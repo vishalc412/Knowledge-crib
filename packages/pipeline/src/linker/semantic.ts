@@ -10,8 +10,14 @@
  *     hit can never promote a pair to `describes` or override a stronger deterministic method;
  *   - never duplicates an existing describes/references edge for the same (section, symbol).
  *
- * Graceful-degrade: pure JS TF-IDF, no network; an empty/short corpus yields no candidates → no edges,
- * and the deterministic linker is unaffected.
+ * M2.3 — the similarity backend is pluggable:
+ *   - `'embedding'` (default): char-n-gram embedding cosine (linker/embedding.ts). Generalizes across
+ *     inflection/case/affix where TF-IDF's exact-token match sees no shared term.
+ *   - `'tfidf'`: the M7 TF-IDF cosine (linker/tfidf.ts). Retained for the recall-up gate's baseline
+ *     and as a graceful-degrade fallback if an embedder is ever unavailable.
+ *
+ * Graceful-degrade: pure JS, no network; an empty/short corpus yields no candidates → no edges, and
+ * the deterministic linker is unaffected.
  */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -19,6 +25,7 @@ import type { SoulStore } from '@knowledge-crib/core';
 import { parseMarkdownSections } from '@knowledge-crib/parsers';
 import { edgeId, idFor } from '@knowledge-crib/soul-schema';
 import type { Edge } from '@knowledge-crib/soul-schema';
+import { EmbeddingLinkIndex } from './embedding.js';
 import { TfidfIndex } from './tfidf.js';
 
 export interface SemanticStats {
@@ -26,8 +33,28 @@ export interface SemanticStats {
   added: number;
 }
 
-/** Minimum cosine similarity to consider a (section, symbol) pair. */
-const FLOOR = 0.1;
+/** Which similarity backend the semantic linker uses. */
+export type SemanticMode = 'embedding' | 'tfidf';
+
+/** Options for {@link runSemanticLink}. */
+export interface SemanticLinkOpts {
+  /** Similarity backend; `'embedding'` (M2.3 default) or `'tfidf'` (M7 baseline). */
+  mode?: SemanticMode;
+}
+
+/** A link index exposes the same surface the linker loop needs, regardless of backend. */
+interface LinkIndex {
+  readonly size: number;
+  query(queryText: string, floor: number, k: number): Array<{ id: string; score: number }>;
+}
+
+/** Minimum similarity to consider a (section, symbol) pair. TF-IDF scores 0 when no term is shared,
+ *  so 0.1 is a near-zero floor. char-n-gram cosine has a higher unrelated-text baseline — common
+ *  n-grams ("th", "he", "e …") give unrelated short texts ~0.15–0.33 — so the embedding floor is set
+ *  just above that band to keep only genuine lexical/inflection overlap. Both floors sit well below
+ *  the [0.4, 0.6] confidence cap, so neither backend can promote a pair to `describes`. */
+const FLOOR_TFIDF = 0.1;
+const FLOOR_EMBEDDING = 0.35;
 /** Top-K symbols retrieved per doc-section. */
 const TOP_K = 5;
 /** Confidence floor/ceiling — capped below the 0.8 describes threshold. */
@@ -35,13 +62,23 @@ const CONF_FLOOR = 0.4;
 const CONF_CEIL = 0.6;
 
 /**
- * Emit INFERRED `references` edges for doc-sections → symbols via TF-IDF similarity, skipping any pair
- * already linked (describes or references) by the deterministic pass. `docFiles` (M6) scopes the emit
- * while the TF-IDF index still spans the whole soul.
+ * Emit INFERRED `references` edges for doc-sections → symbols via the configured similarity backend,
+ * skipping any pair already linked (describes or references) by the deterministic pass. `docFiles`
+ * (M6) scopes the emit while the link index still spans the whole soul.
  */
-export function runSemanticLink(soul: SoulStore, root: string, docFiles?: string[]): SemanticStats {
-  const tfidf = new TfidfIndex(soul.iterate('symbol'));
-  if (tfidf.size === 0) return { added: 0 };
+export function runSemanticLink(
+  soul: SoulStore,
+  root: string,
+  docFiles?: string[],
+  opts: SemanticLinkOpts = {},
+): SemanticStats {
+  const mode = opts.mode ?? 'embedding';
+  const index: LinkIndex =
+    mode === 'tfidf'
+      ? new TfidfIndex(soul.iterate('symbol'))
+      : new EmbeddingLinkIndex(soul.iterate('symbol'));
+  const floor = mode === 'tfidf' ? FLOOR_TFIDF : FLOOR_EMBEDDING;
+  if (index.size === 0) return { added: 0 };
 
   // existing (sectionId, symbolId) pairs — skip duplicates so semantic only fills gaps.
   const existing = new Set<string>();
@@ -66,7 +103,7 @@ export function runSemanticLink(soul: SoulStore, root: string, docFiles?: string
     for (const section of parseMarkdownSections(text)) {
       const sectionId = idFor({ kind: 'doc-section', path: docFile, anchor: section.anchor });
       const query = `${section.heading} ${section.prose} ${section.codeRefs.join(' ')}`;
-      for (const hit of tfidf.query(query, FLOOR, TOP_K)) {
+      for (const hit of index.query(query, floor, TOP_K)) {
         if (existing.has(`${sectionId}|${hit.id}`)) continue; // deterministic already linked this pair
         const confidence = Math.min(CONF_CEIL, CONF_FLOOR + (CONF_CEIL - CONF_FLOOR) * hit.score);
         edges.push({
@@ -77,7 +114,7 @@ export function runSemanticLink(soul: SoulStore, root: string, docFiles?: string
           method: 'semantic',
           provenance: 'INFERRED',
           confidence: round2(confidence),
-          evidence: { by: 'tfidf', score: round2(hit.score) },
+          evidence: { by: mode, score: round2(hit.score) },
         });
       }
     }

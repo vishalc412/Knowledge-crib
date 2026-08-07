@@ -1,0 +1,398 @@
+{
+  "id": "sym:packages/parsers/src/ts/nest.ts#securityOf@L431",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:477b9501b4813cf6a99b4fa9749dd24366f9d90194f81a2b9faeaef34ea78c66",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/ts/nest.ts#securityOf@L431",
+    "kind": "symbol",
+    "type": "function",
+    "name": "securityOf",
+    "qualifiedName": "securityOf",
+    "signature": "securityOf(decs: ts.Decorator[]): Record<string, string> | undefined",
+    "lang": "typescript",
+    "file": "packages/parsers/src/ts/nest.ts",
+    "span": {
+      "start": 431,
+      "end": 453
+    },
+    "callSites": [
+      {
+        "callee": "simpleName",
+        "line": 434
+      },
+      {
+        "callee": "decArgs",
+        "line": 436
+      },
+      {
+        "callee": "join",
+        "line": 438
+      },
+      {
+        "callee": "map",
+        "line": 438
+      },
+      {
+        "callee": "filter",
+        "line": 438
+      },
+      {
+        "callee": "join",
+        "line": 445
+      },
+      {
+        "callee": "filter",
+        "line": 445
+      },
+      {
+        "callee": "map",
+        "line": 445
+      },
+      {
+        "callee": "getText",
+        "line": 446
+      },
+      {
+        "callee": "keys",
+        "line": 452
+      }
+    ]
+  },
+  "source": {
+    "text": "function securityOf(decs: ts.Decorator[]): Record<string, string> | undefined {\n  const out: Record<string, string> = {};\n  for (const d of decs) {\n    const n = simpleName(d);\n    if (!SECURITY_ANNOS.has(n)) continue;\n    const args = decArgs(d);\n    if (n === 'Roles' || n === 'Permissions') {\n      const vals = args\n        .filter(ts.isStringLiteral)\n        .map((a) => a.text)\n        .join('|');\n      if (vals) out[n] = vals;\n    } else {\n      // @UseGuards(G1, G2) → the guard class refs joined.\n      const names = args\n        .map((a) => a.getText())\n        .filter((t) => t.length)\n        .join('|');\n      if (names) out[n] = names;\n    }\n  }\n  return Object.keys(out).length ? out : undefined;\n}",
+    "truncated": false,
+    "totalLines": 23,
+    "startLine": 431
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/ts/nest.ts#extractNestSemantics@L104",
+      "confidence": 1,
+      "name": "extractNestSemantics",
+      "qualifiedName": "extractNestSemantics",
+      "signature": "extractNestSemantics(input: NestPassInput): void",
+      "type": "function",
+      "file": "packages/parsers/src/ts/nest.ts",
+      "line": 104
+    },
+    {
+      "id": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+      "confidence": 1,
+      "name": "extractSpringSemantics",
+      "qualifiedName": "extractSpringSemantics",
+      "signature": "extractSpringSemantics(input: SpringPassInput): void",
+      "type": "function",
+      "file": "packages/parsers/src/java/spring.ts",
+      "line": 100
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/nest.ts#routeMetaOf@L404",
+      "confidence": 1,
+      "name": "routeMetaOf",
+      "qualifiedName": "routeMetaOf",
+      "signature": "routeMetaOf(m: ts.MethodDeclaration): Record<string, unknown>",
+      "type": "function",
+      "file": "packages/parsers/src/ts/nest.ts",
+      "line": 404
+    },
+    {
+      "id": "sym:packages/parsers/src/java/spring.ts#routeMetaOf@L406",
+      "confidence": 1,
+      "name": "routeMetaOf",
+      "qualifiedName": "routeMetaOf",
+      "signature": "routeMetaOf(m: JavaDef): Record<string, unknown>",
+      "type": "function",
+      "file": "packages/parsers/src/java/spring.ts",
+      "line": 406
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/ts/nest.ts#decArgs@L587",
+      "confidence": 1,
+      "name": "decArgs",
+      "qualifiedName": "decArgs",
+      "signature": "decArgs(d: ts.Decorator): readonly ts.Expression[]",
+      "type": "function",
+      "file": "packages/parsers/src/ts/nest.ts",
+      "line": 587
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/nest.ts#simpleName@L571",
+      "confidence": 1,
+      "name": "simpleName",
+      "qualifiedName": "simpleName",
+      "signature": "simpleName(d: ts.Decorator): string",
+      "type": "function",
+      "file": "packages/parsers/src/ts/nest.ts",
+      "line": 571
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/ts/nest.ts@L429",
+      "snippet": "/** Security decorators on a node → `{ UseGuards: \"JwtAuthGuard|AdminGuard\", Roles: \"admin|user\" }`.",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/ts/nest.ts#securityOf@L431",
+    "procedureName": "securityOf",
+    "conditions": [
+      "cond:packages/parsers/src/ts/nest.ts@L433",
+      "cond:packages/parsers/src/ts/nest.ts@L437",
+      "cond:packages/parsers/src/ts/nest.ts@L442",
+      "cond:packages/parsers/src/ts/nest.ts@L449"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.ts#securityOf@L431",
+        "procedureName": "securityOf",
+        "guard": "cond:packages/parsers/src/ts/nest.ts@L433",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/nest.ts@L433",
+            "expr": "decs",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:28aa73202bb59e22fce07d6842d912d40a7d946e05c79c4f565e23f594b697c7",
+          "target": "sym:packages/parsers/src/ts/nest.ts#simpleName@L571",
+          "expr": "simpleName",
+          "line": 434
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.ts#securityOf@L431",
+        "procedureName": "securityOf",
+        "guard": "cond:packages/parsers/src/ts/nest.ts@L433",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/nest.ts@L433",
+            "expr": "decs",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7c4dd55d21f015a7b9cf4f9f4c7574048b8eafec01264c240f4bd5c38e58bc21",
+          "target": "stmt:packages/parsers/src/ts/nest.ts@L434",
+          "line": 434,
+          "expr": "const n = simpleName(d);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.ts#securityOf@L431",
+        "procedureName": "securityOf",
+        "guard": "cond:packages/parsers/src/ts/nest.ts@L433",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/nest.ts@L433",
+            "expr": "decs",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:24d93e4e2beea1e511d17a5c8e57402560abe35931a892387f56d0d45021ca7f",
+          "target": "stmt:packages/parsers/src/ts/nest.ts@L436",
+          "line": 436,
+          "expr": "const args = decArgs(d);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.ts#securityOf@L431",
+        "procedureName": "securityOf",
+        "guard": "cond:packages/parsers/src/ts/nest.ts@L433",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/nest.ts@L433",
+            "expr": "decs",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:35763c2e829f72b0c78b05922e93b16bad30d70dc8a04706ce6333e011909950",
+          "target": "sym:packages/parsers/src/ts/nest.ts#decArgs@L587",
+          "expr": "decArgs",
+          "line": 436
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.ts#securityOf@L431",
+        "procedureName": "securityOf",
+        "guard": "cond:packages/parsers/src/ts/nest.ts@L437",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/nest.ts@L433",
+            "expr": "decs"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/nest.ts@L437",
+            "expr": "n === 'Roles' || n === 'Permissions'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6d547dc8685610a0ee64a539c2bf05e50798c728e99076ae4442eb8b905fc988",
+          "target": "stmt:packages/parsers/src/ts/nest.ts@L438",
+          "line": 438,
+          "expr": "const vals = args\n        .filter(ts.isStringLiteral)\n        .map((a) => a.text)\n        .join('|');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.ts#securityOf@L431",
+        "procedureName": "securityOf",
+        "guard": "cond:packages/parsers/src/ts/nest.ts@L442",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/nest.ts@L433",
+            "expr": "decs"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/nest.ts@L437",
+            "expr": "n === 'Roles' || n === 'Permissions'"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/nest.ts@L442",
+            "expr": "vals",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:83bf851563225f53dd4565c03a0a4688025bae474751ab22907861f0a8ec640b",
+          "target": "assign:packages/parsers/src/ts/nest.ts@L442",
+          "line": 442,
+          "expr": "out[n] = vals;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.ts#securityOf@L431",
+        "procedureName": "securityOf",
+        "guard": "cond:packages/parsers/src/ts/nest.ts@L437",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/nest.ts@L433",
+            "expr": "decs"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/nest.ts@L437",
+            "expr": "n === 'Roles' || n === 'Permissions'",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8d45dcf647a69dcb01003b4261f81442597d396f2008096cd16abb94a8d5a987",
+          "target": "stmt:packages/parsers/src/ts/nest.ts@L445",
+          "line": 445,
+          "expr": "const names = args\n        .map((a) => a.getText())\n        .filter((t) => t.length)\n        .join('|');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.ts#securityOf@L431",
+        "procedureName": "securityOf",
+        "guard": "cond:packages/parsers/src/ts/nest.ts@L449",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/nest.ts@L433",
+            "expr": "decs"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/nest.ts@L437",
+            "expr": "n === 'Roles' || n === 'Permissions'"
+          },
+          {
+            "id": "cond:packages/parsers/src/ts/nest.ts@L449",
+            "expr": "names",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c77671756d40245bed3a9da453835acb58a869c3902b2c753edebe43db18ce3e",
+          "target": "assign:packages/parsers/src/ts/nest.ts@L449",
+          "line": 449,
+          "expr": "out[n] = names;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.ts#securityOf@L431",
+        "procedureName": "securityOf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7fac17f7cc268f9bdf36e6282985b56f52e0a5276ee21d7c0793b7fa3e3f1d50",
+          "target": "stmt:packages/parsers/src/ts/nest.ts@L452",
+          "line": 452,
+          "expr": "return Object.keys(out).length ? out : undefined;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 7,
+    "referencedByFiles": [
+      "packages/parsers/src/java/spring.ts",
+      "packages/parsers/src/ts/nest.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 7,
+    "assignments": 2,
+    "conditions": 4,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 10,
+      "unresolved": 8
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "8 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

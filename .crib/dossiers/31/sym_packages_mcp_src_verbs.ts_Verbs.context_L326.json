@@ -1,0 +1,2156 @@
+{
+  "id": "sym:packages/mcp/src/verbs.ts#Verbs.context@L326",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:154bc6594da01e6dc5bc2a21ab7c97cb142fc2899ed5e5cb395e3e78d30d11c7",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/verbs.ts#Verbs.context@L326",
+    "kind": "symbol",
+    "type": "method",
+    "name": "context",
+    "qualifiedName": "Verbs.context",
+    "signature": "context(args: {\n    id: string;\n    docLimit?: number;\n    extractedOnly?: boolean;\n    /** include the full source text of the node's span (rehydrated from disk, budgeted) */\n    withSource?: boolean;\n    /** for a procedure/function, fold in its decision table (conditions/actions/reads/writes) */\n    withRules?: boolean;\n    /** fold in the schema-1.3 framework-semantics relationships: routes exposed, beans produced,\n     *  DI dependencies/dependents, JPA relations, component renders. Auto-scopes by node — a class\n     *  (controller/@Configuration/@Entity) aggregates its members' route table / bean inventory /\n     *  DI graph / relation model via `member-of`; a callable/component/field returns its own direct\n     *  edges. A @Bean-supplied dependency is surfaced with `kind: 'produces'` + the producer in one\n     *  trip (no round-trip). Unresolved `meta.injects`/`meta.produces` type names surface as\n     *  `⚠ unresolved` entries (parity with `gaps`). */\n    withFramework?: boolean;\n    /** fold in saved LLM-authored semantic graph analysis; default-on when present. */\n    withLlm?: boolean;\n    /** char cap for the rehydrated source body (default {@link DEFAULT_BODY_MAX_CHARS}) */\n    sourceMaxChars?: number;\n    /** line cap for the rehydrated source body (default {@link DEFAULT_BODY_MAX_LINES}) */\n    sourceMaxLines?: number;\n    /** absolute file line to start the source page at (paging cursor; default = span start) */\n    sourceStartLine?: number;\n    /** response-wide token budget (chars/4). When set with `withSource`, the source body is shrunk\n     *  to fit the remaining budget and `budgetExhausted:true` is set; page via `source.nextLine`.\n     *  (M1.2) */\n    maxTokens?: number;\n    /** M2.6 change-aware cache. Echo the `hash` a prior call returned to short-circuit an unchanged\n     *  response: when the rebuilt response is byte-identical, the body collapses to\n     *  `{ unchanged: true, hash }`. Stateless (deterministic BLAKE3 of the response). */\n    ifHash?: string;\n  }): Record<string, unknown>",
+    "lang": "typescript",
+    "file": "packages/mcp/src/verbs.ts",
+    "span": {
+      "start": 326,
+      "end": 443
+    },
+    "callSites": [
+      {
+        "callee": "resolveNodeId",
+        "line": 360
+      },
+      {
+        "callee": "notFound",
+        "line": 361
+      },
+      {
+        "callee": "getNode",
+        "line": 362
+      },
+      {
+        "callee": "notFound",
+        "line": 363
+      },
+      {
+        "callee": "map",
+        "line": 364
+      },
+      {
+        "callee": "callEdges",
+        "line": 364
+      },
+      {
+        "callee": "brief",
+        "line": 365
+      },
+      {
+        "callee": "map",
+        "line": 367
+      },
+      {
+        "callee": "callEdges",
+        "line": 367
+      },
+      {
+        "callee": "brief",
+        "line": 368
+      },
+      {
+        "callee": "bound",
+        "line": 370
+      },
+      {
+        "callee": "docsFor",
+        "line": 371
+      },
+      {
+        "callee": "capInt",
+        "line": 372
+      },
+      {
+        "callee": "publicNode",
+        "line": 375
+      },
+      {
+        "callee": "bodyOf",
+        "line": 381
+      },
+      {
+        "callee": "decisionTable",
+        "line": 383
+      },
+      {
+        "callee": "computeCoverage",
+        "line": 386
+      },
+      {
+        "callee": "frameworkSemantics",
+        "line": 393
+      },
+      {
+        "callee": "attachLlm",
+        "line": 398
+      },
+      {
+        "callee": "capMaxTokens",
+        "line": 404
+      },
+      {
+        "callee": "estimateTokens",
+        "line": 406
+      },
+      {
+        "callee": "max",
+        "line": 419
+      },
+      {
+        "callee": "bodyOf",
+        "line": 420
+      },
+      {
+        "callee": "max",
+        "line": 427
+      },
+      {
+        "callee": "floor",
+        "line": 427
+      },
+      {
+        "callee": "bodyOf",
+        "line": 428
+      },
+      {
+        "callee": "applyIfHash",
+        "line": 442
+      }
+    ]
+  },
+  "source": {
+    "text": "  context(args: {\n    id: string;\n    docLimit?: number;\n    extractedOnly?: boolean;\n    /** include the full source text of the node's span (rehydrated from disk, budgeted) */\n    withSource?: boolean;\n    /** for a procedure/function, fold in its decision table (conditions/actions/reads/writes) */\n    withRules?: boolean;\n    /** fold in the schema-1.3 framework-semantics relationships: routes exposed, beans produced,\n     *  DI dependencies/dependents, JPA relations, component renders. Auto-scopes by node — a class\n     *  (controller/@Configuration/@Entity) aggregates its members' route table / bean inventory /\n     *  DI graph / relation model via `member-of`; a callable/component/field returns its own direct\n     *  edges. A @Bean-supplied dependency is surfaced with `kind: 'produces'` + the producer in one\n     *  trip (no round-trip). Unresolved `meta.injects`/`meta.produces` type names surface as\n     *  `⚠ unresolved` entries (parity with `gaps`). */\n    withFramework?: boolean;\n    /** fold in saved LLM-authored semantic graph analysis; default-on when present. */\n    withLlm?: boolean;\n    /** char cap for the rehydrated source body (default {@link DEFAULT_BODY_MAX_CHARS}) */\n    sourceMaxChars?: number;\n    /** line cap for the rehydrated source body (default {@link DEFAULT_BODY_MAX_LINES}) */\n    sourceMaxLines?: number;\n    /** absolute file line to start the source page at (paging cursor; default = span start) */\n    sourceStartLine?: number;\n    /** response-wide token budget (chars/4). When set with `withSource`, the source body is shrunk\n     *  to fit the remaining budget and `budgetExhausted:true` is set; page via `source.nextLine`.\n     *  (M1.2) */\n    maxTokens?: number;\n    /** M2.6 change-aware cache. Echo the `hash` a prior call returned to short-circuit an unchanged\n     *  response: when the rebuilt response is byte-identical, the body collapses to\n     *  `{ unchanged: true, hash }`. Stateless (deterministic BLAKE3 of the response). */\n    ifHash?: string;\n  }): Record<string, unknown> {\n    const soul = this.deps.soul;\n    const id = this.resolveNodeId(args.id);\n    if (!id) return notFound(args.id);\n    const node = soul.getNode(id);\n    if (!node) return notFound(args.id);\n    const callers = this.callEdges(id, 'up', args.extractedOnly).map((e) =>\n      this.brief(e.src, e.confidence),\n    );\n    const callees = this.callEdges(id, 'down', args.extractedOnly).map((e) =>\n      this.brief(e.dst, e.confidence),\n    );\n    const docs = bound(\n      this.docsFor(id, 0, args.extractedOnly),\n      capInt(args.docLimit, DEFAULT_DOC_LIMIT, MAX_DOC_LIMIT),\n    );\n    const result: Record<string, unknown> = {\n      node: this.publicNode(node),\n      callers,\n      callees,\n      docs: docs.items,\n      truncated: docs.truncated,\n    };\n    if (args.withSource) result.source = this.bodyOf(node, args);\n    if (args.withRules && node.type && CALLABLE_SYMBOL_TYPES.has(node.type)) {\n      result.rules = decisionTable(soul, id, { includeTables: true });\n      // coverage gates the rules: an `unimplemented`/`partial` readiness tells the consumer the\n      // decision table may be empty or lossy because the body is missing or expressions were clipped.\n      result.coverage = computeCoverage(soul, id, {\n        keep: (e) => !args.extractedOnly || e.provenance === 'EXTRACTED',\n      });\n    }\n    if (args.withFramework) {\n      // frameworkSemantics is pure over the soul (one iterateEdges scan, cached adjacency); auto-scopes\n      // by node. Undefined when the node has no framework edges (a non-Spring method) → key omitted.\n      const fw = frameworkSemantics(soul, id, {\n        keep: (e) => !args.extractedOnly || e.provenance === 'EXTRACTED',\n      });\n      if (fw) result.framework = fw;\n    }\n    this.attachLlm(result, id, args.withLlm);\n    // M1.2 response-wide token budget (opt-in). When set with `withSource`, guarantee the serialized",
+    "truncated": true,
+    "totalLines": 118,
+    "startLine": 326,
+    "nextLine": 400
+  },
+  "callers": [
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.ask@L1003",
+      "confidence": 1,
+      "name": "ask",
+      "qualifiedName": "Verbs.ask",
+      "signature": "ask(args: {\n    q: string;\n    limit?: number;\n    format?: 'json' | 'markdown';\n    withSource?: boolean;\n    withRules?: boolean;\n    withFramework?: boolean;\n    extractedOnly?: boolean;\n  }): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 1003
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.applyIfHash@L1736",
+      "confidence": 1,
+      "name": "applyIfHash",
+      "qualifiedName": "Verbs.applyIfHash",
+      "signature": "applyIfHash(args: { ifHash?: string }, result: Record<string, unknown>): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 1736
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.attachLlm@L1752",
+      "confidence": 1,
+      "name": "attachLlm",
+      "qualifiedName": "Verbs.attachLlm",
+      "signature": "attachLlm(result: Record<string, unknown>, targetId: string, withLlm?: boolean): void",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 1752
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.bodyOf@L689",
+      "confidence": 1,
+      "name": "bodyOf",
+      "qualifiedName": "Verbs.bodyOf",
+      "signature": "bodyOf(node: Node, args: {\n      sourceMaxChars?: number;\n      sourceMaxLines?: number;\n      sourceStartLine?: number;\n      maxChars?: number;\n      maxLines?: number;\n      startLine?: number;\n    }): RehydratedBody",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 689
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.brief@L1713",
+      "confidence": 1,
+      "name": "brief",
+      "qualifiedName": "Verbs.brief",
+      "signature": "brief(id: string, confidence: number): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 1713
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.callEdges@L1650",
+      "confidence": 1,
+      "name": "callEdges",
+      "qualifiedName": "Verbs.callEdges",
+      "signature": "callEdges(id: string, dir: Dir, extractedOnly?: boolean): Edge[]",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 1650
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.docsFor@L1657",
+      "confidence": 1,
+      "name": "docsFor",
+      "qualifiedName": "Verbs.docsFor",
+      "signature": "docsFor(id: string, minConfidence: number, extractedOnly?: boolean): DocLink[]",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 1657
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.publicNode@L1770",
+      "confidence": 1,
+      "name": "publicNode",
+      "qualifiedName": "Verbs.publicNode",
+      "signature": "publicNode(n: Node): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 1770
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.resolveNodeId@L1688",
+      "confidence": 1,
+      "name": "resolveNodeId",
+      "qualifiedName": "Verbs.resolveNodeId",
+      "signature": "resolveNodeId(idOrName: string): string | undefined",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 1688
+    },
+    {
+      "id": "sym:packages/mcp/src/token-budget.ts#bound@L75",
+      "confidence": 1,
+      "name": "bound",
+      "qualifiedName": "bound",
+      "signature": "bound(all: T[], limit: number, offset = 0): Bounded<T>",
+      "type": "function",
+      "file": "packages/mcp/src/token-budget.ts",
+      "line": 75
+    },
+    {
+      "id": "sym:packages/mcp/src/token-budget.ts#capInt@L88",
+      "confidence": 1,
+      "name": "capInt",
+      "qualifiedName": "capInt",
+      "signature": "capInt(value: number | undefined, def: number, max: number): number",
+      "type": "function",
+      "file": "packages/mcp/src/token-budget.ts",
+      "line": 88
+    },
+    {
+      "id": "sym:packages/mcp/src/token-budget.ts#capMaxTokens@L110",
+      "confidence": 1,
+      "name": "capMaxTokens",
+      "qualifiedName": "capMaxTokens",
+      "signature": "capMaxTokens(value: number | undefined): number",
+      "type": "function",
+      "file": "packages/mcp/src/token-budget.ts",
+      "line": 110
+    },
+    {
+      "id": "sym:packages/mcp/src/token-budget.ts#estimateTokens@L68",
+      "confidence": 1,
+      "name": "estimateTokens",
+      "qualifiedName": "estimateTokens",
+      "signature": "estimateTokens(value: unknown): number",
+      "type": "function",
+      "file": "packages/mcp/src/token-budget.ts",
+      "line": 68
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#notFound@L1874",
+      "confidence": 1,
+      "name": "notFound",
+      "qualifiedName": "notFound",
+      "signature": "notFound(id: string): Record<string, unknown>",
+      "type": "function",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 1874
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#context-symbol",
+      "heading": "`context(symbol)`",
+      "anchor": "context-symbol",
+      "snippet": "`context(symbol)`",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-deep-extraction.md#4-pl-sql-extractor-first-migration-target",
+      "heading": "4. PL/SQL extractor (first migration target)",
+      "anchor": "4-pl-sql-extractor-first-migration-target",
+      "snippet": "4. PL/SQL extractor (first migration target)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#7-seeroflow-read-contract-q38-and-any-external-consumer",
+      "heading": "7. SeeroFlow read contract [Q38] (and any external consumer)",
+      "anchor": "7-seeroflow-read-contract-q38-and-any-external-consumer",
+      "snippet": "7. SeeroFlow read contract [Q38] (and any external consumer)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-executive-brief.md#5-how-it-works-the-actual-mechanism",
+      "heading": "5. How it works (the actual mechanism)",
+      "anchor": "5-how-it-works-the-actual-mechanism",
+      "snippet": "5. How it works (the actual mechanism)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-build-plan.md#5-milestones-each-one-flagged-pr-test-gate",
+      "heading": "5. Milestones (each = one flagged PR + test gate)",
+      "anchor": "5-milestones-each-one-flagged-pr-test-gate",
+      "snippet": "5. Milestones (each = one flagged PR + test gate)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-06-27-knowledgecrib-linkedin-demo-video.md#task-2-define-and-test-the-45-second-timeline",
+      "heading": "Task 2: Define And Test The 45-Second Timeline",
+      "anchor": "task-2-define-and-test-the-45-second-timeline",
+      "snippet": "Task 2: Define And Test The 45-Second Timeline",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-client-setup.md#10-the-llm-semantic-graph-layer-optional-build-the-bible",
+      "heading": "10. The LLM semantic-graph layer (optional — \"build the bible\")",
+      "anchor": "10-the-llm-semantic-graph-layer-optional-build-the-bible",
+      "snippet": "10. The LLM semantic-graph layer (optional — \"build the bible\")",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-decisions.md#decision-log",
+      "heading": "Decision Log",
+      "anchor": "decision-log",
+      "snippet": "Decision Log",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prd.md#5-architecture",
+      "heading": "5. Architecture",
+      "anchor": "5-architecture",
+      "snippet": "5. Architecture",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m14-framework-semantics-layer-schema-1-3",
+      "heading": "M14 — Framework-semantics layer (schema 1.3)",
+      "anchor": "m14-framework-semantics-layer-schema-1-3",
+      "snippet": "M14 — Framework-semantics layer (schema 1.3)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-refined-vs-existing-assessment.md#2-5-ai-architect",
+      "heading": "2.5 AI Architect",
+      "anchor": "2-5-ai-architect",
+      "snippet": "2.5 AI Architect",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:CHANGELOG.md#added",
+      "heading": "Added",
+      "anchor": "added",
+      "snippet": "Added",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#1-what-it-is",
+      "heading": "1. What it is",
+      "anchor": "1-what-it-is",
+      "snippet": "1. What it is",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#1-3-the-gaps-that-make-plan-a-plan-b-today",
+      "heading": "1.3 The gaps that make Plan A < Plan B today",
+      "anchor": "1-3-the-gaps-that-make-plan-a-plan-b-today",
+      "snippet": "1.3 The gaps that make Plan A < Plan B today",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#ws-5-expose-rich-verbs-on-the-cli-closes-g5",
+      "heading": "WS-5 — Expose rich verbs on the CLI (closes G5)",
+      "anchor": "ws-5-expose-rich-verbs-on-the-cli-closes-g5",
+      "snippet": "WS-5 — Expose rich verbs on the CLI (closes G5)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-architecture.md#3-1-framework-semantics-tier-schema-1-3",
+      "heading": "3.1 Framework-semantics tier (schema 1.3)",
+      "anchor": "3-1-framework-semantics-tier-schema-1-3",
+      "snippet": "3.1 Framework-semantics tier (schema 1.3)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#what-was-built-3",
+      "heading": "What was built",
+      "anchor": "what-was-built-3",
+      "snippet": "What was built",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-questionnaire.md#branch-7-mvp-scope-roadmap",
+      "heading": "Branch 7 — MVP Scope & Roadmap",
+      "anchor": "branch-7-mvp-scope-roadmap",
+      "snippet": "Branch 7 — MVP Scope & Roadmap",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prompts.md#8-anti-patterns-what-burns-tokens-misleads-a-local-model",
+      "heading": "8. Anti-patterns (what burns tokens / misleads a local model)",
+      "anchor": "8-anti-patterns-what-burns-tokens-misleads-a-local-model",
+      "snippet": "8. Anti-patterns (what burns tokens / misleads a local model)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/launch/demo-recipe.md#shot-2-impact-blast-radius-the-enterprise-pull-25s",
+      "heading": "Shot 2 — impact blast-radius (the enterprise pull)  · ~25s",
+      "anchor": "shot-2-impact-blast-radius-the-enterprise-pull-25s",
+      "snippet": "Shot 2 — impact blast-radius (the enterprise pull)  · ~25s",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/launch/demo-recipe.md#shot-3-dossier-decision-table-flow-the-behavior-depth-moat-25s",
+      "heading": "Shot 3 — dossier / decision-table flow (the behavior-depth moat)  · ~25s",
+      "anchor": "shot-3-dossier-decision-table-flow-the-behavior-depth-moat-25s",
+      "snippet": "Shot 3 — dossier / decision-table flow (the behavior-depth moat)  · ~25s",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#conventions",
+      "heading": "Conventions",
+      "anchor": "conventions",
+      "snippet": "Conventions",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-deep-extraction.md#4d-dossier-the-persisted-reusable-deep-context-workstream-d-e",
+      "heading": "4d. Dossier — the persisted reusable deep context (Workstream D/E)",
+      "anchor": "4d-dossier-the-persisted-reusable-deep-context-workstream-d-e",
+      "snippet": "4d. Dossier — the persisted reusable deep context (Workstream D/E)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#surfacing-the-verbs-that-make-a-1-3-graph-replace-reading-the-code",
+      "heading": "Surfacing — the verbs that make a 1.3 graph replace reading the code",
+      "anchor": "surfacing-the-verbs-that-make-a-1-3-graph-replace-reading-the-code",
+      "snippet": "Surfacing — the verbs that make a 1.3 graph replace reading the code",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#2-on-disk-layout",
+      "heading": "2. On-disk layout",
+      "anchor": "2-on-disk-layout",
+      "snippet": "2. On-disk layout",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:packages/cli/skills/crib-enrich/SKILL.md#phase-1-one-batch-author-save-stop-the-default-loop-per-turn",
+      "heading": "Phase 1 — one batch, author, save, stop (the default loop, per turn)",
+      "anchor": "phase-1-one-batch-author-save-stop-the-default-loop-per-turn",
+      "snippet": "Phase 1 — one batch, author, save, stop (the default loop, per turn)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-client-setup.md#8-verify-it-works-any-client",
+      "heading": "8. Verify it works (any client)",
+      "anchor": "8-verify-it-works-any-client",
+      "snippet": "8. Verify it works (any client)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prd.md#6-mvp-scope-q23",
+      "heading": "6. MVP Scope [Q23]",
+      "anchor": "6-mvp-scope-q23",
+      "snippet": "6. MVP Scope [Q23]",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-refined-vs-existing-assessment.md#knowledge-crib-refined-vs-existing-detailed-level-analysis-assessment",
+      "heading": "Knowledge-crib — Refined vs Existing: Detailed-Level Analysis Assessment",
+      "anchor": "knowledge-crib-refined-vs-existing-detailed-level-analysis-assessment",
+      "snippet": "Knowledge-crib — Refined vs Existing: Detailed-Level Analysis Assessment",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:README.md#the-token-cost-benefit-concretely",
+      "heading": "The token-cost benefit, concretely",
+      "anchor": "the-token-cost-benefit-concretely",
+      "snippet": "The token-cost benefit, concretely",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#5-7-mcp-server-verification-the-real-test",
+      "heading": "5.7 MCP server verification (the real test)",
+      "anchor": "5-7-mcp-server-verification-the-real-test",
+      "snippet": "5.7 MCP server verification (the real test)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#9-known-issues-limits",
+      "heading": "9. Known issues & limits",
+      "anchor": "9-known-issues-limits",
+      "snippet": "9. Known issues & limits",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#query-time-merge-lightweight-by-default-full-on-withllm",
+      "heading": "Query-time merge — lightweight by default, full on `withLlm`",
+      "anchor": "query-time-merge-lightweight-by-default-full-on-withllm",
+      "snippet": "Query-time merge — lightweight by default, full on `withLlm`",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prompts.md#knowledge-crib-prompting-guide-how-to-talk-to-your-local-llm-so-crib-does-the-work",
+      "heading": "Knowledge-crib — Prompting Guide (how to talk to your local LLM so crib does the work)",
+      "anchor": "knowledge-crib-prompting-guide-how-to-talk-to-your-local-llm-so-crib-does-the-work",
+      "snippet": "Knowledge-crib — Prompting Guide (how to talk to your local LLM so crib does the work)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prompts.md#1-onboarding-explain-this-repo-to-me-without-reading-every-file",
+      "heading": "1. Onboarding / \"explain this repo to me\" — *without reading every file*",
+      "anchor": "1-onboarding-explain-this-repo-to-me-without-reading-every-file",
+      "snippet": "1. Onboarding / \"explain this repo to me\" — *without reading every file*",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prompts.md#4-deep-dive-one-symbol-the-dossier-prompt-highest-leverage",
+      "heading": "4. Deep-dive one symbol — *the dossier prompt (highest leverage)*",
+      "anchor": "4-deep-dive-one-symbol-the-dossier-prompt-highest-leverage",
+      "snippet": "4. Deep-dive one symbol — *the dossier prompt (highest leverage)*",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prompts.md#7-codex-specific-notes-local-openai-codex-cli",
+      "heading": "7. Codex-specific notes (local OpenAI/Codex CLI)",
+      "anchor": "7-codex-specific-notes-local-openai-codex-cli",
+      "snippet": "7. Codex-specific notes (local OpenAI/Codex CLI)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prompts.md#0-the-mental-model-what-to-ask-for-when",
+      "heading": "0. The mental model — what to ask for, when",
+      "anchor": "0-the-mental-model-what-to-ask-for-when",
+      "snippet": "0. The mental model — what to ask for, when",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/adr/ADR-002-scale-storage.md#dossiers-in-git-keep-committed",
+      "heading": "Dossiers-in-git — KEEP committed",
+      "anchor": "dossiers-in-git-keep-committed",
+      "snippet": "Dossiers-in-git — KEEP committed",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#source-node-deep-context",
+      "heading": "`source(node)` *(deep-context)*",
+      "anchor": "source-node-deep-context",
+      "snippet": "`source(node)` *(deep-context)*",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#dossier-symbol-deep-context-persisted-workstream-d-e",
+      "heading": "`dossier(symbol)` *(deep-context, persisted — Workstream D/E)*",
+      "anchor": "dossier-symbol-deep-context-persisted-workstream-d-e",
+      "snippet": "`dossier(symbol)` *(deep-context, persisted — Workstream D/E)*",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-interview-guide.md#nexus-user-research-interview-guide",
+      "heading": "Nexus — User Research Interview Guide",
+      "anchor": "nexus-user-research-interview-guide",
+      "snippet": "Nexus — User Research Interview Guide",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-deep-extraction.md#4a-serving-layer-deep-context-universal-all-languages",
+      "heading": "4a. Serving-layer deep context (universal, all languages)",
+      "anchor": "4a-serving-layer-deep-context-universal-all-languages",
+      "snippet": "4a. Serving-layer deep context (universal, all languages)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-executive-brief.md#6-proof-reproducible-not-marketing",
+      "heading": "6. Proof — reproducible, not marketing",
+      "anchor": "6-proof-reproducible-not-marketing",
+      "snippet": "6. Proof — reproducible, not marketing",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-executive-brief.md#4-the-benefits-quantified",
+      "heading": "4. The benefits, quantified",
+      "anchor": "4-the-benefits-quantified",
+      "snippet": "4. The benefits, quantified",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-executive-brief.md#1-executive-summary",
+      "heading": "1. Executive summary",
+      "anchor": "1-executive-summary",
+      "snippet": "1. Executive summary",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-executive-brief.md#2-the-business-problem",
+      "heading": "2. The business problem",
+      "anchor": "2-the-business-problem",
+      "snippet": "2. The business problem",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/launch/linkedin-series.md#post-5-the-honest-limits-the-ask",
+      "heading": "Post 5 — The honest limits + the ask",
+      "anchor": "post-5-the-honest-limits-the-ask",
+      "snippet": "Post 5 — The honest limits + the ask",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/launch/linkedin-series.md#post-1-the-problem-why-agents-burn-tokens-break-architecture",
+      "heading": "Post 1 — The problem (why agents burn tokens + break architecture)",
+      "anchor": "post-1-the-problem-why-agents-burn-tokens-break-architecture",
+      "snippet": "Post 1 — The problem (why agents burn tokens + break architecture)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/launch/linkedin-series.md#post-3-the-moat-behavior-depth-grounded-llm-semantics",
+      "heading": "Post 3 — The moat (behavior depth + grounded LLM semantics)",
+      "anchor": "post-3-the-moat-behavior-depth-grounded-llm-semantics",
+      "snippet": "Post 3 — The moat (behavior depth + grounded LLM semantics)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#1-executive-summary",
+      "heading": "1. Executive Summary",
+      "anchor": "1-executive-summary",
+      "snippet": "1. Executive Summary",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#7-the-complete-code-map-quick-reference",
+      "heading": "7. The Complete Code Map (Quick Reference)",
+      "anchor": "7-the-complete-code-map-quick-reference",
+      "snippet": "7. The Complete Code Map (Quick Reference)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#b-query-flow-mcp-tool-call-verb-handler-soulstore-indexstore-response",
+      "heading": "B. Query Flow: MCP Tool Call → Verb Handler → SoulStore/IndexStore → Response",
+      "anchor": "b-query-flow-mcp-tool-call-verb-handler-soulstore-indexstore-response",
+      "snippet": "B. Query Flow: MCP Tool Call → Verb Handler → SoulStore/IndexStore → Response",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-technical-pitch.md#market-position-accurate-comparison",
+      "heading": "Market position — accurate comparison",
+      "anchor": "market-position-accurate-comparison",
+      "snippet": "Market position — accurate comparison",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-technical-pitch.md#why-it-matters",
+      "heading": "Why it matters",
+      "anchor": "why-it-matters",
+      "snippet": "Why it matters",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-technical-pitch.md#position",
+      "heading": "Position",
+      "anchor": "position",
+      "snippet": "Position",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-technical-pitch.md#agent-and-llm-design",
+      "heading": "Agent and LLM design",
+      "anchor": "agent-and-llm-design",
+      "snippet": "Agent and LLM design",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-technical-pitch.md#recommended-pitch-close",
+      "heading": "Recommended pitch close",
+      "anchor": "recommended-pitch-close",
+      "snippet": "Recommended pitch close",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-technical-pitch.md#technical-depth",
+      "heading": "Technical depth",
+      "anchor": "technical-depth",
+      "snippet": "Technical depth",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:packages/cli/skills/crib-enrich/SKILL.md#grounding-rule-anti-hallucination-the-server-enforces-this-on-save",
+      "heading": "Grounding rule (anti-hallucination) — the server enforces this on save",
+      "anchor": "grounding-rule-anti-hallucination-the-server-enforces-this-on-save",
+      "snippet": "Grounding rule (anti-hallucination) — the server enforces this on save",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:packages/cli/skills/crib-enrich/SKILL.md#the-two-rules-that-prevent-the-infinite-loop",
+      "heading": "⚠️ The two rules that prevent the infinite loop",
+      "anchor": "the-two-rules-that-prevent-the-infinite-loop",
+      "snippet": "⚠️ The two rules that prevent the infinite loop",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-client-setup.md#3-the-mcp-server-the-clients-connect-to",
+      "heading": "3. The MCP server the clients connect to",
+      "anchor": "3-the-mcp-server-the-clients-connect-to",
+      "snippet": "3. The MCP server the clients connect to",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-client-setup.md#knowledge-crib-mcp-client-setup-guide",
+      "heading": "Knowledge-crib — MCP Client Setup Guide",
+      "anchor": "knowledge-crib-mcp-client-setup-guide",
+      "snippet": "Knowledge-crib — MCP Client Setup Guide",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/superpowers/specs/2026-06-27-knowledgecrib-linkedin-demo-video-design.md#final-narration-script",
+      "heading": "Final Narration Script",
+      "anchor": "final-narration-script",
+      "snippet": "Final Narration Script",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/superpowers/specs/2026-06-27-knowledgecrib-linkedin-demo-video-design.md#audience-and-success-criteria",
+      "heading": "Audience And Success Criteria",
+      "anchor": "audience-and-success-criteria",
+      "snippet": "Audience And Success Criteria",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/launch/show-hn.md#body",
+      "heading": "Body",
+      "anchor": "body",
+      "snippet": "Body",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:CLAUDE.md#always-do",
+      "heading": "Always Do",
+      "anchor": "always-do",
+      "snippet": "Always Do",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prd.md#7-success-metrics-q25",
+      "heading": "7. Success Metrics [Q25]",
+      "anchor": "7-success-metrics-q25",
+      "snippet": "7. Success Metrics [Q25]",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prd.md#1-one-liner",
+      "heading": "1. One-liner",
+      "anchor": "1-one-liner",
+      "snippet": "1. One-liner",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prd.md#3-positioning",
+      "heading": "3. Positioning",
+      "anchor": "3-positioning",
+      "snippet": "3. Positioning",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prd.md#9-user-research-plan-q27-q30",
+      "heading": "9. User Research Plan [Q27–Q30]",
+      "anchor": "9-user-research-plan-q27-q30",
+      "snippet": "9. User Research Plan [Q27–Q30]",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prd.md#12-future-seeroflow-integration-q38",
+      "heading": "12. Future: SeeroFlow Integration [Q38]",
+      "anchor": "12-future-seeroflow-integration-q38",
+      "snippet": "12. Future: SeeroFlow Integration [Q38]",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prd.md#2-problem-user",
+      "heading": "2. Problem & User",
+      "anchor": "2-problem-user",
+      "snippet": "2. Problem & User",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:outputs/knowledge-crib-coi-decisions.md#decision-log",
+      "heading": "Decision Log",
+      "anchor": "decision-log",
+      "snippet": "Decision Log",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:AGENTS.md#always-do",
+      "heading": "Always Do",
+      "anchor": "always-do",
+      "snippet": "Always Do",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-refined-vs-existing-assessment.md#2-2-product-manager",
+      "heading": "2.2 Product Manager",
+      "anchor": "2-2-product-manager",
+      "snippet": "2.2 Product Manager",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-refined-vs-existing-assessment.md#2-6-ai-engineer",
+      "heading": "2.6 AI Engineer",
+      "anchor": "2-6-ai-engineer",
+      "snippet": "2.6 AI Engineer",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:CHANGELOG.md#added-2",
+      "heading": "Added",
+      "anchor": "added-2",
+      "snippet": "Added",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:README.md#why",
+      "heading": "Why",
+      "anchor": "why",
+      "snippet": "Why",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:README.md#measured-not-projected-run-it-yourself",
+      "heading": "Measured, not projected (run it yourself)",
+      "anchor": "measured-not-projected-run-it-yourself",
+      "snippet": "Measured, not projected (run it yourself)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/README.md#why",
+      "heading": "Why",
+      "anchor": "why",
+      "snippet": "Why",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#knowledge-crib-user-guide",
+      "heading": "Knowledge-crib — User Guide",
+      "anchor": "knowledge-crib-user-guide",
+      "snippet": "Knowledge-crib — User Guide",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#table-of-contents",
+      "heading": "Table of contents",
+      "anchor": "table-of-contents",
+      "snippet": "Table of contents",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#commands",
+      "heading": "Commands",
+      "anchor": "commands",
+      "snippet": "Commands",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#dossier-one-call-deep-context-the-migration-verb",
+      "heading": "`dossier` — one-call deep context (the migration verb)",
+      "anchor": "dossier-one-call-deep-context-the-migration-verb",
+      "snippet": "`dossier` — one-call deep context (the migration verb)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#8-troubleshooting",
+      "heading": "8. Troubleshooting",
+      "anchor": "8-troubleshooting",
+      "snippet": "8. Troubleshooting",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#honesty-in-the-authored-layer",
+      "heading": "Honesty in the authored layer",
+      "anchor": "honesty-in-the-authored-layer",
+      "snippet": "Honesty in the authored layer",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#5-phasing-effort",
+      "heading": "5. Phasing & effort",
+      "anchor": "5-phasing-effort",
+      "snippet": "5. Phasing & effort",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-questionnaire.md#branch-2-target-user-job",
+      "heading": "Branch 2 — Target User & Job",
+      "anchor": "branch-2-target-user-job",
+      "snippet": "Branch 2 — Target User & Job",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-questionnaire.md#branch-8-user-research-plan",
+      "heading": "Branch 8 — User Research Plan",
+      "anchor": "branch-8-user-research-plan",
+      "snippet": "Branch 8 — User Research Plan",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-interview-guide.md#wrap-up-5-min",
+      "heading": "Wrap-up (5 min)",
+      "anchor": "wrap-up-5-min",
+      "snippet": "Wrap-up (5 min)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-interview-guide.md#deep-dive-1-7-min-what-context-was-missing-q29-1",
+      "heading": "Deep dive 1 (7 min) — what context was missing [Q29.1]",
+      "anchor": "deep-dive-1-7-min-what-context-was-missing-q29-1",
+      "snippet": "Deep dive 1 (7 min) — what context was missing [Q29.1]",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-interview-guide.md#objectives",
+      "heading": "Objectives",
+      "anchor": "objectives",
+      "snippet": "Objectives",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-interview-guide.md#go-pivot-criteria-decide-before-interviews-judge-after",
+      "heading": "Go / pivot criteria (decide before interviews, judge after)",
+      "anchor": "go-pivot-criteria-decide-before-interviews-judge-after",
+      "snippet": "Go / pivot criteria (decide before interviews, judge after)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-interview-guide.md#context-10-min-current-workflow",
+      "heading": "Context (10 min) — current workflow",
+      "anchor": "context-10-min-current-workflow",
+      "snippet": "Context (10 min) — current workflow",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-build-plan.md#6-token-cut-proof-headline-metric-q25",
+      "heading": "6. Token-cut proof (headline metric [Q25])",
+      "anchor": "6-token-cut-proof-headline-metric-q25",
+      "snippet": "6. Token-cut proof (headline metric [Q25])",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-testing.md#5-token-cut-benchmark-m5-the-headline-metric-q25",
+      "heading": "5. Token-cut benchmark (M5 — the headline metric [Q25])",
+      "anchor": "5-token-cut-benchmark-m5-the-headline-metric-q25",
+      "snippet": "5. Token-cut benchmark (M5 — the headline metric [Q25])",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/launch/comparison.md#what-this-matrix-is-not-claiming",
+      "heading": "What this matrix is NOT claiming",
+      "anchor": "what-this-matrix-is-not-claiming",
+      "snippet": "What this matrix is NOT claiming",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/specs/2026-06-27-knowledgecrib-linkedin-demo-video-design.md#33-40-seconds-any-agent-one-memory",
+      "heading": "33-40 seconds: Any Agent, One Memory",
+      "anchor": "33-40-seconds-any-agent-one-memory",
+      "snippet": "33-40 seconds: Any Agent, One Memory",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#knowledge-crib-robustness-plan-make-plan-a-plan-b-and-preferable",
+      "heading": "Knowledge-crib Robustness Plan — Make Plan A == Plan B, and preferable",
+      "anchor": "knowledge-crib-robustness-plan-make-plan-a-plan-b-and-preferable",
+      "snippet": "Knowledge-crib Robustness Plan — Make Plan A == Plan B, and preferable",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.context@L326",
+    "procedureName": "Verbs.context",
+    "conditions": [
+      "cond:packages/mcp/src/verbs.ts@L361",
+      "cond:packages/mcp/src/verbs.ts@L363",
+      "cond:packages/mcp/src/verbs.ts@L381",
+      "cond:packages/mcp/src/verbs.ts@L403",
+      "cond:packages/mcp/src/verbs.ts@L409",
+      "cond:packages/mcp/src/verbs.ts@L422",
+      "cond:packages/mcp/src/verbs.ts@L382",
+      "cond:packages/mcp/src/verbs.ts@L390",
+      "cond:packages/mcp/src/verbs.ts@L396",
+      "cond:packages/mcp/src/verbs.ts@L430"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.context@L326",
+        "procedureName": "Verbs.context",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:87856c3691935da2977bb03297d842a2b0d40b3e85e0c5616782c4934559d46f",
+          "target": "stmt:packages/mcp/src/verbs.ts@L360",
+          "line": 360,
+          "expr": "const id = this.resolveNodeId(args.id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.context@L326",
+        "procedureName": "Verbs.context",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:c6f347bc0133b50f7a917ed02baf271ec9c4bae26a7f0b365e529bcca382cd71",
+          "target": "sym:packages/mcp/src/verbs.ts#Verbs.resolveNodeId@L1688",
+          "expr": "resolveNodeId",
+          "line": 360
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.context@L326",
+        "procedureName": "Verbs.context",
+        "guard": "cond:packages/mcp/src/verbs.ts@L361",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L361",
+            "expr": "!id",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2ea0c25beea911569226d1a97588eec22399d6412edf41cc22c6e0aa77176e55",
+          "target": "stmt:packages/mcp/src/verbs.ts@L361",
+          "line": 361,
+          "expr": "return notFound(args.id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.context@L326",
+        "procedureName": "Verbs.context",
+        "guard": "cond:packages/mcp/src/verbs.ts@L363",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L363",
+            "expr": "!node",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:402b464601a85fdf4679583126ecca2ea752b641ea16402a65fde76aba392d1a",
+          "target": "sym:packages/mcp/src/verbs.ts#notFound@L1874",
+          "expr": "notFound",
+          "line": 361
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.context@L326",
+        "procedureName": "Verbs.context",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:090ae1154c2d8523eadb0313b1e356884860b4c801e6f6b91cf97c74a182a24f",
+          "target": "stmt:packages/mcp/src/verbs.ts@L362",
+          "line": 362,
+          "expr": "const node = soul.getNode(id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.context@L326",
+        "procedureName": "Verbs.context",
+        "guard": "cond:packages/mcp/src/verbs.ts@L363",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L363",
+            "expr": "!node",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:729b0fe3071aaa0bacf89597d1f28ab213f0fbe65108792e9130b65799734a8d",
+          "target": "stmt:packages/mcp/src/verbs.ts@L363",
+          "line": 363,
+          "expr": "return notFound(args.id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.context@L326",
+        "procedureName": "Verbs.context",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9622e8ca70bbdbcee21e6e430121b9f56a6ff461a559fc551d47d219dcea787f",
+          "target": "stmt:packages/mcp/src/verbs.ts@L364",
+          "line": 364,
+          "expr": "const callers = this.callEdges(id, 'up', args.extractedOnly).map((e) =>\n      this.brief(e.src, e.confidence),\n    );"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.context@L326",
+        "procedureName": "Verbs.context",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:c6e914122bd4fe46752b5bf134ac4c1f2778cb0346628a553e0235d576769ce9",
+          "target": "sym:packages/mcp/src/verbs.ts#Verbs.callEdges@L1650",
+          "expr": "callEdges",
+          "line": 364
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.context@L326",
+        "procedureName": "Verbs.context",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:30f81c8e115f3f9e82e2d16703768a7fbcff52c94352f3d8e45811fa85c66a90",
+          "target": "sym:packages/mcp/src/verbs.ts#Verbs.brief@L1713",
+          "expr": "brief",
+          "line": 365
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.context@L326",
+        "procedureName": "Verbs.context",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:07d2cada79d90c468678edf611d7483ea39881318b373ac48136e35acf9ff3d6",
+          "target": "stmt:packages/mcp/src/verbs.ts@L367",
+          "line": 367,
+          "expr": "const callees = this.callEdges(id, 'down', args.extractedOnly).map((e) =>\n      this.brief(e.dst, e.confidence),\n    );"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.context@L326",
+        "procedureName": "Verbs.context",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7d60c02b2d5bda18c44aa20cca86fb49590da79ae4ac04c2ea13f7ee7348924a",
+          "target": "stmt:packages/mcp/src/verbs.ts@L370",
+          "line": 370,
+          "expr": "const docs = bound(\n      this.docsFor(id, 0, args.extractedOnly),\n      capInt(args.docLimit, DEFAULT_DOC_LIMIT, MAX_DOC_LIMIT),\n    );"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.context@L326",
+        "procedureName": "Verbs.context",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:a01d59052067662b9cca4a6a9a24f0a3af68298f33ecee538995c273f92e8204",
+          "target": "sym:packages/mcp/src/token-budget.ts#bound@L75",
+          "expr": "bound",
+          "line": 370
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.context@L326",
+        "procedureName": "Verbs.context",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:b7237924ca99f9eae63bcb4c1076bfaa1e6abfaa2db04285ba6183e673e6a25c",
+          "target": "sym:packages/mcp/src/verbs.ts#Verbs.docsFor@L1657",
+          "expr": "docsFor",
+          "line": 371
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.context@L326",
+        "procedureName": "Verbs.context",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:89c661efaa6daf7167f29e789feb2fd46870bf7c1f348b4c77169d32f499eb8f",
+          "target": "sym:packages/mcp/src/token-budget.ts#capInt@L88",
+          "expr": "capInt",
+          "line": 372
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.context@L326",
+        "procedureName": "Verbs.context",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:069830a377888e9ad54baf65a8a9aaca2e8f4a1d17d5a02db408d8f185bec7fc",
+          "target": "stmt:packages/mcp/src/verbs.ts@L374",
+          "line": 374,
+          "expr": "const result: Record<string, unknown> = {\n      node: this.publicNode(node),\n      callers,\n      callees,\n      docs: docs.items,\n      truncated: docs.truncated,\n    };"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.context@L326",
+        "procedureName": "Verbs.context",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:d6be696e0e82800e8fa9d5af7b6b3aed12c9e071e7fe45cf3302404e491a82a2",
+          "target": "sym:packages/mcp/src/verbs.ts#Verbs.publicNode@L1770",
+          "expr": "publicNode",
+          "line": 375
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.context@L326",
+        "procedureName": "Verbs.context",
+        "guard": "cond:packages/mcp/src/verbs.ts@L381",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L381",
+            "expr": "args.withSource",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:438cf5b89a99654fa310d6ddeab71664c00ec5bd63649157df061567e1d721fb",
+          "target": "assign:packages/mcp/src/verbs.ts@L381",
+          "line": 381,
+          "expr": "result.source = this.bodyOf(node, args);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.context@L326",
+        "procedureName": "Verbs.context",
+        "guard": "cond:packages/mcp/src/verbs.ts@L422",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L403",
+            "expr": "args.maxTokens !== undefined && args.withSource && result.source !== undefined"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L409",
+            "expr": "remaining < 1"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L422",
+            "expr": "estimateTokens({ ...result, source: shrunk }) > maxTokens &&\n          charBudget > 1 &&\n          guard++ < 8",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:549ceff4b8ddfa79db8a57a858e759b4cf3bc42f7fd6f608acb536e371ab2f40",
+          "target": "sym:packages/mcp/src/verbs.ts#Verbs.bodyOf@L689",
+          "expr": "bodyOf",
+          "line": 381
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.context@L326",
+        "procedureName": "Verbs.context",
+        "guard": "cond:packages/mcp/src/verbs.ts@L382",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L382",
+            "expr": "args.withRules && node.type && CALLABLE_SYMBOL_TYPES.has(node.type)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7946c62864dc3e98846b2bbbd3e484d045562bd8db01392b2ca647905eae7a0b",
+          "target": "assign:packages/mcp/src/verbs.ts@L383",
+          "line": 383,
+          "expr": "result.rules = decisionTable(soul, id, { includeTables: true });"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.context@L326",
+        "procedureName": "Verbs.context",
+        "guard": "cond:packages/mcp/src/verbs.ts@L382",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L382",
+            "expr": "args.withRules && node.type && CALLABLE_SYMBOL_TYPES.has(node.type)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7cea680ba2a5057363925d966c34546dfcde758a0d10f57a511e71eb8707f797",
+          "target": "assign:packages/mcp/src/verbs.ts@L386",
+          "line": 386,
+          "expr": "result.coverage = computeCoverage(soul, id, {\n        keep: (e) => !args.extractedOnly || e.provenance === 'EXTRACTED',\n      });"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.context@L326",
+        "procedureName": "Verbs.context",
+        "guard": "cond:packages/mcp/src/verbs.ts@L390",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L390",
+            "expr": "args.withFramework",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:de6a6307ee375660b1e4d9e8f2bd3e8cbe17387d8b6c93a4b433a2ca74a7057d",
+          "target": "stmt:packages/mcp/src/verbs.ts@L393",
+          "line": 393,
+          "expr": "const fw = frameworkSemantics(soul, id, {\n        keep: (e) => !args.extractedOnly || e.provenance === 'EXTRACTED',\n      });"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.context@L326",
+        "procedureName": "Verbs.context",
+        "guard": "cond:packages/mcp/src/verbs.ts@L396",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L390",
+            "expr": "args.withFramework"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L396",
+            "expr": "fw",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9bc9fd9f241c58038c86da5936ae2b417f7a81d3f9a9a80e6f015063d62d4875",
+          "target": "assign:packages/mcp/src/verbs.ts@L396",
+          "line": 396,
+          "expr": "result.framework = fw;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.context@L326",
+        "procedureName": "Verbs.context",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:3f2a73ea18041b8ef321c777f4fb0d817e43a23f5ba19ac08b569cdd0be6a967",
+          "target": "sym:packages/mcp/src/verbs.ts#Verbs.attachLlm@L1752",
+          "expr": "attachLlm",
+          "line": 398
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.context@L326",
+        "procedureName": "Verbs.context",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7cee278f2c668a94c2284fe3cf56a289a75c9435543b2d1fb3ab040d03729c97",
+          "target": "stmt:packages/mcp/src/verbs.ts@L398",
+          "line": 398,
+          "expr": "this.attachLlm(result, id, args.withLlm);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.context@L326",
+        "procedureName": "Verbs.context",
+        "guard": "cond:packages/mcp/src/verbs.ts@L403",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L403",
+            "expr": "args.maxTokens !== undefined && args.withSource && result.source !== undefined",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a1c1a7529d7f30b77fda894e153bdfa5e2cbeb414cbafa881cae569c3cbed779",
+          "target": "stmt:packages/mcp/src/verbs.ts@L404",
+          "line": 404,
+          "expr": "const maxTokens = capMaxTokens(args.maxTokens);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.context@L326",
+        "procedureName": "Verbs.context",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:b17fc059ae3edec52b1daea82f8b53acb72987a078ffb8a4e82f72d2bd9b3b44",
+          "target": "sym:packages/mcp/src/token-budget.ts#capMaxTokens@L110",
+          "expr": "capMaxTokens",
+          "line": 404
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.context@L326",
+        "procedureName": "Verbs.context",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:74c5cf39142f4bd324e86140b475304ff712a865ee4e3ab566a4eec91acbf416",
+          "target": "sym:packages/mcp/src/token-budget.ts#estimateTokens@L68",
+          "expr": "estimateTokens",
+          "line": 406
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.context@L326",
+        "procedureName": "Verbs.context",
+        "guard": "cond:packages/mcp/src/verbs.ts@L403",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L403",
+            "expr": "args.maxTokens !== undefined && args.withSource && result.source !== undefined",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e567d962348e7a3c2a8a7c278e7024a3194a9800e4e49e64e2aef6bb45cce8b7",
+          "target": "stmt:packages/mcp/src/verbs.ts@L406",
+          "line": 406,
+          "expr": "const tokensWithout = estimateTokens(withoutSource);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.context@L326",
+        "procedureName": "Verbs.context",
+        "guard": "cond:packages/mcp/src/verbs.ts@L403",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L403",
+            "expr": "args.maxTokens !== undefined && args.withSource && result.source !== undefined",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:11e6b346fbd5284237f24dc7d0c52a4e1e22ed181c43dee3ed8ef53c2e8ad4c1",
+          "target": "assign:packages/mcp/src/verbs.ts@L408",
+          "line": 408,
+          "expr": "result.budgetExhausted = false;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.context@L326",
+        "procedureName": "Verbs.context",
+        "guard": "cond:packages/mcp/src/verbs.ts@L409",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L403",
+            "expr": "args.maxTokens !== undefined && args.withSource && result.source !== undefined"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L409",
+            "expr": "remaining < 1",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1dff0fcb4e80a7e3976b7cf56bd149032a481c40172a3013a90f696ac4980c0b",
+          "target": "assign:packages/mcp/src/verbs.ts@L412",
+          "line": 412,
+          "expr": "result.source = undefined;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.context@L326",
+        "procedureName": "Verbs.context",
+        "guard": "cond:packages/mcp/src/verbs.ts@L409",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L403",
+            "expr": "args.maxTokens !== undefined && args.withSource && result.source !== undefined"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L409",
+            "expr": "remaining < 1",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:251d3571f85b91ccdbf9cf919a0e92138303ddef4a735aeb154c5d510b72fda2",
+          "target": "assign:packages/mcp/src/verbs.ts@L413",
+          "line": 413,
+          "expr": "result.budgetExhausted = true;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.context@L326",
+        "procedureName": "Verbs.context",
+        "guard": "cond:packages/mcp/src/verbs.ts@L409",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L403",
+            "expr": "args.maxTokens !== undefined && args.withSource && result.source !== undefined"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L409",
+            "expr": "remaining < 1",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5509cb23d3f3fa5744cddc44a5d223f360035abf62d5f19f289647142167f35d",
+          "target": "stmt:packages/mcp/src/verbs.ts@L419",
+          "line": 419,
+          "expr": "let charBudget = Math.max(1, remaining * 4);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.context@L326",
+        "procedureName": "Verbs.context",
+        "guard": "cond:packages/mcp/src/verbs.ts@L409",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L403",
+            "expr": "args.maxTokens !== undefined && args.withSource && result.source !== undefined"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L409",
+            "expr": "remaining < 1",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:31ca19daf5c5c008348a26fb9c7fb826c3f8cee33f2bd9d18714656d083710fd",
+          "target": "stmt:packages/mcp/src/verbs.ts@L420",
+          "line": 420,
+          "expr": "let shrunk = this.bodyOf(node, { ...args, sourceMaxChars: charBudget });"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.context@L326",
+        "procedureName": "Verbs.context",
+        "guard": "cond:packages/mcp/src/verbs.ts@L422",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L403",
+            "expr": "args.maxTokens !== undefined && args.withSource && result.source !== undefined"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L409",
+            "expr": "remaining < 1"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L422",
+            "expr": "estimateTokens({ ...result, source: shrunk }) > maxTokens &&\n          charBudget > 1 &&\n          guard++ < 8",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e8d8352a933edd9c42abfb7e751b8bcb069c38941ce3048b91d308077e0826ed",
+          "target": "assign:packages/mcp/src/verbs.ts@L427",
+          "line": 427,
+          "expr": "charBudget = Math.max(1, Math.floor(charBudget / 2));"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.context@L326",
+        "procedureName": "Verbs.context",
+        "guard": "cond:packages/mcp/src/verbs.ts@L422",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L403",
+            "expr": "args.maxTokens !== undefined && args.withSource && result.source !== undefined"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L409",
+            "expr": "remaining < 1"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L422",
+            "expr": "estimateTokens({ ...result, source: shrunk }) > maxTokens &&\n          charBudget > 1 &&\n          guard++ < 8",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4d40e8280687449ee97c504cc46a593fd80eae97a2f0c4621b2b467d72dfcd10",
+          "target": "assign:packages/mcp/src/verbs.ts@L428",
+          "line": 428,
+          "expr": "shrunk = this.bodyOf(node, { ...args, sourceMaxChars: charBudget });"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.context@L326",
+        "procedureName": "Verbs.context",
+        "guard": "cond:packages/mcp/src/verbs.ts@L430",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L403",
+            "expr": "args.maxTokens !== undefined && args.withSource && result.source !== undefined"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L409",
+            "expr": "remaining < 1"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L430",
+            "expr": "estimateTokens({ ...result, source: shrunk }) > maxTokens",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:52eb288ede3bac76a1d144566046c05da6c4cdcf878c07967c2243decee0e27b",
+          "target": "assign:packages/mcp/src/verbs.ts@L434",
+          "line": 434,
+          "expr": "result.source = undefined;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.context@L326",
+        "procedureName": "Verbs.context",
+        "guard": "cond:packages/mcp/src/verbs.ts@L430",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L403",
+            "expr": "args.maxTokens !== undefined && args.withSource && result.source !== undefined"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L409",
+            "expr": "remaining < 1"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L430",
+            "expr": "estimateTokens({ ...result, source: shrunk }) > maxTokens",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9504d66f6fe4b413d7dcf738b71e30d5304e50335a53e17584cb8aa28b2e2fec",
+          "target": "assign:packages/mcp/src/verbs.ts@L435",
+          "line": 435,
+          "expr": "result.budgetExhausted = true;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.context@L326",
+        "procedureName": "Verbs.context",
+        "guard": "cond:packages/mcp/src/verbs.ts@L430",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L403",
+            "expr": "args.maxTokens !== undefined && args.withSource && result.source !== undefined"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L409",
+            "expr": "remaining < 1"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L430",
+            "expr": "estimateTokens({ ...result, source: shrunk }) > maxTokens",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5c2cc926d80f5b5d7adb2354642f39652137ffa321adba5b11239c29a8f4563b",
+          "target": "assign:packages/mcp/src/verbs.ts@L437",
+          "line": 437,
+          "expr": "result.source = shrunk;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.context@L326",
+        "procedureName": "Verbs.context",
+        "guard": "cond:packages/mcp/src/verbs.ts@L430",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L403",
+            "expr": "args.maxTokens !== undefined && args.withSource && result.source !== undefined"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L409",
+            "expr": "remaining < 1"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L430",
+            "expr": "estimateTokens({ ...result, source: shrunk }) > maxTokens",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e619dddc6d8a822bfcb63e8190726f36843bde1d905843fe196433df9ee2c66b",
+          "target": "assign:packages/mcp/src/verbs.ts@L438",
+          "line": 438,
+          "expr": "result.budgetExhausted = guard > 0 || shrunk.truncated;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.context@L326",
+        "procedureName": "Verbs.context",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c5070ce6569459e47d06def0a7b4aa100200e32afee6e0765726afbdb949ab1c",
+          "target": "stmt:packages/mcp/src/verbs.ts@L442",
+          "line": 442,
+          "expr": "return this.applyIfHash(args, result);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.context@L326",
+        "procedureName": "Verbs.context",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:f64037a58d1c845f3bec9bfdb0c7f2f6c1efcfff4e80c3aceec48493b337a45c",
+          "target": "sym:packages/mcp/src/verbs.ts#Verbs.applyIfHash@L1736",
+          "expr": "applyIfHash",
+          "line": 442
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 28,
+    "referencedByFiles": [
+      "packages/mcp/src/verbs.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 28,
+    "assignments": 13,
+    "conditions": 10,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 13,
+      "recorded": 27,
+      "unresolved": 5
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "5 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

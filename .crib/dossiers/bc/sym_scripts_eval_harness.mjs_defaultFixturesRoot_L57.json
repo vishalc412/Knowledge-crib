@@ -1,0 +1,144 @@
+{
+  "id": "sym:scripts/eval/harness.mjs#defaultFixturesRoot@L57",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:e7406f9bd5fe25400ce4f8dbf67b0777ebf238080e098dacb70e681374957683",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:scripts/eval/harness.mjs#defaultFixturesRoot@L57",
+    "kind": "symbol",
+    "type": "function",
+    "name": "defaultFixturesRoot",
+    "qualifiedName": "defaultFixturesRoot",
+    "signature": "defaultFixturesRoot()",
+    "lang": "javascript",
+    "file": "scripts/eval/harness.mjs",
+    "span": {
+      "start": 57,
+      "end": 59
+    },
+    "callSites": [
+      {
+        "callee": "join",
+        "line": 58
+      },
+      {
+        "callee": "repoRoot",
+        "line": 58
+      }
+    ]
+  },
+  "source": {
+    "text": "export function defaultFixturesRoot() {\n  return join(repoRoot(), 'packages', 'parsers', 'fixtures');\n}",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 57
+  },
+  "callers": [
+    {
+      "id": "sym:scripts/eval/harness.mjs#main@L318",
+      "confidence": 1,
+      "name": "main",
+      "qualifiedName": "main",
+      "signature": "main()",
+      "type": "function",
+      "file": "scripts/eval/harness.mjs",
+      "line": 318
+    },
+    {
+      "id": "sym:scripts/eval/harness.mjs#runEval@L259",
+      "confidence": 1,
+      "name": "runEval",
+      "qualifiedName": "runEval",
+      "signature": "runEval(fixturesRoot = defaultFixturesRoot(), opts = {})",
+      "type": "function",
+      "file": "scripts/eval/harness.mjs",
+      "line": 259
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:scripts/eval/harness.mjs#repoRoot@L51",
+      "confidence": 1,
+      "name": "repoRoot",
+      "qualifiedName": "repoRoot",
+      "signature": "repoRoot()",
+      "type": "function",
+      "file": "scripts/eval/harness.mjs",
+      "line": 51
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:scripts/eval/harness.mjs@L56",
+      "snippet": "/** Default fixtures root. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:scripts/eval/harness.mjs#defaultFixturesRoot@L57",
+    "procedureName": "defaultFixturesRoot",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:scripts/eval/harness.mjs#defaultFixturesRoot@L57",
+        "procedureName": "defaultFixturesRoot",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a9299eab0b77d955f72a2aad2f75771db787cdbbab155baba9f3f96309ee076b",
+          "target": "stmt:scripts/eval/harness.mjs@L58",
+          "line": 58,
+          "expr": "return join(repoRoot(), 'packages', 'parsers', 'fixtures');"
+        }
+      },
+      {
+        "procedure": "sym:scripts/eval/harness.mjs#defaultFixturesRoot@L57",
+        "procedureName": "defaultFixturesRoot",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:f0ea221dffb4c35c9d65577bd70e19ed878218b980873f1d6e78d08659523591",
+          "target": "sym:scripts/eval/harness.mjs#repoRoot@L51",
+          "expr": "repoRoot",
+          "line": 58
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "scripts/eval/harness.mjs"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 2,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

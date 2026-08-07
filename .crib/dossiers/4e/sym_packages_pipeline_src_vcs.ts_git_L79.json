@@ -1,0 +1,572 @@
+{
+  "id": "sym:packages/pipeline/src/vcs.ts#git@L79",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:465a61ec637f0b33abe7d622226ce42327c5968a9ce39f83da9fc77b37f8a68f",
+  "builtAt": "2026-06-30T15:54:03.404Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/vcs.ts#git@L79",
+    "kind": "symbol",
+    "type": "function",
+    "name": "git",
+    "qualifiedName": "git",
+    "signature": "git(root: string, args: string[]): string | undefined",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/vcs.ts",
+    "span": {
+      "start": 79,
+      "end": 88
+    },
+    "callSites": [
+      {
+        "callee": "trim",
+        "line": 81
+      },
+      {
+        "callee": "execFileSync",
+        "line": 81
+      }
+    ]
+  },
+  "source": {
+    "text": "function git(root: string, args: string[]): string | undefined {\n  try {\n    return execFileSync('git', ['-C', root, ...args], {\n      encoding: 'utf8',\n      stdio: ['ignore', 'pipe', 'ignore'],\n    }).trim();\n  } catch {\n    return undefined;\n  }\n}",
+    "truncated": false,
+    "totalLines": 10,
+    "startLine": 79
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/src/vcs.ts#changedFilesSince@L44",
+      "confidence": 1,
+      "name": "changedFilesSince",
+      "qualifiedName": "changedFilesSince",
+      "signature": "changedFilesSince(root: string, since: string): string[]",
+      "type": "function",
+      "file": "packages/pipeline/src/vcs.ts",
+      "line": 44
+    },
+    {
+      "id": "sym:packages/pipeline/src/vcs.ts#currentHead@L33",
+      "confidence": 1,
+      "name": "currentHead",
+      "qualifiedName": "currentHead",
+      "signature": "currentHead(root: string): string",
+      "type": "function",
+      "file": "packages/pipeline/src/vcs.ts",
+      "line": 33
+    },
+    {
+      "id": "sym:packages/pipeline/src/update.test.ts#indexAndCommit@L69",
+      "confidence": 1,
+      "name": "indexAndCommit",
+      "qualifiedName": "indexAndCommit",
+      "signature": "indexAndCommit(): Promise<void>",
+      "type": "function",
+      "file": "packages/pipeline/src/update.test.ts",
+      "line": 69
+    },
+    {
+      "id": "sym:packages/pipeline/src/vcs.ts#uncommittedChanges@L60",
+      "confidence": 1,
+      "name": "uncommittedChanges",
+      "qualifiedName": "uncommittedChanges",
+      "signature": "uncommittedChanges(root: string): string[]",
+      "type": "function",
+      "file": "packages/pipeline/src/vcs.ts",
+      "line": 60
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/pipeline/src/vcs.ts@L78",
+      "snippet": "/** Run a git subcommand; returns trimmed stdout, or undefined on git failure (missing repo/commits). */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#2-on-disk-layout",
+      "heading": "2. On-disk layout",
+      "anchor": "2-on-disk-layout",
+      "snippet": "2. On-disk layout",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#2-install",
+      "heading": "2. Install",
+      "anchor": "2-install",
+      "snippet": "2. Install",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-06-27-knowledgecrib-linkedin-demo-video.md#task-1-scaffold-the-reproducible-media-workspace",
+      "heading": "Task 1: Scaffold The Reproducible Media Workspace",
+      "anchor": "task-1-scaffold-the-reproducible-media-workspace",
+      "snippet": "Task 1: Scaffold The Reproducible Media Workspace",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#update",
+      "heading": "`update`",
+      "anchor": "update",
+      "snippet": "`update`",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#detect-changes",
+      "heading": "`detect_changes`",
+      "anchor": "detect-changes",
+      "snippet": "`detect_changes`",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prd.md#5-architecture",
+      "heading": "5. Architecture",
+      "anchor": "5-architecture",
+      "snippet": "5. Architecture",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#4-manifest-crib-json",
+      "heading": "4. Manifest — `crib.json`",
+      "anchor": "4-manifest-crib-json",
+      "snippet": "4. Manifest — `crib.json`",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#detect-changes-dry-run-delta-since-a-git-ref",
+      "heading": "`detect_changes` — dry-run delta since a git ref",
+      "anchor": "detect-changes-dry-run-delta-since-a-git-ref",
+      "snippet": "`detect_changes` — dry-run delta since a git ref",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-06-27-knowledgecrib-linkedin-demo-video.md#task-2-define-and-test-the-45-second-timeline",
+      "heading": "Task 2: Define And Test The 45-Second Timeline",
+      "anchor": "task-2-define-and-test-the-45-second-timeline",
+      "snippet": "Task 2: Define And Test The 45-Second Timeline",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-06-27-knowledgecrib-linkedin-demo-video.md#task-3-capture-real-product-evidence",
+      "heading": "Task 3: Capture Real Product Evidence",
+      "anchor": "task-3-capture-real-product-evidence",
+      "snippet": "Task 3: Capture Real Product Evidence",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-06-27-knowledgecrib-linkedin-demo-video.md#task-4-generate-narration-and-original-music",
+      "heading": "Task 4: Generate Narration And Original Music",
+      "anchor": "task-4-generate-narration-and-original-music",
+      "snippet": "Task 4: Generate Narration And Original Music",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-06-27-knowledgecrib-linkedin-demo-video.md#task-5-render-the-signal-grid-video",
+      "heading": "Task 5: Render The Signal Grid Video",
+      "anchor": "task-5-render-the-signal-grid-video",
+      "snippet": "Task 5: Render The Signal Grid Video",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-06-27-knowledgecrib-linkedin-demo-video.md#task-6-orchestrate-deliverables-and-quality-gates",
+      "heading": "Task 6: Orchestrate Deliverables And Quality Gates",
+      "anchor": "task-6-orchestrate-deliverables-and-quality-gates",
+      "snippet": "Task 6: Orchestrate Deliverables And Quality Gates",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-06-27-knowledgecrib-linkedin-demo-video.md#task-7-inspect-the-final-video-end-to-end",
+      "heading": "Task 7: Inspect The Final Video End To End",
+      "anchor": "task-7-inspect-the-final-video-end-to-end",
+      "snippet": "Task 7: Inspect The Final Video End To End",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m6-incremental-update-git-anchored-scoped-re-extract-merge-driver",
+      "heading": "M6 — Incremental update (git-anchored scoped re-extract) + merge driver",
+      "anchor": "m6-incremental-update-git-anchored-scoped-re-extract-merge-driver",
+      "snippet": "M6 — Incremental update (git-anchored scoped re-extract) + merge driver",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#7-the-complete-code-map-quick-reference",
+      "heading": "7. The Complete Code Map (Quick Reference)",
+      "anchor": "7-the-complete-code-map-quick-reference",
+      "snippet": "7. The Complete Code Map (Quick Reference)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:CHANGELOG.md#added",
+      "heading": "Added",
+      "anchor": "added",
+      "snippet": "Added",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:README.md#architecture-dual-store",
+      "heading": "Architecture (dual store)",
+      "anchor": "architecture-dual-store",
+      "snippet": "Architecture (dual store)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#knowledge-crib-implementation-plan-detailed",
+      "heading": "Knowledge-crib — Implementation Plan (detailed)",
+      "anchor": "knowledge-crib-implementation-plan-detailed",
+      "snippet": "Knowledge-crib — Implementation Plan (detailed)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#2-7-deployment-lifecycle",
+      "heading": "2.7 Deployment & lifecycle",
+      "anchor": "2-7-deployment-lifecycle",
+      "snippet": "2.7 Deployment & lifecycle",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#3-2-feature-by-feature",
+      "heading": "3.2 Feature-by-feature",
+      "anchor": "3-2-feature-by-feature",
+      "snippet": "3.2 Feature-by-feature",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#5-reconciliation-decisions-cross-doc-contradictions-gaps-resolved",
+      "heading": "5. Reconciliation decisions (cross-doc contradictions/gaps resolved)",
+      "anchor": "5-reconciliation-decisions-cross-doc-contradictions-gaps-resolved",
+      "snippet": "5. Reconciliation decisions (cross-doc contradictions/gaps resolved)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#13-open-questions-research-coverage-gaps",
+      "heading": "13. Open questions / research coverage gaps",
+      "anchor": "13-open-questions-research-coverage-gaps",
+      "snippet": "13. Open questions / research coverage gaps",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-architecture.md#8-key-technical-choices-and-why",
+      "heading": "8. Key technical choices (and why)",
+      "anchor": "8-key-technical-choices-and-why",
+      "snippet": "8. Key technical choices (and why)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-build-plan.md#5-milestones-each-one-flagged-pr-test-gate",
+      "heading": "5. Milestones (each = one flagged PR + test gate)",
+      "anchor": "5-milestones-each-one-flagged-pr-test-gate",
+      "snippet": "5. Milestones (each = one flagged PR + test gate)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-cli.md#crib-install-hooks-path",
+      "heading": "`crib install-hooks [path]`",
+      "anchor": "crib-install-hooks-path",
+      "snippet": "`crib install-hooks [path]`",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-client-setup.md#1-one-time-machine-setup",
+      "heading": "1. One-time machine setup",
+      "anchor": "1-one-time-machine-setup",
+      "snippet": "1. One-time machine setup",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-data-model.md#3-enumerations",
+      "heading": "3. Enumerations",
+      "anchor": "3-enumerations",
+      "snippet": "3. Enumerations",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-data-model.md#4-id-grammar-stable-deterministic-critical-for-diffs-cross-tool-refs-seeroflow",
+      "heading": "4. ID grammar (stable, deterministic — critical for diffs + cross-tool refs + SeeroFlow)",
+      "anchor": "4-id-grammar-stable-deterministic-critical-for-diffs-cross-tool-refs-seeroflow",
+      "snippet": "4. ID grammar (stable, deterministic — critical for diffs + cross-tool refs + SeeroFlow)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-decisions.md#decision-log",
+      "heading": "Decision Log",
+      "anchor": "decision-log",
+      "snippet": "Decision Log",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#knowledge-crib-unified-build-plan-m6-m13",
+      "heading": "Knowledge-crib — Unified Build Plan M6 → M13",
+      "anchor": "knowledge-crib-unified-build-plan-m6-m13",
+      "snippet": "Knowledge-crib — Unified Build Plan M6 → M13",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-pipeline.md#incremental-update",
+      "heading": "Incremental update",
+      "anchor": "incremental-update",
+      "snippet": "Incremental update",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-questionnaire.md#branch-3-unified-graph-data-architecture",
+      "heading": "Branch 3 — Unified Graph & Data Architecture",
+      "anchor": "branch-3-unified-graph-data-architecture",
+      "snippet": "Branch 3 — Unified Graph & Data Architecture",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#knowledge-crib-the-soul-format-v1-0-1-1-1-2-1-3-spec",
+      "heading": "Knowledge-crib — The Soul Format (v1.0 / 1.1 / 1.2 / 1.3 spec)",
+      "anchor": "knowledge-crib-the-soul-format-v1-0-1-1-1-2-1-3-spec",
+      "snippet": "Knowledge-crib — The Soul Format (v1.0 / 1.1 / 1.2 / 1.3 spec)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#conflict-merge-rule-deterministic-embed-in-spec-not-code-only",
+      "heading": "Conflict / merge rule (deterministic — embed in spec, not code-only)",
+      "anchor": "conflict-merge-rule-deterministic-embed-in-spec-not-code-only",
+      "snippet": "Conflict / merge rule (deterministic — embed in spec, not code-only)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#5-incremental-update-protocol-the-upgrades-as-project-evolves-part",
+      "heading": "5. Incremental update protocol (the \"upgrades as project evolves\" part)",
+      "anchor": "5-incremental-update-protocol-the-upgrades-as-project-evolves-part",
+      "snippet": "5. Incremental update protocol (the \"upgrades as project evolves\" part)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#1-what-it-is",
+      "heading": "1. What it is",
+      "anchor": "1-what-it-is",
+      "snippet": "1. What it is",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#llm-integration-deep-dive-architecture",
+      "heading": "LLM Integration — Deep Dive Architecture",
+      "anchor": "llm-integration-deep-dive-architecture",
+      "snippet": "LLM Integration — Deep Dive Architecture",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#2-1-monorepo-package-map",
+      "heading": "2.1 Monorepo Package Map",
+      "anchor": "2-1-monorepo-package-map",
+      "snippet": "2.1 Monorepo Package Map",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#5-package-significance-matrix",
+      "heading": "5. Package Significance Matrix",
+      "anchor": "5-package-significance-matrix",
+      "snippet": "5. Package Significance Matrix",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/vcs.ts#git@L79",
+    "procedureName": "git",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/vcs.ts#git@L79",
+        "procedureName": "git",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:45e850d2b42ed06ef858a76b066fb55131d8d50103d68abca7eca1514277b417",
+          "target": "stmt:packages/pipeline/src/vcs.ts@L81",
+          "line": 81,
+          "expr": "return execFileSync('git', ['-C', root, ...args], {\n      encoding: 'utf8',\n      stdio: ['ignore', 'pipe', 'ignore'],\n    }).trim();"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/vcs.ts#git@L79",
+        "procedureName": "git",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8f25e71a70cde11a71b303baffe539f541583e964089fd313af36ddc5d46993a",
+          "target": "stmt:packages/pipeline/src/vcs.ts@L86",
+          "line": 86,
+          "expr": "return undefined;"
+        }
+      }
+    ]
+  },
+  "controlFlow": {
+    "raises": [],
+    "handles": [
+      {
+        "id": "exc:packages/pipeline/src/vcs.ts@L85",
+        "kind": "exception-handler",
+        "lang": "typescript",
+        "file": "packages/pipeline/src/vcs.ts",
+        "span": {
+          "start": 85,
+          "end": 85
+        },
+        "confidence": 1
+      }
+    ],
+    "iterates": [],
+    "declares": []
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/pipeline/src/update.test.ts",
+      "packages/pipeline/src/vcs.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 1,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 2,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

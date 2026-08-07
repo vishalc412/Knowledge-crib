@@ -1,0 +1,87 @@
+{
+  "id": "sym:scripts/scale-bench.mjs#fmt@L259",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:f6ff781abfc34d890a8bcf03bab60c2edd468aa8bcfda1ac003619499eb4fc85",
+  "builtAt": "2026-07-13T14:47:57.424Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:scripts/scale-bench.mjs#fmt@L259",
+    "kind": "symbol",
+    "type": "function",
+    "name": "fmt",
+    "qualifiedName": "fmt",
+    "signature": "fmt(n)",
+    "lang": "javascript",
+    "file": "scripts/scale-bench.mjs",
+    "span": {
+      "start": 259,
+      "end": 261
+    },
+    "callSites": [
+      {
+        "callee": "isFinite",
+        "line": 260
+      },
+      {
+        "callee": "toLocaleString",
+        "line": 260
+      }
+    ]
+  },
+  "source": {
+    "text": "function fmt(n) {\n  return typeof n === 'number' && Number.isFinite(n) ? n.toLocaleString() : '—';\n}",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 259
+  },
+  "callers": [],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:scripts/scale-bench.mjs#fmt@L259",
+    "procedureName": "fmt",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:scripts/scale-bench.mjs#fmt@L259",
+        "procedureName": "fmt",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:89028a4654a6ef9a255d21f4fbbf3b365c2d41f8c8175ec772560c358fb98f59",
+          "target": "stmt:scripts/scale-bench.mjs@L260",
+          "line": 260,
+          "expr": "return typeof n === 'number' && Number.isFinite(n) ? n.toLocaleString() : '—';"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 2,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

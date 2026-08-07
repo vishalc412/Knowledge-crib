@@ -1,0 +1,179 @@
+{
+  "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.isNameToken@L1526",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:40e1acf0a2f11e5745257724fc29063039b76b10fc6750b6ae19e15ea0217a6b",
+  "builtAt": "2026-07-13T14:47:57.424Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.isNameToken@L1526",
+    "kind": "symbol",
+    "type": "method",
+    "name": "isNameToken",
+    "qualifiedName": "Parser.isNameToken",
+    "signature": "isNameToken(): boolean",
+    "lang": "typescript",
+    "file": "packages/parsers/src/csharp/parser.ts",
+    "span": {
+      "start": 1526,
+      "end": 1528
+    },
+    "callSites": [
+      {
+        "callee": "peek",
+        "line": 1527
+      }
+    ]
+  },
+  "source": {
+    "text": "  private isNameToken(): boolean {\n    return this.peek().type === 'NAME';\n  }",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 1526
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.consumeAttribute@L910",
+      "confidence": 1,
+      "name": "consumeAttribute",
+      "qualifiedName": "Parser.consumeAttribute",
+      "signature": "consumeAttribute(out: string[]): void",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 910
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseDelegate@L422",
+      "confidence": 1,
+      "name": "parseDelegate",
+      "qualifiedName": "Parser.parseDelegate",
+      "signature": "parseDelegate(startLine: number, attributes: string[], modifiers: string[]): CsharpDef | null",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 422
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseDottedName@L820",
+      "confidence": 1,
+      "name": "parseDottedName",
+      "qualifiedName": "Parser.parseDottedName",
+      "signature": "parseDottedName(): string | undefined",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 820
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseDottedTypeName@L833",
+      "confidence": 1,
+      "name": "parseDottedTypeName",
+      "qualifiedName": "Parser.parseDottedTypeName",
+      "signature": "parseDottedTypeName(): string | undefined",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 833
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseRecord@L325",
+      "confidence": 1,
+      "name": "parseRecord",
+      "qualifiedName": "Parser.parseRecord",
+      "signature": "parseRecord(startLine: number, attributes: string[], modifiers: string[]): CsharpDef | null",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 325
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseType@L371",
+      "confidence": 1,
+      "name": "parseType",
+      "qualifiedName": "Parser.parseType",
+      "signature": "parseType(kind: 'class' | 'interface' | 'struct' | 'enum', startLine: number, attributes: string[], modifiers: string[]): CsharpDef | null",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 371
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.skipWhereClauses@L498",
+      "confidence": 1,
+      "name": "skipWhereClauses",
+      "qualifiedName": "Parser.skipWhereClauses",
+      "signature": "skipWhereClauses(): void",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 498
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.peek@L1534",
+      "confidence": 1,
+      "name": "peek",
+      "qualifiedName": "Parser.peek",
+      "signature": "peek(offset = 0): Token",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 1534
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.isNameToken@L1526",
+    "procedureName": "Parser.isNameToken",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.isNameToken@L1526",
+        "procedureName": "Parser.isNameToken",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:038eefdf9d1856a4fcf3f840e15e847c1c0033d1100d34c90ade83cb6c4bb9cd",
+          "target": "sym:packages/parsers/src/csharp/parser.ts#Parser.peek@L1534",
+          "expr": "peek",
+          "line": 1527
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.isNameToken@L1526",
+        "procedureName": "Parser.isNameToken",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:924b37c75e48179dc9bd89ef2495f12e836089e62ecbffd1508f73df3238c530",
+          "target": "stmt:packages/parsers/src/csharp/parser.ts@L1527",
+          "line": 1527,
+          "expr": "return this.peek().type === 'NAME';"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/parsers/src/csharp/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

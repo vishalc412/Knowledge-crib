@@ -1,0 +1,251 @@
+{
+  "id": "sym:packages/pipeline/src/parse-concurrent.test.ts#snapshotCrib@L67",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:f27c7489295560aaac27cd9076bfa259c4bd29d62fff4325fd2bb30f0b042efa",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/parse-concurrent.test.ts#snapshotCrib@L67",
+    "kind": "symbol",
+    "type": "function",
+    "name": "snapshotCrib",
+    "qualifiedName": "snapshotCrib",
+    "signature": "snapshotCrib(repo: string): string",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/parse-concurrent.test.ts",
+    "span": {
+      "start": 67,
+      "end": 87
+    },
+    "callSites": [
+      {
+        "callee": "join",
+        "line": 68
+      },
+      {
+        "callee": "sort",
+        "line": 71
+      },
+      {
+        "callee": "readdirSync",
+        "line": 71
+      },
+      {
+        "callee": "join",
+        "line": 72
+      },
+      {
+        "callee": "isDirectory",
+        "line": 77
+      },
+      {
+        "callee": "statSync",
+        "line": 77
+      },
+      {
+        "callee": "walk",
+        "line": 78
+      },
+      {
+        "callee": "push",
+        "line": 81
+      },
+      {
+        "callee": "push",
+        "line": 82
+      },
+      {
+        "callee": "readFileSync",
+        "line": 82
+      },
+      {
+        "callee": "walk",
+        "line": 85
+      },
+      {
+        "callee": "join",
+        "line": 86
+      }
+    ]
+  },
+  "source": {
+    "text": "function snapshotCrib(repo: string): string {\n  const crib = join(repo, '.crib');\n  const out: string[] = [];\n  const walk = (dir: string, rel: string) => {\n    for (const name of readdirSync(dir).sort()) {\n      const abs = join(dir, name);\n      const r = rel === '.crib' ? `.crib/${name}` : `${rel}/${name}`;\n      // skip gitignored DERIVED state (sqlite index + embeddings dirs) — never committed, not what\n      // parse produces. Only snapshot the soul shards (nodes/edges/manifest) + cluster topology.\n      if (r === '.crib/index' || r === '.crib/embeddings') continue;\n      if (statSync(abs).isDirectory()) {\n        walk(abs, r);\n        continue;\n      }\n      out.push(r);\n      out.push(readFileSync(abs, 'utf8'));\n    }\n  };\n  walk(crib, '.crib');\n  return out.join('\\n');\n}",
+    "truncated": false,
+    "totalLines": 21,
+    "startLine": 67
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 39
+    },
+    {
+      "id": "sym:packages/pipeline/src/parse-concurrent.test.ts#snapshotCrib.walk@L70",
+      "confidence": 1,
+      "name": "walk",
+      "qualifiedName": "snapshotCrib.walk",
+      "signature": "walk(…)",
+      "type": "function",
+      "file": "packages/pipeline/src/parse-concurrent.test.ts",
+      "line": 70
+    },
+    {
+      "id": "sym:scripts/docs-stats.mjs#walk@L31",
+      "confidence": 1,
+      "name": "walk",
+      "qualifiedName": "walk",
+      "signature": "walk(…)",
+      "type": "function",
+      "file": "scripts/docs-stats.mjs",
+      "line": 31
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/pipeline/src/parse-concurrent.test.ts@L66",
+      "snippet": "/** Snapshot the committed .crib tree as a deterministic string (sorted paths + file contents). */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/parse-concurrent.test.ts#snapshotCrib@L67",
+    "procedureName": "snapshotCrib",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/parse-concurrent.test.ts#snapshotCrib@L67",
+        "procedureName": "snapshotCrib",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3e149c1f31ecf9a0f403f40ddcd0e8542849dd46b8a9314f1cfbf4806295d0be",
+          "target": "stmt:packages/pipeline/src/parse-concurrent.test.ts@L68",
+          "line": 68,
+          "expr": "const crib = join(repo, '.crib');"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/parse-concurrent.test.ts#snapshotCrib@L67",
+        "procedureName": "snapshotCrib",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:578b46c9f33ed076a1220f4b62d6c6103891a77720dcad2c988cdecb3a1f84f3",
+          "target": "stmt:packages/pipeline/src/parse-concurrent.test.ts@L70",
+          "line": 70,
+          "expr": "const walk = (dir: string, rel: string) => {\n    for (const name of readdirSync(dir).sort()) {\n      const abs = join(dir, name);\n      const r = rel === '.crib' ? `.crib/${name}` : `${rel}/${name}`;\n      // skip gitignored DERIVED state (sqlite index + embeddings dirs) — never committed, not what\n      // parse produces. Only snapshot the soul shards (nodes/edges/manifest) + cluster topology.\n      if (r === '.crib/index' || r === '.crib/embeddings') continue;\n      if (statSync(abs).isDirectory()) {\n        walk(abs, r);\n        continue;\n      }\n      out.push(r);\n      out.push(readFileSync(abs, 'utf8'));\n    }\n  };"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/parse-concurrent.test.ts#snapshotCrib@L67",
+        "procedureName": "snapshotCrib",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:83a12add6a187a94de1d0be15dc2a99243d8cbcad18e09bc9fbd20663137a754",
+          "target": "sym:scripts/docs-stats.mjs#walk@L31",
+          "expr": "walk",
+          "line": 78
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/parse-concurrent.test.ts#snapshotCrib@L67",
+        "procedureName": "snapshotCrib",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:96b42953d6954228fc4a9cf8c37590ca2341ae8f7b775cd78c3bba5b5db21f6d",
+          "target": "sym:packages/pipeline/src/parse-concurrent.test.ts#snapshotCrib.walk@L70",
+          "expr": "walk",
+          "line": 78
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/parse-concurrent.test.ts#snapshotCrib@L67",
+        "procedureName": "snapshotCrib",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:a8c78b1a79e800dfcee065a40497f25dff74d406977daa191622a695c72f84e2",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 81
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/parse-concurrent.test.ts#snapshotCrib@L67",
+        "procedureName": "snapshotCrib",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:915193ece5bdf201964afeac3744f39ae06830ae214074fd20e85341119b2812",
+          "target": "stmt:packages/pipeline/src/parse-concurrent.test.ts@L85",
+          "line": 85,
+          "expr": "walk(crib, '.crib');"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/parse-concurrent.test.ts#snapshotCrib@L67",
+        "procedureName": "snapshotCrib",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:be2d5c99c3473ba73075658bc9c7c647f11be107a95d9f1077771fb5eaf67ced",
+          "target": "stmt:packages/pipeline/src/parse-concurrent.test.ts@L86",
+          "line": 86,
+          "expr": "return out.join('\\n');"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 3,
+      "recorded": 12,
+      "unresolved": 8
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "8 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

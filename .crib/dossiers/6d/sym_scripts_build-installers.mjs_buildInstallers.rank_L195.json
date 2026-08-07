@@ -1,0 +1,153 @@
+{
+  "id": "sym:scripts/build-installers.mjs#buildInstallers.rank@L195",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:8d6207488ccc2db90c33598d4aa81ca6c5f5fed3a66196cda57b033d986c1d85",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:scripts/build-installers.mjs#buildInstallers.rank@L195",
+    "kind": "symbol",
+    "type": "function",
+    "name": "rank",
+    "qualifiedName": "buildInstallers.rank",
+    "signature": "rank(…)",
+    "lang": "javascript",
+    "file": "scripts/build-installers.mjs",
+    "span": {
+      "start": 195,
+      "end": 198
+    },
+    "callSites": [
+      {
+        "callee": "findIndex",
+        "line": 196
+      },
+      {
+        "callee": "includes",
+        "line": 196
+      },
+      {
+        "callee": "at",
+        "line": 196
+      },
+      {
+        "callee": "split",
+        "line": 196
+      }
+    ]
+  },
+  "source": {
+    "text": "      const rank = (name) => {\n        const index = packageDirs.findIndex((dir) => name.includes(dir.split('/').at(-1)));\n        return index === -1 ? Number.MAX_SAFE_INTEGER : index;\n      };",
+    "truncated": false,
+    "totalLines": 4,
+    "startLine": 195
+  },
+  "callers": [
+    {
+      "id": "sym:scripts/build-installers.mjs#buildInstallers@L175",
+      "confidence": 1,
+      "name": "buildInstallers",
+      "qualifiedName": "buildInstallers",
+      "signature": "buildInstallers({ outRoot = join(repoRoot, 'dist', 'installers') } = {})",
+      "type": "function",
+      "file": "scripts/build-installers.mjs",
+      "line": 175
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "doc:CHANGELOG.md#added",
+      "heading": "Added",
+      "anchor": "added",
+      "snippet": "Added",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-technical-pitch.md#current-limits-say-before-architects-ask",
+      "heading": "Current limits — say before architects ask",
+      "anchor": "current-limits-say-before-architects-ask",
+      "snippet": "Current limits — say before architects ask",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m7-clustering-deterministic-embeddings-web-ui",
+      "heading": "M7 — Clustering + deterministic embeddings + web UI",
+      "anchor": "m7-clustering-deterministic-embeddings-web-ui",
+      "snippet": "M7 — Clustering + deterministic embeddings + web UI",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:scripts/build-installers.mjs#buildInstallers.rank@L195",
+    "procedureName": "buildInstallers.rank",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:scripts/build-installers.mjs#buildInstallers.rank@L195",
+        "procedureName": "buildInstallers.rank",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4fc5760bcb1b8a75d79a75d876aeba2707a340d5378d057b303ef00aa837553b",
+          "target": "stmt:scripts/build-installers.mjs@L196",
+          "line": 196,
+          "expr": "const index = packageDirs.findIndex((dir) => name.includes(dir.split('/').at(-1)));"
+        }
+      },
+      {
+        "procedure": "sym:scripts/build-installers.mjs#buildInstallers.rank@L195",
+        "procedureName": "buildInstallers.rank",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3c6e222be6275b5a6106e6853f341499dec8a9f11d741174a355b4a922f1c39a",
+          "target": "stmt:scripts/build-installers.mjs@L197",
+          "line": 197,
+          "expr": "return index === -1 ? Number.MAX_SAFE_INTEGER : index;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "scripts/build-installers.mjs"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 4,
+      "unresolved": 3
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "3 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

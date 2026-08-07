@@ -38,7 +38,7 @@ corepack pnpm@9.15.0 installer:smoke
 ```
 
 `installer:smoke` executes the generated platform installer with a temporary npm global prefix. The
-installer verifies every entry in `SHA256SUMS.txt`, enforces Node.js 20 or newer, installs with an
+installer verifies every entry in `SHA256SUMS.txt`, enforces Node.js 22.5 or newer, installs with an
 isolated npm cache, and then the harness uses the installed package to run `crib --help`, index a
 temporary TypeScript project, and validate parsed `crib status` output.
 
@@ -60,7 +60,7 @@ download one of the uploaded installer artifacts for the GitHub release.
 
 ## macOS Install
 
-Requirements: Node.js 20 or newer with npm.
+Requirements: Node.js 22.5 or newer with npm.
 
 From the extracted installer bundle:
 
@@ -72,7 +72,7 @@ crib --help
 
 ## Windows Install
 
-Requirements: Node.js 20 or newer with npm.
+Requirements: Node.js 22.5 or newer with npm.
 
 From PowerShell in the extracted installer bundle:
 
@@ -88,6 +88,6 @@ verification and stops on any mismatch or npm failure.
 ## Current Beta Limitation
 
 These beta installers require Node/npm on the target machine and use npm to fetch third-party
-dependencies such as `ajv`, `typescript`, and `better-sqlite3`. Native signed `.pkg` and `.msi`
+dependencies such as `ajv` and `typescript` (the sqlite backend uses Node's built-in `node:sqlite`). Native signed `.pkg` and `.msi`
 installers should be added after Apple Developer ID, Windows code-signing, and release notarization
 credentials are available.

@@ -12,6 +12,7 @@
 | `--exclude a,b,…` | (defaults) | Discovery ignore set on top of `DEFAULT_IGNORES`. Repeatable. |
 | `--semantic` | off | Run the M7 INFERRED TF-IDF semantic linker after the deterministic linker (adds capped `references` edges, provenance `INFERRED`, confidence ≤0.6). Zero-dep, pure JS. Off by default so `--extracted-only` stays the pure deterministic subset. |
 | `--port <N>` | (viz default) | Port for `crib viz`. |
+| `--package <name\|all>` | (full walk) | Monorepo only — scope `crib index`/`reindex` discovery to one workspace package (or `all` for the full walk). Repeatable / comma-separated. See `crib index` below. |
 
 > Flags shown as **planned** below (`--json`, `--quiet/--verbose`, `--link-threshold`,
 > `--include`, `--lang`, `--worker-timeout`, `--transport`, `--extracted-only`) are in the
@@ -38,14 +39,43 @@ Registers the project in `~/.crib/registry.json`.
 crib index .                      # index current repo
 crib index . --semantic            # also run the INFERRED TF-IDF semantic linker (references edges)
 crib index . --exclude vendor,third_party,generated
+crib index . --package FTCCloud     # monorepo: scope discovery to one package (sibling packages pruned)
+crib index . --package all          # monorepo: full walk (explicit)
 ```
 | Flag | Status | Meaning |
 |------|--------|---------|
 | `--semantic` | ✅ | run the INFERRED TF-IDF semantic linker (adds capped `references` edges) |
 | `--exclude <a,b,…>` | ✅ | add dirs to the discovery ignore set (repeatable) |
+| `--package <name\|all>` | ✅ | **monorepo only.** Scope discovery to one workspace package by name or
+|       |        | repo-relative path (e.g. `packages/FTCCloud`), or `all` for the full walk. Repeatable /
+|       |        | comma-separated for multiple. With no `--package` on a detected monorepo, the detected
+|       |        | packages are listed to stderr and the full repo is indexed. Unknown name → exit 2. |
 | `--include <glob>` | planned | scope files (not yet wired) |
 | `--lang <a,b>` | planned | restrict languages (not yet wired) |
 | `--worker-timeout <ms>` | planned | per-file parse timeout (not yet wired) |
+
+### Monorepo / workspace detection (`--package`)
+Before indexing, `crib index` reads the target repo's workspace manifest to detect a monorepo and
+enumerate its packages — no extraction, no network. Supported layouts:
+
+| Tool | Detected from |
+|------|----------------|
+| pnpm | `pnpm-workspace.yaml` (`packages: [...]`) |
+| Lerna | `lerna.json` (`packages`) |
+| Nx | `nx.json` present + package list inherited from `package.json#workspaces` or `lerna.json` |
+| npm/Yarn workspaces | `package.json#workspaces` (array or `{ packages }`) |
+| Cargo | root `Cargo.toml` `[workspace].members` |
+
+Glob patterns (`packages/*`, `libs/**`) are expanded to existing dirs; recursive `**` patterns are
+filtered to dirs that actually look like a package (have a `package.json` or `Cargo.toml`) so
+intermediate parent dirs are not surfaced. A member with no `package.json#name` falls back to the dir
+basename — a workspace member is a valid index target even if it isn't a published package.
+
+**One soul per repo is preserved.** `--package` only narrows which package dirs discovery descends
+into (root-level files are always kept); the soul stays unified, so cross-package impact / blast-radius
+queries still resolve. Splitting into one soul per package would lose cross-package reach — the killer
+feature — so we scope extraction, not storage. The detected layout + the package roots actually indexed
+are stamped onto the soul manifest's `meta.workspace` and `meta.indexedPackages`.
 
 ## `crib update [--since <ref>]`
 Incremental update from changed files (default: `manifest.incrementalSince`). Rewrites only affected
@@ -63,7 +93,8 @@ crib serve /abs/path               # explicit root (wins)
 | `--extracted-only` | planned | serve EXTRACTED edges only (not yet wired) |
 
 ## `crib reindex [path]`
-Full re-index (alias for `crib index`). Re-registers the project.
+Full re-index (alias for `crib index`). Re-registers the project. Accepts the same `--semantic`,
+`--exclude`, and `--package` flags as `crib index` (see above for monorepo workspace detection).
 
 ## `crib mcp <install|list|remove> [--ide <name|all>] [--global] [--bin <path>] [path]`  (REQ-2)
 Auto-wire the MCP server into each IDE's config file — no hand-editing JSON/TOML. Idempotent,
@@ -110,7 +141,15 @@ One-shot hybrid query from the terminal (same engine as the MCP `query` verb). P
 query text — **not** a root; root comes from `--cwd`/env/CWD.
 ```
 crib query "where is the session token issued?"
+crib query "DTI" --with-source --with-rules      # fold body + decision table per hit
+crib query "login" --with-llm                    # upgrade LLM pointer → full analysis blob
 ```
+Flags: `--with-source` `--with-rules` `--with-framework` `--extracted-only` `--with-llm` `--limit N`.
+Output shape: `{ hits, llmHits, truncated }`. `hits` are BM25-ranked; by default each carries a
+**lightweight LLM pointer** (`provenance`/`confidence`/`purpose`) — not the full analysis blob — so
+the default call stays low-token. `llmHits` are semantic discoveries BM25 missed (separate field,
+never override BM25 ranking). `--with-llm` upgrades the pointer to the full analysis+graph+evidence.
+`truncated: true` means more results existed beyond `--limit`.
 
 ## `crib install-hooks [path]`
 Install the git **post-commit** hook (auto `crib update`) and the `.crib` **merge driver** (resolves

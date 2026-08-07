@@ -1,0 +1,125 @@
+{
+  "id": "sym:scripts/build-installers.mjs#readCliPackage@L161",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:5d6ea308e29f0785d84c498279372390ebfca7f7d93010fa49579e3dd4e2235a",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:scripts/build-installers.mjs#readCliPackage@L161",
+    "kind": "symbol",
+    "type": "function",
+    "name": "readCliPackage",
+    "qualifiedName": "readCliPackage",
+    "signature": "readCliPackage()",
+    "lang": "javascript",
+    "file": "scripts/build-installers.mjs",
+    "span": {
+      "start": 161,
+      "end": 163
+    },
+    "callSites": [
+      {
+        "callee": "parse",
+        "line": 162
+      },
+      {
+        "callee": "readFileSync",
+        "line": 162
+      }
+    ]
+  },
+  "source": {
+    "text": "function readCliPackage() {\n  return JSON.parse(readFileSync(cliPackagePath, 'utf8'));\n}",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 161
+  },
+  "callers": [
+    {
+      "id": "sym:scripts/build-installers.mjs#buildInstallers@L175",
+      "confidence": 1,
+      "name": "buildInstallers",
+      "qualifiedName": "buildInstallers",
+      "signature": "buildInstallers({ outRoot = join(repoRoot, 'dist', 'installers') } = {})",
+      "type": "function",
+      "file": "scripts/build-installers.mjs",
+      "line": 175
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/pipeline/fixtures/plain-js/src/legacy.cjs#parse@L4",
+      "confidence": 1,
+      "name": "parse",
+      "qualifiedName": "parse",
+      "signature": "parse(input)",
+      "type": "function",
+      "file": "packages/pipeline/fixtures/plain-js/src/legacy.cjs",
+      "line": 4
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:scripts/build-installers.mjs#readCliPackage@L161",
+    "procedureName": "readCliPackage",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:scripts/build-installers.mjs#readCliPackage@L161",
+        "procedureName": "readCliPackage",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4e08a2837e95d8a5625dbf64f439b7a92f03e1cf60e05b1d3520261fb1f60738",
+          "target": "stmt:scripts/build-installers.mjs@L162",
+          "line": 162,
+          "expr": "return JSON.parse(readFileSync(cliPackagePath, 'utf8'));"
+        }
+      },
+      {
+        "procedure": "sym:scripts/build-installers.mjs#readCliPackage@L161",
+        "procedureName": "readCliPackage",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:7e2ead4b41d64b330894edb500448699a7ce5784fae9f5be2c2f2bec3cce0fc5",
+          "target": "sym:packages/pipeline/fixtures/plain-js/src/legacy.cjs#parse@L4",
+          "expr": "parse",
+          "line": 162
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "scripts/build-installers.mjs"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 2,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

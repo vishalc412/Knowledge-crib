@@ -13,6 +13,14 @@
 - Every edge-bearing result carries `{method, provenance, confidence, evidence}` so agents can filter to `EXTRACTED`-only.
 - Errors: `{ error: { code, message, detail? } }`, codes: `NOT_INDEXED | NOT_FOUND | AMBIGUOUS | BAD_ARGS | INTERNAL`.
 - **Enrichment via host LLM:** for optional enrichment (cluster naming, NL→query) the server uses MCP `sampling` — the IDE's own model [Q18]. Requires client sampling support; degrades gracefully (skipped) if absent. **Never used on deterministic verbs** (`context`/`impact`/`query`/`neighbors`/`shortest_path`).
+- **Functional map + importance ranking (overview v2):** the soul is segmented on demand into
+  architecturally meaningful modules (workspace packages when `crib index` stamped them, else
+  directory prefixes with a >80% monorepo-descent rule). Every node carries an `importance` signal
+  (directed in-degree over architectural rels — `calls`/`imports`/`inherits`/`implements`/`exposes`/
+  `injects`/`renders`/`produces` — decorated by a kind base weight, noise kinds ×0.1). The enrich
+  queue and the overview analyses are ordered by importance desc with test paths deprioritized, so
+  production symbols are authored/surfaced before test scaffolding. Computed in `@knowledge-crib/core`
+  and shared by `ui` and `mcp` (no `module` NodeKind; `SCHEMA_VERSION` stays 1.3).
 
 ---
 
@@ -162,16 +170,28 @@ Blast radius + the docs describing affected nodes. **The wedge verb.**
 ```
 
 ## `query(hybrid)`
-Hybrid BM25 + semantic search over code + docs, process-grouped.
+Hybrid BM25 search over code + docs (names/signatures/headings/files AND rehydrated source bodies +
+in-soul logic fragments — matches rule content like `DTI > 0.43`, not just signatures). LLM semantic
+discoveries that BM25 missed are surfaced separately in `llmHits`.
 ```jsonc
 // req: { "q":"where is the session token issued?", "kinds?":["symbol","doc-section"], "limit?":10,
-//        "extractedOnly?":false }
+//        "extractedOnly?":false, "withSource?":false, "withRules?":false,
+//        "withFramework?":false, "withLlm?":false }
 // res:
 { "hits":[ { "id":"sym:…#TokenService.issue@L88","kind":"symbol","score":0.81,
-             "snippet":"issue(userId):Session","clusterId":"c:auth" } ],
-  "groups":[ { "clusterId":"c:auth","label":"Authentication","hitIds":["…"] } ],
+             "snippet":"issue(userId):Session","clusterId":"c:auth",
+             "llm":{ "provenance":"LLM","model":"…","stale":false,"confidence":0.9,
+                     "purpose":"Issues a session token after auth." } } ],
+  "llmHits":[ { "id":"sym:…#SessionCache@L12","kind":"symbol","snippet":"…",
+                "llm":{ "provenance":"LLM","confidence":0.8,"purpose":"…" } } ],
   "truncated": false }
 ```
+By default each hit carries a **lightweight LLM pointer** (5 fields, no analysis blob) — the
+token-cost discipline. `withLlm:true` upgrades the pointer to the full `analysis`+`graph`+`evidence`
+blob; `withLlm:false` suppresses even the pointer. `withSource`/`withRules`/`withFramework` fold the
+rehydrated body / decision table+coverage / framework semantics per hit. `llmHits` are ranked by
+term-overlap and de-duplicated against `hits` so they never override BM25 ranking. `truncated:true`
+means more results existed beyond `limit`.
 
 ## `describes(symbol)`
 Thin verb: just the doc-sections linked to a symbol (cheap, high value).
@@ -259,6 +279,110 @@ Raw graph query when the index backend supports it (LadybugDB). Gated by `capabi
 ```jsonc
 // req: { "query":"MATCH (a:symbol)-[:calls]->(b) WHERE a.name='login' RETURN b LIMIT 20" }
 // res: { "rows":[ {…} ], "columns":["b"] }
+```
+
+---
+
+## `enrich_status` *(LLM graph generation queue)*
+Coverage + next layer + (optionally) ranked scopes for the graphify-style picker. The MCP server
+never calls a model — it exposes a deterministic work queue the host IDE's agent drives.
+```jsonc
+// req: { layer?, scope?:{pathPrefix,cluster}, scopes?:true, budgetTokens?:number }
+// res (unscoped):
+{ "model":"host-model", "builtAgainstHead":"a1b2c3",
+  "layers":{ "symbol":{total,missing,stale,fresh}, "file":{…}, "cluster":{…}, "system":{…} },
+  "nextLayer":"symbol", "done":false,
+  "progress":{completed,pending,total}, "costEstimate":{currency:"tokens",pending,total},
+  "systemSkeleton":{ "present":false, "fresh":false } }   // Phase-0.5 draft-bible signal
+// req:{scopes:true} → adds { totalPending, threshold, scopes:[{pathPrefix,label,pending,symbols,files,clusters}] }
+// req:{scope:{pathPrefix}} → counts/nextLayer over in-scope targets; system reported via wholeRepoPending.
+```
+
+## `enrich_next` *(grounded work batch for the host agent model)*
+Returns the next missing/stale work batch — seed facts, lower-layer analyses, output schema, and
+instructions — for the host agent to author. `batchId` is deterministic over the FULL pending set
+(same pending set ⇒ same id ⇒ idempotent re-calls; `zeroProgress:true` flags a re-issue with no save
+landing). The system layer is never offered under a scope.
+```jsonc
+// req: { layer?, limit?, scope?:{pathPrefix,cluster}, budgetTokens?:number, skeleton?:boolean }
+// res:
+{ "batchId":"llm:symbol:8ae6aa12e1a0", "layer":"symbol",
+  "items":[ { targetId, seed:{node,sourceBody,callers,callees,…}, lowerLayer, outputSchema, instructions } ],
+  "remaining":12, "selectedTargetIds":[…],
+  "progress":{…}, "costEstimate":{currency:"tokens",batch,perItem,totalPending} }
+```
+- **Queue ordering (new default):** tests LAST → importance desc (cluster = summed member importance)
+  → id asc. Replaces the old alphabetical-by-id sort that surfaced `cli.test.ts` helpers first.
+- **`skeleton:true` with `layer:"system"` (Phase 0.5):** returns a SINGLE draft-bible work item
+  under batchId prefix `llm:system-skeleton:`, seeded from `{repo, stats, functionalMap, readmes
+  (top 10 README doc-sections), topSymbols (top 50 by importance), caveats}`. A skeleton never
+  satisfies the system layer — the final full pass (`llm:system:`) is still offered. Explicit-only;
+  `nextLayer` never auto-chooses skeleton. Returns an empty batch once a fresh skeleton exists.
+
+## `enrich_save` *(persist an externally-authored batch)*
+Validates + persists a batch the host agent authored. `accepted`/`rejected` per item; unresolved
+graph edges are dropped with a reason. The MCP server never calls a model — it only validates,
+stamps, and writes artifacts + projections + manifest + overview.
+
+```jsonc
+// req: { batchId, items:[{ targetId, model?, analysis, graph:{nodes,edges}, evidence }] }
+// res: { "accepted":[{targetId,path,droppedEdges?}], "rejected":[{targetId,reason}] }
+```
+
+**Per-item validation** (rejects land in `rejected[].reason`):
+- `unknown targetId` — `targetId` is not a registered soul target (wrong/renamed symbol).
+- `analysis must be an object` / `graph must be an object` / `graph.nodes|edges must be an array` /
+  `evidence must be an array` — shape checks.
+- `graph.nodes require localId, kind, and name` — every node needs all three.
+- `graph.edges require from, to, and rel` — every edge needs all three.
+- `graph.edge confidence must be between 0 and 1` / `analysis confidence must be between 0 and 1`.
+
+**Edge endpoint resolution** (`resolveEndpoint`, per `from`/`to`): the endpoint is accepted if it is
+(1) a real soul node id, (2) a `localId` defined in *this* item's `graph.nodes`, (3) an LLM node id
+already saved in an *earlier* item of this batch or a prior saved batch, or (4) the bare localId of
+an already-saved node on this target. Otherwise the edge is **dropped** and reported in
+`accepted[].droppedEdges[]` as `{ edge, reason:"unresolved endpoint" }`. Scope is **not** a write
+constraint — cross-scope edges (a `packages/core` symbol calling a `packages/mcp` symbol) resolve
+against the full soul, so they are kept.
+
+**Stamping & persistence (per accepted item):**
+- Each `graph.node` is stamped with `id = llmNodeId(targetId, localId)` and `targetId`; each kept
+  edge is stamped with resolved `from`/`to` + `targetId`.
+- Skeleton mode is stamped **server-side from the batchId prefix** — a `llm:system-skeleton:` batch
+  always persists `mode:"skeleton"` (the skill can't forget); a full system save leaves `mode`
+  absent (reads as `full`) and **overwrites the skeleton at the same `targetId`+`nodeHash` path**.
+- `writeArtifact` writes the per-target JSON to `.crib/llm/analysis/<layer>/<hh>/<target>…json`;
+  `writeGraphProjection` writes the merged projection that `llm_neighbors` / `overview` read, so the
+  new analysis is visible immediately.
+- After the batch: `writeManifest(model)` and `writeOverview()` rebuild the cached manifest +
+  `overview.json` (v2 gate). `model` falls back to the first item's `model` then the prior manifest
+  model. The `lastIssued` zero-progress map (see `enrich_next`) is preserved across the manifest
+  rewrite.
+
+## `overview` *(LLM codebase bible — v2, module-segmented + lean)*
+v2: `modules` (always present, works at 0% enrichment), `analyses` (lean pointers, production
+symbols first / test helpers last), and `system` (the freshest bible, full preferred over a draft
+skeleton). The old v1 dump of every fresh artifact as a full analysis+graph+evidence blob sorted
+alphabetically is gone — that surfaced test helpers first and megabytes of scaffolding before the
+bible. v1 `overview.json` caches auto-rebuild via the `version === 2` gate.
+```jsonc
+// req: { scope?:{pathPrefix,cluster}, withLlm?:boolean }
+// res:
+{ "version":2, "model":…, "builtAgainstHead":…,
+  "modules":[ { id, name, pathPrefix, purpose?, counts, coverage:{fresh,pending,pct}, topSymbols } ],
+  "analyses":[ { layer, targetId, purpose, confidence?, stale } ],   // LEAN pointers, importance-sorted
+  "system":{…LlmAnalysis}, "systemProvenance":{ mode:"full"|"skeleton", stale },   // unscoped only
+  "scopeEcho?":{…} }
+// withLlm:true → adds `full:[{layer,targetId,analysis,graph,evidence}]` (computed live, never cached).
+// scope:{pathPrefix} → excludes the system layer; modules/analyses filtered to the scope.
+```
+
+## `llm_neighbors` *(LLM semantic-graph walk)*
+Walk the LLM semantic graph around a soul id or LLM local/global node id: rules, features, flows,
+capabilities, and concepts touching it. Returns the resolved id + the touching edges.
+```jsonc
+// req: { id:"sym:src/auth.ts#AuthService.login@L10" }
+// res: { "id":"sym:…", "edges":[ {from,to,rel,confidence?,rationale?} ] }
 ```
 
 ---

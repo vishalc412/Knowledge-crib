@@ -1,0 +1,250 @@
+{
+  "id": "sym:packages/cli/src/cli.ts#resolveRoot@L262",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:5c0497523661af48259a0c166388336474cf186bab7a8034ccaa3e4fadd79cfd",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/cli/src/cli.ts#resolveRoot@L262",
+    "kind": "symbol",
+    "type": "function",
+    "name": "resolveRoot",
+    "qualifiedName": "resolveRoot",
+    "signature": "resolveRoot(args: string[], ctx?: CmdCtx): ResolvedRoot",
+    "lang": "typescript",
+    "file": "packages/cli/src/cli.ts",
+    "span": {
+      "start": 262,
+      "end": 266
+    },
+    "callSites": [
+      {
+        "callee": "pathArg",
+        "line": 263
+      },
+      {
+        "callee": "resolveProjectRoot",
+        "line": 265
+      }
+    ]
+  },
+  "source": {
+    "text": "function resolveRoot(args: string[], ctx?: CmdCtx): ResolvedRoot {\n  const pos = pathArg(args);\n  const explicitRoot = ctx?.cwdOverride ?? (pos && pos !== '.' ? pos : undefined);\n  return resolveProjectRoot({ explicitRoot });\n}",
+    "truncated": false,
+    "totalLines": 5,
+    "startLine": 262
+  },
+  "callers": [
+    {
+      "id": "sym:packages/cli/src/cli.ts#cmdAuditLlm@L2029",
+      "confidence": 1,
+      "name": "cmdAuditLlm",
+      "qualifiedName": "cmdAuditLlm",
+      "signature": "cmdAuditLlm(args: string[], ctx?: CmdCtx): Promise<number>",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 2029
+    },
+    {
+      "id": "sym:packages/cli/src/cli.ts#cmdEnrich@L1712",
+      "confidence": 1,
+      "name": "cmdEnrich",
+      "qualifiedName": "cmdEnrich",
+      "signature": "cmdEnrich(args: string[], ctx?: CmdCtx): Promise<number>",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 1712
+    },
+    {
+      "id": "sym:packages/cli/src/cli.ts#cmdMaterialize@L364",
+      "confidence": 1,
+      "name": "cmdMaterialize",
+      "qualifiedName": "cmdMaterialize",
+      "signature": "cmdMaterialize(args: string[], ctx?: CmdCtx): Promise<number>",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 364
+    },
+    {
+      "id": "sym:packages/cli/src/cli.ts#cmdMigrateGraph@L344",
+      "confidence": 1,
+      "name": "cmdMigrateGraph",
+      "qualifiedName": "cmdMigrateGraph",
+      "signature": "cmdMigrateGraph(args: string[], ctx?: CmdCtx): Promise<number>",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 344
+    },
+    {
+      "id": "sym:packages/cli/src/cli.ts#cmdServe@L1072",
+      "confidence": 1,
+      "name": "cmdServe",
+      "qualifiedName": "cmdServe",
+      "signature": "cmdServe(args: string[], ctx?: CmdCtx): Promise<number>",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 1072
+    },
+    {
+      "id": "sym:packages/cli/src/cli.ts#cmdStatus@L564",
+      "confidence": 1,
+      "name": "cmdStatus",
+      "qualifiedName": "cmdStatus",
+      "signature": "cmdStatus(args: string[], ctx?: CmdCtx): Promise<number>",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 564
+    },
+    {
+      "id": "sym:packages/cli/src/cli.ts#cmdUpdate@L1096",
+      "confidence": 1,
+      "name": "cmdUpdate",
+      "qualifiedName": "cmdUpdate",
+      "signature": "cmdUpdate(args: string[], ctx?: CmdCtx): Promise<number>",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 1096
+    },
+    {
+      "id": "sym:packages/cli/src/cli.ts#openVerbs@L655",
+      "confidence": 1,
+      "name": "openVerbs",
+      "qualifiedName": "openVerbs",
+      "signature": "openVerbs(args: string[], ctx?: CmdCtx): { verbs: Verbs; index: IndexStore } | null",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 655
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/cli/src/cli.ts#pathArg@L240",
+      "confidence": 1,
+      "name": "pathArg",
+      "qualifiedName": "pathArg",
+      "signature": "pathArg(args: string[]): string | undefined",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 240
+    },
+    {
+      "id": "sym:packages/cli/src/runtime.ts#resolveProjectRoot@L53",
+      "confidence": 1,
+      "name": "resolveProjectRoot",
+      "qualifiedName": "resolveProjectRoot",
+      "signature": "resolveProjectRoot(opts: ResolveOpts): ResolvedRoot",
+      "type": "function",
+      "file": "packages/cli/src/runtime.ts",
+      "line": 53
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/cli/src/cli.ts@L261",
+      "snippet": "/** Resolve a root for the path-taking commands (serve/status/update/export/viz): walks up + registry overlay. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#2-2-the-three-command-paths",
+      "heading": "2.2 The Three Command Paths",
+      "anchor": "2-2-the-three-command-paths",
+      "snippet": "2.2 The Three Command Paths",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/cli/src/cli.ts#resolveRoot@L262",
+    "procedureName": "resolveRoot",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#resolveRoot@L262",
+        "procedureName": "resolveRoot",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9683aa74b7f76b9b29bec43dcb798aabd8fd025cfe030cb5142a7007b3e2c844",
+          "target": "stmt:packages/cli/src/cli.ts@L263",
+          "line": 263,
+          "expr": "const pos = pathArg(args);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#resolveRoot@L262",
+        "procedureName": "resolveRoot",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:be703d5627b5b3e8de86524fa59b5ec7f4043922369a0f493109957d57e1e884",
+          "target": "sym:packages/cli/src/cli.ts#pathArg@L240",
+          "expr": "pathArg",
+          "line": 263
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#resolveRoot@L262",
+        "procedureName": "resolveRoot",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:098af0b534d39d715137a4ab684a40bc65532a662f10456a1c76b476cfb1146a",
+          "target": "sym:packages/cli/src/runtime.ts#resolveProjectRoot@L53",
+          "expr": "resolveProjectRoot",
+          "line": 265
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#resolveRoot@L262",
+        "procedureName": "resolveRoot",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1f5ec438a7f2f15f9ea5f79ec4f31fec0cf50d9bf568f523ab292c5f5b8537cd",
+          "target": "stmt:packages/cli/src/cli.ts@L265",
+          "line": 265,
+          "expr": "return resolveProjectRoot({ explicitRoot });"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/cli/src/cli.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 2,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

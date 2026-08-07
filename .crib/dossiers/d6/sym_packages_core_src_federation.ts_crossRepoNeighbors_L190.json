@@ -1,0 +1,311 @@
+{
+  "id": "sym:packages/core/src/federation.ts#crossRepoNeighbors@L190",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:91a5f443043f06d34d0a48ad3dff4baef973a83486bfdd3cd4804247fae9947f",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/federation.ts#crossRepoNeighbors@L190",
+    "kind": "symbol",
+    "type": "function",
+    "name": "crossRepoNeighbors",
+    "qualifiedName": "crossRepoNeighbors",
+    "signature": "crossRepoNeighbors(fed: Federation, cur: { soulRoot: string; id: string }, node: Node | undefined, dir: Dir): Array<{ soulRoot: string; id: string }>",
+    "lang": "typescript",
+    "file": "packages/core/src/federation.ts",
+    "span": {
+      "start": 190,
+      "end": 218
+    },
+    "callSites": [
+      {
+        "callee": "push",
+        "line": 203
+      },
+      {
+        "callee": "push",
+        "line": 213
+      }
+    ]
+  },
+  "source": {
+    "text": "function crossRepoNeighbors(\n  fed: Federation,\n  cur: { soulRoot: string; id: string },\n  node: Node | undefined,\n  dir: Dir,\n): Array<{ soulRoot: string; id: string }> {\n  if (!node) return [];\n  const out: Array<{ soulRoot: string; id: string }> = [];\n  if (dir === 'down' && node.kind === 'http-call') {\n    const callMethod = node.httpMethod ?? '';\n    const callPath = node.routePath ?? '';\n    for (const { soulRoot, node: route } of iterateRouteMatches(fed, callMethod, callPath)) {\n      if (soulRoot === cur.soulRoot) continue; // bridge crosses repos, not within.\n      out.push({ soulRoot, id: route.id });\n    }\n  } else if (dir === 'up' && node.kind === 'route') {\n    const routeMethod = node.httpMethod ?? '';\n    const routePath = node.routePath ?? '';\n    for (const call of fed.httpCalls) {\n      if (call.soulRoot === cur.soulRoot) continue;\n      if (\n        routeMatches(call.node.httpMethod ?? '', call.node.routePath ?? '', routeMethod, routePath)\n      ) {\n        out.push({ soulRoot: call.soulRoot, id: call.node.id });\n      }\n    }\n  }\n  return out;\n}",
+    "truncated": false,
+    "totalLines": 29,
+    "startLine": 190
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/federation.ts#federatedImpact@L106",
+      "confidence": 1,
+      "name": "federatedImpact",
+      "qualifiedName": "federatedImpact",
+      "signature": "federatedImpact(fed: Federation, startRoot: string, id: string, dir: Dir, opts: { depth?: number; limit?: number; extractedOnly?: boolean } = {}): FederatedImpactResult",
+      "type": "function",
+      "file": "packages/core/src/federation.ts",
+      "line": 106
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/core/src/federation.ts#iterateRouteMatches@L221",
+      "confidence": 1,
+      "name": "iterateRouteMatches",
+      "qualifiedName": "iterateRouteMatches",
+      "signature": "iterateRouteMatches(fed: Federation, callMethod: string, callPath: string): Generator<{ soulRoot: string; node: Node }>",
+      "type": "function",
+      "file": "packages/core/src/federation.ts",
+      "line": 221
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 39
+    },
+    {
+      "id": "sym:packages/core/src/federation.ts#push@L303",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Edge[]>, id: string, e: Edge): void",
+      "type": "function",
+      "file": "packages/core/src/federation.ts",
+      "line": 303
+    },
+    {
+      "id": "sym:packages/core/src/federation.ts#routeMatches@L258",
+      "confidence": 1,
+      "name": "routeMatches",
+      "qualifiedName": "routeMatches",
+      "signature": "routeMatches(callMethod: string, callPath: string, routeMethod: string, routePath: string): boolean",
+      "type": "function",
+      "file": "packages/core/src/federation.ts",
+      "line": 258
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/core/src/federation.ts@L184",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/federation.ts#crossRepoNeighbors@L190",
+    "procedureName": "crossRepoNeighbors",
+    "conditions": [
+      "cond:packages/core/src/federation.ts@L196",
+      "cond:packages/core/src/federation.ts@L198",
+      "cond:packages/core/src/federation.ts@L201",
+      "cond:packages/core/src/federation.ts@L205",
+      "cond:packages/core/src/federation.ts@L208",
+      "cond:packages/core/src/federation.ts@L210"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/federation.ts#crossRepoNeighbors@L190",
+        "procedureName": "crossRepoNeighbors",
+        "guard": "cond:packages/core/src/federation.ts@L196",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/federation.ts@L196",
+            "expr": "!node",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c722a99696f25a484422335a748d92fca9b2edce1fffa73c8cec3ddaa8db4887",
+          "target": "stmt:packages/core/src/federation.ts@L196",
+          "line": 196,
+          "expr": "return [];"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/federation.ts#crossRepoNeighbors@L190",
+        "procedureName": "crossRepoNeighbors",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:725fe9a20cdbaea93873595ce941792262b3152ac116ae665fe4cef4784e9dab",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 203
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/federation.ts#crossRepoNeighbors@L190",
+        "procedureName": "crossRepoNeighbors",
+        "guard": "cond:packages/core/src/federation.ts@L201",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/federation.ts@L198",
+            "expr": "dir === 'down' && node.kind === 'http-call'"
+          },
+          {
+            "id": "cond:packages/core/src/federation.ts@L201",
+            "expr": "iterateRouteMatches(fed, callMethod, callPath)",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:adab5d8c263f939c9922c19ee4a19e97a3600ba9b35632e756b29b86cdf4f90a",
+          "target": "stmt:packages/core/src/federation.ts@L203",
+          "line": 203,
+          "expr": "out.push({ soulRoot, id: route.id });"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/federation.ts#crossRepoNeighbors@L190",
+        "procedureName": "crossRepoNeighbors",
+        "guard": "cond:packages/core/src/federation.ts@L210",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/federation.ts@L198",
+            "expr": "dir === 'down' && node.kind === 'http-call'"
+          },
+          {
+            "id": "cond:packages/core/src/federation.ts@L205",
+            "expr": "dir === 'up' && node.kind === 'route'"
+          },
+          {
+            "id": "cond:packages/core/src/federation.ts@L208",
+            "expr": "fed.httpCalls"
+          },
+          {
+            "id": "cond:packages/core/src/federation.ts@L210",
+            "expr": "routeMatches(call.node.httpMethod ?? '', call.node.routePath ?? '', routeMethod, routePath)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:e3d0cafbd14c582281661b6b231827744c8d84b7ad40eeacdf4256dd3a440e1b",
+          "target": "sym:packages/core/src/federation.ts#push@L303",
+          "expr": "push",
+          "line": 203
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/federation.ts#crossRepoNeighbors@L190",
+        "procedureName": "crossRepoNeighbors",
+        "guard": "cond:packages/core/src/federation.ts@L210",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/federation.ts@L198",
+            "expr": "dir === 'down' && node.kind === 'http-call'"
+          },
+          {
+            "id": "cond:packages/core/src/federation.ts@L205",
+            "expr": "dir === 'up' && node.kind === 'route'"
+          },
+          {
+            "id": "cond:packages/core/src/federation.ts@L208",
+            "expr": "fed.httpCalls"
+          },
+          {
+            "id": "cond:packages/core/src/federation.ts@L210",
+            "expr": "routeMatches(call.node.httpMethod ?? '', call.node.routePath ?? '', routeMethod, routePath)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:48a7c360d1e1658204f5523a26c3679f957f0d328d9614c77227a7367a25f91c",
+          "target": "stmt:packages/core/src/federation.ts@L213",
+          "line": 213,
+          "expr": "out.push({ soulRoot: call.soulRoot, id: call.node.id });"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/federation.ts#crossRepoNeighbors@L190",
+        "procedureName": "crossRepoNeighbors",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2ff1a038c12d5c96b1a21ca2445cff7248da19c165d6e72bd194a6009e01e7da",
+          "target": "stmt:packages/core/src/federation.ts@L217",
+          "line": 217,
+          "expr": "return out;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/federation.ts#crossRepoNeighbors@L190",
+        "procedureName": "crossRepoNeighbors",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:f0e9313181314aef94fda4a44896739d38139e38102e8a1455ca8268779b7ecb",
+          "target": "sym:packages/core/src/federation.ts#iterateRouteMatches@L221",
+          "expr": "iterateRouteMatches"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/federation.ts#crossRepoNeighbors@L190",
+        "procedureName": "crossRepoNeighbors",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:e3ae1bf0f030e73cc0dbd6aeac3b08193db73211b75511559dd3aa54f0d8e5c4",
+          "target": "sym:packages/core/src/federation.ts#routeMatches@L258",
+          "expr": "routeMatches"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": [
+      "packages/core/src/federation.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 0,
+    "conditions": 3,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 4,
+      "recorded": 2,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

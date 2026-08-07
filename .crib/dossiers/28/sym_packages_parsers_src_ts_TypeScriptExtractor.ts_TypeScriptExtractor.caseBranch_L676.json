@@ -1,0 +1,278 @@
+{
+  "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.caseBranch@L676",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:ed8f0caed803bd5b1a83730bd315bba8df20935a3cc5f8b8c825307b9e7e6a8c",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.caseBranch@L676",
+    "kind": "symbol",
+    "type": "method",
+    "name": "caseBranch",
+    "qualifiedName": "TypeScriptExtractor.caseBranch",
+    "signature": "caseBranch(line: number, selector: string, env: BodyEnv): string",
+    "lang": "typescript",
+    "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+    "span": {
+      "start": 676,
+      "end": 704
+    },
+    "callSites": [
+      {
+        "callee": "idFor",
+        "line": 677
+      },
+      {
+        "callee": "add",
+        "line": 679
+      },
+      {
+        "callee": "push",
+        "line": 680
+      },
+      {
+        "callee": "exprFields",
+        "line": 684
+      },
+      {
+        "callee": "truncate",
+        "line": 685
+      },
+      {
+        "callee": "hash",
+        "line": 689
+      },
+      {
+        "callee": "push",
+        "line": 692
+      },
+      {
+        "callee": "edgeId",
+        "line": 693
+      }
+    ]
+  },
+  "source": {
+    "text": "  private caseBranch(line: number, selector: string, env: BodyEnv): string {\n    const id = env.ctx.idFor('case-branch', { file: env.path, line });\n    if (!env.behaviorSeen.has(id)) {\n      env.behaviorSeen.add(id);\n      env.nodes.push({\n        id,\n        kind: 'case-branch',\n        branch: 'CASE',\n        ...exprFields(selector),\n        whenSelector: truncate(selector, EXPR_MAX_CHARS),\n        file: env.path,\n        span: { start: line, end: line },\n        lang: env.lang,\n        hash: env.ctx.hash(`${env.path}:case:${line}:${selector}`),\n      });\n      // executes: proc → case-branch (the callable dispatches into this branch).\n      env.edges.push({\n        id: edgeId(env.procId, id, 'executes'),\n        src: env.procId,\n        dst: id,\n        rel: 'executes',\n        method: 'static',\n        provenance: 'EXTRACTED',\n        confidence: 1,\n        evidence: { by: this.name, snippet: selector },\n      });\n    }\n    return id;\n  }",
+    "truncated": false,
+    "totalLines": 29,
+    "startLine": 676
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkSwitch@L491",
+      "confidence": 1,
+      "name": "walkSwitch",
+      "qualifiedName": "TypeScriptExtractor.walkSwitch",
+      "signature": "walkSwitch(stmt: ts.SwitchStatement, env: BodyEnv): void",
+      "type": "method",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 491
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#exprFields@L928",
+      "confidence": 1,
+      "name": "exprFields",
+      "qualifiedName": "exprFields",
+      "signature": "exprFields(raw: string | undefined): { expr?: string; exprTruncated?: true }",
+      "type": "function",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 928
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#truncate@L923",
+      "confidence": 1,
+      "name": "truncate",
+      "qualifiedName": "truncate",
+      "signature": "truncate(s: string, max: number): string",
+      "type": "function",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 923
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/ts/TypeScriptExtractor.ts@L674",
+      "snippet": "/** 1.2: emit a deduped `case-branch` node (whenSelector = the case expression) + an `executes`",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.caseBranch@L676",
+    "procedureName": "TypeScriptExtractor.caseBranch",
+    "conditions": [
+      "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L678"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.caseBranch@L676",
+        "procedureName": "TypeScriptExtractor.caseBranch",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:91e095054cfd3d6643da535c9cdd56eb05f4bd147299bb1486d377afc8962da5",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L677",
+          "line": 677,
+          "expr": "const id = env.ctx.idFor('case-branch', { file: env.path, line });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.caseBranch@L676",
+        "procedureName": "TypeScriptExtractor.caseBranch",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L678",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L678",
+            "expr": "!env.behaviorSeen.has(id)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e3714a30b16b155f686a1feb537dcf849b088fee7054703266a4227218394a5a",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L679",
+          "line": 679,
+          "expr": "env.behaviorSeen.add(id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.caseBranch@L676",
+        "procedureName": "TypeScriptExtractor.caseBranch",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L678",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L678",
+            "expr": "!env.behaviorSeen.has(id)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fb646891452d71333e0f31443d1f3d34b121a1c3b13bb27adc28ee3e8eef137d",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L680",
+          "line": 680,
+          "expr": "env.nodes.push({\n        id,\n        kind: 'case-branch',\n        branch: 'CASE',\n        ...exprFields(selector),\n        whenSelector: truncate(selector, EXPR_MAX_CHARS),\n        file: env.path,\n        span: { start: line, end: line },\n        lang: env.lang,\n        hash: env.ctx.hash(`${env.path}:case:${line}:${selector}`),\n      });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.caseBranch@L676",
+        "procedureName": "TypeScriptExtractor.caseBranch",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L678",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L678",
+            "expr": "!env.behaviorSeen.has(id)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:43f0a9ef9e08f451d46b44f1f708cac5cb5799425e9a0f7eb98cab3f4fb97fa6",
+          "target": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#exprFields@L928",
+          "expr": "exprFields",
+          "line": 684
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.caseBranch@L676",
+        "procedureName": "TypeScriptExtractor.caseBranch",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L678",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L678",
+            "expr": "!env.behaviorSeen.has(id)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:343aeaffd6ed031a1d8a1205fe48af548702d8cc96b58956c6674f6b55298b11",
+          "target": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#truncate@L923",
+          "expr": "truncate",
+          "line": 685
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.caseBranch@L676",
+        "procedureName": "TypeScriptExtractor.caseBranch",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L678",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L678",
+            "expr": "!env.behaviorSeen.has(id)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7b90d99b76b9629501dd99167a30a2d0d5bf2e926fb02ce57d9e8c24b4fb7147",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L692",
+          "line": 692,
+          "expr": "env.edges.push({\n        id: edgeId(env.procId, id, 'executes'),\n        src: env.procId,\n        dst: id,\n        rel: 'executes',\n        method: 'static',\n        provenance: 'EXTRACTED',\n        confidence: 1,\n        evidence: { by: this.name, snippet: selector },\n      });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.caseBranch@L676",
+        "procedureName": "TypeScriptExtractor.caseBranch",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0ffb7213575655522facc1e93dbbc65e29bca0c604b2d1dd1af5d64e7a6d73c6",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L703",
+          "line": 703,
+          "expr": "return id;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 5,
+    "referencedByFiles": [
+      "packages/parsers/src/ts/TypeScriptExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 5,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 8,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

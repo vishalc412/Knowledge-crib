@@ -1,0 +1,56 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://knowledge-crib.dev/schema/memory-1/candidate.schema.json",
+  "title": "MemoryCandidate",
+  "description": "Untrusted staging for a proposed memory record (PRD §2). Trust is implicitly 'candidate'.",
+  "type": "object",
+  "required": [
+    "id",
+    "schemaVersion",
+    "kind",
+    "subject",
+    "claim",
+    "scope",
+    "appliesTo",
+    "evidence",
+    "authorship",
+    "origin",
+    "proposedAt"
+  ],
+  "properties": {
+    "id": { "type": "string", "pattern": "^cand:[0-9a-f]+$" },
+    "schemaVersion": { "type": "string", "const": "1" },
+    "kind": {
+      "type": "string",
+      "enum": ["fact", "procedure", "decision", "pitfall", "convention"]
+    },
+    "subject": { "type": "string", "minLength": 1 },
+    "claim": { "type": "string", "minLength": 1 },
+    "scope": {
+      "type": "object",
+      "required": ["boundary"],
+      "properties": {
+        "boundary": { "type": "string", "enum": ["repo", "global"] },
+        "repoId": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "appliesTo": { "type": "array", "items": { "type": "string" } },
+    "evidence": { "type": "array" },
+    "authorship": {
+      "type": "object",
+      "required": ["actor", "kind"],
+      "properties": {
+        "actor": { "type": "string", "minLength": 1 },
+        "kind": { "type": "string", "enum": ["agent", "human"] },
+        "tool": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "origin": { "type": "string", "enum": ["observe", "attempt"] },
+    "attemptId": { "type": "string" },
+    "proposedAt": { "type": "string" },
+    "meta": { "type": "object" }
+  },
+  "additionalProperties": true
+}

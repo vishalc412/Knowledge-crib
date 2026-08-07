@@ -1,10 +1,11 @@
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { SoulStore, SqliteIndexStore, newManifest } from '@knowledge-crib/core';
 import { contentHash, edgeId, idFor } from '@knowledge-crib/soul-schema';
 import type { Edge, Node, Rel } from '@knowledge-crib/soul-schema';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { estimateTokens } from './token-budget.js';
 import { Verbs } from './verbs.js';
 
 // Minimal result shapes for the verb calls below so the tests can drop `as any`.
@@ -30,6 +31,9 @@ interface ContextResult {
   docs: Array<{ edgeType: string }>;
   source?: { text: string; truncated: boolean; totalLines: number };
   rules?: { rules: Array<{ action: { kind: string } }> };
+  budgetExhausted?: boolean;
+  hash?: string;
+  unchanged?: boolean;
   framework?: {
     routes?: Array<{
       httpMethod?: string;
@@ -51,6 +55,8 @@ interface ContextResult {
 interface SourceResult {
   node: { id: string; file?: string };
   source: { text: string; truncated: boolean };
+  hash?: string;
+  unchanged?: boolean;
 }
 interface DescribesResult {
   docs: Array<unknown>;
@@ -62,6 +68,10 @@ interface QueryResult {
     rules?: { rules: Array<{ action: { kind: string } }> };
     coverage?: { readiness: string };
   }>;
+  llmHits: Array<{ id: string; snippet: string }>;
+  truncated: boolean;
+  budgetExhausted?: boolean;
+  cursor?: string;
 }
 interface NeighborsResult {
   edges: Array<{ src: string; dst: string }>;
@@ -73,6 +83,7 @@ interface ShortestPathResult {
 interface StatusResult {
   indexed: boolean;
   capabilities: Record<string, unknown>;
+  dirty?: { isDirty: boolean; uncommittedCount: number; uncommitted?: string[] };
 }
 interface ErrorResult {
   error: { code: string; message?: string };
@@ -109,6 +120,8 @@ interface DossiersByScopeResult {
   truncated: boolean;
   skipped: string[];
   markdown?: string;
+  budgetExhausted?: boolean;
+  cursor?: string;
 }
 interface RulesResult {
   rules: Array<{
@@ -155,6 +168,7 @@ interface EnrichNextResult {
     targetId: string;
     seed: { node?: { id: string }; sourceBody?: { text: string } };
     outputSchema: Record<string, unknown>;
+    suggestedTier?: 'fast' | 'balanced' | 'powerful';
   }>;
   remaining: number;
 }
@@ -379,6 +393,91 @@ describe('verbs', () => {
     expect(hit!.coverage!.readiness).toBe('unimplemented');
   });
 
+  it('query keeps BM25 hits ranked and LLM discoveries in a separate llmHits field', () => {
+    // A symbol-only BM25 query for "login" must surface the login symbol at the top of `hits`.
+    // The old code unshifted LLM matches at score 0 above BM25, so a loosely-matching LLM artifact
+    // could push the real symbol out of position. The new shape keeps BM25 ranking honest and
+    // moves LLM-only discoveries to `llmHits` (de-duped against `hits`).
+    const res = verbs.query({ q: 'login', kinds: ['symbol'], limit: 5 }) as unknown as QueryResult;
+    expect(res.hits.length).toBeGreaterThan(0);
+    expect(res.hits[0]!.id).toBe(login.id);
+    // llmHits never share an id with a BM25 hit (de-duped).
+    const bm25Ids = new Set(res.hits.map((h) => h.id));
+    expect(res.llmHits.every((h) => !bm25Ids.has(h.id))).toBe(true);
+  });
+
+  it('query reports truncated=true honestly when the BM25 result set exceeds the limit', () => {
+    // Over-fetch by one to detect overflow. "login" matches the login symbol AND the auth.md doc
+    // section (whose body mentions "AuthService.login"), so a limit of 1 must report truncated,
+    // not the old hardcoded `truncated: false`.
+    const res = verbs.query({ q: 'login', limit: 1 }) as unknown as QueryResult;
+    expect(res.truncated).toBe(true);
+    expect(res.hits.length).toBe(1);
+  });
+
+  it('query withLlm:false attaches NO llm pointer to hits and emits no llmHits', () => {
+    const res = verbs.query({
+      q: 'login',
+      kinds: ['symbol'],
+      withLlm: false,
+    }) as unknown as {
+      hits: Array<{ id: string; llm?: unknown }>;
+      llmHits: unknown[];
+      truncated: boolean;
+    };
+    expect(res.hits.every((h) => h.llm === undefined)).toBe(true);
+    expect(res.llmHits).toHaveLength(0);
+  });
+
+  it('ask explains a resolved node id/name directly', () => {
+    const res = verbs.ask({ q: 'AuthService.login' }) as unknown as {
+      question: string;
+      interpretation: string;
+      nodeId: string;
+      context: ContextResult;
+    };
+    expect(res.interpretation).toBe('explain');
+    expect(res.nodeId).toBe(login.id);
+    expect(res.context.node.qualifiedName).toBe('AuthService.login');
+    expect(res.context.callers.map((c) => c.id)).toContain(handle.id);
+  });
+
+  it('ask discovery searches the index and returns hits + LLM hits', () => {
+    const res = verbs.ask({ q: 'session' }) as unknown as {
+      interpretation: string;
+      hits: Array<{ id: string }>;
+      llmHits: unknown[];
+    };
+    expect(res.interpretation).toBe('discovery');
+    const ids = res.hits.map((h) => h.id);
+    expect(ids.length).toBeGreaterThan(0);
+    // the doc section about sessions should be one of the hits.
+    expect(ids).toContain(docSection.id);
+  });
+
+  it('ask overview classifies architecture questions', () => {
+    const res = verbs.ask({ q: 'what is the architecture' }) as unknown as {
+      interpretation: string;
+      overview: { analyses: unknown[] };
+      fallback?: { clusters: unknown[] };
+    };
+    expect(res.interpretation).toBe('overview');
+    // with no LLM artifacts, the system bible is absent and a deterministic cluster fallback is present.
+    expect(res.overview.analyses).toEqual([]);
+    expect(res.fallback?.clusters).toBeDefined();
+  });
+
+  it('ask returns markdown when format is markdown', () => {
+    const res = verbs.ask({ q: 'AuthService.login', format: 'markdown' }) as unknown as {
+      markdown: string;
+      interpretation: string;
+    };
+    expect(res.interpretation).toBe('explain');
+    expect(res.markdown).toContain('# AuthService.login');
+    expect(res.markdown).toContain('interpretation:');
+    expect(res.markdown).toContain('Controller.handleLogin');
+  });
+
   it('neighbors maps in/out/both', () => {
     expect(
       (verbs.neighbors({ id: login.id, rel: 'calls', dir: 'in' }) as unknown as NeighborsResult)
@@ -405,6 +504,44 @@ describe('verbs', () => {
     expect(res.capabilities.cypher).toBe(false);
   });
 
+  it('status({dirty:true}) previews what a dirty update would re-index', () => {
+    soul.setVcsHead('h1');
+    const v = new Verbs({
+      soul,
+      index,
+      repoRoot: repo,
+      vcs: {
+        currentHead: () => 'h2',
+        changedFilesSince: () => ['src/auth.ts'],
+        uncommittedChanges: () => ['src/http.ts'],
+      },
+    });
+    const res = v.status({ dirty: true }) as unknown as StatusResult & {
+      dirtyPreview: { wouldUpdate: string[]; wouldScope: string[]; head: string };
+    };
+    expect(res.dirtyPreview.head).toBe('h2');
+    expect(res.dirtyPreview.wouldUpdate.sort()).toEqual(['src/auth.ts', 'src/http.ts']);
+    expect(res.dirtyPreview.wouldScope).toContain('src/http.ts'); // reverse-dep closure from handle→login
+  });
+
+  it('bounds default dirty status and includes paths only on explicit request', () => {
+    const v = new Verbs({
+      soul,
+      index,
+      repoRoot: repo,
+      vcs: {
+        currentHead: () => 'h1',
+        changedFilesSince: () => [],
+        uncommittedChanges: () => ['src/auth.ts', 'src/http.ts'],
+      },
+    });
+    const summary = v.status() as unknown as StatusResult;
+    expect(summary.dirty).toMatchObject({ isDirty: true, uncommittedCount: 2 });
+    expect(summary.dirty?.uncommitted).toBeUndefined();
+    const detail = v.status({ dirty: true }) as unknown as StatusResult;
+    expect(detail.dirty?.uncommitted).toEqual(['src/auth.ts', 'src/http.ts']);
+  });
+
   it('enrich_status / enrich_next / enrich_save drive an LLM-authored symbol graph batch', () => {
     const status = verbs.enrichStatus() as unknown as EnrichStatusResult;
     expect(status.nextLayer).toBe('symbol');
@@ -417,6 +554,18 @@ describe('verbs', () => {
     expect(batch.items[0]!.seed.node?.id).toBe(batch.items[0]!.targetId);
     expect(batch.items[0]!.seed.sourceBody?.text.length).toBeGreaterThan(0);
     expect(batch.items[0]!.outputSchema).toHaveProperty('type', 'object');
+
+    // W7: only a grounded (verbatim-quoted) artifact is `verified` and counts as `fresh`; an
+    // ungrounded save reads as `legacy` → still pending. Lift the longest line of the rehydrated
+    // span as the quote so the saved symbol graph is grounded — the seed sourceBody IS the
+    // rehydrated anchor span, so any line of it overlaps (whitespace-normalized) and grounds.
+    const spanText = batch.items[0]!.seed.sourceBody?.text ?? '';
+    const quote =
+      spanText
+        .split('\n')
+        .map((l) => l.trim())
+        .filter((l) => l.length > 0)
+        .sort((a, b) => b.length - a.length)[0] ?? '';
 
     const save = verbs.enrichSave({
       batchId: batch.batchId,
@@ -466,7 +615,10 @@ describe('verbs', () => {
               },
             ],
           },
-          evidence: [{ soulId: batch.items[0]!.targetId, why: 'Dossier source and callers.' }],
+          evidence: [
+            { soulId: batch.items[0]!.targetId, quote },
+            { soulId: batch.items[0]!.targetId, why: 'Dossier source and callers.' },
+          ],
         },
       ],
     }) as unknown as EnrichSaveResult;
@@ -478,6 +630,77 @@ describe('verbs', () => {
     const after = verbs.enrichStatus({ layer: 'symbol' }) as unknown as EnrichStatusResult;
     expect(after.model).toBe('host-selected-model');
     expect(after.layers.symbol.fresh).toBe(1);
+  });
+
+  it('enrich_status reports progress + costEstimate and enrich_next respects budgetTokens guard', () => {
+    const status = verbs.enrichStatus() as unknown as EnrichStatusResult & {
+      progress: { completed: number; pending: number; total: number };
+      costEstimate: { currency: string; pending: number; total: number };
+    };
+    expect(status.progress.total).toBeGreaterThanOrEqual(3);
+    expect(status.progress.pending).toBeGreaterThan(0);
+    expect(status.progress.completed).toBeLessThan(status.progress.total);
+    expect(status.costEstimate.currency).toBe('tokens');
+    expect(status.costEstimate.pending).toBeGreaterThan(0);
+    expect(status.costEstimate.total).toBeGreaterThanOrEqual(status.costEstimate.pending);
+
+    const batch = verbs.enrichNext({ layer: 'symbol', limit: 1 }) as unknown as EnrichNextResult & {
+      progress: { completed: number; pending: number; total: number };
+      costEstimate: {
+        currency: string;
+        batch: number;
+        perItem: Array<{
+          targetId: string;
+          tokens: number;
+          tier: 'fast' | 'balanced' | 'powerful';
+        }>;
+        totalPending: number;
+      };
+    };
+    expect(batch.progress.pending).toBeGreaterThan(0);
+    expect(batch.costEstimate.batch).toBeGreaterThan(0);
+    expect(batch.costEstimate.perItem).toHaveLength(1);
+    // M2.7 — every perItem carries the tier the host dispatcher routes on.
+    expect(batch.costEstimate.perItem[0]!.tier).toBe('fast');
+
+    // WP1 — budgetTokens is now a PACKER, not a guard. A budget too small for even one item no
+    // longer returns an empty batch (that deadlocked the queue); the first item is returned ALONE
+    // with `oversized: true` so the queue always makes progress. Raise the budget or route to a
+    // bigger tier to clear it.
+    const blocked = verbs.enrichNext({
+      layer: 'symbol',
+      limit: 1,
+      budgetTokens: 1,
+    }) as unknown as EnrichNextResult & {
+      budgetExceeded: boolean;
+      oversized: boolean;
+      budget: number;
+    };
+    expect(blocked.budgetExceeded).toBe(true);
+    expect(blocked.oversized).toBe(true);
+    expect(blocked.budget).toBe(1);
+    expect(blocked.items).toHaveLength(1); // oversized single item returned alone — queue never stalls
+  });
+
+  it('M2.7 — enrich_next items carry a suggestedTier mapped by layer (symbol=fast)', () => {
+    const batch = verbs.enrichNext({ layer: 'symbol', limit: 1 }) as unknown as EnrichNextResult;
+    expect(batch.items[0]!.suggestedTier).toBe('fast');
+    // the costEstimate perItem mirrors the tier so a host dispatcher can route from either surface
+    const withCost = batch as unknown as {
+      costEstimate?: { perItem: Array<{ tier: 'fast' | 'balanced' | 'powerful' }> };
+    };
+    expect(withCost.costEstimate?.perItem[0]!.tier).toBe('fast');
+  });
+
+  it('M2.7 — skeleton system pass carries suggestedTier balanced (lightweight draft, not powerful)', () => {
+    const skel = verbs.enrichNext({
+      layer: 'system',
+      skeleton: true,
+    }) as unknown as EnrichNextResult;
+    // skeleton is whole-repo only; if the soul has a system target it yields one balanced item.
+    if (skel.items.length > 0) {
+      expect(skel.items[0]!.suggestedTier).toBe('balanced');
+    }
   });
 
   it('context, dossier, query, overview, and llm_neighbors surface saved LLM graph context', () => {
@@ -527,34 +750,97 @@ describe('verbs', () => {
             ],
           },
           evidence: [
-            { soulId: target.targetId, why: 'The source body calls token issue after login.' },
+            {
+              soulId: target.targetId,
+              why: 'The source body calls token issue after login.',
+              quote: 'login(user, pass)',
+              startLine: 10,
+              endLine: 10,
+            },
           ],
         },
       ],
     });
+    expect(soul.getManifest().generation?.semantic).toBe(1);
 
+    // Default projection is LIGHTWEIGHT: provenance + confidence + purpose only, no full
+    // analysis/graph/evidence blob (the token-cost promise). The pointer still signals LLM insight.
     const ctx = verbs.context({ id: target.targetId }) as unknown as {
-      llm?: { analysis: { purpose: string } };
+      llm?: { provenance: string; purpose: string; analysis?: unknown; graph?: unknown };
     };
-    expect(ctx.llm?.analysis.purpose).toContain('login credentials');
+    expect(ctx.llm?.provenance).toBe('LLM');
+    expect(ctx.llm?.purpose).toContain('login credentials');
+    expect(ctx.llm?.analysis).toBeUndefined();
+    expect(ctx.llm?.graph).toBeUndefined();
 
-    const doss = verbs.dossier({ id: target.targetId }) as unknown as {
+    // Opt-in full projection via withLlm: true folds the analysis + graph.
+    const ctxFull = verbs.context({
+      id: target.targetId,
+      withLlm: true,
+    }) as unknown as { llm?: { analysis: { purpose: string }; graph: { nodes: unknown[] } } };
+    expect(ctxFull.llm?.analysis.purpose).toContain('login credentials');
+    expect(ctxFull.llm?.graph.nodes).toHaveLength(1);
+
+    const doss = verbs.dossier({ id: target.targetId, withLlm: true }) as unknown as {
       llm?: { graph: { nodes: unknown[] } };
     };
     expect(doss.llm?.graph.nodes).toHaveLength(1);
 
-    const query = verbs.query({ q: 'authenticated sessions', limit: 1 }) as unknown as {
-      hits: Array<{ id: string; llm?: { provenance: string } }>;
+    // query: BM25 `hits` stay lightweight by default; LLM-only discoveries land in `llmHits` (ranked,
+    // de-duped), never overriding BM25 ranking. The target's analysis mentions "authenticated" +
+    // "session" so it surfaces as a semantic discovery.
+    const query = verbs.query({ q: 'authenticated sessions', limit: 5 }) as unknown as {
+      hits: Array<{ id: string; llm?: { provenance: string; analysis?: unknown } }>;
+      llmHits: Array<{ id: string; llm?: { provenance: string } }>;
     };
-    expect(query.hits.some((h) => h.id === target.targetId && h.llm?.provenance === 'LLM')).toBe(
+    expect(query.hits.every((h) => h.llm?.analysis === undefined)).toBe(true);
+    expect(query.llmHits.some((h) => h.id === target.targetId && h.llm?.provenance === 'LLM')).toBe(
       true,
     );
+
+    // Opt-in full LLM on query upgrades the pointer on every hit to the full analysis blob.
+    const queryFull = verbs.query({
+      q: 'authenticated sessions',
+      limit: 5,
+      withLlm: true,
+    }) as unknown as {
+      hits: Array<{ id: string; llm?: { provenance: string; analysis?: unknown } }>;
+      llmHits: Array<{ id: string; llm?: { provenance: string; analysis?: unknown } }>;
+    };
+    expect(
+      [...queryFull.hits, ...queryFull.llmHits].some(
+        (h) => h.id === target.targetId && h.llm?.provenance === 'LLM' && h.llm?.analysis,
+      ),
+    ).toBe(true);
 
     const neighbors = verbs.llmNeighbors({ id: target.targetId }) as unknown as {
       edges: Array<{ rel: string; to: string }>;
     };
     expect(neighbors.edges[0]!.rel).toBe('enforces');
     expect(neighbors.edges[0]!.to).toContain('rule:authenticated-session');
+
+    const semanticId = neighbors.edges[0]!.to;
+    const compositeNeighbors = verbs.neighbors({
+      id: target.targetId,
+      includeLlm: true,
+    }) as unknown as { edges: Array<{ rel: string; origin: string }> };
+    expect(
+      compositeNeighbors.edges.some(
+        (edge) => edge.rel === 'enforces' && edge.origin === 'semantic',
+      ),
+    ).toBe(true);
+    const compositePath = verbs.shortestPath({
+      from: target.targetId,
+      to: semanticId,
+      includeLlm: true,
+    }) as unknown as { found: boolean; path: string[] };
+    expect(compositePath.found).toBe(true);
+    expect(compositePath.path).toEqual([target.targetId, semanticId]);
+    const deterministicPath = verbs.shortestPath({
+      from: target.targetId,
+      to: semanticId,
+    }) as unknown as { found: boolean };
+    expect(deterministicPath.found).toBe(false);
 
     const overview = verbs.overview() as unknown as { analyses: Array<{ targetId: string }> };
     expect(overview.analyses.some((a) => a.targetId === target.targetId)).toBe(true);
@@ -615,6 +901,84 @@ describe('verbs', () => {
     expect(
       (verbs.describes({ id: issue.id, extractedOnly: true }) as unknown as DescribesResult).docs,
     ).toHaveLength(0);
+  });
+});
+
+describe('M2.6 ifHash — stateless change-aware response cache', () => {
+  it('context returns a blake3 hash; echoing it as ifHash collapses the body to unchanged:true', () => {
+    const first = verbs.context({ id: login.id }) as unknown as ContextResult;
+    expect(first.hash).toMatch(/^blake3:[0-9a-f]{64}$/);
+    expect(first.unchanged).toBeUndefined();
+    // the full body is present on the first call
+    expect(first.node.name).toBe('login');
+
+    const cached = verbs.context({ id: login.id, ifHash: first.hash }) as unknown as ContextResult;
+    expect(cached.unchanged).toBe(true);
+    expect(cached.hash).toBe(first.hash);
+    // the body is gone — the whole point is the client does not re-receive it
+    expect(cached.node).toBeUndefined();
+    expect(cached.callers).toBeUndefined();
+  });
+
+  it('context with a stale ifHash returns the full body + a fresh hash (no false unchanged)', () => {
+    const first = verbs.context({ id: login.id }) as unknown as ContextResult;
+    const stale = verbs.context({
+      id: login.id,
+      ifHash: 'blake3:deadbeef',
+    }) as unknown as ContextResult;
+    expect(stale.unchanged).toBeUndefined();
+    expect(stale.hash).toBe(first.hash); // rebuilt identical → same fingerprint
+    expect(stale.node).toBeDefined();
+  });
+
+  it('context fingerprint is stable across independent calls (deterministic, no state)', () => {
+    const a = verbs.context({ id: login.id }) as unknown as ContextResult;
+    const b = verbs.context({ id: login.id }) as unknown as ContextResult;
+    expect(a.hash).toBe(b.hash);
+  });
+
+  it('source echoes its hash to unchanged:true; a different id yields a different hash', () => {
+    const first = verbs.source({ id: login.id }) as unknown as SourceResult;
+    expect(first.hash).toMatch(/^blake3:/);
+    const cached = verbs.source({ id: login.id, ifHash: first.hash }) as unknown as SourceResult;
+    expect(cached.unchanged).toBe(true);
+    expect(cached.node).toBeUndefined();
+
+    const other = verbs.source({ id: issue.id }) as unknown as SourceResult;
+    expect(other.hash).not.toBe(first.hash);
+  });
+
+  it('dossier (json) collapses on a matching ifHash', () => {
+    const first = verbs.dossier({ id: login.id }) as unknown as {
+      hash?: string;
+      unchanged?: boolean;
+      id?: string;
+    };
+    expect(first.hash).toMatch(/^blake3:/);
+    const cached = verbs.dossier({ id: login.id, ifHash: first.hash }) as unknown as {
+      hash?: string;
+      unchanged?: boolean;
+      id?: string;
+    };
+    expect(cached.unchanged).toBe(true);
+    expect(cached.hash).toBe(first.hash);
+    expect(cached.id).toBeUndefined();
+  });
+
+  it('dossier (markdown) collapses on a matching ifHash', () => {
+    const first = verbs.dossier({
+      id: login.id,
+      format: 'markdown',
+    }) as unknown as { hash?: string; unchanged?: boolean; markdown?: string };
+    expect(first.hash).toMatch(/^blake3:/);
+    expect(first.markdown).toBeDefined();
+    const cached = verbs.dossier({
+      id: login.id,
+      format: 'markdown',
+      ifHash: first.hash,
+    }) as unknown as { hash?: string; unchanged?: boolean; markdown?: string };
+    expect(cached.unchanged).toBe(true);
+    expect(cached.markdown).toBeUndefined();
   });
 });
 
@@ -919,6 +1283,547 @@ describe('crib-enrich scope picker — scopes / scope / deterministic batchId / 
     };
     expect(whole.system).toBeDefined();
     expect(whole.system!.purpose).toBe('bible');
+  });
+});
+
+describe('overview v2 — module-segmented, importance-ranked, lean by default', () => {
+  // Uses the shared `verbs` soul (handle/login/issue under src/, a doc-section under docs/) — no
+  // workspace meta stamped → directory-fallback modules `src`, `docs`, `(root)`.
+
+  it('default output is lean v2: version 2, modules always present, no `full`/`graph` blobs', () => {
+    const ov = verbs.overview() as unknown as {
+      version: number;
+      modules: Array<{ id: string }>;
+      analyses: Array<Record<string, unknown>>;
+      full?: unknown;
+    };
+    expect(ov.version).toBe(2);
+    expect(ov.modules.length).toBeGreaterThan(0);
+    expect(ov.analyses).toEqual([]); // no LLM artifacts yet
+    expect(ov.full).toBeUndefined(); // blobs opt-in only
+  });
+
+  it('lean analyses carry no graph/evidence keys (the token-cost promise)', () => {
+    // Save one symbol artifact so analyses is non-empty.
+    const batch = verbs.enrichNext({ layer: 'symbol', limit: 10 }) as unknown as EnrichNextResult;
+    const target = batch.items.find((i) => i.targetId === login.id) ?? batch.items[0]!;
+    verbs.enrichSave({
+      batchId: batch.batchId,
+      items: [
+        {
+          targetId: target.targetId,
+          model: 'host-model',
+          analysis: { purpose: 'login', responsibilities: ['auth'], confidence: 0.9 },
+          graph: { nodes: [], edges: [] },
+          evidence: [],
+        },
+      ],
+    });
+    const ov = verbs.overview() as unknown as {
+      analyses: Array<Record<string, unknown>>;
+    };
+    const pointer = ov.analyses.find((a) => a.targetId === target.targetId)!;
+    expect(pointer).toBeDefined();
+    expect(pointer.purpose).toBe('login');
+    expect(pointer.graph).toBeUndefined();
+    expect(pointer.evidence).toBeUndefined();
+    expect(pointer.analysis).toBeUndefined();
+  });
+
+  it('withLlm:true folds the full analysis+graph+evidence blobs into `full`', () => {
+    const batch = verbs.enrichNext({ layer: 'symbol', limit: 10 }) as unknown as EnrichNextResult;
+    const target = batch.items.find((i) => i.targetId === login.id) ?? batch.items[0]!;
+    verbs.enrichSave({
+      batchId: batch.batchId,
+      items: [
+        {
+          targetId: target.targetId,
+          model: 'host-model',
+          analysis: { purpose: 'login', responsibilities: ['auth'], confidence: 0.9 },
+          graph: {
+            nodes: [{ localId: 'n1', kind: 'rule', name: 'r', attributes: {} }],
+            edges: [],
+          },
+          evidence: [{ soulId: target.targetId, why: 'seed' }],
+        },
+      ],
+    });
+    const ov = verbs.overview({ withLlm: true }) as unknown as {
+      full?: Array<Record<string, unknown>>;
+    };
+    expect(ov.full).toBeDefined();
+    const blob = ov.full!.find((f) => f.targetId === target.targetId)!;
+    expect(blob).toBeDefined();
+    expect(blob.analysis).toBeDefined();
+    expect(blob.graph).toBeDefined();
+    expect(blob.evidence).toBeDefined();
+  });
+
+  it('a pre-v2 overview.json cache is auto-rebuilt to v2 (free migration)', () => {
+    // Hand-write a v1-shaped cache (version absent) the way the old buildOverview wrote it.
+    const cachePath = join(repo, '.crib', 'index', 'overview.json');
+    mkdirSync(dirname(cachePath), { recursive: true });
+    writeFileSync(
+      cachePath,
+      `${JSON.stringify({
+        version: 1,
+        builtAgainstHead: soul.getManifest().repo.vcsHead ?? null,
+        analyses: [
+          { layer: 'symbol', targetId: 'stale-v1', analysis: {}, graph: {}, evidence: [] },
+        ],
+      })}\n`,
+    );
+    const ov = verbs.overview() as unknown as { version: number; modules: unknown[] };
+    expect(ov.version).toBe(2); // v1 cache ignored, rebuilt
+    expect(ov.modules.length).toBeGreaterThan(0);
+  });
+
+  it('module coverage counts a fresh saved symbol toward fresh/pct', () => {
+    const batch = verbs.enrichNext({ layer: 'symbol', limit: 10 }) as unknown as EnrichNextResult;
+    const target = batch.items.find((i) => i.targetId === login.id) ?? batch.items[0]!;
+    verbs.enrichSave({
+      batchId: batch.batchId,
+      items: [
+        {
+          targetId: target.targetId,
+          model: 'host-model',
+          analysis: { purpose: 'login', responsibilities: ['auth'], confidence: 0.9 },
+          graph: { nodes: [], edges: [] },
+          evidence: [],
+        },
+      ],
+    });
+    const ov = verbs.overview() as unknown as {
+      modules: Array<{
+        pathPrefix: string;
+        coverage: { fresh: number; pending: number; pct: number };
+      }>;
+    };
+    // The shared soul has no workspace meta → directory fallback with descent (all symbols under
+    // `src/` → modules split into src/auth, src/http, src/token). The login symbol lands in one of
+    // them; that module's coverage reflects the fresh save.
+    const withFresh = ov.modules.find((m) => m.coverage.fresh >= 1);
+    expect(withFresh).toBeDefined();
+    expect(withFresh!.coverage.pct).toBeGreaterThan(0);
+  });
+
+  it('ask overview markdown renders the modules section', () => {
+    const res = verbs.ask({ q: 'what is the architecture', format: 'markdown' }) as unknown as {
+      markdown: string;
+    };
+    expect(res.markdown).toContain('## modules');
+  });
+
+  it('scoped overview filters modules to the scope path prefix', () => {
+    const scoped = verbs.overview({ scope: { pathPrefix: 'src' } }) as unknown as {
+      modules: Array<{ pathPrefix: string }>;
+      system?: unknown;
+    };
+    expect(scoped.system).toBeUndefined(); // system whole-repo only
+    // Every served module is under the scope prefix (descent split src/ into src/auth etc., all
+    // still under `src/`); the root module and any non-src bucket are excluded.
+    expect(scoped.modules.every((m) => m.pathPrefix.startsWith('src/'))).toBe(true);
+    expect(scoped.modules.length).toBeGreaterThan(0);
+  });
+});
+
+describe('enrich queue — importance-ranked, tests last (outcome D)', () => {
+  // Self-contained soul: a high-importance hub (many callers), an alphabetically-earlier leaf with
+  // no callers, three callers, and a test helper under a .test.ts path.
+  let r4: string;
+  let s4: SoulStore;
+  let idx4: SqliteIndexStore;
+  let v4: Verbs;
+  const hub = sym('src/hub.ts', 'Z.hub', 1); // alphabetically LATER than leaf, but high importance
+  const leaf = sym('src/a.ts', 'A.leaf', 1); // alphabetically earlier, zero importance
+  const c1 = sym('src/c1.ts', 'C1.go', 1);
+  const c2 = sym('src/c2.ts', 'C2.go', 1);
+  const c3 = sym('src/c3.ts', 'C3.go', 1);
+  const testHelper = sym('src/cli.test.ts', 'H.run', 1); // test path → deprioritized
+
+  beforeEach(() => {
+    r4 = mkdtempSync(join(tmpdir(), 'crib-queue-'));
+    s4 = new SoulStore(join(r4, '.crib'), {
+      manifest: newManifest({ now: '2026-01-01T00:00:00.000Z' }),
+    });
+    s4.load();
+    s4.putNodes([
+      fileNode('src/hub.ts'),
+      fileNode('src/a.ts'),
+      fileNode('src/c1.ts'),
+      fileNode('src/c2.ts'),
+      fileNode('src/c3.ts'),
+      fileNode('src/cli.test.ts'),
+      hub,
+      leaf,
+      c1,
+      c2,
+      c3,
+      testHelper,
+    ]);
+    s4.putEdges([
+      edge(c1.id, hub.id, 'calls'),
+      edge(c2.id, hub.id, 'calls'),
+      edge(c3.id, hub.id, 'calls'),
+    ]);
+    s4.commit('2026-01-01T00:00:00.000Z');
+    idx4 = new SqliteIndexStore();
+    idx4.buildFromSoul(s4, r4);
+    v4 = new Verbs({ soul: s4, index: idx4, repoRoot: r4 });
+  });
+  afterEach(() => {
+    idx4.close();
+    rmSync(r4, { recursive: true, force: true });
+  });
+
+  it('returns the high-importance hub before the alphabetically-earlier leaf', () => {
+    const batch = v4.enrichNext({ layer: 'symbol', limit: 1 }) as unknown as {
+      selectedTargetIds: string[];
+    };
+    expect(batch.selectedTargetIds[0]).toBe(hub.id); // not leaf (alphabetical) — importance wins
+  });
+
+  it('sorts the test helper after every non-test target', () => {
+    const batch = v4.enrichNext({ layer: 'symbol', limit: 25 }) as unknown as {
+      selectedTargetIds: string[];
+    };
+    const ids = batch.selectedTargetIds;
+    const testIdx = ids.indexOf(testHelper.id);
+    expect(testIdx).toBeGreaterThanOrEqual(0);
+    for (const id of ids) {
+      if (id !== testHelper.id) expect(ids.indexOf(id)).toBeLessThan(testIdx);
+    }
+  });
+
+  it('batchId is unchanged for the same pending set regardless of limit', () => {
+    const a = v4.enrichNext({ layer: 'symbol', limit: 1 }) as unknown as { batchId: string };
+    const b = v4.enrichNext({ layer: 'symbol', limit: 5 }) as unknown as { batchId: string };
+    expect(b.batchId).toBe(a.batchId);
+  });
+
+  it('is deterministic — same pending set yields the same selectedTargetIds order', () => {
+    const a = v4.enrichNext({ layer: 'symbol', limit: 25 }) as unknown as {
+      selectedTargetIds: string[];
+    };
+    const b = v4.enrichNext({ layer: 'symbol', limit: 25 }) as unknown as {
+      selectedTargetIds: string[];
+    };
+    expect(b.selectedTargetIds).toEqual(a.selectedTargetIds);
+  });
+});
+
+describe('enrich_next — token-packed batch selection (WP1)', () => {
+  // 34 structurally-identical leaf symbols (no callers, no source on disk ⇒ uniform per-item cost)
+  // prove the packer fills a batch by TOKEN BUDGET, not a hardcoded item count. Paths/lines are
+  // length-padded so every work item has the same serialized size ⇒ the per-item cost C is uniform
+  // and exact batch counts are deterministic. This is the fixture the "34 symbols ⇒ ~9 turns" bug
+  // report was about: under the old count-capped selector it took 9 batches; token-packing collapses
+  // it to ~2.
+  let rp: string;
+  let sp: SoulStore;
+  let idxp: SqliteIndexStore;
+  let vp: Verbs;
+  const N = 34;
+  const paths = Array.from({ length: N }, (_, i) => `src/s${String(i).padStart(2, '0')}.ts`);
+  const syms: Node[] = paths.map((p, i) => sym(p, 'S.run', 100 + i)); // 100+i ⇒ uniform 3-digit line
+
+  beforeEach(() => {
+    rp = mkdtempSync(join(tmpdir(), 'crib-pack-'));
+    sp = new SoulStore(join(rp, '.crib'), {
+      manifest: newManifest({ now: '2026-01-01T00:00:00Z' }),
+    });
+    sp.load();
+    sp.putNodes([...paths.map((p) => fileNode(p)), ...syms]);
+    sp.commit('2026-01-01T00:00:00Z');
+    idxp = new SqliteIndexStore();
+    idxp.buildFromSoul(sp, rp);
+    vp = new Verbs({ soul: sp, index: idxp, repoRoot: rp });
+  });
+  afterEach(() => {
+    idxp.close();
+    rmSync(rp, { recursive: true, force: true });
+  });
+
+  /** Derive the uniform per-item cost C and the full importance-ordered pending list (limit-capped). */
+  function fullBatch() {
+    return vp.enrichNext({
+      layer: 'symbol',
+      limit: 25,
+      budgetTokens: N * 1_000_000,
+    }) as unknown as {
+      costEstimate: { perItem: Array<{ tokens: number }> };
+      selectedTargetIds: string[];
+    };
+  }
+
+  it('fixture is uniform-cost (per-item tokens equal) — prerequisite for the exact-count tests', () => {
+    const full = fullBatch();
+    const costs = full.costEstimate.perItem.map((p) => p.tokens);
+    const c = costs[0]!;
+    expect(c).toBeGreaterThan(0);
+    expect(costs.every((x) => x === c)).toBe(true);
+  });
+
+  it('packs many cheap items into one batch (limit-capped at 25), not the old hardcoded 4', () => {
+    const full = fullBatch();
+    const c = full.costEstimate.perItem[0]!.tokens;
+    const batch = vp.enrichNext({ layer: 'symbol', limit: 25, budgetTokens: N * c }) as unknown as {
+      items: unknown[];
+      remaining: number;
+      costEstimate: { batch: number };
+    };
+    expect(batch.items).toHaveLength(25); // limit ceiling, NOT 4
+    expect(batch.remaining).toBe(N - 25);
+    expect(batch.costEstimate.batch).toBeLessThanOrEqual(N * c);
+  });
+
+  it('default (no explicit budget) packs ≫4 items per batch — token-packed, not count-capped at 4', () => {
+    const batch = vp.enrichNext({ layer: 'symbol', limit: 25 }) as unknown as { items: unknown[] };
+    expect(batch.items.length).toBeGreaterThan(4); // the reported bug: was 4, now budget-driven
+  });
+
+  it('a tight budget packs few items and never exceeds the budget when ≥2 fit', () => {
+    const c = fullBatch().costEstimate.perItem[0]!.tokens;
+    const budget = 3 * c;
+    const batch = vp.enrichNext({
+      layer: 'symbol',
+      limit: 25,
+      budgetTokens: budget,
+    }) as unknown as {
+      items: unknown[];
+      costEstimate: { batch: number };
+      budgetExceeded?: boolean;
+      oversized?: boolean;
+    };
+    expect(batch.items).toHaveLength(3); // 3 fit; the 4th would overflow ⇒ strict prefix stops
+    expect(batch.costEstimate.batch).toBeLessThanOrEqual(budget);
+    expect(batch.budgetExceeded).not.toBe(true);
+    expect(batch.oversized).not.toBe(true);
+  });
+
+  it('batch cost never exceeds the budget whenever ≥2 items fit (sweep)', () => {
+    const c = fullBatch().costEstimate.perItem[0]!.tokens;
+    for (const k of [2, 5, 10, 25]) {
+      const batch = vp.enrichNext({
+        layer: 'symbol',
+        limit: 25,
+        budgetTokens: k * c,
+      }) as unknown as {
+        items: unknown[];
+        costEstimate: { batch: number };
+      };
+      expect(batch.items).toHaveLength(Math.min(k, 25));
+      expect(batch.costEstimate.batch).toBeLessThanOrEqual(k * c);
+    }
+  });
+
+  it('oversized single item returns alone with oversized:true — queue never stalls', () => {
+    const batch = vp.enrichNext({ layer: 'symbol', limit: 25, budgetTokens: 1 }) as unknown as {
+      items: unknown[];
+      budgetExceeded: boolean;
+      oversized: boolean;
+      budget: number;
+    };
+    expect(batch.items).toHaveLength(1); // returned alone, NOT an empty batch
+    expect(batch.budgetExceeded).toBe(true);
+    expect(batch.oversized).toBe(true);
+    expect(batch.budget).toBe(1);
+  });
+
+  it('batchId is identical across different limit/budget values for the same pending set', () => {
+    const a = vp.enrichNext({ layer: 'symbol', limit: 25 }) as unknown as { batchId: string };
+    const b = vp.enrichNext({ layer: 'symbol', limit: 5, budgetTokens: 100_000 }) as unknown as {
+      batchId: string;
+    };
+    const c = vp.enrichNext({ layer: 'symbol', limit: 25, budgetTokens: 1 }) as unknown as {
+      batchId: string;
+    };
+    expect(a.batchId).toBe(b.batchId);
+    expect(b.batchId).toBe(c.batchId);
+  });
+
+  it('selection is a strict prefix of the importance-ordered pending list (no skipping)', () => {
+    const full = fullBatch();
+    const fullOrder = full.selectedTargetIds; // 25-item prefix (limit cap)
+    const c = full.costEstimate.perItem[0]!.tokens;
+    const partial = vp.enrichNext({
+      layer: 'symbol',
+      limit: 25,
+      budgetTokens: 4 * c,
+    }) as unknown as {
+      selectedTargetIds: string[];
+    };
+    // 4 items fit ⇒ the batch is exactly the first 4 of the full order — the packer never skips a
+    // non-fitting item to grab a smaller later one (that would starve fat-but-important targets).
+    expect(partial.selectedTargetIds).toEqual(fullOrder.slice(0, 4));
+  });
+
+  it('--limit 25 --budget-tokens N makes progress (the old deadlock is gone)', () => {
+    const c = fullBatch().costEstimate.perItem[0]!.tokens;
+    // Old behavior: a budget guard returned an EMPTY batch + budgetExceeded, deadlocking the queue.
+    // Now the budget is a packer: it fills a batch that fits and makes progress.
+    const batch = vp.enrichNext({
+      layer: 'symbol',
+      limit: 25,
+      budgetTokens: 10 * c,
+    }) as unknown as {
+      items: unknown[];
+      budgetExceeded?: boolean;
+    };
+    expect(batch.items.length).toBeGreaterThan(0);
+    expect(batch.budgetExceeded).not.toBe(true);
+  });
+});
+
+describe('enrich skeleton system pass (outcome C, Phase 0.5)', () => {
+  // Uses the shared `verbs` soul (handle/login/issue) so the system target exists.
+
+  it('returns a single skeleton work item seeded from the functional map, distinct batchId', () => {
+    const batch = verbs.enrichNext({ layer: 'system', skeleton: true }) as unknown as {
+      batchId: string;
+      items: Array<{ targetId: string; seed: { functionalMap?: unknown } }>;
+      selectedTargetIds: string[];
+    };
+    expect(batch.batchId.startsWith('llm:system-skeleton:')).toBe(true);
+    expect(batch.items).toHaveLength(1);
+    expect(batch.items[0]!.targetId).toBe('system:repo');
+    expect(batch.items[0]!.seed.functionalMap).toBeDefined();
+    expect(batch.selectedTargetIds).toEqual(['system:repo']);
+  });
+
+  it('after a skeleton save, the system layer is still pending and the full pass is offered', () => {
+    const skel = verbs.enrichNext({ layer: 'system', skeleton: true }) as unknown as {
+      batchId: string;
+      items: Array<{ targetId: string }>;
+    };
+    verbs.enrichSave({
+      batchId: skel.batchId,
+      items: [
+        {
+          targetId: skel.items[0]!.targetId,
+          model: 'host-model',
+          analysis: { purpose: 'draft bible', responsibilities: ['tbd'], confidence: 0.5 },
+          graph: { nodes: [], edges: [] },
+          evidence: [],
+        },
+      ],
+    });
+    // status: skeleton counts as missing for queue purposes → system still pending; skeleton present.
+    const st = verbs.enrichStatus() as unknown as {
+      layers: { system: { missing: number; fresh: number } };
+      systemSkeleton: { present: boolean; fresh: boolean };
+    };
+    expect(st.systemSkeleton.present).toBe(true);
+    expect(st.systemSkeleton.fresh).toBe(true);
+    expect(st.layers.system.missing).toBe(1); // skeleton does NOT satisfy the layer
+    // full pass still offered (non-skeleton next on system returns a work item).
+    const full = verbs.enrichNext({ layer: 'system' }) as unknown as {
+      batchId: string;
+      items: Array<{ targetId: string }>;
+    };
+    expect(full.batchId.startsWith('llm:system:')).toBe(true);
+    expect(full.items.length).toBeGreaterThan(0);
+  });
+
+  it('overview uses the skeleton as the system bible when it is the only system artifact', () => {
+    const skel = verbs.enrichNext({ layer: 'system', skeleton: true }) as unknown as {
+      batchId: string;
+      items: Array<{ targetId: string }>;
+    };
+    verbs.enrichSave({
+      batchId: skel.batchId,
+      items: [
+        {
+          targetId: skel.items[0]!.targetId,
+          model: 'host-model',
+          analysis: { purpose: 'draft bible', responsibilities: ['tbd'], confidence: 0.5 },
+          graph: { nodes: [], edges: [] },
+          evidence: [],
+        },
+      ],
+    });
+    const ov = verbs.overview() as unknown as {
+      system?: { purpose: string };
+      systemProvenance?: { mode: 'skeleton' | 'full'; stale: boolean };
+    };
+    expect(ov.system?.purpose).toBe('draft bible');
+    expect(ov.systemProvenance?.mode).toBe('skeleton');
+  });
+
+  it('a full system save overwrites the skeleton and satisfies the layer', () => {
+    // author + save a skeleton first
+    const skel = verbs.enrichNext({ layer: 'system', skeleton: true }) as unknown as {
+      batchId: string;
+      items: Array<{ targetId: string }>;
+    };
+    verbs.enrichSave({
+      batchId: skel.batchId,
+      items: [
+        {
+          targetId: skel.items[0]!.targetId,
+          model: 'host-model',
+          analysis: { purpose: 'draft', responsibilities: ['tbd'], confidence: 0.5 },
+          graph: { nodes: [], edges: [] },
+          evidence: [],
+        },
+      ],
+    });
+    // then the full pass overwrites it
+    const full = verbs.enrichNext({ layer: 'system' }) as unknown as {
+      batchId: string;
+      items: Array<{ targetId: string }>;
+    };
+    verbs.enrichSave({
+      batchId: full.batchId,
+      items: [
+        {
+          targetId: full.items[0]!.targetId,
+          model: 'host-model',
+          analysis: { purpose: 'real bible', responsibilities: ['arch'], confidence: 0.9 },
+          graph: { nodes: [], edges: [] },
+          // W7: a full system pass satisfies the layer only when `verified` (grounded). Ground it
+          // against the login symbol's rehydrated span (`return issue(user, pass)`) so the full
+          // bible is `verified` → fresh, not a `legacy` stub still pending.
+          evidence: [{ soulId: login.id, quote: 'return issue(user, pass)' }],
+        },
+      ],
+    });
+    const st = verbs.enrichStatus() as unknown as {
+      layers: { system: { missing: number; fresh: number } };
+      systemSkeleton: { present: boolean };
+    };
+    expect(st.layers.system.missing).toBe(0); // full satisfies the layer
+    expect(st.layers.system.fresh).toBe(1);
+    expect(st.systemSkeleton.present).toBe(false); // overwritten — mode gone
+    const ov = verbs.overview() as unknown as {
+      system?: { purpose: string };
+      systemProvenance?: { mode: 'skeleton' | 'full' };
+    };
+    expect(ov.system?.purpose).toBe('real bible');
+    expect(ov.systemProvenance?.mode).toBe('full');
+  });
+
+  it('a second skeleton next returns an empty batch once a fresh skeleton exists', () => {
+    const skel = verbs.enrichNext({ layer: 'system', skeleton: true }) as unknown as {
+      batchId: string;
+      items: Array<{ targetId: string }>;
+    };
+    verbs.enrichSave({
+      batchId: skel.batchId,
+      items: [
+        {
+          targetId: skel.items[0]!.targetId,
+          model: 'host-model',
+          analysis: { purpose: 'draft', responsibilities: ['tbd'], confidence: 0.5 },
+          graph: { nodes: [], edges: [] },
+          evidence: [],
+        },
+      ],
+    });
+    const again = verbs.enrichNext({ layer: 'system', skeleton: true }) as unknown as {
+      items: unknown[];
+    };
+    expect(again.items).toEqual([]); // fresh skeleton already present — nothing to re-author
   });
 });
 
@@ -1851,5 +2756,471 @@ describe('dossierByScope — bulk per-symbol dossiers (WS-4)', () => {
     }) as unknown as DossiersByScopeResult;
     const soEx = ex.symbols.find((d) => d.node.qualifiedName === 'PKG_RULES.SPEC_ONLY')!;
     expect(soEx.callees.map((c) => c.qualifiedName)).not.toContain('PKG_RULES.HELPER');
+  });
+
+  // M1.2 — response-wide token budget on dossier_by_scope. The 3-member PKG_RULES fixture is the
+  // ground truth here. A budget is "realistic" when it sits above the scope-metadata skeleton (so the
+  // gate can hold) but below the full 3-dossier response (so the fit trims). We pick such a budget by
+  // measuring the full response first, then halving it.
+  it('M1.2: the non-maxTokens path is unchanged (no budgetExhausted / no cursor)', () => {
+    const res = verbs.dossierByScope({
+      scope: 'package',
+      id: 'PKG_RULES',
+    }) as unknown as DossiersByScopeResult;
+    expect(res.budgetExhausted).toBeUndefined();
+    expect(res.cursor).toBeUndefined();
+    expect(res.symbolCount).toBe(3);
+  });
+
+  it('M1.2: maxTokens trims the dossiers to fit + signals budgetExhausted + a cursor', () => {
+    const full = verbs.dossierByScope({
+      scope: 'package',
+      id: 'PKG_RULES',
+    }) as unknown as DossiersByScopeResult;
+    const fullTokens = estimateTokens(JSON.stringify(full));
+    // A budget just above ONE dossier + the scope skeleton (so ≥1 survives) but below the full
+    // 3-dossier response (so the fit trims). Measured from the real 1-dossier response + a margin
+    // for the budgetExhausted/cursor signal fields the non-maxTokens path omits.
+    const oneDossierTokens = estimateTokens(
+      JSON.stringify({ ...full, symbols: [full.symbols[0]] }),
+    );
+    const tight = oneDossierTokens + 16;
+    expect(tight).toBeLessThan(fullTokens);
+    const res = verbs.dossierByScope({
+      scope: 'package',
+      id: 'PKG_RULES',
+      maxTokens: tight,
+    }) as unknown as DossiersByScopeResult;
+    expect(estimateTokens(JSON.stringify(res))).toBeLessThanOrEqual(tight);
+    expect(res.budgetExhausted).toBe(true);
+    expect(typeof res.cursor).toBe('string');
+    expect(res.symbols.length).toBeLessThan(3);
+    expect(res.symbols.length).toBeGreaterThan(0);
+  });
+
+  it('M1.2: a generous maxTokens keeps all 3 dossiers + budgetExhausted:false + no cursor', () => {
+    const res = verbs.dossierByScope({
+      scope: 'package',
+      id: 'PKG_RULES',
+      maxTokens: 1_000_000,
+    }) as unknown as DossiersByScopeResult;
+    expect(res.budgetExhausted).toBe(false);
+    expect(res.cursor).toBeUndefined();
+    expect(res.symbols.length).toBe(3);
+  });
+
+  it('M1.2: cursor paging resumes past a budget cut (offset advances past page1 head)', () => {
+    const full = verbs.dossierByScope({
+      scope: 'package',
+      id: 'PKG_RULES',
+    }) as unknown as DossiersByScopeResult;
+    // Same budget basis as the trim test: just above ONE dossier + skeleton so page1 carries exactly
+    // one dossier (the head), and the cursor advances past it.
+    const oneDossierTokens = estimateTokens(
+      JSON.stringify({ ...full, symbols: [full.symbols[0]] }),
+    );
+    const tight = oneDossierTokens + 16;
+    const page1 = verbs.dossierByScope({
+      scope: 'package',
+      id: 'PKG_RULES',
+      maxTokens: tight,
+    }) as unknown as DossiersByScopeResult;
+    expect(estimateTokens(JSON.stringify(page1))).toBeLessThanOrEqual(tight);
+    expect(page1.budgetExhausted).toBe(true);
+    expect(typeof page1.cursor).toBe('string');
+    expect(page1.symbols.length).toBeGreaterThan(0);
+
+    // resume at the cursor — the offset advanced, so page2's leading symbol differs from page1's.
+    const page2 = verbs.dossierByScope({
+      scope: 'package',
+      id: 'PKG_RULES',
+      maxTokens: tight,
+      cursor: page1.cursor,
+    }) as unknown as DossiersByScopeResult;
+    expect(estimateTokens(JSON.stringify(page2))).toBeLessThanOrEqual(tight);
+    const p1Head = page1.symbols[0]?.node.id;
+    const p2Head = page2.symbols[0]?.node.id;
+    expect(p1Head).toBeDefined();
+    expect(p2Head).not.toBe(p1Head);
+  });
+});
+
+describe('M0.5 verb hard caps — absurd params are clamped, not honored', () => {
+  it('impact clamps limit/depth/docLimit without throwing', () => {
+    const res = verbs.impact({
+      id: login.id,
+      dir: 'down',
+      limit: 1_000_000,
+      depth: 1_000_000,
+      docLimit: 1_000_000,
+    }) as unknown as ImpactResult;
+    // only `issue` is reachable downward; the absurd depth/limit never explodes the traversal
+    expect(res.affected.map((a) => a.id)).toEqual([issue.id]);
+  });
+
+  it('query clamps an absurd limit to MAX_LIMIT', () => {
+    const res = verbs.query({ q: 'login', limit: 1_000_000 }) as unknown as QueryResult;
+    expect(res.hits.length).toBeLessThanOrEqual(200);
+    expect(res.truncated).toBe(false);
+  });
+
+  it('neighbors clamps an absurd limit to MAX_LIMIT', () => {
+    const res = verbs.neighbors({ id: login.id, limit: 1_000_000 }) as unknown as NeighborsResult;
+    expect(res.edges.length).toBeLessThanOrEqual(200);
+  });
+
+  it('shortestPath clamps an absurd maxHops to MAX_HOPS and still resolves', () => {
+    const res = verbs.shortestPath({
+      from: handle.id,
+      to: issue.id,
+      maxHops: 1_000_000,
+    }) as unknown as ShortestPathResult;
+    expect(res.found).toBe(true);
+    expect(res.path.length).toBeLessThanOrEqual(64 + 1);
+  });
+
+  it('source clamps absurd maxChars/maxLines to the source caps', () => {
+    const res = verbs.source({
+      id: login.id,
+      maxChars: 99_999_999,
+      maxLines: 99_999_999,
+    }) as unknown as SourceResult;
+    expect(res.source.text.length).toBeLessThanOrEqual(512 * 1024);
+    expect(res.source.truncated).toBe(false); // the on-disk body is tiny, so nothing is dropped
+  });
+});
+
+// M1.2 — token-true budgets: every opt-in `maxTokens` response must fit the budget (chars/4), and
+// signal `budgetExhausted` + a `cursor` when content was dropped. The non-maxTokens path is
+// byte-identical to before (asserted once per verb) so the feature is strictly additive.
+describe('M1.2 token-true budgets — no verb response exceeds maxTokens', () => {
+  it('query: the non-maxTokens path is unchanged (no cursor / no budgetExhausted)', () => {
+    const res = verbs.query({ q: 'login' }) as unknown as QueryResult;
+    expect(res.budgetExhausted).toBeUndefined();
+    expect(res.cursor).toBeUndefined();
+    expect(res.truncated).toBe(false);
+    expect(res.hits.length).toBeGreaterThan(0);
+  });
+
+  it('query --with-source: a tight maxTokens trims hits to fit + signals exhaustion + cursor', () => {
+    // query that matches at least one symbol so the fit has something to trim.
+    const tiny = 20;
+    const res = verbs.query({
+      q: 'login',
+      withSource: true,
+      maxTokens: tiny,
+    }) as unknown as QueryResult;
+    expect(estimateTokens(JSON.stringify(res))).toBeLessThanOrEqual(tiny);
+    // either the body fit within the tiny budget (no exhaustion) or it was trimmed (exhausted).
+    if (res.budgetExhausted) {
+      expect(typeof res.cursor).toBe('string');
+    }
+  });
+
+  it('query --with-source: a generous maxTokens leaves the hits intact + no exhaustion', () => {
+    const res = verbs.query({
+      q: 'login',
+      withSource: true,
+      maxTokens: 1_000_000,
+    }) as unknown as QueryResult;
+    expect(res.budgetExhausted).toBe(false);
+    expect(res.cursor).toBeUndefined();
+    expect(res.hits.length).toBeGreaterThan(0);
+  });
+
+  it('context withSource: the non-maxTokens path is unchanged', () => {
+    const res = verbs.context({ id: login.id, withSource: true }) as unknown as ContextResult;
+    expect(res.budgetExhausted).toBeUndefined();
+    expect(res.source).toBeDefined();
+  });
+
+  it('context withSource: a tight maxTokens shrinks the body to fit + signals exhaustion', () => {
+    // Build a symbol with a LARGE body so the budget shrink is real (the login body is only ~40
+    // chars — too small to trim meaningfully). A 60-line body (~3 KiB) gives the fit something to cut.
+    const bigPath = 'src/big.ts';
+    const lines = Array.from(
+      { length: 60 },
+      (_, i) => `  const v${i} = ${i}; // padding line ${i}`,
+    );
+    writeFileSync(join(repo, bigPath), `function bigBody() {\n${lines.join('\n')}\n}\n`);
+    const big = sym(bigPath, 'bigBody', 1, {
+      type: 'function',
+      // sym()'s default span is 1 line; the real body is 62 lines (the wrapper + 60 padding lines),
+      // so pass the full span — otherwise rehydration yields 2 lines and the budget has no body to cut.
+      span: { start: 1, end: 62 },
+    });
+    soul.putNodes([big]);
+    soul.commit('2026-01-01T00:00:00.000Z');
+    index.close();
+    index = new SqliteIndexStore();
+    index.buildFromSoul(soul, repo);
+    verbs = new Verbs({ soul, index, repoRoot: repo });
+
+    const full = verbs.context({ id: big.id, withSource: true }) as unknown as ContextResult;
+    const noSrc = verbs.context({ id: big.id }) as unknown as ContextResult;
+    const skeletonTokens = estimateTokens(JSON.stringify(noSrc));
+    const fullTokens = estimateTokens(JSON.stringify(full));
+    expect(fullTokens).toBeGreaterThan(skeletonTokens); // the body adds real mass
+    // a budget above the skeleton + the source-object's irreducible JSON wrapper but well below the
+    // full response → the body shrinks to fit. The wrapper (totalLines/startLine/nextLine/truncated)
+    // is ~30 tokens the no-source skeleton does not count, so a body slice (1/4 of the body mass) is
+    // the smallest budget that still leaves room for a (truncated) body.
+    const bodyMass = fullTokens - skeletonTokens;
+    const tight = skeletonTokens + Math.ceil(bodyMass / 4);
+    expect(tight).toBeLessThan(fullTokens);
+    const res = verbs.context({
+      id: big.id,
+      withSource: true,
+      maxTokens: tight,
+    }) as unknown as ContextResult;
+    expect(estimateTokens(JSON.stringify(res))).toBeLessThanOrEqual(tight);
+    expect(res.budgetExhausted).toBe(true);
+    expect(res.source).toBeDefined();
+    expect(res.source!.truncated).toBe(true);
+  });
+
+  it('context withSource: a generous maxTokens keeps the full body + no exhaustion', () => {
+    const res = verbs.context({
+      id: login.id,
+      withSource: true,
+      maxTokens: 1_000_000,
+    }) as unknown as ContextResult;
+    expect(res.budgetExhausted).toBe(false);
+    expect(res.source).toBeDefined();
+    expect(res.source!.truncated).toBe(false);
+  });
+});
+
+describe('M3.2 — federatedImpact verb crosses the route-layer bridge', () => {
+  // Two independent repos, each its own soul + index + Verbs. The primary is repoA (a client with an
+  // outbound fetch); repoB (an Express server) is passed via `roots`. The verb resolves the start id
+  // by name across both souls and returns the federated blast radius with crossRepo flags.
+  let repoA: string;
+  let repoB: string;
+  let verbsA: Verbs;
+  let verbsB: Verbs;
+  let idxA: SqliteIndexStore;
+  let idxB: SqliteIndexStore;
+  let fetchLoan: Node;
+  let call: Node;
+  let handler: Node;
+  let rt: Node;
+
+  beforeEach(() => {
+    repoA = mkdtempSync(join(tmpdir(), 'crib-fed-a-'));
+    repoB = mkdtempSync(join(tmpdir(), 'crib-fed-b-'));
+    fetchLoan = sym('client.ts', 'fetchLoan', 2);
+    call = {
+      id: idFor({
+        kind: 'http-call',
+        httpMethod: 'GET',
+        routePath: '/api/loans/:id',
+        file: 'client.ts',
+        line: 3,
+      }),
+      kind: 'http-call',
+      name: 'GET /api/loans/:id',
+      httpMethod: 'GET',
+      routePath: '/api/loans/:id',
+      framework: 'fetch',
+      file: 'client.ts',
+      span: { start: 3, end: 3 },
+      lang: 'typescript',
+      hash: contentHash('http-call:GET:/api/loans/:id'),
+    };
+    handler = sym('server.ts', 'getLoan', 4);
+    rt = {
+      id: idFor({
+        kind: 'route',
+        httpMethod: 'GET',
+        routePath: '/api/loans/:id',
+        file: 'server.ts',
+        line: 4,
+      }),
+      kind: 'route',
+      name: 'GET /api/loans/:id',
+      httpMethod: 'GET',
+      routePath: '/api/loans/:id',
+      framework: 'express',
+      file: 'server.ts',
+      span: { start: 4, end: 4 },
+      lang: 'typescript',
+      hash: contentHash('route:GET:/api/loans/:id'),
+    };
+
+    const soulA = new SoulStore(join(repoA, '.crib'), {
+      manifest: newManifest({ now: '2026-01-01T00:00:00.000Z' }),
+    });
+    soulA.load();
+    soulA.putNodes([fetchLoan, call]);
+    soulA.putEdges([edge(fetchLoan.id, call.id, 'calls')]);
+    soulA.commit('2026-01-01T00:00:00.000Z');
+    idxA = new SqliteIndexStore();
+    idxA.buildFromSoul(soulA, repoA);
+    verbsA = new Verbs({ soul: soulA, index: idxA, repoRoot: repoA });
+
+    const soulB = new SoulStore(join(repoB, '.crib'), {
+      manifest: newManifest({ now: '2026-01-01T00:00:00.000Z' }),
+    });
+    soulB.load();
+    soulB.putNodes([handler, rt]);
+    soulB.putEdges([edge(handler.id, rt.id, 'exposes')]);
+    soulB.commit('2026-01-01T00:00:00.000Z');
+    idxB = new SqliteIndexStore();
+    idxB.buildFromSoul(soulB, repoB);
+    verbsB = new Verbs({ soul: soulB, index: idxB, repoRoot: repoB });
+  });
+  afterEach(() => {
+    idxA.close();
+    idxB.close();
+    rmSync(repoA, { recursive: true, force: true });
+    rmSync(repoB, { recursive: true, force: true });
+  });
+
+  it('DOWN from repoA fetchLoan (by name) crosses to repoB route; federatedRoots lists both', () => {
+    const res = verbsA.federatedImpact({
+      id: 'fetchLoan',
+      dir: 'down',
+      roots: [repoB],
+    }) as unknown as {
+      root: string;
+      dir: string;
+      federatedRoots: string[];
+      affected: Array<{ id: string; soul: string; crossRepo: boolean; rel: string }>;
+      crossRepoHops: number;
+      truncated: boolean;
+    };
+    expect(res.federatedRoots).toContain(repoA);
+    expect(res.federatedRoots).toContain(repoB);
+    expect(res.crossRepoHops).toBeGreaterThan(0);
+    const crossed = res.affected.find((a) => a.id === rt.id && a.crossRepo);
+    expect(crossed).toBeDefined();
+    expect(crossed?.soul).toBe(repoB);
+    expect(crossed?.rel).toBe('calls-route');
+  });
+
+  it('UP from repoB route (by name "GET /api/loans/:id") crosses to repoA http-call', () => {
+    const res = verbsB.federatedImpact({ id: rt.id, dir: 'up', roots: [repoA] }) as unknown as {
+      affected: Array<{ id: string; soul: string; crossRepo: boolean }>;
+      crossRepoHops: number;
+    };
+    expect(res.crossRepoHops).toBeGreaterThan(0);
+    const callHop = res.affected.find((a) => a.id === call.id && a.crossRepo);
+    expect(callHop).toBeDefined();
+    expect(callHop?.soul).toBe(repoA);
+  });
+
+  it('returns not-found for an unknown id (no spurious federation hops)', () => {
+    const res = verbsA.federatedImpact({
+      id: 'no-such-thing',
+      dir: 'down',
+      roots: [repoB],
+    }) as unknown as {
+      error?: { code: string };
+      affected?: unknown[];
+    };
+    expect(res.affected).toBeUndefined();
+    expect(res.error?.code).toBe('NOT_FOUND');
+  });
+
+  it('with no extra roots, a single-soul call does not cross (crossRepoHops=0)', () => {
+    const res = verbsA.federatedImpact({ id: 'fetchLoan', dir: 'down' }) as unknown as {
+      crossRepoHops: number;
+      affected: Array<{ crossRepo: boolean }>;
+    };
+    expect(res.crossRepoHops).toBe(0);
+    expect(res.affected.every((a) => !a.crossRepo)).toBe(true);
+  });
+
+  it('returns a {code, message} error (NOT a bare string) when a federated root fails to load', () => {
+    // loadFederation calls SoulStore.load() per root. A MISSING .crib is tolerated (load() hydrates
+    // an empty soul — the nonexistent-root case returns a normal result, NOT an error), so to hit the
+    // FEDERATION_LOAD_FAILED branch we need a .crib that is present but unreadable: a manifest whose
+    // schemaVersion is not in SUPPORTED_SCHEMA_VERSIONS makes load() throw (soul-store.ts loader gate).
+    // The error must share the {code, message} shape of notFound so a consumer branching on
+    // `result.error?.code` sees a stable code, not `undefined` (string.code). Regression for the
+    // divergent bare-string error shape.
+    const badRoot = mkdtempSync(join(tmpdir(), 'crib-fed-bad-'));
+    mkdirSync(join(badRoot, '.crib'), { recursive: true });
+    writeFileSync(
+      join(badRoot, '.crib', 'crib.json'),
+      '{"schemaVersion":"0.0","repo":{},"stats":{}}',
+    );
+    const res = verbsA.federatedImpact({
+      id: 'fetchLoan',
+      dir: 'down',
+      roots: [badRoot],
+    }) as unknown as { error?: { code: string; message: string }; affected?: unknown[] };
+    expect(res.affected).toBeUndefined();
+    expect(res.error?.code).toBe('FEDERATION_LOAD_FAILED');
+    expect(typeof res.error?.message).toBe('string');
+    rmSync(badRoot, { recursive: true, force: true });
+  });
+});
+
+describe('M3.3 stats — Proxy interceptor wires live counters to real verb calls', () => {
+  it('getStats() returns a Stats instance with the live-numbers snapshot shape', () => {
+    const snap = verbs.getStats().snapshot();
+    expect(typeof snap.totalCalls).toBe('number');
+    expect(snap.cache).toBeDefined();
+    expect(snap.verbs).toBeDefined();
+  });
+
+  it('counts per-verb calls across direct + (simulated) MCP entry paths (the Proxy wraps both)', () => {
+    verbs.context({ id: login.id });
+    verbs.context({ id: login.id });
+    verbs.impact({ id: login.id, dir: 'down' });
+    const snap = verbs.getStats().snapshot();
+    expect(snap.verbs.context!.count).toBe(2);
+    expect(snap.verbs.impact!.count).toBe(1);
+    expect(snap.totalCalls).toBe(3);
+    // latency recorded as a non-negative real — determinism lives in verb OUTPUTS, not these counters.
+    expect(snap.verbs.context!.totalMs).toBeGreaterThanOrEqual(0);
+    expect(snap.verbs.context!.minMs).toBeLessThanOrEqual(snap.verbs.context!.maxMs);
+  });
+
+  it('does NOT double-count private helpers (applyIfHash is absent from the verbs map)', () => {
+    verbs.context({ id: login.id }); // calls this.applyIfHash internally
+    const snap = verbs.getStats().snapshot();
+    expect(snap.verbs.applyIfHash).toBeUndefined();
+    expect(snap.verbs.attachLlm).toBeUndefined();
+    expect(snap.verbs.context!.count).toBe(1);
+  });
+
+  it('ifHash cache hit rate: a matching hash is a hit, a mismatch is a miss', () => {
+    const first = verbs.context({ id: login.id }) as unknown as {
+      hash: string;
+      unchanged?: boolean;
+    };
+    expect(first.unchanged).toBeUndefined(); // first fetch is NOT a cache probe
+    // echo the prior hash → cache HIT (body collapses to {unchanged:true, hash})
+    const hit = verbs.context({ id: login.id, ifHash: first.hash }) as unknown as {
+      unchanged: boolean;
+      hash: string;
+    };
+    expect(hit.unchanged).toBe(true);
+    // a wrong hash → cache MISS (full body returned)
+    const miss = verbs.context({ id: login.id, ifHash: 'deadbeef' }) as unknown as {
+      unchanged?: boolean;
+      hash: string;
+    };
+    expect(miss.unchanged).toBeUndefined();
+    const c = verbs.getStats().snapshot().cache;
+    expect(c.hits).toBe(1);
+    expect(c.misses).toBe(1);
+    expect(c.hitRate).toBeCloseTo(0.5);
+  });
+
+  it("deterministic verb outputs are byte-identical with the interceptor on (it's transparent)", () => {
+    // The Proxy must not alter a verb result. Two calls with the same args (no ifHash) return the
+    // same body — the interceptor only times + counts, it never touches the payload.
+    const a = verbs.context({ id: login.id }) as unknown as Record<string, unknown>;
+    const b = verbs.context({ id: login.id }) as unknown as Record<string, unknown>;
+    // Strip the `hash` field (it is deterministic BLAKE3 so equal anyway) — compare the bodies.
+    const { hash: _ha, ...bodyA } = a;
+    const { hash: _hb, ...bodyB } = b;
+    expect(bodyA).toEqual(bodyB);
+    // And the hash itself is stable (deterministic fingerprint, interceptor-transparent).
+    expect(a.hash).toEqual(b.hash);
   });
 });

@@ -1,0 +1,83 @@
+{
+  "id": "sym:scripts/budget-check.mjs#runCli@L333",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:0f067ceefbe2813542eb7c4d9e679db0988290500470e87f51188c66b4b8dc50",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:scripts/budget-check.mjs#runCli@L333",
+    "kind": "symbol",
+    "type": "function",
+    "name": "runCli",
+    "qualifiedName": "runCli",
+    "signature": "runCli(cliPath, args, cwd)",
+    "lang": "javascript",
+    "file": "scripts/budget-check.mjs",
+    "span": {
+      "start": 333,
+      "end": 339
+    },
+    "callSites": [
+      {
+        "callee": "execFileSync",
+        "line": 334
+      }
+    ]
+  },
+  "source": {
+    "text": "function runCli(cliPath, args, cwd) {\n  return execFileSync(process.execPath, [cliPath, ...args], {\n    cwd,\n    encoding: 'utf8',\n    stdio: ['ignore', 'pipe', 'inherit'],\n  });\n}",
+    "truncated": false,
+    "totalLines": 7,
+    "startLine": 333
+  },
+  "callers": [],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:scripts/budget-check.mjs#runCli@L333",
+    "procedureName": "runCli",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:scripts/budget-check.mjs#runCli@L333",
+        "procedureName": "runCli",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:eb986399bc64246c30a850859e8e2c4ff8587e4558fb5dbe51f28f1f8e496b89",
+          "target": "stmt:scripts/budget-check.mjs@L334",
+          "line": 334,
+          "expr": "return execFileSync(process.execPath, [cliPath, ...args], {\n    cwd,\n    encoding: 'utf8',\n    stdio: ['ignore', 'pipe', 'inherit'],\n  });"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 1,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

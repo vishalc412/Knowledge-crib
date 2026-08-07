@@ -1,0 +1,207 @@
+{
+  "id": "sym:scripts/crib-self-hosted-e2e.mjs#McpStdioClient.request@L119",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:d65d0504c6ba467e08b15ac193c40d7daf6e71a042e37b5b1af83ccb73c7fc18",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:scripts/crib-self-hosted-e2e.mjs#McpStdioClient.request@L119",
+    "kind": "symbol",
+    "type": "method",
+    "name": "request",
+    "qualifiedName": "McpStdioClient.request",
+    "signature": "request(method, params)",
+    "lang": "javascript",
+    "file": "scripts/crib-self-hosted-e2e.mjs",
+    "span": {
+      "start": 119,
+      "end": 129
+    },
+    "callSites": [
+      {
+        "callee": "setTimeout",
+        "line": 122
+      },
+      {
+        "callee": "delete",
+        "line": 123
+      },
+      {
+        "callee": "reject",
+        "line": 124
+      },
+      {
+        "callee": "set",
+        "line": 126
+      },
+      {
+        "callee": "write",
+        "line": 127
+      },
+      {
+        "callee": "stringify",
+        "line": 127
+      }
+    ]
+  },
+  "source": {
+    "text": "  request(method, params) {\n    const id = ++this.id;\n    return new Promise((resolveResult, reject) => {\n      const timer = setTimeout(() => {\n        this.pending.delete(id);\n        reject(new Error(`MCP timeout: ${method}`));\n      }, TIMEOUT_MS);\n      this.pending.set(id, { resolve: resolveResult, reject, timer });\n      this.child.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', id, method, params })}\\n`);\n    });\n  }",
+    "truncated": false,
+    "totalLines": 11,
+    "startLine": 119
+  },
+  "callers": [
+    {
+      "id": "sym:scripts/crib-self-hosted-e2e.mjs#McpStdioClient.start@L82",
+      "confidence": 1,
+      "name": "start",
+      "qualifiedName": "McpStdioClient.start",
+      "signature": "start()",
+      "type": "method",
+      "file": "scripts/crib-self-hosted-e2e.mjs",
+      "line": 82
+    },
+    {
+      "id": "sym:scripts/crib-self-hosted-e2e.mjs#main@L165",
+      "confidence": 1,
+      "name": "main",
+      "qualifiedName": "main",
+      "signature": "main()",
+      "type": "function",
+      "file": "scripts/crib-self-hosted-e2e.mjs",
+      "line": 165
+    },
+    {
+      "id": "sym:scripts/crib-self-hosted-e2e.mjs#main.call@L185",
+      "confidence": 1,
+      "name": "call",
+      "qualifiedName": "main.call",
+      "signature": "call(…)",
+      "type": "function",
+      "file": "scripts/crib-self-hosted-e2e.mjs",
+      "line": 185
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "doc:docs/knowledge-crib-prompts.md#1-onboarding-explain-this-repo-to-me-without-reading-every-file",
+      "heading": "1. Onboarding / \"explain this repo to me\" — *without reading every file*",
+      "anchor": "1-onboarding-explain-this-repo-to-me-without-reading-every-file",
+      "snippet": "1. Onboarding / \"explain this repo to me\" — *without reading every file*",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:SECURITY.md#network-surface-inventory-the-whole-product",
+      "heading": "Network surface inventory (the whole product)",
+      "anchor": "network-surface-inventory-the-whole-product",
+      "snippet": "Network surface inventory (the whole product)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/launch/show-hn.md#body",
+      "heading": "Body",
+      "anchor": "body",
+      "snippet": "Body",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#dossier-symbol-deep-context-persisted-workstream-d-e",
+      "heading": "`dossier(symbol)` *(deep-context, persisted — Workstream D/E)*",
+      "anchor": "dossier-symbol-deep-context-persisted-workstream-d-e",
+      "snippet": "`dossier(symbol)` *(deep-context, persisted — Workstream D/E)*",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:SECURITY.md#scope",
+      "heading": "Scope",
+      "anchor": "scope",
+      "snippet": "Scope",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/README.md#document-index-read-in-order",
+      "heading": "Document index (read in order)",
+      "anchor": "document-index-read-in-order",
+      "snippet": "Document index (read in order)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#5-4-fixes-applied-to-knowledge-crib-so-other-projects-work-too",
+      "heading": "5.4 Fixes applied to Knowledge-crib (so other projects work too)",
+      "anchor": "5-4-fixes-applied-to-knowledge-crib-so-other-projects-work-too",
+      "snippet": "5.4 Fixes applied to Knowledge-crib (so other projects work too)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:scripts/crib-self-hosted-e2e.mjs#McpStdioClient.request@L119",
+    "procedureName": "McpStdioClient.request",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:scripts/crib-self-hosted-e2e.mjs#McpStdioClient.request@L119",
+        "procedureName": "McpStdioClient.request",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d5b4a7ddce76ceb445f949191b024aef418ed12bd82ad18e9bf43e79b99e788b",
+          "target": "stmt:scripts/crib-self-hosted-e2e.mjs@L121",
+          "line": 121,
+          "expr": "return new Promise((resolveResult, reject) => {\n      const timer = setTimeout(() => {\n        this.pending.delete(id);\n        reject(new Error(`MCP timeout: ${method}`));\n      }, TIMEOUT_MS);\n      this.pending.set(id, { resolve: resolveResult, reject, timer });\n      this.child.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', id, method, params })}\\n`);\n    });"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "scripts/crib-self-hosted-e2e.mjs"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 6,
+      "unresolved": 4
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "4 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

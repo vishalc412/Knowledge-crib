@@ -1,0 +1,129 @@
+{
+  "id": "sym:packages/core/src/embeddings/char-ngram.ts#decodeVec@L108",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:48efdbaad60de8da8b2cfce6047a8acc39183091c85f368714863d7de88b28a0",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/embeddings/char-ngram.ts#decodeVec@L108",
+    "kind": "symbol",
+    "type": "function",
+    "name": "decodeVec",
+    "qualifiedName": "decodeVec",
+    "signature": "decodeVec(blob: Uint8Array, dim: number): Vec",
+    "lang": "typescript",
+    "file": "packages/core/src/embeddings/char-ngram.ts",
+    "span": {
+      "start": 108,
+      "end": 113
+    },
+    "callSites": [
+      {
+        "callee": "getFloat32",
+        "line": 111
+      }
+    ]
+  },
+  "source": {
+    "text": "export function decodeVec(blob: Uint8Array, dim: number): Vec {\n  const v = new Float32Array(dim);\n  const view = new DataView(blob.buffer, blob.byteOffset, blob.byteLength);\n  for (let i = 0; i < dim; i++) v[i] = view.getFloat32(i * 4, true);\n  return v;\n}",
+    "truncated": false,
+    "totalLines": 6,
+    "startLine": 108
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.vectorQuery@L236",
+      "confidence": 1,
+      "name": "vectorQuery",
+      "qualifiedName": "SqliteIndexStore.vectorQuery",
+      "signature": "vectorQuery(text: string, limit: number, kinds?: NodeKind[]): Hit[]",
+      "type": "method",
+      "file": "packages/core/src/index/sqlite-index.ts",
+      "line": 236
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/core/src/embeddings/char-ngram.ts@L107",
+      "snippet": "/** Decode a stored float32 BLOB back into a Vec. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/embeddings/char-ngram.ts#decodeVec@L108",
+    "procedureName": "decodeVec",
+    "conditions": [
+      "cond:packages/core/src/embeddings/char-ngram.ts@L111"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/embeddings/char-ngram.ts#decodeVec@L108",
+        "procedureName": "decodeVec",
+        "guard": "cond:packages/core/src/embeddings/char-ngram.ts@L111",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/embeddings/char-ngram.ts@L111",
+            "expr": "i < dim",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:354104a7af242219d1c66a355ec63c3483a312a91fb7b6bb12c14de38c828bba",
+          "target": "assign:packages/core/src/embeddings/char-ngram.ts@L111",
+          "line": 111,
+          "expr": "v[i] = view.getFloat32(i * 4, true);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/embeddings/char-ngram.ts#decodeVec@L108",
+        "procedureName": "decodeVec",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7a17ae707e9471b9d5a66f5b5c9fdbcc0bfdd87fe9d4dd37a9b95892b718dc94",
+          "target": "stmt:packages/core/src/embeddings/char-ngram.ts@L112",
+          "line": 112,
+          "expr": "return v;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/core/src/index/sqlite-index.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 1,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 1,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

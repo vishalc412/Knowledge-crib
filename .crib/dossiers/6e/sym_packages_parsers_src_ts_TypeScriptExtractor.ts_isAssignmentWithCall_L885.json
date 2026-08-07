@@ -1,0 +1,160 @@
+{
+  "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#isAssignmentWithCall@L885",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:a6a580fb07a89b0aa5bb7aaab5100c542530fee751c22b57f443f4c1012435bc",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#isAssignmentWithCall@L885",
+    "kind": "symbol",
+    "type": "function",
+    "name": "isAssignmentWithCall",
+    "qualifiedName": "isAssignmentWithCall",
+    "signature": "isAssignmentWithCall(expr: ts.Expression): boolean",
+    "lang": "typescript",
+    "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+    "span": {
+      "start": 885,
+      "end": 890
+    },
+    "callSites": [
+      {
+        "callee": "containsCall",
+        "line": 887
+      }
+    ]
+  },
+  "source": {
+    "text": "function isAssignmentWithCall(expr: ts.Expression): boolean {\n  if (ts.isBinaryExpression(expr) && expr.operatorToken.kind === ts.SyntaxKind.EqualsToken) {\n    return containsCall(expr.right);\n  }\n  return false;\n}",
+    "truncated": false,
+    "totalLines": 6,
+    "startLine": 885
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#actionInfo@L846",
+      "confidence": 1,
+      "name": "actionInfo",
+      "qualifiedName": "actionInfo",
+      "signature": "actionInfo(stmt: ts.Statement): ActionInfo | undefined",
+      "type": "function",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 846
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#containsCall@L893",
+      "confidence": 1,
+      "name": "containsCall",
+      "qualifiedName": "containsCall",
+      "signature": "containsCall(node: ts.Node): boolean",
+      "type": "function",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 893
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/ts/TypeScriptExtractor.ts@L884",
+      "snippet": "/** Is `expr` an assignment (binary `=` or compound-assign) whose RHS contains a call? */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#isAssignmentWithCall@L885",
+    "procedureName": "isAssignmentWithCall",
+    "conditions": [
+      "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L886"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#isAssignmentWithCall@L885",
+        "procedureName": "isAssignmentWithCall",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L886",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L886",
+            "expr": "ts.isBinaryExpression(expr) && expr.operatorToken.kind === ts.SyntaxKind.EqualsToken",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:aadd2ac2a3153e7f808b97ec105d8d61930507559cd4908e1f5cc8d03eb67fa7",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L887",
+          "line": 887,
+          "expr": "return containsCall(expr.right);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#isAssignmentWithCall@L885",
+        "procedureName": "isAssignmentWithCall",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L886",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L886",
+            "expr": "ts.isBinaryExpression(expr) && expr.operatorToken.kind === ts.SyntaxKind.EqualsToken",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:fd185bd442a64c1e6afdba7b3d0333b1a0033c7047e6dc04afe2787f722aa6b3",
+          "target": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#containsCall@L893",
+          "expr": "containsCall",
+          "line": 887
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#isAssignmentWithCall@L885",
+        "procedureName": "isAssignmentWithCall",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c8acca98660912c4f6b6abdaac376b1cffc1d9a638cdb619133be183808f4cec",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L889",
+          "line": 889,
+          "expr": "return false;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/parsers/src/ts/TypeScriptExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

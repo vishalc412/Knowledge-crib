@@ -1,7 +1,7 @@
 # Knowledge-crib — Storage Layer (SoulStore + IndexStore)
 
 > Dual role [Q9]: **SoulStore** = portable source of truth (chunked JSONL, committed); **IndexStore**
-> = fast derived cache (shipped: `better-sqlite3 + FTS5`; LadybugDB planned/not-wired, gitignored, rebuildable). On-disk format is in
+> = fast derived cache (shipped: `node:sqlite + FTS5`; LadybugDB planned/not-wired, gitignored, rebuildable). On-disk format is in
 > [soul-format](knowledge-crib-soul-format.md); this doc is the API + design.
 
 ---
@@ -43,7 +43,7 @@ interface IndexStore {
 **Backends behind one interface [C3]:**
 | Backend | Status | Notes |
 |---------|--------|-------|
-| **better-sqlite3 + FTS5** | **shipped (default)** | pure-Node, zero native-binding risk; `capabilities.cypher=false`, `capabilities.vector=false` |
+| **node:sqlite + FTS5** | **shipped (default)** | built-in Node.js module, zero native-binding risk; `capabilities.cypher=false`, `capabilities.vector=false` |
 | **LadybugDB** | planned / not-wired | native graph + Cypher + vector; richest; original planned default, never shipped |
 | **sqlite-vec (vector/ANN)** | planned / not-wired | optional vector layer on the sqlite backend; no `sqlite-vec` dependency shipped today |
 

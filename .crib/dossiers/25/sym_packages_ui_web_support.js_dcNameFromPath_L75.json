@@ -1,0 +1,140 @@
+{
+  "id": "sym:packages/ui/web/support.js#dcNameFromPath@L75",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:2682e51acb3043f82f3ebef94a8ced29c871a546ae6569fa0e604e8d89c877fe",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/ui/web/support.js#dcNameFromPath@L75",
+    "kind": "symbol",
+    "type": "function",
+    "name": "dcNameFromPath",
+    "qualifiedName": "dcNameFromPath",
+    "signature": "dcNameFromPath(pathname)",
+    "lang": "javascript",
+    "file": "packages/ui/web/support.js",
+    "span": {
+      "start": 75,
+      "end": 83
+    },
+    "callSites": [
+      {
+        "callee": "decodeURIComponent",
+        "line": 78
+      },
+      {
+        "callee": "pop",
+        "line": 81
+      },
+      {
+        "callee": "split",
+        "line": 81
+      },
+      {
+        "callee": "replace",
+        "line": 82
+      },
+      {
+        "callee": "replace",
+        "line": 82
+      }
+    ]
+  },
+  "source": {
+    "text": "  function dcNameFromPath(pathname) {\n    let p = pathname || \"\";\n    try {\n      p = decodeURIComponent(p);\n    } catch {\n    }\n    const base = p.split(\"/\").pop() || \"Root\";\n    return base.replace(/\\.dc\\.html$/, \"\").replace(/\\.html?$/, \"\") || \"Root\";\n  }",
+    "truncated": false,
+    "totalLines": 9,
+    "startLine": 75
+  },
+  "callers": [
+    {
+      "id": "sym:packages/ui/web/support.js#rootNameForDocument@L131",
+      "confidence": 1,
+      "name": "rootNameForDocument",
+      "qualifiedName": "rootNameForDocument",
+      "signature": "rootNameForDocument(doc, loc)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 131
+    }
+  ],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/ui/web/support.js#dcNameFromPath@L75",
+    "procedureName": "dcNameFromPath",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/ui/web/support.js#dcNameFromPath@L75",
+        "procedureName": "dcNameFromPath",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:27562783a8569fa9b239dabe10da4c4deac5dd4a6143b8fac85b3f756687ed60",
+          "target": "assign:packages/ui/web/support.js@L78",
+          "line": 78,
+          "expr": "p = decodeURIComponent(p);"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#dcNameFromPath@L75",
+        "procedureName": "dcNameFromPath",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5cfff412e85a3ecef0297ae7e2bbf7a2520587d315e689280021f0cf112b4955",
+          "target": "stmt:packages/ui/web/support.js@L81",
+          "line": 81,
+          "expr": "const base = p.split(\"/\").pop() || \"Root\";"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#dcNameFromPath@L75",
+        "procedureName": "dcNameFromPath",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0a87f54adc347acb631bd44a2e3f86714b45c25b8dca3d1b59912295a8f410b3",
+          "target": "stmt:packages/ui/web/support.js@L82",
+          "line": 82,
+          "expr": "return base.replace(/\\.dc\\.html$/, \"\").replace(/\\.html?$/, \"\") || \"Root\";"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/ui/web/support.js"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 1,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 5,
+      "unresolved": 5
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "5 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

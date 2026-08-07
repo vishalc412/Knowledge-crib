@@ -1,0 +1,87 @@
+{
+  "version": 1,
+  "layer": "symbol",
+  "targetId": "sym:packages/cli/src/cli.ts#CliVcsAdapter.changedFilesSince@L164",
+  "nodeHash": "blake3:bd7ed8307c2fbd1762e7947d7be74200949e52ad99f0b7619b0aa6e35e06032b",
+  "schemaVersion": "1.3",
+  "builtAt": "2026-06-29T09:54:51.463Z",
+  "model": "kimi-k2.7-code:cloud",
+  "analysis": {
+    "purpose": "CliVcsAdapter.changedFilesSince is an adapter method that delegates to a standalone `changedFilesSince` utility. It provides the VCS contract (listing files changed since a reference) for the CLI's VCS adapter, keeping the adapter thin and routing the work to the real implementation.",
+    "responsibilities": [
+      "Expose a VCS method to list files changed since a given git reference",
+      "Delegate to the underlying changedFilesSince implementation"
+    ],
+    "businessRules": [],
+    "inputs": [
+      {
+        "name": "root",
+        "type": "string",
+        "description": "Repository root path to scan"
+      },
+      {
+        "name": "since",
+        "type": "string",
+        "description": "Git reference (commit, branch, tag) to compare against"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "changedFiles",
+        "type": "string[]",
+        "description": "Relative paths of files changed since the reference"
+      }
+    ],
+    "sideEffects": [
+      "May invoke git commands via the delegated utility (not visible in this body)"
+    ],
+    "errorBehavior": [
+      "Does not handle errors here; any failure from the delegated utility propagates"
+    ],
+    "invariants": [
+      "Return value is exactly what the delegated changedFilesSince utility returns"
+    ],
+    "preconditions": [
+      "The delegated `changedFilesSince` function must be importable and callable",
+      "The repository at `root` must be a valid git workspace if the utility depends on git"
+    ],
+    "postconditions": [
+      "Returns an array of changed file paths relative to root"
+    ],
+    "risks": [
+      "Thin delegation means risks depend entirely on the unresolved callee's implementation",
+      "No input validation is performed before delegation"
+    ],
+    "whatToDistrust": [
+      "The delegated `changedFilesSince` call is unresolved; its exact behavior, side effects, and error conditions are not in the seed"
+    ],
+    "confidence": 0.7
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "cap:vcs-changed-files",
+        "kind": "capability",
+        "name": "VCS changed-files query",
+        "summary": "List repository files changed since a git reference",
+        "id": "llm:sym:packages/cli/src/cli.ts#CliVcsAdapter.changedFilesSince@L164#cap:vcs-changed-files",
+        "targetId": "sym:packages/cli/src/cli.ts#CliVcsAdapter.changedFilesSince@L164"
+      }
+    ],
+    "edges": [
+      {
+        "from": "sym:packages/cli/src/cli.ts#CliVcsAdapter.changedFilesSince@L164",
+        "to": "llm:sym:packages/cli/src/cli.ts#CliVcsAdapter.changedFilesSince@L164#cap:vcs-changed-files",
+        "rel": "realizes",
+        "rationale": "The adapter method exposes the changed-files capability by delegating to the concrete utility",
+        "targetId": "sym:packages/cli/src/cli.ts#CliVcsAdapter.changedFilesSince@L164"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/cli/src/cli.ts#CliVcsAdapter.changedFilesSince@L164",
+      "why": "Lines 164-166: returns changedFilesSince(root, since)"
+    }
+  ]
+}

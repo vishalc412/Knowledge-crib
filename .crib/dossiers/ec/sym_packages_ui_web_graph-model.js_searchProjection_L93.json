@@ -1,0 +1,402 @@
+{
+  "id": "sym:packages/ui/web/graph-model.js#searchProjection@L93",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:ea53ae3c2ded6232388f828845afbd4726de01da299b6e085b81c4612feed0ce",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/ui/web/graph-model.js#searchProjection@L93",
+    "kind": "symbol",
+    "type": "function",
+    "name": "searchProjection",
+    "qualifiedName": "searchProjection",
+    "signature": "searchProjection(options, nodes, edges, byId, indexes)",
+    "lang": "javascript",
+    "file": "packages/ui/web/graph-model.js",
+    "span": {
+      "start": 93,
+      "end": 136
+    },
+    "callSites": [
+      {
+        "callee": "toLowerCase",
+        "line": 94
+      },
+      {
+        "callee": "trim",
+        "line": 94
+      },
+      {
+        "callee": "String",
+        "line": 94
+      },
+      {
+        "callee": "sort",
+        "line": 106
+      },
+      {
+        "callee": "filter",
+        "line": 106
+      },
+      {
+        "callee": "some",
+        "line": 107
+      },
+      {
+        "callee": "searchText",
+        "line": 107
+      },
+      {
+        "callee": "includes",
+        "line": 107
+      },
+      {
+        "callee": "searchRank",
+        "line": 110
+      },
+      {
+        "callee": "searchRank",
+        "line": 110
+      },
+      {
+        "callee": "localeCompare",
+        "line": 112
+      },
+      {
+        "callee": "String",
+        "line": 112
+      },
+      {
+        "callee": "String",
+        "line": 113
+      },
+      {
+        "callee": "localeCompare",
+        "line": 115
+      },
+      {
+        "callee": "map",
+        "line": 118
+      },
+      {
+        "callee": "slice",
+        "line": 118
+      },
+      {
+        "callee": "add",
+        "line": 123
+      },
+      {
+        "callee": "slice",
+        "line": 126
+      },
+      {
+        "callee": "rankIds",
+        "line": 126
+      },
+      {
+        "callee": "edgeIndexesForNodeIds",
+        "line": 133
+      }
+    ]
+  },
+  "source": {
+    "text": "  function searchProjection(options, nodes, edges, byId, indexes) {\n    const query = String(options.query || '').trim().toLowerCase();\n    if (!query) {\n      return {\n        query,\n        matchIds: [],\n        contextIds: [],\n        nodeIds: new Set(),\n        edgeIndexes: [],\n        totalMatches: 0,\n      };\n    }\n\n    const allMatches = nodes\n      .filter((node) => searchText(node).some((value) => value.includes(query)))\n      .sort((a, b) => {\n        return (\n          searchRank(a, query) - searchRank(b, query) ||\n          (b.importance || 0) - (a.importance || 0) ||\n          String(a.qualified || a.label || a.id).localeCompare(\n            String(b.qualified || b.label || b.id),\n          ) ||\n          a.id.localeCompare(b.id)\n        );\n      });\n    const matchIds = allMatches.slice(0, options.matchCap || 80).map((node) => node.id);\n    const matchSet = new Set(matchIds);\n    const contextCandidates = new Set();\n    for (const id of matchIds) {\n      for (const neighbor of indexes.archAdj[id] || []) {\n        if (!matchSet.has(neighbor)) contextCandidates.add(neighbor);\n      }\n    }\n    const contextIds = rankIds(contextCandidates, byId).slice(0, options.contextCap || 160);\n    const nodeIds = new Set([...matchIds, ...contextIds]);\n    return {\n      query,\n      matchIds,\n      contextIds,\n      nodeIds,\n      edgeIndexes: edgeIndexesForNodeIds(nodeIds, edges, indexes),\n      totalMatches: allMatches.length,\n    };\n  }",
+    "truncated": false,
+    "totalLines": 44,
+    "startLine": 93
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/fixtures/python/rules.py#add@L16",
+      "confidence": 1,
+      "name": "add",
+      "qualifiedName": "add",
+      "signature": "add(a, b)",
+      "type": "function",
+      "file": "packages/parsers/fixtures/python/rules.py",
+      "line": 16
+    },
+    {
+      "id": "sym:packages/ui/web/graph-model.js#edgeIndexesForNodeIds@L52",
+      "confidence": 1,
+      "name": "edgeIndexesForNodeIds",
+      "qualifiedName": "edgeIndexesForNodeIds",
+      "signature": "edgeIndexesForNodeIds(nodeIds, edges, indexes)",
+      "type": "function",
+      "file": "packages/ui/web/graph-model.js",
+      "line": 52
+    },
+    {
+      "id": "sym:packages/ui/web/graph-model.js#rankIds@L40",
+      "confidence": 1,
+      "name": "rankIds",
+      "qualifiedName": "rankIds",
+      "signature": "rankIds(ids, byId)",
+      "type": "function",
+      "file": "packages/ui/web/graph-model.js",
+      "line": 40
+    },
+    {
+      "id": "sym:packages/ui/web/graph-model.js#searchRank@L78",
+      "confidence": 1,
+      "name": "searchRank",
+      "qualifiedName": "searchRank",
+      "signature": "searchRank(node, query)",
+      "type": "function",
+      "file": "packages/ui/web/graph-model.js",
+      "line": 78
+    },
+    {
+      "id": "sym:packages/ui/web/graph-model.js#searchText@L63",
+      "confidence": 1,
+      "name": "searchText",
+      "qualifiedName": "searchText",
+      "signature": "searchText(node)",
+      "type": "function",
+      "file": "packages/ui/web/graph-model.js",
+      "line": 63
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/ui/web/graph-model.js@L88",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/ui/web/graph-model.js#searchProjection@L93",
+    "procedureName": "searchProjection",
+    "conditions": [
+      "cond:packages/ui/web/graph-model.js@L95",
+      "cond:packages/ui/web/graph-model.js@L121",
+      "cond:packages/ui/web/graph-model.js@L122",
+      "cond:packages/ui/web/graph-model.js@L123"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/ui/web/graph-model.js#searchProjection@L93",
+        "procedureName": "searchProjection",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:adeee5503e6a8f6fadadd9e65ecba31597e8eb82a48d0a6ebb231372d8045f71",
+          "target": "stmt:packages/ui/web/graph-model.js@L94",
+          "line": 94,
+          "expr": "const query = String(options.query || '').trim().toLowerCase();"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/graph-model.js#searchProjection@L93",
+        "procedureName": "searchProjection",
+        "guard": "cond:packages/ui/web/graph-model.js@L95",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/web/graph-model.js@L95",
+            "expr": "!query",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:64ea7722bf7383c9873b9bf3e8113a9528b4ff3a4bd0b7693380d24c77d696f0",
+          "target": "stmt:packages/ui/web/graph-model.js@L96",
+          "line": 96,
+          "expr": "return {\n        query,\n        matchIds: [],\n        contextIds: [],\n        nodeIds: new Set(),\n        edgeIndexes: [],\n        totalMatches: 0,\n      };"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/graph-model.js#searchProjection@L93",
+        "procedureName": "searchProjection",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:00f253e2766b1d40d6f8333e2a819dffc5f3d86782a9d69f2f1f45dbcb578b4a",
+          "target": "stmt:packages/ui/web/graph-model.js@L106",
+          "line": 106,
+          "expr": "const allMatches = nodes\n      .filter((node) => searchText(node).some((value) => value.includes(query)))\n      .sort((a, b) => {\n        return (\n          searchRank(a, query) - searchRank(b, query) ||\n          (b.importance || 0) - (a.importance || 0) ||\n          String(a.qualified || a.label || a.id).localeCompare(\n            String(b.qualified || b.label || b.id),\n          ) ||\n          a.id.localeCompare(b.id)\n        );\n      });"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/graph-model.js#searchProjection@L93",
+        "procedureName": "searchProjection",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:accab57e1052a1c58ea3be084979dfea5fe6c3aa0d662f8d70ec12d8550d64dc",
+          "target": "sym:packages/ui/web/graph-model.js#searchText@L63",
+          "expr": "searchText",
+          "line": 107
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/graph-model.js#searchProjection@L93",
+        "procedureName": "searchProjection",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:bde75be81dec1775c45cc45cee50f7e5e137807309eca7eaf71c4fc9c336f079",
+          "target": "sym:packages/ui/web/graph-model.js#searchRank@L78",
+          "expr": "searchRank",
+          "line": 110
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/graph-model.js#searchProjection@L93",
+        "procedureName": "searchProjection",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8619ed3ecb2a31ee07cb916f258e1dfa397c19bdc75dd1edb8d73bc6975daacb",
+          "target": "stmt:packages/ui/web/graph-model.js@L118",
+          "line": 118,
+          "expr": "const matchIds = allMatches.slice(0, options.matchCap || 80).map((node) => node.id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/graph-model.js#searchProjection@L93",
+        "procedureName": "searchProjection",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:74f608f5d4ba892f60f98c0917543f3ad1631319444ec28261b1097a99ebfb3d",
+          "target": "sym:packages/parsers/fixtures/python/rules.py#add@L16",
+          "expr": "add",
+          "line": 123
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/graph-model.js#searchProjection@L93",
+        "procedureName": "searchProjection",
+        "guard": "cond:packages/ui/web/graph-model.js@L123",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/web/graph-model.js@L121",
+            "expr": "matchIds"
+          },
+          {
+            "id": "cond:packages/ui/web/graph-model.js@L122",
+            "expr": "indexes.archAdj[id] || []"
+          },
+          {
+            "id": "cond:packages/ui/web/graph-model.js@L123",
+            "expr": "!matchSet.has(neighbor)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c1d6b05211abcb36eb91bc4ea5d1121ab4f1045caf871df781365585081f10d6",
+          "target": "stmt:packages/ui/web/graph-model.js@L123",
+          "line": 123,
+          "expr": "contextCandidates.add(neighbor);"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/graph-model.js#searchProjection@L93",
+        "procedureName": "searchProjection",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:56c8e1e9710ae6edeb193f772aafdfde054c10c77a3ca9a0f99f30748a90f5cd",
+          "target": "sym:packages/ui/web/graph-model.js#rankIds@L40",
+          "expr": "rankIds",
+          "line": 126
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/graph-model.js#searchProjection@L93",
+        "procedureName": "searchProjection",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:cd6b645f4464690c2d8c086989bdd7e7b03035091e1efea3dfe1da1b0ea7a4ed",
+          "target": "stmt:packages/ui/web/graph-model.js@L126",
+          "line": 126,
+          "expr": "const contextIds = rankIds(contextCandidates, byId).slice(0, options.contextCap || 160);"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/graph-model.js#searchProjection@L93",
+        "procedureName": "searchProjection",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:de4c877a70c9ab0b64687a318c8b928f44e2913e5906cea375f34239213bbcc3",
+          "target": "stmt:packages/ui/web/graph-model.js@L128",
+          "line": 128,
+          "expr": "return {\n      query,\n      matchIds,\n      contextIds,\n      nodeIds,\n      edgeIndexes: edgeIndexesForNodeIds(nodeIds, edges, indexes),\n      totalMatches: allMatches.length,\n    };"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/graph-model.js#searchProjection@L93",
+        "procedureName": "searchProjection",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:d503adf792e6f0514d241091b17749d0f68eefcea86da54b54c121087e7ed94a",
+          "target": "sym:packages/ui/web/graph-model.js#edgeIndexesForNodeIds@L52",
+          "expr": "edgeIndexesForNodeIds",
+          "line": 133
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 7,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 7,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 5,
+      "recorded": 20,
+      "unresolved": 14
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "14 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

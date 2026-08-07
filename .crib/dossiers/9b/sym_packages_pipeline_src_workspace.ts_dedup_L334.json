@@ -1,0 +1,139 @@
+{
+  "id": "sym:packages/pipeline/src/workspace.ts#dedup@L334",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:91a13ecb6730996545cd211aa338b91c1227eec9cf293c6fe75099ecd2f450d5",
+  "builtAt": "2026-06-30T22:32:35.510Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/workspace.ts#dedup@L334",
+    "kind": "symbol",
+    "type": "function",
+    "name": "dedup",
+    "qualifiedName": "dedup",
+    "signature": "dedup(arr: string[]): string[]",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/workspace.ts",
+    "span": {
+      "start": 334,
+      "end": 336
+    }
+  },
+  "source": {
+    "text": "function dedup(arr: string[]): string[] {\n  return [...new Set(arr)];\n}",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 334
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/src/workspace.ts#globDirs@L227",
+      "confidence": 1,
+      "name": "globDirs",
+      "qualifiedName": "globDirs",
+      "signature": "globDirs(root: string, pattern: string): string[]",
+      "type": "function",
+      "file": "packages/pipeline/src/workspace.ts",
+      "line": 227
+    },
+    {
+      "id": "sym:packages/pipeline/src/workspace.ts#globDirs.walk@L229",
+      "confidence": 1,
+      "name": "walk",
+      "qualifiedName": "globDirs.walk",
+      "signature": "walk(…)",
+      "type": "function",
+      "file": "packages/pipeline/src/workspace.ts",
+      "line": 229
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#node",
+      "heading": "Node",
+      "anchor": "node",
+      "snippet": "Node",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-refined-vs-existing-assessment.md#2-1-principal-engineer",
+      "heading": "2.1 Principal Engineer",
+      "anchor": "2-1-principal-engineer",
+      "snippet": "2.1 Principal Engineer",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#5-reconciliation-decisions-cross-doc-contradictions-gaps-resolved",
+      "heading": "5. Reconciliation decisions (cross-doc contradictions/gaps resolved)",
+      "anchor": "5-reconciliation-decisions-cross-doc-contradictions-gaps-resolved",
+      "snippet": "5. Reconciliation decisions (cross-doc contradictions/gaps resolved)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#m6-incremental-update-git-hook-merge-driver",
+      "heading": "M6 — incremental `update` + git hook + merge driver",
+      "anchor": "m6-incremental-update-git-hook-merge-driver",
+      "snippet": "M6 — incremental `update` + git hook + merge driver",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/workspace.ts#dedup@L334",
+    "procedureName": "dedup",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/workspace.ts#dedup@L334",
+        "procedureName": "dedup",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:881a165453ae47f1f70fb463086a4386424fa68822236c70174485a834e6282e",
+          "target": "stmt:packages/pipeline/src/workspace.ts@L335",
+          "line": 335,
+          "expr": "return [...new Set(arr)];"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/pipeline/src/workspace.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

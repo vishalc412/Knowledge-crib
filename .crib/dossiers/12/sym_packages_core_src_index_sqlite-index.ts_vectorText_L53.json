@@ -1,0 +1,119 @@
+{
+  "id": "sym:packages/core/src/index/sqlite-index.ts#vectorText@L53",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:5ffb5046fb27cd8ff5e9a587eaaf3025f3d5ca377de24818182a58c259a04a0c",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/index/sqlite-index.ts#vectorText@L53",
+    "kind": "symbol",
+    "type": "function",
+    "name": "vectorText",
+    "qualifiedName": "vectorText",
+    "signature": "vectorText(node: Node): string",
+    "lang": "typescript",
+    "file": "packages/core/src/index/sqlite-index.ts",
+    "span": {
+      "start": 53,
+      "end": 57
+    },
+    "callSites": [
+      {
+        "callee": "join",
+        "line": 54
+      },
+      {
+        "callee": "filter",
+        "line": 54
+      }
+    ]
+  },
+  "source": {
+    "text": "function vectorText(node: Node): string {\n  return [node.name, node.qualifiedName, node.signature, node.heading, node.file]\n    .filter((s): s is string => typeof s === 'string' && s.length > 0)\n    .join(' ');\n}",
+    "truncated": false,
+    "totalLines": 5,
+    "startLine": 53
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.applyDelta@L130",
+      "confidence": 1,
+      "name": "applyDelta",
+      "qualifiedName": "SqliteIndexStore.applyDelta",
+      "signature": "applyDelta(changed: IndexDelta, repoRoot: string): void",
+      "type": "method",
+      "file": "packages/core/src/index/sqlite-index.ts",
+      "line": 130
+    },
+    {
+      "id": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.buildVectors@L286",
+      "confidence": 1,
+      "name": "buildVectors",
+      "qualifiedName": "SqliteIndexStore.buildVectors",
+      "signature": "buildVectors(soul: SoulStore): void",
+      "type": "method",
+      "file": "packages/core/src/index/sqlite-index.ts",
+      "line": 286
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/core/src/index/sqlite-index.ts@L52",
+      "snippet": "/** The text embedded per node for the vector retriever (M2.1). Surface fields only — no body. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/index/sqlite-index.ts#vectorText@L53",
+    "procedureName": "vectorText",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#vectorText@L53",
+        "procedureName": "vectorText",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c6d9a50f4644c1da9e83ff8f43c4f153422b69eeac4ecf0e8936976f8667feb0",
+          "target": "stmt:packages/core/src/index/sqlite-index.ts@L54",
+          "line": 54,
+          "expr": "return [node.name, node.qualifiedName, node.signature, node.heading, node.file]\n    .filter((s): s is string => typeof s === 'string' && s.length > 0)\n    .join(' ');"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/core/src/index/sqlite-index.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 2,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

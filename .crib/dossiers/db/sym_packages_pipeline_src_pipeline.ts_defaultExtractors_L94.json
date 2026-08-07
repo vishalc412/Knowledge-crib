@@ -1,0 +1,118 @@
+{
+  "id": "sym:packages/pipeline/src/pipeline.ts#defaultExtractors@L94",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:941c6a0862825c9be343c5ceae389de553560db396779076bbea60dba0e3d4e6",
+  "builtAt": "2026-06-30T22:32:35.510Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/pipeline.ts#defaultExtractors@L94",
+    "kind": "symbol",
+    "type": "function",
+    "name": "defaultExtractors",
+    "qualifiedName": "defaultExtractors",
+    "signature": "defaultExtractors(): Extractor[]",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/pipeline.ts",
+    "span": {
+      "start": 94,
+      "end": 105
+    }
+  },
+  "source": {
+    "text": "export function defaultExtractors(): Extractor[] {\n  return [\n    new MarkdownExtractor(),\n    new TypeScriptExtractor(),\n    new PlSqlExtractor(),\n    new PythonExtractor(),\n    new JavaExtractor(),\n    new CsharpExtractor(),\n    new GoExtractor(),\n    new RustExtractor(),\n  ];\n}",
+    "truncated": false,
+    "totalLines": 12,
+    "startLine": 94
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L108",
+      "confidence": 1,
+      "name": "indexRepo",
+      "qualifiedName": "indexRepo",
+      "signature": "indexRepo(soul: SoulStore, root: string, opts: IndexOpts = {}): Promise<IndexReport>",
+      "type": "function",
+      "file": "packages/pipeline/src/pipeline.ts",
+      "line": 108
+    },
+    {
+      "id": "sym:packages/pipeline/src/update.ts#updateRepo@L94",
+      "confidence": 1,
+      "name": "updateRepo",
+      "qualifiedName": "updateRepo",
+      "signature": "updateRepo(soul: SoulStore, root: string, opts: UpdateOpts = {}): Promise<UpdateResult>",
+      "type": "function",
+      "file": "packages/pipeline/src/update.ts",
+      "line": 94
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/pipeline/src/pipeline.ts@L88",
+      "snippet": "/** The default extractor fleet shipped with a fresh index — Markdown first so doc files never fall",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#4-1-adding-a-new-language-parser-8th-language",
+      "heading": "4.1 Adding a New Language Parser (8th Language)",
+      "anchor": "4-1-adding-a-new-language-parser-8th-language",
+      "snippet": "4.1 Adding a New Language Parser (8th Language)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/pipeline.ts#defaultExtractors@L94",
+    "procedureName": "defaultExtractors",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/pipeline.ts#defaultExtractors@L94",
+        "procedureName": "defaultExtractors",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f8b7fe55032bb9885ee090589e35591ebc9d23d7ffd8797641db6ed73085a71d",
+          "target": "stmt:packages/pipeline/src/pipeline.ts@L95",
+          "line": 95,
+          "expr": "return [\n    new MarkdownExtractor(),\n    new TypeScriptExtractor(),\n    new PlSqlExtractor(),\n    new PythonExtractor(),\n    new JavaExtractor(),\n    new CsharpExtractor(),\n    new GoExtractor(),\n    new RustExtractor(),\n  ];"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/pipeline/src/pipeline.ts",
+      "packages/pipeline/src/update.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

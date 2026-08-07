@@ -1,0 +1,203 @@
+{
+  "id": "sym:scripts/linker-check.mjs#fixtureSoul@L41",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:bf7bfea9fac394bf28deef5f338c52e990df2664c42966b21dba59351e1f88b9",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:scripts/linker-check.mjs#fixtureSoul@L41",
+    "kind": "symbol",
+    "type": "function",
+    "name": "fixtureSoul",
+    "qualifiedName": "fixtureSoul",
+    "signature": "fixtureSoul(…)",
+    "lang": "javascript",
+    "file": "scripts/linker-check.mjs",
+    "span": {
+      "start": 41,
+      "end": 46
+    },
+    "callSites": [
+      {
+        "callee": "mkdtempSync",
+        "line": 42
+      },
+      {
+        "callee": "join",
+        "line": 42
+      },
+      {
+        "callee": "tmpdir",
+        "line": 42
+      },
+      {
+        "callee": "newManifest",
+        "line": 43
+      },
+      {
+        "callee": "load",
+        "line": 44
+      }
+    ]
+  },
+  "source": {
+    "text": "const fixtureSoul = () => {\n  const dir = mkdtempSync(join(tmpdir(), 'crib-linker-'));\n  const soul = new SoulStore(dir, { manifest: newManifest({ now: NOW }) });\n  soul.load();\n  return { dir, soul };\n};",
+    "truncated": false,
+    "totalLines": 6,
+    "startLine": 41
+  },
+  "callers": [
+    {
+      "id": "sym:scripts/linker-check.mjs#runMode@L62",
+      "confidence": 1,
+      "name": "runMode",
+      "qualifiedName": "runMode",
+      "signature": "runMode(…)",
+      "type": "function",
+      "file": "scripts/linker-check.mjs",
+      "line": 62
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/ui/web/support.js#createExternalModules.load@L1028",
+      "confidence": 1,
+      "name": "load",
+      "qualifiedName": "createExternalModules.load",
+      "signature": "load(kind, url)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 1028
+    },
+    {
+      "id": "sym:packages/core/src/manifest.ts#newManifest@L28",
+      "confidence": 1,
+      "name": "newManifest",
+      "qualifiedName": "newManifest",
+      "signature": "newManifest(opts: NewManifestOpts = {}): Manifest",
+      "type": "function",
+      "file": "packages/core/src/manifest.ts",
+      "line": 28
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:scripts/linker-check.mjs#fixtureSoul@L41",
+    "procedureName": "fixtureSoul",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:scripts/linker-check.mjs#fixtureSoul@L41",
+        "procedureName": "fixtureSoul",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1f8d50005e09a2f078ca4cb6e9101397f08716de334c03c70be799c79347bd07",
+          "target": "stmt:scripts/linker-check.mjs@L42",
+          "line": 42,
+          "expr": "const dir = mkdtempSync(join(tmpdir(), 'crib-linker-'));"
+        }
+      },
+      {
+        "procedure": "sym:scripts/linker-check.mjs#fixtureSoul@L41",
+        "procedureName": "fixtureSoul",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:36b291594cd73d2c3bd732eb61532252564358ad4cbad1804887de197c700cf4",
+          "target": "stmt:scripts/linker-check.mjs@L43",
+          "line": 43,
+          "expr": "const soul = new SoulStore(dir, { manifest: newManifest({ now: NOW }) });"
+        }
+      },
+      {
+        "procedure": "sym:scripts/linker-check.mjs#fixtureSoul@L41",
+        "procedureName": "fixtureSoul",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:3c3f67efb53513cb4989a3862cd5617a2703f50d06fcd98ea65ef7ee6b30d738",
+          "target": "sym:packages/core/src/manifest.ts#newManifest@L28",
+          "expr": "newManifest",
+          "line": 43
+        }
+      },
+      {
+        "procedure": "sym:scripts/linker-check.mjs#fixtureSoul@L41",
+        "procedureName": "fixtureSoul",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:b1fe73932ded54d1d87372434f62dd62e8b498a5b9c6567e6b64ec0a86e97656",
+          "target": "sym:packages/ui/web/support.js#createExternalModules.load@L1028",
+          "expr": "load",
+          "line": 44
+        }
+      },
+      {
+        "procedure": "sym:scripts/linker-check.mjs#fixtureSoul@L41",
+        "procedureName": "fixtureSoul",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f237114a372dab291970d01e775b350cf8a97c1e41c9771ec8c0a9034475c162",
+          "target": "stmt:scripts/linker-check.mjs@L44",
+          "line": 44,
+          "expr": "soul.load();"
+        }
+      },
+      {
+        "procedure": "sym:scripts/linker-check.mjs#fixtureSoul@L41",
+        "procedureName": "fixtureSoul",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bb059d69ddc6e0ecb1ad5de361d70ea02048d8f13bff3374c3d7cbc7a35aed4a",
+          "target": "stmt:scripts/linker-check.mjs@L45",
+          "line": 45,
+          "expr": "return { dir, soul };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": [
+      "scripts/linker-check.mjs"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 5,
+      "unresolved": 3
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "3 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

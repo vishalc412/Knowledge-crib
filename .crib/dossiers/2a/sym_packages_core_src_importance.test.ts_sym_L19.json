@@ -1,0 +1,165 @@
+{
+  "id": "sym:packages/core/src/importance.test.ts#sym@L19",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:2d26dd44e706f586d35ed1acfc7a2e8ef65e88c27787fc670125967d59b6411b",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/importance.test.ts#sym@L19",
+    "kind": "symbol",
+    "type": "function",
+    "name": "sym",
+    "qualifiedName": "sym",
+    "signature": "sym(path: string, qname: string, line: number, extra: Partial<Node> = {}): Node",
+    "lang": "typescript",
+    "file": "packages/core/src/importance.test.ts",
+    "span": {
+      "start": 19,
+      "end": 32
+    },
+    "callSites": [
+      {
+        "callee": "idFor",
+        "line": 21
+      },
+      {
+        "callee": "pop",
+        "line": 24
+      },
+      {
+        "callee": "split",
+        "line": 24
+      },
+      {
+        "callee": "contentHash",
+        "line": 29
+      }
+    ]
+  },
+  "source": {
+    "text": "function sym(path: string, qname: string, line: number, extra: Partial<Node> = {}): Node {\n  return {\n    id: idFor({ kind: 'symbol', path, qualifiedName: qname, startLine: line }),\n    kind: 'symbol',\n    type: 'method',\n    name: qname.split('.').pop() ?? qname,\n    qualifiedName: qname,\n    file: path,\n    span: { start: line, end: line },\n    lang: 'typescript',\n    hash: contentHash(`${path}:${qname}`),\n    ...extra,\n  };\n}",
+    "truncated": false,
+    "totalLines": 14,
+    "startLine": 19
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/soul-schema/src/hash.ts#contentHash@L21",
+      "confidence": 1,
+      "name": "contentHash",
+      "qualifiedName": "contentHash",
+      "signature": "contentHash(input: string): string",
+      "type": "function",
+      "file": "packages/soul-schema/src/hash.ts",
+      "line": 21
+    },
+    {
+      "id": "sym:packages/soul-schema/src/id.ts#idFor@L88",
+      "confidence": 1,
+      "name": "idFor",
+      "qualifiedName": "idFor",
+      "signature": "idFor(spec: IdSpec): string",
+      "type": "function",
+      "file": "packages/soul-schema/src/id.ts",
+      "line": 88
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#7-the-complete-code-map-quick-reference",
+      "heading": "7. The Complete Code Map (Quick Reference)",
+      "anchor": "7-the-complete-code-map-quick-reference",
+      "snippet": "7. The Complete Code Map (Quick Reference)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#node",
+      "heading": "Node",
+      "anchor": "node",
+      "snippet": "Node",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/importance.test.ts#sym@L19",
+    "procedureName": "sym",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/importance.test.ts#sym@L19",
+        "procedureName": "sym",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b98ecab816746fac8bb9d888fe43b041108f980e288b814929c19970151d0cad",
+          "target": "stmt:packages/core/src/importance.test.ts@L20",
+          "line": 20,
+          "expr": "return {\n    id: idFor({ kind: 'symbol', path, qualifiedName: qname, startLine: line }),\n    kind: 'symbol',\n    type: 'method',\n    name: qname.split('.').pop() ?? qname,\n    qualifiedName: qname,\n    file: path,\n    span: { start: line, end: line },\n    lang: 'typescript',\n    hash: contentHash(`${path}:${qname}`),\n    ...extra,\n  };"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/importance.test.ts#sym@L19",
+        "procedureName": "sym",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:5faf0c2238cb572f9415b10745162eaedbc6559b05352beb0463ee0aaf5a3506",
+          "target": "sym:packages/soul-schema/src/id.ts#idFor@L88",
+          "expr": "idFor",
+          "line": 21
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/importance.test.ts#sym@L19",
+        "procedureName": "sym",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:43ff62f40c402f9e46e25fcf5e1bfdae848df3854136fc322549d2079ef78f45",
+          "target": "sym:packages/soul-schema/src/hash.ts#contentHash@L21",
+          "expr": "contentHash",
+          "line": 29
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 4,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

@@ -1,0 +1,529 @@
+{
+  "id": "sym:packages/pipeline/src/vcs.ts#blameLines@L94",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:ddae3f6b516d3caa2dd7cf274165d9bbca50bec0bed934d1169a86f2a46863d5",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/vcs.ts#blameLines@L94",
+    "kind": "symbol",
+    "type": "function",
+    "name": "blameLines",
+    "qualifiedName": "blameLines",
+    "signature": "blameLines(root: string, path: string): BlameLine[]",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/vcs.ts",
+    "span": {
+      "start": 94,
+      "end": 122
+    },
+    "callSites": [
+      {
+        "callee": "git",
+        "line": 95
+      },
+      {
+        "callee": "split",
+        "line": 97
+      },
+      {
+        "callee": "match",
+        "line": 102
+      },
+      {
+        "callee": "push",
+        "line": 104
+      },
+      {
+        "callee": "Number",
+        "line": 105
+      },
+      {
+        "callee": "match",
+        "line": 110
+      },
+      {
+        "callee": "slice",
+        "line": 113
+      },
+      {
+        "callee": "push",
+        "line": 116
+      },
+      {
+        "callee": "push",
+        "line": 120
+      }
+    ]
+  },
+  "source": {
+    "text": "export function blameLines(root: string, path: string): BlameLine[] {\n  const out = git(root, ['blame', '--line-porcelain', '--', path]);\n  if (out === undefined) return [];\n  const lines = out.split('\\n');\n  const records: BlameLine[] = [];\n  let cur: { line: number; commit: string; name: string; email?: string } | null = null;\n  const header = /^([0-9a-f]{7,40})\\s+(\\d+)\\s+(\\d+)/;\n  for (const raw of lines) {\n    const h = raw.match(header);\n    if (h) {\n      if (cur) records.push(cur);\n      cur = { line: Number(h[3] ?? '0'), commit: h[1] ?? '', name: '', email: undefined };\n      continue;\n    }\n    if (!cur) continue;\n    if (raw.startsWith('author-mail ')) {\n      const m = raw.match(/<([^>]+)>/);\n      if (m) cur.email = m[1];\n    } else if (raw.startsWith('author ') && !raw.startsWith('author-mail')) {\n      cur.name = raw.slice('author '.length);\n    } else if (raw.startsWith('\\t')) {\n      // the content line ends this record\n      if (cur) records.push(cur);\n      cur = null;\n    }\n  }\n  if (cur) records.push(cur);\n  return records;\n}",
+    "truncated": false,
+    "totalLines": 29,
+    "startLine": 94
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/src/ownership.ts#runOwnership@L77",
+      "confidence": 1,
+      "name": "runOwnership",
+      "qualifiedName": "runOwnership",
+      "signature": "runOwnership(soul: SoulStore, root: string, onlyFiles?: Set<string>): OwnershipStats",
+      "type": "function",
+      "file": "packages/pipeline/src/ownership.ts",
+      "line": 77
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:scripts/soul-refresh-check.mjs#git@L93",
+      "confidence": 1,
+      "name": "git",
+      "qualifiedName": "git",
+      "signature": "git(…)",
+      "type": "function",
+      "file": "scripts/soul-refresh-check.mjs",
+      "line": 93
+    },
+    {
+      "id": "sym:packages/pipeline/src/vcs.ts#git@L125",
+      "confidence": 1,
+      "name": "git",
+      "qualifiedName": "git",
+      "signature": "git(root: string, args: string[]): string | undefined",
+      "type": "function",
+      "file": "packages/pipeline/src/vcs.ts",
+      "line": 125
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 39
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/pipeline/src/vcs.ts@L88",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/vcs.ts#blameLines@L94",
+    "procedureName": "blameLines",
+    "conditions": [
+      "cond:packages/pipeline/src/vcs.ts@L96",
+      "cond:packages/pipeline/src/vcs.ts@L101",
+      "cond:packages/pipeline/src/vcs.ts@L103",
+      "cond:packages/pipeline/src/vcs.ts@L104",
+      "cond:packages/pipeline/src/vcs.ts@L109",
+      "cond:packages/pipeline/src/vcs.ts@L111",
+      "cond:packages/pipeline/src/vcs.ts@L112",
+      "cond:packages/pipeline/src/vcs.ts@L114",
+      "cond:packages/pipeline/src/vcs.ts@L116",
+      "cond:packages/pipeline/src/vcs.ts@L120"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/vcs.ts#blameLines@L94",
+        "procedureName": "blameLines",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:6ee76aee7b35b4c3c8ab099d7ca0acdd8bb5dc7510fc5e0f8efeaf774368c923",
+          "target": "sym:scripts/soul-refresh-check.mjs#git@L93",
+          "expr": "git",
+          "line": 95
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/vcs.ts#blameLines@L94",
+        "procedureName": "blameLines",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:8b9139125339f72e430477883f352df9080983cdf6f2e9201d3e20c3b508ecbb",
+          "target": "sym:packages/pipeline/src/vcs.ts#git@L125",
+          "expr": "git",
+          "line": 95
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/vcs.ts#blameLines@L94",
+        "procedureName": "blameLines",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a06a0dabce0ee206d638eab8a757bfc0d24e11b208ff336f4fad22330945c22c",
+          "target": "stmt:packages/pipeline/src/vcs.ts@L95",
+          "line": 95,
+          "expr": "const out = git(root, ['blame', '--line-porcelain', '--', path]);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/vcs.ts#blameLines@L94",
+        "procedureName": "blameLines",
+        "guard": "cond:packages/pipeline/src/vcs.ts@L96",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/vcs.ts@L96",
+            "expr": "out === undefined",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5c4c8d60ecedc9424512fd071f97a70d804760b9fcf8fb273635785de7d747aa",
+          "target": "stmt:packages/pipeline/src/vcs.ts@L96",
+          "line": 96,
+          "expr": "return [];"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/vcs.ts#blameLines@L94",
+        "procedureName": "blameLines",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a3e8c65d7c13864973d09d59e105fbf992e8b51a948dc9fea70b96cfced33043",
+          "target": "stmt:packages/pipeline/src/vcs.ts@L97",
+          "line": 97,
+          "expr": "const lines = out.split('\\n');"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/vcs.ts#blameLines@L94",
+        "procedureName": "blameLines",
+        "guard": "cond:packages/pipeline/src/vcs.ts@L101",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/vcs.ts@L101",
+            "expr": "lines",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ceb3590487c3e6206f423d1ea4f060f0086100b7a2a845fab3b929efa6f673cb",
+          "target": "stmt:packages/pipeline/src/vcs.ts@L102",
+          "line": 102,
+          "expr": "const h = raw.match(header);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/vcs.ts#blameLines@L94",
+        "procedureName": "blameLines",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:656c6ed2680ebd80f20e66c6b2ed5982ccc1e4fadb9255d61f52173a6aaaab0e",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 104
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/vcs.ts#blameLines@L94",
+        "procedureName": "blameLines",
+        "guard": "cond:packages/pipeline/src/vcs.ts@L104",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/vcs.ts@L101",
+            "expr": "lines"
+          },
+          {
+            "id": "cond:packages/pipeline/src/vcs.ts@L103",
+            "expr": "h"
+          },
+          {
+            "id": "cond:packages/pipeline/src/vcs.ts@L104",
+            "expr": "cur",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e4458224eebe0a6f9b7474a3d3d4ec09ebbac239c69c9d69ed82cf9e19870f0c",
+          "target": "stmt:packages/pipeline/src/vcs.ts@L104",
+          "line": 104,
+          "expr": "records.push(cur);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/vcs.ts#blameLines@L94",
+        "procedureName": "blameLines",
+        "guard": "cond:packages/pipeline/src/vcs.ts@L103",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/vcs.ts@L101",
+            "expr": "lines"
+          },
+          {
+            "id": "cond:packages/pipeline/src/vcs.ts@L103",
+            "expr": "h",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:93fd9e0d37086e7ea5ebbeb650e6f14bd4a3da8ee3c9195505bdb6d27a767d92",
+          "target": "assign:packages/pipeline/src/vcs.ts@L105",
+          "line": 105,
+          "expr": "cur = { line: Number(h[3] ?? '0'), commit: h[1] ?? '', name: '', email: undefined };"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/vcs.ts#blameLines@L94",
+        "procedureName": "blameLines",
+        "guard": "cond:packages/pipeline/src/vcs.ts@L109",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/vcs.ts@L101",
+            "expr": "lines"
+          },
+          {
+            "id": "cond:packages/pipeline/src/vcs.ts@L109",
+            "expr": "raw.startsWith('author-mail ')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0ae31561396d56b88e7ae5cd0326d24e17d0e2a61648a6908fb518e986ec6f31",
+          "target": "stmt:packages/pipeline/src/vcs.ts@L110",
+          "line": 110,
+          "expr": "const m = raw.match(/<([^>]+)>/);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/vcs.ts#blameLines@L94",
+        "procedureName": "blameLines",
+        "guard": "cond:packages/pipeline/src/vcs.ts@L111",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/vcs.ts@L101",
+            "expr": "lines"
+          },
+          {
+            "id": "cond:packages/pipeline/src/vcs.ts@L109",
+            "expr": "raw.startsWith('author-mail ')"
+          },
+          {
+            "id": "cond:packages/pipeline/src/vcs.ts@L111",
+            "expr": "m",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2d28ce53678ade349fa09cf6335193402c6e728bf4ce1a353f5de3ced57b25c2",
+          "target": "assign:packages/pipeline/src/vcs.ts@L111",
+          "line": 111,
+          "expr": "cur.email = m[1];"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/vcs.ts#blameLines@L94",
+        "procedureName": "blameLines",
+        "guard": "cond:packages/pipeline/src/vcs.ts@L112",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/vcs.ts@L101",
+            "expr": "lines"
+          },
+          {
+            "id": "cond:packages/pipeline/src/vcs.ts@L109",
+            "expr": "raw.startsWith('author-mail ')"
+          },
+          {
+            "id": "cond:packages/pipeline/src/vcs.ts@L112",
+            "expr": "raw.startsWith('author ') && !raw.startsWith('author-mail')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:548a38390faf948bf62ba37cc8259aea342887d1202d694220f1be5f5d72a2c5",
+          "target": "assign:packages/pipeline/src/vcs.ts@L113",
+          "line": 113,
+          "expr": "cur.name = raw.slice('author '.length);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/vcs.ts#blameLines@L94",
+        "procedureName": "blameLines",
+        "guard": "cond:packages/pipeline/src/vcs.ts@L116",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/vcs.ts@L101",
+            "expr": "lines"
+          },
+          {
+            "id": "cond:packages/pipeline/src/vcs.ts@L109",
+            "expr": "raw.startsWith('author-mail ')"
+          },
+          {
+            "id": "cond:packages/pipeline/src/vcs.ts@L112",
+            "expr": "raw.startsWith('author ') && !raw.startsWith('author-mail')"
+          },
+          {
+            "id": "cond:packages/pipeline/src/vcs.ts@L114",
+            "expr": "raw.startsWith('\\t')"
+          },
+          {
+            "id": "cond:packages/pipeline/src/vcs.ts@L116",
+            "expr": "cur",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:31c4396f7f1418682d9d740c2806fbc0f29485a86ddd59ca14878e0be4b88683",
+          "target": "stmt:packages/pipeline/src/vcs.ts@L116",
+          "line": 116,
+          "expr": "records.push(cur);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/vcs.ts#blameLines@L94",
+        "procedureName": "blameLines",
+        "guard": "cond:packages/pipeline/src/vcs.ts@L114",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/vcs.ts@L101",
+            "expr": "lines"
+          },
+          {
+            "id": "cond:packages/pipeline/src/vcs.ts@L109",
+            "expr": "raw.startsWith('author-mail ')"
+          },
+          {
+            "id": "cond:packages/pipeline/src/vcs.ts@L112",
+            "expr": "raw.startsWith('author ') && !raw.startsWith('author-mail')"
+          },
+          {
+            "id": "cond:packages/pipeline/src/vcs.ts@L114",
+            "expr": "raw.startsWith('\\t')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:33ec89eaec75c8afabb34b6c151f0effaf644edf4b85ebcc6cad1ec5e3de8ebb",
+          "target": "assign:packages/pipeline/src/vcs.ts@L117",
+          "line": 117,
+          "expr": "cur = null;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/vcs.ts#blameLines@L94",
+        "procedureName": "blameLines",
+        "guard": "cond:packages/pipeline/src/vcs.ts@L120",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/vcs.ts@L120",
+            "expr": "cur",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:09e4839114fd03e19dd18ac41a7cd277263dc7cb592581a2cb2a8d51342d457d",
+          "target": "stmt:packages/pipeline/src/vcs.ts@L120",
+          "line": 120,
+          "expr": "records.push(cur);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/vcs.ts#blameLines@L94",
+        "procedureName": "blameLines",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1af3eb1e2fc4a99fb21063aae9c8dc1e8782766c09f32eec9c66f0b4b889c5c4",
+          "target": "stmt:packages/pipeline/src/vcs.ts@L121",
+          "line": 121,
+          "expr": "return records;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 13,
+    "referencedByFiles": [
+      "packages/pipeline/src/ownership.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 13,
+    "assignments": 4,
+    "conditions": 10,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 3,
+      "recorded": 9,
+      "unresolved": 5
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "5 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

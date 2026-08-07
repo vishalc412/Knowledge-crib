@@ -1,0 +1,173 @@
+{
+  "id": "sym:packages/mcp/src/enrichment.ts#presencedLastIssued@L1198",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:93fd644ac127c499808671ad00d217e0fb569b806e5236ee6b235d53bfe1933b",
+  "builtAt": "2026-06-30T16:18:20.420Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/enrichment.ts#presencedLastIssued@L1198",
+    "kind": "symbol",
+    "type": "function",
+    "name": "presencedLastIssued",
+    "qualifiedName": "presencedLastIssued",
+    "signature": "presencedLastIssued(v: unknown): v is Record<string, { batchId: string }>",
+    "lang": "typescript",
+    "file": "packages/mcp/src/enrichment.ts",
+    "span": {
+      "start": 1198,
+      "end": 1204
+    }
+  },
+  "source": {
+    "text": "function presencedLastIssued(v: unknown): v is Record<string, { batchId: string }> {\n  if (!isRecord(v)) return false;\n  for (const entry of Object.values(v)) {\n    if (!isRecord(entry) || typeof entry.batchId !== 'string') return false;\n  }\n  return true;\n}",
+    "truncated": false,
+    "totalLines": 7,
+    "startLine": 1198
+  },
+  "callers": [
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.writeManifest@L913",
+      "confidence": 1,
+      "name": "writeManifest",
+      "qualifiedName": "EnrichmentStore.writeManifest",
+      "signature": "writeManifest(model: string | null, lastIssued?: Record<string, { batchId: string }>): void",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 913
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#isRecord@L1193",
+      "confidence": 1,
+      "name": "isRecord",
+      "qualifiedName": "isRecord",
+      "signature": "isRecord(v: unknown): v is Record<string, unknown>",
+      "type": "function",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 1193
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/mcp/src/enrichment.ts@L1197",
+      "snippet": "/** Narrows an unknown manifest `lastIssued` value into a typed map, or returns false. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/enrichment.ts#presencedLastIssued@L1198",
+    "procedureName": "presencedLastIssued",
+    "conditions": [
+      "cond:packages/mcp/src/enrichment.ts@L1199",
+      "cond:packages/mcp/src/enrichment.ts@L1200",
+      "cond:packages/mcp/src/enrichment.ts@L1201"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#presencedLastIssued@L1198",
+        "procedureName": "presencedLastIssued",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:425d009efa5049cc28e36b870c33da8787b8429b69482c7833a27c7ca16b34bb",
+          "target": "sym:packages/mcp/src/enrichment.ts#isRecord@L1193",
+          "expr": "isRecord"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#presencedLastIssued@L1198",
+        "procedureName": "presencedLastIssued",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L1199",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L1199",
+            "expr": "!isRecord(v)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8137b51454b42fcce88a9633c588c78d44b7d08a835a26e6013398d033fb9b3c",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1199",
+          "line": 1199,
+          "expr": "return false;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#presencedLastIssued@L1198",
+        "procedureName": "presencedLastIssued",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L1201",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L1200",
+            "expr": "Object.values(v)"
+          },
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L1201",
+            "expr": "!isRecord(entry) || typeof entry.batchId !== 'string'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a8501f23eba5ccf319f0698895800d4394d6588209ba52896b7a96b302aa5391",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1201",
+          "line": 1201,
+          "expr": "return false;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#presencedLastIssued@L1198",
+        "procedureName": "presencedLastIssued",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8b5560f00ce8a577e8ad1ed995529636643768c3f74b246ffc91e23842f63bb4",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1203",
+          "line": 1203,
+          "expr": "return true;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/mcp/src/enrichment.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

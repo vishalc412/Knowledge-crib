@@ -1,5 +1,13 @@
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
@@ -47,10 +55,13 @@ function soulFor(): SoulStore {
 function snapshotSoul(): Map<string, string> {
   const snap = new Map<string, string>();
   for (const sub of ['nodes', 'edges']) {
-    const base = join(repo, '.crib', sub);
+    const base = join(repo, '.crib', 'graph', 'extracted', sub);
     for (const p of walkJsonl(base)) snap.set(`${sub}/${rel(base, p)}`, readFileSync(p, 'utf8'));
   }
-  snap.set('crib.json', readFileSync(join(repo, '.crib', 'crib.json'), 'utf8'));
+  snap.set(
+    'graph/manifest.json',
+    readFileSync(join(repo, '.crib', 'graph', 'manifest.json'), 'utf8'),
+  );
   return snap;
 }
 function walkJsonl(dir: string): string[] {
@@ -70,7 +81,10 @@ async function indexAndCommit(): Promise<void> {
   // Commit FIRST so `indexRepo` can stamp the VCS anchor (mirrors real `crib index` after a commit).
   git(repo, ['add', '-A']);
   git(repo, ['-c', 'user.email=t@t.test', '-c', 'user.name=T', 'commit', '-q', '-m', 'initial']);
-  await indexRepo(soulFor(), repo, { now: '2026-01-01T00:00:00.000Z' });
+  await indexRepo(soulFor(), repo, {
+    now: '2026-01-01T00:00:00.000Z',
+    ownership: false,
+  });
 }
 
 describe('updateRepo (M6 incremental, git-anchored)', () => {
@@ -83,7 +97,7 @@ describe('updateRepo (M6 incremental, git-anchored)', () => {
         manifest: newManifest({ now: '2026-01-01T00:00:00.000Z' }),
       });
       s.load();
-      await indexRepo(s, plain, { now: '2026-01-01T00:00:00.000Z' });
+      await indexRepo(s, plain, { now: '2026-01-01T00:00:00.000Z', ownership: false });
       const result = await updateRepo(s, plain, {});
       expect(result).toBeNull();
     } finally {
@@ -120,7 +134,10 @@ describe('updateRepo (M6 incremental, git-anchored)', () => {
 
     // Run the incremental update on a freshly-loaded soul (simulating a later session).
     const soul = soulFor();
-    const result = await updateRepo(soul, repo, { now: '2026-01-02T00:00:00.000Z' });
+    const result = await updateRepo(soul, repo, {
+      now: '2026-01-02T00:00:00.000Z',
+      ownership: false,
+    });
     expect(result).not.toBeNull();
     expect(result && 'noop' in result).toBe(false);
 
@@ -153,7 +170,7 @@ describe('updateRepo (M6 incremental, git-anchored)', () => {
     expect(changed).toContain(expectedChangedShard);
     expect(changed).not.toContain(`nodes/${bShard}/0000.jsonl`);
     // Every non-manifest change is exactly the a.ts node shard.
-    expect(changed.filter((k) => k !== 'crib.json')).toEqual([expectedChangedShard]);
+    expect(changed.filter((k) => k !== 'graph/manifest.json')).toEqual([expectedChangedShard]);
 
     // The manifest anchor advanced to the new HEAD.
     expect(reopened.getManifest().stats.incrementalSince).toBe(h2);
@@ -219,7 +236,7 @@ describe('updateRepo (M6 incremental, git-anchored)', () => {
     );
     git(repo, ['add', '-A']);
     git(repo, ['-c', 'user.email=t@t.test', '-c', 'user.name=T', 'commit', '-q', '-m', 'spring']);
-    await indexRepo(soulFor(), repo, { now: '2026-01-01T00:00:00.000Z' });
+    await indexRepo(soulFor(), repo, { now: '2026-01-01T00:00:00.000Z', ownership: false });
 
     // The initial index carries the Spring route + the exposes edge (handler → route).
     const afterIndex = soulFor();
@@ -256,15 +273,18 @@ describe('updateRepo (M6 incremental, git-anchored)', () => {
     ]);
 
     const soul = soulFor();
-    const result = await updateRepo(soul, repo, { now: '2026-01-02T00:00:00.000Z' });
+    const result = await updateRepo(soul, repo, {
+      now: '2026-01-02T00:00:00.000Z',
+      ownership: false,
+    });
     expect(result).not.toBeNull();
     expect(result && 'noop' in result).toBe(false);
     const report = result as UpdateReport;
 
     // The P0 gate: no Spring artifact is silently dropped — the original route + exposes survive the
     // re-extract (they are re-emitted, not lost to delta.removed).
-    expect(report.delta.removed).toEqual([]);
     const reopened = soulFor();
+    expect(report.delta.removed).toEqual([]);
     expect(
       [...reopened.iterate('route')].map((n) => `${n.httpMethod} ${n.routePath}`).sort(),
     ).toEqual(['GET /api/loans', 'POST /api/loans']);
@@ -288,11 +308,208 @@ describe('updateRepo (M6 incremental, git-anchored)', () => {
     const h2 = git(repo, ['rev-parse', 'HEAD']);
 
     const soul = soulFor();
-    const result = await updateRepo(soul, repo, { now: '2026-01-03T00:00:00.000Z' });
+    const result = await updateRepo(soul, repo, {
+      now: '2026-01-03T00:00:00.000Z',
+      ownership: false,
+    });
     expect(result && 'noop' in result).toBe(true);
     if (result && 'noop' in result) {
       expect(result.scopeFiles).toEqual([]);
     }
     expect(soulFor().getManifest().stats.incrementalSince).toBe(h2);
+  });
+
+  it('includes uncommitted working-tree changes with dirty:true without advancing vcsHead', async () => {
+    await indexAndCommit();
+    const h1 = git(repo, ['rev-parse', 'HEAD']);
+
+    // Unstaged edit to a.ts: working tree is ahead of the committed anchor.
+    writeFileSync(join(repo, 'src', 'a.ts'), "export function greet(): string { return 'hey'; }\n");
+
+    const soul = soulFor();
+    const result = await updateRepo(soul, repo, {
+      dirty: true,
+      now: '2026-01-02T00:00:00.000Z',
+      ownership: false,
+    });
+    expect(result).not.toBeNull();
+    expect(result && 'noop' in result).toBe(false);
+
+    const report = result as UpdateReport;
+    expect(report.changedPaths).toContain('src/a.ts');
+    expect(report.scopeFiles).toContain('src/a.ts');
+    expect(report.scopeFiles).toContain('src/b.ts'); // reverse-dependency closure
+
+    // vcsHead stays pinned to the last real commit; incrementalSince catches up to current HEAD.
+    const manifest = soulFor().getManifest();
+    expect(manifest.repo.vcsHead).toBe(h1);
+    expect(manifest.stats.incrementalSince).toBe(h1);
+  });
+
+  it('dirty no-op still refreshes incrementalSince without moving vcsHead', async () => {
+    await indexAndCommit();
+    const h1 = git(repo, ['rev-parse', 'HEAD']);
+
+    const soul = soulFor();
+    const result = await updateRepo(soul, repo, {
+      dirty: true,
+      now: '2026-01-02T00:00:00.000Z',
+      ownership: false,
+    });
+    expect(result && 'noop' in result).toBe(true);
+
+    const manifest = soulFor().getManifest();
+    expect(manifest.repo.vcsHead).toBe(h1);
+    expect(manifest.stats.incrementalSince).toBe(h1);
+  });
+});
+
+describe('updateRepo — packageRoots (P4 multi-package federation)', () => {
+  it('a package-scoped update re-syncs only that package, leaves the other package pending, and does NOT advance the shared anchor', async () => {
+    await indexAndCommit();
+    const h1 = git(repo, ['rev-parse', 'HEAD']);
+
+    // Change files in TWO different packages in the same commit.
+    writeFileSync(join(repo, 'src', 'a.ts'), "export function greet(): string { return 'yo'; }\n");
+    writeFileSync(
+      join(repo, 'src', 'b.ts'),
+      "import { greet } from './a.js';\nexport function main(): string { return greet() + '!'; }\n",
+    );
+    git(repo, ['add', 'src/a.ts', 'src/b.ts']);
+    git(repo, [
+      '-c',
+      'user.email=t@t.test',
+      '-c',
+      'user.name=T',
+      'commit',
+      '-q',
+      '-m',
+      'edit both',
+    ]);
+
+    const soul = soulFor();
+    const result = await updateRepo(soul, repo, {
+      packageRoots: ['src/a.ts'], // a single-file "package" for this fixture's flat layout
+      now: '2026-01-02T00:00:00.000Z',
+      ownership: false,
+    });
+    expect(result).not.toBeNull();
+    expect(result && 'noop' in result).toBe(false);
+    const report = result as UpdateReport;
+
+    expect(report.changedPaths).toEqual(['src/a.ts']);
+    expect(report.excludedPaths).toEqual(['src/b.ts']);
+
+    // The anchor must NOT advance — src/b.ts's change was intentionally left unprocessed.
+    const manifest = soulFor().getManifest();
+    expect(manifest.repo.vcsHead).toBe(h1);
+    expect(manifest.stats.incrementalSince).toBe(h1);
+
+    // A later unscoped update re-diffs from the SAME un-advanced anchor, so it naturally sees both
+    // files again (src/a.ts redundantly, but idempotently — same content, no spurious soul diff) —
+    // that redundant re-touch is the honest cost of never advancing the anchor early: nothing the
+    // scoped run skipped (src/b.ts) is ever silently lost. NOW everything is covered, so the anchor
+    // finally advances.
+    const finalSoul = soulFor();
+    const finalResult = await updateRepo(finalSoul, repo, { now: '2026-01-03T00:00:00.000Z' });
+    expect(finalResult && 'noop' in finalResult).toBe(false);
+    const finalReport = finalResult as UpdateReport;
+    expect(finalReport.changedPaths).toEqual(['src/a.ts', 'src/b.ts']);
+    expect(finalReport.excludedPaths).toEqual([]);
+    const h2 = git(repo, ['rev-parse', 'HEAD']);
+    expect(soulFor().getManifest().repo.vcsHead).toBe(h2);
+  });
+
+  it('advances the anchor when the scoped update happens to cover every changed file (nothing excluded)', async () => {
+    await indexAndCommit();
+
+    writeFileSync(join(repo, 'src', 'a.ts'), "export function greet(): string { return 'yo'; }\n");
+    git(repo, ['add', 'src/a.ts']);
+    git(repo, [
+      '-c',
+      'user.email=t@t.test',
+      '-c',
+      'user.name=T',
+      'commit',
+      '-q',
+      '-m',
+      'edit a only',
+    ]);
+    const h2 = git(repo, ['rev-parse', 'HEAD']);
+
+    const soul = soulFor();
+    const result = await updateRepo(soul, repo, {
+      packageRoots: ['src/a.ts'],
+      now: '2026-01-02T00:00:00.000Z',
+      ownership: false,
+    });
+    const report = result as UpdateReport;
+    expect(report.excludedPaths).toEqual([]);
+    expect(soulFor().getManifest().repo.vcsHead).toBe(h2);
+  });
+});
+
+describe('updateRepo — semantic orphan auto-prune (W7 delta update)', () => {
+  it('prunes orphaned semantic artifacts when a symbol is removed, reports semanticPruned, and bumps generation.semantic', async () => {
+    await indexAndCommit();
+    const indexed = soulFor();
+    const greet = [...indexed.iterate('symbol')].find((n) => n.qualifiedName === 'greet')!;
+    expect(greet).toBeTruthy();
+    const genBefore = indexed.getManifest().generation?.semantic ?? 0;
+
+    // Persist a semantic artifact for `greet` at the canonical artifacts path. The pipeline has no mcp
+    // dep, so we stub the on-disk shape directly — `pruneSemanticArtifacts` only reads `targetId`, so a
+    // minimal stub is enough (the real EnrichmentStore writes the full LlmArtifact at this layout).
+    const shardDir = join(repo, '.crib', 'graph', 'semantic', 'artifacts', 'symbol', '00');
+    mkdirSync(shardDir, { recursive: true });
+    const artifactPath = join(shardDir, 'greet_dead.json');
+    writeFileSync(artifactPath, JSON.stringify({ targetId: greet.id }));
+
+    // Delete a.ts entirely → greet's symbol is removed by `removeByFile` → its artifact orphans.
+    rmSync(join(repo, 'src', 'a.ts'));
+    // b.ts still imports greet; rewrite it so it parses without the now-missing import.
+    writeFileSync(join(repo, 'src', 'b.ts'), "export function main(): string { return 'done'; }\n");
+    git(repo, ['add', '-A']);
+    git(repo, [
+      '-c',
+      'user.email=t@t.test',
+      '-c',
+      'user.name=T',
+      'commit',
+      '-q',
+      '-m',
+      'drop greet',
+    ]);
+
+    const soul = soulFor();
+    const result = await updateRepo(soul, repo, {
+      now: '2026-01-02T00:00:00.000Z',
+      ownership: false,
+    });
+    expect(result).not.toBeNull();
+    expect(result && 'noop' in result).toBe(false);
+    const report = result as UpdateReport;
+    expect(report.semanticPruned).toBeGreaterThanOrEqual(1);
+    // The orphaned artifact file is gone.
+    expect(existsSync(artifactPath)).toBe(false);
+    // generation.semantic was bumped exactly once (single writer → survives the commit).
+    expect(soulFor().getManifest().generation?.semantic ?? 0).toBe(genBefore + 1);
+  });
+
+  it('reports semanticPruned: 0 (field present) on a body-only edit that removes no symbol', async () => {
+    await indexAndCommit();
+    writeFileSync(
+      join(repo, 'src', 'a.ts'),
+      "export function greet(): string { return 'hello'; }\n",
+    );
+    git(repo, ['add', 'src/a.ts']);
+    git(repo, ['-c', 'user.email=t@t.test', '-c', 'user.name=T', 'commit', '-q', '-m', 'edit']);
+    const soul = soulFor();
+    const result = await updateRepo(soul, repo, {
+      now: '2026-01-02T00:00:00.000Z',
+      ownership: false,
+    });
+    const report = result as UpdateReport;
+    expect(report.semanticPruned).toBe(0);
   });
 });

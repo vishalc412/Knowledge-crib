@@ -1,0 +1,154 @@
+{
+  "id": "sym:scripts/test-python.mjs#runPythonTests@L31",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:eb0a92d6d81d90a07ed5121456662efd7a7f6b82a695ccc90551165f08b04ef6",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:scripts/test-python.mjs#runPythonTests@L31",
+    "kind": "symbol",
+    "type": "function",
+    "name": "runPythonTests",
+    "qualifiedName": "runPythonTests",
+    "signature": "runPythonTests()",
+    "lang": "javascript",
+    "file": "scripts/test-python.mjs",
+    "span": {
+      "start": 31,
+      "end": 38
+    },
+    "callSites": [
+      {
+        "callee": "findPython",
+        "line": 32
+      },
+      {
+        "callee": "execFileSync",
+        "line": 33
+      },
+      {
+        "callee": "resolve",
+        "line": 36
+      }
+    ]
+  },
+  "source": {
+    "text": "export function runPythonTests() {\n  const python = findPython();\n  execFileSync(\n    python.command,\n    [...python.prefixArgs, '-m', 'unittest', 'discover', '-s', 'tests', '-p', 'test_*.py'],\n    { cwd: resolve(repoRoot, 'python'), stdio: 'inherit' },\n  );\n}",
+    "truncated": false,
+    "totalLines": 8,
+    "startLine": 31
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:scripts/test-python.mjs#findPython@L21",
+      "confidence": 1,
+      "name": "findPython",
+      "qualifiedName": "findPython",
+      "signature": "findPython(platform = process.platform)",
+      "type": "function",
+      "file": "scripts/test-python.mjs",
+      "line": 21
+    },
+    {
+      "id": "sym:packages/ui/web/support.js#resolve@L193",
+      "confidence": 1,
+      "name": "resolve",
+      "qualifiedName": "resolve",
+      "signature": "resolve(vals, src)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 193
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:scripts/test-python.mjs#runPythonTests@L31",
+    "procedureName": "runPythonTests",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:scripts/test-python.mjs#runPythonTests@L31",
+        "procedureName": "runPythonTests",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:22eb1bcd8c093b31df05dccf1652ee087d1479005533a059954da8f3ad924a30",
+          "target": "sym:scripts/test-python.mjs#findPython@L21",
+          "expr": "findPython",
+          "line": 32
+        }
+      },
+      {
+        "procedure": "sym:scripts/test-python.mjs#runPythonTests@L31",
+        "procedureName": "runPythonTests",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bf246dd8736fe3a699eac2afe31657254c01c25a526886258fa6141b5fd0c8d0",
+          "target": "stmt:scripts/test-python.mjs@L32",
+          "line": 32,
+          "expr": "const python = findPython();"
+        }
+      },
+      {
+        "procedure": "sym:scripts/test-python.mjs#runPythonTests@L31",
+        "procedureName": "runPythonTests",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:322546e83b3a65bf9a105c7cf74e37be523166f51844f669c33f60b822464496",
+          "target": "stmt:scripts/test-python.mjs@L33",
+          "line": 33,
+          "expr": "execFileSync(\n    python.command,\n    [...python.prefixArgs, '-m', 'unittest', 'discover', '-s', 'tests', '-p', 'test_*.py'],\n    { cwd: resolve(repoRoot, 'python'), stdio: 'inherit' },\n  );"
+        }
+      },
+      {
+        "procedure": "sym:scripts/test-python.mjs#runPythonTests@L31",
+        "procedureName": "runPythonTests",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:4afcd64125ed7a62222dd15bbf3cb4b76e9b34b6fb03a9c77422d92c1d01c583",
+          "target": "sym:packages/ui/web/support.js#resolve@L193",
+          "expr": "resolve",
+          "line": 36
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 3,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

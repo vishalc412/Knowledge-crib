@@ -1,0 +1,763 @@
+{
+  "id": "sym:packages/cli/src/cli.ts#cmdExport@L1504",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:491eeb829d8facf0ed4671a2bb2ee1dfd672b6641f6b7db480b39b7293342a40",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/cli/src/cli.ts#cmdExport@L1504",
+    "kind": "symbol",
+    "type": "function",
+    "name": "cmdExport",
+    "qualifiedName": "cmdExport",
+    "signature": "cmdExport(args: string[], ctx?: CmdCtx): Promise<number>",
+    "lang": "typescript",
+    "file": "packages/cli/src/cli.ts",
+    "span": {
+      "start": 1504,
+      "end": 1571
+    },
+    "callSites": [
+      {
+        "callee": "push",
+        "line": 1521
+      },
+      {
+        "callee": "resolveProjectRoot",
+        "line": 1524
+      },
+      {
+        "callee": "write",
+        "line": 1532
+      },
+      {
+        "callee": "join",
+        "line": 1532
+      },
+      {
+        "callee": "write",
+        "line": 1537
+      },
+      {
+        "callee": "write",
+        "line": 1541
+      },
+      {
+        "callee": "openSoul",
+        "line": 1545
+      },
+      {
+        "callee": "write",
+        "line": 1553
+      },
+      {
+        "callee": "exportLlm",
+        "line": 1553
+      },
+      {
+        "callee": "write",
+        "line": 1555
+      },
+      {
+        "callee": "write",
+        "line": 1560
+      },
+      {
+        "callee": "renderExport",
+        "line": 1561
+      },
+      {
+        "callee": "includes",
+        "line": 1562
+      },
+      {
+        "callee": "write",
+        "line": 1567
+      },
+      {
+        "callee": "String",
+        "line": 1567
+      }
+    ]
+  },
+  "source": {
+    "text": "async function cmdExport(args: string[], ctx?: CmdCtx): Promise<number> {\n  // Parse flags + their values out so flag values aren't mistaken for a positional path.\n  let format = 'report';\n  let procedure: string | undefined;\n  let redact = true; // M1.4: the LLM export redacts by default; --no-redact opts out (local debugging only)\n  const positional: string[] = [];\n  for (let i = 0; i < args.length; i++) {\n    const a = args[i]!;\n    if (a === '--no-redact') {\n      redact = false;\n    } else if (a === '--redact') {\n      redact = true;\n    } else if (a === '--format') {\n      format = args[++i] ?? '';\n    } else if (a === '--procedure') {\n      procedure = args[++i];\n    } else if (!a.startsWith('-')) {\n      positional.push(a);\n    }\n  }\n  const resolved = resolveProjectRoot({\n    explicitRoot:\n      ctx?.cwdOverride ?? (positional[0] && positional[0] !== '.' ? positional[0] : undefined),\n  });\n\n  const formats = ['rules', 'mermaid', 'graph.json', 'report', 'llm'] as const;\n  type ExportFormat = (typeof formats)[number];\n  if (!(formats as readonly string[]).includes(format)) {\n    process.stderr.write(`unknown format: ${format || '(none)'}\\nvalid: ${formats.join(', ')}\\n`);\n    return EXIT.BAD_ARGS;\n  }\n  const fmt: ExportFormat = format as ExportFormat;\n  if (!isIndexedRoot(resolved)) {\n    process.stderr.write('not indexed — run `crib index` first\\n');\n    return EXIT.NOT_INDEXED;\n  }\n  if ((fmt === 'rules' || fmt === 'mermaid') && !procedure) {\n    process.stderr.write(`--procedure <id|name> is required for --format ${fmt}\\n`);\n    return EXIT.BAD_ARGS;\n  }\n\n  const rt = openSoul(resolved);\n  try {\n    if (fmt === 'llm') {\n      // M1.4: `llm` dumps committed semantic layer (`.crib/graph/semantic/`). `--redact` (default)\n      // strips every evidence `quote` to a span ref `{soulId, file, startLine, endLine}` and masks\n      // any secret-pattern substring in analysis/graph strings, so the exported bundle never\n      // carries verbatim source snippets or secrets even if the on-disk artifacts do.\n      const enrich = new EnrichmentStore(rt.soul, resolved.repoRoot);\n      process.stdout.write(enrich.exportLlm(redact));\n      if (!redact) {\n        process.stderr.write(\n          'warning: --no-redact emits verbatim evidence quotes — do not share the output externally.\\n',\n        );\n      }\n    } else {\n      process.stdout.write(\n        renderExport(rt.soul, fmt, procedure, {\n          extractedOnly: args.includes('--extracted-only'),\n        }),\n      );\n    }\n  } catch (err) {\n    process.stderr.write(`${err instanceof Error ? err.message : String(err)}\\n`);\n    return EXIT.ERROR;\n  }\n  return EXIT.OK;\n}",
+    "truncated": false,
+    "totalLines": 68,
+    "startLine": 1504
+  },
+  "callers": [
+    {
+      "id": "sym:packages/cli/src/cli.ts#main@L268",
+      "confidence": 1,
+      "name": "main",
+      "qualifiedName": "main",
+      "signature": "main(argvRaw: string[]): Promise<number>",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 268
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/cli/src/runtime.ts#isIndexedRoot@L107",
+      "confidence": 1,
+      "name": "isIndexedRoot",
+      "qualifiedName": "isIndexedRoot",
+      "signature": "isIndexedRoot(resolved: ResolvedRoot): boolean",
+      "type": "function",
+      "file": "packages/cli/src/runtime.ts",
+      "line": 107
+    },
+    {
+      "id": "sym:packages/cli/src/runtime.ts#openSoul@L100",
+      "confidence": 1,
+      "name": "openSoul",
+      "qualifiedName": "openSoul",
+      "signature": "openSoul(resolved: ResolvedRoot): Runtime",
+      "type": "function",
+      "file": "packages/cli/src/runtime.ts",
+      "line": 100
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 39
+    },
+    {
+      "id": "sym:packages/pipeline/src/rules/export.ts#renderExport@L161",
+      "confidence": 1,
+      "name": "renderExport",
+      "qualifiedName": "renderExport",
+      "signature": "renderExport(soul: SoulStore, format: 'rules' | 'mermaid' | 'graph.json' | 'report', procedure?: string, opts: { extractedOnly?: boolean } = {}): string",
+      "type": "function",
+      "file": "packages/pipeline/src/rules/export.ts",
+      "line": 161
+    },
+    {
+      "id": "sym:packages/cli/src/runtime.ts#resolveProjectRoot@L53",
+      "confidence": 1,
+      "name": "resolveProjectRoot",
+      "qualifiedName": "resolveProjectRoot",
+      "signature": "resolveProjectRoot(opts: ResolveOpts): ResolvedRoot",
+      "type": "function",
+      "file": "packages/cli/src/runtime.ts",
+      "line": 53
+    },
+    {
+      "id": "sym:packages/cli/src/hooks.test.ts#write@L54",
+      "confidence": 1,
+      "name": "write",
+      "qualifiedName": "write",
+      "signature": "write(path: string, records: Array<Record<string, unknown>>): void",
+      "type": "function",
+      "file": "packages/cli/src/hooks.test.ts",
+      "line": 54
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/cli/src/cli.ts@L1498",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/cli/src/cli.ts#cmdExport@L1504",
+    "procedureName": "cmdExport",
+    "conditions": [
+      "cond:packages/cli/src/cli.ts@L1510",
+      "cond:packages/cli/src/cli.ts@L1512",
+      "cond:packages/cli/src/cli.ts@L1514",
+      "cond:packages/cli/src/cli.ts@L1516",
+      "cond:packages/cli/src/cli.ts@L1518",
+      "cond:packages/cli/src/cli.ts@L1520",
+      "cond:packages/cli/src/cli.ts@L1531",
+      "cond:packages/cli/src/cli.ts@L1536",
+      "cond:packages/cli/src/cli.ts@L1540",
+      "cond:packages/cli/src/cli.ts@L1547",
+      "cond:packages/cli/src/cli.ts@L1554"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdExport@L1504",
+        "procedureName": "cmdExport",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:0dd0e9d71228d6891229841fd55f92cf237211cb7d65e801fb77e78e1fcb1dba",
+          "target": "sym:packages/cli/src/runtime.ts#isIndexedRoot@L107",
+          "expr": "isIndexedRoot"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdExport@L1504",
+        "procedureName": "cmdExport",
+        "guard": "cond:packages/cli/src/cli.ts@L1512",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1510",
+            "expr": "i < args.length"
+          },
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1512",
+            "expr": "a === '--no-redact'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bcae22240b226b3b4d50e01e975bc3c21b4b2ca242e270910ffe83d46bf8419e",
+          "target": "assign:packages/cli/src/cli.ts@L1513",
+          "line": 1513,
+          "expr": "redact = false;"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdExport@L1504",
+        "procedureName": "cmdExport",
+        "guard": "cond:packages/cli/src/cli.ts@L1514",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1510",
+            "expr": "i < args.length"
+          },
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1512",
+            "expr": "a === '--no-redact'"
+          },
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1514",
+            "expr": "a === '--redact'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:559f6ffdfaee1f4624284e9aacfaf6d3923c7b897d729a5c2673355fd3a05376",
+          "target": "assign:packages/cli/src/cli.ts@L1515",
+          "line": 1515,
+          "expr": "redact = true;"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdExport@L1504",
+        "procedureName": "cmdExport",
+        "guard": "cond:packages/cli/src/cli.ts@L1516",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1510",
+            "expr": "i < args.length"
+          },
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1512",
+            "expr": "a === '--no-redact'"
+          },
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1514",
+            "expr": "a === '--redact'"
+          },
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1516",
+            "expr": "a === '--format'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3175ec0e979f1249cba37e165f1ecb8c3b6297626cce99c422266a36551a4de9",
+          "target": "assign:packages/cli/src/cli.ts@L1517",
+          "line": 1517,
+          "expr": "format = args[++i] ?? '';"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdExport@L1504",
+        "procedureName": "cmdExport",
+        "guard": "cond:packages/cli/src/cli.ts@L1518",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1510",
+            "expr": "i < args.length"
+          },
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1512",
+            "expr": "a === '--no-redact'"
+          },
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1514",
+            "expr": "a === '--redact'"
+          },
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1516",
+            "expr": "a === '--format'"
+          },
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1518",
+            "expr": "a === '--procedure'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4349e2a2069d2fe88c170154d3d8d5d32cb4fe78522672e4645c69ab54e21431",
+          "target": "assign:packages/cli/src/cli.ts@L1519",
+          "line": 1519,
+          "expr": "procedure = args[++i];"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdExport@L1504",
+        "procedureName": "cmdExport",
+        "guard": "cond:packages/cli/src/cli.ts@L1520",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1510",
+            "expr": "i < args.length"
+          },
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1512",
+            "expr": "a === '--no-redact'"
+          },
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1514",
+            "expr": "a === '--redact'"
+          },
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1516",
+            "expr": "a === '--format'"
+          },
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1518",
+            "expr": "a === '--procedure'"
+          },
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1520",
+            "expr": "!a.startsWith('-')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6bdf801808515e15f2a6f9ff0943be0f96ccf63549178a91b6661889815af878",
+          "target": "stmt:packages/cli/src/cli.ts@L1521",
+          "line": 1521,
+          "expr": "positional.push(a);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdExport@L1504",
+        "procedureName": "cmdExport",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:b6e22bc42c8bd3ac6cea5fc8ece1af8e1a8cd7095a51615f9ff4424fc3139669",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 1521
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdExport@L1504",
+        "procedureName": "cmdExport",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:481d3acf0b2571a6ab141cb74dcbe8634a746175a05436b0e7f8b65021f661bd",
+          "target": "stmt:packages/cli/src/cli.ts@L1524",
+          "line": 1524,
+          "expr": "const resolved = resolveProjectRoot({\n    explicitRoot:\n      ctx?.cwdOverride ?? (positional[0] && positional[0] !== '.' ? positional[0] : undefined),\n  });"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdExport@L1504",
+        "procedureName": "cmdExport",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:e863ad5dde9edc02a1f35c04375339355d98ba1855037f4f1267af94a24a877a",
+          "target": "sym:packages/cli/src/runtime.ts#resolveProjectRoot@L53",
+          "expr": "resolveProjectRoot",
+          "line": 1524
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdExport@L1504",
+        "procedureName": "cmdExport",
+        "guard": "cond:packages/cli/src/cli.ts@L1531",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1531",
+            "expr": "!(formats as readonly string[]).includes(format)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6162a82d68dd05fa796da9c3d619bee2a17132c24800475b7bd6d35e29f2dcb0",
+          "target": "stmt:packages/cli/src/cli.ts@L1532",
+          "line": 1532,
+          "expr": "process.stderr.write(`unknown format: ${format || '(none)'}\\nvalid: ${formats.join(', ')}\\n`);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdExport@L1504",
+        "procedureName": "cmdExport",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:9f19233384620ea585a48cf5b73a15cbd0815978cbba581ddf20601557ecd57a",
+          "target": "sym:packages/cli/src/hooks.test.ts#write@L54",
+          "expr": "write",
+          "line": 1532
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdExport@L1504",
+        "procedureName": "cmdExport",
+        "guard": "cond:packages/cli/src/cli.ts@L1531",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1531",
+            "expr": "!(formats as readonly string[]).includes(format)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:83a51d6202f3c9dabff7b5df2b89768382f6c5824058734a32780971da6387cc",
+          "target": "stmt:packages/cli/src/cli.ts@L1533",
+          "line": 1533,
+          "expr": "return EXIT.BAD_ARGS;"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdExport@L1504",
+        "procedureName": "cmdExport",
+        "guard": "cond:packages/cli/src/cli.ts@L1536",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1536",
+            "expr": "!isIndexedRoot(resolved)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:26d8f096dfe4b3ca2629cceaa9bbffc8abecf06ba859951725819ae35cec25b3",
+          "target": "stmt:packages/cli/src/cli.ts@L1537",
+          "line": 1537,
+          "expr": "process.stderr.write('not indexed — run `crib index` first\\n');"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdExport@L1504",
+        "procedureName": "cmdExport",
+        "guard": "cond:packages/cli/src/cli.ts@L1536",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1536",
+            "expr": "!isIndexedRoot(resolved)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:31c5af1954c838e57544cb91b329d1456619538cbe593325ef8d16890c1ddffb",
+          "target": "stmt:packages/cli/src/cli.ts@L1538",
+          "line": 1538,
+          "expr": "return EXIT.NOT_INDEXED;"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdExport@L1504",
+        "procedureName": "cmdExport",
+        "guard": "cond:packages/cli/src/cli.ts@L1540",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1540",
+            "expr": "(fmt === 'rules' || fmt === 'mermaid') && !procedure",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7e83447fc1e514b7f30eb0c72fed653a2b978846f04447e0e7e30d532800c3f9",
+          "target": "stmt:packages/cli/src/cli.ts@L1541",
+          "line": 1541,
+          "expr": "process.stderr.write(`--procedure <id|name> is required for --format ${fmt}\\n`);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdExport@L1504",
+        "procedureName": "cmdExport",
+        "guard": "cond:packages/cli/src/cli.ts@L1540",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1540",
+            "expr": "(fmt === 'rules' || fmt === 'mermaid') && !procedure",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d6cb25c6d0bc3f0c7867b0105cebd7998e65590a34183d9404255567c0764cc3",
+          "target": "stmt:packages/cli/src/cli.ts@L1542",
+          "line": 1542,
+          "expr": "return EXIT.BAD_ARGS;"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdExport@L1504",
+        "procedureName": "cmdExport",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:71a32e0d44fa6026794c5c8b094b6669839edbe388b091c4ab72409e52f7462d",
+          "target": "sym:packages/cli/src/runtime.ts#openSoul@L100",
+          "expr": "openSoul",
+          "line": 1545
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdExport@L1504",
+        "procedureName": "cmdExport",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e87bb56c8ac3e8ace16fe1d02b92d2d33e43e81014cc46252e7da0c22b1e9426",
+          "target": "stmt:packages/cli/src/cli.ts@L1545",
+          "line": 1545,
+          "expr": "const rt = openSoul(resolved);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdExport@L1504",
+        "procedureName": "cmdExport",
+        "guard": "cond:packages/cli/src/cli.ts@L1547",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1547",
+            "expr": "fmt === 'llm'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1ca7760176f1c385c2855a1435cb46d6c387495ea65caf02536e81ea210e00ea",
+          "target": "stmt:packages/cli/src/cli.ts@L1553",
+          "line": 1553,
+          "expr": "process.stdout.write(enrich.exportLlm(redact));"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdExport@L1504",
+        "procedureName": "cmdExport",
+        "guard": "cond:packages/cli/src/cli.ts@L1554",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1547",
+            "expr": "fmt === 'llm'"
+          },
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1554",
+            "expr": "!redact",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:474a07bdca6ab8bfc2d20f655a5bee6816315798acd3d04db958b33d53513d7a",
+          "target": "stmt:packages/cli/src/cli.ts@L1555",
+          "line": 1555,
+          "expr": "process.stderr.write(\n          'warning: --no-redact emits verbatim evidence quotes — do not share the output externally.\\n',\n        );"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdExport@L1504",
+        "procedureName": "cmdExport",
+        "guard": "cond:packages/cli/src/cli.ts@L1547",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L1547",
+            "expr": "fmt === 'llm'",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1aeeb698fa03a15b06309babc44ca55c39c46d3b16933e34ad13cd5d8d10302e",
+          "target": "stmt:packages/cli/src/cli.ts@L1560",
+          "line": 1560,
+          "expr": "process.stdout.write(\n        renderExport(rt.soul, fmt, procedure, {\n          extractedOnly: args.includes('--extracted-only'),\n        }),\n      );"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdExport@L1504",
+        "procedureName": "cmdExport",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:9df8bda75ae8175d9880884e96acff453adf14085d920aa9ae76e8f509e3821f",
+          "target": "sym:packages/pipeline/src/rules/export.ts#renderExport@L161",
+          "expr": "renderExport",
+          "line": 1561
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdExport@L1504",
+        "procedureName": "cmdExport",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2bccd4ca7448df609f061fdb4833cfff1997d8da683ecc5a0ae9392ac4605f1a",
+          "target": "stmt:packages/cli/src/cli.ts@L1567",
+          "line": 1567,
+          "expr": "process.stderr.write(`${err instanceof Error ? err.message : String(err)}\\n`);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdExport@L1504",
+        "procedureName": "cmdExport",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7c78a38245d255a68f65ef85ca12e82a745448ecf7e35353253957a91d506772",
+          "target": "stmt:packages/cli/src/cli.ts@L1568",
+          "line": 1568,
+          "expr": "return EXIT.ERROR;"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdExport@L1504",
+        "procedureName": "cmdExport",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:be050cda932895e61a198ca638e29ebf1ed7c14eb378ebcd595808bd4b35e677",
+          "target": "stmt:packages/cli/src/cli.ts@L1570",
+          "line": 1570,
+          "expr": "return EXIT.OK;"
+        }
+      }
+    ]
+  },
+  "controlFlow": {
+    "raises": [],
+    "handles": [
+      {
+        "id": "exc:packages/cli/src/cli.ts@L1566",
+        "kind": "exception-handler",
+        "lang": "typescript",
+        "file": "packages/cli/src/cli.ts",
+        "span": {
+          "start": 1566,
+          "end": 1566
+        },
+        "confidence": 1
+      }
+    ],
+    "iterates": [],
+    "declares": []
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 19,
+    "referencedByFiles": [
+      "packages/cli/src/cli.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 19,
+    "assignments": 4,
+    "conditions": 10,
+    "raises": 0,
+    "handlers": 1,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 6,
+      "recorded": 15,
+      "unresolved": 3
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "3 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

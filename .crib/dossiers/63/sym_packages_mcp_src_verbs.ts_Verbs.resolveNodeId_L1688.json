@@ -1,0 +1,299 @@
+{
+  "id": "sym:packages/mcp/src/verbs.ts#Verbs.resolveNodeId@L1688",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:2bb10a3aa60cfea244227bef440c1d24a51b124b024c31a2c0be05f760caa915",
+  "builtAt": "2026-07-16T14:40:07.112Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/verbs.ts#Verbs.resolveNodeId@L1688",
+    "kind": "symbol",
+    "type": "method",
+    "name": "resolveNodeId",
+    "qualifiedName": "Verbs.resolveNodeId",
+    "signature": "resolveNodeId(idOrName: string): string | undefined",
+    "lang": "typescript",
+    "file": "packages/mcp/src/verbs.ts",
+    "span": {
+      "start": 1688,
+      "end": 1699
+    },
+    "callSites": [
+      {
+        "callee": "toLowerCase",
+        "line": 1691
+      }
+    ]
+  },
+  "source": {
+    "text": "  private resolveNodeId(idOrName: string): string | undefined {\n    const soul = this.deps.soul;\n    if (soul.getNode(idOrName)) return idOrName;\n    const needle = idOrName.toLowerCase();\n    for (const n of soul.iterate()) {\n      if (n.qualifiedName?.toLowerCase() === needle) return n.id;\n    }\n    for (const n of soul.iterate()) {\n      if (n.name?.toLowerCase() === needle) return n.id;\n    }\n    return undefined;\n  }",
+    "truncated": false,
+    "totalLines": 12,
+    "startLine": 1688
+  },
+  "callers": [
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.ask@L1003",
+      "confidence": 1,
+      "name": "ask",
+      "qualifiedName": "Verbs.ask",
+      "signature": "ask(args: {\n    q: string;\n    limit?: number;\n    format?: 'json' | 'markdown';\n    withSource?: boolean;\n    withRules?: boolean;\n    withFramework?: boolean;\n    extractedOnly?: boolean;\n  }): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 1003
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.context@L326",
+      "confidence": 1,
+      "name": "context",
+      "qualifiedName": "Verbs.context",
+      "signature": "context(args: {\n    id: string;\n    docLimit?: number;\n    extractedOnly?: boolean;\n    /** include the full source text of the node's span (rehydrated from disk, budgeted) */\n    withSource?: boolean;\n    /** for a procedure/function, fold in its decision table (conditions/actions/reads/writes) */\n    withRules?: boolean;\n    /** fold in the schema-1.3 framework-semantics relationships: routes exposed, beans produced,\n     *  DI dependencies/dependents, JPA relations, component renders. Auto-scopes by node — a class\n     *  (controller/@Configuration/@Entity) aggregates its members' route table / bean inventory /\n     *  DI graph / relation model via `member-of`; a callable/component/field returns its own direct\n     *  edges. A @Bean-supplied dependency is surfaced with `kind: 'produces'` + the producer in one\n     *  trip (no round-trip). Unresolved `meta.injects`/`meta.produces` type names surface as\n     *  `⚠ unresolved` entries (parity with `gaps`). */\n    withFramework?: boolean;\n    /** fold in saved LLM-authored semantic graph analysis; default-on when present. */\n    withLlm?: boolean;\n    /** char cap for the rehydrated source body (default {@link DEFAULT_BODY_MAX_CHARS}) */\n    sourceMaxChars?: number;\n    /** line cap for the rehydrated source body (default {@link DEFAULT_BODY_MAX_LINES}) */\n    sourceMaxLines?: number;\n    /** absolute file line to start the source page at (paging cursor; default = span start) */\n    sourceStartLine?: number;\n    /** response-wide token budget (chars/4). When set with `withSource`, the source body is shrunk\n     *  to fit the remaining budget and `budgetExhausted:true` is set; page via `source.nextLine`.\n     *  (M1.2) */\n    maxTokens?: number;\n    /** M2.6 change-aware cache. Echo the `hash` a prior call returned to short-circuit an unchanged\n     *  response: when the rebuilt response is byte-identical, the body collapses to\n     *  `{ unchanged: true, hash }`. Stateless (deterministic BLAKE3 of the response). */\n    ifHash?: string;\n  }): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 326
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.dossier@L487",
+      "confidence": 1,
+      "name": "dossier",
+      "qualifiedName": "Verbs.dossier",
+      "signature": "dossier(args: {\n    id: string;\n    includeTables?: boolean;\n    sourceMaxChars?: number;\n    sourceMaxLines?: number;\n    /** absolute file line to start the source page at (paging cursor; default = span start) */\n    sourceStartLine?: number;\n    extractedOnly?: boolean;\n    /** fold in saved LLM-authored semantic graph analysis; default-on when present. */\n    withLlm?: boolean;\n    format?: 'json' | 'markdown';\n    /** M2.6 change-aware cache. Echo the `hash` a prior call returned to short-circuit an unchanged\n     *  response (works for both `json` and `markdown` formats). Stateless (deterministic BLAKE3). */\n    ifHash?: string;\n  }): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 487
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.dossierByScope@L608",
+      "confidence": 1,
+      "name": "dossierByScope",
+      "qualifiedName": "Verbs.dossierByScope",
+      "signature": "dossierByScope(args: {\n    /** the scope kind: 'package' (the package's member symbols), 'file' (a file's symbols), or\n     *  'cluster' (a cluster's symbols). */\n    scope: 'package' | 'file' | 'cluster';\n    /** the scope node id, OR — for a package — the qualified/simple name (parity with the other node\n     *  verbs); for a file, the path (with or without the `file:` prefix); for a cluster, the slug. */\n    id: string;\n    extractedOnly?: boolean;\n    /** resolve reads/writes table names in each callable's decision table (extra lookups). */\n    includeTables?: boolean;\n    /** cap on the number of per-symbol dossiers returned (default 1000; `truncated` flags a cap). */\n    maxSymbols?: number;\n    sourceMaxChars?: number;\n    sourceMaxLines?: number;\n    format?: 'json' | 'markdown';\n    /** resume cursor (a prior response's `cursor`) — skip the first N resolved symbols. Decoupled\n     *  from `maxTokens` (paging works without a budget), but a cursor is only RETURNED when `maxTokens`\n     *  is set (the opt-in budget path). (M1.2) */\n    cursor?: string;\n    /** response-wide token budget (chars/4). When set, the dossiers list is trimmed to the largest\n     *  leading prefix that fits and `budgetExhausted:true` + a `cursor` resume point are returned.\n     *  (M1.2) */\n    maxTokens?: number;\n  }): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 608
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.impact@L716",
+      "confidence": 1,
+      "name": "impact",
+      "qualifiedName": "Verbs.impact",
+      "signature": "impact(args: {\n    id: string;\n    dir: Dir;\n    depth?: number;\n    docLimit?: number;\n    limit?: number;\n    extractedOnly?: boolean;\n    includeLlm?: boolean;\n  }): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 716
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.llmNeighbors@L1217",
+      "confidence": 1,
+      "name": "llmNeighbors",
+      "qualifiedName": "Verbs.llmNeighbors",
+      "signature": "llmNeighbors(args: { id: string }): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 1217
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.neighbors@L1231",
+      "confidence": 1,
+      "name": "neighbors",
+      "qualifiedName": "Verbs.neighbors",
+      "signature": "neighbors(args: {\n    id: string;\n    rel?: string;\n    dir?: ApiDir;\n    limit?: number;\n    extractedOnly?: boolean;\n    includeLlm?: boolean;\n  }): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 1231
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.ownership@L1261",
+      "confidence": 1,
+      "name": "ownership",
+      "qualifiedName": "Verbs.ownership",
+      "signature": "ownership(args: { id: string }): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 1261
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.reconstruct@L562",
+      "confidence": 1,
+      "name": "reconstruct",
+      "qualifiedName": "Verbs.reconstruct",
+      "signature": "reconstruct(args: {\n    id: string;\n    extractedOnly?: boolean;\n    /** include the referenced-tables section (default true) */\n    includeTables?: boolean;\n    /** cap on the number of member entries (default 1000; `truncated` flags a cap) */\n    maxSymbols?: number;\n    format?: 'json' | 'markdown';\n  }): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 562
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.shortestPath@L1281",
+      "confidence": 1,
+      "name": "shortestPath",
+      "qualifiedName": "Verbs.shortestPath",
+      "signature": "shortestPath(args: {\n    from: string;\n    to: string;\n    maxHops?: number;\n    includeLlm?: boolean;\n    extractedOnly?: boolean;\n  }): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 1281
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.source@L454",
+      "confidence": 1,
+      "name": "source",
+      "qualifiedName": "Verbs.source",
+      "signature": "source(args: {\n    id: string;\n    maxChars?: number;\n    maxLines?: number;\n    /** absolute file line to start the page at (paging cursor; default = span start) */\n    startLine?: number;\n    /** M2.6 change-aware cache. Echo the `hash` a prior call returned to short-circuit an unchanged\n     *  response. Stateless (deterministic BLAKE3 of the response). */\n    ifHash?: string;\n  }): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 454
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/mcp/src/verbs.ts@L1679",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.resolveNodeId@L1688",
+    "procedureName": "Verbs.resolveNodeId",
+    "conditions": [
+      "cond:packages/mcp/src/verbs.ts@L1690",
+      "cond:packages/mcp/src/verbs.ts@L1692",
+      "cond:packages/mcp/src/verbs.ts@L1693",
+      "cond:packages/mcp/src/verbs.ts@L1695",
+      "cond:packages/mcp/src/verbs.ts@L1696"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.resolveNodeId@L1688",
+        "procedureName": "Verbs.resolveNodeId",
+        "guard": "cond:packages/mcp/src/verbs.ts@L1690",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L1690",
+            "expr": "soul.getNode(idOrName)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:68f424dda3a25600d7e10f8ce061dd7708bb22d0150d737c84cafc1d8a89c752",
+          "target": "stmt:packages/mcp/src/verbs.ts@L1690",
+          "line": 1690,
+          "expr": "return idOrName;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.resolveNodeId@L1688",
+        "procedureName": "Verbs.resolveNodeId",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:50a985bd9a14eaa696a318b69c73a9edb0b917763226bdcc374800e50ff165bf",
+          "target": "stmt:packages/mcp/src/verbs.ts@L1691",
+          "line": 1691,
+          "expr": "const needle = idOrName.toLowerCase();"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.resolveNodeId@L1688",
+        "procedureName": "Verbs.resolveNodeId",
+        "guard": "cond:packages/mcp/src/verbs.ts@L1693",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L1692",
+            "expr": "soul.iterate()"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L1693",
+            "expr": "n.qualifiedName?.toLowerCase() === needle",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0ce7ce7e1fdaaca3d2cc4e05c0640d73acee44b14c8acbfd07e1a553e35b68f2",
+          "target": "stmt:packages/mcp/src/verbs.ts@L1693",
+          "line": 1693,
+          "expr": "return n.id;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.resolveNodeId@L1688",
+        "procedureName": "Verbs.resolveNodeId",
+        "guard": "cond:packages/mcp/src/verbs.ts@L1696",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L1695",
+            "expr": "soul.iterate()"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L1696",
+            "expr": "n.name?.toLowerCase() === needle",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:03dc3bf323d569b699d81de5965b63640a92191a034b21108be4d51684e55da1",
+          "target": "stmt:packages/mcp/src/verbs.ts@L1696",
+          "line": 1696,
+          "expr": "return n.id;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.resolveNodeId@L1688",
+        "procedureName": "Verbs.resolveNodeId",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9b34084e3807215b5cdaa68fbc0984856af15792e5536acebac7ed1c21228d25",
+          "target": "stmt:packages/mcp/src/verbs.ts@L1698",
+          "line": 1698,
+          "expr": "return undefined;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 5,
+    "referencedByFiles": [
+      "packages/mcp/src/verbs.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 5,
+    "assignments": 0,
+    "conditions": 3,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 1,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

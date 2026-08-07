@@ -1,0 +1,104 @@
+{
+  "id": "sym:packages/core/src/federation.ts#isParamSegment@L289",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:2a2336f1708948cf650cc5b9f01d3e18bb7a462b04f4a8a571302b5161fdf7a8",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/federation.ts#isParamSegment@L289",
+    "kind": "symbol",
+    "type": "function",
+    "name": "isParamSegment",
+    "qualifiedName": "isParamSegment",
+    "signature": "isParamSegment(seg: string): boolean",
+    "lang": "typescript",
+    "file": "packages/core/src/federation.ts",
+    "span": {
+      "start": 289,
+      "end": 291
+    },
+    "callSites": [
+      {
+        "callee": "startsWith",
+        "line": 290
+      },
+      {
+        "callee": "startsWith",
+        "line": 290
+      },
+      {
+        "callee": "endsWith",
+        "line": 290
+      }
+    ]
+  },
+  "source": {
+    "text": "function isParamSegment(seg: string): boolean {\n  return seg.startsWith(':') || (seg.startsWith('{') && seg.endsWith('}'));\n}",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 289
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/federation.ts#routeMatches@L258",
+      "confidence": 1,
+      "name": "routeMatches",
+      "qualifiedName": "routeMatches",
+      "signature": "routeMatches(callMethod: string, callPath: string, routeMethod: string, routePath: string): boolean",
+      "type": "function",
+      "file": "packages/core/src/federation.ts",
+      "line": 258
+    }
+  ],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/core/src/federation.ts#isParamSegment@L289",
+    "procedureName": "isParamSegment",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/federation.ts#isParamSegment@L289",
+        "procedureName": "isParamSegment",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:390f488c38609d33719eee8459d7e669df0202a3eed46e02d6d78344757149f6",
+          "target": "stmt:packages/core/src/federation.ts@L290",
+          "line": 290,
+          "expr": "return seg.startsWith(':') || (seg.startsWith('{') && seg.endsWith('}'));"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/core/src/federation.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 3,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

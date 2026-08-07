@@ -1,0 +1,480 @@
+{
+  "id": "sym:packages/pipeline/src/workspace.ts#parseCargoMembers@L161",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:129870650be73bf38a55daa05f3bfa37077b692d8a2cb6e2a6ad898ef3f66cfe",
+  "builtAt": "2026-06-30T22:32:35.510Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/workspace.ts#parseCargoMembers@L161",
+    "kind": "symbol",
+    "type": "function",
+    "name": "parseCargoMembers",
+    "qualifiedName": "parseCargoMembers",
+    "signature": "parseCargoMembers(content: string): string[]",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/workspace.ts",
+    "span": {
+      "start": 161,
+      "end": 194
+    },
+    "callSites": [
+      {
+        "callee": "trim",
+        "line": 167
+      },
+      {
+        "callee": "trim",
+        "line": 179
+      },
+      {
+        "callee": "slice",
+        "line": 179
+      },
+      {
+        "callee": "indexOf",
+        "line": 179
+      },
+      {
+        "callee": "collectCargoMembers",
+        "line": 183
+      },
+      {
+        "callee": "slice",
+        "line": 183
+      },
+      {
+        "callee": "collectCargoMembers",
+        "line": 191
+      }
+    ]
+  },
+  "source": {
+    "text": "function parseCargoMembers(content: string): string[] {\n  const out: string[] = [];\n  let inWorkspace = false;\n  let inMembers = false;\n  let bracketDepth = 0;\n  for (const line of content.split(/\\r?\\n/)) {\n    const trimmed = line.trim();\n    if (/^\\[workspace\\]/.test(trimmed)) {\n      inWorkspace = true;\n      inMembers = false;\n      continue;\n    }\n    if (trimmed.startsWith('[')) {\n      inWorkspace = false;\n      continue;\n    }\n    if (!inWorkspace) continue;\n    if (/^members\\s*=/.test(trimmed)) {\n      const after = trimmed.slice(trimmed.indexOf('=') + 1).trim();\n      if (after.startsWith('[')) {\n        inMembers = true;\n        bracketDepth = 1;\n        collectCargoMembers(after.slice(1), out);\n        if (after.includes(']')) inMembers = false;\n      } else {\n        // multi-line `members =\\n  [...]` — wait for bracket on a later line\n        inMembers = true;\n      }\n      continue;\n    }\n    if (inMembers) collectCargoMembers(trimmed, out);\n  }\n  return out;\n}",
+    "truncated": false,
+    "totalLines": 34,
+    "startLine": 161
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/src/workspace.ts#detectCargo@L125",
+      "confidence": 1,
+      "name": "detectCargo",
+      "qualifiedName": "detectCargo",
+      "signature": "detectCargo(root: string): WorkspaceLayout | null",
+      "type": "function",
+      "file": "packages/pipeline/src/workspace.ts",
+      "line": 125
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/pipeline/src/workspace.ts#collectCargoMembers@L196",
+      "confidence": 1,
+      "name": "collectCargoMembers",
+      "qualifiedName": "collectCargoMembers",
+      "signature": "collectCargoMembers(segment: string, out: string[]): void",
+      "type": "function",
+      "file": "packages/pipeline/src/workspace.ts",
+      "line": 196
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/pipeline/src/workspace.ts@L160",
+      "snippet": "/** Parse `[workspace] members = [...]` (array or multi-line) from a root Cargo.toml. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/workspace.ts#parseCargoMembers@L161",
+    "procedureName": "parseCargoMembers",
+    "conditions": [
+      "cond:packages/pipeline/src/workspace.ts@L166",
+      "cond:packages/pipeline/src/workspace.ts@L168",
+      "cond:packages/pipeline/src/workspace.ts@L173",
+      "cond:packages/pipeline/src/workspace.ts@L178",
+      "cond:packages/pipeline/src/workspace.ts@L180",
+      "cond:packages/pipeline/src/workspace.ts@L191",
+      "cond:packages/pipeline/src/workspace.ts@L184"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/workspace.ts#parseCargoMembers@L161",
+        "procedureName": "parseCargoMembers",
+        "guard": "cond:packages/pipeline/src/workspace.ts@L166",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/workspace.ts@L166",
+            "expr": "content.split(/\\r?\\n/)",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c9fb44439a049b8bb48acc2133648d37282f138683134901541a69bb31b92fc7",
+          "target": "stmt:packages/pipeline/src/workspace.ts@L167",
+          "line": 167,
+          "expr": "const trimmed = line.trim();"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/workspace.ts#parseCargoMembers@L161",
+        "procedureName": "parseCargoMembers",
+        "guard": "cond:packages/pipeline/src/workspace.ts@L168",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/workspace.ts@L166",
+            "expr": "content.split(/\\r?\\n/)"
+          },
+          {
+            "id": "cond:packages/pipeline/src/workspace.ts@L168",
+            "expr": "/^\\[workspace\\]/.test(trimmed)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4e388835a8db09ef2b571d1a0ff1f2ab9796a1e411ffea8ed9b9a07b0b60fb8b",
+          "target": "assign:packages/pipeline/src/workspace.ts@L169",
+          "line": 169,
+          "expr": "inWorkspace = true;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/workspace.ts#parseCargoMembers@L161",
+        "procedureName": "parseCargoMembers",
+        "guard": "cond:packages/pipeline/src/workspace.ts@L168",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/workspace.ts@L166",
+            "expr": "content.split(/\\r?\\n/)"
+          },
+          {
+            "id": "cond:packages/pipeline/src/workspace.ts@L168",
+            "expr": "/^\\[workspace\\]/.test(trimmed)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6e83a3e0bad1c2f6a20e730fa9b40c8ad0144cf84660d33b4a94c4eb4898afdb",
+          "target": "assign:packages/pipeline/src/workspace.ts@L170",
+          "line": 170,
+          "expr": "inMembers = false;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/workspace.ts#parseCargoMembers@L161",
+        "procedureName": "parseCargoMembers",
+        "guard": "cond:packages/pipeline/src/workspace.ts@L173",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/workspace.ts@L166",
+            "expr": "content.split(/\\r?\\n/)"
+          },
+          {
+            "id": "cond:packages/pipeline/src/workspace.ts@L173",
+            "expr": "trimmed.startsWith('[')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b5aff912483cdeb5adc9773986eef2db306ca3f5e98deeb72db2ad5ed134349c",
+          "target": "assign:packages/pipeline/src/workspace.ts@L174",
+          "line": 174,
+          "expr": "inWorkspace = false;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/workspace.ts#parseCargoMembers@L161",
+        "procedureName": "parseCargoMembers",
+        "guard": "cond:packages/pipeline/src/workspace.ts@L178",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/workspace.ts@L166",
+            "expr": "content.split(/\\r?\\n/)"
+          },
+          {
+            "id": "cond:packages/pipeline/src/workspace.ts@L178",
+            "expr": "/^members\\s*=/.test(trimmed)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:aad0b1400f9bb2a1d6fdc3d5579615837a6cdb2e5097dcb88002915421f5f9a1",
+          "target": "stmt:packages/pipeline/src/workspace.ts@L179",
+          "line": 179,
+          "expr": "const after = trimmed.slice(trimmed.indexOf('=') + 1).trim();"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/workspace.ts#parseCargoMembers@L161",
+        "procedureName": "parseCargoMembers",
+        "guard": "cond:packages/pipeline/src/workspace.ts@L180",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/workspace.ts@L166",
+            "expr": "content.split(/\\r?\\n/)"
+          },
+          {
+            "id": "cond:packages/pipeline/src/workspace.ts@L178",
+            "expr": "/^members\\s*=/.test(trimmed)"
+          },
+          {
+            "id": "cond:packages/pipeline/src/workspace.ts@L180",
+            "expr": "after.startsWith('[')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:42a049e288f27db9698787aa8957713a67d9ed3e4f3b8c7aad2e54a23ae852ef",
+          "target": "assign:packages/pipeline/src/workspace.ts@L181",
+          "line": 181,
+          "expr": "inMembers = true;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/workspace.ts#parseCargoMembers@L161",
+        "procedureName": "parseCargoMembers",
+        "guard": "cond:packages/pipeline/src/workspace.ts@L180",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/workspace.ts@L166",
+            "expr": "content.split(/\\r?\\n/)"
+          },
+          {
+            "id": "cond:packages/pipeline/src/workspace.ts@L178",
+            "expr": "/^members\\s*=/.test(trimmed)"
+          },
+          {
+            "id": "cond:packages/pipeline/src/workspace.ts@L180",
+            "expr": "after.startsWith('[')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a54d906e63e4531eaae3c60d1476617b19a87235c617b88a820d0d34b01f6583",
+          "target": "assign:packages/pipeline/src/workspace.ts@L182",
+          "line": 182,
+          "expr": "bracketDepth = 1;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/workspace.ts#parseCargoMembers@L161",
+        "procedureName": "parseCargoMembers",
+        "guard": "cond:packages/pipeline/src/workspace.ts@L191",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/workspace.ts@L166",
+            "expr": "content.split(/\\r?\\n/)"
+          },
+          {
+            "id": "cond:packages/pipeline/src/workspace.ts@L191",
+            "expr": "inMembers",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:4a985ef501ae002bb882cf41b24b3b965d12ad97b68e7f748a0f503ff9cff08d",
+          "target": "sym:packages/pipeline/src/workspace.ts#collectCargoMembers@L196",
+          "expr": "collectCargoMembers",
+          "line": 183
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/workspace.ts#parseCargoMembers@L161",
+        "procedureName": "parseCargoMembers",
+        "guard": "cond:packages/pipeline/src/workspace.ts@L180",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/workspace.ts@L166",
+            "expr": "content.split(/\\r?\\n/)"
+          },
+          {
+            "id": "cond:packages/pipeline/src/workspace.ts@L178",
+            "expr": "/^members\\s*=/.test(trimmed)"
+          },
+          {
+            "id": "cond:packages/pipeline/src/workspace.ts@L180",
+            "expr": "after.startsWith('[')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ac92495e2a08dbd4f9aa9f195456d0a8682190fbfbe2ae39ff9e2e82d2978f3c",
+          "target": "stmt:packages/pipeline/src/workspace.ts@L183",
+          "line": 183,
+          "expr": "collectCargoMembers(after.slice(1), out);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/workspace.ts#parseCargoMembers@L161",
+        "procedureName": "parseCargoMembers",
+        "guard": "cond:packages/pipeline/src/workspace.ts@L184",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/workspace.ts@L166",
+            "expr": "content.split(/\\r?\\n/)"
+          },
+          {
+            "id": "cond:packages/pipeline/src/workspace.ts@L178",
+            "expr": "/^members\\s*=/.test(trimmed)"
+          },
+          {
+            "id": "cond:packages/pipeline/src/workspace.ts@L180",
+            "expr": "after.startsWith('[')"
+          },
+          {
+            "id": "cond:packages/pipeline/src/workspace.ts@L184",
+            "expr": "after.includes(']')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3d9255caf4dce7d598ae07919a00f87a32a8425b393509e019e1cd5703a77886",
+          "target": "assign:packages/pipeline/src/workspace.ts@L184",
+          "line": 184,
+          "expr": "inMembers = false;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/workspace.ts#parseCargoMembers@L161",
+        "procedureName": "parseCargoMembers",
+        "guard": "cond:packages/pipeline/src/workspace.ts@L180",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/workspace.ts@L166",
+            "expr": "content.split(/\\r?\\n/)"
+          },
+          {
+            "id": "cond:packages/pipeline/src/workspace.ts@L178",
+            "expr": "/^members\\s*=/.test(trimmed)"
+          },
+          {
+            "id": "cond:packages/pipeline/src/workspace.ts@L180",
+            "expr": "after.startsWith('[')",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7e57a24a7b01549e281647fdca227bd9bf80b86bb34577928aeee1d40a2127d9",
+          "target": "assign:packages/pipeline/src/workspace.ts@L187",
+          "line": 187,
+          "expr": "inMembers = true;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/workspace.ts#parseCargoMembers@L161",
+        "procedureName": "parseCargoMembers",
+        "guard": "cond:packages/pipeline/src/workspace.ts@L191",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/workspace.ts@L166",
+            "expr": "content.split(/\\r?\\n/)"
+          },
+          {
+            "id": "cond:packages/pipeline/src/workspace.ts@L191",
+            "expr": "inMembers",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e0f972a0f14131fc395b899f8637def15e99957a920848b2ef5c36015e4172be",
+          "target": "stmt:packages/pipeline/src/workspace.ts@L191",
+          "line": 191,
+          "expr": "collectCargoMembers(trimmed, out);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/workspace.ts#parseCargoMembers@L161",
+        "procedureName": "parseCargoMembers",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d34df72bcc963f79996a473da6569c996d1a9ac67591c368c61bcf11017fb4a5",
+          "target": "stmt:packages/pipeline/src/workspace.ts@L193",
+          "line": 193,
+          "expr": "return out;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 12,
+    "referencedByFiles": [
+      "packages/pipeline/src/workspace.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 12,
+    "assignments": 7,
+    "conditions": 7,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 7,
+      "unresolved": 5
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "5 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

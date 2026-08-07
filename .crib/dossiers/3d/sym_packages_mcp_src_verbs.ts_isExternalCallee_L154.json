@@ -1,0 +1,100 @@
+{
+  "id": "sym:packages/mcp/src/verbs.ts#isExternalCallee@L154",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:5a8c08afb9da678554343429cf53960f777cd35fe889713e64dac3cf1d8d9520",
+  "builtAt": "2026-07-16T14:40:07.112Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/verbs.ts#isExternalCallee@L154",
+    "kind": "symbol",
+    "type": "function",
+    "name": "isExternalCallee",
+    "qualifiedName": "isExternalCallee",
+    "signature": "isExternalCallee(callee: string): boolean",
+    "lang": "typescript",
+    "file": "packages/mcp/src/verbs.ts",
+    "span": {
+      "start": 154,
+      "end": 156
+    },
+    "callSites": [
+      {
+        "callee": "some",
+        "line": 155
+      },
+      {
+        "callee": "test",
+        "line": 155
+      }
+    ]
+  },
+  "source": {
+    "text": "function isExternalCallee(callee: string): boolean {\n  return EXTERNAL_CALLEE_PATTERNS.some((p) => p.test(callee));\n}",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 154
+  },
+  "callers": [
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#classifyGap@L169",
+      "confidence": 1,
+      "name": "classifyGap",
+      "qualifiedName": "classifyGap",
+      "signature": "classifyGap(args: { file?: string; callee?: string }): GapCategory",
+      "type": "function",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 169
+    }
+  ],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/verbs.ts#isExternalCallee@L154",
+    "procedureName": "isExternalCallee",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#isExternalCallee@L154",
+        "procedureName": "isExternalCallee",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:78ab299003c1b64c8919a1d60d752b87eacf90e5ceed6b0cc5e68cb101790bf2",
+          "target": "stmt:packages/mcp/src/verbs.ts@L155",
+          "line": 155,
+          "expr": "return EXTERNAL_CALLEE_PATTERNS.some((p) => p.test(callee));"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/mcp/src/verbs.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 2,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

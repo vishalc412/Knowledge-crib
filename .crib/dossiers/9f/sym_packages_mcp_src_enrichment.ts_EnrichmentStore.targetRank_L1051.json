@@ -1,0 +1,220 @@
+{
+  "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.targetRank@L1051",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:af2a98da29db161dcf3b758ff75654b8dd12aa88988553c29e9d14585e95d772",
+  "builtAt": "2026-07-16T14:40:07.112Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.targetRank@L1051",
+    "kind": "symbol",
+    "type": "method",
+    "name": "targetRank",
+    "qualifiedName": "EnrichmentStore.targetRank",
+    "signature": "targetRank(node: Node, layer: EnrichLayer, importance: Map<string, ImportanceEntry>): { test: boolean; imp: number }",
+    "lang": "typescript",
+    "file": "packages/mcp/src/enrichment.ts",
+    "span": {
+      "start": 1051,
+      "end": 1066
+    },
+    "callSites": [
+      {
+        "callee": "clusterMembersCore",
+        "line": 1057
+      },
+      {
+        "callee": "filter",
+        "line": 1059
+      },
+      {
+        "callee": "isTestPath",
+        "line": 1059
+      },
+      {
+        "callee": "clusterImportance",
+        "line": 1062
+      },
+      {
+        "callee": "isTestPath",
+        "line": 1065
+      },
+      {
+        "callee": "get",
+        "line": 1065
+      }
+    ]
+  },
+  "source": {
+    "text": "  private targetRank(\n    node: Node,\n    layer: EnrichLayer,\n    importance: Map<string, ImportanceEntry>,\n  ): { test: boolean; imp: number } {\n    if (layer === 'cluster') {\n      const members = clusterMembersCore(this.soul, node);\n      if (members.length === 0) return { test: false, imp: 0 };\n      const tests = members.filter((m) => isTestPath(m.file)).length;\n      return {\n        test: tests > members.length / 2,\n        imp: clusterImportance(this.soul, node, importance),\n      };\n    }\n    return { test: isTestPath(node.file), imp: importance.get(node.id)?.importance ?? 0 };\n  }",
+    "truncated": false,
+    "totalLines": 16,
+    "startLine": 1051
+  },
+  "callers": [
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.rankNodes@L1034",
+      "confidence": 1,
+      "name": "rankNodes",
+      "qualifiedName": "EnrichmentStore.rankNodes",
+      "signature": "rankNodes(nodes: Node[], layer: EnrichLayer, importance: Map<string, ImportanceEntry>): Node[]",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 1034
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/mcp/src/enrichment.ts@L1049",
+      "snippet": "/** Test-path flag + importance for a target. Clusters: test iff the majority of members live in",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.targetRank@L1051",
+    "procedureName": "EnrichmentStore.targetRank",
+    "conditions": [
+      "cond:packages/mcp/src/enrichment.ts@L1056",
+      "cond:packages/mcp/src/enrichment.ts@L1058"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.targetRank@L1051",
+        "procedureName": "EnrichmentStore.targetRank",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L1056",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L1056",
+            "expr": "layer === 'cluster'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:36b4eb21367b6879cc3cd7983acc52574d71753b40a88193834ab976947f2993",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1057",
+          "line": 1057,
+          "expr": "const members = clusterMembersCore(this.soul, node);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.targetRank@L1051",
+        "procedureName": "EnrichmentStore.targetRank",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L1058",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L1056",
+            "expr": "layer === 'cluster'"
+          },
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L1058",
+            "expr": "members.length === 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d49b31132873cd607061a437771cd36f4d28ff33ca0f835028cef33a818c1820",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1058",
+          "line": 1058,
+          "expr": "return { test: false, imp: 0 };"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.targetRank@L1051",
+        "procedureName": "EnrichmentStore.targetRank",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L1056",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L1056",
+            "expr": "layer === 'cluster'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0662ee62a3334fe6614b66956337f8f44308cc62ef6525248915cd794ce1dcb5",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1059",
+          "line": 1059,
+          "expr": "const tests = members.filter((m) => isTestPath(m.file)).length;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.targetRank@L1051",
+        "procedureName": "EnrichmentStore.targetRank",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L1056",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L1056",
+            "expr": "layer === 'cluster'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e928bfccd6765f06c6fc3fd1450db67059b4dcb00dff06762f4a68ff145d67cf",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1060",
+          "line": 1060,
+          "expr": "return {\n        test: tests > members.length / 2,\n        imp: clusterImportance(this.soul, node, importance),\n      };"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.targetRank@L1051",
+        "procedureName": "EnrichmentStore.targetRank",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3f683ba5127624507a5cd582abf380ecf00e1183ade3224564e33708ab39a40f",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1065",
+          "line": 1065,
+          "expr": "return { test: isTestPath(node.file), imp: importance.get(node.id)?.importance ?? 0 };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 5,
+    "referencedByFiles": [
+      "packages/mcp/src/enrichment.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 5,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 6,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

@@ -1,0 +1,787 @@
+{
+  "id": "sym:packages/core/src/federation.test.ts#fixture@L144",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:9ff86acc4a7c3ccd8a78fb7474f5c533ed710207dc3c9b776d194f046c1b5be5",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/federation.test.ts#fixture@L144",
+    "kind": "symbol",
+    "type": "function",
+    "name": "fixture",
+    "qualifiedName": "fixture",
+    "signature": "fixture(): {\n    rootA: string;\n    rootB: string;\n    fetchLoan: Node;\n    call: Node;\n    handler: Node;\n    rt: Node;\n  }",
+    "lang": "typescript",
+    "file": "packages/core/src/federation.test.ts",
+    "span": {
+      "start": 144,
+      "end": 170
+    },
+    "callSites": [
+      {
+        "callee": "fnNode",
+        "line": 154
+      },
+      {
+        "callee": "httpCall",
+        "line": 155
+      },
+      {
+        "callee": "fnNode",
+        "line": 156
+      },
+      {
+        "callee": "route",
+        "line": 157
+      },
+      {
+        "callee": "open",
+        "line": 159
+      },
+      {
+        "callee": "putNodes",
+        "line": 160
+      },
+      {
+        "callee": "putEdges",
+        "line": 161
+      },
+      {
+        "callee": "edge",
+        "line": 161
+      },
+      {
+        "callee": "commit",
+        "line": 162
+      },
+      {
+        "callee": "open",
+        "line": 164
+      },
+      {
+        "callee": "putNodes",
+        "line": 165
+      },
+      {
+        "callee": "putEdges",
+        "line": 166
+      },
+      {
+        "callee": "edge",
+        "line": 166
+      },
+      {
+        "callee": "commit",
+        "line": 167
+      }
+    ]
+  },
+  "source": {
+    "text": "  function fixture(): {\n    rootA: string;\n    rootB: string;\n    fetchLoan: Node;\n    call: Node;\n    handler: Node;\n    rt: Node;\n  } {\n    const rootA = dirs[0]!;\n    const rootB = dirs[1]!;\n    const fetchLoan = fnNode('client.ts', 'fetchLoan', 2);\n    const call = httpCall('GET', '/api/loans/:id', 'client.ts', 3);\n    const handler = fnNode('server.ts', 'getLoan', 4);\n    const rt = route('GET', '/api/loans/:id', 'server.ts', 4);\n\n    const a = open(rootA);\n    a.putNodes([fetchLoan, call]);\n    a.putEdges([edge(fetchLoan, call, 'calls')]);\n    a.commit(NOW);\n\n    const b = open(rootB);\n    b.putNodes([handler, rt]);\n    b.putEdges([edge(handler, rt, 'exposes')]);\n    b.commit(NOW);\n\n    return { rootA, rootB, fetchLoan, call, handler, rt };\n  }",
+    "truncated": false,
+    "totalLines": 27,
+    "startLine": 144
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:scripts/stats-check.mjs#commit@L58",
+      "confidence": 1,
+      "name": "commit",
+      "qualifiedName": "commit",
+      "signature": "commit(…)",
+      "type": "function",
+      "file": "scripts/stats-check.mjs",
+      "line": 58
+    },
+    {
+      "id": "sym:packages/ui/src/viz.test.ts#edge@L27",
+      "confidence": 1,
+      "name": "edge",
+      "qualifiedName": "edge",
+      "signature": "edge(src: string, dst: string, rel: Edge['rel']): Edge",
+      "type": "function",
+      "file": "packages/ui/src/viz.test.ts",
+      "line": 27
+    },
+    {
+      "id": "sym:packages/core/src/federation.test.ts#edge@L88",
+      "confidence": 1,
+      "name": "edge",
+      "qualifiedName": "edge",
+      "signature": "edge(src: Node, dst: Node, rel: Edge['rel'], provenance: Edge['provenance'] = 'EXTRACTED', conf = 1.0): Edge",
+      "type": "function",
+      "file": "packages/core/src/federation.test.ts",
+      "line": 88
+    },
+    {
+      "id": "sym:packages/core/src/federation.test.ts#fnNode@L44",
+      "confidence": 1,
+      "name": "fnNode",
+      "qualifiedName": "fnNode",
+      "signature": "fnNode(path: string, name: string, line: number): Node",
+      "type": "function",
+      "file": "packages/core/src/federation.test.ts",
+      "line": 44
+    },
+    {
+      "id": "sym:packages/core/src/federation.test.ts#httpCall@L58",
+      "confidence": 1,
+      "name": "httpCall",
+      "qualifiedName": "httpCall",
+      "signature": "httpCall(method: string, path: string, file: string, line: number): Node",
+      "type": "function",
+      "file": "packages/core/src/federation.test.ts",
+      "line": 58
+    },
+    {
+      "id": "sym:packages/core/src/soul-store.test.ts#open@L58",
+      "confidence": 1,
+      "name": "open",
+      "qualifiedName": "open",
+      "signature": "open(): SoulStore",
+      "type": "function",
+      "file": "packages/core/src/soul-store.test.ts",
+      "line": 58
+    },
+    {
+      "id": "sym:packages/core/src/federation.test.ts#open@L36",
+      "confidence": 1,
+      "name": "open",
+      "qualifiedName": "open",
+      "signature": "open(repoRoot: string): SoulStore",
+      "type": "function",
+      "file": "packages/core/src/federation.test.ts",
+      "line": 36
+    },
+    {
+      "id": "sym:packages/parsers/src/java/spring.test.ts#route@L451",
+      "confidence": 1,
+      "name": "route",
+      "qualifiedName": "route",
+      "signature": "route(…)",
+      "type": "function",
+      "file": "packages/parsers/src/java/spring.test.ts",
+      "line": 451
+    },
+    {
+      "id": "sym:packages/core/src/federation.test.ts#route@L73",
+      "confidence": 1,
+      "name": "route",
+      "qualifiedName": "route",
+      "signature": "route(method: string, path: string, file: string, line: number): Node",
+      "type": "function",
+      "file": "packages/core/src/federation.test.ts",
+      "line": 73
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/core/src/federation.test.ts@L143",
+      "snippet": "/** Build the canonical fixture: repoA fetchLoan→http-call; repoB handler→route. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:docs/launch/demo-recipe.md#shot-3-dossier-decision-table-flow-the-behavior-depth-moat-25s",
+      "heading": "Shot 3 — dossier / decision-table flow (the behavior-depth moat)  · ~25s",
+      "anchor": "shot-3-dossier-decision-table-flow-the-behavior-depth-moat-25s",
+      "snippet": "Shot 3 — dossier / decision-table flow (the behavior-depth moat)  · ~25s",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-build-plan.md#5-milestones-each-one-flagged-pr-test-gate",
+      "heading": "5. Milestones (each = one flagged PR + test gate)",
+      "anchor": "5-milestones-each-one-flagged-pr-test-gate",
+      "snippet": "5. Milestones (each = one flagged PR + test gate)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-testing.md#3-per-milestone-acceptance-gates-mirror-build-plan-knowledge-crib-build-plan-md",
+      "heading": "3. Per-milestone acceptance gates (mirror [build plan](knowledge-crib-build-plan.md))",
+      "anchor": "3-per-milestone-acceptance-gates-mirror-build-plan-knowledge-crib-build-plan-md",
+      "snippet": "3. Per-milestone acceptance gates (mirror [build plan](knowledge-crib-build-plan.md))",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-track3-spec.md#tests-each-language-add-to-the-existing-extractor-test-ts",
+      "heading": "Tests (each language — add to the existing `Extractor.test.ts`)",
+      "anchor": "tests-each-language-add-to-the-existing-extractor-test-ts",
+      "snippet": "Tests (each language — add to the existing `Extractor.test.ts`)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m14-framework-semantics-layer-schema-1-3",
+      "heading": "M14 — Framework-semantics layer (schema 1.3)",
+      "anchor": "m14-framework-semantics-layer-schema-1-3",
+      "snippet": "M14 — Framework-semantics layer (schema 1.3)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:CHANGELOG.md#added",
+      "heading": "Added",
+      "anchor": "added",
+      "snippet": "Added",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_MAKE_A_BEATS_B.md#ws-a2-body-present-data-flow-verification-finish-ws-7",
+      "heading": "WS-A2 — Body-present data-flow verification (finish WS-7)",
+      "anchor": "ws-a2-body-present-data-flow-verification-finish-ws-7",
+      "snippet": "WS-A2 — Body-present data-flow verification (finish WS-7)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_MAKE_A_BEATS_B_EVERY_EXTRACTOR.md#phase-1-language-agnostic-migration-core-8-days",
+      "heading": "Phase 1 — Language-agnostic migration core  ~8 days",
+      "anchor": "phase-1-language-agnostic-migration-core-8-days",
+      "snippet": "Phase 1 — Language-agnostic migration core  ~8 days",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/adr/ADR-002-scale-storage.md#the-measured-curve",
+      "heading": "The measured curve",
+      "anchor": "the-measured-curve",
+      "snippet": "The measured curve",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/launch/demo-recipe.md#prep-one-time-3-min",
+      "heading": "Prep (one-time, ~3 min)",
+      "anchor": "prep-one-time-3-min",
+      "snippet": "Prep (one-time, ~3 min)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-extractor-plugins.md#5-testing-a-plugin-required-for-merge",
+      "heading": "5. Testing a plugin (required for merge)",
+      "anchor": "5-testing-a-plugin-required-for-merge",
+      "snippet": "5. Testing a plugin (required for merge)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-deep-extraction.md#8-build-track-first-class-alongside-the-doc-link-mvp-depends-on-m0-m3",
+      "heading": "8. Build track (first-class, alongside the doc-link MVP) — depends on M0–M3",
+      "anchor": "8-build-track-first-class-alongside-the-doc-link-mvp-depends-on-m0-m3",
+      "snippet": "8. Build track (first-class, alongside the doc-link MVP) — depends on M0–M3",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/adr/ADR-001-parallel-parse.md#context",
+      "heading": "Context",
+      "anchor": "context",
+      "snippet": "Context",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/adr/ADR-001-parallel-parse.md#crib-s-parse-workload-measured",
+      "heading": "Crib's parse workload (measured)",
+      "anchor": "crib-s-parse-workload-measured",
+      "snippet": "Crib's parse workload (measured)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-06-27-knowledgecrib-linkedin-demo-video.md#file-map",
+      "heading": "File Map",
+      "anchor": "file-map",
+      "snippet": "File Map",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-testing.md#1-test-pyramid",
+      "heading": "1. Test pyramid",
+      "anchor": "1-test-pyramid",
+      "snippet": "1. Test pyramid",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/STATS.md#knowledge-crib-canonical-stats",
+      "heading": "Knowledge-crib — canonical stats",
+      "anchor": "knowledge-crib-canonical-stats",
+      "snippet": "Knowledge-crib — canonical stats",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m11-cfg-pass-guard-chain-condition-nodes",
+      "heading": "M11 — CFG pass + guard chain + condition nodes",
+      "anchor": "m11-cfg-pass-guard-chain-condition-nodes",
+      "snippet": "M11 — CFG pass + guard chain + condition nodes",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m10-pl-sql-extractor-sql-data-flow-phase-3c",
+      "heading": "M10 — PL/SQL extractor + SQL data-flow (Phase 3c)",
+      "anchor": "m10-pl-sql-extractor-sql-data-flow-phase-3c",
+      "snippet": "M10 — PL/SQL extractor + SQL data-flow (Phase 3c)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m8-tree-sitter-wasm-plugin-languages-python-first",
+      "heading": "M8 — Tree-sitter WASM plugin languages (Python first)",
+      "anchor": "m8-tree-sitter-wasm-plugin-languages-python-first",
+      "snippet": "M8 — Tree-sitter WASM plugin languages (Python first)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-refined-vs-existing-assessment.md#3-overall-verdict",
+      "heading": "3. Overall verdict",
+      "anchor": "3-overall-verdict",
+      "snippet": "3. Overall verdict",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_MAKE_A_BEATS_B.md#1-the-equality-gaps-that-remain-plan-a-still-weaker-today",
+      "heading": "1. The equality gaps that remain (Plan A still weaker today)",
+      "anchor": "1-the-equality-gaps-that-remain-plan-a-still-weaker-today",
+      "snippet": "1. The equality gaps that remain (Plan A still weaker today)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_MAKE_A_BEATS_B_EVERY_EXTRACTOR.md#phase-0-universal-cfg-parity-finish-s65-6-days",
+      "heading": "Phase 0 — Universal CFG parity (finish S65)  ~6 days",
+      "anchor": "phase-0-universal-cfg-parity-finish-s65-6-days",
+      "snippet": "Phase 0 — Universal CFG parity (finish S65)  ~6 days",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_MAKE_A_BEATS_B_EVERY_EXTRACTOR.md#4-acceptance-criteria-the-universal-plan-a-plan-b-test",
+      "heading": "4. Acceptance criteria (the universal \"Plan A > Plan B\" test)",
+      "anchor": "4-acceptance-criteria-the-universal-plan-a-plan-b-test",
+      "snippet": "4. Acceptance criteria (the universal \"Plan A > Plan B\" test)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#ws-7-verify-extend-sql-data-flow-edges-defense-in-depth",
+      "heading": "WS-7 — Verify/extend SQL data-flow edges (defense-in-depth)",
+      "anchor": "ws-7-verify-extend-sql-data-flow-edges-defense-in-depth",
+      "snippet": "WS-7 — Verify/extend SQL data-flow edges (defense-in-depth)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#5-phasing-effort",
+      "heading": "5. Phasing & effort",
+      "anchor": "5-phasing-effort",
+      "snippet": "5. Phasing & effort",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/federation.test.ts#fixture@L144",
+    "procedureName": "fixture",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/federation.test.ts#fixture@L144",
+        "procedureName": "fixture",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:60c6b881e7338a1c741b50a210eb29740d4595a88eba7b1b34b71ecdd8c91245",
+          "target": "stmt:packages/core/src/federation.test.ts@L154",
+          "line": 154,
+          "expr": "const fetchLoan = fnNode('client.ts', 'fetchLoan', 2);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/federation.test.ts#fixture@L144",
+        "procedureName": "fixture",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:ce0d61775bd484ecf3edec20cb9df742d194ee83f79a413e787d6ae4fbc49559",
+          "target": "sym:packages/core/src/federation.test.ts#fnNode@L44",
+          "expr": "fnNode",
+          "line": 154
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/federation.test.ts#fixture@L144",
+        "procedureName": "fixture",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:da573bffc3ca7e0ed433b88afe38a7ece70d4559c1dc4d4081e70c070c6a8aa2",
+          "target": "stmt:packages/core/src/federation.test.ts@L155",
+          "line": 155,
+          "expr": "const call = httpCall('GET', '/api/loans/:id', 'client.ts', 3);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/federation.test.ts#fixture@L144",
+        "procedureName": "fixture",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:fca6e0c2e94c6f4cf6783db8ae4b7f1b193bfbcb962d663b4b24175217c2656d",
+          "target": "sym:packages/core/src/federation.test.ts#httpCall@L58",
+          "expr": "httpCall",
+          "line": 155
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/federation.test.ts#fixture@L144",
+        "procedureName": "fixture",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9ebc8a13321d5515e5cf9a10585bb1f200ba29086ccc12f2c6ef889a8a20b7e2",
+          "target": "stmt:packages/core/src/federation.test.ts@L156",
+          "line": 156,
+          "expr": "const handler = fnNode('server.ts', 'getLoan', 4);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/federation.test.ts#fixture@L144",
+        "procedureName": "fixture",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4991ef109c6d82b576312e3896d8f4ee8e0afbe9e17489e7b79505b0d1cdcbf6",
+          "target": "stmt:packages/core/src/federation.test.ts@L157",
+          "line": 157,
+          "expr": "const rt = route('GET', '/api/loans/:id', 'server.ts', 4);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/federation.test.ts#fixture@L144",
+        "procedureName": "fixture",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:66de95bdf057f97cf1be8211d758cd7299aa97d302be44ce84d30718fafbad3c",
+          "target": "sym:packages/parsers/src/java/spring.test.ts#route@L451",
+          "expr": "route",
+          "line": 157
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/federation.test.ts#fixture@L144",
+        "procedureName": "fixture",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:cb86b6d760dfb81fcea79b6fb4b187bd9ef66ef4cd335057d925e3a7c8bd1954",
+          "target": "sym:packages/core/src/federation.test.ts#route@L73",
+          "expr": "route",
+          "line": 157
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/federation.test.ts#fixture@L144",
+        "procedureName": "fixture",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:04db4ec294cd79d2a7def82f49b1c0e76d17e626a50a6024074700597ffbb1c8",
+          "target": "sym:packages/core/src/soul-store.test.ts#open@L58",
+          "expr": "open",
+          "line": 159
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/federation.test.ts#fixture@L144",
+        "procedureName": "fixture",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:076e8ed4b61def1c76b832ac9017c6adc2667660412694c3eca381b9db3d8dbb",
+          "target": "stmt:packages/core/src/federation.test.ts@L159",
+          "line": 159,
+          "expr": "const a = open(rootA);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/federation.test.ts#fixture@L144",
+        "procedureName": "fixture",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:f9cc3229eb1c689160ed256d08eada635062305ba72ef50e35f0344fcf766dbe",
+          "target": "sym:packages/core/src/federation.test.ts#open@L36",
+          "expr": "open",
+          "line": 159
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/federation.test.ts#fixture@L144",
+        "procedureName": "fixture",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:27ac8594f8c3cac020ff4602d9bd48451134b213a5cef5d90663e77860f224cb",
+          "target": "stmt:packages/core/src/federation.test.ts@L160",
+          "line": 160,
+          "expr": "a.putNodes([fetchLoan, call]);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/federation.test.ts#fixture@L144",
+        "procedureName": "fixture",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:04be3d5ec14aa802239078a24a0cb62bf061da4e826f4bcb131967eeb6446cd4",
+          "target": "sym:packages/ui/src/viz.test.ts#edge@L27",
+          "expr": "edge",
+          "line": 161
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/federation.test.ts#fixture@L144",
+        "procedureName": "fixture",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:24cb5d0669df7b10d30214ef30463c31f4136a9be661631356f972599ff87134",
+          "target": "stmt:packages/core/src/federation.test.ts@L161",
+          "line": 161,
+          "expr": "a.putEdges([edge(fetchLoan, call, 'calls')]);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/federation.test.ts#fixture@L144",
+        "procedureName": "fixture",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:ec7fad06a8d6a2b1317231a48337bb45a632781e267e9aacc716ba728e75d460",
+          "target": "sym:packages/core/src/federation.test.ts#edge@L88",
+          "expr": "edge",
+          "line": 161
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/federation.test.ts#fixture@L144",
+        "procedureName": "fixture",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:034a0de6b0bf521eef8c849832b7dbae2081edd0a19d960c40a692e01ba4b904",
+          "target": "sym:scripts/stats-check.mjs#commit@L58",
+          "expr": "commit",
+          "line": 162
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/federation.test.ts#fixture@L144",
+        "procedureName": "fixture",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b65d7d566caeb5e380729f5e721f6a1f5e98562399edd910d462dbb615a17158",
+          "target": "stmt:packages/core/src/federation.test.ts@L162",
+          "line": 162,
+          "expr": "a.commit(NOW);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/federation.test.ts#fixture@L144",
+        "procedureName": "fixture",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a8b21b8e69454118f13155db3de14c8e7c7e70d97b2b873aceb34614f1c13692",
+          "target": "stmt:packages/core/src/federation.test.ts@L164",
+          "line": 164,
+          "expr": "const b = open(rootB);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/federation.test.ts#fixture@L144",
+        "procedureName": "fixture",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8f25d35db7cc7fd1074e1c32d4a422cae58d27b74126763f3fb284a5496617ce",
+          "target": "stmt:packages/core/src/federation.test.ts@L165",
+          "line": 165,
+          "expr": "b.putNodes([handler, rt]);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/federation.test.ts#fixture@L144",
+        "procedureName": "fixture",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6b1de787eee5c2bc03837d114062052d11679dc37af51e13f49841790ebee017",
+          "target": "stmt:packages/core/src/federation.test.ts@L166",
+          "line": 166,
+          "expr": "b.putEdges([edge(handler, rt, 'exposes')]);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/federation.test.ts#fixture@L144",
+        "procedureName": "fixture",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e206515a8b0fc25236f27ce6b8019d9aec066354967e238d4d29ed9f7730a408",
+          "target": "stmt:packages/core/src/federation.test.ts@L167",
+          "line": 167,
+          "expr": "b.commit(NOW);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/federation.test.ts#fixture@L144",
+        "procedureName": "fixture",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0092a4d469429677bc2ac67d81785b1ad3bfc6db92964dd9e9476075d2e122ce",
+          "target": "stmt:packages/core/src/federation.test.ts@L169",
+          "line": 169,
+          "expr": "return { rootA, rootB, fetchLoan, call, handler, rt };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 13,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 13,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 9,
+      "recorded": 14,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

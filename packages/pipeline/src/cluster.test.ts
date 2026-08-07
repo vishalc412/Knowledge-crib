@@ -2,9 +2,10 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { SoulStore, newManifest } from '@knowledge-crib/core';
-import { edgeId } from '@knowledge-crib/soul-schema';
+import { contentHash, edgeId } from '@knowledge-crib/soul-schema';
+import type { Edge, Node } from '@knowledge-crib/soul-schema';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { buildGraph, louvain } from './cluster/index.js';
+import { buildGraph, louvain, runCluster } from './cluster/index.js';
 import { indexRepo } from './pipeline.js';
 
 let repo: string;
@@ -135,6 +136,42 @@ describe('runCluster (M7 structural clustering)', () => {
     expect(loginCluster?.members).toContain(issue.id);
   });
 
+  it('replaces obsolete clusters and membership edges before commit/reload', async () => {
+    const soul = soulFor();
+    await indexRepo(soul, tsRepo(), { now: '2026-01-01T00:00:00.000Z' });
+    const login = [...soul.iterate('symbol')].find((n) => n.qualifiedName === 'AuthService.login')!;
+    const obsolete: Node = {
+      id: 'c:obsolete',
+      kind: 'cluster',
+      label: 'obsolete',
+      members: [login.id],
+      hash: contentHash('obsolete'),
+    };
+    const obsoleteEdge: Edge = {
+      id: edgeId(login.id, obsolete.id, 'member-of'),
+      src: login.id,
+      dst: obsolete.id,
+      rel: 'member-of',
+      method: 'static',
+      provenance: 'EXTRACTED',
+      confidence: 1,
+    };
+    soul.putNodes([obsolete]);
+    soul.putEdges([obsoleteEdge]);
+
+    runCluster(soul);
+    soul.commit('2026-01-02T00:00:00.000Z');
+    const reopened = new SoulStore(join(repo, '.crib'));
+    reopened.load();
+
+    expect(reopened.getNode(obsolete.id)).toBeUndefined();
+    expect(reopened.getEdge(obsoleteEdge.id)).toBeUndefined();
+    const owners = [...reopened.iterateEdges('member-of')].filter(
+      (edge) => edge.src === login.id && reopened.getNode(edge.dst)?.kind === 'cluster',
+    );
+    expect(owners).toHaveLength(1);
+  });
+
   it('opts out cleanly when cluster: false', async () => {
     const soul = soulFor();
     const report = await indexRepo(soul, tsRepo(), {
@@ -143,5 +180,45 @@ describe('runCluster (M7 structural clustering)', () => {
     });
     expect(report.cluster.communities).toBe(0);
     expect([...soul.iterate('cluster')]).toHaveLength(0);
+  });
+
+  it('labels a cluster "<commonDirPrefix> · <dominantType>" when members share a directory', async () => {
+    const soul = soulFor();
+    await indexRepo(soul, tsRepo(), { now: '2026-01-01T00:00:00.000Z' });
+    const clusters = [...soul.iterate('cluster')];
+    expect(clusters.length).toBeGreaterThan(0);
+    // Every emitted cluster label follows the heuristic "<prefix> · <type>" shape (members share
+    // src/auth.ts so a common prefix exists).
+    for (const c of clusters) {
+      expect(c.label).toMatch(/^.+ · .+$/);
+      expect(c.label).toContain('·');
+    }
+    // At least one cluster's label is rooted in the shared `src` directory.
+    expect(clusters.some((c) => c.label?.startsWith('src'))).toBe(true);
+  });
+
+  it('falls back to the highest-degree member qualifiedName when members span roots', async () => {
+    mkdirSync(join(repo, 'src'), { recursive: true });
+    mkdirSync(join(repo, 'lib'), { recursive: true });
+    writeFileSync(
+      join(repo, 'src', 'a.ts'),
+      ['import { b } from "../lib/b";', 'export function a(): void { b(); }'].join('\n'),
+    );
+    writeFileSync(join(repo, 'lib', 'b.ts'), ['export function b(): void {}'].join('\n'));
+
+    const soul = soulFor();
+    await indexRepo(soul, repo, { now: '2026-01-01T00:00:00.000Z' });
+    const spanning = [...soul.iterate('cluster')].find((c) => {
+      const files = (c.members ?? [])
+        .map((id) => soul.getNode(id)?.file)
+        .filter((f): f is string => !!f);
+      const roots = new Set(files.map((f) => f.split('/')[0]));
+      return roots.size > 1;
+    });
+    expect(spanning).toBeDefined();
+    // No shared directory prefix → fallback label is the highest-degree member's qualified/name,
+    // NOT the heuristic `<dir> · <type>` form (no `·` separator).
+    expect(spanning!.label).not.toContain('·');
+    expect(spanning!.label).toBeTruthy();
   });
 });

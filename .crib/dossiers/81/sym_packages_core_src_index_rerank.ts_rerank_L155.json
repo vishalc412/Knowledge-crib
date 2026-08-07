@@ -1,0 +1,378 @@
+{
+  "id": "sym:packages/core/src/index/rerank.ts#rerank@L155",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:bfa89dc269a4982f3ecfea1502db82a0fe551a47549cbec4b41f1f8cbd72471e",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/index/rerank.ts#rerank@L155",
+    "kind": "symbol",
+    "type": "function",
+    "name": "rerank",
+    "qualifiedName": "rerank",
+    "signature": "rerank(candidates: RerankCandidate[], query: string, limit: number, offset: number): Array<{ id: string; kind: NodeKind; score: number; name?: string; file?: string }>",
+    "lang": "typescript",
+    "file": "packages/core/src/index/rerank.ts",
+    "span": {
+      "start": 155,
+      "end": 187
+    },
+    "callSites": [
+      {
+        "callee": "detectIntent",
+        "line": 161
+      },
+      {
+        "callee": "actionStemsInQuery",
+        "line": 162
+      },
+      {
+        "callee": "map",
+        "line": 163
+      },
+      {
+        "callee": "stereotypeFactor",
+        "line": 170
+      },
+      {
+        "callee": "kindFactor",
+        "line": 171
+      },
+      {
+        "callee": "centralityFactor",
+        "line": 172
+      },
+      {
+        "callee": "sort",
+        "line": 176
+      },
+      {
+        "callee": "map",
+        "line": 177
+      },
+      {
+        "callee": "slice",
+        "line": 177
+      },
+      {
+        "callee": "round",
+        "line": 181
+      }
+    ]
+  },
+  "source": {
+    "text": "export function rerank(\n  candidates: RerankCandidate[],\n  query: string,\n  limit: number,\n  offset: number,\n): Array<{ id: string; kind: NodeKind; score: number; name?: string; file?: string }> {\n  const intent = detectIntent(query);\n  const stems = actionStemsInQuery(query);\n  const scored = candidates.map((c) => ({\n    id: c.id,\n    kind: c.kind,\n    name: c.name,\n    file: c.file,\n    score:\n      c.rrfScore *\n      stereotypeFactor(c.name, null, stems) *\n      kindFactor(c.kind, intent) *\n      centralityFactor(c.degree),\n  }));\n  // Stable sort by score desc, id asc as a deterministic tiebreak so equal scores don't depend on\n  // input order (Map iteration is insertion order, which can vary with fusion edge cases).\n  scored.sort((a, b) => b.score - a.score || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));\n  return scored.slice(offset, offset + limit).map((s) => {\n    const out: { id: string; kind: NodeKind; score: number; name?: string; file?: string } = {\n      id: s.id,\n      kind: s.kind,\n      score: Math.round(s.score * 1e5) / 1e5,\n    };\n    if (s.name != null) out.name = s.name;\n    if (s.file != null) out.file = s.file;\n    return out;\n  });\n}",
+    "truncated": false,
+    "totalLines": 33,
+    "startLine": 155
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.query@L154",
+      "confidence": 1,
+      "name": "query",
+      "qualifiedName": "SqliteIndexStore.query",
+      "signature": "query(q: HybridQuery): Hit[]",
+      "type": "method",
+      "file": "packages/core/src/index/sqlite-index.ts",
+      "line": 154
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/core/src/index/rerank.ts#actionStemsInQuery@L100",
+      "confidence": 1,
+      "name": "actionStemsInQuery",
+      "qualifiedName": "actionStemsInQuery",
+      "signature": "actionStemsInQuery(query: string): Set<string>",
+      "type": "function",
+      "file": "packages/core/src/index/rerank.ts",
+      "line": 100
+    },
+    {
+      "id": "sym:packages/core/src/index/rerank.ts#centralityFactor@L118",
+      "confidence": 1,
+      "name": "centralityFactor",
+      "qualifiedName": "centralityFactor",
+      "signature": "centralityFactor(degree: number): number",
+      "type": "function",
+      "file": "packages/core/src/index/rerank.ts",
+      "line": 118
+    },
+    {
+      "id": "sym:packages/core/src/index/rerank.ts#detectIntent@L88",
+      "confidence": 1,
+      "name": "detectIntent",
+      "qualifiedName": "detectIntent",
+      "signature": "detectIntent(query: string): QueryIntent",
+      "type": "function",
+      "file": "packages/core/src/index/rerank.ts",
+      "line": 88
+    },
+    {
+      "id": "sym:packages/core/src/index/rerank.ts#kindFactor@L138",
+      "confidence": 1,
+      "name": "kindFactor",
+      "qualifiedName": "kindFactor",
+      "signature": "kindFactor(kind: NodeKind, intent: QueryIntent): number",
+      "type": "function",
+      "file": "packages/core/src/index/rerank.ts",
+      "line": 138
+    },
+    {
+      "id": "sym:packages/core/src/index/rerank.ts#stereotypeFactor@L123",
+      "confidence": 1,
+      "name": "stereotypeFactor",
+      "qualifiedName": "stereotypeFactor",
+      "signature": "stereotypeFactor(name: string | null, qualifiedName: string | null, stems: Set<string>): number",
+      "type": "function",
+      "file": "packages/core/src/index/rerank.ts",
+      "line": 123
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/core/src/index/rerank.ts@L151",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:docs/launch/comparison.md#the-honest-limits-say-before-an-architect-asks",
+      "heading": "The honest limits (say before an architect asks)",
+      "anchor": "the-honest-limits-say-before-an-architect-asks",
+      "snippet": "The honest limits (say before an architect asks)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/launch/linkedin-series.md#post-5-the-honest-limits-the-ask",
+      "heading": "Post 5 — The honest limits + the ask",
+      "anchor": "post-5-the-honest-limits-the-ask",
+      "snippet": "Post 5 — The honest limits + the ask",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/launch/publish-runbook.md#changelog-cut-autonomous-prep-the-user-triggers",
+      "heading": "Changelog cut (autonomous prep the user triggers)",
+      "anchor": "changelog-cut-autonomous-prep-the-user-triggers",
+      "snippet": "Changelog cut (autonomous prep the user triggers)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/launch/show-hn.md#body",
+      "heading": "Body",
+      "anchor": "body",
+      "snippet": "Body",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:CHANGELOG.md#added",
+      "heading": "Added",
+      "anchor": "added",
+      "snippet": "Added",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#ws-3-optional-vector-semantic-search-closes-g3",
+      "heading": "WS-3 — Optional vector/semantic search (closes G3)",
+      "anchor": "ws-3-optional-vector-semantic-search-closes-g3",
+      "snippet": "WS-3 — Optional vector/semantic search (closes G3)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/index/rerank.ts#rerank@L155",
+    "procedureName": "rerank",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/index/rerank.ts#rerank@L155",
+        "procedureName": "rerank",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:73d24879ae2d22506488b73397f9722d4f1ed22c89d799b0966a291fcfe663ad",
+          "target": "stmt:packages/core/src/index/rerank.ts@L161",
+          "line": 161,
+          "expr": "const intent = detectIntent(query);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/rerank.ts#rerank@L155",
+        "procedureName": "rerank",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:88815fbd422f31ca8353d910a28c31a6a5730a37284cf3c4af4e33eb73df16c2",
+          "target": "sym:packages/core/src/index/rerank.ts#detectIntent@L88",
+          "expr": "detectIntent",
+          "line": 161
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/rerank.ts#rerank@L155",
+        "procedureName": "rerank",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:09d09ad8abba4ad886f6cc1c498ab8718db2f612aef664424dd132abf1a49cbf",
+          "target": "sym:packages/core/src/index/rerank.ts#actionStemsInQuery@L100",
+          "expr": "actionStemsInQuery",
+          "line": 162
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/rerank.ts#rerank@L155",
+        "procedureName": "rerank",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f7508df16d51524ae3e2459dcb110f9ca5e62d27e325cf749426f6037ae42477",
+          "target": "stmt:packages/core/src/index/rerank.ts@L162",
+          "line": 162,
+          "expr": "const stems = actionStemsInQuery(query);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/rerank.ts#rerank@L155",
+        "procedureName": "rerank",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3ce5ba755792eba4c57e324f3eec3203a9d8fbd33e1094d348b10f5358d0150c",
+          "target": "stmt:packages/core/src/index/rerank.ts@L163",
+          "line": 163,
+          "expr": "const scored = candidates.map((c) => ({\n    id: c.id,\n    kind: c.kind,\n    name: c.name,\n    file: c.file,\n    score:\n      c.rrfScore *\n      stereotypeFactor(c.name, null, stems) *\n      kindFactor(c.kind, intent) *\n      centralityFactor(c.degree),\n  }));"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/rerank.ts#rerank@L155",
+        "procedureName": "rerank",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:34ccc6473e785372fa846859f5e6c14e11e1f7b2e498fa11b0ee279ec52a965a",
+          "target": "sym:packages/core/src/index/rerank.ts#stereotypeFactor@L123",
+          "expr": "stereotypeFactor",
+          "line": 170
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/rerank.ts#rerank@L155",
+        "procedureName": "rerank",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:d8701c517b5b92875888cbe5c80857b2a537c6bda7451cc66d2da53a18a8c87b",
+          "target": "sym:packages/core/src/index/rerank.ts#kindFactor@L138",
+          "expr": "kindFactor",
+          "line": 171
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/rerank.ts#rerank@L155",
+        "procedureName": "rerank",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:3c4f109388a600d3875a4d15b643870a379f10016db51349074692520494c17b",
+          "target": "sym:packages/core/src/index/rerank.ts#centralityFactor@L118",
+          "expr": "centralityFactor",
+          "line": 172
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/rerank.ts#rerank@L155",
+        "procedureName": "rerank",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5ea8c79c99eaa0819e6736642ddd7bc963c548aaf594381de59d26eea5b901e3",
+          "target": "stmt:packages/core/src/index/rerank.ts@L176",
+          "line": 176,
+          "expr": "scored.sort((a, b) => b.score - a.score || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/rerank.ts#rerank@L155",
+        "procedureName": "rerank",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a2ba391ae57e93568f3dfa825f67764c09a7f25c3f76008c9bc5c274c8606360",
+          "target": "stmt:packages/core/src/index/rerank.ts@L177",
+          "line": 177,
+          "expr": "return scored.slice(offset, offset + limit).map((s) => {\n    const out: { id: string; kind: NodeKind; score: number; name?: string; file?: string } = {\n      id: s.id,\n      kind: s.kind,\n      score: Math.round(s.score * 1e5) / 1e5,\n    };\n    if (s.name != null) out.name = s.name;\n    if (s.file != null) out.file = s.file;\n    return out;\n  });"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 5,
+    "referencedByFiles": [
+      "packages/core/src/index/sqlite-index.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 5,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 5,
+      "recorded": 10,
+      "unresolved": 5
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "5 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

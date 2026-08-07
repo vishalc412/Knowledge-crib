@@ -1,0 +1,137 @@
+{
+  "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.fileInCluster@L1142",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:954d6d9c9857cf5cb974e2d79d64cb127bd0cba240d71821e422841b3e30c3b2",
+  "builtAt": "2026-07-16T14:40:07.112Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.fileInCluster@L1142",
+    "kind": "symbol",
+    "type": "method",
+    "name": "fileInCluster",
+    "qualifiedName": "EnrichmentStore.fileInCluster",
+    "signature": "fileInCluster(file: string | undefined, cluster: Node): boolean",
+    "lang": "typescript",
+    "file": "packages/mcp/src/enrichment.ts",
+    "span": {
+      "start": 1142,
+      "end": 1146
+    },
+    "callSites": [
+      {
+        "callee": "some",
+        "line": 1145
+      },
+      {
+        "callee": "iterate",
+        "line": 1145
+      },
+      {
+        "callee": "has",
+        "line": 1145
+      }
+    ]
+  },
+  "source": {
+    "text": "  private fileInCluster(file: string | undefined, cluster: Node): boolean {\n    if (!file) return false;\n    const memberIds = new Set(cluster.members ?? []);\n    return [...this.soul.iterate('symbol')].some((n) => memberIds.has(n.id) && n.file === file);\n  }",
+    "truncated": false,
+    "totalLines": 5,
+    "startLine": 1142
+  },
+  "callers": [
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.matchesScope@L1084",
+      "confidence": 1,
+      "name": "matchesScope",
+      "qualifiedName": "EnrichmentStore.matchesScope",
+      "signature": "matchesScope(node: Node, layer: EnrichLayer, scope?: EnrichScope): boolean",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 1084
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/mcp/src/enrichment.ts@L1141",
+      "snippet": "/** True when the file path contains any member symbol of the cluster. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.fileInCluster@L1142",
+    "procedureName": "EnrichmentStore.fileInCluster",
+    "conditions": [
+      "cond:packages/mcp/src/enrichment.ts@L1143"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.fileInCluster@L1142",
+        "procedureName": "EnrichmentStore.fileInCluster",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L1143",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L1143",
+            "expr": "!file",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:990aa93a645d431e6b038c5401d6876bebf6ce2e8d76818b7caa231ef22599e4",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1143",
+          "line": 1143,
+          "expr": "return false;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.fileInCluster@L1142",
+        "procedureName": "EnrichmentStore.fileInCluster",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ca55d3b84f9e64473e8ad8b3297215a37af263b5c01482e4a465ef6d1ba6c5ea",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1145",
+          "line": 1145,
+          "expr": "return [...this.soul.iterate('symbol')].some((n) => memberIds.has(n.id) && n.file === file);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/mcp/src/enrichment.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 3,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

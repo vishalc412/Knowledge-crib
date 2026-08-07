@@ -5,9 +5,13 @@
 > cross-IDE, agent-agnostic, incrementally upgraded as the project evolves. Delivered as **one fast
 > MCP server** (not a skill). Greenfield, all-new, **Apache-2.0**.
 
-**Status:** implemented — M0→M8 + M10→M14 complete, 392 tests green, 7-language deep extraction
-(PL/SQL, TypeScript, Java, C#, Go, Rust, Python) with schema 1.2 behavior nodes + persisted
-dossiers, served over one MCP server. This repo holds the spec + the implementation.
+**Status:** implemented — the foundation + retrieval + enterprise + distribution milestones
+landed (see [knowledge-crib-build-plan.md](knowledge-crib-build-plan.md) and
+[knowledge-crib-m6-m13-build-plan.md](knowledge-crib-m6-m13-build-plan.md)), with schema behavior
+nodes + persisted dossiers, served over one MCP server. This repo holds the spec + the
+implementation. Counts (packages, languages, test surface) drift when stated in prose, so they live
+in one generated source — see [STATS.md](STATS.md) (regenerated from the real tree by
+`scripts/docs-stats.mjs`; reference it instead of restating a number here).
 
 ---
 
@@ -44,13 +48,34 @@ Two existing tools each prove half and serve as **design inspiration only (no co
 | — | [knowledge-crib-decisions.md](knowledge-crib-decisions.md) | Locked decisions (Q1–Q38) — the why |
 | — | [knowledge-crib-questionnaire.md](knowledge-crib-questionnaire.md) | The full decision questionnaire |
 | — | [knowledge-crib-changelog-req1-req2.md](knowledge-crib-changelog-req1-req2.md) | Changelog: single-entry root resolution + `crib mcp` auto-wiring (REQ-1, REQ-2) |
-| — | [knowledge-crib-user-guide.md](knowledge-crib-user-guide.md) | User guide (install, workflow, 12 verbs, worked example) |
+| — | [knowledge-crib-user-guide.md](knowledge-crib-user-guide.md) | User guide (install, workflow, the 23 MCP verbs, worked example) |
+| — | [knowledge-crib-user-guide.html](knowledge-crib-user-guide.html) | **Team user guide (HTML)** — self-contained onboarding page to circulate (install → init → daily workflow → verbs) |
+| — | [knowledge-crib-executive-brief.md](knowledge-crib-executive-brief.md) | Executive brief — the pitch for decision-makers |
+| — | [knowledge-crib-technical-pitch.md](knowledge-crib-technical-pitch.md) | Technical pitch — the mechanism for engineers |
+| — | [knowledge-crib-track3-spec.md](knowledge-crib-track3-spec.md) | Track-3 spec |
+| — | [llm-integration-deep-dive.md](llm-integration-deep-dive.md) | LLM integration deep dive — data flow to/from the model, enrichment gates |
 | — | [knowledge-crib-client-setup.md](knowledge-crib-client-setup.md) | IDE MCP wiring (Claude Code, Cursor, VS Code/Copilot, Codex) |
 | — | [knowledge-crib-prompts.md](knowledge-crib-prompts.md) | **Prompting guide** — how to drive crib from a local LLM (Claude Code / Codex) to save tokens + compute |
 | — | [knowledge-crib-refined-vs-existing-assessment.md](knowledge-crib-refined-vs-existing-assessment.md) | **Refined vs existing comparison + six-role judgment** on detailed-level analysis (plan review) |
 | — | [knowledge-crib-m6-m13-build-plan.md](knowledge-crib-m6-m13-build-plan.md) | Milestones M6→M13 (post-foundation build plan) |
 | — | [knowledge-crib-production-readiness.md](knowledge-crib-production-readiness.md) | Release gate, packaging fixes, and remaining production gaps |
 | — | [knowledge-crib-beta-installers.md](knowledge-crib-beta-installers.md) | macOS and Windows beta installer bundle build/install guide |
+
+## Launch assets (M4.6)
+
+Drafts for the launch — human-reviewed before posting/recording. Grounded in
+[knowledge-crib-technical-pitch.md](knowledge-crib-technical-pitch.md); do not contradict its honest
+limits section. Counts reference [STATS.md](STATS.md) (generated, not hardcoded).
+
+| Asset | What it is |
+|---|---|
+| [launch/comparison.md](launch/comparison.md) | The 7-column capability matrix vs GraphRAG / SCIP / Joern / CodeQL / Aider / Glean — the moat is the intersection |
+| [launch/show-hn.md](launch/show-hn.md) | Show HN post draft (technical tone, reproducible proof, honest limits) |
+| [launch/linkedin-series.md](launch/linkedin-series.md) | 5-post LinkedIn arc: problem → mechanism → moat → proof → ask |
+| [launch/demo-recipe.md](launch/demo-recipe.md) | Demo GIF/video shot list + exact commands (the capture itself is a user action) |
+| [launch/publish-runbook.md](launch/publish-runbook.md) | **M4.1 — USER-ONLY.** npm publish 0.1.0 runbook (prereqs, changelog cut, publish order, clean-machine verify, rollback). Prep complete; needs `npm login` + explicit go |
+| [launch/repo-identity-decision.md](launch/repo-identity-decision.md) | **M4.5 — DECIDED (2026-07-18).** Canonical home: `KnowledgeCrib/knowledge-crib` org, aligned with npm scope `@knowledge-crib`. Decision record + zero-mixed-references gate |
+| [launch/signing-deferral-adr.md](launch/signing-deferral-adr.md) | **M4.7 — USER-ONLY approval.** ADR deferring installer signing in favor of npm-first distribution (the plan's gate is "signed OR ADR deferring") |
 
 ## Open-Source Release Files
 
@@ -76,7 +101,7 @@ knowledge-crib/                 # pnpm monorepo
 
 ## Runtime & licensing
 - **TypeScript / Node** [Q36]. Compiler-API and hand-rolled extractors are offline and deterministic.
-  The `0.1.0` index is `better-sqlite3` + FTS5.
+  The `0.1.0` index is `node:sqlite` + FTS5.
 - **Apache-2.0** [Q37]. `NOTICE` credits GitNexus + Graphify as inspiration. No code reused.
 
 ## Vision quickstart (target UX)

@@ -19,7 +19,7 @@
 import { randomUUID } from 'node:crypto';
 import { existsSync, mkdirSync, renameSync, rmSync, statSync } from 'node:fs';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
-import { MANIFEST_FILE, SoulStore, openIndex } from '@knowledge-crib/core';
+import { MANIFEST_FILE, SoulStore, graphPaths, openIndex } from '@knowledge-crib/core';
 import type { IndexStore } from '@knowledge-crib/core';
 import { type Registry, lookupProject, readRegistry } from './registry.js';
 
@@ -164,7 +164,10 @@ export function openIndexOnly(rt: Runtime): IndexStore {
   if (!existsSync(path)) {
     throw new Error('derived index missing or stale — run `crib index .`');
   }
-  const manifestPath = join(rt.cribDir, MANIFEST_FILE);
+  const canonicalManifest = graphPaths(rt.cribDir).manifest;
+  const manifestPath = existsSync(canonicalManifest)
+    ? canonicalManifest
+    : join(rt.cribDir, MANIFEST_FILE);
   if (existsSync(manifestPath) && statSync(path).mtimeMs + 1 < statSync(manifestPath).mtimeMs) {
     throw new Error('derived index missing or stale — run `crib index .`');
   }

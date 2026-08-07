@@ -1,0 +1,642 @@
+{
+  "id": "sym:packages/pipeline/src/rules/export.ts#surprisingConnections@L49",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:18612277bac419b265db545f580b005af84727a7d67f3cd413d3e5b3f8c4b683",
+  "builtAt": "2026-06-30T15:54:03.404Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/rules/export.ts#surprisingConnections@L49",
+    "kind": "symbol",
+    "type": "function",
+    "name": "surprisingConnections",
+    "qualifiedName": "surprisingConnections",
+    "signature": "surprisingConnections(soul: SoulStore, limit = 20): SurprisingConnection[]",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/rules/export.ts",
+    "span": {
+      "start": 49,
+      "end": 94
+    },
+    "callSites": [
+      {
+        "callee": "set",
+        "line": 53
+      },
+      {
+        "callee": "push",
+        "line": 54
+      },
+      {
+        "callee": "get",
+        "line": 54
+      },
+      {
+        "callee": "getNode",
+        "line": 60
+      },
+      {
+        "callee": "getNode",
+        "line": 61
+      },
+      {
+        "callee": "pathFromId",
+        "line": 64
+      },
+      {
+        "callee": "pathFromId",
+        "line": 65
+      },
+      {
+        "callee": "packageOf",
+        "line": 67
+      },
+      {
+        "callee": "packageOf",
+        "line": 67
+      },
+      {
+        "callee": "get",
+        "line": 69
+      },
+      {
+        "callee": "get",
+        "line": 70
+      },
+      {
+        "callee": "some",
+        "line": 74
+      },
+      {
+        "callee": "includes",
+        "line": 74
+      },
+      {
+        "callee": "push",
+        "line": 80
+      },
+      {
+        "callee": "push",
+        "line": 84
+      },
+      {
+        "callee": "push",
+        "line": 88
+      },
+      {
+        "callee": "join",
+        "line": 88
+      },
+      {
+        "callee": "sort",
+        "line": 92
+      },
+      {
+        "callee": "slice",
+        "line": 93
+      }
+    ]
+  },
+  "source": {
+    "text": "export function surprisingConnections(soul: SoulStore, limit = 20): SurprisingConnection[] {\n  const clusterMap = new Map<string, string[]>();\n  for (const cluster of soul.iterate('cluster')) {\n    for (const memberId of cluster.members ?? []) {\n      if (!clusterMap.has(memberId)) clusterMap.set(memberId, []);\n      clusterMap.get(memberId)!.push(cluster.id);\n    }\n  }\n\n  const results: SurprisingConnection[] = [];\n  for (const edge of soul.iterateEdges()) {\n    const srcNode = soul.getNode(edge.src);\n    const dstNode = soul.getNode(edge.dst);\n    if (!srcNode || !dstNode) continue;\n\n    const srcPath = srcNode.file ?? pathFromId(edge.src) ?? undefined;\n    const dstPath = dstNode.file ?? pathFromId(edge.dst) ?? undefined;\n    const crossPkg =\n      srcPath !== undefined && dstPath !== undefined && packageOf(srcPath) !== packageOf(dstPath);\n\n    const srcClusters = clusterMap.get(edge.src) ?? [];\n    const dstClusters = clusterMap.get(edge.dst) ?? [];\n    const sharedCluster =\n      srcClusters.length > 0 &&\n      dstClusters.length > 0 &&\n      srcClusters.some((c) => dstClusters.includes(c));\n\n    const reasons: string[] = [];\n    let score = 0;\n    if (crossPkg) {\n      score += 2;\n      reasons.push('cross-package');\n    }\n    if (!sharedCluster && (srcClusters.length > 0 || dstClusters.length > 0)) {\n      score += 1;\n      reasons.push('cross-cluster');\n    }\n\n    if (score > 0) {\n      results.push({ edge, reason: reasons.join(', '), score });\n    }\n  }\n\n  results.sort((a, b) => b.score - a.score || b.edge.confidence - a.edge.confidence);\n  return results.slice(0, limit);\n}",
+    "truncated": false,
+    "totalLines": 46,
+    "startLine": 49
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/src/rules/export.ts#renderReport@L97",
+      "confidence": 1,
+      "name": "renderReport",
+      "qualifiedName": "renderReport",
+      "signature": "renderReport(soul: SoulStore, procedure?: string): string",
+      "type": "function",
+      "file": "packages/pipeline/src/rules/export.ts",
+      "line": 97
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/pipeline/src/rules/export.ts#packageOf@L39",
+      "confidence": 1,
+      "name": "packageOf",
+      "qualifiedName": "packageOf",
+      "signature": "packageOf(file: string): string",
+      "type": "function",
+      "file": "packages/pipeline/src/rules/export.ts",
+      "line": 39
+    },
+    {
+      "id": "sym:packages/core/src/shard.ts#pathFromId@L16",
+      "confidence": 1,
+      "name": "pathFromId",
+      "qualifiedName": "pathFromId",
+      "signature": "pathFromId(id: string): string | undefined",
+      "type": "function",
+      "file": "packages/core/src/shard.ts",
+      "line": 16
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 39
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/pipeline/src/rules/export.ts@L43",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/rules/export.ts#surprisingConnections@L49",
+    "procedureName": "surprisingConnections",
+    "conditions": [
+      "cond:packages/pipeline/src/rules/export.ts@L51",
+      "cond:packages/pipeline/src/rules/export.ts@L52",
+      "cond:packages/pipeline/src/rules/export.ts@L53",
+      "cond:packages/pipeline/src/rules/export.ts@L59",
+      "cond:packages/pipeline/src/rules/export.ts@L78",
+      "cond:packages/pipeline/src/rules/export.ts@L82",
+      "cond:packages/pipeline/src/rules/export.ts@L87"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/rules/export.ts#surprisingConnections@L49",
+        "procedureName": "surprisingConnections",
+        "guard": "cond:packages/pipeline/src/rules/export.ts@L53",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/rules/export.ts@L51",
+            "expr": "soul.iterate('cluster')"
+          },
+          {
+            "id": "cond:packages/pipeline/src/rules/export.ts@L52",
+            "expr": "cluster.members ?? []"
+          },
+          {
+            "id": "cond:packages/pipeline/src/rules/export.ts@L53",
+            "expr": "!clusterMap.has(memberId)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b1316924f74cea776c5361542f0fa491a5e4556dfc4b00b69c64b060e7f84845",
+          "target": "stmt:packages/pipeline/src/rules/export.ts@L53",
+          "line": 53,
+          "expr": "clusterMap.set(memberId, []);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/rules/export.ts#surprisingConnections@L49",
+        "procedureName": "surprisingConnections",
+        "guard": "cond:packages/pipeline/src/rules/export.ts@L52",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/rules/export.ts@L51",
+            "expr": "soul.iterate('cluster')"
+          },
+          {
+            "id": "cond:packages/pipeline/src/rules/export.ts@L52",
+            "expr": "cluster.members ?? []",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:167d06445c8aadee15caf65f01d80d1f533c1f4c364244627ff28484d29d26c0",
+          "target": "stmt:packages/pipeline/src/rules/export.ts@L54",
+          "line": 54,
+          "expr": "clusterMap.get(memberId)!.push(cluster.id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/rules/export.ts#surprisingConnections@L49",
+        "procedureName": "surprisingConnections",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:b57b29682684f12fa31255a67e662334a24eb1fe412c7e294300bc8cef62d54e",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 54
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/rules/export.ts#surprisingConnections@L49",
+        "procedureName": "surprisingConnections",
+        "guard": "cond:packages/pipeline/src/rules/export.ts@L59",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/rules/export.ts@L59",
+            "expr": "soul.iterateEdges()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1ab4fb816111083b0834c9229116b5361f45611a65e6319d787df78bc503a495",
+          "target": "stmt:packages/pipeline/src/rules/export.ts@L60",
+          "line": 60,
+          "expr": "const srcNode = soul.getNode(edge.src);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/rules/export.ts#surprisingConnections@L49",
+        "procedureName": "surprisingConnections",
+        "guard": "cond:packages/pipeline/src/rules/export.ts@L59",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/rules/export.ts@L59",
+            "expr": "soul.iterateEdges()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5d9be18daf345e6f8790092377e7071d104155f3aa711065317ea67f7e2163e0",
+          "target": "stmt:packages/pipeline/src/rules/export.ts@L61",
+          "line": 61,
+          "expr": "const dstNode = soul.getNode(edge.dst);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/rules/export.ts#surprisingConnections@L49",
+        "procedureName": "surprisingConnections",
+        "guard": "cond:packages/pipeline/src/rules/export.ts@L59",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/rules/export.ts@L59",
+            "expr": "soul.iterateEdges()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:24110d4619ffb21a4567327297a985d8c38bfe78ed4e6e440e02fdabfb73f174",
+          "target": "stmt:packages/pipeline/src/rules/export.ts@L64",
+          "line": 64,
+          "expr": "const srcPath = srcNode.file ?? pathFromId(edge.src) ?? undefined;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/rules/export.ts#surprisingConnections@L49",
+        "procedureName": "surprisingConnections",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:532f2538a4f0ac1c5b16c585376f56182a9e078a3d946a30f3582cdec70e7af2",
+          "target": "sym:packages/core/src/shard.ts#pathFromId@L16",
+          "expr": "pathFromId",
+          "line": 64
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/rules/export.ts#surprisingConnections@L49",
+        "procedureName": "surprisingConnections",
+        "guard": "cond:packages/pipeline/src/rules/export.ts@L59",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/rules/export.ts@L59",
+            "expr": "soul.iterateEdges()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:512eec65593a81fad7c972479180135a9a7fd45a935810fd3316d4b09039be16",
+          "target": "stmt:packages/pipeline/src/rules/export.ts@L65",
+          "line": 65,
+          "expr": "const dstPath = dstNode.file ?? pathFromId(edge.dst) ?? undefined;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/rules/export.ts#surprisingConnections@L49",
+        "procedureName": "surprisingConnections",
+        "guard": "cond:packages/pipeline/src/rules/export.ts@L59",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/rules/export.ts@L59",
+            "expr": "soul.iterateEdges()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bf20aa48d254a58408a88ffa3037e65e1d9f983bb1efc8608057d4a81994119b",
+          "target": "stmt:packages/pipeline/src/rules/export.ts@L66",
+          "line": 66,
+          "expr": "const crossPkg =\n      srcPath !== undefined && dstPath !== undefined && packageOf(srcPath) !== packageOf(dstPath);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/rules/export.ts#surprisingConnections@L49",
+        "procedureName": "surprisingConnections",
+        "guard": "cond:packages/pipeline/src/rules/export.ts@L59",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/rules/export.ts@L59",
+            "expr": "soul.iterateEdges()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:d7356a39f56cf31ddc6fd10ecff87b9b7698d82c02946cb803bed52c100883d7",
+          "target": "sym:packages/pipeline/src/rules/export.ts#packageOf@L39",
+          "expr": "packageOf",
+          "line": 67
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/rules/export.ts#surprisingConnections@L49",
+        "procedureName": "surprisingConnections",
+        "guard": "cond:packages/pipeline/src/rules/export.ts@L59",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/rules/export.ts@L59",
+            "expr": "soul.iterateEdges()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:29127b6e21b56619842dbe82425c8addcb4a2b4bac29fda40f22f5ca18ba759f",
+          "target": "stmt:packages/pipeline/src/rules/export.ts@L69",
+          "line": 69,
+          "expr": "const srcClusters = clusterMap.get(edge.src) ?? [];"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/rules/export.ts#surprisingConnections@L49",
+        "procedureName": "surprisingConnections",
+        "guard": "cond:packages/pipeline/src/rules/export.ts@L59",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/rules/export.ts@L59",
+            "expr": "soul.iterateEdges()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f7dc695144bf46379a689347e381247844bcfb02397b71496b9386205cc9b2ae",
+          "target": "stmt:packages/pipeline/src/rules/export.ts@L70",
+          "line": 70,
+          "expr": "const dstClusters = clusterMap.get(edge.dst) ?? [];"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/rules/export.ts#surprisingConnections@L49",
+        "procedureName": "surprisingConnections",
+        "guard": "cond:packages/pipeline/src/rules/export.ts@L59",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/rules/export.ts@L59",
+            "expr": "soul.iterateEdges()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:caaeabebea2cfd367cb1806e9665c96eb751dff653f3bfa20540464212cd3615",
+          "target": "stmt:packages/pipeline/src/rules/export.ts@L71",
+          "line": 71,
+          "expr": "const sharedCluster =\n      srcClusters.length > 0 &&\n      dstClusters.length > 0 &&\n      srcClusters.some((c) => dstClusters.includes(c));"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/rules/export.ts#surprisingConnections@L49",
+        "procedureName": "surprisingConnections",
+        "guard": "cond:packages/pipeline/src/rules/export.ts@L78",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/rules/export.ts@L59",
+            "expr": "soul.iterateEdges()"
+          },
+          {
+            "id": "cond:packages/pipeline/src/rules/export.ts@L78",
+            "expr": "crossPkg",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ed4c6167df454e65f4dd56d7b7e63bbaac44369880b1b8d60cef4caea047a10c",
+          "target": "assign:packages/pipeline/src/rules/export.ts@L79",
+          "line": 79,
+          "expr": "score += 2;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/rules/export.ts#surprisingConnections@L49",
+        "procedureName": "surprisingConnections",
+        "guard": "cond:packages/pipeline/src/rules/export.ts@L78",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/rules/export.ts@L59",
+            "expr": "soul.iterateEdges()"
+          },
+          {
+            "id": "cond:packages/pipeline/src/rules/export.ts@L78",
+            "expr": "crossPkg",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:121f60f5db1f80c0dd25b671e1eb4032f960bdcfdc2033372f34d08704333bd7",
+          "target": "stmt:packages/pipeline/src/rules/export.ts@L80",
+          "line": 80,
+          "expr": "reasons.push('cross-package');"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/rules/export.ts#surprisingConnections@L49",
+        "procedureName": "surprisingConnections",
+        "guard": "cond:packages/pipeline/src/rules/export.ts@L82",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/rules/export.ts@L59",
+            "expr": "soul.iterateEdges()"
+          },
+          {
+            "id": "cond:packages/pipeline/src/rules/export.ts@L82",
+            "expr": "!sharedCluster && (srcClusters.length > 0 || dstClusters.length > 0)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6addeeab984efd718db715aa71b00fa9cd62d4bce0002cd9016906a8339b8409",
+          "target": "assign:packages/pipeline/src/rules/export.ts@L83",
+          "line": 83,
+          "expr": "score += 1;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/rules/export.ts#surprisingConnections@L49",
+        "procedureName": "surprisingConnections",
+        "guard": "cond:packages/pipeline/src/rules/export.ts@L82",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/rules/export.ts@L59",
+            "expr": "soul.iterateEdges()"
+          },
+          {
+            "id": "cond:packages/pipeline/src/rules/export.ts@L82",
+            "expr": "!sharedCluster && (srcClusters.length > 0 || dstClusters.length > 0)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:08c5a391cb73cd33350fef6ee31a25e7841d2c8cd0f099bbdfae1ca988ab425a",
+          "target": "stmt:packages/pipeline/src/rules/export.ts@L84",
+          "line": 84,
+          "expr": "reasons.push('cross-cluster');"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/rules/export.ts#surprisingConnections@L49",
+        "procedureName": "surprisingConnections",
+        "guard": "cond:packages/pipeline/src/rules/export.ts@L87",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/rules/export.ts@L59",
+            "expr": "soul.iterateEdges()"
+          },
+          {
+            "id": "cond:packages/pipeline/src/rules/export.ts@L87",
+            "expr": "score > 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a962fb075694fd92c6baf5e01beebb43bb9e9c736cedab7b90ba92431063aa2c",
+          "target": "stmt:packages/pipeline/src/rules/export.ts@L88",
+          "line": 88,
+          "expr": "results.push({ edge, reason: reasons.join(', '), score });"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/rules/export.ts#surprisingConnections@L49",
+        "procedureName": "surprisingConnections",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7e77943903b71dde05fa1cc015cb408c0401d9d9b9ec8db39a13dd159a24e4fd",
+          "target": "stmt:packages/pipeline/src/rules/export.ts@L92",
+          "line": 92,
+          "expr": "results.sort((a, b) => b.score - a.score || b.edge.confidence - a.edge.confidence);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/rules/export.ts#surprisingConnections@L49",
+        "procedureName": "surprisingConnections",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:437a9a14b44cb36db0ce9b5656570dd3b1acc25e25ae5485f86c2cd9b4535334",
+          "target": "stmt:packages/pipeline/src/rules/export.ts@L93",
+          "line": 93,
+          "expr": "return results.slice(0, limit);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 17,
+    "referencedByFiles": [
+      "packages/pipeline/src/rules/export.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 17,
+    "assignments": 2,
+    "conditions": 6,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 3,
+      "recorded": 19,
+      "unresolved": 9
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "9 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

@@ -1,0 +1,188 @@
+{
+  "id": "sym:scripts/install-smoke.mjs#findInstallerBundle@L67",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:b062a218d21ed4029d0bb1776be31d9eeca214ad611b477ef20a247723bf12d0",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:scripts/install-smoke.mjs#findInstallerBundle@L67",
+    "kind": "symbol",
+    "type": "function",
+    "name": "findInstallerBundle",
+    "qualifiedName": "findInstallerBundle",
+    "signature": "findInstallerBundle(outRoot = join(repoRoot, 'dist', 'installers'))",
+    "lang": "javascript",
+    "file": "scripts/install-smoke.mjs",
+    "span": {
+      "start": 67,
+      "end": 86
+    },
+    "callSites": [
+      {
+        "callee": "sort",
+        "line": 69
+      },
+      {
+        "callee": "filter",
+        "line": 69
+      },
+      {
+        "callee": "map",
+        "line": 69
+      },
+      {
+        "callee": "filter",
+        "line": 69
+      },
+      {
+        "callee": "readdirSync",
+        "line": 69
+      },
+      {
+        "callee": "startsWith",
+        "line": 70
+      },
+      {
+        "callee": "join",
+        "line": 72
+      },
+      {
+        "callee": "join",
+        "line": 73
+      },
+      {
+        "callee": "existsSync",
+        "line": 74
+      },
+      {
+        "callee": "statSync",
+        "line": 78
+      }
+    ]
+  },
+  "source": {
+    "text": "export function findInstallerBundle(outRoot = join(repoRoot, 'dist', 'installers')) {\n  if (!existsSync(outRoot)) throw new Error(`No installer bundles found under ${outRoot}`);\n  const candidates = readdirSync(outRoot)\n    .filter((name) => name.startsWith('knowledge-crib-'))\n    .map((name) => {\n      const bundleDir = join(outRoot, name);\n      const manifestPath = join(bundleDir, 'manifest.json');\n      if (!existsSync(manifestPath)) return undefined;\n      return {\n        bundleDir,\n        manifestPath,\n        mtimeMs: statSync(manifestPath).mtimeMs,\n      };\n    })\n    .filter(Boolean)\n    .sort((a, b) => b.mtimeMs - a.mtimeMs);\n\n  if (!candidates[0]) throw new Error(`No installer bundles found under ${outRoot}`);\n  return candidates[0];\n}",
+    "truncated": false,
+    "totalLines": 20,
+    "startLine": 67
+  },
+  "callers": [
+    {
+      "id": "sym:scripts/install-smoke.mjs#smokeInstall@L135",
+      "confidence": 1,
+      "name": "smokeInstall",
+      "qualifiedName": "smokeInstall",
+      "signature": "smokeInstall({ outRoot = join(repoRoot, 'dist', 'installers') } = {})",
+      "type": "function",
+      "file": "scripts/install-smoke.mjs",
+      "line": 135
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-06-26-beta-installers.md#task-2-installer-smoke-verification",
+      "heading": "Task 2: Installer Smoke Verification",
+      "anchor": "task-2-installer-smoke-verification",
+      "snippet": "Task 2: Installer Smoke Verification",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    }
+  ],
+  "rules": {
+    "procedure": "sym:scripts/install-smoke.mjs#findInstallerBundle@L67",
+    "procedureName": "findInstallerBundle",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:scripts/install-smoke.mjs#findInstallerBundle@L67",
+        "procedureName": "findInstallerBundle",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3c4599fdb19b4683ed695f2febd5d8de9b382f3a5439d4dd9edbdb57e3f8141d",
+          "target": "stmt:scripts/install-smoke.mjs@L69",
+          "line": 69,
+          "expr": "const candidates = readdirSync(outRoot)\n    .filter((name) => name.startsWith('knowledge-crib-'))\n    .map((name) => {\n      const bundleDir = join(outRoot, name);\n      const manifestPath = join(bundleDir, 'manifest.json');\n      if (!existsSync(manifestPath)) return undefined;\n      return {\n        bundleDir,\n        manifestPath,\n        mtimeMs: statSync(manifestPath).mtimeMs,\n      };\n    })\n    .filter(Boolean)\n    .sort((a, b) => b.mtimeMs - a.mtimeMs);"
+        }
+      },
+      {
+        "procedure": "sym:scripts/install-smoke.mjs#findInstallerBundle@L67",
+        "procedureName": "findInstallerBundle",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3268e8319c9ecd0ce0d166ad5bf68814abf8d95f49ce19d4049a3abf78211568",
+          "target": "stmt:scripts/install-smoke.mjs@L85",
+          "line": 85,
+          "expr": "return candidates[0];"
+        }
+      }
+    ]
+  },
+  "controlFlow": {
+    "raises": [
+      {
+        "id": "raise:scripts/install-smoke.mjs@L68",
+        "kind": "raise",
+        "lang": "javascript",
+        "file": "scripts/install-smoke.mjs",
+        "span": {
+          "start": 68,
+          "end": 68
+        },
+        "errorMessage": "new Error(`No installer bundles found under ${outRoot}`)",
+        "confidence": 1
+      },
+      {
+        "id": "raise:scripts/install-smoke.mjs@L84",
+        "kind": "raise",
+        "lang": "javascript",
+        "file": "scripts/install-smoke.mjs",
+        "span": {
+          "start": 84,
+          "end": 84
+        },
+        "errorMessage": "new Error(`No installer bundles found under ${outRoot}`)",
+        "confidence": 1
+      }
+    ],
+    "handles": [],
+    "iterates": [],
+    "declares": []
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "scripts/install-smoke.mjs"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 2,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 10,
+      "unresolved": 9
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "9 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

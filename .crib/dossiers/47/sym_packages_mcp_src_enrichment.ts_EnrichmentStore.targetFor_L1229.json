@@ -1,0 +1,291 @@
+{
+  "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.targetFor@L1229",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:3ae69b954437ac2c334c05a0a9d1f6a024529113501242b4bc7c69234357a39d",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.targetFor@L1229",
+    "kind": "symbol",
+    "type": "method",
+    "name": "targetFor",
+    "qualifiedName": "EnrichmentStore.targetFor",
+    "signature": "targetFor(targetId: string): { layer: EnrichLayer; id: string; hash: string; node?: Node } | undefined",
+    "lang": "typescript",
+    "file": "packages/mcp/src/enrichment.ts",
+    "span": {
+      "start": 1229,
+      "end": 1246
+    },
+    "callSites": [
+      {
+        "callee": "systemHash",
+        "line": 1233
+      },
+      {
+        "callee": "getNode",
+        "line": 1234
+      },
+      {
+        "callee": "clusterHash",
+        "line": 1241
+      }
+    ]
+  },
+  "source": {
+    "text": "  private targetFor(\n    targetId: string,\n  ): { layer: EnrichLayer; id: string; hash: string; node?: Node } | undefined {\n    if (targetId === SYSTEM_TARGET)\n      return { layer: 'system', id: targetId, hash: this.systemHash() };\n    const node = this.soul.getNode(targetId);\n    if (!node) return undefined;\n    if (node.kind === 'symbol' || node.kind === 'file' || node.kind === 'cluster') {\n      const layer = node.kind;\n      return {\n        layer,\n        id: targetId,\n        hash: layer === 'cluster' ? this.clusterHash(node) : node.hash,\n        node,\n      };\n    }\n    return undefined;\n  }",
+    "truncated": false,
+    "totalLines": 18,
+    "startLine": 1229
+  },
+  "callers": [
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.auditLlm@L870",
+      "confidence": 1,
+      "name": "auditLlm",
+      "qualifiedName": "EnrichmentStore.auditLlm",
+      "signature": "auditLlm(): AuditLlmResult",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 870
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.isStale@L1624",
+      "confidence": 1,
+      "name": "isStale",
+      "qualifiedName": "EnrichmentStore.isStale",
+      "signature": "isStale(artifact: LlmArtifact): boolean",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 1624
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.pruneStale@L837",
+      "confidence": 1,
+      "name": "pruneStale",
+      "qualifiedName": "EnrichmentStore.pruneStale",
+      "signature": "pruneStale(apply = false): {\n    apply: boolean;\n    candidates: Array<{ path: string; targetId: string; reason: 'stale' | 'orphaned' }>;\n    removed: number;\n  }",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 837
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.readForTarget@L819",
+      "confidence": 1,
+      "name": "readForTarget",
+      "qualifiedName": "EnrichmentStore.readForTarget",
+      "signature": "readForTarget(targetId: string): LlmRead",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 819
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.save@L690",
+      "confidence": 1,
+      "name": "save",
+      "qualifiedName": "EnrichmentStore.save",
+      "signature": "save(args: EnrichSaveArgs): EnrichSaveResult",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 690
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.clusterHash@L1641",
+      "confidence": 1,
+      "name": "clusterHash",
+      "qualifiedName": "EnrichmentStore.clusterHash",
+      "signature": "clusterHash(cluster: Node): string",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 1641
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.systemHash@L1645",
+      "confidence": 1,
+      "name": "systemHash",
+      "qualifiedName": "EnrichmentStore.systemHash",
+      "signature": "systemHash(): string",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 1645
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.targetFor@L1229",
+    "procedureName": "EnrichmentStore.targetFor",
+    "conditions": [
+      "cond:packages/mcp/src/enrichment.ts@L1232",
+      "cond:packages/mcp/src/enrichment.ts@L1235",
+      "cond:packages/mcp/src/enrichment.ts@L1236"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.targetFor@L1229",
+        "procedureName": "EnrichmentStore.targetFor",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L1232",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L1232",
+            "expr": "targetId === SYSTEM_TARGET",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8270f20d6c3bed6f37ce06499aa682d6b286323493b38ea75cf71858411bc174",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1233",
+          "line": 1233,
+          "expr": "return { layer: 'system', id: targetId, hash: this.systemHash() };"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.targetFor@L1229",
+        "procedureName": "EnrichmentStore.targetFor",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L1232",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L1232",
+            "expr": "targetId === SYSTEM_TARGET",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:df5450467bb0113798dbbf8578f4c1aeb8a17a99137e5cc71ac95132e8dc6f2f",
+          "target": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.systemHash@L1645",
+          "expr": "systemHash",
+          "line": 1233
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.targetFor@L1229",
+        "procedureName": "EnrichmentStore.targetFor",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:227985cb35ec81b0fbcb751782b700b51bf7941502555e8bf087d5238a7b5413",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1234",
+          "line": 1234,
+          "expr": "const node = this.soul.getNode(targetId);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.targetFor@L1229",
+        "procedureName": "EnrichmentStore.targetFor",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L1235",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L1235",
+            "expr": "!node",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ddb0e30f190068aeb5324eedf54b9c5b740b5493f0787f3b410064307bebee20",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1235",
+          "line": 1235,
+          "expr": "return undefined;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.targetFor@L1229",
+        "procedureName": "EnrichmentStore.targetFor",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L1236",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L1236",
+            "expr": "node.kind === 'symbol' || node.kind === 'file' || node.kind === 'cluster'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:89c3395096c61a78c52a079a319ddd69a31aef0faa24f724da0e67abdf9ceadd",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1238",
+          "line": 1238,
+          "expr": "return {\n        layer,\n        id: targetId,\n        hash: layer === 'cluster' ? this.clusterHash(node) : node.hash,\n        node,\n      };"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.targetFor@L1229",
+        "procedureName": "EnrichmentStore.targetFor",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L1236",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L1236",
+            "expr": "node.kind === 'symbol' || node.kind === 'file' || node.kind === 'cluster'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:8f786046b5e747d893c13a0d82a527d0666cd8ad97315379c6b4812b485669b6",
+          "target": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.clusterHash@L1641",
+          "expr": "clusterHash",
+          "line": 1241
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.targetFor@L1229",
+        "procedureName": "EnrichmentStore.targetFor",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:dd1947efbd8f37af7b43172c7bfb8013106d4352653adbe335eec69ed4c0a824",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1245",
+          "line": 1245,
+          "expr": "return undefined;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 5,
+    "referencedByFiles": [
+      "packages/mcp/src/enrichment.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 5,
+    "assignments": 0,
+    "conditions": 3,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 3,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

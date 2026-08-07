@@ -1,0 +1,197 @@
+{
+  "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.isStale@L1624",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:3a0944ad255991c37661d204257640407daa7d6dc51ad2e51a3d55b7c0453ab6",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.isStale@L1624",
+    "kind": "symbol",
+    "type": "method",
+    "name": "isStale",
+    "qualifiedName": "EnrichmentStore.isStale",
+    "signature": "isStale(artifact: LlmArtifact): boolean",
+    "lang": "typescript",
+    "file": "packages/mcp/src/enrichment.ts",
+    "span": {
+      "start": 1624,
+      "end": 1631
+    },
+    "callSites": [
+      {
+        "callee": "targetFor",
+        "line": 1625
+      },
+      {
+        "callee": "getManifest",
+        "line": 1629
+      }
+    ]
+  },
+  "source": {
+    "text": "  private isStale(artifact: LlmArtifact): boolean {\n    const target = this.targetFor(artifact.targetId);\n    return (\n      !target ||\n      target.hash !== artifact.nodeHash ||\n      artifact.schemaVersion !== this.soul.getManifest().schemaVersion\n    );\n  }",
+    "truncated": false,
+    "totalLines": 8,
+    "startLine": 1624
+  },
+  "callers": [
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.buildOverview@L1483",
+      "confidence": 1,
+      "name": "buildOverview",
+      "qualifiedName": "EnrichmentStore.buildOverview",
+      "signature": "buildOverview(scope?: EnrichScope, withLlm = false): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 1483
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.freshArtifacts@L1364",
+      "confidence": 1,
+      "name": "freshArtifacts",
+      "qualifiedName": "EnrichmentStore.freshArtifacts",
+      "signature": "freshArtifacts(layer: EnrichLayer): LlmArtifact[]",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 1364
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.hasAnyFresh@L989",
+      "confidence": 1,
+      "name": "hasAnyFresh",
+      "qualifiedName": "EnrichmentStore.hasAnyFresh",
+      "signature": "hasAnyFresh(): boolean",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 989
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.matchText@L970",
+      "confidence": 1,
+      "name": "matchText",
+      "qualifiedName": "EnrichmentStore.matchText",
+      "signature": "matchText(q: string, limit: number): LlmArtifact[]",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 970
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.nextSkeletonSystem@L601",
+      "confidence": 1,
+      "name": "nextSkeletonSystem",
+      "qualifiedName": "EnrichmentStore.nextSkeletonSystem",
+      "signature": "nextSkeletonSystem(args: EnrichNextArgs): EnrichNextBatch",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 601
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.pruneStale@L837",
+      "confidence": 1,
+      "name": "pruneStale",
+      "qualifiedName": "EnrichmentStore.pruneStale",
+      "signature": "pruneStale(apply = false): {\n    apply: boolean;\n    candidates: Array<{ path: string; targetId: string; reason: 'stale' | 'orphaned' }>;\n    removed: number;\n  }",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 837
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.status@L382",
+      "confidence": 1,
+      "name": "status",
+      "qualifiedName": "EnrichmentStore.status",
+      "signature": "status(args: EnrichStatusArgs = {}): EnrichStatus",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 382
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.targetFor@L1229",
+      "confidence": 1,
+      "name": "targetFor",
+      "qualifiedName": "EnrichmentStore.targetFor",
+      "signature": "targetFor(targetId: string): { layer: EnrichLayer; id: string; hash: string; node?: Node } | undefined",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 1229
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.isStale@L1624",
+    "procedureName": "EnrichmentStore.isStale",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.isStale@L1624",
+        "procedureName": "EnrichmentStore.isStale",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5e24ac7556abd6bd5dedc5cb56ab14fae9aba02c2cd280924653cc49e504ad3c",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1625",
+          "line": 1625,
+          "expr": "const target = this.targetFor(artifact.targetId);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.isStale@L1624",
+        "procedureName": "EnrichmentStore.isStale",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:a236a9671456398251a71d07a25171bff4cbb175f4533e08cbfb7f4d82b36536",
+          "target": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.targetFor@L1229",
+          "expr": "targetFor",
+          "line": 1625
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.isStale@L1624",
+        "procedureName": "EnrichmentStore.isStale",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c762c463d281a2cb6e3f0016897871ee4b847cfbab74ef9bb0c2fe99eca4e35b",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1626",
+          "line": 1626,
+          "expr": "return (\n      !target ||\n      target.hash !== artifact.nodeHash ||\n      artifact.schemaVersion !== this.soul.getManifest().schemaVersion\n    );"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/mcp/src/enrichment.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 2,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

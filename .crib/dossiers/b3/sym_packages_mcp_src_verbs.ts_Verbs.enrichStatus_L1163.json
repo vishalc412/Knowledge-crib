@@ -1,0 +1,117 @@
+{
+  "id": "sym:packages/mcp/src/verbs.ts#Verbs.enrichStatus@L1163",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:37983774ec22cd83b4d2ed02286ddedc8a9fdcbcef3227ca04f2694ed03aba70",
+  "builtAt": "2026-07-16T14:40:07.112Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/verbs.ts#Verbs.enrichStatus@L1163",
+    "kind": "symbol",
+    "type": "method",
+    "name": "enrichStatus",
+    "qualifiedName": "Verbs.enrichStatus",
+    "signature": "enrichStatus(args: EnrichStatusArgs = {}): Record<string, unknown>",
+    "lang": "typescript",
+    "file": "packages/mcp/src/verbs.ts",
+    "span": {
+      "start": 1163,
+      "end": 1165
+    },
+    "callSites": [
+      {
+        "callee": "status",
+        "line": 1164
+      }
+    ]
+  },
+  "source": {
+    "text": "  enrichStatus(args: EnrichStatusArgs = {}): Record<string, unknown> {\n    return this.llm.status(args) as unknown as Record<string, unknown>;\n  }",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 1163
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.status@L267",
+      "confidence": 1,
+      "name": "status",
+      "qualifiedName": "Verbs.status",
+      "signature": "status(opts?: { dirty?: boolean }): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 267
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#1-executive-summary",
+      "heading": "1. Executive Summary",
+      "anchor": "1-executive-summary",
+      "snippet": "1. Executive Summary",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.enrichStatus@L1163",
+    "procedureName": "Verbs.enrichStatus",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.enrichStatus@L1163",
+        "procedureName": "Verbs.enrichStatus",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:06551e2603c1f1c95be4f86490bdbb0192659010f9dc14d058ccb358595a7756",
+          "target": "sym:packages/mcp/src/verbs.ts#Verbs.status@L267",
+          "expr": "status",
+          "line": 1164
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.enrichStatus@L1163",
+        "procedureName": "Verbs.enrichStatus",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7a69f14d222b8bf29594ed10da79cbcc26477f579203c284fedf4cbfde898f75",
+          "target": "stmt:packages/mcp/src/verbs.ts@L1164",
+          "line": 1164,
+          "expr": "return this.llm.status(args) as unknown as Record<string, unknown>;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

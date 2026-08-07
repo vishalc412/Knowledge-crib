@@ -1,0 +1,105 @@
+{
+  "id": "sym:packages/mcp/src/verbs.ts#isOverviewQuestion@L1438",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:bd19ab48ce4f6ad02cfb2c544b1b4829e066bd2f5e17d015406737b70b504435",
+  "builtAt": "2026-06-30T16:18:20.420Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/verbs.ts#isOverviewQuestion@L1438",
+    "kind": "symbol",
+    "type": "function",
+    "name": "isOverviewQuestion",
+    "qualifiedName": "isOverviewQuestion",
+    "signature": "isOverviewQuestion(q: string): boolean",
+    "lang": "typescript",
+    "file": "packages/mcp/src/verbs.ts",
+    "span": {
+      "start": 1438,
+      "end": 1442
+    },
+    "callSites": [
+      {
+        "callee": "test",
+        "line": 1439
+      }
+    ]
+  },
+  "source": {
+    "text": "function isOverviewQuestion(q: string): boolean {\n  return /\\b(architecture|overview|high.?level|how is .* organized|system structure|repo structure|big picture|what does this repo do)\\b/i.test(\n    q,\n  );\n}",
+    "truncated": false,
+    "totalLines": 5,
+    "startLine": 1438
+  },
+  "callers": [
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.ask@L682",
+      "confidence": 1,
+      "name": "ask",
+      "qualifiedName": "Verbs.ask",
+      "signature": "ask(args: {\n    q: string;\n    limit?: number;\n    format?: 'json' | 'markdown';\n    withSource?: boolean;\n    withRules?: boolean;\n    withFramework?: boolean;\n    extractedOnly?: boolean;\n  }): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 682
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/mcp/src/verbs.ts@L1437",
+      "snippet": "/** Heuristic classification for overview/architecture questions. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/verbs.ts#isOverviewQuestion@L1438",
+    "procedureName": "isOverviewQuestion",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#isOverviewQuestion@L1438",
+        "procedureName": "isOverviewQuestion",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9d15c5731fa1f0c633fbde47b72b3e4664e254f1de2046dc2d025b360eca20d1",
+          "target": "stmt:packages/mcp/src/verbs.ts@L1439",
+          "line": 1439,
+          "expr": "return /\\b(architecture|overview|high.?level|how is .* organized|system structure|repo structure|big picture|what does this repo do)\\b/i.test(\n    q,\n  );"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/mcp/src/verbs.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 1,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

@@ -1,0 +1,136 @@
+{
+  "id": "sym:packages/mcp/src/enrichment.ts#progressFromLayers@L1866",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:0299f38cad3d1f78df6d3f349c2abf1308a199aae664313a596bdc99f1e5a6fd",
+  "builtAt": "2026-07-16T14:40:07.112Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/enrichment.ts#progressFromLayers@L1866",
+    "kind": "symbol",
+    "type": "function",
+    "name": "progressFromLayers",
+    "qualifiedName": "progressFromLayers",
+    "signature": "progressFromLayers(layers: Record<EnrichLayer, EnrichLayerCounts>): {\n  completed: number;\n  pending: number;\n  total: number;\n}",
+    "lang": "typescript",
+    "file": "packages/mcp/src/enrichment.ts",
+    "span": {
+      "start": 1866,
+      "end": 1874
+    },
+    "callSites": [
+      {
+        "callee": "reduce",
+        "line": 1871
+      },
+      {
+        "callee": "values",
+        "line": 1871
+      },
+      {
+        "callee": "reduce",
+        "line": 1872
+      },
+      {
+        "callee": "values",
+        "line": 1872
+      }
+    ]
+  },
+  "source": {
+    "text": "function progressFromLayers(layers: Record<EnrichLayer, EnrichLayerCounts>): {\n  completed: number;\n  pending: number;\n  total: number;\n} {\n  const total = Object.values(layers).reduce((n, l) => n + l.total, 0);\n  const pending = Object.values(layers).reduce((n, l) => n + l.missing + l.stale, 0);\n  return { completed: total - pending, pending, total };\n}",
+    "truncated": false,
+    "totalLines": 9,
+    "startLine": 1866
+  },
+  "callers": [
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.status@L382",
+      "confidence": 1,
+      "name": "status",
+      "qualifiedName": "EnrichmentStore.status",
+      "signature": "status(args: EnrichStatusArgs = {}): EnrichStatus",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 382
+    }
+  ],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/enrichment.ts#progressFromLayers@L1866",
+    "procedureName": "progressFromLayers",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#progressFromLayers@L1866",
+        "procedureName": "progressFromLayers",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:24fa52b40787e03f4856c1884406d80d8a300ad7fe415db04cf97c26f5636d37",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1871",
+          "line": 1871,
+          "expr": "const total = Object.values(layers).reduce((n, l) => n + l.total, 0);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#progressFromLayers@L1866",
+        "procedureName": "progressFromLayers",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:13f0fc83edb92a58c5bdc8792ec6213cff7bf9491fb985b3de9447c9654eabf6",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1872",
+          "line": 1872,
+          "expr": "const pending = Object.values(layers).reduce((n, l) => n + l.missing + l.stale, 0);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#progressFromLayers@L1866",
+        "procedureName": "progressFromLayers",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:634fa2a9fcccf60c97982270f075aed7746977b8e229661a8c3210da3791fcec",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1873",
+          "line": 1873,
+          "expr": "return { completed: total - pending, pending, total };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/mcp/src/enrichment.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 4,
+      "unresolved": 4
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "4 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

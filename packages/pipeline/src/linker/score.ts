@@ -4,8 +4,12 @@ import { DEFAULT_LINK_THRESHOLD } from '@knowledge-crib/core';
  *
  *   conf      = max(signalConf) + 0.04 per additional agreeing signal, capped at 0.99
  *   method    = the method of the strongest signal (lowest METHOD_RANK)
- *   edge type = `describes` if conf ≥ 0.8 and method ∈ {explicit, identifier}; else `references`
+ *   edge type = `describes` if conf ≥ 0.8 and method ∈ {explicit}; else `references`
  *   persist   = conf ≥ link threshold (default 0.4)
+ *
+ * W1 markdown fidelity: `describes` now requires an EXPLICIT reference (code span, qualified name,
+ * path#symbol, or unique exact name). Generic prose identifier matches (method `identifier`) only
+ * ever produce `references` — the "no generic word links to a symbol as describes" guarantee.
  */
 import { METHOD_RANK } from '@knowledge-crib/soul-schema';
 import type { Method, Rel } from '@knowledge-crib/soul-schema';
@@ -17,7 +21,7 @@ export interface ScoredLink {
   rel: Rel;
 }
 
-const DESCRIBES_METHODS: ReadonlySet<Method> = new Set<Method>(['explicit', 'identifier']);
+const DESCRIBES_METHODS: ReadonlySet<Method> = new Set<Method>(['explicit']);
 
 /** Combine ≥1 signals for the same symbol into a single scored link, or null if below threshold. */
 export function scoreLink(

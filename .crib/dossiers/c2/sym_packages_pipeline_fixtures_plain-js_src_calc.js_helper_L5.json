@@ -1,0 +1,129 @@
+{
+  "id": "sym:packages/pipeline/fixtures/plain-js/src/calc.js#helper@L5",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:438007673579547817fcab5b0314ba49780ec4863c1207a19f5a03c1744aec11",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/fixtures/plain-js/src/calc.js#helper@L5",
+    "kind": "symbol",
+    "type": "function",
+    "name": "helper",
+    "qualifiedName": "helper",
+    "signature": "helper(n)",
+    "lang": "javascript",
+    "file": "packages/pipeline/fixtures/plain-js/src/calc.js",
+    "span": {
+      "start": 5,
+      "end": 7
+    }
+  },
+  "source": {
+    "text": "function helper(n) {\n  return n * 2;\n}",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 5
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/fixtures/plain-js/src/calc.js#Calculator.add@L14",
+      "confidence": 1,
+      "name": "add",
+      "qualifiedName": "Calculator.add",
+      "signature": "add(a, b)",
+      "type": "method",
+      "file": "packages/pipeline/fixtures/plain-js/src/calc.js",
+      "line": 14
+    },
+    {
+      "id": "sym:packages/pipeline/fixtures/plain-js/src/calc.js#verify@L9",
+      "confidence": 1,
+      "name": "verify",
+      "qualifiedName": "verify",
+      "signature": "verify(value)",
+      "type": "function",
+      "file": "packages/pipeline/fixtures/plain-js/src/calc.js",
+      "line": 9
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-06-26-beta-installers.md#task-2-installer-smoke-verification",
+      "heading": "Task 2: Installer Smoke Verification",
+      "anchor": "task-2-installer-smoke-verification",
+      "snippet": "Task 2: Installer Smoke Verification",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_MAKE_A_BEATS_B_EVERY_EXTRACTOR.md#phase-0-universal-cfg-parity-finish-s65-6-days",
+      "heading": "Phase 0 — Universal CFG parity (finish S65)  ~6 days",
+      "anchor": "phase-0-universal-cfg-parity-finish-s65-6-days",
+      "snippet": "Phase 0 — Universal CFG parity (finish S65)  ~6 days",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#ws-4-bulk-package-level-context-closes-g4",
+      "heading": "WS-4 — Bulk / package-level context (closes G4)",
+      "anchor": "ws-4-bulk-package-level-context-closes-g4",
+      "snippet": "WS-4 — Bulk / package-level context (closes G4)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/fixtures/plain-js/src/calc.js#helper@L5",
+    "procedureName": "helper",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/fixtures/plain-js/src/calc.js#helper@L5",
+        "procedureName": "helper",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c06e6effdafcb4f753f03eb660e332a2d5df067bdc5c4596455006aa67b4a116",
+          "target": "stmt:packages/pipeline/fixtures/plain-js/src/calc.js@L6",
+          "line": 6,
+          "expr": "return n * 2;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/pipeline/fixtures/plain-js/src/calc.js"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

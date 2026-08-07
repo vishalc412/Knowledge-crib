@@ -1,0 +1,297 @@
+{
+  "id": "sym:packages/ui/web/graph-model.js#buildIndexes@L20",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:a22ef259342cf0d2fd030f9b615b65c2cace71625ff1f58aa2e008cdf92c6a7d",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/ui/web/graph-model.js#buildIndexes@L20",
+    "kind": "symbol",
+    "type": "function",
+    "name": "buildIndexes",
+    "qualifiedName": "buildIndexes",
+    "signature": "buildIndexes(nodes, edges)",
+    "lang": "javascript",
+    "file": "packages/ui/web/graph-model.js",
+    "span": {
+      "start": 20,
+      "end": 38
+    },
+    "callSites": [
+      {
+        "callee": "create",
+        "line": 21
+      },
+      {
+        "callee": "create",
+        "line": 22
+      },
+      {
+        "callee": "create",
+        "line": 23
+      },
+      {
+        "callee": "uniquePush",
+        "line": 27
+      },
+      {
+        "callee": "forEach",
+        "line": 29
+      },
+      {
+        "callee": "push",
+        "line": 30
+      },
+      {
+        "callee": "push",
+        "line": 31
+      },
+      {
+        "callee": "has",
+        "line": 32
+      },
+      {
+        "callee": "uniquePush",
+        "line": 33
+      },
+      {
+        "callee": "uniquePush",
+        "line": 34
+      }
+    ]
+  },
+  "source": {
+    "text": "  function buildIndexes(nodes, edges) {\n    const membersByCluster = Object.create(null);\n    const incidentByNode = Object.create(null);\n    const archAdj = Object.create(null);\n    for (const node of nodes) {\n      incidentByNode[node.id] = [];\n      archAdj[node.id] = [];\n      if (node.cluster) uniquePush(membersByCluster, node.cluster, node.id);\n    }\n    edges.forEach((edge, index) => {\n      if (incidentByNode[edge.src]) incidentByNode[edge.src].push(index);\n      if (incidentByNode[edge.dst]) incidentByNode[edge.dst].push(index);\n      if (ARCHITECTURAL_RELS.has(edge.rel)) {\n        if (archAdj[edge.src]) uniquePush(archAdj, edge.src, edge.dst);\n        if (archAdj[edge.dst]) uniquePush(archAdj, edge.dst, edge.src);\n      }\n    });\n    return { membersByCluster, incidentByNode, archAdj };\n  }",
+    "truncated": false,
+    "totalLines": 19,
+    "startLine": 20
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 39
+    },
+    {
+      "id": "sym:packages/ui/web/graph-model.js#uniquePush@L15",
+      "confidence": 1,
+      "name": "uniquePush",
+      "qualifiedName": "uniquePush",
+      "signature": "uniquePush(map, key, value)",
+      "type": "function",
+      "file": "packages/ui/web/graph-model.js",
+      "line": 15
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/ui/web/graph-model.js#buildIndexes@L20",
+    "procedureName": "buildIndexes",
+    "conditions": [
+      "cond:packages/ui/web/graph-model.js@L24",
+      "cond:packages/ui/web/graph-model.js@L27"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/ui/web/graph-model.js#buildIndexes@L20",
+        "procedureName": "buildIndexes",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:81f2f9b66ece5aaa3b197aedae662f16383c5859d6bea4d1d4dd7390618fde39",
+          "target": "stmt:packages/ui/web/graph-model.js@L21",
+          "line": 21,
+          "expr": "const membersByCluster = Object.create(null);"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/graph-model.js#buildIndexes@L20",
+        "procedureName": "buildIndexes",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:68f84062392e3db1dc007140b99c7fdaa064bde0c101c5d81e44de45f6e28368",
+          "target": "stmt:packages/ui/web/graph-model.js@L22",
+          "line": 22,
+          "expr": "const incidentByNode = Object.create(null);"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/graph-model.js#buildIndexes@L20",
+        "procedureName": "buildIndexes",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b90674b5f7bb414749f3128fa02bc70afe6953280dce94f6e16ab5aa76422888",
+          "target": "stmt:packages/ui/web/graph-model.js@L23",
+          "line": 23,
+          "expr": "const archAdj = Object.create(null);"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/graph-model.js#buildIndexes@L20",
+        "procedureName": "buildIndexes",
+        "guard": "cond:packages/ui/web/graph-model.js@L24",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/web/graph-model.js@L24",
+            "expr": "nodes",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b7c89c12239d2cb67b895569d6b3b8b33df1665a4ef9b29cbc74311e8e2b7ef0",
+          "target": "assign:packages/ui/web/graph-model.js@L25",
+          "line": 25,
+          "expr": "incidentByNode[node.id] = [];"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/graph-model.js#buildIndexes@L20",
+        "procedureName": "buildIndexes",
+        "guard": "cond:packages/ui/web/graph-model.js@L24",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/web/graph-model.js@L24",
+            "expr": "nodes",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ab497379ab7406358d24b0c439990851383c9c6cac12f08837305e9cadfeffca",
+          "target": "assign:packages/ui/web/graph-model.js@L26",
+          "line": 26,
+          "expr": "archAdj[node.id] = [];"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/graph-model.js#buildIndexes@L20",
+        "procedureName": "buildIndexes",
+        "guard": "cond:packages/ui/web/graph-model.js@L27",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/web/graph-model.js@L24",
+            "expr": "nodes"
+          },
+          {
+            "id": "cond:packages/ui/web/graph-model.js@L27",
+            "expr": "node.cluster",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4dcb01d1f27204feaeec238d0a9d1adcac8732b627549bd1fa749307b5cf42af",
+          "target": "stmt:packages/ui/web/graph-model.js@L27",
+          "line": 27,
+          "expr": "uniquePush(membersByCluster, node.cluster, node.id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/graph-model.js#buildIndexes@L20",
+        "procedureName": "buildIndexes",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:cf2c61b7a881ce018e3c7ac964616db7f90f96506dec531bd67490ea1619bbe1",
+          "target": "sym:packages/ui/web/graph-model.js#uniquePush@L15",
+          "expr": "uniquePush",
+          "line": 27
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/graph-model.js#buildIndexes@L20",
+        "procedureName": "buildIndexes",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f640abf9de562a5c09977d863cf1ff0f2aa654842711d844336af32cf72638c1",
+          "target": "stmt:packages/ui/web/graph-model.js@L29",
+          "line": 29,
+          "expr": "edges.forEach((edge, index) => {\n      if (incidentByNode[edge.src]) incidentByNode[edge.src].push(index);\n      if (incidentByNode[edge.dst]) incidentByNode[edge.dst].push(index);\n      if (ARCHITECTURAL_RELS.has(edge.rel)) {\n        if (archAdj[edge.src]) uniquePush(archAdj, edge.src, edge.dst);\n        if (archAdj[edge.dst]) uniquePush(archAdj, edge.dst, edge.src);\n      }\n    });"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/graph-model.js#buildIndexes@L20",
+        "procedureName": "buildIndexes",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:2982edee5995d43ffb0e88a6458b554e176015a2af0c85d5eb20a1901548960b",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 30
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/graph-model.js#buildIndexes@L20",
+        "procedureName": "buildIndexes",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5ab75b242bf5b2eb94a16c77a2f676dde6ca46fa65b459c942672537afd95ba9",
+          "target": "stmt:packages/ui/web/graph-model.js@L37",
+          "line": 37,
+          "expr": "return { membersByCluster, incidentByNode, archAdj };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 8,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 8,
+    "assignments": 2,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 10,
+      "unresolved": 5
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "5 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

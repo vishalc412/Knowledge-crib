@@ -8,7 +8,7 @@ offline-first behavior, and clear provenance.
 
 Requirements:
 
-- Node.js 20 or newer
+- Node.js 22.5 or newer
 - pnpm 9.15.0 via Corepack
 - Python 3 for the optional worker tests
 

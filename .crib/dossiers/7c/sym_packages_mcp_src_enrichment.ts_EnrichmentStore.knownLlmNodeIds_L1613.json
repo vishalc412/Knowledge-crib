@@ -1,0 +1,139 @@
+{
+  "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.knownLlmNodeIds@L1613",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:69c00f9199cd44a4b1b9aff8899f50bffa86bb82e5129f71ac38d73f528e12ab",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.knownLlmNodeIds@L1613",
+    "kind": "symbol",
+    "type": "method",
+    "name": "knownLlmNodeIds",
+    "qualifiedName": "EnrichmentStore.knownLlmNodeIds",
+    "signature": "knownLlmNodeIds(): Set<string>",
+    "lang": "typescript",
+    "file": "packages/mcp/src/enrichment.ts",
+    "span": {
+      "start": 1613,
+      "end": 1615
+    },
+    "callSites": [
+      {
+        "callee": "flatMap",
+        "line": 1614
+      },
+      {
+        "callee": "allArtifacts",
+        "line": 1614
+      },
+      {
+        "callee": "map",
+        "line": 1614
+      }
+    ]
+  },
+  "source": {
+    "text": "  private knownLlmNodeIds(): Set<string> {\n    return new Set(this.allArtifacts().flatMap((a) => a.graph.nodes.map((n) => n.id)));\n  }",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 1613
+  },
+  "callers": [
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.resolveLlmId@L1617",
+      "confidence": 1,
+      "name": "resolveLlmId",
+      "qualifiedName": "EnrichmentStore.resolveLlmId",
+      "signature": "resolveLlmId(id: string): string | undefined",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 1617
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.save@L690",
+      "confidence": 1,
+      "name": "save",
+      "qualifiedName": "EnrichmentStore.save",
+      "signature": "save(args: EnrichSaveArgs): EnrichSaveResult",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 690
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.allArtifacts@L825",
+      "confidence": 1,
+      "name": "allArtifacts",
+      "qualifiedName": "EnrichmentStore.allArtifacts",
+      "signature": "allArtifacts(): LlmArtifact[]",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 825
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.knownLlmNodeIds@L1613",
+    "procedureName": "EnrichmentStore.knownLlmNodeIds",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.knownLlmNodeIds@L1613",
+        "procedureName": "EnrichmentStore.knownLlmNodeIds",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:572a970d0a65939c8477df8d70aadbe1f69c6a4e0c25d4a23996cc9f309f3af1",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1614",
+          "line": 1614,
+          "expr": "return new Set(this.allArtifacts().flatMap((a) => a.graph.nodes.map((n) => n.id)));"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.knownLlmNodeIds@L1613",
+        "procedureName": "EnrichmentStore.knownLlmNodeIds",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:f41a48c5c5f1ff8883b267e44316ef2adb5eb8a201ecab8a308802d1c1269e28",
+          "target": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.allArtifacts@L825",
+          "expr": "allArtifacts",
+          "line": 1614
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/mcp/src/enrichment.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 3,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

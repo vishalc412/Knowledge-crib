@@ -125,6 +125,7 @@ function stubAdapter(changed = ['src/auth.ts']): VcsAdapter {
   return {
     currentHead: () => 'h2',
     changedFilesSince: () => changed,
+    uncommittedChanges: () => [],
   };
 }
 

@@ -1,0 +1,131 @@
+{
+  "id": "sym:packages/pipeline/src/resolve/rust-resolver.test.ts#expectEdge@L178",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:4fca8a4a5dd1313ab230b9f5fc9672a378374f0200e99af9544a5985f4bda7f9",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/resolve/rust-resolver.test.ts#expectEdge@L178",
+    "kind": "symbol",
+    "type": "function",
+    "name": "expectEdge",
+    "qualifiedName": "expectEdge",
+    "signature": "expectEdge(e: { provenance: string; method: string; confidence: number }): void",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/resolve/rust-resolver.test.ts",
+    "span": {
+      "start": 178,
+      "end": 182
+    },
+    "callSites": [
+      {
+        "callee": "toBe",
+        "line": 179
+      },
+      {
+        "callee": "expect",
+        "line": 179
+      },
+      {
+        "callee": "toBe",
+        "line": 180
+      },
+      {
+        "callee": "expect",
+        "line": 180
+      },
+      {
+        "callee": "toBe",
+        "line": 181
+      },
+      {
+        "callee": "expect",
+        "line": 181
+      }
+    ]
+  },
+  "source": {
+    "text": "function expectEdge(e: { provenance: string; method: string; confidence: number }): void {\n  expect(e.provenance).toBe('EXTRACTED');\n  expect(e.method).toBe('static');\n  expect(e.confidence).toBe(1);\n}",
+    "truncated": false,
+    "totalLines": 5,
+    "startLine": 178
+  },
+  "callers": [],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/resolve/rust-resolver.test.ts#expectEdge@L178",
+    "procedureName": "expectEdge",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/rust-resolver.test.ts#expectEdge@L178",
+        "procedureName": "expectEdge",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:09a8d30093dabc2fbcf074606d60c40b609012c53bc0ce5696cfe0adff275d2f",
+          "target": "stmt:packages/pipeline/src/resolve/rust-resolver.test.ts@L179",
+          "line": 179,
+          "expr": "expect(e.provenance).toBe('EXTRACTED');"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/rust-resolver.test.ts#expectEdge@L178",
+        "procedureName": "expectEdge",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4f8ad984173b7bdf17d703a2dd6b179797acf3bcb67b210458777806fba1a578",
+          "target": "stmt:packages/pipeline/src/resolve/rust-resolver.test.ts@L180",
+          "line": 180,
+          "expr": "expect(e.method).toBe('static');"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/rust-resolver.test.ts#expectEdge@L178",
+        "procedureName": "expectEdge",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8b724b751b5dd5b13fc159ea49fa2d63f937cb0c1af483b3ba1f5fc486350c6d",
+          "target": "stmt:packages/pipeline/src/resolve/rust-resolver.test.ts@L181",
+          "line": 181,
+          "expr": "expect(e.confidence).toBe(1);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 6,
+      "unresolved": 6
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "6 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

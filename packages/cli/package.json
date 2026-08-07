@@ -5,8 +5,8 @@
   "license": "Apache-2.0",
   "type": "module",
   "bin": {
-    "crib": "./dist/cli.js",
-    "knowledge-crib": "./dist/cli.js"
+    "crib": "./dist/bin.js",
+    "knowledge-crib": "./dist/bin.js"
   },
   "files": ["dist", "skills", "LICENSE", "NOTICE", "!dist/**/*.test.*"],
   "scripts": {
@@ -17,12 +17,13 @@
   "dependencies": {
     "@knowledge-crib/soul-schema": "workspace:*",
     "@knowledge-crib/core": "workspace:*",
+    "@knowledge-crib/memory": "workspace:*",
     "@knowledge-crib/pipeline": "workspace:*",
     "@knowledge-crib/mcp": "workspace:*",
     "@knowledge-crib/ui": "workspace:*"
   },
   "devDependencies": {
-    "vitest": "^2.1.0"
+    "vitest": "^3.2.6"
   },
   "repository": {
     "type": "git",
@@ -35,6 +36,6 @@
   "homepage": "https://github.com/KnowledgeCrib/knowledge-crib#readme",
   "keywords": ["mcp", "knowledge-graph", "code-analysis", "ai-agents", "cli", "project-context"],
   "engines": {
-    "node": ">=20"
+    "node": ">=22.5.0"
   }
 }

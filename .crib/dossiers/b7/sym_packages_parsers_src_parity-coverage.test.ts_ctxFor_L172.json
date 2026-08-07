@@ -1,0 +1,106 @@
+{
+  "id": "sym:packages/parsers/src/parity-coverage.test.ts#ctxFor@L172",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:2e2bafb127f734a152278b03550deee3a2209c15c6d938747d2f5fee31668dc1",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/parity-coverage.test.ts#ctxFor@L172",
+    "kind": "symbol",
+    "type": "function",
+    "name": "ctxFor",
+    "qualifiedName": "ctxFor",
+    "signature": "ctxFor(text: string): ExtractCtx",
+    "lang": "typescript",
+    "file": "packages/parsers/src/parity-coverage.test.ts",
+    "span": {
+      "start": 172,
+      "end": 183
+    },
+    "callSites": [
+      {
+        "callee": "idFor",
+        "line": 181
+      }
+    ]
+  },
+  "source": {
+    "text": "function ctxFor(text: string): ExtractCtx {\n  return {\n    async readText() {\n      return text;\n    },\n    treeSitter() {\n      throw new Error('not used — hand-rolled parsers');\n    },\n    hash: contentHash,\n    idFor: (kind: NodeKind, parts) => idFor({ kind, ...parts } as IdSpec),\n  };\n}",
+    "truncated": false,
+    "totalLines": 12,
+    "startLine": 172
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/soul-schema/src/id.ts#idFor@L88",
+      "confidence": 1,
+      "name": "idFor",
+      "qualifiedName": "idFor",
+      "signature": "idFor(spec: IdSpec): string",
+      "type": "function",
+      "file": "packages/soul-schema/src/id.ts",
+      "line": 88
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/parity-coverage.test.ts#ctxFor@L172",
+    "procedureName": "ctxFor",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/parity-coverage.test.ts#ctxFor@L172",
+        "procedureName": "ctxFor",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:84d2d8d8139350fbd8f7b801e996837268f24d327384df774f94d737e07c39d9",
+          "target": "stmt:packages/parsers/src/parity-coverage.test.ts@L173",
+          "line": 173,
+          "expr": "return {\n    async readText() {\n      return text;\n    },\n    treeSitter() {\n      throw new Error('not used — hand-rolled parsers');\n    },\n    hash: contentHash,\n    idFor: (kind: NodeKind, parts) => idFor({ kind, ...parts } as IdSpec),\n  };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/parity-coverage.test.ts#ctxFor@L172",
+        "procedureName": "ctxFor",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:a60beda0491725f1ba0c38eb61f59e712742f95fa64dee372dff81002336c52c",
+          "target": "sym:packages/soul-schema/src/id.ts#idFor@L88",
+          "expr": "idFor",
+          "line": 181
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

@@ -1,0 +1,106 @@
+{
+  "id": "sym:packages/parsers/src/php/PhpExtractor.test.ts#ctxFor.treeSitter@L19",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:163804ac49626880a46f4b4a8c36ddadfa05a346467ac8336d8a35bc826708af",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/php/PhpExtractor.test.ts#ctxFor.treeSitter@L19",
+    "kind": "symbol",
+    "type": "method",
+    "name": "treeSitter",
+    "qualifiedName": "ctxFor.treeSitter",
+    "signature": "treeSitter(grammar: string)",
+    "lang": "typescript",
+    "file": "packages/parsers/src/php/PhpExtractor.test.ts",
+    "span": {
+      "start": 19,
+      "end": 21
+    },
+    "callSites": [
+      {
+        "callee": "createParserHandle",
+        "line": 20
+      }
+    ]
+  },
+  "source": {
+    "text": "    treeSitter(grammar: string) {\n      return createParserHandle(grammar);\n    },",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 19
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/tree-sitter-pool.ts#createParserHandle@L79",
+      "confidence": 1,
+      "name": "createParserHandle",
+      "qualifiedName": "createParserHandle",
+      "signature": "createParserHandle(grammar: string): ParserHandle",
+      "type": "function",
+      "file": "packages/parsers/src/tree-sitter-pool.ts",
+      "line": 79
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/php/PhpExtractor.test.ts#ctxFor.treeSitter@L19",
+    "procedureName": "ctxFor.treeSitter",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/php/PhpExtractor.test.ts#ctxFor.treeSitter@L19",
+        "procedureName": "ctxFor.treeSitter",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:cf2eaa8daa1b29a62899b17677c2ccec42f1cd10e1aabc434998d183547d434c",
+          "target": "sym:packages/parsers/src/tree-sitter-pool.ts#createParserHandle@L79",
+          "expr": "createParserHandle",
+          "line": 20
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/php/PhpExtractor.test.ts#ctxFor.treeSitter@L19",
+        "procedureName": "ctxFor.treeSitter",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:db88e2d2d7d53bf250bd7eefd25eb384e7c3e4f3ec4d095d0a4ac54cd9bf836e",
+          "target": "stmt:packages/parsers/src/php/PhpExtractor.test.ts@L20",
+          "line": 20,
+          "expr": "return createParserHandle(grammar);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

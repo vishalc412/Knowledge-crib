@@ -78,6 +78,11 @@ const LANG_BY_EXT: Record<string, string> = {
 
 export interface DiscoverOpts {
   ignores?: Set<string>;
+  /** Repo-relative POSIX dirs to scope discovery to (monorepo `--package`). When non-empty, the
+   *  walk only descends into (and indexes files under) these package roots plus root-level files;
+   *  sibling packages are pruned at the dir branch so a 50-package repo indexing one package does
+   *  not stat the other 49. Empty/absent → full-repo walk (the default). */
+  packageRoots?: string[];
 }
 
 /**
@@ -94,6 +99,22 @@ export function discoverFiles(root: string, opts: DiscoverOpts = {}): FileMeta[]
   const ignores = opts.ignores ?? DEFAULT_IGNORES;
   const git = new GitignoreMatcher();
   git.add('', readGitignore(root, ''));
+  const packageRoots = (opts.packageRoots ?? [])
+    .map((r) => r.replace(/^\.\/+/, '').replace(/\/+$/, ''))
+    .filter(Boolean);
+  const scoped = packageRoots.length > 0;
+  // True if dir `rel` should be descended into under package scoping: root always; otherwise `rel`
+  // must be an ancestor of, equal to, or inside a selected package root. Sibling packages prune here.
+  const inScopeDir = (rel: string): boolean => {
+    if (!scoped) return true;
+    if (rel === '') return true;
+    for (const pr of packageRoots) {
+      if (rel === pr) return true;
+      if (pr.startsWith(`${rel}/`)) return true; // rel is an ancestor of a package root
+      if (rel.startsWith(`${pr}/`)) return true; // rel is inside a package root
+    }
+    return false;
+  };
   const out: FileMeta[] = [];
   const walk = (dir: string, relDir: string): void => {
     let entries: string[];
@@ -114,6 +135,7 @@ export function discoverFiles(root: string, opts: DiscoverOpts = {}): FileMeta[]
       }
       if (st.isDirectory()) {
         if (git.isIgnored(rel, true)) continue; // gitignored dir → do not descend
+        if (scoped && !inScopeDir(rel)) continue; // outside selected package(s) → prune descent
         // A nested .gitignore scopes its rules to this subtree. Read BEFORE descending so children
         // see the rules; the layer's `dir` prefix keeps it from leaking to sibling subtrees.
         git.add(rel, readGitignore(root, rel));

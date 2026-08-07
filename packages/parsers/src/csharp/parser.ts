@@ -935,6 +935,12 @@ class Parser {
         if (this.isOp('(')) {
           this.excluded.add(this.i);
           this.skipBalancedParens();
+        } else if (!name) {
+          // M3.5 fuzz fix: the token is not `,`, not a name, not `(`, not `]` (e.g. `#` / `~` / `@`
+          // from an adversarial input). ADVANCE past it — otherwise this loop re-peeks the same
+          // token forever (the recover()-class sync hang; reproducer `[#~D`). A malformed attribute
+          // is dropped and parsing continues. Progress is guaranteed every iteration.
+          this.next();
         }
       }
       if (this.isOp(']')) this.next();

@@ -5,18 +5,12 @@
  * Later phases (cluster, semantic link) slot in before/after commit as they land.
  */
 import type { IndexStore, SoulStore } from '@knowledge-crib/core';
-import {
-  CsharpExtractor,
-  ExtractorRegistry,
-  GoExtractor,
-  JavaExtractor,
-  MarkdownExtractor,
-  PlSqlExtractor,
-  PythonExtractor,
-  RustExtractor,
-  TypeScriptExtractor,
-} from '@knowledge-crib/parsers';
+import { ExtractorRegistry } from '@knowledge-crib/parsers';
 import type { Extractor } from '@knowledge-crib/parsers';
+import { defaultExtractors } from './extractors.js';
+export { defaultExtractors } from './extractors.js';
+import { runArtifactGraph } from './artifacts.js';
+import type { ArtifactGraphOpts, ArtifactStats } from './artifacts.js';
 import { runCluster } from './cluster/index.js';
 import type { ClusterStats } from './cluster/index.js';
 import { runDossiers } from './dossiers.js';
@@ -28,6 +22,8 @@ import { runSemanticLink } from './linker/index.js';
 import { runMultimodal } from './multimodal/index.js';
 import type { MultimodalPhaseOpts, MultimodalReport } from './multimodal/index.js';
 import { isMediaPath } from './multimodal/ingest.js';
+import { runOwnership } from './ownership.js';
+import type { OwnershipStats } from './ownership.js';
 import { runParse } from './parse.js';
 import type { ParseStats } from './parse.js';
 import { runCfg } from './resolve/index.js';
@@ -53,6 +49,10 @@ export interface IndexOpts {
   /** dirs to skip during discovery; REPLACES the default ignore set (merge with DEFAULT_IGNORES at
    *  the caller if you want to extend rather than narrow). */
   ignores?: Set<string>;
+  /** Repo-relative POSIX package dirs to scope discovery to (monorepo `--package`). When non-empty,
+   *  discovery only descends into these roots (+ root-level files); sibling packages are pruned.
+   *  Absent/empty → full-repo walk. One soul stays unified so cross-package impact still resolves. */
+  packageRoots?: string[];
   /** run structural clustering (Louvain) after the link phase; default true (M7). */
   cluster?: boolean;
   /** run the INFERRED TF-IDF semantic linker pass after the deterministic linker; default false (M7).
@@ -67,6 +67,22 @@ export interface IndexOpts {
    *  Default ON — the artifact the MCP `dossier` verb serves from cache; graph-divergent artifacts
    *  are refreshed while true no-ops remain byte-stable. */
   dossiers?: boolean;
+  /** run the M3.1 ownership phase: `git blame` → symbol→owner `owned-by` EXTRACTED edges. Default ON
+   *  inside a git work tree (a clean no-op in a non-git repo, so the deterministic path is unchanged).
+   *  Set false to skip blame (benches / `--extracted-only` reproducibility checks that want no git). */
+  ownership?: boolean;
+  /** M3.4 parallel parse: run Phase 2 extraction across a worker-thread pool. Default ON when the
+   *  built worker script is present, ≥2 files are discovered, and `KCRIB_PARALLEL != '0'`. The pool
+   *  ships the DEFAULT fleet only; a non-default `extractors` opt forces the serial loop regardless.
+   *  Output is byte-identical to serial (results persist in discovery order). Set false to force
+   *  serial (determinism cross-check, single-file index, environments without worker_threads). */
+  parallel?: boolean;
+  /** W1 (AI-artifact graph): run the committed + (opt-in) local-overlay artifact scanner after the
+   *  doc linker, emitting `agent-artifact` nodes (skills/agents/commands/rules/instructions/MCP
+   *  servers) + `governs`/`requires`/`invokes` edges. Default ON — a clean no-op on repos with no
+   *  allowlist-matching tracked artifacts (the common test-fixture case), so the deterministic path
+   *  is unchanged. `false` skips; an object passes through {@link ArtifactGraphOpts} (e.g. localRoots). */
+  artifacts?: boolean | ArtifactGraphOpts;
 }
 
 export interface IndexReport {
@@ -79,25 +95,8 @@ export interface IndexReport {
   link: LinkStats;
   cluster: ClusterStats;
   semantic: SemanticStats;
-}
-
-/** The default extractor fleet shipped with a fresh index — Markdown first so doc files never fall
- *  through to a code extractor, then every language extractor (TypeScript + PL/SQL + Python + Java +
- *  C# + Go + Rust). The SINGLE source of truth shared by `indexRepo` (full) and `updateRepo`
- *  (incremental): a `crib update` on an edited `.java`/`.cs`/`.go`/`.rs`/`.py`/`.sql` file re-extracts
- *  that language's symbols + framework semantics (routes/DI/JPA) instead of silently dropping them.
- *  `Supports()` are disjoint by extension, so the order is only load-bearing for `.md`. */
-export function defaultExtractors(): Extractor[] {
-  return [
-    new MarkdownExtractor(),
-    new TypeScriptExtractor(),
-    new PlSqlExtractor(),
-    new PythonExtractor(),
-    new JavaExtractor(),
-    new CsharpExtractor(),
-    new GoExtractor(),
-    new RustExtractor(),
-  ];
+  ownership: OwnershipStats;
+  artifacts: ArtifactStats;
 }
 
 /** Full index of a repo through the deterministic linker, then (optional) index build. */
@@ -111,9 +110,18 @@ export async function indexRepo(
     registry.register(e);
   }
 
-  const files = discoverFiles(root, opts.ignores ? { ignores: opts.ignores } : {});
+  const discoverOpts: { ignores?: Set<string>; packageRoots?: string[] } = {};
+  if (opts.ignores) discoverOpts.ignores = opts.ignores;
+  if (opts.packageRoots && opts.packageRoots.length > 0)
+    discoverOpts.packageRoots = opts.packageRoots;
+  const files = discoverFiles(root, discoverOpts);
   runStructure(soul, root, files); // Phase 1
-  const parse = await runParse(soul, registry, root, files); // Phase 2 + 3b (Markdown extractor)
+  // defaultRegistry = the fleet came from defaultExtractors() (no custom opts.extractors) → the
+  // parallel pool can ship it. Custom extractors force the serial path (workers can't receive them).
+  const parse = await runParse(soul, registry, root, files, {
+    parallel: opts.parallel,
+    defaultRegistry: !opts.extractors,
+  }); // Phase 2 + 3b (Markdown extractor)
   const resolve = runResolve(soul, root, files, opts.resolvers); // Phase 3 (TS + PL/SQL + Python)
   const cfg = runCfg(soul, root, files, opts.cfgPasses); // Phase 3d (M11 guard-chain annotation)
   // Phase 3e (M13, OFF by default): ingest media segments via the offline worker + link them to
@@ -123,8 +131,31 @@ export async function indexRepo(
     ? await runMultimodal(soul, root, opts.multimodal, mediaPaths)
     : { ingest: { files: 0, segments: 0, dropped: 0 }, link: { describes: 0, references: 0 } };
   const link = runLink(soul, root, opts.linkThreshold); // Phase 4
+  // Phase 4a (W1): the AI-artifact graph — discovers tracked skills/agents/commands/rules/instructions
+  // + MCP-server configs that the normal walk misses (they live under gitignored tool dirs), emits
+  // `agent-artifact` nodes, and resolves `governs`/`requires`/`invokes` edges against the indexed
+  // symbol/file/doc graph. A clean no-op on repos with no allowlist-matching artifacts.
+  const artifacts =
+    opts.artifacts === false
+      ? {
+          artifacts: 0,
+          governs: 0,
+          requires: 0,
+          invokes: 0,
+          mcpServers: 0,
+          localOverlay: 0,
+          diagnostics: [],
+        }
+      : runArtifactGraph(soul, root, typeof opts.artifacts === 'object' ? opts.artifacts : {});
   const cluster = opts.cluster === false ? { communities: 0, members: 0 } : runCluster(soul); // Phase 4b (M7)
   const semantic = opts.semantic ? runSemanticLink(soul, root) : { added: 0 }; // Phase 4c (M7, INFERRED)
+  // Phase 4d (M3.1): `git blame` → symbol→owner `owned-by` EXTRACTED edges. Clean no-op in a non-git
+  // repo, so the deterministic path (and the mkdtemp-based tests/gates) is unchanged. Runs before the
+  // VCS anchor stamp + commit so owners land in the committed soul.
+  const ownership =
+    opts.ownership === false
+      ? { files: 0, symbols: 0, owners: 0, edges: 0, skipped: 0 }
+      : runOwnership(soul, root);
   // Best-effort VCS anchor (M6): stamp the current HEAD so `crib update` / `detect_changes` can diff
   // against it. Non-git repos silently skip (the stamp stays absent → update degrades to full index).
   try {
@@ -155,5 +186,7 @@ export async function indexRepo(
     link,
     cluster,
     semantic,
+    ownership,
+    artifacts,
   };
 }

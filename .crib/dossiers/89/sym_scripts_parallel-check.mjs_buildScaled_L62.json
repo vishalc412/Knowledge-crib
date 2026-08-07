@@ -1,0 +1,146 @@
+{
+  "id": "sym:scripts/parallel-check.mjs#buildScaled@L62",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:e815546aeb65bc69ad38fd669a6c472039c62c65771abd99d6bce5c229756546",
+  "builtAt": "2026-07-13T11:14:06.943Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:scripts/parallel-check.mjs#buildScaled@L62",
+    "kind": "symbol",
+    "type": "function",
+    "name": "buildScaled",
+    "qualifiedName": "buildScaled",
+    "signature": "buildScaled(n)",
+    "lang": "javascript",
+    "file": "scripts/parallel-check.mjs",
+    "span": {
+      "start": 62,
+      "end": 66
+    },
+    "callSites": [
+      {
+        "callee": "mkdtempSync",
+        "line": 63
+      },
+      {
+        "callee": "join",
+        "line": 63
+      },
+      {
+        "callee": "tmpdir",
+        "line": 63
+      },
+      {
+        "callee": "cpSync",
+        "line": 64
+      },
+      {
+        "callee": "join",
+        "line": 64
+      }
+    ]
+  },
+  "source": {
+    "text": "function buildScaled(n) {\n  const root = mkdtempSync(join(tmpdir(), 'crib-par-gate-'));\n  for (let i = 0; i < n; i++) cpSync(FIX, join(root, `batch${i}`), { recursive: true });\n  return root;\n}",
+    "truncated": false,
+    "totalLines": 5,
+    "startLine": 62
+  },
+  "callers": [],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:scripts/parallel-check.mjs@L61",
+      "snippet": "// Build a scaled fixture: copy the 23-file fixture tree SCALE times into sibling batch dirs.",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:scripts/parallel-check.mjs#buildScaled@L62",
+    "procedureName": "buildScaled",
+    "conditions": [
+      "cond:scripts/parallel-check.mjs@L64"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:scripts/parallel-check.mjs#buildScaled@L62",
+        "procedureName": "buildScaled",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:af9d7e565779b91e5b308ddabac931f8b73c22ac36369ea158a8d28e72c5f113",
+          "target": "stmt:scripts/parallel-check.mjs@L63",
+          "line": 63,
+          "expr": "const root = mkdtempSync(join(tmpdir(), 'crib-par-gate-'));"
+        }
+      },
+      {
+        "procedure": "sym:scripts/parallel-check.mjs#buildScaled@L62",
+        "procedureName": "buildScaled",
+        "guard": "cond:scripts/parallel-check.mjs@L64",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:scripts/parallel-check.mjs@L64",
+            "expr": "i < n",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d1e1499fd2000e4af60807b93269e0f43beec4ad5eee29ea9772e5e5f67547cc",
+          "target": "stmt:scripts/parallel-check.mjs@L64",
+          "line": 64,
+          "expr": "cpSync(FIX, join(root, `batch${i}`), { recursive: true });"
+        }
+      },
+      {
+        "procedure": "sym:scripts/parallel-check.mjs#buildScaled@L62",
+        "procedureName": "buildScaled",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:176fd6489e5ab5a9361877a58df6dff589d9bdf81ce42ecb80a7ddff5aa7bae6",
+          "target": "stmt:scripts/parallel-check.mjs@L65",
+          "line": 65,
+          "expr": "return root;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 5,
+      "unresolved": 5
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "5 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

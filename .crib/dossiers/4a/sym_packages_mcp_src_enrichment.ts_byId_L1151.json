@@ -1,0 +1,83 @@
+{
+  "id": "sym:packages/mcp/src/enrichment.ts#byId@L1151",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:4492cf4a3a04fd9eae18568fb37cb5a5a6ccea36f622ebacddfa901db8caafae",
+  "builtAt": "2026-06-30T16:18:20.420Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/enrichment.ts#byId@L1151",
+    "kind": "symbol",
+    "type": "function",
+    "name": "byId",
+    "qualifiedName": "byId",
+    "signature": "byId(a: Node, b: Node): number",
+    "lang": "typescript",
+    "file": "packages/mcp/src/enrichment.ts",
+    "span": {
+      "start": 1151,
+      "end": 1153
+    },
+    "callSites": [
+      {
+        "callee": "localeCompare",
+        "line": 1152
+      }
+    ]
+  },
+  "source": {
+    "text": "function byId(a: Node, b: Node): number {\n  return a.id.localeCompare(b.id);\n}",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 1151
+  },
+  "callers": [],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/enrichment.ts#byId@L1151",
+    "procedureName": "byId",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#byId@L1151",
+        "procedureName": "byId",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:276d90b997be2d61b1499a620a6155cddfd61a5f052520662a4cca41b6f6ceb1",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1152",
+          "line": 1152,
+          "expr": "return a.id.localeCompare(b.id);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 1,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

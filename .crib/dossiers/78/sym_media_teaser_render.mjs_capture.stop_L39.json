@@ -1,0 +1,127 @@
+{
+  "id": "sym:media/teaser/render.mjs#capture.stop@L39",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:96382b1c78840796bfffc9d8c47a9ad7b25882bccaeb7acd919788f9cc982bda",
+  "builtAt": "2026-07-13T14:47:57.424Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:media/teaser/render.mjs#capture.stop@L39",
+    "kind": "symbol",
+    "type": "function",
+    "name": "stop",
+    "qualifiedName": "capture.stop",
+    "signature": "stop(…)",
+    "lang": "javascript",
+    "file": "media/teaser/render.mjs",
+    "span": {
+      "start": 39,
+      "end": 41
+    },
+    "callSites": [
+      {
+        "callee": "kill",
+        "line": 40
+      }
+    ]
+  },
+  "source": {
+    "text": "    const stop = () => {\n      try { process.kill(-child.pid, 'SIGTERM'); } catch { /* capture process already exited */ }\n    };",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 39
+  },
+  "callers": [
+    {
+      "id": "sym:media/teaser/render.mjs#capture@L25",
+      "confidence": 1,
+      "name": "capture",
+      "qualifiedName": "capture",
+      "signature": "capture(scene)",
+      "type": "function",
+      "file": "media/teaser/render.mjs",
+      "line": 25
+    },
+    {
+      "id": "sym:media/teaser/render.mjs#capture.check@L43",
+      "confidence": 1,
+      "name": "check",
+      "qualifiedName": "capture.check",
+      "signature": "check(…)",
+      "type": "function",
+      "file": "media/teaser/render.mjs",
+      "line": 43
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#3-3-2-within-a-layer-missing-before-stale-hash-deterministic-ordering",
+      "heading": "3.3.2 Within a Layer: Missing Before Stale, Hash-Deterministic Ordering",
+      "anchor": "3-3-2-within-a-layer-missing-before-stale-hash-deterministic-ordering",
+      "snippet": "3.3.2 Within a Layer: Missing Before Stale, Hash-Deterministic Ordering",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-technical-pitch.md#position",
+      "heading": "Position",
+      "anchor": "position",
+      "snippet": "Position",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:media/teaser/render.mjs#capture.stop@L39",
+    "procedureName": "capture.stop",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:media/teaser/render.mjs#capture.stop@L39",
+        "procedureName": "capture.stop",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:96ac69d956ec2fbfa90d2b43d467a4beac59a1fa429c785c81465f0b86491c78",
+          "target": "stmt:media/teaser/render.mjs@L40",
+          "line": 40,
+          "expr": "process.kill(-child.pid, 'SIGTERM');"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "media/teaser/render.mjs"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 1,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

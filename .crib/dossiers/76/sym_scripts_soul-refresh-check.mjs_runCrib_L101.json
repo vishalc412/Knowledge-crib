@@ -1,0 +1,138 @@
+{
+  "id": "sym:scripts/soul-refresh-check.mjs#runCrib@L101",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:6f3811c90037ce3404fe66b62ae277c30bbb4aad81cfd307eabaee4a3be11222",
+  "builtAt": "2026-07-16T14:40:07.112Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:scripts/soul-refresh-check.mjs#runCrib@L101",
+    "kind": "symbol",
+    "type": "function",
+    "name": "runCrib",
+    "qualifiedName": "runCrib",
+    "signature": "runCrib(…)",
+    "lang": "javascript",
+    "file": "scripts/soul-refresh-check.mjs",
+    "span": {
+      "start": 101,
+      "end": 113
+    },
+    "callSites": [
+      {
+        "callee": "execFileSync",
+        "line": 103
+      }
+    ]
+  },
+  "source": {
+    "text": "const runCrib = (repo, args) => {\n  try {\n    const out = execFileSync(process.execPath, [CLI, ...args], {\n      cwd: repo,\n      encoding: 'utf8',\n      stdio: ['ignore', 'pipe', 'pipe'],\n      env: { ...process.env, NO_COLOR: '1' },\n    });\n    return { code: 0, out };\n  } catch (err) {\n    return { code: err.status ?? 1, out: (err.stdout ?? '') + (err.stderr ?? '') };\n  }\n};",
+    "truncated": false,
+    "totalLines": 13,
+    "startLine": 101
+  },
+  "callers": [],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:scripts/soul-refresh-check.mjs@L100",
+      "snippet": "// real crib runner — shells out to the built CLI exactly as the action does",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:scripts/soul-refresh-check.mjs#runCrib@L101",
+    "procedureName": "runCrib",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:scripts/soul-refresh-check.mjs#runCrib@L101",
+        "procedureName": "runCrib",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9e5fc76f3e8a605a9220c59359269c5d1e51763cf9636c3b4b41981c240e72d1",
+          "target": "stmt:scripts/soul-refresh-check.mjs@L103",
+          "line": 103,
+          "expr": "const out = execFileSync(process.execPath, [CLI, ...args], {\n      cwd: repo,\n      encoding: 'utf8',\n      stdio: ['ignore', 'pipe', 'pipe'],\n      env: { ...process.env, NO_COLOR: '1' },\n    });"
+        }
+      },
+      {
+        "procedure": "sym:scripts/soul-refresh-check.mjs#runCrib@L101",
+        "procedureName": "runCrib",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1bd8aba6f8fcc4ddb1ceefd33e11c92e88cdb3f31529434f3348ce0dcadcf4d3",
+          "target": "stmt:scripts/soul-refresh-check.mjs@L109",
+          "line": 109,
+          "expr": "return { code: 0, out };"
+        }
+      },
+      {
+        "procedure": "sym:scripts/soul-refresh-check.mjs#runCrib@L101",
+        "procedureName": "runCrib",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:278f19b3185face7a92501325d33a54d7645b093216ae5f739d6df87aeec0b79",
+          "target": "stmt:scripts/soul-refresh-check.mjs@L111",
+          "line": 111,
+          "expr": "return { code: err.status ?? 1, out: (err.stdout ?? '') + (err.stderr ?? '') };"
+        }
+      }
+    ]
+  },
+  "controlFlow": {
+    "raises": [],
+    "handles": [
+      {
+        "id": "exc:scripts/soul-refresh-check.mjs@L110",
+        "kind": "exception-handler",
+        "lang": "javascript",
+        "file": "scripts/soul-refresh-check.mjs",
+        "span": {
+          "start": 110,
+          "end": 110
+        },
+        "confidence": 1
+      }
+    ],
+    "iterates": [],
+    "declares": []
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 1,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 1,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

@@ -1,9 +1,20 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import {
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { contentHash, edgeId, idFor } from '@knowledge-crib/soul-schema';
 import type { Edge, Node } from '@knowledge-crib/soul-schema';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { CharNgramEmbedder } from '../embeddings/char-ngram.js';
+import type { HybridQuery } from '../index-store.js';
 import { newManifest } from '../manifest.js';
 import { SoulStore } from '../soul-store.js';
 import { openIndex } from './factory.js';
@@ -218,5 +229,163 @@ describe('WS-1 body-searchable FTS', () => {
     idx.buildFromSoul(specStore, dir); // file not on disk → body column empty, signature still indexed
     expect(idx.query({ text: 'SPEC_PROC', kinds: ['symbol'] })[0]?.id).toBe(specOnly.id);
     idx.close();
+  });
+});
+
+describe('P2 lightweight hybrid retrieval (synonym-expanded query)', () => {
+  it('a conceptual query ("save") finds a symbol named with its synonym ("persistData"), which pure prefix-FTS5 would miss', () => {
+    const persistFn = sym('src/storage/Writer.ts', 'persistData', 1, {
+      signature: 'persistData(record): void',
+    });
+    const semStore = new SoulStore(dir, {
+      manifest: newManifest({ now: '2026-01-01T00:00:00.000Z' }),
+    });
+    semStore.load();
+    semStore.putNodes([file('src/storage/Writer.ts'), persistFn]);
+    semStore.commit('2026-01-01T00:00:00.000Z');
+
+    const idx = new SqliteIndexStore();
+    idx.buildFromSoul(semStore, dir);
+    // sanity: plain substring-unrelated terms never collide ("save" is not a substring of
+    // "persistData", so this proves the hit comes from synonym expansion, not a lucky prefix match).
+    expect('persistdata'.startsWith('save')).toBe(false);
+    const hits = idx.query({ text: 'save', kinds: ['symbol'] });
+    expect(hits.map((h) => h.id)).toContain(persistFn.id);
+    idx.close();
+  });
+
+  it('an unrelated query term does not pull in a synonym group (no false-positive recall)', () => {
+    const persistFn = sym('src/storage/Writer.ts', 'persistData', 1);
+    const semStore = new SoulStore(dir, {
+      manifest: newManifest({ now: '2026-01-01T00:00:00.000Z' }),
+    });
+    semStore.load();
+    semStore.putNodes([file('src/storage/Writer.ts'), persistFn]);
+    semStore.commit('2026-01-01T00:00:00.000Z');
+
+    const idx = new SqliteIndexStore();
+    idx.buildFromSoul(semStore, dir);
+    expect(idx.query({ text: 'render', kinds: ['symbol'] }).map((h) => h.id)).not.toContain(
+      persistFn.id,
+    );
+    idx.close();
+  });
+});
+
+// ---- M2.1 hybrid fusion (RRF of BM25 ∪ char-n-gram vectors) ----
+
+describe('SqliteIndexStore — M2.1 vector layer + RRF hybrid query', () => {
+  it('default store (no embedder) is pure BM25 — capabilities.vector=false', () => {
+    const idx = new SqliteIndexStore();
+    idx.buildFromSoul(store, dir);
+    expect(idx.capabilities().vector).toBe(false);
+    // semantic:false is a no-op when no vectors were built — returns BM25 unchanged.
+    const a = idx.query({ text: 'login', kinds: ['symbol'] });
+    const b = idx.query({ text: 'login', kinds: ['symbol'], semantic: false });
+    expect(a.map((h) => h.id)).toEqual(b.map((h) => h.id));
+    idx.close();
+  });
+
+  it('building with the char-n-gram embedder sets capabilities.vector=true', () => {
+    const idx = new SqliteIndexStore(':memory:', { embedder: new CharNgramEmbedder() });
+    idx.buildFromSoul(store, dir);
+    expect(idx.capabilities().vector).toBe(true);
+    idx.close();
+  });
+
+  it('hybrid query retrieves a paraphrase BM25 misses (the recall mechanism)', () => {
+    // Paraphrase: "logged in" shares no exact token with "login"/"AuthService.login" beyond "login",
+    // but the char-n-gram vector generalizes the inflection. The hybrid path should rank login highly.
+    const idx = new SqliteIndexStore(':memory:', { embedder: new CharNgramEmbedder() });
+    idx.buildFromSoul(store, dir);
+    const hybrid = idx.query({ text: 'logged in session', kinds: ['symbol'] });
+    const pure = idx.query({ text: 'logged in session', kinds: ['symbol'], semantic: false });
+    // hybrid must include login; pure BM25 may or may not, but hybrid definitely does.
+    expect(hybrid.map((h) => h.id)).toContain(login.id);
+    // and hybrid should rank it no worse than pure BM25 does (RRF can only help, not hurt, a present hit).
+    if (pure.some((h) => h.id === login.id)) {
+      expect(hybrid.findIndex((h) => h.id === login.id)).toBeLessThanOrEqual(
+        pure.findIndex((h) => h.id === login.id),
+      );
+    }
+    idx.close();
+  });
+
+  it('hybrid query is deterministic — identical results across two fresh builds', () => {
+    const a = new SqliteIndexStore(':memory:', { embedder: new CharNgramEmbedder() });
+    a.buildFromSoul(store, dir);
+    const ra = a.query({ text: 'auth token login session', kinds: ['symbol'] });
+    a.close();
+    const b = new SqliteIndexStore(':memory:', { embedder: new CharNgramEmbedder() });
+    b.buildFromSoul(store, dir);
+    const rb = b.query({ text: 'auth token login session', kinds: ['symbol'] });
+    b.close();
+    expect(ra.map((h) => h.id)).toEqual(rb.map((h) => h.id));
+  });
+
+  it('applyDelta keeps the vector table in sync (upsert + delete)', () => {
+    const idx = new SqliteIndexStore(':memory:', { embedder: new CharNgramEmbedder() });
+    idx.buildFromSoul(store, dir);
+    const before = idx.query({ text: 'login', kinds: ['symbol'] });
+    // mutate the soul: rename login's surface text via a new node, then delta-remove login.
+    const renamed = sym('src/auth/AuthService.ts', 'AuthService.signin', 42);
+    const s2 = new SoulStore(dir, { manifest: store.getManifest() });
+    s2.load();
+    s2.putNodes([renamed]);
+    s2.commit('2026-01-01T00:00:00.000Z');
+    idx.applyDelta({ nodes: [renamed], edges: [], removed: [login.id] }, dir);
+    const after = idx.query({ text: 'signin', kinds: ['symbol'] });
+    expect(after.map((h) => h.id)).toContain(renamed.id);
+    expect(after.map((h) => h.id)).not.toContain(login.id);
+    // original login still queryable before the delta (sanity that the before-state had it)
+    expect(before.map((h) => h.id)).toContain(login.id);
+    idx.close();
+  });
+
+  it('building with an embedder never mutates the committed soul (vectors live in the derived index only)', () => {
+    // The M2.1 determinism invariant: vectors feed ONLY the gitignored derived index, never the
+    // soul. If buildFromSoul wrote a vectors file into the soul dir, the committed graph would
+    // differ between an embedder-on and embedder-off repo and --extracted-only would no longer be
+    // byte-identical. Snapshot the soul dir tree + file hashes before/after to pin this.
+    const snapshot = (root: string): string => {
+      const out: string[] = [];
+      const walk = (rel: string) => {
+        const full = join(root, rel);
+        for (const name of readdirSync(full).sort()) {
+          const sub = rel ? `${rel}/${name}` : name;
+          const st = statSync(join(full, name));
+          if (st.isDirectory()) {
+            out.push(`D ${sub}`);
+            walk(sub);
+          } else {
+            const buf = readFileSync(join(full, name));
+            out.push(`F ${sub} ${createHash('sha256').update(buf).digest('hex')}`);
+          }
+        }
+      };
+      walk('');
+      return out.join('\n');
+    };
+    const before = snapshot(dir);
+    const idx = new SqliteIndexStore(':memory:', { embedder: new CharNgramEmbedder() });
+    idx.buildFromSoul(store, dir);
+    idx.query({ text: 'login', kinds: ['symbol'] });
+    idx.close();
+    expect(snapshot(dir)).toBe(before);
+  });
+
+  it('extractedOnly query results are identical whether the index was built with or without vectors', () => {
+    // The plan's "--extracted-only byte-identical" gate at the query layer: the deterministic
+    // EXTRACTED-provenance view must not depend on the vector layer. semantic:false (the
+    // deterministic path) returns the same hits on a no-embedder and an embedder-built index,
+    // because semantic:false bypasses the vector table entirely.
+    const plain = new SqliteIndexStore();
+    plain.buildFromSoul(store, dir);
+    const withVec = new SqliteIndexStore(':memory:', { embedder: new CharNgramEmbedder() });
+    withVec.buildFromSoul(store, dir);
+    const q: HybridQuery = { text: 'login', kinds: ['symbol'], semantic: false };
+    expect(withVec.query(q).map((h) => h.id)).toEqual(plain.query(q).map((h) => h.id));
+    plain.close();
+    withVec.close();
   });
 });

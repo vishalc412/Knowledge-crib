@@ -1,0 +1,295 @@
+{
+  "id": "sym:packages/mcp/src/enrichment.ts#readJson@L1824",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:23fff0fff30bffe6a207cd4e93578837d0c6e0e677b0ef252d621999529c7298",
+  "builtAt": "2026-07-16T14:53:52.220Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/enrichment.ts#readJson@L1824",
+    "kind": "symbol",
+    "type": "function",
+    "name": "readJson",
+    "qualifiedName": "readJson",
+    "signature": "readJson(path: string): T | undefined",
+    "lang": "typescript",
+    "file": "packages/mcp/src/enrichment.ts",
+    "span": {
+      "start": 1824,
+      "end": 1831
+    },
+    "callSites": [
+      {
+        "callee": "parse",
+        "line": 1827
+      },
+      {
+        "callee": "readFileSync",
+        "line": 1827
+      }
+    ]
+  },
+  "source": {
+    "text": "function readJson<T>(path: string): T | undefined {\n  if (!existsSync(path)) return undefined;\n  try {\n    return JSON.parse(readFileSync(path, 'utf8')) as T;\n  } catch {\n    return undefined;\n  }\n}",
+    "truncated": false,
+    "totalLines": 8,
+    "startLine": 1824
+  },
+  "callers": [
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.allArtifacts@L825",
+      "confidence": 1,
+      "name": "allArtifacts",
+      "qualifiedName": "EnrichmentStore.allArtifacts",
+      "signature": "allArtifacts(): LlmArtifact[]",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 825
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.overview@L936",
+      "confidence": 1,
+      "name": "overview",
+      "qualifiedName": "EnrichmentStore.overview",
+      "signature": "overview(args: EnrichOverviewArgs = {}): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 936
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.pruneStale@L837",
+      "confidence": 1,
+      "name": "pruneStale",
+      "qualifiedName": "EnrichmentStore.pruneStale",
+      "signature": "pruneStale(apply = false): {\n    apply: boolean;\n    candidates: Array<{ path: string; targetId: string; reason: 'stale' | 'orphaned' }>;\n    removed: number;\n  }",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 837
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.read@L1368",
+      "confidence": 1,
+      "name": "read",
+      "qualifiedName": "EnrichmentStore.read",
+      "signature": "read(layer: EnrichLayer, targetId: string, liveHash: string): LlmRead",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 1368
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.readManifest@L1449",
+      "confidence": 1,
+      "name": "readManifest",
+      "qualifiedName": "EnrichmentStore.readManifest",
+      "signature": "readManifest(): | {\n        model?: string | null;\n        builtAgainstHead?: string | null;\n        lastIssued?: Record<string, { batchId: string }>;\n      }\n    | undefined",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 1449
+    },
+    {
+      "id": "sym:packages/cli/src/mcp-install.ts#installMcp@L171",
+      "confidence": 1,
+      "name": "installMcp",
+      "qualifiedName": "installMcp",
+      "signature": "installMcp(repoRoot: string, opts: McpInstallOptions): McpInstallResult[]",
+      "type": "function",
+      "file": "packages/cli/src/mcp-install.ts",
+      "line": 171
+    },
+    {
+      "id": "sym:packages/core/src/llm-overlay.ts#readAllArtifacts@L141",
+      "confidence": 1,
+      "name": "readAllArtifacts",
+      "qualifiedName": "readAllArtifacts",
+      "signature": "readAllArtifacts(analysisDir: string): ReadArtifact[]",
+      "type": "function",
+      "file": "packages/core/src/llm-overlay.ts",
+      "line": 141
+    },
+    {
+      "id": "sym:packages/core/src/llm-overlay.ts#readLlmOverlay@L63",
+      "confidence": 1,
+      "name": "readLlmOverlay",
+      "qualifiedName": "readLlmOverlay",
+      "signature": "readLlmOverlay(soul: SoulStore, opts: { includeStale?: boolean } = {}): LlmOverlay",
+      "type": "function",
+      "file": "packages/core/src/llm-overlay.ts",
+      "line": 63
+    },
+    {
+      "id": "sym:packages/core/src/graph-store.ts#readMaterialized@L166",
+      "confidence": 1,
+      "name": "readMaterialized",
+      "qualifiedName": "readMaterialized",
+      "signature": "readMaterialized(soul: SoulStore): GraphSnapshot | undefined",
+      "type": "function",
+      "file": "packages/core/src/graph-store.ts",
+      "line": 166
+    },
+    {
+      "id": "sym:packages/core/src/graph-store.ts#readSemantic@L173",
+      "confidence": 1,
+      "name": "readSemantic",
+      "qualifiedName": "readSemantic",
+      "signature": "readSemantic(soul: SoulStore): GraphSnapshot",
+      "type": "function",
+      "file": "packages/core/src/graph-store.ts",
+      "line": 173
+    },
+    {
+      "id": "sym:packages/cli/src/mcp-install.ts#removeMcp@L281",
+      "confidence": 1,
+      "name": "removeMcp",
+      "qualifiedName": "removeMcp",
+      "signature": "removeMcp(repoRoot: string, opts: McpInstallOptions): McpInstallResult[]",
+      "type": "function",
+      "file": "packages/cli/src/mcp-install.ts",
+      "line": 281
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/pipeline/fixtures/plain-js/src/legacy.cjs#parse@L4",
+      "confidence": 1,
+      "name": "parse",
+      "qualifiedName": "parse",
+      "signature": "parse(input)",
+      "type": "function",
+      "file": "packages/pipeline/fixtures/plain-js/src/legacy.cjs",
+      "line": 4
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#3-2-3-staleness-detection-how-the-system-knows-llm-artifacts-are-outdated",
+      "heading": "3.2.3 Staleness Detection — How the System Knows LLM Artifacts Are Outdated",
+      "anchor": "3-2-3-staleness-detection-how-the-system-knows-llm-artifacts-are-outdated",
+      "snippet": "3.2.3 Staleness Detection — How the System Knows LLM Artifacts Are Outdated",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/enrichment.ts#readJson@L1824",
+    "procedureName": "readJson",
+    "conditions": [
+      "cond:packages/mcp/src/enrichment.ts@L1825"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#readJson@L1824",
+        "procedureName": "readJson",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L1825",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L1825",
+            "expr": "!existsSync(path)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6e8540d16592095a54e77dcfa8b8640bca5b0affb6c984b531efdbd351a46f90",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1825",
+          "line": 1825,
+          "expr": "return undefined;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#readJson@L1824",
+        "procedureName": "readJson",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:aa4ce25bf0ca81bea808508f7edb952d80b963895098ad31e3e50c01e61120a5",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1827",
+          "line": 1827,
+          "expr": "return JSON.parse(readFileSync(path, 'utf8')) as T;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#readJson@L1824",
+        "procedureName": "readJson",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:da79d951a7fea4b10833cc38ded6bc97ba097bb0012bb028a0a77aaeb3b625c3",
+          "target": "sym:packages/pipeline/fixtures/plain-js/src/legacy.cjs#parse@L4",
+          "expr": "parse",
+          "line": 1827
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#readJson@L1824",
+        "procedureName": "readJson",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:68fce2f449e28a0d1cbbceb834d084e5009d7d9538a2e89c3731e8a069532c6c",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1829",
+          "line": 1829,
+          "expr": "return undefined;"
+        }
+      }
+    ]
+  },
+  "controlFlow": {
+    "raises": [],
+    "handles": [
+      {
+        "id": "exc:packages/mcp/src/enrichment.ts@L1828",
+        "kind": "exception-handler",
+        "lang": "typescript",
+        "file": "packages/mcp/src/enrichment.ts",
+        "span": {
+          "start": 1828,
+          "end": 1828
+        },
+        "confidence": 1
+      }
+    ],
+    "iterates": [],
+    "declares": []
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/cli/src/mcp-install.ts",
+      "packages/core/src/graph-store.ts",
+      "packages/core/src/llm-overlay.ts",
+      "packages/mcp/src/enrichment.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 1,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 2,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

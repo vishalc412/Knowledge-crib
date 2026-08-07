@@ -1,0 +1,448 @@
+{
+  "id": "sym:packages/cli/src/cli.ts#cmdContext@L611",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:89fdfa4ad9057877986ee46e69b83e14dbc5f8768f00229d7526d13e55b040eb",
+  "builtAt": "2026-06-30T22:39:43.179Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/cli/src/cli.ts#cmdContext@L611",
+    "kind": "symbol",
+    "type": "function",
+    "name": "cmdContext",
+    "qualifiedName": "cmdContext",
+    "signature": "cmdContext(args: string[], ctx?: CmdCtx): Promise<number>",
+    "lang": "typescript",
+    "file": "packages/cli/src/cli.ts",
+    "span": {
+      "start": 611,
+      "end": 646
+    },
+    "callSites": [
+      {
+        "callee": "scopeOf",
+        "line": 615
+      },
+      {
+        "callee": "cmdContextByScope",
+        "line": 617
+      },
+      {
+        "callee": "find",
+        "line": 619
+      },
+      {
+        "callee": "startsWith",
+        "line": 619
+      },
+      {
+        "callee": "write",
+        "line": 621
+      },
+      {
+        "callee": "openVerbs",
+        "line": 628
+      },
+      {
+        "callee": "write",
+        "line": 631
+      },
+      {
+        "callee": "stringify",
+        "line": 632
+      },
+      {
+        "callee": "context",
+        "line": 633
+      },
+      {
+        "callee": "includes",
+        "line": 635
+      },
+      {
+        "callee": "includes",
+        "line": 636
+      },
+      {
+        "callee": "includes",
+        "line": 637
+      },
+      {
+        "callee": "includes",
+        "line": 638
+      },
+      {
+        "callee": "close",
+        "line": 644
+      }
+    ]
+  },
+  "source": {
+    "text": "async function cmdContext(args: string[], ctx?: CmdCtx): Promise<number> {\n  // Bulk path: `crib context --package <pkg>` (or --file <path> / --cluster <slug>) returns per-symbol\n  // dossiers for EVERY symbol in the scope in ONE call (WS-4). The scope flag may carry its value as\n  // the next arg (`--package PKG`) or rely on a positional (`PKG --package`).\n  const scope = scopeOf(args);\n  if (scope) {\n    return cmdContextByScope(args, scope, ctx);\n  }\n  const id = args.find((a) => !a.startsWith('-'));\n  if (!id) {\n    process.stderr.write(\n      'usage: crib context <id> [--with-source] [--with-rules] [--with-framework] [--extracted-only]\\n' +\n        '       crib context --package <pkg> [--file <path> | --cluster <slug>]\\n' +\n        '                      [--format markdown] [--include-tables] [--max-symbols N] [--extracted-only]\\n',\n    );\n    return EXIT.BAD_ARGS;\n  }\n  const opened = openVerbs(args, ctx);\n  if (!opened) return EXIT.NOT_INDEXED;\n  const { verbs, index } = opened;\n  process.stdout.write(\n    `${JSON.stringify(\n      verbs.context({\n        id,\n        ...(args.includes('--with-source') ? { withSource: true } : {}),\n        ...(args.includes('--with-rules') ? { withRules: true } : {}),\n        ...(args.includes('--with-framework') ? { withFramework: true } : {}),\n        ...(args.includes('--extracted-only') ? { extractedOnly: true } : {}),\n      }),\n      null,\n      2,\n    )}\\n`,\n  );\n  index.close();\n  return EXIT.OK;\n}",
+    "truncated": false,
+    "totalLines": 36,
+    "startLine": 611
+  },
+  "callers": [
+    {
+      "id": "sym:packages/cli/src/cli.ts#main@L233",
+      "confidence": 1,
+      "name": "main",
+      "qualifiedName": "main",
+      "signature": "main(argvRaw: string[]): Promise<number>",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 233
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/cli/src/cli.ts#cmdContextByScope@L695",
+      "confidence": 1,
+      "name": "cmdContextByScope",
+      "qualifiedName": "cmdContextByScope",
+      "signature": "cmdContextByScope(args: string[], scope: 'package' | 'file' | 'cluster', ctx?: CmdCtx): Promise<number>",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 695
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
+      "confidence": 1,
+      "name": "find",
+      "qualifiedName": "find",
+      "signature": "find(…)",
+      "type": "function",
+      "file": "packages/parsers/src/java/parser.test.ts",
+      "line": 38
+    },
+    {
+      "id": "sym:packages/cli/src/cli.ts#openVerbs@L549",
+      "confidence": 1,
+      "name": "openVerbs",
+      "qualifiedName": "openVerbs",
+      "signature": "openVerbs(args: string[], ctx?: CmdCtx): { verbs: Verbs; index: IndexStore } | null",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 549
+    },
+    {
+      "id": "sym:packages/cli/src/cli.ts#scopeOf@L687",
+      "confidence": 1,
+      "name": "scopeOf",
+      "qualifiedName": "scopeOf",
+      "signature": "scopeOf(args: string[]): 'package' | 'file' | 'cluster' | undefined",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 687
+    },
+    {
+      "id": "sym:packages/cli/src/hooks.test.ts#write@L54",
+      "confidence": 1,
+      "name": "write",
+      "qualifiedName": "write",
+      "signature": "write(path: string, records: Array<Record<string, unknown>>): void",
+      "type": "function",
+      "file": "packages/cli/src/hooks.test.ts",
+      "line": 54
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/cli/src/cli.ts@L610",
+      "snippet": "/** `crib context <id>` — deep per-symbol context; fold body + rules + framework via flags. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/cli/src/cli.ts#cmdContext@L611",
+    "procedureName": "cmdContext",
+    "conditions": [
+      "cond:packages/cli/src/cli.ts@L616",
+      "cond:packages/cli/src/cli.ts@L620",
+      "cond:packages/cli/src/cli.ts@L629"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdContext@L611",
+        "procedureName": "cmdContext",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:d3507b5ad9150b81a9bddcf54abbb024447d6c7f253b63f84035ef263b3288e9",
+          "target": "sym:packages/cli/src/cli.ts#scopeOf@L687",
+          "expr": "scopeOf",
+          "line": 615
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdContext@L611",
+        "procedureName": "cmdContext",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:dbea2ca4dd0271fccc1347a6da749376ab6109c44969354daf38b51b1439bffd",
+          "target": "stmt:packages/cli/src/cli.ts@L615",
+          "line": 615,
+          "expr": "const scope = scopeOf(args);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdContext@L611",
+        "procedureName": "cmdContext",
+        "guard": "cond:packages/cli/src/cli.ts@L616",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L616",
+            "expr": "scope",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:f46442824f2dbfe4a1cbf84963884ca709ea8b52f9ab9da4eaa6c548f52189da",
+          "target": "sym:packages/cli/src/cli.ts#cmdContextByScope@L695",
+          "expr": "cmdContextByScope",
+          "line": 617
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdContext@L611",
+        "procedureName": "cmdContext",
+        "guard": "cond:packages/cli/src/cli.ts@L616",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L616",
+            "expr": "scope",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4e7b6e7a1d7841b36e62988b37cc6bf7f613da009d25e007487e95036ce77b45",
+          "target": "stmt:packages/cli/src/cli.ts@L617",
+          "line": 617,
+          "expr": "return cmdContextByScope(args, scope, ctx);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdContext@L611",
+        "procedureName": "cmdContext",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a5293a8d7e83904131be2c9fbfa95b0eae40dd1253670f822944c59bd68e7b8c",
+          "target": "stmt:packages/cli/src/cli.ts@L619",
+          "line": 619,
+          "expr": "const id = args.find((a) => !a.startsWith('-'));"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdContext@L611",
+        "procedureName": "cmdContext",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:bf01663c73d5cd34c4ee3f2686e6c7efbdf40f1ece9f9693e1a0fe33162e06da",
+          "target": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
+          "expr": "find",
+          "line": 619
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdContext@L611",
+        "procedureName": "cmdContext",
+        "guard": "cond:packages/cli/src/cli.ts@L620",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L620",
+            "expr": "!id",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:924ba4dc68d7e9fb9e7b1984304a35ae00c93c066fa5a0fef81deeaf30359005",
+          "target": "stmt:packages/cli/src/cli.ts@L621",
+          "line": 621,
+          "expr": "process.stderr.write(\n      'usage: crib context <id> [--with-source] [--with-rules] [--with-framework] [--extracted-only]\\n' +\n        '       crib context --package <pkg> [--file <path> | --cluster <slug>]\\n' +\n        '                      [--format markdown] [--include-tables] [--max-symbols N] [--extracted-only]\\n',\n    );"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdContext@L611",
+        "procedureName": "cmdContext",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:464808f83c01537989d1c474403d853779b731852d92810833932b47f3c62211",
+          "target": "sym:packages/cli/src/hooks.test.ts#write@L54",
+          "expr": "write",
+          "line": 621
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdContext@L611",
+        "procedureName": "cmdContext",
+        "guard": "cond:packages/cli/src/cli.ts@L620",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L620",
+            "expr": "!id",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5e9a5fa1a94555c4d9251b68a6ad0c23abd1c3ea6ab5cb59d0d46a190f09f947",
+          "target": "stmt:packages/cli/src/cli.ts@L626",
+          "line": 626,
+          "expr": "return EXIT.BAD_ARGS;"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdContext@L611",
+        "procedureName": "cmdContext",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:7037b479d7c35482b169e9cf6b4734aba9dddc2aee71cd56fb24063714a72ed2",
+          "target": "sym:packages/cli/src/cli.ts#openVerbs@L549",
+          "expr": "openVerbs",
+          "line": 628
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdContext@L611",
+        "procedureName": "cmdContext",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:89b76dde4a1fa28e36cbcc31f6a346613abb5cb21e13d44435300dbe1eac50e9",
+          "target": "stmt:packages/cli/src/cli.ts@L628",
+          "line": 628,
+          "expr": "const opened = openVerbs(args, ctx);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdContext@L611",
+        "procedureName": "cmdContext",
+        "guard": "cond:packages/cli/src/cli.ts@L629",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L629",
+            "expr": "!opened",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:02ebf20d64429e6190806c13ee98d2a9079bc4ecc37645f125cc549ee2cf0626",
+          "target": "stmt:packages/cli/src/cli.ts@L629",
+          "line": 629,
+          "expr": "return EXIT.NOT_INDEXED;"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdContext@L611",
+        "procedureName": "cmdContext",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9e5340d897d0d295f10dda6bc3a64290463c1b208970b3cc6da40ef069c1dada",
+          "target": "stmt:packages/cli/src/cli.ts@L631",
+          "line": 631,
+          "expr": "process.stdout.write(\n    `${JSON.stringify(\n      verbs.context({\n        id,\n        ...(args.includes('--with-source') ? { withSource: true } : {}),\n        ...(args.includes('--with-rules') ? { withRules: true } : {}),\n        ...(args.includes('--with-framework') ? { withFramework: true } : {}),\n        ...(args.includes('--extracted-only') ? { extractedOnly: true } : {}),\n      }),\n      null,\n      2,\n    )}\\n`,\n  );"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdContext@L611",
+        "procedureName": "cmdContext",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5f520cd3f9ab0e8d5b6d3c13a98597b424cf701ed0d492dbb45a6b031f63c33b",
+          "target": "stmt:packages/cli/src/cli.ts@L644",
+          "line": 644,
+          "expr": "index.close();"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdContext@L611",
+        "procedureName": "cmdContext",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:403b2c2fe664b309a5d78b8191d04f7db8f85040561622e32c26d1dafcbf6933",
+          "target": "stmt:packages/cli/src/cli.ts@L645",
+          "line": 645,
+          "expr": "return EXIT.OK;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 10,
+    "referencedByFiles": [
+      "packages/cli/src/cli.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 10,
+    "assignments": 0,
+    "conditions": 3,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 5,
+      "recorded": 14,
+      "unresolved": 5
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "5 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

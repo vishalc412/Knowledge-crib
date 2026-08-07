@@ -1,0 +1,199 @@
+{
+  "id": "sym:packages/core/src/index/rerank.ts#detectIntent@L88",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:30c1bcaf7ccd6cd78401779cb7683463d834d77bf636ce7bf81b5b80297c98e7",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/index/rerank.ts#detectIntent@L88",
+    "kind": "symbol",
+    "type": "function",
+    "name": "detectIntent",
+    "qualifiedName": "detectIntent",
+    "signature": "detectIntent(query: string): QueryIntent",
+    "lang": "typescript",
+    "file": "packages/core/src/index/rerank.ts",
+    "span": {
+      "start": 88,
+      "end": 97
+    },
+    "callSites": [
+      {
+        "callee": "toLowerCase",
+        "line": 89
+      }
+    ]
+  },
+  "source": {
+    "text": "export function detectIntent(query: string): QueryIntent {\n  const q = query.toLowerCase();\n  // \"where is/are … defined\" — location queries want the symbol/route, not a file or doc.\n  if (/\\bwhere\\b/.test(q)) return 'location';\n  // \"how does/do/is …\" — behavior queries want the function/method.\n  if (/\\bhow\\b/.test(q)) return 'behavior';\n  // \"what/which …\" — entity queries want the symbol/route/component.\n  if (/\\b(what|which)\\b/.test(q)) return 'entity';\n  return 'unknown';\n}",
+    "truncated": false,
+    "totalLines": 10,
+    "startLine": 88
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/index/rerank.ts#rerank@L155",
+      "confidence": 1,
+      "name": "rerank",
+      "qualifiedName": "rerank",
+      "signature": "rerank(candidates: RerankCandidate[], query: string, limit: number, offset: number): Array<{ id: string; kind: NodeKind; score: number; name?: string; file?: string }>",
+      "type": "function",
+      "file": "packages/core/src/index/rerank.ts",
+      "line": 155
+    },
+    {
+      "id": "sym:packages/core/src/index/rerank.ts#structuralPrior@L143",
+      "confidence": 1,
+      "name": "structuralPrior",
+      "qualifiedName": "structuralPrior",
+      "signature": "structuralPrior(c: RerankCandidate, query: string, intent?: QueryIntent): number",
+      "type": "function",
+      "file": "packages/core/src/index/rerank.ts",
+      "line": 143
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/core/src/index/rerank.ts@L87",
+      "snippet": "/** Detect the query intent from leading question words. Deterministic, keyword-only. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/index/rerank.ts#detectIntent@L88",
+    "procedureName": "detectIntent",
+    "conditions": [
+      "cond:packages/core/src/index/rerank.ts@L91",
+      "cond:packages/core/src/index/rerank.ts@L93",
+      "cond:packages/core/src/index/rerank.ts@L95"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/index/rerank.ts#detectIntent@L88",
+        "procedureName": "detectIntent",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3ff37199c21b861247e35f6750762ff94b4a3e49124c6278f1b7b1b7e6fefc36",
+          "target": "stmt:packages/core/src/index/rerank.ts@L89",
+          "line": 89,
+          "expr": "const q = query.toLowerCase();"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/rerank.ts#detectIntent@L88",
+        "procedureName": "detectIntent",
+        "guard": "cond:packages/core/src/index/rerank.ts@L91",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/index/rerank.ts@L91",
+            "expr": "/\\bwhere\\b/.test(q)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:95c4aed4b8812578940d205cf8b12dac7a40c54a935fd930df4775518b047fc9",
+          "target": "stmt:packages/core/src/index/rerank.ts@L91",
+          "line": 91,
+          "expr": "return 'location';"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/rerank.ts#detectIntent@L88",
+        "procedureName": "detectIntent",
+        "guard": "cond:packages/core/src/index/rerank.ts@L93",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/index/rerank.ts@L93",
+            "expr": "/\\bhow\\b/.test(q)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9db2e04b4c7081b93ebd1c1eea8037e3e77944117e33e8120b2f190f78ace704",
+          "target": "stmt:packages/core/src/index/rerank.ts@L93",
+          "line": 93,
+          "expr": "return 'behavior';"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/rerank.ts#detectIntent@L88",
+        "procedureName": "detectIntent",
+        "guard": "cond:packages/core/src/index/rerank.ts@L95",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/index/rerank.ts@L95",
+            "expr": "/\\b(what|which)\\b/.test(q)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9d2219c964218216e56b51178471492d829981a7ee7bb104879e81cc910c79c9",
+          "target": "stmt:packages/core/src/index/rerank.ts@L95",
+          "line": 95,
+          "expr": "return 'entity';"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/rerank.ts#detectIntent@L88",
+        "procedureName": "detectIntent",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:30bf17f8dff2f5ee189ae9f1676abaa743502c3f3aef034cc2f8f402c40c60e2",
+          "target": "stmt:packages/core/src/index/rerank.ts@L96",
+          "line": 96,
+          "expr": "return 'unknown';"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 5,
+    "referencedByFiles": [
+      "packages/core/src/index/rerank.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 5,
+    "assignments": 0,
+    "conditions": 3,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 1,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

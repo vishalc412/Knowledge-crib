@@ -1,0 +1,397 @@
+{
+  "id": "sym:packages/cli/src/cli.ts#cmdReconstruct@L770",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:016f523a32e55784db3f76408c31f2b50310da0c9fceb2c712b9b4d88f287d93",
+  "builtAt": "2026-06-30T22:39:43.179Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/cli/src/cli.ts#cmdReconstruct@L770",
+    "kind": "symbol",
+    "type": "function",
+    "name": "cmdReconstruct",
+    "qualifiedName": "cmdReconstruct",
+    "signature": "cmdReconstruct(args: string[], ctx?: CmdCtx): Promise<number>",
+    "lang": "typescript",
+    "file": "packages/cli/src/cli.ts",
+    "span": {
+      "start": 770,
+      "end": 802
+    },
+    "callSites": [
+      {
+        "callee": "find",
+        "line": 771
+      },
+      {
+        "callee": "startsWith",
+        "line": 771
+      },
+      {
+        "callee": "write",
+        "line": 773
+      },
+      {
+        "callee": "openVerbs",
+        "line": 778
+      },
+      {
+        "callee": "indexOf",
+        "line": 781
+      },
+      {
+        "callee": "indexOf",
+        "line": 783
+      },
+      {
+        "callee": "parseInt",
+        "line": 784
+      },
+      {
+        "callee": "write",
+        "line": 785
+      },
+      {
+        "callee": "stringify",
+        "line": 786
+      },
+      {
+        "callee": "reconstruct",
+        "line": 787
+      },
+      {
+        "callee": "includes",
+        "line": 789
+      },
+      {
+        "callee": "isFinite",
+        "line": 792
+      },
+      {
+        "callee": "includes",
+        "line": 793
+      },
+      {
+        "callee": "close",
+        "line": 800
+      }
+    ]
+  },
+  "source": {
+    "text": "async function cmdReconstruct(args: string[], ctx?: CmdCtx): Promise<number> {\n  const id = args.find((a) => !a.startsWith('-'));\n  if (!id) {\n    process.stderr.write(\n      'usage: crib reconstruct <package> [--format markdown] [--no-tables] [--max-symbols N] [--extracted-only]\\n',\n    );\n    return EXIT.BAD_ARGS;\n  }\n  const opened = openVerbs(args, ctx);\n  if (!opened) return EXIT.NOT_INDEXED;\n  const { verbs, index } = opened;\n  const fmtIdx = args.indexOf('--format');\n  const format = fmtIdx >= 0 ? (args[fmtIdx + 1] === 'markdown' ? 'markdown' : 'json') : undefined;\n  const maxSymIdx = args.indexOf('--max-symbols');\n  const maxSymbols = maxSymIdx >= 0 ? Number.parseInt(args[maxSymIdx + 1] ?? '', 10) : undefined;\n  process.stdout.write(\n    `${JSON.stringify(\n      verbs.reconstruct({\n        id,\n        ...(args.includes('--no-tables') ? { includeTables: false } : {}),\n        // guard: a non-positive or non-finite maxSymbols would pass through as 0/negative and silently\n        // corrupt downstream `slice(0, N)` (e.g. --max-symbols -5 → slice(0,-5)). Only forward a real cap.\n        ...(Number.isFinite(maxSymbols) && maxSymbols! > 0 ? { maxSymbols } : {}),\n        ...(args.includes('--extracted-only') ? { extractedOnly: true } : {}),\n        ...(format ? { format } : {}),\n      }),\n      null,\n      2,\n    )}\\n`,\n  );\n  index.close();\n  return EXIT.OK;\n}",
+    "truncated": false,
+    "totalLines": 33,
+    "startLine": 770
+  },
+  "callers": [
+    {
+      "id": "sym:packages/cli/src/cli.ts#main@L233",
+      "confidence": 1,
+      "name": "main",
+      "qualifiedName": "main",
+      "signature": "main(argvRaw: string[]): Promise<number>",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 233
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
+      "confidence": 1,
+      "name": "find",
+      "qualifiedName": "find",
+      "signature": "find(…)",
+      "type": "function",
+      "file": "packages/parsers/src/java/parser.test.ts",
+      "line": 38
+    },
+    {
+      "id": "sym:packages/cli/src/cli.ts#openVerbs@L549",
+      "confidence": 1,
+      "name": "openVerbs",
+      "qualifiedName": "openVerbs",
+      "signature": "openVerbs(args: string[], ctx?: CmdCtx): { verbs: Verbs; index: IndexStore } | null",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 549
+    },
+    {
+      "id": "sym:packages/cli/src/hooks.test.ts#write@L54",
+      "confidence": 1,
+      "name": "write",
+      "qualifiedName": "write",
+      "signature": "write(path: string, records: Array<Record<string, unknown>>): void",
+      "type": "function",
+      "file": "packages/cli/src/hooks.test.ts",
+      "line": 54
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/cli/src/cli.ts@L769",
+      "snippet": "/** `crib reconstruct <pkg>` — package-scoped migration reconstruction (constants + members + tables + docs). */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/cli/src/cli.ts#cmdReconstruct@L770",
+    "procedureName": "cmdReconstruct",
+    "conditions": [
+      "cond:packages/cli/src/cli.ts@L772",
+      "cond:packages/cli/src/cli.ts@L779"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdReconstruct@L770",
+        "procedureName": "cmdReconstruct",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d1b59e701a51da3ad965efbdece47b7727580de8e1c3c608297772944fd6c3b7",
+          "target": "stmt:packages/cli/src/cli.ts@L771",
+          "line": 771,
+          "expr": "const id = args.find((a) => !a.startsWith('-'));"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdReconstruct@L770",
+        "procedureName": "cmdReconstruct",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:2901740edb392853e4d1ccf59506d545be3e35d6ad953b27bf092d98e650504f",
+          "target": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
+          "expr": "find",
+          "line": 771
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdReconstruct@L770",
+        "procedureName": "cmdReconstruct",
+        "guard": "cond:packages/cli/src/cli.ts@L772",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L772",
+            "expr": "!id",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fa2bbfd50bc46b6538accbabbc347c7919fdd675304ede6fb8e5ee3b5f5f4f7e",
+          "target": "stmt:packages/cli/src/cli.ts@L773",
+          "line": 773,
+          "expr": "process.stderr.write(\n      'usage: crib reconstruct <package> [--format markdown] [--no-tables] [--max-symbols N] [--extracted-only]\\n',\n    );"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdReconstruct@L770",
+        "procedureName": "cmdReconstruct",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:18ab87c6faf91acfcf57729d5200504018d2cda9f9ff7ad441533f2d5b16c08d",
+          "target": "sym:packages/cli/src/hooks.test.ts#write@L54",
+          "expr": "write",
+          "line": 773
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdReconstruct@L770",
+        "procedureName": "cmdReconstruct",
+        "guard": "cond:packages/cli/src/cli.ts@L772",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L772",
+            "expr": "!id",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:adb889003f4d792e54920519c8e8c96cdded6c77e5d3438925eadb66b060ce38",
+          "target": "stmt:packages/cli/src/cli.ts@L776",
+          "line": 776,
+          "expr": "return EXIT.BAD_ARGS;"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdReconstruct@L770",
+        "procedureName": "cmdReconstruct",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:72ca7270dda3341eb4f7124c51c1ea1da54aee66e24d0745f6662873faac367b",
+          "target": "sym:packages/cli/src/cli.ts#openVerbs@L549",
+          "expr": "openVerbs",
+          "line": 778
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdReconstruct@L770",
+        "procedureName": "cmdReconstruct",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:41287495a7f98d1cb671753a1bec5f3976d8e3e79e3071838b4344e5583c4ffb",
+          "target": "stmt:packages/cli/src/cli.ts@L778",
+          "line": 778,
+          "expr": "const opened = openVerbs(args, ctx);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdReconstruct@L770",
+        "procedureName": "cmdReconstruct",
+        "guard": "cond:packages/cli/src/cli.ts@L779",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L779",
+            "expr": "!opened",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d39f8af53a52541808e16bff9e678245ee83082bdbad60296f4cb1d55d4dfad8",
+          "target": "stmt:packages/cli/src/cli.ts@L779",
+          "line": 779,
+          "expr": "return EXIT.NOT_INDEXED;"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdReconstruct@L770",
+        "procedureName": "cmdReconstruct",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:072741d33743e9a860a828f359f99e3f199c7257f8329b52170a31ef2196e537",
+          "target": "stmt:packages/cli/src/cli.ts@L781",
+          "line": 781,
+          "expr": "const fmtIdx = args.indexOf('--format');"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdReconstruct@L770",
+        "procedureName": "cmdReconstruct",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:db20d54aaeaafff1a5ae6c0f1df4673c599c1a5d34d4c2c397453578f34c0425",
+          "target": "stmt:packages/cli/src/cli.ts@L783",
+          "line": 783,
+          "expr": "const maxSymIdx = args.indexOf('--max-symbols');"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdReconstruct@L770",
+        "procedureName": "cmdReconstruct",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8748cd561e0ec31b90bdcad62b3330b85f250ddc1ac76887226c3cf81f419bf4",
+          "target": "stmt:packages/cli/src/cli.ts@L784",
+          "line": 784,
+          "expr": "const maxSymbols = maxSymIdx >= 0 ? Number.parseInt(args[maxSymIdx + 1] ?? '', 10) : undefined;"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdReconstruct@L770",
+        "procedureName": "cmdReconstruct",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:406843649b62d0383b7884c990d94af9925699c2ec45fac77dfbc0b1e1d3c102",
+          "target": "stmt:packages/cli/src/cli.ts@L785",
+          "line": 785,
+          "expr": "process.stdout.write(\n    `${JSON.stringify(\n      verbs.reconstruct({\n        id,\n        ...(args.includes('--no-tables') ? { includeTables: false } : {}),\n        // guard: a non-positive or non-finite maxSymbols would pass through as 0/negative and silently\n        // corrupt downstream `slice(0, N)` (e.g. --max-symbols -5 → slice(0,-5)). Only forward a real cap.\n        ...(Number.isFinite(maxSymbols) && maxSymbols! > 0 ? { maxSymbols } : {}),\n        ...(args.includes('--extracted-only') ? { extractedOnly: true } : {}),\n        ...(format ? { format } : {}),\n      }),\n      null,\n      2,\n    )}\\n`,\n  );"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdReconstruct@L770",
+        "procedureName": "cmdReconstruct",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d858452e36e3c12d9f2f64c11ccb17471da2f4489203c0dc98d1e6edb21c5ecc",
+          "target": "stmt:packages/cli/src/cli.ts@L800",
+          "line": 800,
+          "expr": "index.close();"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdReconstruct@L770",
+        "procedureName": "cmdReconstruct",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c0fc4b204c5d0cf5513d782b2cc425fadf8ed2be8860938fbc527575b5e91655",
+          "target": "stmt:packages/cli/src/cli.ts@L801",
+          "line": 801,
+          "expr": "return EXIT.OK;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 11,
+    "referencedByFiles": [
+      "packages/cli/src/cli.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 11,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 3,
+      "recorded": 14,
+      "unresolved": 7
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "7 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

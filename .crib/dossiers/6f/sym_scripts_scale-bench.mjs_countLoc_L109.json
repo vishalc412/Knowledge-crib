@@ -1,0 +1,229 @@
+{
+  "id": "sym:scripts/scale-bench.mjs#countLoc@L109",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:3f8cba2a310471fb11f94cff6ebdd23a348c7f1994930974b594643ee326e5c4",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:scripts/scale-bench.mjs#countLoc@L109",
+    "kind": "symbol",
+    "type": "function",
+    "name": "countLoc",
+    "qualifiedName": "countLoc",
+    "signature": "countLoc(root)",
+    "lang": "javascript",
+    "file": "scripts/scale-bench.mjs",
+    "span": {
+      "start": 109,
+      "end": 127
+    },
+    "callSites": [
+      {
+        "callee": "readdirSync",
+        "line": 113
+      },
+      {
+        "callee": "join",
+        "line": 114
+      },
+      {
+        "callee": "statSync",
+        "line": 115
+      },
+      {
+        "callee": "isDirectory",
+        "line": 116
+      },
+      {
+        "callee": "walk",
+        "line": 116
+      },
+      {
+        "callee": "has",
+        "line": 117
+      },
+      {
+        "callee": "slice",
+        "line": 117
+      },
+      {
+        "callee": "lastIndexOf",
+        "line": 117
+      },
+      {
+        "callee": "readTextLines",
+        "line": 120
+      },
+      {
+        "callee": "walk",
+        "line": 125
+      }
+    ]
+  },
+  "source": {
+    "text": "function countLoc(root) {\n  let loc = 0;\n  let files = 0;\n  const walk = (dir) => {\n    for (const name of readdirSync(dir)) {\n      const p = join(dir, name);\n      const st = statSync(p);\n      if (st.isDirectory()) walk(p);\n      else if (SRC_EXTS.has(name.slice(name.lastIndexOf('.')))) {\n        files++;\n        // wc -l equivalent: count newline-terminated lines. Read + count \\n.\n        const text = readTextLines(p);\n        loc += text;\n      }\n    }\n  };\n  walk(root);\n  return { loc, files };\n}",
+    "truncated": false,
+    "totalLines": 19,
+    "startLine": 109
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:scripts/scale-bench.mjs#countLoc.walk@L112",
+      "confidence": 1,
+      "name": "walk",
+      "qualifiedName": "countLoc.walk",
+      "signature": "walk(…)",
+      "type": "function",
+      "file": "scripts/scale-bench.mjs",
+      "line": 112
+    },
+    {
+      "id": "sym:scripts/scale-bench.mjs#readTextLines@L129",
+      "confidence": 1,
+      "name": "readTextLines",
+      "qualifiedName": "readTextLines",
+      "signature": "readTextLines(p)",
+      "type": "function",
+      "file": "scripts/scale-bench.mjs",
+      "line": 129
+    },
+    {
+      "id": "sym:scripts/docs-stats.mjs#walk@L31",
+      "confidence": 1,
+      "name": "walk",
+      "qualifiedName": "walk",
+      "signature": "walk(…)",
+      "type": "function",
+      "file": "scripts/docs-stats.mjs",
+      "line": 31
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:scripts/scale-bench.mjs@L108",
+      "snippet": "// --- helpers ------------------------------------------------------------------------------------",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:scripts/scale-bench.mjs#countLoc@L109",
+    "procedureName": "countLoc",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:scripts/scale-bench.mjs#countLoc@L109",
+        "procedureName": "countLoc",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1eb5315c6c813044f82f9118c5b353ac04644e2ae8015af631b6efc53beac416",
+          "target": "stmt:scripts/scale-bench.mjs@L112",
+          "line": 112,
+          "expr": "const walk = (dir) => {\n    for (const name of readdirSync(dir)) {\n      const p = join(dir, name);\n      const st = statSync(p);\n      if (st.isDirectory()) walk(p);\n      else if (SRC_EXTS.has(name.slice(name.lastIndexOf('.')))) {\n        files++;\n        // wc -l equivalent: count newline-terminated lines. Read + count \\n.\n        const text = readTextLines(p);\n        loc += text;\n      }\n    }\n  };"
+        }
+      },
+      {
+        "procedure": "sym:scripts/scale-bench.mjs#countLoc@L109",
+        "procedureName": "countLoc",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:bbb7143daeb5d9250782a1861b8dc3f67e6e9fab7d9c630324bbee929573717b",
+          "target": "sym:scripts/docs-stats.mjs#walk@L31",
+          "expr": "walk",
+          "line": 116
+        }
+      },
+      {
+        "procedure": "sym:scripts/scale-bench.mjs#countLoc@L109",
+        "procedureName": "countLoc",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:d90959b716d06a14dc2ceefd17b1e42427da3a8b4e6de83c4d10dc609c5b2750",
+          "target": "sym:scripts/scale-bench.mjs#countLoc.walk@L112",
+          "expr": "walk",
+          "line": 116
+        }
+      },
+      {
+        "procedure": "sym:scripts/scale-bench.mjs#countLoc@L109",
+        "procedureName": "countLoc",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:e66f2c615eb714291374ff49f1fb55c932c60a5ba14143a19a531d90c35181c2",
+          "target": "sym:scripts/scale-bench.mjs#readTextLines@L129",
+          "expr": "readTextLines",
+          "line": 120
+        }
+      },
+      {
+        "procedure": "sym:scripts/scale-bench.mjs#countLoc@L109",
+        "procedureName": "countLoc",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:805540ed6d1bf3d5693b991971d4c99953c5c99910d5580f6efba5f6e994e553",
+          "target": "stmt:scripts/scale-bench.mjs@L125",
+          "line": 125,
+          "expr": "walk(root);"
+        }
+      },
+      {
+        "procedure": "sym:scripts/scale-bench.mjs#countLoc@L109",
+        "procedureName": "countLoc",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:019c19922458a2f0a69fcfc3acabf8cce47daac0ffc03921dde0031375ce4308",
+          "target": "stmt:scripts/scale-bench.mjs@L126",
+          "line": 126,
+          "expr": "return { loc, files };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 3,
+      "recorded": 10,
+      "unresolved": 7
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "7 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

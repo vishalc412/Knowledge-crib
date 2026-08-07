@@ -1,0 +1,125 @@
+{
+  "id": "sym:packages/ui/web/support.js#evalDcLogic@L700",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:4cc34fb4f7d318bd4c28fbb43956cfb7c78fe97a957cd96988970eec8fb1f626",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/ui/web/support.js#evalDcLogic@L700",
+    "kind": "symbol",
+    "type": "function",
+    "name": "evalDcLogic",
+    "qualifiedName": "evalDcLogic",
+    "signature": "evalDcLogic(src)",
+    "lang": "javascript",
+    "file": "packages/ui/web/support.js",
+    "span": {
+      "start": 700,
+      "end": 709
+    },
+    "callSites": [
+      {
+        "callee": "fn",
+        "line": 708
+      },
+      {
+        "callee": "getReact",
+        "line": 708
+      }
+    ]
+  },
+  "source": {
+    "text": "  function evalDcLogic(src) {\n    //! nosemgrep: eval-and-function-constructor\n    const fn = new Function(\n      \"DCLogic\",\n      \"StreamableLogic\",\n      \"React\",\n      src + '\\n;return (typeof Component!==\"undefined\"&&Component)||undefined;'\n    );\n    return fn(StreamableLogic, StreamableLogic, getReact());\n  }",
+    "truncated": false,
+    "totalLines": 10,
+    "startLine": 700
+  },
+  "callers": [
+    {
+      "id": "sym:packages/ui/web/support.js#createRuntime.updateJs@L1403",
+      "confidence": 1,
+      "name": "updateJs",
+      "qualifiedName": "createRuntime.updateJs",
+      "signature": "updateJs(name, src)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 1403
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/ui/web/support.js#getReact@L9",
+      "confidence": 1,
+      "name": "getReact",
+      "qualifiedName": "getReact",
+      "signature": "getReact()",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 9
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/ui/web/support.js#evalDcLogic@L700",
+    "procedureName": "evalDcLogic",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/ui/web/support.js#evalDcLogic@L700",
+        "procedureName": "evalDcLogic",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:1d81794d01e6bf77432ce4e71cf0781095cd5828e802661c87e0e0c3708ff87f",
+          "target": "sym:packages/ui/web/support.js#getReact@L9",
+          "expr": "getReact",
+          "line": 708
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#evalDcLogic@L700",
+        "procedureName": "evalDcLogic",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ae8a73f02e16cff8c97aa64f58c02ce714822ca4447136cb826a3df95dd725f6",
+          "target": "stmt:packages/ui/web/support.js@L708",
+          "line": 708,
+          "expr": "return fn(StreamableLogic, StreamableLogic, getReact());"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/ui/web/support.js"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 2,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

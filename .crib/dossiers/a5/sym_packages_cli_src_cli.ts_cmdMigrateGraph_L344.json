@@ -1,0 +1,348 @@
+{
+  "id": "sym:packages/cli/src/cli.ts#cmdMigrateGraph@L344",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:df14911b59e576f8c8d65e95cf69d068587ca933a17d882dbb128e6920df8d33",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/cli/src/cli.ts#cmdMigrateGraph@L344",
+    "kind": "symbol",
+    "type": "function",
+    "name": "cmdMigrateGraph",
+    "qualifiedName": "cmdMigrateGraph",
+    "signature": "cmdMigrateGraph(args: string[], ctx?: CmdCtx): Promise<number>",
+    "lang": "typescript",
+    "file": "packages/cli/src/cli.ts",
+    "span": {
+      "start": 344,
+      "end": 362
+    },
+    "callSites": [
+      {
+        "callee": "resolveRoot",
+        "line": 345
+      },
+      {
+        "callee": "write",
+        "line": 347
+      },
+      {
+        "callee": "includes",
+        "line": 350
+      },
+      {
+        "callee": "write",
+        "line": 352
+      },
+      {
+        "callee": "stringify",
+        "line": 353
+      },
+      {
+        "callee": "migrateLegacyGraph",
+        "line": 353
+      },
+      {
+        "callee": "runLocked",
+        "line": 357
+      },
+      {
+        "callee": "migrateLegacyGraph",
+        "line": 358
+      },
+      {
+        "callee": "write",
+        "line": 359
+      },
+      {
+        "callee": "stringify",
+        "line": 359
+      }
+    ]
+  },
+  "source": {
+    "text": "async function cmdMigrateGraph(args: string[], ctx?: CmdCtx): Promise<number> {\n  const resolved = resolveRoot(args, ctx);\n  if (!existsSync(join(resolved.cribDir, MANIFEST_FILE))) {\n    process.stderr.write('not indexed — run `crib index` first\\n');\n    return EXIT.NOT_INDEXED;\n  }\n  const dryRun = args.includes('--dry-run');\n  if (dryRun) {\n    process.stdout.write(\n      `${JSON.stringify(migrateLegacyGraph(resolved.cribDir, true), null, 2)}\\n`,\n    );\n    return EXIT.OK;\n  }\n  return runLocked(resolved.cribDir, () => {\n    const report = migrateLegacyGraph(resolved.cribDir, false);\n    process.stdout.write(`${JSON.stringify(report, null, 2)}\\n`);\n    return EXIT.OK;\n  });\n}",
+    "truncated": false,
+    "totalLines": 19,
+    "startLine": 344
+  },
+  "callers": [
+    {
+      "id": "sym:packages/cli/src/cli.ts#main@L268",
+      "confidence": 1,
+      "name": "main",
+      "qualifiedName": "main",
+      "signature": "main(argvRaw: string[]): Promise<number>",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 268
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/core/src/graph-layout.ts#migrateLegacyGraph@L70",
+      "confidence": 1,
+      "name": "migrateLegacyGraph",
+      "qualifiedName": "migrateLegacyGraph",
+      "signature": "migrateLegacyGraph(cribDir: string, dryRun = false): GraphMigrationReport",
+      "type": "function",
+      "file": "packages/core/src/graph-layout.ts",
+      "line": 70
+    },
+    {
+      "id": "sym:packages/cli/src/cli.ts#resolveRoot@L262",
+      "confidence": 1,
+      "name": "resolveRoot",
+      "qualifiedName": "resolveRoot",
+      "signature": "resolveRoot(args: string[], ctx?: CmdCtx): ResolvedRoot",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 262
+    },
+    {
+      "id": "sym:packages/cli/src/cli.ts#runLocked@L407",
+      "confidence": 1,
+      "name": "runLocked",
+      "qualifiedName": "runLocked",
+      "signature": "runLocked(cribDir: string, fn: () => number | Promise<number>): Promise<number>",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 407
+    },
+    {
+      "id": "sym:packages/cli/src/hooks.test.ts#write@L54",
+      "confidence": 1,
+      "name": "write",
+      "qualifiedName": "write",
+      "signature": "write(path: string, records: Array<Record<string, unknown>>): void",
+      "type": "function",
+      "file": "packages/cli/src/hooks.test.ts",
+      "line": 54
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/cli/src/cli.ts#cmdMigrateGraph@L344",
+    "procedureName": "cmdMigrateGraph",
+    "conditions": [
+      "cond:packages/cli/src/cli.ts@L346",
+      "cond:packages/cli/src/cli.ts@L351"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdMigrateGraph@L344",
+        "procedureName": "cmdMigrateGraph",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:400a37e67175d1678726e0545b6c9330a1ed4d86f639c41c656d449ec11dade2",
+          "target": "sym:packages/cli/src/cli.ts#resolveRoot@L262",
+          "expr": "resolveRoot",
+          "line": 345
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdMigrateGraph@L344",
+        "procedureName": "cmdMigrateGraph",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c82aa78ecb5a7864c55e1f13c39075010e1a4c394d3a86d8728fb361fe88a4b7",
+          "target": "stmt:packages/cli/src/cli.ts@L345",
+          "line": 345,
+          "expr": "const resolved = resolveRoot(args, ctx);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdMigrateGraph@L344",
+        "procedureName": "cmdMigrateGraph",
+        "guard": "cond:packages/cli/src/cli.ts@L346",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L346",
+            "expr": "!existsSync(join(resolved.cribDir, MANIFEST_FILE))",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:54e7a41194b036984d8a49c5e84122c98822834996dfdc4d04a93592db0ff566",
+          "target": "stmt:packages/cli/src/cli.ts@L347",
+          "line": 347,
+          "expr": "process.stderr.write('not indexed — run `crib index` first\\n');"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdMigrateGraph@L344",
+        "procedureName": "cmdMigrateGraph",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:bc667138c9fd3f9d32f74500de32d5418037dd1c6684a726866eba94c0d68353",
+          "target": "sym:packages/cli/src/hooks.test.ts#write@L54",
+          "expr": "write",
+          "line": 347
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdMigrateGraph@L344",
+        "procedureName": "cmdMigrateGraph",
+        "guard": "cond:packages/cli/src/cli.ts@L346",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L346",
+            "expr": "!existsSync(join(resolved.cribDir, MANIFEST_FILE))",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0cb41a41af97a53607365e1a613e53bafe042f314b7a1384f7800a8b726a3fd3",
+          "target": "stmt:packages/cli/src/cli.ts@L348",
+          "line": 348,
+          "expr": "return EXIT.NOT_INDEXED;"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdMigrateGraph@L344",
+        "procedureName": "cmdMigrateGraph",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bc11428d948700ba50719407225b2f0764a50ecf345640c0212a55dd89bc7f96",
+          "target": "stmt:packages/cli/src/cli.ts@L350",
+          "line": 350,
+          "expr": "const dryRun = args.includes('--dry-run');"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdMigrateGraph@L344",
+        "procedureName": "cmdMigrateGraph",
+        "guard": "cond:packages/cli/src/cli.ts@L351",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L351",
+            "expr": "dryRun",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f13401300002e1f011149955db51ba1049c2f5e3518d06fa16dc207af9694318",
+          "target": "stmt:packages/cli/src/cli.ts@L352",
+          "line": 352,
+          "expr": "process.stdout.write(\n      `${JSON.stringify(migrateLegacyGraph(resolved.cribDir, true), null, 2)}\\n`,\n    );"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdMigrateGraph@L344",
+        "procedureName": "cmdMigrateGraph",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:ad9ba7ebfdbf12977b2a56be11dab0b5984a6a5523bfbaa9e96fa79081db901d",
+          "target": "sym:packages/core/src/graph-layout.ts#migrateLegacyGraph@L70",
+          "expr": "migrateLegacyGraph",
+          "line": 353
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdMigrateGraph@L344",
+        "procedureName": "cmdMigrateGraph",
+        "guard": "cond:packages/cli/src/cli.ts@L351",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L351",
+            "expr": "dryRun",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3abe015535a5eb5995135af37a13f1dbf44c5c14adba8288a6bc36dcee04a4b2",
+          "target": "stmt:packages/cli/src/cli.ts@L355",
+          "line": 355,
+          "expr": "return EXIT.OK;"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdMigrateGraph@L344",
+        "procedureName": "cmdMigrateGraph",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b1b6908e4deccd601b64c4881fbe5bc0a50ca0eeb9dcc8f592e4822d13ad0fbe",
+          "target": "stmt:packages/cli/src/cli.ts@L357",
+          "line": 357,
+          "expr": "return runLocked(resolved.cribDir, () => {\n    const report = migrateLegacyGraph(resolved.cribDir, false);\n    process.stdout.write(`${JSON.stringify(report, null, 2)}\\n`);\n    return EXIT.OK;\n  });"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#cmdMigrateGraph@L344",
+        "procedureName": "cmdMigrateGraph",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:f0533925d62b203e6bd04a07b8b722673687d5b7d8e98324cd5fedd254e59c3f",
+          "target": "sym:packages/cli/src/cli.ts#runLocked@L407",
+          "expr": "runLocked",
+          "line": 357
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 7,
+    "referencedByFiles": [
+      "packages/cli/src/cli.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 7,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 4,
+      "recorded": 10,
+      "unresolved": 3
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "3 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

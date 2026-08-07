@@ -1,0 +1,307 @@
+{
+  "id": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.applyDelta@L130",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:92517f4afd7511f03993de5b439ff98ae8da5e5169fa6dc8484d7212f276fad4",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.applyDelta@L130",
+    "kind": "symbol",
+    "type": "method",
+    "name": "applyDelta",
+    "qualifiedName": "SqliteIndexStore.applyDelta",
+    "signature": "applyDelta(changed: IndexDelta, repoRoot: string): void",
+    "lang": "typescript",
+    "file": "packages/core/src/index/sqlite-index.ts",
+    "span": {
+      "start": 130,
+      "end": 152
+    },
+    "callSites": [
+      {
+        "callee": "transaction",
+        "line": 132
+      },
+      {
+        "callee": "run",
+        "line": 134
+      },
+      {
+        "callee": "prepare",
+        "line": 134
+      },
+      {
+        "callee": "run",
+        "line": 135
+      },
+      {
+        "callee": "prepare",
+        "line": 135
+      },
+      {
+        "callee": "run",
+        "line": 136
+      },
+      {
+        "callee": "prepare",
+        "line": 136
+      },
+      {
+        "callee": "run",
+        "line": 137
+      },
+      {
+        "callee": "prepare",
+        "line": 137
+      },
+      {
+        "callee": "insertNode",
+        "line": 139
+      },
+      {
+        "callee": "insertEdge",
+        "line": 140
+      },
+      {
+        "callee": "prepare",
+        "line": 142
+      },
+      {
+        "callee": "embed",
+        "line": 146
+      },
+      {
+        "callee": "vectorText",
+        "line": 146
+      },
+      {
+        "callee": "run",
+        "line": 147
+      },
+      {
+        "callee": "from",
+        "line": 147
+      },
+      {
+        "callee": "encodeVec",
+        "line": 147
+      },
+      {
+        "callee": "apply",
+        "line": 151
+      }
+    ]
+  },
+  "source": {
+    "text": "  applyDelta(changed: IndexDelta, repoRoot: string): void {\n    const fileCache: FileLineCache = new Map();\n    const apply = this.transaction(() => {\n      for (const id of changed.removed) {\n        this.db.prepare('DELETE FROM nodes WHERE id = ?').run(id);\n        this.db.prepare('DELETE FROM nodes_fts WHERE id = ?').run(id);\n        this.db.prepare('DELETE FROM vectors WHERE id = ?').run(id);\n        this.db.prepare('DELETE FROM edges WHERE id = ?').run(id);\n      }\n      for (const node of changed.nodes) this.insertNode(node, repoRoot, fileCache);\n      for (const edge of changed.edges) this.insertEdge(edge);\n      if (this.embedder) {\n        const upsertVec = this.db.prepare(\n          'INSERT OR REPLACE INTO vectors (id, vec, dim) VALUES (?, ?, ?)',\n        );\n        for (const node of changed.nodes) {\n          const v = this.embedder.embed(vectorText(node));\n          upsertVec.run(node.id, Buffer.from(encodeVec(v)), v.length);\n        }\n      }\n    });\n    apply();\n  }",
+    "truncated": false,
+    "totalLines": 23,
+    "startLine": 130
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.insertEdge@L452",
+      "confidence": 1,
+      "name": "insertEdge",
+      "qualifiedName": "SqliteIndexStore.insertEdge",
+      "signature": "insertEdge(edge: Edge): void",
+      "type": "method",
+      "file": "packages/core/src/index/sqlite-index.ts",
+      "line": 452
+    },
+    {
+      "id": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.insertNode@L434",
+      "confidence": 1,
+      "name": "insertNode",
+      "qualifiedName": "SqliteIndexStore.insertNode",
+      "signature": "insertNode(node: Node, repoRoot: string, fileCache: FileLineCache): void",
+      "type": "method",
+      "file": "packages/core/src/index/sqlite-index.ts",
+      "line": 434
+    },
+    {
+      "id": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.transaction@L420",
+      "confidence": 1,
+      "name": "transaction",
+      "qualifiedName": "SqliteIndexStore.transaction",
+      "signature": "transaction(fn: () => T): () => T",
+      "type": "method",
+      "file": "packages/core/src/index/sqlite-index.ts",
+      "line": 420
+    },
+    {
+      "id": "sym:packages/core/src/embeddings/char-ngram.ts#encodeVec@L116",
+      "confidence": 1,
+      "name": "encodeVec",
+      "qualifiedName": "encodeVec",
+      "signature": "encodeVec(v: Vec): Uint8Array",
+      "type": "function",
+      "file": "packages/core/src/embeddings/char-ngram.ts",
+      "line": 116
+    },
+    {
+      "id": "sym:packages/core/src/index/sqlite-index.ts#vectorText@L53",
+      "confidence": 1,
+      "name": "vectorText",
+      "qualifiedName": "vectorText",
+      "signature": "vectorText(node: Node): string",
+      "type": "function",
+      "file": "packages/core/src/index/sqlite-index.ts",
+      "line": 53
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#0-verified-facts-judge-conflict-reconciliations",
+      "heading": "0. Verified facts & judge-conflict reconciliations",
+      "anchor": "0-verified-facts-judge-conflict-reconciliations",
+      "snippet": "0. Verified facts & judge-conflict reconciliations",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m6-incremental-update-git-anchored-scoped-re-extract-merge-driver",
+      "heading": "M6 — Incremental update (git-anchored scoped re-extract) + merge driver",
+      "anchor": "m6-incremental-update-git-anchored-scoped-re-extract-merge-driver",
+      "snippet": "M6 — Incremental update (git-anchored scoped re-extract) + merge driver",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.applyDelta@L130",
+    "procedureName": "SqliteIndexStore.applyDelta",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.applyDelta@L130",
+        "procedureName": "SqliteIndexStore.applyDelta",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:075831b2d30376a6ced840024fdd01b47174953a982ad595694b309002584860",
+          "target": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.transaction@L420",
+          "expr": "transaction",
+          "line": 132
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.applyDelta@L130",
+        "procedureName": "SqliteIndexStore.applyDelta",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:364f016e2fa7005bab4ec86f5450d13c73dc03b56c36b41a853cc80a2ae14e6e",
+          "target": "stmt:packages/core/src/index/sqlite-index.ts@L132",
+          "line": 132,
+          "expr": "const apply = this.transaction(() => {\n      for (const id of changed.removed) {\n        this.db.prepare('DELETE FROM nodes WHERE id = ?').run(id);\n        this.db.prepare('DELETE FROM nodes_fts WHERE id = ?').run(id);\n        this.db.prepare('DELETE FROM vectors WHERE id = ?').run(id);\n        this.db.prepare('DELETE FROM edges WHERE id = ?').run(id);\n      }\n      for (const node of changed.nodes) this.insertNode(node, repoRoot, fileCache);\n      for (const edge of changed.edges) this.insertEdge(edge);\n      if (this.embedder) {\n        const upsertVec = this.db.prepare(\n          'INSERT OR REPLACE INTO vectors (id, vec, dim) VALUES (?, ?, ?)',\n        );\n        for (const node of changed.nodes) {\n          const v = this.embedder.embed(vectorText(node));\n          upsertVec.run(node.id, Buffer.from(encodeVec(v)), v.length);\n        }\n      }\n    });"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.applyDelta@L130",
+        "procedureName": "SqliteIndexStore.applyDelta",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:1baed0b634205b09667b119f73bf9761da287a878d7af968506001549984ab17",
+          "target": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.insertNode@L434",
+          "expr": "insertNode",
+          "line": 139
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.applyDelta@L130",
+        "procedureName": "SqliteIndexStore.applyDelta",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:216764cf572fa3ec53decf7f34f270b754f712f030713d31295f24138f9ed6b2",
+          "target": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.insertEdge@L452",
+          "expr": "insertEdge",
+          "line": 140
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.applyDelta@L130",
+        "procedureName": "SqliteIndexStore.applyDelta",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:7bbfa9667dcf09acd9c051518f83d4f0236c778c3a8fcc4eff091c26b3d145c9",
+          "target": "sym:packages/core/src/index/sqlite-index.ts#vectorText@L53",
+          "expr": "vectorText",
+          "line": 146
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.applyDelta@L130",
+        "procedureName": "SqliteIndexStore.applyDelta",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:747b97fe6ec4399fe15e325f61ef7f0bcb6bd052c67102f85d69d2a508baf4f4",
+          "target": "sym:packages/core/src/embeddings/char-ngram.ts#encodeVec@L116",
+          "expr": "encodeVec",
+          "line": 147
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.applyDelta@L130",
+        "procedureName": "SqliteIndexStore.applyDelta",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:72eb4d8fa0e4052b02a0560c203d6b13840536273ea90f9bd56d4f7b8050998a",
+          "target": "stmt:packages/core/src/index/sqlite-index.ts@L151",
+          "line": 151,
+          "expr": "apply();"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 5,
+      "recorded": 18,
+      "unresolved": 7
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "7 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

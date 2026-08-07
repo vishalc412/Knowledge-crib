@@ -1,0 +1,1198 @@
+{
+  "id": "sym:packages/mcp/src/verbs.ts#Verbs.publicNode@L1770",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:031e29a1be2ff39d3f1f40c4c4c895b3152d76ff7dd935e3e72333dd4ab5e2e0",
+  "builtAt": "2026-07-16T14:40:07.112Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/verbs.ts#Verbs.publicNode@L1770",
+    "kind": "symbol",
+    "type": "method",
+    "name": "publicNode",
+    "qualifiedName": "Verbs.publicNode",
+    "signature": "publicNode(n: Node): Record<string, unknown>",
+    "lang": "typescript",
+    "file": "packages/mcp/src/verbs.ts",
+    "span": {
+      "start": 1770,
+      "end": 1843
+    }
+  },
+  "source": {
+    "text": "  private publicNode(n: Node): Record<string, unknown> {\n    const out: Record<string, unknown> = {\n      id: n.id,\n      kind: n.kind,\n    };\n    if (n.type) out.type = n.type;\n    if (n.name) out.name = n.name;\n    if (n.qualifiedName) out.qualifiedName = n.qualifiedName;\n    if (n.signature) out.signature = n.signature;\n    if (n.lang) out.lang = n.lang;\n    if (n.file) out.file = n.file;\n    if (n.span) out.span = n.span;\n    if (n.clusterId) out.clusterId = n.clusterId;\n    // deep-extraction: SQL / table / column\n    if (n.schema) out.schema = n.schema;\n    if (n.table) out.table = n.table;\n    if (n.dataType) out.dataType = n.dataType;\n    if (n.sqlKind) out.sqlKind = n.sqlKind;\n    if (n.expr) out.expr = n.expr;\n    if (n.branch) out.branch = n.branch;\n    // deep-extraction 1.2 (behavior-bearing fidelity) — the fields that make crib's context\n    // detailed-level rather than high-level: raises, exception handlers, cursors, assignments,\n    // inline column constraints, and the comment span an explanation was derived from.\n    if (n.errorCode) out.errorCode = n.errorCode;\n    if (n.errorMessage) out.errorMessage = n.errorMessage;\n    if (n.whenSelector) out.whenSelector = n.whenSelector;\n    if (n.assignTarget) out.assignTarget = n.assignTarget;\n    if (n.cursorQuery) out.cursorQuery = n.cursorQuery;\n    if (n.exprTruncated) out.exprTruncated = n.exprTruncated;\n    if (Array.isArray(n.constraints)) out.constraints = n.constraints;\n    if (n.commentRef) out.commentRef = n.commentRef;\n    // M3.1 ownership — an `owner` node carries the git-blame author identity (email when blame\n    // exposed one, else name-only). Surfaced so the `ownership` verb's owner records carry email.\n    if (n.email) out.email = n.email;\n    // doc-section\n    if (n.heading) out.heading = n.heading;\n    if (n.level !== undefined) out.level = n.level;\n    if (n.anchor) out.anchor = n.anchor;\n    // framework-semantics 1.3 identity — the handler's own route verb/path, the symbol's stereotype +\n    // framework. Without these the route section shows the route but hides the handler's own contract\n    // (e.g. its @PreAuthorize on the node), breaking the no-round-trip surfacing guarantee.\n    if (n.framework) out.framework = n.framework;\n    if (n.stereotype) out.stereotype = n.stereotype;\n    if (n.httpMethod) out.httpMethod = n.httpMethod;\n    if (n.routePath) out.routePath = n.routePath;\n    // selective meta — surface the structured deep fields, not arbitrary blobs\n    if (n.meta) {\n      const m = n.meta as Record<string, unknown>;\n      if (Array.isArray(m.columns)) out.columns = m.columns;\n      if (m.returnType !== undefined) out.returnType = m.returnType;\n      if (Array.isArray(m.tables)) out.tables = m.tables;\n      // PL/SQL object type: the full attribute field list (the deep context)\n      if (Array.isArray(m.attributes)) out.attributes = m.attributes;\n      // PL/SQL collection type: TABLE OF / VARRAY OF element\n      if (m.collection !== undefined) out.collection = m.collection;\n      // PL/SQL view marker (a table node that is actually a view)\n      if (m.kind !== undefined) out.kindMeta = m.kind;\n      // self-recursion flag (set when a procedure calls itself; no self-edge is emitted by design)\n      if (m.recursive !== undefined) out.recursive = m.recursive;\n      // recorded call sites (callee + line) — surfaces recursive + unresolved/builtin calls that\n      // have no `calls` edge, so the analyst sees the full call-site inventory, not just resolved edges\n      if (Array.isArray(m.calls)) out.callSites = m.calls;\n      // framework-semantics 1.3 meta — route params/security, DI injects, @Bean produces, JPA column.\n      if (Array.isArray(m.params)) out.params = m.params;\n      if (m.security !== undefined) out.security = m.security;\n      if (Array.isArray(m.injects)) out.injects = m.injects;\n      if (Array.isArray(m.produces)) out.produces = m.produces;\n      if (m.column !== undefined) out.column = m.column;",
+    "truncated": true,
+    "totalLines": 74,
+    "startLine": 1770,
+    "nextLine": 1838
+  },
+  "callers": [
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.context@L326",
+      "confidence": 1,
+      "name": "context",
+      "qualifiedName": "Verbs.context",
+      "signature": "context(args: {\n    id: string;\n    docLimit?: number;\n    extractedOnly?: boolean;\n    /** include the full source text of the node's span (rehydrated from disk, budgeted) */\n    withSource?: boolean;\n    /** for a procedure/function, fold in its decision table (conditions/actions/reads/writes) */\n    withRules?: boolean;\n    /** fold in the schema-1.3 framework-semantics relationships: routes exposed, beans produced,\n     *  DI dependencies/dependents, JPA relations, component renders. Auto-scopes by node — a class\n     *  (controller/@Configuration/@Entity) aggregates its members' route table / bean inventory /\n     *  DI graph / relation model via `member-of`; a callable/component/field returns its own direct\n     *  edges. A @Bean-supplied dependency is surfaced with `kind: 'produces'` + the producer in one\n     *  trip (no round-trip). Unresolved `meta.injects`/`meta.produces` type names surface as\n     *  `⚠ unresolved` entries (parity with `gaps`). */\n    withFramework?: boolean;\n    /** fold in saved LLM-authored semantic graph analysis; default-on when present. */\n    withLlm?: boolean;\n    /** char cap for the rehydrated source body (default {@link DEFAULT_BODY_MAX_CHARS}) */\n    sourceMaxChars?: number;\n    /** line cap for the rehydrated source body (default {@link DEFAULT_BODY_MAX_LINES}) */\n    sourceMaxLines?: number;\n    /** absolute file line to start the source page at (paging cursor; default = span start) */\n    sourceStartLine?: number;\n    /** response-wide token budget (chars/4). When set with `withSource`, the source body is shrunk\n     *  to fit the remaining budget and `budgetExhausted:true` is set; page via `source.nextLine`.\n     *  (M1.2) */\n    maxTokens?: number;\n    /** M2.6 change-aware cache. Echo the `hash` a prior call returned to short-circuit an unchanged\n     *  response: when the rebuilt response is byte-identical, the body collapses to\n     *  `{ unchanged: true, hash }`. Stateless (deterministic BLAKE3 of the response). */\n    ifHash?: string;\n  }): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 326
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.ownership@L1261",
+      "confidence": 1,
+      "name": "ownership",
+      "qualifiedName": "Verbs.ownership",
+      "signature": "ownership(args: { id: string }): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 1261
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.source@L454",
+      "confidence": 1,
+      "name": "source",
+      "qualifiedName": "Verbs.source",
+      "signature": "source(args: {\n    id: string;\n    maxChars?: number;\n    maxLines?: number;\n    /** absolute file line to start the page at (paging cursor; default = span start) */\n    startLine?: number;\n    /** M2.6 change-aware cache. Echo the `hash` a prior call returned to short-circuit an unchanged\n     *  response. Stateless (deterministic BLAKE3 of the response). */\n    ifHash?: string;\n  }): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 454
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/mcp/src/verbs.ts@L1763",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#3-1-2-the-enrichworkitem-interface-what-the-llm-sees",
+      "heading": "3.1.2 The `EnrichWorkItem` Interface — What the LLM Sees",
+      "anchor": "3-1-2-the-enrichworkitem-interface-what-the-llm-sees",
+      "snippet": "3.1.2 The `EnrichWorkItem` Interface — What the LLM Sees",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.publicNode@L1770",
+    "procedureName": "Verbs.publicNode",
+    "conditions": [
+      "cond:packages/mcp/src/verbs.ts@L1775",
+      "cond:packages/mcp/src/verbs.ts@L1776",
+      "cond:packages/mcp/src/verbs.ts@L1777",
+      "cond:packages/mcp/src/verbs.ts@L1778",
+      "cond:packages/mcp/src/verbs.ts@L1779",
+      "cond:packages/mcp/src/verbs.ts@L1780",
+      "cond:packages/mcp/src/verbs.ts@L1781",
+      "cond:packages/mcp/src/verbs.ts@L1782",
+      "cond:packages/mcp/src/verbs.ts@L1784",
+      "cond:packages/mcp/src/verbs.ts@L1785",
+      "cond:packages/mcp/src/verbs.ts@L1786",
+      "cond:packages/mcp/src/verbs.ts@L1787",
+      "cond:packages/mcp/src/verbs.ts@L1788",
+      "cond:packages/mcp/src/verbs.ts@L1789",
+      "cond:packages/mcp/src/verbs.ts@L1793",
+      "cond:packages/mcp/src/verbs.ts@L1794",
+      "cond:packages/mcp/src/verbs.ts@L1795",
+      "cond:packages/mcp/src/verbs.ts@L1796",
+      "cond:packages/mcp/src/verbs.ts@L1797",
+      "cond:packages/mcp/src/verbs.ts@L1798",
+      "cond:packages/mcp/src/verbs.ts@L1799",
+      "cond:packages/mcp/src/verbs.ts@L1800",
+      "cond:packages/mcp/src/verbs.ts@L1803",
+      "cond:packages/mcp/src/verbs.ts@L1805",
+      "cond:packages/mcp/src/verbs.ts@L1806",
+      "cond:packages/mcp/src/verbs.ts@L1807",
+      "cond:packages/mcp/src/verbs.ts@L1811",
+      "cond:packages/mcp/src/verbs.ts@L1812",
+      "cond:packages/mcp/src/verbs.ts@L1813",
+      "cond:packages/mcp/src/verbs.ts@L1814",
+      "cond:packages/mcp/src/verbs.ts@L1816",
+      "cond:packages/mcp/src/verbs.ts@L1818",
+      "cond:packages/mcp/src/verbs.ts@L1819",
+      "cond:packages/mcp/src/verbs.ts@L1820",
+      "cond:packages/mcp/src/verbs.ts@L1822",
+      "cond:packages/mcp/src/verbs.ts@L1824",
+      "cond:packages/mcp/src/verbs.ts@L1826",
+      "cond:packages/mcp/src/verbs.ts@L1828",
+      "cond:packages/mcp/src/verbs.ts@L1831",
+      "cond:packages/mcp/src/verbs.ts@L1833",
+      "cond:packages/mcp/src/verbs.ts@L1834",
+      "cond:packages/mcp/src/verbs.ts@L1835",
+      "cond:packages/mcp/src/verbs.ts@L1836",
+      "cond:packages/mcp/src/verbs.ts@L1837",
+      "cond:packages/mcp/src/verbs.ts@L1840"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.publicNode@L1770",
+        "procedureName": "Verbs.publicNode",
+        "guard": "cond:packages/mcp/src/verbs.ts@L1775",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L1775",
+            "expr": "n.type",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:26870c5e039d98a588d004eb3cb1e71875ecb0ab33fefb453afd2d1da9c04e18",
+          "target": "assign:packages/mcp/src/verbs.ts@L1775",
+          "line": 1775,
+          "expr": "out.type = n.type;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.publicNode@L1770",
+        "procedureName": "Verbs.publicNode",
+        "guard": "cond:packages/mcp/src/verbs.ts@L1776",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L1776",
+            "expr": "n.name",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:87ad8294a7a2b58be0b573a64967a8293ecc4876f58006805b236b6822c6e3e6",
+          "target": "assign:packages/mcp/src/verbs.ts@L1776",
+          "line": 1776,
+          "expr": "out.name = n.name;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.publicNode@L1770",
+        "procedureName": "Verbs.publicNode",
+        "guard": "cond:packages/mcp/src/verbs.ts@L1777",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L1777",
+            "expr": "n.qualifiedName",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:23465ae67729fbdbf2794fcd77591e784dfb9c7c488d6dd97446085f2050b6c9",
+          "target": "assign:packages/mcp/src/verbs.ts@L1777",
+          "line": 1777,
+          "expr": "out.qualifiedName = n.qualifiedName;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.publicNode@L1770",
+        "procedureName": "Verbs.publicNode",
+        "guard": "cond:packages/mcp/src/verbs.ts@L1778",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L1778",
+            "expr": "n.signature",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:02851685dabec298445077e5670f3eeb87e69045b1209aa382c67786c5c6e471",
+          "target": "assign:packages/mcp/src/verbs.ts@L1778",
+          "line": 1778,
+          "expr": "out.signature = n.signature;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.publicNode@L1770",
+        "procedureName": "Verbs.publicNode",
+        "guard": "cond:packages/mcp/src/verbs.ts@L1779",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L1779",
+            "expr": "n.lang",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3582a738d0f3e11945d87d827bee6ff769df5b6e1e53747cfe057a744674c79d",
+          "target": "assign:packages/mcp/src/verbs.ts@L1779",
+          "line": 1779,
+          "expr": "out.lang = n.lang;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.publicNode@L1770",
+        "procedureName": "Verbs.publicNode",
+        "guard": "cond:packages/mcp/src/verbs.ts@L1780",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L1780",
+            "expr": "n.file",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fb8075e2f6f36b54dc7c7a6e81d5c98c461690bf007815234dccfa8835db79d0",
+          "target": "assign:packages/mcp/src/verbs.ts@L1780",
+          "line": 1780,
+          "expr": "out.file = n.file;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.publicNode@L1770",
+        "procedureName": "Verbs.publicNode",
+        "guard": "cond:packages/mcp/src/verbs.ts@L1781",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L1781",
+            "expr": "n.span",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:073c236fca2e99a91774aa9d37e35f99588862bd6373640937f1c4cc2f61f798",
+          "target": "assign:packages/mcp/src/verbs.ts@L1781",
+          "line": 1781,
+          "expr": "out.span = n.span;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.publicNode@L1770",
+        "procedureName": "Verbs.publicNode",
+        "guard": "cond:packages/mcp/src/verbs.ts@L1782",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L1782",
+            "expr": "n.clusterId",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:cab656997172e1d91307d298f49f9869b7f237cb4e3a576dce6bcd7f73f5a4c0",
+          "target": "assign:packages/mcp/src/verbs.ts@L1782",
+          "line": 1782,
+          "expr": "out.clusterId = n.clusterId;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.publicNode@L1770",
+        "procedureName": "Verbs.publicNode",
+        "guard": "cond:packages/mcp/src/verbs.ts@L1784",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L1784",
+            "expr": "n.schema",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9342dab01b05bd24312748b6f326357725ef4cd2f10bff5a5ec8de49f088a80e",
+          "target": "assign:packages/mcp/src/verbs.ts@L1784",
+          "line": 1784,
+          "expr": "out.schema = n.schema;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.publicNode@L1770",
+        "procedureName": "Verbs.publicNode",
+        "guard": "cond:packages/mcp/src/verbs.ts@L1785",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L1785",
+            "expr": "n.table",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3789ff7af3b8a50d2b1cc188cfd0f82cdd73c67547efe290a2ff01552e9b587c",
+          "target": "assign:packages/mcp/src/verbs.ts@L1785",
+          "line": 1785,
+          "expr": "out.table = n.table;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.publicNode@L1770",
+        "procedureName": "Verbs.publicNode",
+        "guard": "cond:packages/mcp/src/verbs.ts@L1786",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L1786",
+            "expr": "n.dataType",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fa25a403a4ef6a8867c49342ca70bb8b66c1d1e7d1b995861a51a45bcff52545",
+          "target": "assign:packages/mcp/src/verbs.ts@L1786",
+          "line": 1786,
+          "expr": "out.dataType = n.dataType;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.publicNode@L1770",
+        "procedureName": "Verbs.publicNode",
+        "guard": "cond:packages/mcp/src/verbs.ts@L1787",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L1787",
+            "expr": "n.sqlKind",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e18eb7fa304ff3f08052ed79fb5453f2d1eae80a94b1452fa56135b106db07a4",
+          "target": "assign:packages/mcp/src/verbs.ts@L1787",
+          "line": 1787,
+          "expr": "out.sqlKind = n.sqlKind;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.publicNode@L1770",
+        "procedureName": "Verbs.publicNode",
+        "guard": "cond:packages/mcp/src/verbs.ts@L1788",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L1788",
+            "expr": "n.expr",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8706a1415e4a104aa278e95f52c9b8c0e0d875351312f9a8dc6c7340ab869366",
+          "target": "assign:packages/mcp/src/verbs.ts@L1788",
+          "line": 1788,
+          "expr": "out.expr = n.expr;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.publicNode@L1770",
+        "procedureName": "Verbs.publicNode",
+        "guard": "cond:packages/mcp/src/verbs.ts@L1789",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L1789",
+            "expr": "n.branch",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c101f14abdfebab0dcc44e037c611e668bd5e0c47009140b52e311c02abc5093",
+          "target": "assign:packages/mcp/src/verbs.ts@L1789",
+          "line": 1789,
+          "expr": "out.branch = n.branch;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.publicNode@L1770",
+        "procedureName": "Verbs.publicNode",
+        "guard": "cond:packages/mcp/src/verbs.ts@L1793",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L1793",
+            "expr": "n.errorCode",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5cb088637e1a6d3590cc3b03649c2c310b856c7dc938d8f068c98205a8e19972",
+          "target": "assign:packages/mcp/src/verbs.ts@L1793",
+          "line": 1793,
+          "expr": "out.errorCode = n.errorCode;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.publicNode@L1770",
+        "procedureName": "Verbs.publicNode",
+        "guard": "cond:packages/mcp/src/verbs.ts@L1794",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L1794",
+            "expr": "n.errorMessage",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1a31538123bf32a68f56136cee237189fd3bed713dc217396e8d0789e9ade6b2",
+          "target": "assign:packages/mcp/src/verbs.ts@L1794",
+          "line": 1794,
+          "expr": "out.errorMessage = n.errorMessage;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.publicNode@L1770",
+        "procedureName": "Verbs.publicNode",
+        "guard": "cond:packages/mcp/src/verbs.ts@L1795",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L1795",
+            "expr": "n.whenSelector",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:041a7818c4a02c34c9a24d28d13929b7f5710bf58bf69dc59471c174972128e5",
+          "target": "assign:packages/mcp/src/verbs.ts@L1795",
+          "line": 1795,
+          "expr": "out.whenSelector = n.whenSelector;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.publicNode@L1770",
+        "procedureName": "Verbs.publicNode",
+        "guard": "cond:packages/mcp/src/verbs.ts@L1796",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L1796",
+            "expr": "n.assignTarget",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2b44106ab2733730c128f3339d304fe7de27c503242330273d5b29ac03770205",
+          "target": "assign:packages/mcp/src/verbs.ts@L1796",
+          "line": 1796,
+          "expr": "out.assignTarget = n.assignTarget;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.publicNode@L1770",
+        "procedureName": "Verbs.publicNode",
+        "guard": "cond:packages/mcp/src/verbs.ts@L1797",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L1797",
+            "expr": "n.cursorQuery",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:17eeca4412136e7fe7f1e46f0941229f0f782342bd2b9055fa0f9ffbf7d81b78",
+          "target": "assign:packages/mcp/src/verbs.ts@L1797",
+          "line": 1797,
+          "expr": "out.cursorQuery = n.cursorQuery;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.publicNode@L1770",
+        "procedureName": "Verbs.publicNode",
+        "guard": "cond:packages/mcp/src/verbs.ts@L1798",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L1798",
+            "expr": "n.exprTruncated",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0f91acc1403220fb478579d4c814ef5c2aa5b8390264193e7763c2ae31357d55",
+          "target": "assign:packages/mcp/src/verbs.ts@L1798",
+          "line": 1798,
+          "expr": "out.exprTruncated = n.exprTruncated;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.publicNode@L1770",
+        "procedureName": "Verbs.publicNode",
+        "guard": "cond:packages/mcp/src/verbs.ts@L1799",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L1799",
+            "expr": "Array.isArray(n.constraints)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:661a28e4cbae3c2a85cce13e6e3209172339965acc3b45682acecd8fd9594ba8",
+          "target": "assign:packages/mcp/src/verbs.ts@L1799",
+          "line": 1799,
+          "expr": "out.constraints = n.constraints;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.publicNode@L1770",
+        "procedureName": "Verbs.publicNode",
+        "guard": "cond:packages/mcp/src/verbs.ts@L1800",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L1800",
+            "expr": "n.commentRef",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:487781e6e17912c0b2669de8935302dc86927181d7a43b08cbe04a72359e3367",
+          "target": "assign:packages/mcp/src/verbs.ts@L1800",
+          "line": 1800,
+          "expr": "out.commentRef = n.commentRef;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.publicNode@L1770",
+        "procedureName": "Verbs.publicNode",
+        "guard": "cond:packages/mcp/src/verbs.ts@L1803",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L1803",
+            "expr": "n.email",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1c850434c21a9a8ad0037c59c37da194bcf6dd7f2be0d0a00c49ea8f291f5585",
+          "target": "assign:packages/mcp/src/verbs.ts@L1803",
+          "line": 1803,
+          "expr": "out.email = n.email;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.publicNode@L1770",
+        "procedureName": "Verbs.publicNode",
+        "guard": "cond:packages/mcp/src/verbs.ts@L1805",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L1805",
+            "expr": "n.heading",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c81dd1a340ebf91943290aff51240be06c9cef1496df24f56d83e8d100179bcc",
+          "target": "assign:packages/mcp/src/verbs.ts@L1805",
+          "line": 1805,
+          "expr": "out.heading = n.heading;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.publicNode@L1770",
+        "procedureName": "Verbs.publicNode",
+        "guard": "cond:packages/mcp/src/verbs.ts@L1806",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L1806",
+            "expr": "n.level !== undefined",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e9ffaa0e016d4c77c4a2d45e91831f4a336c9e173b38b924e0b50761329087f9",
+          "target": "assign:packages/mcp/src/verbs.ts@L1806",
+          "line": 1806,
+          "expr": "out.level = n.level;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.publicNode@L1770",
+        "procedureName": "Verbs.publicNode",
+        "guard": "cond:packages/mcp/src/verbs.ts@L1807",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L1807",
+            "expr": "n.anchor",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b73f00f66a37327fe3e905500742243eac619c1ba1307a25a7044ca16fbe2ed7",
+          "target": "assign:packages/mcp/src/verbs.ts@L1807",
+          "line": 1807,
+          "expr": "out.anchor = n.anchor;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.publicNode@L1770",
+        "procedureName": "Verbs.publicNode",
+        "guard": "cond:packages/mcp/src/verbs.ts@L1811",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L1811",
+            "expr": "n.framework",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7791bc3e6fc5ca3246612ad87075f877bcecbd63677bb75486dafe052bdabc32",
+          "target": "assign:packages/mcp/src/verbs.ts@L1811",
+          "line": 1811,
+          "expr": "out.framework = n.framework;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.publicNode@L1770",
+        "procedureName": "Verbs.publicNode",
+        "guard": "cond:packages/mcp/src/verbs.ts@L1812",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L1812",
+            "expr": "n.stereotype",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f401a45217284d16dbdcbd63fa35e33c5ba5e5557e905d83d962cd78ed3c3441",
+          "target": "assign:packages/mcp/src/verbs.ts@L1812",
+          "line": 1812,
+          "expr": "out.stereotype = n.stereotype;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.publicNode@L1770",
+        "procedureName": "Verbs.publicNode",
+        "guard": "cond:packages/mcp/src/verbs.ts@L1813",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L1813",
+            "expr": "n.httpMethod",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a639559b65c77bb65e046e80b96b887c4664849f757fa7af865031aba78522f4",
+          "target": "assign:packages/mcp/src/verbs.ts@L1813",
+          "line": 1813,
+          "expr": "out.httpMethod = n.httpMethod;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.publicNode@L1770",
+        "procedureName": "Verbs.publicNode",
+        "guard": "cond:packages/mcp/src/verbs.ts@L1814",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L1814",
+            "expr": "n.routePath",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3eb065f73c9cfcb74a83d151351b4a4f31d8921461fe043218cab95ec7d54ed7",
+          "target": "assign:packages/mcp/src/verbs.ts@L1814",
+          "line": 1814,
+          "expr": "out.routePath = n.routePath;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.publicNode@L1770",
+        "procedureName": "Verbs.publicNode",
+        "guard": "cond:packages/mcp/src/verbs.ts@L1818",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L1816",
+            "expr": "n.meta"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L1818",
+            "expr": "Array.isArray(m.columns)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f55679fe9652e5562bdc85999c45315ef2ace9dbba2da9c647c983993b4129ff",
+          "target": "assign:packages/mcp/src/verbs.ts@L1818",
+          "line": 1818,
+          "expr": "out.columns = m.columns;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.publicNode@L1770",
+        "procedureName": "Verbs.publicNode",
+        "guard": "cond:packages/mcp/src/verbs.ts@L1819",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L1816",
+            "expr": "n.meta"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L1819",
+            "expr": "m.returnType !== undefined",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:466939aa25f54104d52c63b48a9adb700f3b7ed307fc35c294aa53d7153b9b9e",
+          "target": "assign:packages/mcp/src/verbs.ts@L1819",
+          "line": 1819,
+          "expr": "out.returnType = m.returnType;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.publicNode@L1770",
+        "procedureName": "Verbs.publicNode",
+        "guard": "cond:packages/mcp/src/verbs.ts@L1820",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L1816",
+            "expr": "n.meta"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L1820",
+            "expr": "Array.isArray(m.tables)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4c1b28ba0f84561619a99f32c4c8c5678ba80fece0dacc8b18468d64e3f04eb8",
+          "target": "assign:packages/mcp/src/verbs.ts@L1820",
+          "line": 1820,
+          "expr": "out.tables = m.tables;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.publicNode@L1770",
+        "procedureName": "Verbs.publicNode",
+        "guard": "cond:packages/mcp/src/verbs.ts@L1822",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L1816",
+            "expr": "n.meta"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L1822",
+            "expr": "Array.isArray(m.attributes)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5f87075fe22deecd120f57ec54847bfd8251644b3b65b787b7d2e3fb50d41f91",
+          "target": "assign:packages/mcp/src/verbs.ts@L1822",
+          "line": 1822,
+          "expr": "out.attributes = m.attributes;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.publicNode@L1770",
+        "procedureName": "Verbs.publicNode",
+        "guard": "cond:packages/mcp/src/verbs.ts@L1824",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L1816",
+            "expr": "n.meta"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L1824",
+            "expr": "m.collection !== undefined",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ed998b9d6e096972bcc6226508b5df9fa13d6474aa2b265927da9bb779f78736",
+          "target": "assign:packages/mcp/src/verbs.ts@L1824",
+          "line": 1824,
+          "expr": "out.collection = m.collection;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.publicNode@L1770",
+        "procedureName": "Verbs.publicNode",
+        "guard": "cond:packages/mcp/src/verbs.ts@L1826",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L1816",
+            "expr": "n.meta"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L1826",
+            "expr": "m.kind !== undefined",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:73c360b262d6d6462fcc2f2b70aafeaaaec7ca2f69f4a20090afda307ffcfad1",
+          "target": "assign:packages/mcp/src/verbs.ts@L1826",
+          "line": 1826,
+          "expr": "out.kindMeta = m.kind;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.publicNode@L1770",
+        "procedureName": "Verbs.publicNode",
+        "guard": "cond:packages/mcp/src/verbs.ts@L1828",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L1816",
+            "expr": "n.meta"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L1828",
+            "expr": "m.recursive !== undefined",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:cb5c0edd6e0cea1fbbbd840d5338ccd5b15583b3120552945ade185063d9c6ea",
+          "target": "assign:packages/mcp/src/verbs.ts@L1828",
+          "line": 1828,
+          "expr": "out.recursive = m.recursive;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.publicNode@L1770",
+        "procedureName": "Verbs.publicNode",
+        "guard": "cond:packages/mcp/src/verbs.ts@L1831",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L1816",
+            "expr": "n.meta"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L1831",
+            "expr": "Array.isArray(m.calls)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d0d5977b991c4c41d988bf6ff4d62e6f5707ef90c8642eaa81973e60d9e56ffd",
+          "target": "assign:packages/mcp/src/verbs.ts@L1831",
+          "line": 1831,
+          "expr": "out.callSites = m.calls;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.publicNode@L1770",
+        "procedureName": "Verbs.publicNode",
+        "guard": "cond:packages/mcp/src/verbs.ts@L1833",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L1816",
+            "expr": "n.meta"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L1833",
+            "expr": "Array.isArray(m.params)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9da01a38a9a3e4a888331ebc1de970c13157f1873569569cb22ab62714690bfe",
+          "target": "assign:packages/mcp/src/verbs.ts@L1833",
+          "line": 1833,
+          "expr": "out.params = m.params;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.publicNode@L1770",
+        "procedureName": "Verbs.publicNode",
+        "guard": "cond:packages/mcp/src/verbs.ts@L1834",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L1816",
+            "expr": "n.meta"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L1834",
+            "expr": "m.security !== undefined",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e4226cc51c1aded89e3cd5c899cb3dd8a525e770c284e43fca46c4c2e14fa9eb",
+          "target": "assign:packages/mcp/src/verbs.ts@L1834",
+          "line": 1834,
+          "expr": "out.security = m.security;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.publicNode@L1770",
+        "procedureName": "Verbs.publicNode",
+        "guard": "cond:packages/mcp/src/verbs.ts@L1835",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L1816",
+            "expr": "n.meta"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L1835",
+            "expr": "Array.isArray(m.injects)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8be02fcdae19d81b62f4b0288d0a125868100b85569f1fa437518bc2a2a9b515",
+          "target": "assign:packages/mcp/src/verbs.ts@L1835",
+          "line": 1835,
+          "expr": "out.injects = m.injects;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.publicNode@L1770",
+        "procedureName": "Verbs.publicNode",
+        "guard": "cond:packages/mcp/src/verbs.ts@L1836",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L1816",
+            "expr": "n.meta"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L1836",
+            "expr": "Array.isArray(m.produces)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d6337ea1c4dbb1571fd272fea353276bb6093f177de59446eb278fd3bf20b013",
+          "target": "assign:packages/mcp/src/verbs.ts@L1836",
+          "line": 1836,
+          "expr": "out.produces = m.produces;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.publicNode@L1770",
+        "procedureName": "Verbs.publicNode",
+        "guard": "cond:packages/mcp/src/verbs.ts@L1837",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L1816",
+            "expr": "n.meta"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L1837",
+            "expr": "m.column !== undefined",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5832f203106bf728ee7649a18cb3cc4fe8e94d282e4919e9a06042552e572974",
+          "target": "assign:packages/mcp/src/verbs.ts@L1837",
+          "line": 1837,
+          "expr": "out.column = m.column;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.publicNode@L1770",
+        "procedureName": "Verbs.publicNode",
+        "guard": "cond:packages/mcp/src/verbs.ts@L1840",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L1816",
+            "expr": "n.meta"
+          },
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L1840",
+            "expr": "Array.isArray(m.variables)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4f8e6bdd535d5e5c614cfa215b8f4e3762510ca18e2b8f12d04ffdd06c8fa2c5",
+          "target": "assign:packages/mcp/src/verbs.ts@L1840",
+          "line": 1840,
+          "expr": "out.variables = m.variables;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.publicNode@L1770",
+        "procedureName": "Verbs.publicNode",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:31a9e00077001357c1d972dc63b6c7ff0ee8d89bbe20eeee8a41d74d49c75159",
+          "target": "stmt:packages/mcp/src/verbs.ts@L1842",
+          "line": 1842,
+          "expr": "return out;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 45,
+    "referencedByFiles": [
+      "packages/mcp/src/verbs.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 45,
+    "assignments": 44,
+    "conditions": 44,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

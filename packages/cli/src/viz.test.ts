@@ -6,7 +6,7 @@ import { SoulStore, newManifest } from '@knowledge-crib/core';
 import { indexRepo } from '@knowledge-crib/pipeline';
 import { contentHash, edgeId, idFor } from '@knowledge-crib/soul-schema';
 import type { Edge, Node, Rel } from '@knowledge-crib/soul-schema';
-import { buildVizGraph, vizAssetsDir } from '@knowledge-crib/ui';
+import { buildVizGraph, buildVizOverview, vizAssetsDir } from '@knowledge-crib/ui';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 let repo: string;
@@ -82,6 +82,7 @@ describe('crib viz — buildVizGraph (DC runtime contract)', () => {
   it('vizAssetsDir points at the DC runtime assets', () => {
     const dir = vizAssetsDir();
     expect(existsSync(join(dir, 'index.html'))).toBe(true);
+    expect(existsSync(join(dir, 'graph-model.js'))).toBe(true);
     expect(existsSync(join(dir, 'support.js'))).toBe(true);
   });
 
@@ -137,6 +138,22 @@ describe('crib viz — buildVizGraph (DC runtime contract)', () => {
     expect(html).toContain('max-width:360px');
   });
 
+  it('projects, arranges, and reports search results independently of prior graph state', () => {
+    const html = readFileSync(join(vizAssetsDir(), 'index.html'), 'utf8');
+
+    expect(html).toContain('KCGraphModel.searchProjection');
+    expect(html).toContain('arrangeSearch');
+    expect(html).toContain('No graph matches');
+    expect(html).toContain('{{ searchStatus }}');
+    const visibleNodes = html.slice(
+      html.indexOf('visibleNodes(){'),
+      html.indexOf('arrangeSearch('),
+    );
+    expect(visibleNodes.indexOf('if(q)return [...this.searchProjection(q).nodeIds]')).toBeLessThan(
+      visibleNodes.indexOf('if(this.state.selectedClusterId && !this.state.selectedId)'),
+    );
+  });
+
   it('keeps overview labels and narrow headers inside their boxes', () => {
     const html = readFileSync(join(vizAssetsDir(), 'index.html'), 'utf8');
 
@@ -145,6 +162,51 @@ describe('crib viz — buildVizGraph (DC runtime contract)', () => {
     expect(html).toContain('kc-topbar');
     expect(html).toContain('kc-brand-stats');
     expect(html).toContain('@media (max-width: 900px)');
+  });
+
+  it('serves a module-segmented /overview.json shape from buildVizOverview', async () => {
+    const soul = soulFor();
+    await indexRepo(soul, repo, { now: NOW });
+    const ov = buildVizOverview(soul);
+    expect(ov.schemaVersion).toBe(soul.getManifest().schemaVersion);
+    expect(Array.isArray(ov.modules)).toBe(true);
+    expect(ov.modules.length).toBeGreaterThan(0);
+    for (const m of ov.modules) {
+      expect(typeof m.id).toBe('string');
+      expect(typeof m.name).toBe('string');
+      expect(typeof m.pathPrefix).toBe('string');
+      expect(typeof m.color).toBe('string');
+      expect(m.counts).toBeDefined();
+      expect(Array.isArray(m.topSymbols)).toBe(true);
+      expect(Array.isArray(m.clusterIds)).toBe(true);
+    }
+  });
+
+  it('wires the UI to fetch /overview.json and render module cards (null-guarded)', () => {
+    const html = readFileSync(join(vizAssetsDir(), 'index.html'), 'utf8');
+    // parallel fetch with null-degrade so an old server keeps working
+    expect(html).toContain("fetch('/overview.json')");
+    expect(html).toContain('.catch(() => null)');
+    expect(html).toContain('this.vizModules');
+    // module-card path + back affordance
+    expect(html).toContain('buildModuleOverview');
+    expect(html).toContain('isModule');
+    expect(html).toContain('selectModule');
+    expect(html).toContain('isBack');
+    expect(html).toContain('clearModule');
+  });
+
+  it('wires exact functionality members, source preview, context toggle, and local back navigation', () => {
+    const html = readFileSync(join(vizAssetsDir(), 'index.html'), 'utf8');
+    expect(html).toContain('KCGraphModel.buildIndexes');
+    expect(html).toContain('KCGraphModel.clusterProjection');
+    expect(html).toContain("title:'Members'");
+    expect(html).toContain("kindLabel:'Functionality'");
+    expect(html).toContain('Show connected context');
+    expect(html).toContain('Back to functionality');
+    expect(html).toContain("fetch('/source?nodeId='");
+    expect(html).toContain('Copy location');
+    expect(html).not.toContain('onGo:()=>{}');
   });
 });
 

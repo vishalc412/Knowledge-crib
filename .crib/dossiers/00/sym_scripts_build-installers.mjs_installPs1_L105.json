@@ -1,0 +1,150 @@
+{
+  "id": "sym:scripts/build-installers.mjs#installPs1@L105",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:76bfdcf220424c98d2df179082fb1ed8256872e6dee86440a23ca8be89f9b8a4",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:scripts/build-installers.mjs#installPs1@L105",
+    "kind": "symbol",
+    "type": "function",
+    "name": "installPs1",
+    "qualifiedName": "installPs1",
+    "signature": "installPs1(tarballNames)",
+    "lang": "javascript",
+    "file": "scripts/build-installers.mjs",
+    "span": {
+      "start": 105,
+      "end": 159
+    },
+    "callSites": [
+      {
+        "callee": "isArray",
+        "line": 106
+      },
+      {
+        "callee": "powershellTarballArgs",
+        "line": 150
+      }
+    ]
+  },
+  "source": {
+    "text": "export function installPs1(tarballNames) {\n  const tarballs = Array.isArray(tarballNames) ? tarballNames : [tarballNames];\n  return `$ErrorActionPreference = \"Stop\"\n$CacheDir = Join-Path ([System.IO.Path]::GetTempPath()) (\"knowledge-crib-npm-cache-\" + [System.Guid]::NewGuid().ToString(\"N\"))\n\nif (-not (Get-Command node -ErrorAction SilentlyContinue)) {\n  Write-Error \"Knowledge-crib requires Node.js 22.5 or newer. Install Node, then rerun this installer.\"\n}\n\nif (-not (Get-Command npm -ErrorAction SilentlyContinue)) {\n  Write-Error \"Knowledge-crib requires npm. Install Node.js with npm, then rerun this installer.\"\n}\n\n$NodeMajor = [int](& node -p \"process.versions.node.split('.')[0]\")\nif ($NodeMajor -lt 22) {\n  throw \"Knowledge-crib requires Node.js 22.5 or newer; found $(node --version).\"\n}\n\n$ChecksumPath = Join-Path $PSScriptRoot \"SHA256SUMS.txt\"\nif (-not (Test-Path -LiteralPath $ChecksumPath -PathType Leaf)) {\n  throw \"Installer bundle is missing SHA256SUMS.txt.\"\n}\n$VerifiedFiles = 0\nforeach ($Line in Get-Content -LiteralPath $ChecksumPath) {\n  if ([string]::IsNullOrWhiteSpace($Line)) { continue }\n  if ($Line -notmatch '^([a-fA-F0-9]{64})  (.+)$') {\n    throw \"Invalid checksum line: $Line\"\n  }\n  $Expected = $Matches[1].ToLowerInvariant()\n  $TargetPath = Join-Path $PSScriptRoot $Matches[2]\n  if (-not (Test-Path -LiteralPath $TargetPath -PathType Leaf)) {\n    throw \"Installer bundle is missing $($Matches[2]).\"\n  }\n  $Actual = (Get-FileHash -LiteralPath $TargetPath -Algorithm SHA256).Hash.ToLowerInvariant()\n  if ($Actual -ne $Expected) {\n    throw \"Checksum verification failed for $($Matches[2]).\"\n  }\n  $VerifiedFiles++\n}\nif ($VerifiedFiles -eq 0) {\n  throw \"SHA256SUMS.txt did not contain any files.\"\n}\n\ntry {\n  New-Item -ItemType Directory -Force -Path $CacheDir | Out-Null\n  & npm install -g --cache \"$CacheDir\" --no-audit --no-fund ${powershellTarballArgs(tarballs)}\n  if ($LASTEXITCODE -ne 0) {\n    throw \"npm install failed with exit code $LASTEXITCODE.\"\n  }\n  Write-Host \"Knowledge-crib installed. Run: crib --help\"\n} finally {\n  Remove-Item -Recurse -Force $CacheDir -ErrorAction SilentlyContinue\n}\n`;\n}",
+    "truncated": false,
+    "totalLines": 55,
+    "startLine": 105
+  },
+  "callers": [
+    {
+      "id": "sym:scripts/build-installers.mjs#buildInstallers@L175",
+      "confidence": 1,
+      "name": "buildInstallers",
+      "qualifiedName": "buildInstallers",
+      "signature": "buildInstallers({ outRoot = join(repoRoot, 'dist', 'installers') } = {})",
+      "type": "function",
+      "file": "scripts/build-installers.mjs",
+      "line": 175
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:scripts/build-installers.mjs#powershellTarballArgs@L49",
+      "confidence": 1,
+      "name": "powershellTarballArgs",
+      "qualifiedName": "powershellTarballArgs",
+      "signature": "powershellTarballArgs(tarballNames)",
+      "type": "function",
+      "file": "scripts/build-installers.mjs",
+      "line": 49
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-06-26-beta-installers.md#task-1-installer-builder-script",
+      "heading": "Task 1: Installer Builder Script",
+      "anchor": "task-1-installer-builder-script",
+      "snippet": "Task 1: Installer Builder Script",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    }
+  ],
+  "rules": {
+    "procedure": "sym:scripts/build-installers.mjs#installPs1@L105",
+    "procedureName": "installPs1",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:scripts/build-installers.mjs#installPs1@L105",
+        "procedureName": "installPs1",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:640b9a6332ac873fc2d1790ffa76eb7fc97693d8b6754b62dcdaae7b1ef514f9",
+          "target": "stmt:scripts/build-installers.mjs@L106",
+          "line": 106,
+          "expr": "const tarballs = Array.isArray(tarballNames) ? tarballNames : [tarballNames];"
+        }
+      },
+      {
+        "procedure": "sym:scripts/build-installers.mjs#installPs1@L105",
+        "procedureName": "installPs1",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:19dca03bdf583cc086a36be8d83b9ed2fdf0ff7b2544f1fc5e48a5aa0040d01b",
+          "target": "stmt:scripts/build-installers.mjs@L107",
+          "line": 107,
+          "expr": "return `$ErrorActionPreference = \"Stop\"\n$CacheDir = Join-Path ([System.IO.Path]::GetTempPath()) (\"knowledge-crib-npm-cache-\" + [System.Guid]::NewGuid().ToString(\"N\"))\n\nif (-not (Get-Command node -ErrorAction SilentlyContinue)) {\n  Write-Error \"Knowledge-crib requires Node.js 22.5 or newer. Install Node, then rerun this installer.\"\n}\n\nif (-not (Get-Command npm -ErrorAction SilentlyContinue)) {\n  Write-Error \"Knowledge-crib requires npm. Install Node.js with npm, then rerun this installer.\"\n}\n\n$NodeMajor = [int](& node -p \"process.versions.node.split('.')[0]\")\nif ($NodeMajor -lt 22) {\n  throw \"Knowledge-crib requires Node.js 22.5 or newer; found $(node --version).\"\n}\n\n$ChecksumPath = Join-Path $PSScriptRoot \"SHA256SUMS.txt\"\nif (-not (Test-Path -LiteralPath $ChecksumPath -PathType Leaf)) {\n  throw \"Installer bundle is missing SHA256SUMS.txt.\"\n}\n$VerifiedFiles = 0\nforeach ($Line in Get-Content -LiteralPath $ChecksumPath) {\n  if ([string]::IsNullOrWhiteSpace($Line)) { continue }\n  if ($Line -notmatch '^([a-fA-F0-9]{64})  (.+)$') {\n    throw \"Invalid checksum line: $Line\"\n  }\n  $Expected = $Matches[1].ToLowerInvariant()\n  $TargetPath = Join-Path $PSScriptRoot $Matches[2]\n  if (-not (Test-Path -LiteralPath $TargetPath -PathType Leaf)) {\n    throw \"Installer bundle is missing $($Matches[2]).\"\n  }\n  $Actual = (Get-FileHash -LiteralPath $TargetPath -Algorithm SHA256).Hash.ToLowerInvariant()\n  if ($Actual -ne $Expected) {\n    throw \"Checksum verification failed for $($Matches[2]).\"\n  }\n  $VerifiedFiles++\n}\nif ($VerifiedFiles -eq 0) {\n  throw \"SHA256SUMS.txt did not contain any files.\"\n}\n\ntry {\n  New-Item -ItemType Directory -Force -Path $CacheDir | Out-Null\n  & npm install -g --cache \"$CacheDir\" --no-audit --no-fund ${powershellTarballArgs(tarballs)}\n  if ($LASTEXITCODE -ne 0) {\n    throw \"npm install failed with exit code $LASTEXITCODE.\"\n  }\n  Write-Host \"Knowledge-crib installed. Run: crib --help\"\n} finally {\n  Remove-Item -Recurse -Force $CacheDir -ErrorAction SilentlyCont…"
+        }
+      },
+      {
+        "procedure": "sym:scripts/build-installers.mjs#installPs1@L105",
+        "procedureName": "installPs1",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:dda69480d0b96f8bbfff948a76625cf84eb676fe63a41a93609ee3ef67573b6d",
+          "target": "sym:scripts/build-installers.mjs#powershellTarballArgs@L49",
+          "expr": "powershellTarballArgs",
+          "line": 150
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "scripts/build-installers.mjs"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 2,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

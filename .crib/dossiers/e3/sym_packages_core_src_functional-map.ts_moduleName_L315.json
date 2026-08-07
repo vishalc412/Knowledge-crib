@@ -1,0 +1,203 @@
+{
+  "id": "sym:packages/core/src/functional-map.ts#moduleName@L315",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:82f86f078b184030ffbcc1a988ed8f1a70f80365b7292b81a758461b32bf8879",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/functional-map.ts#moduleName@L315",
+    "kind": "symbol",
+    "type": "function",
+    "name": "moduleName",
+    "qualifiedName": "moduleName",
+    "signature": "moduleName(pathPrefix: string, packages: WorkspacePackage[], source: 'workspace' | 'directory'): string",
+    "lang": "typescript",
+    "file": "packages/core/src/functional-map.ts",
+    "span": {
+      "start": 315,
+      "end": 326
+    },
+    "callSites": [
+      {
+        "callee": "find",
+        "line": 322
+      },
+      {
+        "callee": "pop",
+        "line": 325
+      },
+      {
+        "callee": "split",
+        "line": 325
+      }
+    ]
+  },
+  "source": {
+    "text": "function moduleName(\n  pathPrefix: string,\n  packages: WorkspacePackage[],\n  source: 'workspace' | 'directory',\n): string {\n  if (pathPrefix === '') return '(root)';\n  if (source === 'workspace') {\n    const pkg = packages.find((p) => p.rel === pathPrefix);\n    if (pkg) return pkg.name;\n  }\n  return pathPrefix.split('/').pop() || pathPrefix;\n}",
+    "truncated": false,
+    "totalLines": 12,
+    "startLine": 315
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/functional-map.ts#buildFunctionalMap@L74",
+      "confidence": 1,
+      "name": "buildFunctionalMap",
+      "qualifiedName": "buildFunctionalMap",
+      "signature": "buildFunctionalMap(soul: SoulStore, opts: BuildFunctionalMapOpts = {}): FunctionalMap",
+      "type": "function",
+      "file": "packages/core/src/functional-map.ts",
+      "line": 74
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
+      "confidence": 1,
+      "name": "find",
+      "qualifiedName": "find",
+      "signature": "find(…)",
+      "type": "function",
+      "file": "packages/parsers/src/java/parser.test.ts",
+      "line": 38
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/core/src/functional-map.ts#moduleName@L315",
+    "procedureName": "moduleName",
+    "conditions": [
+      "cond:packages/core/src/functional-map.ts@L320",
+      "cond:packages/core/src/functional-map.ts@L321",
+      "cond:packages/core/src/functional-map.ts@L323"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/functional-map.ts#moduleName@L315",
+        "procedureName": "moduleName",
+        "guard": "cond:packages/core/src/functional-map.ts@L320",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/functional-map.ts@L320",
+            "expr": "pathPrefix === ''",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:73dd8fb275dafe2a2a308a1b4f5dd22f3cb8b0d8fc82186fe387e824ef321e14",
+          "target": "stmt:packages/core/src/functional-map.ts@L320",
+          "line": 320,
+          "expr": "return '(root)';"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/functional-map.ts#moduleName@L315",
+        "procedureName": "moduleName",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:64074c0a9967dc5d40c04065069caea237fdec47c5582bfb9520104866c11c40",
+          "target": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
+          "expr": "find",
+          "line": 322
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/functional-map.ts#moduleName@L315",
+        "procedureName": "moduleName",
+        "guard": "cond:packages/core/src/functional-map.ts@L321",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/functional-map.ts@L321",
+            "expr": "source === 'workspace'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:74475c91a9e8972b4cbe54eb304786204257784a71f769742aa004b9a2dab8d0",
+          "target": "stmt:packages/core/src/functional-map.ts@L322",
+          "line": 322,
+          "expr": "const pkg = packages.find((p) => p.rel === pathPrefix);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/functional-map.ts#moduleName@L315",
+        "procedureName": "moduleName",
+        "guard": "cond:packages/core/src/functional-map.ts@L323",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/functional-map.ts@L321",
+            "expr": "source === 'workspace'"
+          },
+          {
+            "id": "cond:packages/core/src/functional-map.ts@L323",
+            "expr": "pkg",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b5f3ada3d76f33ae8c8dc9d4876796d4c864c6447fc3c214f3e9a18200675207",
+          "target": "stmt:packages/core/src/functional-map.ts@L323",
+          "line": 323,
+          "expr": "return pkg.name;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/functional-map.ts#moduleName@L315",
+        "procedureName": "moduleName",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:eacfad64fb265f47fe3234302cb274671f250159984164caa1a8aba9c01ec4d2",
+          "target": "stmt:packages/core/src/functional-map.ts@L325",
+          "line": 325,
+          "expr": "return pathPrefix.split('/').pop() || pathPrefix;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": [
+      "packages/core/src/functional-map.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 0,
+    "conditions": 3,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 3,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

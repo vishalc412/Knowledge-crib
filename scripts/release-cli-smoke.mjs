@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-export function smokeCli(cliPath = resolve('packages/cli/dist/cli.js')) {
+export function smokeCli(cliPath = resolve('packages/cli/dist/bin.js')) {
   const projectRoot = mkdtempSync(join(tmpdir(), 'knowledge-crib-cli-smoke-'));
   try {
     writeFileSync(

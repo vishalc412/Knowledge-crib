@@ -1,0 +1,555 @@
+{
+  "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.scopes@L679",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:225a40c952f109a6c32fbe137f320f2d9c63d2694d907f20a1d99809fb443ec5",
+  "builtAt": "2026-06-30T22:32:35.510Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.scopes@L679",
+    "kind": "symbol",
+    "type": "method",
+    "name": "scopes",
+    "qualifiedName": "EnrichmentStore.scopes",
+    "signature": "scopes(): EnrichScopeInfo[]",
+    "lang": "typescript",
+    "file": "packages/mcp/src/enrichment.ts",
+    "span": {
+      "start": 679,
+      "end": 727
+    },
+    "callSites": [
+      {
+        "callee": "iterate",
+        "line": 680
+      },
+      {
+        "callee": "read",
+        "line": 686
+      },
+      {
+        "callee": "add",
+        "line": 687
+      },
+      {
+        "callee": "groupByPathPrefix",
+        "line": 690
+      },
+      {
+        "callee": "sort",
+        "line": 693
+      },
+      {
+        "callee": "groupByPathPrefix",
+        "line": 696
+      },
+      {
+        "callee": "iterate",
+        "line": 699
+      },
+      {
+        "callee": "iterate",
+        "line": 700
+      },
+      {
+        "callee": "map",
+        "line": 702
+      },
+      {
+        "callee": "filter",
+        "line": 704
+      },
+      {
+        "callee": "has",
+        "line": 704
+      },
+      {
+        "callee": "filter",
+        "line": 705
+      },
+      {
+        "callee": "startsWith",
+        "line": 706
+      },
+      {
+        "callee": "filter",
+        "line": 708
+      },
+      {
+        "callee": "some",
+        "line": 709
+      },
+      {
+        "callee": "clusterMembers",
+        "line": 709
+      },
+      {
+        "callee": "startsWith",
+        "line": 710
+      },
+      {
+        "callee": "pop",
+        "line": 713
+      },
+      {
+        "callee": "split",
+        "line": 713
+      },
+      {
+        "callee": "slice",
+        "line": 724
+      },
+      {
+        "callee": "sort",
+        "line": 724
+      },
+      {
+        "callee": "localeCompare",
+        "line": 725
+      }
+    ]
+  },
+  "source": {
+    "text": "  private scopes(): EnrichScopeInfo[] {\n    const symbols = [...this.soul.iterate('symbol')];\n    if (symbols.length === 0) return [];\n\n    // Precompute pending symbol ids once (one disk read per symbol) — scopes() runs once per run.\n    const pendingIds = new Set<string>();\n    for (const s of symbols) {\n      const r = this.read('symbol', s.id, s.hash);\n      if (r.missing || r.stale) pendingIds.add(s.id);\n    }\n\n    const buckets = this.groupByPathPrefix(symbols, 1);\n    if (buckets.length === 0) return [];\n    const total = symbols.length;\n    const largest = [...buckets].sort((a, b) => b.symbols.length - a.symbols.length)[0];\n    const effective =\n      largest && largest.symbols.length > total * 0.8\n        ? this.groupByPathPrefix(symbols, 2)\n        : buckets;\n\n    const files = [...this.soul.iterate('file')];\n    const clusters = [...this.soul.iterate('cluster')];\n\n    const infos = effective.map((bucket) => {\n      const { pathPrefix, symbols: syms } = bucket;\n      const pending = syms.filter((s) => pendingIds.has(s.id)).length;\n      const fileCount = files.filter(\n        (f) => f.file && (f.file === pathPrefix || f.file.startsWith(`${pathPrefix}/`)),\n      ).length;\n      const clusterCount = clusters.filter((c) =>\n        this.clusterMembers(c).some(\n          (m) => m.file && (m.file === pathPrefix || m.file.startsWith(`${pathPrefix}/`)),\n        ),\n      ).length;\n      const label = pathPrefix.split('/').pop() || '(root)';\n      return {\n        pathPrefix,\n        label,\n        pending,\n        symbols: syms.length,\n        files: fileCount,\n        clusters: clusterCount,\n      };\n    });\n\n    return infos\n      .sort((a, b) => b.pending - a.pending || a.pathPrefix.localeCompare(b.pathPrefix))\n      .slice(0, 5);\n  }",
+    "truncated": false,
+    "totalLines": 49,
+    "startLine": 679
+  },
+  "callers": [
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.status@L257",
+      "confidence": 1,
+      "name": "status",
+      "qualifiedName": "EnrichmentStore.status",
+      "signature": "status(args: EnrichStatusArgs = {}): EnrichStatus",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 257
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.clusterMembers@L999",
+      "confidence": 1,
+      "name": "clusterMembers",
+      "qualifiedName": "EnrichmentStore.clusterMembers",
+      "signature": "clusterMembers(cluster: Node): Node[]",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 999
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.groupByPathPrefix@L729",
+      "confidence": 1,
+      "name": "groupByPathPrefix",
+      "qualifiedName": "EnrichmentStore.groupByPathPrefix",
+      "signature": "groupByPathPrefix(symbols: Node[], depth: number): Array<{ pathPrefix: string; symbols: Node[] }>",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 729
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.read@L869",
+      "confidence": 1,
+      "name": "read",
+      "qualifiedName": "EnrichmentStore.read",
+      "signature": "read(layer: EnrichLayer, targetId: string, liveHash: string): LlmRead",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 869
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/mcp/src/enrichment.ts@L673",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#3-1-3-the-scope-picker-graphify-style",
+      "heading": "3.1.3 The Scope Picker (Graphify-Style)",
+      "anchor": "3-1-3-the-scope-picker-graphify-style",
+      "snippet": "3.1.3 The Scope Picker (Graphify-Style)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#3-3-3-scope-picker-for-large-repos",
+      "heading": "3.3.3 Scope Picker for Large Repos",
+      "anchor": "3-3-3-scope-picker-for-large-repos",
+      "snippet": "3.3.3 Scope Picker for Large Repos",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:packages/cli/skills/crib-enrich/SKILL.md#phase-0-the-scope-picker-first-thing-once-per-session",
+      "heading": "Phase 0 — the scope picker (first thing, once per session)",
+      "anchor": "phase-0-the-scope-picker-first-thing-once-per-session",
+      "snippet": "Phase 0 — the scope picker (first thing, once per session)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#what-was-built-3",
+      "heading": "What was built",
+      "anchor": "what-was-built-3",
+      "snippet": "What was built",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#context-symbol",
+      "heading": "`context(symbol)`",
+      "anchor": "context-symbol",
+      "snippet": "`context(symbol)`",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#commands",
+      "heading": "Commands",
+      "anchor": "commands",
+      "snippet": "Commands",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:packages/cli/skills/crib-enrich/SKILL.md#crib-enrich-author-knowledge-crib-s-llm-semantic-graph",
+      "heading": "crib-enrich — author knowledge-crib's LLM semantic graph",
+      "anchor": "crib-enrich-author-knowledge-crib-s-llm-semantic-graph",
+      "snippet": "crib-enrich — author knowledge-crib's LLM semantic graph",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet-agent-a4e92d26a9a50426f.md#component-by-component-check",
+      "heading": "Component-by-component check",
+      "anchor": "component-by-component-check",
+      "snippet": "Component-by-component check",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-architecture.md#3-1-framework-semantics-tier-schema-1-3",
+      "heading": "3.1 Framework-semantics tier (schema 1.3)",
+      "anchor": "3-1-framework-semantics-tier-schema-1-3",
+      "snippet": "3.1 Framework-semantics tier (schema 1.3)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.scopes@L679",
+    "procedureName": "EnrichmentStore.scopes",
+    "conditions": [
+      "cond:packages/mcp/src/enrichment.ts@L681",
+      "cond:packages/mcp/src/enrichment.ts@L685",
+      "cond:packages/mcp/src/enrichment.ts@L687",
+      "cond:packages/mcp/src/enrichment.ts@L691"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.scopes@L679",
+        "procedureName": "EnrichmentStore.scopes",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:34b78bcbdc03894a09d3bac768d60905eab17fcf83c7436df7f9fa7947fa5215",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L680",
+          "line": 680,
+          "expr": "const symbols = [...this.soul.iterate('symbol')];"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.scopes@L679",
+        "procedureName": "EnrichmentStore.scopes",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L681",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L681",
+            "expr": "symbols.length === 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:174c6a2cb8fb5ba4103f3747bd7b2509089bc33dcd7110ee961b56263e8b82a4",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L681",
+          "line": 681,
+          "expr": "return [];"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.scopes@L679",
+        "procedureName": "EnrichmentStore.scopes",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L685",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L685",
+            "expr": "symbols",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:81af81967b0a2bc74db83afae5791375582e5f841e091aee74666bbc481f50b6",
+          "target": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.read@L869",
+          "expr": "read",
+          "line": 686
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.scopes@L679",
+        "procedureName": "EnrichmentStore.scopes",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L685",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L685",
+            "expr": "symbols",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:62bd4052f4d7af0d57822485292c77be0583dd7ec9329b7fc80c984a048ffdbd",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L686",
+          "line": 686,
+          "expr": "const r = this.read('symbol', s.id, s.hash);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.scopes@L679",
+        "procedureName": "EnrichmentStore.scopes",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L687",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L685",
+            "expr": "symbols"
+          },
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L687",
+            "expr": "r.missing || r.stale",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d290caf7b1232494ee08f475faa4bd9febfe64aa0770487fa222483445247305",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L687",
+          "line": 687,
+          "expr": "pendingIds.add(s.id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.scopes@L679",
+        "procedureName": "EnrichmentStore.scopes",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:5e7c58e563681b8922e9342f21d68943bb93f2cbecd8c68e32c193155b440dba",
+          "target": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.groupByPathPrefix@L729",
+          "expr": "groupByPathPrefix",
+          "line": 690
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.scopes@L679",
+        "procedureName": "EnrichmentStore.scopes",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:76d89cc1745bfd6e276293a668f5247dcc431d73066be3b9421f11ca49cdba3c",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L690",
+          "line": 690,
+          "expr": "const buckets = this.groupByPathPrefix(symbols, 1);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.scopes@L679",
+        "procedureName": "EnrichmentStore.scopes",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L691",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L691",
+            "expr": "buckets.length === 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bff3a77129b3dbe68ce0c1ba303748b5754eeda289e5adbc99ec6ed10ef432b5",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L691",
+          "line": 691,
+          "expr": "return [];"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.scopes@L679",
+        "procedureName": "EnrichmentStore.scopes",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:18718e133e334ae15c7f0d47de5b82aa2a54118066e3784314746173135a02f5",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L693",
+          "line": 693,
+          "expr": "const largest = [...buckets].sort((a, b) => b.symbols.length - a.symbols.length)[0];"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.scopes@L679",
+        "procedureName": "EnrichmentStore.scopes",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:67f8134d82ce2d4be280abd03e06a896324f6ff17412ee9fdab5d7fe56f38368",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L694",
+          "line": 694,
+          "expr": "const effective =\n      largest && largest.symbols.length > total * 0.8\n        ? this.groupByPathPrefix(symbols, 2)\n        : buckets;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.scopes@L679",
+        "procedureName": "EnrichmentStore.scopes",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e92020ecea9fb5b26a554147caa953cb96ae903e7194ed039f1691e22189c926",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L699",
+          "line": 699,
+          "expr": "const files = [...this.soul.iterate('file')];"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.scopes@L679",
+        "procedureName": "EnrichmentStore.scopes",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:53f95de2587dcdb439255a61fa86834cee8d7df248d37969c997b63bd47e9579",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L700",
+          "line": 700,
+          "expr": "const clusters = [...this.soul.iterate('cluster')];"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.scopes@L679",
+        "procedureName": "EnrichmentStore.scopes",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:87d96e3e4c946941cafb37eda0e56258f71ce8faba94298d1a1d1d2f17d7d369",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L702",
+          "line": 702,
+          "expr": "const infos = effective.map((bucket) => {\n      const { pathPrefix, symbols: syms } = bucket;\n      const pending = syms.filter((s) => pendingIds.has(s.id)).length;\n      const fileCount = files.filter(\n        (f) => f.file && (f.file === pathPrefix || f.file.startsWith(`${pathPrefix}/`)),\n      ).length;\n      const clusterCount = clusters.filter((c) =>\n        this.clusterMembers(c).some(\n          (m) => m.file && (m.file === pathPrefix || m.file.startsWith(`${pathPrefix}/`)),\n        ),\n      ).length;\n      const label = pathPrefix.split('/').pop() || '(root)';\n      return {\n        pathPrefix,\n        label,\n        pending,\n        symbols: syms.length,\n        files: fileCount,\n        clusters: clusterCount,\n      };\n    });"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.scopes@L679",
+        "procedureName": "EnrichmentStore.scopes",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:6873c39455f2c9e84d292b9abf340d609ba1de1abd0a39aae3b5c8fa635cb1b8",
+          "target": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.clusterMembers@L999",
+          "expr": "clusterMembers",
+          "line": 709
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.scopes@L679",
+        "procedureName": "EnrichmentStore.scopes",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:31416fd80481404f2d148639678da557f3b31a5ccc5012d274671574edc97ec3",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L724",
+          "line": 724,
+          "expr": "return infos\n      .sort((a, b) => b.pending - a.pending || a.pathPrefix.localeCompare(b.pathPrefix))\n      .slice(0, 5);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 12,
+    "referencedByFiles": [
+      "packages/mcp/src/enrichment.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 12,
+    "assignments": 0,
+    "conditions": 4,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 3,
+      "recorded": 22,
+      "unresolved": 12
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "12 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

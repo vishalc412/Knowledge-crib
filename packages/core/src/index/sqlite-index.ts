@@ -1,28 +1,36 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { DatabaseSync } from 'node:sqlite';
 import type { Edge, Node, NodeKind, Rel } from '@knowledge-crib/soul-schema';
+import { cosine, decodeVec, encodeVec } from '../embeddings/char-ngram.js';
+import type { Embedder } from '../embeddings/types.js';
 /**
  * SqliteIndexStore — the default IndexStore backend (M1).
  *
- * better-sqlite3 + FTS5 (BM25 ranking) + materialized adjacency, so `impact`/`neighbors`/
- * `shortestPath` are O(degree) graph walks over indexed `edges(src)` / `edges(dst)`. No vector
- * index ships — `capabilities().vector=false` unconditionally. The INFERRED "semantic" layer is the
- * M7 pure-JS TF-IDF linker (pipeline `runSemanticLink`, gated by `IndexOpts.semantic` / CLI
- * `--semantic`), which emits capped `references` edges — it is not a vector ANN path and stays off
+ * Built-in `node:sqlite` + FTS5 (BM25 ranking) + materialized adjacency, so
+ * `impact`/`neighbors`/`shortestPath` are O(degree) graph walks over indexed
+ * `edges(src)` / `edges(dst)`. No vector index ships — `capabilities().vector=false`
+ * unconditionally. The INFERRED "semantic" layer is the M7 pure-JS TF-IDF linker
+ * (pipeline `runSemanticLink`, gated by `IndexOpts.semantic` / CLI `--semantic`),
+ * which emits capped `references` edges — it is not a vector ANN path and stays off
  * the deterministic query hot path.
  *
- * The FTS5 `body` column is a SEARCH-ONLY projection: at build/delta time each node's span is
- * rehydrated from `repoRoot` on disk (capped at BODY_FTS_CAP chars) and folded together with the
- * in-soul logic fragments (`expr`/`cursorQuery`/`whenSelector`/`errorMessage`/`assignTarget`) so a
- * query can match rule *content* (e.g. "DTI > 0.43"), not just names/signatures. The body text is
- * NEVER surfaced from `query` — `query` returns ids/scores only; deep body retrieval is
- * `rehydrateBody` (with its own `truncated` flag) via the `source`/`context`/`dossier` verbs. So the
- * body column carries no honesty flag of its own: the cap is a build-time constant and the
- * surfaced body's truncation discipline lives in `rehydrateBody`. The soul stays lean — body text
- * lives only in this derived index, never in the soul.
+ * Using Node's built-in `node:sqlite` removes the native `better-sqlite3` build
+ * dependency, so `pnpm install` works on a fresh machine without Xcode / CLT /
+ * Python / node-gyp. Requires Node.js >= 22.5.0 (stable `node:sqlite`).
+ *
+ * The FTS5 `body` column is a SEARCH-ONLY projection: at build/delta time each node's
+ * span is rehydrated from `repoRoot` on disk (capped at BODY_FTS_CAP chars) and folded
+ * together with the in-soul logic fragments (`expr`/`cursorQuery`/`whenSelector`/
+ * `errorMessage`/`assignTarget`) so a query can match rule *content*
+ * (e.g. "DTI > 0.43"), not just names/signatures. The body text is NEVER surfaced
+ * from `query` — `query` returns ids/scores only; deep body retrieval is
+ * `rehydrateBody` (with its own `truncated` flag) via the `source`/`context`/
+ * `dossier` verbs. So the body column carries no honesty flag of its own: the cap is
+ * a build-time constant and the surfaced body's truncation discipline lives in
+ * `rehydrateBody`. The soul stays lean — body text lives only in this derived index,
+ * never in the soul.
  */
-import Database from 'better-sqlite3';
-import type { Database as DB } from 'better-sqlite3';
 import type {
   Dir,
   Hit,
@@ -34,9 +42,46 @@ import type {
   PathResult,
 } from '../index-store.js';
 import type { SoulStore } from '../soul-store.js';
+import { rerank } from './rerank.js';
+import type { RerankCandidate } from './rerank.js';
+import { expandToken } from './synonyms.js';
 
 /** Columns we feed into FTS5 for free-text search over symbols + doc sections + bodies. */
 const FTS_COLUMNS = 'name, qualifiedName, signature, heading, file, body';
+
+/** The text embedded per node for the vector retriever (M2.1). Surface fields only — no body. */
+function vectorText(node: Node): string {
+  return [node.name, node.qualifiedName, node.signature, node.heading, node.file]
+    .filter((s): s is string => typeof s === 'string' && s.length > 0)
+    .join(' ');
+}
+
+/** Reciprocal-rank fusion (RRF) of two retriever rankings. k=60 is the standard constant. */
+const RRF_K = 60;
+function rrfFuse(bm25: Hit[], vec: Hit[]): Hit[] {
+  const score = new Map<string, number>();
+  const meta = new Map<string, Hit>();
+  const add = (hits: Hit[]) => {
+    for (let i = 0; i < hits.length; i++) {
+      const h = hits[i]!;
+      const rank = i + 1;
+      score.set(h.id, (score.get(h.id) ?? 0) + 1 / (RRF_K + rank));
+      if (!meta.has(h.id)) meta.set(h.id, h);
+    }
+  };
+  add(bm25);
+  add(vec);
+  const ranked = [...score.entries()].sort((a, b) => b[1] - a[1]);
+  return ranked.map(([id, s]) => {
+    const h = meta.get(id)!;
+    return { id: h.id, kind: h.kind, score: s, name: h.name, file: h.file };
+  });
+}
+
+/** Round to 5 decimals so RRF scores don't carry float noise into deterministic snapshots. */
+function round5(n: number): number {
+  return Math.round(n * 1e5) / 1e5;
+}
 
 /**
  * Per-node char cap for the FTS `body` column. Generous enough that a typical procedure/DDL body is
@@ -49,44 +94,109 @@ const BODY_FTS_CAP = 8192;
 type FileLineCache = Map<string, string[] | undefined>;
 
 export class SqliteIndexStore implements IndexStore {
-  private readonly db: DB;
+  private readonly db: DatabaseSync;
+  /** When set, `buildFromSoul` embeds every node and `query` fuses BM25 ∪ vector via RRF. */
+  private readonly embedder: Embedder | null;
+  /** The embedder id used for the last build, or null if no vectors were built. */
+  private builtEmbedderId: string | null = null;
+  private builtDim = 0;
 
   /**
    * @param path file path for the sqlite db, or ':memory:' for an ephemeral index.
+   * @param opts.embedder when provided, vectors are built at index time and `query` runs RRF hybrid
+   *   fusion; `capabilities().vector` becomes true. When null/omitted, the store is pure BM25 — the
+   *   backward-compatible default. The caller resolves any external provider (async) and passes the
+   *   instance in, keeping `buildFromSoul` synchronous.
    */
-  constructor(path = ':memory:') {
-    this.db = new Database(path);
-    this.db.pragma('journal_mode = WAL');
-    this.db.pragma('foreign_keys = OFF');
+  constructor(path = ':memory:', opts: { embedder?: Embedder | null } = {}) {
+    this.db = new DatabaseSync(path);
+    this.db.exec('PRAGMA journal_mode = WAL');
+    this.db.exec('PRAGMA foreign_keys = OFF');
+    this.embedder = opts.embedder ?? null;
     this.createSchema();
   }
 
   buildFromSoul(soul: SoulStore, repoRoot: string): void {
     this.reset();
     const fileCache: FileLineCache = new Map();
-    const insertMany = this.db.transaction(() => {
+    const insertMany = this.transaction(() => {
       for (const node of soul.iterate()) this.insertNode(node, repoRoot, fileCache);
       for (const edge of soul.iterateEdges()) this.insertEdge(edge);
     });
     insertMany();
+    if (this.embedder) this.buildVectors(soul);
   }
 
   applyDelta(changed: IndexDelta, repoRoot: string): void {
     const fileCache: FileLineCache = new Map();
-    const apply = this.db.transaction(() => {
+    const apply = this.transaction(() => {
       for (const id of changed.removed) {
         this.db.prepare('DELETE FROM nodes WHERE id = ?').run(id);
         this.db.prepare('DELETE FROM nodes_fts WHERE id = ?').run(id);
+        this.db.prepare('DELETE FROM vectors WHERE id = ?').run(id);
         this.db.prepare('DELETE FROM edges WHERE id = ?').run(id);
       }
       for (const node of changed.nodes) this.insertNode(node, repoRoot, fileCache);
       for (const edge of changed.edges) this.insertEdge(edge);
+      if (this.embedder) {
+        const upsertVec = this.db.prepare(
+          'INSERT OR REPLACE INTO vectors (id, vec, dim) VALUES (?, ?, ?)',
+        );
+        for (const node of changed.nodes) {
+          const v = this.embedder.embed(vectorText(node));
+          upsertVec.run(node.id, Buffer.from(encodeVec(v)), v.length);
+        }
+      }
     });
     apply();
   }
 
   query(q: HybridQuery): Hit[] {
     const limit = q.limit ?? 10;
+    const offset = q.offset ?? 0;
+    const wantSemantic = q.semantic !== false && this.builtEmbedderId !== null;
+    if (!wantSemantic) return this.bm25Query(q, limit, offset);
+    // M2.1 — RRF hybrid fusion of BM25 ∪ vector retrieval. Vectors generalize across the
+    // case/affix/paraphrase gaps exact-match BM25 misses; RRF merges ranks without needing
+    // comparable score scales. `score` returned is the RRF score (higher = better).
+    //
+    // M2.2 — after fusion, a deterministic structural prior (centrality × stereotype-match ×
+    // per-intent kind prior) multiplies the RRF score and re-sorts. The prior anchors BM25-found
+    // relevant docs so vector noise can't push them below rank 10 (the java -10.5pp case). Offset
+    // is applied AFTER fusion+rerank so paging stays consistent with the reranked order.
+    const pool = Math.max(limit * 5, 50);
+    const bm25Hits = this.bm25Query(q, pool, 0);
+    const vecHits = this.vectorQuery(q.text, pool, q.kinds);
+    const fused = rrfFuse(bm25Hits, vecHits);
+    if (q.rerank !== false) {
+      const degrees = this.degreesFor(fused.map((h) => h.id));
+      const candidates: RerankCandidate[] = fused.map((h) => ({
+        id: h.id,
+        kind: h.kind,
+        name: h.name ?? null,
+        file: h.file ?? null,
+        rrfScore: h.score,
+        degree: degrees.get(h.id) ?? 0,
+      }));
+      return rerank(candidates, q.text, limit, offset);
+    }
+    return fused.slice(offset, offset + limit).map((h) => ({ ...h, score: round5(h.score) }));
+  }
+
+  /** Total in+out edge count per node id — the centrality signal for M2.2 rerank. Indexed lookups. */
+  private degreesFor(ids: string[]): Map<string, number> {
+    const out = new Map<string, number>();
+    if (ids.length === 0) return out;
+    const stmt = this.db.prepare('SELECT COUNT(*) AS n FROM edges WHERE src = ? OR dst = ?');
+    for (const id of ids) {
+      const row = stmt.get(id, id) as { n: number };
+      out.set(id, row.n);
+    }
+    return out;
+  }
+
+  /** Pure BM25 projection (FTS5). Lower `score` = better. */
+  private bm25Query(q: HybridQuery, limit: number, offset: number): Hit[] {
     const match = toFtsMatch(q.text);
     if (!match) return [];
     const kindFilter = q.kinds?.length
@@ -99,9 +209,9 @@ export class SqliteIndexStore implements IndexStore {
          JOIN nodes n ON n.id = nodes_fts.id
          WHERE nodes_fts MATCH ?${kindFilter}
          ORDER BY score ASC
-         LIMIT ?`,
+         LIMIT ? OFFSET ?`,
       )
-      .all(match, ...(q.kinds ?? []), limit) as Array<{
+      .all(match, ...(q.kinds ?? []), limit, offset) as Array<{
       id: string;
       kind: NodeKind;
       name: string | null;
@@ -115,6 +225,79 @@ export class SqliteIndexStore implements IndexStore {
       ...(r.name != null ? { name: r.name } : {}),
       ...(r.file != null ? { file: r.file } : {}),
     }));
+  }
+
+  /**
+   * Brute-force cosine ANN over the derived `vectors` table (M2.1). No native vector extension —
+   * the float32 vectors live as BLOBs in the existing `node:sqlite` index, scanned in one pass.
+   * For 18k nodes this is sub-millisecond; M3.6's ≥1M-LOC scale bench decides whether to graduate
+   * to sqlite-vec / sharded loading. `score` = cosine similarity (higher = better).
+   */
+  private vectorQuery(text: string, limit: number, kinds?: NodeKind[]): Hit[] {
+    if (!this.embedder || this.builtDim === 0) return [];
+    const qvec = this.embedder.embed(text);
+    const kindSet = kinds?.length ? new Set(kinds) : undefined;
+    const rows = this.db
+      .prepare('SELECT v.id AS id, v.vec AS vec FROM vectors v WHERE v.dim = ?')
+      .all(this.builtDim) as Array<{ id: string; vec: Uint8Array }>;
+    const scored: Array<{ id: string; score: number }> = [];
+    for (const r of rows) {
+      const v = decodeVec(r.vec, this.builtDim);
+      const sim = cosine(qvec, v);
+      if (sim <= 0) continue;
+      scored.push({ id: r.id, score: sim });
+    }
+    scored.sort((a, b) => b.score - a.score);
+    const top = scored.slice(0, limit);
+    if (top.length === 0) return [];
+    const scoreById = new Map(top.map((s) => [s.id, s.score]));
+    const metaRows = this.db
+      .prepare(
+        `SELECT id, kind, name, file FROM nodes WHERE id IN (${top.map(() => '?').join(',')})`,
+      )
+      .all(...top.map((s) => s.id)) as Array<{
+      id: string;
+      kind: NodeKind;
+      name: string | null;
+      file: string | null;
+    }>;
+    const meta = new Map(metaRows.map((r) => [r.id, r]));
+    if (kindSet) {
+      for (const r of metaRows) if (!kindSet.has(r.kind)) meta.delete(r.id);
+    }
+    return top
+      .map((s) => meta.get(s.id))
+      .filter((r): r is NonNullable<typeof r> => r !== undefined)
+      .map((r) => ({
+        id: r.id,
+        kind: r.kind,
+        score: scoreById.get(r.id)!,
+        ...(r.name != null ? { name: r.name } : {}),
+        ...(r.file != null ? { file: r.file } : {}),
+      }));
+  }
+
+  /**
+   * Embed every node into the `vectors` table. Uses only the in-soul surface fields (name +
+   * qualifiedName + signature + heading + file) — NOT the rehydrated body — so the build is fast,
+   * deterministic, and aligned with the conceptual-query mechanism (paraphrases match the *name*
+   * surface). The body is already in FTS5 for exact-content matches.
+   */
+  private buildVectors(soul: SoulStore): void {
+    if (!this.embedder) return;
+    const e = this.embedder;
+    this.builtDim = e.dim();
+    this.builtEmbedderId = e.id;
+    const upsert = this.db.prepare(
+      'INSERT OR REPLACE INTO vectors (id, vec, dim) VALUES (?, ?, ?)',
+    );
+    const insertMany = this.transaction(() => {
+      for (const node of soul.iterate()) {
+        const v = e.embed(vectorText(node));
+        upsert.run(node.id, Buffer.from(encodeVec(v)), v.length);
+      }
+    });
+    insertMany();
   }
 
   impact(id: string, dir: Dir, depth = Number.POSITIVE_INFINITY): ImpactResult {
@@ -183,12 +366,12 @@ export class SqliteIndexStore implements IndexStore {
   }
 
   capabilities(): IndexCapabilities {
-    return { cypher: false, vector: false };
+    return { cypher: false, vector: this.builtEmbedderId !== null };
   }
 
   close(): void {
     try {
-      this.db.pragma('wal_checkpoint(TRUNCATE)');
+      this.db.exec('PRAGMA wal_checkpoint(TRUNCATE)');
     } catch {
       // Best effort: in-memory/closing handles may not need or accept a checkpoint.
     }
@@ -226,6 +409,26 @@ export class SqliteIndexStore implements IndexStore {
       json: string;
     }>;
     return rows.map((r) => JSON.parse(r.json) as Edge);
+  }
+
+  /**
+   * Wrap a callback in BEGIN ... COMMIT / ROLLBACK.
+   * `node:sqlite` has no built-in `transaction()` helper, so we provide the same
+   * synchronous, all-or-nothing semantics that `better-sqlite3` offered. The
+   * current call sites never nest transactions, so a flat BEGIN is sufficient.
+   */
+  private transaction<T>(fn: () => T): () => T {
+    return () => {
+      this.db.exec('BEGIN');
+      try {
+        const result = fn();
+        this.db.exec('COMMIT');
+        return result;
+      } catch (err) {
+        this.db.exec('ROLLBACK');
+        throw err;
+      }
+    };
   }
 
   private insertNode(node: Node, repoRoot: string, fileCache: FileLineCache): void {
@@ -285,6 +488,11 @@ export class SqliteIndexStore implements IndexStore {
       CREATE VIRTUAL TABLE IF NOT EXISTS nodes_fts USING fts5(
         id UNINDEXED, name, qualifiedName, signature, heading, file, body
       );
+      CREATE TABLE IF NOT EXISTS vectors (
+        id TEXT PRIMARY KEY,
+        vec BLOB NOT NULL,
+        dim INTEGER NOT NULL
+      );
     `);
   }
 
@@ -295,23 +503,29 @@ export class SqliteIndexStore implements IndexStore {
     // so dropping here is semantically the same as the old row-delete and is safe.
     this.db.exec(`
       DROP TABLE IF EXISTS nodes_fts;
+      DROP TABLE IF EXISTS vectors;
       DROP TABLE IF EXISTS edges;
       DROP TABLE IF EXISTS nodes;
     `);
+    this.builtEmbedderId = null;
+    this.builtDim = 0;
     this.createSchema();
   }
 }
 
 /**
- * Turn a user query into a safe FTS5 MATCH expression: each alphanumeric token becomes a prefix
- * match, OR-joined. Returns undefined if the query has no usable tokens.
+ * Turn a user query into a safe FTS5 MATCH expression: each alphanumeric token (plus its synonym
+ * group, when one exists — the lightweight hybrid layer, see synonyms.ts) becomes a prefix match,
+ * OR-joined. Returns undefined if the query has no usable tokens.
  */
 function toFtsMatch(text: string): string | undefined {
-  const tokens = text
-    .split(/[^A-Za-z0-9_]+/)
-    .filter((t) => t.length > 0)
-    .map((t) => `"${t}"*`);
-  return tokens.length > 0 ? tokens.join(' OR ') : undefined;
+  const rawTokens = text.split(/[^A-Za-z0-9_]+/).filter((t) => t.length > 0);
+  if (rawTokens.length === 0) return undefined;
+  const expanded = new Set<string>();
+  for (const t of rawTokens) {
+    for (const e of expandToken(t)) expanded.add(e);
+  }
+  return [...expanded].map((t) => `"${t}"*`).join(' OR ');
 }
 
 /**

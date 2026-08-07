@@ -1,0 +1,749 @@
+{
+  "id": "sym:scripts/install-smoke.mjs#smokeInstall@L135",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:75171c3fda2699b4fe2590498089470f6c6f3d39d1af65c0b1d3950c661e2f02",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:scripts/install-smoke.mjs#smokeInstall@L135",
+    "kind": "symbol",
+    "type": "function",
+    "name": "smokeInstall",
+    "qualifiedName": "smokeInstall",
+    "signature": "smokeInstall({ outRoot = join(repoRoot, 'dist', 'installers') } = {})",
+    "lang": "javascript",
+    "file": "scripts/install-smoke.mjs",
+    "span": {
+      "start": 135,
+      "end": 186
+    },
+    "callSites": [
+      {
+        "callee": "findInstallerBundle",
+        "line": 136
+      },
+      {
+        "callee": "parse",
+        "line": 138
+      },
+      {
+        "callee": "readFileSync",
+        "line": 138
+      },
+      {
+        "callee": "map",
+        "line": 140
+      },
+      {
+        "callee": "join",
+        "line": 140
+      },
+      {
+        "callee": "mkdtempSync",
+        "line": 146
+      },
+      {
+        "callee": "join",
+        "line": 146
+      },
+      {
+        "callee": "tmpdir",
+        "line": 146
+      },
+      {
+        "callee": "installerCommand",
+        "line": 148
+      },
+      {
+        "callee": "run",
+        "line": 149
+      },
+      {
+        "callee": "expectedBinPaths",
+        "line": 153
+      },
+      {
+        "callee": "installedBinCommand",
+        "line": 158
+      },
+      {
+        "callee": "run",
+        "line": 159
+      },
+      {
+        "callee": "run",
+        "line": 161
+      },
+      {
+        "callee": "join",
+        "line": 164
+      },
+      {
+        "callee": "mkdirSync",
+        "line": 165
+      },
+      {
+        "callee": "join",
+        "line": 165
+      },
+      {
+        "callee": "writeFileSync",
+        "line": 166
+      },
+      {
+        "callee": "join",
+        "line": 167
+      },
+      {
+        "callee": "stringify",
+        "line": 168
+      },
+      {
+        "callee": "writeFileSync",
+        "line": 170
+      },
+      {
+        "callee": "join",
+        "line": 171
+      },
+      {
+        "callee": "run",
+        "line": 175
+      },
+      {
+        "callee": "validateSmokeStatus",
+        "line": 176
+      },
+      {
+        "callee": "parse",
+        "line": 177
+      },
+      {
+        "callee": "runCapture",
+        "line": 177
+      },
+      {
+        "callee": "write",
+        "line": 179
+      },
+      {
+        "callee": "rmSync",
+        "line": 184
+      }
+    ]
+  },
+  "source": {
+    "text": "export function smokeInstall({ outRoot = join(repoRoot, 'dist', 'installers') } = {}) {\n  const bundle = findInstallerBundle(outRoot);\n\n  const manifest = JSON.parse(readFileSync(bundle.manifestPath, 'utf8'));\n  const packageNames = manifest.packages ?? [manifest.package];\n  const tarballs = packageNames.map((name) => join(bundle.bundleDir, name));\n  for (const tarball of tarballs) {\n    if (!existsSync(tarball))\n      throw new Error(`Installer bundle is missing package tarball: ${tarball}`);\n  }\n\n  const prefix = mkdtempSync(join(tmpdir(), 'knowledge-crib-install-'));\n  try {\n    const installer = installerCommand(bundle.bundleDir);\n    run(installer.command, installer.args, {\n      env: { ...process.env, npm_config_prefix: prefix },\n    });\n\n    const bins = expectedBinPaths(prefix);\n    if (!existsSync(bins.direct)) {\n      throw new Error(`Installed package did not contain its CLI entry point at ${bins.direct}`);\n    }\n    if (existsSync(bins.primary)) {\n      const invocation = installedBinCommand(bins.primary);\n      run(invocation.command, invocation.args);\n    } else {\n      run(process.execPath, [bins.direct, '--help']);\n    }\n\n    const projectRoot = join(prefix, 'smoke-project');\n    mkdirSync(join(projectRoot, 'src'), { recursive: true });\n    writeFileSync(\n      join(projectRoot, 'package.json'),\n      `${JSON.stringify({ name: 'installed-package-smoke', private: true, type: 'module' }, null, 2)}\\n`,\n    );\n    writeFileSync(\n      join(projectRoot, 'src', 'math.ts'),\n      'export function triple(value: number): number {\\n  return value * 3;\\n}\\n',\n    );\n\n    run(process.execPath, [bins.direct, 'index', projectRoot]);\n    const status = validateSmokeStatus(\n      JSON.parse(runCapture(process.execPath, [bins.direct, 'status', projectRoot])),\n    );\n    process.stdout.write(\n      `installer smoke ok - installed ${manifest.package}; indexed ${status.stats.nodes} nodes\\n`,\n    );\n    return status;\n  } finally {\n    rmSync(prefix, { recursive: true, force: true });\n  }\n}",
+    "truncated": false,
+    "totalLines": 52,
+    "startLine": 135
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:scripts/install-smoke.mjs#expectedBinPaths@L20",
+      "confidence": 1,
+      "name": "expectedBinPaths",
+      "qualifiedName": "expectedBinPaths",
+      "signature": "expectedBinPaths(prefix, platform = process.platform)",
+      "type": "function",
+      "file": "scripts/install-smoke.mjs",
+      "line": 20
+    },
+    {
+      "id": "sym:scripts/install-smoke.mjs#findInstallerBundle@L67",
+      "confidence": 1,
+      "name": "findInstallerBundle",
+      "qualifiedName": "findInstallerBundle",
+      "signature": "findInstallerBundle(outRoot = join(repoRoot, 'dist', 'installers'))",
+      "type": "function",
+      "file": "scripts/install-smoke.mjs",
+      "line": 67
+    },
+    {
+      "id": "sym:scripts/install-smoke.mjs#installedBinCommand@L38",
+      "confidence": 1,
+      "name": "installedBinCommand",
+      "qualifiedName": "installedBinCommand",
+      "signature": "installedBinCommand(bin, platform = process.platform, env = process.env)",
+      "type": "function",
+      "file": "scripts/install-smoke.mjs",
+      "line": 38
+    },
+    {
+      "id": "sym:scripts/install-smoke.mjs#installerCommand@L49",
+      "confidence": 1,
+      "name": "installerCommand",
+      "qualifiedName": "installerCommand",
+      "signature": "installerCommand(bundleDir, platform = process.platform)",
+      "type": "function",
+      "file": "scripts/install-smoke.mjs",
+      "line": 49
+    },
+    {
+      "id": "sym:packages/pipeline/fixtures/plain-js/src/legacy.cjs#parse@L4",
+      "confidence": 1,
+      "name": "parse",
+      "qualifiedName": "parse",
+      "signature": "parse(input)",
+      "type": "function",
+      "file": "packages/pipeline/fixtures/plain-js/src/legacy.cjs",
+      "line": 4
+    },
+    {
+      "id": "sym:scripts/release-verify.mjs#run@L3",
+      "confidence": 1,
+      "name": "run",
+      "qualifiedName": "run",
+      "signature": "run(cmd, args, opts = {})",
+      "type": "function",
+      "file": "scripts/release-verify.mjs",
+      "line": 3
+    },
+    {
+      "id": "sym:scripts/install-smoke.mjs#run@L88",
+      "confidence": 1,
+      "name": "run",
+      "qualifiedName": "run",
+      "signature": "run(cmd, args, opts = {})",
+      "type": "function",
+      "file": "scripts/install-smoke.mjs",
+      "line": 88
+    },
+    {
+      "id": "sym:scripts/install-smoke.mjs#runCapture@L93",
+      "confidence": 1,
+      "name": "runCapture",
+      "qualifiedName": "runCapture",
+      "signature": "runCapture(cmd, args, opts = {})",
+      "type": "function",
+      "file": "scripts/install-smoke.mjs",
+      "line": 93
+    },
+    {
+      "id": "sym:scripts/install-smoke.mjs#validateSmokeStatus@L102",
+      "confidence": 1,
+      "name": "validateSmokeStatus",
+      "qualifiedName": "validateSmokeStatus",
+      "signature": "validateSmokeStatus(status)",
+      "type": "function",
+      "file": "scripts/install-smoke.mjs",
+      "line": 102
+    },
+    {
+      "id": "sym:packages/cli/src/hooks.test.ts#write@L54",
+      "confidence": 1,
+      "name": "write",
+      "qualifiedName": "write",
+      "signature": "write(path: string, records: Array<Record<string, unknown>>): void",
+      "type": "function",
+      "file": "packages/cli/src/hooks.test.ts",
+      "line": 54
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:scripts/install-smoke.mjs#smokeInstall@L135",
+    "procedureName": "smokeInstall",
+    "conditions": [
+      "cond:scripts/install-smoke.mjs@L157"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:scripts/install-smoke.mjs#smokeInstall@L135",
+        "procedureName": "smokeInstall",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:687cce97b91deeaa9aadf62d84f7964c44d60f98f51f180fb4719020150e5275",
+          "target": "stmt:scripts/install-smoke.mjs@L136",
+          "line": 136,
+          "expr": "const bundle = findInstallerBundle(outRoot);"
+        }
+      },
+      {
+        "procedure": "sym:scripts/install-smoke.mjs#smokeInstall@L135",
+        "procedureName": "smokeInstall",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:f6ab5e0cf785fa1869d32a332b761bb2015e147f71ec0bd205c587b8facecd69",
+          "target": "sym:scripts/install-smoke.mjs#findInstallerBundle@L67",
+          "expr": "findInstallerBundle",
+          "line": 136
+        }
+      },
+      {
+        "procedure": "sym:scripts/install-smoke.mjs#smokeInstall@L135",
+        "procedureName": "smokeInstall",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:85862ab31d386d4c7716ae67c5783e8b9f35620ad93d07efe1443b583fb07c48",
+          "target": "stmt:scripts/install-smoke.mjs@L138",
+          "line": 138,
+          "expr": "const manifest = JSON.parse(readFileSync(bundle.manifestPath, 'utf8'));"
+        }
+      },
+      {
+        "procedure": "sym:scripts/install-smoke.mjs#smokeInstall@L135",
+        "procedureName": "smokeInstall",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:eb12c82f0a9e5d6cf91b5ab3bb99ca38156078c1efd19df261c13f4f9a5786d3",
+          "target": "sym:packages/pipeline/fixtures/plain-js/src/legacy.cjs#parse@L4",
+          "expr": "parse",
+          "line": 138
+        }
+      },
+      {
+        "procedure": "sym:scripts/install-smoke.mjs#smokeInstall@L135",
+        "procedureName": "smokeInstall",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e18c4999c24ffff1196e08ae883100044e3b3e374ec872a426002c4f2fc08b47",
+          "target": "stmt:scripts/install-smoke.mjs@L140",
+          "line": 140,
+          "expr": "const tarballs = packageNames.map((name) => join(bundle.bundleDir, name));"
+        }
+      },
+      {
+        "procedure": "sym:scripts/install-smoke.mjs#smokeInstall@L135",
+        "procedureName": "smokeInstall",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a5174faf0ab060eb99a678d71bca465cdbf61ab95eb2b01904eade1ebb3a4e85",
+          "target": "stmt:scripts/install-smoke.mjs@L146",
+          "line": 146,
+          "expr": "const prefix = mkdtempSync(join(tmpdir(), 'knowledge-crib-install-'));"
+        }
+      },
+      {
+        "procedure": "sym:scripts/install-smoke.mjs#smokeInstall@L135",
+        "procedureName": "smokeInstall",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:1dc7cd34baed6488bcf055ee5b900d7c59604f5e4f700654b50bdbbcda68506e",
+          "target": "sym:scripts/install-smoke.mjs#installerCommand@L49",
+          "expr": "installerCommand",
+          "line": 148
+        }
+      },
+      {
+        "procedure": "sym:scripts/install-smoke.mjs#smokeInstall@L135",
+        "procedureName": "smokeInstall",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:dd604d1d5f74d36abc1a5d4cf2ef3010d1579660de89331ebf49adb809fb7e25",
+          "target": "stmt:scripts/install-smoke.mjs@L148",
+          "line": 148,
+          "expr": "const installer = installerCommand(bundle.bundleDir);"
+        }
+      },
+      {
+        "procedure": "sym:scripts/install-smoke.mjs#smokeInstall@L135",
+        "procedureName": "smokeInstall",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1861f67a44d5668efe76abbdd42450da844b525e396342d61619ce9af64ddc26",
+          "target": "stmt:scripts/install-smoke.mjs@L149",
+          "line": 149,
+          "expr": "run(installer.command, installer.args, {\n      env: { ...process.env, npm_config_prefix: prefix },\n    });"
+        }
+      },
+      {
+        "procedure": "sym:scripts/install-smoke.mjs#smokeInstall@L135",
+        "procedureName": "smokeInstall",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:595a5a0e825edd83a86666fd0a209d44ed0400c122de9f4eb804de6e240c2f0c",
+          "target": "sym:scripts/release-verify.mjs#run@L3",
+          "expr": "run",
+          "line": 149
+        }
+      },
+      {
+        "procedure": "sym:scripts/install-smoke.mjs#smokeInstall@L135",
+        "procedureName": "smokeInstall",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:9f21775b20ab6ac1cfe713fabe4984c1e00b1f3b7417ca91e42ec684b5aa04f6",
+          "target": "sym:scripts/install-smoke.mjs#run@L88",
+          "expr": "run",
+          "line": 149
+        }
+      },
+      {
+        "procedure": "sym:scripts/install-smoke.mjs#smokeInstall@L135",
+        "procedureName": "smokeInstall",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:cd2f2d4d93adef518aa683d0644fa922e2f4c427f9745e1520ffd355877a7313",
+          "target": "sym:scripts/install-smoke.mjs#expectedBinPaths@L20",
+          "expr": "expectedBinPaths",
+          "line": 153
+        }
+      },
+      {
+        "procedure": "sym:scripts/install-smoke.mjs#smokeInstall@L135",
+        "procedureName": "smokeInstall",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fc9b883fc5a4035344e5f4cb79109d973f277f438fdd3e372f8df2074ec28ee8",
+          "target": "stmt:scripts/install-smoke.mjs@L153",
+          "line": 153,
+          "expr": "const bins = expectedBinPaths(prefix);"
+        }
+      },
+      {
+        "procedure": "sym:scripts/install-smoke.mjs#smokeInstall@L135",
+        "procedureName": "smokeInstall",
+        "guard": "cond:scripts/install-smoke.mjs@L157",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:scripts/install-smoke.mjs@L157",
+            "expr": "existsSync(bins.primary)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:0e54564cde5952ff18fa5f5bcde81e02e3b9ca39d23104949af7d1c2ef93ebab",
+          "target": "sym:scripts/install-smoke.mjs#installedBinCommand@L38",
+          "expr": "installedBinCommand",
+          "line": 158
+        }
+      },
+      {
+        "procedure": "sym:scripts/install-smoke.mjs#smokeInstall@L135",
+        "procedureName": "smokeInstall",
+        "guard": "cond:scripts/install-smoke.mjs@L157",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:scripts/install-smoke.mjs@L157",
+            "expr": "existsSync(bins.primary)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2e5bcc030182276cf80215bc64d17ccacbafac9359d4a4fe08c1cf8e1c56fa02",
+          "target": "stmt:scripts/install-smoke.mjs@L158",
+          "line": 158,
+          "expr": "const invocation = installedBinCommand(bins.primary);"
+        }
+      },
+      {
+        "procedure": "sym:scripts/install-smoke.mjs#smokeInstall@L135",
+        "procedureName": "smokeInstall",
+        "guard": "cond:scripts/install-smoke.mjs@L157",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:scripts/install-smoke.mjs@L157",
+            "expr": "existsSync(bins.primary)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:924aa95fd542caeb892ec0a56c937d0f95a387b51e045009dd69e896dacde0b4",
+          "target": "stmt:scripts/install-smoke.mjs@L159",
+          "line": 159,
+          "expr": "run(invocation.command, invocation.args);"
+        }
+      },
+      {
+        "procedure": "sym:scripts/install-smoke.mjs#smokeInstall@L135",
+        "procedureName": "smokeInstall",
+        "guard": "cond:scripts/install-smoke.mjs@L157",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:scripts/install-smoke.mjs@L157",
+            "expr": "existsSync(bins.primary)",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:42458df72dca1471faff1d767c0bcd3e3b136e8006dbe5eb8787c46f24f128f8",
+          "target": "stmt:scripts/install-smoke.mjs@L161",
+          "line": 161,
+          "expr": "run(process.execPath, [bins.direct, '--help']);"
+        }
+      },
+      {
+        "procedure": "sym:scripts/install-smoke.mjs#smokeInstall@L135",
+        "procedureName": "smokeInstall",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:572204a8321a170cf242126a6f21f3c4940f18b9cc386034be2579db139c482e",
+          "target": "stmt:scripts/install-smoke.mjs@L164",
+          "line": 164,
+          "expr": "const projectRoot = join(prefix, 'smoke-project');"
+        }
+      },
+      {
+        "procedure": "sym:scripts/install-smoke.mjs#smokeInstall@L135",
+        "procedureName": "smokeInstall",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7d260787bfe5d5458ddceb1b5fde6734d3d239540324e9bdc16aa9a57ab2001a",
+          "target": "stmt:scripts/install-smoke.mjs@L165",
+          "line": 165,
+          "expr": "mkdirSync(join(projectRoot, 'src'), { recursive: true });"
+        }
+      },
+      {
+        "procedure": "sym:scripts/install-smoke.mjs#smokeInstall@L135",
+        "procedureName": "smokeInstall",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2f0022b3ef203b0fc2904cbb2b71a71bf72d4405a712c8701b7874cc989d05b2",
+          "target": "stmt:scripts/install-smoke.mjs@L166",
+          "line": 166,
+          "expr": "writeFileSync(\n      join(projectRoot, 'package.json'),\n      `${JSON.stringify({ name: 'installed-package-smoke', private: true, type: 'module' }, null, 2)}\\n`,\n    );"
+        }
+      },
+      {
+        "procedure": "sym:scripts/install-smoke.mjs#smokeInstall@L135",
+        "procedureName": "smokeInstall",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1fb06338ceeca562743238f4e07137af054ae60b306915c715132c88e1e302bb",
+          "target": "stmt:scripts/install-smoke.mjs@L170",
+          "line": 170,
+          "expr": "writeFileSync(\n      join(projectRoot, 'src', 'math.ts'),\n      'export function triple(value: number): number {\\n  return value * 3;\\n}\\n',\n    );"
+        }
+      },
+      {
+        "procedure": "sym:scripts/install-smoke.mjs#smokeInstall@L135",
+        "procedureName": "smokeInstall",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d43765e4dc3d576c46c1bf9e3a15163c16eda2d4aac9f0619ff6fa6524d2af7a",
+          "target": "stmt:scripts/install-smoke.mjs@L175",
+          "line": 175,
+          "expr": "run(process.execPath, [bins.direct, 'index', projectRoot]);"
+        }
+      },
+      {
+        "procedure": "sym:scripts/install-smoke.mjs#smokeInstall@L135",
+        "procedureName": "smokeInstall",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:5f2565893cf076f7c12fab901349a07fef38c87b5dc64fe1c19e47b5ec8d5cf8",
+          "target": "sym:scripts/install-smoke.mjs#validateSmokeStatus@L102",
+          "expr": "validateSmokeStatus",
+          "line": 176
+        }
+      },
+      {
+        "procedure": "sym:scripts/install-smoke.mjs#smokeInstall@L135",
+        "procedureName": "smokeInstall",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b6e626648b27dd4e5b7be6c70298682538fb6b7910cb4edbc6d3f33ef1e9db23",
+          "target": "stmt:scripts/install-smoke.mjs@L176",
+          "line": 176,
+          "expr": "const status = validateSmokeStatus(\n      JSON.parse(runCapture(process.execPath, [bins.direct, 'status', projectRoot])),\n    );"
+        }
+      },
+      {
+        "procedure": "sym:scripts/install-smoke.mjs#smokeInstall@L135",
+        "procedureName": "smokeInstall",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:4712f19b994cc6dc6d125d418ecca9553ef02c4541c45b8b0244a997cdb76ae2",
+          "target": "sym:scripts/install-smoke.mjs#runCapture@L93",
+          "expr": "runCapture",
+          "line": 177
+        }
+      },
+      {
+        "procedure": "sym:scripts/install-smoke.mjs#smokeInstall@L135",
+        "procedureName": "smokeInstall",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a1984f8b90ecf5793de605789ae361aca0baee5190994a984cd1ed7aeb7a603d",
+          "target": "stmt:scripts/install-smoke.mjs@L179",
+          "line": 179,
+          "expr": "process.stdout.write(\n      `installer smoke ok - installed ${manifest.package}; indexed ${status.stats.nodes} nodes\\n`,\n    );"
+        }
+      },
+      {
+        "procedure": "sym:scripts/install-smoke.mjs#smokeInstall@L135",
+        "procedureName": "smokeInstall",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:a9c1b70a607fccdb792d9fcbe3bc4b02939beb11a174a1a09c85a154ca2759c3",
+          "target": "sym:packages/cli/src/hooks.test.ts#write@L54",
+          "expr": "write",
+          "line": 179
+        }
+      },
+      {
+        "procedure": "sym:scripts/install-smoke.mjs#smokeInstall@L135",
+        "procedureName": "smokeInstall",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:491f09c298c1556a25ff8c4e965a40b3cd0b5710930052f2866a5df7baf2bc37",
+          "target": "stmt:scripts/install-smoke.mjs@L182",
+          "line": 182,
+          "expr": "return status;"
+        }
+      },
+      {
+        "procedure": "sym:scripts/install-smoke.mjs#smokeInstall@L135",
+        "procedureName": "smokeInstall",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b58a6632e1549dec37a77244d0404e75cf000d25cae581c4dd0bfeafa541436d",
+          "target": "stmt:scripts/install-smoke.mjs@L184",
+          "line": 184,
+          "expr": "rmSync(prefix, { recursive: true, force: true });"
+        }
+      }
+    ]
+  },
+  "controlFlow": {
+    "raises": [
+      {
+        "id": "raise:scripts/install-smoke.mjs@L143",
+        "kind": "raise",
+        "lang": "javascript",
+        "file": "scripts/install-smoke.mjs",
+        "span": {
+          "start": 143,
+          "end": 143
+        },
+        "errorMessage": "new Error(`Installer bundle is missing package tarball: ${tarball}`)",
+        "confidence": 1
+      },
+      {
+        "id": "raise:scripts/install-smoke.mjs@L155",
+        "kind": "raise",
+        "lang": "javascript",
+        "file": "scripts/install-smoke.mjs",
+        "span": {
+          "start": 155,
+          "end": 155
+        },
+        "errorMessage": "new Error(`Installed package did not contain its CLI entry point at ${bins.direct}`)",
+        "confidence": 1
+      }
+    ],
+    "handles": [],
+    "iterates": [],
+    "declares": []
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 19,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 19,
+    "assignments": 0,
+    "conditions": 3,
+    "raises": 2,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 10,
+      "recorded": 28,
+      "unresolved": 15
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "15 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

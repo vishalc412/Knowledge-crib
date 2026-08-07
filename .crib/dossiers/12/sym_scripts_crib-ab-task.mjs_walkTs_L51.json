@@ -1,0 +1,249 @@
+{
+  "id": "sym:scripts/crib-ab-task.mjs#walkTs@L51",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:0c0024eb2518d004117cc96fbc55473b671a75efbaaf811c8dbf66f743d445ba",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:scripts/crib-ab-task.mjs#walkTs@L51",
+    "kind": "symbol",
+    "type": "function",
+    "name": "walkTs",
+    "qualifiedName": "walkTs",
+    "signature": "walkTs(dir, out = [])",
+    "lang": "javascript",
+    "file": "scripts/crib-ab-task.mjs",
+    "span": {
+      "start": 51,
+      "end": 64
+    },
+    "recursive": true,
+    "callSites": [
+      {
+        "callee": "readdirSync",
+        "line": 54
+      },
+      {
+        "callee": "join",
+        "line": 59
+      },
+      {
+        "callee": "walkTs",
+        "line": 60
+      },
+      {
+        "callee": "push",
+        "line": 61
+      }
+    ]
+  },
+  "source": {
+    "text": "function walkTs(dir, out = []) {\n  let entries;\n  try {\n    entries = readdirSync(dir, { withFileTypes: true });\n  } catch {\n    return out;\n  }\n  for (const e of entries) {\n    const full = join(dir, e.name);\n    if (e.isDirectory()) walkTs(full, out);\n    else if (e.name.endsWith('.ts') && !e.name.endsWith('.test.ts')) out.push(full);\n  }\n  return out;\n}",
+    "truncated": false,
+    "totalLines": 14,
+    "startLine": 51
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 39
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:scripts/crib-ab-task.mjs#walkTs@L51",
+    "procedureName": "walkTs",
+    "conditions": [
+      "cond:scripts/crib-ab-task.mjs@L58",
+      "cond:scripts/crib-ab-task.mjs@L60",
+      "cond:scripts/crib-ab-task.mjs@L61"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:scripts/crib-ab-task.mjs#walkTs@L51",
+        "procedureName": "walkTs",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6b264c798efdd1993a6f29e51e36a470d7b3787c5d6cfce232e5a9e74757c407",
+          "target": "assign:scripts/crib-ab-task.mjs@L54",
+          "line": 54,
+          "expr": "entries = readdirSync(dir, { withFileTypes: true });"
+        }
+      },
+      {
+        "procedure": "sym:scripts/crib-ab-task.mjs#walkTs@L51",
+        "procedureName": "walkTs",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:acc6ac34ec104fe82f00c3dd055893c7e1f1a0b8de92cd17cfebf3f20ceea981",
+          "target": "stmt:scripts/crib-ab-task.mjs@L56",
+          "line": 56,
+          "expr": "return out;"
+        }
+      },
+      {
+        "procedure": "sym:scripts/crib-ab-task.mjs#walkTs@L51",
+        "procedureName": "walkTs",
+        "guard": "cond:scripts/crib-ab-task.mjs@L58",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:scripts/crib-ab-task.mjs@L58",
+            "expr": "entries",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bb17d5461c86e51efc0a8133a64ec101f2662a9d6578d625a76c0f8172774a6e",
+          "target": "stmt:scripts/crib-ab-task.mjs@L59",
+          "line": 59,
+          "expr": "const full = join(dir, e.name);"
+        }
+      },
+      {
+        "procedure": "sym:scripts/crib-ab-task.mjs#walkTs@L51",
+        "procedureName": "walkTs",
+        "guard": "cond:scripts/crib-ab-task.mjs@L60",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:scripts/crib-ab-task.mjs@L58",
+            "expr": "entries"
+          },
+          {
+            "id": "cond:scripts/crib-ab-task.mjs@L60",
+            "expr": "e.isDirectory()",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:96badfd295f650bd8694287a6445dce36dbcc93f2be84ad7f60a5cdf77c956ad",
+          "target": "stmt:scripts/crib-ab-task.mjs@L60",
+          "line": 60,
+          "expr": "walkTs(full, out);"
+        }
+      },
+      {
+        "procedure": "sym:scripts/crib-ab-task.mjs#walkTs@L51",
+        "procedureName": "walkTs",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:bcd96a6a78ae386ee2d1dbd4c325e20dc85b821a1af4a60de53b1d80750e8757",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 61
+        }
+      },
+      {
+        "procedure": "sym:scripts/crib-ab-task.mjs#walkTs@L51",
+        "procedureName": "walkTs",
+        "guard": "cond:scripts/crib-ab-task.mjs@L61",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:scripts/crib-ab-task.mjs@L58",
+            "expr": "entries"
+          },
+          {
+            "id": "cond:scripts/crib-ab-task.mjs@L60",
+            "expr": "e.isDirectory()"
+          },
+          {
+            "id": "cond:scripts/crib-ab-task.mjs@L61",
+            "expr": "e.name.endsWith('.ts') && !e.name.endsWith('.test.ts')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:dc7000ad55d615ff4025ec14d73bf12412e48e9905417fa3b288ae10ec9b53ff",
+          "target": "stmt:scripts/crib-ab-task.mjs@L61",
+          "line": 61,
+          "expr": "out.push(full);"
+        }
+      },
+      {
+        "procedure": "sym:scripts/crib-ab-task.mjs#walkTs@L51",
+        "procedureName": "walkTs",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:95d8083ed20068afa01250b4a5d59f68d0522c147cdcb0467ad25169c36a90f4",
+          "target": "stmt:scripts/crib-ab-task.mjs@L63",
+          "line": 63,
+          "expr": "return out;"
+        }
+      }
+    ]
+  },
+  "controlFlow": {
+    "raises": [],
+    "handles": [
+      {
+        "id": "exc:scripts/crib-ab-task.mjs@L55",
+        "kind": "exception-handler",
+        "lang": "javascript",
+        "file": "scripts/crib-ab-task.mjs",
+        "span": {
+          "start": 55,
+          "end": 55
+        },
+        "confidence": 1
+      }
+    ],
+    "iterates": [],
+    "declares": []
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 6,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 6,
+    "assignments": 1,
+    "conditions": 3,
+    "raises": 0,
+    "handlers": 1,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 4,
+      "unresolved": 2
+    },
+    "recursive": true,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

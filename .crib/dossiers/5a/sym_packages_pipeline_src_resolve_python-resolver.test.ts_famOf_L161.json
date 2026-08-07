@@ -1,0 +1,190 @@
+{
+  "id": "sym:packages/pipeline/src/resolve/python-resolver.test.ts#famOf@L161",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:6f793a17b21078f99037e57d4cc231912ef4369d53680b840543d503f0261f1e",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/resolve/python-resolver.test.ts#famOf@L161",
+    "kind": "symbol",
+    "type": "function",
+    "name": "famOf",
+    "qualifiedName": "famOf",
+    "signature": "famOf(…)",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/resolve/python-resolver.test.ts",
+    "span": {
+      "start": 161,
+      "end": 168
+    },
+    "callSites": [
+      {
+        "callee": "find",
+        "line": 162
+      }
+    ]
+  },
+  "source": {
+    "text": "    const famOf = (id: string): 'ts' | 'py' | undefined => {\n      const n = allNodes.find((x) => x.id === id);\n      const f = n?.file;\n      if (!f) return undefined;\n      if (TS_EXTS.some((e) => f.endsWith(e))) return 'ts';\n      if (PY_EXTS.some((e) => f.endsWith(e))) return 'py';\n      return undefined;\n    };",
+    "truncated": false,
+    "totalLines": 8,
+    "startLine": 161
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
+      "confidence": 1,
+      "name": "find",
+      "qualifiedName": "find",
+      "signature": "find(…)",
+      "type": "function",
+      "file": "packages/parsers/src/java/parser.test.ts",
+      "line": 38
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/resolve/python-resolver.test.ts#famOf@L161",
+    "procedureName": "famOf",
+    "conditions": [
+      "cond:packages/pipeline/src/resolve/python-resolver.test.ts@L164",
+      "cond:packages/pipeline/src/resolve/python-resolver.test.ts@L165",
+      "cond:packages/pipeline/src/resolve/python-resolver.test.ts@L166"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/python-resolver.test.ts#famOf@L161",
+        "procedureName": "famOf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:311946b7c7757160ecf71bd83b9cca0f83c716745a95e23c7e5fb630f6ece2b4",
+          "target": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
+          "expr": "find",
+          "line": 162
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/python-resolver.test.ts#famOf@L161",
+        "procedureName": "famOf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f6f795e48997fa627b17201eb08e830bd83fd4cd1e36ecadd695fd06408b88c8",
+          "target": "stmt:packages/pipeline/src/resolve/python-resolver.test.ts@L162",
+          "line": 162,
+          "expr": "const n = allNodes.find((x) => x.id === id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/python-resolver.test.ts#famOf@L161",
+        "procedureName": "famOf",
+        "guard": "cond:packages/pipeline/src/resolve/python-resolver.test.ts@L164",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/python-resolver.test.ts@L164",
+            "expr": "!f",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0edd94912018abc2a206db0a259e21b63ec3bb5599d7abf0c1f57ed6b45320a7",
+          "target": "stmt:packages/pipeline/src/resolve/python-resolver.test.ts@L164",
+          "line": 164,
+          "expr": "return undefined;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/python-resolver.test.ts#famOf@L161",
+        "procedureName": "famOf",
+        "guard": "cond:packages/pipeline/src/resolve/python-resolver.test.ts@L165",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/python-resolver.test.ts@L165",
+            "expr": "TS_EXTS.some((e) => f.endsWith(e))",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b77fc8c6088160c14b3ba41f6ceeac3821f916efe7d2541b65c0fb551be703f2",
+          "target": "stmt:packages/pipeline/src/resolve/python-resolver.test.ts@L165",
+          "line": 165,
+          "expr": "return 'ts';"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/python-resolver.test.ts#famOf@L161",
+        "procedureName": "famOf",
+        "guard": "cond:packages/pipeline/src/resolve/python-resolver.test.ts@L166",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/python-resolver.test.ts@L166",
+            "expr": "PY_EXTS.some((e) => f.endsWith(e))",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d01c7838ac56c17d4e367b2568dab68059b3c39e87d97923d822e82828cded37",
+          "target": "stmt:packages/pipeline/src/resolve/python-resolver.test.ts@L166",
+          "line": 166,
+          "expr": "return 'py';"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/python-resolver.test.ts#famOf@L161",
+        "procedureName": "famOf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:06738c1c5af5d7ccd3385aea9c50d9304a4fb1113beea08c511f53f43915f5fe",
+          "target": "stmt:packages/pipeline/src/resolve/python-resolver.test.ts@L167",
+          "line": 167,
+          "expr": "return undefined;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 5,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 5,
+    "assignments": 0,
+    "conditions": 3,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

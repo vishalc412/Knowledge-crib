@@ -1,0 +1,236 @@
+{
+  "id": "sym:packages/parsers/src/ts/react.ts#emitRender@L187",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:2bf652cacedadd32c852c480407aab3d0a02456130554fb33423bbdb3226a283",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/ts/react.ts#emitRender@L187",
+    "kind": "symbol",
+    "type": "function",
+    "name": "emitRender",
+    "qualifiedName": "emitRender",
+    "signature": "emitRender(srcId: string, childName: string, byKey: Map<string, string>, edges: Edge[], recorded: string[]): void",
+    "lang": "typescript",
+    "file": "packages/parsers/src/ts/react.ts",
+    "span": {
+      "start": 187,
+      "end": 208
+    },
+    "callSites": [
+      {
+        "callee": "push",
+        "line": 194
+      },
+      {
+        "callee": "get",
+        "line": 195
+      },
+      {
+        "callee": "push",
+        "line": 197
+      },
+      {
+        "callee": "edgeId",
+        "line": 198
+      }
+    ]
+  },
+  "source": {
+    "text": "function emitRender(\n  srcId: string,\n  childName: string,\n  byKey: Map<string, string>,\n  edges: Edge[],\n  recorded: string[],\n): void {\n  recorded.push(childName);\n  const dstId = byKey.get(childName);\n  if (dstId && dstId !== srcId) {\n    edges.push({\n      id: edgeId(srcId, dstId, 'renders'),\n      src: srcId,\n      dst: dstId,\n      rel: 'renders',\n      method: 'static',\n      provenance: 'EXTRACTED',\n      confidence: 1,\n      evidence: { by: 'lang:typescript/react', snippet: childName },\n    });\n  }\n}",
+    "truncated": false,
+    "totalLines": 22,
+    "startLine": 187
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/ts/react.ts#collectRendersAndHooks@L132",
+      "confidence": 1,
+      "name": "collectRendersAndHooks",
+      "qualifiedName": "collectRendersAndHooks",
+      "signature": "collectRendersAndHooks(body: ts.Node | undefined, byKey: Map<string, string>, srcId: string, edges: Edge[], recorded: string[], hooks: string[]): void",
+      "type": "function",
+      "file": "packages/parsers/src/ts/react.ts",
+      "line": 132
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/react.ts#collectRendersAndHooks.visit@L141",
+      "confidence": 1,
+      "name": "visit",
+      "qualifiedName": "collectRendersAndHooks.visit",
+      "signature": "visit(…)",
+      "type": "function",
+      "file": "packages/parsers/src/ts/react.ts",
+      "line": 141
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+      "confidence": 1,
+      "name": "get",
+      "qualifiedName": "createRegistry.get",
+      "signature": "get(name)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 1300
+    },
+    {
+      "id": "sym:packages/soul-schema/src/id.ts#edgeId@L141",
+      "confidence": 1,
+      "name": "edgeId",
+      "qualifiedName": "edgeId",
+      "signature": "edgeId(src: string, dst: string, rel: Rel): string",
+      "type": "function",
+      "file": "packages/soul-schema/src/id.ts",
+      "line": 141
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 39
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/ts/react.ts@L185",
+      "snippet": "/** Emit a `renders` edge (component → child) when the child resolves intra-file; always record the",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/ts/react.ts#emitRender@L187",
+    "procedureName": "emitRender",
+    "conditions": [
+      "cond:packages/parsers/src/ts/react.ts@L196"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/ts/react.ts#emitRender@L187",
+        "procedureName": "emitRender",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:cabf92a8cbd2cd9ac8f6185a7ff825854be80021a5754bb2dd31c590aaf8292b",
+          "target": "stmt:packages/parsers/src/ts/react.ts@L194",
+          "line": 194,
+          "expr": "recorded.push(childName);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/react.ts#emitRender@L187",
+        "procedureName": "emitRender",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:dfa239b70df799906c28318bdd83f47811a7f10574984f9111d9d76743cab724",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 194
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/react.ts#emitRender@L187",
+        "procedureName": "emitRender",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:06d49479ea828948e117110166d704b71989906610f0aa57bdcbe872ce0993e1",
+          "target": "stmt:packages/parsers/src/ts/react.ts@L195",
+          "line": 195,
+          "expr": "const dstId = byKey.get(childName);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/react.ts#emitRender@L187",
+        "procedureName": "emitRender",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:f7025aebf3de155cd7a97a8f56ca2a8a125a6e69ab5788a1333a7cbde22640d6",
+          "target": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+          "expr": "get",
+          "line": 195
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/react.ts#emitRender@L187",
+        "procedureName": "emitRender",
+        "guard": "cond:packages/parsers/src/ts/react.ts@L196",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/react.ts@L196",
+            "expr": "dstId && dstId !== srcId",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f0d7e5a5feac9ed255aa374b85caa6201fe16fbf5c02a18e41f5b7f2e345c0b4",
+          "target": "stmt:packages/parsers/src/ts/react.ts@L197",
+          "line": 197,
+          "expr": "edges.push({\n      id: edgeId(srcId, dstId, 'renders'),\n      src: srcId,\n      dst: dstId,\n      rel: 'renders',\n      method: 'static',\n      provenance: 'EXTRACTED',\n      confidence: 1,\n      evidence: { by: 'lang:typescript/react', snippet: childName },\n    });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/react.ts#emitRender@L187",
+        "procedureName": "emitRender",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:ae3d3d7e332ff09c48103678b4221def5746e52c248ca8b5a6060ed765844f2e",
+          "target": "sym:packages/soul-schema/src/id.ts#edgeId@L141",
+          "expr": "edgeId",
+          "line": 198
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/parsers/src/ts/react.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 3,
+      "recorded": 4,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

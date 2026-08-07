@@ -1,0 +1,174 @@
+{
+  "id": "sym:packages/pipeline/src/ownership.ts#ownerNode@L33",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:883ba4f5861832607efd2a040241dfdbfb9249b6f80d7cca19d6727965da99c6",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/ownership.ts#ownerNode@L33",
+    "kind": "symbol",
+    "type": "function",
+    "name": "ownerNode",
+    "qualifiedName": "ownerNode",
+    "signature": "ownerNode(name: string, email?: string): Node",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/ownership.ts",
+    "span": {
+      "start": 33,
+      "end": 42
+    },
+    "callSites": [
+      {
+        "callee": "idFor",
+        "line": 34
+      },
+      {
+        "callee": "idFor",
+        "line": 34
+      },
+      {
+        "callee": "contentHash",
+        "line": 38
+      }
+    ]
+  },
+  "source": {
+    "text": "export function ownerNode(name: string, email?: string): Node {\n  const id = email ? idFor({ kind: 'owner', email }) : idFor({ kind: 'owner-name', name });\n  return {\n    id,\n    kind: 'owner',\n    hash: contentHash(id),\n    name,\n    ...(email ? { email } : {}),\n  };\n}",
+    "truncated": false,
+    "totalLines": 10,
+    "startLine": 33
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/src/ownership.ts#runOwnership@L77",
+      "confidence": 1,
+      "name": "runOwnership",
+      "qualifiedName": "runOwnership",
+      "signature": "runOwnership(soul: SoulStore, root: string, onlyFiles?: Set<string>): OwnershipStats",
+      "type": "function",
+      "file": "packages/pipeline/src/ownership.ts",
+      "line": 77
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/soul-schema/src/hash.ts#contentHash@L21",
+      "confidence": 1,
+      "name": "contentHash",
+      "qualifiedName": "contentHash",
+      "signature": "contentHash(input: string): string",
+      "type": "function",
+      "file": "packages/soul-schema/src/hash.ts",
+      "line": 21
+    },
+    {
+      "id": "sym:packages/soul-schema/src/id.ts#idFor@L88",
+      "confidence": 1,
+      "name": "idFor",
+      "qualifiedName": "idFor",
+      "signature": "idFor(spec: IdSpec): string",
+      "type": "function",
+      "file": "packages/soul-schema/src/id.ts",
+      "line": 88
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/pipeline/src/ownership.ts@L32",
+      "snippet": "/** Build the `owner` node for an author identity (deduped by email, name-only fallback). */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/ownership.ts#ownerNode@L33",
+    "procedureName": "ownerNode",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/ownership.ts#ownerNode@L33",
+        "procedureName": "ownerNode",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2f795a0aa526b44c0ce80bab92c7ef4ce3f1b7886dc126e0adbd3ee7ed353032",
+          "target": "stmt:packages/pipeline/src/ownership.ts@L34",
+          "line": 34,
+          "expr": "const id = email ? idFor({ kind: 'owner', email }) : idFor({ kind: 'owner-name', name });"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/ownership.ts#ownerNode@L33",
+        "procedureName": "ownerNode",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:bc9aef48ceb3c6f2b4ec7d821165b37479d10993b2bfacabe63cefaa5649bebf",
+          "target": "sym:packages/soul-schema/src/id.ts#idFor@L88",
+          "expr": "idFor",
+          "line": 34
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/ownership.ts#ownerNode@L33",
+        "procedureName": "ownerNode",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:81a8587e19df28412e8cb2237261fdeaa0d70f5122809c581ab8b84b3ed1d438",
+          "target": "stmt:packages/pipeline/src/ownership.ts@L35",
+          "line": 35,
+          "expr": "return {\n    id,\n    kind: 'owner',\n    hash: contentHash(id),\n    name,\n    ...(email ? { email } : {}),\n  };"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/ownership.ts#ownerNode@L33",
+        "procedureName": "ownerNode",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:41b199e05a57b3343128ef847d296d4dc5727679768eed6cc52720cebe284a07",
+          "target": "sym:packages/soul-schema/src/hash.ts#contentHash@L21",
+          "expr": "contentHash",
+          "line": 38
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/pipeline/src/ownership.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 3,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

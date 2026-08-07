@@ -1,0 +1,326 @@
+{
+  "id": "sym:packages/ui/web/graph-model.js#clusterProjection@L138",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:468cf187e28b15e7cac04f0fcebb50a4b1c8a860e7fea7d26c3703cbd1516c61",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/ui/web/graph-model.js#clusterProjection@L138",
+    "kind": "symbol",
+    "type": "function",
+    "name": "clusterProjection",
+    "qualifiedName": "clusterProjection",
+    "signature": "clusterProjection(options, nodes, edges, byId, indexes)",
+    "lang": "javascript",
+    "file": "packages/ui/web/graph-model.js",
+    "span": {
+      "start": 138,
+      "end": 175
+    },
+    "callSites": [
+      {
+        "callee": "filter",
+        "line": 140
+      },
+      {
+        "callee": "rankIds",
+        "line": 143
+      },
+      {
+        "callee": "slice",
+        "line": 145
+      },
+      {
+        "callee": "slice",
+        "line": 151
+      },
+      {
+        "callee": "max",
+        "line": 151
+      },
+      {
+        "callee": "add",
+        "line": 159
+      },
+      {
+        "callee": "slice",
+        "line": 162
+      },
+      {
+        "callee": "rankIds",
+        "line": 162
+      },
+      {
+        "callee": "edgeIndexesForNodeIds",
+        "line": 171
+      },
+      {
+        "callee": "max",
+        "line": 173
+      }
+    ]
+  },
+  "source": {
+    "text": "  function clusterProjection(options, nodes, edges, byId, indexes) {\n    const allMemberIds = [...(indexes.membersByCluster[options.clusterId] || [])];\n    const filteredMemberIds = allMemberIds.filter(\n      (id) => !options.kind || (byId[id] && byId[id].kind === options.kind),\n    );\n    const rankedCore = rankIds(filteredMemberIds, byId);\n    const cap = options.coreCap || 200;\n    let coreIds = rankedCore.slice(0, cap);\n    if (\n      options.promotedId &&\n      filteredMemberIds.includes(options.promotedId) &&\n      !coreIds.includes(options.promotedId)\n    ) {\n      coreIds = [...coreIds.slice(0, Math.max(0, cap - 1)), options.promotedId];\n    }\n    const coreSet = new Set(coreIds);\n    let contextIds = [];\n    if (options.showContext) {\n      const candidates = new Set();\n      for (const id of coreIds) {\n        for (const neighbor of indexes.archAdj[id] || []) {\n          if (!coreSet.has(neighbor)) candidates.add(neighbor);\n        }\n      }\n      contextIds = rankIds(candidates, byId).slice(0, options.contextCap || 60);\n    }\n    const nodeIds = new Set([...coreIds, ...contextIds]);\n    return {\n      allMemberIds,\n      filteredMemberIds,\n      coreIds,\n      contextIds,\n      nodeIds,\n      edgeIndexes: edgeIndexesForNodeIds(nodeIds, edges, indexes),\n      totalCore: filteredMemberIds.length,\n      hiddenCore: Math.max(0, filteredMemberIds.length - coreIds.length),\n    };\n  }",
+    "truncated": false,
+    "totalLines": 38,
+    "startLine": 138
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/fixtures/python/rules.py#add@L16",
+      "confidence": 1,
+      "name": "add",
+      "qualifiedName": "add",
+      "signature": "add(a, b)",
+      "type": "function",
+      "file": "packages/parsers/fixtures/python/rules.py",
+      "line": 16
+    },
+    {
+      "id": "sym:packages/ui/web/graph-model.js#edgeIndexesForNodeIds@L52",
+      "confidence": 1,
+      "name": "edgeIndexesForNodeIds",
+      "qualifiedName": "edgeIndexesForNodeIds",
+      "signature": "edgeIndexesForNodeIds(nodeIds, edges, indexes)",
+      "type": "function",
+      "file": "packages/ui/web/graph-model.js",
+      "line": 52
+    },
+    {
+      "id": "sym:packages/ui/web/graph-model.js#rankIds@L40",
+      "confidence": 1,
+      "name": "rankIds",
+      "qualifiedName": "rankIds",
+      "signature": "rankIds(ids, byId)",
+      "type": "function",
+      "file": "packages/ui/web/graph-model.js",
+      "line": 40
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/ui/web/graph-model.js#clusterProjection@L138",
+    "procedureName": "clusterProjection",
+    "conditions": [
+      "cond:packages/ui/web/graph-model.js@L155",
+      "cond:packages/ui/web/graph-model.js@L146",
+      "cond:packages/ui/web/graph-model.js@L157",
+      "cond:packages/ui/web/graph-model.js@L158",
+      "cond:packages/ui/web/graph-model.js@L159"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/ui/web/graph-model.js#clusterProjection@L138",
+        "procedureName": "clusterProjection",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5fbbaf6804b8b2630f5f992d28f876ab47a6d337e369a567e078fa9cb221eaa8",
+          "target": "stmt:packages/ui/web/graph-model.js@L140",
+          "line": 140,
+          "expr": "const filteredMemberIds = allMemberIds.filter(\n      (id) => !options.kind || (byId[id] && byId[id].kind === options.kind),\n    );"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/graph-model.js#clusterProjection@L138",
+        "procedureName": "clusterProjection",
+        "guard": "cond:packages/ui/web/graph-model.js@L155",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/web/graph-model.js@L155",
+            "expr": "options.showContext",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:07bca59587e381a2863dc8e247593c407f5bcb470dadac968a0712a57abd65a2",
+          "target": "sym:packages/ui/web/graph-model.js#rankIds@L40",
+          "expr": "rankIds",
+          "line": 143
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/graph-model.js#clusterProjection@L138",
+        "procedureName": "clusterProjection",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e67bf5c1e6f27517b55ac1947f79f366429f8a9622ff3fc308e78d0c84a3c24b",
+          "target": "stmt:packages/ui/web/graph-model.js@L143",
+          "line": 143,
+          "expr": "const rankedCore = rankIds(filteredMemberIds, byId);"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/graph-model.js#clusterProjection@L138",
+        "procedureName": "clusterProjection",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0eccd6b0ade3b86e2b6deb11deb127a650805f065b3693a2904fefdbb41b155c",
+          "target": "stmt:packages/ui/web/graph-model.js@L145",
+          "line": 145,
+          "expr": "let coreIds = rankedCore.slice(0, cap);"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/graph-model.js#clusterProjection@L138",
+        "procedureName": "clusterProjection",
+        "guard": "cond:packages/ui/web/graph-model.js@L146",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/web/graph-model.js@L146",
+            "expr": "options.promotedId &&\n      filteredMemberIds.includes(options.promotedId) &&\n      !coreIds.includes(options.promotedId)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:dff50990336395facd8b74c202d70b36aba834351a1fc1f3aad69d64813b9743",
+          "target": "assign:packages/ui/web/graph-model.js@L151",
+          "line": 151,
+          "expr": "coreIds = [...coreIds.slice(0, Math.max(0, cap - 1)), options.promotedId];"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/graph-model.js#clusterProjection@L138",
+        "procedureName": "clusterProjection",
+        "guard": "cond:packages/ui/web/graph-model.js@L159",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/web/graph-model.js@L155",
+            "expr": "options.showContext"
+          },
+          {
+            "id": "cond:packages/ui/web/graph-model.js@L157",
+            "expr": "coreIds"
+          },
+          {
+            "id": "cond:packages/ui/web/graph-model.js@L158",
+            "expr": "indexes.archAdj[id] || []"
+          },
+          {
+            "id": "cond:packages/ui/web/graph-model.js@L159",
+            "expr": "!coreSet.has(neighbor)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:41fd50bd274288065b9a9d8279d2973ee1bc709196eb85110eaf77ea19fdb60b",
+          "target": "stmt:packages/ui/web/graph-model.js@L159",
+          "line": 159,
+          "expr": "candidates.add(neighbor);"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/graph-model.js#clusterProjection@L138",
+        "procedureName": "clusterProjection",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:fa22ed64e8840c0e9adfb1791f1a293ac5f6afbd4f8d2eb5e7190d0bfa91f9db",
+          "target": "sym:packages/parsers/fixtures/python/rules.py#add@L16",
+          "expr": "add",
+          "line": 159
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/graph-model.js#clusterProjection@L138",
+        "procedureName": "clusterProjection",
+        "guard": "cond:packages/ui/web/graph-model.js@L155",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/web/graph-model.js@L155",
+            "expr": "options.showContext",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:247a49c6a24122507b5214fc4d17e1a83cf9e9c14ff6b5b5d145abe8a6325856",
+          "target": "assign:packages/ui/web/graph-model.js@L162",
+          "line": 162,
+          "expr": "contextIds = rankIds(candidates, byId).slice(0, options.contextCap || 60);"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/graph-model.js#clusterProjection@L138",
+        "procedureName": "clusterProjection",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a958adc89f3af1482844cd0a56554f616199e439c1be684b678de79b6b41d606",
+          "target": "stmt:packages/ui/web/graph-model.js@L165",
+          "line": 165,
+          "expr": "return {\n      allMemberIds,\n      filteredMemberIds,\n      coreIds,\n      contextIds,\n      nodeIds,\n      edgeIndexes: edgeIndexesForNodeIds(nodeIds, edges, indexes),\n      totalCore: filteredMemberIds.length,\n      hiddenCore: Math.max(0, filteredMemberIds.length - coreIds.length),\n    };"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/graph-model.js#clusterProjection@L138",
+        "procedureName": "clusterProjection",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:b3a82aca9a803d96379678266afd161b204ac100c633f71a6738a53c50d1b9a3",
+          "target": "sym:packages/ui/web/graph-model.js#edgeIndexesForNodeIds@L52",
+          "expr": "edgeIndexesForNodeIds",
+          "line": 171
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 7,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 7,
+    "assignments": 2,
+    "conditions": 3,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 3,
+      "recorded": 10,
+      "unresolved": 6
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "6 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

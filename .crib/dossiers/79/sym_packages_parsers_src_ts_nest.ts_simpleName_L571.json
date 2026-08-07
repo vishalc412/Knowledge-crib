@@ -1,0 +1,240 @@
+{
+  "id": "sym:packages/parsers/src/ts/nest.ts#simpleName@L571",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:378378909558c55bf6161271450ca83e08bb33bfa3961b7828eff261012a9323",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/ts/nest.ts#simpleName@L571",
+    "kind": "symbol",
+    "type": "function",
+    "name": "simpleName",
+    "qualifiedName": "simpleName",
+    "signature": "simpleName(d: ts.Decorator): string",
+    "lang": "typescript",
+    "file": "packages/parsers/src/ts/nest.ts",
+    "span": {
+      "start": 571,
+      "end": 578
+    },
+    "callSites": [
+      {
+        "callee": "isCallExpression",
+        "line": 573
+      },
+      {
+        "callee": "getText",
+        "line": 577
+      }
+    ]
+  },
+  "source": {
+    "text": "function simpleName(d: ts.Decorator): string {\n  const e = d.expression;\n  const callee = ts.isCallExpression(e) ? e.expression : e;\n  if (ts.isIdentifier(callee)) return callee.text;\n  if (ts.isPropertyAccessExpression(callee) && ts.isIdentifier(callee.name))\n    return callee.name.text;\n  return callee.getText();\n}",
+    "truncated": false,
+    "totalLines": 8,
+    "startLine": 571
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/ts/nest.ts#columnMetaOf@L457",
+      "confidence": 1,
+      "name": "columnMetaOf",
+      "qualifiedName": "columnMetaOf",
+      "signature": "columnMetaOf(pDecs: ts.Decorator[], names: Set<string>): Record<string, unknown> | undefined",
+      "type": "function",
+      "file": "packages/parsers/src/ts/nest.ts",
+      "line": 457
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/nest.ts#controllerBasePath@L341",
+      "confidence": 1,
+      "name": "controllerBasePath",
+      "qualifiedName": "controllerBasePath",
+      "signature": "controllerBasePath(classDecs: ts.Decorator[]): string",
+      "type": "function",
+      "file": "packages/parsers/src/ts/nest.ts",
+      "line": 341
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/nest.ts#extractNestSemantics@L104",
+      "confidence": 1,
+      "name": "extractNestSemantics",
+      "qualifiedName": "extractNestSemantics",
+      "signature": "extractNestSemantics(input: NestPassInput): void",
+      "type": "function",
+      "file": "packages/parsers/src/ts/nest.ts",
+      "line": 104
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/nest.ts#findDecBy@L347",
+      "confidence": 1,
+      "name": "findDecBy",
+      "qualifiedName": "findDecBy",
+      "signature": "findDecBy(node: ts.Node, names: Record<string, unknown>): ts.Decorator | undefined",
+      "type": "function",
+      "file": "packages/parsers/src/ts/nest.ts",
+      "line": 347
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/nest.ts#nestStereotypeOf@L330",
+      "confidence": 1,
+      "name": "nestStereotypeOf",
+      "qualifiedName": "nestStereotypeOf",
+      "signature": "nestStereotypeOf(classDecs: ts.Decorator[]): { stereotype: string; framework: string } | undefined",
+      "type": "function",
+      "file": "packages/parsers/src/ts/nest.ts",
+      "line": 330
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/nest.ts#paramDepType@L353",
+      "confidence": 1,
+      "name": "paramDepType",
+      "qualifiedName": "paramDepType",
+      "signature": "paramDepType(p: ts.ParameterDeclaration): string | undefined",
+      "type": "function",
+      "file": "packages/parsers/src/ts/nest.ts",
+      "line": 353
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/nest.ts#routeParamsOf@L414",
+      "confidence": 1,
+      "name": "routeParamsOf",
+      "qualifiedName": "routeParamsOf",
+      "signature": "routeParamsOf(m: ts.MethodDeclaration): Array<{ name: string; type?: string; in: string }>",
+      "type": "function",
+      "file": "packages/parsers/src/ts/nest.ts",
+      "line": 414
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/nest.ts#securityOf@L431",
+      "confidence": 1,
+      "name": "securityOf",
+      "qualifiedName": "securityOf",
+      "signature": "securityOf(decs: ts.Decorator[]): Record<string, string> | undefined",
+      "type": "function",
+      "file": "packages/parsers/src/ts/nest.ts",
+      "line": 431
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/ts/nest.ts@L569",
+      "snippet": "/** The simple (last-segment) name of a decorator: `@Controller('/x')` → \"Controller\";",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/ts/nest.ts#simpleName@L571",
+    "procedureName": "simpleName",
+    "conditions": [
+      "cond:packages/parsers/src/ts/nest.ts@L574",
+      "cond:packages/parsers/src/ts/nest.ts@L575"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.ts#simpleName@L571",
+        "procedureName": "simpleName",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c4036c00b9d28823da60e1d5b4d8421c481b24ae7252436e136d07c24d07b842",
+          "target": "stmt:packages/parsers/src/ts/nest.ts@L573",
+          "line": 573,
+          "expr": "const callee = ts.isCallExpression(e) ? e.expression : e;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.ts#simpleName@L571",
+        "procedureName": "simpleName",
+        "guard": "cond:packages/parsers/src/ts/nest.ts@L574",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/nest.ts@L574",
+            "expr": "ts.isIdentifier(callee)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9e804f381f222c794148d66bcad6284ddc7acfbeb5e3491269fdfd1269aad12b",
+          "target": "stmt:packages/parsers/src/ts/nest.ts@L574",
+          "line": 574,
+          "expr": "return callee.text;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.ts#simpleName@L571",
+        "procedureName": "simpleName",
+        "guard": "cond:packages/parsers/src/ts/nest.ts@L575",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/nest.ts@L575",
+            "expr": "ts.isPropertyAccessExpression(callee) && ts.isIdentifier(callee.name)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1c2ebea4b3cb81c919f1f6307245f6bd6d2668a750a8d1986c7ebd2fc7420004",
+          "target": "stmt:packages/parsers/src/ts/nest.ts@L576",
+          "line": 576,
+          "expr": "return callee.name.text;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.ts#simpleName@L571",
+        "procedureName": "simpleName",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:cf9fb1121b7a031a7644be8047a60a99d3cac30d8b3b9752514c3fb84ceca08b",
+          "target": "stmt:packages/parsers/src/ts/nest.ts@L577",
+          "line": 577,
+          "expr": "return callee.getText();"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": [
+      "packages/parsers/src/ts/nest.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 2,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

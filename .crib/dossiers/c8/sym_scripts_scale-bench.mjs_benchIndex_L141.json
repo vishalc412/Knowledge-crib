@@ -1,0 +1,203 @@
+{
+  "id": "sym:scripts/scale-bench.mjs#benchIndex@L141",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:fedee0a0d6c7afdb424312c65ff980052ab8282f9a578340a81f80cf0d505785",
+  "builtAt": "2026-07-13T14:47:57.424Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:scripts/scale-bench.mjs#benchIndex@L141",
+    "kind": "symbol",
+    "type": "function",
+    "name": "benchIndex",
+    "qualifiedName": "benchIndex",
+    "signature": "benchIndex(root)",
+    "lang": "javascript",
+    "file": "scripts/scale-bench.mjs",
+    "span": {
+      "start": 141,
+      "end": 167
+    },
+    "callSites": [
+      {
+        "callee": "spawnSync",
+        "line": 143
+      },
+      {
+        "callee": "exec",
+        "line": 152
+      },
+      {
+        "callee": "exec",
+        "line": 153
+      },
+      {
+        "callee": "exec",
+        "line": 156
+      },
+      {
+        "callee": "parseFloat",
+        "line": 158
+      },
+      {
+        "callee": "parseInt",
+        "line": 159
+      },
+      {
+        "callee": "parseInt",
+        "line": 160
+      },
+      {
+        "callee": "parseInt",
+        "line": 161
+      },
+      {
+        "callee": "parseInt",
+        "line": 162
+      },
+      {
+        "callee": "parseInt",
+        "line": 163
+      }
+    ]
+  },
+  "source": {
+    "text": "function benchIndex(root) {\n  // /usr/bin/time -l writes usage to stderr; crib writes its summary to stdout.\n  const res = spawnSync('/usr/bin/time', ['-l', process.execPath, CLI, 'index', root], {\n    encoding: 'utf8',\n    maxBuffer: 256 * 1024 * 1024,\n  });\n  const stderr = res.stderr || '';\n  const stdout = res.stdout || '';\n  if (res.status !== 0) {\n    throw new Error(`crib index exited ${res.status}\\nstdout:${stdout}\\nstderr:${stderr}`);\n  }\n  const realMatch = /([\\d.]+)\\s+real/.exec(stderr);\n  const rssMatch = /(\\d+)\\s+maximum resident set size/.exec(stderr);\n  // crib prints: \"indexed N files → X nodes, Y edges (...) in Zms\"\n  const sumMatch =\n    /indexed\\s+(\\d+)\\s+files.*?→\\s+(\\d+)\\s+nodes,\\s+(\\d+)\\s+edges.*?in\\s+(\\d+)\\s*ms/.exec(stdout);\n  return {\n    wallS: realMatch ? Number.parseFloat(realMatch[1]) : Number.NaN,\n    peakRssBytes: rssMatch ? Number.parseInt(rssMatch[1], 10) : Number.NaN,\n    files: sumMatch ? Number.parseInt(sumMatch[1], 10) : Number.NaN,\n    nodes: sumMatch ? Number.parseInt(sumMatch[2], 10) : Number.NaN,\n    edges: sumMatch ? Number.parseInt(sumMatch[3], 10) : Number.NaN,\n    cribMs: sumMatch ? Number.parseInt(sumMatch[4], 10) : Number.NaN,\n    stdout,\n    stderr,\n  };\n}",
+    "truncated": false,
+    "totalLines": 27,
+    "startLine": 141
+  },
+  "callers": [],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:scripts/scale-bench.mjs@L140",
+      "snippet": "/** Run `crib index <root>` under /usr/bin/time -l; parse wall (s), peak RSS (bytes), crib's summary. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:scripts/scale-bench.mjs#benchIndex@L141",
+    "procedureName": "benchIndex",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:scripts/scale-bench.mjs#benchIndex@L141",
+        "procedureName": "benchIndex",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:839aa2c1eeaf8bae60258652d8c65247a2829247b77ab92915c8919368db74d9",
+          "target": "stmt:scripts/scale-bench.mjs@L143",
+          "line": 143,
+          "expr": "const res = spawnSync('/usr/bin/time', ['-l', process.execPath, CLI, 'index', root], {\n    encoding: 'utf8',\n    maxBuffer: 256 * 1024 * 1024,\n  });"
+        }
+      },
+      {
+        "procedure": "sym:scripts/scale-bench.mjs#benchIndex@L141",
+        "procedureName": "benchIndex",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:79541ff50dfa7c17e8aee7239dbcc67240d4468529a2475d2ab544115fe5162f",
+          "target": "stmt:scripts/scale-bench.mjs@L152",
+          "line": 152,
+          "expr": "const realMatch = /([\\d.]+)\\s+real/.exec(stderr);"
+        }
+      },
+      {
+        "procedure": "sym:scripts/scale-bench.mjs#benchIndex@L141",
+        "procedureName": "benchIndex",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:51f61ac7cc434832a646c7763e440b144837d5f0d83683051308300cc34907d6",
+          "target": "stmt:scripts/scale-bench.mjs@L153",
+          "line": 153,
+          "expr": "const rssMatch = /(\\d+)\\s+maximum resident set size/.exec(stderr);"
+        }
+      },
+      {
+        "procedure": "sym:scripts/scale-bench.mjs#benchIndex@L141",
+        "procedureName": "benchIndex",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9a8a8b4d64acd7dc58109ca59d7c00ae09de4c551947fbcfa845e27e757681b6",
+          "target": "stmt:scripts/scale-bench.mjs@L155",
+          "line": 155,
+          "expr": "const sumMatch =\n    /indexed\\s+(\\d+)\\s+files.*?→\\s+(\\d+)\\s+nodes,\\s+(\\d+)\\s+edges.*?in\\s+(\\d+)\\s*ms/.exec(stdout);"
+        }
+      },
+      {
+        "procedure": "sym:scripts/scale-bench.mjs#benchIndex@L141",
+        "procedureName": "benchIndex",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3fa14bf1bcaa877b53be181ca920f581b6c94e015eff6b166f36ea65c0a51f47",
+          "target": "stmt:scripts/scale-bench.mjs@L157",
+          "line": 157,
+          "expr": "return {\n    wallS: realMatch ? Number.parseFloat(realMatch[1]) : Number.NaN,\n    peakRssBytes: rssMatch ? Number.parseInt(rssMatch[1], 10) : Number.NaN,\n    files: sumMatch ? Number.parseInt(sumMatch[1], 10) : Number.NaN,\n    nodes: sumMatch ? Number.parseInt(sumMatch[2], 10) : Number.NaN,\n    edges: sumMatch ? Number.parseInt(sumMatch[3], 10) : Number.NaN,\n    cribMs: sumMatch ? Number.parseInt(sumMatch[4], 10) : Number.NaN,\n    stdout,\n    stderr,\n  };"
+        }
+      }
+    ]
+  },
+  "controlFlow": {
+    "raises": [
+      {
+        "id": "raise:scripts/scale-bench.mjs@L150",
+        "kind": "raise",
+        "lang": "javascript",
+        "file": "scripts/scale-bench.mjs",
+        "span": {
+          "start": 150,
+          "end": 150
+        },
+        "errorMessage": "new Error(`crib index exited ${res.status}\\nstdout:${stdout}\\nstderr:${stderr}`)",
+        "confidence": 1
+      }
+    ],
+    "handles": [],
+    "iterates": [],
+    "declares": []
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 5,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 5,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 1,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 10,
+      "unresolved": 10
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "10 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

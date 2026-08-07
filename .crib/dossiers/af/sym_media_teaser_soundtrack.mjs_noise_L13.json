@@ -1,0 +1,132 @@
+{
+  "id": "sym:media/teaser/soundtrack.mjs#noise@L13",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:11a1556380efc450f1a63add81e340913b23b671739123a0246fb9d4c449c7d7",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:media/teaser/soundtrack.mjs#noise@L13",
+    "kind": "symbol",
+    "type": "function",
+    "name": "noise",
+    "qualifiedName": "noise",
+    "signature": "noise(…)",
+    "lang": "javascript",
+    "file": "media/teaser/soundtrack.mjs",
+    "span": {
+      "start": 13,
+      "end": 16
+    },
+    "callSites": [
+      {
+        "callee": "sin",
+        "line": 14
+      },
+      {
+        "callee": "floor",
+        "line": 15
+      }
+    ]
+  },
+  "source": {
+    "text": "const noise = (n) => {\n  const value = Math.sin(n * 12.9898) * 43_758.5453;\n  return (value - Math.floor(value)) * 2 - 1;\n};",
+    "truncated": false,
+    "totalLines": 4,
+    "startLine": 13
+  },
+  "callers": [],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#conventions",
+      "heading": "Conventions",
+      "anchor": "conventions",
+      "snippet": "Conventions",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-interview-guide.md#go-pivot-criteria-decide-before-interviews-judge-after",
+      "heading": "Go / pivot criteria (decide before interviews, judge after)",
+      "anchor": "go-pivot-criteria-decide-before-interviews-judge-after",
+      "snippet": "Go / pivot criteria (decide before interviews, judge after)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-refined-vs-existing-assessment.md#2-5-ai-architect",
+      "heading": "2.5 AI Architect",
+      "anchor": "2-5-ai-architect",
+      "snippet": "2.5 AI Architect",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:media/teaser/soundtrack.mjs#noise@L13",
+    "procedureName": "noise",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:media/teaser/soundtrack.mjs#noise@L13",
+        "procedureName": "noise",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:525d275e4465866cc469d63fbc0761e41819bdecb49beee18ad81b7fcb9161e6",
+          "target": "stmt:media/teaser/soundtrack.mjs@L14",
+          "line": 14,
+          "expr": "const value = Math.sin(n * 12.9898) * 43_758.5453;"
+        }
+      },
+      {
+        "procedure": "sym:media/teaser/soundtrack.mjs#noise@L13",
+        "procedureName": "noise",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:89d367d7418363d7babc553e18c54d86f625e6b84300415c6c5584a1c47bea3a",
+          "target": "stmt:media/teaser/soundtrack.mjs@L15",
+          "line": 15,
+          "expr": "return (value - Math.floor(value)) * 2 - 1;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 2,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

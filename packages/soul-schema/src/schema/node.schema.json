@@ -27,7 +27,10 @@
         "case-branch",
         "route",
         "field",
-        "component"
+        "component",
+        "owner",
+        "http-call",
+        "agent-artifact"
       ]
     },
     "hash": { "type": "string", "pattern": "^blake3:[0-9a-f]+$" },
@@ -87,6 +90,14 @@
       },
       "additionalProperties": true
     },
+    "email": { "type": "string" },
+    "artifactType": {
+      "type": "string",
+      "enum": ["instruction", "skill", "agent", "command", "rule", "mcp-server"]
+    },
+    "docType": { "type": "string" },
+    "audience": { "type": "string" },
+    "appliesTo": { "type": "array", "items": { "type": "string" } },
     "meta": { "type": "object" }
   },
   "additionalProperties": true

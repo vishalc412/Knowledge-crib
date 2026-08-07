@@ -1,0 +1,261 @@
+{
+  "id": "sym:packages/core/src/index/sqlite-index.ts#rrfFuse@L61",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:c476aa4712b4c470b6007019b77695141804d0989234487c7d7c0ed82b624888",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/index/sqlite-index.ts#rrfFuse@L61",
+    "kind": "symbol",
+    "type": "function",
+    "name": "rrfFuse",
+    "qualifiedName": "rrfFuse",
+    "signature": "rrfFuse(bm25: Hit[], vec: Hit[]): Hit[]",
+    "lang": "typescript",
+    "file": "packages/core/src/index/sqlite-index.ts",
+    "span": {
+      "start": 61,
+      "end": 79
+    },
+    "callSites": [
+      {
+        "callee": "set",
+        "line": 68
+      },
+      {
+        "callee": "get",
+        "line": 68
+      },
+      {
+        "callee": "has",
+        "line": 69
+      },
+      {
+        "callee": "set",
+        "line": 69
+      },
+      {
+        "callee": "add",
+        "line": 72
+      },
+      {
+        "callee": "add",
+        "line": 73
+      },
+      {
+        "callee": "sort",
+        "line": 74
+      },
+      {
+        "callee": "entries",
+        "line": 74
+      },
+      {
+        "callee": "map",
+        "line": 75
+      },
+      {
+        "callee": "get",
+        "line": 76
+      }
+    ]
+  },
+  "source": {
+    "text": "function rrfFuse(bm25: Hit[], vec: Hit[]): Hit[] {\n  const score = new Map<string, number>();\n  const meta = new Map<string, Hit>();\n  const add = (hits: Hit[]) => {\n    for (let i = 0; i < hits.length; i++) {\n      const h = hits[i]!;\n      const rank = i + 1;\n      score.set(h.id, (score.get(h.id) ?? 0) + 1 / (RRF_K + rank));\n      if (!meta.has(h.id)) meta.set(h.id, h);\n    }\n  };\n  add(bm25);\n  add(vec);\n  const ranked = [...score.entries()].sort((a, b) => b[1] - a[1]);\n  return ranked.map(([id, s]) => {\n    const h = meta.get(id)!;\n    return { id: h.id, kind: h.kind, score: s, name: h.name, file: h.file };\n  });\n}",
+    "truncated": false,
+    "totalLines": 19,
+    "startLine": 61
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.query@L154",
+      "confidence": 1,
+      "name": "query",
+      "qualifiedName": "SqliteIndexStore.query",
+      "signature": "query(q: HybridQuery): Hit[]",
+      "type": "method",
+      "file": "packages/core/src/index/sqlite-index.ts",
+      "line": 154
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/fixtures/python/rules.py#add@L16",
+      "confidence": 1,
+      "name": "add",
+      "qualifiedName": "add",
+      "signature": "add(a, b)",
+      "type": "function",
+      "file": "packages/parsers/fixtures/python/rules.py",
+      "line": 16
+    },
+    {
+      "id": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+      "confidence": 1,
+      "name": "get",
+      "qualifiedName": "createRegistry.get",
+      "signature": "get(name)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 1300
+    },
+    {
+      "id": "sym:packages/core/src/index/sqlite-index.ts#rrfFuse.add@L64",
+      "confidence": 1,
+      "name": "add",
+      "qualifiedName": "rrfFuse.add",
+      "signature": "add(…)",
+      "type": "function",
+      "file": "packages/core/src/index/sqlite-index.ts",
+      "line": 64
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/core/src/index/sqlite-index.ts#rrfFuse@L61",
+    "procedureName": "rrfFuse",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#rrfFuse@L61",
+        "procedureName": "rrfFuse",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bc7a93489d948b08008117bdca07b22cad03f5b89d5684f4a257555f653d0282",
+          "target": "stmt:packages/core/src/index/sqlite-index.ts@L64",
+          "line": 64,
+          "expr": "const add = (hits: Hit[]) => {\n    for (let i = 0; i < hits.length; i++) {\n      const h = hits[i]!;\n      const rank = i + 1;\n      score.set(h.id, (score.get(h.id) ?? 0) + 1 / (RRF_K + rank));\n      if (!meta.has(h.id)) meta.set(h.id, h);\n    }\n  };"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#rrfFuse@L61",
+        "procedureName": "rrfFuse",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:d1d81ab705ff76da1c5efd7580ed5094ab38f4969c613f00586d953464ee2f2b",
+          "target": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+          "expr": "get",
+          "line": 68
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#rrfFuse@L61",
+        "procedureName": "rrfFuse",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:35e429d2372635bff73ec411b802e0a4ed7e9a583387bbec75b3c471f3654f37",
+          "target": "sym:packages/core/src/index/sqlite-index.ts#rrfFuse.add@L64",
+          "expr": "add",
+          "line": 72
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#rrfFuse@L61",
+        "procedureName": "rrfFuse",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:66b84ba53a7301ec4d9617ce0bfb43cb1b0449f9fc2ae15d52a74bd21416b831",
+          "target": "sym:packages/parsers/fixtures/python/rules.py#add@L16",
+          "expr": "add",
+          "line": 72
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#rrfFuse@L61",
+        "procedureName": "rrfFuse",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:91c8634a1cc5ba824be820af8ed287fbd664a867555efe7a159bd13f338cfd66",
+          "target": "stmt:packages/core/src/index/sqlite-index.ts@L72",
+          "line": 72,
+          "expr": "add(bm25);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#rrfFuse@L61",
+        "procedureName": "rrfFuse",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:64ab6f2912d458408b911cc2e7ed4f60edf9f52505c6f31640ecf0f41467e9eb",
+          "target": "stmt:packages/core/src/index/sqlite-index.ts@L73",
+          "line": 73,
+          "expr": "add(vec);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#rrfFuse@L61",
+        "procedureName": "rrfFuse",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:065bed36b53b6c14d5954f29133e3aa10ac22026fe5768aaf944e016c2fa259b",
+          "target": "stmt:packages/core/src/index/sqlite-index.ts@L74",
+          "line": 74,
+          "expr": "const ranked = [...score.entries()].sort((a, b) => b[1] - a[1]);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#rrfFuse@L61",
+        "procedureName": "rrfFuse",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5538dc1bc22dadcfd83f918336960b78df72b02e28192eb8dd63f3b5ef265fe7",
+          "target": "stmt:packages/core/src/index/sqlite-index.ts@L75",
+          "line": 75,
+          "expr": "return ranked.map(([id, s]) => {\n    const h = meta.get(id)!;\n    return { id: h.id, kind: h.kind, score: s, name: h.name, file: h.file };\n  });"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 5,
+    "referencedByFiles": [
+      "packages/core/src/index/sqlite-index.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 5,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 3,
+      "recorded": 10,
+      "unresolved": 6
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "6 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

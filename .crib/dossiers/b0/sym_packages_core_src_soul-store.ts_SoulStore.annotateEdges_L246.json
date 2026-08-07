@@ -1,0 +1,473 @@
+{
+  "id": "sym:packages/core/src/soul-store.ts#SoulStore.annotateEdges@L246",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:162e1d23a5e7af9657fd31c63123eb823ec1d73b21133248142633790e9e3a93",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/soul-store.ts#SoulStore.annotateEdges@L246",
+    "kind": "symbol",
+    "type": "method",
+    "name": "annotateEdges",
+    "qualifiedName": "SoulStore.annotateEdges",
+    "signature": "annotateEdges(updates: EdgeAnnotation[]): void",
+    "lang": "typescript",
+    "file": "packages/core/src/soul-store.ts",
+    "span": {
+      "start": 246,
+      "end": 273
+    },
+    "callSites": [
+      {
+        "callee": "get",
+        "line": 248
+      },
+      {
+        "callee": "add",
+        "line": 271
+      },
+      {
+        "callee": "shardOf",
+        "line": 271
+      },
+      {
+        "callee": "shardKeyForEdge",
+        "line": 271
+      }
+    ]
+  },
+  "source": {
+    "text": "  annotateEdges(updates: EdgeAnnotation[]): void {\n    for (const u of updates) {\n      const edge = this.edges.get(u.id);\n      if (!edge) continue;\n      let changed = false;\n      if (u.guard !== undefined) {\n        edge.guard = u.guard;\n        changed = true;\n      }\n      if (u.cfgPath !== undefined) {\n        edge.cfgPath = u.cfgPath;\n        changed = true;\n      }\n      if (u.branch !== undefined) {\n        edge.branch = u.branch;\n        changed = true;\n      }\n      if (u.inLoop !== undefined) {\n        edge.inLoop = u.inLoop;\n        changed = true;\n      }\n      if (u.inException !== undefined) {\n        edge.inException = u.inException;\n        changed = true;\n      }\n      if (changed) this.dirtyEdgeShards.add(shardOf(shardKeyForEdge(edge), this.shardDigits));\n    }\n  }",
+    "truncated": false,
+    "totalLines": 28,
+    "startLine": 246
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/core/src/shard.ts#shardKeyForEdge@L55",
+      "confidence": 1,
+      "name": "shardKeyForEdge",
+      "qualifiedName": "shardKeyForEdge",
+      "signature": "shardKeyForEdge(edge: Edge): string",
+      "type": "function",
+      "file": "packages/core/src/shard.ts",
+      "line": 55
+    },
+    {
+      "id": "sym:packages/core/src/shard.ts#shardOf@L60",
+      "confidence": 1,
+      "name": "shardOf",
+      "qualifiedName": "shardOf",
+      "signature": "shardOf(key: string, shardHexDigits: number): string",
+      "type": "function",
+      "file": "packages/core/src/shard.ts",
+      "line": 60
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/core/src/soul-store.ts@L238",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m11-cfg-pass-guard-chain-condition-nodes",
+      "heading": "M11 — CFG pass + guard chain + condition nodes",
+      "anchor": "m11-cfg-pass-guard-chain-condition-nodes",
+      "snippet": "M11 — CFG pass + guard chain + condition nodes",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#shared-file-chokepoints",
+      "heading": "Shared-file chokepoints",
+      "anchor": "shared-file-chokepoints",
+      "snippet": "Shared-file chokepoints",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.annotateEdges@L246",
+    "procedureName": "SoulStore.annotateEdges",
+    "conditions": [
+      "cond:packages/core/src/soul-store.ts@L247",
+      "cond:packages/core/src/soul-store.ts@L251",
+      "cond:packages/core/src/soul-store.ts@L255",
+      "cond:packages/core/src/soul-store.ts@L259",
+      "cond:packages/core/src/soul-store.ts@L263",
+      "cond:packages/core/src/soul-store.ts@L267",
+      "cond:packages/core/src/soul-store.ts@L271"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.annotateEdges@L246",
+        "procedureName": "SoulStore.annotateEdges",
+        "guard": "cond:packages/core/src/soul-store.ts@L247",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L247",
+            "expr": "updates",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:20a8ff5c3315782eed269f92b2750d0e7d589cbe2d743204a1ae0ea544fc9bac",
+          "target": "stmt:packages/core/src/soul-store.ts@L248",
+          "line": 248,
+          "expr": "const edge = this.edges.get(u.id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.annotateEdges@L246",
+        "procedureName": "SoulStore.annotateEdges",
+        "guard": "cond:packages/core/src/soul-store.ts@L251",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L247",
+            "expr": "updates"
+          },
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L251",
+            "expr": "u.guard !== undefined",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fa02ec3600df3a65e8019dd2c366fdc727eb033f627d35672cb07496e0695ef4",
+          "target": "assign:packages/core/src/soul-store.ts@L252",
+          "line": 252,
+          "expr": "edge.guard = u.guard;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.annotateEdges@L246",
+        "procedureName": "SoulStore.annotateEdges",
+        "guard": "cond:packages/core/src/soul-store.ts@L251",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L247",
+            "expr": "updates"
+          },
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L251",
+            "expr": "u.guard !== undefined",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1045cf9b0878e71078b8fcdbaaa3d89b936be1b521fa47d68a875c296ef5e0ef",
+          "target": "assign:packages/core/src/soul-store.ts@L253",
+          "line": 253,
+          "expr": "changed = true;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.annotateEdges@L246",
+        "procedureName": "SoulStore.annotateEdges",
+        "guard": "cond:packages/core/src/soul-store.ts@L255",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L247",
+            "expr": "updates"
+          },
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L255",
+            "expr": "u.cfgPath !== undefined",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:150fdc0c6a5a8f0321d01a85e6ee18a22f903fe62403369871ec265c55b00c88",
+          "target": "assign:packages/core/src/soul-store.ts@L256",
+          "line": 256,
+          "expr": "edge.cfgPath = u.cfgPath;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.annotateEdges@L246",
+        "procedureName": "SoulStore.annotateEdges",
+        "guard": "cond:packages/core/src/soul-store.ts@L255",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L247",
+            "expr": "updates"
+          },
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L255",
+            "expr": "u.cfgPath !== undefined",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e3550f081c5dcc6173501ae88b71a83cb676eaaad8ee7820584034a287e2b417",
+          "target": "assign:packages/core/src/soul-store.ts@L257",
+          "line": 257,
+          "expr": "changed = true;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.annotateEdges@L246",
+        "procedureName": "SoulStore.annotateEdges",
+        "guard": "cond:packages/core/src/soul-store.ts@L259",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L247",
+            "expr": "updates"
+          },
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L259",
+            "expr": "u.branch !== undefined",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:875b8286e30c85d69fd7c9bd92aed76d5dbb8c9a9e9a72aecc8322a5dc7e0f23",
+          "target": "assign:packages/core/src/soul-store.ts@L260",
+          "line": 260,
+          "expr": "edge.branch = u.branch;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.annotateEdges@L246",
+        "procedureName": "SoulStore.annotateEdges",
+        "guard": "cond:packages/core/src/soul-store.ts@L259",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L247",
+            "expr": "updates"
+          },
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L259",
+            "expr": "u.branch !== undefined",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bc5ce5f7e4eeb84608fd7ed9fd73b088db68665b1778a3de00902a40c9d72198",
+          "target": "assign:packages/core/src/soul-store.ts@L261",
+          "line": 261,
+          "expr": "changed = true;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.annotateEdges@L246",
+        "procedureName": "SoulStore.annotateEdges",
+        "guard": "cond:packages/core/src/soul-store.ts@L263",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L247",
+            "expr": "updates"
+          },
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L263",
+            "expr": "u.inLoop !== undefined",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9331e10ae3d8ade8c4458f6fe8a73f273bfdfeb6ed42ba7f3bbc3bfeeb2a46a0",
+          "target": "assign:packages/core/src/soul-store.ts@L264",
+          "line": 264,
+          "expr": "edge.inLoop = u.inLoop;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.annotateEdges@L246",
+        "procedureName": "SoulStore.annotateEdges",
+        "guard": "cond:packages/core/src/soul-store.ts@L263",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L247",
+            "expr": "updates"
+          },
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L263",
+            "expr": "u.inLoop !== undefined",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:658532ad7073a10d0b02595bba8533e4f1761c87176a0d75bf8c532049c4e499",
+          "target": "assign:packages/core/src/soul-store.ts@L265",
+          "line": 265,
+          "expr": "changed = true;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.annotateEdges@L246",
+        "procedureName": "SoulStore.annotateEdges",
+        "guard": "cond:packages/core/src/soul-store.ts@L267",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L247",
+            "expr": "updates"
+          },
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L267",
+            "expr": "u.inException !== undefined",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:dd8b9e3f5e401ef4b36427e582c1508519ca6ca236f2dce3cb4a9c1fd6162d6d",
+          "target": "assign:packages/core/src/soul-store.ts@L268",
+          "line": 268,
+          "expr": "edge.inException = u.inException;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.annotateEdges@L246",
+        "procedureName": "SoulStore.annotateEdges",
+        "guard": "cond:packages/core/src/soul-store.ts@L267",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L247",
+            "expr": "updates"
+          },
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L267",
+            "expr": "u.inException !== undefined",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:09be2445ba36c45488647f0836ea7055aa12599be6b0d14fed0a7fd31df1ec70",
+          "target": "assign:packages/core/src/soul-store.ts@L269",
+          "line": 269,
+          "expr": "changed = true;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.annotateEdges@L246",
+        "procedureName": "SoulStore.annotateEdges",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:3efedcd8ec3d669762c0e2a1ecc37c2d8f364175e765d5213e1fb80ba3d36ae8",
+          "target": "sym:packages/core/src/shard.ts#shardKeyForEdge@L55",
+          "expr": "shardKeyForEdge",
+          "line": 271
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.annotateEdges@L246",
+        "procedureName": "SoulStore.annotateEdges",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:4539de03e11462731fc3bea03bff417b102fc0f45fd4721b484257325a335e5c",
+          "target": "sym:packages/core/src/shard.ts#shardOf@L60",
+          "expr": "shardOf",
+          "line": 271
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.ts#SoulStore.annotateEdges@L246",
+        "procedureName": "SoulStore.annotateEdges",
+        "guard": "cond:packages/core/src/soul-store.ts@L271",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L247",
+            "expr": "updates"
+          },
+          {
+            "id": "cond:packages/core/src/soul-store.ts@L271",
+            "expr": "changed",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4986ab83ee9c617544dd4717ebcfe7aea78339db62be01395d2a22c28d9ae8cf",
+          "target": "stmt:packages/core/src/soul-store.ts@L271",
+          "line": 271,
+          "expr": "this.dirtyEdgeShards.add(shardOf(shardKeyForEdge(edge), this.shardDigits));"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 12,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 12,
+    "assignments": 10,
+    "conditions": 7,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 4,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

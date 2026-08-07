@@ -1,0 +1,89 @@
+{
+  "id": "sym:packages/ui/web/support.js#createExternalModules@L1010",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:5fb6749f057c560c6478e1ec44084f2bbd7b8a555f04aeff52b482bb1072eb84",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/ui/web/support.js#createExternalModules@L1010",
+    "kind": "symbol",
+    "type": "function",
+    "name": "createExternalModules",
+    "qualifiedName": "createExternalModules",
+    "signature": "createExternalModules(onResolved)",
+    "lang": "javascript",
+    "file": "packages/ui/web/support.js",
+    "span": {
+      "start": 1010,
+      "end": 1171
+    }
+  },
+  "source": {
+    "text": "  function createExternalModules(onResolved) {\n    const cache = /* @__PURE__ */ new Map();\n    let babelLoading = null;\n    const reportedMissing = /* @__PURE__ */ new Map();\n    const polling = /* @__PURE__ */ new Set();\n    function ensureBabel() {\n      if (window.Babel) return Promise.resolve();\n      if (babelLoading) return babelLoading;\n      babelLoading = new Promise((res, rej) => {\n        const s = document.createElement(\"script\");\n        s.src = BABEL_URL;\n        s.crossOrigin = \"anonymous\";\n        s.onload = () => res();\n        s.onerror = rej;\n        document.head.appendChild(s);\n      });\n      return babelLoading;\n    }\n    function load(kind, url) {\n      if (cache.has(url)) return;\n      cache.set(url, null);\n      console.info(\"[dc-runtime] x-import: loading\", url, \"(\" + kind + \")\");\n      const ready = kind === \"jsx\" ? ensureBabel() : Promise.resolve();\n      ready.then(() => fetch(url)).then((r) => {\n        if (!r.ok) throw new Error(\"HTTP \" + r.status);\n        return r.text();\n      }).then((src) => {\n        const code = kind === \"jsx\" ? window.Babel.transform(src, {\n          filename: url,\n          presets: [\"react\", \"typescript\"]\n        }).code : src;\n        const module = { exports: {} };\n        const before = new Set(Object.keys(window));\n        //! nosemgrep: eval-and-function-constructor\n        new Function(\"React\", \"module\", \"exports\", \"require\", code)(\n          getReact(),\n          module,\n          module.exports,\n          () => ({})\n        );\n        const globals = {};\n        for (const k of Object.keys(window)) {\n          if (!before.has(k) && typeof window[k] === \"function\") {\n            globals[k] = window[k];\n          }\n        }\n        cache.set(url, { mod: module.exports, globals });\n        console.info(\n          \"[dc-runtime] x-import: loaded\",\n          url,\n          \"\\u2014 exports:\",\n          Object.keys(module.exports),\n          \"window globals:\",\n          Object.keys(globals)\n        );\n        onResolved();\n      }).catch((e) => {\n        cache.set(url, {\n          mod: {},\n          globals: {},\n          error: \"failed to load: \" + (e instanceof Error && e.message ? e.message : String(e))\n        });\n        console.error(\n          \"[dc-runtime] x-import: FAILED to load\",\n          url,\n          \"(\" + kind + \")\",\n          e\n        );\n        onResolved();\n      });\n    }\n    function resolve2(url, name) {\n      const entry = cache.get(url);\n      if (!entry) return null;\n      const { mod, globals } = entry;\n      const C = mod && mod[name] || globals && globals[name] || typeof window !== \"undefined\" && window[name] || mod && mod.default;\n      if (typeof C === \"function\") return C;\n      const key = url + \"\\0\" + name;\n      if (!reportedMissing.has(key)) {\n        reportedMissing.set(\n          key,\n          entry.error || 'no export named \"' + name + '\" (has: ' + Object.keys(mod).join(\", \") + \")\"\n        );\n        console.error(\n          \"[dc-runtime] x-import: module\",\n          url,\n          \"loaded but has no component named\",\n          JSON.stringify(name),\n          \"\\u2014 available exports:\",\n          Object.keys(mod),\n          \"window globals:\",\n          Object.keys(globals),\n          \". The module must `module.exports = {\" + name + \"}` or set `window.\" + name + \"`.\"\n        );\n      }\n      return null;\n    }\n    function waitForGlobal(name) {\n      if (polling.has(name)) return;\n      polling.add(name);\n      const started = Date.now();\n      const isCE = isCustomElementName(name);\n      const tick = () => {\n        const found = isCE ? customElements.get(name) : isRenderableType(resolveDottedPath(window, name));\n        if (found) {\n          polling.delete(name);\n          onResolved();\n          return;\n        }\n        if (Date.now() - started >= GLOBAL_POLL_TIMEOUT_MS) {\n          console.warn(\n            \"[dc-runtime] x-import: global\",\n            JSON.stringify(name),",
+    "truncated": true,
+    "totalLines": 162,
+    "startLine": 1010,
+    "nextLine": 1123
+  },
+  "callers": [
+    {
+      "id": "sym:packages/ui/web/support.js#createRuntime@L1329",
+      "confidence": 1,
+      "name": "createRuntime",
+      "qualifiedName": "createRuntime",
+      "signature": "createRuntime(doc = document)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 1329
+    }
+  ],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/ui/web/support.js#createExternalModules@L1010",
+    "procedureName": "createExternalModules",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/ui/web/support.js#createExternalModules@L1010",
+        "procedureName": "createExternalModules",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4f86516d2e3885fe2ae058766d3aa5fc49361bb43e85668ebfc724b75d9d7d5b",
+          "target": "stmt:packages/ui/web/support.js@L1170",
+          "line": 1170,
+          "expr": "return { load, resolve: resolve2, resolveGlobal, getError };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/ui/web/support.js"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

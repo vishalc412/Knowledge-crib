@@ -1,0 +1,19 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://knowledge-crib.dev/schema/memory-1/feedback.schema.json",
+  "title": "MemoryFeedback",
+  "description": "A local feedback signal on a record (PRD §2).",
+  "type": "object",
+  "required": ["id", "schemaVersion", "signal", "subject", "actor", "ts"],
+  "properties": {
+    "id": { "type": "string", "pattern": "^fb:[0-9a-f]+$" },
+    "schemaVersion": { "type": "string", "const": "1" },
+    "signal": { "type": "string", "enum": ["useful", "unhelpful", "contradicted"] },
+    "subject": { "type": "string", "minLength": 1 },
+    "actor": { "type": "string", "minLength": 1 },
+    "context": { "type": "string" },
+    "ts": { "type": "string" },
+    "meta": { "type": "object" }
+  },
+  "additionalProperties": true
+}

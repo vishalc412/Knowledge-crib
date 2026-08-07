@@ -1,0 +1,128 @@
+{
+  "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#stripBlockLine@L996",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:b7b08386f1db9d45c9faaff6dd2013864a306b7098d9be646073ff6fcc7f05fd",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#stripBlockLine@L996",
+    "kind": "symbol",
+    "type": "function",
+    "name": "stripBlockLine",
+    "qualifiedName": "stripBlockLine",
+    "signature": "stripBlockLine(line: string): string",
+    "lang": "typescript",
+    "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+    "span": {
+      "start": 996,
+      "end": 1002
+    },
+    "callSites": [
+      {
+        "callee": "trim",
+        "line": 997
+      },
+      {
+        "callee": "replace",
+        "line": 997
+      },
+      {
+        "callee": "replace",
+        "line": 997
+      },
+      {
+        "callee": "replace",
+        "line": 997
+      }
+    ]
+  },
+  "source": {
+    "text": "function stripBlockLine(line: string): string {\n  return line\n    .replace(/^\\/\\*+\\*?/, '')\n    .replace(/\\*+\\/$/, '')\n    .replace(/^\\s*\\*/, '')\n    .trim();\n}",
+    "truncated": false,
+    "totalLines": 7,
+    "startLine": 996
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/rust/lexer.ts#collectRustComments@L556",
+      "confidence": 1,
+      "name": "collectRustComments",
+      "qualifiedName": "collectRustComments",
+      "signature": "collectRustComments(src: string): RustCommentBlock[]",
+      "type": "function",
+      "file": "packages/parsers/src/rust/lexer.ts",
+      "line": 556
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#collectTsComments@L951",
+      "confidence": 1,
+      "name": "collectTsComments",
+      "qualifiedName": "collectTsComments",
+      "signature": "collectTsComments(src: string): CommentBlock[]",
+      "type": "function",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 951
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/ts/TypeScriptExtractor.ts@L995",
+      "snippet": "/** Strip slash-star open, star-slash close, and a leading `*` (JSDoc continuation) from one line. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#stripBlockLine@L996",
+    "procedureName": "stripBlockLine",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#stripBlockLine@L996",
+        "procedureName": "stripBlockLine",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:57a4c58e41e95913014185dd1cd7831db5dfc6ee8e42bdeeab79bb241b1b165b",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L997",
+          "line": 997,
+          "expr": "return line\n    .replace(/^\\/\\*+\\*?/, '')\n    .replace(/\\*+\\/$/, '')\n    .replace(/^\\s*\\*/, '')\n    .trim();"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/parsers/src/rust/lexer.ts",
+      "packages/parsers/src/ts/TypeScriptExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 4,
+      "unresolved": 4
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "4 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

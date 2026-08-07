@@ -1,0 +1,168 @@
+{
+  "id": "sym:packages/pipeline/src/parse-concurrent.test.ts#buildRepo@L32",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:89785569bf0801c0ebe84c51ffb6c06f54b5c2276e1de97c37f7b77eb1d9d88b",
+  "builtAt": "2026-07-13T11:14:06.943Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/parse-concurrent.test.ts#buildRepo@L32",
+    "kind": "symbol",
+    "type": "function",
+    "name": "buildRepo",
+    "qualifiedName": "buildRepo",
+    "signature": "buildRepo(): string",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/parse-concurrent.test.ts",
+    "span": {
+      "start": 32,
+      "end": 48
+    },
+    "callSites": [
+      {
+        "callee": "mkdtempSync",
+        "line": 33
+      },
+      {
+        "callee": "join",
+        "line": 33
+      },
+      {
+        "callee": "tmpdir",
+        "line": 33
+      },
+      {
+        "callee": "mkdirSync",
+        "line": 34
+      },
+      {
+        "callee": "join",
+        "line": 34
+      },
+      {
+        "callee": "writeFileSync",
+        "line": 46
+      },
+      {
+        "callee": "join",
+        "line": 46
+      }
+    ]
+  },
+  "source": {
+    "text": "function buildRepo(): string {\n  const repo = mkdtempSync(join(tmpdir(), 'crib-par-test-'));\n  mkdirSync(join(repo, 'src'), { recursive: true });\n  const files: Record<string, string> = {\n    'src/auth.ts':\n      'export class AuthService { login(): void { this.issue(); } issue(): void { log(); } }\\nexport function log(): void {}\\n',\n    'src/users.ts':\n      'export class User { constructor(readonly id: string) {} greet(): string { return this.id; } }\\n',\n    'src/orders.ts':\n      'import { User } from \"./users.js\";\\nexport function mkOrder(u: User): string { return u.greet(); }\\n',\n    'src/util.ts':\n      'export const add = (a: number, b: number): number => a + b;\\nexport const mul = (a: number, b: number): number => a * b;\\n',\n    'src/readme.md': '# Module\\n\\nThe AuthService issues tokens.\\n',\n  };\n  for (const [path, content] of Object.entries(files)) writeFileSync(join(repo, path), content);\n  return repo;\n}",
+    "truncated": false,
+    "totalLines": 17,
+    "startLine": 32
+  },
+  "callers": [],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/pipeline/src/parse-concurrent.test.ts@L30",
+      "snippet": "/** A multi-file TS repo — enough files that the concurrency path engages (>1 file) and that the",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/parse-concurrent.test.ts#buildRepo@L32",
+    "procedureName": "buildRepo",
+    "conditions": [
+      "cond:packages/pipeline/src/parse-concurrent.test.ts@L46"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/parse-concurrent.test.ts#buildRepo@L32",
+        "procedureName": "buildRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7b85d27b235e3b50118946570f53f8d414497a51dd3eea9341693d693ee675b1",
+          "target": "stmt:packages/pipeline/src/parse-concurrent.test.ts@L33",
+          "line": 33,
+          "expr": "const repo = mkdtempSync(join(tmpdir(), 'crib-par-test-'));"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/parse-concurrent.test.ts#buildRepo@L32",
+        "procedureName": "buildRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ab77008c06aec62edffe2943b97051049d679559102b4ceb77000c1376855d0a",
+          "target": "stmt:packages/pipeline/src/parse-concurrent.test.ts@L34",
+          "line": 34,
+          "expr": "mkdirSync(join(repo, 'src'), { recursive: true });"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/parse-concurrent.test.ts#buildRepo@L32",
+        "procedureName": "buildRepo",
+        "guard": "cond:packages/pipeline/src/parse-concurrent.test.ts@L46",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/parse-concurrent.test.ts@L46",
+            "expr": "Object.entries(files)",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b0f251a9c295728b16fecb22911e10893dfa3f3593a9180c9ebcc72866e47c8c",
+          "target": "stmt:packages/pipeline/src/parse-concurrent.test.ts@L46",
+          "line": 46,
+          "expr": "writeFileSync(join(repo, path), content);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/parse-concurrent.test.ts#buildRepo@L32",
+        "procedureName": "buildRepo",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ce858605f8510bbb14e9d983905f3cf3ca81df81ab5f9e81e64bd638f4bcb429",
+          "target": "stmt:packages/pipeline/src/parse-concurrent.test.ts@L47",
+          "line": 47,
+          "expr": "return repo;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 7,
+      "unresolved": 7
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "7 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

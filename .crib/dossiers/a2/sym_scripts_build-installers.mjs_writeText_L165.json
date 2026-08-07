@@ -1,0 +1,124 @@
+{
+  "id": "sym:scripts/build-installers.mjs#writeText@L165",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:962b9dc89ce7f0fdb97d122d3d3fa4cdc4a64444e6b8414854a09f82c284832f",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:scripts/build-installers.mjs#writeText@L165",
+    "kind": "symbol",
+    "type": "function",
+    "name": "writeText",
+    "qualifiedName": "writeText",
+    "signature": "writeText(path, text, mode)",
+    "lang": "javascript",
+    "file": "scripts/build-installers.mjs",
+    "span": {
+      "start": 165,
+      "end": 168
+    },
+    "callSites": [
+      {
+        "callee": "writeFileSync",
+        "line": 166
+      },
+      {
+        "callee": "chmodSync",
+        "line": 167
+      }
+    ]
+  },
+  "source": {
+    "text": "function writeText(path, text, mode) {\n  writeFileSync(path, text, 'utf8');\n  if (mode !== undefined) chmodSync(path, mode);\n}",
+    "truncated": false,
+    "totalLines": 4,
+    "startLine": 165
+  },
+  "callers": [
+    {
+      "id": "sym:scripts/build-installers.mjs#buildInstallers@L175",
+      "confidence": 1,
+      "name": "buildInstallers",
+      "qualifiedName": "buildInstallers",
+      "signature": "buildInstallers({ outRoot = join(repoRoot, 'dist', 'installers') } = {})",
+      "type": "function",
+      "file": "scripts/build-installers.mjs",
+      "line": 175
+    }
+  ],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:scripts/build-installers.mjs#writeText@L165",
+    "procedureName": "writeText",
+    "conditions": [
+      "cond:scripts/build-installers.mjs@L167"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:scripts/build-installers.mjs#writeText@L165",
+        "procedureName": "writeText",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ccc23ed8937462145714f87a4065a411b90d13581d09f88034ef447af16cba7b",
+          "target": "stmt:scripts/build-installers.mjs@L166",
+          "line": 166,
+          "expr": "writeFileSync(path, text, 'utf8');"
+        }
+      },
+      {
+        "procedure": "sym:scripts/build-installers.mjs#writeText@L165",
+        "procedureName": "writeText",
+        "guard": "cond:scripts/build-installers.mjs@L167",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:scripts/build-installers.mjs@L167",
+            "expr": "mode !== undefined",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bb59f142c47b3ec7ddc259c26772dde38ca5f6010aa9ae9c301e040bc70a265d",
+          "target": "stmt:scripts/build-installers.mjs@L167",
+          "line": 167,
+          "expr": "chmodSync(path, mode);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "scripts/build-installers.mjs"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 2,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

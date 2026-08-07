@@ -1,0 +1,108 @@
+{
+  "id": "sym:packages/parsers/fixtures/php/auth.php#AuthService.login@L12",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:09b48585dfdf2bf828e06674128986b857406f5a742942ef4b57f3df0c3ee0a8",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/fixtures/php/auth.php#AuthService.login@L12",
+    "kind": "symbol",
+    "type": "method",
+    "name": "login",
+    "qualifiedName": "AuthService.login",
+    "signature": "login($email, $password)",
+    "lang": "php",
+    "file": "packages/parsers/fixtures/php/auth.php",
+    "span": {
+      "start": 12,
+      "end": 15
+    }
+  },
+  "source": {
+    "text": "    public function login($email, $password) {\n        $hash = hashPassword($password);\n        return $this->issueToken($email, $hash);\n    }",
+    "truncated": false,
+    "totalLines": 4,
+    "startLine": 12
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/fixtures/php/auth.php#hashPassword@L3",
+      "confidence": 1,
+      "name": "hashPassword",
+      "qualifiedName": "hashPassword",
+      "signature": "hashPassword($password)",
+      "type": "function",
+      "file": "packages/parsers/fixtures/php/auth.php",
+      "line": 3
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#context-symbol",
+      "heading": "`context(symbol)`",
+      "anchor": "context-symbol",
+      "snippet": "`context(symbol)`",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-data-model.md#edge-example",
+      "heading": "Edge example",
+      "anchor": "edge-example",
+      "snippet": "Edge example",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/fixtures/php/auth.php#AuthService.login@L12",
+    "procedureName": "AuthService.login",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/fixtures/php/auth.php#AuthService.login@L12",
+        "procedureName": "AuthService.login",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:ed7212799c4aab8b6935b2b412dbbd81bce1103ee71a89eb57cc03a0833dba81",
+          "target": "sym:packages/parsers/fixtures/php/auth.php#hashPassword@L3",
+          "expr": "hashPassword"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "unimplemented",
+    "executesCount": 0,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "unimplemented",
+    "bodyPresent": false,
+    "executes": 0,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "BODY UNAVAILABLE — no body statements indexed. The implementation may live in a missing file (e.g. a PL/SQL package body) or be a spec-only declaration. Do NOT derive behavior, scoring formulas, or migration logic from this node — locate and index the body first."
+    ]
+  }
+}

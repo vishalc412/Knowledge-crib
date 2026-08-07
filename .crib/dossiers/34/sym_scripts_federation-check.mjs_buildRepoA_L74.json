@@ -1,0 +1,291 @@
+{
+  "id": "sym:scripts/federation-check.mjs#buildRepoA@L74",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:d92fab3f4a4966b74b65de4624ea3127c95099da5505caeba7acef2977db6a6f",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:scripts/federation-check.mjs#buildRepoA@L74",
+    "kind": "symbol",
+    "type": "function",
+    "name": "buildRepoA",
+    "qualifiedName": "buildRepoA",
+    "signature": "buildRepoA(…)",
+    "lang": "javascript",
+    "file": "scripts/federation-check.mjs",
+    "span": {
+      "start": 74,
+      "end": 94
+    },
+    "callSites": [
+      {
+        "callee": "mkdtempSync",
+        "line": 75
+      },
+      {
+        "callee": "join",
+        "line": 75
+      },
+      {
+        "callee": "tmpdir",
+        "line": 75
+      },
+      {
+        "callee": "gitInit",
+        "line": 76
+      },
+      {
+        "callee": "writeFileSync",
+        "line": 77
+      },
+      {
+        "callee": "join",
+        "line": 78
+      },
+      {
+        "callee": "join",
+        "line": 79
+      },
+      {
+        "callee": "execFileSync",
+        "line": 88
+      },
+      {
+        "callee": "commit",
+        "line": 92
+      }
+    ]
+  },
+  "source": {
+    "text": "const buildRepoA = () => {\n  const repo = mkdtempSync(join(tmpdir(), 'crib-fed-a-'));\n  gitInit(repo);\n  writeFileSync(\n    join(repo, 'client.ts'),\n    [\n      '// repoA — outbound HTTP client. The fetch call site becomes an http-call node.',\n      'export async function fetchLoan(id: string): Promise<unknown> {',\n      '  const res = await fetch(`/api/loans/${id}`);',\n      '  return res.json();',\n      '}',\n      '',\n    ].join('\\n'),\n  );\n  execFileSync('git', ['-C', repo, 'add', 'client.ts'], {\n    encoding: 'utf8',\n    stdio: ['ignore', 'pipe', 'pipe'],\n  });\n  commit(repo, 'repoA: client');\n  return repo;\n};",
+    "truncated": false,
+    "totalLines": 21,
+    "startLine": 74
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:scripts/stats-check.mjs#commit@L58",
+      "confidence": 1,
+      "name": "commit",
+      "qualifiedName": "commit",
+      "signature": "commit(…)",
+      "type": "function",
+      "file": "scripts/stats-check.mjs",
+      "line": 58
+    },
+    {
+      "id": "sym:scripts/federation-check.mjs#commit@L64",
+      "confidence": 1,
+      "name": "commit",
+      "qualifiedName": "commit",
+      "signature": "commit(…)",
+      "type": "function",
+      "file": "scripts/federation-check.mjs",
+      "line": 64
+    },
+    {
+      "id": "sym:scripts/federation-check.mjs#gitInit@L53",
+      "confidence": 1,
+      "name": "gitInit",
+      "qualifiedName": "gitInit",
+      "signature": "gitInit(…)",
+      "type": "function",
+      "file": "scripts/federation-check.mjs",
+      "line": 53
+    },
+    {
+      "id": "sym:scripts/stats-check.mjs#gitInit@L47",
+      "confidence": 1,
+      "name": "gitInit",
+      "qualifiedName": "gitInit",
+      "signature": "gitInit(…)",
+      "type": "function",
+      "file": "scripts/stats-check.mjs",
+      "line": 47
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:scripts/federation-check.mjs@L73",
+      "snippet": "/** repoA: a TS client with an outbound `fetch('/api/loans/${id}')` inside `fetchLoan`. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:scripts/federation-check.mjs#buildRepoA@L74",
+    "procedureName": "buildRepoA",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:scripts/federation-check.mjs#buildRepoA@L74",
+        "procedureName": "buildRepoA",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e485c144fd8975708a06bff3ae43777126fcc95c2eabc9b283a41d6f97c88dd4",
+          "target": "stmt:scripts/federation-check.mjs@L75",
+          "line": 75,
+          "expr": "const repo = mkdtempSync(join(tmpdir(), 'crib-fed-a-'));"
+        }
+      },
+      {
+        "procedure": "sym:scripts/federation-check.mjs#buildRepoA@L74",
+        "procedureName": "buildRepoA",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6eef9dd1d7e6ebf86d1c82ca068d01d2dcb52aac3bd119e05f8340f8361ef422",
+          "target": "stmt:scripts/federation-check.mjs@L76",
+          "line": 76,
+          "expr": "gitInit(repo);"
+        }
+      },
+      {
+        "procedure": "sym:scripts/federation-check.mjs#buildRepoA@L74",
+        "procedureName": "buildRepoA",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:a8ba5793baf4292e4bdbe14579bcab9690aec4de8c9ffeec4f82ec64f49b5334",
+          "target": "sym:scripts/federation-check.mjs#gitInit@L53",
+          "expr": "gitInit",
+          "line": 76
+        }
+      },
+      {
+        "procedure": "sym:scripts/federation-check.mjs#buildRepoA@L74",
+        "procedureName": "buildRepoA",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:f55923060f1db7064323c1385ff5863fb5f773dda4c4d7dc55c6d77a14967dcd",
+          "target": "sym:scripts/stats-check.mjs#gitInit@L47",
+          "expr": "gitInit",
+          "line": 76
+        }
+      },
+      {
+        "procedure": "sym:scripts/federation-check.mjs#buildRepoA@L74",
+        "procedureName": "buildRepoA",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2afcddf7259e8e63b39e5dd4540808df493edd3c896e928a344bb1da10a14069",
+          "target": "stmt:scripts/federation-check.mjs@L77",
+          "line": 77,
+          "expr": "writeFileSync(\n    join(repo, 'client.ts'),\n    [\n      '// repoA — outbound HTTP client. The fetch call site becomes an http-call node.',\n      'export async function fetchLoan(id: string): Promise<unknown> {',\n      '  const res = await fetch(`/api/loans/${id}`);',\n      '  return res.json();',\n      '}',\n      '',\n    ].join('\\n'),\n  );"
+        }
+      },
+      {
+        "procedure": "sym:scripts/federation-check.mjs#buildRepoA@L74",
+        "procedureName": "buildRepoA",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fcf5583cedcc0a27a08bbe5143537f6a384f98acd21d8ce8c5a4f6e73879a124",
+          "target": "stmt:scripts/federation-check.mjs@L88",
+          "line": 88,
+          "expr": "execFileSync('git', ['-C', repo, 'add', 'client.ts'], {\n    encoding: 'utf8',\n    stdio: ['ignore', 'pipe', 'pipe'],\n  });"
+        }
+      },
+      {
+        "procedure": "sym:scripts/federation-check.mjs#buildRepoA@L74",
+        "procedureName": "buildRepoA",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:68faac26f36993206e788660e7381f616bb88aa98290b81da87c6ee241a70613",
+          "target": "stmt:scripts/federation-check.mjs@L92",
+          "line": 92,
+          "expr": "commit(repo, 'repoA: client');"
+        }
+      },
+      {
+        "procedure": "sym:scripts/federation-check.mjs#buildRepoA@L74",
+        "procedureName": "buildRepoA",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:9e794b21a545e5e73938f3f5d7c3b6a97c6978c0370030f851dd5c1c732bbebb",
+          "target": "sym:scripts/stats-check.mjs#commit@L58",
+          "expr": "commit",
+          "line": 92
+        }
+      },
+      {
+        "procedure": "sym:scripts/federation-check.mjs#buildRepoA@L74",
+        "procedureName": "buildRepoA",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:d58f298e05b175c081ab2b78ee9c70cdd1a66faea8f2e956cef4122e98c28f12",
+          "target": "sym:scripts/federation-check.mjs#commit@L64",
+          "expr": "commit",
+          "line": 92
+        }
+      },
+      {
+        "procedure": "sym:scripts/federation-check.mjs#buildRepoA@L74",
+        "procedureName": "buildRepoA",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:32c1b42bd2b04cf50f16c69ee3f2356fa0bcf6e43b1a25979800f041dbab7723",
+          "target": "stmt:scripts/federation-check.mjs@L93",
+          "line": 93,
+          "expr": "return repo;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 6,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 6,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 4,
+      "recorded": 9,
+      "unresolved": 7
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "7 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

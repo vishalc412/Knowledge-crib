@@ -1,0 +1,352 @@
+{
+  "id": "sym:packages/core/src/embeddings/char-ngram.ts#accumulate@L41",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:a9e7ffc9fa21e86744c49005b69773e9b8ebdd24741511b9bf8d925e7bae3d0e",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/embeddings/char-ngram.ts#accumulate@L41",
+    "kind": "symbol",
+    "type": "function",
+    "name": "accumulate",
+    "qualifiedName": "accumulate",
+    "signature": "accumulate(text: string, dim: number, minN: number, maxN: number): Float32Array",
+    "lang": "typescript",
+    "file": "packages/core/src/embeddings/char-ngram.ts",
+    "span": {
+      "start": 41,
+      "end": 57
+    },
+    "callSites": [
+      {
+        "callee": "normalize",
+        "line": 43
+      },
+      {
+        "callee": "max",
+        "line": 45
+      },
+      {
+        "callee": "max",
+        "line": 46
+      },
+      {
+        "callee": "slice",
+        "line": 49
+      },
+      {
+        "callee": "fnv1a",
+        "line": 51
+      }
+    ]
+  },
+  "source": {
+    "text": "function accumulate(text: string, dim: number, minN: number, maxN: number): Float32Array {\n  const v = new Float32Array(dim);\n  const s = normalize(text);\n  if (s.trim().length === 0) return v;\n  const lo = Math.max(1, minN);\n  const hi = Math.max(lo, maxN);\n  for (let n = lo; n <= hi; n++) {\n    for (let i = 0; i + n <= s.length; i++) {\n      const gram = s.slice(i, i + n);\n      if (gram.trim().length === 0) continue; // skip all-space n-grams\n      const h = fnv1a(gram);\n      const bucket = h % dim;\n      v[bucket] = (v[bucket] ?? 0) + (h & 1 ? 1 : -1);\n    }\n  }\n  return v;\n}",
+    "truncated": false,
+    "totalLines": 17,
+    "startLine": 41
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/embeddings/char-ngram.ts#CharNgramEmbedder.embed@L90",
+      "confidence": 1,
+      "name": "embed",
+      "qualifiedName": "CharNgramEmbedder.embed",
+      "signature": "embed(text: string): Vec",
+      "type": "method",
+      "file": "packages/core/src/embeddings/char-ngram.ts",
+      "line": 90
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/core/src/embeddings/char-ngram.ts#fnv1a@L24",
+      "confidence": 1,
+      "name": "fnv1a",
+      "qualifiedName": "fnv1a",
+      "signature": "fnv1a(s: string): number",
+      "type": "function",
+      "file": "packages/core/src/embeddings/char-ngram.ts",
+      "line": 24
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/ts-resolver.ts#normalize@L196",
+      "confidence": 1,
+      "name": "normalize",
+      "qualifiedName": "normalize",
+      "signature": "normalize(p: string): string",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/ts-resolver.ts",
+      "line": 196
+    },
+    {
+      "id": "sym:packages/core/src/embeddings/char-ngram.ts#normalize@L36",
+      "confidence": 1,
+      "name": "normalize",
+      "qualifiedName": "normalize",
+      "signature": "normalize(text: string): string",
+      "type": "function",
+      "file": "packages/core/src/embeddings/char-ngram.ts",
+      "line": 36
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/core/src/embeddings/char-ngram.ts@L40",
+      "snippet": "/** Build the raw signed-count vector for a normalized text. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/embeddings/char-ngram.ts#accumulate@L41",
+    "procedureName": "accumulate",
+    "conditions": [
+      "cond:packages/core/src/embeddings/char-ngram.ts@L44",
+      "cond:packages/core/src/embeddings/char-ngram.ts@L47",
+      "cond:packages/core/src/embeddings/char-ngram.ts@L48"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/embeddings/char-ngram.ts#accumulate@L41",
+        "procedureName": "accumulate",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:6c3fa5d3845c2a6bc0039d0f555526c15f1c5a1e1473235adda2e32fffe39b5e",
+          "target": "sym:packages/pipeline/src/resolve/ts-resolver.ts#normalize@L196",
+          "expr": "normalize",
+          "line": 43
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/embeddings/char-ngram.ts#accumulate@L41",
+        "procedureName": "accumulate",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e34408305efce8824b18015ce37da67263ca1d821b9d6b5c2b790a273a0f6ecd",
+          "target": "stmt:packages/core/src/embeddings/char-ngram.ts@L43",
+          "line": 43,
+          "expr": "const s = normalize(text);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/embeddings/char-ngram.ts#accumulate@L41",
+        "procedureName": "accumulate",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:e6e4d723675e39ce44998afe7042f4c4d1bcfdb31ecce91e0d21e6251a31c632",
+          "target": "sym:packages/core/src/embeddings/char-ngram.ts#normalize@L36",
+          "expr": "normalize",
+          "line": 43
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/embeddings/char-ngram.ts#accumulate@L41",
+        "procedureName": "accumulate",
+        "guard": "cond:packages/core/src/embeddings/char-ngram.ts@L44",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/embeddings/char-ngram.ts@L44",
+            "expr": "s.trim().length === 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8f831b474e2f6948e6cb30797e68306b5b7b648a21a484720c4431b122130623",
+          "target": "stmt:packages/core/src/embeddings/char-ngram.ts@L44",
+          "line": 44,
+          "expr": "return v;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/embeddings/char-ngram.ts#accumulate@L41",
+        "procedureName": "accumulate",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0cbb31b9add5ecdd107f7a4e059fae64de9edaf2640f5630ddb1442e9cfa7ed2",
+          "target": "stmt:packages/core/src/embeddings/char-ngram.ts@L45",
+          "line": 45,
+          "expr": "const lo = Math.max(1, minN);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/embeddings/char-ngram.ts#accumulate@L41",
+        "procedureName": "accumulate",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:207ffaf875a57eee604d6353fae11604a2a34756ceda192d7a24b26e916700ae",
+          "target": "stmt:packages/core/src/embeddings/char-ngram.ts@L46",
+          "line": 46,
+          "expr": "const hi = Math.max(lo, maxN);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/embeddings/char-ngram.ts#accumulate@L41",
+        "procedureName": "accumulate",
+        "guard": "cond:packages/core/src/embeddings/char-ngram.ts@L48",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/embeddings/char-ngram.ts@L47",
+            "expr": "n <= hi"
+          },
+          {
+            "id": "cond:packages/core/src/embeddings/char-ngram.ts@L48",
+            "expr": "i + n <= s.length",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:aab6a3f0a001099000ed6375f12ea130b81747e5516c94fa8ed1300ef95b5f73",
+          "target": "stmt:packages/core/src/embeddings/char-ngram.ts@L49",
+          "line": 49,
+          "expr": "const gram = s.slice(i, i + n);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/embeddings/char-ngram.ts#accumulate@L41",
+        "procedureName": "accumulate",
+        "guard": "cond:packages/core/src/embeddings/char-ngram.ts@L48",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/embeddings/char-ngram.ts@L47",
+            "expr": "n <= hi"
+          },
+          {
+            "id": "cond:packages/core/src/embeddings/char-ngram.ts@L48",
+            "expr": "i + n <= s.length",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1c8ddf2bf40356ee5fa4ed339938847171bed09cd8389328763eb4e041b2677e",
+          "target": "stmt:packages/core/src/embeddings/char-ngram.ts@L51",
+          "line": 51,
+          "expr": "const h = fnv1a(gram);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/embeddings/char-ngram.ts#accumulate@L41",
+        "procedureName": "accumulate",
+        "guard": "cond:packages/core/src/embeddings/char-ngram.ts@L48",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/embeddings/char-ngram.ts@L47",
+            "expr": "n <= hi"
+          },
+          {
+            "id": "cond:packages/core/src/embeddings/char-ngram.ts@L48",
+            "expr": "i + n <= s.length",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:e7e1ad10d92e2e6162251add126049db3386db50a887ce494710b5280720b8c2",
+          "target": "sym:packages/core/src/embeddings/char-ngram.ts#fnv1a@L24",
+          "expr": "fnv1a",
+          "line": 51
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/embeddings/char-ngram.ts#accumulate@L41",
+        "procedureName": "accumulate",
+        "guard": "cond:packages/core/src/embeddings/char-ngram.ts@L48",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/embeddings/char-ngram.ts@L47",
+            "expr": "n <= hi"
+          },
+          {
+            "id": "cond:packages/core/src/embeddings/char-ngram.ts@L48",
+            "expr": "i + n <= s.length",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:779c316ac2dda9c9be07c7a98e259c992b90633f3b857ecae2da1e21f258a4de",
+          "target": "assign:packages/core/src/embeddings/char-ngram.ts@L53",
+          "line": 53,
+          "expr": "v[bucket] = (v[bucket] ?? 0) + (h & 1 ? 1 : -1);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/embeddings/char-ngram.ts#accumulate@L41",
+        "procedureName": "accumulate",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8e74bcbb997b36e44020bf0cb02f1ca11aa33a35805bde1554b215727db59262",
+          "target": "stmt:packages/core/src/embeddings/char-ngram.ts@L56",
+          "line": 56,
+          "expr": "return v;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 8,
+    "referencedByFiles": [
+      "packages/core/src/embeddings/char-ngram.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 8,
+    "assignments": 1,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 3,
+      "recorded": 5,
+      "unresolved": 3
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "3 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

@@ -1,0 +1,497 @@
+{
+  "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.nextSkeletonSystem@L601",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:0075a98c8180f94b81851caa3adc106aa2f971503fb7bc4a0b863c6c29bad9ce",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.nextSkeletonSystem@L601",
+    "kind": "symbol",
+    "type": "method",
+    "name": "nextSkeletonSystem",
+    "qualifiedName": "EnrichmentStore.nextSkeletonSystem",
+    "signature": "nextSkeletonSystem(args: EnrichNextArgs): EnrichNextBatch",
+    "lang": "typescript",
+    "file": "packages/mcp/src/enrichment.ts",
+    "span": {
+      "start": 601,
+      "end": 657
+    },
+    "callSites": [
+      {
+        "callee": "targets",
+        "line": 602
+      },
+      {
+        "callee": "slice",
+        "line": 603
+      },
+      {
+        "callee": "blake3Hex",
+        "line": 603
+      },
+      {
+        "callee": "status",
+        "line": 604
+      },
+      {
+        "callee": "some",
+        "line": 616
+      },
+      {
+        "callee": "allArtifacts",
+        "line": 616
+      },
+      {
+        "callee": "isStale",
+        "line": 617
+      },
+      {
+        "callee": "skeletonSeed",
+        "line": 632
+      },
+      {
+        "callee": "freshArtifacts",
+        "line": 633
+      },
+      {
+        "callee": "outputSchema",
+        "line": 634
+      },
+      {
+        "callee": "instructionsFor",
+        "line": 635
+      },
+      {
+        "callee": "estimateWorkItemCost",
+        "line": 640
+      }
+    ]
+  },
+  "source": {
+    "text": "  private nextSkeletonSystem(args: EnrichNextArgs): EnrichNextBatch {\n    const target = this.targets('system')[0];\n    const batchId = `llm:system-skeleton:${blake3Hex(target?.hash ?? 'empty').slice(0, 12)}`;\n    const progress = this.status().progress;\n    if (!target) {\n      return {\n        batchId,\n        layer: 'system',\n        items: [],\n        remaining: 0,\n        selectedTargetIds: [],\n        progress,\n        costEstimate: { currency: 'tokens', batch: 0, perItem: [], totalPending: 0 },\n      };\n    }\n    const freshSkeleton = this.allArtifacts().some(\n      (a) => a.layer === 'system' && a.mode === 'skeleton' && !this.isStale(a),\n    );\n    if (freshSkeleton) {\n      return {\n        batchId,\n        layer: 'system',\n        items: [],\n        remaining: 0,\n        selectedTargetIds: [],\n        progress,\n        costEstimate: { currency: 'tokens', batch: 0, perItem: [], totalPending: 0 },\n      };\n    }\n    const item: EnrichWorkItem = {\n      targetId: target.id,\n      seed: this.skeletonSeed(),\n      lowerLayer: { clusters: this.freshArtifacts('cluster') },\n      outputSchema: outputSchema('system'),\n      instructions: `${instructionsFor('system')} DRAFT SKELETON: author at confidence ≤0.6 and record a draft note in whatToDistrust. The final full pass will supersede this artifact.`,\n      // Skeleton is a lightweight draft → balanced, not the powerful tier the full bible earns.\n      suggestedTier: 'balanced',\n    };\n    const perItemCost = [\n      { targetId: item.targetId, tokens: estimateWorkItemCost(item), tier: item.suggestedTier },\n    ];\n    return {\n      batchId,\n      layer: 'system',\n      items: [item],\n      remaining: 0,\n      selectedTargetIds: [target.id],\n      progress,\n      costEstimate: {\n        currency: 'tokens',\n        batch: perItemCost[0]!.tokens,\n        perItem: perItemCost,\n        totalPending: perItemCost[0]!.tokens,\n      },\n      ...(args.budgetTokens !== undefined ? { budget: args.budgetTokens } : {}),\n    };\n  }",
+    "truncated": false,
+    "totalLines": 57,
+    "startLine": 601
+  },
+  "callers": [
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.next@L476",
+      "confidence": 1,
+      "name": "next",
+      "qualifiedName": "EnrichmentStore.next",
+      "signature": "next(args: EnrichNextArgs = {}): EnrichNextBatch",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 476
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.allArtifacts@L825",
+      "confidence": 1,
+      "name": "allArtifacts",
+      "qualifiedName": "EnrichmentStore.allArtifacts",
+      "signature": "allArtifacts(): LlmArtifact[]",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 825
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.freshArtifacts@L1364",
+      "confidence": 1,
+      "name": "freshArtifacts",
+      "qualifiedName": "EnrichmentStore.freshArtifacts",
+      "signature": "freshArtifacts(layer: EnrichLayer): LlmArtifact[]",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 1364
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.isStale@L1624",
+      "confidence": 1,
+      "name": "isStale",
+      "qualifiedName": "EnrichmentStore.isStale",
+      "signature": "isStale(artifact: LlmArtifact): boolean",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 1624
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.skeletonSeed@L661",
+      "confidence": 1,
+      "name": "skeletonSeed",
+      "qualifiedName": "EnrichmentStore.skeletonSeed",
+      "signature": "skeletonSeed(): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 661
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.status@L382",
+      "confidence": 1,
+      "name": "status",
+      "qualifiedName": "EnrichmentStore.status",
+      "signature": "status(args: EnrichStatusArgs = {}): EnrichStatus",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 382
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.targets@L1005",
+      "confidence": 1,
+      "name": "targets",
+      "qualifiedName": "EnrichmentStore.targets",
+      "signature": "targets(layer: EnrichLayer, scope?: EnrichScope): Array<{ layer: EnrichLayer; id: string; hash: string; node?: Node }>",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 1005
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#estimateWorkItemCost@L1857",
+      "confidence": 1,
+      "name": "estimateWorkItemCost",
+      "qualifiedName": "estimateWorkItemCost",
+      "signature": "estimateWorkItemCost(item: EnrichWorkItem): number",
+      "type": "function",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 1857
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#instructionsFor@L1761",
+      "confidence": 1,
+      "name": "instructionsFor",
+      "qualifiedName": "instructionsFor",
+      "signature": "instructionsFor(layer: EnrichLayer): string",
+      "type": "function",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 1761
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#outputSchema@L1729",
+      "confidence": 1,
+      "name": "outputSchema",
+      "qualifiedName": "outputSchema",
+      "signature": "outputSchema(layer: EnrichLayer): Record<string, unknown>",
+      "type": "function",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 1729
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/mcp/src/enrichment.ts@L594",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.nextSkeletonSystem@L601",
+    "procedureName": "EnrichmentStore.nextSkeletonSystem",
+    "conditions": [
+      "cond:packages/mcp/src/enrichment.ts@L605",
+      "cond:packages/mcp/src/enrichment.ts@L619"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.nextSkeletonSystem@L601",
+        "procedureName": "EnrichmentStore.nextSkeletonSystem",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:54ef0c41fa6e710f01dcb10429062eba4b9ad4710f7aae879de1d6f7f0084863",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L602",
+          "line": 602,
+          "expr": "const target = this.targets('system')[0];"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.nextSkeletonSystem@L601",
+        "procedureName": "EnrichmentStore.nextSkeletonSystem",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:cbde6250196a70914ef3d1aeaf1a33f89a2a153d5ff19324a18b156faf2e5429",
+          "target": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.targets@L1005",
+          "expr": "targets",
+          "line": 602
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.nextSkeletonSystem@L601",
+        "procedureName": "EnrichmentStore.nextSkeletonSystem",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0cd7f8b8528615f63d7aa4e53fbc0758ffccde9ffce0105050363404aaefb5ee",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L603",
+          "line": 603,
+          "expr": "const batchId = `llm:system-skeleton:${blake3Hex(target?.hash ?? 'empty').slice(0, 12)}`;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.nextSkeletonSystem@L601",
+        "procedureName": "EnrichmentStore.nextSkeletonSystem",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:61878907a951ea714e978ed897e2253665edfbbf3b5bfcf067e3393403cb561e",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L604",
+          "line": 604,
+          "expr": "const progress = this.status().progress;"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.nextSkeletonSystem@L601",
+        "procedureName": "EnrichmentStore.nextSkeletonSystem",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:bf55045b1871ef24192a1089246d99ee9839b588c0391f16d7dfeaa7ceeeb8f1",
+          "target": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.status@L382",
+          "expr": "status",
+          "line": 604
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.nextSkeletonSystem@L601",
+        "procedureName": "EnrichmentStore.nextSkeletonSystem",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L605",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L605",
+            "expr": "!target",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:662b3469acb7605af949e502c9412b76a7a889436e9fd10713d2e7cb82b6ca9b",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L606",
+          "line": 606,
+          "expr": "return {\n        batchId,\n        layer: 'system',\n        items: [],\n        remaining: 0,\n        selectedTargetIds: [],\n        progress,\n        costEstimate: { currency: 'tokens', batch: 0, perItem: [], totalPending: 0 },\n      };"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.nextSkeletonSystem@L601",
+        "procedureName": "EnrichmentStore.nextSkeletonSystem",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:5d755bdace4db183eaa85efa52973ac5a3f4bcd9d54fda26f5c4055ed5963ca7",
+          "target": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.allArtifacts@L825",
+          "expr": "allArtifacts",
+          "line": 616
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.nextSkeletonSystem@L601",
+        "procedureName": "EnrichmentStore.nextSkeletonSystem",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d91e666dc7135545127e9f14cea2de02ef8001c18a14db7d4bc287448c14c0b5",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L616",
+          "line": 616,
+          "expr": "const freshSkeleton = this.allArtifacts().some(\n      (a) => a.layer === 'system' && a.mode === 'skeleton' && !this.isStale(a),\n    );"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.nextSkeletonSystem@L601",
+        "procedureName": "EnrichmentStore.nextSkeletonSystem",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:d32417570dc53a815e2501d235fa9defb0171cb37c49344b286888758b9c213a",
+          "target": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.isStale@L1624",
+          "expr": "isStale",
+          "line": 617
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.nextSkeletonSystem@L601",
+        "procedureName": "EnrichmentStore.nextSkeletonSystem",
+        "guard": "cond:packages/mcp/src/enrichment.ts@L619",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/enrichment.ts@L619",
+            "expr": "freshSkeleton",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3e4d8189037e90f913e0f765fa40f83b42d1c2cf4f121c8b5d98aaa2167cc90c",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L620",
+          "line": 620,
+          "expr": "return {\n        batchId,\n        layer: 'system',\n        items: [],\n        remaining: 0,\n        selectedTargetIds: [],\n        progress,\n        costEstimate: { currency: 'tokens', batch: 0, perItem: [], totalPending: 0 },\n      };"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.nextSkeletonSystem@L601",
+        "procedureName": "EnrichmentStore.nextSkeletonSystem",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d230bc8817862d974caafd76a44a819d3c59c8a549154488aa8aa689d2c350cb",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L630",
+          "line": 630,
+          "expr": "const item: EnrichWorkItem = {\n      targetId: target.id,\n      seed: this.skeletonSeed(),\n      lowerLayer: { clusters: this.freshArtifacts('cluster') },\n      outputSchema: outputSchema('system'),\n      instructions: `${instructionsFor('system')} DRAFT SKELETON: author at confidence ≤0.6 and record a draft note in whatToDistrust. The final full pass will supersede this artifact.`,\n      // Skeleton is a lightweight draft → balanced, not the powerful tier the full bible earns.\n      suggestedTier: 'balanced',\n    };"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.nextSkeletonSystem@L601",
+        "procedureName": "EnrichmentStore.nextSkeletonSystem",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:65536790b4645b0f2cb0636a34731579b91148948a6278df19ba0bafc58cb3ba",
+          "target": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.skeletonSeed@L661",
+          "expr": "skeletonSeed",
+          "line": 632
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.nextSkeletonSystem@L601",
+        "procedureName": "EnrichmentStore.nextSkeletonSystem",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:b026b19245e1e322be954f0a60c95e75f05e8060a1cf5713e6924aeba8957756",
+          "target": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.freshArtifacts@L1364",
+          "expr": "freshArtifacts",
+          "line": 633
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.nextSkeletonSystem@L601",
+        "procedureName": "EnrichmentStore.nextSkeletonSystem",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:4c26623aa4b98ab68000f7525eb6ee5872a3afeb120b09074432eb8478f42d45",
+          "target": "sym:packages/mcp/src/enrichment.ts#outputSchema@L1729",
+          "expr": "outputSchema",
+          "line": 634
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.nextSkeletonSystem@L601",
+        "procedureName": "EnrichmentStore.nextSkeletonSystem",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:770b5fa58f2ba287c302ede502c4cbd7f6d733151bf5d4815c32c96cf9c593a2",
+          "target": "sym:packages/mcp/src/enrichment.ts#instructionsFor@L1761",
+          "expr": "instructionsFor",
+          "line": 635
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.nextSkeletonSystem@L601",
+        "procedureName": "EnrichmentStore.nextSkeletonSystem",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c31353b705e001c0d77f4ef2c8c08caec6c35c70eecaf3dcb0e4cd07feaf9d18",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L639",
+          "line": 639,
+          "expr": "const perItemCost = [\n      { targetId: item.targetId, tokens: estimateWorkItemCost(item), tier: item.suggestedTier },\n    ];"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.nextSkeletonSystem@L601",
+        "procedureName": "EnrichmentStore.nextSkeletonSystem",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:066c22f654c5de959505acbd94050d8e563c991142fea2589e4a4ce22d9173f0",
+          "target": "sym:packages/mcp/src/enrichment.ts#estimateWorkItemCost@L1857",
+          "expr": "estimateWorkItemCost",
+          "line": 640
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.nextSkeletonSystem@L601",
+        "procedureName": "EnrichmentStore.nextSkeletonSystem",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:06a7f3148e55c07a0ed92ac36b2e6302bf71770a10d91eac3d334677785f0508",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L642",
+          "line": 642,
+          "expr": "return {\n      batchId,\n      layer: 'system',\n      items: [item],\n      remaining: 0,\n      selectedTargetIds: [target.id],\n      progress,\n      costEstimate: {\n        currency: 'tokens',\n        batch: perItemCost[0]!.tokens,\n        perItem: perItemCost,\n        totalPending: perItemCost[0]!.tokens,\n      },\n      ...(args.budgetTokens !== undefined ? { budget: args.budgetTokens } : {}),\n    };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 9,
+    "referencedByFiles": [
+      "packages/mcp/src/enrichment.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 9,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 9,
+      "recorded": 12,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

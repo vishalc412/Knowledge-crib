@@ -1,0 +1,83 @@
+{
+  "id": "sym:packages/core/src/lock.ts#CribLock.isHeld@L92",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:14462a8e664e3aa1a29c36fe33d3062735a3c1dba0be6dc352cc04dced23bf5c",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/lock.ts#CribLock.isHeld@L92",
+    "kind": "symbol",
+    "type": "getter",
+    "name": "isHeld",
+    "qualifiedName": "CribLock.isHeld",
+    "lang": "typescript",
+    "file": "packages/core/src/lock.ts",
+    "span": {
+      "start": 92,
+      "end": 94
+    }
+  },
+  "source": {
+    "text": "  get isHeld(): boolean {\n    return this.held;\n  }",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 92
+  },
+  "callers": [],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/core/src/lock.ts@L91",
+      "snippet": "/** True once `acquire()` has succeeded and `release()` has not yet run. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/lock.ts#CribLock.isHeld@L92",
+    "procedureName": "CribLock.isHeld",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/lock.ts#CribLock.isHeld@L92",
+        "procedureName": "CribLock.isHeld",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b7ab304b362169e5b8d36ea25bcb1f2bc6d5ffc45399ead53a2f9022d4088dbc",
+          "target": "stmt:packages/core/src/lock.ts@L93",
+          "line": 93,
+          "expr": "return this.held;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

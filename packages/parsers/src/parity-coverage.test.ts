@@ -148,6 +148,25 @@ func Assess(amount float64, score float64) {
 }
 `,
   },
+  {
+    // M2.5 — plain JS parity. The same TS extractor (ScriptKind.JS) must admit `.js` and emit the
+    // SAME condition + formula-assignment + raise behavior nodes a `.ts` file would, tagged
+    // `lang: 'javascript'`. This is the fidelity half of M2.5 (the js-coverage gate pins the
+    // coverage/edges/determinism half); together they prove JS is a first-class citizen, not a
+    // dropped Phase-1 file node.
+    lang: 'javascript',
+    path: 'scoring.js',
+    extractor: () => new TypeScriptExtractor(),
+    proc: 'assess',
+    source: `function assess(amount, score) {
+  let risk;
+  if (amount > 50000 && score < 700) {
+    risk = amount * 0.4 + score * 0.6;
+    throw new Error("high risk");
+  }
+}
+`,
+  },
 ];
 
 function ctxFor(text: string): ExtractCtx {

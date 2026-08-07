@@ -1,0 +1,122 @@
+{
+  "id": "sym:packages/core/src/graph-layout.ts#requireEntries@L230",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:b940732da7239da98715f9c94ba5e1d798c4c0df2d1799b647cd8ff1b059c56d",
+  "builtAt": "2026-07-16T14:40:07.112Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/graph-layout.ts#requireEntries@L230",
+    "kind": "symbol",
+    "type": "function",
+    "name": "requireEntries",
+    "qualifiedName": "requireEntries",
+    "signature": "requireEntries(dir: string): Array<{ path: string; directory: boolean }>",
+    "lang": "typescript",
+    "file": "packages/core/src/graph-layout.ts",
+    "span": {
+      "start": 230,
+      "end": 235
+    },
+    "callSites": [
+      {
+        "callee": "map",
+        "line": 231
+      },
+      {
+        "callee": "readdirSync",
+        "line": 231
+      },
+      {
+        "callee": "join",
+        "line": 232
+      },
+      {
+        "callee": "isDirectory",
+        "line": 233
+      },
+      {
+        "callee": "statSync",
+        "line": 233
+      }
+    ]
+  },
+  "source": {
+    "text": "function requireEntries(dir: string): Array<{ path: string; directory: boolean }> {\n  return readdirSync(dir).map((name) => {\n    const path = join(dir, name);\n    return { path, directory: statSync(path).isDirectory() };\n  });\n}",
+    "truncated": false,
+    "totalLines": 6,
+    "startLine": 230
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/graph-layout.ts#countFiles@L216",
+      "confidence": 1,
+      "name": "countFiles",
+      "qualifiedName": "countFiles",
+      "signature": "countFiles(root: string): number",
+      "type": "function",
+      "file": "packages/core/src/graph-layout.ts",
+      "line": 216
+    },
+    {
+      "id": "sym:packages/core/src/graph-layout.ts#walkFiles@L202",
+      "confidence": 1,
+      "name": "walkFiles",
+      "qualifiedName": "walkFiles",
+      "signature": "walkFiles(root: string): string[]",
+      "type": "function",
+      "file": "packages/core/src/graph-layout.ts",
+      "line": 202
+    }
+  ],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/core/src/graph-layout.ts#requireEntries@L230",
+    "procedureName": "requireEntries",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/graph-layout.ts#requireEntries@L230",
+        "procedureName": "requireEntries",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8ad1643b8e0ca735720336373f70c514e7221eed53902f50e2fa78c8df236c11",
+          "target": "stmt:packages/core/src/graph-layout.ts@L231",
+          "line": 231,
+          "expr": "return readdirSync(dir).map((name) => {\n    const path = join(dir, name);\n    return { path, directory: statSync(path).isDirectory() };\n  });"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/core/src/graph-layout.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 5,
+      "unresolved": 5
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "5 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

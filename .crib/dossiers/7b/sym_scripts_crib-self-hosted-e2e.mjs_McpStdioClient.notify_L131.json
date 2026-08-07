@@ -1,0 +1,100 @@
+{
+  "id": "sym:scripts/crib-self-hosted-e2e.mjs#McpStdioClient.notify@L131",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:5a2a73b6190d49a23b64045db75d6e2a851b11411f18959afcbe93c7132e2fe4",
+  "builtAt": "2026-07-13T11:14:06.943Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:scripts/crib-self-hosted-e2e.mjs#McpStdioClient.notify@L131",
+    "kind": "symbol",
+    "type": "method",
+    "name": "notify",
+    "qualifiedName": "McpStdioClient.notify",
+    "signature": "notify(method, params = {})",
+    "lang": "javascript",
+    "file": "scripts/crib-self-hosted-e2e.mjs",
+    "span": {
+      "start": 131,
+      "end": 133
+    },
+    "callSites": [
+      {
+        "callee": "write",
+        "line": 132
+      },
+      {
+        "callee": "stringify",
+        "line": 132
+      }
+    ]
+  },
+  "source": {
+    "text": "  notify(method, params = {}) {\n    this.child.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', method, params })}\\n`);\n  }",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 131
+  },
+  "callers": [
+    {
+      "id": "sym:scripts/crib-self-hosted-e2e.mjs#McpStdioClient.start@L82",
+      "confidence": 1,
+      "name": "start",
+      "qualifiedName": "McpStdioClient.start",
+      "signature": "start()",
+      "type": "method",
+      "file": "scripts/crib-self-hosted-e2e.mjs",
+      "line": 82
+    }
+  ],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:scripts/crib-self-hosted-e2e.mjs#McpStdioClient.notify@L131",
+    "procedureName": "McpStdioClient.notify",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:scripts/crib-self-hosted-e2e.mjs#McpStdioClient.notify@L131",
+        "procedureName": "McpStdioClient.notify",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:66cd7f7c9c9548b70595502eccad8a4ffea869f4f258f8c69418f768e4d5293c",
+          "target": "stmt:scripts/crib-self-hosted-e2e.mjs@L132",
+          "line": 132,
+          "expr": "this.child.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', method, params })}\\n`);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "scripts/crib-self-hosted-e2e.mjs"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 2,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

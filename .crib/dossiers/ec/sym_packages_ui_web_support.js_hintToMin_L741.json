@@ -1,0 +1,142 @@
+{
+  "id": "sym:packages/ui/web/support.js#hintToMin@L741",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:ebc0d8e19b9caead9d1fc3b4dfd68a45735348e828ef13e324720983da71948e",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/ui/web/support.js#hintToMin@L741",
+    "kind": "symbol",
+    "type": "function",
+    "name": "hintToMin",
+    "qualifiedName": "hintToMin",
+    "signature": "hintToMin(hint)",
+    "lang": "javascript",
+    "file": "packages/ui/web/support.js",
+    "span": {
+      "start": 741,
+      "end": 745
+    },
+    "callSites": [
+      {
+        "callee": "split",
+        "line": 743
+      },
+      {
+        "callee": "trim",
+        "line": 744
+      },
+      {
+        "callee": "trim",
+        "line": 744
+      }
+    ]
+  },
+  "source": {
+    "text": "  function hintToMin(hint) {\n    if (!hint) return void 0;\n    const [w, hgt] = hint.split(\",\");\n    return { minWidth: w.trim(), minHeight: hgt && hgt.trim() };\n  }",
+    "truncated": false,
+    "totalLines": 5,
+    "startLine": 741
+  },
+  "callers": [
+    {
+      "id": "sym:packages/ui/web/support.js#createComponentFactory.StreamableComponent.render@L887",
+      "confidence": 1,
+      "name": "render",
+      "qualifiedName": "createComponentFactory.StreamableComponent.render",
+      "signature": "render()",
+      "type": "method",
+      "file": "packages/ui/web/support.js",
+      "line": 887
+    }
+  ],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/ui/web/support.js#hintToMin@L741",
+    "procedureName": "hintToMin",
+    "conditions": [
+      "cond:packages/ui/web/support.js@L742"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/ui/web/support.js#hintToMin@L741",
+        "procedureName": "hintToMin",
+        "guard": "cond:packages/ui/web/support.js@L742",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/web/support.js@L742",
+            "expr": "!hint",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c99bab37536be22086e362c53897bffff747f183baf1eecc671c663a298da2ff",
+          "target": "stmt:packages/ui/web/support.js@L742",
+          "line": 742,
+          "expr": "return void 0;"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#hintToMin@L741",
+        "procedureName": "hintToMin",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:791485d52ac3ed77b9659c4bf0796e1496cd7042113b0d61331e2d0d4328f469",
+          "target": "stmt:packages/ui/web/support.js@L743",
+          "line": 743,
+          "expr": "const [w, hgt] = hint.split(\",\");"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#hintToMin@L741",
+        "procedureName": "hintToMin",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a1745cb017a88069579e8b9b66a44d43a1c2aefe6d66a487ffeebe2a0f3d806b",
+          "target": "stmt:packages/ui/web/support.js@L744",
+          "line": 744,
+          "expr": "return { minWidth: w.trim(), minHeight: hgt && hgt.trim() };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/ui/web/support.js"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 3,
+      "unresolved": 3
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "3 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

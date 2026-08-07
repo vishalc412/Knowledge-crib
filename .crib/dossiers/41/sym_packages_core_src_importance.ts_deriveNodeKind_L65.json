@@ -1,0 +1,372 @@
+{
+  "id": "sym:packages/core/src/importance.ts#deriveNodeKind@L65",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:7fceea9005934c9099bd7e415b961386f3569fedd37ac1efa1dc30f625beb32c",
+  "builtAt": "2026-07-16T14:53:52.220Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/importance.ts#deriveNodeKind@L65",
+    "kind": "symbol",
+    "type": "function",
+    "name": "deriveNodeKind",
+    "qualifiedName": "deriveNodeKind",
+    "signature": "deriveNodeKind(node: Node): DerivedKind",
+    "lang": "typescript",
+    "file": "packages/core/src/importance.ts",
+    "span": {
+      "start": 65,
+      "end": 78
+    },
+    "callSites": [
+      {
+        "callee": "toLowerCase",
+        "line": 67
+      }
+    ]
+  },
+  "source": {
+    "text": "export function deriveNodeKind(node: Node): DerivedKind {\n  if (node.kind !== 'symbol') return node.kind;\n  const t = (node.type ?? '').toLowerCase();\n  if (t.includes('class')) return 'class';\n  if (t.includes('method')) return 'method';\n  if (t.includes('function')) return 'function';\n  if (t.includes('interface')) return 'interface';\n  if (t.includes('enum')) return 'enum';\n  if (t.includes('type')) return 'type';\n  if (t.includes('getter')) return 'getter';\n  if (t.includes('setter')) return 'setter';\n  if (t.includes('property')) return 'property';\n  return 'symbol';\n}",
+    "truncated": false,
+    "totalLines": 14,
+    "startLine": 65
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/functional-map.ts#buildFunctionalMap@L74",
+      "confidence": 1,
+      "name": "buildFunctionalMap",
+      "qualifiedName": "buildFunctionalMap",
+      "signature": "buildFunctionalMap(soul: SoulStore, opts: BuildFunctionalMapOpts = {}): FunctionalMap",
+      "type": "function",
+      "file": "packages/core/src/functional-map.ts",
+      "line": 74
+    },
+    {
+      "id": "sym:packages/ui/src/viz.ts#buildVizGraph@L223",
+      "confidence": 1,
+      "name": "buildVizGraph",
+      "qualifiedName": "buildVizGraph",
+      "signature": "buildVizGraph(soul: SoulStore): VizGraph",
+      "type": "function",
+      "file": "packages/ui/src/viz.ts",
+      "line": 223
+    },
+    {
+      "id": "sym:packages/core/src/importance.ts#computeImportance@L102",
+      "confidence": 1,
+      "name": "computeImportance",
+      "qualifiedName": "computeImportance",
+      "signature": "computeImportance(soul: SoulStore): Map<string, ImportanceEntry>",
+      "type": "function",
+      "file": "packages/core/src/importance.ts",
+      "line": 102
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/core/src/importance.ts@L64",
+      "snippet": "/** Resolve a raw `symbol` node into its architectural subtype; non-symbol kinds pass through. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/importance.ts#deriveNodeKind@L65",
+    "procedureName": "deriveNodeKind",
+    "conditions": [
+      "cond:packages/core/src/importance.ts@L66",
+      "cond:packages/core/src/importance.ts@L68",
+      "cond:packages/core/src/importance.ts@L69",
+      "cond:packages/core/src/importance.ts@L70",
+      "cond:packages/core/src/importance.ts@L71",
+      "cond:packages/core/src/importance.ts@L72",
+      "cond:packages/core/src/importance.ts@L73",
+      "cond:packages/core/src/importance.ts@L74",
+      "cond:packages/core/src/importance.ts@L75",
+      "cond:packages/core/src/importance.ts@L76"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/importance.ts#deriveNodeKind@L65",
+        "procedureName": "deriveNodeKind",
+        "guard": "cond:packages/core/src/importance.ts@L66",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/importance.ts@L66",
+            "expr": "node.kind !== 'symbol'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4b185ec3073bb86a92d51d4f8ba47ebf705f0aa4b9c8abfce07db50c8c494cba",
+          "target": "stmt:packages/core/src/importance.ts@L66",
+          "line": 66,
+          "expr": "return node.kind;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/importance.ts#deriveNodeKind@L65",
+        "procedureName": "deriveNodeKind",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:731363cf7d5142ffa1127087a6b269406d6c4c798bbfa0a9e0ffcdaa5cd8cd55",
+          "target": "stmt:packages/core/src/importance.ts@L67",
+          "line": 67,
+          "expr": "const t = (node.type ?? '').toLowerCase();"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/importance.ts#deriveNodeKind@L65",
+        "procedureName": "deriveNodeKind",
+        "guard": "cond:packages/core/src/importance.ts@L68",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/importance.ts@L68",
+            "expr": "t.includes('class')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:29540c4fd64f77948121e259c45fd1ebc7fb514c564c119765e3d593a003f381",
+          "target": "stmt:packages/core/src/importance.ts@L68",
+          "line": 68,
+          "expr": "return 'class';"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/importance.ts#deriveNodeKind@L65",
+        "procedureName": "deriveNodeKind",
+        "guard": "cond:packages/core/src/importance.ts@L69",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/importance.ts@L69",
+            "expr": "t.includes('method')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:45d89c3fa8af5cafb535ed89c4695db0850d69a627c06e6ea15008c33a46d703",
+          "target": "stmt:packages/core/src/importance.ts@L69",
+          "line": 69,
+          "expr": "return 'method';"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/importance.ts#deriveNodeKind@L65",
+        "procedureName": "deriveNodeKind",
+        "guard": "cond:packages/core/src/importance.ts@L70",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/importance.ts@L70",
+            "expr": "t.includes('function')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fc1ba021d690c5e1f7f813a560fe291567c1b84b90716fd45b5fcadd82f5306a",
+          "target": "stmt:packages/core/src/importance.ts@L70",
+          "line": 70,
+          "expr": "return 'function';"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/importance.ts#deriveNodeKind@L65",
+        "procedureName": "deriveNodeKind",
+        "guard": "cond:packages/core/src/importance.ts@L71",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/importance.ts@L71",
+            "expr": "t.includes('interface')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0c9dc45fa510e70e93b7f8441ff685320aa700c1b56b424fc6d45df9fc49c36b",
+          "target": "stmt:packages/core/src/importance.ts@L71",
+          "line": 71,
+          "expr": "return 'interface';"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/importance.ts#deriveNodeKind@L65",
+        "procedureName": "deriveNodeKind",
+        "guard": "cond:packages/core/src/importance.ts@L72",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/importance.ts@L72",
+            "expr": "t.includes('enum')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:910a2abf6e7575e9f3f4a6caa4c95d2c512bc4937109dcafc7436e9288d84d98",
+          "target": "stmt:packages/core/src/importance.ts@L72",
+          "line": 72,
+          "expr": "return 'enum';"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/importance.ts#deriveNodeKind@L65",
+        "procedureName": "deriveNodeKind",
+        "guard": "cond:packages/core/src/importance.ts@L73",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/importance.ts@L73",
+            "expr": "t.includes('type')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8c570d02e8ec9ae741816439cc4d9d42fdbc7eebe131ce5bf3f76cb01708bfd0",
+          "target": "stmt:packages/core/src/importance.ts@L73",
+          "line": 73,
+          "expr": "return 'type';"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/importance.ts#deriveNodeKind@L65",
+        "procedureName": "deriveNodeKind",
+        "guard": "cond:packages/core/src/importance.ts@L74",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/importance.ts@L74",
+            "expr": "t.includes('getter')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e26c6244094b5c7410a78182329e7ff347f4015005e769f722a953f4eccb3fb0",
+          "target": "stmt:packages/core/src/importance.ts@L74",
+          "line": 74,
+          "expr": "return 'getter';"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/importance.ts#deriveNodeKind@L65",
+        "procedureName": "deriveNodeKind",
+        "guard": "cond:packages/core/src/importance.ts@L75",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/importance.ts@L75",
+            "expr": "t.includes('setter')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:37ef059ccc7c1cee7d821059ad09a275485a6cb6ead3721f96adb6557bb8c656",
+          "target": "stmt:packages/core/src/importance.ts@L75",
+          "line": 75,
+          "expr": "return 'setter';"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/importance.ts#deriveNodeKind@L65",
+        "procedureName": "deriveNodeKind",
+        "guard": "cond:packages/core/src/importance.ts@L76",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/importance.ts@L76",
+            "expr": "t.includes('property')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:597e236e89253a259a4cf15fa637c7bb16843f3637611bd66f9a2ef2e015591d",
+          "target": "stmt:packages/core/src/importance.ts@L76",
+          "line": 76,
+          "expr": "return 'property';"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/importance.ts#deriveNodeKind@L65",
+        "procedureName": "deriveNodeKind",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c53052897529302504dc10cf304a0b0af2b99971b3a69eb7214f9c79438c26fc",
+          "target": "stmt:packages/core/src/importance.ts@L77",
+          "line": 77,
+          "expr": "return 'symbol';"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 12,
+    "referencedByFiles": [
+      "packages/core/src/functional-map.ts",
+      "packages/core/src/importance.ts",
+      "packages/ui/src/viz.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 12,
+    "assignments": 0,
+    "conditions": 10,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 1,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

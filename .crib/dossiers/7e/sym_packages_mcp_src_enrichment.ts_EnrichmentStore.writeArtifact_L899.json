@@ -1,0 +1,214 @@
+{
+  "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.writeArtifact@L899",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:7afef6ffed13002e83a2cc7806039563f17a7bc034574f0cd220bce572d9fa62",
+  "builtAt": "2026-06-30T16:18:20.420Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.writeArtifact@L899",
+    "kind": "symbol",
+    "type": "method",
+    "name": "writeArtifact",
+    "qualifiedName": "EnrichmentStore.writeArtifact",
+    "signature": "writeArtifact(artifact: LlmArtifact): string",
+    "lang": "typescript",
+    "file": "packages/mcp/src/enrichment.ts",
+    "span": {
+      "start": 899,
+      "end": 903
+    },
+    "callSites": [
+      {
+        "callee": "artifactPath",
+        "line": 900
+      },
+      {
+        "callee": "root",
+        "line": 900
+      },
+      {
+        "callee": "writeJsonAtomic",
+        "line": 901
+      }
+    ]
+  },
+  "source": {
+    "text": "  private writeArtifact(artifact: LlmArtifact): string {\n    const path = artifactPath(this.root(), artifact.layer, artifact.targetId, artifact.nodeHash);\n    writeJsonAtomic(path, artifact);\n    return path;\n  }",
+    "truncated": false,
+    "totalLines": 5,
+    "startLine": 899
+  },
+  "callers": [
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.save@L435",
+      "confidence": 1,
+      "name": "save",
+      "qualifiedName": "EnrichmentStore.save",
+      "signature": "save(args: EnrichSaveArgs): EnrichSaveResult",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 435
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.root@L1023",
+      "confidence": 1,
+      "name": "root",
+      "qualifiedName": "EnrichmentStore.root",
+      "signature": "root(): string",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 1023
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#artifactPath@L1129",
+      "confidence": 1,
+      "name": "artifactPath",
+      "qualifiedName": "artifactPath",
+      "signature": "artifactPath(root: string, layer: EnrichLayer, targetId: string, hash: string): string",
+      "type": "function",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 1129
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#writeJsonAtomic@L1155",
+      "confidence": 1,
+      "name": "writeJsonAtomic",
+      "qualifiedName": "writeJsonAtomic",
+      "signature": "writeJsonAtomic(path: string, value: unknown): void",
+      "type": "function",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 1155
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#b-query-flow-mcp-tool-call-verb-handler-soulstore-indexstore-response",
+      "heading": "B. Query Flow: MCP Tool Call → Verb Handler → SoulStore/IndexStore → Response",
+      "anchor": "b-query-flow-mcp-tool-call-verb-handler-soulstore-indexstore-response",
+      "snippet": "B. Query Flow: MCP Tool Call → Verb Handler → SoulStore/IndexStore → Response",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.writeArtifact@L899",
+    "procedureName": "EnrichmentStore.writeArtifact",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.writeArtifact@L899",
+        "procedureName": "EnrichmentStore.writeArtifact",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:5efa7ec418e28a556eca2f120d5f92d4ca683a21cdf3f71e82a5a8a32e04d6cf",
+          "target": "sym:packages/mcp/src/enrichment.ts#artifactPath@L1129",
+          "expr": "artifactPath",
+          "line": 900
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.writeArtifact@L899",
+        "procedureName": "EnrichmentStore.writeArtifact",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:22438440f05e02cabce445fbcabb92d974ff58b0cbf39ad86abe6c830810c50f",
+          "target": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.root@L1023",
+          "expr": "root",
+          "line": 900
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.writeArtifact@L899",
+        "procedureName": "EnrichmentStore.writeArtifact",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c96e367e487d3a695c991b4dd085adfc58e83754d52184c6cd2d2300871d44ca",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L900",
+          "line": 900,
+          "expr": "const path = artifactPath(this.root(), artifact.layer, artifact.targetId, artifact.nodeHash);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.writeArtifact@L899",
+        "procedureName": "EnrichmentStore.writeArtifact",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:28d6831d26b7d72daa774dc8fbe3664197203adf4df25396485a66175964e66f",
+          "target": "sym:packages/mcp/src/enrichment.ts#writeJsonAtomic@L1155",
+          "expr": "writeJsonAtomic",
+          "line": 901
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.writeArtifact@L899",
+        "procedureName": "EnrichmentStore.writeArtifact",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e7c39e7fa74a9e6add24d9c281ce142a63d447453fd19794418c5dc9bcf760ee",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L901",
+          "line": 901,
+          "expr": "writeJsonAtomic(path, artifact);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.writeArtifact@L899",
+        "procedureName": "EnrichmentStore.writeArtifact",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:39b017134e2570d427b09caac561a026a3c2b906c9d0bf4cece0640fa63e5e44",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L902",
+          "line": 902,
+          "expr": "return path;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/mcp/src/enrichment.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 3,
+      "recorded": 3,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

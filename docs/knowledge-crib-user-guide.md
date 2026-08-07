@@ -16,7 +16,7 @@
 1. [What it is](#1-what-it-is)
 2. [Install](#2-install)
 3. [The per-project workflow](#3-the-per-project-workflow)
-4. [The MCP server + the 12 verbs](#4-the-mcp-server--the-12-verbs)
+4. [The MCP server + the 17 deterministic verbs](#4-the-mcp-server--the-17-deterministic-verbs-status-context-source-dossier-reconstruct-dossier_by_scope-impact-federatedimpact-query-describes-neighbors-ownership-shortest_path-detect_changes-extract_rules-gaps-stats)
 5. [Worked example: indexing the FTC event-management repo](#5-worked-example-indexing-the-ftc-event-management-repo)
 6. [Keeping the soul fresh](#6-keeping-the-soul-fresh)
 7. [Exporting the graph](#7-exporting-the-graph)
@@ -48,7 +48,7 @@ opt-in and off the query hot path.
 
 ## 2. Install
 
-Requirements: **Node ≥ 20** and **pnpm 9.15.0 via Corepack**, macOS/Linux.
+Requirements: **Node ≥ 22.5** and **pnpm 9.15.0 via Corepack**, macOS/Linux.
 
 ```bash
 git clone <knowledge-crib repo> ~/Documents/Knowlege-crib
@@ -57,8 +57,12 @@ corepack pnpm@9.15.0 install
 corepack pnpm@9.15.0 build              # builds all 7 packages
 corepack pnpm@9.15.0 release:verify     # production release gate
 
+# One-time machine setup: create the global bin directory and add it to PATH
+corepack pnpm@9.15.0 setup
+# Then restart your terminal (or `source ~/.zshrc`) so `crib` resolves.
+
 # Link the CLI globally so `crib` is on PATH for every project
-corepack pnpm@9.15.0 --filter knowledge-crib link --global
+corepack pnpm@9.15.0 --dir packages/cli link --global
 ```
 
 Verify:
@@ -67,6 +71,21 @@ Verify:
 which crib                              # /Users/<you>/Library/pnpm/crib
 crib --help
 ```
+
+Once `crib` is on PATH, the fastest path to a working setup in any project is the one-shot
+onboarder:
+
+```bash
+cd /path/to/your/project
+crib init .                             # index + install-hooks + mcp install + next-steps hero
+crib doctor .                           # 6-point health check (node/corepack/index/freshness/hooks/IDE wiring)
+```
+
+`crib init` does everything §3 describes in one command; `crib doctor` prints ✓/✗ per check with a
+fix hint and exits non-zero when the setup is broken.
+
+If `link --global` fails with `ERR_PNPM_NO_GLOBAL_BIN_DIR`, run the `setup` step
+above, restart your terminal, and retry.
 
 The link points back at the repo's `dist/`, so to upgrade:
 `git pull && corepack pnpm@9.15.0 build` — no reinstall.
@@ -89,17 +108,25 @@ crib status .                           # 2. health + stats
 
 | Command | Purpose |
 |---|---|
-| `crib index [path] [--semantic] [--exclude a,b,…]` | Full index → `.crib` soul + derived SQLite index (+ optional INFERRED TF-IDF semantic links) |
+| `crib index [path] [--semantic] [--exclude a,b,…] [--package <name\|all>]` | Full index → `.crib` soul + derived SQLite index (+ optional INFERRED TF-IDF semantic links); `--package` scopes a monorepo to one workspace package |
 | `crib status [path]` | Health + node/edge/cluster counts + VCS anchor |
-| `crib query <text>` | BM25 search over code + docs |
+| `crib query <text>` | BM25 search over code + docs → `{ hits, llmHits, truncated }`; `--with-source` / `--with-rules` / `--with-framework` fold deep context; `--with-llm` upgrades the lightweight LLM pointer to the full analysis+graph+evidence blob (default is lightweight to keep token cost low) |
 | `crib serve [path]` | Run the MCP server on stdio (what IDEs connect to) |
 | `crib update [path] [--since <sha>]` | Incremental re-extract since the VCS anchor |
-| `crib reindex [path]` | Full re-index (alias for `index`) |
+| `crib reindex [path] [--package <name\|all>]` | Full re-index (alias for `index`); `--package` scopes a monorepo |
 | `crib install-hooks [path]` | Wire post-commit hook + `.gitattributes` merge driver |
 | `crib merge-driver %O %A %B %P` | Git custom merge driver for `.crib` chunks |
 | `crib export [--format F] [--procedure P]` | Render: `rules` \| `mermaid` \| `graph.json` \| `report` |
 | `crib viz [path] [--port N]` | Serve the offline web UI (Cytoscape canvas) + open browser |
-| `crib enrich [path] [--status\|--next\|--save <file>\|--overview] [--layer L] [--limit N]` | Drive the LLM semantic-graph loop headlessly: status / next grounded batch / persist a `{batchId, items}` JSON / render the bible (see §10) |
+| `crib enrich [path] [--status\|--next\|--auto\|--save <file>\|--overview\|--scopes\|--prune-stale [--apply]] [--layer L] [--budget-tokens N]` | Drive the LLM semantic-graph loop headlessly: status / next **token-packed** grounded batch / bounded autonomous loop (`--auto [--max-tokens N] [--max-batches N]`) / persist a `{batchId, items}` JSON / render the bible / prune stale artifacts (see §10) |
+| `crib init [path] [--ide <name\|all>]` | 5-minute onboarding: index + install-hooks + mcp install + next-steps hero |
+| `crib doctor [path]` | Setup health check: node/corepack/indexed/freshness/hooks/IDE-wiring — ✓/✗ per check + fix hint, exit 1 on failure |
+| `crib ask "<question>" [--format markdown]` | Natural-language answer from the crib (deterministic — no model call) |
+| `crib context <id>` / `crib dossier <id>` / `crib impact <id> --dir up\|down` / `crib path <from> <to>` / `crib neighbors <id>` | CLI mirrors of the MCP verbs (§4) for terminal use |
+| `crib gaps [path]` / `crib rules <proc>` / `crib reconstruct <pkg>` | Analysis readiness / decision table for a callable / package reconstruction |
+| `crib migrate-graph [path] [--dry-run]` | Move legacy `nodes/edges/llm` layout into the canonical `.crib/graph` |
+| `crib materialize [path]` | Rebuild the derived composite `graph.json` + SQLite from the soul |
+| `crib audit-llm [path]` | Re-verify every LLM artifact against the soul (grounding moat); exits non-zero on drift |
 | `crib skill <install\|list> [name] [--dest <dir>]` | Install the bundled `/crib-enrich` skill (the loop driver) into `~/.claude/skills/`, or list bundled skills. Idempotent — skips byte-identical re-installs |
 | `crib mcp <install\|list\|remove> [--ide <name\|all>] [--global]` | Auto-wire the MCP server into each IDE config (no hand-editing); `--ide claude --global` = one user-scope entry for every project |
 
@@ -109,14 +136,19 @@ Exit codes: `0` ok · `1` error · `2` bad args · `3` not indexed.
 
 | Language | Extensions | Graph produced |
 |---|---|---|
-| TypeScript | `.ts .tsx .mts .cts` | symbols, `calls`, `imports`, `member-of` |
+| TypeScript / JavaScript | `.ts .tsx .mts .cts` (+ plain-JS coverage) | symbols, `calls`, `imports`, `member-of` |
+| Java | `.java` | classes/methods, calls, Spring stereotypes/routes |
+| C# | `.cs` | classes/methods, calls, attributes |
+| Go | `.go` | funcs/methods, calls, imports |
+| Rust | `.rs` | fns/impls, calls, modules |
+| PHP | `.php` | classes/functions, calls |
 | Python | `.py .pyi` | symbols, module imports, calls, classes |
 | PL/SQL | `.sql .pkb .pks .pck .pls .pkh .typ` | procedures, tables, columns, `executes`, data-flow |
 | Markdown | `.md .markdown` | doc-sections, linked to symbols (`describes`/`references`) |
 
-Other files (`.js`, `.jsx`, `.java`, `.kt`, `.go`, `.rs`, …) are discovered as **file nodes** only —
-they participate in the structure map but produce no symbols. (`.js`/`.jsx` are intentionally not
-symbol-extracted; convert to `.ts`/`.tsx` or extend the registry.)
+Files outside these extensions are discovered as **file nodes** — they participate in the structure
+map but produce no symbols. The canonical parser-language list lives in [STATS.md](STATS.md)
+(generated; the prose here can lag).
 
 ### Excluding dirs
 
@@ -129,6 +161,39 @@ Add your own with `--exclude` (comma-separated, repeatable):
 ```bash
 crib index . --exclude vendor,third_party,generated
 ```
+
+### Monorepos: scope indexing to one package (`--package`)
+
+If the target is a monorepo, `crib index` detects the workspace layout before walking — pnpm
+(`pnpm-workspace.yaml`), Lerna (`lerna.json`), Nx (`nx.json` + inherited package list), npm/Yarn
+workspaces (`package.json#workspaces`), or Cargo (`Cargo.toml` `[workspace].members`) — and
+enumerates the packages. With **no `--package`**, it lists the detected packages to stderr and
+indexes the full repo:
+
+```
+$ crib index .
+monorepo detected (pnpm): 2 package(s)               # stderr
+  - ftc-cloud  (packages/FTCCloud)
+  - ftc-local  (packages/FTCLocal)
+scope one with: crib index . --package <name>  |  all: --package all
+indexed 6 files → ...                                  # stdout (full walk)
+```
+
+Scope discovery to one package (sibling packages pruned at the dir branch; root-level files kept):
+
+```bash
+crib index . --package ftc-cloud        # by package name
+crib index . --package packages/FTCCloud   # by repo-relative path
+crib index . --package ftc-cloud,ftc-local # multiple (repeatable / comma-separated)
+crib index . --package all              # explicit full walk (no [scoped: …] suffix)
+crib index . --package ghost            # unknown → exit 2, lists valid names
+```
+
+**One soul per repo is preserved.** `--package` only narrows which package dirs discovery descends
+into — the soul stays unified, so cross-package impact / blast-radius queries still resolve. Splitting
+into one soul per package would lose cross-package reach, so we scope extraction, not storage. The
+detected layout + indexed package roots are stamped onto the soul manifest's `meta.workspace` and
+`meta.indexedPackages`.
 
 ### Commit the soul
 
@@ -148,17 +213,17 @@ config. See [`knowledge-crib-client-setup.md`](knowledge-crib-client-setup.md) �
 
 ---
 
-## 4. The MCP server + the 12 verbs (status, context, source, dossier, impact, query, describes, neighbors, shortest_path, detect_changes, extract_rules, gaps)
+## 4. The MCP server + the 17 deterministic verbs (status, context, source, dossier, reconstruct, dossier_by_scope, impact, federatedImpact, query, describes, neighbors, ownership, shortest_path, detect_changes, extract_rules, gaps, stats)
 
 `crib serve <root>` starts one MCP server over stdio. Every verb is an MCP tool. All results are
 **token-bounded** (default `docLimit=3`, `limit=10`, with `truncated` + `cursor`) and
 **provenance-tagged** (`method`, `provenance` = `EXTRACTED` | `INFERRED`, `confidence`, `evidence`)
 so the agent can filter to deterministic-only (`extractedOnly: true`).
 
-> The 12 verbs below are the **deterministic structural** layer (AST-extracted, no model in the
-> loop). A second **LLM-authored semantic** layer adds 5 more verbs — `enrich_status`,
-> `enrich_next`, `enrich_save`, `overview`, `llm_neighbors` — described in
-> [§10](#10-the-llm-semantic-graph-layer-the-grove-plan).
+> The 17 verbs below are the **deterministic structural** layer (AST-extracted, no model in the
+> loop). A second **LLM-authored semantic** layer adds 6 more verbs — `enrich_status`,
+> `enrich_next`, `enrich_save`, `audit_llm`, `overview`, `llm_neighbors` — described in
+> [§10](#10-the-llm-semantic-graph-layer-the-grove-plan). 23 verbs total.
 
 ### `status`
 Health + whether indexed. `→ { indexed, schemaVersion, stats{nodes,edges,clusters}, vcsHead, incrementalSince, capabilities }`
@@ -167,8 +232,22 @@ Health + whether indexed. `→ { indexed, schemaVersion, stats{nodes,edges,clust
 ```jsonc
 { "q": "where is the session token issued?", "limit": 10 }
 → { "hits": [ { "id": "sym:…#TokenService.issue@L88", "kind": "symbol", "score": 0.81,
-                "snippet": "issue(userId):Session", "clusterId": "c:auth" } ], "truncated": false }
+                "snippet": "issue(userId):Session", "clusterId": "c:auth",
+                "llm": { "provenance": "LLM", "model": "…", "stale": false,
+                         "confidence": 0.9, "purpose": "Issues a session token after auth." } } ],
+    "llmHits": [ { "id": "sym:…#SessionCache@L12", "kind": "symbol", "snippet": "…",
+                  "llm": { "provenance": "LLM", "confidence": 0.8, "purpose": "…" } } ],
+    "truncated": false }
 ```
+BM25-ranked `hits` (names/signatures/headings/files AND rehydrated source bodies — it matches rule
+content like `DTI > 0.43`, not just signatures). By default each hit carries a **lightweight LLM
+pointer** (`provenance`/`model`/`stale`/`confidence`/`purpose`) — ~5 fields, no analysis blob — so the
+default call stays tiny (the token-cost promise). `llmHits` are semantic discoveries from the LLM
+graph layer that BM25 missed, ranked by term-overlap and de-duplicated against `hits`; they live in
+their own field so they never override BM25 ranking. Opt into the full analysis+graph+evidence blob
+per hit with `withLlm: true`; fold the body / decision table / framework semantics with
+`withSource` / `withRules` / `withFramework`. `truncated: true` means more results existed beyond the
+limit — widen `limit` to page.
 
 ### `context` — 360° for one symbol
 ```jsonc
@@ -250,6 +329,17 @@ Read-only. For "what's the impact of this diff?" — review a PR by running it a
 Flattens the M11 guard-annotated CFG into a decision table — the migration deliverable. Works for
 all 7 languages (PL/SQL, TypeScript, Java, C#, Go, Rust, Python), not just PL/SQL.
 
+### The remaining deterministic verbs (compact)
+
+| Verb | What it returns |
+|---|---|
+| `reconstruct` | `{ pkg }` → package reconstruction: CONSTANT values + members + referenced tables + docs + `expectedBodyFile` — enough to re-author a package from the graph |
+| `dossier_by_scope` | Bulk dossiers for every symbol in a `--package` / `--file` / `--cluster` scope (paged) |
+| `federatedImpact` | Cross-repo blast radius over registered sibling souls (route-layer `http-call` bridge) |
+| `ownership` | `{ id }` → git-blame-derived `owned-by` edges (who owns this symbol) |
+| `gaps` | Analysis readiness: missing bodies + unresolved call sites (+ `--extracted-only`) |
+| `stats` | Live per-verb call counts + latency + ifHash cache hit rate for this server process (runtime observability; not persisted) |
+
 ### Error shape
 `{ "error": { "code": "NOT_FOUND" | "NOT_INDEXED" | "AMBIGUOUS" | "BAD_ARGS" | "INTERNAL", "message" } }`
 
@@ -266,7 +356,8 @@ monorepo (TypeScript + Java + SQL). It records the exact steps and numbers.
 ```bash
 cd ~/Documents/Knowlege-crib
 corepack pnpm@9.15.0 install && corepack pnpm@9.15.0 release:verify
-corepack pnpm@9.15.0 --filter knowledge-crib link --global
+corepack pnpm@9.15.0 setup   # one-time; restart terminal after
+corepack pnpm@9.15.0 --dir packages/cli link --global
 which crib          # ~/Library/pnpm/crib
 ```
 
@@ -374,6 +465,7 @@ initialize  → serverInfo { name: "knowledge-crib", version: "0.1.0" }
 tools/list  → 17 tools: 12 structural (status, context, source, dossier, impact, query, describes,
                         neighbors, shortest_path, detect_changes, extract_rules, gaps) + 5 LLM-graph
                         (enrich_status, enrich_next, enrich_save, overview, llm_neighbors)
+                        # historical transcript — the server registers 23 tools today (see §4)
 status      → { nodes:1576, edges:1831, clusters:104, vcsHead:… }
 query "schedule" → ScheduleFilterBar (score -4.01), ScheduleStatsCards, ScheduleItemRequest
 context(ScheduleFilterBar) → { signature, file, span {25..95} }
@@ -413,6 +505,12 @@ crib install-hooks .                   # post-commit → crib update; .gitattrib
 
 # clean rebuild:
 crib reindex .
+
+# health check any time (✓/✗ + fix hints; exit 1 when broken):
+crib doctor .
+
+# rebuild the derived composite graph cache (after heavy soul churn or a layout migration):
+crib materialize .
 ```
 
 `crib update` uses the git HEAD stamped in the manifest as the anchor; if there's no anchor or it's
@@ -434,6 +532,17 @@ crib export --format rules --procedure <id|name> .    # decision table for one p
 `crib viz .` serves an offline React/canvas graph UI with compound cluster nodes at
 `http://127.0.0.1:<port>/` and opens a browser — useful for eyeballing the graph.
 
+The `.crib/` soul and SQLite search index are durable. Restarting an IDE, terminal, or machine does
+not require another `crib index`. IDEs restart `crib serve` from their MCP config. The web UI is a
+separate foreground process, so after a machine restart run only:
+
+```bash
+crib viz /absolute/path/to/project --port 43127
+```
+
+Using a fixed port keeps the bookmark stable. Keep that terminal open while using the UI; `Ctrl-C`
+stops only the UI server, not the persisted graph.
+
 ---
 
 ## 8. Troubleshooting
@@ -445,6 +554,8 @@ crib export --format rules --procedure <id|name> .    # decision table for one p
 | IDE says server failed to start / `crib` not found | The IDE didn't inherit your PATH. Use the absolute path `/Users/<you>/Library/pnpm/crib` in the config. |
 | Index hangs at 100% CPU | A cache dir isn't ignored, or the PL/SQL extractor hit the known slow path. Re-run with `--exclude <dir>` and/or exclude `resources` for SQL-heavy repos. |
 | `query` returns nothing | The symbol may not be extracted (for example, JavaScript `.js`/`.jsx` files currently produce file nodes only). Use a supported symbol language or extend the registry. |
+| UI search looks blank | Upgrade/build this version. Search now ranks direct matches, lays them out with bounded architectural context, and reports an explicit no-match state instead of reusing stale graph coordinates. |
+| Restart seems to lose the application | Do not re-index. MCP is host-started from `crib mcp install`; verify with `crib mcp list --ide <ide>`. UI is foreground-only; restart it with `crib viz <absolute-project-path> --port 43127`. |
 | Tools visible but agent doesn't use them | You're in Copilot "Ask" mode — switch to **Agent** mode (Copilot only). |
 | `.cursor` / `.vscode` MCP loads nothing | Wrong root key: Cursor uses `mcpServers`, Copilot uses `servers` + `type: "stdio"`. |
 | Codex ignores the server | Use snake_case `[mcp_servers.name]`, not `[mcpServers]` or `[mcp.servers]`. |
@@ -563,22 +674,33 @@ invent code facts that aren't grounded in the soul.
 `fresh` targets are skipped. `limit` (default 4, max 25) bounds tokens per turn — process one batch
 per turn.
 
-### The 5 LLM-graph verbs
+### The 6 LLM-graph verbs
 
 | Verb | Returns |
 |---|---|
 | `enrich_status` | Coverage per layer (`missing` / `stale` / `fresh`), `nextLayer`, `done: bool` |
-| `enrich_next` | `{ layer?, limit }` → a grounded batch; per item `{ targetId, seed, lowerLayer?, outputSchema, instructions, remaining }` |
-| `enrich_save` | `{ batchId, items }` → `{ accepted[], rejected[], droppedEdges }`; validates + persists to `.crib/llm/` |
+| `enrich_next` | `{ layer?, budgetTokens? }` → a **token-packed** grounded batch (greedy strict-prefix packing against the budget, default 24k tokens; a single oversized item is returned alone with `oversized: true` so the queue never stalls); per item `{ targetId, seed, lowerLayer?, outputSchema, instructions, remaining }` |
+| `enrich_save` | `{ batchId, items }` → `{ accepted[], rejected[], droppedEdges }`; validates (grounding + secret scan) + persists |
+| `audit_llm` | Re-verifies every persisted LLM artifact against the soul (grounding moat); reports ungrounded/drifted artifacts |
 | `overview` | The rendered bible (system-level synthesis); empty until the system layer lands |
 | `llm_neighbors` | `{ id }` → walk the LLM semantic graph around a soul id (rules / features / flows / concepts / capabilities) |
 
-### Query-time merge — `withLlm`
+### Query-time merge — lightweight by default, full on `withLlm`
 
-The semantic graph is **off the query hot path by default.** The 12 deterministic verbs are
-unchanged. Add `withLlm: true` (alongside `withRules` / `withFramework`) and the server folds the
-saved LLM analysis + semantic edges into the response — `query` returns the business rules a hit
-`realizes`; `context` returns the symbol's authored `purpose` + `invariants` + `whatToDistrust`.
+The semantic graph is **off the query hot path by default**, but its existence is still surfaced
+cheaply. By default `query` / `context` / `dossier` fold a **lightweight LLM pointer** onto each hit —
+`{ provenance, model, stale, confidence, purpose }`, ~5 fields, no analysis blob — so a consumer can
+see "an LLM analysis exists for this target, here is its one-line purpose" without paying the
+multi-KB cost of the full analysis+graph+evidence. On the self-index, a `query` hit with an LLM
+artifact is ~1.3 KB default vs ~10.3 KB with the full blob — roughly **7.7× smaller per hit**, which
+is the token-cost benefit the crib is built for.
+
+Add `withLlm: true` (alongside `withRules` / `withFramework`) and the pointer upgrades to the full
+saved analysis + semantic graph + evidence — `query` returns the business rules a hit `realizes`;
+`context` returns the symbol's authored `purpose` + `invariants` + `whatToDistrust`. Pass
+`withLlm: false` to suppress even the pointer (pure deterministic hit). `query` also exposes
+LLM-only discoveries that BM25 missed in a separate `llmHits` field (ranked by term-overlap,
+de-duplicated against `hits`) — they never override BM25 ranking.
 
 ### The `llmGraph` capability flag
 
@@ -588,7 +710,7 @@ artifact. It is the **only** capability flag the grove plan touches:
 | Flag | Meaning | Status |
 |---|---|---|
 | `llmGraph` | LLM-authored semantic graph present | Flips on after the first `enrich_save`; the one flag the grove moves. |
-| `embeddings` | Embedding index | Stays `false` — embeddings need a model (violates the no-model invariant) and `better-sqlite3` has no ANN. The LLM graph replaces that need via `withLlm`. |
+| `embeddings` | Embedding index | Stays `false` — embeddings need a model (violates the no-model invariant) and `node:sqlite` has no ANN. The LLM graph replaces that need via `withLlm`. |
 | `vector` | Vector / ANN search | Stays `false` — same reason; BM25 + the TF-IDF linker are the deterministic recall path. |
 | `multimodal` | PDF / image / audio extraction | Opt-in via `crib index --multimodal` (spawns `crib_worker`); not part of the grove. |
 
@@ -599,23 +721,28 @@ whole layer set:
 
 ```bash
 crib skill install                      # copies the bundled /crib-enrich skill to ~/.claude/skills/ (idempotent)
+crib skill install --dest ~/.codex/skills  # Codex: install same skill into its user skill root
 crib skill list                         # show bundled skills
 ```
 
-Then in a Claude Code session in the project, type `/crib-enrich` (or say "enrich the crib" /
+Then in Claude Code type `/crib-enrich`; in Codex invoke `$crib-enrich` (or say "enrich the crib" /
 "build the LLM graph" / "generate the bible"). The skill drives
 `enrich_status → enrich_next → author → enrich_save` one batch per turn, bottom-up, and calls
 `overview` at the end. The skill is **bundled inside the package** (`packages/cli/skills/`), so
-`crib skill install` is the one command that makes LLM-graph generation available in any Claude
-Code install — no separate repo to clone.
+No separate skill repository is required.
+
+`/crib-enrich` / `$crib-enrich` is generation, not search. For lookup use MCP `query`, plain language such as
+"search the crib for cmdViz", or `crib query "cmdViz"`. Command spelling includes final `h`.
 
 **Headless / from the CLI** (the same loop without an IDE):
 
 ```bash
 crib enrich --status                       # coverage + nextLayer + done
-crib enrich --next [--layer symbol] [--limit 4]   # prints a grounded batch (seed + schema per item)
+crib enrich --next [--layer symbol] [--budget-tokens 24000]   # prints a token-packed grounded batch (seed + schema per item)
 # author items to a JSON file shaped {batchId, items} against each item's outputSchema, then:
 crib enrich --save ./batch.json            # validates + persists → {accepted, rejected, droppedEdges}
+crib enrich --auto [--max-tokens N] [--max-batches N]   # bounded autonomous loop: pack → author stubs → save → repeat until a ceiling
+crib enrich --prune-stale [--apply]        # list (or delete with --apply) artifacts whose targets left the soul
 crib enrich --overview                     # the bible (after the system layer)
 ```
 
@@ -674,7 +801,7 @@ knowledge-crib/                 # pnpm monorepo
     core/          # SoulStore (chunked JSONL) + IndexStore (SQLite + FTS5)
     parsers/       # TypeScript / Python / PL-SQL / Markdown / Java / C# / Go / Rust extractors (registry)
     pipeline/      # extract → resolve → link → cluster → index (phased)
-    mcp/           # the one MCP server (stdio) + 12 deterministic verbs + 5 LLM-graph verbs (pure functions)
+    mcp/           # the one MCP server (stdio) + 17 deterministic verbs + 6 LLM-graph verbs (pure functions)
     cli/           # crib index|status|query|serve|update|reindex|export|viz|install-hooks|merge-driver|mcp|enrich|skill
       skills/      # bundled /crib-enrich skill (the LLM-graph loop driver) — ships in the package
     ui/            # offline React/canvas graph visualization

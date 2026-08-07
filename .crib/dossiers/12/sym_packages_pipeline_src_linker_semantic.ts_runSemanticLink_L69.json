@@ -1,0 +1,590 @@
+{
+  "id": "sym:packages/pipeline/src/linker/semantic.ts#runSemanticLink@L69",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:65428fa7c8189515960d65894c81d3f856afa4bb0524be360c5be5a0b72d9d43",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/linker/semantic.ts#runSemanticLink@L69",
+    "kind": "symbol",
+    "type": "function",
+    "name": "runSemanticLink",
+    "qualifiedName": "runSemanticLink",
+    "signature": "runSemanticLink(soul: SoulStore, root: string, docFiles?: string[], opts: SemanticLinkOpts = {}): SemanticStats",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/linker/semantic.ts",
+    "span": {
+      "start": 69,
+      "end": 125
+    },
+    "callSites": [
+      {
+        "callee": "iterate",
+        "line": 78
+      },
+      {
+        "callee": "iterate",
+        "line": 79
+      },
+      {
+        "callee": "add",
+        "line": 86
+      },
+      {
+        "callee": "set",
+        "line": 92
+      },
+      {
+        "callee": "readFileSync",
+        "line": 99
+      },
+      {
+        "callee": "join",
+        "line": 99
+      },
+      {
+        "callee": "idFor",
+        "line": 104
+      },
+      {
+        "callee": "join",
+        "line": 105
+      },
+      {
+        "callee": "min",
+        "line": 108
+      },
+      {
+        "callee": "push",
+        "line": 109
+      },
+      {
+        "callee": "edgeId",
+        "line": 110
+      },
+      {
+        "callee": "round2",
+        "line": 116
+      },
+      {
+        "callee": "round2",
+        "line": 117
+      },
+      {
+        "callee": "putEdges",
+        "line": 123
+      }
+    ]
+  },
+  "source": {
+    "text": "export function runSemanticLink(\n  soul: SoulStore,\n  root: string,\n  docFiles?: string[],\n  opts: SemanticLinkOpts = {},\n): SemanticStats {\n  const mode = opts.mode ?? 'embedding';\n  const index: LinkIndex =\n    mode === 'tfidf'\n      ? new TfidfIndex(soul.iterate('symbol'))\n      : new EmbeddingLinkIndex(soul.iterate('symbol'));\n  const floor = mode === 'tfidf' ? FLOOR_TFIDF : FLOOR_EMBEDDING;\n  if (index.size === 0) return { added: 0 };\n\n  // existing (sectionId, symbolId) pairs — skip duplicates so semantic only fills gaps.\n  const existing = new Set<string>();\n  for (const rel of ['describes', 'references'] as const) {\n    for (const e of soul.iterateEdges(rel)) existing.add(`${e.src}|${e.dst}`);\n  }\n\n  const scope = docFiles ? new Set(docFiles) : undefined;\n  const docFilesInScope = new Map<string, true>();\n  for (const node of soul.iterate('doc-section')) {\n    if (node.file && (!scope || scope.has(node.file))) docFilesInScope.set(node.file, true);\n  }\n\n  const edges: Edge[] = [];\n  for (const docFile of docFilesInScope.keys()) {\n    let text: string;\n    try {\n      text = readFileSync(join(root, docFile), 'utf8');\n    } catch {\n      continue;\n    }\n    for (const section of parseMarkdownSections(text)) {\n      const sectionId = idFor({ kind: 'doc-section', path: docFile, anchor: section.anchor });\n      const query = `${section.heading} ${section.prose} ${section.codeRefs.join(' ')}`;\n      for (const hit of index.query(query, floor, TOP_K)) {\n        if (existing.has(`${sectionId}|${hit.id}`)) continue; // deterministic already linked this pair\n        const confidence = Math.min(CONF_CEIL, CONF_FLOOR + (CONF_CEIL - CONF_FLOOR) * hit.score);\n        edges.push({\n          id: edgeId(sectionId, hit.id, 'references'),\n          src: sectionId,\n          dst: hit.id,\n          rel: 'references',\n          method: 'semantic',\n          provenance: 'INFERRED',\n          confidence: round2(confidence),\n          evidence: { by: mode, score: round2(hit.score) },\n        });\n      }\n    }\n  }\n\n  if (edges.length > 0) soul.putEdges(edges);\n  return { added: edges.length };\n}",
+    "truncated": false,
+    "totalLines": 57,
+    "startLine": 69
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L94",
+      "confidence": 1,
+      "name": "indexRepo",
+      "qualifiedName": "indexRepo",
+      "signature": "indexRepo(soul: SoulStore, root: string, opts: IndexOpts = {}): Promise<IndexReport>",
+      "type": "function",
+      "file": "packages/pipeline/src/pipeline.ts",
+      "line": 94
+    },
+    {
+      "id": "sym:scripts/linker-check.mjs#runMode@L62",
+      "confidence": 1,
+      "name": "runMode",
+      "qualifiedName": "runMode",
+      "signature": "runMode(…)",
+      "type": "function",
+      "file": "scripts/linker-check.mjs",
+      "line": 62
+    },
+    {
+      "id": "sym:packages/pipeline/src/update.ts#updateRepo@L112",
+      "confidence": 1,
+      "name": "updateRepo",
+      "qualifiedName": "updateRepo",
+      "signature": "updateRepo(soul: SoulStore, root: string, opts: UpdateOpts = {}): Promise<UpdateResult>",
+      "type": "function",
+      "file": "packages/pipeline/src/update.ts",
+      "line": 112
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/fixtures/python/rules.py#add@L16",
+      "confidence": 1,
+      "name": "add",
+      "qualifiedName": "add",
+      "signature": "add(a, b)",
+      "type": "function",
+      "file": "packages/parsers/fixtures/python/rules.py",
+      "line": 16
+    },
+    {
+      "id": "sym:packages/soul-schema/src/id.ts#edgeId@L141",
+      "confidence": 1,
+      "name": "edgeId",
+      "qualifiedName": "edgeId",
+      "signature": "edgeId(src: string, dst: string, rel: Rel): string",
+      "type": "function",
+      "file": "packages/soul-schema/src/id.ts",
+      "line": 141
+    },
+    {
+      "id": "sym:packages/soul-schema/src/id.ts#idFor@L88",
+      "confidence": 1,
+      "name": "idFor",
+      "qualifiedName": "idFor",
+      "signature": "idFor(spec: IdSpec): string",
+      "type": "function",
+      "file": "packages/soul-schema/src/id.ts",
+      "line": 88
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 39
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/semantic.ts#round2@L127",
+      "confidence": 1,
+      "name": "round2",
+      "qualifiedName": "round2",
+      "signature": "round2(n: number): number",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/semantic.ts",
+      "line": 127
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/pipeline/src/linker/semantic.ts@L64",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-pipeline.md#phase-4-cross-modal-linker-the-differentiator",
+      "heading": "Phase 4 — Cross-modal linker (the differentiator)",
+      "anchor": "phase-4-cross-modal-linker-the-differentiator",
+      "snippet": "Phase 4 — Cross-modal linker (the differentiator)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#11-architecture",
+      "heading": "11. Architecture",
+      "anchor": "11-architecture",
+      "snippet": "11. Architecture",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/linker/semantic.ts#runSemanticLink@L69",
+    "procedureName": "runSemanticLink",
+    "conditions": [
+      "cond:packages/pipeline/src/linker/semantic.ts@L81",
+      "cond:packages/pipeline/src/linker/semantic.ts@L85",
+      "cond:packages/pipeline/src/linker/semantic.ts@L86",
+      "cond:packages/pipeline/src/linker/semantic.ts@L91",
+      "cond:packages/pipeline/src/linker/semantic.ts@L92",
+      "cond:packages/pipeline/src/linker/semantic.ts@L96",
+      "cond:packages/pipeline/src/linker/semantic.ts@L103",
+      "cond:packages/pipeline/src/linker/semantic.ts@L106",
+      "cond:packages/pipeline/src/linker/semantic.ts@L123"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/linker/semantic.ts#runSemanticLink@L69",
+        "procedureName": "runSemanticLink",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f9655dbf0327a88abbe8e6522f2efa8cca95d129ac77d4488615141e29d83826",
+          "target": "stmt:packages/pipeline/src/linker/semantic.ts@L76",
+          "line": 76,
+          "expr": "const index: LinkIndex =\n    mode === 'tfidf'\n      ? new TfidfIndex(soul.iterate('symbol'))\n      : new EmbeddingLinkIndex(soul.iterate('symbol'));"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/semantic.ts#runSemanticLink@L69",
+        "procedureName": "runSemanticLink",
+        "guard": "cond:packages/pipeline/src/linker/semantic.ts@L81",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/linker/semantic.ts@L81",
+            "expr": "index.size === 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:43c18bfd3869a560c6e747c60970b625bb5aba9b04c2457ffde3fc7b21cd1f5b",
+          "target": "stmt:packages/pipeline/src/linker/semantic.ts@L81",
+          "line": 81,
+          "expr": "return { added: 0 };"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/semantic.ts#runSemanticLink@L69",
+        "procedureName": "runSemanticLink",
+        "guard": "cond:packages/pipeline/src/linker/semantic.ts@L86",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/linker/semantic.ts@L85",
+            "expr": "['describes', 'references'] as const"
+          },
+          {
+            "id": "cond:packages/pipeline/src/linker/semantic.ts@L86",
+            "expr": "soul.iterateEdges(rel)",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:87a126678356bb5442eea8240d64a81c656205721dbe17c75281b5f5f27e431e",
+          "target": "stmt:packages/pipeline/src/linker/semantic.ts@L86",
+          "line": 86,
+          "expr": "existing.add(`${e.src}|${e.dst}`);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/semantic.ts#runSemanticLink@L69",
+        "procedureName": "runSemanticLink",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:d3179c6b242077a6d313bcd81aa9b02c4f698a072d98f6b4b82d4256055850fc",
+          "target": "sym:packages/parsers/fixtures/python/rules.py#add@L16",
+          "expr": "add",
+          "line": 86
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/semantic.ts#runSemanticLink@L69",
+        "procedureName": "runSemanticLink",
+        "guard": "cond:packages/pipeline/src/linker/semantic.ts@L92",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/linker/semantic.ts@L91",
+            "expr": "soul.iterate('doc-section')"
+          },
+          {
+            "id": "cond:packages/pipeline/src/linker/semantic.ts@L92",
+            "expr": "node.file && (!scope || scope.has(node.file))",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e6edc93220401f09304b5feb998625e3fcc4a89bf22dc5b7fb83e99c3d6a654f",
+          "target": "stmt:packages/pipeline/src/linker/semantic.ts@L92",
+          "line": 92,
+          "expr": "docFilesInScope.set(node.file, true);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/semantic.ts#runSemanticLink@L69",
+        "procedureName": "runSemanticLink",
+        "guard": "cond:packages/pipeline/src/linker/semantic.ts@L96",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/linker/semantic.ts@L96",
+            "expr": "docFilesInScope.keys()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bd67b3018fbdbe9d6312be726d20d45f27291f55c198f0a841179f439f46eb8a",
+          "target": "assign:packages/pipeline/src/linker/semantic.ts@L99",
+          "line": 99,
+          "expr": "text = readFileSync(join(root, docFile), 'utf8');"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/semantic.ts#runSemanticLink@L69",
+        "procedureName": "runSemanticLink",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:34639f364c4b389db2659396c7f569d53a40fd0948f63b346aa97d1ab163465f",
+          "target": "sym:packages/soul-schema/src/id.ts#idFor@L88",
+          "expr": "idFor",
+          "line": 104
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/semantic.ts#runSemanticLink@L69",
+        "procedureName": "runSemanticLink",
+        "guard": "cond:packages/pipeline/src/linker/semantic.ts@L103",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/linker/semantic.ts@L96",
+            "expr": "docFilesInScope.keys()"
+          },
+          {
+            "id": "cond:packages/pipeline/src/linker/semantic.ts@L103",
+            "expr": "parseMarkdownSections(text)",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:50f32e740c9b6e93dd269b7d50b9a01ecbe59a6b0a5d3578ab75a4f868a1dcc6",
+          "target": "stmt:packages/pipeline/src/linker/semantic.ts@L104",
+          "line": 104,
+          "expr": "const sectionId = idFor({ kind: 'doc-section', path: docFile, anchor: section.anchor });"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/semantic.ts#runSemanticLink@L69",
+        "procedureName": "runSemanticLink",
+        "guard": "cond:packages/pipeline/src/linker/semantic.ts@L103",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/linker/semantic.ts@L96",
+            "expr": "docFilesInScope.keys()"
+          },
+          {
+            "id": "cond:packages/pipeline/src/linker/semantic.ts@L103",
+            "expr": "parseMarkdownSections(text)",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7822b7d2768d35b77ddd2f35fb7c52ddf49f5793ad2619b2b0df109f6782c8e1",
+          "target": "stmt:packages/pipeline/src/linker/semantic.ts@L105",
+          "line": 105,
+          "expr": "const query = `${section.heading} ${section.prose} ${section.codeRefs.join(' ')}`;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/semantic.ts#runSemanticLink@L69",
+        "procedureName": "runSemanticLink",
+        "guard": "cond:packages/pipeline/src/linker/semantic.ts@L106",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/linker/semantic.ts@L96",
+            "expr": "docFilesInScope.keys()"
+          },
+          {
+            "id": "cond:packages/pipeline/src/linker/semantic.ts@L103",
+            "expr": "parseMarkdownSections(text)"
+          },
+          {
+            "id": "cond:packages/pipeline/src/linker/semantic.ts@L106",
+            "expr": "index.query(query, floor, TOP_K)",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bbfde0ad47959754d624b2259122c42380cc4293f742f0d24f3ca86268158b0f",
+          "target": "stmt:packages/pipeline/src/linker/semantic.ts@L108",
+          "line": 108,
+          "expr": "const confidence = Math.min(CONF_CEIL, CONF_FLOOR + (CONF_CEIL - CONF_FLOOR) * hit.score);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/semantic.ts#runSemanticLink@L69",
+        "procedureName": "runSemanticLink",
+        "guard": "cond:packages/pipeline/src/linker/semantic.ts@L106",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/linker/semantic.ts@L96",
+            "expr": "docFilesInScope.keys()"
+          },
+          {
+            "id": "cond:packages/pipeline/src/linker/semantic.ts@L103",
+            "expr": "parseMarkdownSections(text)"
+          },
+          {
+            "id": "cond:packages/pipeline/src/linker/semantic.ts@L106",
+            "expr": "index.query(query, floor, TOP_K)",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:79228aae4ea9fe1e0c6ed2461a2c8e0d3bf346c15288ab9d5a7ec23ede539792",
+          "target": "stmt:packages/pipeline/src/linker/semantic.ts@L109",
+          "line": 109,
+          "expr": "edges.push({\n          id: edgeId(sectionId, hit.id, 'references'),\n          src: sectionId,\n          dst: hit.id,\n          rel: 'references',\n          method: 'semantic',\n          provenance: 'INFERRED',\n          confidence: round2(confidence),\n          evidence: { by: mode, score: round2(hit.score) },\n        });"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/semantic.ts#runSemanticLink@L69",
+        "procedureName": "runSemanticLink",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:e196e7e4baf8d4e84d9a49d6c90bd7868aeb710d56bafe5530e2dd3403062b51",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 109
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/semantic.ts#runSemanticLink@L69",
+        "procedureName": "runSemanticLink",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:838d7a90339b97c4fcb8d44ad7674ce9a6009035f9384cfce4e5c5183bab474f",
+          "target": "sym:packages/soul-schema/src/id.ts#edgeId@L141",
+          "expr": "edgeId",
+          "line": 110
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/semantic.ts#runSemanticLink@L69",
+        "procedureName": "runSemanticLink",
+        "guard": "cond:packages/pipeline/src/linker/semantic.ts@L106",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/linker/semantic.ts@L96",
+            "expr": "docFilesInScope.keys()"
+          },
+          {
+            "id": "cond:packages/pipeline/src/linker/semantic.ts@L103",
+            "expr": "parseMarkdownSections(text)"
+          },
+          {
+            "id": "cond:packages/pipeline/src/linker/semantic.ts@L106",
+            "expr": "index.query(query, floor, TOP_K)",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:8308aefc8f93fed16ca33a2853b509ba1de64e1013a1eb2f9f2663eaf38055a8",
+          "target": "sym:packages/pipeline/src/linker/semantic.ts#round2@L127",
+          "expr": "round2",
+          "line": 116
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/semantic.ts#runSemanticLink@L69",
+        "procedureName": "runSemanticLink",
+        "guard": "cond:packages/pipeline/src/linker/semantic.ts@L123",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/linker/semantic.ts@L123",
+            "expr": "edges.length > 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:979e3a71b27ce9c1425d974f15d402d5e42e65e70a113659bfcd8d47815000a7",
+          "target": "stmt:packages/pipeline/src/linker/semantic.ts@L123",
+          "line": 123,
+          "expr": "soul.putEdges(edges);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/semantic.ts#runSemanticLink@L69",
+        "procedureName": "runSemanticLink",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b56249fb8aee66308f91370db697ca993c4ca338881df130cac68bb62ff0bb41",
+          "target": "stmt:packages/pipeline/src/linker/semantic.ts@L124",
+          "line": 124,
+          "expr": "return { added: edges.length };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 11,
+    "referencedByFiles": [
+      "packages/pipeline/src/pipeline.ts",
+      "packages/pipeline/src/update.ts",
+      "scripts/linker-check.mjs"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 11,
+    "assignments": 1,
+    "conditions": 7,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 5,
+      "recorded": 14,
+      "unresolved": 5
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "5 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

@@ -1,0 +1,453 @@
+{
+  "id": "sym:packages/pipeline/src/parse-concurrent.test.ts#snapshotCrib.walk@L70",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:ac1564a83cc1032c1565029877d19afc8e5d82ee0a21611ec68a7b590e4d5139",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/parse-concurrent.test.ts#snapshotCrib.walk@L70",
+    "kind": "symbol",
+    "type": "function",
+    "name": "walk",
+    "qualifiedName": "snapshotCrib.walk",
+    "signature": "walk(…)",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/parse-concurrent.test.ts",
+    "span": {
+      "start": 70,
+      "end": 84
+    },
+    "callSites": [
+      {
+        "callee": "join",
+        "line": 72
+      },
+      {
+        "callee": "walk",
+        "line": 78
+      },
+      {
+        "callee": "push",
+        "line": 81
+      },
+      {
+        "callee": "push",
+        "line": 82
+      },
+      {
+        "callee": "readFileSync",
+        "line": 82
+      }
+    ]
+  },
+  "source": {
+    "text": "  const walk = (dir: string, rel: string) => {\n    for (const name of readdirSync(dir).sort()) {\n      const abs = join(dir, name);\n      const r = rel === '.crib' ? `.crib/${name}` : `${rel}/${name}`;\n      // skip gitignored DERIVED state (sqlite index + embeddings dirs) — never committed, not what\n      // parse produces. Only snapshot the soul shards (nodes/edges/manifest) + cluster topology.\n      if (r === '.crib/index' || r === '.crib/embeddings') continue;\n      if (statSync(abs).isDirectory()) {\n        walk(abs, r);\n        continue;\n      }\n      out.push(r);\n      out.push(readFileSync(abs, 'utf8'));\n    }\n  };",
+    "truncated": false,
+    "totalLines": 15,
+    "startLine": 70
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/src/parse-concurrent.test.ts#snapshotCrib@L67",
+      "confidence": 1,
+      "name": "snapshotCrib",
+      "qualifiedName": "snapshotCrib",
+      "signature": "snapshotCrib(repo: string): string",
+      "type": "function",
+      "file": "packages/pipeline/src/parse-concurrent.test.ts",
+      "line": 67
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 39
+    },
+    {
+      "id": "sym:scripts/docs-stats.mjs#walk@L31",
+      "confidence": 1,
+      "name": "walk",
+      "qualifiedName": "walk",
+      "signature": "walk(…)",
+      "type": "function",
+      "file": "scripts/docs-stats.mjs",
+      "line": 31
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#what-was-built-2",
+      "heading": "What was built",
+      "anchor": "what-was-built-2",
+      "snippet": "What was built",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#what-was-built",
+      "heading": "What was built",
+      "anchor": "what-was-built",
+      "snippet": "What was built",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#tests",
+      "heading": "Tests",
+      "anchor": "tests",
+      "snippet": "Tests",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#summary",
+      "heading": "Summary",
+      "anchor": "summary",
+      "snippet": "Summary",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#documents-updated",
+      "heading": "Documents updated",
+      "anchor": "documents-updated",
+      "snippet": "Documents updated",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-client-setup.md#root-resolution-one-entry-every-project",
+      "heading": "Root resolution — one entry, every project",
+      "anchor": "root-resolution-one-entry-every-project",
+      "snippet": "Root resolution — one entry, every project",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#one-ide-entry-for-every-project-root-resolution",
+      "heading": "One IDE entry for every project (root resolution)",
+      "anchor": "one-ide-entry-for-every-project-root-resolution",
+      "snippet": "One IDE entry for every project (root resolution)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-track3-spec.md#what-each-language-extractor-must-emit-additive-keep-existing-symbol-member-of-calls-behavior",
+      "heading": "What each language extractor must emit (additive — keep existing symbol/member-of/calls behavior)",
+      "anchor": "what-each-language-extractor-must-emit-additive-keep-existing-symbol-member-of-calls-behavior",
+      "snippet": "What each language extractor must emit (additive — keep existing symbol/member-of/calls behavior)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-track3-spec.md#per-language-parser-work",
+      "heading": "Per-language parser work",
+      "anchor": "per-language-parser-work",
+      "snippet": "Per-language parser work",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#7-the-complete-code-map-quick-reference",
+      "heading": "7. The Complete Code Map (Quick Reference)",
+      "anchor": "7-the-complete-code-map-quick-reference",
+      "snippet": "7. The Complete Code Map (Quick Reference)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#3-2-4-graph-projection-the-llm-semantic-graph-gets-its-own-storage",
+      "heading": "3.2.4 Graph Projection — The LLM Semantic Graph Gets Its Own Storage",
+      "anchor": "3-2-4-graph-projection-the-llm-semantic-graph-gets-its-own-storage",
+      "snippet": "3.2.4 Graph Projection — The LLM Semantic Graph Gets Its Own Storage",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-cli.md#global-flags",
+      "heading": "Global flags",
+      "anchor": "global-flags",
+      "snippet": "Global flags",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-cli.md#root-resolution-req-1",
+      "heading": "Root resolution (REQ-1)",
+      "anchor": "root-resolution-req-1",
+      "snippet": "Root resolution (REQ-1)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-cli.md#crib-index-path",
+      "heading": "`crib index [path]`",
+      "anchor": "crib-index-path",
+      "snippet": "`crib index [path]`",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:packages/cli/skills/crib-enrich/SKILL.md#tools",
+      "heading": "Tools",
+      "anchor": "tools",
+      "snippet": "Tools",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-client-setup.md#4-claude-code",
+      "heading": "4. Claude Code",
+      "anchor": "4-claude-code",
+      "snippet": "4. Claude Code",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-refined-vs-existing-assessment.md#2-4-technical-architect",
+      "heading": "2.4 Technical Architect",
+      "anchor": "2-4-technical-architect",
+      "snippet": "2.4 Technical Architect",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-refined-vs-existing-assessment.md#2-1-principal-engineer",
+      "heading": "2.1 Principal Engineer",
+      "anchor": "2-1-principal-engineer",
+      "snippet": "2.1 Principal Engineer",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-refined-vs-existing-assessment.md#2-3-solution-architect",
+      "heading": "2.3 Solution Architect",
+      "anchor": "2-3-solution-architect",
+      "snippet": "2.3 Solution Architect",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:CHANGELOG.md#added",
+      "heading": "Added",
+      "anchor": "added",
+      "snippet": "Added",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#the-6-llm-graph-verbs",
+      "heading": "The 6 LLM-graph verbs",
+      "anchor": "the-6-llm-graph-verbs",
+      "snippet": "The 6 LLM-graph verbs",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/parse-concurrent.test.ts#snapshotCrib.walk@L70",
+    "procedureName": "snapshotCrib.walk",
+    "conditions": [
+      "cond:packages/pipeline/src/parse-concurrent.test.ts@L71",
+      "cond:packages/pipeline/src/parse-concurrent.test.ts@L77"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/parse-concurrent.test.ts#snapshotCrib.walk@L70",
+        "procedureName": "snapshotCrib.walk",
+        "guard": "cond:packages/pipeline/src/parse-concurrent.test.ts@L71",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/parse-concurrent.test.ts@L71",
+            "expr": "readdirSync(dir).sort()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:580f6908745026920fda56f1c386722f5475f13e1454971dd49afa6e9734ef41",
+          "target": "stmt:packages/pipeline/src/parse-concurrent.test.ts@L72",
+          "line": 72,
+          "expr": "const abs = join(dir, name);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/parse-concurrent.test.ts#snapshotCrib.walk@L70",
+        "procedureName": "snapshotCrib.walk",
+        "guard": "cond:packages/pipeline/src/parse-concurrent.test.ts@L77",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/parse-concurrent.test.ts@L71",
+            "expr": "readdirSync(dir).sort()"
+          },
+          {
+            "id": "cond:packages/pipeline/src/parse-concurrent.test.ts@L77",
+            "expr": "statSync(abs).isDirectory()",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2a68b8103739dfba7e1b2be1588d42d4a82a7fd22c3540c2d8c07bad0b44ad30",
+          "target": "stmt:packages/pipeline/src/parse-concurrent.test.ts@L78",
+          "line": 78,
+          "expr": "walk(abs, r);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/parse-concurrent.test.ts#snapshotCrib.walk@L70",
+        "procedureName": "snapshotCrib.walk",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:f48f601f5337ff1da65e931eaf0c6bb5f4536a2394cf6b6e2a366984808ad366",
+          "target": "sym:scripts/docs-stats.mjs#walk@L31",
+          "expr": "walk",
+          "line": 78
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/parse-concurrent.test.ts#snapshotCrib.walk@L70",
+        "procedureName": "snapshotCrib.walk",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:620b00ac90532a96f46d5ae2dce94c5f4b401b6f3259c758498f86ee5675e214",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 81
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/parse-concurrent.test.ts#snapshotCrib.walk@L70",
+        "procedureName": "snapshotCrib.walk",
+        "guard": "cond:packages/pipeline/src/parse-concurrent.test.ts@L71",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/parse-concurrent.test.ts@L71",
+            "expr": "readdirSync(dir).sort()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:cfd3f415150ec99707afe49ea26069dde85769961066708583deb6d9f11c1b52",
+          "target": "stmt:packages/pipeline/src/parse-concurrent.test.ts@L81",
+          "line": 81,
+          "expr": "out.push(r);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/parse-concurrent.test.ts#snapshotCrib.walk@L70",
+        "procedureName": "snapshotCrib.walk",
+        "guard": "cond:packages/pipeline/src/parse-concurrent.test.ts@L71",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/parse-concurrent.test.ts@L71",
+            "expr": "readdirSync(dir).sort()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:485e87b2014e5b10e2bc5185b5eb41be1ae69dbeb9a9a0990260cd2c81b98cf3",
+          "target": "stmt:packages/pipeline/src/parse-concurrent.test.ts@L82",
+          "line": 82,
+          "expr": "out.push(readFileSync(abs, 'utf8'));"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": [
+      "packages/pipeline/src/parse-concurrent.test.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 5,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

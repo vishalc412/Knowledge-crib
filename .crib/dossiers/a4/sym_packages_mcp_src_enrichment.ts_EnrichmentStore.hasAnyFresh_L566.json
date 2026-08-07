@@ -1,0 +1,140 @@
+{
+  "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.hasAnyFresh@L566",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:20467442f24d3f8cc8d1350509637554aeacbc89d133f3c7d293210a4753eda3",
+  "builtAt": "2026-06-30T16:18:20.420Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.hasAnyFresh@L566",
+    "kind": "symbol",
+    "type": "method",
+    "name": "hasAnyFresh",
+    "qualifiedName": "EnrichmentStore.hasAnyFresh",
+    "signature": "hasAnyFresh(): boolean",
+    "lang": "typescript",
+    "file": "packages/mcp/src/enrichment.ts",
+    "span": {
+      "start": 566,
+      "end": 568
+    },
+    "callSites": [
+      {
+        "callee": "some",
+        "line": 567
+      },
+      {
+        "callee": "allArtifacts",
+        "line": 567
+      },
+      {
+        "callee": "isStale",
+        "line": 567
+      }
+    ]
+  },
+  "source": {
+    "text": "  hasAnyFresh(): boolean {\n    return this.allArtifacts().some((a) => !this.isStale(a));\n  }",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 566
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.allArtifacts@L506",
+      "confidence": 1,
+      "name": "allArtifacts",
+      "qualifiedName": "EnrichmentStore.allArtifacts",
+      "signature": "allArtifacts(): LlmArtifact[]",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 506
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.isStale@L990",
+      "confidence": 1,
+      "name": "isStale",
+      "qualifiedName": "EnrichmentStore.isStale",
+      "signature": "isStale(artifact: LlmArtifact): boolean",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 990
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.hasAnyFresh@L566",
+    "procedureName": "EnrichmentStore.hasAnyFresh",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.hasAnyFresh@L566",
+        "procedureName": "EnrichmentStore.hasAnyFresh",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:178a6f40cc6edefc889eb5b3a1e3433736d09e9ff6cdb5833f0d5ed1d45f721d",
+          "target": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.allArtifacts@L506",
+          "expr": "allArtifacts",
+          "line": 567
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.hasAnyFresh@L566",
+        "procedureName": "EnrichmentStore.hasAnyFresh",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:1620b8cc615a096a804827f05f170fff6ea2841f33ac72d526bd89df0f42af05",
+          "target": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.isStale@L990",
+          "expr": "isStale",
+          "line": 567
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.hasAnyFresh@L566",
+        "procedureName": "EnrichmentStore.hasAnyFresh",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2a66daf1cbbcd2dbea2736176bce3734cfc6ef101ea77e400d3332109a0674a7",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L567",
+          "line": 567,
+          "expr": "return this.allArtifacts().some((a) => !this.isStale(a));"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 3,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

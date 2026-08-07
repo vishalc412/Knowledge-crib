@@ -48,7 +48,12 @@ afterEach(() => rmSync(cribDir, { recursive: true, force: true }));
 describe('PythonResolver — cross-file edges (M8 gate)', () => {
   it('resolves imports / cross-file calls / inherits across sibling modules', async () => {
     const soul = soulFor();
-    const report = await indexRepo(soul, PY_CROSS, { now: NOW, cluster: false, semantic: false });
+    const report = await indexRepo(soul, PY_CROSS, {
+      now: NOW,
+      cluster: false,
+      semantic: false,
+      ownership: false,
+    });
 
     // imports: auth.py → Base (base.py) and → format_token (util.py)
     const imports = [...soul.iterateEdges('imports')].map((e) => pair(soul, e.src, e.dst)).sort();
@@ -76,7 +81,12 @@ describe('PythonResolver — cross-file edges (M8 gate)', () => {
 
   it('is capability-honest: ≥1 imports/calls/inherits, ZERO type edges', async () => {
     const soul = soulFor();
-    await indexRepo(soul, PY_CROSS, { now: NOW, cluster: false, semantic: false });
+    await indexRepo(soul, PY_CROSS, {
+      now: NOW,
+      cluster: false,
+      semantic: false,
+      ownership: false,
+    });
 
     const pyEdges = edgesInFiles(soul, PY_EXTS);
     const rels = new Set(pyEdges.map((e) => e.rel));
@@ -105,7 +115,12 @@ describe('PythonResolver — cross-file edges (M8 gate)', () => {
 
   it('never emits an edge whose endpoint node does not exist (pruneDangling-safe)', async () => {
     const soul = soulFor();
-    await indexRepo(soul, PY_CROSS, { now: NOW, cluster: false, semantic: false });
+    await indexRepo(soul, PY_CROSS, {
+      now: NOW,
+      cluster: false,
+      semantic: false,
+      ownership: false,
+    });
     const ids = new Set([...soul.iterate()].map((n) => n.id));
     for (const e of soul.iterateEdges()) {
       expect(ids.has(e.src)).toBe(true);
@@ -115,13 +130,13 @@ describe('PythonResolver — cross-file edges (M8 gate)', () => {
 
   it('is id-stable: re-indexing yields byte-identical nodes + edges', async () => {
     const a = soulFor();
-    await indexRepo(a, PY_CROSS, { now: NOW, cluster: false, semantic: false });
+    await indexRepo(a, PY_CROSS, { now: NOW, cluster: false, semantic: false, ownership: false });
     const aNodes = JSON.stringify([...a.iterate()].sort(byId));
     const aEdges = JSON.stringify([...a.iterateEdges()].sort(byEdgeId));
 
     cribDir = mkdtempSync(join(tmpdir(), 'crib-py2-'));
     const b = soulFor();
-    await indexRepo(b, PY_CROSS, { now: NOW, cluster: false, semantic: false });
+    await indexRepo(b, PY_CROSS, { now: NOW, cluster: false, semantic: false, ownership: false });
     expect(JSON.stringify([...b.iterate()].sort(byId))).toBe(aNodes);
     expect(JSON.stringify([...b.iterateEdges()].sort(byEdgeId))).toBe(aEdges);
   });
@@ -172,7 +187,12 @@ describe('Mixed TS + Python indexRepo — no cross-talk (M8 gate)', () => {
 describe('PythonResolver — module bindings (M8 NICE-5)', () => {
   it('resolves `import M` / `M.f()` and comma `import a, b` with ZERO imports edges', async () => {
     const soul = soulFor();
-    await indexRepo(soul, PY_MODULE_IMPORTS, { now: NOW, cluster: false, semantic: false });
+    await indexRepo(soul, PY_MODULE_IMPORTS, {
+      now: NOW,
+      cluster: false,
+      semantic: false,
+      ownership: false,
+    });
 
     // `import base, util` binds BOTH modules (comma multi-module) → both calls resolve cross-file.
     const calls = [...soul.iterateEdges('calls')].map((e) => pair(soul, e.src, e.dst)).sort();

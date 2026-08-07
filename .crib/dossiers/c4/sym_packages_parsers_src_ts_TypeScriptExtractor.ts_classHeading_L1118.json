@@ -1,0 +1,122 @@
+{
+  "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#classHeading@L1118",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:bab7607ec7bd72dcff1299b13ebb7f39a733e75ca12ff011f013b59b2fc6c029",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#classHeading@L1118",
+    "kind": "symbol",
+    "type": "function",
+    "name": "classHeading",
+    "qualifiedName": "classHeading",
+    "signature": "classHeading(node: ts.ClassDeclaration): string | undefined",
+    "lang": "typescript",
+    "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+    "span": {
+      "start": 1118,
+      "end": 1121
+    },
+    "callSites": [
+      {
+        "callee": "join",
+        "line": 1119
+      },
+      {
+        "callee": "map",
+        "line": 1119
+      },
+      {
+        "callee": "getText",
+        "line": 1119
+      },
+      {
+        "callee": "trim",
+        "line": 1120
+      }
+    ]
+  },
+  "source": {
+    "text": "function classHeading(node: ts.ClassDeclaration): string | undefined {\n  const heritage = node.heritageClauses?.map((h) => h.getText()).join(' ');\n  return heritage ? `class ${node.name?.text ?? ''} ${heritage}`.trim() : undefined;\n}",
+    "truncated": false,
+    "totalLines": 4,
+    "startLine": 1118
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#symbolInfo@L1079",
+      "confidence": 1,
+      "name": "symbolInfo",
+      "qualifiedName": "symbolInfo",
+      "signature": "symbolInfo(node: ts.Node): SymInfo | null",
+      "type": "function",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 1079
+    }
+  ],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#classHeading@L1118",
+    "procedureName": "classHeading",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#classHeading@L1118",
+        "procedureName": "classHeading",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9c31b664de0cf55613843b3036667a51e9a310c2f6d302d735e5a0acb5e4ec84",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L1119",
+          "line": 1119,
+          "expr": "const heritage = node.heritageClauses?.map((h) => h.getText()).join(' ');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#classHeading@L1118",
+        "procedureName": "classHeading",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:96412168b6eadd0ca274ff2c65042dab7ba5d2c94e78f2eac2cddbf7a438fa00",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L1120",
+          "line": 1120,
+          "expr": "return heritage ? `class ${node.name?.text ?? ''} ${heritage}`.trim() : undefined;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/parsers/src/ts/TypeScriptExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 4,
+      "unresolved": 4
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "4 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

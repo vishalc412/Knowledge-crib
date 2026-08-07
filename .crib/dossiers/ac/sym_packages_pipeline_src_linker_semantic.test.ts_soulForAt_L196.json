@@ -1,0 +1,168 @@
+{
+  "id": "sym:packages/pipeline/src/linker/semantic.test.ts#soulForAt@L196",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:c760919c78c122619b04bf373c3648c3f0ad10dfff78d2e542e0dbc79a1dd9ba",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/linker/semantic.test.ts#soulForAt@L196",
+    "kind": "symbol",
+    "type": "function",
+    "name": "soulForAt",
+    "qualifiedName": "soulForAt",
+    "signature": "soulForAt(dir: string): SoulStore",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/linker/semantic.test.ts",
+    "span": {
+      "start": 196,
+      "end": 200
+    },
+    "callSites": [
+      {
+        "callee": "join",
+        "line": 197
+      },
+      {
+        "callee": "newManifest",
+        "line": 197
+      },
+      {
+        "callee": "load",
+        "line": 198
+      }
+    ]
+  },
+  "source": {
+    "text": "function soulForAt(dir: string): SoulStore {\n  const s = new SoulStore(join(dir, '.crib'), { manifest: newManifest({ now: NOW }) });\n  s.load();\n  return s;\n}",
+    "truncated": false,
+    "totalLines": 5,
+    "startLine": 196
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/ui/web/support.js#createExternalModules.load@L1028",
+      "confidence": 1,
+      "name": "load",
+      "qualifiedName": "createExternalModules.load",
+      "signature": "load(kind, url)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 1028
+    },
+    {
+      "id": "sym:packages/core/src/manifest.ts#newManifest@L28",
+      "confidence": 1,
+      "name": "newManifest",
+      "qualifiedName": "newManifest",
+      "signature": "newManifest(opts: NewManifestOpts = {}): Manifest",
+      "type": "function",
+      "file": "packages/core/src/manifest.ts",
+      "line": 28
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/linker/semantic.test.ts#soulForAt@L196",
+    "procedureName": "soulForAt",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/linker/semantic.test.ts#soulForAt@L196",
+        "procedureName": "soulForAt",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4e69d9ebb1683d6f31ecc6d15d1695e18941e372e4c6c8c56f609bd0004681c5",
+          "target": "stmt:packages/pipeline/src/linker/semantic.test.ts@L197",
+          "line": 197,
+          "expr": "const s = new SoulStore(join(dir, '.crib'), { manifest: newManifest({ now: NOW }) });"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/semantic.test.ts#soulForAt@L196",
+        "procedureName": "soulForAt",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:b2000b47f182366ae5b7f357c96b842d36ae0411009a668e32a15119217cd2e5",
+          "target": "sym:packages/core/src/manifest.ts#newManifest@L28",
+          "expr": "newManifest",
+          "line": 197
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/semantic.test.ts#soulForAt@L196",
+        "procedureName": "soulForAt",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:03dd5abbc8d5affeec2d31fb7d976fc5ecbbdcef1e16a2240a5fa845701b64e0",
+          "target": "sym:packages/ui/web/support.js#createExternalModules.load@L1028",
+          "expr": "load",
+          "line": 198
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/semantic.test.ts#soulForAt@L196",
+        "procedureName": "soulForAt",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f5e924a2e983713faf2ed1d5a0756e4a1d792abd92d012408c2dd933463da831",
+          "target": "stmt:packages/pipeline/src/linker/semantic.test.ts@L198",
+          "line": 198,
+          "expr": "s.load();"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/semantic.test.ts#soulForAt@L196",
+        "procedureName": "soulForAt",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7ba5d775be921f8171695c14701d3b22fbec82411ecaedf6ef861ce2693ef0c3",
+          "target": "stmt:packages/pipeline/src/linker/semantic.test.ts@L199",
+          "line": 199,
+          "expr": "return s;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 3,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

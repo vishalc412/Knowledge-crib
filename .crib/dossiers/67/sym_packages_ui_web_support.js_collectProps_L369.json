@@ -1,0 +1,500 @@
+{
+  "id": "sym:packages/ui/web/support.js#collectProps@L369",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:73557c21fdb8224abedbfac76feda771a6753967a7e87e8fcc0077b72ec9a343",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/ui/web/support.js#collectProps@L369",
+    "kind": "symbol",
+    "type": "function",
+    "name": "collectProps",
+    "qualifiedName": "collectProps",
+    "signature": "collectProps(node, kind, host)",
+    "lang": "javascript",
+    "file": "packages/ui/web/support.js",
+    "span": {
+      "start": 369,
+      "end": 398
+    },
+    "callSites": [
+      {
+        "callee": "kebabToCamel",
+        "line": 377
+      },
+      {
+        "callee": "slice",
+        "line": 377
+      },
+      {
+        "callee": "push",
+        "line": 383
+      },
+      {
+        "callee": "pseudoClass",
+        "line": 383
+      },
+      {
+        "callee": "slice",
+        "line": 383
+      },
+      {
+        "callee": "kebabToCamel",
+        "line": 388
+      },
+      {
+        "callee": "toUpperCase",
+        "line": 393
+      },
+      {
+        "callee": "slice",
+        "line": 393
+      },
+      {
+        "callee": "push",
+        "line": 395
+      },
+      {
+        "callee": "compileAttr",
+        "line": 395
+      }
+    ]
+  },
+  "source": {
+    "text": "  function collectProps(node, kind, host) {\n    const propGetters = [];\n    const pseudoClasses = [];\n    let hintSize = null;\n    for (const { name, value } of [...node.attributes]) {\n      if (name === \"sc-name\" || name === \"data-dc-tpl\") continue;\n      let key = name;\n      if (key.startsWith(CAMEL_ATTR))\n        key = kebabToCamel(key.slice(CAMEL_ATTR.length));\n      if (key === \"hint-size\") {\n        hintSize = value;\n        continue;\n      }\n      if (key.startsWith(\"style-\")) {\n        pseudoClasses.push(host.pseudoClass(key.slice(6), value));\n        continue;\n      }\n      if (kind !== \"dom\") {\n        if (key.includes(\"-\") && !(kind === \"x-import\" && (key.startsWith(\"aria-\") || key.startsWith(\"data-\"))))\n          key = kebabToCamel(key);\n      } else {\n        if (key === \"class\") key = \"className\";\n        else if (key === \"for\") key = \"htmlFor\";\n        else if (key.startsWith(\"on\"))\n          key = EVENT_MAP[key] || \"on\" + key[2].toUpperCase() + key.slice(3);\n      }\n      propGetters.push([key, compileAttr(value)]);\n    }\n    return { propGetters, pseudoClasses, hintSize };\n  }",
+    "truncated": false,
+    "totalLines": 30,
+    "startLine": 369
+  },
+  "callers": [
+    {
+      "id": "sym:packages/ui/web/support.js#walkComponent@L551",
+      "confidence": 1,
+      "name": "walkComponent",
+      "qualifiedName": "walkComponent",
+      "signature": "walkComponent(el, host)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 551
+    },
+    {
+      "id": "sym:packages/ui/web/support.js#walkElement@L652",
+      "confidence": 1,
+      "name": "walkElement",
+      "qualifiedName": "walkElement",
+      "signature": "walkElement(el, host)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 652
+    },
+    {
+      "id": "sym:packages/ui/web/support.js#walkXImport@L580",
+      "confidence": 1,
+      "name": "walkXImport",
+      "qualifiedName": "walkXImport",
+      "signature": "walkXImport(el, host)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 580
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/ui/web/support.js#compileAttr@L355",
+      "confidence": 1,
+      "name": "compileAttr",
+      "qualifiedName": "compileAttr",
+      "signature": "compileAttr(raw)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 355
+    },
+    {
+      "id": "sym:packages/ui/web/support.js#kebabToCamel@L342",
+      "confidence": 1,
+      "name": "kebabToCamel",
+      "qualifiedName": "kebabToCamel",
+      "signature": "kebabToCamel(s)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 342
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 39
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/ui/web/support.js@L368",
+      "snippet": "// src/compile.ts",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/ui/web/support.js#collectProps@L369",
+    "procedureName": "collectProps",
+    "conditions": [
+      "cond:packages/ui/web/support.js@L373",
+      "cond:packages/ui/web/support.js@L386",
+      "cond:packages/ui/web/support.js@L387",
+      "cond:packages/ui/web/support.js@L376",
+      "cond:packages/ui/web/support.js@L378",
+      "cond:packages/ui/web/support.js@L382",
+      "cond:packages/ui/web/support.js@L390",
+      "cond:packages/ui/web/support.js@L391",
+      "cond:packages/ui/web/support.js@L392"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/ui/web/support.js#collectProps@L369",
+        "procedureName": "collectProps",
+        "guard": "cond:packages/ui/web/support.js@L387",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/web/support.js@L373",
+            "expr": "[...node.attributes]"
+          },
+          {
+            "id": "cond:packages/ui/web/support.js@L386",
+            "expr": "kind !== \"dom\""
+          },
+          {
+            "id": "cond:packages/ui/web/support.js@L387",
+            "expr": "key.includes(\"-\") && !(kind === \"x-import\" && (key.startsWith(\"aria-\") || key.startsWith(\"data-\")))",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:0e904759f735614aa4d2753674e0bc6845b73a5b2e4a03bdc9bef225253b844e",
+          "target": "sym:packages/ui/web/support.js#kebabToCamel@L342",
+          "expr": "kebabToCamel",
+          "line": 377
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#collectProps@L369",
+        "procedureName": "collectProps",
+        "guard": "cond:packages/ui/web/support.js@L376",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/web/support.js@L373",
+            "expr": "[...node.attributes]"
+          },
+          {
+            "id": "cond:packages/ui/web/support.js@L376",
+            "expr": "key.startsWith(CAMEL_ATTR)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d3b3c0248092fe71aaf03ebd4e5019d11bf0c9092a4e27cbc73a35dd8ef90a02",
+          "target": "assign:packages/ui/web/support.js@L377",
+          "line": 377,
+          "expr": "key = kebabToCamel(key.slice(CAMEL_ATTR.length));"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#collectProps@L369",
+        "procedureName": "collectProps",
+        "guard": "cond:packages/ui/web/support.js@L378",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/web/support.js@L373",
+            "expr": "[...node.attributes]"
+          },
+          {
+            "id": "cond:packages/ui/web/support.js@L378",
+            "expr": "key === \"hint-size\"",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0467f465c1bfcf89a68e3cdb250dad61fff5b4012d4882006a3ca6b7ee24fa27",
+          "target": "assign:packages/ui/web/support.js@L379",
+          "line": 379,
+          "expr": "hintSize = value;"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#collectProps@L369",
+        "procedureName": "collectProps",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:1f788484e1bcda3be49abee68280aef74c53c3783b1e2446ce5f32a98ed8663b",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "expr": "push",
+          "line": 383
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#collectProps@L369",
+        "procedureName": "collectProps",
+        "guard": "cond:packages/ui/web/support.js@L382",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/web/support.js@L373",
+            "expr": "[...node.attributes]"
+          },
+          {
+            "id": "cond:packages/ui/web/support.js@L382",
+            "expr": "key.startsWith(\"style-\")",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:83065a9b83b18a24cdffcb5fda687a11627c68215a3b30a000a42e48a89ecb64",
+          "target": "stmt:packages/ui/web/support.js@L383",
+          "line": 383,
+          "expr": "pseudoClasses.push(host.pseudoClass(key.slice(6), value));"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#collectProps@L369",
+        "procedureName": "collectProps",
+        "guard": "cond:packages/ui/web/support.js@L387",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/web/support.js@L373",
+            "expr": "[...node.attributes]"
+          },
+          {
+            "id": "cond:packages/ui/web/support.js@L386",
+            "expr": "kind !== \"dom\""
+          },
+          {
+            "id": "cond:packages/ui/web/support.js@L387",
+            "expr": "key.includes(\"-\") && !(kind === \"x-import\" && (key.startsWith(\"aria-\") || key.startsWith(\"data-\")))",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:526c634fef8eb08fa882ab0a318d16d3250d59a06ddf045dcfb3908aa48aec3f",
+          "target": "assign:packages/ui/web/support.js@L388",
+          "line": 388,
+          "expr": "key = kebabToCamel(key);"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#collectProps@L369",
+        "procedureName": "collectProps",
+        "guard": "cond:packages/ui/web/support.js@L390",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/web/support.js@L373",
+            "expr": "[...node.attributes]"
+          },
+          {
+            "id": "cond:packages/ui/web/support.js@L386",
+            "expr": "kind !== \"dom\""
+          },
+          {
+            "id": "cond:packages/ui/web/support.js@L390",
+            "expr": "key === \"class\"",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:41197f5899edd0484ebc5a302325f8708a7e43965c35e1c1100ca30b9b407d20",
+          "target": "assign:packages/ui/web/support.js@L390",
+          "line": 390,
+          "expr": "key = \"className\";"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#collectProps@L369",
+        "procedureName": "collectProps",
+        "guard": "cond:packages/ui/web/support.js@L391",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/web/support.js@L373",
+            "expr": "[...node.attributes]"
+          },
+          {
+            "id": "cond:packages/ui/web/support.js@L386",
+            "expr": "kind !== \"dom\""
+          },
+          {
+            "id": "cond:packages/ui/web/support.js@L390",
+            "expr": "key === \"class\""
+          },
+          {
+            "id": "cond:packages/ui/web/support.js@L391",
+            "expr": "key === \"for\"",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2df9f3c99a51aeb4b27eb92e5ce27fbcbd7164728ddff650599878e9ab7d8327",
+          "target": "assign:packages/ui/web/support.js@L391",
+          "line": 391,
+          "expr": "key = \"htmlFor\";"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#collectProps@L369",
+        "procedureName": "collectProps",
+        "guard": "cond:packages/ui/web/support.js@L392",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/web/support.js@L373",
+            "expr": "[...node.attributes]"
+          },
+          {
+            "id": "cond:packages/ui/web/support.js@L386",
+            "expr": "kind !== \"dom\""
+          },
+          {
+            "id": "cond:packages/ui/web/support.js@L390",
+            "expr": "key === \"class\""
+          },
+          {
+            "id": "cond:packages/ui/web/support.js@L391",
+            "expr": "key === \"for\""
+          },
+          {
+            "id": "cond:packages/ui/web/support.js@L392",
+            "expr": "key.startsWith(\"on\")",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3e464a67f5141ea18cbc99fdf4c068e0a064efef5f3e2dbc48390ae0deb3417d",
+          "target": "assign:packages/ui/web/support.js@L393",
+          "line": 393,
+          "expr": "key = EVENT_MAP[key] || \"on\" + key[2].toUpperCase() + key.slice(3);"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#collectProps@L369",
+        "procedureName": "collectProps",
+        "guard": "cond:packages/ui/web/support.js@L373",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/web/support.js@L373",
+            "expr": "[...node.attributes]",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:8c3a59f850fe1a1bf75eb0454b5ec6e41cf0c6550c4e380770131fcf4a9512a5",
+          "target": "sym:packages/ui/web/support.js#compileAttr@L355",
+          "expr": "compileAttr",
+          "line": 395
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#collectProps@L369",
+        "procedureName": "collectProps",
+        "guard": "cond:packages/ui/web/support.js@L373",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/ui/web/support.js@L373",
+            "expr": "[...node.attributes]",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:95e1d896ca82e65a91d7eef116d71cb5c6d570f4aa03293abd25323110f76444",
+          "target": "stmt:packages/ui/web/support.js@L395",
+          "line": 395,
+          "expr": "propGetters.push([key, compileAttr(value)]);"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#collectProps@L369",
+        "procedureName": "collectProps",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d68d61cadca3577412c2062a751cc27ef8062667427fe84986987cb4cc809c96",
+          "target": "stmt:packages/ui/web/support.js@L397",
+          "line": 397,
+          "expr": "return { propGetters, pseudoClasses, hintSize };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 9,
+    "referencedByFiles": [
+      "packages/ui/web/support.js"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 9,
+    "assignments": 6,
+    "conditions": 8,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 3,
+      "recorded": 10,
+      "unresolved": 5
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "5 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

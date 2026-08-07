@@ -43,7 +43,7 @@ That gate runs:
 - Beta installer bundles are generated under `dist/installers/` with all workspace package tarballs,
   macOS and Windows installer scripts, manifest metadata, checksums, and local npm-prefix smoke
   installation.
-- Generated installers enforce Node.js 20 or newer, verify all bundled checksums before installation,
+- Generated installers enforce Node.js 22.5 or newer, verify all bundled checksums before installation,
   and use isolated temporary npm caches; CI smoke tests execute the scripts themselves and use the
   installed package to index and validate a temporary project.
 - GitHub Actions verifies the complete release gate on Linux and performs installer build/install

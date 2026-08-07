@@ -1,0 +1,104 @@
+{
+  "id": "sym:packages/mcp/src/enrichment.ts#artifactText@L1892",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:aec089fba386503b1b78bac884f19b20df0ba4d642b07d9b77fcf53acfe1e983",
+  "builtAt": "2026-07-16T14:40:07.112Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/enrichment.ts#artifactText@L1892",
+    "kind": "symbol",
+    "type": "function",
+    "name": "artifactText",
+    "qualifiedName": "artifactText",
+    "signature": "artifactText(artifact: LlmArtifact): string",
+    "lang": "typescript",
+    "file": "packages/mcp/src/enrichment.ts",
+    "span": {
+      "start": 1892,
+      "end": 1897
+    },
+    "callSites": [
+      {
+        "callee": "toLowerCase",
+        "line": 1893
+      },
+      {
+        "callee": "stringify",
+        "line": 1893
+      },
+      {
+        "callee": "map",
+        "line": 1895
+      }
+    ]
+  },
+  "source": {
+    "text": "function artifactText(artifact: LlmArtifact): string {\n  return JSON.stringify({\n    analysis: artifact.analysis,\n    nodes: artifact.graph.nodes.map((n) => ({ name: n.name, summary: n.summary, kind: n.kind })),\n  }).toLowerCase();\n}",
+    "truncated": false,
+    "totalLines": 6,
+    "startLine": 1892
+  },
+  "callers": [
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.matchText@L970",
+      "confidence": 1,
+      "name": "matchText",
+      "qualifiedName": "EnrichmentStore.matchText",
+      "signature": "matchText(q: string, limit: number): LlmArtifact[]",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 970
+    }
+  ],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/enrichment.ts#artifactText@L1892",
+    "procedureName": "artifactText",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/enrichment.ts#artifactText@L1892",
+        "procedureName": "artifactText",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5185ceb2e3cd97d1123a8a65c06c69898215138c0e32249808dde93b3d97501f",
+          "target": "stmt:packages/mcp/src/enrichment.ts@L1893",
+          "line": 1893,
+          "expr": "return JSON.stringify({\n    analysis: artifact.analysis,\n    nodes: artifact.graph.nodes.map((n) => ({ name: n.name, summary: n.summary, kind: n.kind })),\n  }).toLowerCase();"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/mcp/src/enrichment.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 3,
+      "unresolved": 3
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "3 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

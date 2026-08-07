@@ -1,0 +1,195 @@
+{
+  "id": "sym:packages/mcp/src/verbs.test.ts#stmt@L2043",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:def8b1de1e1ad4ad87309bc1bc5d1f1a75ecc31d497455883b57f436a57535e1",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/verbs.test.ts#stmt@L2043",
+    "kind": "symbol",
+    "type": "function",
+    "name": "stmt",
+    "qualifiedName": "stmt",
+    "signature": "stmt(path: string, line: number, sqlKind = 'select'): Node",
+    "lang": "typescript",
+    "file": "packages/mcp/src/verbs.test.ts",
+    "span": {
+      "start": 2043,
+      "end": 2053
+    },
+    "callSites": [
+      {
+        "callee": "idFor",
+        "line": 2045
+      },
+      {
+        "callee": "contentHash",
+        "line": 2051
+      }
+    ]
+  },
+  "source": {
+    "text": "  function stmt(path: string, line: number, sqlKind = 'select'): Node {\n    return {\n      id: idFor({ kind: 'statement', file: path, line }),\n      kind: 'statement',\n      sqlKind,\n      file: path,\n      span: { start: line, end: line },\n      lang: 'plsql',\n      hash: contentHash(`${path}:${line}:${sqlKind}`),\n    };\n  }",
+    "truncated": false,
+    "totalLines": 11,
+    "startLine": 2043
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/soul-schema/src/hash.ts#contentHash@L21",
+      "confidence": 1,
+      "name": "contentHash",
+      "qualifiedName": "contentHash",
+      "signature": "contentHash(input: string): string",
+      "type": "function",
+      "file": "packages/soul-schema/src/hash.ts",
+      "line": 21
+    },
+    {
+      "id": "sym:packages/soul-schema/src/id.ts#idFor@L88",
+      "confidence": 1,
+      "name": "idFor",
+      "qualifiedName": "idFor",
+      "signature": "idFor(spec: IdSpec): string",
+      "type": "function",
+      "file": "packages/soul-schema/src/id.ts",
+      "line": 88
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "doc:docs/knowledge-crib-deep-extraction.md#5-the-example-fully-represented",
+      "heading": "5. The example, fully represented",
+      "anchor": "5-the-example-fully-represented",
+      "snippet": "5. The example, fully represented",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-track3-spec.md#2-statement-nodes-one-per-action-line-in-the-body-call-return-assign-throw-raise",
+      "heading": "2. `statement` nodes — one per \"action\" line in the body (call / return / assign / throw / raise)",
+      "anchor": "2-statement-nodes-one-per-action-line-in-the-body-call-return-assign-throw-raise",
+      "snippet": "2. `statement` nodes — one per \"action\" line in the body (call / return / assign / throw / raise)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-track3-spec.md#the-body-walk-the-core-algorithm-each-extractor-adds",
+      "heading": "The body-walk (the core algorithm each extractor adds)",
+      "anchor": "the-body-walk-the-core-algorithm-each-extractor-adds",
+      "snippet": "The body-walk (the core algorithm each extractor adds)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#node",
+      "heading": "Node",
+      "anchor": "node",
+      "snippet": "Node",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-deep-extraction.md#4b-schema-1-2-behavior-bearing-fidelity-the-detailed-level-part",
+      "heading": "4b. Schema 1.2 — behavior-bearing fidelity (the \"detailed-level\" part)",
+      "anchor": "4b-schema-1-2-behavior-bearing-fidelity-the-detailed-level-part",
+      "snippet": "4b. Schema 1.2 — behavior-bearing fidelity (the \"detailed-level\" part)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-deep-extraction.md#new-node-kinds",
+      "heading": "New node kinds",
+      "anchor": "new-node-kinds",
+      "snippet": "New node kinds",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/verbs.test.ts#stmt@L2043",
+    "procedureName": "stmt",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/verbs.test.ts#stmt@L2043",
+        "procedureName": "stmt",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:81e6e5cf86865f82fa2eec04c756658765ae1d4ac5f206418910401aa12dcb21",
+          "target": "stmt:packages/mcp/src/verbs.test.ts@L2044",
+          "line": 2044,
+          "expr": "return {\n      id: idFor({ kind: 'statement', file: path, line }),\n      kind: 'statement',\n      sqlKind,\n      file: path,\n      span: { start: line, end: line },\n      lang: 'plsql',\n      hash: contentHash(`${path}:${line}:${sqlKind}`),\n    };"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.test.ts#stmt@L2043",
+        "procedureName": "stmt",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:8e91020451f00784c75ee8d82696f0b5c3919774f25a3ccdcd3dfbb5b90c4059",
+          "target": "sym:packages/soul-schema/src/id.ts#idFor@L88",
+          "expr": "idFor",
+          "line": 2045
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.test.ts#stmt@L2043",
+        "procedureName": "stmt",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:81dbf0a28c87b78f07d7ce0dcfd5de8ae2cf871ac3c95bbbaad577a7a8cd8a8c",
+          "target": "sym:packages/soul-schema/src/hash.ts#contentHash@L21",
+          "expr": "contentHash",
+          "line": 2051
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 2,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

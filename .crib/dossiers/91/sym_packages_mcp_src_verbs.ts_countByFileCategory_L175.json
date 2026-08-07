@@ -1,0 +1,156 @@
+{
+  "id": "sym:packages/mcp/src/verbs.ts#countByFileCategory@L175",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:362127e04f2ca2a0b85c0b0d298557d6c9f26fe552662e7090d1bebdd521b859",
+  "builtAt": "2026-07-16T14:40:07.112Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/verbs.ts#countByFileCategory@L175",
+    "kind": "symbol",
+    "type": "function",
+    "name": "countByFileCategory",
+    "qualifiedName": "countByFileCategory",
+    "signature": "countByFileCategory(rows: Array<Record<string, unknown>>): GapCategoryCounts",
+    "lang": "typescript",
+    "file": "packages/mcp/src/verbs.ts",
+    "span": {
+      "start": 175,
+      "end": 187
+    },
+    "callSites": [
+      {
+        "callee": "initGapCategories",
+        "line": 176
+      }
+    ]
+  },
+  "source": {
+    "text": "function countByFileCategory(rows: Array<Record<string, unknown>>): GapCategoryCounts {\n  const counts = initGapCategories();\n  for (const row of rows) {\n    const file =\n      typeof row.file === 'string'\n        ? row.file\n        : typeof row.callerFile === 'string'\n          ? row.callerFile\n          : undefined;\n    counts[fileCategory(file)]++;\n  }\n  return counts;\n}",
+    "truncated": false,
+    "totalLines": 13,
+    "startLine": 175
+  },
+  "callers": [
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.gaps@L1409",
+      "confidence": 1,
+      "name": "gaps",
+      "qualifiedName": "Verbs.gaps",
+      "signature": "gaps(args: { extractedOnly?: boolean; includeBuiltins?: boolean } = {}): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 1409
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#fileCategory@L158",
+      "confidence": 1,
+      "name": "fileCategory",
+      "qualifiedName": "fileCategory",
+      "signature": "fileCategory(file?: string): GapCategory",
+      "type": "function",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 158
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#initGapCategories@L146",
+      "confidence": 1,
+      "name": "initGapCategories",
+      "qualifiedName": "initGapCategories",
+      "signature": "initGapCategories(): GapCategoryCounts",
+      "type": "function",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 146
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/verbs.ts#countByFileCategory@L175",
+    "procedureName": "countByFileCategory",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#countByFileCategory@L175",
+        "procedureName": "countByFileCategory",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:d3c07dda2f259789412b40cac6af8748bb1309dff31f3eb56034354a48c4eca7",
+          "target": "sym:packages/mcp/src/verbs.ts#fileCategory@L158",
+          "expr": "fileCategory"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#countByFileCategory@L175",
+        "procedureName": "countByFileCategory",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:99258ed64312cb9cd5ed02a2636af4fa8d275173d7aefb456f53bd9fef3c33d8",
+          "target": "sym:packages/mcp/src/verbs.ts#initGapCategories@L146",
+          "expr": "initGapCategories",
+          "line": 176
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#countByFileCategory@L175",
+        "procedureName": "countByFileCategory",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f475bc00ae58637443e2905d886a92a6568f2807784ad360084a0a1683ddfde5",
+          "target": "stmt:packages/mcp/src/verbs.ts@L176",
+          "line": 176,
+          "expr": "const counts = initGapCategories();"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#countByFileCategory@L175",
+        "procedureName": "countByFileCategory",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:849ea360889f3a279e82da26ef3cd7a07007958d9e9f36e47c6455905606c2da",
+          "target": "stmt:packages/mcp/src/verbs.ts@L186",
+          "line": 186,
+          "expr": "return counts;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/mcp/src/verbs.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

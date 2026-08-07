@@ -1,0 +1,110 @@
+{
+  "id": "sym:packages/ui/web/support.js#kebabToCamel@L342",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:279f2797bed399b3dce07daaa07f474e1c27f12b9fb198c41313d89408a222f1",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/ui/web/support.js#kebabToCamel@L342",
+    "kind": "symbol",
+    "type": "function",
+    "name": "kebabToCamel",
+    "qualifiedName": "kebabToCamel",
+    "signature": "kebabToCamel(s)",
+    "lang": "javascript",
+    "file": "packages/ui/web/support.js",
+    "span": {
+      "start": 342,
+      "end": 344
+    },
+    "callSites": [
+      {
+        "callee": "replace",
+        "line": 343
+      },
+      {
+        "callee": "toUpperCase",
+        "line": 343
+      }
+    ]
+  },
+  "source": {
+    "text": "  function kebabToCamel(s) {\n    return s.replace(/-([a-z])/g, (_, c) => c.toUpperCase());\n  }",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 342
+  },
+  "callers": [
+    {
+      "id": "sym:packages/ui/web/support.js#collectProps@L369",
+      "confidence": 1,
+      "name": "collectProps",
+      "qualifiedName": "collectProps",
+      "signature": "collectProps(node, kind, host)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 369
+    },
+    {
+      "id": "sym:packages/ui/web/support.js#cssToObj@L345",
+      "confidence": 1,
+      "name": "cssToObj",
+      "qualifiedName": "cssToObj",
+      "signature": "cssToObj(css)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 345
+    }
+  ],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/ui/web/support.js#kebabToCamel@L342",
+    "procedureName": "kebabToCamel",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/ui/web/support.js#kebabToCamel@L342",
+        "procedureName": "kebabToCamel",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b0888af81d0c605dff59c7d6349d6827ad6783782791adf33de09fc08bd87afb",
+          "target": "stmt:packages/ui/web/support.js@L343",
+          "line": 343,
+          "expr": "return s.replace(/-([a-z])/g, (_, c) => c.toUpperCase());"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/ui/web/support.js"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 2,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

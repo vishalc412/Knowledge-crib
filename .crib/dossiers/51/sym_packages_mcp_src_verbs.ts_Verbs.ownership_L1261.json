@@ -1,0 +1,451 @@
+{
+  "id": "sym:packages/mcp/src/verbs.ts#Verbs.ownership@L1261",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:13ab2c829bf02348e810e448f7cc0de7ef75533bd46ac502c447074dfe3c87bc",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/verbs.ts#Verbs.ownership@L1261",
+    "kind": "symbol",
+    "type": "method",
+    "name": "ownership",
+    "qualifiedName": "Verbs.ownership",
+    "signature": "ownership(args: { id: string }): Record<string, unknown>",
+    "lang": "typescript",
+    "file": "packages/mcp/src/verbs.ts",
+    "span": {
+      "start": 1261,
+      "end": 1279
+    },
+    "callSites": [
+      {
+        "callee": "resolveNodeId",
+        "line": 1262
+      },
+      {
+        "callee": "notFound",
+        "line": 1263
+      },
+      {
+        "callee": "getNode",
+        "line": 1267
+      },
+      {
+        "callee": "push",
+        "line": 1270
+      },
+      {
+        "callee": "publicNode",
+        "line": 1271
+      }
+    ]
+  },
+  "source": {
+    "text": "  ownership(args: { id: string }): Record<string, unknown> {\n    const id = this.resolveNodeId(args.id);\n    if (!id || !this.deps.soul.getNode(id)) return notFound(args.id);\n    const owners: Array<Record<string, unknown>> = [];\n    for (const e of this.adjacency(id, 'down', true)) {\n      if (e.rel !== 'owned-by') continue;\n      const owner = this.deps.soul.getNode(e.dst);\n      if (!owner) continue;\n      const ev = (e.evidence ?? {}) as Record<string, unknown>;\n      owners.push({\n        owner: this.publicNode(owner),\n        commit: ev.commit ?? null,\n        head: ev.head ?? null,\n        confidence: e.confidence,\n        provenance: e.provenance,\n      });\n    }\n    return { node: id, owners };\n  }",
+    "truncated": false,
+    "totalLines": 19,
+    "startLine": 1261
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.adjacency@L1627",
+      "confidence": 1,
+      "name": "adjacency",
+      "qualifiedName": "Verbs.adjacency",
+      "signature": "adjacency(id: string, dir: Dir | 'both', extractedOnly?: boolean): Edge[]",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 1627
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.publicNode@L1770",
+      "confidence": 1,
+      "name": "publicNode",
+      "qualifiedName": "Verbs.publicNode",
+      "signature": "publicNode(n: Node): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 1770
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.resolveNodeId@L1688",
+      "confidence": 1,
+      "name": "resolveNodeId",
+      "qualifiedName": "Verbs.resolveNodeId",
+      "signature": "resolveNodeId(idOrName: string): string | undefined",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 1688
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#notFound@L1874",
+      "confidence": 1,
+      "name": "notFound",
+      "qualifiedName": "notFound",
+      "signature": "notFound(id: string): Record<string, unknown>",
+      "type": "function",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 1874
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/mcp/src/verbs.ts@L1256",
+      "snippet": "/** M3.1 ownership: the git-blame owners of a node — \"who do I ask about this code\". Walks outgoing",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-technical-pitch.md#how-it-works",
+      "heading": "How it works",
+      "anchor": "how-it-works",
+      "snippet": "How it works",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#the-remaining-deterministic-verbs-compact",
+      "heading": "The remaining deterministic verbs (compact)",
+      "anchor": "the-remaining-deterministic-verbs-compact",
+      "snippet": "The remaining deterministic verbs (compact)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/launch/linkedin-series.md#post-2-the-mechanism-parse-graph-commit-serve",
+      "heading": "Post 2 — The mechanism (parse → graph → commit → serve)",
+      "anchor": "post-2-the-mechanism-parse-graph-commit-serve",
+      "snippet": "Post 2 — The mechanism (parse → graph → commit → serve)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/launch/publish-runbook.md#changelog-cut-autonomous-prep-the-user-triggers",
+      "heading": "Changelog cut (autonomous prep the user triggers)",
+      "anchor": "changelog-cut-autonomous-prep-the-user-triggers",
+      "snippet": "Changelog cut (autonomous prep the user triggers)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-technical-pitch.md#proof-observed-in-this-audit",
+      "heading": "Proof observed in this audit",
+      "anchor": "proof-observed-in-this-audit",
+      "snippet": "Proof observed in this audit",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-technical-pitch.md#why-it-matters",
+      "heading": "Why it matters",
+      "anchor": "why-it-matters",
+      "snippet": "Why it matters",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-technical-pitch.md#market-position-accurate-comparison",
+      "heading": "Market position — accurate comparison",
+      "anchor": "market-position-accurate-comparison",
+      "snippet": "Market position — accurate comparison",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-technical-pitch.md#technical-depth",
+      "heading": "Technical depth",
+      "anchor": "technical-depth",
+      "snippet": "Technical depth",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-technical-pitch.md#position",
+      "heading": "Position",
+      "anchor": "position",
+      "snippet": "Position",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-technical-pitch.md#agent-and-llm-design",
+      "heading": "Agent and LLM design",
+      "anchor": "agent-and-llm-design",
+      "snippet": "Agent and LLM design",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/launch/show-hn.md#body",
+      "heading": "Body",
+      "anchor": "body",
+      "snippet": "Body",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:outputs/knowledge-crib-coi-decisions.md#decision-log",
+      "heading": "Decision Log",
+      "anchor": "decision-log",
+      "snippet": "Decision Log",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:CHANGELOG.md#added",
+      "heading": "Added",
+      "anchor": "added",
+      "snippet": "Added",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#table-of-contents",
+      "heading": "Table of contents",
+      "anchor": "table-of-contents",
+      "snippet": "Table of contents",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/adr/ADR-001-parallel-parse.md#determinism-trick-load-bearing",
+      "heading": "Determinism trick (load-bearing)",
+      "anchor": "determinism-trick-load-bearing",
+      "snippet": "Determinism trick (load-bearing)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.ownership@L1261",
+    "procedureName": "Verbs.ownership",
+    "conditions": [
+      "cond:packages/mcp/src/verbs.ts@L1263",
+      "cond:packages/mcp/src/verbs.ts@L1265"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.ownership@L1261",
+        "procedureName": "Verbs.ownership",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:863170d5ff16c06a9ff97acbd3d3a524c7437b3f17f9c00db82e4729895b137c",
+          "target": "sym:packages/mcp/src/verbs.ts#Verbs.resolveNodeId@L1688",
+          "expr": "resolveNodeId",
+          "line": 1262
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.ownership@L1261",
+        "procedureName": "Verbs.ownership",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b696fb7301c4d28a7df073f4bf8f3989a314e570a5a43f283c7ec38c6db1d6a8",
+          "target": "stmt:packages/mcp/src/verbs.ts@L1262",
+          "line": 1262,
+          "expr": "const id = this.resolveNodeId(args.id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.ownership@L1261",
+        "procedureName": "Verbs.ownership",
+        "guard": "cond:packages/mcp/src/verbs.ts@L1263",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L1263",
+            "expr": "!id || !this.deps.soul.getNode(id)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:352a4ed0ba314ce7618122fac6e883f686317fc7961a6785c53be9c3f0ac32dc",
+          "target": "sym:packages/mcp/src/verbs.ts#notFound@L1874",
+          "expr": "notFound",
+          "line": 1263
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.ownership@L1261",
+        "procedureName": "Verbs.ownership",
+        "guard": "cond:packages/mcp/src/verbs.ts@L1263",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L1263",
+            "expr": "!id || !this.deps.soul.getNode(id)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:80ab928e81771629dc7bb905e4f79c3948fb75e0badb90fcf214ce9e59f95f51",
+          "target": "stmt:packages/mcp/src/verbs.ts@L1263",
+          "line": 1263,
+          "expr": "return notFound(args.id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.ownership@L1261",
+        "procedureName": "Verbs.ownership",
+        "guard": "cond:packages/mcp/src/verbs.ts@L1265",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L1265",
+            "expr": "this.adjacency(id, 'down', true)",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7955f726dbcd99c1d42c6787933265b0e161f33e8a48f5ce046c77ee901ee960",
+          "target": "stmt:packages/mcp/src/verbs.ts@L1267",
+          "line": 1267,
+          "expr": "const owner = this.deps.soul.getNode(e.dst);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.ownership@L1261",
+        "procedureName": "Verbs.ownership",
+        "guard": "cond:packages/mcp/src/verbs.ts@L1265",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L1265",
+            "expr": "this.adjacency(id, 'down', true)",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a35f44e2357b43c541235bed4cd2912c43491a6dd54c2dbeeef59cc1ea59fc3f",
+          "target": "stmt:packages/mcp/src/verbs.ts@L1270",
+          "line": 1270,
+          "expr": "owners.push({\n        owner: this.publicNode(owner),\n        commit: ev.commit ?? null,\n        head: ev.head ?? null,\n        confidence: e.confidence,\n        provenance: e.provenance,\n      });"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.ownership@L1261",
+        "procedureName": "Verbs.ownership",
+        "guard": "cond:packages/mcp/src/verbs.ts@L1265",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L1265",
+            "expr": "this.adjacency(id, 'down', true)",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:062f199ece145a4e42872e5a586813e1e874d12d5536a17a239b5c6d90768379",
+          "target": "sym:packages/mcp/src/verbs.ts#Verbs.publicNode@L1770",
+          "expr": "publicNode",
+          "line": 1271
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.ownership@L1261",
+        "procedureName": "Verbs.ownership",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:54f5558ab195839b206a79a0517d381d7570a215cc3209e231fe45da099f5d79",
+          "target": "stmt:packages/mcp/src/verbs.ts@L1278",
+          "line": 1278,
+          "expr": "return { node: id, owners };"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.ownership@L1261",
+        "procedureName": "Verbs.ownership",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:876ea62c443df523922ff33ef152241075275bf671a01d898efd75e5079b4426",
+          "target": "sym:packages/mcp/src/verbs.ts#Verbs.adjacency@L1627",
+          "expr": "adjacency"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 5,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 5,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 4,
+      "recorded": 5,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

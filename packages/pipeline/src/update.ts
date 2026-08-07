@@ -14,10 +14,17 @@
  * Returns `null` when there is no anchor (fresh soul) or the repo isn't git — the caller degrades to a
  * full `indexRepo`. Does NOT touch the index; the caller applies `delta` via `index.applyDelta`.
  */
-import { buildDelta, fileScopedIds, pathFromId } from '@knowledge-crib/core';
+import {
+  buildDelta,
+  fileScopedIds,
+  pathFromId,
+  pruneSemanticArtifacts,
+} from '@knowledge-crib/core';
 import type { IndexDelta, SoulStore } from '@knowledge-crib/core';
 import { ExtractorRegistry } from '@knowledge-crib/parsers';
 import type { Extractor } from '@knowledge-crib/parsers';
+import { runArtifactGraph } from './artifacts.js';
+import type { ArtifactStats } from './artifacts.js';
 import { runCluster } from './cluster/index.js';
 import type { ClusterStats } from './cluster/index.js';
 import { runDossiers } from './dossiers.js';
@@ -26,13 +33,15 @@ import { runLink } from './linker/index.js';
 import type { LinkStats } from './linker/index.js';
 import type { SemanticStats } from './linker/index.js';
 import { runSemanticLink } from './linker/index.js';
+import { runOwnership } from './ownership.js';
+import type { OwnershipStats } from './ownership.js';
 import { runParse } from './parse.js';
 import type { ParseStats } from './parse.js';
 import { defaultExtractors } from './pipeline.js';
 import { runResolve } from './resolve/index.js';
 import type { ResolveStats } from './resolve/index.js';
 import { metaForPaths, runStructure } from './structure.js';
-import { changedFilesSince, currentHead } from './vcs.js';
+import { changedFilesSince, currentHead, uncommittedChanges } from './vcs.js';
 
 export interface UpdateOpts {
   /** commit timestamp (deterministic tests). */
@@ -51,11 +60,30 @@ export interface UpdateOpts {
   cluster?: boolean;
   /** run the INFERRED TF-IDF semantic linker pass over scoped docs; default false (M7). */
   semantic?: boolean;
+  /** run the M3.1 ownership phase over changed files: re-blame + re-attribute `owned-by` EXTRACTED edges
+   *  for symbols in changed files (their old owned-by edges were dropped by `removeByFile`). Default ON
+   *  inside a git work tree (clean no-op otherwise); false skips blame (benches / reproducibility). */
+  ownership?: boolean;
+  /** Include staged and unstaged working-tree changes in the delta without advancing `repo.vcsHead`.
+   * The derived index/soul is refreshed, `stats.incrementalSince` is set to current HEAD so subsequent
+   * normal updates see no committed diff, but `repo.vcsHead` stays pinned to the last real commit so
+   * `crib status` can still report the dirty delta. */
+  dirty?: boolean;
+  /** Restrict this update to files under any of these repo-relative package roots (multi-package
+   *  federation: independently re-sync one package's slice of a shared, already-indexed monorepo
+   *  soul without touching the rest). Changed files OUTSIDE every root are left untouched AND —
+   *  critically — the incremental anchor (`vcsHead`/`incrementalSince`) is only advanced if there
+   *  were none, so a later scoped-or-unscoped update still sees the full diff for whatever this run
+   *  skipped. Undefined ⇒ unscoped, the existing whole-repo behavior. */
+  packageRoots?: string[];
 }
 
 export interface UpdateReport {
   delta: IndexDelta;
   changedPaths: string[];
+  /** changed files outside every `packageRoots` prefix, left unprocessed this run (empty when
+   *  unscoped, or when every changed file happened to fall inside the requested package(s)). */
+  excludedPaths: string[];
   scopeFiles: string[];
   head: string;
   parse: ParseStats;
@@ -64,10 +92,17 @@ export interface UpdateReport {
   cluster: ClusterStats;
   semantic: SemanticStats;
   dossiers: DossierStats;
+  ownership: OwnershipStats;
+  artifacts: ArtifactStats;
+  /** count of persisted LLM semantic artifacts whose target node no longer exists, deleted by this
+   *  update's orphan-prune (the semantic-layer analogue of `dossiers.pruned`). Zero when nothing was
+   *  orphaned; bumped `manifest.generation.semantic` only when > 0. */
+  semanticPruned: number;
 }
 
 export interface UpdateNoopReport {
   changedPaths: string[];
+  excludedPaths: string[];
   scopeFiles: [];
   head: string;
   noop: true;
@@ -83,7 +118,16 @@ const EMPTY_RESOLVE: ResolveStats = {
   implements: 0,
   dropped: 0,
 };
-const EMPTY_LINK: LinkStats = { describes: 0, references: 0 };
+const EMPTY_LINK: LinkStats = { describes: 0, references: 0, diagnostics: [] };
+const EMPTY_ARTIFACTS: ArtifactStats = {
+  artifacts: 0,
+  governs: 0,
+  requires: 0,
+  invokes: 0,
+  mcpServers: 0,
+  localOverlay: 0,
+  diagnostics: [],
+};
 
 /** Scoped re-extract since the manifest's VCS anchor. `null` ⇒ caller does a full `indexRepo`. */
 export async function updateRepo(
@@ -102,13 +146,43 @@ export async function updateRepo(
   const since = opts.since ?? manifest.stats.incrementalSince ?? manifest.repo.vcsHead;
   if (!since) return null; // no anchor yet → full index
 
-  const changedPaths = changedFilesSince(root, since);
+  const allChangedPaths = changedFilesSince(root, since);
 
-  // No file changes: just advance the anchor so the next update is anchored to the new HEAD.
+  if (opts.dirty) {
+    for (const p of uncommittedChanges(root)) {
+      if (!allChangedPaths.includes(p)) allChangedPaths.push(p);
+    }
+  }
+
+  // Package-scoped update: only re-sync files under one of the given roots. `excludedPaths` is what
+  // this run intentionally leaves pending — the anchor-advance guard below uses it to decide whether
+  // it's safe to move `vcsHead`/`incrementalSince` forward (only when nothing was skipped).
+  const inRoot = (p: string, r: string): boolean => p === r || p.startsWith(`${r}/`);
+  const packageRoots = opts.packageRoots;
+  const changedPaths = packageRoots
+    ? allChangedPaths.filter((p) => packageRoots.some((r) => inRoot(p, r)))
+    : allChangedPaths;
+  const excludedPaths = packageRoots
+    ? allChangedPaths.filter((p) => !packageRoots.some((r) => inRoot(p, r)))
+    : [];
+
+  // No in-scope file changes: advance the anchor ONLY if nothing was excluded — a scoped run that
+  // skipped out-of-scope changes must NOT advance the shared anchor, or a later update (for another
+  // package, or unscoped) would wrongly believe those skipped changes were already accounted for.
   if (changedPaths.length === 0) {
-    soul.setVcsHead(head);
-    soul.commit(opts.now);
-    return { changedPaths, scopeFiles: [], head, noop: true };
+    if (excludedPaths.length === 0) {
+      if (opts.dirty) {
+        // Dirty no-op: keep the committed vcsHead pinned, but record that the soul is now current with HEAD.
+        soul.setIncrementalSince(head);
+      } else {
+        soul.setVcsHead(head);
+      }
+      // No content changed — only the vcsHead anchor advances. Preserve the existing lastUpdated so
+      // crib.json stays byte-identical apart from the anchor field (idempotent re-runs don't churn
+      // the timestamp, and the M4.3 soul-refresh action's empty-diff check works on a no-op merge).
+      soul.commit(opts.now, true);
+    }
+    return { changedPaths, excludedPaths, scopeFiles: [], head, noop: true };
   }
 
   // Reverse-dependency closure: every file whose references reach into a changed file. Captured BEFORE
@@ -138,7 +212,9 @@ export async function updateRepo(
   }
   const changedMetas = metaForPaths(root, changedPaths);
   runStructure(soul, root, changedMetas);
-  const parse = await runParse(soul, registry, root, changedMetas);
+  // Incremental: the changed set is small (often 1-3 files). Worker-boot cost would dominate, and
+  // the pool is torn down per call, so force the serial path here — parallel is for full-index only.
+  const parse = await runParse(soul, registry, root, changedMetas, { parallel: false });
 
   // Re-resolve the whole closure (changed + reverse deps): re-emits incoming B→A edges. The resolver
   // only processes files in the passed set; the SymbolTable spans the whole soul (B's symbols remain).
@@ -157,15 +233,61 @@ export async function updateRepo(
   // Semantic pass (M7, INFERRED): scoped to the docs in scope, like the deterministic re-link.
   const semantic = opts.semantic ? runSemanticLink(soul, root, scopeDocFiles) : { added: 0 };
 
-  soul.setVcsHead(head);
+  // W1 artifact graph: a changed artifact file (a tracked skill under .claude/ — gitignored, so not
+  // in `changedMetas`/`scopeMetas`) had its node + incoming edges dropped by `removeByFile`. A changed
+  // SYMBOL may also be the target of a `governs`/`requires`/`invokes` edge from an unchanged artifact
+  // (captured in the reverse-dep closure, but the artifact file itself isn't re-extracted by runParse
+  // — it isn't in the registry). A full re-scan is idempotent + cheap (artifacts are few) and re-emits
+  // every artifact node + edge, so a body-only symbol edit produces no spurious artifact-edge delta
+  // (unchanged artifacts rewrite byte-identical shards) while a changed/added/deleted artifact is
+  // correctly re-emitted or dropped. Local overlay is OFF here — incremental updates refresh the
+  // committed soul only; the working overlay (W7) re-applies on read.
+  const artifacts = runArtifactGraph(soul, root);
+
+  // Ownership (M3.1): re-blame only the CHANGED files — their old `owned-by` edges were dropped by
+  // `removeByFile`, so a body edit re-attributes ownership instead of leaving symbols ownerless. The
+  // full-index path (`indexRepo`) blames every file; this is the scoped mirror.
+  const ownership =
+    opts.ownership === false
+      ? { files: 0, symbols: 0, owners: 0, edges: 0, skipped: 0 }
+      : runOwnership(soul, root, new Set(changedPaths));
+
+  // Advance the shared incremental anchor only if this run left nothing pending — a package-scoped
+  // update that excluded other packages' changes must NOT advance it (see UpdateOpts.packageRoots).
+  if (excludedPaths.length === 0) {
+    if (opts.dirty) {
+      // Dirty update: refresh the soul to match HEAD + working tree, but keep vcsHead on the last real
+      // commit so `crib status` can still detect/report the uncommitted delta.
+      soul.setIncrementalSince(head);
+    } else {
+      soul.setVcsHead(head);
+    }
+  }
   soul.commit(opts.now);
 
   const committedAt = opts.now ?? soul.getManifest().stats.lastUpdated;
   const dossiers = runDossiers(soul, root, committedAt);
+
+  // Semantic orphan-prune (the missing delta path): `soul.commit()` above has already written the
+  // refreshed soul, so symbols removed by `removeByFile` are gone from the graph but their persisted
+  // LLM artifacts linger under .crib/graph/semantic/artifacts (the enrich queue only re-offers STALE
+  // artifacts — a target node that simply vanished is never re-offered, and query/context still serve
+  // its stale analysis as if the code existed). Pruning orphans here — using the post-commit live node
+  // set — keeps the semantic cache consistent with the soul exactly once per update, mirroring what
+  // `runDossiers` already does for dossiers. Bumping `generation.semantic` only when something was
+  // pruned invalidates `graphFingerprint`'s semanticHash-derived half so semantic readers don't serve
+  // a stale composite cache; a zero-prune update (no symbols deleted) leaves the counter untouched so
+  // pure-additive edits don't needlessly invalidate the semantic cache.
+  const liveNodeIds = new Set<string>();
+  for (const node of soul.iterate()) liveNodeIds.add(node.id);
+  const semanticPruned = pruneSemanticArtifacts(soul.cribDir, liveNodeIds);
+  if (semanticPruned > 0) soul.bumpSemanticGeneration();
+
   const delta = buildDelta(soul, before, scope);
   return {
     delta,
     changedPaths,
+    excludedPaths,
     scopeFiles: [...scope].sort(),
     head,
     parse,
@@ -174,5 +296,8 @@ export async function updateRepo(
     cluster,
     semantic,
     dossiers,
+    ownership,
+    artifacts,
+    semanticPruned,
   };
 }

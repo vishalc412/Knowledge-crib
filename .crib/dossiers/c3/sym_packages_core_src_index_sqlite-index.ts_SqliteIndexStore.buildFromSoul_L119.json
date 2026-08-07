@@ -1,0 +1,313 @@
+{
+  "id": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.buildFromSoul@L119",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:22081a5718312f6d0ba75e08e0e5d55a5a511131d4b4e52a0f8110236aec2c5c",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.buildFromSoul@L119",
+    "kind": "symbol",
+    "type": "method",
+    "name": "buildFromSoul",
+    "qualifiedName": "SqliteIndexStore.buildFromSoul",
+    "signature": "buildFromSoul(soul: SoulStore, repoRoot: string): void",
+    "lang": "typescript",
+    "file": "packages/core/src/index/sqlite-index.ts",
+    "span": {
+      "start": 119,
+      "end": 128
+    },
+    "callSites": [
+      {
+        "callee": "reset",
+        "line": 120
+      },
+      {
+        "callee": "transaction",
+        "line": 122
+      },
+      {
+        "callee": "iterate",
+        "line": 123
+      },
+      {
+        "callee": "insertNode",
+        "line": 123
+      },
+      {
+        "callee": "iterateEdges",
+        "line": 124
+      },
+      {
+        "callee": "insertEdge",
+        "line": 124
+      },
+      {
+        "callee": "insertMany",
+        "line": 126
+      },
+      {
+        "callee": "buildVectors",
+        "line": 127
+      }
+    ]
+  },
+  "source": {
+    "text": "  buildFromSoul(soul: SoulStore, repoRoot: string): void {\n    this.reset();\n    const fileCache: FileLineCache = new Map();\n    const insertMany = this.transaction(() => {\n      for (const node of soul.iterate()) this.insertNode(node, repoRoot, fileCache);\n      for (const edge of soul.iterateEdges()) this.insertEdge(edge);\n    });\n    insertMany();\n    if (this.embedder) this.buildVectors(soul);\n  }",
+    "truncated": false,
+    "totalLines": 10,
+    "startLine": 119
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.buildVectors@L286",
+      "confidence": 1,
+      "name": "buildVectors",
+      "qualifiedName": "SqliteIndexStore.buildVectors",
+      "signature": "buildVectors(soul: SoulStore): void",
+      "type": "method",
+      "file": "packages/core/src/index/sqlite-index.ts",
+      "line": 286
+    },
+    {
+      "id": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.insertEdge@L452",
+      "confidence": 1,
+      "name": "insertEdge",
+      "qualifiedName": "SqliteIndexStore.insertEdge",
+      "signature": "insertEdge(edge: Edge): void",
+      "type": "method",
+      "file": "packages/core/src/index/sqlite-index.ts",
+      "line": 452
+    },
+    {
+      "id": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.insertNode@L434",
+      "confidence": 1,
+      "name": "insertNode",
+      "qualifiedName": "SqliteIndexStore.insertNode",
+      "signature": "insertNode(node: Node, repoRoot: string, fileCache: FileLineCache): void",
+      "type": "method",
+      "file": "packages/core/src/index/sqlite-index.ts",
+      "line": 434
+    },
+    {
+      "id": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.reset@L499",
+      "confidence": 1,
+      "name": "reset",
+      "qualifiedName": "SqliteIndexStore.reset",
+      "signature": "reset(): void",
+      "type": "method",
+      "file": "packages/core/src/index/sqlite-index.ts",
+      "line": 499
+    },
+    {
+      "id": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.transaction@L420",
+      "confidence": 1,
+      "name": "transaction",
+      "qualifiedName": "SqliteIndexStore.transaction",
+      "signature": "transaction(fn: () => T): () => T",
+      "type": "method",
+      "file": "packages/core/src/index/sqlite-index.ts",
+      "line": 420
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#7-the-complete-code-map-quick-reference",
+      "heading": "7. The Complete Code Map (Quick Reference)",
+      "anchor": "7-the-complete-code-map-quick-reference",
+      "snippet": "7. The Complete Code Map (Quick Reference)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m6-incremental-update-git-anchored-scoped-re-extract-merge-driver",
+      "heading": "M6 — Incremental update (git-anchored scoped re-extract) + merge driver",
+      "anchor": "m6-incremental-update-git-anchored-scoped-re-extract-merge-driver",
+      "snippet": "M6 — Incremental update (git-anchored scoped re-extract) + merge driver",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.buildFromSoul@L119",
+    "procedureName": "SqliteIndexStore.buildFromSoul",
+    "conditions": [
+      "cond:packages/core/src/index/sqlite-index.ts@L127"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.buildFromSoul@L119",
+        "procedureName": "SqliteIndexStore.buildFromSoul",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1e599c6087f184fc2cc80e5993b24c1432d0854e50c5a96030287367d19208c1",
+          "target": "stmt:packages/core/src/index/sqlite-index.ts@L120",
+          "line": 120,
+          "expr": "this.reset();"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.buildFromSoul@L119",
+        "procedureName": "SqliteIndexStore.buildFromSoul",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:e69209647a15d53d8d18d50ab128ba4d9bc604673a91fb7fb79f0cbac8d49b51",
+          "target": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.reset@L499",
+          "expr": "reset",
+          "line": 120
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.buildFromSoul@L119",
+        "procedureName": "SqliteIndexStore.buildFromSoul",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:18573547de4b7cbf3a28792e0e3502eb565885d1b2c00061f65971ac031dcead",
+          "target": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.transaction@L420",
+          "expr": "transaction",
+          "line": 122
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.buildFromSoul@L119",
+        "procedureName": "SqliteIndexStore.buildFromSoul",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1c3f560439c0e530edcccd95aa65ef4baff2a64c48a7d0f37b5ea15c42e642bd",
+          "target": "stmt:packages/core/src/index/sqlite-index.ts@L122",
+          "line": 122,
+          "expr": "const insertMany = this.transaction(() => {\n      for (const node of soul.iterate()) this.insertNode(node, repoRoot, fileCache);\n      for (const edge of soul.iterateEdges()) this.insertEdge(edge);\n    });"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.buildFromSoul@L119",
+        "procedureName": "SqliteIndexStore.buildFromSoul",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:7a3d5c33cdc08a660f7d57a2d2cdf6a91c70647d734187a2e58d2e79c7155a9f",
+          "target": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.insertNode@L434",
+          "expr": "insertNode",
+          "line": 123
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.buildFromSoul@L119",
+        "procedureName": "SqliteIndexStore.buildFromSoul",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:f815e0ef441a6d4501bc6ffed0c83c1ab3e7670954bd5139f53d1b1ad0d518c7",
+          "target": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.insertEdge@L452",
+          "expr": "insertEdge",
+          "line": 124
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.buildFromSoul@L119",
+        "procedureName": "SqliteIndexStore.buildFromSoul",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6dc1e5bd9e011d4d15f6eec1aae1fe1107d90d3704166e41891835b884be0da2",
+          "target": "stmt:packages/core/src/index/sqlite-index.ts@L126",
+          "line": 126,
+          "expr": "insertMany();"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.buildFromSoul@L119",
+        "procedureName": "SqliteIndexStore.buildFromSoul",
+        "guard": "cond:packages/core/src/index/sqlite-index.ts@L127",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/index/sqlite-index.ts@L127",
+            "expr": "this.embedder",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:755ad15ce781a326b0dec474586c5a1541fc1fecf175de9fb7d410fd6adeaf51",
+          "target": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.buildVectors@L286",
+          "expr": "buildVectors",
+          "line": 127
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.buildFromSoul@L119",
+        "procedureName": "SqliteIndexStore.buildFromSoul",
+        "guard": "cond:packages/core/src/index/sqlite-index.ts@L127",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/index/sqlite-index.ts@L127",
+            "expr": "this.embedder",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9c5cad0ca03d3a5bc9a545a7f9a5e318979095c34093e63d3380fcc3f38e486d",
+          "target": "stmt:packages/core/src/index/sqlite-index.ts@L127",
+          "line": 127,
+          "expr": "this.buildVectors(soul);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 5,
+      "recorded": 8,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

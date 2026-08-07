@@ -1,0 +1,175 @@
+{
+  "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.exceptionHandler@L708",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:3677c2b8b42289814432b11410161bd6e28ebaa31d4eb0a8175d77625c1c4d5a",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.exceptionHandler@L708",
+    "kind": "symbol",
+    "type": "method",
+    "name": "exceptionHandler",
+    "qualifiedName": "TypeScriptExtractor.exceptionHandler",
+    "signature": "exceptionHandler(line: number, selector: string | undefined, env: BodyEnv): string",
+    "lang": "typescript",
+    "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+    "span": {
+      "start": 708,
+      "end": 723
+    },
+    "callSites": [
+      {
+        "callee": "idFor",
+        "line": 709
+      },
+      {
+        "callee": "add",
+        "line": 711
+      },
+      {
+        "callee": "push",
+        "line": 712
+      },
+      {
+        "callee": "hash",
+        "line": 719
+      }
+    ]
+  },
+  "source": {
+    "text": "  private exceptionHandler(line: number, selector: string | undefined, env: BodyEnv): string {\n    const id = env.ctx.idFor('exception-handler', { file: env.path, line });\n    if (!env.behaviorSeen.has(id)) {\n      env.behaviorSeen.add(id);\n      env.nodes.push({\n        id,\n        kind: 'exception-handler',\n        ...(selector !== undefined ? { whenSelector: selector } : {}),\n        file: env.path,\n        span: { start: line, end: line },\n        lang: env.lang,\n        hash: env.ctx.hash(`${env.path}:exc:${line}:${selector ?? ''}`),\n      });\n    }\n    return id;\n  }",
+    "truncated": false,
+    "totalLines": 16,
+    "startLine": 708
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.walkTry@L456",
+      "confidence": 1,
+      "name": "walkTry",
+      "qualifiedName": "TypeScriptExtractor.walkTry",
+      "signature": "walkTry(stmt: ts.TryStatement, env: BodyEnv): void",
+      "type": "method",
+      "file": "packages/parsers/src/ts/TypeScriptExtractor.ts",
+      "line": 456
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/ts/TypeScriptExtractor.ts@L706",
+      "snippet": "/** 1.2: emit a deduped `exception-handler` node (whenSelector = the caught type if annotated) and",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.exceptionHandler@L708",
+    "procedureName": "TypeScriptExtractor.exceptionHandler",
+    "conditions": [
+      "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L710"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.exceptionHandler@L708",
+        "procedureName": "TypeScriptExtractor.exceptionHandler",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7b80e33ea6569509ab09c75e0586b59e84915fc0b4700654305980e724e3670c",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L709",
+          "line": 709,
+          "expr": "const id = env.ctx.idFor('exception-handler', { file: env.path, line });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.exceptionHandler@L708",
+        "procedureName": "TypeScriptExtractor.exceptionHandler",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L710",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L710",
+            "expr": "!env.behaviorSeen.has(id)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:728722c0b501e1facd93c7fded1868f5b68084a94fe62f63d97d27e6513c291c",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L711",
+          "line": 711,
+          "expr": "env.behaviorSeen.add(id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.exceptionHandler@L708",
+        "procedureName": "TypeScriptExtractor.exceptionHandler",
+        "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L710",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L710",
+            "expr": "!env.behaviorSeen.has(id)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:027d0a23bb89933535762dd8640839b43904f1ce58e56f7b8ef5fe93a83ada5f",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L712",
+          "line": 712,
+          "expr": "env.nodes.push({\n        id,\n        kind: 'exception-handler',\n        ...(selector !== undefined ? { whenSelector: selector } : {}),\n        file: env.path,\n        span: { start: line, end: line },\n        lang: env.lang,\n        hash: env.ctx.hash(`${env.path}:exc:${line}:${selector ?? ''}`),\n      });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.exceptionHandler@L708",
+        "procedureName": "TypeScriptExtractor.exceptionHandler",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:69a54d4a671cb485007ac1b2d73c46a166d0abf23f335ff09b8d99f8609cb1ee",
+          "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L722",
+          "line": 722,
+          "expr": "return id;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": [
+      "packages/parsers/src/ts/TypeScriptExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 4,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

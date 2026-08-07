@@ -1,0 +1,129 @@
+{
+  "id": "sym:packages/pipeline/src/resolve/csharp-resolver.test.ts#edgesInFiles@L153",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:83e3bf1a997bc45fb2320813d5f019f217dfafa686a1783d6038d30b0c6e59ee",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/resolve/csharp-resolver.test.ts#edgesInFiles@L153",
+    "kind": "symbol",
+    "type": "function",
+    "name": "edgesInFiles",
+    "qualifiedName": "edgesInFiles",
+    "signature": "edgesInFiles(soul: SoulStore, exts: string[]): Edge[]",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/resolve/csharp-resolver.test.ts",
+    "span": {
+      "start": 153,
+      "end": 160
+    },
+    "callSites": [
+      {
+        "callee": "map",
+        "line": 155
+      },
+      {
+        "callee": "filter",
+        "line": 155
+      },
+      {
+        "callee": "iterate",
+        "line": 155
+      },
+      {
+        "callee": "some",
+        "line": 156
+      },
+      {
+        "callee": "endsWith",
+        "line": 156
+      },
+      {
+        "callee": "filter",
+        "line": 159
+      },
+      {
+        "callee": "iterateEdges",
+        "line": 159
+      },
+      {
+        "callee": "has",
+        "line": 159
+      },
+      {
+        "callee": "has",
+        "line": 159
+      }
+    ]
+  },
+  "source": {
+    "text": "function edgesInFiles(soul: SoulStore, exts: string[]): Edge[] {\n  const files = new Set(\n    [...soul.iterate()]\n      .filter((n) => n.file && exts.some((e) => n.file!.endsWith(e)))\n      .map((n) => n.id),\n  );\n  return [...soul.iterateEdges()].filter((e) => files.has(e.src) || files.has(e.dst));\n}",
+    "truncated": false,
+    "totalLines": 8,
+    "startLine": 153
+  },
+  "callers": [],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/resolve/csharp-resolver.test.ts#edgesInFiles@L153",
+    "procedureName": "edgesInFiles",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/csharp-resolver.test.ts#edgesInFiles@L153",
+        "procedureName": "edgesInFiles",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9622e11fc73ced1048651d87e0b55b6a2a70d1813f3c4063924e191dde0eeb13",
+          "target": "stmt:packages/pipeline/src/resolve/csharp-resolver.test.ts@L154",
+          "line": 154,
+          "expr": "const files = new Set(\n    [...soul.iterate()]\n      .filter((n) => n.file && exts.some((e) => n.file!.endsWith(e)))\n      .map((n) => n.id),\n  );"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/csharp-resolver.test.ts#edgesInFiles@L153",
+        "procedureName": "edgesInFiles",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1901fa959e90f9fe100b1f582af56bf1897124aa7cb83cfa3d36a6c6ca59b2c4",
+          "target": "stmt:packages/pipeline/src/resolve/csharp-resolver.test.ts@L159",
+          "line": 159,
+          "expr": "return [...soul.iterateEdges()].filter((e) => files.has(e.src) || files.has(e.dst));"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 9,
+      "unresolved": 7
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "7 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

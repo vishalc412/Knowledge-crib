@@ -1,0 +1,531 @@
+{
+  "id": "sym:packages/mcp/src/verbs.ts#Verbs.describes@L862",
+  "schemaVersion": "1.3",
+  "nodeHash": "blake3:812f2ae17faf5149c61c775a794664db28b84fa72540a02af6293dda12fdc0b1",
+  "builtAt": "2026-06-30T16:18:20.420Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/mcp/src/verbs.ts#Verbs.describes@L862",
+    "kind": "symbol",
+    "type": "method",
+    "name": "describes",
+    "qualifiedName": "Verbs.describes",
+    "signature": "describes(args: { id: string; minConfidence?: number; extractedOnly?: boolean }): Record<\n    string,\n    unknown\n  >",
+    "lang": "typescript",
+    "file": "packages/mcp/src/verbs.ts",
+    "span": {
+      "start": 862,
+      "end": 869
+    },
+    "callSites": [
+      {
+        "callee": "notFound",
+        "line": 866
+      },
+      {
+        "callee": "docsFor",
+        "line": 867
+      }
+    ]
+  },
+  "source": {
+    "text": "  describes(args: { id: string; minConfidence?: number; extractedOnly?: boolean }): Record<\n    string,\n    unknown\n  > {\n    if (!this.deps.soul.getNode(args.id)) return notFound(args.id);\n    const docs = this.docsFor(args.id, args.minConfidence ?? 0.4, args.extractedOnly);\n    return { docs };\n  }",
+    "truncated": false,
+    "totalLines": 8,
+    "startLine": 862
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.docsFor@L1241",
+      "confidence": 1,
+      "name": "docsFor",
+      "qualifiedName": "Verbs.docsFor",
+      "signature": "docsFor(id: string, minConfidence: number, extractedOnly?: boolean): DocLink[]",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 1241
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#notFound@L1409",
+      "confidence": 1,
+      "name": "notFound",
+      "qualifiedName": "notFound",
+      "signature": "notFound(id: string): Record<string, unknown>",
+      "type": "function",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 1409
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "doc:docs/knowledge-crib-prompts.md#2-impact-analysis-before-a-change-the-canonical-crib-prompt",
+      "heading": "2. Impact analysis before a change — *the canonical crib prompt*",
+      "anchor": "2-impact-analysis-before-a-change-the-canonical-crib-prompt",
+      "snippet": "2. Impact analysis before a change — *the canonical crib prompt*",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#what-this-is",
+      "heading": "What this is",
+      "anchor": "what-this-is",
+      "snippet": "What this is",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#3-2-feature-by-feature",
+      "heading": "3.2 Feature-by-feature",
+      "anchor": "3-2-feature-by-feature",
+      "snippet": "3.2 Feature-by-feature",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#m4-doc-extractor-markdown-deterministic-cross-modal-linker-headline-gate-1",
+      "heading": "M4 — doc-extractor (Markdown) + deterministic cross-modal linker ← HEADLINE GATE #1",
+      "anchor": "m4-doc-extractor-markdown-deterministic-cross-modal-linker-headline-gate-1",
+      "snippet": "M4 — doc-extractor (Markdown) + deterministic cross-modal linker ← HEADLINE GATE #1",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#m5-mcp-server-context-impact-describes-query-neighbors-shortest-path-detect-changes-headline-gate-2",
+      "heading": "M5 — MCP server: context/impact/describes/query/neighbors/shortest_path/detect_changes ← HEADLINE GATE #2",
+      "anchor": "m5-mcp-server-context-impact-describes-query-neighbors-shortest-path-detect-changes-headline-gate-2",
+      "snippet": "M5 — MCP server: context/impact/describes/query/neighbors/shortest_path/detect_changes ← HEADLINE GATE #2",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#11-verification-strategy-end-to-end",
+      "heading": "11. Verification strategy (end-to-end)",
+      "anchor": "11-verification-strategy-end-to-end",
+      "snippet": "11. Verification strategy (end-to-end)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-build-plan.md#2-pipeline-original-code-mirrors-the-proven-phases-not-the-source",
+      "heading": "2. Pipeline (original code; mirrors the proven *phases*, not the source)",
+      "anchor": "2-pipeline-original-code-mirrors-the-proven-phases-not-the-source",
+      "snippet": "2. Pipeline (original code; mirrors the proven *phases*, not the source)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-build-plan.md#5-milestones-each-one-flagged-pr-test-gate",
+      "heading": "5. Milestones (each = one flagged PR + test gate)",
+      "anchor": "5-milestones-each-one-flagged-pr-test-gate",
+      "snippet": "5. Milestones (each = one flagged PR + test gate)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-data-model.md#2-edge-relations-rel",
+      "heading": "2. Edge relations (`rel`)",
+      "anchor": "2-edge-relations-rel",
+      "snippet": "2. Edge relations (`rel`)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-data-model.md#edge-example",
+      "heading": "Edge example",
+      "anchor": "edge-example",
+      "snippet": "Edge example",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-deep-extraction.md#4b-schema-1-2-behavior-bearing-fidelity-the-detailed-level-part",
+      "heading": "4b. Schema 1.2 — behavior-bearing fidelity (the \"detailed-level\" part)",
+      "anchor": "4b-schema-1-2-behavior-bearing-fidelity-the-detailed-level-part",
+      "snippet": "4b. Schema 1.2 — behavior-bearing fidelity (the \"detailed-level\" part)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-extractor-plugins.md#multimodal-worker-m13-shipped",
+      "heading": "Multimodal worker (M13 — shipped)",
+      "anchor": "multimodal-worker-m13-shipped",
+      "snippet": "Multimodal worker (M13 — shipped)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m7-clustering-deterministic-embeddings-web-ui",
+      "heading": "M7 — Clustering + deterministic embeddings + web UI",
+      "anchor": "m7-clustering-deterministic-embeddings-web-ui",
+      "snippet": "M7 — Clustering + deterministic embeddings + web UI",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m13-offline-multimodal-worker-pdf-image-whisper-audio",
+      "heading": "M13 — Offline multimodal worker (PDF/image/whisper audio)",
+      "anchor": "m13-offline-multimodal-worker-pdf-image-whisper-audio",
+      "snippet": "M13 — Offline multimodal worker (PDF/image/whisper audio)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#context-symbol",
+      "heading": "`context(symbol)`",
+      "anchor": "context-symbol",
+      "snippet": "`context(symbol)`",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#impact-symbol-dir",
+      "heading": "`impact(symbol, dir)`",
+      "anchor": "impact-symbol-dir",
+      "snippet": "`impact(symbol, dir)`",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#describes-symbol",
+      "heading": "`describes(symbol)`",
+      "anchor": "describes-symbol",
+      "snippet": "`describes(symbol)`",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-pipeline.md#phase-4-cross-modal-linker-the-differentiator",
+      "heading": "Phase 4 — Cross-modal linker (the differentiator)",
+      "anchor": "phase-4-cross-modal-linker-the-differentiator",
+      "snippet": "Phase 4 — Cross-modal linker (the differentiator)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prd.md#5-architecture",
+      "heading": "5. Architecture",
+      "anchor": "5-architecture",
+      "snippet": "5. Architecture",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-refined-vs-existing-assessment.md#1-1-what-each-model-can-answer-about-one-procedure",
+      "heading": "1.1 What each model can answer about ONE procedure",
+      "anchor": "1-1-what-each-model-can-answer-about-one-procedure",
+      "snippet": "1.1 What each model can answer about ONE procedure",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-refined-vs-existing-assessment.md#1-3-what-changed-in-the-contract-deterministic-forward-compatible",
+      "heading": "1.3 What changed in the contract (deterministic, forward-compatible)",
+      "anchor": "1-3-what-changed-in-the-contract-deterministic-forward-compatible",
+      "snippet": "1.3 What changed in the contract (deterministic, forward-compatible)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#edge",
+      "heading": "Edge",
+      "anchor": "edge",
+      "snippet": "Edge",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-testing.md#3-per-milestone-acceptance-gates-mirror-build-plan-knowledge-crib-build-plan-md",
+      "heading": "3. Per-milestone acceptance gates (mirror [build plan](knowledge-crib-build-plan.md))",
+      "anchor": "3-per-milestone-acceptance-gates-mirror-build-plan-knowledge-crib-build-plan-md",
+      "snippet": "3. Per-milestone acceptance gates (mirror [build plan](knowledge-crib-build-plan.md))",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#1-what-it-is",
+      "heading": "1. What it is",
+      "anchor": "1-what-it-is",
+      "snippet": "1. What it is",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#what-gets-indexed",
+      "heading": "What gets indexed",
+      "anchor": "what-gets-indexed",
+      "snippet": "What gets indexed",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#describes-the-doc-sections-linked-to-a-symbol-cheap-high-value",
+      "heading": "`describes` — the doc-sections linked to a symbol (cheap, high value)",
+      "anchor": "describes-the-doc-sections-linked-to-a-symbol-cheap-high-value",
+      "snippet": "`describes` — the doc-sections linked to a symbol (cheap, high value)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#5-5-successful-index-the-demo-graph",
+      "heading": "5.5 Successful index (the demo graph)",
+      "anchor": "5-5-successful-index-the-demo-graph",
+      "snippet": "5.5 Successful index (the demo graph)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#5-7-mcp-server-verification-the-real-test",
+      "heading": "5.7 MCP server verification (the real test)",
+      "anchor": "5-7-mcp-server-verification-the-real-test",
+      "snippet": "5.7 MCP server verification (the real test)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#9-known-issues-limits",
+      "heading": "9. Known issues & limits",
+      "anchor": "9-known-issues-limits",
+      "snippet": "9. Known issues & limits",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:PLAN_PLAN_A_EQUALS_B.md#ws-6-reconstruction-artifact-closes-g6",
+      "heading": "WS-6 — Reconstruction artifact (closes G6)",
+      "anchor": "ws-6-reconstruction-artifact-closes-g6",
+      "snippet": "WS-6 — Reconstruction artifact (closes G6)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#2-6-deterministic-core-vs-opt-in-enrichment-the-trust-model",
+      "heading": "2.6 Deterministic core vs opt-in enrichment (the trust model)",
+      "anchor": "2-6-deterministic-core-vs-opt-in-enrichment-the-trust-model",
+      "snippet": "2.6 Deterministic core vs opt-in enrichment (the trust model)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/analyze-all-the-vdocuments-tranquil-sonnet.md#5-reconciliation-decisions-cross-doc-contradictions-gaps-resolved",
+      "heading": "5. Reconciliation decisions (cross-doc contradictions/gaps resolved)",
+      "anchor": "5-reconciliation-decisions-cross-doc-contradictions-gaps-resolved",
+      "snippet": "5. Reconciliation decisions (cross-doc contradictions/gaps resolved)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-client-setup.md#3-the-mcp-server-the-clients-connect-to",
+      "heading": "3. The MCP server the clients connect to",
+      "anchor": "3-the-mcp-server-the-clients-connect-to",
+      "snippet": "3. The MCP server the clients connect to",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-decisions.md#decision-log",
+      "heading": "Decision Log",
+      "anchor": "decision-log",
+      "snippet": "Decision Log",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-client-setup.md#supported-languages-extractors-shipped-by-default",
+      "heading": "Supported languages (extractors shipped by default)",
+      "anchor": "supported-languages-extractors-shipped-by-default",
+      "snippet": "Supported languages (extractors shipped by default)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.describes@L862",
+    "procedureName": "Verbs.describes",
+    "conditions": [
+      "cond:packages/mcp/src/verbs.ts@L866"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.describes@L862",
+        "procedureName": "Verbs.describes",
+        "guard": "cond:packages/mcp/src/verbs.ts@L866",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L866",
+            "expr": "!this.deps.soul.getNode(args.id)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:1aa668d37b5b64debb4cbe230bee97992f7798b1cdff2656958b9e48d76e3f38",
+          "target": "sym:packages/mcp/src/verbs.ts#notFound@L1409",
+          "expr": "notFound",
+          "line": 866
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.describes@L862",
+        "procedureName": "Verbs.describes",
+        "guard": "cond:packages/mcp/src/verbs.ts@L866",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/mcp/src/verbs.ts@L866",
+            "expr": "!this.deps.soul.getNode(args.id)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3accc485aca25db83956a7e8ec66227b80774bcb9c2f8bd9035ab4979c1f4072",
+          "target": "stmt:packages/mcp/src/verbs.ts@L866",
+          "line": 866,
+          "expr": "return notFound(args.id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.describes@L862",
+        "procedureName": "Verbs.describes",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:c2ee0d0e1d91bd22adfef3e29dab9b79ca2cb1ae63a298d02433c63adbb52516",
+          "target": "sym:packages/mcp/src/verbs.ts#Verbs.docsFor@L1241",
+          "expr": "docsFor",
+          "line": 867
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.describes@L862",
+        "procedureName": "Verbs.describes",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:45f4f88ba59fdd1d612fb66e2b44361b7a91f9dd34671b0fdc2b0ab91f70f9ec",
+          "target": "stmt:packages/mcp/src/verbs.ts@L867",
+          "line": 867,
+          "expr": "const docs = this.docsFor(args.id, args.minConfidence ?? 0.4, args.extractedOnly);"
+        }
+      },
+      {
+        "procedure": "sym:packages/mcp/src/verbs.ts#Verbs.describes@L862",
+        "procedureName": "Verbs.describes",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:66f7df953f20e15b2815ac049d48c652f3d0f671b3eb557aba4b89be118a8ce3",
+          "target": "stmt:packages/mcp/src/verbs.ts@L868",
+          "line": 868,
+          "expr": "return { docs };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 2,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

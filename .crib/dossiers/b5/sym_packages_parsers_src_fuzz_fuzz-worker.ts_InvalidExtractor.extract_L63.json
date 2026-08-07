@@ -1,0 +1,236 @@
+{
+  "id": "sym:packages/parsers/src/fuzz/fuzz-worker.ts#InvalidExtractor.extract@L63",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:aa427caf22309ad2ee63826a59e092e9ef355a61994291103e9851ef5300b36b",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/fuzz/fuzz-worker.ts#InvalidExtractor.extract@L63",
+    "kind": "symbol",
+    "type": "method",
+    "name": "extract",
+    "qualifiedName": "InvalidExtractor.extract",
+    "signature": "extract(): Promise<ExtractResult>",
+    "lang": "typescript",
+    "file": "packages/parsers/src/fuzz/fuzz-worker.ts",
+    "span": {
+      "start": 63,
+      "end": 67
+    }
+  },
+  "source": {
+    "text": "  async extract(): Promise<ExtractResult> {\n    // Malformed node: kind not in NodeKind → the validator must flag it 'invalid'.\n    const bad = { id: '', kind: 'not-a-real-kind', hash: '' } as unknown as Node;\n    return { nodes: [bad], edges: [] };\n  }",
+    "truncated": false,
+    "totalLines": 5,
+    "startLine": 63
+  },
+  "callers": [],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "doc:docs/adr/ADR-002-scale-storage.md#what-the-curve-says-two-different-shapes",
+      "heading": "What the curve says — two different shapes",
+      "anchor": "what-the-curve-says-two-different-shapes",
+      "snippet": "What the curve says — two different shapes",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/adr/ADR-002-scale-storage.md#context",
+      "heading": "Context",
+      "anchor": "context",
+      "snippet": "Context",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-deep-extraction.md#knowledge-crib-deep-extraction-migration-first-class-wedge",
+      "heading": "Knowledge-crib — Deep Extraction & Migration (first-class wedge)",
+      "anchor": "knowledge-crib-deep-extraction-migration-first-class-wedge",
+      "snippet": "Knowledge-crib — Deep Extraction & Migration (first-class wedge)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/adr/ADR-001-parallel-parse.md#determinism-trick-load-bearing",
+      "heading": "Determinism trick (load-bearing)",
+      "anchor": "determinism-trick-load-bearing",
+      "snippet": "Determinism trick (load-bearing)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#java-spring-boot-track-built-tested-schema-1-3",
+      "heading": "Java / Spring Boot track (built + tested, schema 1.3)",
+      "anchor": "java-spring-boot-track-built-tested-schema-1-3",
+      "snippet": "Java / Spring Boot track (built + tested, schema 1.3)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#5-incremental-update-protocol-the-upgrades-as-project-evolves-part",
+      "heading": "5. Incremental update protocol (the \"upgrades as project evolves\" part)",
+      "anchor": "5-incremental-update-protocol-the-upgrades-as-project-evolves-part",
+      "snippet": "5. Incremental update protocol (the \"upgrades as project evolves\" part)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-build-plan.md#0-repo-stack",
+      "heading": "0. Repo & stack",
+      "anchor": "0-repo-stack",
+      "snippet": "0. Repo & stack",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-build-plan.md#2-pipeline-original-code-mirrors-the-proven-phases-not-the-source",
+      "heading": "2. Pipeline (original code; mirrors the proven *phases*, not the source)",
+      "anchor": "2-pipeline-original-code-mirrors-the-proven-phases-not-the-source",
+      "snippet": "2. Pipeline (original code; mirrors the proven *phases*, not the source)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-build-plan.md#4-incremental-git",
+      "heading": "4. Incremental + git",
+      "anchor": "4-incremental-git",
+      "snippet": "4. Incremental + git",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-pipeline.md#phase-overview",
+      "heading": "Phase overview",
+      "anchor": "phase-overview",
+      "snippet": "Phase overview",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-track3-spec.md#3-executes-edges-procedure-symbol-each-statement-node-in-its-body",
+      "heading": "3. `executes` edges — procedure symbol → each statement node in its body",
+      "anchor": "3-executes-edges-procedure-symbol-each-statement-node-in-its-body",
+      "snippet": "3. `executes` edges — procedure symbol → each statement node in its body",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-decisions.md#decision-log",
+      "heading": "Decision Log",
+      "anchor": "decision-log",
+      "snippet": "Decision Log",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:CLAUDE.md#cli",
+      "heading": "CLI",
+      "anchor": "cli",
+      "snippet": "CLI",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:AGENTS.md#cli",
+      "heading": "CLI",
+      "anchor": "cli",
+      "snippet": "CLI",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#commands",
+      "heading": "Commands",
+      "anchor": "commands",
+      "snippet": "Commands",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#1-4-what-is-not-a-gap",
+      "heading": "1.4 What is *not* a gap",
+      "anchor": "1-4-what-is-not-a-gap",
+      "snippet": "1.4 What is *not* a gap",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/fuzz/fuzz-worker.ts#InvalidExtractor.extract@L63",
+    "procedureName": "InvalidExtractor.extract",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/fuzz/fuzz-worker.ts#InvalidExtractor.extract@L63",
+        "procedureName": "InvalidExtractor.extract",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f52f87aec59c3adbdfc1b824cce7361e1337429ace95bb253be4cd603ae99e61",
+          "target": "stmt:packages/parsers/src/fuzz/fuzz-worker.ts@L66",
+          "line": 66,
+          "expr": "return { nodes: [bad], edges: [] };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

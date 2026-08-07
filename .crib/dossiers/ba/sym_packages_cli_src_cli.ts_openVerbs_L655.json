@@ -1,0 +1,456 @@
+{
+  "id": "sym:packages/cli/src/cli.ts#openVerbs@L655",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:bcf920ac8da6ed6a73580771146077e952e037be1d511498d4708fc88d9ccf87",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/cli/src/cli.ts#openVerbs@L655",
+    "kind": "symbol",
+    "type": "function",
+    "name": "openVerbs",
+    "qualifiedName": "openVerbs",
+    "signature": "openVerbs(args: string[], ctx?: CmdCtx): { verbs: Verbs; index: IndexStore } | null",
+    "lang": "typescript",
+    "file": "packages/cli/src/cli.ts",
+    "span": {
+      "start": 655,
+      "end": 671
+    },
+    "callSites": [
+      {
+        "callee": "resolveRoot",
+        "line": 656
+      },
+      {
+        "callee": "write",
+        "line": 658
+      },
+      {
+        "callee": "openSoul",
+        "line": 661
+      },
+      {
+        "callee": "openIndexForRead",
+        "line": 662
+      }
+    ]
+  },
+  "source": {
+    "text": "function openVerbs(args: string[], ctx?: CmdCtx): { verbs: Verbs; index: IndexStore } | null {\n  const resolved = resolveRoot(args, ctx);\n  if (!isIndexedRoot(resolved)) {\n    process.stderr.write('not indexed — run `crib index` first\\n');\n    return null;\n  }\n  const rt = openSoul(resolved);\n  const index = openIndexForRead(rt);\n  if (!index) return null;\n  const verbs = new Verbs({\n    soul: rt.soul,\n    index,\n    repoRoot: resolved.repoRoot,\n    vcs: new CliVcsAdapter(),\n  });\n  return { verbs, index };\n}",
+    "truncated": false,
+    "totalLines": 17,
+    "startLine": 655
+  },
+  "callers": [
+    {
+      "id": "sym:packages/cli/src/cli.ts#cmdAsk@L755",
+      "confidence": 1,
+      "name": "cmdAsk",
+      "qualifiedName": "cmdAsk",
+      "signature": "cmdAsk(args: string[], ctx?: CmdCtx): Promise<number>",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 755
+    },
+    {
+      "id": "sym:packages/cli/src/cli.ts#cmdContext@L717",
+      "confidence": 1,
+      "name": "cmdContext",
+      "qualifiedName": "cmdContext",
+      "signature": "cmdContext(args: string[], ctx?: CmdCtx): Promise<number>",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 717
+    },
+    {
+      "id": "sym:packages/cli/src/cli.ts#cmdContextByScope@L801",
+      "confidence": 1,
+      "name": "cmdContextByScope",
+      "qualifiedName": "cmdContextByScope",
+      "signature": "cmdContextByScope(args: string[], scope: 'package' | 'file' | 'cluster', ctx?: CmdCtx): Promise<number>",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 801
+    },
+    {
+      "id": "sym:packages/cli/src/cli.ts#cmdDossier@L846",
+      "confidence": 1,
+      "name": "cmdDossier",
+      "qualifiedName": "cmdDossier",
+      "signature": "cmdDossier(args: string[], ctx?: CmdCtx): Promise<number>",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 846
+    },
+    {
+      "id": "sym:packages/cli/src/cli.ts#cmdFederatedImpact@L952",
+      "confidence": 1,
+      "name": "cmdFederatedImpact",
+      "qualifiedName": "cmdFederatedImpact",
+      "signature": "cmdFederatedImpact(args: string[], ctx?: CmdCtx): Promise<number>",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 952
+    },
+    {
+      "id": "sym:packages/cli/src/cli.ts#cmdGaps@L674",
+      "confidence": 1,
+      "name": "cmdGaps",
+      "qualifiedName": "cmdGaps",
+      "signature": "cmdGaps(args: string[], ctx?: CmdCtx): Promise<number>",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 674
+    },
+    {
+      "id": "sym:packages/cli/src/cli.ts#cmdImpact@L911",
+      "confidence": 1,
+      "name": "cmdImpact",
+      "qualifiedName": "cmdImpact",
+      "signature": "cmdImpact(args: string[], ctx?: CmdCtx): Promise<number>",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 911
+    },
+    {
+      "id": "sym:packages/cli/src/cli.ts#cmdNeighbors@L1023",
+      "confidence": 1,
+      "name": "cmdNeighbors",
+      "qualifiedName": "cmdNeighbors",
+      "signature": "cmdNeighbors(args: string[], ctx?: CmdCtx): Promise<number>",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 1023
+    },
+    {
+      "id": "sym:packages/cli/src/cli.ts#cmdOwnership@L1058",
+      "confidence": 1,
+      "name": "cmdOwnership",
+      "qualifiedName": "cmdOwnership",
+      "signature": "cmdOwnership(args: string[], ctx?: CmdCtx): Promise<number>",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 1058
+    },
+    {
+      "id": "sym:packages/cli/src/cli.ts#cmdPath@L991",
+      "confidence": 1,
+      "name": "cmdPath",
+      "qualifiedName": "cmdPath",
+      "signature": "cmdPath(args: string[], ctx?: CmdCtx): Promise<number>",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 991
+    },
+    {
+      "id": "sym:packages/cli/src/cli.ts#cmdReconstruct@L876",
+      "confidence": 1,
+      "name": "cmdReconstruct",
+      "qualifiedName": "cmdReconstruct",
+      "signature": "cmdReconstruct(args: string[], ctx?: CmdCtx): Promise<number>",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 876
+    },
+    {
+      "id": "sym:packages/cli/src/cli.ts#cmdRules@L693",
+      "confidence": 1,
+      "name": "cmdRules",
+      "qualifiedName": "cmdRules",
+      "signature": "cmdRules(args: string[], ctx?: CmdCtx): Promise<number>",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 693
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/cli/src/runtime.ts#isIndexedRoot@L107",
+      "confidence": 1,
+      "name": "isIndexedRoot",
+      "qualifiedName": "isIndexedRoot",
+      "signature": "isIndexedRoot(resolved: ResolvedRoot): boolean",
+      "type": "function",
+      "file": "packages/cli/src/runtime.ts",
+      "line": 107
+    },
+    {
+      "id": "sym:packages/cli/src/cli.ts#openIndexForRead@L639",
+      "confidence": 1,
+      "name": "openIndexForRead",
+      "qualifiedName": "openIndexForRead",
+      "signature": "openIndexForRead(rt: ReturnType<typeof openSoul>): IndexStore | null",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 639
+    },
+    {
+      "id": "sym:packages/cli/src/runtime.ts#openSoul@L100",
+      "confidence": 1,
+      "name": "openSoul",
+      "qualifiedName": "openSoul",
+      "signature": "openSoul(resolved: ResolvedRoot): Runtime",
+      "type": "function",
+      "file": "packages/cli/src/runtime.ts",
+      "line": 100
+    },
+    {
+      "id": "sym:packages/cli/src/cli.ts#resolveRoot@L262",
+      "confidence": 1,
+      "name": "resolveRoot",
+      "qualifiedName": "resolveRoot",
+      "signature": "resolveRoot(args: string[], ctx?: CmdCtx): ResolvedRoot",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 262
+    },
+    {
+      "id": "sym:packages/cli/src/hooks.test.ts#write@L54",
+      "confidence": 1,
+      "name": "write",
+      "qualifiedName": "write",
+      "signature": "write(path: string, records: Array<Record<string, unknown>>): void",
+      "type": "function",
+      "file": "packages/cli/src/hooks.test.ts",
+      "line": 54
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/cli/src/cli.ts@L649",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/cli/src/cli.ts#openVerbs@L655",
+    "procedureName": "openVerbs",
+    "conditions": [
+      "cond:packages/cli/src/cli.ts@L657",
+      "cond:packages/cli/src/cli.ts@L663"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#openVerbs@L655",
+        "procedureName": "openVerbs",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:66fb548ca7ba54cb9cd06b8f7bbf3dd6f855b10c331d86ab0ea1dd6eb1e6f514",
+          "target": "sym:packages/cli/src/runtime.ts#isIndexedRoot@L107",
+          "expr": "isIndexedRoot"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#openVerbs@L655",
+        "procedureName": "openVerbs",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:0d6d182fd5ef196808493890ac57d4b33298f8ee2a25dfbfd922a1a5e0a34fbc",
+          "target": "sym:packages/cli/src/cli.ts#resolveRoot@L262",
+          "expr": "resolveRoot",
+          "line": 656
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#openVerbs@L655",
+        "procedureName": "openVerbs",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ef2afd94ed20d20b64a4ba60bd8255375a1892fee8d5cb37ad77d6a57aba0c52",
+          "target": "stmt:packages/cli/src/cli.ts@L656",
+          "line": 656,
+          "expr": "const resolved = resolveRoot(args, ctx);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#openVerbs@L655",
+        "procedureName": "openVerbs",
+        "guard": "cond:packages/cli/src/cli.ts@L657",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L657",
+            "expr": "!isIndexedRoot(resolved)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7aae15a168e0f27cd793968af5612508592444e38818247f7e757b15fe23fbe9",
+          "target": "stmt:packages/cli/src/cli.ts@L658",
+          "line": 658,
+          "expr": "process.stderr.write('not indexed — run `crib index` first\\n');"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#openVerbs@L655",
+        "procedureName": "openVerbs",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:ce9370145b625e0444c4041fcc47694809a38ae76dda288628bd2cef6f54ead1",
+          "target": "sym:packages/cli/src/hooks.test.ts#write@L54",
+          "expr": "write",
+          "line": 658
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#openVerbs@L655",
+        "procedureName": "openVerbs",
+        "guard": "cond:packages/cli/src/cli.ts@L657",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L657",
+            "expr": "!isIndexedRoot(resolved)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d0481117dcdbfd6619de27dc045c2de617d27142f6d263be8760982a758fa41f",
+          "target": "stmt:packages/cli/src/cli.ts@L659",
+          "line": 659,
+          "expr": "return null;"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#openVerbs@L655",
+        "procedureName": "openVerbs",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:5081643a07c8be2066bb722e4eb207b703b937678809e9165aae565f16fc03a9",
+          "target": "sym:packages/cli/src/runtime.ts#openSoul@L100",
+          "expr": "openSoul",
+          "line": 661
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#openVerbs@L655",
+        "procedureName": "openVerbs",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e0b466f5ed4dcf6eb98523a7858660b220fda9d23a982af1744b0e2261344926",
+          "target": "stmt:packages/cli/src/cli.ts@L661",
+          "line": 661,
+          "expr": "const rt = openSoul(resolved);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#openVerbs@L655",
+        "procedureName": "openVerbs",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6e65977499004f34c0b2067f72b3aa316258d164a62b51fa66c8ac6a49d048ec",
+          "target": "stmt:packages/cli/src/cli.ts@L662",
+          "line": 662,
+          "expr": "const index = openIndexForRead(rt);"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#openVerbs@L655",
+        "procedureName": "openVerbs",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:8c3f5af627c8bb6f72a577e3e0f555729ece59eba50638096f7ecc79c62c1f33",
+          "target": "sym:packages/cli/src/cli.ts#openIndexForRead@L639",
+          "expr": "openIndexForRead",
+          "line": 662
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#openVerbs@L655",
+        "procedureName": "openVerbs",
+        "guard": "cond:packages/cli/src/cli.ts@L663",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/cli/src/cli.ts@L663",
+            "expr": "!index",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b5b667e0d08a2fdca59250bff57e23cf4eaac80dcbf25fd515ce71275a1db0fc",
+          "target": "stmt:packages/cli/src/cli.ts@L663",
+          "line": 663,
+          "expr": "return null;"
+        }
+      },
+      {
+        "procedure": "sym:packages/cli/src/cli.ts#openVerbs@L655",
+        "procedureName": "openVerbs",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4da597bc44b3ede0870ea7f6f55f6377bc81e3ddf01dd075941836b88d3510fb",
+          "target": "stmt:packages/cli/src/cli.ts@L670",
+          "line": 670,
+          "expr": "return { verbs, index };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 7,
+    "referencedByFiles": [
+      "packages/cli/src/cli.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 7,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 5,
+      "recorded": 4,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

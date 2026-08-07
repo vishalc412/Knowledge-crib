@@ -1,0 +1,124 @@
+{
+  "id": "sym:scripts/crib-self-hosted-e2e.mjs#runCli@L53",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:d2eb2053accc69c45a6d79b48fba2511ab8a58453042766dfda7ca77e4d1f16f",
+  "builtAt": "2026-07-13T11:14:06.943Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:scripts/crib-self-hosted-e2e.mjs#runCli@L53",
+    "kind": "symbol",
+    "type": "function",
+    "name": "runCli",
+    "qualifiedName": "runCli",
+    "signature": "runCli(args)",
+    "lang": "javascript",
+    "file": "scripts/crib-self-hosted-e2e.mjs",
+    "span": {
+      "start": 53,
+      "end": 73
+    },
+    "callSites": [
+      {
+        "callee": "spawn",
+        "line": 55
+      },
+      {
+        "callee": "on",
+        "line": 61
+      },
+      {
+        "callee": "on",
+        "line": 64
+      },
+      {
+        "callee": "once",
+        "line": 67
+      },
+      {
+        "callee": "once",
+        "line": 68
+      },
+      {
+        "callee": "resolveResult",
+        "line": 69
+      },
+      {
+        "callee": "reject",
+        "line": 70
+      },
+      {
+        "callee": "join",
+        "line": 70
+      }
+    ]
+  },
+  "source": {
+    "text": "function runCli(args) {\n  return new Promise((resolveResult, reject) => {\n    const child = spawn(process.execPath, [cli, ...args], {\n      cwd: repoRoot,\n      stdio: ['ignore', 'pipe', 'pipe'],\n    });\n    let stdout = '';\n    let stderr = '';\n    child.stdout.on('data', (chunk) => {\n      stdout += chunk;\n    });\n    child.stderr.on('data', (chunk) => {\n      stderr += chunk;\n    });\n    child.once('error', reject);\n    child.once('exit', (code) => {\n      if (code === 0) resolveResult({ stdout, stderr });\n      else reject(new Error(`crib ${args.join(' ')} failed (${code})\\n${stderr}\\n${stdout}`));\n    });\n  });\n}",
+    "truncated": false,
+    "totalLines": 21,
+    "startLine": 53
+  },
+  "callers": [
+    {
+      "id": "sym:scripts/crib-self-hosted-e2e.mjs#main@L165",
+      "confidence": 1,
+      "name": "main",
+      "qualifiedName": "main",
+      "signature": "main()",
+      "type": "function",
+      "file": "scripts/crib-self-hosted-e2e.mjs",
+      "line": 165
+    }
+  ],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:scripts/crib-self-hosted-e2e.mjs#runCli@L53",
+    "procedureName": "runCli",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:scripts/crib-self-hosted-e2e.mjs#runCli@L53",
+        "procedureName": "runCli",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5b8a6d34df1799c73ddc729cf3e07f60f9a2b85da4b2d679aabe67113a7a173f",
+          "target": "stmt:scripts/crib-self-hosted-e2e.mjs@L54",
+          "line": 54,
+          "expr": "return new Promise((resolveResult, reject) => {\n    const child = spawn(process.execPath, [cli, ...args], {\n      cwd: repoRoot,\n      stdio: ['ignore', 'pipe', 'pipe'],\n    });\n    let stdout = '';\n    let stderr = '';\n    child.stdout.on('data', (chunk) => {\n      stdout += chunk;\n    });\n    child.stderr.on('data', (chunk) => {\n      stderr += chunk;\n    });\n    child.once('error', reject);\n    child.once('exit', (code) => {\n      if (code === 0) resolveResult({ stdout, stderr });\n      else reject(new Error(`crib ${args.join(' ')} failed (${code})\\n${stderr}\\n${stdout}`));\n    });\n  });"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "scripts/crib-self-hosted-e2e.mjs"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 8,
+      "unresolved": 6
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "6 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

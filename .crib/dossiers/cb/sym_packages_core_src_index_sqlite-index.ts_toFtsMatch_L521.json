@@ -1,0 +1,271 @@
+{
+  "id": "sym:packages/core/src/index/sqlite-index.ts#toFtsMatch@L521",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:77fb2ac01835a94c9ac9464e7d1f2c8d52423db48f90c36db1939577fc131cca",
+  "builtAt": "2026-07-13T11:04:33.459Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/index/sqlite-index.ts#toFtsMatch@L521",
+    "kind": "symbol",
+    "type": "function",
+    "name": "toFtsMatch",
+    "qualifiedName": "toFtsMatch",
+    "signature": "toFtsMatch(text: string): string | undefined",
+    "lang": "typescript",
+    "file": "packages/core/src/index/sqlite-index.ts",
+    "span": {
+      "start": 521,
+      "end": 529
+    },
+    "callSites": [
+      {
+        "callee": "filter",
+        "line": 522
+      },
+      {
+        "callee": "split",
+        "line": 522
+      },
+      {
+        "callee": "add",
+        "line": 526
+      },
+      {
+        "callee": "join",
+        "line": 528
+      },
+      {
+        "callee": "map",
+        "line": 528
+      }
+    ]
+  },
+  "source": {
+    "text": "function toFtsMatch(text: string): string | undefined {\n  const rawTokens = text.split(/[^A-Za-z0-9_]+/).filter((t) => t.length > 0);\n  if (rawTokens.length === 0) return undefined;\n  const expanded = new Set<string>();\n  for (const t of rawTokens) {\n    for (const e of expandToken(t)) expanded.add(e);\n  }\n  return [...expanded].map((t) => `\"${t}\"*`).join(' OR ');\n}",
+    "truncated": false,
+    "totalLines": 9,
+    "startLine": 521
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/index/sqlite-index.ts#SqliteIndexStore.bm25Query@L199",
+      "confidence": 1,
+      "name": "bm25Query",
+      "qualifiedName": "SqliteIndexStore.bm25Query",
+      "signature": "bm25Query(q: HybridQuery, limit: number, offset: number): Hit[]",
+      "type": "method",
+      "file": "packages/core/src/index/sqlite-index.ts",
+      "line": 199
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/fixtures/python/rules.py#add@L16",
+      "confidence": 1,
+      "name": "add",
+      "qualifiedName": "add",
+      "signature": "add(a, b)",
+      "type": "function",
+      "file": "packages/parsers/fixtures/python/rules.py",
+      "line": 16
+    },
+    {
+      "id": "sym:packages/core/src/index/synonyms.ts#expandToken@L52",
+      "confidence": 1,
+      "name": "expandToken",
+      "qualifiedName": "expandToken",
+      "signature": "expandToken(token: string): readonly string[]",
+      "type": "function",
+      "file": "packages/core/src/index/synonyms.ts",
+      "line": 52
+    },
+    {
+      "id": "sym:packages/core/src/index/sqlite-index.ts#rrfFuse.add@L64",
+      "confidence": 1,
+      "name": "add",
+      "qualifiedName": "rrfFuse.add",
+      "signature": "add(…)",
+      "type": "function",
+      "file": "packages/core/src/index/sqlite-index.ts",
+      "line": 64
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/core/src/index/sqlite-index.ts@L516",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/index/sqlite-index.ts#toFtsMatch@L521",
+    "procedureName": "toFtsMatch",
+    "conditions": [
+      "cond:packages/core/src/index/sqlite-index.ts@L523",
+      "cond:packages/core/src/index/sqlite-index.ts@L525",
+      "cond:packages/core/src/index/sqlite-index.ts@L526"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#toFtsMatch@L521",
+        "procedureName": "toFtsMatch",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:ff18978303828c7cf882d5799ba4e0a7d9765978f80c2ad5e82ab6eb17ccaf2f",
+          "target": "sym:packages/core/src/index/synonyms.ts#expandToken@L52",
+          "expr": "expandToken"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#toFtsMatch@L521",
+        "procedureName": "toFtsMatch",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e05606b43a8ba33d7b56fa13376fea9754640c37e8fda65faabd71df9711f435",
+          "target": "stmt:packages/core/src/index/sqlite-index.ts@L522",
+          "line": 522,
+          "expr": "const rawTokens = text.split(/[^A-Za-z0-9_]+/).filter((t) => t.length > 0);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#toFtsMatch@L521",
+        "procedureName": "toFtsMatch",
+        "guard": "cond:packages/core/src/index/sqlite-index.ts@L523",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/index/sqlite-index.ts@L523",
+            "expr": "rawTokens.length === 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4579b5199052dfb7578b59fd21945cb86f9f49cfa8b7e5d2fcc57f376030ac7a",
+          "target": "stmt:packages/core/src/index/sqlite-index.ts@L523",
+          "line": 523,
+          "expr": "return undefined;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#toFtsMatch@L521",
+        "procedureName": "toFtsMatch",
+        "guard": "cond:packages/core/src/index/sqlite-index.ts@L526",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/index/sqlite-index.ts@L525",
+            "expr": "rawTokens"
+          },
+          {
+            "id": "cond:packages/core/src/index/sqlite-index.ts@L526",
+            "expr": "expandToken(t)",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:5f24b8628617fe78fc20ba250e0ccb14b3891cf1349ce98c57bb18de7980a1fe",
+          "target": "sym:packages/core/src/index/sqlite-index.ts#rrfFuse.add@L64",
+          "expr": "add",
+          "line": 526
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#toFtsMatch@L521",
+        "procedureName": "toFtsMatch",
+        "guard": "cond:packages/core/src/index/sqlite-index.ts@L526",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/index/sqlite-index.ts@L525",
+            "expr": "rawTokens"
+          },
+          {
+            "id": "cond:packages/core/src/index/sqlite-index.ts@L526",
+            "expr": "expandToken(t)",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6cc89e73d839d1d4785600e27d5585cea72b15e9fcee8184d6c152e5987a6c84",
+          "target": "stmt:packages/core/src/index/sqlite-index.ts@L526",
+          "line": 526,
+          "expr": "expanded.add(e);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#toFtsMatch@L521",
+        "procedureName": "toFtsMatch",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:904e0d68bda94efdc02a433555c656b74a697b4306b51d98149c5393c2932308",
+          "target": "sym:packages/parsers/fixtures/python/rules.py#add@L16",
+          "expr": "add",
+          "line": 526
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/index/sqlite-index.ts#toFtsMatch@L521",
+        "procedureName": "toFtsMatch",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:27ff89cab5eeb0243a5749956fdd031a9fd6604e02ab045e5653a98bb71c135f",
+          "target": "stmt:packages/core/src/index/sqlite-index.ts@L528",
+          "line": 528,
+          "expr": "return [...expanded].map((t) => `\"${t}\"*`).join(' OR ');"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": [
+      "packages/core/src/index/sqlite-index.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 3,
+      "recorded": 5,
+      "unresolved": 4
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "4 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

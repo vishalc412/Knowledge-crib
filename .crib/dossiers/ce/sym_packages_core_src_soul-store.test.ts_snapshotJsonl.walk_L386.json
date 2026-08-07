@@ -1,0 +1,502 @@
+{
+  "id": "sym:packages/core/src/soul-store.test.ts#snapshotJsonl.walk@L386",
+  "schemaVersion": "1.5",
+  "nodeHash": "blake3:9875d7af997e09d1f50ed351c15dfe453fe9264ef0cabfdb0758e4c9d4186f23",
+  "builtAt": "2026-07-16T16:35:16.098Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/soul-store.test.ts#snapshotJsonl.walk@L386",
+    "kind": "symbol",
+    "type": "function",
+    "name": "walk",
+    "qualifiedName": "snapshotJsonl.walk",
+    "signature": "walk(…)",
+    "lang": "typescript",
+    "file": "packages/core/src/soul-store.test.ts",
+    "span": {
+      "start": 386,
+      "end": 400
+    },
+    "callSites": [
+      {
+        "callee": "join",
+        "line": 387
+      },
+      {
+        "callee": "readdirSync",
+        "line": 390
+      },
+      {
+        "callee": "join",
+        "line": 395
+      },
+      {
+        "callee": "join",
+        "line": 396
+      },
+      {
+        "callee": "walk",
+        "line": 397
+      },
+      {
+        "callee": "readFileSync",
+        "line": 398
+      }
+    ]
+  },
+  "source": {
+    "text": "  const walk = (rel: string) => {\n    const abs = join(crib, rel);\n    let entries: string[];\n    try {\n      entries = readdirSync(abs);\n    } catch {\n      return;\n    }\n    for (const e of entries) {\n      const childRel = join(rel, e);\n      const childAbs = join(crib, childRel);\n      if (statSync(childAbs).isDirectory()) walk(childRel);\n      else if (e.endsWith('.jsonl')) out[childRel] = readFileSync(childAbs, 'utf8');\n    }\n  };",
+    "truncated": false,
+    "totalLines": 15,
+    "startLine": 386
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/soul-store.test.ts#snapshotJsonl@L383",
+      "confidence": 1,
+      "name": "snapshotJsonl",
+      "qualifiedName": "snapshotJsonl",
+      "signature": "snapshotJsonl(cribRoot: string): Record<string, string>",
+      "type": "function",
+      "file": "packages/core/src/soul-store.test.ts",
+      "line": 383
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:scripts/docs-stats.mjs#walk@L31",
+      "confidence": 1,
+      "name": "walk",
+      "qualifiedName": "walk",
+      "signature": "walk(…)",
+      "type": "function",
+      "file": "scripts/docs-stats.mjs",
+      "line": 31
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#summary",
+      "heading": "Summary",
+      "anchor": "summary",
+      "snippet": "Summary",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#7-the-complete-code-map-quick-reference",
+      "heading": "7. The Complete Code Map (Quick Reference)",
+      "anchor": "7-the-complete-code-map-quick-reference",
+      "snippet": "7. The Complete Code Map (Quick Reference)",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-refined-vs-existing-assessment.md#2-3-solution-architect",
+      "heading": "2.3 Solution Architect",
+      "anchor": "2-3-solution-architect",
+      "snippet": "2.3 Solution Architect",
+      "edgeType": "describes",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#documents-updated",
+      "heading": "Documents updated",
+      "anchor": "documents-updated",
+      "snippet": "Documents updated",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#tests",
+      "heading": "Tests",
+      "anchor": "tests",
+      "snippet": "Tests",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#what-was-built",
+      "heading": "What was built",
+      "anchor": "what-was-built",
+      "snippet": "What was built",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#what-was-built-2",
+      "heading": "What was built",
+      "anchor": "what-was-built-2",
+      "snippet": "What was built",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-track3-spec.md#what-each-language-extractor-must-emit-additive-keep-existing-symbol-member-of-calls-behavior",
+      "heading": "What each language extractor must emit (additive — keep existing symbol/member-of/calls behavior)",
+      "anchor": "what-each-language-extractor-must-emit-additive-keep-existing-symbol-member-of-calls-behavior",
+      "snippet": "What each language extractor must emit (additive — keep existing symbol/member-of/calls behavior)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-track3-spec.md#per-language-parser-work",
+      "heading": "Per-language parser work",
+      "anchor": "per-language-parser-work",
+      "snippet": "Per-language parser work",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#3-2-4-graph-projection-the-llm-semantic-graph-gets-its-own-storage",
+      "heading": "3.2.4 Graph Projection — The LLM Semantic Graph Gets Its Own Storage",
+      "anchor": "3-2-4-graph-projection-the-llm-semantic-graph-gets-its-own-storage",
+      "snippet": "3.2.4 Graph Projection — The LLM Semantic Graph Gets Its Own Storage",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-cli.md#global-flags",
+      "heading": "Global flags",
+      "anchor": "global-flags",
+      "snippet": "Global flags",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-cli.md#root-resolution-req-1",
+      "heading": "Root resolution (REQ-1)",
+      "anchor": "root-resolution-req-1",
+      "snippet": "Root resolution (REQ-1)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-cli.md#crib-index-path",
+      "heading": "`crib index [path]`",
+      "anchor": "crib-index-path",
+      "snippet": "`crib index [path]`",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:packages/cli/skills/crib-enrich/SKILL.md#tools",
+      "heading": "Tools",
+      "anchor": "tools",
+      "snippet": "Tools",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-client-setup.md#4-claude-code",
+      "heading": "4. Claude Code",
+      "anchor": "4-claude-code",
+      "snippet": "4. Claude Code",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-client-setup.md#root-resolution-one-entry-every-project",
+      "heading": "Root resolution — one entry, every project",
+      "anchor": "root-resolution-one-entry-every-project",
+      "snippet": "Root resolution — one entry, every project",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-refined-vs-existing-assessment.md#2-1-principal-engineer",
+      "heading": "2.1 Principal Engineer",
+      "anchor": "2-1-principal-engineer",
+      "snippet": "2.1 Principal Engineer",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-refined-vs-existing-assessment.md#2-4-technical-architect",
+      "heading": "2.4 Technical Architect",
+      "anchor": "2-4-technical-architect",
+      "snippet": "2.4 Technical Architect",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:CHANGELOG.md#added",
+      "heading": "Added",
+      "anchor": "added",
+      "snippet": "Added",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#one-ide-entry-for-every-project-root-resolution",
+      "heading": "One IDE entry for every project (root resolution)",
+      "anchor": "one-ide-entry-for-every-project-root-resolution",
+      "snippet": "One IDE entry for every project (root resolution)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#the-6-llm-graph-verbs",
+      "heading": "The 6 LLM-graph verbs",
+      "anchor": "the-6-llm-graph-verbs",
+      "snippet": "The 6 LLM-graph verbs",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/soul-store.test.ts#snapshotJsonl.walk@L386",
+    "procedureName": "snapshotJsonl.walk",
+    "conditions": [
+      "cond:packages/core/src/soul-store.test.ts@L394",
+      "cond:packages/core/src/soul-store.test.ts@L397",
+      "cond:packages/core/src/soul-store.test.ts@L398"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/soul-store.test.ts#snapshotJsonl.walk@L386",
+        "procedureName": "snapshotJsonl.walk",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2a27e6756dde417403311029318a84fd016bdf70ba148592f4456f35cbd676b1",
+          "target": "stmt:packages/core/src/soul-store.test.ts@L387",
+          "line": 387,
+          "expr": "const abs = join(crib, rel);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.test.ts#snapshotJsonl.walk@L386",
+        "procedureName": "snapshotJsonl.walk",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7357faf515f9e8c6b20b2dbd52d065538a1825c6e5c34ac6053de0ef4be7c892",
+          "target": "assign:packages/core/src/soul-store.test.ts@L390",
+          "line": 390,
+          "expr": "entries = readdirSync(abs);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.test.ts#snapshotJsonl.walk@L386",
+        "procedureName": "snapshotJsonl.walk",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d8860f12d4e82cab02dfec602b70e45181aed1aaaf6701233396b60d946be2d3",
+          "target": "stmt:packages/core/src/soul-store.test.ts@L392",
+          "line": 392,
+          "expr": "return;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.test.ts#snapshotJsonl.walk@L386",
+        "procedureName": "snapshotJsonl.walk",
+        "guard": "cond:packages/core/src/soul-store.test.ts@L394",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/soul-store.test.ts@L394",
+            "expr": "entries",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b2f2d47017274edf16275d4755bad6801e22a9fdab28813ff16259b40eb927f9",
+          "target": "stmt:packages/core/src/soul-store.test.ts@L395",
+          "line": 395,
+          "expr": "const childRel = join(rel, e);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.test.ts#snapshotJsonl.walk@L386",
+        "procedureName": "snapshotJsonl.walk",
+        "guard": "cond:packages/core/src/soul-store.test.ts@L394",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/soul-store.test.ts@L394",
+            "expr": "entries",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5ecc3940217bbcf4c66957587deef35d4d606cf4f2b254bc9721f6c33ed6cbe0",
+          "target": "stmt:packages/core/src/soul-store.test.ts@L396",
+          "line": 396,
+          "expr": "const childAbs = join(crib, childRel);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.test.ts#snapshotJsonl.walk@L386",
+        "procedureName": "snapshotJsonl.walk",
+        "guard": "cond:packages/core/src/soul-store.test.ts@L397",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/soul-store.test.ts@L394",
+            "expr": "entries"
+          },
+          {
+            "id": "cond:packages/core/src/soul-store.test.ts@L397",
+            "expr": "statSync(childAbs).isDirectory()",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3ed59bb84e547df6857711170d8b8c6cc9b4fa3b7b8cecc63feae47b9f0e872c",
+          "target": "stmt:packages/core/src/soul-store.test.ts@L397",
+          "line": 397,
+          "expr": "walk(childRel);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.test.ts#snapshotJsonl.walk@L386",
+        "procedureName": "snapshotJsonl.walk",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:bf4609e7b0cdc51a922acc8883dd2ae73cbe9d4304b336aefd3ca8f0fd49dd1d",
+          "target": "sym:scripts/docs-stats.mjs#walk@L31",
+          "expr": "walk",
+          "line": 397
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.test.ts#snapshotJsonl.walk@L386",
+        "procedureName": "snapshotJsonl.walk",
+        "guard": "cond:packages/core/src/soul-store.test.ts@L398",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/soul-store.test.ts@L394",
+            "expr": "entries"
+          },
+          {
+            "id": "cond:packages/core/src/soul-store.test.ts@L397",
+            "expr": "statSync(childAbs).isDirectory()"
+          },
+          {
+            "id": "cond:packages/core/src/soul-store.test.ts@L398",
+            "expr": "e.endsWith('.jsonl')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:227bab90f3861c1cadf0d7dc9dbb9e9990e558b866136f32ad16de9e7acef4dd",
+          "target": "assign:packages/core/src/soul-store.test.ts@L398",
+          "line": 398,
+          "expr": "out[childRel] = readFileSync(childAbs, 'utf8');"
+        }
+      }
+    ]
+  },
+  "controlFlow": {
+    "raises": [],
+    "handles": [
+      {
+        "id": "exc:packages/core/src/soul-store.test.ts@L391",
+        "kind": "exception-handler",
+        "lang": "typescript",
+        "file": "packages/core/src/soul-store.test.ts",
+        "span": {
+          "start": 391,
+          "end": 391
+        },
+        "confidence": 1
+      }
+    ],
+    "iterates": [],
+    "declares": []
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 7,
+    "referencedByFiles": [
+      "packages/core/src/soul-store.test.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 7,
+    "assignments": 2,
+    "conditions": 3,
+    "raises": 0,
+    "handlers": 1,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 6,
+      "unresolved": 5
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "5 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

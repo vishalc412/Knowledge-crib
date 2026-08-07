@@ -97,10 +97,12 @@ export interface NestPassInput {
   ctx: ExtractCtx;
   path: string;
   lineOf: (pos: number) => number;
+  /** M2.5 — `lang` tag for emitted framework nodes ('typescript' | 'javascript'). */
+  lang: 'typescript' | 'javascript';
 }
 
 export function extractNestSemantics(input: NestPassInput): void {
-  const { classSyms, byKey, nodes, edges, ctx, path, lineOf } = input;
+  const { classSyms, byKey, nodes, edges, ctx, path, lineOf, lang } = input;
   const nodeById = new Map(nodes.map((n) => [n.id, n]));
 
   for (const { tsNode, id, qualifiedName } of classSyms) {
@@ -151,7 +153,7 @@ export function extractNestSemantics(input: NestPassInput): void {
             framework: 'nestjs',
             file: path,
             span: { start: methodLine, end: methodEnd },
-            lang: 'typescript',
+            lang,
             hash: ctx.hash(`${path}:route:${verb}:${routePath}`),
             ...(Object.keys(routeMeta).length ? { meta: routeMeta } : {}),
           });
@@ -238,7 +240,7 @@ export function extractNestSemantics(input: NestPassInput): void {
           framework: 'nestjs',
           file: path,
           span: { start: cLine, end: lineOf(catchMethod.getEnd()) },
-          lang: 'typescript',
+          lang,
           hash: ctx.hash(`${path}:exch:${cLine}:${whenSelector ?? '*'}`),
         });
         const handlerId = byKey.get(`${qualifiedName}.catch`);
@@ -269,7 +271,7 @@ export function extractNestSemantics(input: NestPassInput): void {
           qualifiedName: propQ,
           file: path,
           span: { start: startLine, end: endLine },
-          lang: 'typescript',
+          lang,
           hash: ctx.hash(m.getText()),
           ...(fieldTypeText ? { dataType: fieldTypeText } : {}),
           signature: fieldTypeText ? `${fieldTypeText} ${m.name.text}` : m.name.text,
