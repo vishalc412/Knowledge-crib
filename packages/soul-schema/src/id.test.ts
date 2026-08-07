@@ -49,6 +49,25 @@ describe('idFor — all 11 grammars', () => {
   });
 });
 
+describe('idFor — 1.6 AI-artifact grammar', () => {
+  it('agent-artifact — art:<path>#<name>', () => {
+    expect(
+      idFor({ kind: 'agent-artifact', path: '.claude/skills/foo/SKILL.md', name: 'foo' }),
+    ).toBe('art:.claude/skills/foo/SKILL.md#foo');
+  });
+  it('agent-artifact is keyed by path + name (a renamed body keeps the id)', () => {
+    const a = idFor({ kind: 'agent-artifact', path: '.claude/agents/bar.md', name: 'bar' });
+    const b = idFor({ kind: 'agent-artifact', path: '.claude/agents/bar.md', name: 'bar' });
+    expect(a).toBe(b);
+    expect(a).toBe('art:.claude/agents/bar.md#bar');
+  });
+  it('agent-artifact differs by path (a moved file is a new id)', () => {
+    expect(
+      idFor({ kind: 'agent-artifact', path: '.claude/skills/foo/SKILL.md', name: 'foo' }),
+    ).not.toBe(idFor({ kind: 'agent-artifact', path: 'docs/skills/foo.md', name: 'foo' }));
+  });
+});
+
 describe('edgeId', () => {
   it('is deterministic and prefixed e:', () => {
     const a = edgeId('sym:x', 'sym:y', 'calls');
