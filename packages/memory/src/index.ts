@@ -28,3 +28,4 @@ export * from './store.js';
 export * from './grounding.js';
 export * from './locator.js';
 export * from './evaluator.js';
+export * from './recall.js';
