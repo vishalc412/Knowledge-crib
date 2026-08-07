@@ -31,3 +31,6 @@ export * from './evaluator.js';
 export * from './recall.js';
 export * from './fts-index.js';
 export * from './composite.js';
+export * from './policy.js';
+export * from './gate-runner.js';
+export * from './promotion.js';

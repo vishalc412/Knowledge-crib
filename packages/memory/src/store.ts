@@ -347,6 +347,32 @@ export class MemoryStore {
     this.upsertEntries(collection, [entry]);
   }
 
+  /**
+   * Remove a single entry by id (locked + atomic). Used by promotion cleanup: a candidate is removed
+   * from `candidates` AFTER its record + receipt have been durably written to `active`/`receipts`, so
+   * a crash between the shared write and the cleanup leaves a candidate that the next run's
+   * idempotent promotion re-deduplicates + re-cleans (PRD W4: "the next run deduplicates and
+   * completes cleanup"). Returns true iff an entry was removed. Refuses the team store (the
+   * committed ledger is never mutated by a remove — `clearStore` is the only team path and it too
+   * refuses; lifecycle retirement is an append-only decision, never a delete).
+   */
+  removeEntry(collection: MemoryCollection, id: string): boolean {
+    this.assertCollection(collection);
+    if (this.init.role === 'team') {
+      throw new Error(
+        'refusing to remove from the team store: .crib/memory/team is append-only (PRD — retire via a decision event, never a delete)',
+      );
+    }
+    return this.withLock(() => {
+      const shard = memoryShard(id);
+      const existing = this.readShard(collection, shard).entries;
+      const next = existing.filter((e) => e.id !== id);
+      if (next.length === existing.length) return false; // not present — nothing to clean
+      writeJsonAtomic(this.shardPath(collection, shard), serializeMemoryShard(next));
+      return true;
+    });
+  }
+
   // ─── manifest (local + global; recomputable cache) ──────────────────────────
 
   /**
