@@ -33,6 +33,8 @@ import type { IndexStore } from '@knowledge-crib/core';
 import { EnrichmentStore, Verbs, estimateTokens, serveStdio } from '@knowledge-crib/mcp';
 import type { EnrichLayer, EnrichSaveItem, EnrichScope, VcsAdapter } from '@knowledge-crib/mcp';
 import {
+  type AttemptOutcome,
+  type AttemptPhase,
   type GateReceipt,
   type MemoryCandidate,
   MemoryEvaluator,
@@ -40,10 +42,17 @@ import {
   type MemoryRecord,
   MemoryStore,
   SoulStoreSoulPort,
+  type StructuredSummary,
   type TrustedTeamPresence,
   activateLocal,
+  appendAttemptEvent,
   assertValidMemoryEntry,
+  attemptEventId,
+  attemptGroupId,
+  buildAttemptEvent,
+  compactAttempt,
   evaluateCandidate,
+  gcUnpromotedAttempts,
   loadPolicy,
   loadPolicyJson,
   memoryCandidateId,
@@ -2346,6 +2355,38 @@ async function cmdMemoryEvaluate(args: string[], ctx?: CmdCtx): Promise<number> 
     );
     return EXIT.ERROR;
   }
+  // W5 (PRD line 354): record the attempt lifecycle as structured events (the crash trail, PRD line
+  // 348). Reuse the candidate's attemptId when memory_observe started one (origin === 'attempt');
+  // otherwise mint a fresh group. On success the trail is compacted to one summary (PRD line 359);
+  // on failure the trail stays (a failed attempt is non-retrievable, GC'd after 30d — PRD line 359).
+  const attemptId =
+    candidate.attemptId ??
+    attemptGroupId({
+      subject: candidate.subject,
+      actor: candidate.authorship.actor,
+      startedAt: new Date().toISOString(),
+      origin: 'attempt',
+    });
+  // `att` records one lifecycle event; only structured summaries / refs / fingerprints / receipt ids
+  // (PRD line 355 + W5 exit gate: never raw prompts/transcripts/CoT/command output).
+  const att = (
+    phase: AttemptPhase,
+    extra: {
+      subject?: string;
+      observation?: StructuredSummary;
+      action?: StructuredSummary;
+      outcome?: AttemptOutcome;
+      candidateId?: string;
+      evaluationId?: string;
+    } = {},
+  ): void => {
+    const id = attemptEventId({ attemptId, phase, ...extra });
+    appendAttemptEvent(
+      local,
+      buildAttemptEvent({ id, attemptId, phase, ts: new Date().toISOString(), ...extra }),
+    );
+  };
+  att('start', { subject: candidate.subject });
   // PRD line 277: snapshot → execute → reacquire → verify. The snapshot is taken WITHOUT a lock;
   // the gate runs outside any lock; verification happens after.
   const before = {
@@ -2354,6 +2395,9 @@ async function cmdMemoryEvaluate(args: string[], ctx?: CmdCtx): Promise<number> 
     worktreeDigest: worktreeDigest(resolved.repoRoot),
     candidateId: candidate.id,
   };
+  att('observation', {
+    observation: { summary: 'gate snapshot', fileRefs: [resolved.repoRoot] },
+  });
   const gate = await runGate({
     profile,
     policy,
@@ -2365,9 +2409,13 @@ async function cmdMemoryEvaluate(args: string[], ctx?: CmdCtx): Promise<number> 
     now: () => new Date().toISOString(),
   });
   if (!gate.ok) {
+    att('outcome', { outcome: { status: 'failure' } });
     process.stderr.write(`gate failed: ${gate.error}\n`);
     return EXIT.ERROR;
   }
+  att('action', {
+    action: { summary: `gate profile ${profileName}`, receiptIds: [gate.receipt.id] },
+  });
   // Reacquire + verify the snapshot (PRD line 277): a drift means the gate ran against state that
   // has since changed → the receipt MUST NOT be trusted.
   const after = {
@@ -2384,20 +2432,54 @@ async function cmdMemoryEvaluate(args: string[], ctx?: CmdCtx): Promise<number> 
       candidateId: after.candidateId,
     })
   ) {
+    att('outcome', { outcome: { status: 'failure' } });
     process.stderr.write(
       'error: snapshot drift after gate run (policy/HEAD/worktree/candidate changed) — aborting promotion\n',
     );
     return EXIT.ERROR;
   }
+  att('outcome', { outcome: { status: 'success', receiptId: gate.receipt.id } });
+  att('candidate', { candidateId: candidate.id });
   const evaluation = evaluateCandidate(candidate, {
     evaluator: deps.evaluator,
     soul: deps.evalCtx.soul,
     receipt: gate.receipt,
     now: () => new Date().toISOString(),
   });
+  att('evaluation', {
+    candidateId: candidate.id,
+    evaluationId: gate.receipt.id,
+    observation: {
+      summary: `evidence=${evaluation.evaluation.evidence} applicability=${evaluation.evaluation.applicability}`,
+    },
+  });
   const result = activateLocal(local, candidate, evaluation, gate.receipt, {
     receiptId: gate.receipt.id,
   });
+  att('promotion', { candidateId: candidate.id, subject: candidate.subject });
+  // PRD line 359: compact successful attempts immediately — collapse the trail to one summary.
+  const compaction = buildAttemptEvent({
+    id: attemptEventId({
+      attemptId,
+      phase: 'compaction',
+      subject: candidate.subject,
+      observation: {
+        summary: `promoted ${result.recordId} to local via gate ${profileName}`,
+        fileRefs: candidate.appliesTo,
+        receiptIds: [gate.receipt.id, result.receiptId],
+      },
+    }),
+    attemptId,
+    phase: 'compaction',
+    ts: new Date().toISOString(),
+    subject: candidate.subject,
+    observation: {
+      summary: `promoted ${result.recordId} to local via gate ${profileName}`,
+      fileRefs: candidate.appliesTo,
+      receiptIds: [gate.receipt.id, result.receiptId],
+    },
+  });
+  compactAttempt(local, attemptId, compaction);
   process.stdout.write(
     `${JSON.stringify(
       {
@@ -2823,6 +2905,14 @@ function cmdMemoryGc(args: string[], ctx?: CmdCtx): number {
     if (Number.isNaN(proposed)) continue;
     if (now - proposed > maxAgeMs) toRemove.push(c.id);
   }
+  // W5 (PRD line 359): also reap unpromoted attempt trails older than the same cutoff. A failed
+  // attempt that never promoted is non-reusable; its crash trail + candidate are GC'd after 30d by
+  // default. Promoted attempts are kept (their compaction summary is a reusable success). The now
+  // passed to gcUnpromotedAttempts is an ISO string (the store compares lexicographic ISO ts).
+  const attemptNow = new Date().toISOString();
+  const attemptGc = dryRun
+    ? { reapedAttempts: [] as string[], removedCandidateIds: [] as string[] }
+    : gcUnpromotedAttempts(deps.local, maxAgeMs, attemptNow);
   if (!dryRun) {
     for (const id of toRemove) deps.local.removeEntry('candidates', id);
   }
@@ -2834,6 +2924,9 @@ function cmdMemoryGc(args: string[], ctx?: CmdCtx): number {
         candidatesScanned: candidates.length,
         removed: toRemove.length,
         ids: toRemove,
+        attemptsReaped: attemptGc.reapedAttempts.length,
+        attemptIds: attemptGc.reapedAttempts,
+        attemptCandidateIdsRemoved: attemptGc.removedCandidateIds,
       },
       null,
       2,
