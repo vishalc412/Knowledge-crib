@@ -689,3 +689,103 @@ describe('crib federated-impact (M3.2) — CLI dispatch + id-parse regression', 
     expect(r.stderr).toMatch(/usage:/);
   });
 });
+
+// ─── W8 — cross-agent onboarding adapters + doctor memory-loop (PRD line 394/408) ───────────────
+//
+// These exercise the BUILT dist end-to-end: `crib adapters install --client all` writes every
+// client instruction file preserving sibling content, `crib adapters remove` leaves the others +
+// memory intact, `crib doctor` reports the 7th agent-memory-loop check (non-fatal when not
+// initialized). They depend on the cli package's pretest/verify having rebuilt dist first.
+
+describe('crib adapters (W8) — CLI dispatch', () => {
+  it('install --client all writes all six instruction files + reports vscode as no-target', () => {
+    const out = runCli(['adapters', 'install', '--client', 'all']);
+    // six clients get a file written; vscode gets a note with an empty path.
+    expect(out).toContain('claude: installed');
+    expect(out).toContain('cursor: installed');
+    expect(out).toContain('copilot: installed');
+    expect(out).toContain('codex: installed');
+    expect(out).toContain('windsurf: installed');
+    expect(out).toContain('gemini: installed');
+    expect(out).toMatch(/vscode:.*no project-scope instruction file|MCP wiring/);
+    // the files exist and carry the managed block.
+    expect(existsSync(join(repo, 'CLAUDE.md'))).toBe(true);
+    expect(existsSync(join(repo, 'AGENTS.md'))).toBe(true);
+    expect(existsSync(join(repo, 'GEMINI.md'))).toBe(true);
+    expect(existsSync(join(repo, '.cursor', 'rules', 'crib.mdc'))).toBe(true);
+    expect(existsSync(join(repo, '.github', 'copilot-instructions.md'))).toBe(true);
+    expect(existsSync(join(repo, '.windsurfrules'))).toBe(true);
+    expect(readFileSync(join(repo, 'CLAUDE.md'), 'utf8')).toContain('<!-- crib:start -->');
+  });
+
+  it('install preserves pre-existing sibling content in AGENTS.md', () => {
+    writeFileSync(join(repo, 'AGENTS.md'), '# Existing\n\nuser prose\n');
+    runCli(['adapters', 'install', '--client', 'codex']);
+    const out = readFileSync(join(repo, 'AGENTS.md'), 'utf8');
+    expect(out).toContain('# Existing');
+    expect(out).toContain('user prose');
+    expect(out).toContain('<!-- crib:start -->');
+  });
+
+  it('is idempotent — a second install reports "up to date"', () => {
+    runCli(['adapters', 'install', '--client', 'claude']);
+    const second = runCli(['adapters', 'install', '--client', 'claude']);
+    expect(second).toContain('claude: up to date');
+  });
+
+  it('list reports present after install', () => {
+    runCli(['adapters', 'install', '--client', 'all']);
+    const out = runCli(['adapters', 'list', '--client', 'all']);
+    expect(out).toContain('claude: present');
+    expect(out).toContain('codex: present');
+  });
+
+  it('remove --client claude leaves the other instruction files + memory intact', () => {
+    runCli(['adapters', 'install', '--client', 'all']);
+    const out = runCli(['adapters', 'remove', '--client', 'claude']);
+    expect(out).toContain('claude: removed');
+    expect(existsSync(join(repo, 'CLAUDE.md'))).toBe(false);
+    // siblings untouched.
+    expect(existsSync(join(repo, 'AGENTS.md'))).toBe(true);
+    expect(existsSync(join(repo, 'GEMINI.md'))).toBe(true);
+  });
+
+  it('rejects an unknown --client with BAD_ARGS', () => {
+    const r = runCliResult(['adapters', 'install', '--client', 'nope']);
+    expect(r.status).not.toBe(0);
+    expect(r.stderr).toMatch(/unknown --client/);
+  });
+});
+
+describe('crib doctor (W8) — agent-memory loop check', () => {
+  // doctor exits non-zero when OTHER checks fail (git hooks / IDE wiring absent in the temp repo),
+  // so use runCliResult (captures non-zero) and assert on stdout — the memory-loop CHECK state is
+  // what we're verifying, not doctor's overall exit code.
+  it('reports the memory-loop check as non-fatal (✓) when memory is not initialized', () => {
+    const r = runCliResult(['doctor']);
+    expect(r.stdout).toContain('agent-memory loop');
+    expect(r.stdout).toMatch(/✓ agent-memory loop — not initialized/);
+    // overall doctor ran all 7 checks (memory is opt-in → its ✓ does not cause failure by itself).
+    expect(r.stdout).toMatch(/crib doctor: \d+\/7 checks passed/);
+  });
+
+  it('flags the memory loop as failing when policy.json exists but no adapter is installed', () => {
+    // Simulate `crib memory init` having run (policy + team dir) WITHOUT any adapter installed.
+    const memDir = join(repo, '.crib', 'memory');
+    mkdirSync(join(memDir, 'team'), { recursive: true });
+    writeFileSync(join(memDir, 'policy.json'), '{"version":1,"profiles":{}}\n');
+    const r = runCliResult(['doctor']);
+    expect(r.stdout).toContain('agent-memory loop');
+    expect(r.stdout).toMatch(/✗ agent-memory loop/);
+    expect(r.stdout).toMatch(/crib adapters install/);
+  });
+
+  it('passes the memory loop when policy + team dir + an adapter are all present', () => {
+    const memDir = join(repo, '.crib', 'memory');
+    mkdirSync(join(memDir, 'team'), { recursive: true });
+    writeFileSync(join(memDir, 'policy.json'), '{"version":1,"profiles":{}}\n');
+    runCli(['adapters', 'install', '--client', 'claude']);
+    const r = runCliResult(['doctor']);
+    expect(r.stdout).toMatch(/✓ agent-memory loop — policy ✓, team store ✓/);
+  });
+});

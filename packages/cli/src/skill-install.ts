@@ -19,6 +19,7 @@ import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, statSync } fr
 import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { type ClientId, skillDestFor } from './adapters.js';
 
 // ESM has no `__dirname`; derive it from `import.meta.url` (same shim `@knowledge-crib/ui`'s viz.ts uses).
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -41,13 +42,16 @@ export interface BundledSkill {
 export interface SkillInstallOptions {
   /** Skill name to install; omit to install every bundled skill. */
   name?: string;
-  /** Destination root; defaults to `~/.claude/skills` (Claude Code's user skill dir). */
+  /** Destination root; overrides `client`. When absent, derived from `client` via the adapter
+   *  registry (Claude → `~/.claude/skills`, Cursor → `~/.cursor/rules`). */
   destRoot?: string;
+  /** Client whose skill dir to target (default `'claude'`). Ignored when `destRoot` is set. */
+  client?: ClientId;
 }
 
 export interface SkillInstallResult {
   name: string;
-  /** Absolute destination skill dir written. */
+  /** Absolute destination skill dir written (or `''` when the client has no skill mechanism). */
   destDir: string;
   /** Whether the skill was copied vs already present and byte-identical. */
   written: boolean;
@@ -55,7 +59,8 @@ export interface SkillInstallResult {
   note?: string;
 }
 
-/** Default install target: Claude Code's user-level skills dir. */
+/** Default install target: Claude Code's user-level skills dir. Kept for back-compat with callers
+ *  that pre-date the per-client registry; new code should pass `client` / use {@link skillDestFor}. */
 export function defaultSkillsRoot(): string {
   return join(homedir(), '.claude', 'skills');
 }
@@ -80,7 +85,7 @@ export function listBundledSkills(): BundledSkill[] {
  * destination that already holds byte-identical content is reported `written: false` and left alone.
  */
 export function installSkill(opts: SkillInstallOptions = {}): SkillInstallResult[] {
-  const destRoot = opts.destRoot ?? defaultSkillsRoot();
+  const client: ClientId = opts.client ?? 'claude';
   const skills = opts.name
     ? listBundledSkills().filter((s) => s.name === opts.name)
     : listBundledSkills();
@@ -93,6 +98,19 @@ export function installSkill(opts: SkillInstallOptions = {}): SkillInstallResult
         note: `no bundled skill named '${opts.name}'`,
       },
     ];
+  }
+  // Resolve the destination root: explicit --dest wins; else the per-client registry (Claude →
+  // ~/.claude/skills, Cursor → ~/.cursor/rules). A client with no skill mechanism (copilot/vscode/
+  // codex/windsurf/gemini) yields null → report a non-fatal note per skill and install nothing,
+  // rather than silently writing to an unrelated dir.
+  const destRoot = opts.destRoot ?? skillDestFor(client);
+  if (!destRoot) {
+    return skills.map((skill) => ({
+      name: skill.name,
+      destDir: '',
+      written: false,
+      note: `${client} has no skill mechanism; use --dest <dir> or --client claude`,
+    }));
   }
   return skills.map((skill) => installOne(skill, destRoot));
 }

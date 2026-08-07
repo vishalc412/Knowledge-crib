@@ -106,6 +106,13 @@ import { DEFAULT_IGNORES } from '@knowledge-crib/pipeline';
 import type { WorkspaceLayout } from '@knowledge-crib/pipeline';
 import { blake3Hex } from '@knowledge-crib/soul-schema';
 import { buildVizGraph, buildVizOverview, vizAssetsDir } from '@knowledge-crib/ui';
+import {
+  ALL_CLIENTS,
+  type ClientId,
+  installInstructions,
+  listInstructions,
+  removeInstructions,
+} from './adapters.js';
 import { type ProviderDef, resolveProvider, runProviderBatch } from './enrich-provider.js';
 import { hooksInstalled, installHooks, mergeDriverFiles } from './hooks.js';
 import { type McpIde, type McpScope, installMcp, listMcp, removeMcp } from './mcp-install.js';
@@ -389,6 +396,8 @@ async function main(argvRaw: string[]): Promise<number> {
       return cmdMcp(rest, ctx);
     case 'skill':
       return cmdSkill(rest);
+    case 'adapters':
+      return cmdAdapters(rest, ctx);
     case 'init':
       return cmdInit(rest, ctx);
     case 'doctor':
@@ -1288,8 +1297,8 @@ async function cmdReindex(args: string[], ctx?: CmdCtx): Promise<number> {
 }
 
 /**
- * `crib init [path] [--ide <name|all>]` — the 5-minute onboarding (M4.2). Orchestrates the three
- * setup steps a new user would otherwise run by hand — index, install-hooks, mcp install — then
+ * `crib init [path] [--ide <name|all>]` — the 5-minute onboarding (M4.2). Orchestrates the four
+ * setup steps a new user would otherwise run by hand — index, install-hooks, mcp install, adapters — then
  * prints the hero "next steps" so the value is visible immediately and the path to the first MCP
  * query is one copy-paste. Idempotent: re-running refreshes the index, re-wires hooks (managed
  * blocks replace in place), and re-wires MCP (already-present configs report "up to date"). Does
@@ -1300,14 +1309,22 @@ async function cmdInit(args: string[], ctx?: CmdCtx): Promise<number> {
   const repoRoot = resolve(ctx?.cwdOverride ?? positionalsOf(args)[0] ?? '.');
   const ideIdx = args.indexOf('--ide');
   const ide: McpIde | 'all' = ideIdx >= 0 ? ((args[ideIdx + 1] as McpIde | 'all') ?? 'all') : 'all';
-  const validIdes: Array<McpIde | 'all'> = ['all', 'claude', 'cursor', 'vscode', 'codex'];
+  const validIdes: Array<McpIde | 'all'> = [
+    'all',
+    'claude',
+    'cursor',
+    'vscode',
+    'codex',
+    'windsurf',
+    'gemini',
+  ];
   if (!validIdes.includes(ide)) {
     process.stderr.write(`unknown --ide: ${ide}\nvalid: ${validIdes.join(', ')}\n`);
     return EXIT.BAD_ARGS;
   }
 
   process.stdout.write('crib init — 5-minute onboarding\n');
-  process.stdout.write('  step 1/3: indexing the repo (deterministic, LLM-free)…\n');
+  process.stdout.write('  step 1/4: indexing the repo (deterministic, LLM-free)…\n');
   const indexCode = await cmdIndex([repoRoot], ctx);
   if (indexCode !== EXIT.OK) {
     process.stderr.write(`  index failed (exit ${indexCode}) — aborting init\n`);
@@ -1315,7 +1332,7 @@ async function cmdInit(args: string[], ctx?: CmdCtx): Promise<number> {
   }
 
   process.stdout.write(
-    '  step 2/3: wiring git hooks (post-commit `crib update` + .crib merge driver)…\n',
+    '  step 2/4: wiring git hooks (post-commit `crib update` + .crib merge driver)…\n',
   );
   const hooksCode = cmdInstallHooks([repoRoot], ctx);
   if (hooksCode !== EXIT.OK) {
@@ -1323,12 +1340,18 @@ async function cmdInit(args: string[], ctx?: CmdCtx): Promise<number> {
     return hooksCode;
   }
 
-  process.stdout.write(`  step 3/3: wiring the MCP server into IDE config (--ide ${ide})…\n`);
+  process.stdout.write(`  step 3/4: wiring the MCP server into IDE config (--ide ${ide})…\n`);
   const mcpCode = cmdMcp(['install', '--ide', ide, repoRoot], ctx);
   if (mcpCode !== EXIT.OK) {
     process.stderr.write(`  mcp install failed (exit ${mcpCode}) — aborting init\n`);
     return mcpCode;
   }
+
+  process.stdout.write(
+    '  step 4/4: writing the vendor-neutral agent-memory protocol into instruction files…\n',
+  );
+  // Non-fatal: adapter install never aborts init (a user may not want any instruction files yet).
+  cmdAdapters(['install', '--client', 'all', repoRoot], ctx);
 
   process.stdout.write('\n✓ crib init complete. Next steps:\n');
   process.stdout.write('  1. Restart your IDE so it picks up the MCP server config.\n');
@@ -1336,20 +1359,24 @@ async function cmdInit(args: string[], ctx?: CmdCtx): Promise<number> {
     '  2. Ask your agent "query the crib for <symbol>", or run `crib query <text>`.\n',
   );
   process.stdout.write(
-    '  3. (optional) `crib index --semantic` — add INFERRED embedding-cosine links.\n',
+    '  3. (optional) `crib memory init` — enable team + local agent memory for this repo.\n',
   );
-  process.stdout.write('  4. (optional) `crib enrich --next` — drive the LLM-graph layer.\n');
+  process.stdout.write(
+    '  4. (optional) `crib index --semantic` — add INFERRED embedding-cosine links.\n',
+  );
+  process.stdout.write('  5. (optional) `crib enrich --next` — drive the LLM-graph layer.\n');
   process.stdout.write('  Run `crib doctor` any time to re-check setup health.\n');
   return EXIT.OK;
 }
 
 /**
- * `crib doctor [path]` — setup health check (M4.2). Runs the six onboarding-critical checks and
+ * `crib doctor [path]` — setup health check (M4.2). Runs the seven onboarding-critical checks and
  * prints ✓/✗ + a fix hint for each. A failing check never skips the rest — the point is a full
  * diagnostic in one pass. Exits 0 when every check passes, 1 when any fails, so scripts/CI can
  * detect a broken setup. The Node-version check mirrors bin.ts's launcher guard (the canonical
  * gate, REQUIRED_NODE = 22.5.0 — the node:sqlite requirement); doctor re-runs it so a user on a
- * too-old Node learns it here, not from an opaque `node:sqlite` crash.
+ * too-old Node learns it here, not from an opaque `node:sqlite` crash. The 7th check (agent-memory
+ * loop) is non-fatal while memory is not initialized — it reports ✓ with an opt-in hint.
  */
 function cmdDoctor(args: string[], ctx?: CmdCtx): number {
   const repoRoot = resolve(ctx?.cwdOverride ?? positionalsOf(args)[0] ?? '.');
@@ -1479,6 +1506,40 @@ function cmdDoctor(args: string[], ctx?: CmdCtx): number {
     fix: 'run `crib mcp install` (or `crib init`)',
   });
 
+  // 7. Agent-memory loop (PRD W8): once a user opts in with `crib memory init`, the loop is
+  //    policy.json + team store + at least one instruction adapter present. NOT initialized is a
+  //    valid, non-failing state (memory is opt-in) → reported as ✓ with a hint, not ✗.
+  const memoryDir = join(repoRoot, '.crib', 'memory');
+  const policyFile = join(memoryDir, 'policy.json');
+  const teamDir = join(memoryDir, 'team');
+  if (!existsSync(policyFile)) {
+    checks.push({
+      name: 'agent-memory loop',
+      ok: true,
+      detail: 'not initialized (optional)',
+      fix: 'run `crib memory init` to enable team + local memory',
+    });
+  } else {
+    const teamOk = existsSync(teamDir);
+    let adapterCount = 0;
+    try {
+      adapterCount = listInstructions(repoRoot, { client: 'all', scope: 'project' }).filter(
+        (e) => e.present,
+      ).length;
+    } catch {
+      /* best-effort */
+    }
+    const memOk = teamOk && adapterCount > 0;
+    checks.push({
+      name: 'agent-memory loop',
+      ok: memOk,
+      detail: `policy ✓, team store ${teamOk ? '✓' : '✗'}, ${adapterCount} instruction adapter${adapterCount === 1 ? '' : 's'}`,
+      fix: memOk
+        ? undefined
+        : `${!teamOk ? 'run `crib memory init` (team store missing); ' : ''}${adapterCount === 0 ? 'run `crib adapters install` (no instruction file present)' : ''}`.trim(),
+    });
+  }
+
   let failures = 0;
   for (const c of checks) {
     const mark = c.ok ? '✓' : '✗';
@@ -1538,7 +1599,15 @@ function cmdMcp(args: string[], ctx?: CmdCtx): number {
     else if (!a.startsWith('-')) positionals.push(a);
   }
   const repoRoot = resolve(ctx?.cwdOverride ?? positionals[0] ?? '.');
-  const validIdes: Array<McpIde | 'all'> = ['all', 'claude', 'cursor', 'vscode', 'codex'];
+  const validIdes: Array<McpIde | 'all'> = [
+    'all',
+    'claude',
+    'cursor',
+    'vscode',
+    'codex',
+    'windsurf',
+    'gemini',
+  ];
   if (!validIdes.includes(ide)) {
     process.stderr.write(`unknown --ide: ${ide}\nvalid: ${validIdes.join(', ')}\n`);
     return EXIT.BAD_ARGS;
@@ -1590,7 +1659,7 @@ function cmdMcp(args: string[], ctx?: CmdCtx): number {
     case '-h':
     case '--help':
       process.stderr.write(
-        'usage: crib mcp <install|list|remove> [--ide <claude|cursor|vscode|codex|all>] [--global] [--bin <path>] [path]\n',
+        'usage: crib mcp <install|list|remove> [--ide <claude|cursor|vscode|codex|windsurf|gemini|all>] [--global] [--bin <path>] [path]\n',
       );
       return EXIT.BAD_ARGS;
     default:
@@ -2291,15 +2360,25 @@ function cmdSkill(args: string[]): number {
   const [sub, ...rest] = args;
   let destRoot: string | undefined;
   let name: string | undefined;
+  let client: ClientId | undefined;
   for (let i = 0; i < rest.length; i++) {
     const arg = rest[i]!;
     if (arg === '--dest') {
       const value = rest[++i];
       if (looksLikeFlag(value)) {
-        process.stderr.write('usage: crib skill install [name] [--dest <dir>]\n');
+        process.stderr.write('usage: crib skill install [name] [--dest <dir>] [--client <id>]\n');
         return EXIT.BAD_ARGS;
       }
       destRoot = value;
+      continue;
+    }
+    if (arg === '--client') {
+      const value = rest[++i];
+      if (looksLikeFlag(value) || !value) {
+        process.stderr.write('usage: crib skill install [name] [--client <id>]\n');
+        return EXIT.BAD_ARGS;
+      }
+      client = value as ClientId;
       continue;
     }
     if (arg.startsWith('-')) {
@@ -2314,6 +2393,7 @@ function cmdSkill(args: string[]): number {
       const results = installSkill({
         ...(name ? { name } : {}),
         ...(destRoot ? { destRoot } : {}),
+        ...(client ? { client } : {}),
       });
       for (const r of results) {
         if (r.note) process.stdout.write(`${r.name}: ${r.note}\n`);
@@ -2338,10 +2418,108 @@ function cmdSkill(args: string[]): number {
     case undefined:
     case '-h':
     case '--help':
-      process.stderr.write('usage: crib skill <install|list> [name] [--dest <dir>]\n');
+      process.stderr.write(
+        'usage: crib skill <install|list> [name] [--dest <dir>] [--client <id>]\n',
+      );
       return EXIT.BAD_ARGS;
     default:
       process.stderr.write(`unknown skill subcommand: ${sub}\n`);
+      return EXIT.BAD_ARGS;
+  }
+}
+
+/**
+ * `crib adapters <install|list|remove> [--client <id|all>] [--scope project|global]` (W8, PRD line 394).
+ * Writes the vendor-neutral agent-memory protocol as a managed block into each client's native
+ * instruction file (CLAUDE.md, .cursor/rules/crib.mdc, .github/copilot-instructions.md, AGENTS.md,
+ * .windsurfrules, GEMINI.md) — preserving sibling content byte-for-byte. Removing an adapter removes
+ * only its block; memory lives in `.crib/memory/` + `~/.crib/memory/`, never in these files (PRD exit
+ * gate line 408: "removing an adapter does not remove memory"). Mirrors `crib mcp`'s shape.
+ */
+function cmdAdapters(args: string[], ctx?: CmdCtx): number {
+  const [sub, ...rest] = args;
+  let client: ClientId | 'all' = 'all';
+  let scope: 'project' | 'global' = 'project';
+  let pathArg: string | undefined;
+  for (let i = 0; i < rest.length; i++) {
+    const arg = rest[i]!;
+    if (arg === '--client') {
+      const value = rest[++i];
+      if (looksLikeFlag(value) || !value) {
+        process.stderr.write(
+          'usage: crib adapters <install|list|remove> [--client <id|all>] [--scope project|global]\n',
+        );
+        return EXIT.BAD_ARGS;
+      }
+      client = value as ClientId | 'all';
+      continue;
+    }
+    if (arg === '--scope') {
+      const value = rest[++i];
+      if (value !== 'project' && value !== 'global') {
+        process.stderr.write(`unknown --scope: ${value ?? '(missing)'} (project|global)\n`);
+        return EXIT.BAD_ARGS;
+      }
+      scope = value;
+      continue;
+    }
+    if (arg.startsWith('-')) {
+      process.stderr.write(`unknown adapters option: ${arg}\n`);
+      return EXIT.BAD_ARGS;
+    }
+    // The first non-flag positional is the subcommand (consumed via `sub`); a second one is the path.
+    if (!pathArg && arg !== sub) pathArg = arg;
+  }
+  if (client !== 'all' && !ALL_CLIENTS.includes(client)) {
+    process.stderr.write(
+      `unknown --client: ${client}\nvalid: ${['all', ...ALL_CLIENTS].join(', ')}\n`,
+    );
+    return EXIT.BAD_ARGS;
+  }
+  const repoRoot = resolve(ctx?.cwdOverride ?? pathArg ?? '.');
+
+  switch (sub) {
+    case 'install': {
+      const results = installInstructions(repoRoot, { client, scope });
+      for (const r of results) {
+        if (r.note) process.stdout.write(`${r.client}: ${r.note}\n`);
+        else if (r.path)
+          process.stdout.write(
+            `${r.client}: ${r.written ? 'installed' : 'up to date'} → ${r.path}\n`,
+          );
+      }
+      return EXIT.OK;
+    }
+    case 'list': {
+      const entries = listInstructions(repoRoot, { client, scope });
+      if (entries.length === 0) {
+        process.stdout.write(`no ${scope}-scope instruction files for ${client}\n`);
+        return EXIT.OK;
+      }
+      for (const e of entries)
+        process.stdout.write(`${e.client}: ${e.present ? 'present' : 'absent'} → ${e.path}\n`);
+      return EXIT.OK;
+    }
+    case 'remove': {
+      const results = removeInstructions(repoRoot, { client, scope });
+      for (const r of results) {
+        if (r.note) process.stdout.write(`${r.client}: ${r.note}\n`);
+        else if (r.path)
+          process.stdout.write(
+            `${r.client}: ${r.written ? 'removed' : 'not present'} → ${r.path}\n`,
+          );
+      }
+      return EXIT.OK;
+    }
+    case undefined:
+    case '-h':
+    case '--help':
+      process.stderr.write(
+        'usage: crib adapters <install|list|remove> [--client <id|all>] [--scope project|global]\n',
+      );
+      return EXIT.BAD_ARGS;
+    default:
+      process.stderr.write(`unknown adapters subcommand: ${sub}\n`);
       return EXIT.BAD_ARGS;
   }
 }
@@ -3417,11 +3595,13 @@ function printHelp(): void {
       '  crib enrich [path] [--budget-tokens N]    semantic work queue; --next (token-packed batch) | run --provider <name> [--max-tokens N --max-batches N --concurrency N] | --auto [--provider <name>] | --save <file> | --overview | --scopes | --prune-stale [--apply]',
       '  crib memory <init|evaluate|activate|propose|attest>   trusted agent-memory promotion: init policy | evaluate <cand> --profile <name> | activate <cand> | propose <mem-id> | attest <cand> (TTY)',
       '  crib audit-llm [path]                    re-verify every LLM artifact against the soul (grounding moat); exits non-zero on ungrounded/drift',
-      '  crib mcp <install|list|remove> [--ide <claude|cursor|vscode|codex|all>] [--global] [--bin <path>] [path]',
+      '  crib mcp <install|list|remove> [--ide <claude|cursor|vscode|codex|windsurf|gemini|all>] [--global] [--bin <path>] [path]',
       '                                          auto-wire the MCP server into each IDE config (REQ-2)',
-      '  crib skill <install|list> [name] [--dest <dir>]   install bundled skills (default ~/.claude/skills; Codex: --dest ~/.codex/skills)',
-      '  crib init [path] [--ide <name|all>]      5-minute onboarding: index + install-hooks + mcp install + next-steps hero',
-      '  crib doctor [path]                       setup health check: node/corepack/index-freshness/hooks/IDE-wiring (✓/✗ + fix hints)',
+      '  crib adapters <install|list|remove> [--client <id|all>] [--scope project|global]',
+      '                                          write the vendor-neutral agent-memory protocol into each client instruction file (W8)',
+      '  crib skill <install|list> [name] [--dest <dir>] [--client <claude|cursor>]   install bundled skills (default ~/.claude/skills)',
+      '  crib init [path] [--ide <name|all>]      5-minute onboarding: index + install-hooks + mcp install + adapters + next-steps hero',
+      '  crib doctor [path]                       setup health check: node/corepack/index-freshness/hooks/IDE-wiring/memory-loop (✓/✗ + fix hints)',
       '',
       'Global: --cwd <path>   override the project root for any command',
       '',

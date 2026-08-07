@@ -151,12 +151,87 @@ describe('installMcp — codex (TOML, snake_case, absolute path, project + globa
   });
 });
 
+describe('installMcp — windsurf (global-only, json-mcpServers)', () => {
+  it('global: writes ~/.codeium/windsurf/mcp_config.json under mcpServers', () => {
+    const r = first(installMcp(repo, { ide: 'windsurf', scope: 'global', bin: BIN }));
+    expect(r.written).toBe(true);
+    expect(r.configPath).toBe(join(home, '.codeium', 'windsurf', 'mcp_config.json'));
+    expect(r.args).toEqual(['serve', repo]); // windsurf has no interpolation → absolute path
+    const cfg = parse(r.configPath);
+    const entry = (cfg.mcpServers as Record<string, { command: string; args: string[] }>)[NAME]!;
+    expect(entry.command).toBe(RESOLVED_BIN);
+    expect(entry.args).toEqual(['serve', repo]);
+  });
+
+  it('project scope is unsupported → notes + skips (no file written)', () => {
+    const r = first(installMcp(repo, { ide: 'windsurf', scope: 'project', bin: BIN }));
+    expect(r.written).toBe(false);
+    expect(r.note).toMatch(/does not support project-scope/);
+    expect(r.configPath).toBe('');
+  });
+
+  it('preserves sibling servers under mcpServers and is idempotent', () => {
+    installMcp(repo, { ide: 'windsurf', scope: 'global', bin: BIN });
+    const cfg = parse(join(home, '.codeium', 'windsurf', 'mcp_config.json'));
+    (cfg.mcpServers as Record<string, unknown>).other = { command: 'x', args: [] };
+    writeFileSync(join(home, '.codeium', 'windsurf', 'mcp_config.json'), JSON.stringify(cfg));
+    const second = first(installMcp(repo, { ide: 'windsurf', scope: 'global', bin: BIN }));
+    expect(second.written).toBe(false); // byte-identical re-run is a no-op
+    const after = parse(join(home, '.codeium', 'windsurf', 'mcp_config.json'));
+    expect((after.mcpServers as Record<string, unknown>).other).toBeDefined();
+  });
+});
+
+describe('installMcp — gemini (project + global, json-mcpServers, portable ".")', () => {
+  it('project: writes .gemini/settings.json with portable ["serve","."]', () => {
+    const r = first(installMcp(repo, { ide: 'gemini', scope: 'project', bin: BIN }));
+    expect(r.written).toBe(true);
+    expect(r.configPath).toBe(join(repo, '.gemini', 'settings.json'));
+    expect(r.args).toEqual(['serve', '.']); // project-scope runs with CWD=root → portable
+    const cfg = parse(r.configPath);
+    const entry = (cfg.mcpServers as Record<string, { command: string; args: string[] }>)[NAME]!;
+    expect(entry.command).toBe(RESOLVED_BIN);
+    expect(entry.args).toEqual(['serve', '.']);
+  });
+
+  it('global: writes ~/.gemini/settings.json (absolute path)', () => {
+    const r = first(installMcp(repo, { ide: 'gemini', scope: 'global', bin: BIN }));
+    expect(r.written).toBe(true);
+    expect(r.configPath).toBe(join(home, '.gemini', 'settings.json'));
+    expect(r.args).toEqual(['serve', repo]); // global needs an absolute path
+    expect(existsSync(r.configPath)).toBe(true);
+  });
+
+  it('project preserves sibling mcpServers and is idempotent', () => {
+    mkdirSync(join(repo, '.gemini'), { recursive: true });
+    writeFileSync(
+      join(repo, '.gemini', 'settings.json'),
+      JSON.stringify({ mcpServers: { other: { command: 'x', args: [] } } }),
+    );
+    installMcp(repo, { ide: 'gemini', scope: 'project', bin: BIN });
+    const cfg = parse(join(repo, '.gemini', 'settings.json'));
+    expect((cfg.mcpServers as Record<string, unknown>).other).toBeDefined();
+    const second = first(installMcp(repo, { ide: 'gemini', scope: 'project', bin: BIN }));
+    expect(second.written).toBe(false);
+  });
+});
+
 describe('installMcp — --ide all', () => {
-  it('writes all four project-scope configs in one call', () => {
+  it('writes all project-scope configs in one call (windsurf skipped — global-only upstream)', () => {
     const results = installMcp(repo, { ide: 'all', scope: 'project', bin: BIN });
+    // all six ides return a result (windsurf as a non-fatal skip: project-scope unsupported upstream).
     const ides = results.map((r) => r!.ide).sort();
-    expect(ides).toEqual(['claude', 'codex', 'cursor', 'vscode']);
-    for (const r of results) expect(r!.written).toBe(true);
+    expect(ides).toEqual(['claude', 'codex', 'cursor', 'gemini', 'vscode', 'windsurf']);
+    // the five supported project-scope ides wrote a config; windsurf is a skip (written:false + note).
+    for (const r of results) {
+      if (r!.ide === 'windsurf') {
+        expect(r!.written).toBe(false);
+        expect(r!.note).toBeDefined();
+        expect(r!.configPath).toBe('');
+      } else {
+        expect(r!.written).toBe(true);
+      }
+    }
   });
 });
 
@@ -164,12 +239,13 @@ describe('listMcp + removeMcp', () => {
   it('list reports present/absent and remove strips only the managed entry', () => {
     installMcp(repo, { ide: 'all', scope: 'project', bin: BIN });
     const list = listMcp(repo, { scope: 'project' });
+    // listMcp skips null targets (windsurf has no project-scope config) → 5 present ides.
     expect(
       list
         .filter((e) => e.present)
         .map((e) => e.ide)
         .sort(),
-    ).toEqual(['claude', 'codex', 'cursor', 'vscode']);
+    ).toEqual(['claude', 'codex', 'cursor', 'gemini', 'vscode']);
 
     // Seed a sibling server into claude's file, then remove knowledge-crib only.
     const claudePath = join(repo, '.mcp.json');

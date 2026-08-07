@@ -25,9 +25,9 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { spliceManaged } from './hooks.js';
 
-export type McpIde = 'claude' | 'cursor' | 'vscode' | 'codex';
+export type McpIde = 'claude' | 'cursor' | 'vscode' | 'codex' | 'windsurf' | 'gemini';
 export type McpScope = 'project' | 'global';
-const ALL_IDES: McpIde[] = ['claude', 'cursor', 'vscode', 'codex'];
+const ALL_IDES: McpIde[] = ['claude', 'cursor', 'vscode', 'codex', 'windsurf', 'gemini'];
 const SERVER_NAME = 'knowledge-crib';
 
 /** Marker pair delimiting the managed TOML block (Codex config). */
@@ -130,8 +130,11 @@ function buildArgs(ide: McpIde, scope: McpScope, repoRoot: string): string[] {
   if (ide === 'cursor' || ide === 'vscode') return ['serve', '${workspaceFolder}'];
   // Claude Code project-scope spawns with CWD=project root, so '.' is portable + works.
   if (ide === 'claude' && scope === 'project') return ['serve', '.'];
-  // Codex has no interpolation; Claude global + Codex both need an absolute path. The global Claude
-  // entry below uses no-arg resolution instead — see installClaudeGlobal.
+  // Gemini CLI project-scope runs with CWD=project root (the .gemini/settings.json lives in the
+  // repo), so '.' is portable + correct — avoids baking an absolute path into a committed file.
+  if (ide === 'gemini' && scope === 'project') return ['serve', '.'];
+  // Codex has no interpolation; Claude/Gemini global + Codex + Windsurf all need an absolute path.
+  // The global Claude entry below uses no-arg resolution instead — see installClaudeGlobal.
   return ['serve', repoRoot];
 }
 
@@ -165,6 +168,25 @@ function targetFor(ide: McpIde, scope: McpScope, repoRoot: string): McpTarget | 
       return scope === 'project'
         ? { configPath: join(repoRoot, '.codex', 'config.toml'), format: 'toml' }
         : { configPath: join(home, '.codex', 'config.toml'), format: 'toml' };
+    case 'windsurf':
+      // Windsurf supports GLOBAL MCP config only (`~/.codeium/windsurf/mcp_config.json`, root key
+      // `mcpServers`, stdio = command+args). No project-scoped MCP file (upstream) → project = null.
+      // Verified against https://docs.windsurf.com/plugins/cascade/mcp.
+      return scope === 'global'
+        ? {
+            configPath: join(home, '.codeium', 'windsurf', 'mcp_config.json'),
+            format: 'json-mcpServers',
+          }
+        : null;
+    case 'gemini':
+      // Gemini CLI: `mcpServers` root key (stdio = command+args), stdio `command`+`args`. Project =
+      // `.gemini/settings.json` (committed, portable with '.' args); global = `~/.gemini/settings.json`.
+      // Avoid underscores in the server name — the Gemini policy parser splits `mcp_<name>_<tool>`
+      // on the first underscore; `knowledge-crib` (hyphenated) is safe. Verified against
+      // https://google-gemini.github.io/gemini-cli/docs/tools/mcp-server.html.
+      return scope === 'project'
+        ? { configPath: join(repoRoot, '.gemini', 'settings.json'), format: 'json-mcpServers' }
+        : { configPath: join(home, '.gemini', 'settings.json'), format: 'json-mcpServers' };
   }
 }
 
