@@ -32,7 +32,14 @@ import {
 } from '@knowledge-crib/core';
 import type { IndexStore } from '@knowledge-crib/core';
 import { EnrichmentStore, Verbs, estimateTokens, serveStdio } from '@knowledge-crib/mcp';
-import type { EnrichLayer, EnrichSaveItem, EnrichScope, VcsAdapter } from '@knowledge-crib/mcp';
+import type {
+  EnrichLayer,
+  EnrichNextBatch,
+  EnrichSaveItem,
+  EnrichScope,
+  EnrichWorkItem,
+  VcsAdapter,
+} from '@knowledge-crib/mcp';
 import {
   type AttemptOutcome,
   type AttemptPhase,
@@ -99,6 +106,7 @@ import { DEFAULT_IGNORES } from '@knowledge-crib/pipeline';
 import type { WorkspaceLayout } from '@knowledge-crib/pipeline';
 import { blake3Hex } from '@knowledge-crib/soul-schema';
 import { buildVizGraph, buildVizOverview, vizAssetsDir } from '@knowledge-crib/ui';
+import { type ProviderDef, resolveProvider, runProviderBatch } from './enrich-provider.js';
 import { hooksInstalled, installHooks, mergeDriverFiles } from './hooks.js';
 import { type McpIde, type McpScope, installMcp, listMcp, removeMcp } from './mcp-install.js';
 import { registerProject } from './registry.js';
@@ -1790,21 +1798,171 @@ async function cmdViz(args: string[], ctx?: CmdCtx): Promise<number> {
  * Usage:
  *   crib enrich [path] [--budget-tokens N]            coverage + pending count + follow-up hint
  *   crib enrich --next [path] [--layer L] [--limit N] [--scope PFX] [--budget-tokens N]  print the next grounded batch
- *   crib enrich --auto [path] [--max-tokens N] [--max-batches N] [--layer L] [--scope PFX] [--budget-tokens N]
- *                                                       bounded autonomous loop (stub-authors + saves per batch)
+ *   crib enrich run --provider <name> [path] [--max-tokens N] [--max-batches N] [--concurrency N]
+ *                                  [--layer L] [--scope PFX] [--budget-tokens N] [--providers-file F]
+ *                                  bounded autonomous loop that hands each work item to an external
+ *                                  provider from ~/.crib/providers.json (shell:false, strict JSON).
+ *                                  Stops at a layer boundary, rejection, budget, or zero progress.
+ *   crib enrich --auto [path] [--provider <name>] [--max-tokens N] [--max-batches N] ...
+ *                                  DEPRECATED alias for `run --provider <name>`. Bare `--auto` (no
+ *                                  --provider) no longer writes confidence-0.1 stubs (W7: stubs that
+ *                                  masquerade as fresh are gone — only grounded `verified` artifacts
+ *                                  satisfy coverage). It prints pending + guidance and exits.
  *   crib enrich --save <file> [path] [--scope PFX]   persist a {batchId, items[]} JSON batch
  *   crib enrich --overview [path] [--scope PFX]     print the bible (scoped to PFX if given)
  *   crib enrich --scopes [path] [--budget-tokens N] ranked path-prefix scopes for the picker
  *
  * `--budget-tokens N` is a per-batch PACKER (not a guard): `--next` fills a batch whose estimated
  * cost fits N, capped at `--limit` (default 25). If the first item alone exceeds N it is returned
- * alone with `oversized:true` (the queue never stalls). `--auto --max-tokens N` bounds the whole
- * turn (sum of batch costs); `--auto --max-batches N` caps the batch count; the loop also stops at
- * a layer boundary and breaks on zero-progress or rejects (exit non-zero).
+ * alone with `oversized:true` (the queue never stalls). `run --provider --max-tokens N` bounds the
+ * whole turn (sum of batch costs); `--max-batches N` caps the batch count (default 5); the loop also
+ * stops at a layer boundary and breaks on zero-progress or rejects (exit non-zero). `--concurrency N`
+ * sets parallel provider calls (default 1, max 4).
+ *
+ * W7 semantic quality: only grounded `verified` artifacts satisfy coverage. `run --provider` and the
+ * MCP host-agent path both author real artifacts; a provider/authoring failure leaves the target
+ * pending and resumable — it is re-offered next run.
  *
  * `--scope <prefix>` restricts status/next to in-scope targets (system layer is whole-repo only).
  * `--scope-cluster <cluster>` optionally refines inside the prefix. `--scopes` is a discovery view.
  */
+/**
+ * W7 — the bounded autonomous provider loop shared by `crib enrich run --provider <name>` and the
+ * `--auto --provider <name>` alias (PRD line 383). Drives the SAME deterministic queue as the MCP
+ * host-agent path (`enrich_next` → author → `enrich_save`), but hands each work item to an external
+ * provider program from `~/.crib/providers.json`.
+ *
+ * Lock discipline (PRD line: never hold a filesystem lock while an enrichment provider is running):
+ * the crib lock is held ONLY around `enrich.next()` and `enrich.save()` — the short, deterministic
+ * queue/persistence critical sections — and RELEASED for the provider exec in between, which can take
+ * minutes. A provider call therefore never blocks `crib update` / `crib serve` / another `crib enrich`.
+ *
+ * Stop conditions (PRD line 389): layer boundary, rejection (save rejects a grounding/secret failure),
+ * budget (`spent + batchCost > maxTokens`), zero progress (same batchId re-issued with no save
+ * landing), or `maxBatches`. A per-item PROVIDER failure (non-zero exit, timeout, bad JSON) is NOT a
+ * stop — the failed item is simply not saved, so it stays pending and is re-offered next run (PRD exit
+ * gate line 392: "provider failure leaves work pending and resumable"). If every item in a batch fails
+ * at the provider, nothing is saved → the next `next()` re-issues the same batchId → zero-progress stop.
+ */
+async function runProviderEnrichLoop(opts: {
+  cribDir: string;
+  enrich: EnrichmentStore;
+  def: ProviderDef;
+  nextArgs: { layer?: EnrichLayer; scope?: EnrichScope; budgetTokens?: number };
+  maxTokens: number;
+  maxBatches: number;
+  concurrency: number;
+  timeoutMs?: number;
+}): Promise<number> {
+  const { cribDir, enrich, def, nextArgs, maxTokens, maxBatches, concurrency, timeoutMs } = opts;
+  let spent = 0;
+  let batches = 0;
+  let startLayer: EnrichLayer | undefined;
+  let lastBatchId: string | undefined;
+  let totalAccepted = 0;
+  let totalFailed = 0;
+  /** Run a short critical section under the crib lock, returning its value (not constrained to a
+   *  number like {@link runLocked}). Surfaces a lock-busy as EXIT.LOCKED. */
+  const locked = async <T>(fn: () => T | Promise<T>): Promise<T | number> => {
+    try {
+      return await withCribLockAsync({ cribDir }, fn);
+    } catch (e) {
+      if (e instanceof LockBusyError) {
+        process.stderr.write(`${e.message}\n`);
+        return EXIT.LOCKED;
+      }
+      throw e;
+    }
+  };
+  while (true) {
+    // 1. Critical section: pull the next batch under the crib lock, then release for provider exec.
+    const nextResult = await locked(() => enrich.next(nextArgs));
+    if (typeof nextResult === 'number') return nextResult;
+    const batch = nextResult as EnrichNextBatch;
+    if (batch.items.length === 0) {
+      process.stdout.write(`run: nothing pending for layer ${batch.layer} — done.\n`);
+      break;
+    }
+    if (batch.zeroProgress || batch.batchId === lastBatchId) {
+      process.stderr.write(
+        `zero-progress: batchId ${batch.batchId} re-issued for layer ${batch.layer} with no save landing — stopping.\n`,
+      );
+      return EXIT.ERROR;
+    }
+    if (startLayer === undefined) startLayer = batch.layer;
+    else if (batch.layer !== startLayer) {
+      process.stdout.write(
+        `run: layer boundary ${startLayer} → ${batch.layer} — stopping for review.\n`,
+      );
+      break;
+    }
+    const batchCost = batch.costEstimate?.batch ?? 0;
+    if (batches > 0 && spent + batchCost > maxTokens) {
+      process.stdout.write(
+        `run: token ceiling reached (~${spent} spent + ~${batchCost} next > ${maxTokens}) — stopping.\n`,
+      );
+      break;
+    }
+    lastBatchId = batch.batchId;
+
+    // 2. Provider exec — NO crib lock held (PRD: never hold the lock during a provider run).
+    const outcomes = await runProviderBatch(def, batch.items as EnrichWorkItem[], {
+      ...(timeoutMs ? { timeoutMs } : {}),
+      concurrencyOverride: concurrency,
+    });
+    const saveItems: EnrichSaveItem[] = [];
+    for (const o of outcomes) {
+      if (o.ok) saveItems.push(o.item);
+      else {
+        totalFailed++;
+        process.stderr.write(`run: provider failed for ${o.targetId}: ${o.reason}\n`);
+      }
+    }
+
+    // 3. Critical section: persist accepted items under the lock. Rejection here is a real stop
+    //    (grounding/secret failure — the provider returned content that failed the moat).
+    let rejectedCount = 0;
+    if (saveItems.length > 0) {
+      const saveResult = await locked(
+        () =>
+          enrich.save({ batchId: batch.batchId, items: saveItems }) as {
+            accepted: unknown[];
+            rejected: Array<{ targetId: string; reason: string }>;
+          },
+      );
+      if (typeof saveResult === 'number') return saveResult;
+      const result = saveResult as {
+        accepted: unknown[];
+        rejected: Array<{ targetId: string; reason: string }>;
+      };
+      rejectedCount = result.rejected.length;
+      if (rejectedCount > 0) {
+        process.stderr.write(
+          `run: ${rejectedCount} item(s) rejected by grounding/secret check — stopping for review:\n${result.rejected.map((r) => `  ${r.targetId}: ${r.reason}`).join('\n')}\n`,
+        );
+        return EXIT.ERROR;
+      }
+      totalAccepted += result.accepted.length;
+    }
+    spent += batchCost;
+    batches += 1;
+    process.stdout.write(
+      `run batch ${batches}: layer=${batch.layer} accepted=${saveItems.length - rejectedCount}` +
+        ` provider-failed=${outcomes.filter((o) => !o.ok).length}` +
+        ` remaining=${batch.remaining} cost=${batchCost} spent=${spent}/${maxTokens}\n`,
+    );
+    if (batches >= maxBatches) {
+      process.stdout.write(`run: max-batches reached (${maxBatches}) — stopping for review.\n`);
+      break;
+    }
+  }
+  process.stdout.write(
+    `run: ${batches} batch(es), ${totalAccepted} accepted, ${totalFailed} provider failure(s)` +
+      ` (~${spent} tokens spent)${startLayer ? `, layer ${startLayer}` : ''}.\n`,
+  );
+  return EXIT.OK;
+}
+
 async function cmdEnrich(args: string[], ctx?: CmdCtx): Promise<number> {
   // Strip --save <file> so the file path is not misinterpreted as the project root.
   const rootArgs = args.slice();
@@ -1812,6 +1970,8 @@ async function cmdEnrich(args: string[], ctx?: CmdCtx): Promise<number> {
   if (saveIdx >= 0) {
     rootArgs.splice(saveIdx, 2);
   }
+  // Strip the `run` subcommand positional so it is not misread as a project-root path.
+  if (rootArgs[0] === 'run') rootArgs.splice(0, 1);
   const resolved = resolveRoot(rootArgs, ctx);
   if (!isIndexedRoot(resolved)) {
     process.stderr.write('not indexed — run `crib index` first\n');
@@ -1895,7 +2055,30 @@ async function cmdEnrich(args: string[], ctx?: CmdCtx): Promise<number> {
     return EXIT.OK;
   }
 
-  if (args.includes('--auto')) {
+  // W7 — `crib enrich run --provider <name>` and the `--auto --provider <name>` alias share the
+  // bounded provider loop. Bare `--auto` (no --provider) no longer writes confidence-0.1 stubs: W7
+  // made only grounded `verified` artifacts satisfy coverage, so a stub (legacy) would not advance
+  // the queue anyway — it would just spin to zero-progress. Print pending + guidance instead.
+  const isRunSubcmd = args[0] === 'run';
+  const providerIdx = args.indexOf('--provider');
+  const providerName = providerIdx >= 0 ? args[providerIdx + 1] : undefined;
+  if (isRunSubcmd || (args.includes('--auto') && providerName !== undefined)) {
+    if (providerName === undefined || providerName.startsWith('--')) {
+      process.stderr.write(
+        'error: `crib enrich run` requires --provider <name> (defined in ~/.crib/providers.json).\n' +
+          '  example: crib enrich run --provider my-agent\n',
+      );
+      return EXIT.BAD_ARGS;
+    }
+    const providersFileIdx = args.indexOf('--providers-file');
+    const providersFile = providersFileIdx >= 0 ? args[providersFileIdx + 1] : undefined;
+    let def: ProviderDef;
+    try {
+      def = resolveProvider(providerName, providersFile).def;
+    } catch (e) {
+      process.stderr.write(`error: ${(e as Error).message}\n`);
+      return EXIT.BAD_ARGS;
+    }
     const layerIdx = args.indexOf('--layer');
     const layer = layerIdx >= 0 ? (args[layerIdx + 1] as EnrichLayer | undefined) : undefined;
     const maxTokensIdx = args.indexOf('--max-tokens');
@@ -1904,101 +2087,47 @@ async function cmdEnrich(args: string[], ctx?: CmdCtx): Promise<number> {
     const maxBatchesIdx = args.indexOf('--max-batches');
     const maxBatchesRaw =
       maxBatchesIdx >= 0 ? Number.parseInt(args[maxBatchesIdx + 1] ?? '', 10) : undefined;
-    // Turn-level bounds (distinct from --budget-tokens, the per-batch packer ceiling). Defaults match
-    // the /crib-enrich skill's Phase 1-auto loop so a bare `crib enrich --auto` behaves identically to
-    // the interactive autonomous mode: ~100k tokens, ≤5 batches, stop at a layer boundary for review.
+    const concurrencyIdx = args.indexOf('--concurrency');
+    const concurrencyRaw =
+      concurrencyIdx >= 0 ? Number.parseInt(args[concurrencyIdx + 1] ?? '', 10) : undefined;
+    const timeoutIdx = args.indexOf('--timeout-ms');
+    const timeoutRaw =
+      timeoutIdx >= 0 ? Number.parseInt(args[timeoutIdx + 1] ?? '', 10) : undefined;
+    // Defaults per PRD line 388: ≤5 batches, 100k tokens. Concurrency default 1, max 4 (line 387).
     const maxTokens = Number.isFinite(maxTokensRaw) && maxTokensRaw! > 0 ? maxTokensRaw! : 100_000;
     const maxBatches = Number.isFinite(maxBatchesRaw) && maxBatchesRaw! > 0 ? maxBatchesRaw! : 5;
-    return runLocked(resolved.cribDir, () => {
-      let spent = 0;
-      let batches = 0;
-      let startLayer: EnrichLayer | undefined;
-      let lastBatchId: string | undefined;
-      const nextArgs = {
-        ...(layer ? { layer } : {}),
-        ...(scope ? { scope } : {}),
-        ...(budget ? { budgetTokens: budget } : {}),
-      };
-      while (true) {
-        const batch = enrich.next(nextArgs);
-        // Nothing left for this layer/scope (pending drained) — done, not an error.
-        if (batch.items.length === 0) {
-          process.stdout.write(`auto: nothing pending for layer ${batch.layer} — done.\n`);
-          break;
-        }
-        // Zero-progress: the same batchId was already issued with no save landing. A headless driver
-        // hitting this is the churn trap — break non-zero so CI/loops notice instead of spinning.
-        if (batch.zeroProgress || batch.batchId === lastBatchId) {
-          process.stderr.write(
-            `zero-progress: batchId ${batch.batchId} re-issued for layer ${batch.layer} with no save landing — stopping (run \`crib enrich --next\` + \`--save\` to advance).\n`,
-          );
-          return EXIT.ERROR;
-        }
-        // Layer boundary: the queue advanced to a new layer since the first batch. Stop for human
-        // review rather than silently grinding through every layer in one turn.
-        if (startLayer === undefined) startLayer = batch.layer;
-        else if (batch.layer !== startLayer) {
-          process.stdout.write(
-            `auto: layer boundary ${startLayer} → ${batch.layer} — stopping for review.\n`,
-          );
-          break;
-        }
-        const batchCost = batch.costEstimate?.batch ?? 0;
-        // Token ceiling bounds the TURN, not the batch: the first batch always runs (batches===0 guard)
-        // so a single fat batch still makes progress; subsequent batches stop before overshooting.
-        if (batches > 0 && spent + batchCost > maxTokens) {
-          process.stdout.write(
-            `auto: token ceiling reached (~${spent} spent + ~${batchCost} next > ${maxTokens}) — stopping.\n`,
-          );
-          break;
-        }
-        lastBatchId = batch.batchId;
-        // Stub-author each item: the CLI has no model, so --auto cannot produce real analyses. A stub
-        // (model 'crib-auto-stub', confidence 0.1, empty graph/evidence) passes validation and marks
-        // its target fresh for queue purposes (read() checks nodeHash+schemaVersion, NOT grounded) — so
-        // the queue advances and a later /crib-enrich pass refines the stubs. Grounding/audit-llm will
-        // flag stubs as ungrounded in diagnostics, which is the correct signal: they are placeholders.
-        const items: EnrichSaveItem[] = batch.items.map((item) => ({
-          targetId: item.targetId,
-          model: 'crib-auto-stub',
-          analysis: {
-            purpose: 'Auto-stub placeholder — refine via /crib-enrich.',
-            responsibilities: [],
-            confidence: 0.1,
-          },
-          graph: { nodes: [], edges: [] },
-          evidence: [],
-        }));
-        const result = enrich.save({ batchId: batch.batchId, items }) as {
-          accepted: unknown[];
-          rejected: Array<{ targetId: string; reason: string }>;
-        };
-        if (result.rejected.length > 0) {
-          process.stderr.write(
-            `auto: ${result.rejected.length} item(s) rejected — stopping for review:\n${result.rejected.map((r) => `  ${r.targetId}: ${r.reason}`).join('\n')}\n`,
-          );
-          return EXIT.ERROR;
-        }
-        spent += batchCost;
-        batches += 1;
-        process.stdout.write(
-          `auto batch ${batches}: layer=${batch.layer} accepted=${result.accepted.length}` +
-            ` remaining=${batch.remaining} cost=${batchCost} spent=${spent}/${maxTokens}\n`,
-        );
-        if (batches >= maxBatches) {
-          process.stdout.write(
-            `auto: max-batches reached (${maxBatches}) — stopping for review.\n`,
-          );
-          break;
-        }
-      }
-      process.stdout.write(
-        `auto: ${batches} batch(es), ~${spent} tokens spent${
-          startLayer ? `, layer ${startLayer}` : ''
-        }. Refine stubs via /crib-enrich.\n`,
-      );
-      return EXIT.OK;
+    const concurrency =
+      Number.isFinite(concurrencyRaw) && concurrencyRaw! > 0 ? concurrencyRaw! : 1;
+    const timeoutMs = Number.isFinite(timeoutRaw) && timeoutRaw! > 0 ? timeoutRaw! : undefined;
+    const nextArgs = {
+      ...(layer ? { layer } : {}),
+      ...(scope ? { scope } : {}),
+      ...(budget ? { budgetTokens: budget } : {}),
+    };
+    return runProviderEnrichLoop({
+      cribDir: resolved.cribDir,
+      enrich,
+      def,
+      nextArgs,
+      maxTokens,
+      maxBatches,
+      concurrency,
+      ...(timeoutMs ? { timeoutMs } : {}),
     });
+  }
+
+  if (args.includes('--auto')) {
+    // W7: bare `--auto` (no --provider) can no longer write confidence-0.1 stubs that appear fresh
+    // (PRD line 382). Only grounded `verified` artifacts satisfy coverage now, so stubs would not
+    // advance the queue. Report real pending + point at the provider loop / MCP skill instead.
+    const st = enrich.status({
+      ...(scope ? { scope } : {}),
+    });
+    const pending = st.progress?.pending ?? 0;
+    process.stdout.write(
+      `--auto without --provider no longer writes stubs (W7: only grounded verified artifacts satisfy coverage).\npending targets: ${pending}. To author them:\n  • provider loop: crib enrich run --provider <name>   (defined in ~/.crib/providers.json)\n  • MCP host-agent: use the /crib-enrich skill (enrich_next → author → enrich_save)\n  • one batch:     crib enrich --next  then  crib enrich --save <file>\n`,
+    );
+    return EXIT.OK;
   }
 
   if (args.includes('--next')) {
@@ -3285,7 +3414,7 @@ function printHelp(): void {
       '  crib install-hooks [path]                wire post-commit + .gitattributes + merge driver',
       '  crib export [--format F] [--procedure P] [--extracted-only] [--redact|--no-redact] render graph: rules|mermaid|graph.json|report|llm',
       '  crib viz [path] [--port N]               serve the offline web UI (Claude Design DC graph) + open browser',
-      '  crib enrich [path] [--budget-tokens N]    semantic work queue; --next (token-packed batch) | --auto [--max-tokens N --max-batches N] | --save <file> | --overview | --scopes | --prune-stale [--apply]',
+      '  crib enrich [path] [--budget-tokens N]    semantic work queue; --next (token-packed batch) | run --provider <name> [--max-tokens N --max-batches N --concurrency N] | --auto [--provider <name>] | --save <file> | --overview | --scopes | --prune-stale [--apply]',
       '  crib memory <init|evaluate|activate|propose|attest>   trusted agent-memory promotion: init policy | evaluate <cand> --profile <name> | activate <cand> | propose <mem-id> | attest <cand> (TTY)',
       '  crib audit-llm [path]                    re-verify every LLM artifact against the soul (grounding moat); exits non-zero on ungrounded/drift',
       '  crib mcp <install|list|remove> [--ide <claude|cursor|vscode|codex|all>] [--global] [--bin <path>] [path]',

@@ -45,6 +45,29 @@ import { DEFAULT_BATCH_TOKENS, estimateTokens } from './token-budget.js';
 export type EnrichLayer = 'symbol' | 'file' | 'cluster' | 'system';
 
 /**
+ * W7 — semantic quality tier (PRD line 379). Every artifact carries one:
+ *   • `verified` — grounded (≥1 evidence quote passed M1.3 overlap). ONLY `verified` satisfies
+ *     enrichment coverage (PRD line 380); a fresh-but-unverified artifact is still pending repair.
+ *   • `draft` — a skeleton (`mode==='skeleton'`) Phase-0.5 pass; authored but not yet verified.
+ *   • `legacy` — a full (non-skeleton) artifact that is NOT grounded: a pre-quality-era artifact or a
+ *     confidence-0.1 stub. Kept for read-backward-compat but never satisfies coverage.
+ *
+ * Stamped at save time when known; `qualityOf` derives it on read for pre-W7 artifacts (no `quality`
+ * field), so the W7 migration is implicit — no on-disk rewrite required to start enforcing coverage.
+ */
+export type QualityTier = 'verified' | 'draft' | 'legacy';
+
+/** Derive an artifact's quality tier. Prefers the stamped `quality` field; falls back to the
+ *  pre-W7 signals (`mode==='skeleton'` → draft, `grounded===true` → verified, else legacy) so existing
+ *  on-disk artifacts are classified without a rewrite. Pure. */
+export function qualityOf(a: LlmArtifact): QualityTier {
+  if (a.quality) return a.quality;
+  if (a.mode === 'skeleton') return 'draft';
+  if (a.grounded === true) return 'verified';
+  return 'legacy';
+}
+
+/**
  * M2.7 model-tier hint. A deterministic, per-item recommendation for which model tier a host should
  * author the artifact with. The crib never calls a model — the host does — so this is a *contract*
  * the host's dispatcher reads to route items to the right tier. Symbols are the bulk (many small
@@ -325,6 +348,8 @@ export interface AuditTarget {
   stale: boolean;
   /** the artifact's stamped save-time verdict (absent on pre-M1.3 artifacts). */
   stampedGrounded?: boolean;
+  /** W7 — the artifact's derived quality tier (verified/draft/legacy). */
+  quality: QualityTier;
   /** the recomputed verdict (rehydrated against the CURRENT soul). */
   grounded: boolean;
   score: number;
@@ -365,12 +390,20 @@ export interface LlmArtifact {
   /** M1.3 grounding verdict stamped at save time: true iff ≥1 evidence quote was verified against a
    *  rehydrated span. Absent on pre-M1.3 artifacts (audit-llm recomputes). */
   grounded?: boolean;
+  /** W7 semantic quality tier (PRD line 379). Stamped at save time; absent on pre-W7 artifacts
+   *  (`qualityOf` derives it from `mode`/`grounded`). Only `verified` satisfies coverage. */
+  quality?: QualityTier;
 }
 
 export interface LlmRead {
   artifact?: LlmArtifact;
   missing: boolean;
   stale: boolean;
+  /** W7 — true when an artifact is present and fresh (not stale) but its quality tier is NOT
+   *  `verified` (a draft skeleton or a legacy/ungrounded artifact). Such a target is still PENDING
+   *  repair — it does not satisfy coverage — so the queue re-offers it. The artifact is carried so a
+   *  caller can inspect what's there before re-authoring. */
+  unverified?: boolean;
 }
 
 export class EnrichmentStore {
@@ -497,7 +530,8 @@ export class EnrichmentStore {
     const all = this.targets(layer, scope);
     const pending = all.filter((target) => {
       const read = this.read(target.layer, target.id, target.hash);
-      return read.missing || read.stale;
+      // W7: a fresh-but-unverified artifact (draft/legacy) is still pending — re-offer it for repair.
+      return read.missing || read.stale || read.unverified;
     });
     // Deterministic batchId over the FULL pending set (not the selection): same pending set
     // => same id => idempotent re-calls, and the id is stable regardless of `limit`/budget. No
@@ -776,6 +810,14 @@ export class EnrichmentStore {
       const skeletonMode: 'skeleton' | undefined = args.batchId.startsWith('llm:system-skeleton:')
         ? 'skeleton'
         : undefined;
+      // W7 quality tier (PRD line 379): verified iff grounded; draft iff a skeleton pass; legacy
+      // otherwise (an ungrounded full artifact — e.g. a pre-quality-era artifact or a stub). Only
+      // `verified` satisfies coverage; draft/legacy stay pending for repair.
+      const quality: QualityTier = skeletonMode
+        ? 'draft'
+        : groundedCount > 0
+          ? 'verified'
+          : 'legacy';
       const artifact: LlmArtifact = {
         version: LLM_VERSION,
         layer: target.layer,
@@ -797,6 +839,7 @@ export class EnrichmentStore {
         // persist only grounded + unsupported evidence; ungrounded quotes were dropped above.
         evidence: groundedEv,
         ...(groundedCount > 0 ? { grounded: true } : { grounded: false }),
+        quality,
       };
       const path = this.writeArtifact(artifact);
       this.pruneSuperseded(artifact, path);
@@ -891,6 +934,7 @@ export class EnrichmentStore {
         layer: artifact.layer,
         stale: isStale,
         ...(stamped !== undefined ? { stampedGrounded: stamped } : {}),
+        quality: qualityOf(artifact),
         grounded: recomputedGrounded,
         score: result.score,
         groundedCount: result.grounded,
@@ -995,8 +1039,12 @@ export class EnrichmentStore {
     const counts: EnrichLayerCounts = { total: targets.length, missing: 0, stale: 0, fresh: 0 };
     for (const target of targets) {
       const read = this.read(layer, target.id, target.hash);
+      // W7: only `verified` satisfies coverage. A fresh-but-unverified artifact (draft/legacy) is
+      // pending repair → count it as missing so `nextLayer`/`done`/`progress` reflect real coverage,
+      // not stubs that masquerade as fresh (PRD line 380, exit gate line 392).
       if (read.missing) counts.missing++;
       else if (read.stale) counts.stale++;
+      else if (read.unverified) counts.missing++;
       else counts.fresh++;
     }
     return counts;
@@ -1341,7 +1389,7 @@ export class EnrichmentStore {
     if (target.layer === 'symbol') return {};
     if (target.layer === 'file' && target.node) {
       return {
-        symbols: this.freshArtifacts('symbol').filter(
+        symbols: this.verifiedArtifacts('symbol').filter(
           (a) => this.soul.getNode(a.targetId)?.file === target.node?.file,
         ),
       };
@@ -1353,16 +1401,26 @@ export class EnrichmentStore {
           .filter(Boolean),
       );
       return {
-        files: this.freshArtifacts('file').filter((a) =>
+        files: this.verifiedArtifacts('file').filter((a) =>
           memberFiles.has(this.soul.getNode(a.targetId)?.file),
         ),
       };
     }
-    return { clusters: this.freshArtifacts('cluster') };
+    return { clusters: this.verifiedArtifacts('cluster') };
   }
 
   private freshArtifacts(layer: EnrichLayer): LlmArtifact[] {
     return this.allArtifacts().filter((a) => a.layer === layer && !this.isStale(a));
+  }
+
+  /** W7 — fresh AND `verified` artifacts only. Used to seed the lower-layer context fed to a higher
+   *  layer's work items so a draft/legacy stub can never masquerade as a grounded lower-layer
+   *  analysis and propagate garbage upward (PRD line 380). `freshArtifacts` (display/overview) stays
+   *  broader — it still surfaces draft/legacy for transparency. */
+  private verifiedArtifacts(layer: EnrichLayer): LlmArtifact[] {
+    return this.allArtifacts().filter(
+      (a) => a.layer === layer && !this.isStale(a) && qualityOf(a) === 'verified',
+    );
   }
 
   private read(layer: EnrichLayer, targetId: string, liveHash: string): LlmRead {
@@ -1394,6 +1452,10 @@ export class EnrichmentStore {
     // allArtifacts, so this only affects the queue, not the served bible.
     if (layer === 'system' && artifact.mode === 'skeleton' && !stale)
       return { missing: true, stale: false };
+    // W7: a fresh-but-unverified artifact (draft/legacy) is NOT coverage-satisfied. Flag it so the
+    // queue re-offers the target for repair. `verified` artifacts (grounded) pass through as fresh.
+    if (!stale && qualityOf(artifact) !== 'verified')
+      return { artifact, missing: false, stale: false, unverified: true };
     return { artifact, missing: false, stale };
   }
 
@@ -1513,6 +1575,7 @@ export class EnrichmentStore {
       targetId: a.targetId,
       purpose: a.analysis.purpose ?? '',
       ...(a.analysis.confidence !== undefined ? { confidence: a.analysis.confidence } : {}),
+      quality: qualityOf(a),
       stale: false,
     }));
 

@@ -275,48 +275,61 @@ describe('crib enrich --scope / --scope-cluster / --save flag guards (scope-pick
   });
 });
 
-describe('crib enrich --auto — bounded autonomous loop (WP2b)', () => {
-  // --auto stub-authors + saves each batch headlessly (no model). Three independent stop conditions
-  // (token ceiling, max-batches, layer boundary) plus the zero-progress churn-trap break. Each test
-  // drives the BUILT dist/cli.js against a freshly-indexed temp repo so the enrich queue is non-empty.
+describe('crib enrich --auto — bare (no --provider) prints guidance, no stub loop (W7)', () => {
+  // W7 removed the autonomous confidence-0.1 stub loop: only grounded `verified` artifacts satisfy
+  // coverage now, so a stub would not advance the queue (it would spin to zero-progress). Bare
+  // `--auto` (no --provider) reports real pending + points at the provider loop / MCP skill and exits
+  // OK. The bounded loop's stop conditions (layer boundary, max-batches, max-tokens, zero-progress)
+  // now live behind `crib enrich run --provider <name>` (covered in enrich-cli.test.ts). Each test
+  // drives the BUILT dist/cli.js against the shared freshly-indexed temp repo (non-empty queue).
 
-  it('stops at the layer boundary (default budget packs the symbol layer in one batch, next batch is file)', () => {
+  it('bare --auto prints pending + guidance and exits OK (no stub-authoring loop)', () => {
     const r = runCliResult(['enrich', '--auto']);
     expect(r.status).toBe(0);
-    // First batch drains the symbol layer; the second batch is the file layer → stop for review.
-    expect(r.stdout).toContain('auto batch 1');
-    expect(r.stdout).toContain('layer boundary');
-    expect(r.stdout).toContain('stopping for review');
+    expect(r.stdout).toContain('no longer writes stubs');
+    expect(r.stdout).toContain('provider loop: crib enrich run --provider <name>');
+    expect(r.stdout).toMatch(/pending targets: \d+/);
+    expect(r.stdout).not.toContain('auto batch 1');
   });
 
-  it('stops at --max-batches (caps the batch count before the layer boundary would fire)', () => {
-    const r = runCliResult(['enrich', '--auto', '--max-batches', '1']);
+  it('--auto ignores loop-budget flags (no loop runs; still guidance + exit 0)', () => {
+    // --max-batches / --max-tokens / --budget-tokens only govern the provider loop; with no
+    // --provider they are inert — bare --auto still prints guidance and exits OK.
+    const r = runCliResult([
+      'enrich',
+      '--auto',
+      '--max-batches',
+      '1',
+      '--max-tokens',
+      '1',
+      '--budget-tokens',
+      '1',
+    ]);
     expect(r.status).toBe(0);
-    expect(r.stdout).toContain('auto batch 1');
-    expect(r.stdout).toContain('max-batches reached (1)');
-    // The max-batches check ends the loop at the bottom of iteration 1, so the layer-boundary branch
-    // (top of iteration 2) never runs.
-    expect(r.stdout).not.toContain('layer boundary');
+    expect(r.stdout).toContain('no longer writes stubs');
+    expect(r.stdout).not.toContain('auto batch 1');
+    expect(r.stdout).not.toContain('max-batches reached');
+    expect(r.stdout).not.toContain('token ceiling');
   });
 
-  it('stops at the --max-tokens turn ceiling (first batch always runs, subsequent batches stop before overshooting)', () => {
-    // --budget-tokens 1 splits the symbol layer into one-item batches so iteration 2 stays in the
-    // symbol layer (no layer-boundary interference); --max-tokens 1 then trips the turn ceiling after
-    // the first batch. Robust to exact per-item costs: any C>0 gives spent+C > 1 on iteration 2.
-    const r = runCliResult(['enrich', '--auto', '--budget-tokens', '1', '--max-tokens', '1']);
+  it('bare --auto writes no stub artifacts (the W7 stub-freshness fix, end-to-end through the CLI)', () => {
+    const r = runCliResult(['enrich', '--auto']);
     expect(r.status).toBe(0);
-    expect(r.stdout).toContain('auto batch 1');
-    expect(r.stdout).toContain('token ceiling');
+    // No confidence-0.1 stubs were authored: the audit finds zero LLM artifacts on disk.
+    const audit = runCli(['audit-llm']);
+    expect(audit).toContain('no LLM artifacts on disk');
   });
 
-  it('breaks on zeroProgress rather than spinning (exit non-zero when a primed batch re-issues with no save)', () => {
-    // Prime: `--next` issues a batch and persists lastIssued to disk WITHOUT saving. The next process
-    // sees the same batchId re-issued → zero-progress → the churn trap. --auto MUST break non-zero
-    // instead of looping forever on a batch it cannot advance.
+  it('bare --auto does not spin on a primed zero-progress batch (guidance, exit 0)', () => {
+    // Prime: `--next` issues a batch and persists lastIssued WITHOUT saving. The old stub loop would
+    // then re-issue the same batchId → zero-progress churn. Bare --auto never calls next() (it only
+    // reads status), so it prints guidance and exits OK regardless of the primed marker — the
+    // zero-progress guard now governs only the provider loop (run --provider).
     runCliResult(['enrich', '--next']);
     const r = runCliResult(['enrich', '--auto']);
-    expect(r.status).toBe(1);
-    expect(r.stderr).toContain('zero-progress');
+    expect(r.status).toBe(0);
+    expect(r.stdout).toContain('no longer writes stubs');
+    expect(r.stderr).not.toContain('zero-progress');
   });
 });
 

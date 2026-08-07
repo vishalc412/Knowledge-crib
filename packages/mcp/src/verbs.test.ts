@@ -555,6 +555,18 @@ describe('verbs', () => {
     expect(batch.items[0]!.seed.sourceBody?.text.length).toBeGreaterThan(0);
     expect(batch.items[0]!.outputSchema).toHaveProperty('type', 'object');
 
+    // W7: only a grounded (verbatim-quoted) artifact is `verified` and counts as `fresh`; an
+    // ungrounded save reads as `legacy` → still pending. Lift the longest line of the rehydrated
+    // span as the quote so the saved symbol graph is grounded — the seed sourceBody IS the
+    // rehydrated anchor span, so any line of it overlaps (whitespace-normalized) and grounds.
+    const spanText = batch.items[0]!.seed.sourceBody?.text ?? '';
+    const quote =
+      spanText
+        .split('\n')
+        .map((l) => l.trim())
+        .filter((l) => l.length > 0)
+        .sort((a, b) => b.length - a.length)[0] ?? '';
+
     const save = verbs.enrichSave({
       batchId: batch.batchId,
       items: [
@@ -603,7 +615,10 @@ describe('verbs', () => {
               },
             ],
           },
-          evidence: [{ soulId: batch.items[0]!.targetId, why: 'Dossier source and callers.' }],
+          evidence: [
+            { soulId: batch.items[0]!.targetId, quote },
+            { soulId: batch.items[0]!.targetId, why: 'Dossier source and callers.' },
+          ],
         },
       ],
     }) as unknown as EnrichSaveResult;
@@ -1766,7 +1781,10 @@ describe('enrich skeleton system pass (outcome C, Phase 0.5)', () => {
           model: 'host-model',
           analysis: { purpose: 'real bible', responsibilities: ['arch'], confidence: 0.9 },
           graph: { nodes: [], edges: [] },
-          evidence: [],
+          // W7: a full system pass satisfies the layer only when `verified` (grounded). Ground it
+          // against the login symbol's rehydrated span (`return issue(user, pass)`) so the full
+          // bible is `verified` → fresh, not a `legacy` stub still pending.
+          evidence: [{ soulId: login.id, quote: 'return issue(user, pass)' }],
         },
       ],
     });
