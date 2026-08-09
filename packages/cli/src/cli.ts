@@ -15,7 +15,7 @@
  */
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { isAbsolute, join, relative, resolve } from 'node:path';
 import {
   CALLABLE_SYMBOL_TYPES,
   LockBusyError,
@@ -132,6 +132,8 @@ import { WatchMode } from './watch.js';
 
 const EXIT = { OK: 0, ERROR: 1, BAD_ARGS: 2, NOT_INDEXED: 3, LOCKED: 4 } as const;
 
+class CliUsageError extends Error {}
+
 /** Per-invocation context threaded from `main` (currently just the `--cwd` global flag). */
 interface CmdCtx {
   cwdOverride?: string;
@@ -164,6 +166,7 @@ const VALUE_FLAGS = new Set([
   '--package',
   '--repo',
   '--dir',
+  '--crib-dir',
 ]);
 
 /** Collect positional argv tokens, skipping boolean flags AND value-taking flags + their values. */
@@ -308,7 +311,32 @@ function stampPackageMeta(
 
 /** First non-flag positional arg (the path for path-taking commands), or `undefined`. */
 function pathArg(args: string[]): string | undefined {
-  return args.find((a) => !a.startsWith('-'));
+  return positionalsOf(args)[0];
+}
+
+/** Resolve an optional external crib directory while keeping it separate from the source work tree. */
+function resolveCribDir(args: string[], repoRoot: string): string {
+  const idx = args.indexOf('--crib-dir');
+  if (idx < 0) return join(repoRoot, '.crib');
+  const value = args[idx + 1];
+  if (!value || value.startsWith('-')) {
+    throw new CliUsageError('--crib-dir requires an absolute path');
+  }
+  if (!isAbsolute(value)) {
+    throw new CliUsageError('--crib-dir must be an absolute path');
+  }
+  const cribDir = resolve(value);
+  const gitDir = join(repoRoot, '.git');
+  const fromGitDir = relative(gitDir, cribDir);
+  if (
+    fromGitDir === '' ||
+    (!fromGitDir.startsWith(`..${process.platform === 'win32' ? '\\' : '/'}`) &&
+      fromGitDir !== '..' &&
+      !isAbsolute(fromGitDir))
+  ) {
+    throw new CliUsageError('--crib-dir must not be inside the source root .git directory');
+  }
+  return cribDir;
 }
 
 /**
@@ -332,7 +360,8 @@ function extractCwdFlag(argv: string[]): { argv: string[]; cwdOverride?: string 
 function resolveRoot(args: string[], ctx?: CmdCtx): ResolvedRoot {
   const pos = pathArg(args);
   const explicitRoot = ctx?.cwdOverride ?? (pos && pos !== '.' ? pos : undefined);
-  return resolveProjectRoot({ explicitRoot });
+  const resolved = resolveProjectRoot({ explicitRoot });
+  return { ...resolved, cribDir: resolveCribDir(args, resolved.repoRoot) };
 }
 
 async function main(argvRaw: string[]): Promise<number> {
@@ -578,7 +607,7 @@ async function cmdIndex(args: string[], ctx?: CmdCtx): Promise<number> {
   const ignores = parseExcludes(args);
   const scope = resolvePackageScope(repoRoot, args);
   if (scope.status !== EXIT.OK) return scope.status;
-  const cribDir = join(repoRoot, '.crib');
+  const cribDir = resolveCribDir(args, repoRoot);
   return runLocked(cribDir, async () => {
     // Full rebuild: fresh manifest stamped with the current SCHEMA_VERSION (never inherit a stale
     // one), repo.id preserved across rebuilds (stable committed soul + ~/.crib/registry mapping),
@@ -1278,7 +1307,7 @@ async function cmdReindex(args: string[], ctx?: CmdCtx): Promise<number> {
   const ignores = parseExcludes(args);
   const scope = resolvePackageScope(repoRoot, args);
   if (scope.status !== EXIT.OK) return scope.status;
-  const cribDir = join(repoRoot, '.crib');
+  const cribDir = resolveCribDir(args, repoRoot);
   return runLocked(cribDir, async () => {
     const soul = freshSoulForRebuild(cribDir);
     stampPackageMeta(soul, scope);
@@ -3678,7 +3707,7 @@ function printHelp(): void {
       'crib — Knowledge-crib CLI',
       '',
       'Usage:',
-      '  crib index [path] [--semantic] [--exclude a,b,...] [--package <name|all>...]     full index → .crib soul + derived index (+ INFERRED embedding-cosine semantic links); --package scopes to one monorepo package (list detected with no --package)',
+      '  crib index [path] [--crib-dir <absolute-path>] [--semantic] [--exclude a,b,...] [--package <name|all>...]     full index → .crib soul + derived index (+ INFERRED embedding-cosine semantic links); --package scopes to one monorepo package (list detected with no --package)',
       '  crib status [path] [--dirty]             health + stats; --dirty previews files that would be re-indexed',
       '  crib query <text>                        BM25 search over code + docs (incl. bodies); --with-source --with-rules fold body + decision table into each hit',
       '  crib gaps [path] [--extracted-only] [--include-builtins]   analysis readiness + missing bodies + unresolved call sites',
@@ -3691,9 +3720,9 @@ function printHelp(): void {
       '  crib impact <id> --dir up|down [--depth N] [--include-llm]   blast radius',
       '  crib path <from> <to> [--max-hops N] [--include-llm]   shortest path',
       '  crib neighbors <id> [--rel reads] [--dir in|out|both] [--include-llm]   adjacency',
-      '  crib serve [path] [--watch]              run the MCP server on stdio (resolves root: arg/--cwd/KCRIB_ROOT/CLAUDE_PROJECT_DIR/walk/cwd); --watch overlays dirty/untracked files in memory so edits are queryable without dirtying .crib/graph',
-      '  crib update [path] [--since <sha>] [--dirty] [--package <name>]  incremental re-extract since the VCS anchor; --dirty includes working-tree changes without advancing vcsHead; --package scopes to one package of a monorepo without advancing the shared anchor if other packages changed too',
-      '  crib reindex [path] [--package <name|all>...]     full re-index (alias for `crib index`; --package scopes to one monorepo package)',
+      '  crib serve [path] [--crib-dir <absolute-path>] [--watch]              run the MCP server on stdio (resolves root: arg/--cwd/KCRIB_ROOT/CLAUDE_PROJECT_DIR/walk/cwd); --watch overlays dirty/untracked files in memory so edits are queryable without dirtying .crib/graph',
+      '  crib update [path] [--crib-dir <absolute-path>] [--since <sha>] [--dirty] [--package <name>]  incremental re-extract since the VCS anchor; --dirty includes working-tree changes without advancing vcsHead; --package scopes to one package of a monorepo without advancing the shared anchor if other packages changed too',
+      '  crib reindex [path] [--crib-dir <absolute-path>] [--package <name|all>...]     full re-index (alias for `crib index`; --package scopes to one monorepo package)',
       '  crib migrate-graph [path] [--dry-run]     move legacy nodes/edges/llm into canonical .crib/graph',
       '  crib materialize [path]                   build derived composite graph.json + sqlite',
       '  crib merge-driver %O %A %B %P            git custom merge driver for .crib chunks',
@@ -3725,6 +3754,11 @@ main(process.argv.slice(2))
     process.exitCode = code;
   })
   .catch((err) => {
+    if (err instanceof CliUsageError) {
+      process.stderr.write(`${err.message}\n`);
+      process.exitCode = EXIT.BAD_ARGS;
+      return;
+    }
     process.stderr.write(`${err instanceof Error ? err.stack : String(err)}\n`);
     process.exitCode = EXIT.ERROR;
   });

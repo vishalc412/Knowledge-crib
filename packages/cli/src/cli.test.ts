@@ -155,6 +155,75 @@ describe('read commands use an existing derived index instead of rebuilding it',
   });
 });
 
+describe('crib index --crib-dir', () => {
+  it('indexes into an external crib directory and registers that directory', () => {
+    const sourceRoot = mkdtempSync(join(tmpdir(), 'crib-cli-external-source-'));
+    const cribDir = mkdtempSync(join(tmpdir(), 'crib-cli-external-store-'));
+    const registryDir = mkdtempSync(join(tmpdir(), 'crib-cli-external-registry-'));
+    try {
+      writeFileSync(join(sourceRoot, 'hello.ts'), 'export const hello = "world";\n');
+      const result = (() => {
+        try {
+          const stdout = execFileSync(
+            process.execPath,
+            [CLI, 'index', sourceRoot, '--crib-dir', cribDir],
+            {
+              cwd: sourceRoot,
+              encoding: 'utf8',
+              env: { ...process.env, KCRIB_REGISTRY_DIR: registryDir },
+              stdio: ['ignore', 'pipe', 'pipe'],
+            },
+          );
+          return { status: 0, stdout, stderr: '' };
+        } catch (e) {
+          const err = e as { status?: number; stdout?: string; stderr?: string };
+          return { status: err.status ?? 1, stdout: err.stdout ?? '', stderr: err.stderr ?? '' };
+        }
+      })();
+
+      expect(result.status, result.stderr).toBe(0);
+      expect(existsSync(join(sourceRoot, '.crib'))).toBe(false);
+      expect(existsSync(join(cribDir, 'crib.json'))).toBe(true);
+      const registry = JSON.parse(readFileSync(join(registryDir, 'registry.json'), 'utf8')) as {
+        projects: Record<string, { cribDir: string }>;
+      };
+      expect(registry.projects[sourceRoot]?.cribDir).toBe(cribDir);
+    } finally {
+      rmSync(sourceRoot, { recursive: true, force: true });
+      rmSync(cribDir, { recursive: true, force: true });
+      rmSync(registryDir, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects relative paths and paths inside the source .git directory', () => {
+    const sourceRoot = mkdtempSync(join(tmpdir(), 'crib-cli-external-invalid-'));
+    try {
+      writeFileSync(join(sourceRoot, 'hello.ts'), 'export const hello = "world";\n');
+      mkdirSync(join(sourceRoot, '.git'));
+      for (const cribDir of ['relative-crib', join(sourceRoot, '.git', 'crib')]) {
+        const result = (() => {
+          try {
+            execFileSync(process.execPath, [CLI, 'index', sourceRoot, '--crib-dir', cribDir], {
+              cwd: sourceRoot,
+              encoding: 'utf8',
+              stdio: ['ignore', 'pipe', 'pipe'],
+            });
+            return { status: 0, stderr: '' };
+          } catch (e) {
+            const err = e as { status?: number; stderr?: string };
+            return { status: err.status ?? 1, stderr: err.stderr ?? '' };
+          }
+        })();
+        expect(result.status).toBe(2);
+        expect(result.stderr).toContain('--crib-dir');
+      }
+      expect(existsSync(join(sourceRoot, '.crib'))).toBe(false);
+    } finally {
+      rmSync(sourceRoot, { recursive: true, force: true });
+    }
+  });
+});
+
 describe('crib reconstruct (WS-6) — CLI dispatch + maxSymbols guard (Blocker 2 regression)', () => {
   it('markdown emits the 30/80 thresholds + expectedBodyFile + members', () => {
     const out = runCli(['reconstruct', pkgQname, '--format', 'markdown']);
