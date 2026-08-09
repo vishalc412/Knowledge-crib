@@ -1,5 +1,14 @@
 import { execFileSync, spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  realpathSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { SoulStore, newManifest, openIndex } from '@knowledge-crib/core';
@@ -187,7 +196,7 @@ describe('crib index --crib-dir', () => {
       const registry = JSON.parse(readFileSync(join(registryDir, 'registry.json'), 'utf8')) as {
         projects: Record<string, { cribDir: string }>;
       };
-      expect(registry.projects[sourceRoot]?.cribDir).toBe(cribDir);
+      expect(registry.projects[sourceRoot]?.cribDir).toBe(realpathSync(cribDir));
     } finally {
       rmSync(sourceRoot, { recursive: true, force: true });
       rmSync(cribDir, { recursive: true, force: true });
@@ -220,6 +229,76 @@ describe('crib index --crib-dir', () => {
       expect(existsSync(join(sourceRoot, '.crib'))).toBe(false);
     } finally {
       rmSync(sourceRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('uses the registered external crib directory when update omits --crib-dir', () => {
+    const sourceRoot = mkdtempSync(join(tmpdir(), 'crib-cli-external-update-source-'));
+    const cribDir = mkdtempSync(join(tmpdir(), 'crib-cli-external-update-store-'));
+    const registryDir = mkdtempSync(join(tmpdir(), 'crib-cli-external-update-registry-'));
+    const env = { ...process.env, KCRIB_REGISTRY_DIR: registryDir };
+    try {
+      writeFileSync(join(sourceRoot, 'hello.ts'), 'export const hello = "world";\n');
+      execFileSync(process.execPath, [CLI, 'index', sourceRoot, '--crib-dir', cribDir], {
+        cwd: sourceRoot,
+        encoding: 'utf8',
+        env,
+        stdio: ['ignore', 'pipe', 'pipe'],
+      });
+      const result = (() => {
+        try {
+          execFileSync(process.execPath, [CLI, 'update', sourceRoot], {
+            cwd: sourceRoot,
+            encoding: 'utf8',
+            env,
+            stdio: ['ignore', 'pipe', 'pipe'],
+          });
+          return { status: 0, stderr: '' };
+        } catch (e) {
+          const err = e as { status?: number; stderr?: string };
+          return { status: err.status ?? 1, stderr: err.stderr ?? '' };
+        }
+      })();
+      expect(result.status, result.stderr).toBe(0);
+      expect(existsSync(join(sourceRoot, '.crib'))).toBe(false);
+    } finally {
+      rmSync(sourceRoot, { recursive: true, force: true });
+      rmSync(cribDir, { recursive: true, force: true });
+      rmSync(registryDir, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects a symlinked external path that resolves inside source .git', () => {
+    const sourceRoot = mkdtempSync(join(tmpdir(), 'crib-cli-external-symlink-source-'));
+    const outsideRoot = mkdtempSync(join(tmpdir(), 'crib-cli-external-symlink-outside-'));
+    try {
+      writeFileSync(join(sourceRoot, 'hello.ts'), 'export const hello = "world";\n');
+      mkdirSync(join(sourceRoot, '.git'));
+      const link = join(outsideRoot, 'git-link');
+      symlinkSync(join(sourceRoot, '.git'), link, 'dir');
+      const result = (() => {
+        try {
+          execFileSync(
+            process.execPath,
+            [CLI, 'index', sourceRoot, '--crib-dir', join(link, 'crib')],
+            {
+              cwd: sourceRoot,
+              encoding: 'utf8',
+              stdio: ['ignore', 'pipe', 'pipe'],
+            },
+          );
+          return { status: 0, stderr: '' };
+        } catch (e) {
+          const err = e as { status?: number; stderr?: string };
+          return { status: err.status ?? 1, stderr: err.stderr ?? '' };
+        }
+      })();
+      expect(result.status).toBe(2);
+      expect(result.stderr).toContain('--crib-dir');
+      expect(existsSync(join(sourceRoot, '.git', 'crib'))).toBe(false);
+    } finally {
+      rmSync(sourceRoot, { recursive: true, force: true });
+      rmSync(outsideRoot, { recursive: true, force: true });
     }
   });
 });

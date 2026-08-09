@@ -14,8 +14,8 @@
  * Exit codes (cli spec): 0 ok · 1 error · 2 bad args · 3 not indexed.
  */
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { isAbsolute, join, relative, resolve } from 'node:path';
+import { existsSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
+import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import {
   CALLABLE_SYMBOL_TYPES,
   LockBusyError,
@@ -314,10 +314,27 @@ function pathArg(args: string[]): string | undefined {
   return positionalsOf(args)[0];
 }
 
+/** Resolve a path through existing symlink ancestors, including a new leaf. */
+function canonicalizePotentialPath(path: string): string {
+  const suffix: string[] = [];
+  let current = resolve(path);
+  while (!existsSync(current)) {
+    const parent = dirname(current);
+    if (parent === current) return resolve(path);
+    suffix.unshift(basename(current));
+    current = parent;
+  }
+  return resolve(realpathSync(current), ...suffix);
+}
+
 /** Resolve an optional external crib directory while keeping it separate from the source work tree. */
-function resolveCribDir(args: string[], repoRoot: string): string {
+function resolveCribDir(args: string[], resolvedRoot: ResolvedRoot | string): string {
+  const repoRoot = typeof resolvedRoot === 'string' ? resolvedRoot : resolvedRoot.repoRoot;
   const idx = args.indexOf('--crib-dir');
-  if (idx < 0) return join(repoRoot, '.crib');
+  // `resolveProjectRoot` applies the per-user registry overlay. Do not erase a
+  // registered external directory merely because this command omits the flag.
+  if (idx < 0)
+    return typeof resolvedRoot === 'string' ? join(repoRoot, '.crib') : resolvedRoot.cribDir;
   const value = args[idx + 1];
   if (!value || value.startsWith('-')) {
     throw new CliUsageError('--crib-dir requires an absolute path');
@@ -325,8 +342,8 @@ function resolveCribDir(args: string[], repoRoot: string): string {
   if (!isAbsolute(value)) {
     throw new CliUsageError('--crib-dir must be an absolute path');
   }
-  const cribDir = resolve(value);
-  const gitDir = join(repoRoot, '.git');
+  const cribDir = canonicalizePotentialPath(value);
+  const gitDir = canonicalizePotentialPath(join(repoRoot, '.git'));
   const fromGitDir = relative(gitDir, cribDir);
   if (
     fromGitDir === '' ||
@@ -361,7 +378,7 @@ function resolveRoot(args: string[], ctx?: CmdCtx): ResolvedRoot {
   const pos = pathArg(args);
   const explicitRoot = ctx?.cwdOverride ?? (pos && pos !== '.' ? pos : undefined);
   const resolved = resolveProjectRoot({ explicitRoot });
-  return { ...resolved, cribDir: resolveCribDir(args, resolved.repoRoot) };
+  return { ...resolved, cribDir: resolveCribDir(args, resolved) };
 }
 
 async function main(argvRaw: string[]): Promise<number> {
@@ -601,13 +618,15 @@ function printLlmPending(soul: SoulStore, repoRoot: string): void {
 }
 
 async function cmdIndex(args: string[], ctx?: CmdCtx): Promise<number> {
-  // index targets the exact given dir (no upward walk) — you index THIS, not a parent.
-  const repoRoot = resolve(ctx?.cwdOverride ?? positionalsOf(args)[0] ?? '.');
+  // An explicit source path remains the source authority. `resolveRoot` also
+  // preserves a registered external cribDir when this is an update fallback.
+  const resolved = resolveRoot(args, ctx);
+  const repoRoot = resolved.repoRoot;
   const semantic = args.includes('--semantic');
   const ignores = parseExcludes(args);
   const scope = resolvePackageScope(repoRoot, args);
   if (scope.status !== EXIT.OK) return scope.status;
-  const cribDir = resolveCribDir(args, repoRoot);
+  const cribDir = resolved.cribDir;
   return runLocked(cribDir, async () => {
     // Full rebuild: fresh manifest stamped with the current SCHEMA_VERSION (never inherit a stale
     // one), repo.id preserved across rebuilds (stable committed soul + ~/.crib/registry mapping),
@@ -1301,13 +1320,13 @@ async function cmdUpdate(args: string[], ctx?: CmdCtx): Promise<number> {
 }
 
 async function cmdReindex(args: string[], ctx?: CmdCtx): Promise<number> {
-  // reindex targets the exact given dir (no upward walk), like index.
-  const repoRoot = resolve(ctx?.cwdOverride ?? positionalsOf(args)[0] ?? '.');
+  const resolved = resolveRoot(args, ctx);
+  const repoRoot = resolved.repoRoot;
   const semantic = args.includes('--semantic');
   const ignores = parseExcludes(args);
   const scope = resolvePackageScope(repoRoot, args);
   if (scope.status !== EXIT.OK) return scope.status;
-  const cribDir = resolveCribDir(args, repoRoot);
+  const cribDir = resolved.cribDir;
   return runLocked(cribDir, async () => {
     const soul = freshSoulForRebuild(cribDir);
     stampPackageMeta(soul, scope);
