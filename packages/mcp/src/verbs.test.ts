@@ -355,6 +355,22 @@ describe('verbs', () => {
     expect(res.error.code).toBe('NOT_FOUND');
   });
 
+  it('source verb redacts property values for a redact-properties node', () => {
+    writeFileSync(join(repo, 'secure.properties'), 'db.user=alice\ndb.password=swordfish');
+    const props = sym('secure.properties', 'secure.properties', 1, {
+      kind: 'file' as const,
+      type: 'property',
+      meta: { sourcePolicy: 'redact-properties' },
+    });
+    soul.putNodes([props]);
+    soul.commit('2026-01-01T00:00:00.000Z');
+    const res = verbs.source({ id: props.id }) as unknown as SourceResult;
+    expect(res.source.text).toContain('db.password=<redacted>');
+    expect(res.source.text).toContain('db.user=<redacted>');
+    expect(res.source.text).not.toContain('swordfish');
+    expect(res.source.text).not.toContain('alice');
+  });
+
   it('source verb respects the char budget + signals truncation', () => {
     const res = verbs.source({ id: login.id, maxChars: 5 }) as unknown as SourceResult;
     expect(res.source.truncated).toBe(true);

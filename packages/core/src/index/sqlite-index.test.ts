@@ -389,3 +389,88 @@ describe('SqliteIndexStore — M2.1 vector layer + RRF hybrid query', () => {
     withVec.close();
   });
 });
+
+describe('SqliteIndexStore — source redaction policy (FTS never indexes secret values)', () => {
+  it('indexes property keys but not values (query db.password hits, swordfish does not)', () => {
+    writeFileSync(join(dir, 'secure.properties'), 'db.user=alice\ndb.password=swordfish');
+    const redactStore = new SoulStore(dir, {
+      manifest: newManifest({ now: '2026-01-01T00:00:00.000Z' }),
+    });
+    redactStore.load();
+    const props: Node = {
+      id: idFor({ kind: 'file', path: 'secure.properties' }),
+      kind: 'file',
+      file: 'secure.properties',
+      span: { start: 1, end: 2 },
+      hash: contentHash('secure.properties'),
+      meta: { sourcePolicy: 'redact-properties' },
+    };
+    redactStore.putNodes([props]);
+    redactStore.commit('2026-01-01T00:00:00.000Z');
+
+    const idx = new SqliteIndexStore();
+    idx.buildFromSoul(redactStore, dir);
+    // the KEY is searchable (redacted body keeps keys)
+    expect(idx.query({ text: 'db.password' }).map((h) => h.id)).toContain(props.id);
+    // the secret VALUE is never indexed
+    expect(idx.query({ text: 'swordfish' }).map((h) => h.id)).not.toContain(props.id);
+    expect(idx.query({ text: 'alice' }).map((h) => h.id)).not.toContain(props.id);
+    idx.close();
+  });
+
+  it('redacts Mule XML secret attributes: xml-canary never indexed, api.token placeholder is', () => {
+    writeFileSync(
+      join(dir, 'http.xml'),
+      '<http:request password="xml-canary" token="${api.token}"/>',
+    );
+    const redactStore = new SoulStore(dir, {
+      manifest: newManifest({ now: '2026-01-01T00:00:00.000Z' }),
+    });
+    redactStore.load();
+    const xml: Node = {
+      id: idFor({ kind: 'file', path: 'http.xml' }),
+      kind: 'file',
+      file: 'http.xml',
+      span: { start: 1, end: 1 },
+      hash: contentHash('http.xml'),
+      meta: { sourcePolicy: 'redact-mule-secrets' },
+    };
+    redactStore.putNodes([xml]);
+    redactStore.commit('2026-01-01T00:00:00.000Z');
+
+    const idx = new SqliteIndexStore();
+    idx.buildFromSoul(redactStore, dir);
+    // the secret VALUE token never reaches the FTS body (canary only appears in the redacted value)
+    expect(idx.query({ text: 'canary' }).map((h) => h.id)).not.toContain(xml.id);
+    // the placeholder reference key remains searchable
+    expect(idx.query({ text: 'api.token' }).map((h) => h.id)).toContain(xml.id);
+    idx.close();
+  });
+
+  it('deny nodes never reach the FTS body at all', () => {
+    writeFileSync(join(dir, 'keystore.jks'), 'RAW-KEYSTORE-BYTES-SECRET');
+    const redactStore = new SoulStore(dir, {
+      manifest: newManifest({ now: '2026-01-01T00:00:00.000Z' }),
+    });
+    redactStore.load();
+    const deny: Node = {
+      id: idFor({ kind: 'file', path: 'keystore.jks' }),
+      kind: 'file',
+      file: 'keystore.jks',
+      span: { start: 1, end: 1 },
+      hash: contentHash('keystore.jks'),
+      meta: { sourcePolicy: 'deny' },
+    };
+    redactStore.putNodes([deny]);
+    redactStore.commit('2026-01-01T00:00:00.000Z');
+
+    const idx = new SqliteIndexStore();
+    idx.buildFromSoul(redactStore, dir);
+    // the secret CONTENT token never reaches the FTS body (deny blocks the disk read)
+    expect(idx.query({ text: 'BYTES' }).map((h) => h.id)).not.toContain(deny.id);
+    expect(idx.query({ text: 'SECRET' }).map((h) => h.id)).not.toContain(deny.id);
+    // the file path itself is still indexed (it carries no secret)
+    expect(idx.query({ text: 'keystore.jks' }).map((h) => h.id)).toContain(deny.id);
+    idx.close();
+  });
+});

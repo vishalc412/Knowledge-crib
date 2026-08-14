@@ -42,6 +42,7 @@ import type {
   PathResult,
 } from '../index-store.js';
 import type { SoulStore } from '../soul-store.js';
+import { redactMuleSecretAttributes, redactPropertyText, sourcePolicy } from '../source-policy.js';
 import { rerank } from './rerank.js';
 import type { RerankCandidate } from './rerank.js';
 import { expandToken } from './synonyms.js';
@@ -561,14 +562,24 @@ function composeSearchableBody(node: Node, repoRoot: string, fileCache: FileLine
   const parts: string[] = [];
 
   // 1. Rehydrated span text from disk (the body / DDL / statement text).
+  //    The source policy is applied BEFORE the text enters the searchable body so a secret VALUE
+  //    can never be matched by FTS. `deny` blocks the disk read entirely (encrypted/secure files +
+  //    key/trust stores never reach the index body); `redact-properties` / `redact-mule-secrets`
+  //    keep keys / placeholder references so structure stays searchable.
   if (node.file && node.span) {
-    const lines = readCachedLines(repoRoot, node.file, fileCache);
-    if (lines && lines.length > 0) {
-      const start = Math.max(node.span.start - 1, 0);
-      const end = Math.min(node.span.end, lines.length);
-      if (end > start) {
-        const spanText = lines.slice(start, end).join('\n');
-        parts.push(spanText.length > BODY_FTS_CAP ? spanText.slice(0, BODY_FTS_CAP) : spanText);
+    const policy = sourcePolicy(node);
+    if (policy !== 'deny') {
+      const lines = readCachedLines(repoRoot, node.file, fileCache);
+      if (lines && lines.length > 0) {
+        const start = Math.max(node.span.start - 1, 0);
+        const end = Math.min(node.span.end, lines.length);
+        if (end > start) {
+          let spanText = lines.slice(start, end).join('\n');
+          if (policy === 'redact-properties') spanText = redactPropertyText(spanText);
+          else if (policy === 'redact-mule-secrets')
+            spanText = redactMuleSecretAttributes(spanText);
+          parts.push(spanText.length > BODY_FTS_CAP ? spanText.slice(0, BODY_FTS_CAP) : spanText);
+        }
       }
     }
   }

@@ -15,6 +15,10 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Node } from '@knowledge-crib/soul-schema';
+import { redactMuleSecretAttributes, redactPropertyText, sourcePolicy } from './source-policy.js';
+
+export { redactMuleSecretAttributes, redactPropertyText, sourcePolicy };
+export type { SourcePolicy } from './source-policy.js';
 
 const MAX_SNIPPET = 160;
 
@@ -41,16 +45,33 @@ export interface RehydratedBody {
 /** First non-blank line of `node`'s span, trimmed to MAX_SNIPPET chars; '' if unavailable. */
 export function rehydrate(repoRoot: string, node: Node | undefined): string {
   if (!node?.file || !node.span) return '';
+  // deny blocks the disk read entirely — a secure/encrypted file is never surfaced.
+  if (sourcePolicy(node) === 'deny') return '';
   try {
     const lines = readFileSync(join(repoRoot, node.file), 'utf8').split('\n');
     for (let i = node.span.start - 1; i < node.span.end && i < lines.length; i++) {
       const line = (lines[i] ?? '').trim().replace(/^#+\s*/, '');
-      if (line.length > 0) return line.slice(0, MAX_SNIPPET);
+      if (line.length > 0) return redactSnippet(node, line).slice(0, MAX_SNIPPET);
     }
   } catch {
     // fall through
   }
   return '';
+}
+
+/** Apply the node's redaction policy to a single in-span line (used by the cheap snippet view). */
+function redactSnippet(node: Node, line: string): string {
+  switch (sourcePolicy(node)) {
+    case 'redact-properties': {
+      // redactPropertyText drops comments + blank lines; a single non-comment line yields its key.
+      const r = redactPropertyText(line);
+      return r.length > 0 ? r : line;
+    }
+    case 'redact-mule-secrets':
+      return redactMuleSecretAttributes(line);
+    default:
+      return line;
+  }
 }
 
 /**
@@ -73,6 +94,8 @@ export function rehydrateBody(
 ): RehydratedBody {
   const empty: RehydratedBody = { text: '', truncated: false, totalLines: 0, startLine: 0 };
   if (!node?.file || !node.span) return empty;
+  // deny blocks the disk read entirely — a secure/encrypted file body is never surfaced.
+  if (sourcePolicy(node) === 'deny') return empty;
   const maxChars = opts.maxChars ?? DEFAULT_BODY_MAX_CHARS;
   const maxLines = opts.maxLines ?? DEFAULT_BODY_MAX_LINES;
   const spanStart = node.span.start;
@@ -94,8 +117,19 @@ export function rehydrateBody(
     }
 
     let text = slice.join('\n');
+    // Apply the node's redaction policy before any budgeting so a secret VALUE never surfaces.
+    // `redact-properties` may drop comment/blank lines (fewer lines than the raw slice); recompute
+    // linesReturned from the redacted text so paging stays consistent with what was returned.
+    switch (sourcePolicy(node)) {
+      case 'redact-properties':
+        text = redactPropertyText(text);
+        break;
+      case 'redact-mule-secrets':
+        text = redactMuleSecretAttributes(text);
+        break;
+    }
     let truncated = winEnd < spanEnd; // more span lines lie beyond this page window
-    let linesReturned = slice.length;
+    let linesReturned = text.length > 0 ? text.split('\n').length : 0;
     if (text.length > maxChars) {
       // char budget cuts within the window — trim at a line boundary so `nextLine` lands cleanly,
       // unless even the first line exceeds the budget (then return the capped fragment of it).

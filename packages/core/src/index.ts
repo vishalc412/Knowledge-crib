@@ -16,6 +16,7 @@ export * from './memory-kinds.js';
 export * from './memory-merge.js';
 export * from './validate.js';
 export * from './source.js';
+export * from './source-policy.js';
 export * from './importance.js';
 export * from './lock.js';
 export * from './cluster-hash.js';
