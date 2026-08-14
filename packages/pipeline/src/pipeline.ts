@@ -31,6 +31,7 @@ import { runResolve } from './resolve/index.js';
 import type { ResolveStats } from './resolve/index.js';
 import type { CfgPass, Resolver } from './resolve/index.js';
 import { discoverFiles, runStructure } from './structure.js';
+import { classifyMuleDiscovery } from './mule/discover.js';
 import { currentHead } from './vcs.js';
 
 export interface IndexOpts {
@@ -115,6 +116,10 @@ export async function indexRepo(
   if (opts.packageRoots && opts.packageRoots.length > 0)
     discoverOpts.packageRoots = opts.packageRoots;
   const files = discoverFiles(root, discoverOpts);
+  // Mule pre-pass (Foundation Task 4): stamp a clone-safe FileClassification + role lang onto Mule
+  // files so MuleExtractor.supports() can dispatch disjointly (Task 13) and fileNode can hash
+  // sensitive config by KEYS only. Diagnostics are aggregated by the parse phase (Task 7).
+  classifyMuleDiscovery(root, files);
   runStructure(soul, root, files); // Phase 1
   // defaultRegistry = the fleet came from defaultExtractors() (no custom opts.extractors) → the
   // parallel pool can ship it. Custom extractors force the serial path (workers can't receive them).

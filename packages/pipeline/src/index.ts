@@ -17,5 +17,12 @@ export * from './rules/index.js';
 export * from './cluster/index.js';
 export { classifyMuleFiles } from './mule/classify.js';
 export type { MuleClassificationResult } from './mule/classify.js';
+export {
+  classifyMuleDiscovery,
+  keyOnlyHash,
+  pathOnlyHash,
+  propertyKeys,
+  secureContentHash,
+} from './mule/discover.js';
 export * from './input/archive.js';
 export * from './input/prepared-source.js';

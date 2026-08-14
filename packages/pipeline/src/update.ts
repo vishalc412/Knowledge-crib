@@ -41,6 +41,7 @@ import { defaultExtractors } from './pipeline.js';
 import { runResolve } from './resolve/index.js';
 import type { ResolveStats } from './resolve/index.js';
 import { metaForPaths, runStructure } from './structure.js';
+import { classifyMuleDiscovery } from './mule/discover.js';
 import { changedFilesSince, currentHead, uncommittedChanges } from './vcs.js';
 
 export interface UpdateOpts {
@@ -211,6 +212,9 @@ export async function updateRepo(
     registry.register(e);
   }
   const changedMetas = metaForPaths(root, changedPaths);
+  // Mule pre-pass: stamp classification on changed Mule files so fileNode hashes sensitive config by
+  // keys only and the Mule extractor (Task 13) dispatches. Full-index path (pipeline.ts) does the same.
+  classifyMuleDiscovery(root, changedMetas);
   runStructure(soul, root, changedMetas);
   // Incremental: the changed set is small (often 1-3 files). Worker-boot cost would dominate, and
   // the pool is torn down per call, so force the serial path here — parallel is for full-index only.

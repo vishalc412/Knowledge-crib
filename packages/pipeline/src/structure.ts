@@ -7,9 +7,10 @@ import { type Stats, readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, sep } from 'node:path';
 import type { SoulStore } from '@knowledge-crib/core';
 import type { FileMeta } from '@knowledge-crib/parsers';
-import { contentHash, idFor } from '@knowledge-crib/soul-schema';
+import { idFor } from '@knowledge-crib/soul-schema';
 import type { Node } from '@knowledge-crib/soul-schema';
 import { GitignoreMatcher, readGitignore } from './gitignore.js';
+import { secureContentHash } from './mule/discover.js';
 
 /**
  * Dirs never walked by discovery: VCS, dependency caches, build output, and the soul itself.
@@ -182,7 +183,9 @@ export function fileNode(root: string, file: FileMeta): Node {
     id: idFor({ kind: 'file', path: file.path }),
     kind: 'file',
     file: file.path,
-    hash: contentHash(content),
+    // Sensitive Mule files (secure properties, keystores) never hash their secret bytes: properties
+    // files hash their KEYS only; binary stores hash their path only. See mule/discover.ts.
+    hash: secureContentHash(file, content),
     ...(file.lang ? { lang: file.lang } : {}),
   };
 }
