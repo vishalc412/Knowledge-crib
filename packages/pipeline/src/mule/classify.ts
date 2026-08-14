@@ -29,6 +29,16 @@ const MULE3_XML_SIGNALS = [
 /** Sensitive property filename patterns → source policy `deny` (never persisted, never hashed by value). */
 const SENSITIVE_NAME = /secure|password|secret|credential|keystore|truststore|jks/i;
 
+/** True if `path` contains the directory `segment` as a path component — at the start of the path
+ *  or after a leading slash — so a repo-root file (`src/test/munit/suite.xml`, no leading slash)
+ *  and a nested-root file (`legacy/src/test/munit/order-test.xml`) both match `src/test/munit`.
+ *  Plain `.includes('/src/test/munit/')` (leading slash) misses the repo-root case: a Mule project
+ *  indexed at its own root (`crib index <project-dir>`) has projectRoot `''`, so every file path
+ *  lacks the leading slash and MUnit files would misclassify as `config` instead of `munit`. */
+function hasSegment(path: string, segment: string): boolean {
+  return path === segment || path.startsWith(`${segment}/`) || path.includes(`/${segment}/`);
+}
+
 /** JAR-packaging prefixes that mark a config as a build copy rather than the canonical source.
  *  A deployable Mule JAR carries the original config tree under `META-INF/mule-src` (attached
  *  source) and a packaged copy under `classes/`; only the attached source is semantically
@@ -107,7 +117,7 @@ function dedupAttachedSource(
 
 const roleOf = (path: string): FileClassification['role'] => {
   const lower = path.toLowerCase();
-  if (lower.includes('/src/test/munit/') && lower.endsWith('.xml')) return 'munit';
+  if (hasSegment(lower, 'src/test/munit') && lower.endsWith('.xml')) return 'munit';
   if (/\.(dwl|dw)$/.test(lower)) return 'dataweave';
   if (lower.endsWith('.mel')) return 'mel';
   if (lower.endsWith('.raml')) return 'raml';
@@ -192,10 +202,10 @@ export function classifyMuleFiles(
       const text = textByPath.get(file.path) ?? '';
       if (file.path.endsWith('mule-artifact.json')) mule4 += 3;
       if (/<packaging>mule-application<\/packaging>/.test(text)) mule4 += 3;
-      if (file.path.includes('/src/main/mule/')) mule4 += 2;
-      if (file.path.includes('/src/test/munit/')) mule4 += 2;
+      if (hasSegment(file.path, 'src/main/mule')) mule4 += 2;
+      if (hasSegment(file.path, 'src/test/munit')) mule4 += 2;
       if (file.path.endsWith('mule-project.xml')) mule3 += 3;
-      if (file.path.includes('/src/main/app/')) mule3 += 3;
+      if (hasSegment(file.path, 'src/main/app')) mule3 += 3;
       if (/<packaging>mule-domain<\/packaging>/.test(text)) mule3 += 2;
       if (MULE3_XML_SIGNALS.some((re) => re.test(text))) mule3 += 2;
     }

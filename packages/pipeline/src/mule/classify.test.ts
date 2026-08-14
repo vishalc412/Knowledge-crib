@@ -158,6 +158,45 @@ describe('classifyMuleFiles', () => {
     expect(result.diagnostics).toHaveLength(0);
   });
 
+  it('classifies MUnit + config files for a project at the repo root (no leading slash)', () => {
+    // A Mule project indexed at its own directory (`crib index <project-dir>`) has projectRoot ''
+    // so every file path lacks a leading slash. The leading-slash segment checks must still detect
+    // MUnit files (`src/test/munit/suite.xml` → role 'munit', not 'config') and the layout bonuses
+    // (`src/main/mule/`) must contribute to dialect scoring.
+    const result = classifyMuleFiles(
+      [
+        meta('mule-artifact.json'),
+        meta('pom.xml'),
+        meta('src/main/mule/configs.xml'),
+        meta('src/main/mule/flows.xml'),
+        meta('src/test/munit/suite.xml'),
+      ],
+      new Map([
+        ['mule-artifact.json', '{}'],
+        ['pom.xml', '<project><packaging>mule-application</packaging></project>'],
+        ['src/main/mule/configs.xml', '<mule xmlns="http://www.mulesoft.org/schema/mule/core"/>'],
+        ['src/main/mule/flows.xml', '<mule xmlns="http://www.mulesoft.org/schema/mule/core"/>'],
+        [
+          'src/test/munit/suite.xml',
+          '<mule xmlns:munit="http://www.mulesoft.org/schema/mule/munit"><munit:test name="t"/></mule>',
+        ],
+      ]),
+    );
+    expect(result.files.get('mule-artifact.json')?.role).toBe('descriptor');
+    expect(result.files.get('src/main/mule/configs.xml')).toMatchObject({
+      dialect: 'mule4',
+      role: 'config',
+      projectRoot: '',
+    });
+    // THE REGRESSION: MUnit at the repo root must classify as 'munit', not 'config'.
+    expect(result.files.get('src/test/munit/suite.xml')).toMatchObject({
+      dialect: 'mule4',
+      role: 'munit',
+      projectRoot: '',
+    });
+    expect(result.diagnostics).toHaveLength(0);
+  });
+
   it('ignores non-Mule files entirely', () => {
     const result = classifyMuleFiles(
       [meta('src/index.ts'), meta('README.md')],
