@@ -9,7 +9,8 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { SoulStore, newManifest } from '@knowledge-crib/core';
 import { ExtractorRegistry } from '@knowledge-crib/parsers';
 import type { ExtractDiagnostic, Extractor } from '@knowledge-crib/parsers';
@@ -17,6 +18,8 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { defaultExtractors } from './extractors.js';
 import { runParseConcurrent } from './parse-concurrent.js';
 import { runParse } from './parse.js';
+import { defaultResolvers } from './resolve/index.js';
+import { MuleResolver } from './resolve/mule-resolver.js';
 import { discoverFiles, runStructure } from './structure.js';
 
 /**
@@ -247,5 +250,75 @@ describe('Task 7 — ordered diagnostics aggregation', () => {
     expect(serial.diagnosticsTruncated).toBe(2);
     expect(serial.bySeverity.warning).toBe(2);
     expect(serial.byCode).toEqual({ 'test:first': 1, 'test:second': 1 });
+  });
+});
+
+/**
+ * Task 8 — MuleSoft is registered in the default fleets (exactly one extractor + one resolver), and
+ * the parallel parse path produces a byte-identical soul to the serial path for a Mule 4 fixture
+ * (the same determinism contract the TS fixture pins). The MuleSoft supports() are disjoint
+ * (family === 'mule', set by the discovery classifier), so registering Mule last cannot steal
+ * ordinary XML/resource files from any other extractor.
+ */
+const MULE_FIXTURE = join(dirname(fileURLToPath(import.meta.url)), '..', 'fixtures', 'mule-cross');
+
+describe('Task 8 — MuleSoft fleet registration + parallel determinism', () => {
+  it('defaultExtractors() contains exactly one MuleExtractor', () => {
+    const mules = defaultExtractors().filter((e) => e.name === 'family:mulesoft');
+    expect(mules.length).toBe(1);
+  });
+
+  it('defaultResolvers() contains exactly one MuleResolver', () => {
+    const mules = defaultResolvers().filter((r) => r instanceof MuleResolver);
+    expect(mules.length).toBe(1);
+  });
+
+  it('MuleExtractor supports() is disjoint from generic XML/resource files (never steals)', () => {
+    const extractor = defaultExtractors().find((e) => e.name === 'family:mulesoft')!;
+    // a classified Mule file is supported
+    expect(
+      extractor.supports({
+        path: 'src/main/mule/orders.xml',
+        bytes: 0,
+        mtime: 0,
+        classification: {
+          family: 'mule',
+          projectId: '.',
+          projectRoot: '',
+          dialect: 'mule4',
+          role: 'config',
+        },
+      }),
+    ).toBe(true);
+    // an unclassified ordinary XML file is NOT supported (no classification → not Mule)
+    expect(extractor.supports({ path: 'pom.xml', bytes: 0, mtime: 0 })).toBe(false);
+    expect(extractor.supports({ path: 'report.xml', bytes: 0, mtime: 0 })).toBe(false);
+  });
+
+  it('a Mule 4 fixture indexes to a byte-identical soul via serial and concurrent paths', async () => {
+    const { indexRepo } = await import('./pipeline.js');
+    const opts = { now: NOW, dossiers: false, ownership: false };
+    const serialRepo = mkdtempSync(join(tmpdir(), 'crib-mule-par-ser-'));
+    const concRepo = mkdtempSync(join(tmpdir(), 'crib-mule-par-conc-'));
+    cpSync(MULE_FIXTURE, serialRepo, { recursive: true });
+    cpSync(MULE_FIXTURE, concRepo, { recursive: true });
+    await indexRepo(soulAt(serialRepo), serialRepo, { ...opts, parallel: false });
+    await indexRepo(soulAt(concRepo), concRepo, opts); // parallel omitted → concurrency engages
+    expect(snapshotCrib(concRepo)).toBe(snapshotCrib(serialRepo));
+    rmSync(serialRepo, { recursive: true, force: true });
+    rmSync(concRepo, { recursive: true, force: true });
+  });
+
+  it('the Mule fixture produces cross-file resolve edges (resolver runs end-to-end via indexRepo)', async () => {
+    const { indexRepo } = await import('./pipeline.js');
+    const repo = mkdtempSync(join(tmpdir(), 'crib-mule-par-edges-'));
+    cpSync(MULE_FIXTURE, repo, { recursive: true });
+    const soul = soulAt(repo);
+    const report = await indexRepo(soul, repo, { now: NOW, dossiers: false, ownership: false });
+    // cross-file flow-ref → one calls edge (getOrders → enrichOrder); static missing → one externalFlow
+    expect(report.resolve.calls).toBeGreaterThanOrEqual(1);
+    expect(report.resolve.externalFlows).toBeGreaterThanOrEqual(1);
+    expect([...soul.iterate('symbol')].some((n) => n.type === 'external-flow')).toBe(true);
+    rmSync(repo, { recursive: true, force: true });
   });
 });

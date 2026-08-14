@@ -15,6 +15,7 @@ import {
   GoExtractor,
   JavaExtractor,
   MarkdownExtractor,
+  MuleExtractor,
   PhpExtractor,
   PlSqlExtractor,
   PythonExtractor,
@@ -34,5 +35,9 @@ export function defaultExtractors(): Extractor[] {
     new GoExtractor(),
     new RustExtractor(),
     new PhpExtractor(),
+    // MuleSoft — the first non-source-language extractor. `supports()` is disjoint (family === 'mule'
+    // set by the discovery classifier), so it never competes with a code extractor; appended last so a
+    // repo with no Mule files pays nothing. Property VALUES are never stored (keys + references only).
+    new MuleExtractor(),
   ];
 }

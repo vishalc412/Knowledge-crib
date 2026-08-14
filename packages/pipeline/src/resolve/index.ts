@@ -10,11 +10,13 @@ import type { SoulStore } from '@knowledge-crib/core';
  * an indexed node is dropped, never guessed.
  */
 import type { FileMeta } from '@knowledge-crib/parsers';
+import type { Edge, Node } from '@knowledge-crib/soul-schema';
 import { CsharpResolver } from './csharp-resolver.js';
 import type { CfgPass } from './dispatch.js';
 import { CfgPassRegistry } from './dispatch.js';
 import { GoResolver } from './go-resolver.js';
 import { JavaResolver } from './java-resolver.js';
+import { MuleResolver } from './mule-resolver.js';
 import { PlSqlCfgPass } from './plsql-cfg.js';
 import { PythonResolver } from './python-resolver.js';
 import { ResolverRegistry } from './resolver-registry.js';
@@ -34,6 +36,8 @@ export { JavaResolver, resolveJava } from './java-resolver.js';
 export { CsharpResolver, resolveCsharp } from './csharp-resolver.js';
 export { GoResolver, resolveGo } from './go-resolver.js';
 export { RustResolver, resolveRust } from './rust-resolver.js';
+export { MuleResolver, resolveMule } from './mule-resolver.js';
+export type { MuleResolveResult } from './mule-resolver.js';
 export { SchemaCatalog } from './schema-catalog.js';
 export { ResolverRegistry } from './resolver-registry.js';
 export type {
@@ -49,7 +53,7 @@ export type { BasicBlock } from '../cfg/basic-block.js';
 export { pathCondition } from '../cfg/guard-chain.js';
 export type { GuardFrame, PathCondition } from '../cfg/guard-chain.js';
 
-/** Default resolvers when the caller doesn't override: TypeScript + PL/SQL + Python + Java + C# + Go + Rust. */
+/** Default resolvers when the caller doesn't override: TypeScript + PL/SQL + Python + Java + C# + Go + Rust + MuleSoft. */
 export function defaultResolvers(): Resolver[] {
   return [
     new TypeScriptResolver(),
@@ -59,6 +63,10 @@ export function defaultResolvers(): Resolver[] {
     new CsharpResolver(),
     new GoResolver(),
     new RustResolver(),
+    // MuleSoft — `supports()` is disjoint (family === 'mule'), so it never competes with a code
+    // resolver; appended last. Returns placeholder NODES for unresolved cross-file flow targets,
+    // which runResolve persists so the edges pointing at them resolve (see below).
+    new MuleResolver(),
   ];
 }
 
@@ -80,14 +88,21 @@ export function runResolve(
   const table = new SymbolTable(soul);
   const agg: ResolveStats = { imports: 0, calls: 0, inherits: 0, implements: 0, dropped: 0 };
 
-  const allEdges = [];
+  const allEdges: Edge[] = [];
+  // Some resolvers (MuleSoft) return placeholder NODES for unresolved cross-file targets (e.g. a
+  // static flow-ref whose target flow isn't in the indexed project). Persist those BEFORE the edges
+  // so the edges that point at placeholder ids resolve against a node that actually exists.
+  const allNodes: Node[] = [];
   for (const resolver of registry.all()) {
     const supported = files.filter((f) => resolver.supports(f));
     if (supported.length === 0) continue;
-    const { edges, stats } = resolver.resolve({ soul, table, root, files: supported });
-    for (const e of edges) allEdges.push(e);
-    for (const [k, v] of Object.entries(stats)) agg[k] = (agg[k] ?? 0) + (v ?? 0);
+    const result = resolver.resolve({ soul, table, root, files: supported });
+    for (const e of result.edges) allEdges.push(e);
+    for (const [k, v] of Object.entries(result.stats)) agg[k] = (agg[k] ?? 0) + (v ?? 0);
+    const nodes = (result as { nodes?: Node[] }).nodes;
+    if (nodes) for (const n of nodes) allNodes.push(n);
   }
+  if (allNodes.length > 0) soul.putNodes(allNodes);
   if (allEdges.length > 0) soul.putEdges(allEdges);
   // Self-recursion stamp (language-agnostic): a callable that calls itself. Self-call EDGES are never
   // emitted (cycle avoidance — every extractor + resolver skips them), so recursion is surfaced as a
