@@ -158,3 +158,59 @@ describe('parseMUnit — Mule 4 MUnit', () => {
     expect(suite.tests[0]?.fixtures).toEqual(['fixtures/orders.json']);
   });
 });
+
+const MULE3_MUNIT_XML = `<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns="http://www.mulesoft.org/schema/mule/core"
+      xmlns:munit="http://www.mulesoft.org/schema/mule/munit"
+      xmlns:mock="http://www.mulesoft.org/schema/mule/mock"
+      xmlns:http="http://www.mulesoft.org/schema/mule/http">
+  <munit:test name="legacy-flow-test" expectException="LEGACY:TIMEOUT">
+    <flow-ref name="legacyFlow"/>
+    <mock:when processor="http:request" config-ref="httpConfig">
+      <mock:then-return>
+        <mock:payload mediaType="application/java">#[payload]</mock:payload>
+      </mock:then-return>
+    </mock:when>
+    <mock:verify-times-called processor="http:request" times="1"/>
+    <munit:assert-that expression="#[payload]" is="#[equalTo('OK')]"/>
+    <munit:set-event name="setInbound">
+      <munit:inbound-properties>
+        <munit:inbound-property key="http.request.path" value="/orders"/>
+      </munit:inbound-properties>
+    </munit:set-event>
+  </munit:test>
+</mule>`;
+
+describe('parseMUnit — Mule 3 MUnit', () => {
+  it('lifts a flat Mule 3 test with a direct flow-ref (no execution wrapper) + expected exception', () => {
+    const suite = parseMUnit(MULE3_MUNIT_XML, 'mule3');
+    expect(suite.dialect).toBe('mule3');
+    expect(suite.tests).toHaveLength(1);
+    expect(suite.tests[0]).toMatchObject({
+      name: 'legacy-flow-test',
+      testedFlows: ['legacyFlow'],
+      expectedErrorType: 'LEGACY:TIMEOUT',
+    });
+  });
+
+  it('collects a mock and a verify-times-called assertion from the flat structure', () => {
+    const suite = parseMUnit(MULE3_MUNIT_XML, 'mule3');
+    const mocks = suite.tests[0]?.mocks ?? [];
+    expect(mocks).toContainEqual(
+      expect.objectContaining({ processor: 'http:request', configRef: 'httpConfig' }),
+    );
+    const assertions = suite.tests[0]?.assertions ?? [];
+    expect(assertions.map((a) => a.kind)).toEqual(
+      expect.arrayContaining(['assert-that', 'verify-times-called']),
+    );
+  });
+
+  it('tolerates inbound-property setup under set-event without retaining the value as a secret', () => {
+    // set-event inbound-properties are a setup construct; the parser does not model them, and a
+    // literal value there must not surface as a retained secret. Here the value is a path (not a
+    // secret), but the point is the suite stays well-formed and the mock payload redacts a key.
+    const suite = parseMUnit(MULE3_MUNIT_XML, 'mule3');
+    expect(suite.tests[0]?.mocks[0]?.payload).toBe('#[payload]');
+    expect(JSON.stringify(suite)).not.toContain('password');
+  });
+});

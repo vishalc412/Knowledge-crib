@@ -186,6 +186,8 @@ function collectTestedFlows(testEl: MuleXmlElement): string[] {
         if (step.local === 'flow-ref') add(attr(step, 'name'));
       }
     }
+    // Mule 3 MUnit is flat: a flow-ref may be a DIRECT child of munit:test (no execution wrapper).
+    if (child.local === 'flow-ref') add(attr(child, 'name'));
   }
   return flows;
 }
@@ -252,7 +254,10 @@ function buildAssertion(el: MuleXmlElement): MUnitAssertion {
 function buildTest(testEl: MuleXmlElement, names: (typeof MUNIT_NAMES)[Dialect]): MUnitTest {
   const name = attr(testEl, 'name') ?? '';
   const description = attr(testEl, 'description');
-  const expectedErrorType = attr(testEl, 'expectedErrorType') ?? attr(testEl, 'expectErrorType');
+  const expectedErrorType =
+    attr(testEl, 'expectedErrorType') ??
+    attr(testEl, 'expectErrorType') ??
+    attr(testEl, 'expectException');
   const testedFlows = collectTestedFlows(testEl);
   const mocks: MUnitMock[] = [];
   const assertions: MUnitAssertion[] = [];
