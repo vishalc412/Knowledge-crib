@@ -6,7 +6,7 @@
  * The contract types live here rather than in `soul-schema` so the leaf schema package stays free
  * of parser concerns; they reference only the schema's Node/Edge/NodeKind.
  */
-import type { Edge, Node, NodeKind } from '@knowledge-crib/soul-schema';
+import type { Edge, Node, NodeKind, Span } from '@knowledge-crib/soul-schema';
 
 /**
  * Max chars retained for a captured expression snippet — an assignment RHS (scoring formula), a
@@ -38,6 +38,9 @@ export interface FileMeta {
   lang?: string;
   bytes: number;
   mtime: number;
+  /** Mule-only: clone-safe classification attached by the structure-phase pre-pass. Absent for every
+   *  non-Mule file, so existing extractors stay source-compatible (`supports()` never inspects it). */
+  classification?: FileClassification;
 }
 
 /** A minimal tree-sitter-ish parser handle; concrete shape is backend-defined (M8 langs). */
@@ -62,6 +65,9 @@ export interface ExtractResult {
   nodes: Node[];
   /** intra-file edges only: member-of, local calls, etc. */
   edges: Edge[];
+  /** per-file diagnostics produced during extraction (warnings/errors/info). Absent ⇒ none. The
+   *  parse phase aggregates these across files into `ParseStats` in discovery order. */
+  diagnostics?: ExtractDiagnostic[];
 }
 
 /** What a language extractor claims to resolve. Capability-honesty tests verify these (§5). */
@@ -82,4 +88,58 @@ export interface Extractor {
   capabilities?: Capabilities;
   /** parse one file → nodes + intra-file edges. Must degrade to a file node on parse failure. */
   extract(file: FileMeta, ctx: ExtractCtx): Promise<ExtractResult>;
+}
+
+// ---------------------------------------------------------------------------
+// MuleSoft extraction contracts (schema-agnostic, clone-safe).
+//
+// Mule is the first NON-source-language extractor: it ingests Mule 3/4 projects
+// (XML config, DataWeave, RAML, descriptors, properties, MUnit) and emits the same
+// graph vocabulary as the language extractors. Classification is attached to
+// FileMeta by the structure-phase pre-pass (classifyMuleFiles) so `MuleExtractor.
+// supports()` can dispatch disjointly from generic XML/resource files WITHOUT any
+// extractor registration order sensitivity. All Mule types are optional on the
+// shared contracts above so every existing extractor compiles unchanged.
+// ---------------------------------------------------------------------------
+
+/** The role a Mule file plays inside its project. Drives extractor dispatch + source policy. */
+export type MuleFileRole =
+  | 'config' // *.xml flow/config under src/main/mule (mule4) or src/main/app (mule3)
+  | 'dataweave' // *.dwl / *.dw DataWeave module
+  | 'mel' // *.mel MuleSoft Expression Language resource (Mule 3)
+  | 'raml' // *.raml API contract (APIKit route source)
+  | 'munit' // *.xml MUnit test under src/test/munit
+  | 'descriptor' // pom.xml / mule-artifact.json / mule-deploy.properties
+  | 'properties' // *.properties / *.yaml / *.yml config (keys-only; values redacted)
+  | 'resource'; // any other classified file (static resources, keystores metadata, etc.)
+
+/** Clone-safe (pure-data, no live references) classification stamped onto FileMeta. */
+export interface FileClassification {
+  /** always 'mule' — the dispatch key MuleExtractor.supports() checks. */
+  family: 'mule';
+  /** the detected Mule project this file belongs to (projectRoot, or '.' for the repo root). */
+  projectId: string;
+  /** repo-relative POSIX root of the detected Mule project ('' for the repo root itself). */
+  projectRoot: string;
+  /** Mule 3 vs Mule 4 — selects the dialect normalizer inside MuleExtractor. */
+  dialect: 'mule3' | 'mule4';
+  /** what kind of Mule artifact this file is — drives extractor sub-dispatch + source policy. */
+  role: MuleFileRole;
+  /** true for secure/encrypted property files + key/trust stores → source policy `deny`. */
+  sensitive?: boolean;
+}
+
+/** A per-file diagnostic produced by a Mule (or future) extractor. Pure data; structuredClone-safe. */
+export interface ExtractDiagnostic {
+  /** stable code, e.g. 'mule:unsupported-expression', 'mule:ambiguous-dialect'. */
+  code: string;
+  /** 'error' halts nothing by itself — the rest of the project stays queryable; counted in summary. */
+  severity: 'info' | 'warning' | 'error';
+  message: string;
+  /** repo-relative path of the file that produced the diagnostic, when file-scoped. */
+  file?: string;
+  /** the Mule project the diagnostic belongs to (matches FileClassification.projectId). */
+  projectId?: string;
+  /** line span anchoring the diagnostic, when known. */
+  span?: Span;
 }
