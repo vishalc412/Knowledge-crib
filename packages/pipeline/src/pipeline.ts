@@ -6,7 +6,7 @@
  */
 import type { IndexStore, SoulStore } from '@knowledge-crib/core';
 import { ExtractorRegistry } from '@knowledge-crib/parsers';
-import type { Extractor } from '@knowledge-crib/parsers';
+import type { ExtractDiagnostic, Extractor } from '@knowledge-crib/parsers';
 import { defaultExtractors } from './extractors.js';
 export { defaultExtractors } from './extractors.js';
 import { runArtifactGraph } from './artifacts.js';
@@ -19,6 +19,7 @@ import { runLink } from './linker/index.js';
 import type { LinkStats } from './linker/index.js';
 import type { SemanticStats } from './linker/index.js';
 import { runSemanticLink } from './linker/index.js';
+import { classifyMuleDiscovery } from './mule/discover.js';
 import { runMultimodal } from './multimodal/index.js';
 import type { MultimodalPhaseOpts, MultimodalReport } from './multimodal/index.js';
 import { isMediaPath } from './multimodal/ingest.js';
@@ -31,7 +32,6 @@ import { runResolve } from './resolve/index.js';
 import type { ResolveStats } from './resolve/index.js';
 import type { CfgPass, Resolver } from './resolve/index.js';
 import { discoverFiles, runStructure } from './structure.js';
-import { classifyMuleDiscovery } from './mule/discover.js';
 import { currentHead } from './vcs.js';
 
 export interface IndexOpts {
@@ -98,6 +98,23 @@ export interface IndexReport {
   semantic: SemanticStats;
   ownership: OwnershipStats;
   artifacts: ArtifactStats;
+  /** MuleSoft pre-pass summary. Present (non-null) only when at least one Mule file was classified;
+   *  absent for a non-Mule repo so the deterministic path is unchanged. Surfaces the classification
+   *  diagnostics (`mule:ambiguous-dialect`, `mule:packaged-duplicate-skipped`) that the parse phase
+   *  does not aggregate, plus project + per-dialect file counts the CLI folds into its summary. */
+  mule?: MuleReport;
+}
+
+/** MuleSoft classification summary computed in the structure pre-pass, before parse. The
+ *  parse-time Mule diagnostics live in {@link ParseStats}; this carries the classification-time
+ *  diagnostics + the project/dialect counts derived from the stamped FileClassification. */
+export interface MuleReport {
+  /** Distinct detected Mule project roots (FileClassification.projectId). */
+  projects: number;
+  /** Classified files per dialect (a file routed to a dialect counts once). */
+  dialectFiles: { mule3: number; mule4: number };
+  /** Classification-time diagnostics (ambiguous-dialect errors, packaged-duplicate warnings). */
+  diagnostics: ExtractDiagnostic[];
 }
 
 /** Full index of a repo through the deterministic linker, then (optional) index build. */
@@ -118,8 +135,11 @@ export async function indexRepo(
   const files = discoverFiles(root, discoverOpts);
   // Mule pre-pass (Foundation Task 4): stamp a clone-safe FileClassification + role lang onto Mule
   // files so MuleExtractor.supports() can dispatch disjointly (Task 13) and fileNode can hash
-  // sensitive config by KEYS only. Diagnostics are aggregated by the parse phase (Task 7).
-  classifyMuleDiscovery(root, files);
+  // sensitive config by KEYS only. The classification diagnostics (ambiguous-dialect errors +
+  // packaged-duplicate warnings) are NOT aggregated by the parse phase (only parse-time mule:*
+  // codes are) — capture them here and surface them via the report's `mule` field (Task 7).
+  const muleDiagnostics = classifyMuleDiscovery(root, files);
+  const mule = muleReport(files, muleDiagnostics);
   runStructure(soul, root, files); // Phase 1
   // defaultRegistry = the fleet came from defaultExtractors() (no custom opts.extractors) → the
   // parallel pool can ship it. Custom extractors force the serial path (workers can't receive them).
@@ -193,5 +213,27 @@ export async function indexRepo(
     semantic,
     ownership,
     artifacts,
+    mule,
   };
+}
+
+/** Build the {@link MuleReport} from the classified FileMetas + the classification diagnostics.
+ *  Pure over `files` (reads the in-place-stamped `classification`) + the diagnostics array. Returns
+ *  undefined when no Mule file was classified so non-Mule repos see no change. */
+function muleReport(
+  files: { classification?: { projectId: string; dialect: 'mule3' | 'mule4' } }[],
+  diagnostics: ExtractDiagnostic[],
+): MuleReport | undefined {
+  let mule3 = 0;
+  let mule4 = 0;
+  const projects = new Set<string>();
+  for (const f of files) {
+    const c = f.classification;
+    if (!c) continue;
+    projects.add(c.projectId);
+    if (c.dialect === 'mule3') mule3++;
+    else mule4++;
+  }
+  if (projects.size === 0 && diagnostics.length === 0) return undefined;
+  return { projects: projects.size, dialectFiles: { mule3, mule4 }, diagnostics };
 }

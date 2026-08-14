@@ -112,7 +112,12 @@ import {
   updateRepo,
 } from '@knowledge-crib/pipeline';
 import { DEFAULT_IGNORES } from '@knowledge-crib/pipeline';
-import type { PreparedSourceInput, WorkspaceLayout } from '@knowledge-crib/pipeline';
+import type {
+  IndexReport,
+  MuleReport,
+  PreparedSourceInput,
+  WorkspaceLayout,
+} from '@knowledge-crib/pipeline';
 import { blake3Hex } from '@knowledge-crib/soul-schema';
 import { buildVizGraph, buildVizOverview, vizAssetsDir } from '@knowledge-crib/ui';
 import {
@@ -683,6 +688,105 @@ function printLlmPending(soul: SoulStore, repoRoot: string): void {
   }
 }
 
+/** MuleSoft summary emitted by `crib index` (human line + the `mulesoft` key of `--json`). The
+ *  project/dialect/diagnostics fields come from the pipeline's structure pre-pass
+ *  ({@link MuleReport}); the topology counts are derived in-process from the committed soul with
+ *  the same predicates the local acceptance gate (`scripts/check-mule-sample.mjs`) uses, so the
+ *  summary and the gate agree. */
+interface MuleIndexSummary {
+  projects: number;
+  dialectFiles: { mule3: number; mule4: number };
+  flows: number;
+  subflows: number;
+  /** Message sources + RAML API operations (all `route`-kind nodes). */
+  routes: number;
+  flowRefs: number;
+  transforms: number;
+  munitTests: number;
+  /** Distinct unresolved flow-ref targets (`external-flow` placeholder nodes). */
+  externalTargets: number;
+  /** `resolved` = flowRefs − externalTargets (each unresolved target counts as one unresolved
+   *  flow-ref; an approximation when several flow-refs share one missing target). */
+  references: { resolved: number; unresolved: number };
+  /** Mule diagnostics by severity (classification-time + parse-time `mule:*` codes). */
+  diagnostics: { warnings: number; errors: number };
+}
+
+/** Derive the {@link MuleIndexSummary} from the pipeline report + the committed soul. One pass
+ *  over `soul.iterate()`; pure (no mutation). Only called when `report.mule` is present. */
+function summarizeMule(report: IndexReport, soul: SoulStore): MuleIndexSummary {
+  const mule = report.mule as MuleReport;
+  let flows = 0;
+  let subflows = 0;
+  let routes = 0;
+  let flowRefs = 0;
+  let transforms = 0;
+  let munitTests = 0;
+  let externalTargets = 0;
+  for (const n of soul.iterate()) {
+    // `type` lives on flow/subflow/test/module nodes; `kind` on statement/route/http-call/...
+    const t = n.type;
+    const k = n.kind;
+    if (t === 'flow') flows++;
+    else if (t === 'subflow') subflows++;
+    else if (t === 'test') munitTests++;
+    else if (t === 'external-flow') externalTargets++;
+    else if (k === 'route') routes++;
+    else if (k === 'statement') {
+      const sk = n.meta?.semanticKind;
+      if (sk === 'flow-ref') flowRefs++;
+      else if (sk === 'transform') transforms++;
+    }
+  }
+  // Diagnostics: classification-time (report.mule.diagnostics) + parse-time mule:* codes.
+  let warnings = 0;
+  let errors = 0;
+  for (const d of mule.diagnostics) {
+    if (d.severity === 'warning') warnings++;
+    else if (d.severity === 'error') errors++;
+  }
+  for (const d of report.parse.diagnostics) {
+    if (!d.code.startsWith('mule:')) continue;
+    if (d.severity === 'warning') warnings++;
+    else if (d.severity === 'error') errors++;
+  }
+  return {
+    projects: mule.projects,
+    dialectFiles: mule.dialectFiles,
+    flows,
+    subflows,
+    routes,
+    flowRefs,
+    transforms,
+    munitTests,
+    externalTargets,
+    references: { resolved: Math.max(0, flowRefs - externalTargets), unresolved: externalTargets },
+    diagnostics: { warnings, errors },
+  };
+}
+
+/** One-line Mule summary for the human index line (appended after the nodes/edges count). */
+function renderMuleLine(s: MuleIndexSummary): string {
+  const dialect = [
+    s.dialectFiles.mule3 ? `mule3: ${s.dialectFiles.mule3}` : '',
+    s.dialectFiles.mule4 ? `mule4: ${s.dialectFiles.mule4}` : '',
+  ]
+    .filter(Boolean)
+    .join(', ');
+  const parts = [
+    `${s.projects} ${s.projects === 1 ? 'project' : 'projects'}`,
+    dialect ? `(${dialect})` : '',
+    `${s.flows} flows`,
+    `${s.subflows} subflows`,
+    `${s.routes} routes`,
+    `${s.flowRefs} flow-refs`,
+    `${s.transforms} transforms`,
+    `${s.munitTests} munit tests`,
+    `${s.references.unresolved} unresolved`,
+  ].filter(Boolean);
+  return `mule: ${parts.join(', ')}`;
+}
+
 async function cmdIndex(args: string[], ctx?: CmdCtx): Promise<number> {
   // An explicit source path remains the source authority. `resolveRoot` also
   // preserves a registered external cribDir when this is an update fallback.
@@ -695,6 +799,7 @@ async function cmdIndex(args: string[], ctx?: CmdCtx): Promise<number> {
   const cribDir = prepared.cribDir;
   const projectKey = resolved.projectKey;
   const semantic = args.includes('--semantic');
+  const json = args.includes('--json');
   const ignores = parseExcludes(args);
   const scope = resolvePackageScope(repoRoot, args);
   if (scope.status !== EXIT.OK) return scope.status;
@@ -715,13 +820,23 @@ async function cmdIndex(args: string[], ctx?: CmdCtx): Promise<number> {
     registerIndexed(projectKey, cribDir, soul, source);
     const stats = soul.getManifest().stats;
     const scopeSuffix = scope.packageRoots ? ` [scoped: ${scope.indexedPackages.join(', ')}]` : '';
-    process.stdout.write(
-      `indexed ${report.files} files → ${stats.nodes} nodes, ${stats.edges} edges ` +
-        `(${report.link.describes} describes, ${report.link.references} references)${scopeSuffix} in ${Date.now() - started}ms\n`,
-    );
-    printTokenSavingsHero(new Verbs({ soul, index, repoRoot }), soul, repoRoot);
+    // Mule summary (only when a Mule project was classified). `--json` emits the full report with a
+    // `mulesoft` key and no other top-level changes; the default human line appends a one-line Mule
+    // segment after the node/edge counts. Index success never depends on the Mule warning count.
+    const muleSummary = report.mule ? summarizeMule(report, soul) : undefined;
+    if (json) {
+      const out: Record<string, unknown> = { ...report, mulesoft: muleSummary ?? null };
+      process.stdout.write(`${JSON.stringify(out, null, 2)}\n`);
+    } else {
+      const muleSeg = muleSummary ? ` · ${renderMuleLine(muleSummary)}` : '';
+      process.stdout.write(
+        `indexed ${report.files} files → ${stats.nodes} nodes, ${stats.edges} edges ` +
+          `(${report.link.describes} describes, ${report.link.references} references)${scopeSuffix}${muleSeg} in ${Date.now() - started}ms\n`,
+      );
+      printTokenSavingsHero(new Verbs({ soul, index, repoRoot }), soul, repoRoot);
+      printLlmPending(soul, repoRoot);
+    }
     index.close();
-    printLlmPending(soul, repoRoot);
     return EXIT.OK;
   });
 }

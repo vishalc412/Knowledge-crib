@@ -15,6 +15,7 @@ import { crc32 } from 'node:zlib';
 import { SoulStore, newManifest, openIndex } from '@knowledge-crib/core';
 import { indexRepo } from '@knowledge-crib/pipeline';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { syntheticMuleProject } from '../../../scripts/fixtures/synthetic-mule-project.mjs';
 
 /**
  * End-to-end CLI dispatch tests for the P2 surface: `context --package <pkg>` (WS-4 bulk dossierByScope)
@@ -1160,5 +1161,104 @@ describe('crib doctor (W8) — agent-memory loop check', () => {
     runCli(['adapters', 'install', '--client', 'claude']);
     const r = runCliResult(['doctor']);
     expect(r.stdout).toMatch(/✓ agent-memory loop — policy ✓, team store ✓/);
+  });
+});
+
+describe('crib index — MuleSoft summary (Task 7)', () => {
+  let muleRoot: string;
+  beforeEach(() => {
+    muleRoot = mkdtempSync(join(tmpdir(), 'crib-cli-mule-'));
+    syntheticMuleProject(muleRoot);
+  });
+  afterEach(() => rmSync(muleRoot, { recursive: true, force: true }));
+
+  const runMule = (args: string[]): { status: number; stdout: string; stderr: string } => {
+    const r = spawnSync(process.execPath, [CLI, ...args], {
+      cwd: muleRoot,
+      encoding: 'utf8',
+      maxBuffer: 32 * 1024 * 1024,
+    });
+    const stripNoise = (s: string): string =>
+      s
+        .split('\n')
+        .filter((l) => !/ExperimentalWarning|trace-warnings/.test(l))
+        .join('\n')
+        .trim();
+    return {
+      status: r.status ?? 1,
+      stdout: stripNoise(r.stdout ?? ''),
+      stderr: stripNoise(r.stderr ?? ''),
+    };
+  };
+
+  it('the human line appends a Mule summary with project, dialect, flows, subflows, munit, unresolved', () => {
+    const r = runMule(['index', '.']);
+    expect(r.status).toBe(0);
+    expect(r.stdout).toMatch(/indexed \d+ files → \d+ nodes, \d+ edges/);
+    expect(r.stdout).toContain('· mule:');
+    // 1 project, Mule 4 (the synthetic corpus is a single mule4 app at the repo root).
+    expect(r.stdout).toContain('1 project');
+    expect(r.stdout).toContain('mule4:');
+    expect(r.stdout).toContain('18 flows');
+    expect(r.stdout).toContain('7 subflows');
+    expect(r.stdout).toContain('6 munit tests');
+    // 3 unresolved flow-ref targets → "3 unresolved".
+    expect(r.stdout).toContain('3 unresolved');
+  });
+
+  it('--json emits the full report with a mulesoft key and unchanged top-level fields', () => {
+    const r = runMule(['index', '.', '--json']);
+    expect(r.status).toBe(0);
+    const obj = JSON.parse(r.stdout);
+    // Existing top-level fields are preserved (the JSON contract: no top-level change).
+    for (const k of [
+      'files',
+      'parse',
+      'resolve',
+      'cfg',
+      'link',
+      'cluster',
+      'ownership',
+      'artifacts',
+    ])
+      expect(obj[k]).toBeDefined();
+    expect(obj.mulesoft).toBeDefined();
+    const m = obj.mulesoft;
+    expect(m.projects).toBe(1);
+    expect(m.dialectFiles).toEqual({ mule3: 0, mule4: expect.any(Number) });
+    expect(m.dialectFiles.mule4).toBeGreaterThan(0);
+    expect(m.flows).toBe(18);
+    expect(m.subflows).toBe(7);
+    expect(m.flowRefs).toBe(39);
+    expect(m.transforms).toBe(27);
+    expect(m.munitTests).toBe(6);
+    expect(m.externalTargets).toBe(3);
+    // routes = 2 http:listeners + 8 RAML API operations = 10.
+    expect(m.routes).toBe(10);
+    expect(m.references).toEqual({ resolved: 36, unresolved: 3 });
+    // The synthetic corpus has no ambiguous-dialect / packaged-duplicate diagnostics.
+    expect(m.diagnostics).toEqual({ warnings: 0, errors: 0 });
+  });
+
+  it('a non-Mule repo emits no mule segment and mulesoft is null under --json', () => {
+    const plain = mkdtempSync(join(tmpdir(), 'crib-cli-nomule-'));
+    try {
+      writeFileSync(join(plain, 'index.ts'), 'export const x = 1;\n');
+      const r = spawnSync(process.execPath, [CLI, 'index', '.', '--json'], {
+        cwd: plain,
+        encoding: 'utf8',
+        maxBuffer: 32 * 1024 * 1024,
+      });
+      expect(r.status ?? 1).toBe(0);
+      const out = (r.stdout ?? '')
+        .split('\n')
+        .filter((l) => !/ExperimentalWarning|trace-warnings/.test(l))
+        .join('\n')
+        .trim();
+      const obj = JSON.parse(out);
+      expect(obj.mulesoft).toBeNull();
+    } finally {
+      rmSync(plain, { recursive: true, force: true });
+    }
   });
 });
