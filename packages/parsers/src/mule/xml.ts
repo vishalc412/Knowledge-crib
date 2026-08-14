@@ -113,11 +113,18 @@ export function parseMuleXml(source: string): MuleXmlDocument {
   });
 
   parser.on('text', (text: string) => {
-    if (text.length > 0) top().text += text;
+    if (text.length === 0) return;
+    // Whitespace between the `<?xml …?>` declaration and the root element (and trailing whitespace
+    // after the root closes) is legal XML prolog/epilog — every real Mule config and pom.xml starts
+    // with `<?xml?>\n<mule>`. Ignore whitespace-only text outside the root; only non-whitespace text
+    // outside the root is genuinely malformed.
+    if (stack.length === 0 && text.trim() === '') return;
+    top().text += text;
   });
 
   parser.on('cdata', (cdata: string) => {
-    if (cdata.length > 0) top().text += cdata;
+    if (cdata.length === 0) return;
+    top().text += cdata;
   });
 
   try {
