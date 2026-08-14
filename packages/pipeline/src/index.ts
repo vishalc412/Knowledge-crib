@@ -15,3 +15,5 @@ export * from './workspace.js';
 export { makeExtractCtx } from './extract-ctx.js';
 export * from './rules/index.js';
 export * from './cluster/index.js';
+export { classifyMuleFiles } from './mule/classify.js';
+export type { MuleClassificationResult } from './mule/classify.js';
