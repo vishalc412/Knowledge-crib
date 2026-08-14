@@ -291,17 +291,101 @@ describe('MuleExtractor — raml role (routes)', () => {
   });
 });
 
-describe('MuleExtractor — mule3 + munit + error fallback', () => {
-  it('reports a not-implemented diagnostic for Mule 3 and emits no semantic nodes', async () => {
-    const extractor = new MuleExtractor();
-    const result = await extractor.extract(
-      muleFile('src/main/app/mule3.xml', 'config', 'mule3', CONFIG_XML),
-      mkCtx(CONFIG_XML),
+const MULE3_CONFIG_XML = `<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns="http://www.mulesoft.org/schema/mule/core"
+      xmlns:vm="http://www.mulesoft.org/schema/mule/vm">
+  <vm:connector name="vmConnector"/>
+  <flow name="legacyFlow">
+    <inbound-endpoint ref="vmConnector" path="in"/>
+    <set-payload value="#[payload]"/>
+    <choice>
+      <when expression="#[payload == 1]">
+        <flow-ref name="helper"/>
+      </when>
+      <otherwise>
+        <logger message="default"/>
+      </otherwise>
+    </choice>
+    <outbound-endpoint ref="vmConnector" path="out"/>
+    <catch-exception-strategy>
+      <logger message="caught"/>
+    </catch-exception-strategy>
+  </flow>
+  <sub-flow name="helper">
+    <set-variable variableName="v" value="#[payload]"/>
+  </sub-flow>
+</mule>`;
+
+const MEL_RESOURCE = `#[flowVars.customerId != null ? app.registry['region'] : p('billing.region')]`;
+
+describe('MuleExtractor — mule3 config role (same vocabulary as Mule 4)', () => {
+  const extractor = new MuleExtractor();
+  let result = {
+    nodes: [] as ReturnType<typeof Object>[],
+    edges: [] as ReturnType<typeof Object>[],
+  } as unknown as Awaited<ReturnType<typeof extractor.extract>>;
+
+  it('emits flow + subflow + config symbol nodes stamped meta.dialect mule3', async () => {
+    result = await extractor.extract(
+      muleFile('src/main/app/mule3.xml', 'config', 'mule3', MULE3_CONFIG_XML),
+      mkCtx(MULE3_CONFIG_XML),
     );
-    expect(result.nodes).toEqual([]);
-    expect(result.diagnostics?.some((d) => d.code === 'mule:mule3-not-implemented')).toBe(true);
+    const flow = result.nodes.find((n) => n.name === 'legacyFlow');
+    expect(flow).toMatchObject({ kind: 'symbol', type: 'flow', lang: 'mule' });
+    expect(flow?.meta).toMatchObject({ dialect: 'mule3' });
+    const subflow = result.nodes.find((n) => n.name === 'helper');
+    expect(subflow).toMatchObject({ kind: 'symbol', type: 'subflow', lang: 'mule' });
+    const config = result.nodes.find((n) => n.type === 'config');
+    expect(config).toMatchObject({ name: 'vmConnector' });
+    expect(config?.meta).toMatchObject({ dialect: 'mule3' });
   });
 
+  it('emits an exception-handler node for the catch-exception-strategy', () => {
+    const eh = result.nodes.find((n) => n.kind === 'exception-handler');
+    expect(eh?.meta).toMatchObject({ strategy: 'catch' });
+  });
+
+  it('emits a local calls edge for a same-file Mule 3 flow-ref', () => {
+    const subflow = result.nodes.find((n) => n.name === 'helper');
+    expect(result.edges).toContainEqual(
+      expect.objectContaining({ dst: subflow?.id, rel: 'calls' }),
+    );
+  });
+
+  it('attaches inline MEL expressions and never persists a property value', () => {
+    // a set-payload statement carries the MEL #[payload] expression; no secret value leaks.
+    const statements = result.nodes.filter((n) => n.kind === 'statement');
+    expect(statements.length).toBeGreaterThan(0);
+    expect(JSON.stringify(result)).not.toContain('mule:mule3-not-implemented');
+  });
+});
+
+describe('MuleExtractor — mel role (Mule 3 standalone expression resource)', () => {
+  it('emits one module symbol carrying property-key references, never values', async () => {
+    const extractor = new MuleExtractor();
+    const result = await extractor.extract(
+      muleFile('src/main/resources/exprs/region.mel', 'mel', 'mule3', MEL_RESOURCE),
+      mkCtx(MEL_RESOURCE),
+    );
+    const module = result.nodes.find((n) => n.type === 'module');
+    expect(module).toMatchObject({ kind: 'symbol', lang: 'mel', name: 'region' });
+    expect(module?.meta).toMatchObject({ dialect: 'mule3' });
+    // the property KEY is a cross-file reference; the resolved value is absent
+    expect(module?.meta).toMatchObject({
+      references: [{ kind: 'property', name: 'billing.region' }],
+    });
+    expect(JSON.stringify(result)).not.toContain('swordfish');
+    // variables + registry are surfaced as intra-expression facts for migration triage
+    expect(module?.meta).toMatchObject({
+      melReferences: expect.arrayContaining([
+        expect.objectContaining({ kind: 'variable', name: 'customerId' }),
+        expect.objectContaining({ kind: 'registry', name: 'region' }),
+      ]),
+    });
+  });
+});
+
+describe('MuleExtractor — munit + error fallback', () => {
   it('emits no semantic nodes for an MUnit file (structure-phase file node represents it)', async () => {
     const extractor = new MuleExtractor();
     const result = await extractor.extract(

@@ -13,9 +13,12 @@
  * normalizer before they reach this layer; `${key}` / `secure::key` placeholders stay as key
  * references. A literal secret can never reach the graph.
  *
- * Dialect dispatch: Mule 4 is fully implemented here; Mule 3 (Task 16) is not yet — it returns an
- * honest `mule:mule3-not-implemented` diagnostic and emits no semantic nodes. MUnit files are
- * represented by their structure-phase file node; MUnit semantic nodes arrive in the hardening plan.
+ * Dialect dispatch: both Mule 4 (`parseMule4`) and Mule 3 (`parseMule3`) normalizers produce the
+ * shared {@link MuleDocument} vocabulary, so the SAME config emitter below serves both dialects —
+ * only the `dialect` stamp on flow/config nodes differs. A standalone Mule 3 `.mel` Expression
+ * Language resource is scanned by `parseMel` (variables/registry/calls + property KEY refs only).
+ * MUnit files are represented by their structure-phase file node; MUnit semantic nodes arrive in the
+ * hardening plan.
  */
 import { edgeId } from '@knowledge-crib/soul-schema';
 import type { Edge, Node } from '@knowledge-crib/soul-schema';
@@ -28,9 +31,11 @@ import type {
   FileClassification,
   FileMeta,
 } from '../types.js';
-import type { MuleErrorHandler, MuleProcessor } from './ast.js';
+import type { MuleDocument, MuleErrorHandler, MuleProcessor } from './ast.js';
 import { parseDataWeave } from './dataweave.js';
 import { parseMuleArtifact, parsePom, parseProperties } from './descriptors.js';
+import { parseMel } from './mel.js';
+import { parseMule3 } from './mule3.js';
 import { parseMule4 } from './mule4.js';
 import { parseRaml } from './raml.js';
 
@@ -103,9 +108,11 @@ function extractClassifiedMuleFile(
 ): ExtractResult {
   const fileId = ctx.idFor('file', { path: file.path });
   switch (c.role) {
-    case 'config':
-      if (c.dialect === 'mule4') return emitConfig(source, file, c, ctx, fileId);
-      return mule3NotImplemented(file, c);
+    case 'config': {
+      // Both dialect normalizers emit the shared MuleDocument, so the SAME emitter serves both.
+      const doc = c.dialect === 'mule3' ? parseMule3(source) : parseMule4(source);
+      return emitConfig(doc, file, c, ctx, fileId);
+    }
     case 'dataweave':
       return emitDataWeave(source, file, c, ctx, fileId);
     case 'raml':
@@ -115,8 +122,8 @@ function extractClassifiedMuleFile(
     case 'properties':
       return emitProperties(source, file, c, ctx, fileId);
     case 'mel':
-      // Mule 3 Expression Language resource — Mule 4 has none. Defer to Task 16.
-      if (c.dialect === 'mule3') return mule3NotImplemented(file, c);
+      // A standalone Mule 3 Expression Language resource. Mule 4 has no `.mel` role.
+      if (c.dialect === 'mule3') return emitMel(source, file, c, ctx, fileId);
       return { nodes: [], edges: [] };
     default:
       // `munit` and `resource` roles are represented by their structure-phase file node; MUnit
@@ -126,32 +133,20 @@ function extractClassifiedMuleFile(
   }
 }
 
-/** Mule 3 honest fallback — no semantic nodes until the legacy normalizer lands (Task 16). */
-function mule3NotImplemented(file: FileMeta, c: FileClassification): ExtractResult {
-  const diagnostic: ExtractDiagnostic = {
-    code: 'mule:mule3-not-implemented',
-    severity: 'info',
-    message: `Mule 3 extraction is not yet implemented for role '${c.role}' (planned)`,
-    file: file.path,
-    projectId: c.projectId,
-  };
-  return { nodes: [], edges: [], diagnostics: [diagnostic] };
-}
-
 // ---------------------------------------------------------------------------
-// config role (Mule 4)
+// config role (Mule 3 + Mule 4 — shared MuleDocument vocabulary)
 // ---------------------------------------------------------------------------
 
-/** Emit the Mule 4 config graph: configs, flows/subflows, processors, routers, handlers, routes,
- *  outbound calls. */
+/** Emit the config graph (Mule 3 or Mule 4 — both share the {@link MuleDocument} vocabulary):
+ *  configs, flows/subflows, processors, routers, handlers, routes, outbound calls. The `dialect`
+ *  stamp on flow nodes comes from the parsed document so Mule 3 is labeled honestly. */
 function emitConfig(
-  source: string,
+  doc: MuleDocument,
   file: FileMeta,
   c: FileClassification,
   ctx: ExtractCtx,
   fileId: string,
 ): ExtractResult {
-  const doc = parseMule4(source);
   const nodes: Node[] = [];
   const edges: Edge[] = [];
   const diagnostics: ExtractDiagnostic[] = [
@@ -182,7 +177,7 @@ function emitConfig(
       file: file.path,
       span: cfg.span,
       hash: ctx.hash(`config:${cfg.name}@${cfg.span.start}`),
-      meta: { namespace: cfg.namespace, configurationName: cfg.name },
+      meta: { namespace: cfg.namespace, configurationName: cfg.name, dialect: doc.dialect },
     });
     edges.push(memberOf(id, fileId, 'family:mulesoft'));
   }
@@ -205,7 +200,7 @@ function emitConfig(
       file: file.path,
       span: flow.span,
       hash: ctx.hash(`flow:${flow.name}@${flow.span.start}`),
-      meta: { dialect: 'mule4', projectId: c.projectId },
+      meta: { dialect: doc.dialect, projectId: c.projectId },
     });
     edges.push(memberOf(flowId, fileId, 'family:mulesoft'));
   }
@@ -851,6 +846,70 @@ function emitRaml(
     }
   }
 
+  return { nodes, edges, diagnostics: diagnostics.length ? diagnostics : undefined };
+}
+
+// ---------------------------------------------------------------------------
+// mel role (standalone Mule 3 Expression Language resource)
+// ---------------------------------------------------------------------------
+
+/** Emit a standalone `.mel` Mule 3 Expression Language resource as one `module` symbol node
+ *  member-of the file. `parseMel` is non-evaluating: property KEY refs become cross-file
+ *  `references` (the resolver binds them to property files); variables/registry/calls are
+ *  intra-expression facts surfaced on `meta` for migration triage. SECURITY: only property KEY
+ *  NAMES are recorded — a `p('db.password')` records `db.password`, never the resolved value. */
+function emitMel(
+  source: string,
+  file: FileMeta,
+  c: FileClassification,
+  ctx: ExtractCtx,
+  fileId: string,
+): ExtractResult {
+  const mel = parseMel(source);
+  const nodes: Node[] = [];
+  const edges: Edge[] = [];
+  const diagnostics = mel.diagnostics.map((d) => ({
+    ...d,
+    file: file.path,
+    projectId: c.projectId,
+  }));
+
+  const moduleName =
+    file.path
+      .split('/')
+      .pop()
+      ?.replace(/\.mel$/i, '') ?? file.path;
+  const moduleId = ctx.idFor('symbol', {
+    path: file.path,
+    qualifiedName: moduleName,
+    startLine: 0,
+  });
+  // Only property refs are cross-file (resolver binds them to a .properties file); variables +
+  // registry are runtime bindings, calls are intra-expression — both stay on meta for triage.
+  const references: MuleReference[] = mel.references
+    .filter((r) => r.kind === 'property')
+    .map((r) => ({ kind: 'property' as const, name: r.name }));
+  const melReferences = mel.references
+    .filter((r) => r.kind !== 'property')
+    .map((r) => ({ kind: r.kind, name: r.name }));
+  nodes.push({
+    id: moduleId,
+    kind: 'symbol',
+    type: 'module',
+    lang: 'mel',
+    name: moduleName,
+    qualifiedName: moduleName,
+    file: file.path,
+    hash: ctx.hash(`mel:${moduleName}`),
+    meta: {
+      dialect: 'mule3',
+      projectId: c.projectId,
+      ...(references.length ? { references } : {}),
+      ...(melReferences.length ? { melReferences } : {}),
+      ...(mel.calls.length ? { melCalls: mel.calls.map((call) => call.name) } : {}),
+    },
+  });
+  edges.push(memberOf(moduleId, fileId, 'family:mulesoft'));
   return { nodes, edges, diagnostics: diagnostics.length ? diagnostics : undefined };
 }
 
