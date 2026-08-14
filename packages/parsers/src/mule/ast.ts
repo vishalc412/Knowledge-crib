@@ -54,24 +54,73 @@ export interface MuleConfiguration {
   span: Span;
 }
 
-/** A Mule message processor. Same shape as {@link MuleXmlElement} — the alias documents that the
- *  element is being treated as a processor tree inside a flow / sub-flow / error handler. */
-export interface MuleProcessor {
-  uri: string;
-  local: string;
-  prefix: string;
-  attributes: MuleXmlAttribute[];
-  children: MuleProcessor[];
-  text: string;
-  startLine: number;
-  endLine: number;
+/**
+ * Semantic Mule shapes — the dialect-neutral structures the normalizers (mule4/mule3) lift out of
+ * the raw XML tree. Both dialects share these so a Mule 3 normalizer can import them from here
+ * without coupling to the Mule 4 module. `MuleDocument` is the common base; `Mule4Document` /
+ * `Mule3Document` narrow its `dialect`.
+ */
+
+/** The high-level role a processor plays in a flow. Drives graph node stereotyping. */
+export type MuleSemanticKind =
+  | 'source' // a message source (the first element of a `<flow>`: http:listener, scheduler, …)
+  | 'operation' // a generic connector operation (db:select, …)
+  | 'router' // a routing construct (choice, scatter-gather, foreach, until-successful, …)
+  | 'flow-ref' // a `<flow-ref>` call into another flow
+  | 'transform' // an `<ee:transform>` DataWeave transform
+  | 'outbound-call' // an outbound connector call (http:request, …)
+  | 'raise-error'; // a `<raise-error>` explicit error
+
+/** A DataWeave / expression payload attached to a processor attribute. `raw` is the literal source
+ *  (`#[…]]`); `language` is 'dw2' when it parses as DataWeave 2, else 'unknown'. The raw text may
+ *  reference property keys (`p('key')`) but never carries resolved secret values. */
+export interface MuleExpression {
+  raw: string;
+  language: 'dw2' | 'unknown';
+  span: Span;
 }
 
-/** A Mule error-handler block (`<error-handler>`) with its strategy, optional error type, and the
- *  processor subtrees it dispatches to (`on-error-propagate`, `on-error-continue`, etc.). */
+/** A semantic Mule message processor. `namespace`/`operation` are the element's prefix + local name
+ *  (e.g. `http` + `request`); `semanticKind` classifies it for the graph. Attribute values are
+ *  sanitized: credential-like literals become `<redacted>`, `${key}`/`secure::key` stay as key
+ *  references, and DataWeave `#[…]` payloads move to `expressions` (never into `attributes`). */
+export interface MuleProcessor {
+  namespace: string;
+  operation: string;
+  semanticKind: MuleSemanticKind;
+  name?: string;
+  configRef?: string;
+  target?: string;
+  attributes: Record<string, string>;
+  expressions: MuleExpression[];
+  children: MuleProcessor[];
+  span: Span;
+}
+
+/** An error-handling strategy (`<on-error-propagate>` / `<on-error-continue>` / `<on-error>`)
+ *  inside an `<error-handler>` block, with the processor subtree it dispatches to. */
 export interface MuleErrorHandler {
   strategy: string;
   errorType?: string;
   processors: MuleProcessor[];
   span: Span;
+}
+
+/** A Mule flow (`<flow>`, with a message source) or sub-flow (`<sub-flow>`, invoked via flow-ref). */
+export interface MuleFlow {
+  name: string;
+  kind: 'flow' | 'subflow';
+  processors: MuleProcessor[];
+  errorHandlers: MuleErrorHandler[];
+  span: Span;
+}
+
+/** The dialect-neutral Mule document both normalizers produce. `dialect` is narrowed by
+ *  `Mule4Document` / `Mule3Document`. */
+export interface MuleDocument {
+  dialect: 'mule3' | 'mule4';
+  imports: MuleImport[];
+  configurations: MuleConfiguration[];
+  flows: MuleFlow[];
+  diagnostics: ExtractDiagnostic[];
 }
