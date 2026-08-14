@@ -17,8 +17,8 @@
  * shared {@link MuleDocument} vocabulary, so the SAME config emitter below serves both dialects —
  * only the `dialect` stamp on flow/config nodes differs. A standalone Mule 3 `.mel` Expression
  * Language resource is scanned by `parseMel` (variables/registry/calls + property KEY refs only).
- * MUnit files are represented by their structure-phase file node; MUnit semantic nodes arrive in the
- * hardening plan.
+ * MUnit files are lifted by the munit normalizer into a `MUnitSuite` and emitted here as `test`
+ * symbol nodes + mock/assertion child statements (migration evidence the resolver links).
  */
 import { edgeId } from '@knowledge-crib/soul-schema';
 import type { Edge, Node } from '@knowledge-crib/soul-schema';
@@ -37,6 +37,8 @@ import { parseMuleArtifact, parsePom, parseProperties } from './descriptors.js';
 import { parseMel } from './mel.js';
 import { parseMule3 } from './mule3.js';
 import { parseMule4 } from './mule4.js';
+import { parseMUnit } from './munit.js';
+import type { MUnitSuite } from './munit.js';
 import { parseRaml } from './raml.js';
 
 /** A cross-file reference the extractor surfaces for the resolver (never resolved here). The legacy
@@ -54,7 +56,10 @@ export interface MuleReference {
     | 'trait'
     | 'securityScheme'
     | 'endpoint' // Mule 3 inbound/outbound-endpoint `ref` → connector config
-    | 'exceptionStrategy'; // Mule 3 reference-exception-strategy `ref` → global strategy config
+    | 'exceptionStrategy' // Mule 3 reference-exception-strategy `ref` → global strategy config
+    | 'test-target' // MUnit test → the flow it exercises (calls edge)
+    | 'mock-target' // MUnit mock → the connector config it intercepts (references edge)
+    | 'fixture'; // MUnit test → a static fixture file it loads (references edge)
   name: string;
 }
 
@@ -129,12 +134,137 @@ function extractClassifiedMuleFile(
       // A standalone Mule 3 Expression Language resource. Mule 4 has no `.mel` role.
       if (c.dialect === 'mule3') return emitMel(source, file, c, ctx, fileId);
       return { nodes: [], edges: [] };
+    case 'munit': {
+      // MUnit (Mule 3 + Mule 4) test configs: one `munit:test` per test, each a `test` symbol node
+      // carrying its tested flows + expected error type, with mock/assertion child statement nodes
+      // the test `executes`. Cross-file test→flow (calls), mock→config, fixture→file edges are the
+      // resolver's job; the extractor only records the static names as `meta.references`.
+      const suite = parseMUnit(source, c.dialect === 'mule3' ? 'mule3' : 'mule4');
+      return emitMUnit(suite, file, c, ctx, fileId);
+    }
     default:
-      // `munit` and `resource` roles are represented by their structure-phase file node; MUnit
-      // semantic nodes arrive in the hardening plan. Emit nothing here so the file node stands
-      // alone. (Any other unhandled role likewise carries no semantic nodes.)
+      // `resource` roles are represented by their structure-phase file node. Any other unhandled
+      // role likewise carries no semantic nodes.
       return { nodes: [], edges: [] };
   }
+}
+
+// ---------------------------------------------------------------------------
+// munit role (Mule 3 + Mule 4 — shared MUnitSuite vocabulary)
+// ---------------------------------------------------------------------------
+
+/** Emit the MUnit graph (Mule 3 or Mule 4 — both share the {@link MUnitSuite} vocabulary): one
+ *  `test` symbol node per `munit:test`, carrying its tested flows + expected error type + fixture
+ *  references; mock + assertion child `statement` nodes the test `executes`, each mock carrying a
+ *  `mock-target` reference to the connector config (or processor) it intercepts. Cross-file edges
+ *  (test→flow `calls`, mock→config `references`, fixture→file `references`) are the resolver's job
+ *  — the extractor only records the static names as `meta.references` so the resolver can resolve
+ *  them against the project index without re-parsing XML.
+ *
+ *  SECURITY (locked constraint): only KEYS + REFERENCES leave this layer. Mock payload + assertion
+ *  expressions are already redacted/capped by the munit normalizer (a credential-key payload is
+ *  `<redacted>`); a literal secret value never reaches the graph via this path. */
+function emitMUnit(
+  suite: MUnitSuite,
+  file: FileMeta,
+  c: FileClassification,
+  ctx: ExtractCtx,
+  fileId: string,
+): ExtractResult {
+  const nodes: Node[] = [];
+  const edges: Edge[] = [];
+  const diagnostics: ExtractDiagnostic[] = [
+    ...suite.diagnostics.map((d) => ({ ...d, file: file.path, projectId: c.projectId })),
+  ];
+
+  for (const test of suite.tests) {
+    const testId = ctx.idFor('symbol', {
+      path: file.path,
+      qualifiedName: test.name,
+      startLine: test.span.start,
+    });
+    // test-target refs (the flows it exercises) + fixture refs (the static files it loads).
+    const references: MuleReference[] = [];
+    for (const flowName of test.testedFlows)
+      references.push({ kind: 'test-target', name: flowName });
+    for (const fixturePath of test.fixtures)
+      references.push({ kind: 'fixture', name: fixturePath });
+    const meta: Record<string, unknown> = {
+      dialect: suite.dialect,
+      projectId: c.projectId,
+      testedFlows: test.testedFlows,
+    };
+    if (references.length) meta.references = references;
+    if (test.description !== undefined) meta.description = test.description;
+    if (test.expectedErrorType !== undefined) meta.expectedErrorType = test.expectedErrorType;
+    nodes.push({
+      id: testId,
+      kind: 'symbol',
+      type: 'test',
+      lang: 'mule',
+      name: test.name,
+      qualifiedName: test.name,
+      file: file.path,
+      span: test.span,
+      hash: ctx.hash(`test:${test.name}@${test.span.start}`),
+      meta,
+    });
+    edges.push(memberOf(testId, fileId, 'family:mulesoft'));
+
+    // Mocks → child statement nodes executed by the test. Each mock references the connector config
+    // (when a config-ref is present) or the processor it intercepts (a `mock-target` ref the resolver
+    // resolves against the config bucket — a processor-only mock is honest: dropped, not guessed).
+    for (const mock of test.mocks) {
+      const mockId = ctx.idFor('statement', { file: file.path, line: mock.span.start });
+      const mockMeta: Record<string, unknown> = {
+        munitKind: 'mock',
+        processor: mock.processor,
+        references: [
+          { kind: 'mock-target', name: mock.configRef ?? mock.processor } as MuleReference,
+        ],
+      };
+      if (mock.configRef !== undefined) mockMeta.configRef = mock.configRef;
+      if (mock.fixture !== undefined) mockMeta.fixture = mock.fixture;
+      if (mock.payload !== undefined) mockMeta.payload = mock.payload;
+      nodes.push({
+        id: mockId,
+        kind: 'statement',
+        lang: 'mule',
+        file: file.path,
+        span: mock.span,
+        hash: ctx.hash(`mock:${mock.processor}@${mock.span.start}`),
+        meta: mockMeta,
+      });
+      edges.push(executes(testId, mockId, 'family:mulesoft'));
+    }
+
+    // Assertions → child statement nodes executed by the test (assert-that, assert-equals,
+    // verify-call, …). Expressions/expected values are already capped + redacted by the normalizer.
+    for (const assertion of test.assertions) {
+      const assertionId = ctx.idFor('statement', {
+        file: file.path,
+        line: assertion.span.start,
+      });
+      const assertionMeta: Record<string, unknown> = {
+        munitKind: 'assertion',
+        assertionKind: assertion.kind,
+      };
+      if (assertion.expression !== undefined) assertionMeta.expression = assertion.expression;
+      if (assertion.expected !== undefined) assertionMeta.expected = assertion.expected;
+      nodes.push({
+        id: assertionId,
+        kind: 'statement',
+        lang: 'mule',
+        file: file.path,
+        span: assertion.span,
+        hash: ctx.hash(`assert:${assertion.kind}@${assertion.span.start}`),
+        meta: assertionMeta,
+      });
+      edges.push(executes(testId, assertionId, 'family:mulesoft'));
+    }
+  }
+
+  return { nodes, edges, diagnostics: diagnostics.length ? diagnostics : undefined };
 }
 
 // ---------------------------------------------------------------------------

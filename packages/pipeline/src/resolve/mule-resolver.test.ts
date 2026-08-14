@@ -271,6 +271,169 @@ describe('MuleResolver — Mule 3 legacy endpoint + exception-strategy refs', ()
   });
 });
 
+const BILLING_XML = `<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns="http://www.mulesoft.org/schema/mule/core"
+      xmlns:http="http://www.mulesoft.org/schema/mule/http">
+  <http:listener-config name="httpConfig" basePath="/api"/>
+  <flow name="billing-api">
+    <logger level="INFO" message="x"/>
+  </flow>
+</mule>`;
+
+const MUNIT_TEST_XML = `<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns="http://www.mulesoft.org/schema/mule/core"
+      xmlns:munit="http://www.mulesoft.org/schema/mule/munit"
+      xmlns:mock="http://www.mulesoft.org/schema/mule/mock"
+      xmlns:http="http://www.mulesoft.org/schema/mule/http">
+  <munit:test name="billing-api-test">
+    <munit:enable-flow-sources>
+      <munit:enable-flow-source flowName="billing-api"/>
+      <munit:enable-flow-source flowName="missingFlow"/>
+    </munit:enable-flow-sources>
+    <munit:behavior>
+      <mock:when processor="http:request" config-ref="httpConfig">
+        <mock:then-return>
+          <mock:payload mediaType="application/java">#[payload]</mock:payload>
+        </mock:then-return>
+      </mock:when>
+      <mock:spy processor="logger"/>
+    </munit:behavior>
+    <munit:validation>
+      <munit:load-static-resource file="fixtures/orders.json"/>
+      <munit:load-static-resource file="fixtures/missing.json"/>
+    </munit:validation>
+  </munit:test>
+</mule>`;
+
+/** Extract a Mule 4 app + its MUnit suite into a fresh soul, add a fixture file node so one
+ *  fixture resolves to a real file, then resolve. */
+async function setupMunit() {
+  const soul = soulFor();
+  const extractor = new MuleExtractor();
+  const appFile = muleFile('src/main/mule/billing.xml', 'config', 'mule4', BILLING_XML);
+  const testFile = muleFile('src/test/munit/tests.xml', 'munit', 'mule4', MUNIT_TEST_XML);
+  const files = [appFile, testFile];
+  for (const f of files) {
+    const src = f.path.endsWith('tests.xml') ? MUNIT_TEST_XML : BILLING_XML;
+    const r = await extractor.extract(f, mkCtx(src));
+    if (r.nodes.length) soul.putNodes(r.nodes as never);
+    if (r.edges.length) soul.putEdges(r.edges as never);
+  }
+  // A structure-phase file node for the existing fixture so one fixture resolves to a real file.
+  const fixtureFileId = idFor({
+    kind: 'file',
+    path: 'src/test/resources/fixtures/orders.json',
+  } as IdSpec);
+  soul.putNodes([
+    {
+      id: fixtureFileId,
+      kind: 'file',
+      file: 'src/test/resources/fixtures/orders.json',
+      hash: contentHash('file:orders.json'),
+      meta: {},
+    } as never,
+  ]);
+  const table = new SymbolTable(soul);
+  const result = resolveMule(soul, table, '/repo', files);
+  return { soul, table, result, appFile, testFile };
+}
+
+describe('MuleResolver — MUnit migration evidence', () => {
+  it('resolves a test-target to a calls edge from the test to the named flow', async () => {
+    const { result, soul } = await setupMunit();
+    const test = refNode(soul, 'test-target', 'billing-api');
+    expect(test).toBeDefined();
+    const flow = [...soul.iterate('symbol')].find((n) => n.name === 'billing-api');
+    expect(flow).toBeDefined();
+    expect(result.edges).toContainEqual(
+      expect.objectContaining({
+        rel: 'calls',
+        src: test?.id,
+        dst: flow?.id,
+        evidence: expect.objectContaining({ referenceKind: 'test-target' }),
+      }),
+    );
+  });
+
+  it('emits an external-flow placeholder + calls edge for a missing tested flow', async () => {
+    const { result, soul } = await setupMunit();
+    const test = refNode(soul, 'test-target', 'missingFlow');
+    const placeholder = result.nodes.find(
+      (n) => n.type === 'external-flow' && n.name === 'missingFlow',
+    );
+    expect(placeholder).toMatchObject({ kind: 'symbol', type: 'external-flow' });
+    expect(result.edges).toContainEqual(
+      expect.objectContaining({
+        rel: 'calls',
+        src: test?.id,
+        dst: placeholder?.id,
+        evidence: expect.objectContaining({ referenceKind: 'test-target' }),
+      }),
+    );
+  });
+
+  it('resolves a mock config-ref to a references edge with referenceKind mock-target', async () => {
+    const { result, soul } = await setupMunit();
+    const mock = refNode(soul, 'mock-target', 'httpConfig');
+    expect(mock).toBeDefined();
+    const config = [...soul.iterate('symbol')].find(
+      (n) => n.type === 'config' && n.name === 'httpConfig',
+    );
+    expect(config).toBeDefined();
+    expect(result.edges).toContainEqual(
+      expect.objectContaining({
+        rel: 'references',
+        src: mock?.id,
+        dst: config?.id,
+        evidence: expect.objectContaining({ referenceKind: 'mock-target' }),
+      }),
+    );
+  });
+
+  it('drops a mock with no resolvable config (spy) without emitting an edge', async () => {
+    const { result, soul } = await setupMunit();
+    const spy = refNode(soul, 'mock-target', 'logger');
+    expect(spy).toBeDefined();
+    const spyEdges = result.edges.filter((e) => e.src === spy?.id && e.rel === 'references');
+    expect(spyEdges).toEqual([]);
+  });
+
+  it('resolves an existing fixture to a references edge to the file node', async () => {
+    const { result, soul } = await setupMunit();
+    const test = refNode(soul, 'fixture', 'fixtures/orders.json');
+    expect(test).toBeDefined();
+    const fixtureFile = [...soul.iterate('file')].find((n) =>
+      n.file?.endsWith('fixtures/orders.json'),
+    );
+    expect(fixtureFile).toBeDefined();
+    expect(result.edges).toContainEqual(
+      expect.objectContaining({
+        rel: 'references',
+        src: test?.id,
+        dst: fixtureFile?.id,
+        evidence: expect.objectContaining({ referenceKind: 'fixture' }),
+      }),
+    );
+  });
+
+  it('emits an external-fixture placeholder + references edge for a missing fixture', async () => {
+    const { result, soul } = await setupMunit();
+    const test = refNode(soul, 'fixture', 'fixtures/missing.json');
+    const placeholder = result.nodes.find(
+      (n) => n.type === 'external-fixture' && n.name === 'fixtures/missing.json',
+    );
+    expect(placeholder).toMatchObject({ kind: 'symbol', type: 'external-fixture' });
+    expect(result.edges).toContainEqual(
+      expect.objectContaining({
+        rel: 'references',
+        src: test?.id,
+        dst: placeholder?.id,
+        evidence: expect.objectContaining({ referenceKind: 'fixture' }),
+      }),
+    );
+  });
+});
+
 describe('MuleResolver — Resolver adapter', () => {
   it('supports only mule-family files', () => {
     const r = new MuleResolver();

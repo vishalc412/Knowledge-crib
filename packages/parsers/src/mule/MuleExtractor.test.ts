@@ -385,15 +385,122 @@ describe('MuleExtractor — mel role (Mule 3 standalone expression resource)', (
   });
 });
 
-describe('MuleExtractor — munit + error fallback', () => {
-  it('emits no semantic nodes for an MUnit file (structure-phase file node represents it)', async () => {
+const MUNIT_XML = `<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns="http://www.mulesoft.org/schema/mule/core"
+      xmlns:munit="http://www.mulesoft.org/schema/mule/munit"
+      xmlns:mock="http://www.mulesoft.org/schema/mule/mock"
+      xmlns:http="http://www.mulesoft.org/schema/mule/http">
+  <munit:test name="billing-api-test" description="tests the billing api">
+    <munit:enable-flow-sources>
+      <munit:enable-flow-source flowName="billing-api"/>
+      <munit:enable-flow-source flowName="missingFlow"/>
+    </munit:enable-flow-sources>
+    <munit:behavior>
+      <mock:when processor="http:request" config-ref="httpConfig">
+        <mock:then-return>
+          <mock:payload mediaType="application/java">#[payload]</mock:payload>
+        </mock:then-return>
+      </mock:when>
+      <mock:spy processor="logger"/>
+    </munit:behavior>
+    <munit:execution>
+      <flow-ref name="billing-api"/>
+    </munit:execution>
+    <munit:validation>
+      <munit:assert-that expression="#[payload]" is="#[equalTo('OK')]"/>
+      <munit:load-static-resource file="fixtures/orders.json"/>
+    </munit:validation>
+  </munit:test>
+</mule>`;
+
+describe('MuleExtractor — munit role', () => {
+  it('emits a test symbol node carrying tested flows + test-target / fixture references', async () => {
     const extractor = new MuleExtractor();
     const result = await extractor.extract(
-      muleFile('src/test/munit/tests.xml', 'munit', 'mule4', '<mule></mule>'),
-      mkCtx('<mule></mule>'),
+      muleFile('src/test/munit/tests.xml', 'munit', 'mule4', MUNIT_XML),
+      mkCtx(MUNIT_XML),
     );
-    expect(result.nodes).toEqual([]);
-    expect(result.edges).toEqual([]);
+    const test = result.nodes.find((n) => n.type === 'test' && n.name === 'billing-api-test');
+    expect(test).toMatchObject({
+      kind: 'symbol',
+      type: 'test',
+      name: 'billing-api-test',
+      lang: 'mule',
+      file: 'src/test/munit/tests.xml',
+    });
+    expect(test?.meta).toMatchObject({ dialect: 'mule4', projectId: 'proj' });
+    expect(test?.meta?.testedFlows).toEqual(expect.arrayContaining(['billing-api', 'missingFlow']));
+    const refs = (test?.meta?.references as { kind: string; name: string }[]) ?? [];
+    expect(refs).toContainEqual({ kind: 'test-target', name: 'billing-api' });
+    expect(refs).toContainEqual({ kind: 'test-target', name: 'missingFlow' });
+    expect(refs).toContainEqual({ kind: 'fixture', name: 'fixtures/orders.json' });
+    // a member-of edge ties the test to its file node.
+    expect(result.edges).toContainEqual(
+      expect.objectContaining({
+        rel: 'member-of',
+        src: test?.id,
+        evidence: expect.objectContaining({ by: 'family:mulesoft' }),
+      }),
+    );
+  });
+
+  it('emits mock child statement nodes executed by the test, with mock-target references', async () => {
+    const extractor = new MuleExtractor();
+    const result = await extractor.extract(
+      muleFile('src/test/munit/tests.xml', 'munit', 'mule4', MUNIT_XML),
+      mkCtx(MUNIT_XML),
+    );
+    const test = result.nodes.find((n) => n.type === 'test' && n.name === 'billing-api-test');
+    expect(test).toBeDefined();
+
+    const mocks = result.nodes.filter((n) => n.meta?.munitKind === 'mock');
+    // the http:request mock names its config; the logger spy names only its processor.
+    const httpMock = mocks.find((m) => m.meta?.processor === 'http:request');
+    expect(httpMock).toMatchObject({ kind: 'statement', lang: 'mule' });
+    expect(httpMock?.meta?.references).toEqual([{ kind: 'mock-target', name: 'httpConfig' }]);
+    const spyMock = mocks.find((m) => m.meta?.processor === 'logger');
+    expect(spyMock?.meta?.references).toEqual([{ kind: 'mock-target', name: 'logger' }]);
+
+    // each mock is executed by the test (executes edge test → mock).
+    for (const m of mocks) {
+      expect(result.edges).toContainEqual(
+        expect.objectContaining({ rel: 'executes', src: test?.id, dst: m.id }),
+      );
+    }
+  });
+
+  it('emits an assertion child statement node executed by the test', async () => {
+    const extractor = new MuleExtractor();
+    const result = await extractor.extract(
+      muleFile('src/test/munit/tests.xml', 'munit', 'mule4', MUNIT_XML),
+      mkCtx(MUNIT_XML),
+    );
+    const test = result.nodes.find((n) => n.type === 'test' && n.name === 'billing-api-test');
+    const assertion = result.nodes.find((n) => n.meta?.munitKind === 'assertion');
+    expect(assertion).toMatchObject({ kind: 'statement', lang: 'mule' });
+    expect(assertion?.meta?.assertionKind).toBe('assert-that');
+    expect(result.edges).toContainEqual(
+      expect.objectContaining({ rel: 'executes', src: test?.id, dst: assertion?.id }),
+    );
+  });
+
+  it('retains the expected error type as metadata, never as a value', async () => {
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns="http://www.mulesoft.org/schema/mule/core"
+      xmlns:munit="http://www.mulesoft.org/schema/mule/munit">
+  <munit:test name="err-test" expectedErrorType="BILLING:NOT_FOUND">
+    <munit:execution>
+      <flow-ref name="billing-api"/>
+    </munit:execution>
+  </munit:test>
+</mule>`;
+    const extractor = new MuleExtractor();
+    const result = await extractor.extract(
+      muleFile('src/test/munit/err.xml', 'munit', 'mule4', xml),
+      mkCtx(xml),
+    );
+    const test = result.nodes.find((n) => n.type === 'test' && n.name === 'err-test');
+    expect(test?.meta?.expectedErrorType).toBe('BILLING:NOT_FOUND');
   });
 
   it('degrades to a parse-failed diagnostic on a hostile payload', async () => {

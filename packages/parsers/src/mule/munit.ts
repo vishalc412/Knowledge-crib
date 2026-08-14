@@ -283,11 +283,14 @@ function buildTest(testEl: MuleXmlElement, names: (typeof MUNIT_NAMES)[Dialect])
       }
       continue;
     }
-    // validation: assertions (assert-* + verify-call)
+    // validation: assertions (assert-* + verify-call) + load-static-resource fixtures.
     if (block.local === 'validation') {
       for (const step of block.children) {
         if (names.assert.has(step.local) || names.verify.has(step.local)) {
           assertions.push(buildAssertion(step));
+        } else if (step.local === 'load-static-resource') {
+          const file = attr(step, 'file');
+          if (file) fixtures.push(file);
         }
       }
       continue;

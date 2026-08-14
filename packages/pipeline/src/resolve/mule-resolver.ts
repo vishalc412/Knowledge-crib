@@ -55,7 +55,10 @@ interface MuleReference {
     | 'trait'
     | 'securityScheme'
     | 'endpoint'
-    | 'exceptionStrategy';
+    | 'exceptionStrategy'
+    | 'test-target' // MUnit test → the flow it exercises (calls edge; missing → external-flow)
+    | 'mock-target' // MUnit mock → the connector config it intercepts (references edge)
+    | 'fixture'; // MUnit test → a static fixture file it loads (references edge; missing → external-fixture)
   name: string;
 }
 
@@ -185,6 +188,22 @@ function resolveReference(
     case 'property':
       resolveIndexedRef(ref, 'property', node, proj, index, push, 'property', stats);
       return;
+    case 'test-target':
+      // An MUnit test → the flow it exercises. The src is the TEST node (not an enclosing flow), and
+      // there is no same-file skip — the extractor emits no local flow-ref calls for MUnit, so this
+      // calls edge is the only one. A static missing target → external-flow placeholder.
+      resolveTestTarget(ref.name, node, proj, index, push, placeholders, stats);
+      return;
+    case 'mock-target':
+      // An MUnit mock → the connector config it intercepts (config bucket, referenceKind mock-target).
+      // A processor-only mock (no config-ref) names a processor, not a config → dropped, never guessed.
+      resolveIndexedRef(ref, 'config', node, proj, index, push, 'mock-target', stats);
+      return;
+    case 'fixture':
+      // An MUnit test → a static fixture file it loads. Resolve to a file node (path-suffix match);
+      // a missing fixture → an external-fixture placeholder + references edge.
+      resolveFixture(ref.name, node, soul, table, push, placeholders, stats);
+      return;
     case 'import':
       resolveImport(ref.name, node, proj, index, table, push, stats);
       return;
@@ -234,6 +253,67 @@ function resolveFlowRef(
   const placeholder = placeholderFor(proj, name, placeholders);
   push(enclosing, placeholder.id, 'calls', { callSite: node.id, snippet: `flow-ref ${name}` });
   stats.externalFlows = (stats.externalFlows ?? 0) + 1;
+}
+
+/** An MUnit test-target: dynamic → drop; static → the TEST node `calls` the named flow (no
+ *  same-file skip — the extractor emits no local calls edge for MUnit flow-refs); missing →
+ *  external-flow placeholder + calls edge. The src is the test node itself, not an enclosing flow. */
+function resolveTestTarget(
+  name: string,
+  node: Node,
+  proj: string,
+  index: Map<string, string>,
+  push: (src: string, dst: string, rel: Rel, evidence: Record<string, unknown>) => void,
+  placeholders: Map<string, Node>,
+  stats: ResolveStats,
+): void {
+  if (isDynamic(name)) {
+    stats.dynamic = (stats.dynamic ?? 0) + 1;
+    return;
+  }
+  const targetId = index.get(key(proj, 'flow', name));
+  if (targetId) {
+    push(node.id, targetId, 'calls', { referenceKind: 'test-target', snippet: `munit ${name}` });
+    stats.calls = (stats.calls ?? 0) + 1;
+    return;
+  }
+  // Static missing target → external-flow placeholder + calls edge from the test.
+  const placeholder = placeholderFor(proj, name, placeholders);
+  push(node.id, placeholder.id, 'calls', {
+    referenceKind: 'test-target',
+    snippet: `munit ${name}`,
+  });
+  stats.externalFlows = (stats.externalFlows ?? 0) + 1;
+}
+
+/** An MUnit fixture: resolve to a file node (path-suffix match, no re-read); missing → an
+ *  external-fixture placeholder + references edge from the test. */
+function resolveFixture(
+  name: string,
+  node: Node,
+  soul: SoulStore,
+  table: SymbolTable,
+  push: (src: string, dst: string, rel: Rel, evidence: Record<string, unknown>) => void,
+  placeholders: Map<string, Node>,
+  stats: ResolveStats,
+): void {
+  const targetPath = findIncludedFile(name, soul);
+  if (targetPath) {
+    if (!node.file) return;
+    push(node.id, table.fileId(targetPath), 'references', {
+      referenceKind: 'fixture',
+      snippet: `fixture ${name}`,
+    });
+    stats.references = (stats.references ?? 0) + 1;
+    return;
+  }
+  // Missing fixture → external-fixture placeholder + references edge.
+  const placeholder = fixturePlaceholderFor(name, placeholders);
+  push(node.id, placeholder.id, 'references', {
+    referenceKind: 'fixture',
+    snippet: `fixture ${name}`,
+  });
+  stats.externalFixtures = (stats.externalFixtures ?? 0) + 1;
 }
 
 /** A config-ref / property reference → `references` edge to an indexed symbol, with referenceKind. */
@@ -333,6 +413,25 @@ function placeholderFor(proj: string, name: string, placeholders: Map<string, No
 /** A flow-ref name is dynamic when it is a DataWeave expression (`#[…]`) or a placeholder (`${…}`). */
 function isDynamic(name: string): boolean {
   return name.length === 0 || name.startsWith('#') || name.includes('${') || name.includes('#[');
+}
+
+/** Find or create the external-fixture placeholder for a missing fixture path (deduped by id). */
+function fixturePlaceholderFor(name: string, placeholders: Map<string, Node>): Node {
+  const id = idFor({ kind: 'symbol', path: 'mule:fixture', qualifiedName: name, startLine: 0 });
+  const existing = placeholders.get(id);
+  if (existing) return existing;
+  const node: Node = {
+    id,
+    kind: 'symbol',
+    type: 'external-fixture',
+    lang: 'mule',
+    name,
+    qualifiedName: name,
+    hash: contentHash(`external-fixture:${name}`),
+    meta: { family: 'mule', external: true },
+  };
+  placeholders.set(id, node);
+  return node;
 }
 
 /** Find an indexed Mule file whose repo-relative path matches an include path (exact or suffix). */
