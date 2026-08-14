@@ -169,4 +169,99 @@ describe('classifyMuleFiles', () => {
     expect(result.files.size).toBe(0);
     expect(result.diagnostics).toHaveLength(0);
   });
+
+  describe('deployable-JAR attached-source dedup', () => {
+    const mule4xml = '<mule xmlns="http://www.mulesoft.org/schema/mule/core"/>';
+
+    // A deployable JAR carries the canonical config under META-INF/mule-src (attached source) and a
+    // packaged copy under classes/. They describe the same project-relative file: attached source
+    // wins, the packaged duplicate is skipped with a bounded warning diagnostic.
+    it('attached source wins over a packaged classes duplicate (same logical key)', () => {
+      const result = classifyMuleFiles(
+        [
+          meta('mule-artifact.json'),
+          meta('classes/api.xml'),
+          meta('META-INF/mule-src/main/mule/api.xml'),
+        ],
+        new Map([
+          ['mule-artifact.json', '{}'],
+          ['classes/api.xml', mule4xml],
+          ['META-INF/mule-src/main/mule/api.xml', mule4xml],
+        ]),
+      );
+      // Attached source is classified for semantic extraction.
+      expect(result.files.get('META-INF/mule-src/main/mule/api.xml')).toMatchObject({
+        dialect: 'mule4',
+        role: 'config',
+        projectId: '.',
+      });
+      // The packaged duplicate is dropped from classification.
+      expect(result.files.has('classes/api.xml')).toBe(false);
+      // A single bounded warning names the skipped packaged path.
+      const skipped = result.diagnostics.filter(
+        (d) => d.code === 'mule:packaged-duplicate-skipped',
+      );
+      expect(skipped).toHaveLength(1);
+      expect(skipped[0]?.severity).toBe('warning');
+      expect(skipped[0]?.file).toBe('classes/api.xml');
+    });
+
+    it('keeps both when packaged and attached paths describe different files', () => {
+      const result = classifyMuleFiles(
+        [
+          meta('mule-artifact.json'),
+          meta('classes/api.xml'),
+          meta('META-INF/mule-src/main/mule/orders.xml'),
+        ],
+        new Map([
+          ['mule-artifact.json', '{}'],
+          ['classes/api.xml', mule4xml],
+          ['META-INF/mule-src/main/mule/orders.xml', mule4xml],
+        ]),
+      );
+      expect(result.files.has('classes/api.xml')).toBe(true);
+      expect(result.files.has('META-INF/mule-src/main/mule/orders.xml')).toBe(true);
+      expect(
+        result.diagnostics.filter((d) => d.code === 'mule:packaged-duplicate-skipped'),
+      ).toHaveLength(0);
+    });
+
+    it('keeps a packaged config when no attached source counterpart exists', () => {
+      const result = classifyMuleFiles(
+        [meta('mule-artifact.json'), meta('classes/api.xml')],
+        new Map([
+          ['mule-artifact.json', '{}'],
+          ['classes/api.xml', mule4xml],
+        ]),
+      );
+      expect(result.files.get('classes/api.xml')).toMatchObject({
+        dialect: 'mule4',
+        role: 'config',
+      });
+      expect(
+        result.diagnostics.filter((d) => d.code === 'mule:packaged-duplicate-skipped'),
+      ).toHaveLength(0);
+    });
+
+    it('does not dedup descriptor or properties files (only semantic XML configs)', () => {
+      const result = classifyMuleFiles(
+        [
+          meta('mule-artifact.json'),
+          meta('classes/app.properties'),
+          meta('META-INF/mule-src/app.properties'),
+        ],
+        new Map([
+          ['mule-artifact.json', '{}'],
+          ['classes/app.properties', 'key=val'],
+          ['META-INF/mule-src/app.properties', 'key=val'],
+        ]),
+      );
+      // Both property files are classified — dedup is scoped to semantic XML (config/munit).
+      expect(result.files.has('classes/app.properties')).toBe(true);
+      expect(result.files.has('META-INF/mule-src/app.properties')).toBe(true);
+      expect(
+        result.diagnostics.filter((d) => d.code === 'mule:packaged-duplicate-skipped'),
+      ).toHaveLength(0);
+    });
+  });
 });

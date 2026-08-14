@@ -29,6 +29,82 @@ const MULE3_XML_SIGNALS = [
 /** Sensitive property filename patterns → source policy `deny` (never persisted, never hashed by value). */
 const SENSITIVE_NAME = /secure|password|secret|credential|keystore|truststore|jks/i;
 
+/** JAR-packaging prefixes that mark a config as a build copy rather than the canonical source.
+ *  A deployable Mule JAR carries the original config tree under `META-INF/mule-src` (attached
+ *  source) and a packaged copy under `classes/`; only the attached source is semantically
+ *  extracted (see {@link dedupAttachedSource}). */
+const PACKAGED_PREFIX = 'classes/';
+const ATTACHED_PREFIX = 'META-INF/mule-src/';
+
+/** Mule source-tree segments (with and without the `src/` qualifier) stripped when keying a config
+ *  so a packaged copy and its attached-source original converge to the same logical path. */
+const SOURCE_TREE_SEGMENTS = [
+  'src/main/mule/',
+  'src/main/app/',
+  'src/test/munit/',
+  'main/mule/',
+  'main/app/',
+  'test/munit/',
+] as const;
+
+/** Normalize a config path to its project-relative logical key by stripping the JAR-packaging
+ *  prefix (`classes/` or `META-INF/mule-src/`) and a leading Mule source-tree segment. A packaged
+ *  `classes/api.xml` and its attached source `META-INF/mule-src/main/mule/api.xml` both reduce to
+ *  `api.xml`. Paths carrying neither packaging prefix are returned unchanged (not deduped). */
+function logicalConfigKey(path: string): string {
+  let p = path;
+  if (p.startsWith(ATTACHED_PREFIX)) p = p.slice(ATTACHED_PREFIX.length);
+  else if (p.startsWith(PACKAGED_PREFIX)) p = p.slice(PACKAGED_PREFIX.length);
+  for (const seg of SOURCE_TREE_SEGMENTS) {
+    if (p.startsWith(seg)) return p.slice(seg.length);
+  }
+  return p;
+}
+
+/** True for the semantic XML roles that participate in attached-source dedup (config flows +
+ *  MUnit tests). Descriptors, properties, DataWeave, and RAML are out of scope: the spec dedups
+ *  "packaged XML" configs, and descriptors must stay classified to anchor a JAR's dialect. */
+function isDedupRole(role: FileClassification['role']): boolean {
+  return role === 'config' || role === 'munit';
+}
+
+/** For one project's members, return the set of packaged `classes/` paths whose attached-source
+ *  original is also present (attached source wins). Emits one bounded warning per skipped path. */
+function dedupAttachedSource(
+  members: FileMeta[],
+  projectId: string,
+  diagnostics: ExtractDiagnostic[],
+): Set<string> {
+  // logicalKey → { attached present?, packaged paths }
+  const byKey = new Map<string, { attached: boolean; packaged: string[] }>();
+  for (const file of members) {
+    if (!isDedupRole(roleOf(file.path))) continue;
+    const isAttached = file.path.startsWith(ATTACHED_PREFIX);
+    const isPackaged = file.path.startsWith(PACKAGED_PREFIX);
+    if (!isAttached && !isPackaged) continue;
+    const key = logicalConfigKey(file.path);
+    const slot = byKey.get(key) ?? { attached: false, packaged: [] };
+    if (isAttached) slot.attached = true;
+    else slot.packaged.push(file.path);
+    byKey.set(key, slot);
+  }
+  const skip = new Set<string>();
+  for (const { attached, packaged } of byKey.values()) {
+    if (!attached || packaged.length === 0) continue;
+    for (const path of packaged) {
+      skip.add(path);
+      diagnostics.push({
+        code: 'mule:packaged-duplicate-skipped',
+        severity: 'warning',
+        message: `Skipped packaged duplicate ${path}; attached source wins`,
+        file: path,
+        projectId,
+      });
+    }
+  }
+  return skip;
+}
+
 const roleOf = (path: string): FileClassification['role'] => {
   const lower = path.toLowerCase();
   if (lower.includes('/src/test/munit/') && lower.endsWith('.xml')) return 'munit';
@@ -135,7 +211,11 @@ export function classifyMuleFiles(
     }
     if (mule3 === 0 && mule4 === 0) continue;
     const dialect: FileClassification['dialect'] = mule4 > mule3 ? 'mule4' : 'mule3';
+    // Deployable-JAR attached-source dedup: drop packaged `classes/` configs whose
+    // `META-INF/mule-src` original is present (attached source wins), with a bounded warning.
+    const skip = dedupAttachedSource(members, projectId, diagnostics);
     for (const file of members) {
+      if (skip.has(file.path)) continue;
       const role = roleOf(file.path);
       classified.set(file.path, {
         family: 'mule',
