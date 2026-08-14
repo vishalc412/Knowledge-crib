@@ -461,6 +461,16 @@ export function parseDataWeave(source: string): DataWeaveResult {
     result.references.push({ kind: 'resource', name, line });
   };
 
+  // DW1 message-context variable references (flowVars.X / inboundProperties.X / outboundProperties.X)
+  // are deduplicated by (line, name) — a repeated binding is one fact.
+  const seenVarRefs = new Set<string>();
+  const addVarRef = (name: string, line: number): void => {
+    const key = `${line}:${name}`;
+    if (seenVarRefs.has(key)) return;
+    seenVarRefs.add(key);
+    result.references.push({ kind: 'variable', name, line });
+  };
+
   // Record a property reference `p(arg)`/`Mule::p(arg)`. Only string-literal args resolve to a key;
   // a dynamic arg is a diagnostic and never resolved (the resolved value lives in a properties file
   // the indexer never stores).
@@ -520,6 +530,21 @@ export function parseDataWeave(source: string): DataWeaveResult {
         i += 3;
         continue;
       }
+      // DW1 header directives are %-prefixed: %output / %input (valid in both dialects → skipLine),
+      // and %var / %function (DW1-only → var/fun declarations). %var/%function are gated on the 1.x
+      // version so a stray DW2 `%var` is not misparsed as a declaration.
+      if (
+        t.kind === 'symbol' &&
+        t.value === '%' &&
+        next?.kind === 'ident' &&
+        (next.value === 'output' ||
+          next.value === 'input' ||
+          (result.version?.startsWith('1.') && (next.value === 'var' || next.value === 'function')))
+      ) {
+        // Parse starting at the keyword token (i + 1); parseDirective reads the name from startIdx + 1.
+        i = parseDirective(tokens, i + 1, source, lineStarts, result);
+        continue;
+      }
       if (t.kind === 'ident' && DIRECTIVE_KEYWORDS.has(t.value)) {
         i = parseDirective(tokens, i, source, lineStarts, result);
         continue;
@@ -528,6 +553,20 @@ export function parseDataWeave(source: string): DataWeaveResult {
 
     // Property / resource references + generic calls — scanned across header AND body.
     if (t.kind === 'ident') {
+      // DW1 message-context variable references: flowVars.X / inboundProperties.X / outboundProperties.X.
+      const memberTok = tokens[i + 2];
+      if (
+        (t.value === 'flowVars' ||
+          t.value === 'inboundProperties' ||
+          t.value === 'outboundProperties') &&
+        next?.kind === 'symbol' &&
+        next.value === '.' &&
+        memberTok?.kind === 'ident'
+      ) {
+        addVarRef(memberTok.value, t.line);
+        i += 3;
+        continue;
+      }
       // `Mule::p('key')`
       if (
         t.value === 'Mule' &&
@@ -636,7 +675,8 @@ function parseDirective(
       return eqIdx + 1;
     }
 
-    case 'fun': {
+    case 'fun':
+    case 'function': {
       const nameTok = tokens[startIdx + 1];
       // Skip the parameter list `( … )`.
       let j = startIdx + 2;

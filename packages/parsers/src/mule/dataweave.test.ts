@@ -100,3 +100,50 @@ var res = readUrl(nonLiteral)
     expect(result.propertyKeys).toEqual(['a.b']);
   });
 });
+
+describe('parseDataWeave — DW1 (Mule 3)', () => {
+  const DW1 = `%dw 1.0
+%var greeting = "Hello"
+%output application/java
+%function fullName(first, last) = first ++ " " ++ last
+---
+fullName(greeting, flowVars.name, inboundProperties.correlationId)`;
+
+  it('extracts the 1.0 version', () => {
+    const result = parseDataWeave(DW1);
+    expect(result.version).toBe('1.0');
+  });
+
+  it('maps %var → var and %function → fun declarations (version-gated)', () => {
+    const result = parseDataWeave(DW1);
+    expect(result.declarations.map((d) => [d.kind, d.name])).toEqual(
+      expect.arrayContaining([
+        ['var', 'greeting'],
+        ['fun', 'fullName'],
+      ]),
+    );
+  });
+
+  it('records the body fullName call but not the declaration head', () => {
+    const result = parseDataWeave(DW1);
+    const fullNameCalls = result.calls.filter((c) => c.name === 'fullName');
+    expect(fullNameCalls).toHaveLength(1);
+  });
+
+  it('extracts flowVars and inboundProperties as variable references', () => {
+    const result = parseDataWeave(DW1);
+    expect(result.references.map((r) => [r.kind, r.name])).toEqual(
+      expect.arrayContaining([
+        ['variable', 'name'],
+        ['variable', 'correlationId'],
+      ]),
+    );
+  });
+
+  it('does not regress DW2 fixtures (the SAMPLE expectations still hold)', () => {
+    const result = parseDataWeave(SAMPLE);
+    expect(result.version).toBe('2.0');
+    expect(result.declarations.map((d) => d.kind)).toEqual(['var', 'fun']);
+    expect(result.propertyKeys).toEqual(['billing.region']);
+  });
+});
