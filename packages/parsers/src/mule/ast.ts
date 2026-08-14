@@ -72,11 +72,12 @@ export type MuleSemanticKind =
   | 'raise-error'; // a `<raise-error>` explicit error
 
 /** A DataWeave / expression payload attached to a processor attribute. `raw` is the literal source
- *  (`#[…]]`); `language` is 'dw2' when it parses as DataWeave 2, else 'unknown'. The raw text may
- *  reference property keys (`p('key')`) but never carries resolved secret values. */
+ *  (`#[…]]`); `language` is 'dw2' (Mule 4 DataWeave 2), 'mel' (Mule 3 Mule Expression Language), or
+ *  'unknown'. The raw text may reference property keys (`p('key')`) but never carries resolved
+ *  secret values. */
 export interface MuleExpression {
   raw: string;
-  language: 'dw2' | 'unknown';
+  language: 'dw2' | 'mel' | 'unknown';
   span: Span;
 }
 
