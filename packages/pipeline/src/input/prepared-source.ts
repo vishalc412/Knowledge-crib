@@ -45,9 +45,10 @@ export interface PreparedSourceInput {
   archivePath?: string;
 }
 
-/** Caller options. `importsDir` defaults to `~/.crib/imports`; `cribDir` overrides the per-archive crib. */
+/** Caller options. `importsDir` defaults to `~/.crib/imports` (or `$KCRIB_IMPORTS_DIR`); `cribDir`
+ *  overrides the per-archive crib. */
 export interface PrepareSourceOptions {
-  /** Base directory for the archive cache. Default `~/.crib/imports`. */
+  /** Base directory for the archive cache. Default `$KCRIB_IMPORTS_DIR` or `~/.crib/imports`. */
   importsDir?: string;
   /** Explicit `.crib` location (overrides `<baseDir>/crib` for archives and `<dir>/.crib` for directories). */
   cribDir?: string;
@@ -120,7 +121,8 @@ export async function prepareSourceInput(
   // Archive: fingerprint bytes, then cache by canonical-path hash.
   const bytes = await readFile(projectKey);
   const fingerprint = SHA256(bytes);
-  const importsDir = opts.importsDir ?? join(homedir(), '.crib', 'imports');
+  const importsDir =
+    opts.importsDir ?? process.env.KCRIB_IMPORTS_DIR ?? join(homedir(), '.crib', 'imports');
   const baseDir = join(importsDir, SHA256(Buffer.from(projectKey)));
   const sourceRoot = join(baseDir, 'source');
   const cribDir = opts.cribDir ?? join(baseDir, 'crib');

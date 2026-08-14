@@ -11,6 +11,7 @@ import {
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { crc32 } from 'node:zlib';
 import { SoulStore, newManifest, openIndex } from '@knowledge-crib/core';
 import { indexRepo } from '@knowledge-crib/pipeline';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -299,6 +300,216 @@ describe('crib index --crib-dir', () => {
     } finally {
       rmSync(sourceRoot, { recursive: true, force: true });
       rmSync(outsideRoot, { recursive: true, force: true });
+    }
+  });
+});
+
+/**
+ * Build a minimal STORED (uncompressed, method 0) ZIP in memory so the archive CLI path can be
+ * exercised end-to-end without a zip library (yazl is a pipeline devDep, not resolvable from the cli
+ * package). Real archives use deflate; yauzl in the pipeline handles both — the stored layout is the
+ * simplest valid container and proves the extract → index → register → resolve round-trip.
+ */
+function buildStoredZip(entries: Array<{ name: string; data: Buffer }>): Buffer {
+  const dos = (d: Date): number =>
+    (d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >>> 1);
+  const dosDate = (d: Date): number =>
+    ((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate();
+  const now = new Date();
+  const time = dos(now);
+  const date = dosDate(now);
+  const locals: Buffer[] = [];
+  const offsets: number[] = [];
+  let cursor = 0;
+  const central: Buffer[] = [];
+  for (const { name, data } of entries) {
+    const nameBuf = Buffer.from(name, 'utf8');
+    const crc = crc32(data) >>> 0;
+    offsets.push(cursor);
+    const local = Buffer.concat([
+      Buffer.from([0x50, 0x4b, 0x03, 0x04]), // local file header sig
+      Buffer.from([20, 0]), // version needed = 2.0
+      Buffer.from([0, 0]), // flags
+      Buffer.from([0, 0]), // method = stored
+      Buffer.from([time & 0xff, (time >>> 8) & 0xff]), // mod time
+      Buffer.from([date & 0xff, (date >>> 8) & 0xff]), // mod date
+      Buffer.from(uint32(crc)),
+      Buffer.from(uint32(data.length)),
+      Buffer.from(uint32(data.length)),
+      Buffer.from(uint16(nameBuf.length)),
+      Buffer.from([0, 0]), // extra len
+      nameBuf,
+      data,
+    ]);
+    locals.push(local);
+    cursor += local.length;
+    const centralRec = Buffer.concat([
+      Buffer.from([0x50, 0x4b, 0x01, 0x02]), // central dir header sig
+      Buffer.from([20, 0]), // version made by
+      Buffer.from([20, 0]), // version needed
+      Buffer.from([0, 0]), // flags
+      Buffer.from([0, 0]), // method
+      Buffer.from([time & 0xff, (time >>> 8) & 0xff]),
+      Buffer.from([date & 0xff, (date >>> 8) & 0xff]),
+      Buffer.from(uint32(crc)),
+      Buffer.from(uint32(data.length)),
+      Buffer.from(uint32(data.length)),
+      Buffer.from(uint16(nameBuf.length)),
+      Buffer.from([0, 0]), // extra len
+      Buffer.from([0, 0]), // comment len
+      Buffer.from([0, 0]), // disk start
+      Buffer.from([0, 0]), // internal attrs
+      Buffer.from(uint32(0)), // external attrs
+      Buffer.from(uint32(offsets[offsets.length - 1]!)), // local header offset
+      nameBuf,
+    ]);
+    central.push(centralRec);
+  }
+  const centralBlob = Buffer.concat(central);
+  const cdOffset = cursor;
+  const eocd = Buffer.concat([
+    Buffer.from([0x50, 0x4b, 0x05, 0x06]), // EOCD sig
+    Buffer.from([0, 0]), // disk number
+    Buffer.from([0, 0]), // disk with central dir
+    Buffer.from(uint16(entries.length)), // entries on this disk
+    Buffer.from(uint16(entries.length)), // total entries
+    Buffer.from(uint32(centralBlob.length)),
+    Buffer.from(uint32(cdOffset)),
+    Buffer.from([0, 0]), // comment len
+  ]);
+  return Buffer.concat([...locals, centralBlob, eocd]);
+}
+
+function uint16(n: number): Buffer {
+  const b = Buffer.alloc(2);
+  b.writeUInt16LE(n & 0xffff, 0);
+  return b;
+}
+function uint32(n: number): Buffer {
+  const b = Buffer.alloc(4);
+  b.writeUInt32LE(n >>> 0, 0);
+  return b;
+}
+
+describe('crib index <archive> — archive identity round-trip', () => {
+  let importsDir: string;
+  let registryDir: string;
+  let env: NodeJS.ProcessEnv;
+  const runArchive = (args: string[]): { status: number; stdout: string; stderr: string } => {
+    const r = spawnSync(process.execPath, [CLI, ...args], {
+      encoding: 'utf8',
+      maxBuffer: 32 * 1024 * 1024,
+      env,
+    });
+    const strip = (s: string): string =>
+      s
+        .split('\n')
+        .filter((l) => !/ExperimentalWarning|trace-warnings|DEP00/.test(l))
+        .join('\n')
+        .trim();
+    return { status: r.status ?? 1, stdout: strip(r.stdout ?? ''), stderr: strip(r.stderr ?? '') };
+  };
+
+  beforeEach(() => {
+    importsDir = mkdtempSync(join(tmpdir(), 'crib-cli-imports-'));
+    registryDir = mkdtempSync(join(tmpdir(), 'crib-cli-archive-reg-'));
+    env = { ...process.env, KCRIB_IMPORTS_DIR: importsDir, KCRIB_REGISTRY_DIR: registryDir };
+  });
+  afterEach(() => {
+    rmSync(importsDir, { recursive: true, force: true });
+    rmSync(registryDir, { recursive: true, force: true });
+  });
+
+  it('indexes a ZIP, registers archive identity, and resolves read commands from the registry (no re-extract)', () => {
+    const archiveDir = mkdtempSync(join(tmpdir(), 'crib-cli-archive-src-'));
+    try {
+      const zip = join(archiveDir, 'app.zip');
+      writeFileSync(
+        zip,
+        buildStoredZip([
+          {
+            name: 'hello.ts',
+            data: Buffer.from('export function greet(): string {\n  return "hi";\n}\n'),
+          },
+        ]),
+      );
+
+      const indexed = runArchive(['index', zip]);
+      expect(indexed.status, indexed.stderr).toBe(0);
+      expect(indexed.stdout).toMatch(/indexed \d+ files/);
+      // No `.crib` is created next to the archive — the soul lives in the imports cache.
+      expect(existsSync(join(archiveDir, '.crib'))).toBe(false);
+
+      // The registry records the archive identity under the archive path (projectKey).
+      const registry = JSON.parse(readFileSync(join(registryDir, 'registry.json'), 'utf8')) as {
+        projects: Record<
+          string,
+          { cribDir: string; sourceRoot: string; sourceArchive: string; sourceFingerprint: string }
+        >;
+      };
+      const entry = registry.projects[zip]!;
+      expect(entry).toBeDefined();
+      expect(entry.sourceArchive).toBe(zip);
+      expect(entry.sourceFingerprint).toMatch(/^[0-9a-f]{64}$/);
+      // sourceRoot + cribDir live inside the imports cache, not next to the archive.
+      expect(entry.sourceRoot.startsWith(importsDir)).toBe(true);
+      expect(entry.cribDir.startsWith(importsDir)).toBe(true);
+      expect(existsSync(join(entry.cribDir, 'crib.json'))).toBe(true);
+
+      // A read command using the ARCHIVE PATH resolves via the registry without re-extracting:
+      // status reports indexed:true against the cached soul (no `.crib` next to the zip to find).
+      const status = runArchive(['status', zip]);
+      expect(status.status, status.stderr).toBe(0);
+      const parsed = JSON.parse(status.stdout) as { indexed: boolean };
+      expect(parsed.indexed).toBe(true);
+    } finally {
+      rmSync(archiveDir, { recursive: true, force: true });
+    }
+  });
+
+  it('update on an unchanged archive is a no-op (fingerprint cache hit), and re-index keeps identity', () => {
+    const archiveDir = mkdtempSync(join(tmpdir(), 'crib-cli-archive-upd-'));
+    try {
+      const zip = join(archiveDir, 'app.zip');
+      writeFileSync(
+        zip,
+        buildStoredZip([{ name: 'a.ts', data: Buffer.from('export const a = 1;\n') }]),
+      );
+      const first = runArchive(['index', zip]);
+      expect(first.status, first.stderr).toBe(0);
+      const registry = () =>
+        (
+          JSON.parse(readFileSync(join(registryDir, 'registry.json'), 'utf8')) as {
+            projects: Record<string, { sourceFingerprint: string }>;
+          }
+        ).projects[zip]?.sourceFingerprint;
+      const fp1 = registry();
+      expect(fp1).toMatch(/^[0-9a-f]{64}$/);
+
+      // Unchanged archive → no-op, identity preserved.
+      const upd = runArchive(['update', zip]);
+      expect(upd.status, upd.stderr).toBe(0);
+      expect(upd.stdout).toContain('up to date (archive unchanged)');
+      expect(registry()).toBe(fp1);
+    } finally {
+      rmSync(archiveDir, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects --watch on an archive input (no work tree to observe)', () => {
+    const archiveDir = mkdtempSync(join(tmpdir(), 'crib-cli-archive-watch-'));
+    try {
+      const zip = join(archiveDir, 'app.zip');
+      writeFileSync(
+        zip,
+        buildStoredZip([{ name: 'a.ts', data: Buffer.from('export const a = 1;\n') }]),
+      );
+      runArchive(['index', zip]);
+      const r = runArchive(['serve', zip, '--watch']);
+      expect(r.status).toBe(2);
+      expect(r.stderr).toContain('watch is not supported for archive inputs');
+    } finally {
+      rmSync(archiveDir, { recursive: true, force: true });
     }
   });
 });

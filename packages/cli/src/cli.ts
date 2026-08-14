@@ -14,7 +14,14 @@
  * Exit codes (cli spec): 0 ok · 1 error · 2 bad args · 3 not indexed.
  */
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  realpathSync,
+  statSync,
+  writeFileSync,
+} from 'node:fs';
 import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import {
   CALLABLE_SYMBOL_TYPES,
@@ -95,6 +102,7 @@ import {
   isGitRepo,
   lsTreeFiles,
   mergeBase,
+  prepareSourceInput,
   refExists,
   renderExport,
   resolvePackageArg,
@@ -104,7 +112,7 @@ import {
   updateRepo,
 } from '@knowledge-crib/pipeline';
 import { DEFAULT_IGNORES } from '@knowledge-crib/pipeline';
-import type { WorkspaceLayout } from '@knowledge-crib/pipeline';
+import type { PreparedSourceInput, WorkspaceLayout } from '@knowledge-crib/pipeline';
 import { blake3Hex } from '@knowledge-crib/soul-schema';
 import { buildVizGraph, buildVizOverview, vizAssetsDir } from '@knowledge-crib/ui';
 import {
@@ -122,6 +130,7 @@ import {
   type ResolvedRoot,
   buildIndex,
   isIndexedRoot,
+  openIndexForServe,
   openIndexOnly,
   openSoul,
   resolveProjectRoot,
@@ -508,14 +517,71 @@ class CliVcsAdapter implements VcsAdapter {
   }
 }
 
-/** Register the just-indexed project in `~/.crib/registry.json` (REQ-1). Idempotent. */
-function registerIndexed(repoRoot: string, cribDir: string, soul: SoulStore): void {
+/**
+ * Register the just-indexed project in `~/.crib/registry.json` (REQ-1). Idempotent. `projectKey` is
+ * the registry key — the directory path for a folder input, or the `.zip`/`.jar` path for an archive.
+ * `source` carries the archive identity (extracted `sourceRoot` + original path + fingerprint) when
+ * the index ran from a prepared archive; directories omit it so the entry is a plain directory record.
+ */
+function registerIndexed(
+  projectKey: string,
+  cribDir: string,
+  soul: SoulStore,
+  source?: { sourceRoot?: string; sourceArchive?: string; sourceFingerprint?: string },
+): void {
   const m = soul.getManifest();
-  registerProject(repoRoot, {
+  registerProject(projectKey, {
     repoId: m.repo.id,
     cribDir,
     ...(m.repo.vcsHead !== undefined ? { vcsHead: m.repo.vcsHead } : {}),
+    ...(source?.sourceRoot !== undefined ? { sourceRoot: source.sourceRoot } : {}),
+    ...(source?.sourceArchive !== undefined
+      ? { sourceArchive: source.sourceArchive, sourceFingerprint: source.sourceFingerprint }
+      : {}),
   });
+}
+
+/** True if `path` exists and is a regular file (an archive input), false for dirs / missing. */
+function isFileInput(path: string): boolean {
+  try {
+    return statSync(path).isFile();
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Prepare the source tree an index/reindex will `discover()` against. Directories are a passthrough
+ * (`sourceRoot` = the directory, `cribDir` = the resolved overlay); archives are extracted once into
+ * the `~/.crib/imports` cache (or hit the cache by fingerprint) and return the cache `sourceRoot` +
+ * per-archive `cribDir`. The `--crib-dir` flag is honored for both; for archives without it the cache
+ * default is used so a `.crib` is never created next to the archive. Returns the prepared input plus
+ * the registry source fields to stamp on success (omitted for directory passthroughs).
+ */
+async function prepareSourceForIndex(
+  resolved: ResolvedRoot,
+  args: string[],
+): Promise<{
+  prepared: PreparedSourceInput;
+  source: { sourceRoot?: string; sourceArchive?: string; sourceFingerprint?: string };
+}> {
+  const archive = resolved.sourceArchive !== undefined || isFileInput(resolved.projectKey);
+  const hasCribDirFlag = args.includes('--crib-dir');
+  const opts = archive
+    ? hasCribDirFlag
+      ? { cribDir: resolved.cribDir }
+      : {}
+    : { cribDir: resolved.cribDir };
+  const prepared = await prepareSourceInput(resolved.projectKey, opts);
+  const source =
+    prepared.archivePath !== undefined
+      ? {
+          sourceRoot: prepared.sourceRoot,
+          sourceArchive: prepared.archivePath,
+          sourceFingerprint: prepared.fingerprint,
+        }
+      : {};
+  return { prepared, source };
 }
 
 /**
@@ -621,12 +687,17 @@ async function cmdIndex(args: string[], ctx?: CmdCtx): Promise<number> {
   // An explicit source path remains the source authority. `resolveRoot` also
   // preserves a registered external cribDir when this is an update fallback.
   const resolved = resolveRoot(args, ctx);
-  const repoRoot = resolved.repoRoot;
+  // Normalize the input: directories pass through; archives (zip/jar) extract once into the
+  // ~/.crib/imports cache and index the extracted tree. `prepared.sourceRoot` is the tree
+  // discovery runs against; `prepared.cribDir` is where the soul lives (cache dir for archives).
+  const { prepared, source } = await prepareSourceForIndex(resolved, args);
+  const repoRoot = prepared.sourceRoot;
+  const cribDir = prepared.cribDir;
+  const projectKey = resolved.projectKey;
   const semantic = args.includes('--semantic');
   const ignores = parseExcludes(args);
   const scope = resolvePackageScope(repoRoot, args);
   if (scope.status !== EXIT.OK) return scope.status;
-  const cribDir = resolved.cribDir;
   return runLocked(cribDir, async () => {
     // Full rebuild: fresh manifest stamped with the current SCHEMA_VERSION (never inherit a stale
     // one), repo.id preserved across rebuilds (stable committed soul + ~/.crib/registry mapping),
@@ -641,7 +712,7 @@ async function cmdIndex(args: string[], ctx?: CmdCtx): Promise<number> {
       packageRoots: scope.packageRoots,
     });
     const index = buildIndex({ repoRoot, cribDir, soul });
-    registerIndexed(repoRoot, cribDir, soul);
+    registerIndexed(projectKey, cribDir, soul, source);
     const stats = soul.getManifest().stats;
     const scopeSuffix = scope.packageRoots ? ` [scoped: ${scope.indexedPackages.join(', ')}]` : '';
     process.stdout.write(
@@ -766,6 +837,71 @@ function openIndexForRead(rt: ReturnType<typeof openSoul>): IndexStore | null {
     process.stderr.write(`${msg}\n`);
     return null;
   }
+}
+
+/**
+ * Open the derived index for `crib serve`, self-healing so the MCP stdio transport never drops on a
+ * stale/missing derived index (the `MCP error -32000: Connection closed` failure mode).
+ *
+ *   - fresh OR stale-but-present → open and serve (stale → logged warning via openIndexForServe).
+ *   - missing → rebuild from the committed soul under the writer lock (self-heal); re-check inside
+ *     the lock so two concurrent serves don't both rebuild. If the lock is busy (another writer —
+ *     likely a concurrent rebuild or `crib update`), wait briefly and retry once before giving up.
+ *
+ * Returns the opened index, or null only if the index truly cannot be opened or built.
+ */
+async function openServeIndex(
+  resolved: ResolvedRoot,
+  rt: ReturnType<typeof openSoul>,
+): Promise<IndexStore | null> {
+  try {
+    return openIndexForServe(rt);
+  } catch {
+    // missing or unreadable → self-heal below
+  }
+  let index: IndexStore | null = null;
+  const r = await runLocked(resolved.cribDir, async () => {
+    try {
+      // Another concurrent serve may have just rebuilt it under the lock — don't rebuild twice.
+      index = openIndexForServe(rt);
+      return EXIT.OK;
+    } catch {
+      process.stderr.write('derived index missing — rebuilding from soul before serving\n');
+      index = buildIndex(rt);
+      // Preserve the archive source identity (sourceRoot/sourceArchive/fingerprint) on a serve
+      // self-heal: a plain registerIndexed with no `source` would drop those fields and the next
+      // `crib update <archive>` would mis-resolve as a directory. `resolved` carries them from the
+      // registry overlay, so forward them; directories have no sourceArchive and are unaffected.
+      registerIndexed(
+        resolved.projectKey,
+        resolved.cribDir,
+        rt.soul,
+        resolved.sourceArchive !== undefined
+          ? {
+              sourceRoot: resolved.repoRoot,
+              sourceArchive: resolved.sourceArchive,
+              ...(resolved.sourceFingerprint !== undefined
+                ? { sourceFingerprint: resolved.sourceFingerprint }
+                : {}),
+            }
+          : undefined,
+      );
+      return EXIT.OK;
+    }
+  });
+  if (r === EXIT.LOCKED) {
+    // A concurrent writer holds the lock (likely another serve rebuilding, or a `crib update`).
+    // Wait for it to finish, then retry the open — the freshly-built index should now be on disk.
+    await new Promise<void>((resolve) => setTimeout(resolve, 2000));
+    try {
+      index = openIndexForServe(rt);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      process.stderr.write(`index unavailable after rebuild wait: ${msg}\n`);
+      index = null;
+    }
+  }
+  return index;
 }
 
 /**
@@ -1183,6 +1319,12 @@ async function cmdOwnership(args: string[], ctx?: CmdCtx): Promise<number> {
     process.stderr.write('usage: crib ownership <id>\n');
     return EXIT.BAD_ARGS;
   }
+  // Ownership is git-blame backed; an archive input has no work tree to blame.
+  const resolved = resolveRoot(args, ctx);
+  if (resolved.sourceArchive !== undefined) {
+    process.stderr.write('ownership requires a git work tree; not supported for archive inputs\n');
+    return EXIT.BAD_ARGS;
+  }
   const opened = openVerbs(args, ctx);
   if (!opened) return EXIT.NOT_INDEXED;
   const { verbs, index } = opened;
@@ -1197,8 +1339,18 @@ async function cmdServe(args: string[], ctx?: CmdCtx): Promise<number> {
     process.stderr.write('not indexed — run `crib index` first\n');
     return EXIT.NOT_INDEXED;
   }
+  // `--watch` observes a live work tree for edits; an archive input has nothing to watch.
+  if (resolved.sourceArchive !== undefined && args.includes('--watch')) {
+    process.stderr.write('watch is not supported for archive inputs (no work tree to observe)\n');
+    return EXIT.BAD_ARGS;
+  }
   const rt = openSoul(resolved);
-  const index = openIndexForRead(rt);
+  // The MCP server must NEVER drop the stdio pipe on a stale/missing derived index — that is the
+  // `MCP error -32000: Connection closed` failure: the serve process exits and the IDE transport
+  // dies. Stale-but-present → serve it with a warning (openIndexForServe). Missing → self-heal by
+  // rebuilding from the committed soul under the writer lock (so two concurrent serves don't race
+  // the rebuild); re-check inside the lock in case another serve just rebuilt it.
+  const index = await openServeIndex(resolved, rt);
   if (!index) return EXIT.NOT_INDEXED;
   const memory = createMemoryDeps(rt.soul, resolved.repoRoot, resolved.cribDir);
   // W6 — `crib serve --watch` installs an always-fresh working overlay: an ephemeral in-memory soul
@@ -1255,9 +1407,30 @@ async function cmdUpdate(args: string[], ctx?: CmdCtx): Promise<number> {
   const sinceIdx = args.indexOf('--since');
   const since = sinceIdx >= 0 ? args[sinceIdx + 1] : undefined;
   const dirty = args.includes('--dirty');
+  // Archive inputs have no VCS work tree, so the git-delta knobs (`--since`/`--dirty`) are
+  // meaningless. Detecting change on an archive is by fingerprint, handled below as a no-op or a
+  // full re-index — never a `--since`/`--dirty` delta. Reject up front rather than silently ignoring.
+  if (resolved.sourceArchive !== undefined && (since !== undefined || dirty)) {
+    process.stderr.write(
+      'archive inputs do not support --since/--dirty (no git work tree) — re-run `crib index <archive>` to refresh\n',
+    );
+    return EXIT.BAD_ARGS;
+  }
   if (!isIndexedRoot(resolved)) {
     process.stderr.write('not indexed — run `crib index` first\n');
     return EXIT.NOT_INDEXED;
+  }
+  // Archive path: compare the current archive fingerprint to the registered one. Unchanged → no-op;
+  // changed → a fresh archive has no incremental anchor, so degrade to a full index (which re-extracts
+  // and re-registers the new fingerprint). Directories fall through to the normal VCS delta below.
+  if (resolved.sourceArchive !== undefined) {
+    const prepared = await prepareSourceInput(resolved.projectKey, { cribDir: resolved.cribDir });
+    if (prepared.fingerprint === resolved.sourceFingerprint) {
+      process.stdout.write('up to date (archive unchanged)\n');
+      return EXIT.OK;
+    }
+    process.stderr.write('archive changed — re-indexing\n');
+    return cmdIndex(args, ctx);
   }
   // Multi-package federation: --package restricts this incremental update to one package's slice
   // of an already-indexed monorepo soul, leaving the rest untouched (see UpdateOpts.packageRoots).
@@ -1297,7 +1470,7 @@ async function cmdUpdate(args: string[], ctx?: CmdCtx): Promise<number> {
       index = buildIndex(rt); // full buildFromSoul from the just-updated soul
     }
     index.close();
-    registerIndexed(resolved.repoRoot, resolved.cribDir, rt.soul);
+    registerIndexed(resolved.projectKey, resolved.cribDir, rt.soul);
     const d = result.delta;
     process.stdout.write(
       `updated ${result.changedPaths.length} file(s) [scope ${result.scopeFiles.length}] → ` +
@@ -1321,12 +1494,14 @@ async function cmdUpdate(args: string[], ctx?: CmdCtx): Promise<number> {
 
 async function cmdReindex(args: string[], ctx?: CmdCtx): Promise<number> {
   const resolved = resolveRoot(args, ctx);
-  const repoRoot = resolved.repoRoot;
+  const { prepared, source } = await prepareSourceForIndex(resolved, args);
+  const repoRoot = prepared.sourceRoot;
+  const cribDir = prepared.cribDir;
+  const projectKey = resolved.projectKey;
   const semantic = args.includes('--semantic');
   const ignores = parseExcludes(args);
   const scope = resolvePackageScope(repoRoot, args);
   if (scope.status !== EXIT.OK) return scope.status;
-  const cribDir = resolved.cribDir;
   return runLocked(cribDir, async () => {
     const soul = freshSoulForRebuild(cribDir);
     stampPackageMeta(soul, scope);
@@ -1338,7 +1513,7 @@ async function cmdReindex(args: string[], ctx?: CmdCtx): Promise<number> {
     });
     const index = buildIndex({ repoRoot, cribDir, soul });
     index.close();
-    registerIndexed(repoRoot, cribDir, soul);
+    registerIndexed(projectKey, cribDir, soul, source);
     const stats = soul.getManifest().stats;
     const scopeSuffix = scope.packageRoots ? ` [scoped: ${scope.indexedPackages.join(', ')}]` : '';
     process.stdout.write(

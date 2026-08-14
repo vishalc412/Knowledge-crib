@@ -17,7 +17,7 @@
  * pass an explicit root keep working unchanged.
  */
 import { randomUUID } from 'node:crypto';
-import { existsSync, mkdirSync, renameSync, rmSync, statSync } from 'node:fs';
+import { type Stats, existsSync, mkdirSync, renameSync, rmSync, statSync } from 'node:fs';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { MANIFEST_FILE, SoulStore, graphPaths, openIndex } from '@knowledge-crib/core';
 import type { IndexStore } from '@knowledge-crib/core';
@@ -30,10 +30,21 @@ export interface Runtime {
 }
 
 export interface ResolvedRoot {
-  /** Work-tree root — used for source-file reads + VCS adapters. */
+  /**
+   * The canonical registry key for this input: the absolute path the user pointed at (a directory OR
+   * an archive file). For directories this equals `repoRoot`; for archives it is the `.zip`/`.jar`
+   * path while `repoRoot` is the extracted cache tree. The registry is keyed by this, not `repo.id`.
+   */
+  projectKey: string;
+  /** Work-tree root — used for source-file reads + VCS adapters. For archives this is the extracted
+   *  cache tree (registered `sourceRoot`), so read-only commands resolve without re-extracting. */
   repoRoot: string;
   /** Where the soul lives — `<repoRoot>/.crib` by default, or a registered custom dir. */
   cribDir: string;
+  /** Original archive path, when this project was indexed from an archive (registry overlay). */
+  sourceArchive?: string;
+  /** SHA-256 of archive bytes at index time (registry overlay), for archive change detection. */
+  sourceFingerprint?: string;
 }
 
 export interface ResolveOpts {
@@ -47,8 +58,14 @@ export interface ResolveOpts {
 
 /**
  * Resolve the project root + soul directory per the priority chain above. Never throws — a miss
- * returns `{ repoRoot: <candidate>, cribDir: <candidate>/.crib }` so the caller's `isIndexedRoot`
- * check produces the familiar "not indexed" error rather than a crash.
+ * returns `{ projectKey: <candidate>, repoRoot: <candidate>, cribDir: <candidate>/.crib }` so the
+ * caller's `isIndexedRoot` check produces the familiar "not indexed" error rather than a crash.
+ *
+ * Archive inputs (a `.zip`/`.jar` FILE) are a distinct resolution shape: the `projectKey` is the
+ * archive path (the registry key), while `repoRoot` is the registered `sourceRoot` (the extracted
+ * cache tree) when the archive was previously indexed, or the archive path itself on a first index
+ * (the indexing command then calls `prepareSourceInput` to extract + override `repoRoot`). Directory
+ * inputs keep `projectKey === repoRoot` exactly as before, so every existing call site is unchanged.
  */
 export function resolveProjectRoot(opts: ResolveOpts): ResolvedRoot {
   const env = opts.env ?? process.env;
@@ -67,20 +84,69 @@ export function resolveProjectRoot(opts: ResolveOpts): ResolvedRoot {
     candidate = resolve(cwd, env.CLAUDE_PROJECT_DIR);
   }
 
-  let repoRoot: string;
+  // Look up the registry entry for the candidate key FIRST. A registered archive (entry with
+  // sourceArchive) is the authority: its extracted cache tree + its .crib were created at index
+  // time, so resolve straight to them — no stat, no existsSync guard (the archive file need not be
+  // present for read-only resolution; cmdIndex re-prepares if a refresh is needed). This also keeps
+  // resolution cheap and avoids walking up from an archive path (which would find an unrelated
+  // ancestor .crib). Directory inputs keep `projectKey === repoRoot`.
   if (candidate) {
-    // Explicit/env: walk up only if the exact dir has no .crib (handles a subdir of a project).
-    repoRoot = hasCrib(candidate) ? candidate : (walkUpForCrib(candidate) ?? candidate);
+    const entry = lookupProject(candidate, env) ?? registry.projects[candidate];
+    if (entry?.sourceArchive !== undefined) {
+      return {
+        projectKey: candidate,
+        repoRoot: entry.sourceRoot ?? candidate,
+        cribDir: entry.cribDir,
+        sourceArchive: entry.sourceArchive,
+        ...(entry.sourceFingerprint !== undefined
+          ? { sourceFingerprint: entry.sourceFingerprint }
+          : {}),
+      };
+    }
+  }
+
+  let projectKey: string;
+  let repoRoot: string;
+  let entry: ReturnType<typeof lookupProject>;
+  if (candidate) {
+    // A fresh (unregistered) archive input is a FILE: its projectKey is the file path; do NOT walk up
+    // from a file (that would find an unrelated ancestor .crib). repoRoot is the archive path itself
+    // here; cmdIndex overrides it via prepareSourceInput to the extracted cache tree. A directory
+    // input walks up to its .crib as before.
+    let st: Stats | undefined;
+    try {
+      st = statSync(candidate);
+    } catch {
+      st = undefined;
+    }
+    if (st?.isFile()) {
+      projectKey = candidate;
+      repoRoot = candidate;
+      entry = lookupProject(projectKey, env) ?? registry.projects[projectKey];
+    } else {
+      repoRoot = hasCrib(candidate) ? candidate : (walkUpForCrib(candidate) ?? candidate);
+      projectKey = repoRoot;
+      entry = lookupProject(projectKey, env) ?? registry.projects[projectKey];
+    }
   } else {
     // 4–5. no signal: walk up from CWD, else fall back to CWD (pre-REQ-1 behaviour).
     repoRoot = walkUpForCrib(cwd) ?? cwd;
+    projectKey = repoRoot;
+    entry = lookupProject(projectKey, env) ?? registry.projects[projectKey];
   }
 
   // Registry overlay: a registered custom cribDir wins, but only if it still exists on disk.
-  const entry = lookupProject(repoRoot, env) ?? registry.projects[repoRoot];
   const cribDir = entry && existsSync(entry.cribDir) ? entry.cribDir : join(repoRoot, '.crib');
 
-  return { repoRoot, cribDir };
+  return {
+    projectKey,
+    repoRoot,
+    cribDir,
+    ...(entry?.sourceArchive !== undefined ? { sourceArchive: entry.sourceArchive } : {}),
+    ...(entry?.sourceFingerprint !== undefined
+      ? { sourceFingerprint: entry.sourceFingerprint }
+      : {}),
+  };
 }
 
 /** Walk upward from `start` returning the first dir containing `.crib/crib.json`, else `undefined`. */
@@ -170,6 +236,42 @@ export function openIndexOnly(rt: Runtime): IndexStore {
     : join(rt.cribDir, MANIFEST_FILE);
   if (existsSync(manifestPath) && statSync(path).mtimeMs + 1 < statSync(manifestPath).mtimeMs) {
     throw new Error('derived index missing or stale — run `crib index .`');
+  }
+  return openIndex(manifest.stores.index.backend, { path });
+}
+
+/**
+ * Open the derived index for `crib serve`. The MCP stdio server must NEVER drop the transport on a
+ * stale/missing derived index — that surfaces to the IDE as `MCP error -32000: Connection closed`,
+ * because the serve process exits and the stdio pipe dies. So this is deliberately more forgiving
+ * than {@link openIndexOnly}:
+ *
+ *   - fresh index → open it (same mtime guard as `openIndexOnly`).
+ *   - stale-but-present (the canonical manifest advanced past the sqlite — e.g. an external
+ *     `crib update`/enrich bumped the soul after the index was built) → open the existing sqlite
+ *     ANYWAY and log a one-line warning. A slightly-behind index is internally consistent (it was
+ *     built from a valid earlier soul) and far better than a dead transport; the IDE stays usable
+ *     while an explicit `crib index .` refreshes it.
+ *   - missing entirely → throw `'derived index missing'` so the caller can rebuild from the
+ *     committed soul (self-heal) instead of exiting.
+ *
+ * Never returns null for a present index. Throws only on a truly missing (or unreadable) sqlite.
+ */
+export function openIndexForServe(rt: Runtime): IndexStore {
+  const manifest = rt.soul.getManifest();
+  const rel = manifest.stores.index.path;
+  const path = resolveIndexPath(rel, rt.repoRoot, rt.cribDir);
+  if (!existsSync(path)) {
+    throw new Error('derived index missing');
+  }
+  const canonicalManifest = graphPaths(rt.cribDir).manifest;
+  const manifestPath = existsSync(canonicalManifest)
+    ? canonicalManifest
+    : join(rt.cribDir, MANIFEST_FILE);
+  if (existsSync(manifestPath) && statSync(path).mtimeMs + 1 < statSync(manifestPath).mtimeMs) {
+    process.stderr.write(
+      'warning: derived index stale (soul advanced) — serving existing index; run `crib index .` to refresh\n',
+    );
   }
   return openIndex(manifest.stores.index.backend, { path });
 }

@@ -70,4 +70,65 @@ describe('registry', () => {
     expect(existsSync(path)).toBe(true);
     expect(JSON.parse(readFileSync(path, 'utf8')).projects['/x'].repoId).toBe('9');
   });
+
+  it('registers archive source identity (sourceRoot/archive/fingerprint) when provided', () => {
+    const root = '/work/app.zip';
+    registerProject(root, {
+      repoId: 'r1',
+      cribDir: '/cache/crib',
+      sourceRoot: '/cache/source',
+      sourceArchive: '/work/app.zip',
+      sourceFingerprint: 'sha256:abc',
+      env,
+    });
+    const entry = lookupProject(root, env)!;
+    expect(entry.sourceRoot).toBe('/cache/source');
+    expect(entry.sourceArchive).toBe('/work/app.zip');
+    expect(entry.sourceFingerprint).toBe('sha256:abc');
+  });
+
+  it('omits archive fields entirely for a plain directory registration', () => {
+    registerProject('/work/app', { repoId: 'r2', cribDir: '/work/app/.crib', env });
+    const entry = lookupProject('/work/app', env)!;
+    expect(entry.sourceRoot).toBeUndefined();
+    expect(entry.sourceArchive).toBeUndefined();
+    expect(entry.sourceFingerprint).toBeUndefined();
+  });
+
+  it('preserves addedAt and refreshes archive fields on re-registration', () => {
+    const root = '/work/app.zip';
+    registerProject(root, {
+      repoId: 'r1',
+      cribDir: '/cache/crib',
+      addedAt: '2026-01-01T00:00:00Z',
+      sourceRoot: '/cache/source',
+      sourceArchive: root,
+      sourceFingerprint: 'sha256:v1',
+      env,
+    });
+    registerProject(root, {
+      repoId: 'r1',
+      cribDir: '/cache/crib',
+      sourceRoot: '/cache/source',
+      sourceArchive: root,
+      sourceFingerprint: 'sha256:v2',
+      env,
+    });
+    const after = lookupProject(root, env)!;
+    expect(after.addedAt).toBe('2026-01-01T00:00:00Z');
+    expect(after.sourceFingerprint).toBe('sha256:v2');
+  });
+
+  it('resolves an old registry JSON (pre-archive fields) without breaking', () => {
+    writeRegistry(
+      {
+        version: 1,
+        projects: { '/legacy': { repoId: 'old', cribDir: '/legacy/.crib', addedAt: 't' } },
+      },
+      env,
+    );
+    const entry = lookupProject('/legacy', env)!;
+    expect(entry.repoId).toBe('old');
+    expect(entry.sourceArchive).toBeUndefined();
+  });
 });
