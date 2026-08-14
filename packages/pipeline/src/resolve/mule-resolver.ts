@@ -10,9 +10,17 @@
  *   flow-ref      enclosing flow symbol --calls--> target flow (evidence.callSite = processor id);
  *                a static missing target → an `external-flow` placeholder node + calls edge.
  *   config-ref    processor --references--> config symbol (evidence.referenceKind = 'config')
+ *   endpoint      Mule 3 inbound/outbound-endpoint `ref` --references--> connector config
+ *                (evidence.referenceKind = 'endpoint'; same `config` bucket as config-ref)
+ *   exceptionStrategy  Mule 3 reference-exception-strategy `ref` --references--> global strategy
+ *                config symbol (evidence.referenceKind = 'exceptionStrategy')
  *   property      DW module --references--> property symbol (evidence.referenceKind = 'property')
  *   import (DW)   DW file --imports--> imported module symbol (project-local; stdlib dropped)
  *   include (RAML) RAML file --imports--> included file node (path-suffix match)
+ *
+ * Deferred legacy families (honest gaps, not yet emitted by the extractor): Mule 3 transformer
+ * `ref` and `<import resource="..."/>` config-file imports. The extractor decides when to emit
+ * those reference kinds; the resolver needs no dialect branch once it does.
  *
  * Same-file flow-refs are SKIPPED here: the extractor already emitted the local statement→flow
  * `calls` edge; emitting a flow→flow edge too would double-count the relationship. The placeholder
@@ -30,7 +38,11 @@ import type { ResolveContext, ResolveResult, Resolver } from './resolver-registr
 import type { SymbolTable } from './symbol-table.js';
 import type { ResolveStats } from './ts-resolver.js';
 
-/** A reference the extractor surfaces (shape of `meta.references` entries on Mule nodes). */
+/** A reference the extractor surfaces (shape of `meta.references` entries on Mule nodes). The
+ *  legacy Mule 3 kinds `endpoint` (inbound/outbound-endpoint `ref` → connector config) and
+ *  `exceptionStrategy` (reference-exception-strategy `ref` → global strategy config) both resolve
+ *  against the `config` symbol bucket — the extractor decides the kind, the resolver maps it to a
+ *  `references` edge with a distinct `referenceKind` for migration clarity. */
 interface MuleReference {
   kind:
     | 'flow-ref'
@@ -41,7 +53,9 @@ interface MuleReference {
     | 'resource'
     | 'type'
     | 'trait'
-    | 'securityScheme';
+    | 'securityScheme'
+    | 'endpoint'
+    | 'exceptionStrategy';
   name: string;
 }
 
@@ -159,6 +173,14 @@ function resolveReference(
       return;
     case 'config-ref':
       resolveIndexedRef(ref, 'config', node, proj, index, push, 'config', stats);
+      return;
+    case 'endpoint':
+      // Mule 3 inbound/outbound-endpoint `ref` → the connector config symbol.
+      resolveIndexedRef(ref, 'config', node, proj, index, push, 'endpoint', stats);
+      return;
+    case 'exceptionStrategy':
+      // Mule 3 reference-exception-strategy `ref` → the global exception-strategy config symbol.
+      resolveIndexedRef(ref, 'config', node, proj, index, push, 'exceptionStrategy', stats);
       return;
     case 'property':
       resolveIndexedRef(ref, 'property', node, proj, index, push, 'property', stats);

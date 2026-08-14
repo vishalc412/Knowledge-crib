@@ -236,6 +236,9 @@ function collectErrorHandlers(
   }
   const errorType = el.attributes.find((a) => a.local === 'type')?.value;
   const when = el.attributes.find((a) => a.local === 'when')?.value;
+  // A reference-exception-strategy delegates to a GLOBAL named strategy via `ref` — a cross-file
+  // reference the resolver binds to that global strategy's config symbol.
+  const ref = el.attributes.find((a) => a.local === 'ref')?.value;
   const processors = el.children
     .filter((c) => !isExceptionStrategy(c.local))
     .map((c) => buildProcessor(c, false, diagnostics));
@@ -246,6 +249,7 @@ function collectErrorHandlers(
   };
   if (errorType !== undefined) handler.errorType = errorType;
   else if (when !== undefined) handler.errorType = when; // catch-exception-strategy `when` guard
+  if (ref !== undefined) handler.ref = ref; // reference-exception-strategy → global strategy
   return [handler];
 }
 

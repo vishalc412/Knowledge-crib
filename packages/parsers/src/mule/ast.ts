@@ -99,10 +99,14 @@ export interface MuleProcessor {
 }
 
 /** An error-handling strategy (`<on-error-propagate>` / `<on-error-continue>` / `<on-error>`)
- *  inside an `<error-handler>` block, with the processor subtree it dispatches to. */
+ *  inside an `<error-handler>` block, with the processor subtree it dispatches to. For a Mule 3
+ *  `reference-exception-strategy`, `ref` is the name of the global exception strategy it delegates
+ *  to (a cross-file/config reference the resolver binds to that global strategy's symbol). */
 export interface MuleErrorHandler {
   strategy: string;
   errorType?: string;
+  /** Mule 3 `reference-exception-strategy ref="..."` — the global strategy name it references. */
+  ref?: string;
   processors: MuleProcessor[];
   span: Span;
 }

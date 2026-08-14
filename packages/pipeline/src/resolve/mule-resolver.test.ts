@@ -187,6 +187,90 @@ describe('MuleResolver — config-ref + dynamic', () => {
   });
 });
 
+const LEGACY_XML = `<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns="http://www.mulesoft.org/schema/mule/core"
+      xmlns:vm="http://www.mulesoft.org/schema/mule/vm">
+  <vm:connector name="vmConnector"/>
+  <catch-exception-strategy name="globalErr">
+    <logger message="global catch"/>
+  </catch-exception-strategy>
+  <flow name="legacyFlow">
+    <inbound-endpoint ref="vmConnector" path="in"/>
+    <set-payload value="#[payload]"/>
+    <outbound-endpoint ref="vmConnector" path="out"/>
+    <reference-exception-strategy ref="globalErr"/>
+  </flow>
+</mule>`;
+
+/** Extract the Mule 3 legacy fixture into a fresh soul, then resolve. */
+async function setupMule3() {
+  const soul = soulFor();
+  const extractor = new MuleExtractor();
+  const file = muleFile('src/main/app/legacy.xml', 'config', 'mule3', LEGACY_XML);
+  const files = [file];
+  const r = await extractor.extract(file, mkCtx(LEGACY_XML));
+  if (r.nodes.length) soul.putNodes(r.nodes as never);
+  if (r.edges.length) soul.putEdges(r.edges as never);
+  const table = new SymbolTable(soul);
+  const result = resolveMule(soul, table, '/repo', files);
+  return { soul, table, result, file };
+}
+
+describe('MuleResolver — Mule 3 legacy endpoint + exception-strategy refs', () => {
+  it('resolves an inbound/outbound-endpoint ref to the connector config (referenceKind endpoint)', async () => {
+    const { result, soul } = await setupMule3();
+    const connector = [...soul.iterate('symbol')].find(
+      (n) => n.type === 'config' && n.name === 'vmConnector',
+    );
+    expect(connector).toBeDefined();
+    // the inbound source route + the outbound http-call both surface an endpoint ref
+    const endpointEdges = result.edges.filter(
+      (e) =>
+        e.rel === 'references' &&
+        e.dst === connector?.id &&
+        (e.evidence as { referenceKind?: string }).referenceKind === 'endpoint',
+    );
+    expect(endpointEdges.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('resolves a reference-exception-strategy ref to the global strategy config', async () => {
+    const { result, soul } = await setupMule3();
+    const globalErr = [...soul.iterate('symbol')].find(
+      (n) => n.type === 'config' && n.name === 'globalErr',
+    );
+    expect(globalErr).toBeDefined();
+    const handler = [...soul.iterate('exception-handler')].find((n) =>
+      (n.meta?.references as { kind: string; name: string }[] | undefined)?.some(
+        (r) => r.kind === 'exceptionStrategy' && r.name === 'globalErr',
+      ),
+    );
+    expect(handler).toBeDefined();
+    expect(result.edges).toContainEqual(
+      expect.objectContaining({
+        rel: 'references',
+        src: handler?.id,
+        dst: globalErr?.id,
+        evidence: expect.objectContaining({ referenceKind: 'exceptionStrategy' }),
+      }),
+    );
+  });
+
+  it('does not regress: Mule 4 config-ref still resolves with referenceKind config', async () => {
+    const { result, soul } = await setup();
+    const config = [...soul.iterate('symbol')].find(
+      (n) => n.type === 'config' && n.name === 'httpConfig',
+    );
+    expect(
+      result.edges.some(
+        (e) =>
+          e.rel === 'references' &&
+          e.dst === config?.id &&
+          (e.evidence as { referenceKind?: string }).referenceKind === 'config',
+      ),
+    ).toBe(true);
+  });
+});
+
 describe('MuleResolver — Resolver adapter', () => {
   it('supports only mule-family files', () => {
     const r = new MuleResolver();

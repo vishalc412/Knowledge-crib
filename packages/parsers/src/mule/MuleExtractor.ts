@@ -39,7 +39,9 @@ import { parseMule3 } from './mule3.js';
 import { parseMule4 } from './mule4.js';
 import { parseRaml } from './raml.js';
 
-/** A cross-file reference the extractor surfaces for the resolver (never resolved here). */
+/** A cross-file reference the extractor surfaces for the resolver (never resolved here). The legacy
+ *  Mule 3 kinds (`endpoint`, `exceptionStrategy`) are emitted only by the Mule 3 path; the resolver
+ *  binds `endpoint` → connector config symbol and `exceptionStrategy` → global strategy symbol. */
 export interface MuleReference {
   kind:
     | 'flow-ref'
@@ -50,7 +52,9 @@ export interface MuleReference {
     | 'resource'
     | 'type'
     | 'trait'
-    | 'securityScheme';
+    | 'securityScheme'
+    | 'endpoint' // Mule 3 inbound/outbound-endpoint `ref` → connector config
+    | 'exceptionStrategy'; // Mule 3 reference-exception-strategy `ref` → global strategy config
   name: string;
 }
 
@@ -332,7 +336,7 @@ function emitStatement(
 
   // Generic processor → statement node.
   const id = ctx.idFor('statement', { file: file.path, line: proc.span.start });
-  const references = collectConfigRef(proc, index);
+  const references = connectorRefs(proc);
   nodes.push({
     id,
     kind: 'statement',
@@ -376,8 +380,7 @@ function emitSourceRoute(
     file: file.path,
     line: proc.span.start,
   });
-  const references: MuleReference[] = [];
-  if (proc.configRef) references.push({ kind: 'config-ref', name: proc.configRef });
+  const references: MuleReference[] = connectorRefs(proc);
   nodes.push({
     id,
     kind: 'route',
@@ -426,8 +429,7 @@ function emitHttpCall(
     file: file.path,
     line: proc.span.start,
   });
-  const references: MuleReference[] = [];
-  if (proc.configRef) references.push({ kind: 'config-ref', name: proc.configRef });
+  const references: MuleReference[] = connectorRefs(proc);
   nodes.push({
     id,
     kind: 'http-call',
@@ -511,6 +513,10 @@ function emitErrorHandler(
   edges: Edge[],
 ): void {
   const id = ctx.idFor('exception-handler', { file: file.path, line: eh.span.start });
+  // A Mule 3 reference-exception-strategy surfaces the global strategy name it delegates to as a
+  // cross-file reference (the resolver binds it to that global strategy's config symbol).
+  const references: MuleReference[] = [];
+  if (eh.ref) references.push({ kind: 'exceptionStrategy', name: eh.ref });
   nodes.push({
     id,
     kind: 'exception-handler',
@@ -519,7 +525,11 @@ function emitErrorHandler(
     span: eh.span,
     whenSelector: eh.errorType,
     hash: ctx.hash(`exc:${eh.strategy}@${eh.span.start}`),
-    meta: { strategy: eh.strategy, ...(eh.errorType ? { errorType: eh.errorType } : {}) },
+    meta: {
+      strategy: eh.strategy,
+      ...(eh.errorType ? { errorType: eh.errorType } : {}),
+      ...(references.length ? { references } : {}),
+    },
   });
   edges.push(memberOf(id, ctx.idFor('file', { path: file.path }), 'family:mulesoft'));
   // The handler's processors are statements the flow executes, guarded-by the handler.
@@ -542,10 +552,18 @@ function emitErrorHandler(
   }
 }
 
-/** If a processor references a config (config-ref), surface it as a reference for the resolver. */
-function collectConfigRef(proc: MuleProcessor, _index: FlowIndex): MuleReference[] {
+/** Surface a processor's connector references for the resolver: the Mule 4 `config-ref` attribute
+ *  AND the Mule 3 inbound/outbound-endpoint `ref` attribute (which names the same connector config
+ *  but via the legacy `ref` attribute). Both resolve to a `config` symbol in the resolver. */
+function connectorRefs(proc: MuleProcessor): MuleReference[] {
   const refs: MuleReference[] = [];
   if (proc.configRef) refs.push({ kind: 'config-ref', name: proc.configRef });
+  if (
+    (proc.operation === 'inbound-endpoint' || proc.operation === 'outbound-endpoint') &&
+    proc.attributes.ref
+  ) {
+    refs.push({ kind: 'endpoint', name: proc.attributes.ref });
+  }
   return refs;
 }
 
