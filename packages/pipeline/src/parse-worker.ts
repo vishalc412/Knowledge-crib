@@ -65,17 +65,23 @@ if (parentPort) {
             nodes: [],
             edges: [],
             parsed: false,
+            extractorName: '',
+            diagnostics: [],
           });
           return;
         }
         const ctx = makeExtractCtx(msg.root, msg.file.path);
-        const result = ready ? await extractor.extract(msg.file, ctx) : { nodes: [], edges: [] };
+        const result = ready
+          ? await extractor.extract(msg.file, ctx)
+          : { nodes: [], edges: [], diagnostics: [] };
         parentPort!.postMessage({
           kind: 'result',
           idx: msg.idx,
           nodes: result.nodes,
           edges: result.edges,
           parsed: true,
+          extractorName: extractor.name,
+          diagnostics: result.diagnostics ?? [],
         });
       } catch (err) {
         // Extractors are contracted to degrade to a file node on parse failure (never throw the
@@ -92,16 +98,36 @@ if (parentPort) {
       // ~2×files to ~2×workers — the dominant cost for crib's many-small-file workload. Results are
       // returned in slice order; the main thread persists in DISCOVERY order (it knows the idx map).
       try {
-        const results: { nodes: unknown[]; edges: unknown[]; parsed: boolean }[] = [];
+        const results: {
+          nodes: unknown[];
+          edges: unknown[];
+          parsed: boolean;
+          extractorName: string;
+          diagnostics: unknown[];
+        }[] = [];
         for (const item of msg.items) {
           const extractor = registry.resolve(item.file);
           if (!extractor) {
-            results.push({ nodes: [], edges: [], parsed: false });
+            results.push({
+              nodes: [],
+              edges: [],
+              parsed: false,
+              extractorName: '',
+              diagnostics: [],
+            });
             continue;
           }
           const ctx = makeExtractCtx(msg.root, item.file.path);
-          const result = ready ? await extractor.extract(item.file, ctx) : { nodes: [], edges: [] };
-          results.push({ nodes: result.nodes, edges: result.edges, parsed: true });
+          const result = ready
+            ? await extractor.extract(item.file, ctx)
+            : { nodes: [], edges: [], diagnostics: [] };
+          results.push({
+            nodes: result.nodes,
+            edges: result.edges,
+            parsed: true,
+            extractorName: extractor.name,
+            diagnostics: result.diagnostics ?? [],
+          });
         }
         parentPort!.postMessage({ kind: 'batch', results });
       } catch (err) {

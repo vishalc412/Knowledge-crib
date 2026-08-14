@@ -30,7 +30,7 @@ import { ExtractorRegistry } from '@knowledge-crib/parsers';
 import type { Extractor } from '@knowledge-crib/parsers';
 import { runCluster } from './cluster/index.js';
 import type { ClusterStats } from './cluster/index.js';
-import { runParse } from './parse.js';
+import { emptyParseStats, runParse } from './parse.js';
 import type { ParseStats } from './parse.js';
 import { defaultExtractors } from './pipeline.js';
 import { runResolve } from './resolve/index.js';
@@ -74,7 +74,7 @@ export async function refreshWorkingOverlay(
     return {
       dirty,
       scope: [],
-      parse: { filesParsed: 0, nodes: 0, edges: 0 },
+      parse: emptyParseStats(),
       resolve: EMPTY_RESOLVE,
       cluster: EMPTY_CLUSTER,
     };

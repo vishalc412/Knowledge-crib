@@ -33,15 +33,15 @@ import { runLink } from './linker/index.js';
 import type { LinkStats } from './linker/index.js';
 import type { SemanticStats } from './linker/index.js';
 import { runSemanticLink } from './linker/index.js';
+import { classifyMuleDiscovery } from './mule/discover.js';
 import { runOwnership } from './ownership.js';
 import type { OwnershipStats } from './ownership.js';
-import { runParse } from './parse.js';
+import { emptyParseStats, runParse } from './parse.js';
 import type { ParseStats } from './parse.js';
 import { defaultExtractors } from './pipeline.js';
 import { runResolve } from './resolve/index.js';
 import type { ResolveStats } from './resolve/index.js';
 import { metaForPaths, runStructure } from './structure.js';
-import { classifyMuleDiscovery } from './mule/discover.js';
 import { changedFilesSince, currentHead, uncommittedChanges } from './vcs.js';
 
 export interface UpdateOpts {
@@ -111,7 +111,7 @@ export interface UpdateNoopReport {
 
 export type UpdateResult = UpdateReport | UpdateNoopReport | null;
 
-const EMPTY_PARSE: ParseStats = { filesParsed: 0, nodes: 0, edges: 0 };
+const EMPTY_PARSE: ParseStats = emptyParseStats();
 const EMPTY_RESOLVE: ResolveStats = {
   imports: 0,
   calls: 0,

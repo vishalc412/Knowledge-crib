@@ -24,9 +24,10 @@
  */
 import type { SoulStore } from '@knowledge-crib/core';
 import { grammarsNeededFor, preloadGrammars } from '@knowledge-crib/parsers';
-import type { ExtractorRegistry, FileMeta } from '@knowledge-crib/parsers';
+import type { ExtractDiagnostic, ExtractorRegistry, FileMeta } from '@knowledge-crib/parsers';
 import { makeExtractCtx } from './extract-ctx.js';
-import type { ParseStats } from './parse.js';
+import { DEFAULT_DIAGNOSTIC_LIMIT, aggregateDiagnostics, emptyParseStats } from './parse.js';
+import type { FileExtraction, ParseStats } from './parse.js';
 
 /** Default concurrency. Tuned on the 2300-file bench: speedup plateaus at K≈8-32; 16 is a safe
  *  middle that avoids over-scheduling the event loop on smaller repos. */
@@ -39,8 +40,9 @@ export async function runParseConcurrent(
   root: string,
   files: FileMeta[],
   concurrency = DEFAULT_CONCURRENCY,
+  diagnosticLimit = DEFAULT_DIAGNOSTIC_LIMIT,
 ): Promise<ParseStats> {
-  if (files.length === 0) return { filesParsed: 0, nodes: 0, edges: 0 };
+  if (files.length === 0) return emptyParseStats();
   // Preload tree-sitter grammars on the main thread (the pool shares this one loaded language across
   // all concurrent extractors — `createParserHandle` is cheap per call; the Language is shared).
   await preloadGrammars(grammarsNeededFor(files));
@@ -49,6 +51,8 @@ export async function runParseConcurrent(
     nodes: import('@knowledge-crib/soul-schema').Node[];
     edges: import('@knowledge-crib/soul-schema').Edge[];
     parsed: boolean;
+    extractorName: string;
+    diagnostics: ExtractDiagnostic[];
   } | null;
   const results: Slot[] = new Array(files.length).fill(null);
   let cursor = 0;
@@ -62,22 +66,30 @@ export async function runParseConcurrent(
       const file = files[idx]!;
       const extractor = registry.resolve(file);
       if (!extractor) {
-        results[idx] = { nodes: [], edges: [], parsed: false };
+        results[idx] = { nodes: [], edges: [], parsed: false, extractorName: '', diagnostics: [] };
         continue;
       }
       const ctx = makeExtractCtx(root, file.path);
       const result = await extractor.extract(file, ctx);
-      results[idx] = { nodes: result.nodes, edges: result.edges, parsed: true };
+      results[idx] = {
+        nodes: result.nodes,
+        edges: result.edges,
+        parsed: true,
+        extractorName: extractor.name,
+        diagnostics: result.diagnostics ?? [],
+      };
     }
   };
 
   const K = Math.min(Math.max(1, concurrency), files.length);
   await Promise.all(Array.from({ length: K }, () => runner()));
 
-  // SERIAL PERSIST in discovery order — determinism-critical (see header).
+  // SERIAL PERSIST in discovery order — determinism-critical (see header). The diagnostics are also
+  // folded in this same discovery-order pass so the aggregated surface matches the serial loop.
   let filesParsed = 0;
   let nodes = 0;
   let edges = 0;
+  const extractions: FileExtraction[] = [];
   for (let i = 0; i < files.length; i++) {
     const r = results[i];
     if (!r) continue; // defensive — every index should have been filled
@@ -86,6 +98,7 @@ export async function runParseConcurrent(
     if (r.parsed) filesParsed++; // mirrors serial `filesParsed` semantics
     nodes += r.nodes.length;
     edges += r.edges.length;
+    if (r.parsed) extractions.push({ extractorName: r.extractorName, diagnostics: r.diagnostics });
   }
-  return { filesParsed, nodes, edges };
+  return { filesParsed, nodes, edges, ...aggregateDiagnostics(extractions, diagnosticLimit) };
 }
