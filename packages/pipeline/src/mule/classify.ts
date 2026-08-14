@@ -36,14 +36,26 @@ const roleOf = (path: string): FileClassification['role'] => {
   if (lower.endsWith('.mel')) return 'mel';
   if (lower.endsWith('.raml')) return 'raml';
   if (/\.(properties|yaml|yml)$/.test(lower)) return 'properties';
-  if (/(?:^|\/)(?:pom\.xml|mule-artifact\.json|mule-deploy\.properties)$/.test(lower)) return 'descriptor';
+  if (
+    /(?:^|\/)(?:pom\.xml|mule-artifact\.json|mule-deploy\.properties|mule-project\.xml)$/.test(
+      lower,
+    )
+  )
+    return 'descriptor';
   if (lower.endsWith('.xml')) return 'config';
   return 'resource';
 };
 
 /** Resolve the Mule project root for a file by matching known structural markers, or undefined.
  *  Returns the repo-relative POSIX root with NO trailing slash ('' for the repo root). */
-const MARKERS = ['/mule-artifact.json', '/mule-deploy.properties', '/src/main/mule/', '/src/main/app/', '/src/test/munit/'] as const;
+const MARKERS = [
+  '/mule-artifact.json',
+  '/mule-deploy.properties',
+  '/mule-project.xml',
+  '/src/main/mule/',
+  '/src/main/app/',
+  '/src/test/munit/',
+] as const;
 const markerRoot = (file: FileMeta, text: string): string | undefined => {
   for (const marker of MARKERS) {
     if (file.path === marker.slice(1)) return ''; // top-level marker file → repo root
@@ -52,7 +64,10 @@ const markerRoot = (file: FileMeta, text: string): string | undefined => {
   }
   // A Mule-packaged pom.xml (mule-application/mule-domain) anchors a project even without the
   // standard src/ layout (deployable JARs, flat projects).
-  if (file.path.endsWith('/pom.xml') && /<packaging>mule-(?:application|domain)<\/packaging>/.test(text)) {
+  if (
+    file.path.endsWith('/pom.xml') &&
+    /<packaging>mule-(?:application|domain)<\/packaging>/.test(text)
+  ) {
     return dirname(file.path);
   }
   return undefined;
@@ -64,19 +79,27 @@ function dirname(path: string): string {
   return slash === -1 ? '' : path.slice(0, slash);
 }
 
-export function classifyMuleFiles(files: FileMeta[], textByPath: ReadonlyMap<string, string>): MuleClassificationResult {
+export function classifyMuleFiles(
+  files: FileMeta[],
+  textByPath: ReadonlyMap<string, string>,
+): MuleClassificationResult {
   // 1. Collect candidate roots from every marker-bearing file (longest first so nested roots win).
-  const roots = [...new Set(
-    files.flatMap((file) => {
-      const root = markerRoot(file, textByPath.get(file.path) ?? '');
-      return root === undefined ? [] : [root];
-    }),
-  )].sort((a, b) => b.length - a.length || a.localeCompare(b));
+  const roots = [
+    ...new Set(
+      files.flatMap((file) => {
+        const root = markerRoot(file, textByPath.get(file.path) ?? '');
+        return root === undefined ? [] : [root];
+      }),
+    ),
+  ].sort((a, b) => b.length - a.length || a.localeCompare(b));
 
   // 2. Assign every file to its deepest enclosing root.
   const grouped = new Map<string, FileMeta[]>();
   for (const file of files) {
-    const root = roots.find((candidate) => candidate === '' || file.path === candidate || file.path.startsWith(`${candidate}/`));
+    const root = roots.find(
+      (candidate) =>
+        candidate === '' || file.path === candidate || file.path.startsWith(`${candidate}/`),
+    );
     if (root === undefined) continue;
     const list = grouped.get(root) ?? [];
     list.push(file);
@@ -95,6 +118,7 @@ export function classifyMuleFiles(files: FileMeta[], textByPath: ReadonlyMap<str
       if (/<packaging>mule-application<\/packaging>/.test(text)) mule4 += 3;
       if (file.path.includes('/src/main/mule/')) mule4 += 2;
       if (file.path.includes('/src/test/munit/')) mule4 += 2;
+      if (file.path.endsWith('mule-project.xml')) mule3 += 3;
       if (file.path.includes('/src/main/app/')) mule3 += 3;
       if (/<packaging>mule-domain<\/packaging>/.test(text)) mule3 += 2;
       if (MULE3_XML_SIGNALS.some((re) => re.test(text))) mule3 += 2;
