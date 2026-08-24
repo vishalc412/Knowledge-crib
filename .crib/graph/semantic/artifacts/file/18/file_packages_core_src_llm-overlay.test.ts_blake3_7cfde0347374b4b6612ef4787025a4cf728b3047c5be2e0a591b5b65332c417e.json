@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/core/src/llm-overlay.test.ts",
+  "nodeHash": "blake3:7cfde0347374b4b6612ef4787025a4cf728b3047c5be2e0a591b5b65332c417e",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:17:56.867Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The test suite for llm-overlay — it defines the behaviour that is guaranteed, so a change that breaks any of it fails the build. It pins: readLlmOverlay.",
+    "responsibilities": [
+      "Pin the observable behaviour of llm-overlay",
+      "Fail the build when a guaranteed behaviour changes"
+    ],
+    "businessRules": [],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.76
+  },
+  "graph": {
+    "nodes": [],
+    "edges": []
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/core/src/llm-overlay.test.ts#sym@L11",
+      "quote": "function sym(path: string, qname: string, line: number): Node {"
+    },
+    {
+      "soulId": "sym:packages/core/src/llm-overlay.test.ts#writeArtifact@L25",
+      "quote": "function writeArtifact(cribDir: string, artifact: Record<string, unknown>): void {"
+    },
+    {
+      "soulId": "sym:packages/core/src/llm-overlay.test.ts#writeLlmManifest@L38",
+      "quote": "function writeLlmManifest(cribDir: string, builtAgainstHead: string | null): void {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

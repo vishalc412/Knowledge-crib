@@ -1,0 +1,68 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/core/src/aliases.ts",
+  "nodeHash": "blake3:0855c456c868947de3b2148c7ab28cf3cecf68449d8ea45eb8f8bfa8fc5291be",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:02:22.983Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "A per-repository alias dictionary and query rewrite: maps a team term to the identifier it actually means, so a domain word finds the code even when the code never uses that word.",
+    "responsibilities": [
+      "Load the committed alias dictionary",
+      "Rewrite a query through it before search"
+    ],
+    "businessRules": [
+      {
+        "rule": "Aliases are deterministic and committed rather than learned.",
+        "rationale": "A learned mapping cannot be reviewed, and search must stay reproducible.",
+        "sourceRef": "file:packages/core/src/aliases.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.83
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:query-aliasing",
+        "kind": "capability",
+        "name": "Query aliasing",
+        "summary": "Domain vocabulary mapped to code terms.",
+        "attributes": {},
+        "id": "llm:file:packages/core/src/aliases.ts#capability:query-aliasing",
+        "targetId": "file:packages/core/src/aliases.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/core/src/aliases.ts",
+        "to": "llm:file:packages/core/src/aliases.ts#capability:query-aliasing",
+        "rel": "realizes",
+        "rationale": "This file implements aliases.",
+        "confidence": 0.83,
+        "targetId": "file:packages/core/src/aliases.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/core/src/aliases.ts#AliasFile@L31",
+      "quote": "aliases: Array<{ alias: string; expand: string }>;"
+    },
+    {
+      "soulId": "sym:packages/core/src/aliases.ts#AliasMap@L28",
+      "quote": "export type AliasMap = ReadonlyMap<string, string>;"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

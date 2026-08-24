@@ -1,0 +1,75 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/parsers/src/ts/TypeScriptExtractor.ts",
+  "nodeHash": "blake3:0832ee5e3483332dc8cf28dc2fa2b00559ce983862c3a63ddc0a8082c621fdf0",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T02:51:35.754Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The TypeScript extractor: turns one TypeScript file into symbol nodes (class, interface, enum, function, method, property) with qualified names, spans and signatures, plus member-of edges and intra-file call edges — never resolving anything across file boundaries.",
+    "responsibilities": [
+      "Emit a symbol per declaration with qualifiedName, span and signature",
+      "Emit member-of edges linking each symbol to its enclosing symbol or file",
+      "Emit calls edges only where the callee resolves inside the same file",
+      "Stay deterministic and offline so a cold install needs no network"
+    ],
+    "businessRules": [
+      {
+        "rule": "The extractor never guesses across files; cross-file resolution is the resolver phase job.",
+        "rationale": "Capability honesty — a guess made here would be indistinguishable from a fact downstream.",
+        "sourceRef": "file:packages/parsers/src/ts/TypeScriptExtractor.ts"
+      },
+      {
+        "rule": "Engine: the TypeScript compiler API used syntactically, with no type-checker and no network, pure JavaScript and deterministic.",
+        "rationale": "Determinism is what makes re-indexing byte-stable and installs offline.",
+        "sourceRef": "file:packages/parsers/src/ts/TypeScriptExtractor.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.85
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:extract-typescript",
+        "kind": "capability",
+        "name": "TypeScript extraction",
+        "summary": "Symbols, nesting and intra-file calls for TypeScript.",
+        "attributes": {},
+        "id": "llm:file:packages/parsers/src/ts/TypeScriptExtractor.ts#capability:extract-typescript",
+        "targetId": "file:packages/parsers/src/ts/TypeScriptExtractor.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/parsers/src/ts/TypeScriptExtractor.ts",
+        "to": "llm:file:packages/parsers/src/ts/TypeScriptExtractor.ts#capability:extract-typescript",
+        "rel": "realizes",
+        "rationale": "This file is the TypeScript extractor.",
+        "confidence": 0.85,
+        "targetId": "file:packages/parsers/src/ts/TypeScriptExtractor.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#ActionInfo@L803",
+      "quote": "type: 'call' | 'return' | 'throw' | 'assign';"
+    },
+    {
+      "soulId": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#BodyEnv@L779",
+      "quote": "lineOf: (pos: number) => number;"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

@@ -1,0 +1,68 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/soul-schema/src/types.ts",
+  "nodeHash": "blake3:6c00b3bf673a76a37dff7f5f67cc81eb4d5df7f1a6fe00e5ac9119da47146d28",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T03:58:13.486Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The core record types of the graph: nodes as a discriminated union on kind, edges with provenance and confidence, and the manifest that describes a stored graph.",
+    "responsibilities": [
+      "Define the node, edge and manifest record shapes",
+      "Carry provenance and confidence on every edge"
+    ],
+    "businessRules": [
+      {
+        "rule": "Every edge carries provenance and confidence, so an extracted fact is always distinguishable from an inferred one.",
+        "rationale": "Provenance is the property the whole trust model rests on.",
+        "sourceRef": "file:packages/soul-schema/src/types.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.85
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:graph-schema",
+        "kind": "capability",
+        "name": "Graph record types",
+        "summary": "Nodes, edges, provenance and manifest.",
+        "attributes": {},
+        "id": "llm:file:packages/soul-schema/src/types.ts#capability:graph-schema",
+        "targetId": "file:packages/soul-schema/src/types.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/soul-schema/src/types.ts",
+        "to": "llm:file:packages/soul-schema/src/types.ts#capability:graph-schema",
+        "rel": "realizes",
+        "rationale": "This file defines the record types.",
+        "confidence": 0.85,
+        "targetId": "file:packages/soul-schema/src/types.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/soul-schema/src/types.ts#Edge@L128",
+      "quote": "meta?: Record<string, unknown>;"
+    },
+    {
+      "soulId": "sym:packages/soul-schema/src/types.ts#IndexBackend@L177",
+      "quote": "export type IndexBackend = 'sqlite' | 'kuzu';"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

@@ -52,8 +52,8 @@ LLM enrichment is deliberately separate:
 
 1. Deterministic soul creates grounded work items at symbol, file, cluster, and system layers.
 2. Host agent/model writes analysis and semantic graph; MCP server never selects or calls a model.
-3. `enrich_save` checks evidence quotes against rehydrated source spans, drops failed evidence, rejects a fully ungrounded quoted submission, scans model-authored strings for secrets, then persists artifacts under `.crib/llm`.
-4. `audit_llm` rechecks saved artifacts after refactors.
+3. `enrich({op:'save'})` checks evidence quotes against rehydrated source spans, drops failed evidence, rejects a fully ungrounded quoted submission, scans model-authored strings for secrets, then persists artifacts under `.crib/llm`.
+4. `enrich({op:'audit'})` rechecks saved artifacts after refactors.
 
 Important precision: quote overlap proves source anchoring, not truth of every interpretive LLM statement. Present it as **grounded semantic enrichment**, not formal semantic verification.
 

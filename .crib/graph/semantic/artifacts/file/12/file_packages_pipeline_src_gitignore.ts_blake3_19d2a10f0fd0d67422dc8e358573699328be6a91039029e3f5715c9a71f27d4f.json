@@ -1,0 +1,68 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/pipeline/src/gitignore.ts",
+  "nodeHash": "blake3:19d2a10f0fd0d67422dc8e358573699328be6a91039029e3f5715c9a71f27d4f",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:00:13.886Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "A zero-dependency ignore-rule matcher: the repository own statement of what is not repo content, layered on top of the hardcoded baseline.",
+    "responsibilities": [
+      "Match paths against the repo ignore rules, including nested files",
+      "Scope nested rules to their own subtree"
+    ],
+    "businessRules": [
+      {
+        "rule": "Repo ignore rules layer ON TOP of the hardcoded baseline and can never re-include it.",
+        "rationale": "A re-include line must not be able to drag dependency directories into the graph.",
+        "sourceRef": "file:packages/pipeline/src/gitignore.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.84
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:ignore-rules",
+        "kind": "capability",
+        "name": "Ignore matching",
+        "summary": "The repo own not-content signal.",
+        "attributes": {},
+        "id": "llm:file:packages/pipeline/src/gitignore.ts#capability:ignore-rules",
+        "targetId": "file:packages/pipeline/src/gitignore.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/pipeline/src/gitignore.ts",
+        "to": "llm:file:packages/pipeline/src/gitignore.ts#capability:ignore-rules",
+        "rel": "realizes",
+        "rationale": "This file matches ignore rules.",
+        "confidence": 0.84,
+        "targetId": "file:packages/pipeline/src/gitignore.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/pipeline/src/gitignore.ts#GitignoreMatcher.add@L121",
+      "quote": "add(dir: string, rules: GitignoreRule[]): void {"
+    },
+    {
+      "soulId": "sym:packages/pipeline/src/gitignore.ts#GitignoreMatcher.isIgnored@L130",
+      "quote": "isIgnored(relPath: string, isDir: boolean): boolean {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

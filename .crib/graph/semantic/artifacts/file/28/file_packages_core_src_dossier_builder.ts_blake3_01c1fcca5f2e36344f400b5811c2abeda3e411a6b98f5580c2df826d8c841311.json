@@ -1,0 +1,69 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/core/src/dossier/builder.ts",
+  "nodeHash": "blake3:01c1fcca5f2e36344f400b5811c2abeda3e411a6b98f5580c2df826d8c841311",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T03:53:11.757Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The dossier builder: folds everything an agent would otherwise assemble from several calls — deep node fields, paged source, callers, callees, docs, decision table, control flow — into one reusable artifact per symbol.",
+    "responsibilities": [
+      "Assemble deep context for one symbol in a single pass",
+      "Page the rehydrated source body and report the cursor",
+      "Include the decision table and control-flow constructs for a callable"
+    ],
+    "businessRules": [
+      {
+        "rule": "One artifact replaces orchestrating context, source and rule extraction separately.",
+        "rationale": "Fewer round trips, and one consistent shape for the same symbol every time.",
+        "sourceRef": "file:packages/core/src/dossier/builder.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.84
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:dossier-build",
+        "kind": "capability",
+        "name": "Dossier assembly",
+        "summary": "One-call deep context per symbol.",
+        "attributes": {},
+        "id": "llm:file:packages/core/src/dossier/builder.ts#capability:dossier-build",
+        "targetId": "file:packages/core/src/dossier/builder.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/core/src/dossier/builder.ts",
+        "to": "llm:file:packages/core/src/dossier/builder.ts#capability:dossier-build",
+        "rel": "realizes",
+        "rationale": "This file builds dossiers.",
+        "confidence": 0.84,
+        "targetId": "file:packages/core/src/dossier/builder.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/core/src/dossier/builder.ts#AdjacentBrief@L37",
+      "quote": "export interface AdjacentBrief {"
+    },
+    {
+      "soulId": "sym:packages/core/src/dossier/builder.ts#Dossier@L93",
+      "quote": "node: Record<string, unknown>;"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

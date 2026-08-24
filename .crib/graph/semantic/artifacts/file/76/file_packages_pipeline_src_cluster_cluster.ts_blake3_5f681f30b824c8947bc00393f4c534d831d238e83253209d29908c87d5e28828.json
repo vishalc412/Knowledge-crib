@@ -1,0 +1,68 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/pipeline/src/cluster/cluster.ts",
+  "nodeHash": "blake3:5f681f30b824c8947bc00393f4c534d831d238e83253209d29908c87d5e28828",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:02:22.983Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "Structural clustering: builds a weighted graph from calls, imports and inheritance, runs community detection over it, and emits the clusters that give the codebase its functional shape.",
+    "responsibilities": [
+      "Build a weighted graph from structural edges",
+      "Run community detection and emit cluster nodes"
+    ],
+    "businessRules": [
+      {
+        "rule": "Clusters come from structural edges rather than from directory layout.",
+        "rationale": "Directories reflect how files were filed; edges reflect how code actually depends on code.",
+        "sourceRef": "file:packages/pipeline/src/cluster/cluster.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.84
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:clustering",
+        "kind": "capability",
+        "name": "Structural clustering",
+        "summary": "Functional grouping from real dependencies.",
+        "attributes": {},
+        "id": "llm:file:packages/pipeline/src/cluster/cluster.ts#capability:clustering",
+        "targetId": "file:packages/pipeline/src/cluster/cluster.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/pipeline/src/cluster/cluster.ts",
+        "to": "llm:file:packages/pipeline/src/cluster/cluster.ts#capability:clustering",
+        "rel": "realizes",
+        "rationale": "This file builds clusters.",
+        "confidence": 0.84,
+        "targetId": "file:packages/pipeline/src/cluster/cluster.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/pipeline/src/cluster/cluster.ts#ClusterStats@L29",
+      "quote": "export interface ClusterStats {"
+    },
+    {
+      "soulId": "sym:packages/pipeline/src/cluster/cluster.ts#dominantStereotypeOrType.best@L170",
+      "quote": "const best = (counts: Map<string, number>): string | undefined => {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

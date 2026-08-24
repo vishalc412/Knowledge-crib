@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:docs/knowledge-crib-deep-extraction.md",
+  "nodeHash": "blake3:379c237eb31a047df205c4d6ac35c582443b239c4aadf3d1ba12ee31c12d8abf",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:13:18.221Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "How deep extraction works: statements, conditions, control flow and the rule tables derived from them.",
+    "responsibilities": [
+      "Describe deep extraction and rule derivation"
+    ],
+    "businessRules": [],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.78
+  },
+  "graph": {
+    "nodes": [],
+    "edges": []
+  },
+  "evidence": [
+    {
+      "soulId": "doc:docs/knowledge-crib-deep-extraction.md#1-why-this-is-its-own-capability",
+      "quote": "A plain call graph says *`process_claim` calls `escalate_claim`*. Migration needs *`process_claim`"
+    },
+    {
+      "soulId": "doc:docs/knowledge-crib-deep-extraction.md#3-pipeline-additions-see-pipeline-knowledge-crib-pipeline-md-phases-3c-3d",
+      "quote": "- **Phase 3c — SQL data-flow:** parse DML in each proc → `statement` nodes; resolve table/column"
+    },
+    {
+      "soulId": "doc:docs/knowledge-crib-deep-extraction.md#4-pl-sql-extractor-first-migration-target",
+      "quote": "- Grammar: tree-sitter PL/SQL (or dedicated parser). Emit `symbol(procedure|function|package|"
+    },
+    {
+      "soulId": "doc:docs/knowledge-crib-deep-extraction.md#4a-serving-layer-deep-context-universal-all-languages",
+      "quote": "The lean soul stores `file`+`span` references, never source text. Deep context is rehydrated on"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

@@ -1,0 +1,73 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/core/src/source-policy.ts",
+  "nodeHash": "blake3:9858542fd4bc6dfca4c1cc92b290a42c04b4473ee3e88fd87d20eb6b4f4202d5",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:04:00.264Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "Decides how a node source may be surfaced: allowed, redacted, or refused outright — the gate that keeps secret values out of both answers and the search index.",
+    "responsibilities": [
+      "Resolve the surfacing policy for a node",
+      "Refuse the read entirely for secure files"
+    ],
+    "businessRules": [
+      {
+        "rule": "Policy is applied before text enters the index, not only before it is returned.",
+        "rationale": "A secret that reaches the index is searchable even if never displayed.",
+        "sourceRef": "file:packages/core/src/source-policy.ts"
+      },
+      {
+        "rule": "Redaction is driven by an explicit extractor signal rather than inferred from a node type.",
+        "rationale": "Type-based inference mangled ordinary source that merely shared a type name.",
+        "sourceRef": "file:packages/core/src/source-policy.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.86
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:source-policy",
+        "kind": "capability",
+        "name": "Source policy",
+        "summary": "What may be shown, redacted, or never read.",
+        "attributes": {},
+        "id": "llm:file:packages/core/src/source-policy.ts#capability:source-policy",
+        "targetId": "file:packages/core/src/source-policy.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/core/src/source-policy.ts",
+        "to": "llm:file:packages/core/src/source-policy.ts#capability:source-policy",
+        "rel": "realizes",
+        "rationale": "This file implements source policy.",
+        "confidence": 0.86,
+        "targetId": "file:packages/core/src/source-policy.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/core/src/source-policy.ts#SourcePolicy@L23",
+      "quote": "export type SourcePolicy = 'allow' | 'redact-properties' | 'redact-mule-secrets' | 'deny';"
+    },
+    {
+      "soulId": "sym:packages/core/src/source-policy.ts#redactMuleSecretAttributes@L72",
+      "quote": "export function redactMuleSecretAttributes(text: string): string {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

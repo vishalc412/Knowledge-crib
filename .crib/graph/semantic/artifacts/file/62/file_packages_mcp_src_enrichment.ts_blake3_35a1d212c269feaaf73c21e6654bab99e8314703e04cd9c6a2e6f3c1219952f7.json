@@ -1,0 +1,82 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/mcp/src/enrichment.ts",
+  "nodeHash": "blake3:35a1d212c269feaaf73c21e6654bab99e8314703e04cd9c6a2e6f3c1219952f7",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T02:47:38.267Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The engine for the agent-authored semantic layer: it decides WHAT still needs describing, hands out grounded work batches, and validates and persists what an agent writes back — without ever calling a model itself.",
+    "responsibilities": [
+      "Rank and hand out enrichment targets across the symbol/file/cluster/system layers",
+      "Gate the symbol queue by architectural importance so full coverage is reachable",
+      "Pack each batch against a token budget rather than a fixed item count",
+      "Reject any authored claim whose evidence quote does not appear in the code it cites",
+      "Persist artifacts content-addressed, and report staleness against the live graph",
+      "Resolve a target purpose by inheritance when the target itself has none"
+    ],
+    "businessRules": [
+      {
+        "rule": "The server never calls a model; the host agent authors, and this module only queues and validates.",
+        "rationale": "Keeps query latency and cost deterministic and makes the graph reproducible.",
+        "sourceRef": "file:packages/mcp/src/enrichment.ts"
+      },
+      {
+        "rule": "An artifact is only verified when at least one evidence quote overlaps the span it is anchored to; ungrounded claims are rejected as hallucination.",
+        "rationale": "This is the moat that keeps authored prose traceable to real code.",
+        "sourceRef": "file:packages/mcp/src/enrichment.ts"
+      },
+      {
+        "rule": "Symbol targets below the importance percentile are excluded from the queue but still inherit prose from their file or cluster.",
+        "rationale": "Makes \"done\" reachable without leaving the excluded tail unexplained.",
+        "sourceRef": "file:packages/mcp/src/enrichment.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.88
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:semantic-authoring",
+        "kind": "capability",
+        "name": "Semantic authoring loop",
+        "summary": "Queue, ground, validate and persist agent-authored meaning.",
+        "attributes": {},
+        "id": "llm:file:packages/mcp/src/enrichment.ts#capability:semantic-authoring",
+        "targetId": "file:packages/mcp/src/enrichment.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/mcp/src/enrichment.ts",
+        "to": "llm:file:packages/mcp/src/enrichment.ts#capability:semantic-authoring",
+        "rel": "realizes",
+        "rationale": "This file implements the whole enrichment loop.",
+        "confidence": 0.88,
+        "targetId": "file:packages/mcp/src/enrichment.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/mcp/src/enrichment.ts#AuditLlmResult@L442",
+      "quote": "export interface AuditLlmResult {"
+    },
+    {
+      "soulId": "sym:packages/mcp/src/enrichment.ts#AuditTarget@L424",
+      "quote": "export interface AuditTarget {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

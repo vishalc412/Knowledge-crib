@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/pipeline/src/workspace.test.ts",
+  "nodeHash": "blake3:bd5968c6588dac42ef54135ff77f82e4a5f1e1beef25b76f9331d77a3fd04366",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:17:58.238Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The test suite for workspace — it defines the behaviour that is guaranteed, so a change that breaks any of it fails the build. It pins: detectWorkspace; resolvePackageArg; discoverFiles package scoping.",
+    "responsibilities": [
+      "Pin the observable behaviour of workspace",
+      "Fail the build when a guaranteed behaviour changes"
+    ],
+    "businessRules": [],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.76
+  },
+  "graph": {
+    "nodes": [],
+    "edges": []
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/pipeline/src/workspace.test.ts#pkg@L15",
+      "quote": "function pkg(name: string, rel: string): void {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

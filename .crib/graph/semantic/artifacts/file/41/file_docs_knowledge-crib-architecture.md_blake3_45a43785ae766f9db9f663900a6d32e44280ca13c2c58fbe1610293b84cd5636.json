@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:docs/knowledge-crib-architecture.md",
+  "nodeHash": "blake3:45a43785ae766f9db9f663900a6d32e44280ca13c2c58fbe1610293b84cd5636",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:13:18.217Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The architecture reference: the design principles, system context, and how the packages fit together.",
+    "responsibilities": [
+      "Describe the system structure and its principles"
+    ],
+    "businessRules": [],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.78
+  },
+  "graph": {
+    "nodes": [],
+    "edges": []
+  },
+  "evidence": [
+    {
+      "soulId": "doc:docs/knowledge-crib-architecture.md#1-design-principles",
+      "quote": "1. **Soul is the source of truth; index is a rebuildable cache.** Single writer, one direction."
+    },
+    {
+      "soulId": "doc:docs/knowledge-crib-architecture.md#2-system-context-who-talks-to-what",
+      "quote": "dev([Developer]) --> ide[Agentic IDE\\nClaude Code / Cursor / Copilot]"
+    },
+    {
+      "soulId": "doc:docs/knowledge-crib-architecture.md#3-1-framework-semantics-tier-schema-1-3",
+      "quote": "Above the syntactic symbol/CFG graph sits a **framework-semantics tier** — an additive layer that"
+    },
+    {
+      "soulId": "doc:docs/knowledge-crib-architecture.md#3-component-view-monorepo-packages",
+      "quote": "subgraph contract"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

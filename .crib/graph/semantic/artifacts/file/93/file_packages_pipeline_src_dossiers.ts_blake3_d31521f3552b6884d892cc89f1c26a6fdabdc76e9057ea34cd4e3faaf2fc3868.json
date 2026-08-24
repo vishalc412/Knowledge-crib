@@ -1,0 +1,68 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/pipeline/src/dossiers.ts",
+  "nodeHash": "blake3:d31521f3552b6884d892cc89f1c26a6fdabdc76e9057ea34cd4e3faaf2fc3868",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:04:00.266Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The dossier phase: builds and persists a dossier per symbol after the graph is complete, and prunes artifacts whose symbol no longer exists.",
+    "responsibilities": [
+      "Build and persist a dossier per eligible symbol",
+      "Skip an unchanged dossier and prune orphans"
+    ],
+    "businessRules": [
+      {
+        "rule": "An unchanged dossier is skipped rather than rewritten.",
+        "rationale": "Rewriting identical content would churn the working tree on every index.",
+        "sourceRef": "file:packages/pipeline/src/dossiers.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.83
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:dossiers",
+        "kind": "capability",
+        "name": "Dossier phase",
+        "summary": "Persisted deep context per symbol.",
+        "attributes": {},
+        "id": "llm:file:packages/pipeline/src/dossiers.ts#capability:dossiers",
+        "targetId": "file:packages/pipeline/src/dossiers.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/pipeline/src/dossiers.ts",
+        "to": "llm:file:packages/pipeline/src/dossiers.ts#capability:dossiers",
+        "rel": "realizes",
+        "rationale": "This file implements dossier phase.",
+        "confidence": 0.83,
+        "targetId": "file:packages/pipeline/src/dossiers.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/pipeline/src/dossiers.ts#DossierStats@L25",
+      "quote": "export interface DossierStats {"
+    },
+    {
+      "soulId": "sym:packages/pipeline/src/dossiers.ts#runDossiers@L43",
+      "quote": "export function runDossiers(soul: SoulStore, repoRoot: string, now: string): DossierStats {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

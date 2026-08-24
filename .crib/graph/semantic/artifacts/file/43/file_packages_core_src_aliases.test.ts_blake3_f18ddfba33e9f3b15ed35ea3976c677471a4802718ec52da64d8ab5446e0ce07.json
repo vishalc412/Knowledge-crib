@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/core/src/aliases.test.ts",
+  "nodeHash": "blake3:f18ddfba33e9f3b15ed35ea3976c677471a4802718ec52da64d8ab5446e0ce07",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:17:57.492Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The test suite for aliases — it defines the behaviour that is guaranteed, so a change that breaks any of it fails the build. It pins: parseAliases; rewriteQuery; loadAliases; writeAliases + loadAliases.",
+    "responsibilities": [
+      "Pin the observable behaviour of aliases",
+      "Fail the build when a guaranteed behaviour changes"
+    ],
+    "businessRules": [],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.76
+  },
+  "graph": {
+    "nodes": [],
+    "edges": []
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/core/src/aliases.test.ts#tmp@L14",
+      "quote": "const tmp = () => mkdtempSync(join(tmpdir(), 'crib-aliases-'));"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

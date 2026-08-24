@@ -1,0 +1,68 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/mcp/src/stats.ts",
+  "nodeHash": "blake3:196759fffe230a37d3491efaeee3a2f4e6b2f0520f4b326c4a92f410de8cd74d",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T03:58:13.483Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "Runtime observability: per-verb call counts, latency and cache hit rate for the running server, held in memory and never persisted.",
+    "responsibilities": [
+      "Record call counts and latency per verb",
+      "Track the change-aware cache hit rate"
+    ],
+    "businessRules": [
+      {
+        "rule": "Counters live in memory only and never touch the graph.",
+        "rationale": "Persisting them would make the committed graph differ between runs and break byte-stability.",
+        "sourceRef": "file:packages/mcp/src/stats.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.84
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:server-observability",
+        "kind": "capability",
+        "name": "Server observability",
+        "summary": "In-memory verb metrics.",
+        "attributes": {},
+        "id": "llm:file:packages/mcp/src/stats.ts#capability:server-observability",
+        "targetId": "file:packages/mcp/src/stats.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/mcp/src/stats.ts",
+        "to": "llm:file:packages/mcp/src/stats.ts#capability:server-observability",
+        "rel": "realizes",
+        "rationale": "This file implements the counters.",
+        "confidence": 0.84,
+        "targetId": "file:packages/mcp/src/stats.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/mcp/src/stats.ts#Stats.perVerb@L40",
+      "quote": "private perVerb = new Map<string, VerbStat>();"
+    },
+    {
+      "soulId": "sym:packages/mcp/src/stats.ts#Stats.record@L46",
+      "quote": "record(verb: string, ms: number, error: boolean): void {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

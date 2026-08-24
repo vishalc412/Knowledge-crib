@@ -1,0 +1,68 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:scripts/eval/harness.mjs",
+  "nodeHash": "blake3:315c10c90f35da5ec15a6fc4d291998a70b5dc7b07b7f36818568a68b52ca3d9",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T03:58:13.488Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The retrieval evaluation harness: builds a fresh graph per language fixture and scores whether a natural-language question actually retrieves the right symbol.",
+    "responsibilities": [
+      "Build a fresh in-memory graph per fixture",
+      "Score retrieval against expected answers per query"
+    ],
+    "businessRules": [
+      {
+        "rule": "Retrieval quality is measured against fixtures rather than asserted.",
+        "rationale": "Ranking changes are otherwise impossible to evaluate honestly.",
+        "sourceRef": "file:scripts/eval/harness.mjs"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.82
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:retrieval-eval",
+        "kind": "capability",
+        "name": "Retrieval evaluation",
+        "summary": "Measured search quality per language.",
+        "attributes": {},
+        "id": "llm:file:scripts/eval/harness.mjs#capability:retrieval-eval",
+        "targetId": "file:scripts/eval/harness.mjs"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:scripts/eval/harness.mjs",
+        "to": "llm:file:scripts/eval/harness.mjs#capability:retrieval-eval",
+        "rel": "realizes",
+        "rationale": "This script is the eval harness.",
+        "confidence": 0.82,
+        "targetId": "file:scripts/eval/harness.mjs"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:scripts/eval/harness.mjs#defaultFixturesRoot@L57",
+      "quote": "export function defaultFixturesRoot() {"
+    },
+    {
+      "soulId": "sym:scripts/eval/harness.mjs#loadCore@L66",
+      "quote": "pathToFileURL(resolve(root, 'packages', 'core', 'dist', 'index.js')).href"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

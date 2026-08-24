@@ -1,0 +1,69 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/parsers/src/mule/munit.ts",
+  "nodeHash": "blake3:b2f0926f31f05915b8de86dff2ee9aec61516438d89f4d93878b9d4096257b86",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T03:53:11.758Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The MUnit normalizer: lifts a raw Mule test XML tree into typed test suites with their tested flows, mocks, assertions and fixtures, so tests become migration evidence rather than opaque config.",
+    "responsibilities": [
+      "Normalize MUnit XML into typed suites and tests",
+      "Link each test to the flow it exercises",
+      "Capture mocks, assertions and fixtures as structured data"
+    ],
+    "businessRules": [
+      {
+        "rule": "The normalizer never touches the wire format; XML parsing happens once, upstream.",
+        "rationale": "One parser owning the format keeps the two layers from disagreeing.",
+        "sourceRef": "file:packages/parsers/src/mule/munit.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.82
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:munit-normalization",
+        "kind": "capability",
+        "name": "MUnit normalization",
+        "summary": "Mule tests as structured migration evidence.",
+        "attributes": {},
+        "id": "llm:file:packages/parsers/src/mule/munit.ts#capability:munit-normalization",
+        "targetId": "file:packages/parsers/src/mule/munit.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/parsers/src/mule/munit.ts",
+        "to": "llm:file:packages/parsers/src/mule/munit.ts#capability:munit-normalization",
+        "rel": "realizes",
+        "rationale": "This file normalizes MUnit suites.",
+        "confidence": 0.82,
+        "targetId": "file:packages/parsers/src/mule/munit.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/parsers/src/mule/munit.ts#Dialect@L113",
+      "quote": "type Dialect = 'mule3' | 'mule4';"
+    },
+    {
+      "soulId": "sym:packages/parsers/src/mule/munit.ts#MUnitAssertion@L132",
+      "quote": "export interface MUnitAssertion {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

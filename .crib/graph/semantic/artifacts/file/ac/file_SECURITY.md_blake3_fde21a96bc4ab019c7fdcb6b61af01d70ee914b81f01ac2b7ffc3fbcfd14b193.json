@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:SECURITY.md",
+  "nodeHash": "blake3:fde21a96bc4ab019c7fdcb6b61af01d70ee914b81f01ac2b7ffc3fbcfd14b193",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:13:18.216Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The security posture and disclosure process: what guarantees the tool makes about secrets and source, and how to report a vulnerability.",
+    "responsibilities": [
+      "State security guarantees and the disclosure process"
+    ],
+    "businessRules": [],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.78
+  },
+  "graph": {
+    "nodes": [],
+    "edges": []
+  },
+  "evidence": [
+    {
+      "soulId": "doc:SECURITY.md#access-model-the-soul-inherits-the-repo-acl",
+      "quote": "The soul (`.crib/soul/` — nodes, edges, dossiers, clusters, manifest) is **ordinary files committed"
+    },
+    {
+      "soulId": "doc:SECURITY.md#assets-trust-boundaries",
+      "quote": "| Asset | Location | Trust boundary | Why it matters |"
+    },
+    {
+      "soulId": "doc:SECURITY.md#data-classification-the-llm-layer-m1-4",
+      "quote": "The knowledge graph has two committed artifacts, and they carry different data classes:"
+    },
+    {
+      "soulId": "doc:SECURITY.md#network-surface-inventory-the-whole-product",
+      "quote": "There are exactly **two** network-reachable or network-originating surfaces. Both are opt-in; the"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

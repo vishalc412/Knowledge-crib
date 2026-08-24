@@ -1,0 +1,68 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/memory/src/attempt.ts",
+  "nodeHash": "blake3:e696bd8fa0cf2722b0b99308e1a1278e7de8a10b82aad89e92243ee8a6ca6227",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:00:13.884Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "Records what an agent actually tried — the structured attempt log — then compacts it and garbage-collects attempts that never became durable memory.",
+    "responsibilities": [
+      "Record structured attempts as they happen",
+      "Compact the log and collect unpromoted attempts"
+    ],
+    "businessRules": [
+      {
+        "rule": "Attempts are compacted and collected rather than kept forever.",
+        "rationale": "An unbounded attempt log would grow without ever becoming knowledge.",
+        "sourceRef": "file:packages/memory/src/attempt.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.83
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:attempt-log",
+        "kind": "capability",
+        "name": "Attempt lifecycle",
+        "summary": "What was tried, compacted over time.",
+        "attributes": {},
+        "id": "llm:file:packages/memory/src/attempt.ts#capability:attempt-log",
+        "targetId": "file:packages/memory/src/attempt.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/memory/src/attempt.ts",
+        "to": "llm:file:packages/memory/src/attempt.ts#capability:attempt-log",
+        "rel": "realizes",
+        "rationale": "This file records attempts.",
+        "confidence": 0.83,
+        "targetId": "file:packages/memory/src/attempt.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/memory/src/attempt.ts#appendAttemptEvent@L142",
+      "quote": "export function appendAttemptEvent(store: MemoryStore, event: AttemptEvent): void {"
+    },
+    {
+      "soulId": "sym:packages/memory/src/attempt.ts#attemptEventsFor@L32",
+      "quote": "export function attemptEventsFor("
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

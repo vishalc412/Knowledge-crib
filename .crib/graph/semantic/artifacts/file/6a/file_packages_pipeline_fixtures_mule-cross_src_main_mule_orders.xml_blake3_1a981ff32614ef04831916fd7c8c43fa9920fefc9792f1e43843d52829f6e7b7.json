@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/pipeline/fixtures/mule-cross/src/main/mule/orders.xml",
+  "nodeHash": "blake3:1a981ff32614ef04831916fd7c8c43fa9920fefc9792f1e43843d52829f6e7b7",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:17:57.490Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "A test fixture: sample XML source that exists to exercise the extractor for this language, not to run in production.",
+    "responsibilities": [
+      "Provide representative source constructs for extractor tests"
+    ],
+    "businessRules": [],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.76
+  },
+  "graph": {
+    "nodes": [],
+    "edges": []
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/pipeline/fixtures/mule-cross/src/main/mule/orders.xml#getOrders@L9",
+      "quote": "<flow name=\"getOrders\">"
+    },
+    {
+      "soulId": "sym:packages/pipeline/fixtures/mule-cross/src/main/mule/orders.xml#httpConfig@L6",
+      "quote": "<http:listener-config name=\"httpConfig\" basePath=\"/api\">"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

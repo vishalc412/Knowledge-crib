@@ -1,0 +1,67 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/pipeline/src/mule/discover.ts",
+  "nodeHash": "blake3:9374ee44be421985ff48c102e23dab2d0cae495bd70ac75a43297a0025fd41b5",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:02:22.987Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "Finds Mule projects inside a repository and determines their version, so a repo containing several integration apps is handled per project rather than as one blob.",
+    "responsibilities": [
+      "Detect each Mule project root and version"
+    ],
+    "businessRules": [
+      {
+        "rule": "Each detected project is scoped separately.",
+        "rationale": "Resolving references across two unrelated Mule apps would produce false edges.",
+        "sourceRef": "file:packages/pipeline/src/mule/discover.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.82
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:mule-discovery",
+        "kind": "capability",
+        "name": "Mule discovery",
+        "summary": "Per-project scoping for Mule repos.",
+        "attributes": {},
+        "id": "llm:file:packages/pipeline/src/mule/discover.ts#capability:mule-discovery",
+        "targetId": "file:packages/pipeline/src/mule/discover.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/pipeline/src/mule/discover.ts",
+        "to": "llm:file:packages/pipeline/src/mule/discover.ts#capability:mule-discovery",
+        "rel": "realizes",
+        "rationale": "This file discovers Mule projects.",
+        "confidence": 0.82,
+        "targetId": "file:packages/pipeline/src/mule/discover.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/pipeline/src/mule/discover.ts#classifyMuleDiscovery@L50",
+      "quote": "export function classifyMuleDiscovery(root: string, files: FileMeta[]): ExtractDiagnostic[] {"
+    },
+    {
+      "soulId": "sym:packages/pipeline/src/mule/discover.ts#isMuleMarker@L22",
+      "quote": "function isMuleMarker(path: string): boolean {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

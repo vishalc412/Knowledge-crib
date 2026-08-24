@@ -1,0 +1,68 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:scripts/federation-check.mjs",
+  "nodeHash": "blake3:bf387940cec794e04bc42c9d23c92c65da2abd2847297dbcc33bc2509d8858cf",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:02:22.989Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "A gate proving cross-repository blast radius actually works: indexes two repositories and asserts an outbound call reaches the route that serves it.",
+    "responsibilities": [
+      "Index two repositories and federate them",
+      "Assert an outbound call resolves across the boundary"
+    ],
+    "businessRules": [
+      {
+        "rule": "Federation is verified across two real graphs rather than asserted in a unit test.",
+        "rationale": "The cross-repo hop only exists when two independent souls are loaded together.",
+        "sourceRef": "file:scripts/federation-check.mjs"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.82
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:federation-gate",
+        "kind": "capability",
+        "name": "Federation gate",
+        "summary": "Cross-repo reachability, proven.",
+        "attributes": {},
+        "id": "llm:file:scripts/federation-check.mjs#capability:federation-gate",
+        "targetId": "file:scripts/federation-check.mjs"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:scripts/federation-check.mjs",
+        "to": "llm:file:scripts/federation-check.mjs#capability:federation-gate",
+        "rel": "realizes",
+        "rationale": "This script gates federation.",
+        "confidence": 0.82,
+        "targetId": "file:scripts/federation-check.mjs"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:scripts/federation-check.mjs#buildRepoA@L78",
+      "quote": "const repo = mkdtempSync(join(tmpdir(), 'crib-fed-a-'));"
+    },
+    {
+      "soulId": "sym:scripts/federation-check.mjs#buildRepoB@L101",
+      "quote": "const repo = mkdtempSync(join(tmpdir(), 'crib-fed-b-'));"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

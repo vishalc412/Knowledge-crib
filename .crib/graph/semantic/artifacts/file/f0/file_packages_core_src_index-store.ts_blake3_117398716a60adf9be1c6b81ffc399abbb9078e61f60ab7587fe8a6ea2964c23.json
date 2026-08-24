@@ -1,0 +1,68 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/core/src/index-store.ts",
+  "nodeHash": "blake3:117398716a60adf9be1c6b81ffc399abbb9078e61f60ab7587fe8a6ea2964c23",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:00:13.887Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The index interface: the derived, fast, swappable query layer every backend implements, and the delta contract that lets an incremental update patch it.",
+    "responsibilities": [
+      "Define search, adjacency and path operations",
+      "Define the delta contract for incremental update"
+    ],
+    "businessRules": [
+      {
+        "rule": "The index is derived and swappable behind one interface.",
+        "rationale": "It must always be rebuildable from the graph, never a second source of truth.",
+        "sourceRef": "file:packages/core/src/index-store.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.83
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:index-contract",
+        "kind": "capability",
+        "name": "Index contract",
+        "summary": "The swappable query layer interface.",
+        "attributes": {},
+        "id": "llm:file:packages/core/src/index-store.ts#capability:index-contract",
+        "targetId": "file:packages/core/src/index-store.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/core/src/index-store.ts",
+        "to": "llm:file:packages/core/src/index-store.ts#capability:index-contract",
+        "rel": "realizes",
+        "rationale": "This file defines the index interface.",
+        "confidence": 0.83,
+        "targetId": "file:packages/core/src/index-store.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/core/src/index-store.ts#Dir@L13",
+      "quote": "export type Dir = 'up' | 'down';"
+    },
+    {
+      "soulId": "sym:packages/core/src/index-store.ts#HybridQuery@L33",
+      "quote": "export interface HybridQuery {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/parsers/src/parity-coverage.test.ts",
+  "nodeHash": "blake3:fd4daf6e02f60036db56055c82b7b0f97ae3252bb0c7773e025f71c62575d241",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:17:56.865Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The test suite for parity-coverage — it defines the behaviour that is guaranteed, so a change that breaks any of it fails the build. It pins: Phase 3 — cross-language coverage + fidelity parity (loan scoring); Task 8 — MuleSoft capability honesty (config language, no type system, key-only.",
+    "responsibilities": [
+      "Pin the observable behaviour of parity-coverage",
+      "Fail the build when a guaranteed behaviour changes"
+    ],
+    "businessRules": [],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.76
+  },
+  "graph": {
+    "nodes": [],
+    "edges": []
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/parsers/src/parity-coverage.test.ts#Case@L34",
+      "quote": "interface Case {"
+    },
+    {
+      "soulId": "sym:packages/parsers/src/parity-coverage.test.ts#ctxFor.readText@L174",
+      "quote": "async readText() {"
+    },
+    {
+      "soulId": "sym:packages/parsers/src/parity-coverage.test.ts#ctxFor.treeSitter@L177",
+      "quote": "throw new Error('not used — hand-rolled parsers');"
+    },
+    {
+      "soulId": "sym:packages/parsers/src/parity-coverage.test.ts#ctxFor@L172",
+      "quote": "function ctxFor(text: string): ExtractCtx {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

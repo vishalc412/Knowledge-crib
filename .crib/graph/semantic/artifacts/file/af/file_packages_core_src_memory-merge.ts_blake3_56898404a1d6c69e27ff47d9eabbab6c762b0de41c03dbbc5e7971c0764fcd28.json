@@ -1,0 +1,68 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/core/src/memory-merge.ts",
+  "nodeHash": "blake3:56898404a1d6c69e27ff47d9eabbab6c762b0de41c03dbbc5e7971c0764fcd28",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T03:58:13.483Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "A strict append-only merge driver for memory files, so two machines that both recorded memories merge without either side losing records.",
+    "responsibilities": [
+      "Merge memory chunks by union rather than by overwrite",
+      "Refuse a merge that would drop a record"
+    ],
+    "businessRules": [
+      {
+        "rule": "Memory merges append-only: soul chunks can be regenerated from source, but a memory record cannot.",
+        "rationale": "Losing a remembered claim is unrecoverable — there is no source to re-derive it from.",
+        "sourceRef": "file:packages/core/src/memory-merge.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.85
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:memory-merge",
+        "kind": "capability",
+        "name": "Memory merge driver",
+        "summary": "Lossless append-only merge for memory.",
+        "attributes": {},
+        "id": "llm:file:packages/core/src/memory-merge.ts#capability:memory-merge",
+        "targetId": "file:packages/core/src/memory-merge.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/core/src/memory-merge.ts",
+        "to": "llm:file:packages/core/src/memory-merge.ts#capability:memory-merge",
+        "rel": "realizes",
+        "rationale": "This file is the merge driver.",
+        "confidence": 0.85,
+        "targetId": "file:packages/core/src/memory-merge.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/core/src/memory-merge.ts#MemoryMergeResult@L79",
+      "quote": "export interface MemoryMergeResult {"
+    },
+    {
+      "soulId": "sym:packages/core/src/memory-merge.ts#MemoryRecord@L30",
+      "quote": "export interface MemoryRecord {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

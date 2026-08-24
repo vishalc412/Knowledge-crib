@@ -1,0 +1,68 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/core/src/ifhash.ts",
+  "nodeHash": "blake3:881cd3a0001e131c7333decb5e554f65fef1e0433877344252bd102a569c44f1",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:04:00.263Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "A stateless response fingerprint: lets a caller say \"I already have version X\" and get a few bytes back instead of the whole payload when nothing changed.",
+    "responsibilities": [
+      "Fingerprint a response deterministically",
+      "Collapse an unchanged repeat to a tiny response"
+    ],
+    "businessRules": [
+      {
+        "rule": "The fingerprint is stateless, computed from the response itself rather than from a server-side cache.",
+        "rationale": "A stateless check works across restarts and needs no invalidation.",
+        "sourceRef": "file:packages/core/src/ifhash.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.85
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:ifhash",
+        "kind": "capability",
+        "name": "Change-aware caching",
+        "summary": "Unchanged answers cost almost nothing.",
+        "attributes": {},
+        "id": "llm:file:packages/core/src/ifhash.ts#capability:ifhash",
+        "targetId": "file:packages/core/src/ifhash.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/core/src/ifhash.ts",
+        "to": "llm:file:packages/core/src/ifhash.ts#capability:ifhash",
+        "rel": "realizes",
+        "rationale": "This file implements change-aware caching.",
+        "confidence": 0.85,
+        "targetId": "file:packages/core/src/ifhash.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/core/src/ifhash.ts#canonicalStringify@L30",
+      "quote": "export function canonicalStringify(value: unknown): string {"
+    },
+    {
+      "soulId": "sym:packages/core/src/ifhash.ts#ifHash@L51",
+      "quote": "export function ifHash(value: unknown): string {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

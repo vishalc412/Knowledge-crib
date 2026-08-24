@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:scripts/fixtures/synthetic-mule-project.mjs",
+  "nodeHash": "blake3:4142e47d85917582afd043fe1cc3d0aa57795e5d9553f86247a2d411632221e5",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:17:56.382Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "A test fixture: sample MJS source that exists to exercise the extractor for this language, not to run in production.",
+    "responsibilities": [
+      "Provide representative source constructs for extractor tests"
+    ],
+    "businessRules": [],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.76
+  },
+  "graph": {
+    "nodes": [],
+    "edges": []
+  },
+  "evidence": [
+    {
+      "soulId": "sym:scripts/fixtures/synthetic-mule-project.mjs#containerBody@L75",
+      "quote": "function containerBody(i, refs) {"
+    },
+    {
+      "soulId": "sym:scripts/fixtures/synthetic-mule-project.mjs#containerName@L54",
+      "quote": "const containerName = (i) => (i < 18 ? `f${i + 1}` : `sf${i - 17}`);"
+    },
+    {
+      "soulId": "sym:scripts/fixtures/synthetic-mule-project.mjs#flowRefTargets@L44",
+      "quote": "function flowRefTargets() {"
+    },
+    {
+      "soulId": "sym:scripts/fixtures/synthetic-mule-project.mjs#isFlow@L55",
+      "quote": "const isFlow = (i) => i < 18;"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

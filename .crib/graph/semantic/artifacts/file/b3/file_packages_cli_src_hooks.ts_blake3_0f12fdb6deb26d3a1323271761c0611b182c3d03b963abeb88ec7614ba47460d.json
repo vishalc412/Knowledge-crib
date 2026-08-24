@@ -1,0 +1,69 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/cli/src/hooks.ts",
+  "nodeHash": "blake3:0f12fdb6deb26d3a1323271761c0611b182c3d03b963abeb88ec7614ba47460d",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T03:53:11.758Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "Git plumbing: wires the repo so the graph stays in sync automatically — a commit hook advances the soul, and a merge driver resolves memory files without clobbering either side.",
+    "responsibilities": [
+      "Install a managed block in the post-commit hook to advance the soul",
+      "Register the memory merge driver",
+      "Keep every write idempotent and reversible"
+    ],
+    "businessRules": [
+      {
+        "rule": "Hook edits are managed blocks, so a user's existing hook content is preserved.",
+        "rationale": "Git hooks are frequently hand-written and shared with other tooling.",
+        "sourceRef": "file:packages/cli/src/hooks.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.83
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:git-integration",
+        "kind": "capability",
+        "name": "Git integration",
+        "summary": "Hooks and merge driver for automatic sync.",
+        "attributes": {},
+        "id": "llm:file:packages/cli/src/hooks.ts#capability:git-integration",
+        "targetId": "file:packages/cli/src/hooks.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/cli/src/hooks.ts",
+        "to": "llm:file:packages/cli/src/hooks.ts#capability:git-integration",
+        "rel": "realizes",
+        "rationale": "This file installs the git plumbing.",
+        "confidence": 0.83,
+        "targetId": "file:packages/cli/src/hooks.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/cli/src/hooks.ts#ChunkMap@L39",
+      "quote": "type ChunkMap = ReturnType<typeof parseChunk>;"
+    },
+    {
+      "soulId": "sym:packages/cli/src/hooks.ts#HookInstallOptions@L61",
+      "quote": "export interface HookInstallOptions {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

@@ -1,0 +1,74 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/pipeline/src/resolve/csharp-resolver.ts",
+  "nodeHash": "blake3:41f798df99b94a6ff096a9006c15d5b637dbe447b59a3ccc9439fbd8ac6061ff",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T03:54:27.578Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The C# cross-file resolver: turns the cross-file references an extractor recorded — imports, calls, inheritance and interface implementation — into real edges by looking every target up in the global symbol table.",
+    "responsibilities": [
+      "Resolve import specifiers to the symbols they actually name",
+      "Link a caller to the imported symbol it invokes",
+      "Resolve inheritance and interface implementation across files into edges"
+    ],
+    "businessRules": [
+      {
+        "rule": "Every target is resolved through the global symbol table rather than matched by name.",
+        "rationale": "A name-matched edge would be a guess presented as a fact.",
+        "sourceRef": "file:packages/pipeline/src/resolve/csharp-resolver.ts"
+      },
+      {
+        "rule": "A reference that does not resolve is dropped and counted, never guessed.",
+        "rationale": "A missing edge is honest; a wrong one is not.",
+        "sourceRef": "file:packages/pipeline/src/resolve/csharp-resolver.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.83
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:resolve-csharp",
+        "kind": "capability",
+        "name": "C# resolution",
+        "summary": "Cross-file edges for C#.",
+        "attributes": {},
+        "id": "llm:file:packages/pipeline/src/resolve/csharp-resolver.ts#capability:resolve-csharp",
+        "targetId": "file:packages/pipeline/src/resolve/csharp-resolver.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/pipeline/src/resolve/csharp-resolver.ts",
+        "to": "llm:file:packages/pipeline/src/resolve/csharp-resolver.ts#capability:resolve-csharp",
+        "rel": "realizes",
+        "rationale": "This file is the C# resolver.",
+        "confidence": 0.83,
+        "targetId": "file:packages/pipeline/src/resolve/csharp-resolver.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/pipeline/src/resolve/csharp-resolver.ts#CsharpResolver.resolve@L281",
+      "quote": "resolve(ctx: ResolveContext): { edges: Edge[]; stats: ResolveStats } {"
+    },
+    {
+      "soulId": "sym:packages/pipeline/src/resolve/csharp-resolver.ts#CsharpResolver.supports@L278",
+      "quote": "supports(file: FileMeta): boolean {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

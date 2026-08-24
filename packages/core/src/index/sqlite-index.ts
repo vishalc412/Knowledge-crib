@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { DatabaseSync } from 'node:sqlite';
+import { DatabaseSync, type StatementSync } from 'node:sqlite';
 import type { Edge, Node, NodeKind, Rel } from '@knowledge-crib/soul-schema';
 import { cosine, decodeVec, encodeVec } from '../embeddings/char-ngram.js';
 import type { Embedder } from '../embeddings/types.js';
@@ -101,6 +101,13 @@ export class SqliteIndexStore implements IndexStore {
   /** The embedder id used for the last build, or null if no vectors were built. */
   private builtEmbedderId: string | null = null;
   private builtDim = 0;
+  /**
+   * Prepared-statement cache keyed by SQL text. `node:sqlite` recompiles nothing for us, so
+   * re-preparing the same INSERT once per row costs a full parse+codegen each time. Cleared by
+   * `reset()` because the DROP/CREATE there invalidates every statement compiled against the old
+   * tables.
+   */
+  private stmtCache = new Map<string, StatementSync>();
 
   /**
    * @param path file path for the sqlite db, or ':memory:' for an ephemeral index.
@@ -121,7 +128,7 @@ export class SqliteIndexStore implements IndexStore {
     this.reset();
     const fileCache: FileLineCache = new Map();
     const insertMany = this.transaction(() => {
-      for (const node of soul.iterate()) this.insertNode(node, repoRoot, fileCache);
+      for (const node of soul.iterate()) this.insertNode(node, repoRoot, fileCache, true);
       for (const edge of soul.iterateEdges()) this.insertEdge(edge);
     });
     insertMany();
@@ -132,12 +139,13 @@ export class SqliteIndexStore implements IndexStore {
     const fileCache: FileLineCache = new Map();
     const apply = this.transaction(() => {
       for (const id of changed.removed) {
-        this.db.prepare('DELETE FROM nodes WHERE id = ?').run(id);
-        this.db.prepare('DELETE FROM nodes_fts WHERE id = ?').run(id);
-        this.db.prepare('DELETE FROM vectors WHERE id = ?').run(id);
-        this.db.prepare('DELETE FROM edges WHERE id = ?').run(id);
+        // `removed` carries both node ids and edge ids (see IndexDelta), hence both deletes.
+        this.stmt('DELETE FROM nodes WHERE id = ?').run(id);
+        this.deleteFtsRow(id);
+        this.stmt('DELETE FROM vectors WHERE id = ?').run(id);
+        this.stmt('DELETE FROM edges WHERE id = ?').run(id);
       }
-      for (const node of changed.nodes) this.insertNode(node, repoRoot, fileCache);
+      for (const node of changed.nodes) this.insertNode(node, repoRoot, fileCache, false);
       for (const edge of changed.edges) this.insertEdge(edge);
       if (this.embedder) {
         const upsertVec = this.db.prepare(
@@ -188,7 +196,12 @@ export class SqliteIndexStore implements IndexStore {
   private degreesFor(ids: string[]): Map<string, number> {
     const out = new Map<string, number>();
     if (ids.length === 0) return out;
-    const stmt = this.db.prepare('SELECT COUNT(*) AS n FROM edges WHERE src = ? OR dst = ?');
+    // Two indexed subqueries, not `src = ? OR dst = ?` — SQLite cannot use both idx_edges_src and
+    // idx_edges_dst for an OR, so the single-predicate form degrades to a scan. Runs once per
+    // reranked candidate (pool >= 50), so it sits on the interactive query path.
+    const stmt = this.stmt(
+      'SELECT (SELECT COUNT(*) FROM edges WHERE src = ?) + (SELECT COUNT(*) FROM edges WHERE dst = ?) AS n',
+    );
     for (const id of ids) {
       const row = stmt.get(id, id) as { n: number };
       out.set(id, row.n);
@@ -203,16 +216,14 @@ export class SqliteIndexStore implements IndexStore {
     const kindFilter = q.kinds?.length
       ? ` AND n.kind IN (${q.kinds.map(() => '?').join(',')})`
       : '';
-    const rows = this.db
-      .prepare(
-        `SELECT n.id AS id, n.kind AS kind, n.name AS name, n.file AS file, bm25(nodes_fts) AS score
+    const rows = this.stmt(
+      `SELECT n.id AS id, n.kind AS kind, n.name AS name, n.file AS file, bm25(nodes_fts) AS score
          FROM nodes_fts
          JOIN nodes n ON n.id = nodes_fts.id
          WHERE nodes_fts MATCH ?${kindFilter}
          ORDER BY score ASC
          LIMIT ? OFFSET ?`,
-      )
-      .all(match, ...(q.kinds ?? []), limit, offset) as Array<{
+    ).all(match, ...(q.kinds ?? []), limit, offset) as Array<{
       id: string;
       kind: NodeKind;
       name: string | null;
@@ -432,38 +443,71 @@ export class SqliteIndexStore implements IndexStore {
     };
   }
 
-  private insertNode(node: Node, repoRoot: string, fileCache: FileLineCache): void {
-    this.db
-      .prepare('INSERT OR REPLACE INTO nodes (id, kind, name, file, json) VALUES (?, ?, ?, ?, ?)')
-      .run(node.id, node.kind, node.name ?? null, node.file ?? null, JSON.stringify(node));
-    this.db.prepare('DELETE FROM nodes_fts WHERE id = ?').run(node.id);
-    this.db
-      .prepare(`INSERT INTO nodes_fts (id, ${FTS_COLUMNS}) VALUES (?, ?, ?, ?, ?, ?, ?)`)
-      .run(
-        node.id,
-        node.name ?? '',
-        node.qualifiedName ?? '',
-        node.signature ?? '',
-        node.heading ?? '',
-        node.file ?? '',
-        composeSearchableBody(node, repoRoot, fileCache),
-      );
+  /** Prepare-once/reuse accessor. See {@link stmtCache}. */
+  private stmt(sql: string): StatementSync {
+    let prepared = this.stmtCache.get(sql);
+    if (prepared === undefined) {
+      prepared = this.db.prepare(sql);
+      this.stmtCache.set(sql, prepared);
+    }
+    return prepared;
+  }
+
+  /**
+   * Remove a node's row from the FTS index by its *rowid*.
+   *
+   * `nodes_fts.id` is declared UNINDEXED, so `DELETE FROM nodes_fts WHERE id = ?` cannot seek — it
+   * full-scans the entire FTS table per call, which made a full build O(N^2) (measured: 34.7s vs
+   * 40ms for 30k rows). `rowid` IS the FTS5 docid and is always indexed, so we keep an explicit
+   * id -> rowid map and delete by rowid instead.
+   */
+  private deleteFtsRow(id: string): void {
+    const row = this.stmt('SELECT rid FROM fts_map WHERE id = ?').get(id) as
+      | { rid: number }
+      | undefined;
+    if (row === undefined) return;
+    this.stmt('DELETE FROM nodes_fts WHERE rowid = ?').run(row.rid);
+    this.stmt('DELETE FROM fts_map WHERE id = ?').run(id);
+  }
+
+  private insertNode(node: Node, repoRoot: string, fileCache: FileLineCache, fresh: boolean): void {
+    this.stmt(
+      'INSERT OR REPLACE INTO nodes (id, kind, name, file, json) VALUES (?, ?, ?, ?, ?)',
+    ).run(node.id, node.kind, node.name ?? null, node.file ?? null, JSON.stringify(node));
+    // `fresh` = the full-rebuild path, where `reset()` has just dropped and recreated `nodes_fts`.
+    // There is provably no prior row, so skipping the delete is not an optimisation gamble.
+    if (!fresh) this.deleteFtsRow(node.id);
+    const inserted = this.stmt(
+      `INSERT INTO nodes_fts (id, ${FTS_COLUMNS}) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    ).run(
+      node.id,
+      node.name ?? '',
+      node.qualifiedName ?? '',
+      node.signature ?? '',
+      node.heading ?? '',
+      node.file ?? '',
+      composeSearchableBody(node, repoRoot, fileCache),
+    );
+    // Recorded on BOTH paths: without a map entry from the fresh build, the first later delta would
+    // have no rowid to delete by and would leave a stale FTS row behind.
+    this.stmt('INSERT OR REPLACE INTO fts_map (id, rid) VALUES (?, ?)').run(
+      node.id,
+      Number(inserted.lastInsertRowid),
+    );
   }
 
   private insertEdge(edge: Edge): void {
-    this.db
-      .prepare(
-        'INSERT OR REPLACE INTO edges (id, src, dst, rel, provenance, confidence, json) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      )
-      .run(
-        edge.id,
-        edge.src,
-        edge.dst,
-        edge.rel,
-        edge.provenance,
-        edge.confidence,
-        JSON.stringify(edge),
-      );
+    this.stmt(
+      'INSERT OR REPLACE INTO edges (id, src, dst, rel, provenance, confidence, json) VALUES (?, ?, ?, ?, ?, ?, ?)',
+    ).run(
+      edge.id,
+      edge.src,
+      edge.dst,
+      edge.rel,
+      edge.provenance,
+      edge.confidence,
+      JSON.stringify(edge),
+    );
   }
 
   private createSchema(): void {
@@ -494,7 +538,81 @@ export class SqliteIndexStore implements IndexStore {
         vec BLOB NOT NULL,
         dim INTEGER NOT NULL
       );
+      CREATE TABLE IF NOT EXISTS fts_map (
+        id TEXT PRIMARY KEY,
+        rid INTEGER NOT NULL
+      );
+      -- Authored meaning, searchable. Deliberately separate from nodes_fts: node text derives
+      -- from the soul and changes only when code changes, whereas authored prose changes whenever
+      -- an agent saves an artifact - a different lifecycle, tracked by its own generation counter.
+      CREATE VIRTUAL TABLE IF NOT EXISTS semantic_fts USING fts5(
+        targetId UNINDEXED, layer UNINDEXED, purpose, detail
+      );
+      CREATE TABLE IF NOT EXISTS semantic_meta (k TEXT PRIMARY KEY, v TEXT NOT NULL);
     `);
+  }
+
+  /**
+   * Replace the searchable projection of the authored semantic layer.
+   *
+   * Without this the semantic layer is invisible to retrieval: prose is attached to hits only AFTER
+   * keyword search has already chosen them, so authoring meaning improves how an answer READS but
+   * never which answer is FOUND. Measured on this repo before it existed, a phrase occurring only
+   * in authored prose returned zero hits, and "how do I debug a parser that hangs" ranked a Rust
+   * test fixture first while the fuzz harness - described precisely for that - never surfaced.
+   *
+   * `generation` is `manifest.generation.semantic`, which every artifact save bumps, so a caller
+   * can tell this projection is behind without re-reading every artifact.
+   */
+  buildSemanticIndex(
+    entries: Array<{ targetId: string; layer: string; purpose: string; detail: string }>,
+    generation: number,
+  ): void {
+    const apply = this.transaction(() => {
+      this.db.exec('DELETE FROM semantic_fts');
+      const insert = this.db.prepare(
+        'INSERT INTO semantic_fts (targetId, layer, purpose, detail) VALUES (?, ?, ?, ?)',
+      );
+      for (const e of entries) insert.run(e.targetId, e.layer, e.purpose, e.detail);
+      this.db
+        .prepare('INSERT OR REPLACE INTO semantic_meta (k, v) VALUES (?, ?)')
+        .run('generation', String(generation));
+    });
+    apply();
+  }
+
+  /** The `generation.semantic` this searchable projection was built at, or -1 if never built. */
+  semanticIndexGeneration(): number {
+    try {
+      const row = this.db.prepare('SELECT v FROM semantic_meta WHERE k = ?').get('generation') as
+        | { v: string }
+        | undefined;
+      return row === undefined ? -1 : Number.parseInt(row.v, 10);
+    } catch {
+      return -1; // table absent - an index built before this existed
+    }
+  }
+
+  /**
+   * Rank authored prose against a query. Returns target ids, best first (lower bm25 = better).
+   *
+   * `purpose` is weighted far above `detail`: a purpose is a deliberate one-line answer to "what is
+   * this", while responsibilities and rules are supporting text that would otherwise let a long
+   * artifact outrank a precisely-matching short one on term frequency alone.
+   */
+  semanticSearch(text: string, limit: number): Array<{ targetId: string; score: number }> {
+    const match = toFtsMatch(text);
+    if (match === undefined) return [];
+    try {
+      return this.db
+        .prepare(
+          `SELECT targetId, bm25(semantic_fts, 0.0, 0.0, 10.0, 1.0) AS score
+             FROM semantic_fts WHERE semantic_fts MATCH ? ORDER BY score LIMIT ?`,
+        )
+        .all(match, limit) as Array<{ targetId: string; score: number }>;
+    } catch {
+      return []; // an unparseable query is an empty result, never an error
+    }
   }
 
   private reset(): void {
@@ -507,7 +625,10 @@ export class SqliteIndexStore implements IndexStore {
       DROP TABLE IF EXISTS vectors;
       DROP TABLE IF EXISTS edges;
       DROP TABLE IF EXISTS nodes;
+      DROP TABLE IF EXISTS fts_map;
     `);
+    // Every cached statement was compiled against the tables just dropped.
+    this.stmtCache.clear();
     this.builtEmbedderId = null;
     this.builtDim = 0;
     this.createSchema();
@@ -515,13 +636,107 @@ export class SqliteIndexStore implements IndexStore {
 }
 
 /**
+ * Question scaffolding carried by natural-language queries. Deliberately small and closed: only
+ * words that are almost never the SUBJECT of a code question. Domain words that look like
+ * stopwords elsewhere (`use`, `set`, `get`, `call`, `new`, `class`, `type`) are excluded from this
+ * list precisely because they are real identifiers in code.
+ */
+const QUERY_STOPWORDS = new Set([
+  'a',
+  'an',
+  'the',
+  'is',
+  'are',
+  'was',
+  'were',
+  'be',
+  'been',
+  'being',
+  'do',
+  'does',
+  'did',
+  'doing',
+  'have',
+  'has',
+  'had',
+  'having',
+  'i',
+  'you',
+  'we',
+  'they',
+  'it',
+  'he',
+  'she',
+  'me',
+  'my',
+  'our',
+  'your',
+  'what',
+  'why',
+  'how',
+  'when',
+  'where',
+  'which',
+  'who',
+  'whom',
+  'and',
+  'or',
+  'but',
+  'if',
+  'then',
+  'than',
+  'that',
+  'this',
+  'these',
+  'those',
+  'to',
+  'of',
+  'in',
+  'on',
+  'at',
+  'by',
+  'for',
+  'with',
+  'from',
+  'about',
+  'into',
+  'can',
+  'could',
+  'should',
+  'would',
+  'will',
+  'shall',
+  'may',
+  'might',
+  'must',
+  'there',
+  'here',
+  'not',
+  'no',
+  'so',
+  'as',
+  'too',
+  'very',
+  'just',
+]);
+
+/**
  * Turn a user query into a safe FTS5 MATCH expression: each alphanumeric token (plus its synonym
  * group, when one exists — the lightweight hybrid layer, see synonyms.ts) becomes a prefix match,
  * OR-joined. Returns undefined if the query has no usable tokens.
  */
 function toFtsMatch(text: string): string | undefined {
-  const rawTokens = text.split(/[^A-Za-z0-9_]+/).filter((t) => t.length > 0);
-  if (rawTokens.length === 0) return undefined;
+  const allTokens = text.split(/[^A-Za-z0-9_]+/).filter((t) => t.length > 0);
+  if (allTokens.length === 0) return undefined;
+  // Drop question scaffolding. Tokens are OR-joined, so a word like "why" or "does" matches a large
+  // share of the corpus and pulls unrelated documents up — an effect that got materially worse once
+  // the semantic layer added hundreds of files of English prose to search. Measured: "why did you
+  // choose blake3" ranked an unrelated ADR above the hashing module that answers it.
+  //
+  // Falls back to the unfiltered tokens when a query is nothing BUT scaffolding, so "how does it
+  // work" still returns something rather than nothing.
+  const content = allTokens.filter((t) => !QUERY_STOPWORDS.has(t.toLowerCase()));
+  const rawTokens = content.length > 0 ? content : allTokens;
   const expanded = new Set<string>();
   for (const t of rawTokens) {
     for (const e of expandToken(t)) expanded.add(e);

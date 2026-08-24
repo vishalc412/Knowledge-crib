@@ -1,0 +1,46 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/pipeline/fixtures/csharp-cross/Service.cs",
+  "nodeHash": "blake3:fdb9080982666210b976859eec43586cf325e17f99df5d5f2cd2ebd125950576",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:17:56.869Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "A test fixture: sample CS source that exists to exercise the extractor for this language, not to run in production.",
+    "responsibilities": [
+      "Provide representative source constructs for extractor tests"
+    ],
+    "businessRules": [],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.76
+  },
+  "graph": {
+    "nodes": [],
+    "edges": []
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/pipeline/fixtures/csharp-cross/Service.cs#Crib.Example.Service.Greet@L5",
+      "quote": "public string Greet(string user)"
+    },
+    {
+      "soulId": "sym:packages/pipeline/fixtures/csharp-cross/Service.cs#Crib.Example.Service@L3",
+      "quote": "public class Service : IGreeter"
+    },
+    {
+      "soulId": "sym:packages/pipeline/fixtures/csharp-cross/Service.cs#Crib.Example@L1",
+      "quote": "namespace Crib.Example;"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

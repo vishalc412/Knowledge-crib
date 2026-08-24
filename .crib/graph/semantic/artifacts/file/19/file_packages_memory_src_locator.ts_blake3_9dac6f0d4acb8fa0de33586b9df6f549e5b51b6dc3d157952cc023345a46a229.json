@@ -1,0 +1,68 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/memory/src/locator.ts",
+  "nodeHash": "blake3:9dac6f0d4acb8fa0de33586b9df6f549e5b51b6dc3d157952cc023345a46a229",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:00:13.885Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "Stable locators and reattachment: how a remembered claim keeps pointing at the right code after a refactor moves it, by re-matching rather than by storing a line number.",
+    "responsibilities": [
+      "Derive a locator that survives code movement",
+      "Reattach a locator to exactly one current node, or fail"
+    ],
+    "businessRules": [
+      {
+        "rule": "Reattachment must resolve to exactly one node; an ambiguous match is treated as a failure.",
+        "rationale": "Silently reattaching to the wrong symbol would make a memory quietly false.",
+        "sourceRef": "file:packages/memory/src/locator.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.85
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:refactor-survival",
+        "kind": "capability",
+        "name": "Refactor survival",
+        "summary": "Memory anchors that survive code movement.",
+        "attributes": {},
+        "id": "llm:file:packages/memory/src/locator.ts#capability:refactor-survival",
+        "targetId": "file:packages/memory/src/locator.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/memory/src/locator.ts",
+        "to": "llm:file:packages/memory/src/locator.ts#capability:refactor-survival",
+        "rel": "realizes",
+        "rationale": "This file implements locators.",
+        "confidence": 0.85,
+        "targetId": "file:packages/memory/src/locator.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/memory/src/locator.ts#ParsedSoulId@L44",
+      "quote": "export interface ParsedSoulId {"
+    },
+    {
+      "soulId": "sym:packages/memory/src/locator.ts#StableLocator@L24",
+      "quote": "export interface StableLocator {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

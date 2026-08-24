@@ -31,7 +31,16 @@ export function sourcePolicy(node: Node | undefined): SourcePolicy {
   if (value === 'deny' || value === 'redact-properties' || value === 'redact-mule-secrets') {
     return value;
   }
-  if (node?.meta?.valueRedacted === true || node?.type === 'property') return 'redact-properties';
+  // `meta.valueRedacted` is the EXPLICIT signal a config/properties extractor stamps on a key whose
+  // value must never be surfaced (MuleExtractor sets it on every `property` symbol it emits).
+  //
+  // `type === 'property'` alone is NOT that signal: TypeScriptExtractor gives every class FIELD the
+  // same type, so the old bare check ran `.properties`-style key=value redaction over ordinary
+  // TypeScript source — mangling 206 nodes in this repo (and zero real config properties) both in
+  // surfaced snippets and in the FTS body that makes them searchable. Every genuine config property
+  // still redacts here via the explicit flag, so the "secret VALUE is never surfaced or indexed"
+  // guarantee is unchanged.
+  if (node?.meta?.valueRedacted === true) return 'redact-properties';
   return 'allow';
 }
 

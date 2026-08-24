@@ -1,0 +1,68 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/mcp/src/token-budget.ts",
+  "nodeHash": "blake3:b3248f71fd239d1b50ed8106e991c1622324469442f27eae662b5ba4d5387738",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:00:13.887Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The token budgets every response is held to, and the truncation helper that enforces them — so an agent can never pull an unbounded payload by accident.",
+    "responsibilities": [
+      "Define default and maximum budgets per verb",
+      "Trim a payload to budget and report truncation with a cursor"
+    ],
+    "businessRules": [
+      {
+        "rule": "Every list response is bounded and reports truncation with a cursor to page.",
+        "rationale": "An unbounded payload is exactly the token blow-up the whole tool exists to prevent.",
+        "sourceRef": "file:packages/mcp/src/token-budget.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.85
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:token-bounding",
+        "kind": "capability",
+        "name": "Token bounding",
+        "summary": "Every answer fits a declared budget.",
+        "attributes": {},
+        "id": "llm:file:packages/mcp/src/token-budget.ts#capability:token-bounding",
+        "targetId": "file:packages/mcp/src/token-budget.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/mcp/src/token-budget.ts",
+        "to": "llm:file:packages/mcp/src/token-budget.ts#capability:token-bounding",
+        "rel": "realizes",
+        "rationale": "This file defines the budgets.",
+        "confidence": 0.85,
+        "targetId": "file:packages/mcp/src/token-budget.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/mcp/src/token-budget.ts#Bounded@L49",
+      "quote": "export interface Bounded<T> {"
+    },
+    {
+      "soulId": "sym:packages/mcp/src/token-budget.ts#bound@L75",
+      "quote": "export function bound<T>(all: T[], limit: number, offset = 0): Bounded<T> {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

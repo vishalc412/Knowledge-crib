@@ -1,0 +1,68 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/pipeline/src/input/prepared-source.ts",
+  "nodeHash": "blake3:21df484c52d9002b995cfd8fce3ecdedd27e0aeef1e06ae0d1e9c4272cb2363a",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T03:58:13.485Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "Normalizes the three accepted input shapes — a source folder, an exported archive, or a deployable JAR — into one prepared directory the rest of the pipeline can treat uniformly.",
+    "responsibilities": [
+      "Accept a folder, an archive or a packaged artifact",
+      "Present one prepared source directory downstream"
+    ],
+    "businessRules": [
+      {
+        "rule": "Input shape is normalized once at the edge so no later phase has to know how the source arrived.",
+        "rationale": "Otherwise every phase grows its own input handling.",
+        "sourceRef": "file:packages/pipeline/src/input/prepared-source.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.83
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:input-normalization",
+        "kind": "capability",
+        "name": "Input normalization",
+        "summary": "One prepared source from any input shape.",
+        "attributes": {},
+        "id": "llm:file:packages/pipeline/src/input/prepared-source.ts#capability:input-normalization",
+        "targetId": "file:packages/pipeline/src/input/prepared-source.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/pipeline/src/input/prepared-source.ts",
+        "to": "llm:file:packages/pipeline/src/input/prepared-source.ts#capability:input-normalization",
+        "rel": "realizes",
+        "rationale": "This file normalizes inputs.",
+        "confidence": 0.83,
+        "targetId": "file:packages/pipeline/src/input/prepared-source.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/pipeline/src/input/prepared-source.ts#PrepareSourceOptions@L50",
+      "quote": "export interface PrepareSourceOptions {"
+    },
+    {
+      "soulId": "sym:packages/pipeline/src/input/prepared-source.ts#PreparedInputManifest@L58",
+      "quote": "interface PreparedInputManifest {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

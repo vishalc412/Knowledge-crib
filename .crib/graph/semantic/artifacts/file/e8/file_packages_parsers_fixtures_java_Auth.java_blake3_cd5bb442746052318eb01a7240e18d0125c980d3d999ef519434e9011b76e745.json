@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/parsers/fixtures/java/Auth.java",
+  "nodeHash": "blake3:cd5bb442746052318eb01a7240e18d0125c980d3d999ef519434e9011b76e745",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:17:55.640Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "A test fixture: sample JAVA source that exists to exercise the extractor for this language, not to run in production.",
+    "responsibilities": [
+      "Provide representative source constructs for extractor tests"
+    ],
+    "businessRules": [],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.76
+  },
+  "graph": {
+    "nodes": [],
+    "edges": []
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/parsers/fixtures/java/Auth.java#AuthApi.issue@L58",
+      "quote": "Token issue(TokenReq req);"
+    },
+    {
+      "soulId": "sym:packages/parsers/fixtures/java/Auth.java#AuthApi.login@L57",
+      "quote": "String login(String user);"
+    },
+    {
+      "soulId": "sym:packages/parsers/fixtures/java/Auth.java#AuthApi@L56",
+      "quote": "interface AuthApi {"
+    },
+    {
+      "soulId": "sym:packages/parsers/fixtures/java/Auth.java#AuthController.issue@L19",
+      "quote": "@PostMapping(\"/issue\")"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

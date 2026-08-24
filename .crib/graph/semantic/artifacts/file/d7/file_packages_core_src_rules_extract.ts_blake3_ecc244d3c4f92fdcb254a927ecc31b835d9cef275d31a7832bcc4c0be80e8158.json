@@ -1,0 +1,68 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/core/src/rules/extract.ts",
+  "nodeHash": "blake3:ecc244d3c4f92fdcb254a927ecc31b835d9cef275d31a7832bcc4c0be80e8158",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T03:54:27.581Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "Rule extraction: walks a guard-annotated control-flow graph and materializes the inherited path conditions into decision-table records — the business rules, as data.",
+    "responsibilities": [
+      "Walk the annotated control-flow edges of a procedure",
+      "Materialize each path condition into a decision-table row"
+    ],
+    "businessRules": [
+      {
+        "rule": "Rules are derived from the recorded guard chain rather than re-parsed from source.",
+        "rationale": "One source of truth for control flow keeps the rules consistent with the graph.",
+        "sourceRef": "file:packages/core/src/rules/extract.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.84
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:rule-extraction",
+        "kind": "capability",
+        "name": "Rule extraction",
+        "summary": "Decision tables from control flow.",
+        "attributes": {},
+        "id": "llm:file:packages/core/src/rules/extract.ts#capability:rule-extraction",
+        "targetId": "file:packages/core/src/rules/extract.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/core/src/rules/extract.ts",
+        "to": "llm:file:packages/core/src/rules/extract.ts#capability:rule-extraction",
+        "rel": "realizes",
+        "rationale": "This file extracts rules.",
+        "confidence": 0.84,
+        "targetId": "file:packages/core/src/rules/extract.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/core/src/rules/extract.ts#DecisionTable@L65",
+      "quote": "export interface DecisionTable {"
+    },
+    {
+      "soulId": "sym:packages/core/src/rules/extract.ts#ExtractRulesOpts@L73",
+      "quote": "export interface ExtractRulesOpts {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

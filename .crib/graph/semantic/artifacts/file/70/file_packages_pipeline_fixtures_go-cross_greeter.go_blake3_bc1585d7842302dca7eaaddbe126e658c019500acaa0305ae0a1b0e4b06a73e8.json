@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/pipeline/fixtures/go-cross/greeter.go",
+  "nodeHash": "blake3:bc1585d7842302dca7eaaddbe126e658c019500acaa0305ae0a1b0e4b06a73e8",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:17:57.488Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "A test fixture: sample GO source that exists to exercise the extractor for this language, not to run in production.",
+    "responsibilities": [
+      "Provide representative source constructs for extractor tests"
+    ],
+    "businessRules": [],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.76
+  },
+  "graph": {
+    "nodes": [],
+    "edges": []
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/pipeline/fixtures/go-cross/greeter.go#Greeter.Greet@L7",
+      "quote": "Greet(user string) string"
+    },
+    {
+      "soulId": "sym:packages/pipeline/fixtures/go-cross/greeter.go#Greeter@L6",
+      "quote": "type Greeter interface {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

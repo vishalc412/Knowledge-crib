@@ -1,0 +1,67 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/core/src/index/factory.ts",
+  "nodeHash": "blake3:f439fa5760be1d9b1caa47f0902d1837d46434f64c7b49d66a8760219d8f4f7b",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:05:50.830Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The one place that knows about concrete index backends: resolves the declared backend from the manifest so everything else codes to the interface.",
+    "responsibilities": [
+      "Resolve a backend instance from the manifest"
+    ],
+    "businessRules": [
+      {
+        "rule": "This is the ONLY module aware of concrete backends.",
+        "rationale": "Backend knowledge spread through the codebase is what makes a storage layer unswappable.",
+        "sourceRef": "file:packages/core/src/index/factory.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.83
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:packages-core-src-index-factory-ts",
+        "kind": "capability",
+        "name": "Backend factory",
+        "summary": "The single point of backend knowledge.",
+        "attributes": {},
+        "id": "llm:file:packages/core/src/index/factory.ts#capability:packages-core-src-index-factory-ts",
+        "targetId": "file:packages/core/src/index/factory.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/core/src/index/factory.ts",
+        "to": "llm:file:packages/core/src/index/factory.ts#capability:packages-core-src-index-factory-ts",
+        "rel": "realizes",
+        "rationale": "This file implements backend factory.",
+        "confidence": 0.83,
+        "targetId": "file:packages/core/src/index/factory.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/core/src/index/factory.ts#OpenIndexOpts@L10",
+      "quote": "export interface OpenIndexOpts {"
+    },
+    {
+      "soulId": "sym:packages/core/src/index/factory.ts#openIndex@L16",
+      "quote": "export function openIndex(backend: IndexBackend = 'sqlite', opts: OpenIndexOpts = {}): IndexStore {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

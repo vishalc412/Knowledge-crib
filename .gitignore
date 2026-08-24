@@ -48,3 +48,8 @@ claude/
 # Local demo/media assets (large binaries, never committed)
 media/
 outputs/
+
+# Derived, rebuildable from the soul (buildDossier is pure over soul+source; the dossier verb
+# builds-on-miss then persists). Tracking them put 3,303 files and ~4,500 dirty entries in every
+# git status, which is why `git add -A` was unsafe here.
+.crib/dossiers/

@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:docs/knowledge-crib-testing.md",
+  "nodeHash": "blake3:1acab18e061a25b5647de3467c9d4dcb637d97602e7f1f8c91a5c8fe04e5708b",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:13:18.221Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The testing strategy: what is unit tested, what is gated in the build, and what the acceptance gates prove.",
+    "responsibilities": [
+      "Describe the test strategy and build gates"
+    ],
+    "businessRules": [],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.78
+  },
+  "graph": {
+    "nodes": [],
+    "edges": []
+  },
+  "evidence": [
+    {
+      "soulId": "doc:docs/knowledge-crib-testing.md#1-test-pyramid",
+      "quote": "| Layer | Scope | Tooling |"
+    },
+    {
+      "soulId": "doc:docs/knowledge-crib-testing.md#2-fixtures",
+      "quote": "- `fixtures/ts-min/` — tiny TS repo with known call graph (M2/M3 golden)."
+    },
+    {
+      "soulId": "doc:docs/knowledge-crib-testing.md#3-per-milestone-acceptance-gates-mirror-build-plan-knowledge-crib-build-plan-md",
+      "quote": "| M | Gate (must pass to merge) |"
+    },
+    {
+      "soulId": "doc:docs/knowledge-crib-testing.md#4-link-precision-measurement-m4-the-trust-gate",
+      "quote": "- Hand-label the true doc↔symbol links in `fixtures/docs-linked`."
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

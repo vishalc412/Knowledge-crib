@@ -1,0 +1,74 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/cli/src/mcp-install.ts",
+  "nodeHash": "blake3:ea05f797d0a8959892665d050834472b0e9b88414eefec5e44fe60e943105034",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T02:56:59.751Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "Wires the MCP server into each supported IDE config file so a user never hand-edits JSON or TOML to connect their editor.",
+    "responsibilities": [
+      "Write an idempotent managed block into each client config",
+      "Preserve sibling content byte-for-byte on every write",
+      "Default to an absolute binary path so GUI-launched editors resolve it"
+    ],
+    "businessRules": [
+      {
+        "rule": "Writes are idempotent managed blocks that never clobber sibling content.",
+        "rationale": "These are user-owned config files shared with other tools.",
+        "sourceRef": "file:packages/cli/src/mcp-install.ts"
+      },
+      {
+        "rule": "The binary path defaults to an absolute resolved path.",
+        "rationale": "A GUI-launched IDE does not inherit the shell PATH.",
+        "sourceRef": "file:packages/cli/src/mcp-install.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.84
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:mcp-install",
+        "kind": "capability",
+        "name": "MCP client wiring",
+        "summary": "Idempotent IDE configuration for the server.",
+        "attributes": {},
+        "id": "llm:file:packages/cli/src/mcp-install.ts#capability:mcp-install",
+        "targetId": "file:packages/cli/src/mcp-install.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/cli/src/mcp-install.ts",
+        "to": "llm:file:packages/cli/src/mcp-install.ts#capability:mcp-install",
+        "rel": "realizes",
+        "rationale": "This file implements MCP client installation.",
+        "confidence": 0.84,
+        "targetId": "file:packages/cli/src/mcp-install.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/cli/src/mcp-install.ts#McpIde@L28",
+      "quote": "export type McpIde = 'claude' | 'cursor' | 'vscode' | 'codex' | 'windsurf' | 'gemini';"
+    },
+    {
+      "soulId": "sym:packages/cli/src/mcp-install.ts#McpInstallOptions@L37",
+      "quote": "export interface McpInstallOptions {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

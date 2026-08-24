@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/pipeline/src/resolve/go-resolver.test.ts",
+  "nodeHash": "blake3:a93989ba49b4b5663ffeff8eab048f589b5b3af56385d9dae8ea5352fccb3a0f",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:17:55.984Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The test suite for go-resolver — it defines the behaviour that is guaranteed, so a change that breaks any of it fails the build. It pins: GoResolver — cross-file edges (gate).",
+    "responsibilities": [
+      "Pin the observable behaviour of go-resolver",
+      "Fail the build when a guaranteed behaviour changes"
+    ],
+    "businessRules": [],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.76
+  },
+  "graph": {
+    "nodes": [],
+    "edges": []
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/pipeline/src/resolve/go-resolver.test.ts#byEdgeId@L164",
+      "quote": "function byEdgeId(a: Edge, b: Edge): number {"
+    },
+    {
+      "soulId": "sym:packages/pipeline/src/resolve/go-resolver.test.ts#byId@L161",
+      "quote": "function byId(a: Node, b: Node): number {"
+    },
+    {
+      "soulId": "sym:packages/pipeline/src/resolve/go-resolver.test.ts#edgesInFiles@L125",
+      "quote": "function edgesInFiles(soul: SoulStore, exts: string[]): Edge[] {"
+    },
+    {
+      "soulId": "sym:packages/pipeline/src/resolve/go-resolver.test.ts#expectEdge@L155",
+      "quote": "function expectEdge(e: { provenance: string; method: string; confidence: number }): void {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

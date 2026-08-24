@@ -1,0 +1,68 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:scripts/linker-check.mjs",
+  "nodeHash": "blake3:ae8f0667bfa3ab2ae4bfe1b5faf33fb5d4974e2c89ba8c97315cccdae4958e63",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:00:13.889Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "A quality gate pinning the embedding linker against the term-frequency baseline: recall must improve while precision holds.",
+    "responsibilities": [
+      "Run both linkers over the same fixture",
+      "Fail if recall regresses or precision drops"
+    ],
+    "businessRules": [
+      {
+        "rule": "The gate pins recall improvement AND precision, not recall alone.",
+        "rationale": "Recall bought with precision is not an improvement.",
+        "sourceRef": "file:scripts/linker-check.mjs"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.82
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:linker-gate",
+        "kind": "capability",
+        "name": "Linker quality gate",
+        "summary": "Recall up, precision held.",
+        "attributes": {},
+        "id": "llm:file:scripts/linker-check.mjs#capability:linker-gate",
+        "targetId": "file:scripts/linker-check.mjs"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:scripts/linker-check.mjs",
+        "to": "llm:file:scripts/linker-check.mjs#capability:linker-gate",
+        "rel": "realizes",
+        "rationale": "This script gates linker quality.",
+        "confidence": 0.82,
+        "targetId": "file:scripts/linker-check.mjs"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:scripts/linker-check.mjs#describesEdges@L56",
+      "quote": "const describesEdges = (soul) => [...soul.iterateEdges('describes')];"
+    },
+    {
+      "soulId": "sym:scripts/linker-check.mjs#fail@L43",
+      "quote": "process.stderr.write(`  linker:check FAIL — ${msg}\\n`);"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

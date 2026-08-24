@@ -1,0 +1,74 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/pipeline/src/resolve/java-resolver.ts",
+  "nodeHash": "blake3:95061c11a02161786f27789965e20013f9740f77dd12b0e8a2b288cd1599430d",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T03:54:27.578Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The Java cross-file resolver: turns the cross-file references an extractor recorded — imports, calls, inheritance via extends and implements — into real edges by looking every target up in the global symbol table.",
+    "responsibilities": [
+      "Resolve import specifiers to the symbols they actually name",
+      "Link a caller to the imported symbol it invokes",
+      "Resolve inheritance via extends and implements across files into edges"
+    ],
+    "businessRules": [
+      {
+        "rule": "Every target is resolved through the global symbol table rather than matched by name.",
+        "rationale": "A name-matched edge would be a guess presented as a fact.",
+        "sourceRef": "file:packages/pipeline/src/resolve/java-resolver.ts"
+      },
+      {
+        "rule": "A reference that does not resolve is dropped and counted, never guessed.",
+        "rationale": "A missing edge is honest; a wrong one is not.",
+        "sourceRef": "file:packages/pipeline/src/resolve/java-resolver.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.83
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:resolve-java",
+        "kind": "capability",
+        "name": "Java resolution",
+        "summary": "Cross-file edges for Java.",
+        "attributes": {},
+        "id": "llm:file:packages/pipeline/src/resolve/java-resolver.ts#capability:resolve-java",
+        "targetId": "file:packages/pipeline/src/resolve/java-resolver.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/pipeline/src/resolve/java-resolver.ts",
+        "to": "llm:file:packages/pipeline/src/resolve/java-resolver.ts#capability:resolve-java",
+        "rel": "realizes",
+        "rationale": "This file is the Java resolver.",
+        "confidence": 0.83,
+        "targetId": "file:packages/pipeline/src/resolve/java-resolver.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/pipeline/src/resolve/java-resolver.ts#JavaResolver.resolve@L306",
+      "quote": "resolve(ctx: ResolveContext): { edges: Edge[]; stats: ResolveStats } {"
+    },
+    {
+      "soulId": "sym:packages/pipeline/src/resolve/java-resolver.ts#JavaResolver.supports@L303",
+      "quote": "supports(file: FileMeta): boolean {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

@@ -1,0 +1,74 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/memory/src/recall.ts",
+  "nodeHash": "blake3:2e79011adfcd30a5f597b0eaa95bc808e4d730a1db41b0e6eda7ddf1a566d1d4",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T02:56:59.750Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The memory recall core: ranks eligible remembered claims for a query, surfaces conflicting claims together, and stays free of any storage engine so it can be reasoned about in isolation.",
+    "responsibilities": [
+      "Filter to records that are currently eligible for recall",
+      "Rank candidates against the query using a multi-criterion comparator",
+      "Group conflicting claims so a disagreement is visible rather than hidden"
+    ],
+    "businessRules": [
+      {
+        "rule": "The recall core takes its lexical relevance signal through a port, so it stays free of any database dependency.",
+        "rationale": "Keeps the ranking logic unit-testable in isolation from storage.",
+        "sourceRef": "file:packages/memory/src/recall.ts"
+      },
+      {
+        "rule": "Conflicting claims are returned together rather than silently picking a winner.",
+        "rationale": "A hidden conflict is how stale memory quietly misleads an agent.",
+        "sourceRef": "file:packages/memory/src/recall.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.84
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:memory-recall",
+        "kind": "capability",
+        "name": "Memory recall",
+        "summary": "Eligibility, ranking and conflict surfacing for memory.",
+        "attributes": {},
+        "id": "llm:file:packages/memory/src/recall.ts#capability:memory-recall",
+        "targetId": "file:packages/memory/src/recall.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/memory/src/recall.ts",
+        "to": "llm:file:packages/memory/src/recall.ts#capability:memory-recall",
+        "rel": "realizes",
+        "rationale": "This file is the recall core.",
+        "confidence": 0.84,
+        "targetId": "file:packages/memory/src/recall.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/memory/src/recall.ts#GatheredRecall@L184",
+      "quote": "export interface GatheredRecall {"
+    },
+    {
+      "soulId": "sym:packages/memory/src/recall.ts#LexicalScorer@L63",
+      "quote": "export interface LexicalScorer {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

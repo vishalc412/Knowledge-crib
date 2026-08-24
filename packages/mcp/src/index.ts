@@ -11,7 +11,7 @@ export {
   DEFAULT_BODY_MAX_LINES,
   type RehydratedBody,
 } from './snippet.js';
-export { buildServer, serveStdio } from './server.js';
+export { buildServer, serveHttp, serveStdio } from './server.js';
 export { Stats, trackCall, type StatsSnapshot, type VerbStat } from './stats.js';
 export { EnrichmentStore, llmProjection, ENRICH_SCOPE_THRESHOLD, qualityOf } from './enrichment.js';
 export {

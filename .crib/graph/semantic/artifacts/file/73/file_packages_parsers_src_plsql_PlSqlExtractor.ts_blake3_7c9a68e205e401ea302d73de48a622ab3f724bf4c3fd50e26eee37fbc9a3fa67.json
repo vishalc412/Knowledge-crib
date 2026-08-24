@@ -1,0 +1,70 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/parsers/src/plsql/PlSqlExtractor.ts",
+  "nodeHash": "blake3:7c9a68e205e401ea302d73de48a622ab3f724bf4c3fd50e26eee37fbc9a3fa67",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T02:51:35.756Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "Turns one PL/SQL file into nodes and intra-file edges: procedures, functions and packages as symbols, plus the tables, columns, statements and conditions that make SQL logic analysable as data rather than text.",
+    "responsibilities": [
+      "Emit symbols for procedures, functions, packages and types",
+      "Model tables, views and columns declared in the file",
+      "Emit one statement node per DML with the tables and columns it touches",
+      "Emit one condition node per branch predicate so rules are queryable"
+    ],
+    "businessRules": [
+      {
+        "rule": "Cross-file resolution of calls and table references is the resolver phase job, against a schema catalog built from the whole graph.",
+        "rationale": "Capability honesty — this extractor never guesses across files.",
+        "sourceRef": "file:packages/parsers/src/plsql/PlSqlExtractor.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.84
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:extract-plsql",
+        "kind": "capability",
+        "name": "PL/SQL extraction",
+        "summary": "Symbols, schema and statement-level structure from PL/SQL.",
+        "attributes": {},
+        "id": "llm:file:packages/parsers/src/plsql/PlSqlExtractor.ts#capability:extract-plsql",
+        "targetId": "file:packages/parsers/src/plsql/PlSqlExtractor.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/parsers/src/plsql/PlSqlExtractor.ts",
+        "to": "llm:file:packages/parsers/src/plsql/PlSqlExtractor.ts#capability:extract-plsql",
+        "rel": "realizes",
+        "rationale": "This file is the PL/SQL extractor.",
+        "confidence": 0.84,
+        "targetId": "file:packages/parsers/src/plsql/PlSqlExtractor.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addAssign@L542",
+      "quote": "env: { inLoop: boolean; inException: boolean; guard: string | undefined },"
+    },
+    {
+      "soulId": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addCall@L490",
+      "quote": "env: { inLoop: boolean; inException: boolean; guard: string | undefined },"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

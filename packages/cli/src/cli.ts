@@ -39,7 +39,7 @@ import {
   withCribLockAsync,
 } from '@knowledge-crib/core';
 import type { IndexStore } from '@knowledge-crib/core';
-import { EnrichmentStore, Verbs, estimateTokens, serveStdio } from '@knowledge-crib/mcp';
+import { EnrichmentStore, Verbs, estimateTokens, serveHttp, serveStdio } from '@knowledge-crib/mcp';
 import type {
   EnrichLayer,
   EnrichNextBatch,
@@ -1506,6 +1506,34 @@ async function cmdServe(args: string[], ctx?: CmdCtx): Promise<number> {
   });
   // stdout is the MCP transport; logs go to stderr only.
   const stats = rt.soul.getManifest().stats;
+
+  // Shared-daemon mode: one process holds the graph and many agents connect over HTTP. Each stdio
+  // server costs 213 MB and ~450ms of startup, so a swarm running one per agent would need ~83 GB
+  // just to hold 400 identical copies of the same graph. `--http` makes that one copy.
+  const httpFlag = args.includes('--http');
+  if (httpFlag) {
+    const portArg = args[args.indexOf('--port') + 1];
+    const port = args.includes('--port') ? Number.parseInt(portArg ?? '', 10) : 0;
+    if (args.includes('--port') && !Number.isInteger(port)) {
+      process.stderr.write('--port needs an integer\n');
+      return EXIT.BAD_ARGS;
+    }
+    const daemon = await serveHttp(verbs, { ...(port ? { port } : {}) });
+    process.stderr.write(
+      `knowledge-crib MCP daemon on http://127.0.0.1:${daemon.port} — ${stats.nodes} nodes, ${stats.edges} edges ready (shared by every connected agent)\n`,
+    );
+    try {
+      await new Promise<void>((resolve) => {
+        process.on('SIGINT', resolve);
+        process.on('SIGTERM', resolve);
+      });
+    } finally {
+      await daemon.close();
+      watch?.stop();
+    }
+    return EXIT.OK;
+  }
+
   process.stderr.write(
     `knowledge-crib MCP server on stdio — ${stats.nodes} nodes, ${stats.edges} edges ready (default responses are tiered lean; pass withLlm:true for the full analysis blob)\n`,
   );

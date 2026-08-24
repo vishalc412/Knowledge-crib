@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/mcp/src/verbs.test.ts",
+  "nodeHash": "blake3:396f437bc16ee66f9133c462457b8f6d95475ea328cf60e19a3d9244013cbb9b",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:17:55.638Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The test suite for verbs — it defines the behaviour that is guaranteed, so a change that breaks any of it fails the build. It pins: M5 wedge — impact returns blast radius + describing docs; verbs; M2.6 ifHash — stateless change-aware response cache; crib-enrich scope picker — scopes / scope / deterministic batchId / scoped overv.",
+    "responsibilities": [
+      "Pin the observable behaviour of verbs",
+      "Fail the build when a guaranteed behaviour changes"
+    ],
+    "businessRules": [],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.76
+  },
+  "graph": {
+    "nodes": [],
+    "edges": []
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/mcp/src/verbs.test.ts#authorArtifact@L3258",
+      "quote": "function authorArtifact(layer: 'symbol' | 'file' | 'cluster', targetId: string, purpose: string) {"
+    },
+    {
+      "soulId": "sym:packages/mcp/src/verbs.test.ts#Batch@L3460",
+      "quote": "interface Batch {"
+    },
+    {
+      "soulId": "sym:packages/mcp/src/verbs.test.ts#BriefResult@L3247",
+      "quote": "interface BriefResult {"
+    },
+    {
+      "soulId": "sym:packages/mcp/src/verbs.test.ts#ContextResult@L17",
+      "quote": "interface ContextResult {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

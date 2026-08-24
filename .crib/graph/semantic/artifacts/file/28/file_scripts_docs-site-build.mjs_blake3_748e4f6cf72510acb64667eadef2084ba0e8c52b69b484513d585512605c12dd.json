@@ -1,0 +1,63 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:scripts/docs-site-build.mjs",
+  "nodeHash": "blake3:748e4f6cf72510acb64667eadef2084ba0e8c52b69b484513d585512605c12dd",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:07:00.942Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "Builds the documentation site from the Markdown sources so published docs come from the same files the repository reviews.",
+    "responsibilities": [
+      "Build the documentation site from repo Markdown"
+    ],
+    "businessRules": [
+      {
+        "rule": "The published site is generated from the reviewed Markdown, never maintained separately.",
+        "rationale": "A separately maintained site drifts from the docs people actually edit.",
+        "sourceRef": "file:scripts/docs-site-build.mjs"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.79
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:scripts-docs-site-build-mjs",
+        "kind": "capability",
+        "name": "Docs site build",
+        "summary": "Published docs from reviewed sources.",
+        "attributes": {},
+        "id": "llm:file:scripts/docs-site-build.mjs#capability:scripts-docs-site-build-mjs",
+        "targetId": "file:scripts/docs-site-build.mjs"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:scripts/docs-site-build.mjs",
+        "to": "llm:file:scripts/docs-site-build.mjs#capability:scripts-docs-site-build-mjs",
+        "rel": "realizes",
+        "rationale": "This file implements docs site build.",
+        "confidence": 0.79,
+        "targetId": "file:scripts/docs-site-build.mjs"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:scripts/docs-site-build.mjs#esc@L87",
+      "quote": "const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

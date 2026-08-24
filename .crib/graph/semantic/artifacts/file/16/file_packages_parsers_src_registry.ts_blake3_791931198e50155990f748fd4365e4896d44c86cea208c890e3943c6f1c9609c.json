@@ -1,0 +1,68 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/parsers/src/registry.ts",
+  "nodeHash": "blake3:791931198e50155990f748fd4365e4896d44c86cea208c890e3943c6f1c9609c",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:02:22.985Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The extractor registry: priority-ordered, first match wins, and instantiated per run so tests stay isolated from one another.",
+    "responsibilities": [
+      "Select the first extractor that supports a file",
+      "Create a fresh registry per pipeline run"
+    ],
+    "businessRules": [
+      {
+        "rule": "A registry instance is created per run rather than shared globally.",
+        "rationale": "A global registry leaks state between tests and between projects.",
+        "sourceRef": "file:packages/parsers/src/registry.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.83
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:extractor-registry",
+        "kind": "capability",
+        "name": "Extractor registry",
+        "summary": "Pluggable per-language extraction.",
+        "attributes": {},
+        "id": "llm:file:packages/parsers/src/registry.ts#capability:extractor-registry",
+        "targetId": "file:packages/parsers/src/registry.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/parsers/src/registry.ts",
+        "to": "llm:file:packages/parsers/src/registry.ts#capability:extractor-registry",
+        "rel": "realizes",
+        "rationale": "This file registers extractors.",
+        "confidence": 0.83,
+        "targetId": "file:packages/parsers/src/registry.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/parsers/src/registry.ts#ExtractorRegistry.all@L20",
+      "quote": "all(): readonly Extractor[] {"
+    },
+    {
+      "soulId": "sym:packages/parsers/src/registry.ts#ExtractorRegistry.extractors@L8",
+      "quote": "private readonly extractors: Extractor[] = [];"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

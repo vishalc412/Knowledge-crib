@@ -1,0 +1,68 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/core/src/embeddings/char-ngram.ts",
+  "nodeHash": "blake3:a7a23bcdcef4f5e6e63db5af57cb25016f946f1abbc4053d539be6639d5eecbb",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T03:53:11.758Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "A pure-JavaScript character n-gram embedder: the offline default that lets a paraphrased question find code whose surface words do not match, without any model download.",
+    "responsibilities": [
+      "Hash character n-grams into a fixed-width vector",
+      "Run entirely offline with no model or network"
+    ],
+    "businessRules": [
+      {
+        "rule": "Character n-grams are used rather than word embeddings because the queries that matter are paraphrases whose stems do not match.",
+        "rationale": "Keyword ranking already handles exact surface matches; this covers what it misses.",
+        "sourceRef": "file:packages/core/src/embeddings/char-ngram.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.82
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:offline-embedding",
+        "kind": "capability",
+        "name": "Offline embedding",
+        "summary": "Dependency-free paraphrase matching.",
+        "attributes": {},
+        "id": "llm:file:packages/core/src/embeddings/char-ngram.ts#capability:offline-embedding",
+        "targetId": "file:packages/core/src/embeddings/char-ngram.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/core/src/embeddings/char-ngram.ts",
+        "to": "llm:file:packages/core/src/embeddings/char-ngram.ts#capability:offline-embedding",
+        "rel": "realizes",
+        "rationale": "This file implements the default embedder.",
+        "confidence": 0.82,
+        "targetId": "file:packages/core/src/embeddings/char-ngram.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/core/src/embeddings/char-ngram.ts#CharNgramEmbedder.dim_@L75",
+      "quote": "private readonly dim_: number;"
+    },
+    {
+      "soulId": "sym:packages/core/src/embeddings/char-ngram.ts#CharNgramEmbedder.embed@L90",
+      "quote": "return l2normalize(accumulate(text, this.dim_, this.minN, this.maxN));"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

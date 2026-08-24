@@ -1,0 +1,68 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/pipeline/src/linker/semantic.ts",
+  "nodeHash": "blake3:f53894d71d92bf5c4a84f961593524bc1ae9d069f6ceabef50d99e0328dcd495",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:02:22.987Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The inferred linker pass: emits similarity-based documentation links, off by default, capped in confidence, and always marked inferred rather than extracted.",
+    "responsibilities": [
+      "Run only when explicitly enabled",
+      "Emit capped-confidence inferred links"
+    ],
+    "businessRules": [
+      {
+        "rule": "Inferred links are opt-in and never marked as extracted fact.",
+        "rationale": "The deterministic core must remain trustworthy whether or not this ran.",
+        "sourceRef": "file:packages/pipeline/src/linker/semantic.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.84
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:inferred-linking",
+        "kind": "capability",
+        "name": "Inferred linking",
+        "summary": "Opt-in similarity links, clearly labelled.",
+        "attributes": {},
+        "id": "llm:file:packages/pipeline/src/linker/semantic.ts#capability:inferred-linking",
+        "targetId": "file:packages/pipeline/src/linker/semantic.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/pipeline/src/linker/semantic.ts",
+        "to": "llm:file:packages/pipeline/src/linker/semantic.ts#capability:inferred-linking",
+        "rel": "realizes",
+        "rationale": "This file is the semantic linker.",
+        "confidence": 0.84,
+        "targetId": "file:packages/pipeline/src/linker/semantic.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/pipeline/src/linker/semantic.ts#LinkIndex@L46",
+      "quote": "query(queryText: string, floor: number, k: number): Array<{ id: string; score: number }>;"
+    },
+    {
+      "soulId": "sym:packages/pipeline/src/linker/semantic.ts#SemanticLinkOpts@L40",
+      "quote": "export interface SemanticLinkOpts {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

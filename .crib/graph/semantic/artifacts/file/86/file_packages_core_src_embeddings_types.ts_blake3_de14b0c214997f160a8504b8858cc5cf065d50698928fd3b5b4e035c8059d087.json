@@ -1,0 +1,67 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/core/src/embeddings/types.ts",
+  "nodeHash": "blake3:de14b0c214997f160a8504b8858cc5cf065d50698928fd3b5b4e035c8059d087",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:05:50.833Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The embedder interface, so a vector provider can be swapped without the index knowing which one is in use.",
+    "responsibilities": [
+      "Define the embedder contract"
+    ],
+    "businessRules": [
+      {
+        "rule": "The index codes to the interface, never to a specific provider.",
+        "rationale": "A provider-specific index could not fall back to the offline default.",
+        "sourceRef": "file:packages/core/src/embeddings/types.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.81
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:packages-core-src-embeddings-types-ts",
+        "kind": "capability",
+        "name": "Embedder contract",
+        "summary": "Swappable vector providers.",
+        "attributes": {},
+        "id": "llm:file:packages/core/src/embeddings/types.ts#capability:packages-core-src-embeddings-types-ts",
+        "targetId": "file:packages/core/src/embeddings/types.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/core/src/embeddings/types.ts",
+        "to": "llm:file:packages/core/src/embeddings/types.ts#capability:packages-core-src-embeddings-types-ts",
+        "rel": "realizes",
+        "rationale": "This file implements embedder contract.",
+        "confidence": 0.81,
+        "targetId": "file:packages/core/src/embeddings/types.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/core/src/embeddings/types.ts#Embedder@L28",
+      "quote": "embedBatch(texts: string[]): Vec[];"
+    },
+    {
+      "soulId": "sym:packages/core/src/embeddings/types.ts#EmbedderOptions@L40",
+      "quote": "export interface EmbedderOptions {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

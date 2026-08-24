@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/cli/src/memory-check.test.ts",
+  "nodeHash": "blake3:8339deebc3ba092a73c1c28a4c846401fec5f9314d5c22b4f123dafcb775f4e0",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:17:55.977Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The test suite for memory-check — it defines the behaviour that is guaranteed, so a change that breaks any of it fails the build. It pins: crib memory check — invariant #4: already-trusted records pass; crib memory check — invariant #3: branch-only memory is pending; crib memory check — invariant #2: invalid-evidence records are refused; crib memory check — invariant #1: the self-authoring guard.",
+    "responsibilities": [
+      "Pin the observable behaviour of memory-check",
+      "Fail the build when a guaranteed behaviour changes"
+    ],
+    "businessRules": [],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.76
+  },
+  "graph": {
+    "nodes": [],
+    "edges": []
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/cli/src/memory-check.test.ts#commitAll@L179",
+      "quote": "function commitAll(message: string): string {"
+    },
+    {
+      "soulId": "sym:packages/cli/src/memory-check.test.ts#ev@L73",
+      "quote": "function ev(verdict: MemoryEvidence['verdict'] = 'valid'): MemoryEvidence {"
+    },
+    {
+      "soulId": "sym:packages/cli/src/memory-check.test.ts#git@L165",
+      "quote": "function git(args: string[]): string {"
+    },
+    {
+      "soulId": "sym:packages/cli/src/memory-check.test.ts#profile@L50",
+      "quote": "function profile(name: string): GateProfile {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

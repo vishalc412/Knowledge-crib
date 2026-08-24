@@ -1,0 +1,68 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/pipeline/src/cfg/guard-chain.ts",
+  "nodeHash": "blake3:c93926ffbb8948643fc180051fa5a0d04a23abff83de7ed0635c52e10bd035cb",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:04:00.265Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The path-condition model: what had to be true for execution to reach a given statement, threaded down a procedure body so business rules can be read off the graph.",
+    "responsibilities": [
+      "Thread the accumulated path condition through a body",
+      "Attach the condition to each reached statement"
+    ],
+    "businessRules": [
+      {
+        "rule": "The inherited guard chain is recorded rather than re-derived on demand.",
+        "rationale": "Recomputing it per query would be both slow and prone to disagreeing with the stored graph.",
+        "sourceRef": "file:packages/pipeline/src/cfg/guard-chain.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.84
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:guard-chain",
+        "kind": "capability",
+        "name": "Guard chains",
+        "summary": "The conditions under which code runs.",
+        "attributes": {},
+        "id": "llm:file:packages/pipeline/src/cfg/guard-chain.ts#capability:guard-chain",
+        "targetId": "file:packages/pipeline/src/cfg/guard-chain.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/pipeline/src/cfg/guard-chain.ts",
+        "to": "llm:file:packages/pipeline/src/cfg/guard-chain.ts#capability:guard-chain",
+        "rel": "realizes",
+        "rationale": "This file implements guard chains.",
+        "confidence": 0.84,
+        "targetId": "file:packages/pipeline/src/cfg/guard-chain.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/pipeline/src/cfg/guard-chain.ts#GuardFrame@L23",
+      "quote": "export interface GuardFrame {"
+    },
+    {
+      "soulId": "sym:packages/pipeline/src/cfg/guard-chain.ts#PathCondition@L33",
+      "quote": "export interface PathCondition {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

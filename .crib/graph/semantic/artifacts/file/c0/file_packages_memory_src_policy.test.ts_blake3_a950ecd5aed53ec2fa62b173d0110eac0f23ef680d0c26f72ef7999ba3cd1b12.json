@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/memory/src/policy.test.ts",
+  "nodeHash": "blake3:a950ecd5aed53ec2fa62b173d0110eac0f23ef680d0c26f72ef7999ba3cd1b12",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:17:57.487Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The test suite for policy — it defines the behaviour that is guaranteed, so a change that breaks any of it fails the build. It pins: policy validation; policy loading; policy / profile hashing (drift detection); profile + trusted-ref resolution.",
+    "responsibilities": [
+      "Pin the observable behaviour of policy",
+      "Fail the build when a guaranteed behaviour changes"
+    ],
+    "businessRules": [],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.76
+  },
+  "graph": {
+    "nodes": [],
+    "edges": []
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/memory/src/policy.test.ts#policy@L40",
+      "quote": "function policy(profiles: Record<string, GateProfile> = { test: profile() }) {"
+    },
+    {
+      "soulId": "sym:packages/memory/src/policy.test.ts#profile@L27",
+      "quote": "function profile(partial: Partial<GateProfile> & { name?: string } = {}): GateProfile {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

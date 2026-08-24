@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/pipeline/src/resolve/java-resolver.test.ts",
+  "nodeHash": "blake3:4a09e1424161ac1ad7c59402bf69cecc9ba544c1fd3e92b33877805ac5f13018",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:17:55.978Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The test suite for java-resolver — it defines the behaviour that is guaranteed, so a change that breaks any of it fails the build. It pins: JavaResolver — cross-file edges (gate); JavaResolver — Spring DI cross-file (schema 1.3 gate).",
+    "responsibilities": [
+      "Pin the observable behaviour of java-resolver",
+      "Fail the build when a guaranteed behaviour changes"
+    ],
+    "businessRules": [],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.76
+  },
+  "graph": {
+    "nodes": [],
+    "edges": []
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/pipeline/src/resolve/java-resolver.test.ts#byEdgeId@L252",
+      "quote": "function byEdgeId(a: Edge, b: Edge): number {"
+    },
+    {
+      "soulId": "sym:packages/pipeline/src/resolve/java-resolver.test.ts#byId@L249",
+      "quote": "function byId(a: Node, b: Node): number {"
+    },
+    {
+      "soulId": "sym:packages/pipeline/src/resolve/java-resolver.test.ts#edgesInFiles@L213",
+      "quote": "function edgesInFiles(soul: SoulStore, exts: string[]): Edge[] {"
+    },
+    {
+      "soulId": "sym:packages/pipeline/src/resolve/java-resolver.test.ts#expectEdge@L243",
+      "quote": "function expectEdge(e: { provenance: string; method: string; confidence: number }): void {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

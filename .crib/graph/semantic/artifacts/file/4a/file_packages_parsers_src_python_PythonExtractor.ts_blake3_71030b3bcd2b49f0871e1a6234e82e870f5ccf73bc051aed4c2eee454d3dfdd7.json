@@ -1,0 +1,70 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/parsers/src/python/PythonExtractor.ts",
+  "nodeHash": "blake3:71030b3bcd2b49f0871e1a6234e82e870f5ccf73bc051aed4c2eee454d3dfdd7",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T02:52:39.452Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The Python extractor: turns one Python file into symbol nodes (class, function, method) with qualified names, spans and signatures, plus member-of edges and intra-file call edges — never resolving anything across file boundaries.",
+    "responsibilities": [
+      "Emit a symbol per declaration with qualifiedName, span and signature",
+      "Emit member-of edges linking each symbol to its enclosing symbol or file",
+      "Emit calls edges only where the callee resolves inside the same file",
+      "Stay deterministic and offline so a cold install needs no network"
+    ],
+    "businessRules": [
+      {
+        "rule": "The extractor never guesses across files; imports, cross-file calls and inheritance are the resolver phase job.",
+        "rationale": "Capability honesty — a guess made here would be indistinguishable from a fact downstream.",
+        "sourceRef": "file:packages/parsers/src/python/PythonExtractor.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.85
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:extract-python",
+        "kind": "capability",
+        "name": "Python extraction",
+        "summary": "Symbols, nesting and intra-file calls for Python.",
+        "attributes": {},
+        "id": "llm:file:packages/parsers/src/python/PythonExtractor.ts#capability:extract-python",
+        "targetId": "file:packages/parsers/src/python/PythonExtractor.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/parsers/src/python/PythonExtractor.ts",
+        "to": "llm:file:packages/parsers/src/python/PythonExtractor.ts#capability:extract-python",
+        "rel": "realizes",
+        "rationale": "This file is the Python extractor.",
+        "confidence": 0.85,
+        "targetId": "file:packages/parsers/src/python/PythonExtractor.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.EXTS@L66",
+      "quote": "private static readonly EXTS = ['.py'];"
+    },
+    {
+      "soulId": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.SUPPORTED@L68",
+      "quote": "private static readonly SUPPORTED = ['.py', '.pyi'];"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

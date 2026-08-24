@@ -1,0 +1,75 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/memory/src/evaluator.ts",
+  "nodeHash": "blake3:88e5f6cdbaeef22fd5dc294745739a465e33918407b098ed17ee68a63c3fdbfc",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T02:52:39.451Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The memory freshness engine: an independent evaluator that recomputes whether a remembered claim is still trustworthy, still evidenced, still applicable, and still live — deliberately separate from the enrichment staleness path.",
+    "responsibilities": [
+      "Recompute a four-axis verdict: trust, evidence, applicability and lifecycle",
+      "Apply a per-claim-kind minimum-evidence matrix before admitting a claim",
+      "Re-ground evidence against the current code and reattach moved anchors",
+      "Decide quarantine and supersession rather than silently dropping records"
+    ],
+    "businessRules": [
+      {
+        "rule": "Memory freshness is evaluated by a separate engine and never by reusing the enrichment staleness check.",
+        "rationale": "The two ask different questions; sharing the code path would couple unrelated invalidation rules.",
+        "sourceRef": "file:packages/memory/src/evaluator.ts"
+      },
+      {
+        "rule": "Evidence admissibility depends on the kind of claim being made, via an explicit matrix.",
+        "rationale": "A decision needs different support than a pitfall; one threshold for all would be wrong for both.",
+        "sourceRef": "file:packages/memory/src/evaluator.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.84
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:memory-freshness",
+        "kind": "capability",
+        "name": "Memory freshness",
+        "summary": "Independent re-evaluation of remembered claims.",
+        "attributes": {},
+        "id": "llm:file:packages/memory/src/evaluator.ts#capability:memory-freshness",
+        "targetId": "file:packages/memory/src/evaluator.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/memory/src/evaluator.ts",
+        "to": "llm:file:packages/memory/src/evaluator.ts#capability:memory-freshness",
+        "rel": "realizes",
+        "rationale": "This file implements the memory evaluator.",
+        "confidence": 0.84,
+        "targetId": "file:packages/memory/src/evaluator.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/memory/src/evaluator.ts#ConflictGroup@L709",
+      "quote": "export interface ConflictGroup {"
+    },
+    {
+      "soulId": "sym:packages/memory/src/evaluator.ts#EffectiveVerdicts@L638",
+      "quote": "export interface EffectiveVerdicts extends Verdicts {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

@@ -1,0 +1,67 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/parsers/src/fuzz/fuzz-ctx.ts",
+  "nodeHash": "blake3:4e6f17b5e39d6c3f1a58c1c896e1a905fc7d1f506b479732baa79a2564ecf9a9",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:02:22.989Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The minimal extraction context the fuzz harness supplies, so an extractor can run against generated input without a real repository behind it.",
+    "responsibilities": [
+      "Provide a synthetic extraction context for fuzzing"
+    ],
+    "businessRules": [
+      {
+        "rule": "Fuzzing runs the real extractor against a synthetic context rather than a mock extractor.",
+        "rationale": "A mock would not exhibit the parser bugs fuzzing exists to find.",
+        "sourceRef": "file:packages/parsers/src/fuzz/fuzz-ctx.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.81
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:fuzz-context",
+        "kind": "capability",
+        "name": "Fuzz context",
+        "summary": "Repository-free extraction context.",
+        "attributes": {},
+        "id": "llm:file:packages/parsers/src/fuzz/fuzz-ctx.ts#capability:fuzz-context",
+        "targetId": "file:packages/parsers/src/fuzz/fuzz-ctx.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/parsers/src/fuzz/fuzz-ctx.ts",
+        "to": "llm:file:packages/parsers/src/fuzz/fuzz-ctx.ts#capability:fuzz-context",
+        "rel": "realizes",
+        "rationale": "This file provides the fuzz context.",
+        "confidence": 0.81,
+        "targetId": "file:packages/parsers/src/fuzz/fuzz-ctx.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/parsers/src/fuzz/fuzz-ctx.ts#makeFuzzCtx.idFor@L30",
+      "quote": "idFor(kind: NodeKind, parts: Record<string, unknown>): string {"
+    },
+    {
+      "soulId": "sym:packages/parsers/src/fuzz/fuzz-ctx.ts#makeFuzzCtx.readText@L21",
+      "quote": "async readText(): Promise<string> {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

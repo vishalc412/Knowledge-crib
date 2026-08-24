@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/memory/src/gate-runner.test.ts",
+  "nodeHash": "blake3:0c349578d2236afaf375ca7e572e8666e3f91501ccad0e93c491dd512dfd9321",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:17:55.985Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The test suite for gate-runner — it defines the behaviour that is guaranteed, so a change that breaks any of it fails the build. It pins: evalAssertion (pure); runGate — the sanitized receipt; NodeGateExecPort.resolveExecutable.",
+    "responsibilities": [
+      "Pin the observable behaviour of gate-runner",
+      "Fail the build when a guaranteed behaviour changes"
+    ],
+    "businessRules": [],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.76
+  },
+  "graph": {
+    "nodes": [],
+    "edges": []
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/memory/src/gate-runner.test.ts#FakeExec.execFile@L55",
+      "quote": "opts: { env: NodeJS.ProcessEnv },"
+    },
+    {
+      "soulId": "sym:packages/memory/src/gate-runner.test.ts#FakeExec.resolveExecutable@L52",
+      "quote": "resolveExecutable(): string {"
+    },
+    {
+      "soulId": "sym:packages/memory/src/gate-runner.test.ts#FakeExec.spawned@L47",
+      "quote": "readonly spawned: Array<{ file: string; args: string[]; env: NodeJS.ProcessEnv }> = [];"
+    },
+    {
+      "soulId": "sym:packages/memory/src/gate-runner.test.ts#FakeExec@L46",
+      "quote": "class FakeExec implements GateExecPort {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

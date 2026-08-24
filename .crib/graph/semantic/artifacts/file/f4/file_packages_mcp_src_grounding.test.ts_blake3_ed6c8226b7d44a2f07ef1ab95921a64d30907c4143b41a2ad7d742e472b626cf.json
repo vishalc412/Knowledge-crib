@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/mcp/src/grounding.test.ts",
+  "nodeHash": "blake3:ed6c8226b7d44a2f07ef1ab95921a64d30907c4143b41a2ad7d742e472b626cf",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:17:57.486Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The test suite for grounding — it defines the behaviour that is guaranteed, so a change that breaks any of it fails the build. It pins: M1.3 grounding — pure validator; M1.3 grounding — enrich_save gate (hallucinated rejected, real passes).",
+    "responsibilities": [
+      "Pin the observable behaviour of grounding",
+      "Fail the build when a guaranteed behaviour changes"
+    ],
+    "businessRules": [],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.76
+  },
+  "graph": {
+    "nodes": [],
+    "edges": []
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/mcp/src/grounding.test.ts#EnrichNextResult@L25",
+      "quote": "interface EnrichNextResult {"
+    },
+    {
+      "soulId": "sym:packages/mcp/src/grounding.test.ts#EnrichSaveResult@L31",
+      "quote": "interface EnrichSaveResult {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

@@ -1,0 +1,68 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/soul-schema/src/id.ts",
+  "nodeHash": "blake3:2858e8ad0071bbc2951e5c839a41d327e68c678ad3ae39dd601e99f82fc8e12b",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:04:00.262Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The id grammar: stable, deterministic, human-readable identifiers for every node kind and edge, so the same content always yields the same id across runs and machines.",
+    "responsibilities": [
+      "Derive a deterministic id per node kind",
+      "Derive edge ids from their endpoints and relation"
+    ],
+    "businessRules": [
+      {
+        "rule": "Same content produces the same id, which is what makes re-indexing incremental and references stable.",
+        "rationale": "Random ids would make every re-index a full rewrite and break every stored reference.",
+        "sourceRef": "file:packages/soul-schema/src/id.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.87
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:id",
+        "kind": "capability",
+        "name": "ID grammar",
+        "summary": "Deterministic identity for every node and edge.",
+        "attributes": {},
+        "id": "llm:file:packages/soul-schema/src/id.ts#capability:id",
+        "targetId": "file:packages/soul-schema/src/id.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/soul-schema/src/id.ts",
+        "to": "llm:file:packages/soul-schema/src/id.ts#capability:id",
+        "rel": "realizes",
+        "rationale": "This file implements id grammar.",
+        "confidence": 0.87,
+        "targetId": "file:packages/soul-schema/src/id.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/soul-schema/src/id.ts#IdSpec@L36",
+      "quote": "| { kind: 'file'; path: string }"
+    },
+    {
+      "soulId": "sym:packages/soul-schema/src/id.ts#edgeId@L151",
+      "quote": "export function edgeId(src: string, dst: string, rel: Rel): string {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

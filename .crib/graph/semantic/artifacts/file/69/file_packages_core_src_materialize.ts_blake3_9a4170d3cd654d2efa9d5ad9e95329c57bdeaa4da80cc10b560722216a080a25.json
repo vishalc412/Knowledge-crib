@@ -1,0 +1,67 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/core/src/materialize.ts",
+  "nodeHash": "blake3:9a4170d3cd654d2efa9d5ad9e95329c57bdeaa4da80cc10b560722216a080a25",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:05:50.830Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "Explicit materialization of the unified composite graph, so a consumer that needs the merged extracted-plus-semantic view gets it deliberately rather than by accident.",
+    "responsibilities": [
+      "Materialize the composite view on request"
+    ],
+    "businessRules": [
+      {
+        "rule": "Materialization is explicit rather than implicit on read.",
+        "rationale": "An accidental materialization would pay the merge cost on every query.",
+        "sourceRef": "file:packages/core/src/materialize.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.81
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:packages-core-src-materialize-ts",
+        "kind": "capability",
+        "name": "Composite materialization",
+        "summary": "Deliberate merged-graph construction.",
+        "attributes": {},
+        "id": "llm:file:packages/core/src/materialize.ts#capability:packages-core-src-materialize-ts",
+        "targetId": "file:packages/core/src/materialize.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/core/src/materialize.ts",
+        "to": "llm:file:packages/core/src/materialize.ts#capability:packages-core-src-materialize-ts",
+        "rel": "realizes",
+        "rationale": "This file implements composite materialization.",
+        "confidence": 0.81,
+        "targetId": "file:packages/core/src/materialize.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/core/src/materialize.ts#MaterializeResult@L9",
+      "quote": "export interface MaterializeResult {"
+    },
+    {
+      "soulId": "sym:packages/core/src/materialize.ts#materializeComposite@L16",
+      "quote": "export function materializeComposite(soul: SoulStore): MaterializeResult {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

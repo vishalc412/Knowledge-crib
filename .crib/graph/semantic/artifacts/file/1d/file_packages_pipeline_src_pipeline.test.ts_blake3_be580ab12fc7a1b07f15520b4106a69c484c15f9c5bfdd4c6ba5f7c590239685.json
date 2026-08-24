@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/pipeline/src/pipeline.test.ts",
+  "nodeHash": "blake3:be580ab12fc7a1b07f15520b4106a69c484c15f9c5bfdd4c6ba5f7c590239685",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:17:58.238Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The test suite for pipeline — it defines the behaviour that is guaranteed, so a change that breaks any of it fails the build. It pins: indexRepo Phase 1+2 (M2 integration); indexRepo Workstream E — persisted reusable dossiers; indexRepo — PHP end-to-end (P3 tree-sitter proof-of-concept, full pipeline wirin.",
+    "responsibilities": [
+      "Pin the observable behaviour of pipeline",
+      "Fail the build when a guaranteed behaviour changes"
+    ],
+    "businessRules": [],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.76
+  },
+  "graph": {
+    "nodes": [],
+    "edges": []
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/pipeline/src/pipeline.test.ts#soulFor@L35",
+      "quote": "function soulFor(): SoulStore {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

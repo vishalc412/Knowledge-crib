@@ -1,0 +1,64 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:scripts/fuzz-check.mjs",
+  "nodeHash": "blake3:3692e0fc5c822c1649da65a115a459cc71f81c0ddfbbfa8254985b6c1805393c",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:07:00.942Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "A build gate that runs the parser fuzzer and fails on a crash or a hang, failing the build on regression rather than reporting a number nobody reads.",
+    "responsibilities": [
+      "Exercise the real code path",
+      "Fail the build when the property no longer holds"
+    ],
+    "businessRules": [
+      {
+        "rule": "The gate runs the SAME code path the product uses, not a test-only variant.",
+        "rationale": "A parser that hangs blocks the whole indexing run and cannot be timed out in-process.",
+        "sourceRef": "file:scripts/fuzz-check.mjs"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.8
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:scripts-fuzz-check-mjs",
+        "kind": "capability",
+        "name": "Build gate",
+        "summary": "Automated enforcement: runs the parser fuzzer and fails on a crash or a hang.",
+        "attributes": {},
+        "id": "llm:file:scripts/fuzz-check.mjs#capability:scripts-fuzz-check-mjs",
+        "targetId": "file:scripts/fuzz-check.mjs"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:scripts/fuzz-check.mjs",
+        "to": "llm:file:scripts/fuzz-check.mjs#capability:scripts-fuzz-check-mjs",
+        "rel": "realizes",
+        "rationale": "This file implements build gate.",
+        "confidence": 0.8,
+        "targetId": "file:scripts/fuzz-check.mjs"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:scripts/fuzz-check.mjs#fail@L70",
+      "quote": "process.stderr.write(`  fuzz:check FAIL — ${msg}\\n`);"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

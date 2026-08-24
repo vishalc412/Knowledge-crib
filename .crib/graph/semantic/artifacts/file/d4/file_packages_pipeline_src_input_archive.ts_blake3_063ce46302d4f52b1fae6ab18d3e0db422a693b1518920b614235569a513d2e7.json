@@ -1,0 +1,69 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/pipeline/src/input/archive.ts",
+  "nodeHash": "blake3:063ce46302d4f52b1fae6ab18d3e0db422a693b1518920b614235569a513d2e7",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T03:54:27.580Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "Safe archive extraction: the single place archive bytes touch disk, validating every entry before writing so a crafted ZIP cannot escape the extraction directory.",
+    "responsibilities": [
+      "Validate each entry path before writing it",
+      "Keep archive handling in one auditable place",
+      "Reject an entry that would escape the destination"
+    ],
+    "businessRules": [
+      {
+        "rule": "This is the ONE place archive bytes touch disk, and every entry is validated first.",
+        "rationale": "Path traversal in archive extraction is a classic vulnerability; one audited path is the defence.",
+        "sourceRef": "file:packages/pipeline/src/input/archive.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.85
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:safe-archives",
+        "kind": "capability",
+        "name": "Safe archive input",
+        "summary": "Validated extraction of zipped projects.",
+        "attributes": {},
+        "id": "llm:file:packages/pipeline/src/input/archive.ts#capability:safe-archives",
+        "targetId": "file:packages/pipeline/src/input/archive.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/pipeline/src/input/archive.ts",
+        "to": "llm:file:packages/pipeline/src/input/archive.ts#capability:safe-archives",
+        "rel": "realizes",
+        "rationale": "This file owns archive extraction.",
+        "confidence": 0.85,
+        "targetId": "file:packages/pipeline/src/input/archive.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/pipeline/src/input/archive.ts#ArchiveExtractionError@L43",
+      "quote": "export class ArchiveExtractionError extends Error {"
+    },
+    {
+      "soulId": "sym:packages/pipeline/src/input/archive.ts#ArchiveLimits@L40",
+      "quote": "export type ArchiveLimits = typeof ARCHIVE_LIMITS;"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

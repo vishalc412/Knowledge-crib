@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:docs/knowledge-crib-pipeline.md",
+  "nodeHash": "blake3:4ac360a3e3b3f1bd4dd1a7894d8ae49489678e8129f2fc88bfef9a2a83b74be7",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:13:18.217Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The pipeline reference: what each indexing phase does, in what order, and why the order is fixed.",
+    "responsibilities": [
+      "Describe each phase of the indexing pipeline"
+    ],
+    "businessRules": [],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.78
+  },
+  "graph": {
+    "nodes": [],
+    "edges": []
+  },
+  "evidence": [
+    {
+      "soulId": "doc:docs/knowledge-crib-pipeline.md#determinism-trust-guarantees",
+      "quote": "- Phases 1–3,2b,3b,5 are fully deterministic and offline."
+    },
+    {
+      "soulId": "doc:docs/knowledge-crib-pipeline.md#incremental-update",
+      "quote": "1. Changed files since `manifest.incrementalSince` (git diff/watcher)."
+    },
+    {
+      "soulId": "doc:docs/knowledge-crib-pipeline.md#knowledge-crib-indexing-pipeline-algorithms",
+      "quote": "> Original implementation of the proven *phases* (inspired by GitNexus/Graphify, no code copied)."
+    },
+    {
+      "soulId": "doc:docs/knowledge-crib-pipeline.md#phase-1-structure-map",
+      "quote": "Walk the repo (respect `.gitignore` + `--include/--exclude`). Emit a `file` node per source/doc"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

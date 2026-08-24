@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:docs/adr/ADR-001-parallel-parse.md",
+  "nodeHash": "blake3:fb64a6b70abbe6c6b68b3de4dc27526e94b10b7436b23ce6d3537c4ca88e4d1f",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:13:18.216Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The decision record for parallel parsing: why extraction runs across worker threads, and why determinism was the binding constraint on that choice.",
+    "responsibilities": [
+      "Record the parallel-parse decision and its trade-offs"
+    ],
+    "businessRules": [],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.78
+  },
+  "graph": {
+    "nodes": [],
+    "edges": []
+  },
+  "evidence": [
+    {
+      "soulId": "doc:docs/adr/ADR-001-parallel-parse.md#adr-001-parallel-parse-bounded-concurrency-as-the-shipped-default-worker-thread-pool-retained-as-opt-in",
+      "quote": "- **Status:** Accepted"
+    },
+    {
+      "soulId": "doc:docs/adr/ADR-001-parallel-parse.md#decision",
+      "quote": "`runParse` (`packages/pipeline/src/parse.ts`) routes between three modes:"
+    },
+    {
+      "soulId": "doc:docs/adr/ADR-001-parallel-parse.md#option-a-worker-thread-pool-over-file-batches-the-plan-s-original-proposal",
+      "quote": "Implemented in `packages/pipeline/src/parse-worker.ts` + `parse-pool.ts` (kept behind `KCRIB_PARALLEL=workers`)."
+    },
+    {
+      "soulId": "doc:docs/adr/ADR-001-parallel-parse.md#option-b-bounded-concurrency-async-pool-the-shipped-default",
+      "quote": "Implemented in `packages/pipeline/src/parse-concurrent.ts` (`DEFAULT_CONCURRENCY = 16`)."
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

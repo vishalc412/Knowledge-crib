@@ -1,0 +1,67 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:scripts/lib/pricing.mjs",
+  "nodeHash": "blake3:dad6f2270e455dc5f5915ffa9c123f35bd8dbf008b3934c99b33c552a4d044e5",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:02:22.990Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "Token pricing tables used to turn an enrichment estimate into a cost figure, so the scale of a run is visible before it starts.",
+    "responsibilities": [
+      "Map token counts to a cost estimate per tier"
+    ],
+    "businessRules": [
+      {
+        "rule": "Cost is estimated up front rather than discovered afterwards.",
+        "rationale": "A long enrichment run should never be a financial surprise.",
+        "sourceRef": "file:scripts/lib/pricing.mjs"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.79
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:cost-estimation",
+        "kind": "capability",
+        "name": "Cost estimation",
+        "summary": "Enrichment cost known in advance.",
+        "attributes": {},
+        "id": "llm:file:scripts/lib/pricing.mjs#capability:cost-estimation",
+        "targetId": "file:scripts/lib/pricing.mjs"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:scripts/lib/pricing.mjs",
+        "to": "llm:file:scripts/lib/pricing.mjs#capability:cost-estimation",
+        "rel": "realizes",
+        "rationale": "This file holds the pricing tables.",
+        "confidence": 0.79,
+        "targetId": "file:scripts/lib/pricing.mjs"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:scripts/lib/pricing.mjs#bucketCost@L37",
+      "quote": "export function bucketCost(tokens, rate) {"
+    },
+    {
+      "soulId": "sym:scripts/lib/pricing.mjs#coldCost@L47",
+      "quote": "export function coldCost(tokens, r = rates()) {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

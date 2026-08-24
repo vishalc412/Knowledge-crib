@@ -116,3 +116,51 @@ describe('source redaction — rehydrate / rehydrateBody', () => {
     expect(rehydrate(root, n)).toBe('');
   });
 });
+
+/**
+ * The `type: 'property'` heuristic vs the explicit `meta.valueRedacted` signal.
+ *
+ * A config extractor (MuleExtractor) stamps `meta.valueRedacted = true` on every property key whose
+ * value must never be surfaced. TypeScriptExtractor independently gives every class FIELD
+ * `type: 'property'` — so inferring redaction from `type` alone ran key=value redaction over
+ * ordinary TypeScript, corrupting both surfaced snippets and the FTS body that makes those symbols
+ * searchable. These tests pin both directions: real config values stay redacted, TS fields do not.
+ */
+describe('source redaction — property redaction is driven by the explicit signal', () => {
+  function symbol(file: string, type: string, meta: Record<string, unknown> = {}): Node {
+    return {
+      id: idFor({ kind: 'symbol', path: file, qualifiedName: 'X.y', startLine: 1 }),
+      kind: 'symbol',
+      type,
+      name: 'y',
+      qualifiedName: 'X.y',
+      file,
+      span: { start: 1, end: 1 },
+      hash: contentHash(`${file}#X.y`),
+      meta,
+    } as Node;
+  }
+
+  it('a config property flagged valueRedacted still hides its value', () => {
+    writeFileSync(join(root, 'app.properties'), 'db.password=swordfish');
+    const n = symbol('app.properties', 'property', { valueRedacted: true });
+    expect(sourcePolicy(n)).toBe('redact-properties');
+    const snippet = rehydrate(root, n);
+    expect(snippet).not.toContain('swordfish');
+    expect(snippet).toContain('<redacted>');
+  });
+
+  it('an unflagged TypeScript class field is surfaced verbatim, not mangled as key=value', () => {
+    writeFileSync(join(root, 'store.ts'), '  private importanceCache = new Map();');
+    const n = symbol('store.ts', 'property');
+    expect(sourcePolicy(n)).toBe('allow');
+    expect(rehydrate(root, n)).toBe('private importanceCache = new Map();');
+  });
+
+  it('an explicit meta.sourcePolicy still wins over any inference', () => {
+    writeFileSync(join(root, 'store.ts'), 'const token = "canary";');
+    const n = symbol('store.ts', 'property', { sourcePolicy: 'deny' });
+    expect(sourcePolicy(n)).toBe('deny');
+    expect(rehydrate(root, n)).toBe('');
+  });
+});

@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:python/tests/test_worker.py",
+  "nodeHash": "blake3:ad1292bde783a63c960db0c7191e0f9e9f505a2c9fe0eb3d63bac4eae76f7b39",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:17:55.640Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The test suite for worker — it defines the behaviour that is guaranteed, so a change that breaks any of it fails the build. It pins: test_segment_shape; test_build_payload_envelope; test_empty_payload_degrades; test_reads_sidecar_and_segments_per_line.",
+    "responsibilities": [
+      "Pin the observable behaviour of worker",
+      "Fail the build when a guaranteed behaviour changes"
+    ],
+    "businessRules": [],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.76
+  },
+  "graph": {
+    "nodes": [],
+    "edges": []
+  },
+  "evidence": [
+    {
+      "soulId": "sym:python/tests/test_worker.py#test_deterministic@L66",
+      "quote": "def test_deterministic(self):"
+    },
+    {
+      "soulId": "sym:python/tests/test_worker.py#test_missing_sidecar_degrades_to_empty@L72",
+      "quote": "def test_missing_sidecar_degrades_to_empty(self):"
+    },
+    {
+      "soulId": "sym:python/tests/test_worker.py#test_reads_sidecar_and_segments_per_line@L56",
+      "quote": "def test_reads_sidecar_and_segments_per_line(self):"
+    },
+    {
+      "soulId": "sym:python/tests/test_worker.py#TestCli.setUp@L79",
+      "quote": "def setUp(self):"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

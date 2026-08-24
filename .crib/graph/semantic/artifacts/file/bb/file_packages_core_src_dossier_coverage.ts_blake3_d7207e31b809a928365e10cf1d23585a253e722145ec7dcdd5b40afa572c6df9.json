@@ -1,0 +1,68 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/core/src/dossier/coverage.ts",
+  "nodeHash": "blake3:d7207e31b809a928365e10cf1d23585a253e722145ec7dcdd5b40afa572c6df9",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:02:22.986Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The honest self-report for a callable: how much of it the graph actually models, so an agent knows when the graph is thin enough that it should go read the source.",
+    "responsibilities": [
+      "Measure how much of a callable is represented in the graph",
+      "Report readiness rather than implying completeness"
+    ],
+    "businessRules": [
+      {
+        "rule": "The promise is \"read the graph, not the source\", so the graph must state where it is incomplete.",
+        "rationale": "A confident answer over a thin graph is the failure mode this exists to prevent.",
+        "sourceRef": "file:packages/core/src/dossier/coverage.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.85
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:analysis-coverage",
+        "kind": "capability",
+        "name": "Analysis coverage",
+        "summary": "How much the graph really models.",
+        "attributes": {},
+        "id": "llm:file:packages/core/src/dossier/coverage.ts#capability:analysis-coverage",
+        "targetId": "file:packages/core/src/dossier/coverage.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/core/src/dossier/coverage.ts",
+        "to": "llm:file:packages/core/src/dossier/coverage.ts#capability:analysis-coverage",
+        "rel": "realizes",
+        "rationale": "This file computes coverage.",
+        "confidence": 0.85,
+        "targetId": "file:packages/core/src/dossier/coverage.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/core/src/dossier/coverage.ts#CallableCoverage@L30",
+      "quote": "export interface CallableCoverage {"
+    },
+    {
+      "soulId": "sym:packages/core/src/dossier/coverage.ts#CoverageCalls@L21",
+      "quote": "export interface CoverageCalls {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

@@ -1,0 +1,68 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/core/src/validate.ts",
+  "nodeHash": "blake3:f3bd07af9162edd92bcca834198f13c894c31d74de8b139dc2ebc34f88a83793",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:04:00.263Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "Validates every record against the vendored schemas on write, enforcing the closed vocabulary so an unknown kind or relation is an error rather than silent drift.",
+    "responsibilities": [
+      "Validate nodes, edges and the manifest against schema",
+      "Reject unknown enum values"
+    ],
+    "businessRules": [
+      {
+        "rule": "Validation uses VENDORED schemas so it does not depend on anything fetched at runtime.",
+        "rationale": "Validation that can fail to load is not validation.",
+        "sourceRef": "file:packages/core/src/validate.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.85
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:validate",
+        "kind": "capability",
+        "name": "Record validation",
+        "summary": "Schema enforcement on every write.",
+        "attributes": {},
+        "id": "llm:file:packages/core/src/validate.ts#capability:validate",
+        "targetId": "file:packages/core/src/validate.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/core/src/validate.ts",
+        "to": "llm:file:packages/core/src/validate.ts#capability:validate",
+        "rel": "realizes",
+        "rationale": "This file implements record validation.",
+        "confidence": 0.85,
+        "targetId": "file:packages/core/src/validate.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/core/src/validate.ts#SchemaValidationError@L17",
+      "quote": "export class SchemaValidationError extends Error {"
+    },
+    {
+      "soulId": "sym:packages/core/src/validate.ts#assertValidEdge@L34",
+      "quote": "export function assertValidEdge(edge: Edge): void {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

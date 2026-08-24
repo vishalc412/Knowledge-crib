@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/parsers/src/python/PythonExtractor.test.ts",
+  "nodeHash": "blake3:4a0a568f511626562ac36f050f67d4c95938deca4c7fc58a1705d9cd97b20235",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:17:55.980Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The test suite for PythonExtractor — it defines the behaviour that is guaranteed, so a change that breaks any of it fails the build. It pins: PythonExtractor — golden (M8 gate); PythonExtractor — degradation + id-stability (M8 gate); PythonExtractor — Track 3 statement/condition/CFG; PythonExtractor — schema 1.2 behavior nodes.",
+    "responsibilities": [
+      "Pin the observable behaviour of PythonExtractor",
+      "Fail the build when a guaranteed behaviour changes"
+    ],
+    "businessRules": [],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.76
+  },
+  "graph": {
+    "nodes": [],
+    "edges": []
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/parsers/src/python/PythonExtractor.test.ts#byId@L479",
+      "quote": "const byId = (id: string) => nodes.find((n) => n.id === id);"
+    },
+    {
+      "soulId": "sym:packages/parsers/src/python/PythonExtractor.test.ts#byQ@L64",
+      "quote": "const byQ = (q: string) => nodes.find((n) => n.qualifiedName === q);"
+    },
+    {
+      "soulId": "sym:packages/parsers/src/python/PythonExtractor.test.ts#ctxFor.readText@L17",
+      "quote": "async readText() {"
+    },
+    {
+      "soulId": "sym:packages/parsers/src/python/PythonExtractor.test.ts#ctxFor.treeSitter@L20",
+      "quote": "throw new Error('not used — Python is hand-rolled, no tree-sitter');"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

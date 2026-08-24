@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/cli/src/resolution.test.ts",
+  "nodeHash": "blake3:08f690489f9d673f688df87f3209e6f76d53d1b274a21c2f9f0c9e3a3e40df4e",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:17:57.492Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The test suite for resolution — it defines the behaviour that is guaranteed, so a change that breaks any of it fails the build. It pins: resolveProjectRoot — priority chain; walkUpForCrib.",
+    "responsibilities": [
+      "Pin the observable behaviour of resolution",
+      "Fail the build when a guaranteed behaviour changes"
+    ],
+    "businessRules": [],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.76
+  },
+  "graph": {
+    "nodes": [],
+    "edges": []
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/cli/src/resolution.test.ts#markIndexed@L15",
+      "quote": "function markIndexed(dir: string): void {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

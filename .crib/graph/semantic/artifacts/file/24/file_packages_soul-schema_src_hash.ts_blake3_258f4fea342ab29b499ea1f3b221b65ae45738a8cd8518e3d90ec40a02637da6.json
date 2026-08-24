@@ -1,0 +1,67 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/soul-schema/src/hash.ts",
+  "nodeHash": "blake3:258f4fea342ab29b499ea1f3b221b65ae45738a8cd8518e3d90ec40a02637da6",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:04:00.262Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "Pure-JavaScript content hashing with no native bindings, so a cold install never needs a compiler toolchain.",
+    "responsibilities": [
+      "Hash content deterministically without native code"
+    ],
+    "businessRules": [
+      {
+        "rule": "A pure-JavaScript implementation is chosen over a native binding.",
+        "rationale": "Native bindings break cold install on machines without a compiler.",
+        "sourceRef": "file:packages/soul-schema/src/hash.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.84
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:hash",
+        "kind": "capability",
+        "name": "Content hashing",
+        "summary": "Native-free deterministic hashing.",
+        "attributes": {},
+        "id": "llm:file:packages/soul-schema/src/hash.ts#capability:hash",
+        "targetId": "file:packages/soul-schema/src/hash.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/soul-schema/src/hash.ts",
+        "to": "llm:file:packages/soul-schema/src/hash.ts#capability:hash",
+        "rel": "realizes",
+        "rationale": "This file implements content hashing.",
+        "confidence": 0.84,
+        "targetId": "file:packages/soul-schema/src/hash.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/soul-schema/src/hash.ts#blake3Hex@L15",
+      "quote": "export function blake3Hex(input: string): string {"
+    },
+    {
+      "soulId": "sym:packages/soul-schema/src/hash.ts#contentHash@L21",
+      "quote": "export function contentHash(input: string): string {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

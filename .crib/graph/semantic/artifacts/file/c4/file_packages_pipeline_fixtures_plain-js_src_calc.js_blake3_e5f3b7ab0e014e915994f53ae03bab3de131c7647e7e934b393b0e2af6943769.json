@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/pipeline/fixtures/plain-js/src/calc.js",
+  "nodeHash": "blake3:e5f3b7ab0e014e915994f53ae03bab3de131c7647e7e934b393b0e2af6943769",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:17:56.866Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "A test fixture: sample JS source that exists to exercise the extractor for this language, not to run in production.",
+    "responsibilities": [
+      "Provide representative source constructs for extractor tests"
+    ],
+    "businessRules": [],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.76
+  },
+  "graph": {
+    "nodes": [],
+    "edges": []
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/pipeline/fixtures/plain-js/src/calc.js#Calculator.add@L14",
+      "quote": "return helper(a) + b;"
+    },
+    {
+      "soulId": "sym:packages/pipeline/fixtures/plain-js/src/calc.js#Calculator@L13",
+      "quote": "class Calculator {"
+    },
+    {
+      "soulId": "sym:packages/pipeline/fixtures/plain-js/src/calc.js#helper@L5",
+      "quote": "function helper(n) {"
+    },
+    {
+      "soulId": "sym:packages/pipeline/fixtures/plain-js/src/calc.js#verify@L9",
+      "quote": "function verify(value) {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

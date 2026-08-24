@@ -1,0 +1,63 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/cli/src/bin.ts",
+  "nodeHash": "blake3:a18d4fa9b37591169129a26f4df053e189435921dc32a03b1ca54223d1655939",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:07:00.940Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The published command entry point: the thin launcher an installed package exposes, which hands straight off to the CLI implementation.",
+    "responsibilities": [
+      "Expose the executable entry point for the installed package"
+    ],
+    "businessRules": [
+      {
+        "rule": "The bin entry stays a thin launcher with no logic of its own.",
+        "rationale": "Logic here would be unreachable from tests, which invoke the CLI module directly.",
+        "sourceRef": "file:packages/cli/src/bin.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.8
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:packages-cli-src-bin-ts",
+        "kind": "capability",
+        "name": "Command entry point",
+        "summary": "The installed executable.",
+        "attributes": {},
+        "id": "llm:file:packages/cli/src/bin.ts#capability:packages-cli-src-bin-ts",
+        "targetId": "file:packages/cli/src/bin.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/cli/src/bin.ts",
+        "to": "llm:file:packages/cli/src/bin.ts#capability:packages-cli-src-bin-ts",
+        "rel": "realizes",
+        "rationale": "This file implements command entry point.",
+        "confidence": 0.8,
+        "targetId": "file:packages/cli/src/bin.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/cli/src/bin.ts#nodeVersionOk@L21",
+      "quote": "function nodeVersionOk(): boolean {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

@@ -1,0 +1,67 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/pipeline/src/multimodal/worker.ts",
+  "nodeHash": "blake3:c61cb95a2fde74b5f4985b3a2129d5677f1e5c00a9a5a1c8954994399ec0d7ce",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:02:22.989Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "A worker for non-text inputs, keeping heavier media handling off the main indexing thread.",
+    "responsibilities": [
+      "Process non-text inputs in a separate thread"
+    ],
+    "businessRules": [
+      {
+        "rule": "Non-text handling runs in a worker so it cannot block the main indexing loop.",
+        "rationale": "A hang on one media file would otherwise stall the whole run.",
+        "sourceRef": "file:packages/pipeline/src/multimodal/worker.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.79
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:multimodal-worker",
+        "kind": "capability",
+        "name": "Multimodal worker",
+        "summary": "Isolated non-text processing.",
+        "attributes": {},
+        "id": "llm:file:packages/pipeline/src/multimodal/worker.ts#capability:multimodal-worker",
+        "targetId": "file:packages/pipeline/src/multimodal/worker.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/pipeline/src/multimodal/worker.ts",
+        "to": "llm:file:packages/pipeline/src/multimodal/worker.ts#capability:multimodal-worker",
+        "rel": "realizes",
+        "rationale": "This file is the multimodal worker.",
+        "confidence": 0.79,
+        "targetId": "file:packages/pipeline/src/multimodal/worker.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/pipeline/src/multimodal/worker.ts#WorkerOpts@L35",
+      "quote": "export interface WorkerOpts {"
+    },
+    {
+      "soulId": "sym:packages/pipeline/src/multimodal/worker.ts#WorkerPayload@L26",
+      "quote": "export interface WorkerPayload {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

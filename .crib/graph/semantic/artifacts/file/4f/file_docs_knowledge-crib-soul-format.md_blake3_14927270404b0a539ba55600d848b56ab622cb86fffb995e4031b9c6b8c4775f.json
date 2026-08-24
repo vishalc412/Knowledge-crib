@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:docs/knowledge-crib-soul-format.md",
+  "nodeHash": "blake3:14927270404b0a539ba55600d848b56ab622cb86fffb995e4031b9c6b8c4775f",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:13:18.218Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The on-disk format of the committed graph: how chunks are laid out and what makes a re-index byte-stable.",
+    "responsibilities": [
+      "Specify the stored graph format"
+    ],
+    "businessRules": [],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.78
+  },
+  "graph": {
+    "nodes": [],
+    "edges": []
+  },
+  "evidence": [
+    {
+      "soulId": "doc:docs/knowledge-crib-soul-format.md#1-design-goals-choices",
+      "quote": "| Goal | Choice |"
+    },
+    {
+      "soulId": "doc:docs/knowledge-crib-soul-format.md#2-on-disk-layout",
+      "quote": ".crib/                         # COMMITTED to git (the soul travels with the repo)"
+    },
+    {
+      "soulId": "doc:docs/knowledge-crib-soul-format.md#4-manifest-crib-json",
+      "quote": "\"cribFormatVersion\": \"1.0\","
+    },
+    {
+      "soulId": "doc:docs/knowledge-crib-soul-format.md#5-incremental-update-protocol-the-upgrades-as-project-evolves-part",
+      "quote": "1. Detect changed files (git diff / watcher) since `stats.incrementalSince`."
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

@@ -1,0 +1,68 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/parsers/src/ts/http-client.ts",
+  "nodeHash": "blake3:f6074680bd755ce0bc0e7a4e120dbc2997e1837e4ad488ed46af713762d6df5a",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T03:53:11.757Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "Outbound HTTP call extraction: the counterpart to an inbound route — records that this repo CALLS an endpoint, which is what lets a blast radius cross from one repository into another.",
+    "responsibilities": [
+      "Detect outbound HTTP call sites and their method and path",
+      "Emit an http-call node that a federated walk can match to a route"
+    ],
+    "businessRules": [
+      {
+        "rule": "A route is the inbound endpoint this repo serves; an http-call is the outbound one it consumes.",
+        "rationale": "Modelling both sides is what makes cross-repo impact possible without a shared graph.",
+        "sourceRef": "file:packages/parsers/src/ts/http-client.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.83
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:http-call-extraction",
+        "kind": "capability",
+        "name": "Outbound call extraction",
+        "summary": "The repo-A side of cross-repo federation.",
+        "attributes": {},
+        "id": "llm:file:packages/parsers/src/ts/http-client.ts#capability:http-call-extraction",
+        "targetId": "file:packages/parsers/src/ts/http-client.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/parsers/src/ts/http-client.ts",
+        "to": "llm:file:packages/parsers/src/ts/http-client.ts#capability:http-call-extraction",
+        "rel": "realizes",
+        "rationale": "This file extracts outbound HTTP calls.",
+        "confidence": 0.83,
+        "targetId": "file:packages/parsers/src/ts/http-client.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/parsers/src/ts/http-client.ts#HttpClientPassInput@L56",
+      "quote": "export interface HttpClientPassInput {"
+    },
+    {
+      "soulId": "sym:packages/parsers/src/ts/http-client.ts#callableSymbolViaVariableStatement@L288",
+      "quote": "function callableSymbolViaVariableStatement("
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

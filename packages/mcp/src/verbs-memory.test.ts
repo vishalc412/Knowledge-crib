@@ -774,3 +774,100 @@ describe('memoryAudit feedback surfacing', () => {
     }
   });
 });
+
+/**
+ * Shared working memory for a swarm of agents on one repository.
+ *
+ * The trust model deliberately hides pending candidates from recall: a claim becomes trusted by
+ * passing a declared gate, never by an agent writing it down. Measured with two live MCP servers,
+ * that also meant agent B could not see anything agent A had just learned — so every agent in a
+ * swarm re-derives what its neighbours already solved.
+ *
+ * `includePending` exposes them WITHOUT weakening the gate: a separate group, never merged into
+ * `memories`, every entry stamped untrusted.
+ */
+describe('memoryRecall — shared pending observations for a swarm', () => {
+  function observe(
+    v: ReturnType<typeof verbsWithLocal>,
+    subject: string,
+    claim: string,
+    actor: string,
+  ) {
+    v.memoryObserve({ kind: 'fact', subject, claim, actor, tool: actor });
+  }
+
+  it('does NOT return pending observations by default', () => {
+    const local = localStore();
+    const v = verbsWithLocal(local);
+    try {
+      observe(
+        v,
+        'parser-hangs',
+        'Hangs are caught by a killable worker with a time budget.',
+        'agent-A',
+      );
+      const res = v.memoryRecall({ q: 'killable worker' }) as Record<string, unknown>;
+      expect(res.memories).toEqual([]);
+      expect(res.pending).toBeUndefined(); // absent entirely, not merely empty
+    } finally {
+      rmSync(home, { recursive: true, force: true });
+    }
+  });
+
+  it('returns a peer observation in a SEPARATE group when asked, stamped untrusted', () => {
+    const local = localStore();
+    const v = verbsWithLocal(local);
+    try {
+      observe(
+        v,
+        'parser-hangs',
+        'Hangs are caught by a killable worker with a time budget.',
+        'agent-A',
+      );
+      const res = v.memoryRecall({ q: 'killable worker', includePending: true }) as {
+        memories: unknown[];
+        pending?: Array<Record<string, unknown>>;
+      };
+      // The invariant that matters: an untrusted claim never reaches the trusted group.
+      expect(res.memories).toEqual([]);
+      expect(res.pending).toHaveLength(1);
+      const p = res.pending?.[0];
+      expect(p?.claim).toContain('killable worker');
+      expect(p?.trust).toBe('untrusted');
+      expect(p?.status).toBe('pending');
+      expect(String(p?.id).startsWith('cand:')).toBe(true);
+    } finally {
+      rmSync(home, { recursive: true, force: true });
+    }
+  });
+
+  it('matches on the query rather than returning everything an agent ever wrote', () => {
+    const local = localStore();
+    const v = verbsWithLocal(local);
+    try {
+      observe(v, 'parser-hangs', 'Hangs are caught by a killable worker.', 'agent-A');
+      observe(v, 'billing', 'Invoices are rounded to two decimal places.', 'agent-B');
+      const res = v.memoryRecall({ q: 'killable worker', includePending: true }) as {
+        pending?: Array<Record<string, unknown>>;
+      };
+      expect(res.pending).toHaveLength(1);
+      expect(String(res.pending?.[0]?.claim)).toContain('killable');
+    } finally {
+      rmSync(home, { recursive: true, force: true });
+    }
+  });
+
+  it('degrades to no pending group when no local store is wired', () => {
+    const v = verbsWithLocal(localStore());
+    try {
+      const res = v.memoryRecall({ q: 'anything', includePending: true }) as Record<
+        string,
+        unknown
+      >;
+      expect(Array.isArray(res.pending)).toBe(true);
+      expect(res.pending).toEqual([]);
+    } finally {
+      rmSync(home, { recursive: true, force: true });
+    }
+  });
+});

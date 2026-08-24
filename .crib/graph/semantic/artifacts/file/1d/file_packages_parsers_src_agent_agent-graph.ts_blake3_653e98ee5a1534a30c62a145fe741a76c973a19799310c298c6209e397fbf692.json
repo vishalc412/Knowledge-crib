@@ -1,0 +1,68 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/parsers/src/agent/agent-graph.ts",
+  "nodeHash": "blake3:653e98ee5a1534a30c62a145fe741a76c973a19799310c298c6209e397fbf692",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:00:13.886Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "Turns one AI artifact file — a skill, agent, command, rule or instruction — into a graph node, so the rules an agent follows are visible in the same graph as the code.",
+    "responsibilities": [
+      "Extract a single artifact node per artifact file",
+      "Capture the references it makes to other artifacts"
+    ],
+    "businessRules": [
+      {
+        "rule": "Agent instructions are modelled as graph nodes rather than left as opaque files.",
+        "rationale": "The rules shaping an agent belong in the same knowledge graph as the code it edits.",
+        "sourceRef": "file:packages/parsers/src/agent/agent-graph.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.83
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:agent-artifacts",
+        "kind": "capability",
+        "name": "Agent artifact extraction",
+        "summary": "Skills and rules as graph nodes.",
+        "attributes": {},
+        "id": "llm:file:packages/parsers/src/agent/agent-graph.ts#capability:agent-artifacts",
+        "targetId": "file:packages/parsers/src/agent/agent-graph.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/parsers/src/agent/agent-graph.ts",
+        "to": "llm:file:packages/parsers/src/agent/agent-graph.ts#capability:agent-artifacts",
+        "rel": "realizes",
+        "rationale": "This file extracts agent artifacts.",
+        "confidence": 0.83,
+        "targetId": "file:packages/parsers/src/agent/agent-graph.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/parsers/src/agent/agent-graph.ts#ArtifactExtract@L39",
+      "quote": "export interface ArtifactExtract {"
+    },
+    {
+      "soulId": "sym:packages/parsers/src/agent/agent-graph.ts#ArtifactRef@L30",
+      "quote": "export interface ArtifactRef {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

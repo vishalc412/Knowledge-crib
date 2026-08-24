@@ -1,0 +1,69 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/memory/src/fts-index.ts",
+  "nodeHash": "blake3:a3a2830ba9fc7d1392c46899054d08af65f8031322b66c81dad65ceb1ecb0f1f",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T02:56:59.750Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "A disposable, gitignored full-text index over memory records, supplying the lexical relevance signal that recall ranks with — deliberately separate from the code search index.",
+    "responsibilities": [
+      "Maintain a derived full-text read model over memory records",
+      "Supply lexical scores to the recall core through its port",
+      "Stay disposable: rebuildable at any time and never committed"
+    ],
+    "businessRules": [
+      {
+        "rule": "Kept deliberately separate from the code search index rather than sharing one.",
+        "rationale": "Memory and code are different corpora; one index would blur their ranking and lifecycles.",
+        "sourceRef": "file:packages/memory/src/fts-index.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.83
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:memory-fts",
+        "kind": "capability",
+        "name": "Memory full-text index",
+        "summary": "Derived lexical index over memory records.",
+        "attributes": {},
+        "id": "llm:file:packages/memory/src/fts-index.ts#capability:memory-fts",
+        "targetId": "file:packages/memory/src/fts-index.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/memory/src/fts-index.ts",
+        "to": "llm:file:packages/memory/src/fts-index.ts#capability:memory-fts",
+        "rel": "realizes",
+        "rationale": "This file implements the memory FTS index.",
+        "confidence": 0.83,
+        "targetId": "file:packages/memory/src/fts-index.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/memory/src/fts-index.ts#FtsLexicalScorer.cache@L183",
+      "quote": "private readonly cache = new Map<string, Map<string, number>>();"
+    },
+    {
+      "soulId": "sym:packages/memory/src/fts-index.ts#FtsLexicalScorer.score@L187",
+      "quote": "score(record: MemoryRecord, query: string, targetIds: readonly string[]): number {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

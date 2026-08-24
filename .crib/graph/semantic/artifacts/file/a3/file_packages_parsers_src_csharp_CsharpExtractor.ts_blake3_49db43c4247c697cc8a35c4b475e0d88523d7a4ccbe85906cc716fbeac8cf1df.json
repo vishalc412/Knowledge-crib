@@ -1,0 +1,75 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/parsers/src/csharp/CsharpExtractor.ts",
+  "nodeHash": "blake3:49db43c4247c697cc8a35c4b475e0d88523d7a4ccbe85906cc716fbeac8cf1df",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T02:51:35.754Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The C# extractor: turns one C# file into symbol nodes (namespace, class, interface, struct, record, enum, delegate, method, property, constructor, indexer, operator) with qualified names, spans and signatures, plus member-of edges and intra-file call edges — never resolving anything across file boundaries.",
+    "responsibilities": [
+      "Emit a symbol per declaration with qualifiedName, span and signature",
+      "Emit member-of edges linking each symbol to its enclosing symbol or file",
+      "Emit calls edges only where the callee resolves inside the same file",
+      "Stay deterministic and offline so a cold install needs no network"
+    ],
+    "businessRules": [
+      {
+        "rule": "The extractor never guesses across files; cross-file resolution is the resolver phase job.",
+        "rationale": "Capability honesty — a guess made here would be indistinguishable from a fact downstream.",
+        "sourceRef": "file:packages/parsers/src/csharp/CsharpExtractor.ts"
+      },
+      {
+        "rule": "Engine: a hand-rolled tokenizer and structural parser, pure JavaScript and deterministic.",
+        "rationale": "Determinism is what makes re-indexing byte-stable and installs offline.",
+        "sourceRef": "file:packages/parsers/src/csharp/CsharpExtractor.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.85
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:extract-csharp",
+        "kind": "capability",
+        "name": "C# extraction",
+        "summary": "Symbols, nesting and intra-file calls for C#.",
+        "attributes": {},
+        "id": "llm:file:packages/parsers/src/csharp/CsharpExtractor.ts#capability:extract-csharp",
+        "targetId": "file:packages/parsers/src/csharp/CsharpExtractor.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/parsers/src/csharp/CsharpExtractor.ts",
+        "to": "llm:file:packages/parsers/src/csharp/CsharpExtractor.ts#capability:extract-csharp",
+        "rel": "realizes",
+        "rationale": "This file is the C# extractor.",
+        "confidence": 0.85,
+        "targetId": "file:packages/parsers/src/csharp/CsharpExtractor.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.addAssignStatement@L663",
+      "quote": "private addAssignStatement(s: CsharpStmt, procId: string, env: WalkEnv): void {"
+    },
+    {
+      "soulId": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.addCallStatement@L633",
+      "quote": "private addCallStatement(s: CsharpStmt, procId: string, env: WalkEnv): void {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

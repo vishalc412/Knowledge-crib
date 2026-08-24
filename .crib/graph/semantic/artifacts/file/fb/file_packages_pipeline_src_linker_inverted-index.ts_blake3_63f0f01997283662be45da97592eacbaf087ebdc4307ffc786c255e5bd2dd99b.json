@@ -1,0 +1,68 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/pipeline/src/linker/inverted-index.ts",
+  "nodeHash": "blake3:63f0f01997283662be45da97592eacbaf087ebdc4307ffc786c255e5bd2dd99b",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T03:54:27.581Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "An inverted index from names to symbols, built once from the graph so the deterministic linker passes cost time proportional to the text they scan rather than to the size of the graph.",
+    "responsibilities": [
+      "Index symbols by name, qualified name and file",
+      "Serve the linker passes in constant time per token"
+    ],
+    "businessRules": [
+      {
+        "rule": "Built once so linking is proportional to document tokens rather than documents times symbols.",
+        "rationale": "The naive form is quadratic and does not survive a real repository.",
+        "sourceRef": "file:packages/pipeline/src/linker/inverted-index.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.84
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:linker-index",
+        "kind": "capability",
+        "name": "Linker inverted index",
+        "summary": "Name to symbol lookup for linking.",
+        "attributes": {},
+        "id": "llm:file:packages/pipeline/src/linker/inverted-index.ts#capability:linker-index",
+        "targetId": "file:packages/pipeline/src/linker/inverted-index.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/pipeline/src/linker/inverted-index.ts",
+        "to": "llm:file:packages/pipeline/src/linker/inverted-index.ts#capability:linker-index",
+        "rel": "realizes",
+        "rationale": "This file builds the inverted index.",
+        "confidence": 0.84,
+        "targetId": "file:packages/pipeline/src/linker/inverted-index.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/pipeline/src/linker/inverted-index.ts#InvertedIndex.byFile@L21",
+      "quote": "private readonly byFile = new Map<string, Node[]>();"
+    },
+    {
+      "soulId": "sym:packages/pipeline/src/linker/inverted-index.ts#InvertedIndex.byName@L19",
+      "quote": "private readonly byName = new Map<string, Node[]>();"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

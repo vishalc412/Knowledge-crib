@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/parsers/fixtures/php/auth.php",
+  "nodeHash": "blake3:391d6337c856f40b0263325d407c78815e471b2c01261ad37e82ef724d0c82e8",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:17:56.381Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "A test fixture: sample PHP source that exists to exercise the extractor for this language, not to run in production.",
+    "responsibilities": [
+      "Provide representative source constructs for extractor tests"
+    ],
+    "businessRules": [],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.76
+  },
+  "graph": {
+    "nodes": [],
+    "edges": []
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/parsers/fixtures/php/auth.php#Authenticatable.login@L23",
+      "quote": "public function login($email, $password);"
+    },
+    {
+      "soulId": "sym:packages/parsers/fixtures/php/auth.php#Authenticatable@L22",
+      "quote": "interface Authenticatable {"
+    },
+    {
+      "soulId": "sym:packages/parsers/fixtures/php/auth.php#AuthService.issueToken@L17",
+      "quote": "private function issueToken($email, $hash) {"
+    },
+    {
+      "soulId": "sym:packages/parsers/fixtures/php/auth.php#AuthService.login@L12",
+      "quote": "public function login($email, $password) {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

@@ -121,7 +121,17 @@ export function pruneDossiers(cribDir: string, liveNodeIds: ReadonlySet<string>)
   return pruned;
 }
 
-/** Filesystem-safe name for a node id (replaces path separators / colons). */
+/**
+ * Filesystem-safe name for a node id (replaces path separators / colons).
+ * Caps length for macOS NAME_MAX (255): long Java package+method ids otherwise
+ * overflow when writing `<safe>.json.tmp`.
+ */
 function safeName(nodeId: string): string {
-  return nodeId.replace(/[^A-Za-z0-9._-]+/g, '_');
+  const cleaned = nodeId.replace(/[^A-Za-z0-9._-]+/g, '_');
+  // Leave room for `.json.tmp` suffix on the write path (~9 chars).
+  const maxBase = 240;
+  if (cleaned.length <= maxBase) return cleaned;
+  const hash = blake3Hex(nodeId).slice(0, 16);
+  const keep = maxBase - hash.length - 1;
+  return `${cleaned.slice(0, keep)}_${hash}`;
 }

@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/parsers/src/md/MarkdownExtractor.test.ts",
+  "nodeHash": "blake3:ed8d860a69b6d8a13f6f388669bddc945ab6701f9d9594e7583d91c5c5a9d420",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:17:56.864Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The test suite for MarkdownExtractor — it defines the behaviour that is guaranteed, so a change that breaks any of it fails the build. It pins: MarkdownExtractor.",
+    "responsibilities": [
+      "Pin the observable behaviour of MarkdownExtractor",
+      "Fail the build when a guaranteed behaviour changes"
+    ],
+    "businessRules": [],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.76
+  },
+  "graph": {
+    "nodes": [],
+    "edges": []
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/parsers/src/md/MarkdownExtractor.test.ts#ctx.readText@L24",
+      "quote": "async readText() {"
+    },
+    {
+      "soulId": "sym:packages/parsers/src/md/MarkdownExtractor.test.ts#ctx.treeSitter@L27",
+      "quote": "throw new Error('n/a');"
+    },
+    {
+      "soulId": "sym:packages/parsers/src/md/MarkdownExtractor.test.ts#ctx@L22",
+      "quote": "function ctx(text: string): ExtractCtx {"
+    },
+    {
+      "soulId": "sym:packages/parsers/src/md/MarkdownExtractor.test.ts#parentOf@L43",
+      "quote": "const parentOf = (anchor: string) => {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

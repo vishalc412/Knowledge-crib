@@ -1,0 +1,68 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/pipeline/src/parse-pool.ts",
+  "nodeHash": "blake3:a6c29ea95780e7f9ac369c363d758a62c7789f58a634b766c90edfe3a9cde043",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T03:58:13.486Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "Runs extraction across worker threads so a large repository parses in parallel, while keeping results deterministic regardless of completion order.",
+    "responsibilities": [
+      "Dispatch files to a pool of workers",
+      "Reassemble results in a deterministic order"
+    ],
+    "businessRules": [
+      {
+        "rule": "Results are ordered deterministically regardless of which worker finished first.",
+        "rationale": "Parallelism must not change the bytes the graph is written with.",
+        "sourceRef": "file:packages/pipeline/src/parse-pool.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.83
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:parallel-parsing",
+        "kind": "capability",
+        "name": "Parallel parsing",
+        "summary": "Deterministic multi-threaded extraction.",
+        "attributes": {},
+        "id": "llm:file:packages/pipeline/src/parse-pool.ts#capability:parallel-parsing",
+        "targetId": "file:packages/pipeline/src/parse-pool.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/pipeline/src/parse-pool.ts",
+        "to": "llm:file:packages/pipeline/src/parse-pool.ts#capability:parallel-parsing",
+        "rel": "realizes",
+        "rationale": "This file implements the parse pool.",
+        "confidence": 0.83,
+        "targetId": "file:packages/pipeline/src/parse-pool.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/pipeline/src/parse-pool.ts#FileResult@L37",
+      "quote": "nodes: import('@knowledge-crib/soul-schema').Node[];"
+    },
+    {
+      "soulId": "sym:packages/pipeline/src/parse-pool.ts#WorkerOutMsg@L48",
+      "quote": "diagnostics: ExtractDiagnostic[];"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

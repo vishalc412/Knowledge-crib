@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/core/src/working-overlay.test.ts",
+  "nodeHash": "blake3:31acbb1a9aff01ba3abb21a6f494c225cc85e08b28aa1c862fe560256b2b82d1",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:17:56.387Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The test suite for working-overlay — it defines the behaviour that is guaranteed, so a change that breaks any of it fails the build. It pins: working overlay — seed + ephemeral guard; working overlay — dirty bookkeeping; working overlay — canonical drift detection; working overlay — resync.",
+    "responsibilities": [
+      "Pin the observable behaviour of working-overlay",
+      "Fail the build when a guaranteed behaviour changes"
+    ],
+    "businessRules": [],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.76
+  },
+  "graph": {
+    "nodes": [],
+    "edges": []
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/core/src/working-overlay.test.ts#callEdge@L50",
+      "quote": "function callEdge(src: Node, dst: Node): Edge {"
+    },
+    {
+      "soulId": "sym:packages/core/src/working-overlay.test.ts#committedCanonical@L64",
+      "quote": "function committedCanonical(): {"
+    },
+    {
+      "soulId": "sym:packages/core/src/working-overlay.test.ts#fileNode@L28",
+      "quote": "function fileNode(path: string): Node {"
+    },
+    {
+      "soulId": "sym:packages/core/src/working-overlay.test.ts#symNode@L37",
+      "quote": "function symNode(path: string, name: string, line: number): Node {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

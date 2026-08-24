@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/mcp/src/server.test.ts",
+  "nodeHash": "blake3:343eeea6cf5ab151573f37965248193d7dea5002c5c23f99957ac38ebbb3be76",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:17:56.385Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The test suite for server — it defines the behaviour that is guaranteed, so a change that breaks any of it fails the build. It pins: MCP server wiring; memory dispatcher; op dispatchers.",
+    "responsibilities": [
+      "Pin the observable behaviour of server",
+      "Fail the build when a guaranteed behaviour changes"
+    ],
+    "businessRules": [],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.76
+  },
+  "graph": {
+    "nodes": [],
+    "edges": []
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/mcp/src/server.test.ts#callMemory@L50",
+      "quote": "async function callMemory(args: Record<string, unknown>): Promise<unknown> {"
+    },
+    {
+      "soulId": "sym:packages/mcp/src/server.test.ts#read@L280",
+      "quote": "const read = async (t: string, a: unknown) =>"
+    },
+    {
+      "soulId": "sym:packages/mcp/src/server.test.ts#recorder@L155",
+      "quote": "function recorder(names: string[]) {"
+    },
+    {
+      "soulId": "sym:packages/mcp/src/server.test.ts#server@L38",
+      "quote": "function server() {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

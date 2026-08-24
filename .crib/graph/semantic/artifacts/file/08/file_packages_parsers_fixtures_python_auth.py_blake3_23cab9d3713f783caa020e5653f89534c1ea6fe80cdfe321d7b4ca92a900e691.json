@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/parsers/fixtures/python/auth.py",
+  "nodeHash": "blake3:23cab9d3713f783caa020e5653f89534c1ea6fe80cdfe321d7b4ca92a900e691",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:17:56.386Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "A test fixture: sample PY source that exists to exercise the extractor for this language, not to run in production.",
+    "responsibilities": [
+      "Provide representative source constructs for extractor tests"
+    ],
+    "businessRules": [],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.76
+  },
+  "graph": {
+    "nodes": [],
+    "edges": []
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/parsers/fixtures/python/auth.py#Auth.issue@L18",
+      "quote": "async def issue(self, user):"
+    },
+    {
+      "soulId": "sym:packages/parsers/fixtures/python/auth.py#Auth.login@L15",
+      "quote": "def login(self, user):"
+    },
+    {
+      "soulId": "sym:packages/parsers/fixtures/python/auth.py#Auth@L12",
+      "quote": "class Auth(Base):"
+    },
+    {
+      "soulId": "sym:packages/parsers/fixtures/python/auth.py#helper@L7",
+      "quote": "def helper(value):"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

@@ -1,0 +1,74 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/cli/src/enrich-provider.ts",
+  "nodeHash": "blake3:9edb8be09d80430f4be31aa609140616e223e0ff350039b1b95a35430387c902",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T03:54:27.581Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "External enrichment execution: drives the same deterministic work queue as the in-IDE path, but hands each work item to a user-configured external program instead of the host agent.",
+    "responsibilities": [
+      "Drive the same queue the host-agent path uses",
+      "Hand each item to a user-configured program over strict JSON",
+      "Treat a provider failure as non-fatal and resumable"
+    ],
+    "businessRules": [
+      {
+        "rule": "Providers are configured in a user-owned file and executed without a shell.",
+        "rationale": "Running model providers through a shell would be an injection surface.",
+        "sourceRef": "file:packages/cli/src/enrich-provider.ts"
+      },
+      {
+        "rule": "A provider failure is non-fatal; the run resumes rather than losing prior work.",
+        "rationale": "Long enrichment runs must survive one bad item.",
+        "sourceRef": "file:packages/cli/src/enrich-provider.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.84
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:external-enrichment",
+        "kind": "capability",
+        "name": "External enrichment",
+        "summary": "Same queue, externally-run authoring.",
+        "attributes": {},
+        "id": "llm:file:packages/cli/src/enrich-provider.ts#capability:external-enrichment",
+        "targetId": "file:packages/cli/src/enrich-provider.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/cli/src/enrich-provider.ts",
+        "to": "llm:file:packages/cli/src/enrich-provider.ts#capability:external-enrichment",
+        "rel": "realizes",
+        "rationale": "This file runs external providers.",
+        "confidence": 0.84,
+        "targetId": "file:packages/cli/src/enrich-provider.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/cli/src/enrich-provider.ts#ProviderDef@L31",
+      "quote": "export interface ProviderDef {"
+    },
+    {
+      "soulId": "sym:packages/cli/src/enrich-provider.ts#ProviderItemError@L185",
+      "quote": "export class ProviderItemError extends Error {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

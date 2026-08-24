@@ -1,0 +1,67 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/core/src/memory-kinds.ts",
+  "nodeHash": "blake3:d757a0d09d985ab9fc4638253e1364a6bdb500c8beeaf66b56e32bd0267ecc88",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:04:00.264Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The memory claim kinds shared with the merge driver, kept in the core package to avoid a dependency cycle between core and memory.",
+    "responsibilities": [
+      "Define the claim kinds both core and memory need"
+    ],
+    "businessRules": [
+      {
+        "rule": "These live in core specifically because the merge driver needs them and moving them would cycle the dependency graph.",
+        "rationale": "A cycle between core and memory would break the build.",
+        "sourceRef": "file:packages/core/src/memory-kinds.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.82
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:memory-kinds",
+        "kind": "capability",
+        "name": "Shared memory kinds",
+        "summary": "Claim vocabulary without a dependency cycle.",
+        "attributes": {},
+        "id": "llm:file:packages/core/src/memory-kinds.ts#capability:memory-kinds",
+        "targetId": "file:packages/core/src/memory-kinds.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/core/src/memory-kinds.ts",
+        "to": "llm:file:packages/core/src/memory-kinds.ts#capability:memory-kinds",
+        "rel": "realizes",
+        "rationale": "This file implements shared memory kinds.",
+        "confidence": 0.82,
+        "targetId": "file:packages/core/src/memory-kinds.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/core/src/memory-kinds.ts#MemoryDecisionKind@L26",
+      "quote": "export type MemoryDecisionKind = 'activate' | 'accept' | 'supersede' | 'retract' | 'quarantine';"
+    },
+    {
+      "soulId": "sym:packages/core/src/memory-kinds.ts#MemoryRecordKind@L11",
+      "quote": "export type MemoryRecordKind = 'fact' | 'procedure' | 'decision' | 'pitfall' | 'convention';"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

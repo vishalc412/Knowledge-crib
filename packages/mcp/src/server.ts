@@ -1,3 +1,4 @@
+import { createServer } from 'node:http';
 import type { NodeKind } from '@knowledge-crib/soul-schema';
 /**
  * The one MCP server (stdio). Each verb is registered as an MCP tool; handlers are thin adapters
@@ -6,6 +7,7 @@ import type { NodeKind } from '@knowledge-crib/soul-schema';
  */
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { z } from 'zod';
 import {
   MAX_DEPTH,
@@ -24,15 +26,13 @@ const TOOL_RESULT = (obj: unknown) => ({
   content: [{ type: 'text' as const, text: JSON.stringify(obj) }],
 });
 
+/** Uniform argument-validation failure for the `op` dispatchers below. A dispatcher can otherwise
+ *  forward an under-specified call to a verb and return a plausible-but-wrong payload. */
+const BAD_REQUEST = (message: string) => ({ error: { code: 'BAD_REQUEST', message } });
+
 /** Build (but do not connect) the MCP server with all verbs registered. */
 export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
   const server = new McpServer({ name: 'knowledge-crib', version });
-
-  server.registerTool(
-    'status',
-    { description: 'Health + whether the project is indexed.', inputSchema: {} },
-    async () => TOOL_RESULT(verbs.status()),
-  );
 
   server.registerTool(
     'context',
@@ -73,102 +73,10 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
   );
 
   server.registerTool(
-    'dossier',
-    {
-      description:
-        'One-shot deep reusable context for a symbol: deep node fields, paged rehydrated source body, callers, callees, linked docs, the decision table (callable), and the schema-1.2 control-flow constructs (raises / handles / iterates / declares). The artifact a migration analyst consumes in one call instead of orchestrating context + source + extract_rules. source.nextLine (when truncated) is the paging cursor — pass it back as sourceStartLine.',
-      inputSchema: {
-        id: z.string(),
-        includeTables: z.boolean().optional(),
-        sourceMaxChars: z.number().int().positive().max(MAX_SOURCE_CHARS).optional(),
-        sourceMaxLines: z.number().int().positive().max(MAX_SOURCE_LINES).optional(),
-        sourceStartLine: z.number().int().positive().optional(),
-        extractedOnly: z.boolean().optional(),
-        withLlm: z.boolean().optional(),
-        format: z.enum(['json', 'markdown']).optional(),
-        ifHash: z.string().optional(),
-      },
-    },
-    async (a) => TOOL_RESULT(verbs.dossier(a)),
-  );
-
-  server.registerTool(
-    'reconstruct',
-    {
-      description:
-        'Package-scoped migration reconstruction: the package CONSTANT values (e.g. the 30/80 thresholds), every member callable with its implementation status, the union of tables the package reads/writes, docs linked to the package or its members, and the expected body file (Oracle spec→body inference). The artifact an agent hands a migrator in one call instead of orchestrating context over every member + gaps + extract_rules. Returns NOT_FOUND for an unknown id or a non-package node (use context/dossier for a single callable).',
-      inputSchema: {
-        id: z.string(),
-        extractedOnly: z.boolean().optional(),
-        includeTables: z.boolean().optional(),
-        maxSymbols: z.number().int().positive().max(MAX_SCOPE_SYMBOLS).optional(),
-        format: z.enum(['json', 'markdown']).optional(),
-      },
-    },
-    async (a) => TOOL_RESULT(verbs.reconstruct(a)),
-  );
-
-  server.registerTool(
-    'dossier_by_scope',
-    {
-      description:
-        "Bulk per-symbol dossiers for EVERY symbol in a scope — a package's members, a file's symbols, or a cluster's symbols — in ONE call (the 1-scan-adjacency path). Each dossier carries the deep node, rehydrated source body, callers/callees, decision table, implementation status, and linked docs. Use this instead of orchestrating `dossier` over each of ~50 package members: one call returns all of them so a migration plan built from crib (Plan A) sees the same per-symbol detail a full code read (Plan B) sees. Returns NOT_FOUND when the scope node cannot be resolved. Honesty flags: symbolCount (total resolved), truncated (capped at maxSymbols), skipped (ids that resolved to no dossier). For a package, `id` is the id or qualified/simple name; for a file, the path (with or without the `file:` prefix); for a cluster, the slug.",
-      inputSchema: {
-        scope: z.enum(['package', 'file', 'cluster']),
-        id: z.string(),
-        extractedOnly: z.boolean().optional(),
-        includeTables: z.boolean().optional(),
-        maxSymbols: z.number().int().positive().max(MAX_SCOPE_SYMBOLS).optional(),
-        sourceMaxChars: z.number().int().positive().max(MAX_SOURCE_CHARS).optional(),
-        sourceMaxLines: z.number().int().positive().max(MAX_SOURCE_LINES).optional(),
-        format: z.enum(['json', 'markdown']).optional(),
-        cursor: z.string().optional(),
-        maxTokens: z.number().int().positive().max(MAX_MAX_TOKENS).optional(),
-      },
-    },
-    async (a) => TOOL_RESULT(verbs.dossierByScope(a)),
-  );
-
-  server.registerTool(
-    'impact',
-    {
-      description:
-        'Blast radius (up=dependents, down=dependencies) + docs describing affected nodes.',
-      inputSchema: {
-        id: z.string(),
-        dir: z.enum(['up', 'down']),
-        depth: z.number().int().positive().max(MAX_DEPTH).optional(),
-        docLimit: z.number().int().positive().max(MAX_DOC_LIMIT).optional(),
-        limit: z.number().int().positive().max(MAX_LIMIT).optional(),
-        extractedOnly: z.boolean().optional(),
-        includeLlm: z.boolean().optional(),
-      },
-    },
-    async (a) => TOOL_RESULT(verbs.impact(a)),
-  );
-
-  server.registerTool(
-    'federatedImpact',
-    {
-      description:
-        'M3.2 cross-repo blast radius. Like `impact` but federates extra repo souls (`roots`) and crosses the route-layer bridge: a repo-A outbound HTTP client call (`http-call` node) resolves to the repo-B `route` it serves, matched by {httpMethod, routePath}. No cross-repo edge is committed — the bridge is a runtime computation over the loaded souls. Each affected node carries `soul` (its repo root) + `crossRepo` (true iff the hop crossed repos). The primary repo (the server cwd) is always federated.',
-      inputSchema: {
-        id: z.string(),
-        dir: z.enum(['up', 'down']),
-        roots: z.array(z.string()).max(MAX_FED_ROOTS).optional(),
-        depth: z.number().int().positive().max(MAX_DEPTH).optional(),
-        limit: z.number().int().positive().max(MAX_LIMIT).optional(),
-        extractedOnly: z.boolean().optional(),
-      },
-    },
-    async (a) => TOOL_RESULT(verbs.federatedImpact(a)),
-  );
-
-  server.registerTool(
     'query',
     {
       description:
-        'Hybrid BM25 search over code + docs, including rehydrated source bodies (WS-1: matches rule content, not just signatures). Returns { hits, llmHits, truncated }. `hits` are BM25-ranked symbols/docs each carrying a one-line snippet + a LIGHTWEIGHT LLM pointer (provenance/confidence/purpose) when an LLM analysis exists — this is the cheap default that keeps token cost low. `llmHits` are semantic discoveries from the LLM graph layer that BM25 missed, ranked by term-overlap, de-duplicated against `hits` (they never override BM25 ranking). Set withSource to fold the rehydrated source body into each hit, withRules to fold a callable decision table + coverage readiness, withFramework to fold routes/beans/DI/relations, and withLlm to upgrade the LLM pointer to the FULL analysis+graph+evidence blob. One query --with-source --with-rules --with-llm returns what a full file read + an LLM brief surfaces, but the default call stays tiny.',
+        'Keyword search over code + docs, including source bodies, so rule CONTENT matches and not just names. Prefer brief for questions; use query when you want raw ranked hits or the opt-in folds. Returns { hits, llmHits, truncated }; each hit has a one-line snippet plus a lightweight LLM pointer when analysis exists. llmHits are semantic finds BM25 missed. Opt in with withSource (full body), withRules (decision table), withFramework (routes/DI), withLlm (full analysis). Defaults stay small.',
       inputSchema: {
         q: z.string(),
         kinds: z.array(z.string()).optional(),
@@ -204,101 +112,10 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
   );
 
   server.registerTool(
-    'enrich_status',
-    {
-      description:
-        'Coverage/progress for agent-driven semantic layer under .crib/graph/semantic. Pass scopes:true (with no scope) to get ranked path-prefix scopes + totalPending + threshold. Pass scope:{pathPrefix} to restrict counts/nextLayer/done. Pass targets:[ids] to restrict counts to a delta re-issue set (mutually exclusive with scope/scopes). Server never calls a model.',
-      inputSchema: {
-        layer: z.enum(['symbol', 'file', 'cluster', 'system']).optional(),
-        scope: z
-          .object({
-            pathPrefix: z.string().optional(),
-            cluster: z.string().optional(),
-          })
-          .optional(),
-        scopes: z.boolean().optional(),
-        targets: z.array(z.string()).optional(),
-      },
-    },
-    async (a) => TOOL_RESULT(verbs.enrichStatus(a)),
-  );
-
-  server.registerTool(
-    'enrich_next',
-    {
-      description:
-        'Return the next missing/stale grounded work batch for the IDE agent model to author. Includes seed facts, lower-layer analyses, schema, and instructions. Pass scope:{pathPrefix} to restrict the batch to in-scope targets. Pass targets:[ids] to restrict the queue to a delta re-issue set (from semantic_delta.reissueTargets); a targeted re-issue is namespaced apart from the unscoped queue for zero-progress detection. batchId is deterministic (same pending set => same id) so a zero-progress re-issue is detectable by id equality. The system layer is never offered under a scope. Pass skeleton:true with layer:"system" for the Phase-0.5 draft skeleton bible (a single work item seeded from the functional map + top READMEs + top symbols; a skeleton never satisfies the system layer — the full pass is still offered).',
-      inputSchema: {
-        layer: z.enum(['symbol', 'file', 'cluster', 'system']).optional(),
-        limit: z.number().int().positive().max(MAX_LIMIT).optional(),
-        scope: z
-          .object({
-            pathPrefix: z.string().optional(),
-            cluster: z.string().optional(),
-          })
-          .optional(),
-        skeleton: z.boolean().optional(),
-        targets: z.array(z.string()).optional(),
-      },
-    },
-    async (a) => TOOL_RESULT(verbs.enrichNext(a)),
-  );
-
-  server.registerTool(
-    'enrich_save',
-    {
-      description:
-        'Validate and persist an IDE-agent-authored semantic graph batch under .crib/graph/semantic.',
-      inputSchema: {
-        batchId: z.string(),
-        items: z.array(
-          z.object({
-            targetId: z.string(),
-            model: z.string().optional(),
-            analysis: z.record(z.string(), z.unknown()),
-            graph: z.object({
-              nodes: z.array(z.record(z.string(), z.unknown())),
-              edges: z.array(z.record(z.string(), z.unknown())),
-            }),
-            evidence: z.array(z.record(z.string(), z.unknown())),
-          }),
-        ),
-      },
-    },
-    async (a) => TOOL_RESULT(verbs.enrichSave(a)),
-  );
-
-  server.registerTool(
-    'semantic_delta',
-    {
-      description:
-        "Semantic-layer delta report (+ optional prune) — the explicit companion to crib update's silent orphan auto-prune. Scans persisted LLM artifacts, classifies each as orphaned (target node gone) / stale (hash mismatch) / drifted (grounding verdict changed, only with verifyDrift), and returns `reissueTargets` to pass to enrich_next/enrich_status `targets` to re-author exactly the flagged set. Two scoping modes: `targets:[ids]` scans only those ids; `since:<ref>` computes the changed symbols/files via VCS and scopes the scan to them; neither scans the whole repo. Non-destructive by default: `prune:true` deletes orphans (safe), `pruneStale:true` also deletes stale-but-present (destructive — discards old evidence). Bumps generation.semantic only when a file was deleted. PURE over the soul — never calls a model.",
-      inputSchema: {
-        since: z.string().optional(),
-        targets: z.array(z.string()).optional(),
-        prune: z.boolean().optional(),
-        pruneStale: z.boolean().optional(),
-        verifyDrift: z.boolean().optional(),
-      },
-    },
-    async (a) => TOOL_RESULT(verbs.semanticDelta(a)),
-  );
-
-  server.registerTool(
-    'audit_llm',
-    {
-      description:
-        "Re-verify every persisted LLM artifact on disk against the current soul (M1.3 — the grounding moat). Re-runs the save-time grounding check: rehydrates each evidence quote's anchor span and requires overlap. A post-refactor re-verify is identical to the original verdict. PURE — never calls a model, never mutates artifacts. Returns per-target verdicts (grounded/ungrounded/unsupported), drift (save-time stamp vs recomputed), and staleness. Use after a refactor or index rebuild to confirm the LLM graph is still traceable to disk.",
-      inputSchema: {},
-    },
-    async () => TOOL_RESULT(verbs.auditLlm()),
-  );
-
-  server.registerTool(
     'overview',
     {
       description:
-        'Return the LLM-authored codebase bible / overview generated from the semantic graph layer. v2: module-segmented, importance-ranked, LEAN by default — `modules` (always present, works at 0% enrichment), `analyses` (lean pointers, production symbols first / test helpers last), and `system` (the freshest bible, full preferred over a draft skeleton). Pass withLlm:true to fold the full analysis+graph+evidence blobs into a `full` array (computed live, never cached). Pass scope:{pathPrefix} for a module-scoped bible (excludes the whole-repo system layer); omit scope for the cached whole-repo overview.json.',
+        'The codebase overview built from the semantic layer. Lean by default: modules (always present, works at 0% enrichment), analyses (pointers, production symbols first), and system (the freshest bible). withLlm:true folds in the full analyses; scope:{pathPrefix} gives a module-scoped view.',
       inputSchema: {
         scope: z
           .object({
@@ -310,72 +127,6 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
       },
     },
     async (a) => TOOL_RESULT(verbs.overview(a)),
-  );
-
-  server.registerTool(
-    'llm_neighbors',
-    {
-      description:
-        'Walk the LLM semantic graph around a soul id or LLM local/global node id: rules, features, flows, capabilities, and concepts touching it.',
-      inputSchema: { id: z.string() },
-    },
-    async (a) => TOOL_RESULT(verbs.llmNeighbors(a)),
-  );
-
-  server.registerTool(
-    'describes',
-    {
-      description: 'The doc-sections linked to a symbol (cheap, high value).',
-      inputSchema: {
-        id: z.string(),
-        minConfidence: z.number().min(0).max(1).optional(),
-        extractedOnly: z.boolean().optional(),
-      },
-    },
-    async (a) => TOOL_RESULT(verbs.describes(a)),
-  );
-
-  server.registerTool(
-    'neighbors',
-    {
-      description: 'Raw adjacency for a node (graph-walking primitive).',
-      inputSchema: {
-        id: z.string(),
-        rel: z.string().optional(),
-        dir: z.enum(['in', 'out', 'both']).optional(),
-        limit: z.number().int().positive().max(MAX_LIMIT).optional(),
-        extractedOnly: z.boolean().optional(),
-        includeLlm: z.boolean().optional(),
-      },
-    },
-    async (a) => TOOL_RESULT(verbs.neighbors(a)),
-  );
-
-  server.registerTool(
-    'ownership',
-    {
-      description:
-        'M3.1 ownership: the git-blame owners of a node (symbol → owner), answering "who do I ask about this code". Returns owner nodes + the blame commit + the HEAD the index ran against.',
-      inputSchema: {
-        id: z.string(),
-      },
-    },
-    async (a) => TOOL_RESULT(verbs.ownership(a)),
-  );
-
-  server.registerTool(
-    'shortest_path',
-    {
-      description: 'Shortest directed path between two nodes.',
-      inputSchema: {
-        from: z.string(),
-        to: z.string(),
-        maxHops: z.number().int().positive().max(MAX_HOPS).optional(),
-        includeLlm: z.boolean().optional(),
-        extractedOnly: z.boolean().optional(),
-      },
-    },
-    async (a) => TOOL_RESULT(verbs.shortestPath(a)),
   );
 
   server.registerTool(
@@ -400,19 +151,6 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
     async (a) => TOOL_RESULT(verbs.extractRules(a)),
   );
 
-  server.registerTool(
-    'gaps',
-    {
-      description:
-        'Missing-asset + unimplemented-symbol detection over the soul. Returns unimplemented procedures (declared, no body / no executes edges), package specs with no body file (e.g. a .pks present but .pkb absent — the migration-critical "body is missing" signal), and unresolved call sites (calls into symbols that do not exist in the crib; Oracle built-ins flagged). Use this to confirm whether a package body or implementation is actually present before trusting the graph for line-level migration.',
-      inputSchema: {
-        extractedOnly: z.boolean().optional(),
-        includeBuiltins: z.boolean().optional(),
-      },
-    },
-    async (a) => TOOL_RESULT(verbs.gaps(a)),
-  );
-
   // ─── W3 trusted-agent-memory verbs (PRD lines 226–248) ─────────────────────────────────────
   // `brief`         — the one-call typed-group retrieval: code BM25 hits + doc instructions + trusted
   //                   memories as SEPARATE groups (code + memory scores are never fused — PRD 333).
@@ -430,7 +168,7 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
     'brief',
     {
       description:
-        'W3 — the one-call typed-group retrieval. Returns code BM25 hits, doc-section instructions, and trusted memories as SEPARATE typed groups (code + memory scores are never fused). `codeHits`+`instructions` come from one BM25 scan over the soul index (partitioned by kind); `memories`+`conflicts` come from the memory recall projection (criterion-1 lexical via the separate memory FTS, ranked by the 6-criterion comparator). `cursor` pages the code BM25 offset; `maxTokens` (default 2000) trims the combined payload. `ifHash` collapses a repeat to ~30 bytes.',
+        "START HERE for any question about this codebase - ask it before reading files. Searches BOTH the code and the AUTHORED MEANING layer, then interleaves them, so a conceptual question ('how do I debug a parser that hangs') finds the module that answers it even when they share no words. Returns code hits, doc-section instructions and trusted memories as SEPARATE typed groups. Each hit carries a one-line snippet plus `grounding` (semantic = authored purpose is in `llm`; if `inherited` is set that purpose describes the owning file/cluster named in `via`, NOT the hit itself) and `semanticMatch` when authored meaning RANKED it rather than merely decorating it. Two self-reports: `coverage` = share of hits carrying prose; `retrieval.matched` = share the semantic layer actually found - the honest signal, since coverage saturates once most files are described. `cursor` pages; `maxTokens` (default 2000) trims; `ifHash` collapses a repeat to ~30 bytes.",
       inputSchema: {
         q: z.string(),
         paths: z.array(z.string()).optional(),
@@ -448,7 +186,7 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
     'memory_recall',
     {
       description:
-        'W3 — recall trusted memory. Default limit 5, max 20, default token budget 1200; team + local + applicable-global sources. Normal recall never returns invalid / orphaned / superseded / retracted / pending records; conflicting claims appear together. Default view = evidence summaries + pointers; full evidence opt-in via withEvidence. Supports ifHash.',
+        "Recall trusted team/local/global memory. Default limit 5 (max 20), token budget 1200. Never returns invalid, superseded, retracted or pending records; conflicting claims come back together so the disagreement is visible. Evidence is summarised unless withEvidence. `includePending: true` adds a SEPARATE `pending` group of untrusted, in-flight observations from other agents on this repo - the shared working set for a swarm. They are never merged into `memories`, and each is stamped trust:'untrusted'/status:'pending': treat them as leads, not facts.",
       inputSchema: {
         q: z.string().optional(),
         targetIds: z.array(z.string()).optional(),
@@ -456,6 +194,7 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
         limit: z.number().int().positive().optional(),
         maxTokens: z.number().int().positive().optional(),
         withEvidence: z.boolean().optional(),
+        includePending: z.boolean().optional(),
         ifHash: z.string().optional(),
       },
     },
@@ -466,7 +205,7 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
     'memory_observe',
     {
       description:
-        "W4 — write a LOCAL candidate only (PRD: the MCP server never evaluates, executes a gate, or writes team memory). Stages an untrusted, content-addressed candidate in the local `candidates` collection; a repeat observation of the same claim upserts to the same id (idempotent). Promotion to a trusted record is a separate CLI/CI step (`crib memory evaluate`/`activate`/`propose`). Degrades to `{ memory: 'not configured' }` when no local store is wired. The repoId for a repo-scoped claim is resolved from the soul manifest / registry.",
+        "Stage a LOCAL memory candidate. Never writes team memory and never evaluates it - promotion is a separate CLI/CI step (crib memory evaluate/activate/propose). Re-observing the same claim upserts the same id. Returns { memory: 'not configured' } when no local store is wired.",
       inputSchema: {
         kind: z.enum(['fact', 'procedure', 'decision', 'pitfall', 'convention']),
         subject: z.string(),
@@ -484,65 +223,262 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
     async (a) => TOOL_RESULT(verbs.memoryObserve(a)),
   );
 
+  // One dispatcher instead of four near-identical tools (memory_get / memory_status / memory_audit /
+  // memory_feedback). Each carried its own name, description and schema in the tool list every
+  // session; folding them behind `op` removes that fixed cost without losing any capability.
+  // `memory_recall` and `memory_observe` stay standalone: they are the two verbs the installed
+  // client protocol names directly, and renaming them would break existing agent instructions.
   server.registerTool(
-    'memory_get',
+    'memory',
     {
       description:
-        'W3 — fetch one memory record by id: the full record + effective verdicts + store source. Evidence is returned as summaries by default (kind + verdict + soul anchor); the full evidence array is opt-in via withEvidence. Searches team `records`, local `active`, then global `records`. Supports ifHash.',
+        'Memory ledger operations, selected by `op`. get: one record by id (needs id; withEvidence for full evidence). status: ledger counts by trust/evidence/lifecycle plus recall-eligible, quarantined, and pending. audit: read-only health report - drifted verdicts, conflict groups, a secret re-scan, trust distribution, locally quarantined records. feedback: record LOCAL feedback on a record (needs subject, signal, actor); a `contradicted` signal quarantines only when backed by admissible counterEvidence, and never retracts team memory. To READ memory for a task use `memory_recall`; to WRITE a new claim use `memory_observe`.',
       inputSchema: {
-        id: z.string(),
+        op: z.enum(['get', 'status', 'audit', 'feedback']),
+        id: z.string().optional(),
         withEvidence: z.boolean().optional(),
-        ifHash: z.string().optional(),
-      },
-    },
-    async (a) => TOOL_RESULT(verbs.memoryGet(a)),
-  );
-
-  server.registerTool(
-    'memory_status',
-    {
-      description:
-        'W3 — memory ledger status: counts by trust / evidence / applicability / lifecycle / source, plus eligible (recall-eligible), quarantined, and pending (local candidate entries not yet promoted to active records). provenance.fresh = true means the counts reflect a live revalidation against the soul. Supports ifHash.',
-      inputSchema: { ifHash: z.string().optional() },
-    },
-    async (a) => TOOL_RESULT(verbs.memoryStatus(a)),
-  );
-
-  server.registerTool(
-    'memory_audit',
-    {
-      description:
-        'W3 — read-only memory audit: a validation / conflict / drift / privacy / trust report. validation.drift lists records whose fresh evidence/applicability verdict differs from the stamped one; conflicts lists the conflict groups; privacy re-runs the write-time secret scan on every record; trust is the trust distribution; feedback.quarantined counts records excluded from recall by a local quarantine, and feedback.contradictedForReview lists `contradicted` feedback whose subject was NOT suppressed (bounded penalty only — awaiting admissible counter-evidence). Read-only: never mutates a record, decision, or store. Supports ifHash.',
-      inputSchema: { ifHash: z.string().optional() },
-    },
-    async (a) => TOOL_RESULT(verbs.memoryAudit(a)),
-  );
-
-  server.registerTool(
-    'memory_feedback',
-    {
-      description:
-        'W5 — write a LOCAL feedback signal (useful / unhelpful / contradicted) on a memory record by id (PRD line 241: "Writes a local feedback event; one negative event cannot retract team memory"). For a `contradicted` signal, the record is quarantined LOCALLY only when supported by admissible counter-evidence (a counterEvidence item whose kind is admissible for the record claim kind and whose verdict is valid — PRD W5 line 361); otherwise it keeps a bounded penalty and is surfaced for review via memory_audit. The quarantine decision is local-only — team memory is never retracted by a single local negative event. Content-addressed → idempotent. Degrades to `{ memory: \'not configured\' }` when no local store is wired.',
-      inputSchema: {
-        subject: z.string(),
-        signal: z.enum(['useful', 'unhelpful', 'contradicted']),
-        actor: z.string(),
+        subject: z.string().optional(),
+        signal: z.enum(['useful', 'unhelpful', 'contradicted']).optional(),
+        actor: z.string().optional(),
         context: z.string().optional(),
         counterEvidence: z.array(z.record(z.string(), z.unknown())).optional(),
         ifHash: z.string().optional(),
       },
     },
-    async (a) => TOOL_RESULT(verbs.memoryFeedback(a)),
+    async (a) => {
+      switch (a.op) {
+        case 'get':
+          if (!a.id)
+            return TOOL_RESULT({ error: { code: 'BAD_REQUEST', message: 'op=get requires id' } });
+          return TOOL_RESULT(
+            verbs.memoryGet({
+              id: a.id,
+              ...(a.withEvidence !== undefined ? { withEvidence: a.withEvidence } : {}),
+              ...(a.ifHash !== undefined ? { ifHash: a.ifHash } : {}),
+            }),
+          );
+        case 'status':
+          return TOOL_RESULT(
+            verbs.memoryStatus({ ...(a.ifHash !== undefined ? { ifHash: a.ifHash } : {}) }),
+          );
+        case 'audit':
+          return TOOL_RESULT(
+            verbs.memoryAudit({ ...(a.ifHash !== undefined ? { ifHash: a.ifHash } : {}) }),
+          );
+        case 'feedback': {
+          if (!a.subject || !a.signal || !a.actor)
+            return TOOL_RESULT({
+              error: {
+                code: 'BAD_REQUEST',
+                message: 'op=feedback requires subject, signal, and actor',
+              },
+            });
+          return TOOL_RESULT(
+            verbs.memoryFeedback({
+              subject: a.subject,
+              signal: a.signal,
+              actor: a.actor,
+              ...(a.context !== undefined ? { context: a.context } : {}),
+              ...(a.counterEvidence !== undefined ? { counterEvidence: a.counterEvidence } : {}),
+              ...(a.ifHash !== undefined ? { ifHash: a.ifHash } : {}),
+            }),
+          );
+        }
+      }
+    },
+  );
+
+  // ---------------------------------------------------------------------------------------------
+  // Dispatchers. Each of these replaced a family of near-identical tools that differed only in
+  // which verb they called. Every tool in the list costs name + description + JSON schema in the
+  // tool list of EVERY session, whether or not it is used, so a family of five rarely-used tools is
+  // a permanent tax on every conversation. Folding them behind `op` keeps every capability while
+  // paying for one entry instead of five.
+  //
+  // `brief`, `context`, `query`, `source`, `detect_changes`, `memory_recall` and `memory_observe`
+  // stay standalone: they are the verbs reached for constantly, or named directly by the installed
+  // client protocol / project instructions, where an extra `op` would be friction or breakage.
+  // ---------------------------------------------------------------------------------------------
+
+  server.registerTool(
+    'enrich',
+    {
+      description:
+        "Drive the agent-authored semantic layer, selected by `op`. The server NEVER calls a model — you author the content. status: coverage + progress; `scopes:true` ranks path-prefix scopes to choose from, `scope:{pathPrefix}` restricts counts, and `gate` reports the symbol-importance cut that makes `done` honest. next: the next batch of targets to author, with seed facts, lower-layer analyses, output schema and instructions; `batchId` is deterministic, so the same batchId twice means nothing was authored in between. Long caller/callee lists are sampled — `callersTotal`/`calleesTotal` give the true count. save: validate + persist authored items (needs batchId + items); rejected items stay pending and are re-offered. delta: classify persisted artifacts as orphaned/stale/drifted and return `reissueTargets`; non-destructive unless prune/pruneStale. audit: re-verify every artifact's evidence against current code and report grounded/ungrounded/unsupported.",
+      inputSchema: {
+        op: z.enum(['status', 'next', 'save', 'delta', 'audit']),
+        layer: z.enum(['symbol', 'file', 'cluster', 'system']).optional(),
+        scope: z.record(z.string(), z.unknown()).optional(),
+        scopes: z.boolean().optional(),
+        targets: z.array(z.string()).optional(),
+        limit: z.number().int().positive().optional(),
+        skeleton: z.boolean().optional(),
+        batchId: z.string().optional(),
+        items: z.array(z.record(z.string(), z.unknown())).optional(),
+        since: z.string().optional(),
+        prune: z.boolean().optional(),
+        pruneStale: z.boolean().optional(),
+        verifyDrift: z.boolean().optional(),
+      },
+    },
+    async (a) => {
+      const { op, ...rest } = a as Record<string, unknown> & { op: string };
+      switch (op) {
+        case 'status':
+          return TOOL_RESULT(verbs.enrichStatus(rest as never));
+        case 'next':
+          return TOOL_RESULT(verbs.enrichNext(rest as never));
+        case 'save':
+          if (!a.batchId || !a.items)
+            return TOOL_RESULT(BAD_REQUEST('op=save requires batchId and items'));
+          return TOOL_RESULT(verbs.enrichSave(rest as never));
+        case 'delta':
+          return TOOL_RESULT(verbs.semanticDelta(rest as never));
+        case 'audit':
+          return TOOL_RESULT(verbs.auditLlm());
+        default:
+          return TOOL_RESULT(BAD_REQUEST(`unknown op ${op}`));
+      }
+    },
   );
 
   server.registerTool(
-    'stats',
+    'impact',
     {
       description:
-        'M3.3 server observability — live per-verb call counts + latency (min/mean/max) and the ifHash change-aware cache hit rate for this running process. Pure runtime counters; not persisted, not part of the deterministic soul. Useful for capacity tuning and cache-effectiveness checks.',
-      inputSchema: {},
+        'Blast radius and reachability, selected by `op`. blast (default): what breaks if `id` changes — `dir` up = dependents, down = dependencies; carries the docs that describe the changed symbol. federated: the same walk across MULTIPLE repos (`roots`), following an outbound HTTP call to the route that serves it; each node carries `soul` and `crossRepo`. path: the shortest dependency path between `from` and `to`. owners: which files/modules own `id`. Run blast BEFORE editing any symbol.',
+      inputSchema: {
+        op: z.enum(['blast', 'federated', 'path', 'owners']).optional(),
+        id: z.string().optional(),
+        from: z.string().optional(),
+        to: z.string().optional(),
+        dir: z.enum(['up', 'down']).optional(),
+        roots: z.array(z.string()).max(MAX_FED_ROOTS).optional(),
+        depth: z.number().int().positive().max(MAX_DEPTH).optional(),
+        maxHops: z.number().int().positive().max(MAX_HOPS).optional(),
+        docLimit: z.number().int().positive().max(MAX_DOC_LIMIT).optional(),
+        limit: z.number().int().positive().max(MAX_LIMIT).optional(),
+        extractedOnly: z.boolean().optional(),
+        includeLlm: z.boolean().optional(),
+      },
     },
-    async () => TOOL_RESULT(verbs.getStats().snapshot()),
+    async (a) => {
+      const { op, ...rest } = a as Record<string, unknown> & { op?: string };
+      switch (op ?? 'blast') {
+        case 'blast':
+          if (!a.id) return TOOL_RESULT(BAD_REQUEST('op=blast requires id'));
+          return TOOL_RESULT(verbs.impact(rest as never));
+        case 'federated':
+          if (!a.id) return TOOL_RESULT(BAD_REQUEST('op=federated requires id'));
+          return TOOL_RESULT(verbs.federatedImpact(rest as never));
+        case 'path':
+          if (!a.from || !a.to) return TOOL_RESULT(BAD_REQUEST('op=path requires from and to'));
+          return TOOL_RESULT(verbs.shortestPath(rest as never));
+        case 'owners':
+          if (!a.id) return TOOL_RESULT(BAD_REQUEST('op=owners requires id'));
+          return TOOL_RESULT(verbs.ownership(rest as never));
+        default:
+          return TOOL_RESULT(BAD_REQUEST(`unknown op ${op}`));
+      }
+    },
+  );
+
+  server.registerTool(
+    'dossier',
+    {
+      description:
+        'Deep reusable context, selected by `op`. one (default): everything about ONE symbol in a call — deep node fields, paged source body, callers, callees, linked docs, decision table, control flow. `source.nextLine` is the paging cursor; pass it back as sourceStartLine. package: everything about one PACKAGE — constant values, every member with implementation status, tables read/written, docs, expected body file. scope: bulk dossiers for EVERY symbol in a package/file/cluster in ONE call (use instead of looping over ~50 members); honesty flags symbolCount, truncated, skipped.',
+      inputSchema: {
+        op: z.enum(['one', 'package', 'scope']).optional(),
+        id: z.string(),
+        scope: z.enum(['package', 'file', 'cluster']).optional(),
+        includeTables: z.boolean().optional(),
+        maxSymbols: z.number().int().positive().max(MAX_SCOPE_SYMBOLS).optional(),
+        sourceMaxChars: z.number().int().positive().max(MAX_SOURCE_CHARS).optional(),
+        sourceMaxLines: z.number().int().positive().max(MAX_SOURCE_LINES).optional(),
+        sourceStartLine: z.number().int().positive().optional(),
+        extractedOnly: z.boolean().optional(),
+        withLlm: z.boolean().optional(),
+        format: z.enum(['json', 'markdown']).optional(),
+        cursor: z.string().optional(),
+        maxTokens: z.number().int().positive().max(MAX_MAX_TOKENS).optional(),
+        ifHash: z.string().optional(),
+      },
+    },
+    async (a) => {
+      const { op, ...rest } = a as Record<string, unknown> & { op?: string };
+      switch (op ?? 'one') {
+        case 'one':
+          return TOOL_RESULT(verbs.dossier(rest as never));
+        case 'package':
+          return TOOL_RESULT(verbs.reconstruct(rest as never));
+        case 'scope':
+          if (!a.scope)
+            return TOOL_RESULT(
+              BAD_REQUEST("op=scope requires scope: 'package' | 'file' | 'cluster'"),
+            );
+          return TOOL_RESULT(verbs.dossierByScope(rest as never));
+        default:
+          return TOOL_RESULT(BAD_REQUEST(`unknown op ${op}`));
+      }
+    },
+  );
+
+  server.registerTool(
+    'neighbors',
+    {
+      description:
+        'One hop out from `id`, selected by `op`. edges (default): adjacent soul nodes, filterable by `rel` and `dir`. llm: neighbours in the agent-authored semantic graph instead of the extracted one. describes: the doc sections that document `id`, with confidence and provenance.',
+      inputSchema: {
+        op: z.enum(['edges', 'llm', 'describes']).optional(),
+        id: z.string(),
+        rel: z.string().optional(),
+        dir: z.enum(['in', 'out', 'both']).optional(),
+        limit: z.number().int().positive().max(MAX_LIMIT).optional(),
+        minConfidence: z.number().optional(),
+        extractedOnly: z.boolean().optional(),
+        includeLlm: z.boolean().optional(),
+      },
+    },
+    async (a) => {
+      const { op, ...rest } = a as Record<string, unknown> & { op?: string };
+      switch (op ?? 'edges') {
+        case 'edges':
+          return TOOL_RESULT(verbs.neighbors(rest as never));
+        case 'llm':
+          return TOOL_RESULT(verbs.llmNeighbors(rest as never));
+        case 'describes':
+          return TOOL_RESULT(verbs.describes(rest as never));
+        default:
+          return TOOL_RESULT(BAD_REQUEST(`unknown op ${op}`));
+      }
+    },
+  );
+
+  server.registerTool(
+    'status',
+    {
+      description:
+        'Server and graph state, selected by `op`. health (default): is the project indexed. stats: live per-verb call counts, latency and ifHash cache hit rate for this process (in-memory only). gaps: what the graph is MISSING — procedures declared with no body, package specs whose body file is absent, and call sites pointing at symbols the crib has never seen. Check gaps before trusting the graph for line-level work.',
+      inputSchema: {
+        op: z.enum(['health', 'stats', 'gaps']).optional(),
+        extractedOnly: z.boolean().optional(),
+        includeBuiltins: z.boolean().optional(),
+      },
+    },
+    async (a) => {
+      const { op, ...rest } = a as Record<string, unknown> & { op?: string };
+      switch (op ?? 'health') {
+        case 'health':
+          return TOOL_RESULT(verbs.status());
+        case 'stats':
+          return TOOL_RESULT(verbs.getStats().snapshot());
+        case 'gaps':
+          return TOOL_RESULT(verbs.gaps(rest as never));
+        default:
+          return TOOL_RESULT(BAD_REQUEST(`unknown op ${op}`));
+      }
+    },
   );
 
   return server;
@@ -556,6 +492,103 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
  * answer a single request. We wait on stdin's `end`/`close` so the process lives exactly as long
  * as the client keeps the connection open.
  */
+/**
+ * Shared-daemon mode: ONE process holds the graph, many agents connect over HTTP.
+ *
+ * Why this exists. The stdio transport is one process per client, and each loads the full graph:
+ * measured on this repo, 213 MB and ~450ms of startup EACH. A swarm of 400 agents would therefore
+ * need ~83 GB of RAM to do nothing but hold 400 identical copies of the same graph — more than the
+ * machine has. Sharing one instance is not an optimisation here; it is the difference between the
+ * swarm being possible and impossible.
+ *
+ * Stateless by construction (`sessionIdGenerator: undefined`): every request carries everything it
+ * needs, so agents may connect, disconnect and reconnect freely, and one crashed agent leaves no
+ * server-side state behind to leak or to confuse the next one. A fresh transport and server object
+ * per request keeps concurrent callers isolated from each other's streams while they continue to
+ * share the single expensive thing — the graph held in `verbs`.
+ *
+ * Binds to loopback by default: the graph contains source text, and a code-knowledge daemon should
+ * never become reachable from the network by accident.
+ */
+export async function serveHttp(
+  verbs: Verbs,
+  opts: { port?: number; host?: string; version?: string } = {},
+): Promise<{ port: number; close: () => Promise<void> }> {
+  const version = opts.version ?? '0.0.0';
+  const host = opts.host ?? '127.0.0.1';
+  const httpServer = createServer((req, res) => {
+    if (req.method === 'GET' && req.url === '/health') {
+      res.writeHead(200, { 'content-type': 'application/json' });
+      res.end(JSON.stringify({ ok: true, version }));
+      return;
+    }
+    if (req.method !== 'POST') {
+      res.writeHead(405).end();
+      return;
+    }
+    const chunks: Buffer[] = [];
+    req.on('data', (c: Buffer) => chunks.push(c));
+    req.on('end', () => {
+      void (async () => {
+        let body: unknown;
+        try {
+          body = JSON.parse(Buffer.concat(chunks).toString('utf8'));
+        } catch {
+          res.writeHead(400, { 'content-type': 'application/json' });
+          res.end(
+            JSON.stringify({
+              jsonrpc: '2.0',
+              id: null,
+              error: { code: -32700, message: 'parse error' },
+            }),
+          );
+          return;
+        }
+        // One transport+server per request: the SDK objects are per-connection, while `verbs` —
+        // the graph, the index, the caches — stays shared. That is the whole point of this mode.
+        const transport = new StreamableHTTPServerTransport({
+          sessionIdGenerator: undefined,
+          enableJsonResponse: true,
+        });
+        const server = buildServer(verbs, version);
+        res.on('close', () => {
+          void transport.close();
+          void server.close();
+        });
+        try {
+          await server.connect(transport);
+          await transport.handleRequest(req, res, body);
+        } catch {
+          if (!res.headersSent) {
+            res.writeHead(500, { 'content-type': 'application/json' });
+            res.end(
+              JSON.stringify({
+                jsonrpc: '2.0',
+                id: null,
+                error: { code: -32603, message: 'internal error' },
+              }),
+            );
+          }
+        }
+      })();
+    });
+  });
+  const port = await new Promise<number>((resolve, reject) => {
+    httpServer.once('error', reject);
+    httpServer.listen(opts.port ?? 0, host, () => {
+      const addr = httpServer.address();
+      resolve(typeof addr === 'object' && addr !== null ? addr.port : 0);
+    });
+  });
+  return {
+    port,
+    close: () =>
+      new Promise<void>((resolve) => {
+        httpServer.close(() => resolve());
+      }),
+  };
+}
+
 export async function serveStdio(verbs: Verbs, version = '0.0.0'): Promise<void> {
   const server = buildServer(verbs, version);
   const transport = new StdioServerTransport();

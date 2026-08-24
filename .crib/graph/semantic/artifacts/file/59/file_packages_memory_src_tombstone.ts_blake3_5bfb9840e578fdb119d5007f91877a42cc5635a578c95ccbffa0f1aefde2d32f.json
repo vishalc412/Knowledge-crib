@@ -1,0 +1,67 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/memory/src/tombstone.ts",
+  "nodeHash": "blake3:5bfb9840e578fdb119d5007f91877a42cc5635a578c95ccbffa0f1aefde2d32f",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:04:00.265Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "Tombstones a local memory once it has been promoted to the team, so the same claim does not exist twice with two different trust levels.",
+    "responsibilities": [
+      "Mark a promoted local record as superseded"
+    ],
+    "businessRules": [
+      {
+        "rule": "The local copy is tombstoned rather than deleted or left in place.",
+        "rationale": "Leaving it would duplicate the claim; deleting it would lose the local history.",
+        "sourceRef": "file:packages/memory/src/tombstone.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.83
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:tombstone",
+        "kind": "capability",
+        "name": "Promotion tombstones",
+        "summary": "One claim, one trust level.",
+        "attributes": {},
+        "id": "llm:file:packages/memory/src/tombstone.ts#capability:tombstone",
+        "targetId": "file:packages/memory/src/tombstone.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/memory/src/tombstone.ts",
+        "to": "llm:file:packages/memory/src/tombstone.ts#capability:tombstone",
+        "rel": "realizes",
+        "rationale": "This file implements promotion tombstones.",
+        "confidence": 0.83,
+        "targetId": "file:packages/memory/src/tombstone.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/memory/src/tombstone.ts#TombstoneResult@L62",
+      "quote": "export interface TombstoneResult {"
+    },
+    {
+      "soulId": "sym:packages/memory/src/tombstone.ts#isTeamTrustedRecord@L41",
+      "quote": "export function isTeamTrustedRecord("
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

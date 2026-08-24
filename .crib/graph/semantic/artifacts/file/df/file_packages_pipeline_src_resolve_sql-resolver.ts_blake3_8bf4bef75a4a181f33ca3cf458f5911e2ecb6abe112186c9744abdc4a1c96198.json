@@ -1,0 +1,68 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/pipeline/src/resolve/sql-resolver.ts",
+  "nodeHash": "blake3:8bf4bef75a4a181f33ca3cf458f5911e2ecb6abe112186c9744abdc4a1c96198",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:00:13.888Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "Cross-file SQL data flow: resolves which tables and columns each statement actually reads and writes, turning SQL from text into a queryable data-flow graph.",
+    "responsibilities": [
+      "Resolve statement references against the schema catalog",
+      "Emit reads and writes edges per statement"
+    ],
+    "businessRules": [
+      {
+        "rule": "A reference that does not resolve to a catalogued table is dropped rather than invented.",
+        "rationale": "A fabricated table edge would corrupt a migration analysis.",
+        "sourceRef": "file:packages/pipeline/src/resolve/sql-resolver.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.84
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:sql-dataflow",
+        "kind": "capability",
+        "name": "SQL data flow",
+        "summary": "Statement-level reads and writes.",
+        "attributes": {},
+        "id": "llm:file:packages/pipeline/src/resolve/sql-resolver.ts#capability:sql-dataflow",
+        "targetId": "file:packages/pipeline/src/resolve/sql-resolver.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/pipeline/src/resolve/sql-resolver.ts",
+        "to": "llm:file:packages/pipeline/src/resolve/sql-resolver.ts#capability:sql-dataflow",
+        "rel": "realizes",
+        "rationale": "This file resolves SQL data flow.",
+        "confidence": 0.84,
+        "targetId": "file:packages/pipeline/src/resolve/sql-resolver.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/pipeline/src/resolve/sql-resolver.ts#SqlResolver.resolve.emit@L71",
+      "quote": "const id = edgeId(src, dst, rel);"
+    },
+    {
+      "soulId": "sym:packages/pipeline/src/resolve/sql-resolver.ts#SqlResolver.resolve@L41",
+      "quote": "resolve(ctx: ResolveContext): ResolveResult {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

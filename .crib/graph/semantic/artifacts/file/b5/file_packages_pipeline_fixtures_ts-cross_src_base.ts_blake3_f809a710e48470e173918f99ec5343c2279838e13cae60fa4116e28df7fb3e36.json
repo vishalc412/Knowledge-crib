@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/pipeline/fixtures/ts-cross/src/base.ts",
+  "nodeHash": "blake3:f809a710e48470e173918f99ec5343c2279838e13cae60fa4116e28df7fb3e36",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:17:56.866Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "A test fixture: sample TS source that exists to exercise the extractor for this language, not to run in production.",
+    "responsibilities": [
+      "Provide representative source constructs for extractor tests"
+    ],
+    "businessRules": [],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.76
+  },
+  "graph": {
+    "nodes": [],
+    "edges": []
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/pipeline/fixtures/ts-cross/src/base.ts#Base.greet@L2",
+      "quote": "greet(): string {"
+    },
+    {
+      "soulId": "sym:packages/pipeline/fixtures/ts-cross/src/base.ts#Base@L1",
+      "quote": "export class Base {"
+    },
+    {
+      "soulId": "sym:packages/pipeline/fixtures/ts-cross/src/base.ts#Greeter@L7",
+      "quote": "export interface Greeter {"
+    },
+    {
+      "soulId": "sym:packages/pipeline/fixtures/ts-cross/src/base.ts#helper@L11",
+      "quote": "export function helper(): number {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

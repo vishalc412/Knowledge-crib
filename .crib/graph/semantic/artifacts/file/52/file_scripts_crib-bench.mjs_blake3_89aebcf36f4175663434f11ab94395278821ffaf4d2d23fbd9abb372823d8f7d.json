@@ -1,0 +1,67 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:scripts/crib-bench.mjs",
+  "nodeHash": "blake3:89aebcf36f4175663434f11ab94395278821ffaf4d2d23fbd9abb372823d8f7d",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:05:50.838Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "Benchmarks the query verbs so a latency regression shows up as a number rather than as a feeling.",
+    "responsibilities": [
+      "Time each verb against a real graph and report"
+    ],
+    "businessRules": [
+      {
+        "rule": "Latency is measured against a real graph, not a synthetic one.",
+        "rationale": "Synthetic graphs hide the costs that only appear at real scale.",
+        "sourceRef": "file:scripts/crib-bench.mjs"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.8
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:scripts-crib-bench-mjs",
+        "kind": "capability",
+        "name": "Query benchmark",
+        "summary": "Measured verb latency.",
+        "attributes": {},
+        "id": "llm:file:scripts/crib-bench.mjs#capability:scripts-crib-bench-mjs",
+        "targetId": "file:scripts/crib-bench.mjs"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:scripts/crib-bench.mjs",
+        "to": "llm:file:scripts/crib-bench.mjs#capability:scripts-crib-bench-mjs",
+        "rel": "realizes",
+        "rationale": "This file implements query benchmark.",
+        "confidence": 0.8,
+        "targetId": "file:scripts/crib-bench.mjs"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:scripts/crib-bench.mjs#estimateTokens@L52",
+      "quote": "function estimateTokens(text) {"
+    },
+    {
+      "soulId": "sym:scripts/crib-bench.mjs#fileOfId@L57",
+      "quote": "const m = /^(?:sym|file|cluster):([^#]+?)(?:#.*)?$/.exec(id);"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

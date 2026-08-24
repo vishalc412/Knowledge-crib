@@ -1,0 +1,68 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/soul-schema/src/enums.ts",
+  "nodeHash": "blake3:2d8910b38eab24408c00b3fb99d482d2b8acb6bffd14c3b56bb85e61c575fab6",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T03:58:13.487Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The closed enumerations of the graph vocabulary: node kinds, relations, methods and provenance, frozen per schema version so an unknown value is a validation error rather than silent drift.",
+    "responsibilities": [
+      "Enumerate the valid node kinds and relation types",
+      "Reject an unknown value at validation time"
+    ],
+    "businessRules": [
+      {
+        "rule": "The enumerations are CLOSED: an unknown value fails validation instead of being accepted.",
+        "rationale": "An open vocabulary would let a typo become a permanent silent node kind.",
+        "sourceRef": "file:packages/soul-schema/src/enums.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.85
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:closed-vocabulary",
+        "kind": "capability",
+        "name": "Closed graph vocabulary",
+        "summary": "Frozen kinds and relations per schema version.",
+        "attributes": {},
+        "id": "llm:file:packages/soul-schema/src/enums.ts#capability:closed-vocabulary",
+        "targetId": "file:packages/soul-schema/src/enums.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/soul-schema/src/enums.ts",
+        "to": "llm:file:packages/soul-schema/src/enums.ts#capability:closed-vocabulary",
+        "rel": "realizes",
+        "rationale": "This file defines the enums.",
+        "confidence": 0.85,
+        "targetId": "file:packages/soul-schema/src/enums.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/soul-schema/src/enums.ts#ArtifactType@L50",
+      "quote": "export type ArtifactType = 'instruction' | 'skill' | 'agent' | 'command' | 'rule' | 'mcp-server';"
+    },
+    {
+      "soulId": "sym:packages/soul-schema/src/enums.ts#Method@L102",
+      "quote": "export type Method = 'static' | 'explicit' | 'identifier' | 'path' | 'semantic' | 'inferred';"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

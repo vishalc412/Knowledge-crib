@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/parsers/fixtures/csharp/LoanRuleEngine.cs",
+  "nodeHash": "blake3:47a8b3eb43a1be163aad205cd2cd20ac44ec8cbe8b40c2fec9c120e51f424c84",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:17:56.380Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "A test fixture: sample CS source that exists to exercise the extractor for this language, not to run in production.",
+    "responsibilities": [
+      "Provide representative source constructs for extractor tests"
+    ],
+    "businessRules": [],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.76
+  },
+  "graph": {
+    "nodes": [],
+    "edges": []
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/parsers/fixtures/csharp/LoanRuleEngine.cs#Crib.LoanRuleEngine.ApplicationRow@L57",
+      "quote": "public class ApplicationRow { public decimal Amount; public string Status; public decimal CreditScore; }"
+    },
+    {
+      "soulId": "sym:packages/parsers/fixtures/csharp/LoanRuleEngine.cs#Crib.LoanRuleEngine.LoanRuleService.AssessApplication@L9",
+      "quote": "public void AssessApplication(decimal pId)"
+    },
+    {
+      "soulId": "sym:packages/parsers/fixtures/csharp/LoanRuleEngine.cs#Crib.LoanRuleEngine.LoanRuleService.SelectApplications@L52",
+      "quote": "ApplicationRow[] SelectApplications(decimal id) { return new ApplicationRow[0]; }"
+    },
+    {
+      "soulId": "sym:packages/parsers/fixtures/csharp/LoanRuleEngine.cs#Crib.LoanRuleEngine.LoanRuleService.UpdateApplication@L53",
+      "quote": "void UpdateApplication(decimal id, string status) { }"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

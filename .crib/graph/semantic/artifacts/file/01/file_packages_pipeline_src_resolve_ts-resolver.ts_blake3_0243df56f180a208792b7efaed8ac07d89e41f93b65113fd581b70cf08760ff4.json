@@ -1,0 +1,69 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/pipeline/src/resolve/ts-resolver.ts",
+  "nodeHash": "blake3:0243df56f180a208792b7efaed8ac07d89e41f93b65113fd581b70cf08760ff4",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T03:53:11.757Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The TypeScript cross-file resolver: re-parses each file and turns cross-file references — imports, calls, inheritance — into real edges by looking every target up in the global symbol table.",
+    "responsibilities": [
+      "Resolve import specifiers to the symbols they actually name",
+      "Link a caller to the imported symbol it invokes",
+      "Resolve inheritance across files into edges"
+    ],
+    "businessRules": [
+      {
+        "rule": "Every target is resolved through the global symbol table rather than guessed from a name.",
+        "rationale": "A name-matched edge would be a guess presented as a fact.",
+        "sourceRef": "file:packages/pipeline/src/resolve/ts-resolver.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.84
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:resolve-typescript",
+        "kind": "capability",
+        "name": "TypeScript resolution",
+        "summary": "Cross-file edges for TypeScript.",
+        "attributes": {},
+        "id": "llm:file:packages/pipeline/src/resolve/ts-resolver.ts#capability:resolve-typescript",
+        "targetId": "file:packages/pipeline/src/resolve/ts-resolver.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/pipeline/src/resolve/ts-resolver.ts",
+        "to": "llm:file:packages/pipeline/src/resolve/ts-resolver.ts#capability:resolve-typescript",
+        "rel": "realizes",
+        "rationale": "This file is the TypeScript resolver.",
+        "confidence": 0.84,
+        "targetId": "file:packages/pipeline/src/resolve/ts-resolver.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/pipeline/src/resolve/ts-resolver.ts#ResolveResult@L46",
+      "quote": "export interface ResolveResult {"
+    },
+    {
+      "soulId": "sym:packages/pipeline/src/resolve/ts-resolver.ts#ResolveStats@L31",
+      "quote": "export interface ResolveStats {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

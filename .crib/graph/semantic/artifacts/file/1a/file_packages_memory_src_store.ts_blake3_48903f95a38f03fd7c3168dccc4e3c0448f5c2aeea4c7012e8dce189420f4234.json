@@ -1,0 +1,75 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/memory/src/store.ts",
+  "nodeHash": "blake3:48903f95a38f03fd7c3168dccc4e3c0448f5c2aeea4c7012e8dce189420f4234",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T02:52:39.450Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The three memory stores — team, local and global — that hold what agents have learned about this repository, each with a different trust level and sharing boundary.",
+    "responsibilities": [
+      "Keep committed team memory under the repo, shared with the team",
+      "Keep per-machine local memory outside the repo, never shared implicitly",
+      "Serialize team writes on the same lock the reindex holds",
+      "Write atomically and validate every record before it lands"
+    ],
+    "businessRules": [
+      {
+        "rule": "A team memory write serializes on the repo lock that the soul reindex also holds, so the two can never race.",
+        "rationale": "Team memory and the graph it references must stay consistent.",
+        "sourceRef": "file:packages/memory/src/store.ts"
+      },
+      {
+        "rule": "Local memory is per-machine and per-repo, and is never promoted to team memory implicitly.",
+        "rationale": "Trust has to be granted deliberately, not accumulated by accident.",
+        "sourceRef": "file:packages/memory/src/store.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.84
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:memory-stores",
+        "kind": "capability",
+        "name": "Memory stores",
+        "summary": "Team, local and global memory with distinct trust boundaries.",
+        "attributes": {},
+        "id": "llm:file:packages/memory/src/store.ts#capability:memory-stores",
+        "targetId": "file:packages/memory/src/store.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/memory/src/store.ts",
+        "to": "llm:file:packages/memory/src/store.ts#capability:memory-stores",
+        "rel": "realizes",
+        "rationale": "This file implements the three stores.",
+        "confidence": 0.84,
+        "targetId": "file:packages/memory/src/store.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/memory/src/store.ts#MemoryCollection@L49",
+      "quote": "export type MemoryCollection ="
+    },
+    {
+      "soulId": "sym:packages/memory/src/store.ts#MemoryLockNestingError@L96",
+      "quote": "export class MemoryLockNestingError extends Error {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

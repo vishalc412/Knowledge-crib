@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/parsers/src/ts/TypeScriptExtractor.test.ts",
+  "nodeHash": "blake3:2cf12e33d2291df6005a67d88a0395c63bc6dd3be754268ba46156f7afb0c51c",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:17:55.982Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The test suite for TypeScriptExtractor — it defines the behaviour that is guaranteed, so a change that breaks any of it fails the build. It pins: TypeScriptExtractor — golden (M2 gate); TypeScriptExtractor — Track 3 statement/condition/CFG; TypeScriptExtractor — extract_rules e2e (Track 3); TypeScriptExtractor — schema 1.2 deep-extraction fidelity.",
+    "responsibilities": [
+      "Pin the observable behaviour of TypeScriptExtractor",
+      "Fail the build when a guaranteed behaviour changes"
+    ],
+    "businessRules": [],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.76
+  },
+  "graph": {
+    "nodes": [],
+    "edges": []
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/parsers/src/ts/TypeScriptExtractor.test.ts#ctxFor.readText@L17",
+      "quote": "async readText() {"
+    },
+    {
+      "soulId": "sym:packages/parsers/src/ts/TypeScriptExtractor.test.ts#ctxFor.treeSitter@L20",
+      "quote": "throw new Error('not used');"
+    },
+    {
+      "soulId": "sym:packages/parsers/src/ts/TypeScriptExtractor.test.ts#ctxFor@L15",
+      "quote": "function ctxFor(text: string): ExtractCtx {"
+    },
+    {
+      "soulId": "sym:packages/parsers/src/ts/TypeScriptExtractor.test.ts#id@L49",
+      "quote": "const id = (q: string) => nodes.find((n) => n.qualifiedName === q)?.id;"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

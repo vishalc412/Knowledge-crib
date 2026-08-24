@@ -1,0 +1,69 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/parsers/src/fuzz/extractor-fuzz.ts",
+  "nodeHash": "blake3:50e3c89ef0fe2919b5ae01d3fed0b3b3645df82098a02c14bbd38e0c98916812",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T03:53:11.759Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The parser fuzzing harness: generates seeded random inputs and runs every extractor against them in a worker pool with a per-call timeout, so a parser that hangs is caught rather than shipped.",
+    "responsibilities": [
+      "Generate seeded inputs so a failure is reproducible",
+      "Dispatch each input to a worker with a time budget",
+      "Terminate and report a worker that exceeds its budget"
+    ],
+    "businessRules": [
+      {
+        "rule": "Each extract call runs in a worker under a timeout, because a synchronous parse hang cannot be interrupted in-process.",
+        "rationale": "A promise-based timeout cannot fire while the event loop is blocked.",
+        "sourceRef": "file:packages/parsers/src/fuzz/extractor-fuzz.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.84
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:parser-fuzzing",
+        "kind": "capability",
+        "name": "Parser fuzzing",
+        "summary": "Hang and crash detection for every extractor.",
+        "attributes": {},
+        "id": "llm:file:packages/parsers/src/fuzz/extractor-fuzz.ts#capability:parser-fuzzing",
+        "targetId": "file:packages/parsers/src/fuzz/extractor-fuzz.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/parsers/src/fuzz/extractor-fuzz.ts",
+        "to": "llm:file:packages/parsers/src/fuzz/extractor-fuzz.ts#capability:parser-fuzzing",
+        "rel": "realizes",
+        "rationale": "This file is the fuzz harness.",
+        "confidence": 0.84,
+        "targetId": "file:packages/parsers/src/fuzz/extractor-fuzz.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/parsers/src/fuzz/extractor-fuzz.ts#FastCheck@L41",
+      "quote": "type FastCheck = typeof import('fast-check');"
+    },
+    {
+      "soulId": "sym:packages/parsers/src/fuzz/extractor-fuzz.ts#FuzzOutcome@L59",
+      "quote": "export interface FuzzOutcome {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

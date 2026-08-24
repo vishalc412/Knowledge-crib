@@ -1,0 +1,67 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:scripts/eval/metrics.mjs",
+  "nodeHash": "blake3:7f33175deeed2f2ec901b1851821c6508ef78337a87431fefaa718c2cfb4d13a",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:05:50.838Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The retrieval metrics — precision, recall and rank-based scores — that turn evaluation runs into comparable numbers.",
+    "responsibilities": [
+      "Compute ranking metrics from evaluation results"
+    ],
+    "businessRules": [
+      {
+        "rule": "Ranked metrics are used rather than a plain hit rate.",
+        "rationale": "A hit at rank 50 is not a hit in any practical sense.",
+        "sourceRef": "file:scripts/eval/metrics.mjs"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.8
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:scripts-eval-metrics-mjs",
+        "kind": "capability",
+        "name": "Retrieval metrics",
+        "summary": "Comparable search-quality numbers.",
+        "attributes": {},
+        "id": "llm:file:scripts/eval/metrics.mjs#capability:scripts-eval-metrics-mjs",
+        "targetId": "file:scripts/eval/metrics.mjs"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:scripts/eval/metrics.mjs",
+        "to": "llm:file:scripts/eval/metrics.mjs#capability:scripts-eval-metrics-mjs",
+        "rel": "realizes",
+        "rationale": "This file implements retrieval metrics.",
+        "confidence": 0.8,
+        "targetId": "file:scripts/eval/metrics.mjs"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:scripts/eval/metrics.mjs#mean@L64",
+      "quote": "export function mean(values) {"
+    },
+    {
+      "soulId": "sym:scripts/eval/metrics.mjs#mrr@L33",
+      "quote": "export function mrr(retrieved, expected) {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

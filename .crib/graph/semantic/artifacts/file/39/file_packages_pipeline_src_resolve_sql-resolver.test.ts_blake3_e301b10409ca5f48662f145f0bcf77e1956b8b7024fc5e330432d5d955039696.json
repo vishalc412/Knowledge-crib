@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/pipeline/src/resolve/sql-resolver.test.ts",
+  "nodeHash": "blake3:e301b10409ca5f48662f145f0bcf77e1956b8b7024fc5e330432d5d955039696",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:17:56.384Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The test suite for sql-resolver — it defines the behaviour that is guaranteed, so a change that breaks any of it fails the build. It pins: SqlResolver — cross-file SQL data-flow (M10 gate); Mixed TS + SQL indexRepo — no cross-talk (M10 gate); SqlResolver — WS-7 cross-file cursor reads + FK references.",
+    "responsibilities": [
+      "Pin the observable behaviour of sql-resolver",
+      "Fail the build when a guaranteed behaviour changes"
+    ],
+    "businessRules": [],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.76
+  },
+  "graph": {
+    "nodes": [],
+    "edges": []
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/pipeline/src/resolve/sql-resolver.test.ts#expectEdge@L227",
+      "quote": "function expectEdge(e: { provenance: string; method: string; confidence: number }): void {"
+    },
+    {
+      "soulId": "sym:packages/pipeline/src/resolve/sql-resolver.test.ts#famOf@L117",
+      "quote": "const famOf = (id: string): 'ts' | 'sql' | undefined => {"
+    },
+    {
+      "soulId": "sym:packages/pipeline/src/resolve/sql-resolver.test.ts#label@L202",
+      "quote": "function label(soul: SoulStore, id: string): string {"
+    },
+    {
+      "soulId": "sym:packages/pipeline/src/resolve/sql-resolver.test.ts#pair@L198",
+      "quote": "function pair(soul: SoulStore, srcId: string, dstId: string): string {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

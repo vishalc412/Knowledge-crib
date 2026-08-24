@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/cli/src/watch.test.ts",
+  "nodeHash": "blake3:db1472ea4f19717c2dc00fcaaabfa301bde73012d2af8fa0487034538fd7bbb5",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:17:55.978Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The test suite for watch — it defines the behaviour that is guaranteed, so a change that breaks any of it fails the build. It pins: WatchMode — convergence (exit gate line 375); WatchMode — external crib update drift; WatchMode — VCS scan is the source of truth.",
+    "responsibilities": [
+      "Pin the observable behaviour of watch",
+      "Fail the build when a guaranteed behaviour changes"
+    ],
+    "businessRules": [],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.76
+  },
+  "graph": {
+    "nodes": [],
+    "edges": []
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/cli/src/watch.test.ts#callsBtoA@L79",
+      "quote": "function callsBtoA(overlay: WorkingOverlay): boolean {"
+    },
+    {
+      "soulId": "sym:packages/cli/src/watch.test.ts#committedBytes.walk@L89",
+      "quote": "const walk = (d: string): void => {"
+    },
+    {
+      "soulId": "sym:packages/cli/src/watch.test.ts#committedBytes@L86",
+      "quote": "function committedBytes(): string {"
+    },
+    {
+      "soulId": "sym:packages/cli/src/watch.test.ts#git@L35",
+      "quote": "function git(root: string, args: string[]): string {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

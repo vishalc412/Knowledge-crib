@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/pipeline/fixtures/rust-cross/controller.rs",
+  "nodeHash": "blake3:b0fe7dad5f77c5492a1890637fcfeb78fc2e9ad6af0f72297e08dd38a529186f",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:17:56.866Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "A test fixture: sample RS source that exists to exercise the extractor for this language, not to run in production.",
+    "responsibilities": [
+      "Provide representative source constructs for extractor tests"
+    ],
+    "businessRules": [],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.76
+  },
+  "graph": {
+    "nodes": [],
+    "edges": []
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/pipeline/fixtures/rust-cross/controller.rs#Controller::issue@L10",
+      "quote": "pub fn issue(&self, input: String) -> Token {"
+    },
+    {
+      "soulId": "sym:packages/pipeline/fixtures/rust-cross/controller.rs#Controller::run@L14",
+      "quote": "pub fn run(&self) -> u32 {"
+    },
+    {
+      "soulId": "sym:packages/pipeline/fixtures/rust-cross/controller.rs#Controller@L5",
+      "quote": "pub struct Controller {"
+    },
+    {
+      "soulId": "sym:packages/pipeline/fixtures/rust-cross/controller.rs#impl Controller@L9",
+      "quote": "impl Controller {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

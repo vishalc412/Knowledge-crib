@@ -1,0 +1,64 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:scripts/semantic-check.mjs",
+  "nodeHash": "blake3:932d4a590d7fd14782c5b04f74d78e11ddce1d8abdffffdf420d63bddb02bc4c",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:07:00.943Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "A build gate that verifies the semantic layer stays grounded and its artifacts resolve, failing the build on regression rather than reporting a number nobody reads.",
+    "responsibilities": [
+      "Exercise the real code path",
+      "Fail the build when the property no longer holds"
+    ],
+    "businessRules": [
+      {
+        "rule": "The gate runs the SAME code path the product uses, not a test-only variant.",
+        "rationale": "Ungrounded prose in a knowledge graph is worse than no prose at all.",
+        "sourceRef": "file:scripts/semantic-check.mjs"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.8
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:scripts-semantic-check-mjs",
+        "kind": "capability",
+        "name": "Build gate",
+        "summary": "Automated enforcement: verifies the semantic layer stays grounded and its artifacts resolve.",
+        "attributes": {},
+        "id": "llm:file:scripts/semantic-check.mjs#capability:scripts-semantic-check-mjs",
+        "targetId": "file:scripts/semantic-check.mjs"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:scripts/semantic-check.mjs",
+        "to": "llm:file:scripts/semantic-check.mjs#capability:scripts-semantic-check-mjs",
+        "rel": "realizes",
+        "rationale": "This file implements build gate.",
+        "confidence": 0.8,
+        "targetId": "file:scripts/semantic-check.mjs"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:scripts/semantic-check.mjs#check@L42",
+      "quote": "async function check(name, fn) {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

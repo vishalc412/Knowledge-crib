@@ -1,0 +1,68 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/pipeline/src/cluster/louvain.ts",
+  "nodeHash": "blake3:875154983912d3e21bf7b1a7066e619fdf1d05ed42a9d8b70c7d5c33256c0549",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:02:22.984Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "A pure-JavaScript multi-level community detection implementation, made deterministic so the same graph always produces the same communities.",
+    "responsibilities": [
+      "Detect communities by modularity optimization",
+      "Produce the same partition for the same input every time"
+    ],
+    "businessRules": [
+      {
+        "rule": "The implementation is made deterministic despite the algorithm normally depending on iteration order.",
+        "rationale": "Non-deterministic clusters would change ids between runs and break the committed graph.",
+        "sourceRef": "file:packages/pipeline/src/cluster/louvain.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.84
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:community-detection",
+        "kind": "capability",
+        "name": "Community detection",
+        "summary": "Deterministic modularity clustering.",
+        "attributes": {},
+        "id": "llm:file:packages/pipeline/src/cluster/louvain.ts#capability:community-detection",
+        "targetId": "file:packages/pipeline/src/cluster/louvain.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/pipeline/src/cluster/louvain.ts",
+        "to": "llm:file:packages/pipeline/src/cluster/louvain.ts#capability:community-detection",
+        "rel": "realizes",
+        "rationale": "This file implements Louvain.",
+        "confidence": 0.84,
+        "targetId": "file:packages/pipeline/src/cluster/louvain.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/pipeline/src/cluster/louvain.ts#LouvainGraph@L13",
+      "quote": "export interface LouvainGraph {"
+    },
+    {
+      "soulId": "sym:packages/pipeline/src/cluster/louvain.ts#aggregate@L155",
+      "quote": "supernodeOf: Map<number, number>,"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

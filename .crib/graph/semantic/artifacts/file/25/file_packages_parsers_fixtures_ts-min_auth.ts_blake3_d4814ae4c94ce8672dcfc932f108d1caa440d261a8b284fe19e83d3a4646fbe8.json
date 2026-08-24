@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/parsers/fixtures/ts-min/auth.ts",
+  "nodeHash": "blake3:d4814ae4c94ce8672dcfc932f108d1caa440d261a8b284fe19e83d3a4646fbe8",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:17:56.386Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "A test fixture: sample TS source that exists to exercise the extractor for this language, not to run in production.",
+    "responsibilities": [
+      "Provide representative source constructs for extractor tests"
+    ],
+    "businessRules": [],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.76
+  },
+  "graph": {
+    "nodes": [],
+    "edges": []
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/parsers/fixtures/ts-min/auth.ts#AuthService.issue@L6",
+      "quote": "private issue(email: string): Session {"
+    },
+    {
+      "soulId": "sym:packages/parsers/fixtures/ts-min/auth.ts#AuthService.login@L2",
+      "quote": "login(email: string, pw: string): Session {"
+    },
+    {
+      "soulId": "sym:packages/parsers/fixtures/ts-min/auth.ts#AuthService@L1",
+      "quote": "export class AuthService {"
+    },
+    {
+      "soulId": "sym:packages/parsers/fixtures/ts-min/auth.ts#makeSession@L11",
+      "quote": "export function makeSession(email: string): Session {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

@@ -17,7 +17,15 @@
  * pass an explicit root keep working unchanged.
  */
 import { randomUUID } from 'node:crypto';
-import { type Stats, existsSync, mkdirSync, renameSync, rmSync, statSync } from 'node:fs';
+import {
+  type Stats,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  renameSync,
+  rmSync,
+  statSync,
+} from 'node:fs';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { MANIFEST_FILE, SoulStore, graphPaths, openIndex } from '@knowledge-crib/core';
 import type { IndexStore } from '@knowledge-crib/core';
@@ -194,7 +202,23 @@ export function buildIndex(rt: Runtime): IndexStore {
   const path = resolveIndexPath(rel, rt.repoRoot, rt.cribDir);
   mkdirSync(dirname(path), { recursive: true });
   if (manifest.stores.index.backend === 'sqlite') {
+    sweepStaleBuilds(dirname(path));
     const tmp = join(dirname(path), `.crib-build-${process.pid}-${randomUUID()}.sqlite`);
+    // A `catch` only covers *thrown* errors. A build interrupted by Ctrl-C (SIGINT) or a `kill`
+    // unwinds no stack, so without these handlers the partial sqlite plus its uncheckpointed WAL
+    // (tens of MB) are simply abandoned — the mechanism that accumulated 510 MB of
+    // `.crib-build-*` files in this repo. Handlers are removed in `finally` so repeated builds in
+    // one process (tests, `crib serve` self-heal) never stack listeners.
+    const cleanup = (): void => removeBuildArtifacts(tmp);
+    const onSignal = (sig: NodeJS.Signals) => () => {
+      cleanup();
+      process.removeAllListeners(sig);
+      process.kill(process.pid, sig); // re-raise so the default disposition still applies
+    };
+    const onSigint = onSignal('SIGINT');
+    const onSigterm = onSignal('SIGTERM');
+    process.once('SIGINT', onSigint);
+    process.once('SIGTERM', onSigterm);
     try {
       const index = openIndex(manifest.stores.index.backend, { path: tmp });
       index.buildFromSoul(rt.soul, rt.repoRoot);
@@ -204,10 +228,11 @@ export function buildIndex(rt: Runtime): IndexStore {
       renameSync(tmp, path);
       return openIndex(manifest.stores.index.backend, { path });
     } catch (e) {
-      rmSync(tmp, { force: true });
-      rmSync(`${tmp}-wal`, { force: true });
-      rmSync(`${tmp}-shm`, { force: true });
+      cleanup();
       throw e;
+    } finally {
+      process.removeListener('SIGINT', onSigint);
+      process.removeListener('SIGTERM', onSigterm);
     }
   }
   const index = openIndex(manifest.stores.index.backend, { path });
@@ -216,6 +241,45 @@ export function buildIndex(rt: Runtime): IndexStore {
   // is a capability record (always false until a vector backend ships) and does not drive the build.
   index.buildFromSoul(rt.soul, rt.repoRoot);
   return index;
+}
+
+/** Remove a temp build sqlite together with its `-wal` / `-shm` sidecars. */
+function removeBuildArtifacts(tmp: string): void {
+  rmSync(tmp, { force: true });
+  rmSync(`${tmp}-wal`, { force: true });
+  rmSync(`${tmp}-shm`, { force: true });
+}
+
+/** How old an abandoned `.crib-build-*` must be before the sweep reclaims it. Comfortably longer
+ *  than any real build, so a concurrent writer's in-progress temp file is never deleted. */
+const STALE_BUILD_MS = 60 * 60 * 1000;
+
+/**
+ * Reclaim `.crib-build-*` temp databases abandoned by earlier interrupted builds.
+ *
+ * Signal handlers stop *new* leaks; this clears the backlog already on disk (and anything a
+ * SIGKILL — which cannot be trapped — leaves behind). Age-gated so a build running concurrently in
+ * another process is never touched, and fully best-effort: a sweep failure must never block an
+ * index build.
+ */
+export function sweepStaleBuilds(indexDir: string, now = Date.now()): number {
+  let removed = 0;
+  try {
+    for (const name of readdirSync(indexDir)) {
+      if (!name.startsWith('.crib-build-') || !name.endsWith('.sqlite')) continue;
+      const full = join(indexDir, name);
+      try {
+        if (now - statSync(full).mtimeMs < STALE_BUILD_MS) continue;
+        removeBuildArtifacts(full);
+        removed++;
+      } catch {
+        // Racing with another sweep, or a permissions problem — skip this entry.
+      }
+    }
+  } catch {
+    // Index dir unreadable/absent: nothing to sweep.
+  }
+  return removed;
 }
 
 /**

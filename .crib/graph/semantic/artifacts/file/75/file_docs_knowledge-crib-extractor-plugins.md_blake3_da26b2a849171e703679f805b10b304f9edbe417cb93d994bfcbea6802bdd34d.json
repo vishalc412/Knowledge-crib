@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:docs/knowledge-crib-extractor-plugins.md",
+  "nodeHash": "blake3:da26b2a849171e703679f805b10b304f9edbe417cb93d994bfcbea6802bdd34d",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:13:18.220Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The extractor plugin specification: the contract a new language extractor implements and the honesty rules it must follow.",
+    "responsibilities": [
+      "Specify the extractor contract for new languages"
+    ],
+    "businessRules": [],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.78
+  },
+  "graph": {
+    "nodes": [],
+    "edges": []
+  },
+  "evidence": [
+    {
+      "soulId": "doc:docs/knowledge-crib-extractor-plugins.md#1-contract",
+      "quote": "interface Extractor {"
+    },
+    {
+      "soulId": "doc:docs/knowledge-crib-extractor-plugins.md#3-registration-discovery",
+      "quote": "registerExtractor(new TypeScriptExtractor());"
+    },
+    {
+      "soulId": "doc:docs/knowledge-crib-extractor-plugins.md#4-adding-a-language-worked-rust",
+      "quote": "1. Add the `tree-sitter-rust` WASM grammar to `packages/parsers/grammars/`."
+    },
+    {
+      "soulId": "doc:docs/knowledge-crib-extractor-plugins.md#5-testing-a-plugin-required-for-merge",
+      "quote": "- **Golden test:** fixture file → exact expected nodes/edges (ids, spans, rels)."
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

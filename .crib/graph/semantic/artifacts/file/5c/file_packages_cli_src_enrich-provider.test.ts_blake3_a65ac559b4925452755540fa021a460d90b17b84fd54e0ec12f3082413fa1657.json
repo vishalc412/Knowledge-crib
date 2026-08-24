@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/cli/src/enrich-provider.test.ts",
+  "nodeHash": "blake3:a65ac559b4925452755540fa021a460d90b17b84fd54e0ec12f3082413fa1657",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:17:56.872Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The test suite for enrich-provider — it defines the behaviour that is guaranteed, so a change that breaks any of it fails the build. It pins: W7 loadProviders — structurally validate the user-owned providers file; W7 resolveProvider — guidance error when a name is absent; W7 providerConcurrency — default 1, clamped to [1, MAX]; W7 validateSaveItemShape — minimal contract a provider must honor.",
+    "responsibilities": [
+      "Pin the observable behaviour of enrich-provider",
+      "Fail the build when a guaranteed behaviour changes"
+    ],
+    "businessRules": [],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.76
+  },
+  "graph": {
+    "nodes": [],
+    "edges": []
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/cli/src/enrich-provider.test.ts#validResponse@L51",
+      "quote": "function validResponse(targetId: string) {"
+    },
+    {
+      "soulId": "sym:packages/cli/src/enrich-provider.test.ts#workItem@L39",
+      "quote": "function workItem(targetId: string): EnrichWorkItem {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

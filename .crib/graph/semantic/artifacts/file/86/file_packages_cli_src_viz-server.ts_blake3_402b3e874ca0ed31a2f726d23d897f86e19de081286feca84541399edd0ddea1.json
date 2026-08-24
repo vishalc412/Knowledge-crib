@@ -1,0 +1,67 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/cli/src/viz-server.ts",
+  "nodeHash": "blake3:402b3e874ca0ed31a2f726d23d897f86e19de081286feca84541399edd0ddea1",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:02:22.985Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "Serves the visualization locally: hands the canvas its graph snapshot over a short-lived local server so a user can explore the graph in a browser.",
+    "responsibilities": [
+      "Serve the snapshot and static canvas assets locally"
+    ],
+    "businessRules": [
+      {
+        "rule": "The server is local and short-lived, serving a static snapshot.",
+        "rationale": "A knowledge graph of private code must not need a hosted service.",
+        "sourceRef": "file:packages/cli/src/viz-server.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.8
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:viz-serving",
+        "kind": "capability",
+        "name": "Visualization serving",
+        "summary": "Local browser access to the graph.",
+        "attributes": {},
+        "id": "llm:file:packages/cli/src/viz-server.ts#capability:viz-serving",
+        "targetId": "file:packages/cli/src/viz-server.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/cli/src/viz-server.ts",
+        "to": "llm:file:packages/cli/src/viz-server.ts#capability:viz-serving",
+        "rel": "realizes",
+        "rationale": "This file serves the visualization.",
+        "confidence": 0.8,
+        "targetId": "file:packages/cli/src/viz-server.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/cli/src/viz-server.ts#VizHttpError@L34",
+      "quote": "export class VizHttpError extends Error {"
+    },
+    {
+      "soulId": "sym:packages/cli/src/viz-server.ts#VizSourceResponse@L43",
+      "quote": "export interface VizSourceResponse {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

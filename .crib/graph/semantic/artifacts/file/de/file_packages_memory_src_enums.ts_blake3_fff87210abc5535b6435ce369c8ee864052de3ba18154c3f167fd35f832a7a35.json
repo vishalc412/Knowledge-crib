@@ -1,0 +1,68 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/memory/src/enums.ts",
+  "nodeHash": "blake3:fff87210abc5535b6435ce369c8ee864052de3ba18154c3f167fd35f832a7a35",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T03:53:11.756Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The memory vocabulary: the claim kinds, verdicts and lifecycle states memory records use, deliberately kept outside the soul's own closed enumerations.",
+    "responsibilities": [
+      "Define claim kinds, evidence verdicts and lifecycle states",
+      "Keep memory's vocabulary independent of the soul schema"
+    ],
+    "businessRules": [
+      {
+        "rule": "Memory is not the soul: these enumerations live outside the soul's closed node and relation enums.",
+        "rationale": "Memory evolves on its own cadence; coupling it to the graph schema would force a schema bump per change.",
+        "sourceRef": "file:packages/memory/src/enums.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.82
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:memory-vocabulary",
+        "kind": "capability",
+        "name": "Memory vocabulary",
+        "summary": "Claim kinds, verdicts and lifecycle states.",
+        "attributes": {},
+        "id": "llm:file:packages/memory/src/enums.ts#capability:memory-vocabulary",
+        "targetId": "file:packages/memory/src/enums.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/memory/src/enums.ts",
+        "to": "llm:file:packages/memory/src/enums.ts#capability:memory-vocabulary",
+        "rel": "realizes",
+        "rationale": "This file defines the memory enums.",
+        "confidence": 0.82,
+        "targetId": "file:packages/memory/src/enums.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/memory/src/enums.ts#ApplicabilityVerdict@L34",
+      "quote": "export type ApplicabilityVerdict = 'current' | 'needs-review' | 'orphaned';"
+    },
+    {
+      "soulId": "sym:packages/memory/src/enums.ts#EvidenceVerdict@L29",
+      "quote": "export type EvidenceVerdict = 'valid' | 'degraded' | 'invalid';"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

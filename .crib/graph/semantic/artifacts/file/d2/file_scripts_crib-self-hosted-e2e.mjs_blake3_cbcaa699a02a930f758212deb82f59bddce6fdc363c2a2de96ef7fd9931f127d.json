@@ -1,0 +1,68 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:scripts/crib-self-hosted-e2e.mjs",
+  "nodeHash": "blake3:cbcaa699a02a930f758212deb82f59bddce6fdc363c2a2de96ef7fd9931f127d",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T03:58:13.487Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The self-hosted acceptance run: indexes and serves this project with its own tooling, so the product is exercised end to end against a real repository — itself.",
+    "responsibilities": [
+      "Index this repository with the built CLI",
+      "Serve it and exercise the verbs end to end"
+    ],
+    "businessRules": [
+      {
+        "rule": "The tool is validated against itself rather than only against fixtures.",
+        "rationale": "A fixture cannot reveal what a real repository does to the pipeline.",
+        "sourceRef": "file:scripts/crib-self-hosted-e2e.mjs"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.82
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:self-hosted-acceptance",
+        "kind": "capability",
+        "name": "Self-hosted acceptance",
+        "summary": "The product indexed by itself.",
+        "attributes": {},
+        "id": "llm:file:scripts/crib-self-hosted-e2e.mjs#capability:self-hosted-acceptance",
+        "targetId": "file:scripts/crib-self-hosted-e2e.mjs"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:scripts/crib-self-hosted-e2e.mjs",
+        "to": "llm:file:scripts/crib-self-hosted-e2e.mjs#capability:self-hosted-acceptance",
+        "rel": "realizes",
+        "rationale": "This script is the self-hosted gate.",
+        "confidence": 0.82,
+        "targetId": "file:scripts/crib-self-hosted-e2e.mjs"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:scripts/crib-self-hosted-e2e.mjs#McpStdioClient.close@L143",
+      "quote": "await Promise.race([this.exit, new Promise((resolveExit) => setTimeout(resolveExit, 2_000))]);"
+    },
+    {
+      "soulId": "sym:scripts/crib-self-hosted-e2e.mjs#McpStdioClient.notify@L131",
+      "quote": "notify(method, params = {}) {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

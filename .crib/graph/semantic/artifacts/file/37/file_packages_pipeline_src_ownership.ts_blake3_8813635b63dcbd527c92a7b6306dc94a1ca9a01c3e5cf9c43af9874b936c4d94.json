@@ -1,0 +1,68 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/pipeline/src/ownership.ts",
+  "nodeHash": "blake3:8813635b63dcbd527c92a7b6306dc94a1ca9a01c3e5cf9c43af9874b936c4d94",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:04:00.265Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "Derives symbol-level ownership from version-control history, so a question about who to ask is answered from evidence rather than from a stale directory of names.",
+    "responsibilities": [
+      "Attribute symbols to authors from blame history",
+      "Emit ownership edges with extracted provenance"
+    ],
+    "businessRules": [
+      {
+        "rule": "Ownership is derived from history and carries extracted provenance.",
+        "rationale": "A hand-maintained owners file goes stale silently; history does not.",
+        "sourceRef": "file:packages/pipeline/src/ownership.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.83
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:ownership",
+        "kind": "capability",
+        "name": "Ownership derivation",
+        "summary": "Who actually wrote this.",
+        "attributes": {},
+        "id": "llm:file:packages/pipeline/src/ownership.ts#capability:ownership",
+        "targetId": "file:packages/pipeline/src/ownership.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/pipeline/src/ownership.ts",
+        "to": "llm:file:packages/pipeline/src/ownership.ts#capability:ownership",
+        "rel": "realizes",
+        "rationale": "This file implements ownership derivation.",
+        "confidence": 0.83,
+        "targetId": "file:packages/pipeline/src/ownership.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/pipeline/src/ownership.ts#OwnershipStats@L19",
+      "quote": "export interface OwnershipStats {"
+    },
+    {
+      "soulId": "sym:packages/pipeline/src/ownership.ts#majorityAuthor@L46",
+      "quote": "blame: Map<number, { name: string; email?: string; commit: string }>,"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/parsers/src/ts/nest.test.ts",
+  "nodeHash": "blake3:2d811611a5696ae82f94d98a53fe36d4c31c2fde1411783e4574b822c2c73df1",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:17:55.641Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The test suite for nest — it defines the behaviour that is guaranteed, so a change that breaks any of it fails the build. It pins: NestJS stereotypes; NestJS routes; NestJS DI; NestJS @Module producers.",
+    "responsibilities": [
+      "Pin the observable behaviour of nest",
+      "Fail the build when a guaranteed behaviour changes"
+    ],
+    "businessRules": [],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.76
+  },
+  "graph": {
+    "nodes": [],
+    "edges": []
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/parsers/src/ts/nest.test.ts#columnMeta@L108",
+      "quote": "const columnMeta = (r: ExtractResult, q: string): Record<string, unknown> | undefined =>"
+    },
+    {
+      "soulId": "sym:packages/parsers/src/ts/nest.test.ts#ctxFor.readText@L19",
+      "quote": "async readText() {"
+    },
+    {
+      "soulId": "sym:packages/parsers/src/ts/nest.test.ts#ctxFor.treeSitter@L22",
+      "quote": "throw new Error('not used — TypeScript uses the TS compiler API');"
+    },
+    {
+      "soulId": "sym:packages/parsers/src/ts/nest.test.ts#ctxFor@L17",
+      "quote": "function ctxFor(text: string): ExtractCtx {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

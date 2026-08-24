@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { SoulStore, newManifest } from '@knowledge-crib/core';
@@ -13,6 +13,7 @@ import {
   openIndexOnly,
   openSoul,
   resolveProjectRoot,
+  sweepStaleBuilds,
 } from './runtime.js';
 
 let repo: string;
@@ -169,5 +170,43 @@ describe('CLI runtime — archive resolution', () => {
     expect(resolved.repoRoot).toBe(zip);
     expect(resolved.sourceArchive).toBeUndefined();
     expect(resolved.cribDir).toBe(join(zip, '.crib'));
+  });
+});
+
+describe('sweepStaleBuilds (temp build-db reclamation)', () => {
+  const HOUR = 60 * 60 * 1000;
+  function tempBuild(dir: string, name: string, ageMs: number): string {
+    const full = join(dir, name);
+    writeFileSync(full, 'x');
+    writeFileSync(`${full}-wal`, 'x');
+    writeFileSync(`${full}-shm`, 'x');
+    const when = new Date(Date.now() - ageMs);
+    for (const f of [full, `${full}-wal`, `${full}-shm`]) utimesSync(f, when, when);
+    return full;
+  }
+
+  it('reclaims aged temp builds together with their -wal/-shm sidecars', () => {
+    const dir = join(repo, 'index');
+    mkdirSync(dir, { recursive: true });
+    const stale = tempBuild(dir, '.crib-build-111-aaa.sqlite', 3 * HOUR);
+    expect(sweepStaleBuilds(dir)).toBe(1);
+    expect(existsSync(stale)).toBe(false);
+    expect(existsSync(`${stale}-wal`)).toBe(false);
+    expect(existsSync(`${stale}-shm`)).toBe(false);
+  });
+
+  it('never touches a recent temp build (a concurrent writer) or the real index', () => {
+    const dir = join(repo, 'index');
+    mkdirSync(dir, { recursive: true });
+    const live = tempBuild(dir, '.crib-build-222-bbb.sqlite', 5 * 1000);
+    const real = join(dir, 'crib.sqlite');
+    writeFileSync(real, 'x');
+    expect(sweepStaleBuilds(dir)).toBe(0);
+    expect(existsSync(live)).toBe(true);
+    expect(existsSync(real)).toBe(true);
+  });
+
+  it('is best-effort: a missing index dir is not an error', () => {
+    expect(sweepStaleBuilds(join(repo, 'does-not-exist'))).toBe(0);
   });
 });

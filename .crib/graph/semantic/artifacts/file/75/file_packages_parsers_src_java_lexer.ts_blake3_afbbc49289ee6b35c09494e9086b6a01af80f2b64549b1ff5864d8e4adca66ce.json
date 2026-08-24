@@ -1,0 +1,69 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/parsers/src/java/lexer.ts",
+  "nodeHash": "blake3:afbbc49289ee6b35c09494e9086b6a01af80f2b64549b1ff5864d8e4adca66ce",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T02:52:39.454Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The Java tokenizer: a hand-rolled, zero-dependency lexer for the subset the symbol graph needs, written to keep cold install offline, pure-JavaScript and deterministic.",
+    "responsibilities": [
+      "Turn source text into the token stream the structural parser consumes",
+      "Degrade a lexing anomaly into a generic token instead of throwing",
+      "Apply the generic angle-bracket split rule so nested type arguments close correctly"
+    ],
+    "businessRules": [
+      {
+        "rule": "The lexer never throws — an anomaly degrades to a generic token and lexing continues.",
+        "rationale": "Lets the extractor fall back to a file node rather than aborting the whole pipeline.",
+        "sourceRef": "file:packages/parsers/src/java/lexer.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.83
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:lex-java",
+        "kind": "capability",
+        "name": "Java lexing",
+        "summary": "Tolerant zero-dependency Java tokenizer.",
+        "attributes": {},
+        "id": "llm:file:packages/parsers/src/java/lexer.ts#capability:lex-java",
+        "targetId": "file:packages/parsers/src/java/lexer.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/parsers/src/java/lexer.ts",
+        "to": "llm:file:packages/parsers/src/java/lexer.ts#capability:lex-java",
+        "rel": "realizes",
+        "rationale": "This file is the Java lexer.",
+        "confidence": 0.83,
+        "targetId": "file:packages/parsers/src/java/lexer.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/parsers/src/java/lexer.ts#CommentBlock@L33",
+      "quote": "export interface CommentBlock {"
+    },
+    {
+      "soulId": "sym:packages/parsers/src/java/lexer.ts#Lexer.advance@L441",
+      "quote": "const c = this.src[this.pos];"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

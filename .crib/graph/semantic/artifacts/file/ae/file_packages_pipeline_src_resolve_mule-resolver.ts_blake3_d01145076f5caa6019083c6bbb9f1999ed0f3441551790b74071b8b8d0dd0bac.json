@@ -1,0 +1,74 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/pipeline/src/resolve/mule-resolver.ts",
+  "nodeHash": "blake3:d01145076f5caa6019083c6bbb9f1999ed0f3441551790b74071b8b8d0dd0bac",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T02:56:59.748Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The Mule cross-file resolver: turns the references the extractor recorded into real edges against a project-scoped symbol index, without re-parsing any XML.",
+    "responsibilities": [
+      "Resolve references deterministically against the indexed project",
+      "Scope resolution to a single detected Mule project",
+      "Drop and count an unresolvable reference rather than guessing at it"
+    ],
+    "businessRules": [
+      {
+        "rule": "A reference that does not resolve is dropped and counted, never guessed or replaced with a placeholder.",
+        "rationale": "A guessed edge is worse than a missing one, because it looks like a fact.",
+        "sourceRef": "file:packages/pipeline/src/resolve/mule-resolver.ts"
+      },
+      {
+        "rule": "Dynamic flow-ref names built from expressions are dropped and counted rather than resolved.",
+        "rationale": "Their target is only known at runtime.",
+        "sourceRef": "file:packages/pipeline/src/resolve/mule-resolver.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.84
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:resolve-mule",
+        "kind": "capability",
+        "name": "Mule resolution",
+        "summary": "Deterministic cross-file edges for Mule projects.",
+        "attributes": {},
+        "id": "llm:file:packages/pipeline/src/resolve/mule-resolver.ts#capability:resolve-mule",
+        "targetId": "file:packages/pipeline/src/resolve/mule-resolver.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/pipeline/src/resolve/mule-resolver.ts",
+        "to": "llm:file:packages/pipeline/src/resolve/mule-resolver.ts#capability:resolve-mule",
+        "rel": "realizes",
+        "rationale": "This file is the Mule resolver.",
+        "confidence": 0.84,
+        "targetId": "file:packages/pipeline/src/resolve/mule-resolver.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/pipeline/src/resolve/mule-resolver.ts#Bucket@L74",
+      "quote": "type Bucket = 'flow' | 'config' | 'property' | 'module';"
+    },
+    {
+      "soulId": "sym:packages/pipeline/src/resolve/mule-resolver.ts#MuleReference@L46",
+      "quote": "| 'test-target' // MUnit test → the flow it exercises (calls edge; missing → external-flow)"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

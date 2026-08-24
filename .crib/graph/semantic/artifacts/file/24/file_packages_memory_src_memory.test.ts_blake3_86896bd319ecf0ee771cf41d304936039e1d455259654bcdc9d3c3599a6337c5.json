@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/memory/src/memory.test.ts",
+  "nodeHash": "blake3:86896bd319ecf0ee771cf41d304936039e1d455259654bcdc9d3c3599a6337c5",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:17:56.388Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The test suite for memory — it defines the behaviour that is guaranteed, so a change that breaks any of it fails the build. It pins: content-addressed ids; validators; migrations + version gate (fail closed); manifest.",
+    "responsibilities": [
+      "Pin the observable behaviour of memory",
+      "Fail the build when a guaranteed behaviour changes"
+    ],
+    "businessRules": [],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.76
+  },
+  "graph": {
+    "nodes": [],
+    "edges": []
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/memory/src/memory.test.ts#evidence@L53",
+      "quote": "function evidence("
+    },
+    {
+      "soulId": "sym:packages/memory/src/memory.test.ts#RecordInput@L45",
+      "quote": "interface RecordInput {"
+    },
+    {
+      "soulId": "sym:packages/memory/src/memory.test.ts#recordInput@L67",
+      "quote": "function recordInput(over: RecordInput = {}): Parameters<typeof memoryRecordId>[0] {"
+    },
+    {
+      "soulId": "sym:packages/memory/src/memory.test.ts#validRecord@L80",
+      "quote": "function validRecord(over: RecordInput = {}): MemoryRecord {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

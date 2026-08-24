@@ -1,0 +1,63 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/pipeline/src/extractors.ts",
+  "nodeHash": "blake3:bed34351caf512820776e2c4da345a4eb99253c31fd5e50ea52cfd337a3787d2",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:07:00.941Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The default extractor fleet: the single shared list used by the full index, the incremental update, and the parallel worker, so all three can never disagree about which languages are supported.",
+    "responsibilities": [
+      "Declare the default set of extractors once"
+    ],
+    "businessRules": [
+      {
+        "rule": "One module is the SINGLE source of truth for the extractor fleet across all three entry points.",
+        "rationale": "Three separate lists would silently diverge, so a language could work in a full index but not incrementally.",
+        "sourceRef": "file:packages/pipeline/src/extractors.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.85
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:packages-pipeline-src-extractors-ts",
+        "kind": "capability",
+        "name": "Extractor fleet",
+        "summary": "One language list, three consumers.",
+        "attributes": {},
+        "id": "llm:file:packages/pipeline/src/extractors.ts#capability:packages-pipeline-src-extractors-ts",
+        "targetId": "file:packages/pipeline/src/extractors.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/pipeline/src/extractors.ts",
+        "to": "llm:file:packages/pipeline/src/extractors.ts#capability:packages-pipeline-src-extractors-ts",
+        "rel": "realizes",
+        "rationale": "This file implements extractor fleet.",
+        "confidence": 0.85,
+        "targetId": "file:packages/pipeline/src/extractors.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/pipeline/src/extractors.ts#defaultExtractors@L27",
+      "quote": "export function defaultExtractors(): Extractor[] {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

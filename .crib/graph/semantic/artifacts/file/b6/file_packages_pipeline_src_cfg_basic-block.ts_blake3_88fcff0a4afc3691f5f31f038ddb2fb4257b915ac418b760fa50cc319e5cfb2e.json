@@ -1,0 +1,67 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/pipeline/src/cfg/basic-block.ts",
+  "nodeHash": "blake3:88fcff0a4afc3691f5f31f038ddb2fb4257b915ac418b760fa50cc319e5cfb2e",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:04:00.266Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "Basic-block segmentation: the language-agnostic unit of control flow every per-language pass builds on.",
+    "responsibilities": [
+      "Segment a body into basic blocks"
+    ],
+    "businessRules": [
+      {
+        "rule": "The unit is language-agnostic so every language pass shares one control-flow model.",
+        "rationale": "Per-language models would make cross-language rule comparison impossible.",
+        "sourceRef": "file:packages/pipeline/src/cfg/basic-block.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.83
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:basic-block",
+        "kind": "capability",
+        "name": "Basic blocks",
+        "summary": "Shared control-flow unit.",
+        "attributes": {},
+        "id": "llm:file:packages/pipeline/src/cfg/basic-block.ts#capability:basic-block",
+        "targetId": "file:packages/pipeline/src/cfg/basic-block.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/pipeline/src/cfg/basic-block.ts",
+        "to": "llm:file:packages/pipeline/src/cfg/basic-block.ts#capability:basic-block",
+        "rel": "realizes",
+        "rationale": "This file implements basic blocks.",
+        "confidence": 0.83,
+        "targetId": "file:packages/pipeline/src/cfg/basic-block.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/pipeline/src/cfg/basic-block.ts#BasicBlock@L15",
+      "quote": "export interface BasicBlock {"
+    },
+    {
+      "soulId": "sym:packages/pipeline/src/cfg/basic-block.ts#isCompound@L20",
+      "quote": "function isCompound(s: Stmt): boolean {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

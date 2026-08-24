@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/memory/src/composite.test.ts",
+  "nodeHash": "blake3:52b5cd8f3af426af3c9dde3b708f2ee108b737cbefadd9d34e29bfbea4f2ef34",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:17:56.388Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The test suite for composite — it defines the behaviour that is guaranteed, so a change that breaks any of it fails the build. It pins: memoryComposite nodes; memoryComposite applies-to edges; memoryComposite supported-by edges; memoryComposite conflicts-with edges.",
+    "responsibilities": [
+      "Pin the observable behaviour of composite",
+      "Fail the build when a guaranteed behaviour changes"
+    ],
+    "businessRules": [],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.76
+  },
+  "graph": {
+    "nodes": [],
+    "edges": []
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/memory/src/composite.test.ts#compositeOf@L93",
+      "quote": "function compositeOf("
+    },
+    {
+      "soulId": "sym:packages/memory/src/composite.test.ts#evidence@L27",
+      "quote": "function evidence(partial: Partial<MemoryEvidence> = {}): MemoryEvidence {"
+    },
+    {
+      "soulId": "sym:packages/memory/src/composite.test.ts#gathered@L85",
+      "quote": "function gathered("
+    },
+    {
+      "soulId": "sym:packages/memory/src/composite.test.ts#record@L39",
+      "quote": "function record(opts: {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

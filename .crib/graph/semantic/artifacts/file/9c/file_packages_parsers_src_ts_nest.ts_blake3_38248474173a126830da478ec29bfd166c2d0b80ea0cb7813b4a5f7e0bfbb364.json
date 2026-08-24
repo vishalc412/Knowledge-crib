@@ -1,0 +1,75 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/parsers/src/ts/nest.ts",
+  "nodeHash": "blake3:38248474173a126830da478ec29bfd166c2d0b80ea0cb7813b4a5f7e0bfbb364",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T02:56:59.749Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "NestJS and TypeORM framework-semantics extraction: on top of the syntactic symbol graph, derives the stereotypes, routes and wiring that let a team understand a NestJS service without reading it.",
+    "responsibilities": [
+      "Tag each class with its NestJS stereotype and framework",
+      "Derive the route table from the annotations or decorators that declare it",
+      "Resolve the dependency wiring between components",
+      "Attach the result to the existing symbol nodes rather than inventing new ones"
+    ],
+    "businessRules": [
+      {
+        "rule": "Framework meaning is derived from the syntactic graph that already exists, not from a second parse.",
+        "rationale": "One parse, one source of truth — a second pass could disagree with the first.",
+        "sourceRef": "file:packages/parsers/src/ts/nest.ts"
+      },
+      {
+        "rule": "Only what the annotations actually declare is surfaced; nothing is inferred from naming convention.",
+        "rationale": "An inferred route would be indistinguishable from a declared one downstream.",
+        "sourceRef": "file:packages/parsers/src/ts/nest.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.83
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:nest-semantics",
+        "kind": "capability",
+        "name": "NestJS semantics",
+        "summary": "Stereotypes, routes and wiring for NestJS services.",
+        "attributes": {},
+        "id": "llm:file:packages/parsers/src/ts/nest.ts#capability:nest-semantics",
+        "targetId": "file:packages/parsers/src/ts/nest.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/parsers/src/ts/nest.ts",
+        "to": "llm:file:packages/parsers/src/ts/nest.ts#capability:nest-semantics",
+        "rel": "realizes",
+        "rationale": "This file derives NestJS framework semantics.",
+        "confidence": 0.83,
+        "targetId": "file:packages/parsers/src/ts/nest.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/parsers/src/ts/nest.ts#NestPassInput@L90",
+      "quote": "export interface NestPassInput {"
+    },
+    {
+      "soulId": "sym:packages/parsers/src/ts/nest.ts#allStringArgs@L597",
+      "quote": "function allStringArgs(d: ts.Decorator): string[] {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

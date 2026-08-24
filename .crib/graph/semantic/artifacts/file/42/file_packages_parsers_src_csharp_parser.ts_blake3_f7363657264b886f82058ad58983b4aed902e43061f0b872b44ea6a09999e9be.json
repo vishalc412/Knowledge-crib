@@ -1,0 +1,81 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/parsers/src/csharp/parser.ts",
+  "nodeHash": "blake3:f7363657264b886f82058ad58983b4aed902e43061f0b872b44ea6a09999e9be",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T02:49:47.914Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The C# structural parser: turns the token stream into a declaration tree (namespace, class, interface, struct, record, enum, delegate, method, property, constructor, indexer, operator) plus a flat list of call sites, deliberately stopping short of a full expression parser because the symbol graph only needs declaration spans, nesting, and call-site heads.",
+    "responsibilities": [
+      "Descend the token stream tolerantly, emitting a declaration per construct",
+      "Record nesting so members carry qualified names and member-of edges",
+      "Collect call sites in a separate whole-stream pass",
+      "Degrade on malformed input by skipping the construct rather than throwing",
+      "Track the file namespace so nested types resolve to fully qualified names"
+    ],
+    "businessRules": [
+      {
+        "rule": "Not a full expression parser — a tolerant brace/indent-level descent is enough, and is far less surface area to get wrong.",
+        "rationale": "The symbol graph needs spans, nesting and call heads; parsing expressions would add risk without adding graph value.",
+        "sourceRef": "file:packages/parsers/src/csharp/parser.ts"
+      },
+      {
+        "rule": "A property is emitted as one symbol; its get/set/init accessor bodies are not descended into separate symbols.",
+        "rationale": "Accessors are implementation detail of one member.",
+        "sourceRef": "file:packages/parsers/src/csharp/parser.ts"
+      },
+      {
+        "rule": "Local functions inside method bodies are not extracted, because method bodies are consumed rather than descended.",
+        "rationale": "A documented limitation matching the Java parser.",
+        "sourceRef": "file:packages/parsers/src/csharp/parser.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.84
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:parse-csharp",
+        "kind": "capability",
+        "name": "C# parsing",
+        "summary": "Declarations, nesting and call sites for C#.",
+        "attributes": {},
+        "id": "llm:file:packages/parsers/src/csharp/parser.ts#capability:parse-csharp",
+        "targetId": "file:packages/parsers/src/csharp/parser.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/parsers/src/csharp/parser.ts",
+        "to": "llm:file:packages/parsers/src/csharp/parser.ts#capability:parse-csharp",
+        "rel": "realizes",
+        "rationale": "This file is the C# structural parser.",
+        "confidence": 0.84,
+        "targetId": "file:packages/parsers/src/csharp/parser.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/parsers/src/csharp/parser.ts#CsharpCallSite@L69",
+      "quote": "export interface CsharpCallSite {"
+    },
+    {
+      "soulId": "sym:packages/parsers/src/csharp/parser.ts#CsharpCatchHandler@L163",
+      "quote": "export interface CsharpCatchHandler {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

@@ -1,0 +1,68 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/parsers/src/ts/express.ts",
+  "nodeHash": "blake3:111b19bf2beaca9f387034404d30a1b69bf0b2fcac7d22eace2a28a2ab98d6b7",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:00:13.887Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "Express route extraction: recovers the route table from imperatively registered handlers, where there are no decorators to read.",
+    "responsibilities": [
+      "Detect imperative route registrations and their method and path",
+      "Link a named handler to the route it serves"
+    ],
+    "businessRules": [
+      {
+        "rule": "Only genuine registrations are surfaced; an inline handler is not treated as a named symbol.",
+        "rationale": "Attributing a route to a symbol that does not exist would produce a false edge.",
+        "sourceRef": "file:packages/parsers/src/ts/express.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.82
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:express-routes",
+        "kind": "capability",
+        "name": "Express routes",
+        "summary": "Route table from imperative registration.",
+        "attributes": {},
+        "id": "llm:file:packages/parsers/src/ts/express.ts#capability:express-routes",
+        "targetId": "file:packages/parsers/src/ts/express.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/parsers/src/ts/express.ts",
+        "to": "llm:file:packages/parsers/src/ts/express.ts#capability:express-routes",
+        "rel": "realizes",
+        "rationale": "This file extracts Express routes.",
+        "confidence": 0.82,
+        "targetId": "file:packages/parsers/src/ts/express.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/parsers/src/ts/express.ts#ExpressPassInput@L49",
+      "quote": "export interface ExpressPassInput {"
+    },
+    {
+      "soulId": "sym:packages/parsers/src/ts/express.ts#edge@L176",
+      "quote": "function edge(src: string, dst: string, rel: Edge['rel'], snippet: string): Edge {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

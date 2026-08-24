@@ -1,0 +1,68 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/core/src/index/rerank.ts",
+  "nodeHash": "blake3:a6e460f749ab9636da849665660e3f83e45f575450b9851034bab083312bc4ae",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:00:13.884Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "A deterministic structural rerank applied after search fusion: how central a symbol is, and how well its kind matches the question, multiply into the score so relevant results cannot be pushed out by noise.",
+    "responsibilities": [
+      "Score candidates by centrality and kind match",
+      "Re-sort deterministically after fusion"
+    ],
+    "businessRules": [
+      {
+        "rule": "The prior is deterministic, so the same query always ranks the same way.",
+        "rationale": "Non-deterministic ranking would make retrieval quality impossible to evaluate.",
+        "sourceRef": "file:packages/core/src/index/rerank.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.83
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:structural-rerank",
+        "kind": "capability",
+        "name": "Structural rerank",
+        "summary": "Centrality-aware deterministic ranking.",
+        "attributes": {},
+        "id": "llm:file:packages/core/src/index/rerank.ts#capability:structural-rerank",
+        "targetId": "file:packages/core/src/index/rerank.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/core/src/index/rerank.ts",
+        "to": "llm:file:packages/core/src/index/rerank.ts#capability:structural-rerank",
+        "rel": "realizes",
+        "rationale": "This file implements the rerank.",
+        "confidence": 0.83,
+        "targetId": "file:packages/core/src/index/rerank.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/core/src/index/rerank.ts#QueryIntent@L45",
+      "quote": "export type QueryIntent = 'location' | 'behavior' | 'entity' | 'unknown';"
+    },
+    {
+      "soulId": "sym:packages/core/src/index/rerank.ts#RerankCandidate@L33",
+      "quote": "export interface RerankCandidate {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

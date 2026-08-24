@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:docs/knowledge-crib-production-readiness.md",
+  "nodeHash": "blake3:5e12ab260122e5ce68b17ff635a00b6d427da3119939917ede34a46e3c33de54",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:13:18.221Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The production readiness assessment: what is hardened, what is known-limited, and what remains before wider use.",
+    "responsibilities": [
+      "Assess readiness honestly, including limits"
+    ],
+    "businessRules": [],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.78
+  },
+  "graph": {
+    "nodes": [],
+    "edges": []
+  },
+  "evidence": [
+    {
+      "soulId": "doc:docs/knowledge-crib-production-readiness.md#fixed-for-release",
+      "quote": "- Root package stays private; publishable workspace packages are set to `0.1.0`."
+    },
+    {
+      "soulId": "doc:docs/knowledge-crib-production-readiness.md#knowledge-crib-production-readiness",
+      "quote": "Date: 2026-06-26"
+    },
+    {
+      "soulId": "doc:docs/knowledge-crib-production-readiness.md#known-non-blockers",
+      "quote": "- LLM graph generation is optional post-release enrichment. `llmGraph: false` is acceptable for a"
+    },
+    {
+      "soulId": "doc:docs/knowledge-crib-production-readiness.md#release-checklist",
+      "quote": "1. Confirm versions and changelog for the `0.1.0` production candidate."
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

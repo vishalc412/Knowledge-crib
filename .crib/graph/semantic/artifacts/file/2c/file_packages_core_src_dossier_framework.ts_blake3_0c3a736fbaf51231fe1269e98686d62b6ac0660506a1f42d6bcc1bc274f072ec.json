@@ -1,0 +1,77 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/core/src/dossier/framework.ts",
+  "nodeHash": "blake3:0c3a736fbaf51231fe1269e98686d62b6ac0660506a1f42d6bcc1bc274f072ec",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T02:40:14.183Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "Surfaces framework relationships around a symbol — the route it exposes, the bean it produces, the dependencies its class injects, the JPA relations its fields declare — computed purely over the soul so the persisted dossier and the live context verb return byte-identical shapes.",
+    "responsibilities": [
+      "Auto-scope by node: class-level aggregation versus method-level direct edges",
+      "Fold route, bean, dependency, relation and render edges into one object",
+      "Surface a dependency that is also bean-produced with its producer in the same object",
+      "Return undefined when nothing framework-related applies"
+    ],
+    "businessRules": [
+      {
+        "rule": "Pure over the soul with no index or disk access, so the persisted dossier and the live context verb share one code path.",
+        "rationale": "Two code paths would drift and produce different shapes for the same node.",
+        "sourceRef": "file:packages/core/src/dossier/framework.ts"
+      },
+      {
+        "rule": "Dependency resolution is one hop only; multi-hop dependency injection remains the impact verb job.",
+        "rationale": "Bounds the cost and keeps responsibilities separate.",
+        "sourceRef": "file:packages/core/src/dossier/framework.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.82
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:framework-semantics",
+        "kind": "capability",
+        "name": "Framework semantics",
+        "summary": "Resolved route/DI/relation view around a symbol.",
+        "attributes": {},
+        "id": "llm:file:packages/core/src/dossier/framework.ts#capability:framework-semantics",
+        "targetId": "file:packages/core/src/dossier/framework.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/core/src/dossier/framework.ts",
+        "to": "llm:file:packages/core/src/dossier/framework.ts#capability:framework-semantics",
+        "rel": "realizes",
+        "rationale": "This file implements framework-relationship surfacing.",
+        "confidence": 0.82,
+        "targetId": "file:packages/core/src/dossier/framework.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/core/src/dossier/framework.ts#DossierFrameworkSemantics@L130",
+      "quote": "export interface DossierFrameworkSemantics {",
+      "why": "The single aggregate shape returned for both dossier and context."
+    },
+    {
+      "soulId": "sym:packages/core/src/dossier/framework.ts#DossierDependency@L79",
+      "quote": "export interface DossierDependency {",
+      "why": "Dependencies are surfaced as first-class resolved records."
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

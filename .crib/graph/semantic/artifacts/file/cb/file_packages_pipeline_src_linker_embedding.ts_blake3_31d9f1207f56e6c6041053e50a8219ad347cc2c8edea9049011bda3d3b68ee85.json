@@ -1,0 +1,68 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/pipeline/src/linker/embedding.ts",
+  "nodeHash": "blake3:31d9f1207f56e6c6041053e50a8219ad347cc2c8edea9049011bda3d3b68ee85",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T03:58:13.485Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The embedding-based upgrade to term-frequency linking: scores a documentation section against symbol text by vector similarity, under the same confidence cap and the same graceful-degradation contract.",
+    "responsibilities": [
+      "Score doc sections against symbols by embedding similarity",
+      "Return top candidates above a floor with capped confidence"
+    ],
+    "businessRules": [
+      {
+        "rule": "Same contract and same confidence cap as the term-frequency linker it upgrades.",
+        "rationale": "A stronger signal must not be allowed to outrank an explicit documentation link.",
+        "sourceRef": "file:packages/pipeline/src/linker/embedding.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.82
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:embedding-linking",
+        "kind": "capability",
+        "name": "Embedding linking",
+        "summary": "Similarity-based doc-to-code suggestions.",
+        "attributes": {},
+        "id": "llm:file:packages/pipeline/src/linker/embedding.ts#capability:embedding-linking",
+        "targetId": "file:packages/pipeline/src/linker/embedding.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/pipeline/src/linker/embedding.ts",
+        "to": "llm:file:packages/pipeline/src/linker/embedding.ts#capability:embedding-linking",
+        "rel": "realizes",
+        "rationale": "This file implements the embedding linker.",
+        "confidence": 0.82,
+        "targetId": "file:packages/pipeline/src/linker/embedding.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/pipeline/src/linker/embedding.ts#EmbeddingLinkIndex.embedder@L37",
+      "quote": "private readonly embedder: Embedder;"
+    },
+    {
+      "soulId": "sym:packages/pipeline/src/linker/embedding.ts#EmbeddingLinkIndex.ids@L38",
+      "quote": "private readonly ids: string[] = [];"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

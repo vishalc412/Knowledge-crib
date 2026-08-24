@@ -1,0 +1,69 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/parsers/src/go/lexer.ts",
+  "nodeHash": "blake3:238b334cd6751ab600d1e37ee809cad4f7c905a857351914b0f562cd76bdadd2",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T02:52:39.453Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The Go tokenizer: a hand-rolled, zero-dependency lexer for the subset the symbol graph needs, written to keep cold install offline, pure-JavaScript and deterministic.",
+    "responsibilities": [
+      "Turn source text into the token stream the structural parser consumes",
+      "Degrade a lexing anomaly into a generic token instead of throwing",
+      "Apply Go automatic semicolon insertion so statement boundaries match the language rules"
+    ],
+    "businessRules": [
+      {
+        "rule": "The lexer never throws — an anomaly degrades to a generic token and lexing continues.",
+        "rationale": "Lets the extractor fall back to a file node rather than aborting the whole pipeline.",
+        "sourceRef": "file:packages/parsers/src/go/lexer.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.83
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:lex-go",
+        "kind": "capability",
+        "name": "Go lexing",
+        "summary": "Tolerant zero-dependency Go tokenizer.",
+        "attributes": {},
+        "id": "llm:file:packages/parsers/src/go/lexer.ts#capability:lex-go",
+        "targetId": "file:packages/parsers/src/go/lexer.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/parsers/src/go/lexer.ts",
+        "to": "llm:file:packages/parsers/src/go/lexer.ts#capability:lex-go",
+        "rel": "realizes",
+        "rationale": "This file is the Go lexer.",
+        "confidence": 0.83,
+        "targetId": "file:packages/parsers/src/go/lexer.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/parsers/src/go/lexer.ts#GoCommentBlock@L119",
+      "quote": "export interface GoCommentBlock {"
+    },
+    {
+      "soulId": "sym:packages/parsers/src/go/lexer.ts#Lexer.advance@L448",
+      "quote": "const c = this.src[this.pos];"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

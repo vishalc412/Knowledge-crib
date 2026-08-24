@@ -1,0 +1,69 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/pipeline/src/artifacts.ts",
+  "nodeHash": "blake3:317f2e4c910366aeff246deefa1eea0ddafa479bb73b595f96637c6e488950fc",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T02:56:59.750Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "Builds the AI-artifact graph: discovers the skills, agents, commands, rules and MCP configs that ordinary discovery misses, and links them to the code and each other.",
+    "responsibilities": [
+      "Find tracked AI artifacts living under tool directories the walk skips",
+      "Emit one artifact node per discovered artifact",
+      "Resolve governs, requires and invokes edges between them"
+    ],
+    "businessRules": [
+      {
+        "rule": "These artifacts are found deliberately because they live under gitignored tool directories the normal discovery walk never reaches.",
+        "rationale": "They shape agent behaviour, so leaving them out would hide the rules the agent is actually following.",
+        "sourceRef": "file:packages/pipeline/src/artifacts.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.82
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:artifact-graph",
+        "kind": "capability",
+        "name": "AI artifact graph",
+        "summary": "Skills, agents and rules as first-class graph nodes.",
+        "attributes": {},
+        "id": "llm:file:packages/pipeline/src/artifacts.ts#capability:artifact-graph",
+        "targetId": "file:packages/pipeline/src/artifacts.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/pipeline/src/artifacts.ts",
+        "to": "llm:file:packages/pipeline/src/artifacts.ts#capability:artifact-graph",
+        "rel": "realizes",
+        "rationale": "This file builds the artifact graph.",
+        "confidence": 0.82,
+        "targetId": "file:packages/pipeline/src/artifacts.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/pipeline/src/artifacts.ts#ArtifactDiagnostic@L89",
+      "quote": "export interface ArtifactDiagnostic {"
+    },
+    {
+      "soulId": "sym:packages/pipeline/src/artifacts.ts#ArtifactGraphOpts@L80",
+      "quote": "export interface ArtifactGraphOpts {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

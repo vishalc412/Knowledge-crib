@@ -1,0 +1,69 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/memory/src/promotion.ts",
+  "nodeHash": "blake3:d370ec90a3b9ccf59cc621bff9ed645342ab65d0e778a54d62c30df6a00c1eb1",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T03:54:27.579Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The path a remembered claim takes from untrusted observation to trusted team memory: evaluate against a declared gate, activate locally, then propose for the team.",
+    "responsibilities": [
+      "Evaluate a candidate against the configured gate",
+      "Activate a passing candidate in local memory",
+      "Propose a local record for team adoption as a separate step"
+    ],
+    "businessRules": [
+      {
+        "rule": "Promotion is a deliberate multi-step path, never automatic from observation.",
+        "rationale": "Trust has to be granted, not accumulated by writing something down.",
+        "sourceRef": "file:packages/memory/src/promotion.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.84
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:memory-promotion",
+        "kind": "capability",
+        "name": "Memory promotion",
+        "summary": "Observation to trusted team memory.",
+        "attributes": {},
+        "id": "llm:file:packages/memory/src/promotion.ts#capability:memory-promotion",
+        "targetId": "file:packages/memory/src/promotion.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/memory/src/promotion.ts",
+        "to": "llm:file:packages/memory/src/promotion.ts#capability:memory-promotion",
+        "rel": "realizes",
+        "rationale": "This file implements the promotion pipeline.",
+        "confidence": 0.84,
+        "targetId": "file:packages/memory/src/promotion.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/memory/src/promotion.ts#ActivationResult@L192",
+      "quote": "export interface ActivationResult {"
+    },
+    {
+      "soulId": "sym:packages/memory/src/promotion.ts#CandidateEvaluation@L106",
+      "quote": "export interface CandidateEvaluation {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

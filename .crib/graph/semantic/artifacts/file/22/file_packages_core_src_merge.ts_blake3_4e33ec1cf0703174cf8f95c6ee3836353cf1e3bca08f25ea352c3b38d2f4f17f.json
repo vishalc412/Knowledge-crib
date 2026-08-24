@@ -1,0 +1,68 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/core/src/merge.ts",
+  "nodeHash": "blake3:4e33ec1cf0703174cf8f95c6ee3836353cf1e3bca08f25ea352c3b38d2f4f17f",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:00:13.884Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The three-way merge for graph chunks that the git merge driver calls, so two branches that both re-indexed can merge without a hand-resolved conflict in generated data.",
+    "responsibilities": [
+      "Merge two versions of a graph chunk against their base",
+      "Produce a deterministic merged result"
+    ],
+    "businessRules": [
+      {
+        "rule": "Graph chunks are regenerable from source, so a merge may safely rebuild rather than demand hand resolution.",
+        "rationale": "Hand-resolving generated JSONL is error-prone and pointless.",
+        "sourceRef": "file:packages/core/src/merge.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.83
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:graph-merge",
+        "kind": "capability",
+        "name": "Graph chunk merge",
+        "summary": "Automatic merge for generated graph data.",
+        "attributes": {},
+        "id": "llm:file:packages/core/src/merge.ts#capability:graph-merge",
+        "targetId": "file:packages/core/src/merge.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/core/src/merge.ts",
+        "to": "llm:file:packages/core/src/merge.ts#capability:graph-merge",
+        "rel": "realizes",
+        "rationale": "This file is the graph merger.",
+        "confidence": 0.83,
+        "targetId": "file:packages/core/src/merge.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/core/src/merge.ts#ChunkRecord@L22",
+      "quote": "export type ChunkRecord = Node | Edge;"
+    },
+    {
+      "soulId": "sym:packages/core/src/merge.ts#MergeResult@L53",
+      "quote": "export interface MergeResult {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

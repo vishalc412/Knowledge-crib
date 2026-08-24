@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/cli/src/viz.test.ts",
+  "nodeHash": "blake3:16c8df694c46cdc43fb41e12ec1da8f2b5a0b24092a41f3e8e855f043f9b77c5",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:17:56.866Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The test suite for viz — it defines the behaviour that is guaranteed, so a change that breaks any of it fails the build. It pins: crib viz — buildVizGraph (DC runtime contract); crib viz — framework-semantics 1.3 surfacing.",
+    "responsibilities": [
+      "Pin the observable behaviour of viz",
+      "Fail the build when a guaranteed behaviour changes"
+    ],
+    "businessRules": [],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.76
+  },
+  "graph": {
+    "nodes": [],
+    "edges": []
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/cli/src/viz.test.ts#edge@L226",
+      "quote": "function edge(src: string, dst: string, rel: Rel): Edge {"
+    },
+    {
+      "soulId": "sym:packages/cli/src/viz.test.ts#node@L216",
+      "quote": "function node(partial: Partial<Node> & { id: string; kind: Node['kind'] }): Node {"
+    },
+    {
+      "soulId": "sym:packages/cli/src/viz.test.ts#soulFor@L25",
+      "quote": "function soulFor(): SoulStore {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/parsers/src/tree-sitter-pool.test.ts",
+  "nodeHash": "blake3:06e57cb433e8e285a22bacdb8064fb0351791bfcdc604360cc96bfbbfa58a3f7",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:17:57.494Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The test suite for tree-sitter-pool — it defines the behaviour that is guaranteed, so a change that breaks any of it fails the build. It pins: grammarsNeededFor (lazy pool — never pay for a grammar a repo never uses); createParserHandle (sync accessor over the async-preloaded pool).",
+    "responsibilities": [
+      "Pin the observable behaviour of tree-sitter-pool",
+      "Fail the build when a guaranteed behaviour changes"
+    ],
+    "businessRules": [],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.76
+  },
+  "graph": {
+    "nodes": [],
+    "edges": []
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/parsers/src/tree-sitter-pool.test.ts#file@L5",
+      "quote": "function file(path: string): FileMeta {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

@@ -1,0 +1,63 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:scripts/eval/seed.mjs",
+  "nodeHash": "blake3:abbd787a3fd4f99524038902f6fb554e61f25dd9a4d83a15289d2f4b95aa3817",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:07:00.941Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "Builds the evaluation fixtures and their expected answers, so retrieval quality is measured against a fixed, reviewable ground truth.",
+    "responsibilities": [
+      "Generate the evaluation corpus and expected answers"
+    ],
+    "businessRules": [
+      {
+        "rule": "Ground truth is committed and reviewable rather than generated per run.",
+        "rationale": "A moving target cannot measure a regression.",
+        "sourceRef": "file:scripts/eval/seed.mjs"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.8
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:scripts-eval-seed-mjs",
+        "kind": "capability",
+        "name": "Evaluation seeding",
+        "summary": "Fixed ground truth for search quality.",
+        "attributes": {},
+        "id": "llm:file:scripts/eval/seed.mjs#capability:scripts-eval-seed-mjs",
+        "targetId": "file:scripts/eval/seed.mjs"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:scripts/eval/seed.mjs",
+        "to": "llm:file:scripts/eval/seed.mjs#capability:scripts-eval-seed-mjs",
+        "rel": "realizes",
+        "rationale": "This file implements evaluation seeding.",
+        "confidence": 0.8,
+        "targetId": "file:scripts/eval/seed.mjs"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:scripts/eval/seed.mjs#seedGoldenPairs@L26",
+      "quote": "export function seedGoldenPairs(soul, lang) {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

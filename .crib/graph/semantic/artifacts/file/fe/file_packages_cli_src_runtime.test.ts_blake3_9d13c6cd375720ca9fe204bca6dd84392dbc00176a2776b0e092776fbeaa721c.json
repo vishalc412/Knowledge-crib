@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/cli/src/runtime.test.ts",
+  "nodeHash": "blake3:9d13c6cd375720ca9fe204bca6dd84392dbc00176a2776b0e092776fbeaa721c",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:17:57.492Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The test suite for runtime — it defines the behaviour that is guaranteed, so a change that breaks any of it fails the build. It pins: CLI runtime — index → open → query; CLI runtime — archive resolution; sweepStaleBuilds (temp build-db reclamation).",
+    "responsibilities": [
+      "Pin the observable behaviour of runtime",
+      "Fail the build when a guaranteed behaviour changes"
+    ],
+    "businessRules": [],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.76
+  },
+  "graph": {
+    "nodes": [],
+    "edges": []
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/cli/src/runtime.test.ts#tempBuild@L178",
+      "quote": "function tempBuild(dir: string, name: string, ageMs: number): string {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

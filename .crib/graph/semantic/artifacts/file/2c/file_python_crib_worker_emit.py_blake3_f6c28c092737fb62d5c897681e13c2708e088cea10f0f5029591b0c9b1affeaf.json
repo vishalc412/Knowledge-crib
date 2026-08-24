@@ -1,0 +1,64 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:python/crib_worker/emit.py",
+  "nodeHash": "blake3:f6c28c092737fb62d5c897681e13c2708e088cea10f0f5029591b0c9b1affeaf",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:07:44.787Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "Builds the media worker JSON payload as a pure function with no input or output of its own, keeping the Python side to a minimal contract while the TypeScript layer owns graph identity.",
+    "responsibilities": [
+      "Shape worker output into the payload the ingest layer consumes",
+      "Stay pure: no filesystem or network access"
+    ],
+    "businessRules": [
+      {
+        "rule": "The contract is deliberately minimal — graph identity and schema conformance are computed on the TypeScript side, not here.",
+        "rationale": "Two languages deriving ids independently would eventually disagree, and id determinism is what the whole graph rests on.",
+        "sourceRef": "file:python/crib_worker/emit.py"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.8
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:worker-payload",
+        "kind": "capability",
+        "name": "Worker payload",
+        "summary": "Minimal cross-language contract for media workers.",
+        "attributes": {},
+        "id": "llm:file:python/crib_worker/emit.py#capability:worker-payload",
+        "targetId": "file:python/crib_worker/emit.py"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:python/crib_worker/emit.py",
+        "to": "llm:file:python/crib_worker/emit.py#capability:worker-payload",
+        "rel": "realizes",
+        "rationale": "This module builds the payload.",
+        "confidence": 0.8,
+        "targetId": "file:python/crib_worker/emit.py"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:python/crib_worker/emit.py#Segment@L15",
+      "quote": "class Segment(TypedDict):"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

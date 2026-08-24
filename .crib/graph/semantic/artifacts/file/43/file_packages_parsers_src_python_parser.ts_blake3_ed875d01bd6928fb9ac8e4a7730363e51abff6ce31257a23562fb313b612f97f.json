@@ -1,0 +1,81 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/parsers/src/python/parser.ts",
+  "nodeHash": "blake3:ed875d01bd6928fb9ac8e4a7730363e51abff6ce31257a23562fb313b612f97f",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T02:49:47.914Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The Python structural parser: turns the token stream into a declaration tree (classes, functions, methods) plus a flat list of call sites, deliberately stopping short of a full expression parser because the symbol graph only needs declaration spans, nesting, and call-site heads.",
+    "responsibilities": [
+      "Descend the token stream tolerantly, emitting a declaration per construct",
+      "Record nesting so members carry qualified names and member-of edges",
+      "Collect call sites in a separate whole-stream pass",
+      "Degrade on malformed input by skipping the construct rather than throwing",
+      "Drive the declaration tree from INDENT/DEDENT tokens rather than braces"
+    ],
+    "businessRules": [
+      {
+        "rule": "Not a full expression parser — a tolerant brace/indent-level descent is enough, and is far less surface area to get wrong.",
+        "rationale": "The symbol graph needs spans, nesting and call heads; parsing expressions would add risk without adding graph value.",
+        "sourceRef": "file:packages/parsers/src/python/parser.ts"
+      },
+      {
+        "rule": "A malformed header degrades to skipping that logical line and never throws.",
+        "rationale": "One bad construct must not cost the whole file its symbols.",
+        "sourceRef": "file:packages/parsers/src/python/parser.ts"
+      },
+      {
+        "rule": "Call-site detection is a separate pass over the tokens rather than folded into the descent.",
+        "rationale": "Keeps call collection independent of how well the structural descent handled a construct.",
+        "sourceRef": "file:packages/parsers/src/python/parser.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.84
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:parse-python",
+        "kind": "capability",
+        "name": "Python parsing",
+        "summary": "Declarations, nesting and call sites for Python.",
+        "attributes": {},
+        "id": "llm:file:packages/parsers/src/python/parser.ts#capability:parse-python",
+        "targetId": "file:packages/parsers/src/python/parser.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/parsers/src/python/parser.ts",
+        "to": "llm:file:packages/parsers/src/python/parser.ts#capability:parse-python",
+        "rel": "realizes",
+        "rationale": "This file is the Python structural parser.",
+        "confidence": 0.84,
+        "targetId": "file:packages/parsers/src/python/parser.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/parsers/src/python/parser.ts#DefKind@L20",
+      "quote": "export type DefKind = 'class' | 'function' | 'method';"
+    },
+    {
+      "soulId": "sym:packages/parsers/src/python/parser.ts#Parser.atEnd@L808",
+      "quote": "return this.i >= this.t.length || this.peek().type === 'ENDMARKER';"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

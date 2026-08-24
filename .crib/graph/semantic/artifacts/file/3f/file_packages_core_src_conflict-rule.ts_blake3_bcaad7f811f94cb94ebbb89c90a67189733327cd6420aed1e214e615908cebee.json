@@ -1,0 +1,68 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/core/src/conflict-rule.ts",
+  "nodeHash": "blake3:bcaad7f811f94cb94ebbb89c90a67189733327cd6420aed1e214e615908cebee",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:04:00.263Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The single deterministic rule for what happens when two edges share the same identity — applied identically by the store and the merge driver, so both always agree.",
+    "responsibilities": [
+      "Decide which of two competing edges wins",
+      "Apply the same rule in the store and in merges"
+    ],
+    "businessRules": [
+      {
+        "rule": "One rule is the single source of truth for BOTH the store and the merge driver.",
+        "rationale": "Two implementations would eventually disagree and produce a graph that depends on how it was written.",
+        "sourceRef": "file:packages/core/src/conflict-rule.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.85
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:conflict-rule",
+        "kind": "capability",
+        "name": "Edge conflict resolution",
+        "summary": "One deterministic winner, everywhere.",
+        "attributes": {},
+        "id": "llm:file:packages/core/src/conflict-rule.ts#capability:conflict-rule",
+        "targetId": "file:packages/core/src/conflict-rule.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/core/src/conflict-rule.ts",
+        "to": "llm:file:packages/core/src/conflict-rule.ts#capability:conflict-rule",
+        "rel": "realizes",
+        "rationale": "This file implements edge conflict resolution.",
+        "confidence": 0.85,
+        "targetId": "file:packages/core/src/conflict-rule.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/core/src/conflict-rule.ts#mergeEvidence@L44",
+      "quote": "function mergeEvidence(x?: Evidence, y?: Evidence): Evidence | undefined {"
+    },
+    {
+      "soulId": "sym:packages/core/src/conflict-rule.ts#passesThreshold@L55",
+      "quote": "export function passesThreshold(edge: Edge, threshold = DEFAULT_LINK_THRESHOLD): boolean {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

@@ -1,0 +1,68 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/parsers/src/mule/mule4.ts",
+  "nodeHash": "blake3:d7aec27fe3eb757ad9be3891312cba37ad080299265df084f546c38805e396d7",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T03:58:13.484Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The Mule 4 normalizer: lifts a raw Mule XML tree into typed flows, processors, error handlers and configurations, emitting the same vocabulary the Mule 3 normalizer produces.",
+    "responsibilities": [
+      "Normalize Mule 4 XML into typed flows and processors",
+      "Emit the shared document vocabulary"
+    ],
+    "businessRules": [
+      {
+        "rule": "Mule 3 and Mule 4 normalize to the SAME vocabulary so one extractor and resolver serve both.",
+        "rationale": "Version-specific downstream code would double every future change.",
+        "sourceRef": "file:packages/parsers/src/mule/mule4.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.83
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:normalize-mule4",
+        "kind": "capability",
+        "name": "Mule 4 normalization",
+        "summary": "Mule 4 XML into the shared vocabulary.",
+        "attributes": {},
+        "id": "llm:file:packages/parsers/src/mule/mule4.ts#capability:normalize-mule4",
+        "targetId": "file:packages/parsers/src/mule/mule4.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/parsers/src/mule/mule4.ts",
+        "to": "llm:file:packages/parsers/src/mule/mule4.ts#capability:normalize-mule4",
+        "rel": "realizes",
+        "rationale": "This file normalizes Mule 4 documents.",
+        "confidence": 0.83,
+        "targetId": "file:packages/parsers/src/mule/mule4.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/parsers/src/mule/mule4.ts#Mule4Document@L31",
+      "quote": "export interface Mule4Document extends Omit<MuleDocument, 'dialect'> {"
+    },
+    {
+      "soulId": "sym:packages/parsers/src/mule/mule4.ts#ProcessedAttrs@L87",
+      "quote": "attrs: Record<string, string>;"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

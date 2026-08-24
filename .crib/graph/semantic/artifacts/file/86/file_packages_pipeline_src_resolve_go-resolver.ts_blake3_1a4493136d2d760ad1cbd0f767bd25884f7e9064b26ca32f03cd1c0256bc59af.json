@@ -1,0 +1,74 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/pipeline/src/resolve/go-resolver.ts",
+  "nodeHash": "blake3:1a4493136d2d760ad1cbd0f767bd25884f7e9064b26ca32f03cd1c0256bc59af",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T03:54:27.578Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The Go cross-file resolver: turns the cross-file references an extractor recorded — imports, calls, inheritance via struct and interface embedding — into real edges by looking every target up in the global symbol table.",
+    "responsibilities": [
+      "Resolve import specifiers to the symbols they actually name",
+      "Link a caller to the imported symbol it invokes",
+      "Resolve inheritance via struct and interface embedding across files into edges"
+    ],
+    "businessRules": [
+      {
+        "rule": "Every target is resolved through the global symbol table rather than matched by name.",
+        "rationale": "A name-matched edge would be a guess presented as a fact.",
+        "sourceRef": "file:packages/pipeline/src/resolve/go-resolver.ts"
+      },
+      {
+        "rule": "A reference that does not resolve is dropped and counted, never guessed.",
+        "rationale": "A missing edge is honest; a wrong one is not.",
+        "sourceRef": "file:packages/pipeline/src/resolve/go-resolver.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.83
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:resolve-go",
+        "kind": "capability",
+        "name": "Go resolution",
+        "summary": "Cross-file edges for Go.",
+        "attributes": {},
+        "id": "llm:file:packages/pipeline/src/resolve/go-resolver.ts#capability:resolve-go",
+        "targetId": "file:packages/pipeline/src/resolve/go-resolver.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/pipeline/src/resolve/go-resolver.ts",
+        "to": "llm:file:packages/pipeline/src/resolve/go-resolver.ts#capability:resolve-go",
+        "rel": "realizes",
+        "rationale": "This file is the Go resolver.",
+        "confidence": 0.83,
+        "targetId": "file:packages/pipeline/src/resolve/go-resolver.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/pipeline/src/resolve/go-resolver.ts#GoResolver.resolve@L253",
+      "quote": "resolve(ctx: ResolveContext): { edges: Edge[]; stats: ResolveStats } {"
+    },
+    {
+      "soulId": "sym:packages/pipeline/src/resolve/go-resolver.ts#GoResolver.supports@L250",
+      "quote": "supports(file: FileMeta): boolean {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

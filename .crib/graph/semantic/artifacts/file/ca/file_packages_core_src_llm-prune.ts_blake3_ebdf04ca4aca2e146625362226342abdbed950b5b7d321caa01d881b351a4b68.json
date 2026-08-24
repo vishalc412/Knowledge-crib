@@ -1,0 +1,68 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/core/src/llm-prune.ts",
+  "nodeHash": "blake3:ebdf04ca4aca2e146625362226342abdbed950b5b7d321caa01d881b351a4b68",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:05:50.830Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "Prunes semantic artifacts whose target no longer exists, so a deleted symbol does not leave authored prose behind describing something that is gone.",
+    "responsibilities": [
+      "Find artifacts whose target node has disappeared",
+      "Remove them and report what was pruned"
+    ],
+    "businessRules": [
+      {
+        "rule": "Pruning is a pure computation over the graph; the caller performs the deletion.",
+        "rationale": "Keeps the decision testable and separates it from the destructive act.",
+        "sourceRef": "file:packages/core/src/llm-prune.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.83
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:packages-core-src-llm-prune-ts",
+        "kind": "capability",
+        "name": "Semantic pruning",
+        "summary": "No prose for code that no longer exists.",
+        "attributes": {},
+        "id": "llm:file:packages/core/src/llm-prune.ts#capability:packages-core-src-llm-prune-ts",
+        "targetId": "file:packages/core/src/llm-prune.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/core/src/llm-prune.ts",
+        "to": "llm:file:packages/core/src/llm-prune.ts#capability:packages-core-src-llm-prune-ts",
+        "rel": "realizes",
+        "rationale": "This file implements semantic pruning.",
+        "confidence": 0.83,
+        "targetId": "file:packages/core/src/llm-prune.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/core/src/llm-prune.ts#pruneSemanticArtifacts@L46",
+      "quote": "export function pruneSemanticArtifacts(cribDir: string, liveNodeIds: ReadonlySet<string>): number {"
+    },
+    {
+      "soulId": "sym:packages/core/src/llm-prune.ts#semanticArtifactsRoot@L34",
+      "quote": "function semanticArtifactsRoot(cribDir: string): string {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

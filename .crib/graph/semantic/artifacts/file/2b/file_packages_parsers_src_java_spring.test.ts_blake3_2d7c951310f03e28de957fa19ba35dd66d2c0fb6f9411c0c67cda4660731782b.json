@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/parsers/src/java/spring.test.ts",
+  "nodeHash": "blake3:2d7c951310f03e28de957fa19ba35dd66d2c0fb6f9411c0c67cda4660731782b",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:17:55.640Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The test suite for spring — it defines the behaviour that is guaranteed, so a change that breaks any of it fails the build. It pins: Spring stereotypes; Spring routes — the API surface; Spring DI graph; JPA entity relations.",
+    "responsibilities": [
+      "Pin the observable behaviour of spring",
+      "Fail the build when a guaranteed behaviour changes"
+    ],
+    "businessRules": [],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.76
+  },
+  "graph": {
+    "nodes": [],
+    "edges": []
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/parsers/src/java/spring.test.ts#ctxFor.readText@L19",
+      "quote": "async readText() {"
+    },
+    {
+      "soulId": "sym:packages/parsers/src/java/spring.test.ts#ctxFor.treeSitter@L22",
+      "quote": "throw new Error('not used — Java is hand-rolled');"
+    },
+    {
+      "soulId": "sym:packages/parsers/src/java/spring.test.ts#ctxFor@L17",
+      "quote": "function ctxFor(text: string): ExtractCtx {"
+    },
+    {
+      "soulId": "sym:packages/parsers/src/java/spring.test.ts#exposes@L51",
+      "quote": "const exposes = (r: ExtractResult): string[] => {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

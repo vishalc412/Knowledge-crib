@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:docs/launch/publish-runbook.md",
+  "nodeHash": "blake3:32a13db2a289ff10c3969d012f43ab62aa6d857bfd3fd59e33ed3fec2473e053",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:13:18.225Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The publishing runbook: the ordered steps to cut and announce a release.",
+    "responsibilities": [
+      "Give the ordered release procedure"
+    ],
+    "businessRules": [],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.78
+  },
+  "graph": {
+    "nodes": [],
+    "edges": []
+  },
+  "evidence": [
+    {
+      "soulId": "doc:docs/launch/publish-runbook.md#changelog-cut-autonomous-prep-the-user-triggers",
+      "quote": "The CHANGELOG has an `[Unreleased]` section. Before publish, cut it to a dated release:"
+    },
+    {
+      "soulId": "doc:docs/launch/publish-runbook.md#post-publish-verification-the-m4-1-gate",
+      "quote": "npx knowledge-crib@0.1.0 --help          # prints the command list (index, init, doctor, mcp, viz, ...)"
+    },
+    {
+      "soulId": "doc:docs/launch/publish-runbook.md#pre-publish-checklist-tick-before-the-first-publish",
+      "quote": "- [ ] `npm whoami` returns the publishing account"
+    },
+    {
+      "soulId": "doc:docs/launch/publish-runbook.md#pre-publish-state-already-verified-autonomous",
+      "quote": "- All 7 packages at **v0.1.0**, all PUBLISHABLE (root is `private: true` — only the 7 `packages/*` publish):"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

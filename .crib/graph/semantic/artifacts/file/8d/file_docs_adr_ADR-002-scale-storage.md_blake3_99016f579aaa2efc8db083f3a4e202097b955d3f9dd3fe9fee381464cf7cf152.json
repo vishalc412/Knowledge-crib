@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:docs/adr/ADR-002-scale-storage.md",
+  "nodeHash": "blake3:99016f579aaa2efc8db083f3a4e202097b955d3f9dd3fe9fee381464cf7cf152",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:13:18.217Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The decision record for storage at scale: why the graph is chunked and sharded rather than kept as one file.",
+    "responsibilities": [
+      "Record the storage-scaling decision and its trade-offs"
+    ],
+    "businessRules": [],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.78
+  },
+  "graph": {
+    "nodes": [],
+    "edges": []
+  },
+  "evidence": [
+    {
+      "soulId": "doc:docs/adr/ADR-002-scale-storage.md#adr-002-scale-storage-single-soul-vs-per-module-souls-lazy-shard-loading-dossiers-in-git",
+      "quote": "- **Status:** Accepted"
+    },
+    {
+      "soulId": "doc:docs/adr/ADR-002-scale-storage.md#consequences",
+      "quote": "- The `crib audit-llm` gate is load-bearing for dossier integrity and stays in release:verify."
+    },
+    {
+      "soulId": "doc:docs/adr/ADR-002-scale-storage.md#context",
+      "quote": "The plan's M3.6 row left three storage decisions open until measured data existed:"
+    },
+    {
+      "soulId": "doc:docs/adr/ADR-002-scale-storage.md#the-measured-curve",
+      "quote": "| LOC | Files | Nodes | Wall (s) | Peak RSS (MB) | MB/kLOC | Nodes/s |"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

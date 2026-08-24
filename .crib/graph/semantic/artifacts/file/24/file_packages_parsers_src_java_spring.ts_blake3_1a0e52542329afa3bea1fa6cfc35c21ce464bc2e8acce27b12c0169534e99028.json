@@ -1,0 +1,75 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/parsers/src/java/spring.ts",
+  "nodeHash": "blake3:1a0e52542329afa3bea1fa6cfc35c21ce464bc2e8acce27b12c0169534e99028",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T02:56:59.749Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "Spring Boot framework-semantics extraction: on top of the syntactic symbol graph, derives the stereotypes, routes and wiring that let a team understand a Spring service without reading it.",
+    "responsibilities": [
+      "Tag each class with its Spring stereotype and framework",
+      "Derive the route table from the annotations or decorators that declare it",
+      "Resolve the dependency wiring between components",
+      "Attach the result to the existing symbol nodes rather than inventing new ones"
+    ],
+    "businessRules": [
+      {
+        "rule": "Framework meaning is derived from the syntactic graph that already exists, not from a second parse.",
+        "rationale": "One parse, one source of truth — a second pass could disagree with the first.",
+        "sourceRef": "file:packages/parsers/src/java/spring.ts"
+      },
+      {
+        "rule": "Only what the annotations actually declare is surfaced; nothing is inferred from naming convention.",
+        "rationale": "An inferred route would be indistinguishable from a declared one downstream.",
+        "sourceRef": "file:packages/parsers/src/java/spring.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.83
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:spring-semantics",
+        "kind": "capability",
+        "name": "Spring semantics",
+        "summary": "Stereotypes, routes and wiring for Spring services.",
+        "attributes": {},
+        "id": "llm:file:packages/parsers/src/java/spring.ts#capability:spring-semantics",
+        "targetId": "file:packages/parsers/src/java/spring.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/parsers/src/java/spring.ts",
+        "to": "llm:file:packages/parsers/src/java/spring.ts#capability:spring-semantics",
+        "rel": "realizes",
+        "rationale": "This file derives Spring framework semantics.",
+        "confidence": 0.83,
+        "targetId": "file:packages/parsers/src/java/spring.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/parsers/src/java/spring.ts#SpringPassInput@L89",
+      "quote": "export interface SpringPassInput {"
+    },
+    {
+      "soulId": "sym:packages/parsers/src/java/spring.ts#allQuoted@L376",
+      "quote": "function allQuoted(s?: string): string[] {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/pipeline/fixtures/sql-cross/claim_pkg.pkb",
+  "nodeHash": "blake3:dc6b2cdc964acb9989367f19900f8f134b2bbeb59e54c65dafa5b7bd7263f890",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:17:57.490Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "A test fixture: sample PKB source that exists to exercise the extractor for this language, not to run in production.",
+    "responsibilities": [
+      "Provide representative source constructs for extractor tests"
+    ],
+    "businessRules": [],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.76
+  },
+  "graph": {
+    "nodes": [],
+    "edges": []
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/pipeline/fixtures/sql-cross/claim_pkg.pkb#claim_pkg.process_claim@L4",
+      "quote": "PROCEDURE process_claim(p_id NUMBER) IS"
+    },
+    {
+      "soulId": "sym:packages/pipeline/fixtures/sql-cross/claim_pkg.pkb#claim_pkg@L3",
+      "quote": "CREATE OR REPLACE PACKAGE BODY claim_pkg IS"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

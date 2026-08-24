@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/pipeline/src/rules.test.ts",
+  "nodeHash": "blake3:9328d1ed46ea5eb05c2fe6e16afeb8091889090160c900bb3d39ef93d3ba25cf",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:17:57.491Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The test suite for rules — it defines the behaviour that is guaranteed, so a change that breaks any of it fails the build. It pins: M12 rule extraction — decision table (golden); M12 renderers.",
+    "responsibilities": [
+      "Pin the observable behaviour of rules",
+      "Fail the build when a guaranteed behaviour changes"
+    ],
+    "businessRules": [],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.76
+  },
+  "graph": {
+    "nodes": [],
+    "edges": []
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/pipeline/src/rules.test.ts#condId@L36",
+      "quote": "const condId = (line: number): string => idFor({ kind: 'condition', file: FILE, line });"
+    },
+    {
+      "soulId": "sym:packages/pipeline/src/rules.test.ts#soulFor@L24",
+      "quote": "function soulFor(): SoulStore {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

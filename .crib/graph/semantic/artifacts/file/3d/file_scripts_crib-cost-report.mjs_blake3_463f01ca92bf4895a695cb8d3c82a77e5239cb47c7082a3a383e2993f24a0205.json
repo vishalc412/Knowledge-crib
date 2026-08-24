@@ -1,0 +1,67 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:scripts/crib-cost-report.mjs",
+  "nodeHash": "blake3:463f01ca92bf4895a695cb8d3c82a77e5239cb47c7082a3a383e2993f24a0205",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:05:50.837Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "Reports what an enrichment run would cost before it is started, by pricing the pending work per model tier.",
+    "responsibilities": [
+      "Price the pending enrichment queue per tier"
+    ],
+    "businessRules": [
+      {
+        "rule": "Cost is reported before the run rather than discovered after it.",
+        "rationale": "A long enrichment run should never be a financial surprise.",
+        "sourceRef": "file:scripts/crib-cost-report.mjs"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.8
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:scripts-crib-cost-report-mjs",
+        "kind": "capability",
+        "name": "Cost reporting",
+        "summary": "Enrichment cost known in advance.",
+        "attributes": {},
+        "id": "llm:file:scripts/crib-cost-report.mjs#capability:scripts-crib-cost-report-mjs",
+        "targetId": "file:scripts/crib-cost-report.mjs"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:scripts/crib-cost-report.mjs",
+        "to": "llm:file:scripts/crib-cost-report.mjs#capability:scripts-crib-cost-report-mjs",
+        "rel": "realizes",
+        "rationale": "This file implements cost reporting.",
+        "confidence": 0.8,
+        "targetId": "file:scripts/crib-cost-report.mjs"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:scripts/crib-cost-report.mjs#costOf@L66",
+      "quote": "const c = bucketCost(run[b], PRICE[RATE_OF[b]]);"
+    },
+    {
+      "soulId": "sym:scripts/crib-cost-report.mjs#lens@L107",
+      "quote": "function lens(costA, costB) {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

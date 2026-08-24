@@ -1,0 +1,75 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/pipeline/src/structure.ts",
+  "nodeHash": "blake3:8ca0a8ff3459bd03ebdef96e924a31c487b9b357b06424fbb73ec8d37b2ac2bf",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T03:58:13.486Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The structure phase: walks the repository into file nodes, skipping build, dependency, vendored and minified paths, and computes each file content hash once.",
+    "responsibilities": [
+      "Walk the repository into file nodes",
+      "Apply the baseline ignore set and the repo own ignore rules",
+      "Skip vendored and minified artifacts, whose identifiers carry no meaning",
+      "Compute each content hash once for later phases"
+    ],
+    "businessRules": [
+      {
+        "rule": "The baseline ignore set is hardcoded so a repo without ignore rules still skips universal noise, and no rule can re-include it.",
+        "rationale": "Dependency directories must never enter the graph, whatever the repo configures.",
+        "sourceRef": "file:packages/pipeline/src/structure.ts"
+      },
+      {
+        "rule": "Minified and vendored files are skipped because their identifiers are mangled and unsearchable.",
+        "rationale": "They are code, but they are not knowledge.",
+        "sourceRef": "file:packages/pipeline/src/structure.ts"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.85
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:discovery",
+        "kind": "capability",
+        "name": "Repository discovery",
+        "summary": "What enters the graph, and what never does.",
+        "attributes": {},
+        "id": "llm:file:packages/pipeline/src/structure.ts#capability:discovery",
+        "targetId": "file:packages/pipeline/src/structure.ts"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:packages/pipeline/src/structure.ts",
+        "to": "llm:file:packages/pipeline/src/structure.ts#capability:discovery",
+        "rel": "realizes",
+        "rationale": "This file implements discovery.",
+        "confidence": 0.85,
+        "targetId": "file:packages/pipeline/src/structure.ts"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/pipeline/src/structure.ts#DiscoverOpts@L99",
+      "quote": "export interface DiscoverOpts {"
+    },
+    {
+      "soulId": "sym:packages/pipeline/src/structure.ts#discoverFiles.inScopeDir@L128",
+      "quote": "const inScopeDir = (rel: string): boolean => {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

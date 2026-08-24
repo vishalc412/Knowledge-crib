@@ -1,0 +1,68 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:scripts/release-verify.mjs",
+  "nodeHash": "blake3:2a24a847079671e45b55e8a6a926ebdf78bd8a4da22752db5ca557e9622f36b0",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:05:50.837Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "A build gate that verifies a release artifact is complete and leaks nothing it should not ship, failing the build on regression rather than reporting a number nobody reads.",
+    "responsibilities": [
+      "Exercise the real code path for a release artifact is complete and leaks nothing it should not ship",
+      "Fail the build when the property no longer holds"
+    ],
+    "businessRules": [
+      {
+        "rule": "The gate runs the SAME code path the product uses, not a test-only variant.",
+        "rationale": "A published package cannot be un-published.",
+        "sourceRef": "file:scripts/release-verify.mjs"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.8
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:scripts-release-verify-mjs",
+        "kind": "capability",
+        "name": "Build gate",
+        "summary": "Automated enforcement: verifies a release artifact is complete and leaks nothing it should not ship.",
+        "attributes": {},
+        "id": "llm:file:scripts/release-verify.mjs#capability:scripts-release-verify-mjs",
+        "targetId": "file:scripts/release-verify.mjs"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:scripts/release-verify.mjs",
+        "to": "llm:file:scripts/release-verify.mjs#capability:scripts-release-verify-mjs",
+        "rel": "realizes",
+        "rationale": "This file implements build gate.",
+        "confidence": 0.8,
+        "targetId": "file:scripts/release-verify.mjs"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:scripts/release-verify.mjs#pnpm@L20",
+      "quote": "run('corepack', ['pnpm@9.15.0', ...args]);"
+    },
+    {
+      "soulId": "sym:scripts/release-verify.mjs#run@L3",
+      "quote": "function run(cmd, args, opts = {}) {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

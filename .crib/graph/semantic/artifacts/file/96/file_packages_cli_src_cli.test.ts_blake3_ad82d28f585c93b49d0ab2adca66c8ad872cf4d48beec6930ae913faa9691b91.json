@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:packages/cli/src/cli.test.ts",
+  "nodeHash": "blake3:ad82d28f585c93b49d0ab2adca66c8ad872cf4d48beec6930ae913faa9691b91",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:17:55.639Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "The test suite for cli — it defines the behaviour that is guaranteed, so a change that breaks any of it fails the build. It pins: crib context --package (WS-4 bulk dossierByScope) — CLI dispatch; read commands use an existing derived index instead of rebuilding it; crib index --crib-dir; crib index <archive> — archive identity round-trip.",
+    "responsibilities": [
+      "Pin the observable behaviour of cli",
+      "Fail the build when a guaranteed behaviour changes"
+    ],
+    "businessRules": [],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.76
+  },
+  "graph": {
+    "nodes": [],
+    "edges": []
+  },
+  "evidence": [
+    {
+      "soulId": "sym:packages/cli/src/cli.test.ts#buildStoredZip.dos@L315",
+      "quote": "const dos = (d: Date): number =>"
+    },
+    {
+      "soulId": "sym:packages/cli/src/cli.test.ts#buildStoredZip.dosDate@L317",
+      "quote": "const dosDate = (d: Date): number =>"
+    },
+    {
+      "soulId": "sym:packages/cli/src/cli.test.ts#buildStoredZip@L314",
+      "quote": "function buildStoredZip(entries: Array<{ name: string; data: Buffer }>): Buffer {"
+    },
+    {
+      "soulId": "sym:packages/cli/src/cli.test.ts#fileCount@L733",
+      "quote": "const fileCount = (stdout: string): number => {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

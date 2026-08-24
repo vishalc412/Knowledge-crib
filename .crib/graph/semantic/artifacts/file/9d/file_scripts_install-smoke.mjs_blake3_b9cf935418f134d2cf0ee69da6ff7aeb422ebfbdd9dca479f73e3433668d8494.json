@@ -1,0 +1,68 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:scripts/install-smoke.mjs",
+  "nodeHash": "blake3:b9cf935418f134d2cf0ee69da6ff7aeb422ebfbdd9dca479f73e3433668d8494",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:00:13.889Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "An install smoke test: verifies the packaged tool actually installs and runs from a clean state, catching packaging breaks the unit tests cannot see.",
+    "responsibilities": [
+      "Install the packaged artifact into a clean location",
+      "Run it and assert it starts correctly"
+    ],
+    "businessRules": [
+      {
+        "rule": "Packaging is verified from a clean install rather than from the development tree.",
+        "rationale": "A working dev tree says nothing about what the published package contains.",
+        "sourceRef": "file:scripts/install-smoke.mjs"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.81
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:install-smoke",
+        "kind": "capability",
+        "name": "Install smoke test",
+        "summary": "Clean-install verification.",
+        "attributes": {},
+        "id": "llm:file:scripts/install-smoke.mjs#capability:install-smoke",
+        "targetId": "file:scripts/install-smoke.mjs"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:scripts/install-smoke.mjs",
+        "to": "llm:file:scripts/install-smoke.mjs#capability:install-smoke",
+        "rel": "realizes",
+        "rationale": "This script smoke-tests installs.",
+        "confidence": 0.81,
+        "targetId": "file:scripts/install-smoke.mjs"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:scripts/install-smoke.mjs#expectedBinPaths@L20",
+      "quote": "export function expectedBinPaths(prefix, platform = process.platform) {"
+    },
+    {
+      "soulId": "sym:scripts/install-smoke.mjs#findInstallerBundle@L77",
+      "quote": "export function findInstallerBundle(outRoot = join(repoRoot, 'dist', 'installers')) {"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}

@@ -1,0 +1,67 @@
+{
+  "version": 1,
+  "layer": "file",
+  "targetId": "file:scripts/crib-ab-task.mjs",
+  "nodeHash": "blake3:972599fd5420471519c98b3adc1bbe8c50e0936b532359e535036fcc429068f7",
+  "schemaVersion": "1.6",
+  "builtAt": "2026-08-23T04:05:50.838Z",
+  "model": "claude-opus-5",
+  "analysis": {
+    "purpose": "Compares answering a task through the graph against reading source directly, which is the measurement the whole product rests on.",
+    "responsibilities": [
+      "Run the same task both ways and compare cost and quality"
+    ],
+    "businessRules": [
+      {
+        "rule": "The comparison is the product claim under test: reading the graph should beat reading files.",
+        "rationale": "An unmeasured claim of token savings is just marketing.",
+        "sourceRef": "file:scripts/crib-ab-task.mjs"
+      }
+    ],
+    "inputs": [],
+    "outputs": [],
+    "sideEffects": [],
+    "errorBehavior": [],
+    "invariants": [],
+    "preconditions": [],
+    "postconditions": [],
+    "risks": [],
+    "whatToDistrust": [],
+    "confidence": 0.82
+  },
+  "graph": {
+    "nodes": [
+      {
+        "localId": "capability:scripts-crib-ab-task-mjs",
+        "kind": "capability",
+        "name": "A/B comparison",
+        "summary": "Graph versus reading source.",
+        "attributes": {},
+        "id": "llm:file:scripts/crib-ab-task.mjs#capability:scripts-crib-ab-task-mjs",
+        "targetId": "file:scripts/crib-ab-task.mjs"
+      }
+    ],
+    "edges": [
+      {
+        "from": "file:scripts/crib-ab-task.mjs",
+        "to": "llm:file:scripts/crib-ab-task.mjs#capability:scripts-crib-ab-task-mjs",
+        "rel": "realizes",
+        "rationale": "This file implements a/b comparison.",
+        "confidence": 0.82,
+        "targetId": "file:scripts/crib-ab-task.mjs"
+      }
+    ]
+  },
+  "evidence": [
+    {
+      "soulId": "sym:scripts/crib-ab-task.mjs#crib@L43",
+      "quote": "return execFileSync(process.execPath, [CLI, ...args], {"
+    },
+    {
+      "soulId": "sym:scripts/crib-ab-task.mjs#estTokens@L39",
+      "quote": "return Math.ceil(Buffer.byteLength(text, 'utf8') / 4);"
+    }
+  ],
+  "grounded": true,
+  "quality": "verified"
+}
