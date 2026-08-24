@@ -23,10 +23,17 @@ const ROOT = process.cwd();
 const BUDGET_FILE = join(ROOT, 'scripts', 'cost-budgets.json');
 const UPDATE = process.argv.includes('--update');
 
-/** Headroom over the measured cost. Tight enough to catch a real regression, loose enough that
- *  ordinary growth in a repo's own content does not fail an unrelated pull request. */
+/**
+ * Headroom over the measured cost.
+ *
+ * TOKENS FAIL THE BUILD; LATENCY ONLY WARNS. Token counts are deterministic — measured under heavy
+ * machine load they came back byte-identical (3782 / 2588 / 1256 / 188) while the same run's
+ * wall-clock inflated 6x and tripped every budget. A gate that fires on someone else's CPU
+ * contention is a gate people learn to ignore, and then it protects nothing. Latency is still
+ * reported, and still useful for spotting a real slowdown, but it does not decide the exit code.
+ */
 const TOKEN_SLACK = 1.25;
-const MS_SLACK = 3.0; // wall-clock is noisy on shared CI; tokens are the precise signal
+const MS_SLACK = 3.0;
 
 function rpc(proc, pending, method, params, id) {
   return new Promise((resolve) => {
@@ -138,6 +145,7 @@ async function main() {
 
   const budgets = JSON.parse(readFileSync(BUDGET_FILE, 'utf8'));
   const failures = [];
+  const warnings = [];
   console.log('call                    tokens / budget      ms / budget');
   for (const [name, v] of Object.entries(measured)) {
     const b = budgets[name];
@@ -148,13 +156,17 @@ async function main() {
     const tokBad = v.tokens > b.maxTokens;
     const msBad = v.ms > b.maxMs;
     if (tokBad) failures.push(`${name}: ${v.tokens} tokens exceeds budget ${b.maxTokens}`);
-    if (msBad) failures.push(`${name}: ${v.ms}ms exceeds budget ${b.maxMs}ms`);
+    if (msBad) warnings.push(`${name}: ${v.ms}ms over the ${b.maxMs}ms guideline`);
     console.log(
-      `  ${name.padEnd(20)} ${String(v.tokens).padStart(6)} / ${String(b.maxTokens).padEnd(7)}${tokBad ? ' OVER' : '    '}  ${String(v.ms).padStart(5)} / ${String(b.maxMs).padEnd(5)}${msBad ? ' OVER' : ''}`,
+      `  ${name.padEnd(20)} ${String(v.tokens).padStart(6)} / ${String(b.maxTokens).padEnd(7)}${tokBad ? ' OVER' : '    '}  ${String(v.ms).padStart(5)} / ${String(b.maxMs).padEnd(5)}${msBad ? ' slow' : ''}`,
     );
   }
   const total = Object.values(measured).reduce((a, v) => a + v.tokens, 0);
   console.log(`\nsession total: ${total} tokens`);
+  if (warnings.length) {
+    console.log('\nslower than guideline (informational — a loaded machine inflates these):');
+    for (const w of warnings) console.log(`  ${w}`);
+  }
   if (failures.length) {
     console.error('\nFAIL — cost regression:');
     for (const f of failures) console.error(`  ${f}`);
