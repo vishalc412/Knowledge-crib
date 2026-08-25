@@ -17,7 +17,8 @@
  *       (step 2 ran), ".mcp.json" (step 3 wrote the IDE config), and "Next steps" (the hero);
  *       `.mcp.json` exists on disk (the wiring is real, not just a printed line);
  *       `.gitattributes` contains the kcrib merge block (hooks are real);
- *   (4) `crib doctor .` on the just-init'd repo → exit 0, "6/6 checks passed", every line marked ✓
+ *   (4) `crib doctor .` on the just-init'd repo → exit 0, ALL checks passed (n/n, whatever n is —
+ *       the count grows as diagnostics are added), every line marked ✓
  *       (a clean setup is reported clean — the diagnostic does not cry wolf);
  *   (5) a SECOND temp repo, NOT indexed — `crib doctor .` → exit NON-zero, "repo indexed" line
  *       marked ✗ with a "fix:" hint (a broken setup is reported broken + actionable — the
@@ -128,12 +129,16 @@ try {
     const doc = runCrib(repo1, ['doctor', '.']);
     if (doc.code !== 0) {
       fail(`crib doctor on a clean repo exited ${doc.code} (expected 0): ${doc.out}`);
-    } else if (!/6\/6 checks passed/.test(doc.out)) {
-      fail(`crib doctor did not report 6/6 checks passed:\n${doc.out}`);
+    } else if (!/(\d+)\/\1 checks passed/.test(doc.out)) {
+      // Asserts ALL checks passed, whatever the count. Pinning the literal "6/6" meant adding a
+      // seventh diagnostic (stale build artifacts) failed this gate even though every check still
+      // passed — the gate would have to be hand-edited for each new check, which is how it ends up
+      // asserting a number nobody has re-derived.
+      fail(`crib doctor did not report every check passing:\n${doc.out}`);
     } else if (/✗/.test(doc.out)) {
       fail(`crib doctor reported a ✗ on a clean repo (cry wolf):\n${doc.out}`);
     } else {
-      process.stdout.write('  onboarding:check — crib doctor reports clean setup as 6/6 ✓\n');
+      process.stdout.write('  onboarding:check — crib doctor reports every check passing ✓\n');
     }
   } finally {
     rmSync(repo1, { recursive: true, force: true });
