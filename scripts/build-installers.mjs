@@ -15,11 +15,17 @@ import { fileURLToPath } from 'node:url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(__dirname, '..');
 const cliPackagePath = join(repoRoot, 'packages', 'cli', 'package.json');
+// Dependency order: a package must be packed before anything that depends on it, or the offline
+// install resolves the missing one from the public registry instead. `memory` was added to the
+// workspace but never added here, so every installer bundle shipped without it and `npm install`
+// fell through to registry.npmjs.org for `@knowledge-crib/memory` — which is unpublished, so it
+// 404'd. That is why the installer smoke test has failed on every branch since memory landed.
 const packageDirs = [
   'packages/soul-schema',
   'packages/core',
   'packages/parsers',
   'packages/ui',
+  'packages/memory', // core + soul-schema; must precede mcp and cli, which depend on it
   'packages/mcp',
   'packages/pipeline',
   'packages/cli',
