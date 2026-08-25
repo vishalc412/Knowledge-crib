@@ -18,6 +18,7 @@ import {
   existsSync,
   mkdirSync,
   readFileSync,
+  readdirSync,
   realpathSync,
   statSync,
   writeFileSync,
@@ -1749,14 +1750,65 @@ async function cmdInit(args: string[], ctx?: CmdCtx): Promise<number> {
   return EXIT.OK;
 }
 
+/** Duplicated from runtime.ts STALE_BUILD_MS (unexported there — runtime.ts is owned by another
+ *  workstream, so doctor re-implements the predicate). If runtime.ts ever exports it, switch over;
+ *  until then keep the two in sync: a younger cutoff here would report a live build as stale. */
+const DOCTOR_STALE_BUILD_MS = 60 * 60 * 1000;
+
 /**
- * `crib doctor [path]` — setup health check (M4.2). Runs the seven onboarding-critical checks and
+ * Count `.crib-build-*` temp databases abandoned by interrupted builds, plus their `-wal`/`-shm`
+ * sidecar bytes. Read-only cousin of runtime.ts's sweepStaleBuilds: same selection predicate
+ * (name, suffix, age gate), but doctor REPORTS — deleting belongs exclusively to the build-time
+ * sweep; a diagnostic command must never mutate the repo it inspects. Fully best-effort like the
+ * sweep: an absent/unreadable index dir is "zero", not an error.
+ */
+function countStaleBuilds(indexDir: string, now = Date.now()): { count: number; bytes: number } {
+  let count = 0;
+  let bytes = 0;
+  let entries: string[];
+  try {
+    entries = readdirSync(indexDir);
+  } catch {
+    return { count, bytes }; // index dir absent — nothing has been built here
+  }
+  for (const name of entries) {
+    if (!name.startsWith('.crib-build-') || !name.endsWith('.sqlite')) continue;
+    const full = join(indexDir, name);
+    try {
+      if (now - statSync(full).mtimeMs < DOCTOR_STALE_BUILD_MS) continue;
+      count++;
+      for (const path of [full, `${full}-wal`, `${full}-shm`]) {
+        try {
+          bytes += statSync(path).size;
+        } catch {
+          // sidecar absent — the main file alone still counts
+        }
+      }
+    } catch {
+      // racing removal or a permissions problem — skip this entry, mirroring the sweep
+    }
+  }
+  return { count, bytes };
+}
+
+/** Human byte size for the doctor report (small values dominate — KiB before MiB). */
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  const kib = bytes / 1024;
+  if (kib < 1024) return `${kib.toFixed(1)} KiB`;
+  return `${(kib / 1024).toFixed(1)} MiB`;
+}
+
+/**
+ * `crib doctor [path]` — setup health check (M4.2). Runs the eight onboarding-critical checks and
  * prints ✓/✗ + a fix hint for each. A failing check never skips the rest — the point is a full
  * diagnostic in one pass. Exits 0 when every check passes, 1 when any fails, so scripts/CI can
  * detect a broken setup. The Node-version check mirrors bin.ts's launcher guard (the canonical
  * gate, REQUIRED_NODE = 22.5.0 — the node:sqlite requirement); doctor re-runs it so a user on a
  * too-old Node learns it here, not from an opaque `node:sqlite` crash. The 7th check (agent-memory
- * loop) is non-fatal while memory is not initialized — it reports ✓ with an opt-in hint.
+ * loop) is non-fatal while memory is not initialized — it reports ✓ with an opt-in hint. The 8th
+ * check (stale build artifacts) is WARN-class: always ✓, never reported as a failure — it surfaces
+ * a backlog the next build would reclaim anyway.
  */
 function cmdDoctor(args: string[], ctx?: CmdCtx): number {
   const repoRoot = resolve(ctx?.cwdOverride ?? positionalsOf(args)[0] ?? '.');
@@ -1919,6 +1971,23 @@ function cmdDoctor(args: string[], ctx?: CmdCtx): number {
         : `${!teamOk ? 'run `crib memory init` (team store missing); ' : ''}${adapterCount === 0 ? 'run `crib adapters install` (no instruction file present)' : ''}`.trim(),
     });
   }
+
+  // 8. Stale build artifacts (WARN-class: reported, never fatal, never deleted here). Interrupted
+  //    `crib index` runs abandon `.crib-build-*` temp databases that the next build's startup sweep
+  //    (runtime.ts sweepStaleBuilds) reclaims — doctor surfaces the backlog so a user can see it
+  //    (it once quietly accumulated 510 MB in this repo) without waiting for a build, and without
+  //    turning house-cleaning into a red ✗ that would fail CI. Runs even when unindexed: a failed
+  //    first index is exactly when these pile up. The index dir is `<cribDir>/index` by convention
+  //    on both standard and custom-cribDir layouts (resolveIndexPath strips the `.crib/` prefix).
+  const stale = countStaleBuilds(join(resolved.cribDir, 'index'));
+  checks.push({
+    name: 'stale build artifacts',
+    ok: true,
+    detail:
+      stale.count === 0
+        ? 'none'
+        : `${stale.count} stale .crib-build-* build${stale.count === 1 ? '' : 's'} (${formatBytes(stale.bytes)} incl. -wal/-shm) — auto-reclaimed on next \`crib index\``,
+  });
 
   let failures = 0;
   for (const c of checks) {
@@ -4075,7 +4144,7 @@ function printHelp(): void {
       '                                          write the vendor-neutral agent-memory protocol into each client instruction file (W8)',
       '  crib skill <install|list> [name] [--dest <dir>] [--client <claude>]   install bundled skills (default ~/.claude/skills)',
       '  crib init [path] [--ide <name|all>]      5-minute onboarding: index + install-hooks + mcp install + adapters + next-steps hero',
-      '  crib doctor [path]                       setup health check: node/corepack/index-freshness/hooks/IDE-wiring/memory-loop (✓/✗ + fix hints)',
+      '  crib doctor [path]                       setup health check: node/corepack/index-freshness/hooks/IDE-wiring/memory-loop/stale-builds (✓/✗ + fix hints)',
       '',
       'Global: --cwd <path>   override the project root for any command',
       '',

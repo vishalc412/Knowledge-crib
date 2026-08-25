@@ -7,6 +7,7 @@ import {
   realpathSync,
   rmSync,
   symlinkSync,
+  utimesSync,
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -1139,8 +1140,8 @@ describe('crib doctor (W8) — agent-memory loop check', () => {
     const r = runCliResult(['doctor']);
     expect(r.stdout).toContain('agent-memory loop');
     expect(r.stdout).toMatch(/✓ agent-memory loop — not initialized/);
-    // overall doctor ran all 7 checks (memory is opt-in → its ✓ does not cause failure by itself).
-    expect(r.stdout).toMatch(/crib doctor: \d+\/7 checks passed/);
+    // overall doctor ran all 8 checks (memory is opt-in → its ✓ does not cause failure by itself).
+    expect(r.stdout).toMatch(/crib doctor: \d+\/8 checks passed/);
   });
 
   it('flags the memory loop as failing when policy.json exists but no adapter is installed', () => {
@@ -1161,6 +1162,54 @@ describe('crib doctor (W8) — agent-memory loop check', () => {
     runCli(['adapters', 'install', '--client', 'claude']);
     const r = runCliResult(['doctor']);
     expect(r.stdout).toMatch(/✓ agent-memory loop — policy ✓, team store ✓/);
+  });
+});
+
+describe('crib doctor — stale build artifacts (WARN-class, report-only)', () => {
+  // doctor exits non-zero when OTHER checks fail (git hooks / IDE wiring absent in the temp repo),
+  // so assert on stdout like the memory-loop block above. The 8th check must never itself fail:
+  // stale `.crib-build-*` builds are auto-reclaimed by the build-time sweep (runtime.ts); doctor
+  // only surfaces the backlog.
+  /** Write a `.crib-build-*` temp db (+ sidecars) into the temp repo's index dir. */
+  function plantBuild(name: string, ageMs: number): string {
+    const indexDir = join(repo, '.crib', 'index');
+    mkdirSync(indexDir, { recursive: true });
+    const full = join(indexDir, name);
+    writeFileSync(full, Buffer.alloc(2048));
+    writeFileSync(`${full}-wal`, Buffer.alloc(1024));
+    writeFileSync(`${full}-shm`, Buffer.alloc(64));
+    const mtime = new Date(Date.now() - ageMs);
+    for (const p of [full, `${full}-wal`, `${full}-shm`]) utimesSync(p, mtime, mtime);
+    return full;
+  }
+
+  it('reports a stale build (name, count, size incl. sidecars) as a non-failing ✓ check', () => {
+    plantBuild('.crib-build-999-stale.sqlite', 2 * 60 * 60 * 1000);
+    const r = runCliResult(['doctor']);
+    expect(r.stdout).toMatch(
+      /✓ stale build artifacts — 1 stale \.crib-build-\* build \(3\.1 KiB incl\. -wal\/-shm\)/,
+    );
+  });
+
+  it('never deletes the stale artifacts it reports — deletion is the runtime sweep', () => {
+    const full = plantBuild('.crib-build-999-stale.sqlite', 2 * 60 * 60 * 1000);
+    runCliResult(['doctor']);
+    expect(existsSync(full)).toBe(true);
+    expect(existsSync(`${full}-wal`)).toBe(true);
+    expect(existsSync(`${full}-shm`)).toBe(true);
+  });
+
+  it('treats a fresh .crib-build-* file as an in-progress build, not a stale one', () => {
+    plantBuild('.crib-build-123-live.sqlite', 5 * 1000);
+    const r = runCliResult(['doctor']);
+    expect(r.stdout).toMatch(/✓ stale build artifacts — none/);
+  });
+
+  it('reports "none" when the index dir holds no build artifacts', () => {
+    const r = runCliResult(['doctor']);
+    expect(r.stdout).toMatch(/✓ stale build artifacts — none/);
+    // the 8th check is included in the total
+    expect(r.stdout).toMatch(/crib doctor: \d+\/8 checks passed/);
   });
 });
 
