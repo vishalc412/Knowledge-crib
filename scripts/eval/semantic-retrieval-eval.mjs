@@ -21,9 +21,9 @@
 import * as core from '../../packages/core/dist/index.js';
 import { Verbs } from '../../packages/mcp/dist/verbs.js';
 const R = process.cwd();
-const soul = new core.SoulStore(R + '/.crib');
+const soul = new core.SoulStore(`${R}/.crib`);
 soul.load();
-const index = new core.SqliteIndexStore(R + '/.crib/index/crib.sqlite');
+const index = new core.SqliteIndexStore(`${R}/.crib/index/crib.sqlite`);
 const v = new Verbs({ soul, index, repoRoot: R });
 
 const CASES = [
@@ -120,10 +120,10 @@ function rankOf(q, wants) {
   for (let i = 0; i < ids.length; i++) if (wants.some((w) => ids[i].includes(w))) return i + 1;
   return 0;
 }
-let top1 = 0,
-  top3 = 0,
-  top10 = 0,
-  mrrSum = 0;
+let top1 = 0;
+let top3 = 0;
+let top10 = 0;
+let mrrSum = 0;
 const misses = [];
 for (const [q, want] of CASES) {
   const rank = rankOf(q, want);
@@ -132,17 +132,17 @@ for (const [q, want] of CASES) {
   if (rank >= 1) {
     top10++;
     mrrSum += 1 / rank;
-  } else misses.push(q + '  -> want ' + want.join(' | '));
+  } else misses.push(`${q}  -> want ${want.join(' | ')}`);
 }
 const n = CASES.length;
 console.log('questions        :', n);
-console.log('answer at rank 1 :', top1, '(' + Math.round((100 * top1) / n) + '%)');
-console.log('answer in top 3  :', top3, '(' + Math.round((100 * top3) / n) + '%)');
-console.log('answer in top 10 :', top10, '(' + Math.round((100 * top10) / n) + '%)');
+console.log('answer at rank 1 :', top1, `(${Math.round((100 * top1) / n)}%)`);
+console.log('answer in top 3  :', top3, `(${Math.round((100 * top3) / n)}%)`);
+console.log('answer in top 10 :', top10, `(${Math.round((100 * top10) / n)}%)`);
 console.log('MRR              :', (mrrSum / n).toFixed(3));
 if (misses.length) {
   console.log('\nnot found at all:');
-  for (const m of misses) console.log('  ' + m);
+  for (const m of misses) console.log(`  ${m}`);
 }
 
 const argIdx = process.argv.indexOf('--min-mrr');

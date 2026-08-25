@@ -10,11 +10,7 @@ assert.equal(status.indexed, true, 'smoke project must be indexed');
 // assertion silently rotted the moment the schema moved to 1.6, and this check — whose whole job is
 // to prove a freshly installed CLI writes the CURRENT schema — failed on every release run instead
 // of catching anything. A test that must be hand-edited on every bump will be stale most of the time.
-assert.equal(
-  status.schemaVersion,
-  SCHEMA_VERSION,
-  'smoke project must use the current schema',
-);
+assert.equal(status.schemaVersion, SCHEMA_VERSION, 'smoke project must use the current schema');
 assert.ok(status.stats.nodes > 0, 'smoke project must contain extracted nodes');
 
 const releaseVerifier = readFileSync('scripts/release-verify.mjs', 'utf8');

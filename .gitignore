@@ -49,7 +49,11 @@ claude/
 media/
 outputs/
 
-# Derived, rebuildable from the soul (buildDossier is pure over soul+source; the dossier verb
-# builds-on-miss then persists). Tracking them put 3,303 files and ~4,500 dirty entries in every
-# git status, which is why `git add -A` was unsafe here.
-.crib/dossiers/
+# The whole local knowledge-graph working directory. Every `crib index` rewrites thousands of files
+# here, which buried real code changes under ~4,700 generated files in review and made `git status`
+# unusable. It is all reproducible from source with `crib index .`, so it is build output, not
+# source — the same reasoning that already excluded `.crib/index/`.
+.crib/
+
+# Codex tool state — machine-local, same reasoning.
+.codex/

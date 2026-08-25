@@ -34,7 +34,23 @@ function query(args) {
 // the committed JSONL soul — a fresh CI checkout has none, so `crib query` returns NOT_INDEXED (3)
 // and every assertion below is meaningless. Build it once here if absent; subsequent queries are
 // fast. release:verify does the same `crib index .` before running this gate locally.
-if (!existsSync(DERIVED_INDEX)) {
+// Rebuild when the index is MISSING **or STALE**. Presence alone is not readiness: the CLI also
+// refuses a derived index older than the soul it projects (exit 3, "missing or stale"), which
+// happens on any working checkout where a reindex advanced the soul afterwards — including the
+// pre-commit hook doing exactly that. Testing only for existence turned that ordinary state into a
+// confusing hard failure with no hint that a rebuild was all it needed.
+function indexIsUsable() {
+  if (!existsSync(DERIVED_INDEX)) return false;
+  try {
+    execFileSync(process.execPath, [CLI, 'query', 'SoulStore', '--limit', '1'], {
+      stdio: 'ignore',
+    });
+    return true;
+  } catch {
+    return false; // exit 3 = not indexed / stale
+  }
+}
+if (!indexIsUsable()) {
   execFileSync(process.execPath, [CLI, 'index', '.'], {
     stdio: 'inherit',
     timeout: 8 * 60_000, // full repo re-parse is ~132s locally; allow headroom on slower CI runners

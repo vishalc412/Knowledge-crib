@@ -17,9 +17,9 @@
  *
  * Usage: node scripts/swarm/swarm-gate.mjs [agents]   (default 400)
  */
-import { spawn, execFileSync } from 'node:child_process';
-import { fileURLToPath } from 'node:url';
+import { execFileSync, spawn } from 'node:child_process';
 import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = process.cwd();
@@ -27,8 +27,17 @@ const AGENTS = Number(process.argv[2] ?? 400);
 const PORT = 7000 + Math.floor(Math.random() * 900);
 
 const rssMb = (pid) => {
-  try { return Math.round(Number(execFileSync('ps', ['-o', 'rss=', '-p', String(pid)]).toString().trim()) / 1024); }
-  catch { return -1; }
+  try {
+    return Math.round(
+      Number(
+        execFileSync('ps', ['-o', 'rss=', '-p', String(pid)])
+          .toString()
+          .trim(),
+      ) / 1024,
+    );
+  } catch {
+    return -1;
+  }
 };
 const run = (script, args) =>
   new Promise((resolve) => {
@@ -36,14 +45,24 @@ const run = (script, args) =>
     p.on('exit', (code) => resolve(code ?? 1));
   });
 
-const daemon = spawn('node', [join(ROOT, 'packages/cli/dist/cli.js'), 'serve', ROOT, '--http', '--port', String(PORT)], {
-  stdio: ['ignore', 'ignore', 'pipe'],
-});
+const daemon = spawn(
+  'node',
+  [join(ROOT, 'packages/cli/dist/cli.js'), 'serve', ROOT, '--http', '--port', String(PORT)],
+  {
+    stdio: ['ignore', 'ignore', 'pipe'],
+  },
+);
 let ready = false;
-daemon.stderr.on('data', (d) => { if (String(d).includes('daemon on http')) ready = true; });
+daemon.stderr.on('data', (d) => {
+  if (String(d).includes('daemon on http')) ready = true;
+});
 const deadline = Date.now() + 30000;
 while (!ready && Date.now() < deadline) await new Promise((r) => setTimeout(r, 200));
-if (!ready) { console.error('daemon did not start within 30s'); daemon.kill(); process.exit(2); }
+if (!ready) {
+  console.error('daemon did not start within 30s');
+  daemon.kill();
+  process.exit(2);
+}
 
 const baseline = rssMb(daemon.pid);
 console.log(`daemon up on :${PORT} — baseline RSS ${baseline} MB\n`);
@@ -63,9 +82,15 @@ const idle = rssMb(daemon.pid);
 console.log(`  baseline ${baseline} MB -> peak ${peak} MB -> idle ${idle} MB`);
 // Generous: GC timing varies by machine. This catches an unbounded leak, not ordinary churn.
 const leakCeiling = baseline * 3;
-if (idle > leakCeiling) { console.log(`  FAIL: idle RSS ${idle} MB exceeds ${leakCeiling} MB — possible leak`); failures++; }
-else console.log('  ok — memory returns near baseline');
+if (idle > leakCeiling) {
+  console.log(`  FAIL: idle RSS ${idle} MB exceeds ${leakCeiling} MB — possible leak`);
+  failures++;
+} else console.log('  ok — memory returns near baseline');
 
 daemon.kill();
-console.log(failures ? `\nSWARM GATE FAILED (${failures})` : `\nSWARM GATE PASSED — ${AGENTS} agents, one shared graph`);
+console.log(
+  failures
+    ? `\nSWARM GATE FAILED (${failures})`
+    : `\nSWARM GATE PASSED — ${AGENTS} agents, one shared graph`,
+);
 process.exit(failures ? 1 : 0);

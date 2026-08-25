@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import type { Edge, Node } from '@knowledge-crib/soul-schema';
+import { describe, expect, it } from 'vitest';
 import type {
   Capabilities,
   ExtractDiagnostic,
@@ -71,7 +71,12 @@ describe('extractor contracts', () => {
   });
 
   it('capability matrix stays compatible with non-source extractors', () => {
-    const muleCaps: Capabilities = { imports: true, calls: true, inheritance: false, types: 'none' };
+    const muleCaps: Capabilities = {
+      imports: true,
+      calls: true,
+      inheritance: false,
+      types: 'none',
+    };
     expect(muleCaps.inheritance).toBe(false);
   });
 });
