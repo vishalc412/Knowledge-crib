@@ -130,3 +130,38 @@ describe('importance (core port — value parity with viz.ts)', () => {
     expect(isTestPath(undefined)).toBe(false);
   });
 });
+
+// Fixture directories hold sample INPUTS for tests, not shipped code. Before they were recognised,
+// 289 symbols (7% of this repo's graph) ranked alongside production modules — surfacing in
+// top-symbol lists and being offered for enrichment ahead of real code.
+describe('isTestPath — fixture and golden-data directories', () => {
+  it('treats fixture, __fixtures__ and testdata DIRECTORIES as test material', () => {
+    for (const p of [
+      'packages/parsers/fixtures/go/auth.go',
+      'packages/parsers/fixture/x.ts',
+      'a/__fixtures__/b.ts',
+      'svc/testdata/sample.json',
+      'testdata/root.go',
+    ]) {
+      expect(isTestPath(p)).toBe(true);
+    }
+  });
+
+  it('still recognises the existing test conventions', () => {
+    for (const p of ['a/b.test.ts', 'a/b.spec.ts', 'a/__tests__/c.ts', 'test/x.ts', 'tests/y.ts']) {
+      expect(isTestPath(p)).toBe(true);
+    }
+  });
+
+  it('does not catch ordinary source that merely mentions fixtures', () => {
+    // Only directory segments match, so a module named for the concept is untouched.
+    for (const p of [
+      'src/fixtures.ts',
+      'src/fixture-builder.ts',
+      'src/testdata.ts',
+      'src/latest.ts',
+    ]) {
+      expect(isTestPath(p)).toBe(false);
+    }
+  });
+});

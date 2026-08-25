@@ -401,3 +401,58 @@ function snapshotJsonl(cribRoot: string): Record<string, string> {
   walk('');
   return out;
 }
+
+// The kind index is a cache: `iterate(kind)` serves pre-bucketed arrays instead of scanning every
+// node. Every mutation path must invalidate it, or reads silently serve a stale view of the soul.
+describe('kind index invalidation', () => {
+  const kinds = (soul: SoulStore, kind: 'symbol' | 'file') =>
+    [...soul.iterate(kind)].map((n) => n.id).sort();
+
+  it('putNodes after a read is visible to iterate(kind)', () => {
+    const soul = new SoulStore(dir, { manifest: newManifest({ now: '2026-01-01T00:00:00.000Z' }) });
+    soul.load();
+    const a = symNode('src/a.ts', 'a', 1);
+    soul.putNodes([fileNode('src/a.ts'), a]);
+    expect(kinds(soul, 'symbol')).toEqual([a.id]); // warms the cache
+
+    const b = symNode('src/b.ts', 'b', 1);
+    soul.putNodes([fileNode('src/b.ts'), b]);
+    expect(kinds(soul, 'symbol')).toEqual([a.id, b.id].sort());
+    expect(kinds(soul, 'file')).toHaveLength(2);
+  });
+
+  it('removeByFile after a read is visible to iterate(kind)', () => {
+    const soul = new SoulStore(dir, { manifest: newManifest({ now: '2026-01-01T00:00:00.000Z' }) });
+    soul.load();
+    const a = symNode('src/a.ts', 'a', 1);
+    const b = symNode('src/b.ts', 'b', 1);
+    soul.putNodes([fileNode('src/a.ts'), fileNode('src/b.ts'), a, b]);
+    expect(kinds(soul, 'symbol')).toHaveLength(2); // warms the cache
+
+    soul.removeByFile('src/a.ts');
+    expect(kinds(soul, 'symbol')).toEqual([b.id]);
+  });
+
+  it('iterate(kind) preserves insertion order, which the determinism gates depend on', () => {
+    const soul = new SoulStore(dir, { manifest: newManifest({ now: '2026-01-01T00:00:00.000Z' }) });
+    soul.load();
+    const nodes = [
+      symNode('src/z.ts', 'z', 1),
+      symNode('src/a.ts', 'a', 1),
+      symNode('src/m.ts', 'm', 1),
+    ];
+    soul.putNodes(nodes);
+    expect([...soul.iterate('symbol')].map((n) => n.id)).toEqual(nodes.map((n) => n.id));
+  });
+
+  it('nodeGeneration advances on every mutation so derived caches can version off it', () => {
+    const soul = new SoulStore(dir, { manifest: newManifest({ now: '2026-01-01T00:00:00.000Z' }) });
+    soul.load();
+    const before = soul.nodeGeneration;
+    soul.putNodes([symNode('src/a.ts', 'a', 1)]);
+    const afterPut = soul.nodeGeneration;
+    expect(afterPut).toBeGreaterThan(before);
+    soul.removeByFile('src/a.ts');
+    expect(soul.nodeGeneration).toBeGreaterThan(afterPut);
+  });
+});

@@ -133,5 +133,17 @@ export function clusterImportance(
 
 /** True for test scaffolding paths — the test-helper deprioritization signal for the enrich queue. */
 export function isTestPath(file?: string): boolean {
-  return !!file && /(\.test\.|\.spec\.|__tests__|(?:^|\/)tests?\/)/.test(file);
+  // Fixture and golden-data directories are test material too: `packages/parsers/fixtures/go/auth.go`
+  // is a sample input for the Go parser's tests, not shipped code. Before they were recognised, 289
+  // symbols (7% of this repo's graph) ranked alongside production code — surfacing fixture symbols
+  // in top-symbol lists and offering them for enrichment ahead of real modules.
+  //
+  // Only DIRECTORY segments match (the trailing slash), so an ordinary `src/fixtures.ts` module is
+  // untouched. This governs ranking only; nothing here excludes a file from the graph.
+  return (
+    !!file &&
+    /(\.test\.|\.spec\.|__tests__|(?:^|\/)tests?\/|(?:^|\/)(?:fixtures?|__fixtures__|testdata)\/)/.test(
+      file,
+    )
+  );
 }

@@ -7,9 +7,10 @@ import { type Stats, readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, sep } from 'node:path';
 import type { SoulStore } from '@knowledge-crib/core';
 import type { FileMeta } from '@knowledge-crib/parsers';
-import { contentHash, idFor } from '@knowledge-crib/soul-schema';
+import { idFor } from '@knowledge-crib/soul-schema';
 import type { Node } from '@knowledge-crib/soul-schema';
 import { GitignoreMatcher, readGitignore } from './gitignore.js';
+import { secureContentHash } from './mule/discover.js';
 
 /**
  * Dirs never walked by discovery: VCS, dependency caches, build output, and the soul itself.
@@ -53,7 +54,26 @@ export const DEFAULT_IGNORES = new Set([
   'tmp',
   'temp',
   'logs',
+  // Third-party code vendored into the tree. Conventionally not-your-code across ecosystems:
+  // `go mod vendor`, Composer's `vendor/`, and bundled JS vendor dirs. Indexing it buries the
+  // repo's own symbols under dependency internals.
+  'vendor',
 ]);
+
+/**
+ * True for build artifacts that are code but carry no knowledge — minified/bundled output.
+ *
+ * Minified code defeats the entire point of a code-knowledge graph: identifiers are mangled to
+ * single letters, so the symbols are unsearchable and unexplainable. Before this check, the two
+ * vendored React bundles in this repo contributed 401 symbols — 8.9% of the whole graph — named
+ * `B`, `C`, `D`, `E`… They polluted every search ranking and, because the enrich queue ranks files
+ * by symbol density, `react-dom.production.min.js` sorted FIRST in the entire enrichment backlog.
+ *
+ * Matched on the filename so it applies wherever the file lives, including outside `vendor/`.
+ */
+export function isMinifiedArtifact(name: string): boolean {
+  return /\.min\.(js|mjs|cjs|css)$/i.test(name) || /[.-]bundle\.min\.[a-z]+$/i.test(name);
+}
 
 const LANG_BY_EXT: Record<string, string> = {
   '.ts': 'typescript',
@@ -142,6 +162,7 @@ export function discoverFiles(root: string, opts: DiscoverOpts = {}): FileMeta[]
         walk(abs, rel);
       } else if (st.isFile()) {
         if (git.isIgnored(rel, false)) continue; // gitignored file → skip
+        if (isMinifiedArtifact(entry)) continue; // mangled identifiers carry no knowledge
         out.push({ path: rel, lang: langForPath(rel), bytes: st.size, mtime: st.mtimeMs });
       }
     }
@@ -182,7 +203,9 @@ export function fileNode(root: string, file: FileMeta): Node {
     id: idFor({ kind: 'file', path: file.path }),
     kind: 'file',
     file: file.path,
-    hash: contentHash(content),
+    // Sensitive Mule files (secure properties, keystores) never hash their secret bytes: properties
+    // files hash their KEYS only; binary stores hash their path only. See mule/discover.ts.
+    hash: secureContentHash(file, content),
     ...(file.lang ? { lang: file.lang } : {}),
   };
 }

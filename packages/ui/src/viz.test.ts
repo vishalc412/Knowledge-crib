@@ -1,7 +1,13 @@
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
-import { SoulStore, clusterContentHash, newManifest } from '@knowledge-crib/core';
+import {
+  type CompositeEdge,
+  type CompositeNode,
+  SoulStore,
+  clusterContentHash,
+  newManifest,
+} from '@knowledge-crib/core';
 import { contentHash, edgeId, idFor } from '@knowledge-crib/soul-schema';
 import type { Edge, Node } from '@knowledge-crib/soul-schema';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -264,5 +270,109 @@ describe('buildVizOverview + LLM cluster label preference (outcome F + E)', () =
     const c = graph.clusters[0]!;
     expect(c.llmLabel).toBeUndefined();
     expect(c.label).toBe('API'); // heuristic fallback
+  });
+});
+
+describe('buildVizGraph — memory overlay (W3)', () => {
+  it('appends virtual mem: nodes + applies-to/conflicts-with edges tagged origin memory', () => {
+    dir = mkdtempSync(join(tmpdir(), 'crib-ui-viz-mem-'));
+    const soul = new SoulStore(join(dir, '.crib'), {
+      manifest: newManifest({ now: '2026-01-01T00:00:00.000Z' }),
+    });
+    soul.load();
+    const service = sym('src/service.ts', 'LoanService.create', 30);
+    const cluster: Node = {
+      id: 'cluster:api',
+      kind: 'cluster',
+      label: 'API',
+      members: [service.id],
+      hash: contentHash('api'),
+    };
+    soul.putNodes([cluster, service]);
+    soul.putEdges([edge(service.id, cluster.id, 'member-of')]);
+    soul.commit('2026-01-01T00:00:00.000Z');
+
+    // A hand-built virtual memory composite (the shape memoryComposite produces): one mem: node
+    // that applies-to the soul symbol, plus a conflicts-with edge to a second mem: node.
+    const memA: CompositeNode = {
+      id: 'mem:aaaaaaaa',
+      kind: 'memory',
+      origin: 'memory',
+      label: 'topic:loans',
+      targetId: 'topic:loans',
+      trust: 'team',
+      source: 'team',
+      claim: 'loans require credit check',
+    } as CompositeNode;
+    const memB: CompositeNode = {
+      id: 'mem:bbbbbbbb',
+      kind: 'memory',
+      origin: 'memory',
+      label: 'topic:loans',
+      targetId: 'topic:loans',
+      trust: 'local',
+      source: 'local',
+      claim: 'loans skip credit check',
+    } as CompositeNode;
+    const appliesTo: CompositeEdge = {
+      id: 'memedge:applies-to:mem:aaaaaaaa:sym:src/service.ts#LoanService.create',
+      src: 'mem:aaaaaaaa',
+      dst: service.id,
+      rel: 'applies-to',
+      method: 'memory',
+      provenance: 'INFERRED',
+      confidence: 1,
+      origin: 'memory',
+      rationale: 'memory applies to target',
+    };
+    const conflicts: CompositeEdge = {
+      id: 'memedge:conflicts-with:mem:aaaaaaaa:mem:bbbbbbbb',
+      src: 'mem:aaaaaaaa',
+      dst: 'mem:bbbbbbbb',
+      rel: 'conflicts-with',
+      method: 'memory',
+      provenance: 'INFERRED',
+      confidence: 1,
+      origin: 'memory',
+      rationale: 'conflicting claims share subject + scope',
+    };
+
+    const graph = buildVizGraph(soul, { nodes: [memA, memB], edges: [appliesTo, conflicts] });
+
+    // the two memory nodes are appended alongside the soul symbol (cluster excluded from node count)
+    const memNodes = graph.nodes.filter((n) => n.data.origin === 'memory');
+    expect(memNodes.map((n) => n.data.id).sort()).toEqual(['mem:aaaaaaaa', 'mem:bbbbbbbb'].sort());
+    const a = memNodes.find((n) => n.data.id === 'mem:aaaaaaaa')?.data;
+    expect(a?.kind).toBe('memory');
+    expect(a?.tier).toBe('detail');
+    expect(a?.trust).toBe('team');
+    expect(a?.source).toBe('team');
+    expect(a?.summary).toBe('loans require credit check');
+
+    const memEdges = graph.edges.filter((e) => e.data.origin === 'memory');
+    expect(memEdges.map((e) => e.data.rel).sort()).toEqual(['applies-to', 'conflicts-with'].sort());
+    const appliesEdge = memEdges.find((e) => e.data.rel === 'applies-to')?.data;
+    expect(appliesEdge?.source).toBe('mem:aaaaaaaa');
+    expect(appliesEdge?.target).toBe(service.id);
+    expect(appliesEdge?.rationale).toBe('memory applies to target');
+
+    // stats reflect the merged graph: 1 soul symbol + 2 mem nodes; 1 soul edge + 2 mem edges.
+    expect(graph.stats.nodes).toBe(3);
+    expect(graph.stats.edges).toBe(3);
+  });
+
+  it('omits memory nodes/edges when no memory composite is passed (byte-identical to before)', () => {
+    dir = mkdtempSync(join(tmpdir(), 'crib-ui-viz-mem-none-'));
+    const soul = new SoulStore(join(dir, '.crib'), {
+      manifest: newManifest({ now: '2026-01-01T00:00:00.000Z' }),
+    });
+    soul.load();
+    const service = sym('src/service.ts', 'LoanService.create', 30);
+    soul.putNodes([service]);
+    soul.commit('2026-01-01T00:00:00.000Z');
+
+    const graph = buildVizGraph(soul);
+    expect(graph.nodes.every((n) => n.data.origin !== 'memory')).toBe(true);
+    expect(graph.edges.every((e) => e.data.origin !== 'memory')).toBe(true);
   });
 });

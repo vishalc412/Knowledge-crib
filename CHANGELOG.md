@@ -7,6 +7,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [0.1.0] - 2026-07-18
+
 ### Added
 
 - **Team user guide (HTML).** `docs/knowledge-crib-user-guide.html` — a self-contained,
@@ -129,7 +133,20 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - `clusterSummary` read `c.name` (cluster nodes carry `label`, not `name`) → always undefined. Now
   reads `c.label ?? c.id` and surfaces LLM cluster names via the overlay.
 
-## [0.1.0] - 2026-06-26
+### Security
+
+- Bumped vitest to ^3.2.6 and pinned transitive vite (^6.4.3) / esbuild (^0.25.0) via
+  `pnpm.overrides`, clearing all audit findings (GHSA-5xrq-8626-4rwp critical,
+  GHSA-fx2h-pf6j-xcff high, plus three moderate vite/esbuild advisories). Dev-only
+  dependencies — no production runtime exposure.
+
+### Changed
+
+- Repository identity locked to the `KnowledgeCrib` GitHub org (M4.5, Option A):
+  canonical home is `https://github.com/KnowledgeCrib/knowledge-crib`, aligned with the
+  `@knowledge-crib` npm scope. All docs references updated; zero mixed-owner references.
+
+## 0.1.0-alpha — 2026-06-26 (internal, unpublished)
 
 ### Added
 

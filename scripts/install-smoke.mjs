@@ -37,9 +37,19 @@ export function expectedBinPaths(prefix, platform = process.platform) {
 
 export function installedBinCommand(bin, platform = process.platform, env = process.env) {
   if (platform === 'win32') {
+    // Pass the .cmd path and --help as SEPARATE args (no pre-quoting, no /s). run() invokes this
+    // via execFileSync with shell:false, so Node escapes each arg for the cmd.exe command line
+    // itself. The earlier form — a single pre-quoted arg `"/c", `"${bin}" --help"` — was double-
+    // escaped: Node re-wrapped that one arg (spaces + embedded quotes) and escaped the inner
+    // quotes to `\"`, so cmd.exe /s /c received `\"C:\…\crib.cmd\" --help` and treated the literal
+    // `\"…\"` as the program name ("is not recognized as an internal or external command").
+    // With separate args Node quotes only a spaced path (`"C:\Program Files\…\crib.cmd"`), and
+    // cmd.exe /c's quote rule resolves the program + passes --help through — for both spaced and
+    // non-spaced paths. /s is dropped: it disabled the helpful /c quote-stripping that made the
+    // spaced-path case work.
     return {
       command: env.ComSpec || 'cmd.exe',
-      args: ['/d', '/s', '/c', `"${bin}" --help`],
+      args: ['/d', '/c', bin, '--help'],
     };
   }
 

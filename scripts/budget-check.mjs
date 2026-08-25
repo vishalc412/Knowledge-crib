@@ -11,10 +11,17 @@
  *  - warm query p50 latency                                           < MAX_QUERY_P50_MS
  *  - cold index time on a 50-file fixture                             < MAX_INDEX_MS
  *
- * MAX_RUNTIME_DEPS is 6, not lower, because `web-tree-sitter` (the PHP extractor's WASM engine,
- * P3) is currently the 6th external runtime dependency — a deliberate, disclosed tradeoff (see
- * NOTICE), not headroom to spend carelessly. MAX_PARSERS_PACKAGE_BYTES exists for the same reason:
- * a future grammar addition that quietly balloons this package should fail the build, not slip in.
+ * MAX_RUNTIME_DEPS is 9, and every one of the nine is a deliberate, disclosed tradeoff (see
+ * NOTICE) rather than headroom to spend carelessly. It was 6 when `web-tree-sitter` (the PHP
+ * extractor's WASM engine, P3) was the sixth. MuleSoft support then added three more — `saxes`
+ * (streaming SAX XML for Mule 3/4 configs), `yaml` (RAML and descriptor parsing) and `yauzl` (ZIP
+ * reader for project archives) — and the cap was never moved with them, so this gate has failed on
+ * every branch since. All three are pure-JS with no native build, which is the property this budget
+ * exists to protect; raising the cap records a decision already shipped rather than permitting a
+ * new one. The next addition should still have to argue for itself here.
+ *
+ * MAX_PARSERS_PACKAGE_BYTES exists for the same reason: a future grammar addition that quietly
+ * balloons this package should fail the build, not slip in.
  */
 import { execFileSync } from 'node:child_process';
 import {
@@ -28,9 +35,10 @@ import {
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { sessionCost } from './lib/pricing.mjs';
 
-const MAX_RUNTIME_DEPS = 6;
+const MAX_RUNTIME_DEPS = 9;
 const MAX_PACKAGE_BYTES = 5 * 1024 * 1024; // 5 MB, mcp+cli combined
 const MAX_PARSERS_PACKAGE_BYTES = 3 * 1024 * 1024; // 3 MB — today's actual is ~0.6 MB; headroom for a
 // couple more small vendored grammars before this becomes a real conversation, not silent bloat.
@@ -97,11 +105,17 @@ await check('core path is network-free', () => {
   for (const dir of CORE_PATH_DIRS) {
     for (const file of walk(dir)) {
       if (file.endsWith('.test.ts')) continue;
-      if (NETWORK_ALLOWLIST.has(file)) continue;
+      // walk() returns platform-native paths (backslashes on win32). NETWORK_ALLOWLIST is authored
+      // in posix form, so a win32 `packages\parsers\src\ts\http-client.ts` would NOT match the posix
+      // `packages/parsers/src/ts/http-client.ts` entry → the allowlisted http-call detector would be
+      // false-flagged as a network offender on windows. Normalize to posix before the allowlist check
+      // + offender reporting (no-op on posix — no backslashes present).
+      const posixFile = file.replace(/\\/g, '/');
+      if (NETWORK_ALLOWLIST.has(posixFile)) continue;
       const text = readFileSync(file, 'utf8');
       for (const line of text.split('\n')) {
         const code = line.split('//')[0];
-        if (NETWORK_PATTERN.test(code)) offenders.push(file);
+        if (NETWORK_PATTERN.test(code)) offenders.push(posixFile);
       }
     }
   }
@@ -119,6 +133,10 @@ await check('mcp+cli package size', () => {
       execFileSync('corepack', ['pnpm@9.15.0', 'pack', '--pack-destination', stagingDir], {
         cwd: `packages/${pkg}`,
         stdio: ['ignore', 'pipe', 'pipe'],
+        // Windows ships corepack as a .cmd shim; shell:false (execFileSync default) cannot launch
+        // it (spawnSync ENOENT). shell:true on win32 routes through cmd.exe. No-op on posix.
+        // Same fix as release-verify.mjs / build-installers.mjs / pack-check.mjs.
+        shell: process.platform === 'win32',
       });
     }
     for (const name of readdirSync(stagingDir)) {
@@ -142,6 +160,7 @@ await check('parsers package size (vendored grammars)', () => {
     execFileSync('corepack', ['pnpm@9.15.0', 'pack', '--pack-destination', stagingDir], {
       cwd: 'packages/parsers',
       stdio: ['ignore', 'pipe', 'pipe'],
+      shell: process.platform === 'win32', // corepack is a .cmd on win32; shell:true to launch it
     });
     let total = 0;
     for (const name of readdirSync(stagingDir)) {
@@ -166,8 +185,11 @@ await check('default hit size + warm query p50', async () => {
   const { repoRoot, cliPath } = buildFixture();
   try {
     runCli(cliPath, ['index', repoRoot], repoRoot);
-    const runtimeModule = resolve('packages/cli/dist/runtime.js');
-    const mcpModule = resolve('packages/mcp/dist/index.js');
+    // dynamic import() needs a file:// URL on win32: a bare `D:\...\runtime.js` is rejected with
+    // "Only URLs with a scheme in: file, data, and node ... Received protocol 'd:'". pathToFileURL
+    // produces a file:// URL on every platform (posix → `file:///...`), so import() resolves on both.
+    const runtimeModule = pathToFileURL(resolve('packages/cli/dist/runtime.js')).href;
+    const mcpModule = pathToFileURL(resolve('packages/mcp/dist/index.js')).href;
     const { resolveProjectRoot, openSoul, openIndexOnly } = await import(runtimeModule);
     const { Verbs } = await import(mcpModule);
     const resolved = resolveProjectRoot({ explicitRoot: repoRoot });
@@ -248,8 +270,11 @@ await check(`cost saving >= ${MIN_COST_SAVING}x (${COST_MODEL_TURNS}-turn task)`
     );
   }
   try {
-    const runtimeModule = resolve('packages/cli/dist/runtime.js');
-    const mcpModule = resolve('packages/mcp/dist/index.js');
+    // dynamic import() needs a file:// URL on win32: a bare `D:\...\runtime.js` is rejected with
+    // "Only URLs with a scheme in: file, data, and node ... Received protocol 'd:'". pathToFileURL
+    // produces a file:// URL on every platform (posix → `file:///...`), so import() resolves on both.
+    const runtimeModule = pathToFileURL(resolve('packages/cli/dist/runtime.js')).href;
+    const mcpModule = pathToFileURL(resolve('packages/mcp/dist/index.js')).href;
     const { resolveProjectRoot, openSoul, openIndexOnly } = await import(runtimeModule);
     const { Verbs } = await import(mcpModule);
     runCli(resolve('packages/cli/dist/cli.js'), ['index', repoRoot], repoRoot);

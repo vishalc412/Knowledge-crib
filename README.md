@@ -79,7 +79,7 @@ knowledge-crib/                 # pnpm monorepo
   packages/
     soul-schema/   # JSON Schema + TS types (the contract)
     core/          # GraphModel, SoulStore, IndexStore
-    parsers/       # offline extractors: TS, PL/SQL, Python, Java, C#, Go, Rust, PHP, Markdown
+    parsers/       # offline extractors: TS, PL/SQL, Python, Java, C#, Go, Rust, PHP, Markdown, MuleSoft
     pipeline/      # extract → resolve → link → cluster → index
     mcp/           # MCP server (npx knowledge-crib)
     cli/           # crib index|update|export|serve|mcp|viz|install-hooks|merge-driver
@@ -131,7 +131,9 @@ corepack pnpm@9.15.0 release:verify
 Requires Node >= 22.5 and pnpm 9.15.0 via Corepack.
 
 ## Document index (read in order)
-See [`docs/README.md`](docs/README.md) for the complete specification and guide index.
+See [`docs/README.md`](docs/README.md) for the complete specification and guide index. Indexing a
+MuleSoft (Mule 3/4) integration project — folders, ZIPs, or deployable JARs — is covered in
+[`docs/mulesoft.md`](docs/mulesoft.md).
 
 ## Community
 

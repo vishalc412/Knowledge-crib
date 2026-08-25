@@ -1,3 +1,10 @@
+# Normalize all text files to LF on checkout regardless of platform / core.autocrlf.
+# Without this, windows checkouts (core.autocrlf=true) receive CRLF line endings and biome
+# (default lineEnding=lf) flags every source/config file at `biome check .`. `text=auto` lets
+# git auto-detect binary files and leave them untouched. No committed .ps1/.cmd/.bat exist, so
+# forcing LF cannot break a Windows script that requires CRLF.
+* text=auto eol=lf
+
 # >>> kcrib merge >>>
 .crib/** merge=kcrib
 # <<< kcrib merge <<<

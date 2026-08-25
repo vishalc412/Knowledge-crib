@@ -17,19 +17,26 @@
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO = resolve(__dirname, '..');
 const FIXTURE = join(REPO, 'packages', 'pipeline', 'fixtures', 'docs-semantic');
 const NOW = '2026-01-01T00:00:00.000Z';
 
-const core = await import(resolve(REPO, 'packages', 'core', 'dist', 'index.js'));
-const pipeline = await import(resolve(REPO, 'packages', 'pipeline', 'dist', 'index.js'));
+// dynamic import() needs a file:// URL on win32: a bare `D:\...\index.js` is rejected with
+// "Only URLs with a scheme in: file, data, and node ... Received protocol 'd:'". pathToFileURL
+// produces a file:// URL on every platform (posix → `file:///...`), so import() resolves on both.
+const core = await import(
+  pathToFileURL(resolve(REPO, 'packages', 'core', 'dist', 'index.js')).href
+);
+const pipeline = await import(
+  pathToFileURL(resolve(REPO, 'packages', 'pipeline', 'dist', 'index.js')).href
+);
 const { SoulStore, newManifest } = core;
 const { indexRepo } = pipeline;
 const { runSemanticLink } = await import(
-  resolve(REPO, 'packages', 'pipeline', 'dist', 'linker', 'index.js')
+  pathToFileURL(resolve(REPO, 'packages', 'pipeline', 'dist', 'linker', 'index.js')).href
 );
 
 let failed = 0;

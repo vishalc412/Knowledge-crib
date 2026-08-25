@@ -37,6 +37,17 @@ export interface RegisteredProject {
   vcsHead?: string;
   /** ISO timestamp the project was first registered. */
   addedAt: string;
+  /**
+   * Absolute path of the tree the pipeline `discover()`s against, when it differs from the registry
+   * key. Directories leave this unset (their key IS the source tree); archive inputs point this at the
+   * extracted cache tree (`~/.crib/imports/<hash>/source`) so read-only commands resolve the soul
+   * without re-extracting.
+   */
+  sourceRoot?: string;
+  /** The original archive path (`.zip`/`.jar`), when the project was indexed from an archive. */
+  sourceArchive?: string;
+  /** SHA-256 of the archive bytes at index time, for `crib update` change detection on archives. */
+  sourceFingerprint?: string;
 }
 
 export interface Registry {
@@ -101,12 +112,21 @@ export interface RegisterOpts {
   vcsHead?: string;
   /** Fixed timestamp for deterministic tests; defaults to now. */
   addedAt?: string;
+  /** Extracted source tree for archive inputs (see {@link RegisteredProject.sourceRoot}). */
+  sourceRoot?: string;
+  /** Original archive path for archive inputs. */
+  sourceArchive?: string;
+  /** SHA-256 of archive bytes for archive inputs. */
+  sourceFingerprint?: string;
   env?: NodeJS.ProcessEnv;
 }
 
 /**
  * Upsert a project into the registry. Preserves `addedAt` on re-registration (so re-indexing a
- * project doesn't reset its first-seen timestamp) but refreshes `repoId`/`cribDir`/`vcsHead`.
+ * project doesn't reset its first-seen timestamp) but refreshes `repoId`/`cribDir`/`vcsHead` and the
+ * archive fields. Only DEFINED optional fields are copied, so a directory re-registration does not
+ * erase an earlier archive's `sourceArchive` unless the caller explicitly passes one — and an old
+ * registry JSON written before these fields existed still resolves (the fields stay `undefined`).
  * Idempotent: re-registering the same project is a no-op apart from refreshing the volatile fields.
  */
 export function registerProject(absRoot: string, opts: RegisterOpts): RegisteredProject {
@@ -118,6 +138,10 @@ export function registerProject(absRoot: string, opts: RegisterOpts): Registered
     cribDir: opts.cribDir,
     ...(opts.vcsHead !== undefined ? { vcsHead: opts.vcsHead } : {}),
     addedAt: existing?.addedAt ?? opts.addedAt ?? new Date().toISOString(),
+    ...(opts.sourceRoot !== undefined ? { sourceRoot: opts.sourceRoot } : {}),
+    ...(opts.sourceArchive !== undefined
+      ? { sourceArchive: opts.sourceArchive, sourceFingerprint: opts.sourceFingerprint }
+      : {}),
   };
   reg.projects[absRoot] = entry;
   writeRegistry(reg, env);

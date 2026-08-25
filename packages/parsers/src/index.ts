@@ -23,8 +23,18 @@ export type {
   DefKind as PyDefKind,
 } from './python/parser.js';
 export { MarkdownExtractor } from './md/MarkdownExtractor.js';
-export { parseMarkdownSections } from './md/markdown.js';
+export { parseMarkdownSections, extractCodeRefs, extractLinks } from './md/markdown.js';
 export type { MdSection } from './md/markdown.js';
+// W1 — bounded frontmatter parser + per-file AI-artifact extraction (skill/agent/command/rule/
+// instruction → one `agent-artifact` node + governs/requires/invokes refs). Pure + deterministic.
+export { parseFrontmatter } from './agent/frontmatter.js';
+export type { ParsedFrontmatter } from './agent/frontmatter.js';
+export {
+  classifyArtifact,
+  artifactName,
+  extractArtifact,
+} from './agent/agent-graph.js';
+export type { ArtifactRel, ArtifactRef, ArtifactExtract } from './agent/agent-graph.js';
 export { JavaExtractor } from './java/JavaExtractor.js';
 export { tokenize as tokenizeJava } from './java/lexer.js';
 export type { Token as JavaToken } from './java/lexer.js';
@@ -111,6 +121,28 @@ export type {
   AstSpan,
   CallSite,
 } from './plsql/ast.js';
+
+// MuleSoft — the first non-source-language extractor: it ingests a classified Mule 3/4 project
+// file (config XML, DataWeave, RAML, descriptors, properties) and emits the same graph vocabulary
+// the language extractors emit. Cross-file resolution is the resolver's job; this layer is
+// intra-file facts only. Property VALUES are never stored (keys + references only).
+export { MuleExtractor } from './mule/MuleExtractor.js';
+export type { MuleReference } from './mule/MuleExtractor.js';
+export { parseMule4 } from './mule/mule4.js';
+export type { Mule4Document } from './mule/mule4.js';
+export { parseDataWeave } from './mule/dataweave.js';
+export { parseRaml } from './mule/raml.js';
+export type { RamlResult, RamlResource, RamlReference } from './mule/raml.js';
+export { parsePom, parseProperties, parseMuleArtifact } from './mule/descriptors.js';
+export type {
+  PomDependency,
+  PomResult,
+  MulePropertyResult,
+  MuleArtifactResult,
+} from './mule/descriptors.js';
+export { parseMuleXml } from './mule/xml.js';
+export { MuleXmlError } from './mule/xml.js';
+export type { MuleXmlDocument, MuleXmlElement } from './mule/ast.js';
 
 // M3.5 parser fuzzing — deterministic, seeded fast-check inputs over the extractor fleet, run in a
 // worker pool with a per-call budget so a sync parse hang (the PL/SQL recover() class) is caught by

@@ -16,7 +16,7 @@
 1. [What it is](#1-what-it-is)
 2. [Install](#2-install)
 3. [The per-project workflow](#3-the-per-project-workflow)
-4. [The MCP server + the 17 deterministic verbs](#4-the-mcp-server--the-17-deterministic-verbs-status-context-source-dossier-reconstruct-dossier_by_scope-impact-federatedimpact-query-describes-neighbors-ownership-shortest_path-detect_changes-extract_rules-gaps-stats)
+4. [The MCP server + the 17 deterministic verbs](#4-the-mcp-server--the-17-deterministic-verbs-status-context-source-dossier-dossier({op:'package'})-dossier({op:'scope'})-impact-federatedimpact-query-describes-neighbors-ownership-impact({op:'path'})-detect_changes-extract_rules-gaps-stats)
 5. [Worked example: indexing the FTC event-management repo](#5-worked-example-indexing-the-ftc-event-management-repo)
 6. [Keeping the soul fresh](#6-keeping-the-soul-fresh)
 7. [Exporting the graph](#7-exporting-the-graph)
@@ -31,7 +31,7 @@
 
 AI coding agents burn tokens re-reading files every session because they lack durable architectural
 context. Knowledge-crib indexes a project **once** into a queryable graph (the *soul*), then serves
-it to any agent over MCP. The agent asks `context`, `impact`, `query`, `describes` and gets a
+it to any agent over MCP. The agent asks `context`, `impact`, `query`, `neighbors({op:'describes'})` and gets a
 token-bounded, provenance-tagged answer instead of re-reading the whole codebase.
 
 **The one-sentence model:** parse → graph → persist as a committable "soul" → build a fast index
@@ -123,7 +123,7 @@ crib status .                           # 2. health + stats
 | `crib doctor [path]` | Setup health check: node/corepack/indexed/freshness/hooks/IDE-wiring — ✓/✗ per check + fix hint, exit 1 on failure |
 | `crib ask "<question>" [--format markdown]` | Natural-language answer from the crib (deterministic — no model call) |
 | `crib context <id>` / `crib dossier <id>` / `crib impact <id> --dir up\|down` / `crib path <from> <to>` / `crib neighbors <id>` | CLI mirrors of the MCP verbs (§4) for terminal use |
-| `crib gaps [path]` / `crib rules <proc>` / `crib reconstruct <pkg>` | Analysis readiness / decision table for a callable / package reconstruction |
+| `crib gaps [path]` / `crib rules <proc>` / `crib dossier({op:'package'}) <pkg>` | Analysis readiness / decision table for a callable / package reconstruction |
 | `crib migrate-graph [path] [--dry-run]` | Move legacy `nodes/edges/llm` layout into the canonical `.crib/graph` |
 | `crib materialize [path]` | Rebuild the derived composite `graph.json` + SQLite from the soul |
 | `crib audit-llm [path]` | Re-verify every LLM artifact against the soul (grounding moat); exits non-zero on drift |
@@ -213,7 +213,7 @@ config. See [`knowledge-crib-client-setup.md`](knowledge-crib-client-setup.md) �
 
 ---
 
-## 4. The MCP server + the 17 deterministic verbs (status, context, source, dossier, reconstruct, dossier_by_scope, impact, federatedImpact, query, describes, neighbors, ownership, shortest_path, detect_changes, extract_rules, gaps, stats)
+## 4. The MCP server + the 17 deterministic verbs (status, context, source, dossier, dossier({op:'package'}), dossier({op:'scope'}), impact, impact({op:'federated'}), query, describes, neighbors, ownership, impact({op:'path'}), detect_changes, extract_rules, gaps, stats)
 
 `crib serve <root>` starts one MCP server over stdio. Every verb is an MCP tool. All results are
 **token-bounded** (default `docLimit=3`, `limit=10`, with `truncated` + `cursor`) and
@@ -221,8 +221,8 @@ config. See [`knowledge-crib-client-setup.md`](knowledge-crib-client-setup.md) �
 so the agent can filter to deterministic-only (`extractedOnly: true`).
 
 > The 17 verbs below are the **deterministic structural** layer (AST-extracted, no model in the
-> loop). A second **LLM-authored semantic** layer adds 6 more verbs — `enrich_status`,
-> `enrich_next`, `enrich_save`, `audit_llm`, `overview`, `llm_neighbors` — described in
+> loop). A second **LLM-authored semantic** layer adds 6 more verbs — `enrich({op:'status'})`,
+> `enrich({op:'next'})`, `enrich({op:'save'})`, `enrich({op:'audit'})`, `overview`, `neighbors({op:'llm'})` — described in
 > [§10](#10-the-llm-semantic-graph-layer-the-grove-plan). 23 verbs total.
 
 ### `status`
@@ -293,7 +293,7 @@ all 7 languages with capability-honest skips.
 `high`/`medium`/`low` by distance. **This is the verb that prevents architecture-breaking changes** —
 ask it before any refactor.
 
-### `describes` — the doc-sections linked to a symbol (cheap, high value)
+### `neighbors({op:'describes'})` — the doc-sections linked to a symbol (cheap, high value)
 ```jsonc
 { "id": "sym:…#login@L42", "minConfidence": 0.4 }
 → { "docs": [ { "sectionId": "doc:docs/auth.md#sessions", "heading": "Sessions",
@@ -307,7 +307,7 @@ ask it before any refactor.
 ```
 `dir`: `in` / `out` / `both`.
 
-### `shortest_path`
+### `impact({op:'path'})`
 ```jsonc
 { "from": "sym:…", "to": "sym:…", "maxHops": 6 }
 → { "path": [ "sym:…", "sym:…", "sym:…" ], "edges": […], "found": true }
@@ -333,12 +333,12 @@ all 7 languages (PL/SQL, TypeScript, Java, C#, Go, Rust, Python), not just PL/SQ
 
 | Verb | What it returns |
 |---|---|
-| `reconstruct` | `{ pkg }` → package reconstruction: CONSTANT values + members + referenced tables + docs + `expectedBodyFile` — enough to re-author a package from the graph |
-| `dossier_by_scope` | Bulk dossiers for every symbol in a `--package` / `--file` / `--cluster` scope (paged) |
-| `federatedImpact` | Cross-repo blast radius over registered sibling souls (route-layer `http-call` bridge) |
-| `ownership` | `{ id }` → git-blame-derived `owned-by` edges (who owns this symbol) |
-| `gaps` | Analysis readiness: missing bodies + unresolved call sites (+ `--extracted-only`) |
-| `stats` | Live per-verb call counts + latency + ifHash cache hit rate for this server process (runtime observability; not persisted) |
+| `dossier({op:'package'})` | `{ pkg }` → package reconstruction: CONSTANT values + members + referenced tables + docs + `expectedBodyFile` — enough to re-author a package from the graph |
+| `dossier({op:'scope'})` | Bulk dossiers for every symbol in a `--package` / `--file` / `--cluster` scope (paged) |
+| `impact({op:'federated'})` | Cross-repo blast radius over registered sibling souls (route-layer `http-call` bridge) |
+| `impact({op:'owners'})` | `{ id }` → git-blame-derived `owned-by` edges (who owns this symbol) |
+| `status({op:'gaps'})` | Analysis readiness: missing bodies + unresolved call sites (+ `--extracted-only`) |
+| `status({op:'stats'})` | Live per-verb call counts + latency + ifHash cache hit rate for this server process (runtime observability; not persisted) |
 
 ### Error shape
 `{ "error": { "code": "NOT_FOUND" | "NOT_INDEXED" | "AMBIGUOUS" | "BAD_ARGS" | "INTERNAL", "message" } }`
@@ -442,7 +442,7 @@ That's a **detailed knowledge graph: 1576 nodes, 1831 edges, 621 symbols, 65 doc
 doc↔code links, 104 structural clusters**, built in 1.3 s.
 
 `llmGraph: false` here because the LLM-graph loop (§10) was not run on this repo — only the
-deterministic structural layer. It flips to `true` after the first `enrich_save`.
+deterministic structural layer. It flips to `true` after the first `enrich({op:'save'})`.
 
 ### 5.6 Query + export
 
@@ -463,8 +463,8 @@ Drove `crib serve FTCCloud` through a canonical MCP SDK client (`Client` +
 ```
 initialize  → serverInfo { name: "knowledge-crib", version: "0.1.0" }
 tools/list  → 17 tools: 12 structural (status, context, source, dossier, impact, query, describes,
-                        neighbors, shortest_path, detect_changes, extract_rules, gaps) + 5 LLM-graph
-                        (enrich_status, enrich_next, enrich_save, overview, llm_neighbors)
+                        neighbors, impact({op:'path'}), detect_changes, extract_rules, gaps) + 5 LLM-graph
+                        (enrich({op:'status'}), enrich({op:'next'}), enrich({op:'save'}), overview, neighbors({op:'llm'}))
                         # historical transcript — the server registers 23 tools today (see §4)
 status      → { nodes:1576, edges:1831, clusters:104, vcsHead:… }
 query "schedule" → ScheduleFilterBar (score -4.01), ScheduleStatsCards, ScheduleItemRequest
@@ -598,7 +598,7 @@ You should see two JSON-RPC responses (initialize + status).
 4. **Multimodal (PDF/image/audio) is opt-in** — the `crib_worker` Python subprocess is never spawned
    on the default `crib index`/`serve` path; it only runs when `indexRepo` is called with an
    explicit `multimodal` option. No `crib` CLI flag exposes it yet (enablement is library-API only).
-5. **Framework semantics (schema 1.3) surface in `context`/`dossier`/`gaps`/`viz`** — the Spring
+5. **Framework semantics (schema 1.3) surface in `context`/`dossier`/`status({op:'gaps'})`/`viz`** — the Spring
    track is built (stereotypes, routes, DI `injects`, `@Bean` `produces`, JPA `references`/columns,
    `@ExceptionHandler` handlers, `@PreAuthorize`/`@Transactional`/`@Scheduled`/`@Query` method
    meta). `context` gains an opt-in `withFramework` flag (returns `routes`/`produces`/
@@ -653,24 +653,24 @@ symbol  →  file  →  cluster  →  system
 ### The loop
 
 ```
-s = enrich_status()                                    # coverage per layer + nextLayer + done
+s = enrich({op:'status'})                                    # coverage per layer + nextLayer + done
 while !s.done:
-  batch = enrich_next({ layer: s.nextLayer, limit: 4 })  # grounded seed + schema per item
+  batch = enrich({op:'next', layer: s.nextLayer, limit: 4})  # grounded seed + schema per item
   items = [ author(item) for item in batch.items ]        # YOU (host LLM) author, grounded in seed
-  enrich_save({ batchId: batch.batchId, items })          # server validates + persists → {accepted, rejected, droppedEdges}
-  s = enrich_status()
+  enrich({op:'save', batchId: batch.batchId, items})          # server validates + persists → {accepted, rejected, droppedEdges}
+  s = enrich({op:'status'})
 overview()                                                # the bible (system layer must be last)
 ```
 
 The server validates **every edge endpoint** against the soul — it must resolve to a real soul node
 id present in the item's `seed` (the target itself, its callers, callees) or to a `localId`
 authored in this or a previously-saved item. **Unresolved edges are dropped** and reported in
-`enrich_save` → `accepted[].droppedEdges`. This is the anti-hallucination gate: the LLM cannot
+`enrich({op:'save'})` → `accepted[].droppedEdges`. This is the anti-hallucination gate: the LLM cannot
 invent code facts that aren't grounded in the soul.
 
-`enrich_status.nextLayer` tells you which layer is next; never jump ahead — higher layers'
+`enrich({op:'status'}).nextLayer` tells you which layer is next; never jump ahead — higher layers'
 `lowerLayer` payload carries the saved child analyses you synthesize from. The loop is
-**resumable**: interrupt anytime, `enrich_status` reports the first `missing|stale` layer, already-
+**resumable**: interrupt anytime, `enrich({op:'status'})` reports the first `missing|stale` layer, already-
 `fresh` targets are skipped. `limit` (default 4, max 25) bounds tokens per turn — process one batch
 per turn.
 
@@ -678,12 +678,12 @@ per turn.
 
 | Verb | Returns |
 |---|---|
-| `enrich_status` | Coverage per layer (`missing` / `stale` / `fresh`), `nextLayer`, `done: bool` |
-| `enrich_next` | `{ layer?, budgetTokens? }` → a **token-packed** grounded batch (greedy strict-prefix packing against the budget, default 24k tokens; a single oversized item is returned alone with `oversized: true` so the queue never stalls); per item `{ targetId, seed, lowerLayer?, outputSchema, instructions, remaining }` |
-| `enrich_save` | `{ batchId, items }` → `{ accepted[], rejected[], droppedEdges }`; validates (grounding + secret scan) + persists |
-| `audit_llm` | Re-verifies every persisted LLM artifact against the soul (grounding moat); reports ungrounded/drifted artifacts |
+| `enrich({op:'status'})` | Coverage per layer (`missing` / `stale` / `fresh`), `nextLayer`, `done: bool` |
+| `enrich({op:'next'})` | `{ layer?, budgetTokens? }` → a **token-packed** grounded batch (greedy strict-prefix packing against the budget, default 24k tokens; a single oversized item is returned alone with `oversized: true` so the queue never stalls); per item `{ targetId, seed, lowerLayer?, outputSchema, instructions, remaining }` |
+| `enrich({op:'save'})` | `{ batchId, items }` → `{ accepted[], rejected[], droppedEdges }`; validates (grounding + secret scan) + persists |
+| `enrich({op:'audit'})` | Re-verifies every persisted LLM artifact against the soul (grounding moat); reports ungrounded/drifted artifacts |
 | `overview` | The rendered bible (system-level synthesis); empty until the system layer lands |
-| `llm_neighbors` | `{ id }` → walk the LLM semantic graph around a soul id (rules / features / flows / concepts / capabilities) |
+| `neighbors({op:'llm'})` | `{ id }` → walk the LLM semantic graph around a soul id (rules / features / flows / concepts / capabilities) |
 
 ### Query-time merge — lightweight by default, full on `withLlm`
 
@@ -709,7 +709,7 @@ artifact. It is the **only** capability flag the grove plan touches:
 
 | Flag | Meaning | Status |
 |---|---|---|
-| `llmGraph` | LLM-authored semantic graph present | Flips on after the first `enrich_save`; the one flag the grove moves. |
+| `llmGraph` | LLM-authored semantic graph present | Flips on after the first `enrich({op:'save'})`; the one flag the grove moves. |
 | `embeddings` | Embedding index | Stays `false` — embeddings need a model (violates the no-model invariant) and `node:sqlite` has no ANN. The LLM graph replaces that need via `withLlm`. |
 | `vector` | Vector / ANN search | Stays `false` — same reason; BM25 + the TF-IDF linker are the deterministic recall path. |
 | `multimodal` | PDF / image / audio extraction | Opt-in via `crib index --multimodal` (spawns `crib_worker`); not part of the grove. |
@@ -727,7 +727,7 @@ crib skill list                         # show bundled skills
 
 Then in Claude Code type `/crib-enrich`; in Codex invoke `$crib-enrich` (or say "enrich the crib" /
 "build the LLM graph" / "generate the bible"). The skill drives
-`enrich_status → enrich_next → author → enrich_save` one batch per turn, bottom-up, and calls
+`enrich({op:'status'}) → enrich({op:'next'}) → author → enrich({op:'save'})` one batch per turn, bottom-up, and calls
 `overview` at the end. The skill is **bundled inside the package** (`packages/cli/skills/`), so
 No separate skill repository is required.
 
@@ -755,7 +755,7 @@ uncovered, e.g.:
 
 ### The author contract (per item)
 
-For each `item` from `enrich_next`, the LLM authors one object against `item.outputSchema`:
+For each `item` from `enrich({op:'next'})`, the LLM authors one object against `item.outputSchema`:
 
 ```jsonc
 {
@@ -812,7 +812,7 @@ knowledge-crib/                 # pnpm monorepo
 runCluster → (runSemanticLink) → commit soul → buildIndex`. The soul is the source of truth; the
 SQLite index is derived and rebuildable. Every MCP verb is a pure function over `{soul, index,
 repoRoot, vcs?}` — the server is thin wiring. The LLM-graph layer is a separate, optional pass
-driven by the host IDE LLM over the 5 `enrich_*` / `overview` / `llm_neighbors` verbs; it writes to
+driven by the host IDE LLM over the 5 `enrich_*` / `overview` / `neighbors({op:'llm'})` verbs; it writes to
 `.crib/llm/` and never touches the deterministic core.
 
 **Determinism:** the deterministic core never touches the network. Edges carry

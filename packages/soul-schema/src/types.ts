@@ -6,7 +6,7 @@
  * `span`, never copied (lean soul; rehydrate on demand). Unknown `meta` keys are preserved on
  * round-trip (invariant #5 — forward compatibility).
  */
-import type { Method, NodeKind, Provenance, Rel } from './enums.js';
+import type { ArtifactType, Method, NodeKind, Provenance, Rel } from './enums.js';
 
 export interface Span {
   /** start line, 1-based inclusive */
@@ -105,6 +105,20 @@ export interface Node {
   /** `owner` node: the git author's email (the canonical, stable identity for dedup). Absent for
    *  owners extracted from a blame that exposed no email (rare; the name is the fallback identity). */
   email?: string;
+
+  // --- AI-artifact graph 1.6 (PRD W1) ---
+  /** `agent-artifact` node: the artifact class — instruction/skill/agent/command/rule/mcp-server.
+   *  Required on `agent-artifact` nodes; absent on all other kinds. */
+  artifactType?: ArtifactType;
+  /** Documentation metadata (PRD W1): the document type — e.g. "runbook"/"adr"/"spec"/"readme".
+   *  Populated on `doc-section` and `agent-artifact` nodes from bounded frontmatter. */
+  docType?: string;
+  /** Documentation metadata (PRD W1): the intended audience — e.g. "backend"/"oncall"/"all".
+   *  Free-form but short; from frontmatter. */
+  audience?: string;
+  /** Documentation metadata (PRD W1): applicability targets — repo paths, symbol ids, or glob
+   *  scopes the doc/artifact applies to. Path/ID-validated at extraction (PRD §2 admissibility). */
+  appliesTo?: string[];
 
   /** extensible; unknown keys preserved on read→write */
   meta?: Record<string, unknown>;
@@ -207,16 +221,21 @@ export const CRIB_FORMAT_VERSION = '1.0';
  * 1.0–1.3 soul still loads verbatim. 1.5 (cross-repo federation) adds NodeKind `http-call` (an
  * outbound HTTP client call site; reuses the optional `httpMethod`/`routePath`/`framework` fields)
  * — additive + optional, so a 1.0–1.4 soul still loads verbatim. No new Rel: the A→B route
- * resolution is a runtime federation computation, not a committed edge.
+ * resolution is a runtime federation computation, not a committed edge. 1.6 (AI-artifact graph /
+ * PRD W1) adds NodeKind `agent-artifact`, the `ArtifactType` enum (instruction/skill/agent/command/
+ * rule/mcp-server), Rels `governs`/`requires`/`invokes`, and optional Node fields `artifactType`/
+ * `docType`/`audience`/`appliesTo` — all additive + optional, so a 1.0–1.5 soul still loads verbatim.
+ * `agent-artifact` nodes are EXTRACTED tracked-file facts, never memories (memories live in the
+ * separate memory ledger outside this schema, per PRD §1 boundary #2).
  */
-export const SCHEMA_VERSION = '1.5';
+export const SCHEMA_VERSION = '1.6';
 export const TOOL_NAME = 'knowledge-crib';
 
 /**
  * Schema versions the loader will hydrate. A 1.0 soul (pre-M11) loads as-is; its edges have no
  * `cfgPath` and that is preserved on re-write (no widening). Unknown versions → load() refuses.
  */
-export const SUPPORTED_SCHEMA_VERSIONS = ['1.0', '1.1', '1.2', '1.3', '1.4', '1.5'] as const;
+export const SUPPORTED_SCHEMA_VERSIONS = ['1.0', '1.1', '1.2', '1.3', '1.4', '1.5', '1.6'] as const;
 
 /** Default chunking knobs (per spec storage §6 / C4). */
 export const DEFAULT_CHUNKING: ManifestChunking = {

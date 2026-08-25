@@ -7,7 +7,7 @@ import { clusterContentHash } from './cluster-hash.js';
 import { graphPaths } from './graph-layout.js';
 import type { SoulStore } from './soul-store.js';
 
-export type GraphOrigin = 'extracted' | 'semantic';
+export type GraphOrigin = 'extracted' | 'semantic' | 'memory';
 
 export type CompositeNode = (Node | Record<string, unknown>) & {
   id: string;
@@ -72,14 +72,37 @@ interface SemanticArtifact {
 
 /** Sole graph reader. Writers remain SoulStore (extracted) and EnrichmentStore (semantic). */
 export class GraphStore {
+  /**
+   * W6 — the optional working overlay. When set, the EXTRACTED layer is read from the overlay store
+   * (canonical + dirty swap, in memory) instead of the committed soul; the committed `.crib/graph` is
+   * never touched. The semantic layer still reads from the committed soul — semantic artifacts are a
+   * separate, independently-fresh layer, and the PRD (line 375) scopes watch to the extracted graph.
+   */
+  private overlay?: SoulStore;
+
   constructor(private readonly soul: SoulStore) {}
 
+  /**
+   * W6 — install or remove the working overlay. When set, every extracted read delegates to the
+   * overlay store so edits become queryable through query/context/dossier/neighbors/shortestPath
+   * without dirtying the committed `.crib/graph`. Pass `undefined` to return to committed-only reads.
+   */
+  setWorkingOverlay(overlay: SoulStore | undefined): void {
+    this.overlay = overlay;
+  }
+
+  /** The soul backing the EXTRACTED layer — the overlay when active, else the committed soul. */
+  private live(): SoulStore {
+    return this.overlay ?? this.soul;
+  }
+
   extracted(): GraphSnapshot {
-    const nodes = [...this.soul.iterate()].map((node) => ({
+    const live = this.live();
+    const nodes = [...live.iterate()].map((node) => ({
       ...node,
       origin: 'extracted' as const,
     }));
-    const edges = [...this.soul.iterateEdges()].map((edge) => extractedEdge(edge));
+    const edges = [...live.iterateEdges()].map((edge) => extractedEdge(edge));
     return { nodes, edges, diagnostics: emptyDiagnostics() };
   }
 
@@ -88,8 +111,13 @@ export class GraphStore {
   }
 
   composite(): GraphSnapshot {
-    const materialized = readMaterialized(this.soul);
-    if (materialized) return materialized;
+    // W6 — when an overlay is active, bypass the on-disk materialized composite cache (it reflects the
+    // committed soul, not the working overlay) and always compute compositeLive so dirty edits are
+    // visible. With no overlay, the materialized fast path is unchanged.
+    if (!this.overlay) {
+      const materialized = readMaterialized(this.soul);
+      if (materialized) return materialized;
+    }
     return this.compositeLive();
   }
 
@@ -104,6 +132,30 @@ export class GraphStore {
       ...semantic.edges.filter((edge) => valid.has(edge.src) && valid.has(edge.dst)),
     ];
     return { nodes: [...nodes.values()], edges, diagnostics: semantic.diagnostics };
+  }
+
+  /**
+   * W3 — fold a VIRTUAL sub-graph (the memory composite layer, origin `'memory'`) into a base
+   * snapshot WITHOUT touching the soul. Mirrors {@link compositeLive}'s extracted+semantic merge:
+   * extra nodes are unioned by id (base wins on collision — a soul node is never overwritten by a
+   * virtual one), then extra edges are kept only where BOTH endpoints are in the merged node set
+   * (so a memory `applies-to` edge to a soul id that no longer exists is dropped, exactly like
+   * semantic edges to absent extracted nodes). Pure + standalone so the viz builder (`ui`, which
+   * depends on `core` but not `memory`) and the MCP `brief` verb can both call it with the memory
+   * composite produced by the `memory` package — `core` never takes a `memory` dependency.
+   */
+  mergeComposite(
+    base: GraphSnapshot,
+    extra: { nodes: CompositeNode[]; edges: CompositeEdge[] },
+  ): GraphSnapshot {
+    const nodes = new Map(base.nodes.map((node) => [node.id, node]));
+    for (const node of extra.nodes) if (!nodes.has(node.id)) nodes.set(node.id, node);
+    const valid = new Set(nodes.keys());
+    const edges = [
+      ...base.edges,
+      ...extra.edges.filter((edge) => valid.has(edge.src) && valid.has(edge.dst)),
+    ];
+    return { nodes: [...nodes.values()], edges, diagnostics: base.diagnostics };
   }
 
   neighbors(id: string, includeSemantic = false): CompositeEdge[] {

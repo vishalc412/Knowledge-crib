@@ -33,7 +33,10 @@ assert.deepEqual(
   }),
   {
     command: 'C:\\Windows\\System32\\cmd.exe',
-    args: ['/d', '/s', '/c', '"C:\\Program Files\\Knowledge Crib\\crib.cmd" --help'],
+    // Separate args (no pre-quoting, no /s) — see installedBinCommand: a single pre-quoted arg
+    // was double-escaped by Node's execFileSync arg escaping, so cmd.exe saw `\"…\crib.cmd\"` as
+    // the program name. Separate args let Node quote only a spaced path + pass --help through.
+    args: ['/d', '/c', 'C:\\Program Files\\Knowledge Crib\\crib.cmd', '--help'],
   },
 );
 

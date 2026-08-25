@@ -15,7 +15,7 @@
  *   in  {kind:'extract', idx, text}             → run extract + validate, post {kind:'result',...}
  *   in  {kind:'shutdown'}                       → close + exit
  *
- * The worker resolves `extractorName` against the 9 shipped extractors PLUS three TEST-ONLY fakes
+ * The worker resolves `extractorName` against the 10 shipped extractors PLUS three TEST-ONLY fakes
  * (hang / throw / invalid) so the detector's regression test can prove the harness catches each
  * failure class. Production fuzz-check never sends a fake name.
  *
@@ -26,7 +26,7 @@
  */
 import { parentPort, workerData } from 'node:worker_threads';
 import type { Node } from '@knowledge-crib/soul-schema';
-import type { ExtractResult, Extractor, FileMeta } from '../types.js';
+import type { ExtractResult, Extractor, FileClassification, FileMeta } from '../types.js';
 import { makeFuzzCtx } from './fuzz-ctx.js';
 import { FUZZ_EXTRACTORS } from './fuzz-extractors.js';
 import { validateFuzzResult } from './fuzz-validate.js';
@@ -85,6 +85,16 @@ function extFor(name: string): string {
   return spec?.ext ?? '.fuzz';
 }
 
+/** The classification the fuzz FileMeta should carry for an extractor (undefined for the 9
+ *  source-language extractors, which gate on file extension — not classification — in `supports()`).
+ *  Mule is the exception: its `supports()` requires `file.classification?.family === 'mule'`, so
+ *  without copying the spec's classification into FileMeta the worker would build a path like
+ *  `fuzz0.xml` with NO classification and MuleExtractor.supports() would correctly refuse it →
+ *  the extractor would fuzz nothing. The spec carries the classification so the worker can stamp it. */
+function classificationFor(name: string): FileClassification | undefined {
+  return FUZZ_EXTRACTORS.find((s) => s.name === name)?.classification;
+}
+
 type InMsg =
   | { kind: 'init'; extractorName: string }
   | { kind: 'extract'; idx: number; text: string }
@@ -92,12 +102,14 @@ type InMsg =
 
 let extractor: Extractor | null = null;
 let ext = '.fuzz';
+let classification: FileClassification | undefined;
 
 if (parentPort) {
   parentPort.on('message', async (msg: InMsg) => {
     if (msg.kind === 'init') {
       extractor = buildExtractor(msg.extractorName);
       ext = extFor(msg.extractorName);
+      classification = classificationFor(msg.extractorName);
       if (!extractor) {
         parentPort!.postMessage({
           kind: 'error',
@@ -118,7 +130,12 @@ if (parentPort) {
         });
         return;
       }
-      const file: FileMeta = { path: `fuzz${msg.idx}${ext}`, bytes: msg.text.length, mtime: 0 };
+      const file: FileMeta = {
+        path: `fuzz${msg.idx}${ext}`,
+        bytes: msg.text.length,
+        mtime: 0,
+        ...(classification ? { classification } : {}),
+      };
       const ctx = makeFuzzCtx(msg.text);
       try {
         const res = await extractor.extract(file, ctx);

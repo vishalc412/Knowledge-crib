@@ -1,0 +1,100 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://knowledge-crib.dev/schema/memory-1/record.schema.json",
+  "title": "MemoryRecord",
+  "description": "One immutable, content-addressed agent-memory claim (PRD §2). Outside the soul NodeKind enum.",
+  "type": "object",
+  "required": [
+    "id",
+    "schemaVersion",
+    "kind",
+    "subject",
+    "claim",
+    "scope",
+    "appliesTo",
+    "evidence",
+    "authorship",
+    "verdicts",
+    "createdAt"
+  ],
+  "properties": {
+    "id": { "type": "string", "pattern": "^mem:[0-9a-f]+$" },
+    "schemaVersion": { "type": "string", "const": "1" },
+    "kind": {
+      "type": "string",
+      "enum": ["fact", "procedure", "decision", "pitfall", "convention"]
+    },
+    "subject": { "type": "string", "minLength": 1 },
+    "claim": { "type": "string", "minLength": 1 },
+    "scope": {
+      "type": "object",
+      "required": ["boundary"],
+      "properties": {
+        "boundary": { "type": "string", "enum": ["repo", "global"] },
+        "repoId": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "appliesTo": { "type": "array", "items": { "type": "string" } },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["kind", "verdict", "checkedAt"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "source-quote",
+              "execution-assertion",
+              "committed-policy",
+              "human-attestation",
+              "receipt-pair"
+            ]
+          },
+          "verdict": { "type": "string", "enum": ["valid", "degraded", "invalid"] },
+          "checkedAt": { "type": "string" },
+          "soulId": { "type": "string" },
+          "quote": { "type": "string" },
+          "targetHash": { "type": "string", "pattern": "^blake3:[0-9a-f]+$" },
+          "startLine": { "type": "integer", "minimum": 1 },
+          "receiptId": { "type": "string" },
+          "assertion": { "type": "string" },
+          "artifactId": { "type": "string" },
+          "anchor": { "type": "string" },
+          "actor": { "type": "string" },
+          "tty": { "type": "boolean", "const": true },
+          "attestedAt": { "type": "string" },
+          "failingReceiptId": { "type": "string" },
+          "passingReceiptId": { "type": "string" },
+          "reason": { "type": "string" }
+        },
+        "additionalProperties": true
+      }
+    },
+    "authorship": {
+      "type": "object",
+      "required": ["actor", "kind"],
+      "properties": {
+        "actor": { "type": "string", "minLength": 1 },
+        "kind": { "type": "string", "enum": ["agent", "human"] },
+        "tool": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "verdicts": {
+      "type": "object",
+      "required": ["trust", "evidence", "applicability", "lifecycle"],
+      "properties": {
+        "trust": { "type": "string", "enum": ["candidate", "local", "team"] },
+        "evidence": { "type": "string", "enum": ["valid", "degraded", "invalid"] },
+        "applicability": { "type": "string", "enum": ["current", "needs-review", "orphaned"] },
+        "lifecycle": { "type": "string", "enum": ["active", "superseded", "retracted"] }
+      },
+      "additionalProperties": false
+    },
+    "createdAt": { "type": "string" },
+    "meta": { "type": "object" }
+  },
+  "additionalProperties": true
+}

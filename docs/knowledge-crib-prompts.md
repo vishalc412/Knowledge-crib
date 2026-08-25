@@ -13,7 +13,7 @@ If not, see [client-setup](knowledge-crib-client-setup.md) — one line per clie
 - Codex (local): `codex mcp add knowledge-crib -- crib serve /absolute/path/to/project`
 
 Then `crib index` once per repo. After that the verbs below are available to the model as tools:
-`status · context · source · dossier · impact · query · describes · neighbors · shortest_path ·
+`status · context · source · dossier · impact · query · neighbors · brief ·
 detect_changes · extract_rules`.
 
 ---
@@ -164,7 +164,7 @@ are identical. **Tip for small local models:** always pass `extractedOnly=true` 
 - **Calling `context` + `source` + `extract_rules` separately** when `dossier` returns all three.
 - **Forgetting `extractedOnly:true`** on a local model — INFERRED edges read as fact.
 - **Walking the graph manually** with `neighbors` ("give me everything"). Use `impact` (bounded
-  depth, inherited guards) or `shortest_path` (targeted).
+  depth, inherited guards) or `impact({op:'path'})` (targeted).
 - **Ignoring `truncated:true`.** It's a cursor, not an error — page deliberately.
 - **Re-indexing mid-session.** `crib index` is a commit-time action; for live edits use `update`
   (incremental, cost ∝ change size).

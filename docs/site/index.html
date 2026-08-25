@@ -39,11 +39,11 @@
       <code>scripts/docs-stats.mjs</code> → <code>docs/STATS.md</code>. Reference that file instead of
       restating a number in prose — a hardcoded stat drifts; a generated stat refreshes every run.</p>
     <table class="stats">
-          <tr><th>packages</th><td>7 (knowledge-crib, @knowledge-crib/core, @knowledge-crib/mcp, @knowledge-crib/parsers, @knowledge-crib/pipeline, @knowledge-crib/soul-schema, @knowledge-crib/ui)</td></tr>
-          <tr><th>parser languages</th><td>9 (csharp, go, java, md, php, plsql, python, rust, ts)</td></tr>
+          <tr><th>packages</th><td>8 (knowledge-crib, @knowledge-crib/core, @knowledge-crib/mcp, @knowledge-crib/memory, @knowledge-crib/parsers, @knowledge-crib/pipeline, @knowledge-crib/soul-schema, @knowledge-crib/ui)</td></tr>
+          <tr><th>parser languages</th><td>11 (agent, csharp, go, java, md, mule, php, plsql, python, rust, ts)</td></tr>
           <tr><th>eval fixture languages</th><td>9 (csharp, go, java, php, plsql, python, rust, ts, ts-min)</td></tr>
-          <tr><th>test files</th><td>82</td></tr>
-          <tr><th>test call-sites (static)</th><td>1055</td></tr>
+          <tr><th>test files</th><td>126</td></tr>
+          <tr><th>test call-sites (static)</th><td>1817</td></tr>
     </table>
     <p class="stats-note">Test call-sites are a static count of <code>it(</code>/<code>test(</code>
       occurrences (excluding comments), not the runtime total — <code>it.each</code> is one call-site.
@@ -83,6 +83,7 @@
         <li><span class="num">—</span> <a href="../knowledge-crib-m6-m13-build-plan.md">knowledge-crib-m6-m13-build-plan.md</a> — <span class="desc">Milestones M6→M13 (post-foundation build plan)</span></li>
         <li><span class="num">—</span> <a href="../knowledge-crib-production-readiness.md">knowledge-crib-production-readiness.md</a> — <span class="desc">Release gate, packaging fixes, and remaining production gaps</span></li>
         <li><span class="num">—</span> <a href="../knowledge-crib-beta-installers.md">knowledge-crib-beta-installers.md</a> — <span class="desc">macOS and Windows beta installer bundle build/install guide</span></li>
+        <li><span class="num">—</span> <a href="../mulesoft.md">mulesoft.md</a> — <span class="desc">MuleSoft (Mule 3/4) extraction — folders/ZIPs/JARs, dialect detection, MUnit, property key-only redaction</span></li>
   </ul>
 
   <h2>Standalone HTML docs</h2>

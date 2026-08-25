@@ -1,0 +1,23 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://knowledge-crib.dev/schema/memory-1/decision.schema.json",
+  "title": "MemoryDecision",
+  "description": "A lifecycle decision event applied to a record (PRD §2). Immutable + append-only.",
+  "type": "object",
+  "required": ["id", "schemaVersion", "kind", "subject", "actor", "ts"],
+  "properties": {
+    "id": { "type": "string", "pattern": "^dec:[0-9a-f]+$" },
+    "schemaVersion": { "type": "string", "const": "1" },
+    "kind": {
+      "type": "string",
+      "enum": ["activate", "accept", "supersede", "retract", "quarantine"]
+    },
+    "subject": { "type": "string", "minLength": 1 },
+    "successor": { "type": "string" },
+    "actor": { "type": "string", "minLength": 1 },
+    "reason": { "type": "string" },
+    "ts": { "type": "string" },
+    "meta": { "type": "object" }
+  },
+  "additionalProperties": true
+}

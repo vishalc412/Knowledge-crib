@@ -29,8 +29,9 @@ import { fileURLToPath } from 'node:url';
 import { Worker } from 'node:worker_threads';
 import type { SoulStore } from '@knowledge-crib/core';
 import { grammarsNeededFor } from '@knowledge-crib/parsers';
-import type { FileMeta } from '@knowledge-crib/parsers';
-import type { ParseStats } from './parse.js';
+import type { ExtractDiagnostic, FileMeta } from '@knowledge-crib/parsers';
+import { DEFAULT_DIAGNOSTIC_LIMIT, aggregateDiagnostics, emptyParseStats } from './parse.js';
+import type { FileExtraction, ParseStats } from './parse.js';
 
 /** A single file's extraction result, stashed by discovery index until serial persist. */
 interface FileResult {
@@ -38,6 +39,10 @@ interface FileResult {
   edges: import('@knowledge-crib/soul-schema').Edge[];
   /** true iff an extractor resolved for this file (mirrors serial `filesParsed` semantics). */
   parsed: boolean;
+  /** name of the extractor that resolved this file ('' when none did) — drives byExtractor counts. */
+  extractorName: string;
+  /** per-file diagnostics carried back from the worker isolate for discovery-order aggregation. */
+  diagnostics: ExtractDiagnostic[];
 }
 
 type WorkerOutMsg =
@@ -48,6 +53,8 @@ type WorkerOutMsg =
       nodes: FileResult['nodes'];
       edges: FileResult['edges'];
       parsed: boolean;
+      extractorName: string;
+      diagnostics: ExtractDiagnostic[];
     }
   | { kind: 'error'; idx: number; message: string };
 
@@ -73,8 +80,9 @@ export async function runParseParallel(
   root: string,
   files: FileMeta[],
   size = defaultPoolSize(files.length),
+  diagnosticLimit = DEFAULT_DIAGNOSTIC_LIMIT,
 ): Promise<ParseStats> {
-  if (files.length === 0) return { filesParsed: 0, nodes: 0, edges: 0 };
+  if (files.length === 0) return emptyParseStats();
   const url = workerUrl();
   if (!existsSync(url)) {
     throw new Error(
@@ -126,7 +134,13 @@ export async function runParseParallel(
         const onMsg = (msg: WorkerOutMsg) => {
           if (msg.kind === 'result' && msg.idx === idx) {
             w.off('message', onMsg);
-            resolve({ nodes: msg.nodes, edges: msg.edges, parsed: msg.parsed });
+            resolve({
+              nodes: msg.nodes,
+              edges: msg.edges,
+              parsed: msg.parsed,
+              extractorName: msg.extractorName,
+              diagnostics: msg.diagnostics,
+            });
           } else if (msg.kind === 'error' && msg.idx === idx) {
             w.off('message', onMsg);
             reject(new Error(`extract failed for ${file.path}: ${msg.message}`));
@@ -156,7 +170,9 @@ export async function runParseParallel(
 
   // SERIAL PERSIST in discovery order — the determinism-critical step. The soul's Map insertion
   // order now exactly matches the serial `for (const file of files)` loop, so every downstream
-  // phase (resolve/cfg/link/cluster) iterates the same sequence.
+  // phase (resolve/cfg/link/cluster) iterates the same sequence. Diagnostics are folded in the same
+  // discovery-order pass so the aggregated surface matches serial + concurrent.
+  const extractions: FileExtraction[] = [];
   for (let i = 0; i < files.length; i++) {
     const r = results[i];
     if (!r) continue; // worker dropped this index without a result (shouldn't happen — guard)
@@ -165,9 +181,10 @@ export async function runParseParallel(
     if (r.parsed) filesParsed++; // mirrors serial: count files an extractor resolved for
     nodes += r.nodes.length;
     edges += r.edges.length;
+    if (r.parsed) extractions.push({ extractorName: r.extractorName, diagnostics: r.diagnostics });
   }
 
-  return { filesParsed, nodes, edges };
+  return { filesParsed, nodes, edges, ...aggregateDiagnostics(extractions, diagnosticLimit) };
 }
 
 /** Minimum file count before the parallel path is worth spawning workers. Below this, worker

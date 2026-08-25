@@ -15,11 +15,17 @@ import { fileURLToPath } from 'node:url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(__dirname, '..');
 const cliPackagePath = join(repoRoot, 'packages', 'cli', 'package.json');
+// Dependency order: a package must be packed before anything that depends on it, or the offline
+// install resolves the missing one from the public registry instead. `memory` was added to the
+// workspace but never added here, so every installer bundle shipped without it and `npm install`
+// fell through to registry.npmjs.org for `@knowledge-crib/memory` — which is unpublished, so it
+// 404'd. That is why the installer smoke test has failed on every branch since memory landed.
 const packageDirs = [
   'packages/soul-schema',
   'packages/core',
   'packages/parsers',
   'packages/ui',
+  'packages/memory', // core + soul-schema; must precede mcp and cli, which depend on it
   'packages/mcp',
   'packages/pipeline',
   'packages/cli',
@@ -47,7 +53,13 @@ function shellTarballArgs(tarballNames) {
 }
 
 function powershellTarballArgs(tarballNames) {
-  return tarballNames.map((name) => `"$PSScriptRoot\\${name}"`).join(' ');
+  // Forward-slash relative specs (./<name>), NOT absolute backslash paths ("$PSScriptRoot\<name>").
+  // The installer Push-Location's into $PSScriptRoot (the bundle dir) before invoking npm, so ./<name>
+  // resolves against the bundle. Forward-slash relative specs pass through the PS 5.1 -> npm.cmd batch
+  // shim -> node argv untouched; an absolute backslash path gets mangled in that native-arg stream
+  // (middle path segments stripped -> npm sees D:\<name> -> ENOENT -4058). See installPs1() for the
+  // full note.
+  return tarballNames.map((name) => `"./${name}"`).join(' ');
 }
 
 export function installSh(tarballNames) {
@@ -105,6 +117,23 @@ echo "Knowledge-crib installed. Run: crib --help"
 export function installPs1(tarballNames) {
   const tarballs = Array.isArray(tarballNames) ? tarballNames : [tarballNames];
   return `$ErrorActionPreference = "Stop"
+# Compute a lowercase hex SHA-256 of a file via the .NET crypto API rather than the Get-FileHash
+# cmdlet. Get-FileHash ships in Microsoft.PowerShell.Utility on Windows PowerShell 5.1+, but some
+# stock 5.1 hosts (notably GitHub windows-latest runners invoked as \`powershell.exe -NoProfile\`)
+# fail to auto-load it — "The term 'Get-FileHash' is not recognized" — breaking the installer for
+# real users on those hosts. [System.Security.Cryptography.SHA256] is available in Windows
+# PowerShell 3.0+ and PowerShell 7, so this is strictly more portable and removes the cmdlet
+# dependency. Streaming (OpenRead + ComputeHash(stream)) keeps large tarballs off the heap.
+function Get-KcFileHash {
+  param([Parameter(Mandatory)][string]$LiteralPath)
+  $sha = [System.Security.Cryptography.SHA256]::Create()
+  try {
+    $stream = [System.IO.File]::OpenRead($LiteralPath)
+    try {
+      return [System.BitConverter]::ToString($sha.ComputeHash($stream)).Replace('-', '').ToLowerInvariant()
+    } finally { $stream.Dispose() }
+  } finally { $sha.Dispose() }
+}
 $CacheDir = Join-Path ([System.IO.Path]::GetTempPath()) ("knowledge-crib-npm-cache-" + [System.Guid]::NewGuid().ToString("N"))
 
 if (-not (Get-Command node -ErrorAction SilentlyContinue)) {
@@ -135,7 +164,7 @@ foreach ($Line in Get-Content -LiteralPath $ChecksumPath) {
   if (-not (Test-Path -LiteralPath $TargetPath -PathType Leaf)) {
     throw "Installer bundle is missing $($Matches[2])."
   }
-  $Actual = (Get-FileHash -LiteralPath $TargetPath -Algorithm SHA256).Hash.ToLowerInvariant()
+  $Actual = Get-KcFileHash -LiteralPath $TargetPath
   if ($Actual -ne $Expected) {
     throw "Checksum verification failed for $($Matches[2])."
   }
@@ -147,11 +176,26 @@ if ($VerifiedFiles -eq 0) {
 
 try {
   New-Item -ItemType Directory -Force -Path $CacheDir | Out-Null
-  & npm install -g --cache "$CacheDir" --no-audit --no-fund ${powershellTarballArgs(tarballs)}
-  if ($LASTEXITCODE -ne 0) {
-    throw "npm install failed with exit code $LASTEXITCODE."
+  # Install from the bundle dir so the ./<name> tarball specs resolve as local files. Push-Location
+  # into $PSScriptRoot (the bundle dir) so npm's CWD is the bundle, then pass forward-slash relative
+  # specs. We deliberately do NOT pass "$PSScriptRoot\<name>" here: Windows PowerShell 5.1 hands
+  # native-command arguments to npm.cmd through cmd.exe's %* expansion, which mangles quoted
+  # backslash paths — the middle path segments get stripped and npm resolves the arg to the drive root
+  # (e.g. D:\knowledge-crib-parsers-0.1.0.tgz -> ENOENT -4058, "no such file or directory, open"). The
+  # checksum loop above is immune because Join-Path yields an in-process PathInfo used with -LiteralPath
+  # (never serialized to a native argv); only this native call serializes a path, so it must avoid
+  # backslashes + absolute paths. ./<name> has no backslashes and no escape semantics in any shell, so
+  # it survives PS 5.1 -> npm.cmd -> node verbatim, and npm resolves it against CWD ($PSScriptRoot).
+  Push-Location -LiteralPath $PSScriptRoot
+  try {
+    & npm install -g --cache "$CacheDir" --no-audit --no-fund ${powershellTarballArgs(tarballs)}
+    if ($LASTEXITCODE -ne 0) {
+      throw "npm install failed with exit code $LASTEXITCODE."
+    }
+    Write-Host "Knowledge-crib installed. Run: crib --help"
+  } finally {
+    Pop-Location
   }
-  Write-Host "Knowledge-crib installed. Run: crib --help"
 } finally {
   Remove-Item -Recurse -Force $CacheDir -ErrorAction SilentlyContinue
 }
@@ -169,7 +213,15 @@ function writeText(path, text, mode) {
 
 function run(cmd, args, opts = {}) {
   process.stdout.write(`$ ${[cmd, ...args].join(' ')}\n`);
-  execFileSync(cmd, args, { cwd: repoRoot, stdio: 'inherit', ...opts });
+  // On Windows, `corepack` is a .cmd shim; execFileSync (shell: false) cannot launch .cmd files
+  // directly (ENOENT). Use a shell there so the windows-latest installer:build cell stays green.
+  // Same convention as scripts/release-verify.mjs.
+  execFileSync(cmd, args, {
+    cwd: repoRoot,
+    stdio: 'inherit',
+    shell: process.platform === 'win32',
+    ...opts,
+  });
 }
 
 export function buildInstallers({ outRoot = join(repoRoot, 'dist', 'installers') } = {}) {

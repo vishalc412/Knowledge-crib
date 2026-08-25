@@ -8,7 +8,7 @@
 
 1. **`npm login`** as the publishing account — `npm whoami` must return a username before step 1 below.
 2. **Create the `@knowledge-crib` npm org** (if not already) at https://www.npmjs.com/org/create — name it `knowledge-crib`. The 7 packages are scoped `@knowledge-crib/*` (251 internal references — the scope is locked; do not rename). The org must exist before the first scoped package publishes.
-3. **Resolve M4.5 repo identity first** — see [`repo-identity-decision.md`](repo-identity-decision.md). The `repository.url` in every package.json must point at the canonical GitHub home before publish (npm embeds it). Decision is narrow (KnowledgeCrib org vs vishalc412); recommendation is KnowledgeCrib to match the npm scope.
+3. **M4.5 repo identity: DECIDED (2026-07-18)** — canonical home is `https://github.com/KnowledgeCrib/knowledge-crib` (see [`repo-identity-decision.md`](repo-identity-decision.md)). Every package.json `repository.url` already points there (npm embeds it at publish).
 
 ## Pre-publish state (already verified, autonomous)
 
