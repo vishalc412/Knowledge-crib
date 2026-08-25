@@ -173,6 +173,136 @@ describe('CLI runtime — archive resolution', () => {
   });
 });
 
+describe('resolveProjectRoot — wrong-project guard', () => {
+  // The measured failure: `crib serve` against a repo whose `.crib/crib.json` was missing fell
+  // through to an ANCESTOR's `.crib` (~/Documents/.crib) and silently served that soul — a swarm
+  // gate ran against the wrong project and scored 0/400 while looking healthy.
+  function markIndexed(dir: string): void {
+    mkdirSync(join(dir, '.crib'), { recursive: true });
+    writeFileSync(join(dir, '.crib', 'crib.json'), '{}');
+  }
+
+  function captureStderr(fn: () => void): string {
+    const spy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+    try {
+      fn();
+      return spy.mock.calls.map((c) => String(c[0])).join('');
+    } finally {
+      spy.mockRestore();
+    }
+  }
+
+  it('an explicit root with a damaged .crib (dir present, manifest gone) refuses to fall through', () => {
+    const ancestor = join(repo, 'ancestor');
+    const target = join(ancestor, 'proj');
+    mkdirSync(target, { recursive: true });
+    markIndexed(ancestor);
+    mkdirSync(join(target, '.crib')); // .crib exists but crib.json is gone — damaged index
+
+    let resolved!: ReturnType<typeof resolveProjectRoot>;
+    const err = captureStderr(() => {
+      resolved = resolveProjectRoot({ explicitRoot: target, env: {}, cwd: repo });
+    });
+
+    expect(resolved.repoRoot).toBe(target); // NOT the ancestor: the wrong-project fallback is refused
+    expect(existsSync(join(resolved.cribDir, 'crib.json'))).toBe(false); // → caller's not-indexed error
+    expect(err).toMatch(/damaged/);
+    expect(err).toContain(`crib index ${target}`); // remediation command included
+  });
+
+  it('a CWD with a damaged .crib refuses to fall through even on the discovery path', () => {
+    // Same wrong-project hazard when `crib serve` runs with no args: walk-up from CWD must not
+    // serve an ancestor past a damaged local index.
+    const ancestor = join(repo, 'ancestor');
+    const target = join(ancestor, 'proj');
+    mkdirSync(target, { recursive: true });
+    markIndexed(ancestor);
+    mkdirSync(join(target, '.crib'));
+
+    let resolved!: ReturnType<typeof resolveProjectRoot>;
+    const err = captureStderr(() => {
+      resolved = resolveProjectRoot({ env: {}, cwd: target });
+    });
+
+    expect(resolved.repoRoot).toBe(target);
+    expect(err).toMatch(/damaged/);
+    expect(err).toContain(`crib index ${target}`);
+  });
+
+  it('an explicit subdir with no .crib still walks up (monorepo) but loudly names the ancestor', () => {
+    const ancestor = join(repo, 'ancestor');
+    const sub = join(ancestor, 'packages', 'foo');
+    mkdirSync(sub, { recursive: true });
+    markIndexed(ancestor);
+
+    let resolved!: ReturnType<typeof resolveProjectRoot>;
+    const err = captureStderr(() => {
+      resolved = resolveProjectRoot({ explicitRoot: sub, env: {}, cwd: repo });
+    });
+
+    expect(resolved.repoRoot).toBe(ancestor); // leniency kept (pinned by resolution.test.ts)
+    expect(err).toContain(`serving the ancestor project at ${ancestor}`);
+    expect(err).toContain(`crib index ${sub}`); // and says how to index the dir actually pointed at
+  });
+
+  it('an env-signaled root (KCRIB_ROOT, user-scoped IDE entry) loudly names the ancestor too', () => {
+    const ancestor = join(repo, 'ancestor');
+    const sub = join(ancestor, 'proj');
+    mkdirSync(sub, { recursive: true });
+    markIndexed(ancestor);
+
+    let resolved!: ReturnType<typeof resolveProjectRoot>;
+    const err = captureStderr(() => {
+      resolved = resolveProjectRoot({ env: { KCRIB_ROOT: sub }, cwd: repo });
+    });
+
+    expect(resolved.repoRoot).toBe(ancestor);
+    expect(err).toMatch(/serving the ancestor project at/);
+  });
+
+  it('the pure CWD walk-up (healthy monorepo subdir) resolves to the ancestor silently', () => {
+    const ancestor = join(repo, 'ancestor');
+    const sub = join(ancestor, 'src');
+    mkdirSync(sub, { recursive: true });
+    markIndexed(ancestor);
+
+    let resolved!: ReturnType<typeof resolveProjectRoot>;
+    const err = captureStderr(() => {
+      resolved = resolveProjectRoot({ env: {}, cwd: sub });
+    });
+
+    expect(resolved.repoRoot).toBe(ancestor);
+    expect(err).not.toMatch(/not indexed|ancestor project/); // normal case — no scare warnings
+  });
+});
+
+describe('buildIndex — interruption-cleanup window', () => {
+  it('is fully synchronous, so signal handlers suffice and no uncaughtException handler is registered', async () => {
+    // The SIGINT/SIGTERM handlers + `finally` removal only cover the whole build if the event loop
+    // never yields between tmp creation and rename. Guard the premise: if the sqlite path ever
+    // gains an `await`, buildIndex returns a Promise and this test fails — at that point an
+    // uncaughtException/unhandledRejection handler becomes mandatory (see comment in buildIndex).
+    const seed = new SoulStore(join(repo, '.crib'), { manifest: newManifest({ root: '.' }) });
+    seed.load();
+    await indexRepo(seed, repo);
+    const rt = openSoul(resolveProjectRoot({ explicitRoot: repo, env: {} }));
+
+    const before = {
+      sigint: process.listenerCount('SIGINT'),
+      sigterm: process.listenerCount('SIGTERM'),
+      uncaughtException: process.listenerCount('uncaughtException'),
+    };
+    const first = buildIndex(rt);
+    first.close();
+    const second = buildIndex(rt); // repeated builds in one process must not stack listeners
+    expect(typeof (second as unknown as { then?: unknown }).then).not.toBe('function');
+    second.close();
+    expect(process.listenerCount('SIGINT')).toBe(before.sigint);
+    expect(process.listenerCount('SIGTERM')).toBe(before.sigterm);
+    expect(process.listenerCount('uncaughtException')).toBe(before.uncaughtException);
+  });
+});
+
 describe('sweepStaleBuilds (temp build-db reclamation)', () => {
   const HOUR = 60 * 60 * 1000;
   function tempBuild(dir: string, name: string, ageMs: number): string {

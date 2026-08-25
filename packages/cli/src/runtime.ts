@@ -12,6 +12,22 @@
  *   4. upward walk from CWD for `.crib/crib.json` (handles monorepo subdirs)
  *   5. cwd fallback (preserves pre-REQ-1 behaviour)
  *
+ * Wrong-project guard: a walk-up that lands on an ANCESTOR's `.crib` serves that ancestor's soul —
+ * silently, unless this layer says so. (Measured incident: `crib serve` run against a repo whose
+ * `.crib/crib.json` was missing fell through to ~/Documents/.crib and served a stray 366-node soul
+ * to a swarm gate, which then scored 0/400 while looking healthy.) Two mechanisms, one per hazard:
+ *
+ *   - DAMAGED INDEX → hard refusal. A dir that HAS a `.crib` directory but no `crib.json` was
+ *     indexed and lost its manifest; an ancestor's soul is never an acceptable substitute, so
+ *     resolution stops there regardless of how the root was signaled (explicit, env, or CWD) and
+ *     logs the repair command. Callers then hit their `isIndexedRoot` guard as usual. Bonus: this
+ *     also stops `crib index <dir>` from reindexing the wrong (ancestor) tree — resolution targets
+ *     the dir, which is exactly the repair.
+ *   - NO `.crib` AT ALL → lenient walk-up, but loud. A monorepo subdir legitimately falls through
+ *     to the indexed project root (pinned by resolution.test.ts), so refusal there would break real
+ *     usage; instead, an explicitly-signaled root that falls through logs WHICH ancestor's project
+ *     is being served. The pure CWD-discovery walk-up (monorepo normal case) stays silent.
+ *
  * then the `~/.crib` registry is consulted as an **overlay**: a registered custom `cribDir` wins over
  * the standard `<root>/.crib`. Explicit args always win, so existing per-project IDE entries that
  * pass an explicit root keep working unchanged.
@@ -132,13 +148,17 @@ export function resolveProjectRoot(opts: ResolveOpts): ResolvedRoot {
       repoRoot = candidate;
       entry = lookupProject(projectKey, env) ?? registry.projects[projectKey];
     } else {
-      repoRoot = hasCrib(candidate) ? candidate : (walkUpForCrib(candidate) ?? candidate);
+      repoRoot = hasCrib(candidate)
+        ? candidate
+        : resolveUnindexedDir(candidate, { logFallThrough: true });
       projectKey = repoRoot;
       entry = lookupProject(projectKey, env) ?? registry.projects[projectKey];
     }
   } else {
-    // 4–5. no signal: walk up from CWD, else fall back to CWD (pre-REQ-1 behaviour).
-    repoRoot = walkUpForCrib(cwd) ?? cwd;
+    // 4–5. no signal: walk up from CWD, else fall back to CWD (pre-REQ-1 behaviour). The
+    // wrong-project guard still applies (a damaged CWD index never serves an ancestor), but a
+    // healthy subdir walk-up is the normal monorepo case, so its fall-through stays silent.
+    repoRoot = resolveUnindexedDir(cwd, { logFallThrough: false });
     projectKey = repoRoot;
     entry = lookupProject(projectKey, env) ?? registry.projects[projectKey];
   }
@@ -155,6 +175,39 @@ export function resolveProjectRoot(opts: ResolveOpts): ResolvedRoot {
       ? { sourceFingerprint: entry.sourceFingerprint }
       : {}),
   };
+}
+
+/** True when `dir` has a `.crib` directory but no committed manifest — was indexed, lost its soul. */
+function hasDamagedCrib(dir: string): boolean {
+  return existsSync(join(dir, '.crib')) && !existsSync(join(dir, '.crib', 'crib.json'));
+}
+
+/**
+ * The wrong-project guard (see module doc): decide what an UNINDEXED dir resolves to.
+ *
+ * A dir with a DAMAGED `.crib` (dir exists, manifest gone) refuses to fall through — serving an
+ * ancestor's soul then is always wrong-project, and `crib index <dir>` is the repair. The caller's
+ * own `isIndexedRoot` check then produces the standard not-indexed error on top of the loud line
+ * here. A dir with NO `.crib` walks up as before (monorepo subdirs); when `logFallThrough`, an
+ * ancestor hit is announced so an explicitly-signaled root never silently serves another project.
+ */
+function resolveUnindexedDir(dir: string, opts: { logFallThrough: boolean }): string {
+  if (hasDamagedCrib(dir)) {
+    process.stderr.write(
+      `not indexed: ${join(dir, '.crib')} exists but crib.json is missing — the index is damaged; ` +
+        `refusing to serve an ancestor project. Repair with \`crib index ${dir}\`\n`,
+    );
+    return dir;
+  }
+  const ancestor = walkUpForCrib(dir);
+  if (ancestor === undefined || ancestor === dir) return dir;
+  if (opts.logFallThrough) {
+    process.stderr.write(
+      `warning: ${dir} is not indexed — serving the ancestor project at ${ancestor}. ` +
+        `To index this directory instead, run \`crib index ${dir}\`\n`,
+    );
+  }
+  return ancestor;
 }
 
 /** Walk upward from `start` returning the first dir containing `.crib/crib.json`, else `undefined`. */
@@ -219,6 +272,19 @@ export function buildIndex(rt: Runtime): IndexStore {
     const onSigterm = onSignal('SIGTERM');
     process.once('SIGINT', onSigint);
     process.once('SIGTERM', onSigterm);
+    // No `uncaughtException` handler — deliberately. Every statement between registration and the
+    // `finally` below is synchronous: `openIndex` is a sync factory, `buildFromSoul` is declared
+    // `void` (its sqlite transaction runs in one JS stack, and `Embedder.embed` is sync by type —
+    // async provider resolution happens in the caller, per the SqliteIndexStore docstring), and the
+    // commit is `rmSync`/`renameSync`. The event loop therefore never yields inside this window, and
+    // `uncaughtException` is only deliverable at a yield point — an error from a pending timer or
+    // watcher callback queues until this task completes, by which time a handler here would already
+    // be removed. It could never fire, so registering one would be dead code. Signals differ —
+    // Ctrl-C arrives mid-build from OUTSIDE the loop and is delivered between the discrete native
+    // sqlite statements (the 510 MB leak mode), so the SIGINT/SIGTERM handlers stay. The
+    // `buildIndex is fully synchronous…` test in runtime.test.ts fails if an `await` is ever
+    // introduced into this window — at which point an uncaughtException handler (and
+    // `unhandledRejection`) becomes mandatory alongside the signals.
     try {
       const index = openIndex(manifest.stores.index.backend, { path: tmp });
       index.buildFromSoul(rt.soul, rt.repoRoot);
