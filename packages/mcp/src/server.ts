@@ -8,6 +8,7 @@ import type { NodeKind } from '@knowledge-crib/soul-schema';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
+import { CallToolRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import { z } from 'zod';
 import {
   MAX_DEPTH,
@@ -29,6 +30,87 @@ const TOOL_RESULT = (obj: unknown) => ({
 /** Uniform argument-validation failure for the `op` dispatchers below. A dispatcher can otherwise
  *  forward an under-specified call to a verb and return a plausible-but-wrong payload. */
 const BAD_REQUEST = (message: string) => ({ error: { code: 'BAD_REQUEST', message } });
+
+/**
+ * Retired standalone tool names → the dispatcher tool + `op` that replaced them. ONE-RELEASE-ONLY
+ * backwards-compat shim: the six installed clients were configured against these names before the
+ * `op` dispatchers folded them, so their calls must keep resolving until the next release, after
+ * which this table and {@link installAliasRouter} are removed. New clients never see these names —
+ * they are not registered tools, so they cost nothing in tools/list (see the router comment).
+ */
+const RETIRED_ALIASES: Record<string, { tool: string; op: string }> = {
+  memory_get: { tool: 'memory', op: 'get' },
+  memory_status: { tool: 'memory', op: 'status' },
+  memory_audit: { tool: 'memory', op: 'audit' },
+  memory_feedback: { tool: 'memory', op: 'feedback' },
+  enrich_status: { tool: 'enrich', op: 'status' },
+  enrich_next: { tool: 'enrich', op: 'next' },
+  enrich_save: { tool: 'enrich', op: 'save' },
+  semantic_delta: { tool: 'enrich', op: 'delta' },
+  audit_llm: { tool: 'enrich', op: 'audit' },
+  shortest_path: { tool: 'impact', op: 'path' },
+  ownership: { tool: 'impact', op: 'owners' },
+  reconstruct: { tool: 'dossier', op: 'package' },
+  dossier_by_scope: { tool: 'dossier', op: 'scope' },
+  llm_neighbors: { tool: 'neighbors', op: 'llm' },
+  describes: { tool: 'neighbors', op: 'describes' },
+  stats: { tool: 'status', op: 'stats' },
+  gaps: { tool: 'status', op: 'gaps' },
+  extract_rules: { tool: 'dossier', op: 'rules' },
+};
+
+/**
+ * Route the retired names in {@link RETIRED_ALIASES} to their dispatcher before the SDK's own
+ * tools/call handler rejects them as unknown.
+ *
+ * Why a call-level router and not hidden tool registrations: MCP TS SDK v1.29 has no supported
+ * way to hide a CALLABLE tool from tools/list — the list filters on `tool.enabled`, and a
+ * `disable()`d tool answers calls with `Tool X disabled`. Registering the 18 retired names would
+ * therefore re-inflate every session's tool list to 32 entries, exactly the fixed per-session cost
+ * the `op` dispatchers removed. Instead we wrap the protocol's tools/call request handler:
+ * Protocol.setRequestHandler explicitly documents that it replaces the previous handler for a
+ * method, so we capture the handler the SDK installed (lazily on the first registerTool call —
+ * always above us here), then install a wrapper that rewrites an alias call into the dispatcher
+ * call (name swapped, `op` injected, other arguments untouched) and forwards everything else
+ * unmodified. Validation, error mapping and the Stats interceptor all still run in the SDK's own
+ * handler on the forward path. Callers may not contradict the alias: an injected `op` always wins
+ * over one smuggled into `arguments`.
+ */
+function installAliasRouter(server: McpServer): void {
+  const protocol = server.server;
+  // `_requestHandlers` is an underscore-private Protocol field; there is no public getter for the
+  // installed handler, and this is the minimal seam the wrapper needs.
+  const handlers = (
+    protocol as unknown as {
+      // Promise<never> so the forwarded result type-checks against whatever response type the SDK
+      // expects from a tools/call handler; the runtime value is the SDK handler's own result.
+      _requestHandlers: Map<string, (request: unknown, extra: unknown) => Promise<never>>;
+    }
+  )._requestHandlers;
+  const original = handlers.get('tools/call');
+  if (!original) {
+    // Fail loudly rather than ship a server whose clients silently lose the retired names: the
+    // handler is installed lazily by the first registerTool call, so absent wiring means the SDK's
+    // internals changed under us and this shim must be re-derived.
+    throw new Error('SDK tools/call handler not installed; alias shim cannot be wired');
+  }
+  protocol.removeRequestHandler('tools/call');
+  protocol.setRequestHandler(CallToolRequestSchema, (request, extra) => {
+    const alias = RETIRED_ALIASES[request.params.name];
+    if (!alias) return original(request, extra);
+    return original(
+      {
+        ...request,
+        params: {
+          ...request.params,
+          name: alias.tool,
+          arguments: { ...(request.params.arguments ?? {}), op: alias.op },
+        },
+      },
+      extra,
+    );
+  });
+}
 
 /** Build (but do not connect) the MCP server with all verbs registered. */
 export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
@@ -138,18 +220,9 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
     async (a) => TOOL_RESULT(verbs.detectChanges(a)),
   );
 
-  server.registerTool(
-    'extract_rules',
-    {
-      description:
-        'Walk a procedure guard-annotated CFG (M11) and materialize its decision table / rule records.',
-      inputSchema: {
-        procedure: z.string(),
-        includeTables: z.boolean().optional(),
-      },
-    },
-    async (a) => TOOL_RESULT(verbs.extractRules(a)),
-  );
+  // `extract_rules` had no keep-standalone rationale (unlike brief/context/query/source above):
+  // it walks a procedure to a decision table, and dossier already carries decision-table semantics
+  // (withRules). It is folded behind dossier{op:'rules'} and its name lives on in RETIRED_ALIASES.
 
   // ─── W3 trusted-agent-memory verbs (PRD lines 226–248) ─────────────────────────────────────
   // `brief`         — the one-call typed-group retrieval: code BM25 hits + doc instructions + trusted
@@ -387,10 +460,14 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
     'dossier',
     {
       description:
-        'Deep reusable context, selected by `op`. one (default): everything about ONE symbol in a call — deep node fields, paged source body, callers, callees, linked docs, decision table, control flow. `source.nextLine` is the paging cursor; pass it back as sourceStartLine. package: everything about one PACKAGE — constant values, every member with implementation status, tables read/written, docs, expected body file. scope: bulk dossiers for EVERY symbol in a package/file/cluster in ONE call (use instead of looping over ~50 members); honesty flags symbolCount, truncated, skipped.',
+        'Deep reusable context, selected by `op`. one (default): everything about ONE symbol in a call — deep node fields, paged source body, callers, callees, linked docs, decision table, control flow. `source.nextLine` is the paging cursor; pass it back as sourceStartLine. package: everything about one PACKAGE — constant values, every member with implementation status, tables read/written, docs, expected body file. scope: bulk dossiers for EVERY symbol in a package/file/cluster in ONE call (use instead of looping over ~50 members); honesty flags symbolCount, truncated, skipped. rules: walk a procedure guard-annotated CFG and materialize its decision table / rule records (the retired `extract_rules` tool, folded here).',
       inputSchema: {
-        op: z.enum(['one', 'package', 'scope']).optional(),
-        id: z.string(),
+        op: z.enum(['one', 'package', 'scope', 'rules']).optional(),
+        // `id` and `procedure` are per-op requirements — one/package/scope need `id`, rules needs
+        // `procedure` — so both are optional here and enforced in the handler, where a missing one
+        // yields a BAD_REQUEST instead of a plausible-but-wrong payload from a mis-called verb.
+        id: z.string().optional(),
+        procedure: z.string().optional(),
         scope: z.enum(['package', 'file', 'cluster']).optional(),
         includeTables: z.boolean().optional(),
         maxSymbols: z.number().int().positive().max(MAX_SCOPE_SYMBOLS).optional(),
@@ -409,15 +486,25 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
       const { op, ...rest } = a as Record<string, unknown> & { op?: string };
       switch (op ?? 'one') {
         case 'one':
+          if (!a.id) return TOOL_RESULT(BAD_REQUEST('op=one requires id'));
           return TOOL_RESULT(verbs.dossier(rest as never));
         case 'package':
+          if (!a.id) return TOOL_RESULT(BAD_REQUEST('op=package requires id'));
           return TOOL_RESULT(verbs.reconstruct(rest as never));
         case 'scope':
-          if (!a.scope)
+          if (!a.id || !a.scope)
             return TOOL_RESULT(
-              BAD_REQUEST("op=scope requires scope: 'package' | 'file' | 'cluster'"),
+              BAD_REQUEST("op=scope requires id and scope: 'package' | 'file' | 'cluster'"),
             );
           return TOOL_RESULT(verbs.dossierByScope(rest as never));
+        case 'rules':
+          if (!a.procedure) return TOOL_RESULT(BAD_REQUEST('op=rules requires procedure'));
+          return TOOL_RESULT(
+            verbs.extractRules({
+              procedure: a.procedure,
+              ...(a.includeTables !== undefined ? { includeTables: a.includeTables } : {}),
+            }),
+          );
         default:
           return TOOL_RESULT(BAD_REQUEST(`unknown op ${op}`));
       }
@@ -480,6 +567,8 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
       }
     },
   );
+
+  installAliasRouter(server);
 
   return server;
 }
