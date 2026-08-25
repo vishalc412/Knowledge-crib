@@ -6,13 +6,53 @@
 
 ---
 
+## Tool consolidation (current surface: 15 tools)
+
+Fourteen tools that differed only in which verb they called were folded behind an `op` parameter.
+Every tool costs name + description + JSON schema in the tool list of **every** session whether or
+not it is used, so a family of five rarely-used tools was a permanent tax on every conversation.
+The consolidated surface is 15 tools / ~3,654 tokens, down from 31 / ~6,249 — a 42% cut with no
+capability removed.
+
+| Was | Now |
+|---|---|
+| `enrich_status` | `enrich({op:'status'})` |
+| `enrich_next` | `enrich({op:'next'})` |
+| `enrich_save` | `enrich({op:'save'})` |
+| `semantic_delta` | `enrich({op:'delta'})` |
+| `audit_llm` | `enrich({op:'audit'})` |
+| `impact` | `impact({op:'blast'})` *(default — `op` may be omitted)* |
+| `federatedImpact` | `impact({op:'federated'})` |
+| `shortest_path` | `impact({op:'path'})` |
+| `ownership` | `impact({op:'owners'})` |
+| `dossier` | `dossier({op:'one'})` *(default)* |
+| `reconstruct` | `dossier({op:'package'})` |
+| `dossier_by_scope` | `dossier({op:'scope'})` |
+| `neighbors` | `neighbors({op:'edges'})` *(default)* |
+| `llm_neighbors` | `neighbors({op:'llm'})` |
+| `describes` | `neighbors({op:'describes'})` |
+| `status` | `status({op:'health'})` *(default)* |
+| `stats` | `status({op:'stats'})` |
+| `gaps` | `status({op:'gaps'})` |
+| `memory_get` / `memory_status` / `memory_audit` / `memory_feedback` | `memory({op:'get'\|'status'\|'audit'\|'feedback'})` |
+
+Still standalone, deliberately: `brief`, `context`, `query`, `source`, `detect_changes`,
+`extract_rules`, `overview`, `memory_recall`, `memory_observe` — reached for constantly, or named
+directly by the installed client protocol and project instructions, where an extra `op` would be
+friction or breakage.
+
+An under-specified `op` returns `{ error: { code: 'BAD_REQUEST' } }` rather than forwarding a
+partial call to a verb.
+
+---
+
 ## Conventions
 - Transport: MCP stdio. Each verb = an MCP tool.
 - IDs follow the [data-model](knowledge-crib-data-model.md) grammar.
 - All list responses support `limit` (default per verb) and return `truncated: boolean` + `cursor?`.
 - Every edge-bearing result carries `{method, provenance, confidence, evidence}` so agents can filter to `EXTRACTED`-only.
 - Errors: `{ error: { code, message, detail? } }`, codes: `NOT_INDEXED | NOT_FOUND | AMBIGUOUS | BAD_ARGS | INTERNAL`.
-- **Enrichment via host LLM:** for optional enrichment (cluster naming, NL→query) the server uses MCP `sampling` — the IDE's own model [Q18]. Requires client sampling support; degrades gracefully (skipped) if absent. **Never used on deterministic verbs** (`context`/`impact`/`query`/`neighbors`/`shortest_path`).
+- **Enrichment via host LLM:** for optional enrichment (cluster naming, NL→query) the server uses MCP `sampling` — the IDE's own model [Q18]. Requires client sampling support; degrades gracefully (skipped) if absent. **Never used on deterministic verbs** (`context`/`impact`/`query`/`neighbors`/`impact({op:'path'})`).
 - **Functional map + importance ranking (overview v2):** the soul is segmented on demand into
   architecturally meaningful modules (workspace packages when `crib index` stamped them, else
   directory prefixes with a >80% monorepo-descent rule). Every node carries an `importance` signal
@@ -68,7 +108,7 @@ model; a callable/component/field returns its own direct edges. Returns `framewo
 node has framework edges (omitted for a non-Spring method, so the shape stays honest). A
 `@Bean`-supplied dependency surfaces as `kind:'produces'` + the producer brief in the **same**
 object (one-hop supply chain, no round-trip). Unresolved `meta.injects`/`meta.produces` type names
-surface as `⚠ unresolved` entries (parity with `gaps`).
+surface as `⚠ unresolved` entries (parity with `status({op:'gaps'})`).
 
 ```jsonc
 // req: { "id":"sym:src/auth/AuthService.ts#AuthService.login@L42", "docLimit?":3,
@@ -193,7 +233,7 @@ rehydrated body / decision table+coverage / framework semantics per hit. `llmHit
 term-overlap and de-duplicated against `hits` so they never override BM25 ranking. `truncated:true`
 means more results existed beyond `limit`.
 
-## `describes(symbol)`
+## `neighbors({op:'describes', id})`
 Thin verb: just the doc-sections linked to a symbol (cheap, high value).
 ```jsonc
 // req: { "id":"sym:…#AuthService.login@L42", "minConfidence?":0.4 }
@@ -208,7 +248,7 @@ Raw adjacency for a node (graph walking primitive).
 // res: { "edges":[ { "src":"…","dst":"…","rel":"calls","provenance":"EXTRACTED","confidence":1.0 } ], "truncated":false }
 ```
 
-## `shortest_path(from, to)`
+## `impact({op:'path', from, to})`
 ```jsonc
 // req: { "from":"sym:…","to":"sym:…","maxHops?":6 }
 // res: { "path":[ "sym:…","sym:…","sym:…" ], "edges":[ {…} ], "found":true }
@@ -230,7 +270,7 @@ it. The migration deliverable [Q39, Q40].
 //                    "source":"claims.pkb@L12","reads":["CLAIMS.amount"] } ] }
 ```
 
-## `gaps` *(missing-asset detection)*
+## `status({op:'gaps'})` *(missing-asset detection)*
 Surface what an LLM otherwise misses by reading the graph alone: declarations without bodies,
 package specs with no body file, call sites that resolve to no symbol, plus the schema-1.3
 framework-semantics anomalies. Pure over the soul + index; deterministic. The migration-analyst
@@ -283,7 +323,7 @@ Raw graph query when the index backend supports it (LadybugDB). Gated by `capabi
 
 ---
 
-## `enrich_status` *(LLM graph generation queue)*
+## `enrich({op:'status'})` *(LLM graph generation queue)*
 Coverage + next layer + (optionally) ranked scopes for the graphify-style picker. The MCP server
 never calls a model — it exposes a deterministic work queue the host IDE's agent drives.
 ```jsonc
@@ -298,7 +338,7 @@ never calls a model — it exposes a deterministic work queue the host IDE's age
 // req:{scope:{pathPrefix}} → counts/nextLayer over in-scope targets; system reported via wholeRepoPending.
 ```
 
-## `enrich_next` *(grounded work batch for the host agent model)*
+## `enrich({op:'next'})` *(grounded work batch for the host agent model)*
 Returns the next missing/stale work batch — seed facts, lower-layer analyses, output schema, and
 instructions — for the host agent to author. `batchId` is deterministic over the FULL pending set
 (same pending set ⇒ same id ⇒ idempotent re-calls; `zeroProgress:true` flags a re-issue with no save
@@ -319,7 +359,7 @@ landing). The system layer is never offered under a scope.
   satisfies the system layer — the final full pass (`llm:system:`) is still offered. Explicit-only;
   `nextLayer` never auto-chooses skeleton. Returns an empty batch once a fresh skeleton exists.
 
-## `enrich_save` *(persist an externally-authored batch)*
+## `enrich({op:'save'})` *(persist an externally-authored batch)*
 Validates + persists a batch the host agent authored. `accepted`/`rejected` per item; unresolved
 graph edges are dropped with a reason. The MCP server never calls a model — it only validates,
 stamps, and writes artifacts + projections + manifest + overview.
@@ -352,11 +392,11 @@ against the full soul, so they are kept.
   always persists `mode:"skeleton"` (the skill can't forget); a full system save leaves `mode`
   absent (reads as `full`) and **overwrites the skeleton at the same `targetId`+`nodeHash` path**.
 - `writeArtifact` writes the per-target JSON to `.crib/llm/analysis/<layer>/<hh>/<target>…json`;
-  `writeGraphProjection` writes the merged projection that `llm_neighbors` / `overview` read, so the
+  `writeGraphProjection` writes the merged projection that `neighbors({op:'llm'})` / `overview` read, so the
   new analysis is visible immediately.
 - After the batch: `writeManifest(model)` and `writeOverview()` rebuild the cached manifest +
   `overview.json` (v2 gate). `model` falls back to the first item's `model` then the prior manifest
-  model. The `lastIssued` zero-progress map (see `enrich_next`) is preserved across the manifest
+  model. The `lastIssued` zero-progress map (see `enrich({op:'next'})`) is preserved across the manifest
   rewrite.
 
 ## `overview` *(LLM codebase bible — v2, module-segmented + lean)*
@@ -377,7 +417,7 @@ bible. v1 `overview.json` caches auto-rebuild via the `version === 2` gate.
 // scope:{pathPrefix} → excludes the system layer; modules/analyses filtered to the scope.
 ```
 
-## `llm_neighbors` *(LLM semantic-graph walk)*
+## `neighbors({op:'llm'})` *(LLM semantic-graph walk)*
 Walk the LLM semantic graph around a soul id or LLM local/global node id: rules, features, flows,
 capabilities, and concepts touching it. Returns the resolved id + the touching edges.
 ```jsonc

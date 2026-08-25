@@ -30,7 +30,7 @@ import { execFileSync } from 'node:child_process';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO = resolve(__dirname, '..');
@@ -38,8 +38,12 @@ const NOW = '2026-01-01T00:00:00.000Z';
 const AUTHOR_NAME = 'Federation Gate';
 const AUTHOR_EMAIL = 'fed@crib.dev';
 
-const core = await import(resolve(REPO, 'packages', 'core', 'dist', 'index.js'));
-const pipeline = await import(resolve(REPO, 'packages', 'pipeline', 'dist', 'index.js'));
+const core = await import(
+  pathToFileURL(resolve(REPO, 'packages', 'core', 'dist', 'index.js')).href
+);
+const pipeline = await import(
+  pathToFileURL(resolve(REPO, 'packages', 'pipeline', 'dist', 'index.js')).href
+);
 const { SoulStore, newManifest, loadFederation, federatedImpact } = core;
 const { indexRepo } = pipeline;
 

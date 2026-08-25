@@ -153,3 +153,54 @@ describe('cluster-hash (core ↔ mcp parity)', () => {
     expect(report.issues.some((issue) => issue.includes('missing member-of edge'))).toBe(true);
   });
 });
+
+// `symbolsByClusterId` and the cluster-hash memo are per-soul caches versioned by
+// `soul.nodeGeneration`. If invalidation regressed, these read a soul that no longer exists.
+describe('cluster caches invalidate on soul mutation', () => {
+  function freshSoul(): SoulStore {
+    dir = mkdtempSync(join(tmpdir(), 'crib-cluster-cache-'));
+    const soul = new SoulStore(join(dir, '.crib'), {
+      manifest: newManifest({ now: '2026-01-01T00:00:00.000Z' }),
+    });
+    soul.load();
+    return soul;
+  }
+
+  it('clusterMembers sees symbols added after a previous read', () => {
+    const soul = freshSoul();
+    const a = sym('src/a.ts', 'A.run', 1, { clusterId: 'mod' });
+    const cluster: Node = { id: 'c:mod', kind: 'cluster', label: 'mod', hash: contentHash('mod') };
+    soul.putNodes([a, cluster]);
+    expect(clusterMembers(soul, cluster).map((n) => n.id)).toEqual([a.id]); // warms the cache
+
+    const b = sym('src/b.ts', 'B.go', 1, { clusterId: 'mod' });
+    soul.putNodes([b]);
+    expect(clusterMembers(soul, cluster).map((n) => n.id)).toEqual([a.id, b.id].sort());
+  });
+
+  it('clusterContentHash changes when a member is added after a previous read', () => {
+    const soul = freshSoul();
+    const a = sym('src/a.ts', 'A.run', 1, { clusterId: 'mod' });
+    const cluster: Node = { id: 'c:mod', kind: 'cluster', label: 'mod', hash: contentHash('mod') };
+    soul.putNodes([a, cluster]);
+    const before = clusterContentHash(soul, cluster); // warms the memo
+
+    soul.putNodes([sym('src/b.ts', 'B.go', 1, { clusterId: 'mod' })]);
+    expect(clusterContentHash(soul, cluster)).not.toBe(before);
+  });
+
+  it('clusterContentHash distinguishes two clusters that share an id but differ in content', () => {
+    const soul = freshSoul();
+    const a = sym('src/a.ts', 'A.run', 1);
+    soul.putNodes([a]);
+    const one: Node = {
+      id: 'c:mod',
+      kind: 'cluster',
+      label: 'mod',
+      members: [a.id],
+      hash: contentHash('v1'),
+    };
+    const two: Node = { ...one, hash: contentHash('v2') };
+    expect(clusterContentHash(soul, one)).not.toBe(clusterContentHash(soul, two));
+  });
+});

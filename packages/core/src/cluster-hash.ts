@@ -9,24 +9,86 @@ import type { Node } from '@knowledge-crib/soul-schema';
  */
 import type { SoulStore } from './soul-store.js';
 
+/**
+ * Symbols grouped by their stamped `clusterId`, cached per SoulStore.
+ *
+ * The back-compat `clusterId` lookup used to be a full scan of every symbol, run once per cluster —
+ * O(clusters x symbols), i.e. ~3M comparisons over this repo's 666 clusters, and the dominant cost
+ * in `enrich_next`. One grouping pass replaces all of them.
+ *
+ * Keyed weakly by soul so the cache dies with the store, and versioned by `soul.nodeGeneration` so
+ * any node mutation invalidates it exactly — no heuristic staleness check.
+ */
+const clusterIdBuckets = new WeakMap<
+  SoulStore,
+  { generation: number; buckets: Map<string, Node[]> }
+>();
+
+function symbolsByClusterId(soul: SoulStore): Map<string, Node[]> {
+  const generation = soul.nodeGeneration;
+  const cached = clusterIdBuckets.get(soul);
+  if (cached !== undefined && cached.generation === generation) return cached.buckets;
+  const buckets = new Map<string, Node[]>();
+  for (const node of soul.iterate('symbol')) {
+    const key = node.clusterId;
+    if (key === undefined) continue;
+    const bucket = buckets.get(key);
+    if (bucket === undefined) buckets.set(key, [node]);
+    else bucket.push(node);
+  }
+  clusterIdBuckets.set(soul, { generation, buckets });
+  return buckets;
+}
+
 /** Members of a cluster — resolved from the `members` array (the pipeline's stamp) with a
  *  `clusterId` back-compat path for souls that stamp it onto symbols. Sorted by id. */
 export function clusterMembers(soul: SoulStore, cluster: Node): Node[] {
-  const ids = new Set(cluster.members ?? []);
   const slug = cluster.id.startsWith('c:') ? cluster.id.slice(2) : cluster.id;
-  return [...soul.iterate('symbol')]
-    .filter((n) => ids.has(n.id) || n.clusterId === cluster.id || n.clusterId === slug)
-    .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+  // Deduped by id: a symbol listed in `members` AND stamped with `clusterId` appeared once under
+  // the old single-pass filter, and must still appear once here.
+  const found = new Map<string, Node>();
+  for (const id of cluster.members ?? []) {
+    const node = soul.getNode(id);
+    // Kind check preserves the old semantics: the scan only ever considered `symbol` nodes, so a
+    // `members` entry pointing at anything else was silently skipped.
+    if (node !== undefined && node.kind === 'symbol') found.set(node.id, node);
+  }
+  const byClusterId = symbolsByClusterId(soul);
+  for (const key of slug === cluster.id ? [cluster.id] : [cluster.id, slug]) {
+    for (const node of byClusterId.get(key) ?? []) found.set(node.id, node);
+  }
+  return [...found.values()].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
 }
+
+/** Per-soul cache of computed cluster hashes, versioned by `soul.nodeGeneration`. `readLlmOverlay`
+ *  hashes every cluster to decide staleness, so without this the same 666 blake3 digests were
+ *  recomputed on each overlay read. */
+const clusterHashCache = new WeakMap<
+  SoulStore,
+  { generation: number; hashes: Map<string, string> }
+>();
 
 /** Content hash of a cluster: blake3 of `cluster.hash|<sorted member hashes>`. Changes iff the
  *  cluster node OR any member's content changes — the staleness signal for cluster LLM artifacts.
  *  Byte-identical to `EnrichmentStore.clusterHash`. */
 export function clusterContentHash(soul: SoulStore, cluster: Node): string {
+  const generation = soul.nodeGeneration;
+  let entry = clusterHashCache.get(soul);
+  if (entry === undefined || entry.generation !== generation) {
+    entry = { generation, hashes: new Map<string, string>() };
+    clusterHashCache.set(soul, entry);
+  }
+  // Keyed by the cluster node's own hash as well as its id: `replaceClusters` bumps the generation,
+  // but a caller passing a detached cluster object with the same id must not get a stale digest.
+  const key = `${cluster.id}\u0000${cluster.hash}`;
+  const memo = entry.hashes.get(key);
+  if (memo !== undefined) return memo;
   const memberHashes = clusterMembers(soul, cluster)
     .map((n) => n.hash)
     .sort();
-  return contentHash([cluster.hash, ...memberHashes].join('|'));
+  const digest = contentHash([cluster.hash, ...memberHashes].join('|'));
+  entry.hashes.set(key, digest);
+  return digest;
 }
 
 export interface ClusterIntegrityReport {

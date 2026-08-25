@@ -1,0 +1,69 @@
+# crib memory check — the CI trust gate (PRD lines 275–280, 350).
+#
+# Runs on every pull request that touches the trusted-memory surface. The gate loads policy from the
+# MERGE BASE (never the untrusted PR version), derives team trust from the trusted Git ref, and fails
+# the build on any self-authoring violation, missing receipt, or refused invalid-evidence record.
+#
+# The four W4 exit-gate invariants (PRD line 350):
+#   - an untrusted PR cannot inject or alter a command CI executes;
+#   - an agent cannot self-assert a pass;
+#   - branch-only memory is not team-trusted;
+#   - exact merged records become team-trusted without a cloud service.
+#
+# `crib memory check` resolves the merge base + trusted ref itself; the workflow only needs a full
+# fetch (so `refs/remotes/origin/HEAD` and the merge base resolve) and a built CLI.
+
+name: crib memory check
+
+on:
+  pull_request:
+    paths:
+      - '.crib/memory/**'
+      - 'packages/memory/**'
+      - 'packages/cli/**'
+      - 'packages/pipeline/src/vcs.ts'
+      - '.github/workflows/crib-memory.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: crib-memory-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  memory-check:
+    name: crib memory check (merge-base policy)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout (full history for merge-base + trusted ref)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+
+      # The trusted ref defaults to `refs/remotes/origin/HEAD` (the policy's trustedRef). Override via
+      # repo secret/env when the default branch is not `main`. The gate reads policy from the merge
+      # base of HEAD and the trusted ref — the PR's own policy.json is NEVER trusted by the gate.
+      - name: crib memory check
+        env:
+          KCRIB_TRUSTED_REF: ${{ secrets.KCRIB_TRUSTED_REF }}
+        run: node packages/cli/dist/cli.js memory check

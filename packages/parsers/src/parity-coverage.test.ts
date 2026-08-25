@@ -241,3 +241,124 @@ describe('Phase 3 — cross-language coverage + fidelity parity (loan scoring)',
     });
   }
 });
+
+/**
+ * Task 8 — MuleSoft capability honesty. Mule is a CONFIG language (XML), not a procedural one, so the
+ * loan-scoring parity harness above does not apply. Instead this pins what Mule honestly IS: it emits
+ * behavior nodes (flow / condition / statement / exception-handler / http-call) but, having no type
+ * system, emits ZERO inherits/implements edges — and the property extractor is KEY-ONLY: a property
+ * key becomes a `property` symbol node with `meta.valueRedacted: true`, while the VALUE never reaches
+ * the graph (the security contract: never store values from secure/credential files).
+ */
+import { MuleExtractor } from './mule/MuleExtractor.js';
+
+const MULE4_CONFIG = `<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns="http://www.mulesoft.org/schema/mule/core"
+      xmlns:http="http://www.mulesoft.org/schema/mule/http">
+  <http:listener-config name="httpConfig" basePath="/api">
+    <http:listener-connection host="0.0.0.0" port="8081"/>
+  </http:listener-config>
+  <flow name="getOrders">
+    <http:listener config-ref="httpConfig" path="/orders" allowedMethods="GET"/>
+    <choice>
+      <when expression="#[payload.id == 1]">
+        <logger level="INFO" message="one"/>
+      </when>
+      <otherwise>
+        <logger level="INFO" message="default"/>
+      </otherwise>
+    </choice>
+    <http:request config-ref="httpConfig" method="GET" path="/downstream"/>
+    <error-handler>
+      <on-error-propagate type="ANY">
+        <logger level="ERROR" message="#[error.description]"/>
+      </on-error-propagate>
+    </error-handler>
+  </flow>
+</mule>
+`;
+
+const MULE4_PROPS = `db.user=alice
+db.password=swordfish
+`;
+
+describe('Task 8 — MuleSoft capability honesty (config language, no type system, key-only props)', () => {
+  it('emits behavior nodes: a flow, a condition, a statement, an http-call, an exception-handler', async () => {
+    const r = await new MuleExtractor().extract(
+      {
+        path: 'src/main/mule/orders.xml',
+        lang: 'mule',
+        bytes: MULE4_CONFIG.length,
+        mtime: 0,
+        classification: {
+          family: 'mule',
+          projectId: '.',
+          projectRoot: '',
+          dialect: 'mule4',
+          role: 'config',
+        },
+      },
+      ctxFor(MULE4_CONFIG),
+    );
+
+    const kinds = new Set(r.nodes.map((n) => n.kind));
+    const types = new Set(r.nodes.map((n) => n.type));
+    // flow is a symbol node typed `flow`
+    expect(
+      r.nodes.some((n) => n.kind === 'symbol' && n.type === 'flow' && n.name === 'getOrders'),
+    ).toBe(true);
+    expect(kinds.has('condition')).toBe(true);
+    expect(kinds.has('statement')).toBe(true);
+    expect(kinds.has('http-call')).toBe(true);
+    expect(kinds.has('exception-handler')).toBe(true);
+  });
+
+  it('emits NO inherits or implements edges (no type system — capability honesty)', async () => {
+    const r = await new MuleExtractor().extract(
+      {
+        path: 'src/main/mule/orders.xml',
+        lang: 'mule',
+        bytes: MULE4_CONFIG.length,
+        mtime: 0,
+        classification: {
+          family: 'mule',
+          projectId: '.',
+          projectRoot: '',
+          dialect: 'mule4',
+          role: 'config',
+        },
+      },
+      ctxFor(MULE4_CONFIG),
+    );
+    const rels = new Set(r.edges.map((e) => e.rel));
+    expect(rels.has('inherits')).toBe(false);
+    expect(rels.has('implements')).toBe(false);
+  });
+
+  it('properties extractor is key-only: persists the key node, never the value', async () => {
+    const r = await new MuleExtractor().extract(
+      {
+        path: 'src/main/mule/app.properties',
+        lang: 'mule-properties',
+        bytes: MULE4_PROPS.length,
+        mtime: 0,
+        classification: {
+          family: 'mule',
+          projectId: '.',
+          projectRoot: '',
+          dialect: 'mule4',
+          role: 'properties',
+        },
+      },
+      ctxFor(MULE4_PROPS),
+    );
+    // the key becomes a `property` symbol node, redacted
+    const pwd = r.nodes.find((n) => n.name === 'db.password');
+    expect(pwd).toMatchObject({ kind: 'symbol', type: 'property', lang: 'properties' });
+    expect((pwd?.meta as { valueRedacted?: boolean })?.valueRedacted).toBe(true);
+    // the secret value must never reach the graph in any node or edge
+    const dump = JSON.stringify({ nodes: r.nodes, edges: r.edges });
+    expect(dump).not.toContain('swordfish');
+    expect(dump).toContain('db.password');
+  });
+});

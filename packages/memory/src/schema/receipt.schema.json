@@ -1,0 +1,52 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://knowledge-crib.dev/schema/memory-1/receipt.schema.json",
+  "title": "GateReceipt",
+  "description": "A sanitized validation receipt (PRD §2). Never raw stdout/stderr — only outputDigest + allowlisted assertions.",
+  "type": "object",
+  "required": [
+    "id",
+    "schemaVersion",
+    "policyHash",
+    "profileHash",
+    "executable",
+    "args",
+    "head",
+    "worktreeDigest",
+    "exitCode",
+    "durationMs",
+    "outputDigest",
+    "assertions",
+    "runner",
+    "ts"
+  ],
+  "properties": {
+    "id": { "type": "string", "pattern": "^rcpt:[0-9a-f]+$" },
+    "schemaVersion": { "type": "string", "const": "1" },
+    "policyHash": { "type": "string", "pattern": "^blake3:[0-9a-f]+$" },
+    "profileHash": { "type": "string", "pattern": "^blake3:[0-9a-f]+$" },
+    "executable": { "type": "string", "minLength": 1 },
+    "args": { "type": "array", "items": { "type": "string" } },
+    "head": { "type": "string", "minLength": 1 },
+    "worktreeDigest": { "type": "string", "pattern": "^blake3:[0-9a-f]+$" },
+    "exitCode": { "type": "integer" },
+    "durationMs": { "type": "integer", "minimum": 0 },
+    "outputDigest": { "type": "string", "pattern": "^blake3:[0-9a-f]+$" },
+    "assertions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "passed"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "passed": { "type": "boolean" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "runner": { "type": "string", "enum": ["cli", "ci"] },
+    "ts": { "type": "string" },
+    "meta": { "type": "object" }
+  },
+  "additionalProperties": true
+}

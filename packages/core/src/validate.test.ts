@@ -16,6 +16,7 @@
  *    so an extractor emitting a typo can never silently corrupt the soul.
  */
 import {
+  ARTIFACT_TYPES,
   type Edge,
   type Manifest,
   type Node,
@@ -25,6 +26,7 @@ import {
   contentHash,
   edgeId,
   idFor,
+  isArtifactType,
 } from '@knowledge-crib/soul-schema';
 import { describe, expect, it } from 'vitest';
 import { newManifest } from './manifest.js';
@@ -149,6 +151,60 @@ function producesEdge(): Edge {
   };
 }
 
+// 1.6 (AI-artifact graph) fixtures — module-scoped so both describe blocks share them.
+const SKILL_PATH = '.claude/skills/deploy/SKILL.md';
+function artifactNode(): Node {
+  return {
+    id: idFor({ kind: 'agent-artifact', path: SKILL_PATH, name: 'deploy' }),
+    kind: 'agent-artifact',
+    name: 'deploy',
+    artifactType: 'skill',
+    file: SKILL_PATH,
+    span: { start: 1, end: 40 },
+    lang: 'markdown',
+    hash: contentHash('artifact:deploy'),
+    docType: 'runbook',
+    audience: 'oncall',
+    appliesTo: ['scripts/deploy.sh', 'sym:src/deploy/Runner.ts#deploy.run@L30'],
+  };
+}
+function governsEdge(): Edge {
+  return {
+    id: edgeId(artifactNode().id, 'sym:src/deploy/Runner.ts#deploy.run@L30', 'governs'),
+    src: artifactNode().id,
+    dst: 'sym:src/deploy/Runner.ts#deploy.run@L30',
+    rel: 'governs',
+    method: 'explicit',
+    provenance: 'EXTRACTED',
+    confidence: 1,
+    evidence: { snippet: 'applies to: src/deploy/Runner.ts#deploy.run', by: 'artifact-scanner' },
+  };
+}
+function requiresEdge(): Edge {
+  return {
+    id: edgeId(artifactNode().id, 'art:.claude/commands/ship.md#ship', 'requires'),
+    src: artifactNode().id,
+    dst: 'art:.claude/commands/ship.md#ship',
+    rel: 'requires',
+    method: 'explicit',
+    provenance: 'EXTRACTED',
+    confidence: 1,
+    evidence: { snippet: 'requires: /ship', by: 'artifact-scanner' },
+  };
+}
+function invokesEdge(): Edge {
+  return {
+    id: edgeId(artifactNode().id, 'route:POST /api/deploy@src/deploy/Runner.ts#L12', 'invokes'),
+    src: artifactNode().id,
+    dst: 'route:POST /api/deploy@src/deploy/Runner.ts#L12',
+    rel: 'invokes',
+    method: 'explicit',
+    provenance: 'EXTRACTED',
+    confidence: 1,
+    evidence: { snippet: 'invokes: POST /api/deploy', by: 'artifact-scanner' },
+  };
+}
+
 describe('schema validation — 1.3 round-trip', () => {
   it('validates a route node carrying every 1.3 field + meta.params/security', () => {
     expect(() => assertValidNode(routeNode())).not.toThrow();
@@ -269,14 +325,15 @@ describe('schema validation — "crib migrate" is additive (no rewrite)', () => 
     expect(migrated.hash).toBe(service.hash);
   });
 
-  it('SUPPORTED_SCHEMA_VERSIONS includes 1.0→1.5 (every old soul is loadable)', () => {
+  it('SUPPORTED_SCHEMA_VERSIONS includes 1.0→1.6 (every old soul is loadable)', () => {
     expect(SUPPORTED_SCHEMA_VERSIONS).toContain('1.0');
     expect(SUPPORTED_SCHEMA_VERSIONS).toContain('1.1');
     expect(SUPPORTED_SCHEMA_VERSIONS).toContain('1.2');
     expect(SUPPORTED_SCHEMA_VERSIONS).toContain('1.3');
     expect(SUPPORTED_SCHEMA_VERSIONS).toContain('1.4');
     expect(SUPPORTED_SCHEMA_VERSIONS).toContain('1.5');
-    expect(SCHEMA_VERSION).toBe('1.5');
+    expect(SUPPORTED_SCHEMA_VERSIONS).toContain('1.6');
+    expect(SCHEMA_VERSION).toBe('1.6');
   });
 });
 
@@ -340,5 +397,88 @@ describe('schema validation — closed enums reject unknown values', () => {
   it('rejects a malformed edge id (not e:)', () => {
     const bad = { ...referencesEdge(), id: 'edge-1' };
     expect(() => assertValidEdge(bad)).toThrow(SchemaValidationError);
+  });
+});
+
+describe('schema validation — 1.6 AI-artifact graph', () => {
+  it('validates an agent-artifact node carrying artifactType + doc metadata', () => {
+    expect(() => assertValidNode(artifactNode())).not.toThrow();
+  });
+  it('validates a governs edge (artifact → symbol it defines policy for)', () => {
+    expect(() => assertValidEdge(governsEdge())).not.toThrow();
+  });
+  it('validates a requires edge (artifact → artifact it depends on)', () => {
+    expect(() => assertValidEdge(requiresEdge())).not.toThrow();
+  });
+  it('validates an invokes edge (artifact → command/route it triggers)', () => {
+    expect(() => assertValidEdge(invokesEdge())).not.toThrow();
+  });
+
+  it('survives a JSON serialize/parse round-trip and re-validates (no 1.6 field lost)', () => {
+    const n = artifactNode();
+    const nRound = JSON.parse(JSON.stringify(n)) as Node;
+    expect(nRound).toEqual(n);
+    expect(nRound.artifactType).toBe('skill');
+    expect(nRound.docType).toBe('runbook');
+    expect(nRound.appliesTo).toEqual([
+      'scripts/deploy.sh',
+      'sym:src/deploy/Runner.ts#deploy.run@L30',
+    ]);
+    expect(() => assertValidNode(nRound)).not.toThrow();
+    const e = governsEdge();
+    const eRound = JSON.parse(JSON.stringify(e)) as Edge;
+    expect(eRound).toEqual(e);
+    expect(() => assertValidEdge(eRound)).not.toThrow();
+  });
+
+  it('a 1.5-era node (no 1.6 fields) still validates under the 1.6 schema (additive)', () => {
+    const legacy: Node = {
+      id: idFor({
+        kind: 'http-call',
+        httpMethod: 'GET',
+        routePath: '/api/x',
+        file: 'src/c.ts',
+        line: 9,
+      }),
+      kind: 'http-call',
+      httpMethod: 'GET',
+      routePath: '/api/x',
+      file: 'src/c.ts',
+      span: { start: 9, end: 9 },
+      lang: 'typescript',
+      hash: contentHash('http-call:x'),
+    };
+    expect(() => assertValidNode(legacy)).not.toThrow();
+  });
+});
+
+describe('schema validation — ArtifactType closed enum (1.6)', () => {
+  it('ARTIFACT_TYPES lists all six artifact classes', () => {
+    expect(ARTIFACT_TYPES).toEqual([
+      'instruction',
+      'skill',
+      'agent',
+      'command',
+      'rule',
+      'mcp-server',
+    ]);
+  });
+  it('isArtifactType narrows each known value and rejects unknowns', () => {
+    for (const t of ARTIFACT_TYPES) expect(isArtifactType(t)).toBe(true);
+    expect(isArtifactType('workflow')).toBe(false);
+    expect(isArtifactType('Skill')).toBe(false); // case-sensitive
+    expect(isArtifactType(42)).toBe(false);
+    expect(isArtifactType(undefined)).toBe(false);
+  });
+  it('rejects an agent-artifact node with an unknown artifactType', () => {
+    const bad = { ...artifactNode(), artifactType: 'workflow' as Node['artifactType'] };
+    expect(() => assertValidNode(bad)).toThrow(SchemaValidationError);
+  });
+  it("rejects 'AgentArtifact' as a node kind (wrong case, like 'Field')", () => {
+    const bad = {
+      ...artifactNode(),
+      kind: 'AgentArtifact' as Node['kind'],
+    };
+    expect(() => assertValidNode(bad)).toThrow(SchemaValidationError);
   });
 });

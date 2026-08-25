@@ -4,7 +4,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { SoulStore, decisionTable, extractRules, newManifest } from '@knowledge-crib/core';
 import type { RuleRecord } from '@knowledge-crib/core';
-import { contentHash, edgeId, idFor } from '@knowledge-crib/soul-schema';
+import { SCHEMA_VERSION, contentHash, edgeId, idFor } from '@knowledge-crib/soul-schema';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { indexRepo } from './pipeline.js';
 import { exportGraph, renderExport, renderMermaid, renderReport } from './rules/index.js';
@@ -156,7 +156,7 @@ describe('M12 renderers', () => {
 
     const graph = renderExport(soul, 'graph.json');
     const parsed = JSON.parse(graph);
-    expect(parsed.schemaVersion).toBe('1.5');
+    expect(parsed.schemaVersion).toBe(SCHEMA_VERSION);
     expect(parsed.nodes.length).toBeGreaterThan(0);
     expect(parsed.edges.length).toBeGreaterThan(0);
 

@@ -147,14 +147,14 @@ structural tools:
 | `source` | Paged source body for a symbol (span rehydration) |
 | `dossier` | One-call deep context for a symbol: decision table, raises, handlers, cursors, declares, docs (persisted under `.crib/dossiers/`) |
 | `impact` | Blast radius (up=dependents / down=dependencies) + docs |
-| `describes` | Doc-sections linked to a symbol (cheap, high value) |
+| `neighbors({op:'describes'})` | Doc-sections linked to a symbol (cheap, high value) |
 | `neighbors` | Raw adjacency (graph-walking primitive) |
-| `shortest_path` | Shortest directed path between two nodes |
+| `impact({op:'path'})` | Shortest directed path between two nodes |
 | `detect_changes` | Dry-run delta since a git ref (for reviewing diffs) |
 | `extract_rules` | Decision table from a procedure's guard-annotated CFG |
 
-Plus `gaps` (unimplemented symbols / missing package bodies / unresolved call sites) and the **5
-LLM-graph verbs** — `enrich_status`, `enrich_next`, `enrich_save`, `overview`, `llm_neighbors` —
+Plus `status({op:'gaps'})` (unimplemented symbols / missing package bodies / unresolved call sites) and the **5
+LLM-graph verbs** — `enrich({op:'status'})`, `enrich({op:'next'})`, `enrich({op:'save'})`, `overview`, `neighbors({op:'llm'})` —
 which drive the optional LLM-authored semantic-graph layer. Those are covered in
 [user guide §10](knowledge-crib-user-guide.md#10-the-llm-semantic-graph-layer-the-grove-plan); the
 wiring to run them from each client is in §10 below.
@@ -421,7 +421,7 @@ drive the same loop headlessly via the CLI (§10.3).
 
 In a Claude Code session in the indexed project, type `/crib-enrich` (or say "enrich the crib" /
 "build the LLM graph" / "generate the codebase bible"). The skill drives
-`enrich_status → enrich_next → author → enrich_save` one batch per turn, bottom-up
+`enrich({op:'status'}) → enrich({op:'next'}) → author → enrich({op:'save'})` one batch per turn, bottom-up
 (`symbol → file → cluster → system`), then calls `overview` to render the bible. It reports
 accepted/rejected counts + `droppedEdges` after each batch and a one-line bible summary at the end.
 Full detail on the loop, the author contract, and grounding rules is in
@@ -445,7 +445,7 @@ crib enrich --overview                            # the bible (after the system 
 
 | Flag | After the loop | Why |
 |---|---|---|
-| `llmGraph` | **`true`** | Flips on after the first `enrich_save` — the only flag the grove moves. |
+| `llmGraph` | **`true`** | Flips on after the first `enrich({op:'save'})` — the only flag the grove moves. |
 | `embeddings` | `false` (always) | Embeddings need a model (violates the no-model invariant) + `node:sqlite` has no ANN. The LLM graph replaces that need via `withLlm` at query time. |
 | `vector` | `false` (always) | Same reason — BM25 + the TF-IDF linker are the deterministic recall path. |
 | `multimodal` | `false` unless `--multimodal` | Opt-in via `crib index --multimodal` (spawns `crib_worker`); unrelated to the grove. |

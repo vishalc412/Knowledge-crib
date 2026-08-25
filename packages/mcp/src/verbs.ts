@@ -8,7 +8,7 @@ import {
 } from '@knowledge-crib/core';
 import { ifHash, loadAliases, rewriteQuery } from '@knowledge-crib/core';
 import { GraphStore } from '@knowledge-crib/core';
-import type { CompositeEdge, Dir, Dossier, IndexStore, SoulStore } from '@knowledge-crib/core';
+import type { CompositeEdge, Dir, Dossier, Hit, IndexStore, SoulStore } from '@knowledge-crib/core';
 import {
   CALLABLE_SYMBOL_TYPES,
   buildDossier,
@@ -26,6 +26,35 @@ import {
   writeDossier,
 } from '@knowledge-crib/core';
 import type { DossiersByScope as DossiersByScopeShape } from '@knowledge-crib/core';
+import {
+  type ConflictGroup,
+  type EffectiveVerdicts,
+  FtsLexicalScorer,
+  type MemoryCandidate,
+  type MemoryDecision,
+  type MemoryEvalContext,
+  type MemoryEvaluator,
+  type MemoryEvidence,
+  type MemoryFeedback,
+  MemoryFtsIndex,
+  type MemoryRecord,
+  type MemorySource,
+  type MemoryStore,
+  type RecallProjection,
+  type ScoredRecord,
+  applyContradictedFeedback,
+  assertNoMemorySecrets,
+  conflictGroups,
+  contradictedForReview,
+  effectiveVerdicts,
+  gatherRecall,
+  isFeedbackSignal,
+  isRecallEligible,
+  memoryCandidateId,
+  quarantinedRecordIds,
+  readRepoId,
+  recallProjection,
+} from '@knowledge-crib/memory';
 /**
  * The MCP verbs as pure functions over the soul + index. These are the product surface; the stdio
  * server is thin wiring on top. Every edge-bearing result carries {method, provenance, confidence,
@@ -37,6 +66,7 @@ import {
   type EnrichNextArgs,
   type EnrichStatusArgs,
   EnrichmentStore,
+  type SemanticDeltaArgs,
   llmPointer,
   llmProjection,
 } from './enrichment.js';
@@ -87,12 +117,59 @@ export interface VcsAdapter {
   uncommittedChanges(root: string): string[];
 }
 
+/**
+ * W3 — the optional memory ledger deps. Any store may be absent (a fresh repo has no local store
+ * yet; a repo may have no team store). The `evaluator` + `evalCtx` are required for FRESH
+ * revalidation (audit drift detection, recall `fresh` provenance); when absent, the verbs fall back
+ * to the records' stamped verdicts (effective verdicts with no evaluation). The `brief` /
+ * `memory_*` verbs degrade to a `memory: 'not configured'` result when the whole object is absent,
+ * mirroring the `vcs` "not configured" pattern.
+ */
+export interface MemoryDeps {
+  team?: MemoryStore;
+  local?: MemoryStore;
+  global?: MemoryStore;
+  evaluator?: MemoryEvaluator;
+  evalCtx?: MemoryEvalContext;
+}
+
 export interface VerbDeps {
   soul: SoulStore;
   index: IndexStore;
   repoRoot: string;
   vcs?: VcsAdapter;
+  /** W3 — the trusted agent-memory ledger. Optional; verbs degrade gracefully when absent. */
+  memory?: MemoryDeps;
+  /** W6 — the optional working-overlay store. When set, the extracted graph is read from the overlay
+   *  (canonical + dirty swap, in memory) so edits are queryable without dirtying `.crib/graph`. The
+   *  semantic layer still reads from `soul` (the committed soul). */
+  workingOverlay?: SoulStore;
+  /** Fraction of symbols (by architectural importance) the enrich queue offers. Defaults to
+   *  `DEFAULT_SYMBOL_PERCENTILE`; set 1 to queue every symbol. */
+  symbolPercentile?: number;
 }
+
+/** The optional semantic-search surface an IndexStore backend may provide. Backends without it
+ *  degrade to code-only retrieval rather than failing. */
+interface SemanticSearchable {
+  buildSemanticIndex(
+    entries: Array<{ targetId: string; layer: string; purpose: string; detail: string }>,
+    generation: number,
+  ): void;
+  semanticIndexGeneration(): number;
+  semanticSearch(text: string, limit: number): Array<{ targetId: string; score: number }>;
+}
+
+/** Default number of `overview` analysis pointers returned before paging. Small on purpose: the
+ *  list grows with every artifact authored, and orientation needs the module map, not 500 entries. */
+/** How long working-tree facts from git stay cached. See {@link Verbs.vcsFacts}. */
+const VCS_FACT_TTL_MS = 2000;
+
+const DEFAULT_OVERVIEW_ANALYSES = 40;
+
+/** Floor for the `overview` analysis list, so a caller always receives some entries even when the
+ *  envelope (module map + system bible) already fills the requested budget. */
+const MIN_OVERVIEW_LIST_TOKENS = 1500;
 
 /** Direction as the MCP api expresses it. */
 export type ApiDir = 'in' | 'out' | 'both';
@@ -142,6 +219,9 @@ const EXTERNAL_CALLEE_PATTERNS: readonly RegExp[] = [
   /^(react|react-dom|lodash|axios|express|fastify|zod|vitest|jest|mocha|chai|commander)\b/i,
   /^(org\.springframework|org\.slf4j|com\.fasterxml|com\.google|io\.micrometer)\./i,
 ];
+
+/** The admissible claim kinds for a `memory_observe` candidate (mirrors the candidate schema enum). */
+const MEMORY_CANDIDATE_KINDS = new Set(['fact', 'procedure', 'decision', 'pitfall', 'convention']);
 
 function initGapCategories(): GapCategoryCounts {
   return { project: 0, tests: 0, fixtures: 0, builtin: 0, external: 0 };
@@ -213,6 +293,7 @@ const PUBLIC_VERBS = new Set<string>([
   'enrichStatus',
   'enrichNext',
   'enrichSave',
+  'semanticDelta',
   'auditLlm',
   'overview',
   'llmNeighbors',
@@ -223,6 +304,16 @@ const PUBLIC_VERBS = new Set<string>([
   'detectChanges',
   'extractRules',
   'gaps',
+  // W3 — the trusted agent-memory verbs (PRD lines 226–248). brief is the one-call typed-group
+  // retrieval; memory_* are the dedicated read/audit surface. Private memory helpers
+  // (recallProjectionOf, memoryView, …) are absent here so internal calls bypass the Proxy trap.
+  'brief',
+  'memoryRecall',
+  'memoryGet',
+  'memoryObserve',
+  'memoryStatus',
+  'memoryAudit',
+  'memoryFeedback',
 ]);
 
 export class Verbs {
@@ -232,11 +323,19 @@ export class Verbs {
   private readonly aliases: AliasMap;
   /** M3.3 — runtime observability counters (per-verb count/latency + ifHash cache hit rate). */
   private readonly stats = new Stats();
+  /** W3 — the optional trusted agent-memory ledger (absent ⇒ memory verbs report "not configured"). */
+  private readonly memory?: MemoryDeps;
 
   constructor(private readonly deps: VerbDeps) {
-    this.llm = new EnrichmentStore(deps.soul, deps.repoRoot);
+    this.llm = new EnrichmentStore(deps.soul, deps.repoRoot, {
+      ...(deps.symbolPercentile !== undefined ? { symbolPercentile: deps.symbolPercentile } : {}),
+    });
     this.graph = new GraphStore(deps.soul);
+    // W6 — install the working overlay so the extracted layer reads canonical+dirty from the overlay
+    // store. Semantic reads stay on the committed soul (GraphStore keeps `soul` for that).
+    if (deps.workingOverlay) this.graph.setWorkingOverlay(deps.workingOverlay);
     this.aliases = loadAliases(deps.soul.cribDir);
+    this.memory = deps.memory;
     // M3.3 — Proxy interceptor: wrap every PUBLIC verb method with `trackCall` so per-verb
     // count + latency is recorded for BOTH entry paths (direct in-process calls AND MCP tool
     // calls, since the MCP handler is `verbs.X(a)`). Internal helper calls (`this.applyIfHash`,
@@ -266,8 +365,7 @@ export class Verbs {
 
   status(opts?: { dirty?: boolean }): Record<string, unknown> {
     const m = this.deps.soul.getManifest();
-    const hasLlmGraph = this.llm.hasAnyFresh();
-    const composite = this.graph.composite();
+    const { hasLlmGraph, composite } = this.statusGraphFacts();
     const result: Record<string, unknown> = {
       indexed: m.stats.nodes > 0,
       schemaVersion: m.schemaVersion,
@@ -283,8 +381,7 @@ export class Verbs {
     };
     if (this.deps.vcs) {
       try {
-        const head = this.deps.vcs.currentHead(this.deps.repoRoot);
-        const dirtyFiles = this.deps.vcs.uncommittedChanges(this.deps.repoRoot);
+        const { head, dirtyFiles } = this.vcsFacts();
         result.currentHead = head;
         result.dirty = {
           isDirty: dirtyFiles.length > 0,
@@ -362,10 +459,10 @@ export class Verbs {
     const node = soul.getNode(id);
     if (!node) return notFound(args.id);
     const callers = this.callEdges(id, 'up', args.extractedOnly).map((e) =>
-      this.brief(e.src, e.confidence),
+      this.nodeBrief(e.src, e.confidence),
     );
     const callees = this.callEdges(id, 'down', args.extractedOnly).map((e) =>
-      this.brief(e.dst, e.confidence),
+      this.nodeBrief(e.dst, e.confidence),
     );
     const docs = bound(
       this.docsFor(id, 0, args.extractedOnly),
@@ -940,56 +1037,118 @@ export class Verbs {
       return hit;
     });
 
-    // Semantic discoveries from the LLM graph layer that BM25 did NOT surface — ranked by term-overlap
-    // (see EnrichmentStore.matchText) and de-duplicated against the BM25 hit set. These live in their
-    // own `llmHits` field so they never drown out BM25 ranking (the old `unshift`-at-score-0 path put
-    // a test helper that merely mentioned a query term above the real `sqlite-index.ts` for "sqlite").
-    const seen = new Set(bm25Ids);
-    const llmArtifacts = args.withLlm === false ? [] : this.llm.matchText(args.q, limit + 1);
-    const llmTruncated = llmArtifacts.length > limit;
+    // Semantic discoveries from the authored-meaning layer that BM25 did NOT surface, ranked by the
+    // SAME semantic_fts BM25 projection `brief` uses ({@link Verbs.semanticHits}) — the measured
+    // ranker — and de-duplicated against the BM25 hit set. These live in their own `llmHits` field
+    // so they never drown out BM25 ranking (the old `unshift`-at-score-0 path put a test helper
+    // that merely mentioned a query term above the real `sqlite-index.ts` for "sqlite").
+    //
+    // `EnrichmentStore.matchText` (an O(all-artifacts) disk scan ranked by raw term count) is kept
+    // only as the fallback for when semantic_fts is unavailable or cold, and the fallback is never
+    // silent: `llmSource` names the ranker that served the discoveries, and FTS-sourced hits carry
+    // `semanticMatch` — the same signal `brief` uses for "authored meaning FOUND this hit" — while
+    // fallback hits do not.
     const llmHits: Array<Record<string, unknown>> = [];
-    for (const artifact of llmArtifacts.slice(0, limit)) {
-      if (seen.has(artifact.targetId)) continue;
-      seen.add(artifact.targetId);
-      const node = soul.getNode(artifact.targetId);
-      const read = { artifact, missing: false, stale: false };
-      const proj = args.withLlm === true ? llmProjection(read) : llmPointer(read);
-      if (!proj) continue;
-      llmHits.push({
-        id: artifact.targetId,
-        kind: node?.kind ?? 'symbol',
-        snippet: node ? rehydrate(this.deps.repoRoot, node) : '',
-        llm: proj,
-      });
+    let llmTruncated = false;
+    let llmSource: 'semantic_fts' | 'matchText' | undefined;
+    if (args.withLlm !== false) {
+      const seen = new Set(bm25Ids);
+      const ftsHits = this.semanticHits(args.q, limit + 1);
+      if (ftsHits.length > 0) {
+        llmSource = 'semantic_fts';
+        llmTruncated = ftsHits.length > limit;
+        for (const hit of ftsHits.slice(0, limit)) {
+          if (seen.has(hit.id)) continue;
+          seen.add(hit.id);
+          const node = soul.getNode(hit.id);
+          // Inheritance-aware pointer, identical to what attachLlm folds onto BM25 hits — a
+          // discovery ranked for its FILE's prose must not read as the symbol's own meaning.
+          const { read, via, inherited } = this.llm.readInherited(hit.id);
+          const proj =
+            args.withLlm === true ? llmProjection(read) : llmPointer(read, { via, inherited });
+          if (!proj) continue;
+          llmHits.push({
+            id: hit.id,
+            kind: node?.kind ?? 'symbol',
+            grounding: 'semantic', // authored meaning is what ranked this discovery
+            semanticMatch: true,
+            snippet: node ? rehydrate(this.deps.repoRoot, node) : '',
+            llm: proj,
+          });
+        }
+      } else {
+        llmSource = 'matchText';
+        const llmArtifacts = this.llm.matchText(args.q, limit + 1);
+        llmTruncated = llmArtifacts.length > limit;
+        for (const artifact of llmArtifacts.slice(0, limit)) {
+          if (seen.has(artifact.targetId)) continue;
+          seen.add(artifact.targetId);
+          const node = soul.getNode(artifact.targetId);
+          const read = { artifact, missing: false, stale: false };
+          const proj = args.withLlm === true ? llmProjection(read) : llmPointer(read);
+          if (!proj) continue;
+          llmHits.push({
+            id: artifact.targetId,
+            kind: node?.kind ?? 'symbol',
+            grounding: 'semantic', // every llmHit carries an artifact by construction
+            snippet: node ? rehydrate(this.deps.repoRoot, node) : '',
+            llm: proj,
+          });
+        }
+      }
     }
 
+    // Honest self-report over the RETURNED payload (hits + llmHits), mirroring brief.coverage:
+    // how much of this answer is backed by authored meaning rather than source alone. Omitted when
+    // withLlm:false — the caller opted the semantic layer out, so reporting a 0-ratio desert would
+    // blame them for a choice they made. Below LOW_COVERAGE_RATIO the response carries an explicit
+    // caller-facing `hint` instead of relying on the reader to interpret the ratio.
+    const coverage = args.withLlm === false ? undefined : coverageOf([...hits, ...llmHits]);
     const baseTruncated = bm25Truncated || llmTruncated;
+    const tail: Record<string, unknown> = {
+      truncated: baseTruncated,
+      // Only when there is something for it to describe. `llmSource` names the ranker that served
+      // the discoveries; reporting the provenance of an EMPTY list is noise, and on a tight budget
+      // it is noise that crowds out the fields a caller needs to page.
+      ...(llmSource !== undefined && llmHits.length > 0 ? { llmSource } : {}),
+      ...(coverage !== undefined ? { coverage, ...lowCoverageHint(coverage) } : {}),
+    };
     // M1.2 response-wide token budget (opt-in). When maxTokens is set, fit the hits list to the
-    // largest leading prefix whose serialized response fits (chars/4); llmHits + the fixed
-    // `truncated` flag are counted in the estimate. The non-maxTokens path is byte-identical to
-    // before (no cursor / no budgetExhausted) so existing callers + tests are unchanged.
+    // largest leading prefix whose serialized response fits (chars/4); llmHits + the fixed tail
+    // fields are counted in the estimate. The non-maxTokens path adds no cursor / no
+    // budgetExhausted so existing callers + tests are unchanged.
     if (args.maxTokens === undefined) {
-      return { hits, llmHits, truncated: baseTruncated };
+      return { hits, llmHits, ...tail };
     }
     const maxTokens = capMaxTokens(args.maxTokens);
     const fitted = fitTokenBudget(hits, maxTokens, (prefix) =>
       JSON.stringify({
         hits: prefix,
         llmHits,
-        truncated: baseTruncated,
+        ...tail,
         budgetExhausted: true,
         cursor: String(offset + prefix.length),
       }),
     );
     const more = fitted.budgetExhausted || bm25Truncated;
-    return {
+    const result: Record<string, unknown> = {
       hits: fitted.items,
       llmHits,
-      truncated: baseTruncated,
+      ...tail,
       // when maxTokens is opted in, always report budgetExhausted (true/false); cursor only when more.
       budgetExhausted: fitted.budgetExhausted,
       ...(more ? { cursor: String(offset + fitted.items.length) } : {}),
     };
+    // `maxTokens` is a ceiling, not a suggestion — the fitter can only trim `hits`, so on a budget
+    // too small for even an empty-hits response the ADVISORY tail must yield. `coverage` and its
+    // `hint` describe a payload that has just been trimmed to nothing, so they are the first things
+    // worth dropping; `truncated`, `budgetExhausted` and `cursor` stay, because without them the
+    // caller cannot tell a small answer from a truncated one, or page to get the rest.
+    if (estimateTokens(JSON.stringify(result)) > maxTokens) {
+      const { coverage: _c, hint: _h, ...rest } = result;
+      return rest;
+    }
+    return result;
   }
 
   /**
@@ -1199,6 +1358,90 @@ export class Verbs {
   }
 
   /**
+   * `semantic_delta` — the semantic-layer delta report (+ optional prune), the explicit companion to
+   * `crib update`'s silent orphan auto-prune. Two scoping modes:
+   *   • `targets` — an explicit set of target ids (the re-issue surface; a driver passes
+   *     `enrich_next`'s `targets` here to assess exactly that set).
+   *   • `since` — a VCS ref; when `targets` is absent, the changed symbols/files since `since` are
+   *     computed (via {@link affectedTargetIds}) and used as the scan filter, so only artifacts whose
+   *     target changed are scanned (faster than a whole-repo `audit_llm` when the diff is small).
+   * When BOTH are absent, every persisted artifact is scanned (the whole-repo delta). Non-destructive
+   * by default (`prune:false`); `prune` deletes orphans, `pruneStale` also deletes stale-but-present
+   * (destructive). The returned `reissueTargets` is the set to pass to `enrich_next`/`enrich_status`
+   * `targets` to re-author exactly the flagged targets.
+   */
+  semanticDelta(args: {
+    since?: string;
+    targets?: string[];
+    prune?: boolean;
+    pruneStale?: boolean;
+    verifyDrift?: boolean;
+  }): Record<string, unknown> {
+    let targets = args.targets;
+    let vcs: { since: string; head: string; changedPaths: string[] } | undefined;
+    if (!targets && args.since !== undefined) {
+      const affected = this.affectedTargetIds(args.since);
+      if ('note' in affected) {
+        // No VCS / no anchor / non-git: fall through to an unscoped whole-repo scan so the verb still
+        // reports the delta it can compute (orphans/stale against the current soul), with the note.
+        vcs = undefined;
+      } else {
+        targets = affected.targets;
+        vcs = { since: affected.since, head: affected.head, changedPaths: affected.changedPaths };
+      }
+    }
+    const deltaArgs: SemanticDeltaArgs = {
+      ...(targets ? { targets } : {}),
+      ...(args.prune ? { prune: true } : {}),
+      ...(args.pruneStale ? { pruneStale: true } : {}),
+      ...(args.verifyDrift ? { verifyDrift: true } : {}),
+    };
+    const report = this.llm.semanticDelta(deltaArgs);
+    return {
+      ...report,
+      ...(vcs ? { since: vcs.since, head: vcs.head, changedPaths: vcs.changedPaths } : {}),
+      ...(args.since !== undefined && !vcs ? { note: 'no vcs anchor — scanned whole repo' } : {}),
+    } as unknown as Record<string, unknown>;
+  }
+
+  /**
+   * Compute the semantic target ids affected by a VCS diff since `since` — the changed symbols + the
+   * changed files + EVERY cluster (cluster membership is global; a moved symbol changes its old + new
+   * cluster's hash, and we cannot cheaply tell which clusters shifted, so all cluster targets are in
+   * scope) + the whole-repo `system:repo` target (any change can invalidate the bible). Mirrors
+   * `detectChanges`'s graceful VCS degradation (no adapter / non-git / no anchor → `{note}`).
+   */
+  private affectedTargetIds(
+    since: string,
+  ): { since: string; head: string; changedPaths: string[]; targets: string[] } | { note: string } {
+    const vcs = this.deps.vcs;
+    if (!vcs) return { note: 'vcs adapter not configured' };
+    let head: string;
+    try {
+      head = vcs.currentHead(this.deps.repoRoot);
+    } catch {
+      return { note: 'not a git work tree' };
+    }
+    let changedPaths: string[];
+    try {
+      changedPaths = vcs.changedFilesSince(this.deps.repoRoot, since);
+    } catch {
+      return { note: 'not a git work tree' };
+    }
+    const changed = new Set(changedPaths);
+    const targets: string[] = [];
+    for (const node of this.deps.soul.iterate()) {
+      // symbol + file nodes carry a `file`; clusters do not (pathFromId(clusterId) is undefined), so
+      // clusters are added by the dedicated pass below, not the file match.
+      const p = node.file ?? pathFromId(node.id);
+      if (p !== undefined && changed.has(p)) targets.push(node.id);
+    }
+    for (const node of this.deps.soul.iterate('cluster')) targets.push(node.id);
+    targets.push('system:repo');
+    return { since, head, changedPaths, targets };
+  }
+
+  /**
    * `audit_llm` (M1.3 — the moat): re-verify every persisted LLM artifact on disk against the current
    * soul. Re-runs the grounding check (rehydrate each evidence quote's anchor span, require overlap)
    * so a post-refactor re-verify is identical to the original save-time verdict. PURE — never calls a
@@ -1208,10 +1451,48 @@ export class Verbs {
     return this.llm.auditLlm() as unknown as Record<string, unknown>;
   }
 
+  /**
+   * The codebase overview, held to a token budget like every other list verb.
+   *
+   * `analyses` is one entry per authored artifact, so it grows with enrichment and had no cap: on
+   * this repo at 494 artifacts a single default `overview` call returned 43,328 tokens — more than
+   * a whole conversation's budget, from one call the caller had no reason to think was expensive.
+   * `modules` is kept whole (it is the map you actually orient by, and stays small); `analyses` is
+   * trimmed to fit and reports what it dropped, so a caller can page rather than be silently
+   * truncated.
+   */
   overview(
-    args: { scope?: { pathPrefix?: string; cluster?: string }; withLlm?: boolean } = {},
+    args: {
+      scope?: { pathPrefix?: string; cluster?: string };
+      withLlm?: boolean;
+      maxTokens?: number;
+      limit?: number;
+      cursor?: string;
+    } = {},
   ): Record<string, unknown> {
-    return this.llm.overview(args) as unknown as Record<string, unknown>;
+    const result = this.llm.overview(args) as unknown as Record<string, unknown>;
+    const analyses = result.analyses;
+    if (!Array.isArray(analyses)) return result;
+
+    const offset = Math.max(0, Number.parseInt(args.cursor ?? '', 10) || 0);
+    const hardLimit = capInt(args.limit, DEFAULT_OVERVIEW_ANALYSES, 500);
+    const page = analyses.slice(offset, offset + hardLimit);
+    // Budget the LIST against what the envelope leaves, not against the whole response. Measuring
+    // the envelope inside the budget meant `modules` and the system bible consumed it before a
+    // single analysis fit, and the call returned zero of them — technically within budget, and
+    // useless. A floor guarantees a caller always gets some, even on a tight budget.
+    const maxTokens = args.maxTokens === undefined ? 4000 : capMaxTokens(args.maxTokens);
+    const envelopeTokens = estimateTokens(JSON.stringify({ ...result, analyses: [] }));
+    const listBudget = Math.max(maxTokens - envelopeTokens, MIN_OVERVIEW_LIST_TOKENS);
+    const fitted = fitTokenBudget(page, listBudget, (prefix) => JSON.stringify(prefix));
+    const shown = fitted.items;
+    const next = offset + shown.length;
+    return {
+      ...result,
+      analyses: shown,
+      analysisCount: { shown: shown.length, total: analyses.length },
+      ...(next < analyses.length ? { truncated: true, cursor: String(next) } : {}),
+    };
   }
 
   llmNeighbors(args: { id: string }): Record<string, unknown> {
@@ -1710,7 +1991,7 @@ export class Verbs {
     return resolveIdInSoul(primary.soul, idOrName);
   }
 
-  private brief(id: string, confidence: number): Record<string, unknown> {
+  private nodeBrief(id: string, confidence: number): Record<string, unknown> {
     const n = this.deps.soul.getNode(id);
     if (!n) return { id, confidence };
     return {
@@ -1723,6 +2004,761 @@ export class Verbs {
       ...(n.span ? { line: n.span.start } : {}),
       confidence,
     };
+  }
+
+  /**
+   * W3 — the one-call typed-group retrieval (PRD lines 226–248). Returns code hits, doc instructions,
+   * and trusted memories as SEPARATE typed groups so the soul's code BM25 and the memory recall score
+   * are never fused (PRD line 333 — "never mix code BM25 + memory scores"). `codeHits` + `instructions`
+   * come from ONE BM25 scan over the soul index, partitioned by kind (symbols/files vs doc-sections);
+   * `memories` + `conflicts` come from the recall projection (criterion-1 lexical via the separate
+   * memory FTS, ranked by the 6-criterion comparator). `cursor` pages the code BM25 offset; the
+   * response-wide `maxTokens` budget (default 2000) trims the combined payload. `ifHash` collapses a
+   * repeat to `{ unchanged: true, hash }` (~30 bytes — PRD line 338 invariant #3).
+   */
+  /**
+   * Primary recall entry point — every hit carries the best MEANING available for it.
+   *
+   * The token problem this solves is not the size of a `brief` response (it is ~500 tokens; the
+   * per-hit snippet is a single trimmed line, ~11 tokens). It is that a hit carrying only a name
+   * and one line of source tells the caller nothing about what the code *does*, so the caller
+   * escalates — to `context`/`dossier`, and past those to reading whole files, which is where the
+   * thousands of tokens actually go. Attaching authored purpose is what removes the reason to
+   * escalate.
+   *
+   * So prose is added, not swapped in: the cheap snippet stays (dropping ~11 tokens of real
+   * signal to add ~46 tokens of pointer would make the payload both larger and less useful).
+   * Each hit reports `grounding` — `semantic` when authored prose was found for the target or,
+   * flagged as `inherited`, for its owning file/cluster; `code` when nothing was authored — and
+   * `coverage` reports the grounded fraction of the response, so a semantic desert is visible
+   * instead of silently thin.
+   */
+  brief(args: {
+    q: string;
+    paths?: string[];
+    targetIds?: string[];
+    sources?: MemorySource[];
+    maxTokens?: number;
+    cursor?: string;
+    ifHash?: string;
+  }): Record<string, unknown> {
+    const limit = DEFAULT_LIMIT;
+    const offset = Math.max(0, Number.parseInt(args.cursor ?? '', 10) || 0);
+    const q = rewriteQuery(args.q, this.aliases);
+    const rawHits = this.deps.index.query({ text: q, limit: limit + 1, offset });
+    const moreCode = rawHits.length > limit;
+    const keywordHits = moreCode ? rawHits.slice(0, limit) : rawHits;
+    // Fuse keyword hits with hits ranked over AUTHORED MEANING. Keyword search alone answers
+    // "which code contains these words"; a question like "how do I debug a parser that hangs"
+    // shares no words with the fuzz harness that answers it, and used to return a Rust fixture.
+    // Semantic hits are interleaved from the front so a precise prose match cannot be buried
+    // beneath incidental keyword matches, and duplicates collapse to the keyword hit.
+    // A deeper semantic pool than the response can hold: RRF needs to SEE a candidate to rank it,
+    // and the answer to a conceptual question routinely sits below the visible cut in its own list.
+    const hits =
+      offset > 0
+        ? keywordHits
+        : fuseSemantic(
+            keywordHits,
+            this.semanticHits(args.q, Math.max(limit * 4, 40)),
+            this.deps.soul,
+            limit,
+          );
+    const codeHits: Array<Record<string, unknown>> = [];
+    const instructions: Array<Record<string, unknown>> = [];
+    for (const h of hits) {
+      const node = this.deps.soul.getNode(h.id);
+      const { read, via, inherited } = this.llm.readInherited(h.id);
+      const pointer = llmPointer(read, { via, inherited });
+      const grounded = pointer !== undefined;
+      const view: Record<string, unknown> = {
+        id: h.id,
+        kind: h.kind,
+        score: h.score,
+        grounding: grounded ? 'semantic' : 'code',
+        snippet: rehydrate(this.deps.repoRoot, node),
+      };
+      // True when authored meaning RANKED this hit, not merely decorated it.
+      if ((h as { semanticMatch?: boolean }).semanticMatch === true) view.semanticMatch = true;
+      if (pointer) view.llm = pointer;
+      if (h.kind === 'doc-section') instructions.push(view);
+      else codeHits.push(view);
+    }
+    // memories + conflicts: the recall projection over the configured stores (optional — a repo with
+    // no memory ledger configured returns empty memories, not an error). targets = explicit ids + paths.
+    const targets = [...(args.targetIds ?? []), ...(args.paths ?? [])];
+    const projection = this.recallProjectionOf({
+      query: args.q,
+      ...(targets.length > 0 ? { targetIds: targets } : {}),
+      ...(args.sources ? { sources: args.sources } : {}),
+      fresh: true,
+    });
+    const memories = projection
+      ? projection.memories.slice(0, limit).map((m) => this.memoryView(m, false))
+      : [];
+    const conflicts = projection ? projection.conflicts.map((g) => this.conflictView(g)) : [];
+    const memoryProvenance = projection?.provenance;
+
+    // Fit the whole typed-group payload to the budget: one binary search over a tagged item stream
+    // (code/instr/mem) whose serialize fn rebuilds the exact response shape, so the budget guards the
+    // real on-wire size, not a proxy. The cursor resumes the CODE BM25 offset (the paged group).
+    type Tagged = { group: 'code' | 'instr' | 'mem'; view: Record<string, unknown> };
+    const items: Tagged[] = [
+      ...codeHits.map((view) => ({ group: 'code' as const, view })),
+      ...instructions.map((view) => ({ group: 'instr' as const, view })),
+      ...memories.map((view) => ({ group: 'mem' as const, view })),
+    ];
+    const maxTokens = args.maxTokens === undefined ? 2000 : capMaxTokens(args.maxTokens);
+    const fitted = fitTokenBudget(items, maxTokens, (prefix) => {
+      // coverage + retrieval describe the candidate prefix, so the estimate counts the real
+      // fixed fields the wire response carries (a low-coverage `hint` is one of them).
+      const cov = coverageOf(prefix.filter((i) => i.group !== 'mem').map((i) => i.view));
+      return JSON.stringify({
+        codeHits: prefix.filter((i) => i.group === 'code').map((i) => i.view),
+        instructions: prefix.filter((i) => i.group === 'instr').map((i) => i.view),
+        memories: prefix.filter((i) => i.group === 'mem').map((i) => i.view),
+        conflicts,
+        ...(memoryProvenance ? { provenance: memoryProvenance } : {}),
+        coverage: cov,
+        retrieval: retrievalOf(prefix.filter((i) => i.group !== 'mem').map((i) => i.view)),
+        ...lowCoverageHint(cov),
+        truncated: true,
+        budgetExhausted: true,
+      });
+    });
+    const keptCode = fitted.items.filter((i) => i.group === 'code').map((i) => i.view);
+    const keptInstr = fitted.items.filter((i) => i.group === 'instr').map((i) => i.view);
+    const keptMem = fitted.items.filter((i) => i.group === 'mem').map((i) => i.view);
+    const more = moreCode || fitted.budgetExhausted;
+    const coverage = coverageOf([...keptCode, ...keptInstr]);
+    const result: Record<string, unknown> = {
+      codeHits: keptCode,
+      instructions: keptInstr,
+      memories: keptMem,
+      conflicts,
+      ...(memoryProvenance ? { provenance: memoryProvenance } : {}),
+      // Honest self-report: how much of THIS answer came from authored meaning rather than source.
+      // Below the low-coverage floor the response says so explicitly (`hint`) instead of relying
+      // on the caller to interpret the ratio.
+      //
+      // Counted over the items actually RETURNED (post token-budget trim), not the wider set that
+      // was fetched — coverage has to describe the payload the caller is holding, or it would
+      // overstate grounding whenever the budget dropped the semantic hits.
+      coverage,
+      ...lowCoverageHint(coverage),
+      // `retrieval` answers a DIFFERENT question from `coverage`, and the difference matters.
+      // `coverage` says how many hits carry prose — which saturates at 100% once most files are
+      // described, because a symbol inherits its file's purpose whether or not it is relevant.
+      // `matched` counts hits that authored meaning actually RANKED, which is the signal that the
+      // semantic layer contributed to finding this answer rather than merely decorating it.
+      retrieval: retrievalOf([...keptCode, ...keptInstr]),
+      truncated: more,
+    };
+    if (fitted.budgetExhausted) result.budgetExhausted = true;
+    if (more) result.cursor = String(offset + keptCode.length);
+    return this.applyIfHash(args, result);
+  }
+
+  /**
+   * W3 — recall trusted memory (PRD `memory_recall`): default limit 5, max 20, default token budget
+   * 1200, team + local + applicable-global sources. Returns the ranked eligible memories (default
+   * view = evidence summaries + pointers; full evidence opt-in via `withEvidence`), the conflict
+   * groups, and deterministic provenance. Normal recall never returns invalid / orphaned /
+   * superseded / retracted / pending records (the projection's hard eligibility filter — PRD line
+   * 338 invariant #1); conflicting claims appear together (invariant #2).
+   */
+  memoryRecall(args: {
+    q?: string;
+    targetIds?: string[];
+    sources?: MemorySource[];
+    limit?: number;
+    maxTokens?: number;
+    withEvidence?: boolean;
+    includePending?: boolean;
+    ifHash?: string;
+  }): Record<string, unknown> {
+    if (!this.memory) return this.applyIfHash(args, { memory: 'not configured' });
+    const limit = capInt(args.limit, 5, 20);
+    const projection = this.recallProjectionOf({
+      query: args.q ?? '',
+      ...(args.targetIds ? { targetIds: args.targetIds } : {}),
+      ...(args.sources ? { sources: args.sources } : {}),
+      fresh: true,
+    });
+    if (!projection) return this.applyIfHash(args, { memory: 'not configured' });
+    // limit is the hard count cap (default 5, max 20); the token budget trims within the limited set.
+    const limited = projection.memories
+      .slice(0, limit)
+      .map((m) => this.memoryView(m, args.withEvidence));
+    const conflictsView = projection.conflicts.map((g) => this.conflictView(g));
+    const maxTokens = args.maxTokens === undefined ? 1200 : capMaxTokens(args.maxTokens);
+    const fitted = fitTokenBudget(limited, maxTokens, (prefix) =>
+      JSON.stringify({
+        memories: prefix,
+        conflicts: conflictsView,
+        provenance: projection.provenance,
+        budgetExhausted: true,
+      }),
+    );
+    const more = fitted.budgetExhausted || projection.memories.length > limit;
+    const result: Record<string, unknown> = {
+      memories: fitted.items,
+      conflicts: conflictsView,
+      provenance: projection.provenance,
+      truncated: more,
+    };
+    // Opt-in, and kept in its own group. `memories` remains trusted-only whatever this returns.
+    if (args.includePending === true) {
+      result.pending = this.pendingCandidates(args.q ?? '', limit);
+    }
+    if (fitted.budgetExhausted) result.budgetExhausted = true;
+    return this.applyIfHash(args, result);
+  }
+
+  /**
+   * W3 — fetch one memory record by id (PRD `memory_get`): the full record + its effective verdicts +
+   * store source. Evidence is returned as summaries by default (kind + verdict + soul anchor); the
+   * full evidence array is opt-in via `withEvidence`. Searches team `records`, local `active`, then
+   * global `records`.
+   */
+  memoryGet(args: { id: string; withEvidence?: boolean; ifHash?: string }): Record<
+    string,
+    unknown
+  > {
+    if (!this.memory) return this.applyIfHash(args, { memory: 'not configured' });
+    const found = this.findMemoryRecord(args.id);
+    if (!found) return this.applyIfHash(args, { found: false, id: args.id });
+    const { record, source } = found;
+    const result: Record<string, unknown> = {
+      id: record.id,
+      subject: record.subject,
+      claim: record.claim,
+      scope: record.scope,
+      appliesTo: record.appliesTo,
+      authorship: record.authorship,
+      verdicts: record.verdicts,
+      source,
+      createdAt: record.createdAt,
+      evidence:
+        args.withEvidence === true
+          ? record.evidence
+          : record.evidence.map((e) => this.evidenceSummary(e)),
+    };
+    return this.applyIfHash(args, result);
+  }
+
+  /**
+   * W3 — memory ledger status (PRD `memory_status`): counts by trust / evidence / applicability /
+   * lifecycle / source, plus `eligible` (recall-eligible), `quarantined`, and `pending` (local
+   * candidate entries not yet promoted to active records). `fresh: true` in provenance means the
+   * counts reflect a live revalidation against the soul (evaluator configured), not just stamped
+   * verdicts.
+   */
+  memoryStatus(args: { ifHash?: string }): Record<string, unknown> {
+    if (!this.memory) return this.applyIfHash(args, { memory: 'not configured' });
+    const all = this.gatherAllVerdicts(true);
+    const trust: Record<string, number> = {};
+    const evidence: Record<string, number> = {};
+    const applicability: Record<string, number> = {};
+    const lifecycle: Record<string, number> = {};
+    const source: Record<string, number> = {};
+    let eligible = 0;
+    let quarantined = 0;
+    for (const entry of all.entries) {
+      const v = entry.verdicts;
+      this.bump(trust, v.trust);
+      this.bump(evidence, v.evidence);
+      this.bump(applicability, v.applicability);
+      this.bump(lifecycle, v.lifecycle);
+      this.bump(source, entry.source);
+      if (v.quarantined) quarantined += 1;
+      if (isRecallEligible(v)) eligible += 1;
+    }
+    // pending = local candidate entries (candidate-trust, not yet promoted to active records).
+    let pending = 0;
+    const local = this.memory?.local;
+    if (local) pending = local.readCollection('candidates').entries.length;
+    const result = {
+      counts: {
+        total: all.entries.length,
+        eligible,
+        quarantined,
+        pending,
+        trust,
+        evidence,
+        applicability,
+        lifecycle,
+        source,
+      },
+      provenance: { fresh: all.fresh, errors: all.errors },
+    };
+    return this.applyIfHash(args, result);
+  }
+
+  /**
+   * W3 — read-only memory audit (PRD `memory_audit`): a validation / conflict / drift / privacy /
+   * trust report. `validation.drift` lists records whose fresh evidence/applicability verdict differs
+   * from the stamped one (content drifted since the record was saved); `conflicts` lists the
+   * conflict groups; `privacy` re-runs the write-time secret scan on every record (the store
+   * guarantees 0 on write — audit confirms no secret slipped in via a raw shard edit); `trust` is the
+   * trust distribution. Read-only: never mutates a record, a decision, or a store.
+   */
+  memoryAudit(args: { ifHash?: string }): Record<string, unknown> {
+    if (!this.memory) return this.applyIfHash(args, { memory: 'not configured' });
+    const all = this.gatherAllVerdicts(true);
+    let drifted = 0;
+    const drift: Array<Record<string, unknown>> = [];
+    for (const { record, verdicts: fresh } of all.entries) {
+      const stamped = record.verdicts;
+      if (stamped.evidence !== fresh.evidence || stamped.applicability !== fresh.applicability) {
+        drifted += 1;
+        if (drift.length < 50) {
+          drift.push({
+            id: record.id,
+            stamped: { evidence: stamped.evidence, applicability: stamped.applicability },
+            fresh: { evidence: fresh.evidence, applicability: fresh.applicability },
+          });
+        }
+      }
+    }
+    const conflicts = conflictGroups(all.entries).map((g) => this.conflictView(g));
+    let secretsFlagged = 0;
+    for (const { record } of all.entries) {
+      try {
+        assertNoMemorySecrets(record);
+      } catch {
+        secretsFlagged += 1;
+      }
+    }
+    const trust: Record<string, number> = {};
+    for (const { verdicts } of all.entries) this.bump(trust, verdicts.trust);
+    // W5 Slice 3 — surface contradicted-for-review records (PRD W5 line 361: "surface it for review").
+    // A `contradicted` feedback whose subject is NOT quarantined took only the bounded penalty and
+    // awaits admissible counter-evidence; a `quarantined` verdict marks a record already suppressed.
+    let quarantined = 0;
+    for (const { verdicts } of all.entries) {
+      if (verdicts.quarantined) {
+        quarantined += 1;
+      }
+    }
+    const localFeedback = this.memory?.local
+      ? (this.memory.local.readCollection('feedback').entries as MemoryFeedback[])
+      : [];
+    const localQuarantineSubjects = quarantinedRecordIds(
+      this.memory?.local
+        ? (this.memory.local.readCollection('decisions').entries as MemoryDecision[])
+        : [],
+    );
+    const forReview = contradictedForReview(localFeedback, localQuarantineSubjects).map((fb) => ({
+      subject: fb.subject,
+      actor: fb.actor,
+      ts: fb.ts,
+      ...(fb.context ? { context: fb.context } : {}),
+    }));
+    const result = {
+      validation: { records: all.entries.length, drifted, drift },
+      conflicts,
+      privacy: { secretsScannedOnWrite: true, secretsFlagged },
+      trust,
+      feedback: {
+        quarantined,
+        contradictedForReview: forReview,
+      },
+      provenance: { fresh: all.fresh, errors: all.errors },
+    };
+    return this.applyIfHash(args, result);
+  }
+
+  /**
+   * W4 — `memory_observe` (PRD line 239: "Writes a local candidate only"). The MCP server NEVER
+   * evaluates, NEVER executes a gate, NEVER writes team memory (PRD line 68: only the CLI + CI
+   * runner produce evaluation receipts). It stages an untrusted {@link MemoryCandidate} in the
+   * LOCAL `candidates` collection — content-addressed, so a repeat observation of the same claim
+   * upserts to the same `cand:` id (idempotent dedupe). Promotion to a trusted record is a separate
+   * CLI/CI step (`crib memory evaluate`/`activate`/`propose`).
+   *
+   * Degrades to `{ memory: 'not configured' }` when no local store is wired (mirrors the vcs / read
+   * verbs). The candidate's `scope.repoId` is resolved from the soul manifest / registry via
+   * {@link readRepoId}; a repo-scoped claim in a repo with no resolvable id is refused (the content
+   * id would be unstable across machines) rather than silently written with a blank repoId.
+   */
+  memoryObserve(args: {
+    kind: string;
+    subject: string;
+    claim: string;
+    appliesTo?: string[];
+    /** proposed evidence items (loose — the store schema-validates + secret-scans on write). */
+    evidence?: ReadonlyArray<Record<string, unknown>>;
+    actor: string;
+    authorKind?: 'agent' | 'human';
+    tool?: string;
+    scopeBoundary?: 'repo' | 'global';
+    attemptId?: string;
+    ifHash?: string;
+  }): Record<string, unknown> {
+    const local = this.memory?.local;
+    if (!local) return this.applyIfHash(args, { memory: 'not configured' });
+    const kind = args.kind;
+    if (!MEMORY_CANDIDATE_KINDS.has(kind)) {
+      return this.applyIfHash(args, {
+        ok: false,
+        error: `invalid kind '${kind}' — expected one of ${[...MEMORY_CANDIDATE_KINDS].join(', ')}`,
+      });
+    }
+    if (typeof args.subject !== 'string' || args.subject.length === 0) {
+      return this.applyIfHash(args, { ok: false, error: 'subject is required' });
+    }
+    if (typeof args.claim !== 'string' || args.claim.length === 0) {
+      return this.applyIfHash(args, { ok: false, error: 'claim is required' });
+    }
+    if (typeof args.actor !== 'string' || args.actor.length === 0) {
+      return this.applyIfHash(args, { ok: false, error: 'actor is required' });
+    }
+    const boundary = args.scopeBoundary ?? 'repo';
+    const scope: { boundary: 'repo' | 'global'; repoId?: string } = { boundary };
+    if (boundary === 'repo') {
+      const repoId = readRepoId(this.deps.soul.cribDir);
+      if (!repoId) {
+        return this.applyIfHash(args, {
+          ok: false,
+          error:
+            'could not resolve a stable repoId for this repo — run `crib index` to register it before observing repo-scoped memory',
+        });
+      }
+      scope.repoId = repoId;
+    }
+    const origin: 'observe' | 'attempt' = args.attemptId ? 'attempt' : 'observe';
+    const input = {
+      kind: kind as MemoryCandidate['kind'],
+      subject: args.subject,
+      claim: args.claim,
+      scope,
+      appliesTo: args.appliesTo ?? [],
+      evidence: (args.evidence ?? []) as MemoryEvidence[],
+      authorship: {
+        actor: args.actor,
+        kind: args.authorKind ?? 'agent',
+        ...(args.tool ? { tool: args.tool } : {}),
+      } as MemoryCandidate['authorship'],
+    };
+    const candidate: MemoryCandidate = {
+      id: memoryCandidateId(input),
+      schemaVersion: '1',
+      ...input,
+      origin,
+      ...(args.attemptId ? { attemptId: args.attemptId } : {}),
+      proposedAt: new Date().toISOString(),
+    };
+    // assertWritable (schema validate + secret scan) runs inside upsertEntry; a bad candidate throws.
+    local.upsertEntry('candidates', candidate);
+    return this.applyIfHash(args, {
+      id: candidate.id,
+      status: 'pending',
+      origin,
+      scope: candidate.scope,
+    });
+  }
+
+  /**
+   * W5 Slice 3 — `memory_feedback` (PRD line 241): "Writes a local feedback event; one negative event
+   * cannot retract team memory." Records a LOCAL feedback signal (`useful` / `unhelpful` /
+   * `contradicted`) on a memory record by id. The event is content-addressed → idempotent (a repeat
+   * signal upserts to the same `fb:` id).
+   *
+   * For a `contradicted` signal, PRD W5 line 361 applies: the record is suppressed (quarantined)
+   * LOCALLY only when supported by admissible counter-evidence (a `counterEvidence` item whose kind is
+   * admissible for the record's claim kind AND whose verdict is `valid`); otherwise the record keeps a
+   * bounded feedback penalty and is surfaced for review (`memory_audit` lists it under
+   * `contradictedForReview`). The quarantine decision is written to the LOCAL `decisions` collection
+   * ONLY — never team / global — so a single local negative event can never retract team memory (the
+   * no-poison rule; recall folds local decisions into local records only).
+   *
+   * The MCP server never evaluates or executes anything here: `counterEvidence` is supplied by the
+   * caller as pre-checked evidence items (kind + verdict); the suppression verdict is a pure decision
+   * over those items, not a gate run. Degrades to `{ memory: 'not configured' }` when no local store
+   * is wired.
+   */
+  memoryFeedback(args: {
+    /** the `mem:` record id the feedback is about. */
+    subject: string;
+    /** `useful` / `unhelpful` / `contradicted` (PRD §2 MemoryFeedback). */
+    signal: string;
+    actor: string;
+    context?: string;
+    /**
+     * Counter-evidence supporting a `contradicted` signal (PRD W5 line 361). Each item is a loose
+     * evidence record (kind + verdict + anchor); admissibility is checked per item. Only admissible +
+     * `valid` items trigger local quarantine. Ignored for non-`contradicted` signals.
+     */
+    counterEvidence?: ReadonlyArray<Record<string, unknown>>;
+    ifHash?: string;
+  }): Record<string, unknown> {
+    const local = this.memory?.local;
+    if (!local) return this.applyIfHash(args, { memory: 'not configured' });
+    if (typeof args.subject !== 'string' || args.subject.length === 0) {
+      return this.applyIfHash(args, { ok: false, error: 'subject is required' });
+    }
+    if (!isFeedbackSignal(args.signal)) {
+      return this.applyIfHash(args, {
+        ok: false,
+        error: `invalid signal '${args.signal}' — expected one of useful, unhelpful, contradicted`,
+      });
+    }
+    if (typeof args.actor !== 'string' || args.actor.length === 0) {
+      return this.applyIfHash(args, { ok: false, error: 'actor is required' });
+    }
+    // resolve the record (local active → team records → global records) to learn its claim kind for
+    // counter-evidence admissibility. A missing record is still recorded as feedback (the signal stands
+    // for when the record appears), but admissibility cannot be checked → no suppression.
+    const found = this.findMemoryRecord(args.subject);
+    const claimKind = found?.record.kind;
+    const counterEvidence = (args.counterEvidence ?? []) as unknown as MemoryEvidence[];
+    const result = applyContradictedFeedback(local, {
+      record: { id: args.subject, kind: claimKind ?? 'fact' },
+      feedback: {
+        id: '',
+        schemaVersion: '1',
+        signal: args.signal,
+        subject: args.subject,
+        actor: args.actor,
+        ...(args.context ? { context: args.context } : {}),
+        ts: new Date().toISOString(),
+      },
+      counterEvidence: claimKind ? counterEvidence : [],
+      now: () => new Date().toISOString(),
+    });
+    if (result.suppression.suppress) {
+      return this.applyIfHash(args, {
+        ok: true,
+        feedbackId: result.feedbackId,
+        suppressed: true,
+        quarantineDecisionId: result.suppression.decision.id,
+        subject: args.subject,
+        note: 'contradicted by admissible counter-evidence — record quarantined locally (team memory untouched)',
+      });
+    }
+    return this.applyIfHash(args, {
+      ok: true,
+      feedbackId: result.feedbackId,
+      suppressed: false,
+      surfacedForReview: args.signal === 'contradicted',
+      subject: args.subject,
+      note:
+        args.signal === 'contradicted'
+          ? 'contradicted without admissible counter-evidence — bounded penalty applied, surfaced for review'
+          : 'feedback recorded (bounded ranking adjustment only)',
+    });
+  }
+
+  // ─── W3 memory helpers (private — NOT in PUBLIC_VERBS, so they bypass the Proxy trap) ────────
+
+  /** The three memory stores as a RecallStores map, or undefined when memory isn't configured. */
+  /**
+   * Untrusted, in-flight observations from the LOCAL candidate pool — the shared working set for a
+   * swarm of agents on one repository.
+   *
+   * The trust model deliberately hides these from normal recall: a claim becomes trusted by passing
+   * a declared gate, never by an agent writing it down. That is correct, and this does not weaken
+   * it. But with many agents working the same repo it also means every agent re-derives what its
+   * neighbours already solved, because nothing crosses between them until a human or CI promotes
+   * it.
+   *
+   * So they are returned in a SEPARATE group, never merged into `memories`, every entry stamped
+   * `trust: 'untrusted'` and `status: 'pending'` — the same discipline that keeps code hits and
+   * memory hits from being fused into one opaque list. A caller can act on a peer's finding while
+   * knowing exactly what it is: a lead, not an established fact.
+   */
+  private pendingCandidates(query: string, limit: number): Array<Record<string, unknown>> {
+    const local = this.memory?.local;
+    if (!local) return [];
+    const terms = query
+      .toLowerCase()
+      .split(/[^a-z0-9_]+/)
+      .filter((t) => t.length > 2);
+    const out: Array<{ score: number; view: Record<string, unknown> }> = [];
+    for (const entry of local.readCollection('candidates').entries) {
+      const rec = entry as unknown as Record<string, unknown>;
+      const claim = String(rec.claim ?? '');
+      const subject = String(rec.subject ?? '');
+      const haystack = `${subject} ${claim}`.toLowerCase();
+      const score = terms.length === 0 ? 1 : terms.filter((t) => haystack.includes(t)).length;
+      if (score === 0) continue;
+      out.push({
+        score,
+        view: {
+          id: rec.id,
+          kind: rec.kind,
+          subject,
+          claim,
+          actor: (rec.provenance as Record<string, unknown> | undefined)?.actor ?? rec.actor,
+          // Stated on every entry, not just in the group name, because a single view can be
+          // copied out of its group and lose that context.
+          trust: 'untrusted',
+          status: 'pending',
+        },
+      });
+    }
+    return out
+      .sort((a, b) => b.score - a.score || String(a.view.id).localeCompare(String(b.view.id)))
+      .slice(0, limit)
+      .map((x) => x.view);
+  }
+
+  private recallStores():
+    | { team?: MemoryStore; local?: MemoryStore; global?: MemoryStore }
+    | undefined {
+    const mem = this.memory;
+    if (!mem) return undefined;
+    return { team: mem.team, local: mem.local, global: mem.global };
+  }
+
+  /**
+   * Gather + rank a recall projection. Builds a disposable IN-MEMORY FTS5 index from the gathered
+   * records (the criterion-1 lexical signal — PRD line 333: never mixed with the soul's code BM25)
+   * and runs the pure 6-criterion rank + conflict projection. When `fresh` is set AND an evaluator +
+   * evalCtx are configured, records are revalidated against the live soul; otherwise stamped
+   * verdicts are used. The FTS handle is closed in a finally — a `:memory:` DB holds no filesystem
+   * lock, so the PRD's "never hold a FS lock across an evaluation command" rule is honoured.
+   */
+  private recallProjectionOf(opts: {
+    query?: string;
+    targetIds?: readonly string[];
+    sources?: readonly MemorySource[];
+    fresh?: boolean;
+  }): RecallProjection | undefined {
+    const mem = this.memory;
+    const stores = this.recallStores();
+    if (!mem || !stores) return undefined;
+    const gathered = gatherRecall(stores, { sources: opts.sources });
+    const fts = new MemoryFtsIndex(':memory:');
+    try {
+      fts.rebuild(gathered.records.map((r) => r.record));
+      const scorer = new FtsLexicalScorer(fts);
+      const evalOpts =
+        opts.fresh && mem.evaluator && mem.evalCtx
+          ? { evaluator: mem.evaluator, evalCtx: mem.evalCtx }
+          : {};
+      return recallProjection(gathered, {
+        query: opts.query ?? '',
+        ...(opts.targetIds ? { targetIds: opts.targetIds } : {}),
+        lexicalScorer: scorer,
+        ...evalOpts,
+      });
+    } finally {
+      fts.close();
+    }
+  }
+
+  /**
+   * Gather ALL records (team + local + global) with their effective verdicts — not just the
+   * recall-eligible subset. Used by `memory_status` (per-verdict tallies include ineligible
+   * records) and `memory_audit` (drift = stamped vs fresh, over every record). `fresh: true` runs
+   * the evaluator against the live soul; `fresh: false` uses stamped verdicts.
+   */
+  private gatherAllVerdicts(fresh: boolean): {
+    entries: Array<{
+      record: MemoryRecord;
+      source: MemorySource;
+      verdicts: EffectiveVerdicts;
+    }>;
+    errors: string[];
+    fresh: boolean;
+  } {
+    const mem = this.memory;
+    const stores = this.recallStores();
+    const entries: Array<{
+      record: MemoryRecord;
+      source: MemorySource;
+      verdicts: EffectiveVerdicts;
+    }> = [];
+    if (!mem || !stores) return { entries, errors: [], fresh: false };
+    const gathered = gatherRecall(stores);
+    const evalFn =
+      fresh && mem.evaluator && mem.evalCtx
+        ? (r: MemoryRecord) => mem.evaluator?.evaluate(r, mem.evalCtx as MemoryEvalContext)
+        : undefined;
+    for (const { record, source } of gathered.records) {
+      const evaluation = evalFn ? evalFn(record) : undefined;
+      // No-poison (W5 Slice 2 + 3): local decisions overlay LOCAL records only; team/global decisions
+      // are authoritative across stores. Folding local decisions into a team/global record would let a
+      // single local negative event (quarantine / tombstone) retract team memory (PRD line 242).
+      const decs =
+        source === 'local'
+          ? [...gathered.decisions, ...gathered.localDecisions]
+          : gathered.decisions;
+      entries.push({
+        record,
+        source,
+        verdicts: effectiveVerdicts(record, decs, evaluation),
+      });
+    }
+    return { entries, errors: gathered.errors, fresh: evalFn !== undefined };
+  }
+
+  /** Find one record by id across team `records`, local `active`, then global `records`. */
+  private findMemoryRecord(id: string): { record: MemoryRecord; source: MemorySource } | undefined {
+    const mem = this.memory;
+    if (!mem) return undefined;
+    if (mem.team) {
+      for (const e of mem.team.readCollection('records').entries) {
+        if ((e as MemoryRecord).id === id) return { record: e as MemoryRecord, source: 'team' };
+      }
+    }
+    if (mem.local) {
+      for (const e of mem.local.readCollection('active').entries) {
+        if ((e as MemoryRecord).id === id) return { record: e as MemoryRecord, source: 'local' };
+      }
+    }
+    if (mem.global) {
+      for (const e of mem.global.readCollection('records').entries) {
+        if ((e as MemoryRecord).id === id) return { record: e as MemoryRecord, source: 'global' };
+      }
+    }
+    return undefined;
+  }
+
+  /** A lightweight evidence pointer (kind + verdict + soul anchor) — the default recall view. */
+  private evidenceSummary(ev: MemoryEvidence): Record<string, unknown> {
+    const out: Record<string, unknown> = { kind: ev.kind, verdict: ev.verdict };
+    if (ev.soulId) out.soulId = ev.soulId;
+    return out;
+  }
+
+  /** The public recall view of one scored record: verdicts + score + appliesTo + evidence (summary
+   *  by default, full when `withEvidence`). Deterministic over the same projection (ifHash-stable). */
+  private memoryView(m: ScoredRecord, withEvidence?: boolean): Record<string, unknown> {
+    const r = m.record;
+    return {
+      id: r.id,
+      subject: r.subject,
+      claim: r.claim,
+      scope: r.scope,
+      source: m.source,
+      trust: m.verdicts.trust,
+      evidence: m.verdicts.evidence,
+      applicability: m.verdicts.applicability,
+      lifecycle: m.verdicts.lifecycle,
+      appliesTo: r.appliesTo,
+      createdAt: r.createdAt,
+      score: m.score,
+      evidenceItems:
+        withEvidence === true ? r.evidence : r.evidence.map((e) => this.evidenceSummary(e)),
+    };
+  }
+
+  /** A conflict-group view: the shared key + subject + scope + the member record ids. */
+  private conflictView(g: ConflictGroup): Record<string, unknown> {
+    return {
+      key: g.key,
+      subject: g.subject,
+      scope: g.scope,
+      recordIds: g.records.map((r) => r.id),
+    };
+  }
+
+  /** Tally one into a string-keyed count map (noUncheckedIndexedAccess-safe via `?? 0`). */
+  private bump(map: Record<string, number>, key: string): void {
+    map[key] = (map[key] ?? 0) + 1;
   }
 
   /**
@@ -1749,14 +2785,139 @@ export class Verbs {
     return { ...result, hash };
   }
 
+  /**
+   * Working-tree facts from version control, cached for a short window.
+   *
+   * `status` is a health check an agent may call several times in one turn, and each call spawned
+   * TWO git subprocesses. On this repo that is ~150ms per call, because `git status` walks 3,736
+   * dirty files — churn the indexer itself produces.
+   *
+   * A short time window is the right cache key here, unlike everywhere else in this file where a
+   * generation counter is available: the working tree changes through human action, which no
+   * counter inside this process observes. Two seconds collapses an agent's burst of calls into one
+   * git invocation while staying well inside the interval a person could notice.
+   */
+  private vcsMemo: { at: number; facts: { head: string; dirtyFiles: string[] } } | undefined;
+
+  private vcsFacts(): { head: string; dirtyFiles: string[] } {
+    const now = Date.now();
+    const memo = this.vcsMemo;
+    if (memo !== undefined && now - memo.at < VCS_FACT_TTL_MS) return memo.facts;
+    const vcs = this.deps.vcs;
+    if (vcs === undefined) return { head: '', dirtyFiles: [] };
+    const facts = {
+      head: vcs.currentHead(this.deps.repoRoot),
+      dirtyFiles: vcs.uncommittedChanges(this.deps.repoRoot),
+    };
+    this.vcsMemo = { at: now, facts };
+    return facts;
+  }
+
+  /**
+   * The two expensive facts `status` reports, memoized against the counters that govern them.
+   *
+   * `status` is a health check an agent calls freely, but it was materializing the ENTIRE composite
+   * graph (39ms) and re-reading every semantic artifact (11ms) on every call, purely to report node
+   * and edge COUNTS. Both costs grew with enrichment — 494 artifacts made a health check the
+   * slowest verb in the surface.
+   *
+   * Neither fact can change without one of these counters moving: `nodeGeneration` covers graph
+   * mutation, `generation.semantic` covers every artifact save and prune. So a repeat call is a
+   * pair of integer comparisons.
+   */
+  private statusFactsMemo:
+    | {
+        nodeGeneration: number;
+        semanticGeneration: number;
+        facts: { hasLlmGraph: boolean; composite: ReturnType<GraphStore['composite']> };
+      }
+    | undefined;
+
+  private statusGraphFacts(): {
+    hasLlmGraph: boolean;
+    composite: ReturnType<GraphStore['composite']>;
+  } {
+    const nodeGeneration = this.deps.soul.nodeGeneration;
+    const semanticGeneration = this.deps.soul.getManifest().generation?.semantic ?? 0;
+    const memo = this.statusFactsMemo;
+    if (
+      memo !== undefined &&
+      memo.nodeGeneration === nodeGeneration &&
+      memo.semanticGeneration === semanticGeneration
+    ) {
+      return memo.facts;
+    }
+    const facts = { hasLlmGraph: this.llm.hasAnyFresh(), composite: this.graph.composite() };
+    this.statusFactsMemo = { nodeGeneration, semanticGeneration, facts };
+    return facts;
+  }
+
+  /**
+   * Make sure the searchable projection of the authored semantic layer is current, then rank it.
+   *
+   * Rebuilt only when `generation.semantic` (bumped by every artifact save) has moved past what the
+   * index was built at — so the common case is one integer comparison, and the rebuild cost falls
+   * once per enrichment round rather than once per query.
+   *
+   * A target whose node has since disappeared is dropped: a code re-index can shift line numbers
+   * and orphan an artifact, and a hit pointing at a node that no longer exists is worse than none.
+   */
+  private semanticHits(text: string, limit: number): Array<{ id: string; score: number }> {
+    const index = this.deps.index as unknown as Partial<SemanticSearchable>;
+    if (
+      typeof index.semanticSearch !== 'function' ||
+      typeof index.buildSemanticIndex !== 'function' ||
+      typeof index.semanticIndexGeneration !== 'function'
+    ) {
+      return []; // a backend without semantic search degrades to code-only retrieval
+    }
+    const current = this.deps.soul.getManifest().generation?.semantic ?? 0;
+    if (index.semanticIndexGeneration() !== current) {
+      const entries = this.llm.allArtifacts().map((a) => {
+        // Fold the target's own identity into the searchable text. Authored prose describes what
+        // something DOES and often never names it — the hashing module's purpose reads "pure
+        // JavaScript content hashing with no native bindings" and contains the word "blake3"
+        // nowhere, so a query naming the algorithm could not reach its artifact at all.
+        const node = this.deps.soul.getNode(a.targetId);
+        const identity = [node?.name, node?.qualifiedName, node?.file].filter(Boolean).join(' ');
+        return {
+          targetId: a.targetId,
+          layer: String(a.layer),
+          purpose: String(a.analysis?.purpose ?? ''),
+          detail: [
+            identity,
+            ...(a.analysis?.responsibilities ?? []),
+            ...(a.analysis?.businessRules ?? []).map((r) => {
+              const rec = r as Record<string, unknown>;
+              return [rec.rule, rec.rationale].filter(Boolean).join(' - ');
+            }),
+          ].join('\n'),
+        };
+      });
+      index.buildSemanticIndex(entries, current);
+    }
+    return index
+      .semanticSearch(text, limit)
+      .filter((h) => this.deps.soul.getNode(h.targetId) !== undefined)
+      .map((h) => ({ id: h.targetId, score: h.score }));
+  }
+
   private attachLlm(result: Record<string, unknown>, targetId: string, withLlm?: boolean): void {
     if (withLlm === false) return;
+    // Inheritance-aware: a symbol with no artifact of its own still surfaces its file's or
+    // cluster's purpose (tagged `inherited`), instead of reporting no meaning at all.
     // Default (withLlm undefined): fold the LIGHTWEIGHT pointer only — provenance + confidence +
     // one-line purpose — so a hit signals "LLM insight exists" without paying the multi-KB
     // analysis+graph+evidence blob. Full projection is opt-in via withLlm: true; this is the
     // token-cost discipline that keeps query/context/dossier lightweight by default.
-    const read = this.llm.readForTarget(targetId);
-    const projection = withLlm === true ? llmProjection(read) : llmPointer(read);
+    const { read, via, inherited } = this.llm.readInherited(targetId);
+    const projection =
+      withLlm === true ? llmProjection(read) : llmPointer(read, { via, inherited });
+    // The same discriminator `brief` stamps per hit, grounded through the same readInherited
+    // resolver: 'semantic' = authored prose backs this answer (directly or inherited from the
+    // owning symbol/file/cluster), 'code' = the caller is holding structure and snippets only.
+    // On single-symbol responses (context/dossier) this lands once on the response root.
+    result.grounding = read.artifact === undefined ? 'code' : 'semantic';
     if (projection) result.llm = projection;
   }
 
@@ -1869,6 +3030,98 @@ function publicAnyEdge(e: Edge | CompositeEdge): Record<string, unknown> {
     ...('model' in e && e.model ? { model: e.model } : {}),
     ...('rationale' in e && e.rationale ? { rationale: e.rationale } : {}),
   };
+}
+
+/**
+ * How the returned hits were FOUND, as opposed to how they are decorated.
+ *
+ * `coverage` counts hits carrying prose, and saturates once most files are described — a symbol
+ * inherits its file's purpose regardless of relevance, so it reported 100% while the top hit for
+ * "how do I debug a parser that hangs" was an unrelated Rust fixture. `matched` counts only hits
+ * that authored meaning actually ranked, which is what tells a reader the semantic layer helped
+ * find the answer rather than merely dressing it.
+ */
+function retrievalOf(views: Array<Record<string, unknown>>): Record<string, unknown> {
+  const total = views.length;
+  const matched = views.filter((v) => v.semanticMatch === true).length;
+  return {
+    matched,
+    total,
+    ...(total > 0 ? { ratio: Math.round((matched / total) * 100) / 100 } : {}),
+  };
+}
+
+/**
+ * Fuse hits ranked over AUTHORED MEANING with keyword hits, alternating from the front:
+ * semantic #1, keyword #1, semantic #2, keyword #2, ...
+ *
+ * Chosen by measurement, not by theory. On a 20-question held-out set (real engineering questions,
+ * each scored against every file that legitimately answers it):
+ *
+ *   keyword only ....... top-1 10%   top-3 10%   MRR 0.147
+ *   reciprocal-rank .... top-1 40%   top-3 90%   MRR 0.649
+ *   alternating ........ top-1 85%   top-3 90%   MRR 0.873
+ *
+ * Reciprocal-rank fusion is the textbook choice and it lost decisively here, because it treats the
+ * two rankers as equally trustworthy. They are not: for a conceptual question ("how do I debug a
+ * parser that hangs") the semantic ranker is usually right and keyword search is usually noise, so
+ * damping the semantic top hit toward the keyword one actively destroys the answer. Alternating
+ * preserves each ranker's own first choice.
+ *
+ * If you are tempted to replace this with RRF, re-run the eval first.
+ *
+ * Duplicates resolve to the keyword hit (it already carries its BM25 score and kind) but are still
+ * flagged `semanticMatch`, so a caller can tell authored meaning helped FIND the hit.
+ */
+function fuseSemantic(
+  keyword: Hit[],
+  semantic: Array<{ id: string; score: number }>,
+  soul: SoulStore,
+  limit: number,
+): Hit[] {
+  if (semantic.length === 0) return keyword;
+  const inKeyword = new Map(keyword.map((h) => [h.id, h]));
+  const marked = keyword.map((h) =>
+    semantic.some((s) => s.id === h.id) ? ({ ...h, semanticMatch: true } as Hit) : h,
+  );
+  const extra: Hit[] = [];
+  for (const s of semantic) {
+    if (inKeyword.has(s.id)) continue;
+    const node = soul.getNode(s.id);
+    if (node === undefined) continue; // artifact orphaned by a re-index
+    extra.push({ id: s.id, kind: node.kind, score: s.score, semanticMatch: true } as Hit);
+  }
+  const out: Hit[] = [];
+  for (let i = 0; out.length < limit && (i < extra.length || i < marked.length); i++) {
+    if (i < extra.length) out.push(extra[i]!);
+    if (out.length < limit && i < marked.length) out.push(marked[i]!);
+  }
+  return out;
+}
+
+/** Grounded-fraction self-report over the hits a response actually carries. */
+function coverageOf(views: Array<Record<string, unknown>>): Record<string, unknown> {
+  const total = views.length;
+  const semantic = views.filter((v) => v.grounding === 'semantic').length;
+  return {
+    semantic,
+    total,
+    ...(total > 0 ? { ratio: Math.round((semantic / total) * 100) / 100 } : {}),
+  };
+}
+
+/**
+ * Below this grounded fraction the semantic layer is NOT answering the question, and the honest
+ * move is to read source. Half the payload ungrounded is the floor; a coverage ratio is otherwise
+ * easy to misread as a grade rather than a routing signal, so the hint spells the action out.
+ */
+const LOW_COVERAGE_RATIO = 0.5;
+const LOW_COVERAGE_HINT = 'low semantic coverage — fall back to reading code for these hits';
+
+/** The caller-facing low-coverage hint, present only when the ratio says so (absent at total 0). */
+function lowCoverageHint(coverage: Record<string, unknown>): Record<string, unknown> {
+  const ratio = coverage.ratio as number | undefined;
+  return ratio !== undefined && ratio < LOW_COVERAGE_RATIO ? { hint: LOW_COVERAGE_HINT } : {};
 }
 
 function notFound(id: string): Record<string, unknown> {

@@ -41,6 +41,17 @@ const CLUSTERS_FILE = join('clusters', 'clusters.jsonl');
 export interface SoulStoreOpts {
   /** Manifest to seed a fresh soul; ignored if a manifest already exists on disk. */
   manifest?: Manifest;
+  /**
+   * W6 — mark this store EPHEMERAL: an in-memory working copy that mirrors a committed soul but must
+   * never persist. `commit()` becomes a no-op (the dirty-shard flush, manifest write, and vendored
+   * schema/gitignore writes are all skipped), so the overlay can `load()` from a canonical `.crib`
+   * directory for a fast seed and then mutate freely in memory with ZERO risk of dirtying the
+   * committed `.crib/graph` shards. This is the structural guard the PRD failure-audit (line 467)
+   * demands: "Watch mode dirties committed soul → Separate working-tree overlay under ignored runtime
+   * storage." `setVcsHead`/`setIncrementalSince`/`setCapabilities` still mutate the in-memory manifest
+   * (harmless — never flushed) so readers that consult the manifest see consistent state.
+   */
+  ephemeral?: boolean;
 }
 
 /**
@@ -61,6 +72,8 @@ export class SoulStore {
   private readonly edges = new Map<string, Edge>();
   private manifest: Manifest;
   private readonly canonicalLayout: boolean;
+  /** W6 — when true, `commit()` is a no-op so an in-memory overlay can never dirty a canonical `.crib`. */
+  private readonly ephemeral: boolean;
 
   /** Node shards whose chunk files must be rewritten on commit. */
   private readonly dirtyNodeShards = new Set<string>();
@@ -78,6 +91,7 @@ export class SoulStore {
     this.manifest = opts.manifest ?? newManifest({ root: '.' });
     this.canonicalLayout =
       hasCanonicalGraph(cribDirPrivate) || !existsSync(join(cribDirPrivate, MANIFEST_FILE));
+    this.ephemeral = opts.ephemeral === true;
   }
 
   /** Read the manifest and hydrate the graph from existing chunks. Returns the manifest. */
@@ -97,6 +111,7 @@ export class SoulStore {
     }
     this.nodes.clear();
     this.edges.clear();
+    this.invalidateKindIndex();
     this.hydrateNodes();
     this.hydrateEdges();
     this.dirtyNodeShards.clear();
@@ -116,6 +131,7 @@ export class SoulStore {
   resetForRebuild(): void {
     this.nodes.clear();
     this.edges.clear();
+    this.invalidateKindIndex();
     const nodesRoot = this.nodesRoot;
     if (existsSync(nodesRoot)) for (const s of readdirSync(nodesRoot)) this.dirtyNodeShards.add(s);
     const edgesRoot = this.edgesRoot;
@@ -133,6 +149,7 @@ export class SoulStore {
       this.nodes.set(node.id, node);
       this.markNodeDirty(node);
     }
+    if (ns.length > 0) this.invalidateKindIndex();
   }
 
   /** Upsert edges by id, collapsing `(src,dst,rel)` collisions via the conflict rule. */
@@ -224,6 +241,7 @@ export class SoulStore {
       [...this.nodes.values()].filter((node) => node.kind === 'cluster').map((node) => node.id),
     );
     for (const id of oldClusterIds) this.nodes.delete(id);
+    this.invalidateKindIndex();
     if (oldClusterIds.size > 0 || clusters.length > 0) this.clustersDirty = true;
     for (const edge of [...this.edges.values()]) {
       if (!oldClusterIds.has(edge.src) && !oldClusterIds.has(edge.dst)) continue;
@@ -276,14 +294,58 @@ export class SoulStore {
     return this.nodes.get(id);
   }
 
+  /**
+   * Lazily-built kind -> nodes buckets. `iterate(kind)` used to scan every node and filter, so a
+   * caller that walks one kind per cluster (e.g. `clusterMembers` over 666 clusters) paid
+   * O(clusters x ALL nodes) — 20M iterations on this repo. Bucketing makes it O(matching).
+   *
+   * Invalidated wholesale by every mutation rather than maintained incrementally: mutations are
+   * rare and batched, and "any write drops the cache" cannot silently desynchronise the way seven
+   * hand-maintained update sites could. Buckets are filled by walking `nodes.values()`, so
+   * iteration order stays byte-identical to the old filter — which the determinism gates rely on.
+   */
+  private kindIndex: Map<NodeKind, Node[]> | null = null;
+
+  private generation = 0;
+
+  private invalidateKindIndex(): void {
+    this.kindIndex = null;
+    this.generation++;
+  }
+
+  /**
+   * Monotonic counter bumped on every node mutation. Derived caches outside this class (e.g. the
+   * cluster-membership grouping in `cluster-hash.ts`) key off it to detect staleness *exactly*,
+   * instead of guessing from a proxy like node count.
+   */
+  get nodeGeneration(): number {
+    return this.generation;
+  }
+
+  private kindBuckets(): Map<NodeKind, Node[]> {
+    let index = this.kindIndex;
+    if (index === null) {
+      index = new Map<NodeKind, Node[]>();
+      for (const node of this.nodes.values()) {
+        const bucket = index.get(node.kind);
+        if (bucket === undefined) index.set(node.kind, [node]);
+        else bucket.push(node);
+      }
+      this.kindIndex = index;
+    }
+    return index;
+  }
+
   getEdge(id: string): Edge | undefined {
     return this.edges.get(id);
   }
 
   *iterate(kind?: NodeKind): Iterable<Node> {
-    for (const node of this.nodes.values()) {
-      if (!kind || node.kind === kind) yield node;
+    if (kind === undefined) {
+      yield* this.nodes.values();
+      return;
     }
+    yield* this.kindBuckets().get(kind) ?? [];
   }
 
   *iterateEdges(rel?: Rel): Iterable<Edge> {
@@ -300,6 +362,7 @@ export class SoulStore {
         this.markNodeDirty(node);
       }
     }
+    this.invalidateKindIndex();
     for (const edge of [...this.edges.values()]) {
       if (pathFromId(edge.src) === path || pathFromId(edge.dst) === path) {
         this.edges.delete(edge.id);
@@ -310,6 +373,10 @@ export class SoulStore {
 
   /** Flush dirty shards atomically, prune dangling edges, rewrite manifest + vendored schemas. */
   commit(now = new Date().toISOString(), preserveTimestamp = false): void {
+    // W6 — an ephemeral (working-overlay) store is an in-memory mirror only; persisting would dirty
+    // the canonical `.crib/graph` it loaded from. The PRD failure-audit (line 467) makes this a
+    // hard structural guard, not a convention.
+    if (this.ephemeral) return;
     const graphChanged =
       this.dirtyNodeShards.size > 0 || this.dirtyEdgeShards.size > 0 || this.clustersDirty;
     this.pruneDangling();
@@ -369,6 +436,27 @@ export class SoulStore {
    */
   setCapabilities(patch: Partial<ManifestCapabilities>): void {
     this.manifest.capabilities = { ...this.manifest.capabilities, ...patch };
+  }
+
+  /**
+   * Bump the semantic-layer invalidation counter (`manifest.generation.semantic`) by one and persist
+   * it immediately. Called by `updateRepo` after `pruneSemanticArtifacts` deletes orphaned LLM
+   * artifacts so readers (`graphFingerprint`, `enrich_status`) see that the semantic cache has been
+   * invalidated and must not serve stale analysis of deleted symbols. Unlike `setVcsHead` /
+   * `setCapabilities`, this writes NOW rather than deferring to `commit()` — `updateRepo` has already
+   * committed the soul (the prune runs post-commit) and may not call `commit()` again, so a deferred
+   * bump would be lost. Mutating the cached `this.manifest` (not re-reading disk) keeps the in-memory
+   * manifest a caller may still hold consistent with disk, so a later `commit()` does not clobber the
+   * bump back to its pre-bump value (the divergence trap a disk-only write would create). A no-op on
+   * ephemeral stores (W6 working overlay — never owns the canonical manifest) and when no canonical
+   * graph manifest exists yet (fresh repo / legacy layout with nothing to bump).
+   */
+  bumpSemanticGeneration(): void {
+    if (this.ephemeral) return;
+    if (!existsSync(join(this.cribDirPrivate, 'graph', 'manifest.json'))) return;
+    const generation = this.manifest.generation ?? { extracted: 0, semantic: 0 };
+    this.manifest.generation = { ...generation, semantic: generation.semantic + 1 };
+    this.writeManifest();
   }
 
   // ---------------------------------------------------------------------------
@@ -454,6 +542,7 @@ export class SoulStore {
     if (existsSync(clustersPath)) {
       for (const node of this.readRecords<Node>(clustersPath)) this.nodes.set(node.id, node);
     }
+    this.invalidateKindIndex();
   }
 
   private hydrateEdges(): void {

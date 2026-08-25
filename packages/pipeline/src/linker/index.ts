@@ -12,10 +12,11 @@ import { edgeId, idFor } from '@knowledge-crib/soul-schema';
 import type { Edge } from '@knowledge-crib/soul-schema';
 import { InvertedIndex } from './inverted-index.js';
 import { scoreLink } from './score.js';
-import { explicitSignal, identifierSignal, pathSignal } from './signals.js';
-import type { SignalHit } from './signals.js';
+import { explicitSignal, identifierSignal, linkSignal } from './signals.js';
+import type { LinkDiagnostic, SignalHit } from './signals.js';
 
 export { InvertedIndex } from './inverted-index.js';
+export type { InvertedIndexOpts } from './inverted-index.js';
 export { runMediaLink } from './media.js';
 export type { MediaLinkStats } from './media.js';
 export { runSemanticLink } from './semantic.js';
@@ -26,12 +27,18 @@ export { TfidfIndex, tokenize } from './tfidf.js';
 // as the deterministic doc→symbol linker — one scoring path, no drift.
 export { scoreLink } from './score.js';
 export type { ScoredLink } from './score.js';
-export { explicitSignal, identifierSignal, pathSignal } from './signals.js';
-export type { SignalHit } from './signals.js';
+export { explicitSignal, identifierSignal, linkSignal } from './signals.js';
+export type { LinkDiagnostic, LinkSignalResult, SignalHit } from './signals.js';
 
 export interface LinkStats {
   describes: number;
   references: number;
+  /**
+   * Internal MD links that did NOT become edges: unresolved (no indexed file/doc-section/symbol at
+   * the target) or ambiguous (2+ symbols match a `path#name`). Surfaced so `crib audit` / the CLI
+   * can report documentation drift — PRD W1 "every internal link is resolved or diagnosed".
+   */
+  diagnostics: LinkDiagnostic[];
 }
 
 /**
@@ -47,7 +54,8 @@ export function runLink(
   threshold?: number,
   docFiles?: string[],
 ): LinkStats {
-  const index = new InvertedIndex(soul);
+  // `{ targets: true }` so the link signal resolves internal MD links to file/doc-section nodes.
+  const index = new InvertedIndex(soul, { targets: true });
 
   // group doc-section nodes by file (optionally restricted to `docFiles`)
   const scope = docFiles ? new Set(docFiles) : undefined;
@@ -57,7 +65,9 @@ export function runLink(
   }
 
   const edges: Edge[] = [];
-  const stats: LinkStats = { describes: 0, references: 0 };
+  const diagnostics: LinkDiagnostic[] = [];
+  const seenDiag = new Set<string>();
+  const stats: LinkStats = { describes: 0, references: 0, diagnostics: [] };
 
   for (const docFile of docFilesInScope.keys()) {
     let text: string;
@@ -68,12 +78,20 @@ export function runLink(
     }
     for (const section of parseMarkdownSections(text)) {
       const sectionId = idFor({ kind: 'doc-section', path: docFile, anchor: section.anchor });
-      // gather signals, grouped by target symbol id
+      // gather signals, grouped by target node id
       const bySymbol = new Map<string, SignalHit[]>();
+      const linkRes = linkSignal(section, docFile, index);
+      for (const d of linkRes.diagnostics) {
+        const key = `${d.docFile}|${d.anchor}|${d.target}|${d.kind}`;
+        if (!seenDiag.has(key)) {
+          seenDiag.add(key);
+          diagnostics.push(d);
+        }
+      }
       const allHits = [
         ...explicitSignal(section, index),
         ...identifierSignal(section, index),
-        ...pathSignal(section, docFile, index),
+        ...linkRes.hits,
       ];
       for (const hit of allHits) {
         const list = bySymbol.get(hit.symbol.id) ?? [];
@@ -83,6 +101,9 @@ export function runLink(
       for (const [symbolId, hits] of bySymbol) {
         const scored = scoreLink(hits, threshold);
         if (!scored) continue;
+        // target hash in evidence so `crib audit` can flag documentation drift (target changed,
+        // doc still points at the old span). All hits for one node share its hash.
+        const targetNode = hits[0]?.symbol;
         edges.push({
           id: edgeId(sectionId, symbolId, scored.rel),
           src: sectionId,
@@ -91,7 +112,11 @@ export function runLink(
           method: scored.method,
           provenance: 'EXTRACTED',
           confidence: scored.confidence,
-          evidence: { by: 'deterministic-linker', snippet: section.heading },
+          evidence: {
+            by: 'deterministic-linker',
+            snippet: section.heading,
+            ...(targetNode?.hash ? { targetHash: targetNode.hash } : {}),
+          },
         });
         if (scored.rel === 'describes') stats.describes++;
         else stats.references++;
@@ -100,5 +125,6 @@ export function runLink(
   }
 
   if (edges.length > 0) soul.putEdges(edges);
+  stats.diagnostics = diagnostics;
   return stats;
 }

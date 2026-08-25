@@ -27,6 +27,7 @@ import { availableParallelism } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Worker } from 'node:worker_threads';
+import { FUZZ_EXTRACTORS } from './fuzz-extractors.js';
 import type { FuzzOutcomeKind } from './fuzz-validate.js';
 
 /**
@@ -157,11 +158,18 @@ export async function runFuzz(extractorName: string, opts: RunFuzzOpts = {}): Pr
     throw new Error(`fuzz worker not built: ${url} (run the build before fuzz)`);
   }
 
-  // Seeded, deterministic inputs. Arbitrary unicode strings up to maxLength — exercises truncation,
-  // odd tokens, control chars, partial/invalid syntax across every extractor's surface. fast-check
-  // is dynamically imported here (dev/CI only) so the published runtime never loads it.
+  // Seeded, deterministic inputs. Each extractor's spec may carry a `seedInputs` corpus (deterministic
+  // adversarial strings) that is prepended to the fast-check set so the extractor's input-specific
+  // untrusted-input boundaries are exercised every run, not just when fast-check happens to emit them.
+  // The total stays `iterations`: the random count is `iterations - seeds.length` (clamped at 0), so
+  // the gate's `ok === iterations` invariant holds. fast-check is dynamically imported here (dev/CI
+  // only) so the published runtime never loads it.
   const fc = await loadFc();
-  const inputs: string[] = fc.sample(fc.string({ maxLength }), { numRuns: iterations, seed });
+  const seeds = FUZZ_EXTRACTORS.find((s) => s.name === extractorName)?.seedInputs ?? [];
+  const randomCount = Math.max(0, iterations - seeds.length);
+  const randomInputs =
+    randomCount > 0 ? fc.sample(fc.string({ maxLength }), { numRuns: randomCount, seed }) : [];
+  const inputs: string[] = [...seeds, ...randomInputs];
 
   const outcome: FuzzOutcome = {
     extractor: extractorName,

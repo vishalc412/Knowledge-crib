@@ -9,6 +9,7 @@ coverage/
 # Knowledge-crib derived artifacts (rebuildable from the committed soul)
 .crib/index/
 .crib/embeddings/
+.crib/runtime/
 .crib/.lock
 .crib/index/.lock
 
@@ -47,3 +48,12 @@ claude/
 # Local demo/media assets (large binaries, never committed)
 media/
 outputs/
+
+# The whole local knowledge-graph working directory. Every `crib index` rewrites thousands of files
+# here, which buried real code changes under ~4,700 generated files in review and made `git status`
+# unusable. It is all reproducible from source with `crib index .`, so it is build output, not
+# source — the same reasoning that already excluded `.crib/index/`.
+.crib/
+
+# Codex tool state — machine-local, same reasoning.
+.codex/

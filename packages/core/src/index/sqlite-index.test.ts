@@ -155,6 +155,52 @@ describe('applyDelta (incremental)', () => {
     expect(idx.impact(login.id, 'down').nodes).not.toContain(issue.id);
     idx.close();
   });
+
+  // Guards the rowid-mapped FTS delete. `nodes_fts.id` is UNINDEXED, so the old
+  // `DELETE FROM nodes_fts WHERE id = ?` full-scanned the table (O(N^2) builds). We now delete by a
+  // mapped rowid — correct ONLY if the id->rowid map is written on the fresh build path too. If it
+  // were written only on the delta path, `deleteFtsRow` would find no mapping for a
+  // build-time row, silently skip the delete, and leave a stale duplicate whose superseded text
+  // stays matchable forever. Both tests below seed a UNIQUE token into the soul before the fresh
+  // build so that leaked row is actually observable.
+  function seedUnique(token: string): Node {
+    const node = sym('src/auth/Unique.ts', 'Unique.probe', 7, { signature: token });
+    const s2 = new SoulStore(dir, { manifest: store.getManifest() });
+    s2.load();
+    s2.putNodes([file('src/auth/Unique.ts'), node]);
+    s2.commit('2026-01-02T00:00:00.000Z');
+    store = s2;
+    return node;
+  }
+
+  it('re-indexing a node purges the FTS text written by the fresh build', () => {
+    const probe = seedUnique('ZZORIGINALTOKEN');
+    const idx = new SqliteIndexStore();
+    idx.buildFromSoul(store, dir); // fresh path — must record the id->rowid mapping
+    expect(idx.query({ text: 'ZZORIGINALTOKEN' }).map((h) => h.id)).toContain(probe.id);
+
+    idx.applyDelta(
+      { nodes: [{ ...probe, signature: 'ZZREPLACEDTOKEN' } as Node], edges: [], removed: [] },
+      dir,
+    );
+    expect(idx.query({ text: 'ZZREPLACEDTOKEN' }).map((h) => h.id)).toContain(probe.id);
+    // The build-time row must be gone, not merely outranked or shadowed by a duplicate.
+    expect(idx.query({ text: 'ZZORIGINALTOKEN' })).toEqual([]);
+    idx.close();
+  });
+
+  // Note: this one passes even without the id->rowid mapping, because `bm25Query` JOINs `nodes` and
+  // a removed node has no `nodes` row to join to. It pins the user-visible contract; the
+  // replacement test above is what actually guards the mapping.
+  it('removing a node makes its FTS text unsearchable', () => {
+    const probe = seedUnique('ZZREMOVEMETOKEN');
+    const idx = new SqliteIndexStore();
+    idx.buildFromSoul(store, dir);
+    expect(idx.query({ text: 'ZZREMOVEMETOKEN' }).map((h) => h.id)).toContain(probe.id);
+    idx.applyDelta({ nodes: [], edges: [], removed: [probe.id] }, dir);
+    expect(idx.query({ text: 'ZZREMOVEMETOKEN' })).toEqual([]);
+    idx.close();
+  });
 });
 
 describe('capabilities + factory', () => {
@@ -387,5 +433,226 @@ describe('SqliteIndexStore — M2.1 vector layer + RRF hybrid query', () => {
     expect(withVec.query(q).map((h) => h.id)).toEqual(plain.query(q).map((h) => h.id));
     plain.close();
     withVec.close();
+  });
+});
+
+describe('SqliteIndexStore — source redaction policy (FTS never indexes secret values)', () => {
+  it('indexes property keys but not values (query db.password hits, swordfish does not)', () => {
+    writeFileSync(join(dir, 'secure.properties'), 'db.user=alice\ndb.password=swordfish');
+    const redactStore = new SoulStore(dir, {
+      manifest: newManifest({ now: '2026-01-01T00:00:00.000Z' }),
+    });
+    redactStore.load();
+    const props: Node = {
+      id: idFor({ kind: 'file', path: 'secure.properties' }),
+      kind: 'file',
+      file: 'secure.properties',
+      span: { start: 1, end: 2 },
+      hash: contentHash('secure.properties'),
+      meta: { sourcePolicy: 'redact-properties' },
+    };
+    redactStore.putNodes([props]);
+    redactStore.commit('2026-01-01T00:00:00.000Z');
+
+    const idx = new SqliteIndexStore();
+    idx.buildFromSoul(redactStore, dir);
+    // the KEY is searchable (redacted body keeps keys)
+    expect(idx.query({ text: 'db.password' }).map((h) => h.id)).toContain(props.id);
+    // the secret VALUE is never indexed
+    expect(idx.query({ text: 'swordfish' }).map((h) => h.id)).not.toContain(props.id);
+    expect(idx.query({ text: 'alice' }).map((h) => h.id)).not.toContain(props.id);
+    idx.close();
+  });
+
+  it('redacts Mule XML secret attributes: xml-canary never indexed, api.token placeholder is', () => {
+    writeFileSync(
+      join(dir, 'http.xml'),
+      '<http:request password="xml-canary" token="${api.token}"/>',
+    );
+    const redactStore = new SoulStore(dir, {
+      manifest: newManifest({ now: '2026-01-01T00:00:00.000Z' }),
+    });
+    redactStore.load();
+    const xml: Node = {
+      id: idFor({ kind: 'file', path: 'http.xml' }),
+      kind: 'file',
+      file: 'http.xml',
+      span: { start: 1, end: 1 },
+      hash: contentHash('http.xml'),
+      meta: { sourcePolicy: 'redact-mule-secrets' },
+    };
+    redactStore.putNodes([xml]);
+    redactStore.commit('2026-01-01T00:00:00.000Z');
+
+    const idx = new SqliteIndexStore();
+    idx.buildFromSoul(redactStore, dir);
+    // the secret VALUE token never reaches the FTS body (canary only appears in the redacted value)
+    expect(idx.query({ text: 'canary' }).map((h) => h.id)).not.toContain(xml.id);
+    // the placeholder reference key remains searchable
+    expect(idx.query({ text: 'api.token' }).map((h) => h.id)).toContain(xml.id);
+    idx.close();
+  });
+
+  it('deny nodes never reach the FTS body at all', () => {
+    writeFileSync(join(dir, 'keystore.jks'), 'RAW-KEYSTORE-BYTES-SECRET');
+    const redactStore = new SoulStore(dir, {
+      manifest: newManifest({ now: '2026-01-01T00:00:00.000Z' }),
+    });
+    redactStore.load();
+    const deny: Node = {
+      id: idFor({ kind: 'file', path: 'keystore.jks' }),
+      kind: 'file',
+      file: 'keystore.jks',
+      span: { start: 1, end: 1 },
+      hash: contentHash('keystore.jks'),
+      meta: { sourcePolicy: 'deny' },
+    };
+    redactStore.putNodes([deny]);
+    redactStore.commit('2026-01-01T00:00:00.000Z');
+
+    const idx = new SqliteIndexStore();
+    idx.buildFromSoul(redactStore, dir);
+    // the secret CONTENT token never reaches the FTS body (deny blocks the disk read)
+    expect(idx.query({ text: 'BYTES' }).map((h) => h.id)).not.toContain(deny.id);
+    expect(idx.query({ text: 'SECRET' }).map((h) => h.id)).not.toContain(deny.id);
+    // the file path itself is still indexed (it carries no secret)
+    expect(idx.query({ text: 'keystore.jks' }).map((h) => h.id)).toContain(deny.id);
+    idx.close();
+  });
+});
+
+// Authored meaning has to be SEARCHABLE, not merely attachable. Before this existed, a phrase
+// occurring only in authored prose returned zero hits: the semantic layer decorated results that
+// keyword search had already chosen, and could never change which result was found.
+describe('semantic search over authored meaning', () => {
+  function seeded() {
+    const s = new SqliteIndexStore();
+    s.buildSemanticIndex(
+      [
+        {
+          targetId: 'file:a.ts',
+          layer: 'file',
+          purpose: 'Detects a parser that hangs by running it inside a killable worker.',
+          detail: 'Terminate a worker that exceeds its time budget',
+        },
+        {
+          targetId: 'file:b.ts',
+          layer: 'file',
+          purpose: 'Formats a date for display.',
+          detail: 'Render timestamps',
+        },
+      ],
+      7,
+    );
+    return s;
+  }
+
+  it('finds a target by prose that appears nowhere in its source', () => {
+    const s = seeded();
+    const hits = s.semanticSearch('killable worker', 5);
+    expect(hits[0]?.targetId).toBe('file:a.ts');
+    s.close();
+  });
+
+  it('records the generation it was built at, so staleness is a single comparison', () => {
+    const s = new SqliteIndexStore();
+    expect(s.semanticIndexGeneration()).toBe(-1); // never built
+    s.buildSemanticIndex([], 7);
+    expect(s.semanticIndexGeneration()).toBe(7);
+    s.close();
+  });
+
+  it('replaces the whole projection on rebuild rather than accumulating', () => {
+    const s = seeded();
+    s.buildSemanticIndex(
+      [{ targetId: 'file:c.ts', layer: 'file', purpose: 'Something else entirely.', detail: '' }],
+      8,
+    );
+    expect(s.semanticSearch('killable worker', 5)).toHaveLength(0); // old entry gone
+    expect(s.semanticIndexGeneration()).toBe(8);
+    s.close();
+  });
+
+  it('returns nothing rather than throwing on an unusable query', () => {
+    const s = seeded();
+    expect(s.semanticSearch('', 5)).toEqual([]);
+    expect(s.semanticSearch('!!! ***', 5)).toEqual([]);
+    s.close();
+  });
+});
+
+// Query scaffolding ("why did you...") is OR-joined with the real terms, so it matches a large
+// share of a corpus that now contains hundreds of files of English prose and drags unrelated
+// documents up. Measured: "why did you choose blake3" ranked an unrelated ADR above the hashing
+// module that answers it.
+describe('query stopword handling', () => {
+  it('ignores question scaffolding when real terms are present', () => {
+    const s = new SqliteIndexStore();
+    s.buildSemanticIndex(
+      [
+        {
+          targetId: 'file:hash.ts',
+          layer: 'file',
+          purpose: 'Content hashing without native bindings.',
+          detail: '',
+        },
+        {
+          targetId: 'file:why.ts',
+          layer: 'file',
+          purpose: 'A module about why and how you should do things.',
+          detail: '',
+        },
+      ],
+      1,
+    );
+    const hits = s.semanticSearch('why did you choose hashing', 5);
+    expect(hits[0]?.targetId).toBe('file:hash.ts');
+    s.close();
+  });
+
+  it('still answers a query made ENTIRELY of scaffolding, rather than returning nothing', () => {
+    const s = new SqliteIndexStore();
+    s.buildSemanticIndex(
+      [{ targetId: 'file:a.ts', layer: 'file', purpose: 'How does it work.', detail: '' }],
+      1,
+    );
+    // Falls back to the unfiltered tokens — an empty result would be worse than a loose one.
+    expect(s.semanticSearch('how does it work', 5).length).toBeGreaterThan(0);
+    s.close();
+  });
+
+  it('never treats a real code identifier as scaffolding', () => {
+    // `type`, `class`, `use`, `get`, `set`, `new`, `call` read like stopwords in English but are
+    // genuine identifiers in code. The decoy repeats the SHARED word, so it outranks the target on
+    // that word alone — the target can only win if the identifier is still part of the query.
+    const s = new SqliteIndexStore();
+    s.buildSemanticIndex(
+      [
+        { targetId: 'file:type.ts', layer: 'file', purpose: 'The type system.', detail: '' },
+        {
+          targetId: 'file:decoy.ts',
+          layer: 'file',
+          purpose: 'system system system system system system',
+          detail: 'system system system system system system',
+        },
+      ],
+      1,
+    );
+    expect(s.semanticSearch('type system', 5)[0]?.targetId).toBe('file:type.ts');
+
+    s.buildSemanticIndex(
+      [
+        { targetId: 'file:class.ts', layer: 'file', purpose: 'The class loader.', detail: '' },
+        {
+          targetId: 'file:decoy2.ts',
+          layer: 'file',
+          purpose: 'loader loader loader loader loader loader',
+          detail: 'loader loader loader loader loader loader',
+        },
+      ],
+      2,
+    );
+    expect(s.semanticSearch('class loader', 5)[0]?.targetId).toBe('file:class.ts');
+    s.close();
   });
 });
