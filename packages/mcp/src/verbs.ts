@@ -1037,56 +1037,118 @@ export class Verbs {
       return hit;
     });
 
-    // Semantic discoveries from the LLM graph layer that BM25 did NOT surface — ranked by term-overlap
-    // (see EnrichmentStore.matchText) and de-duplicated against the BM25 hit set. These live in their
-    // own `llmHits` field so they never drown out BM25 ranking (the old `unshift`-at-score-0 path put
-    // a test helper that merely mentioned a query term above the real `sqlite-index.ts` for "sqlite").
-    const seen = new Set(bm25Ids);
-    const llmArtifacts = args.withLlm === false ? [] : this.llm.matchText(args.q, limit + 1);
-    const llmTruncated = llmArtifacts.length > limit;
+    // Semantic discoveries from the authored-meaning layer that BM25 did NOT surface, ranked by the
+    // SAME semantic_fts BM25 projection `brief` uses ({@link Verbs.semanticHits}) — the measured
+    // ranker — and de-duplicated against the BM25 hit set. These live in their own `llmHits` field
+    // so they never drown out BM25 ranking (the old `unshift`-at-score-0 path put a test helper
+    // that merely mentioned a query term above the real `sqlite-index.ts` for "sqlite").
+    //
+    // `EnrichmentStore.matchText` (an O(all-artifacts) disk scan ranked by raw term count) is kept
+    // only as the fallback for when semantic_fts is unavailable or cold, and the fallback is never
+    // silent: `llmSource` names the ranker that served the discoveries, and FTS-sourced hits carry
+    // `semanticMatch` — the same signal `brief` uses for "authored meaning FOUND this hit" — while
+    // fallback hits do not.
     const llmHits: Array<Record<string, unknown>> = [];
-    for (const artifact of llmArtifacts.slice(0, limit)) {
-      if (seen.has(artifact.targetId)) continue;
-      seen.add(artifact.targetId);
-      const node = soul.getNode(artifact.targetId);
-      const read = { artifact, missing: false, stale: false };
-      const proj = args.withLlm === true ? llmProjection(read) : llmPointer(read);
-      if (!proj) continue;
-      llmHits.push({
-        id: artifact.targetId,
-        kind: node?.kind ?? 'symbol',
-        snippet: node ? rehydrate(this.deps.repoRoot, node) : '',
-        llm: proj,
-      });
+    let llmTruncated = false;
+    let llmSource: 'semantic_fts' | 'matchText' | undefined;
+    if (args.withLlm !== false) {
+      const seen = new Set(bm25Ids);
+      const ftsHits = this.semanticHits(args.q, limit + 1);
+      if (ftsHits.length > 0) {
+        llmSource = 'semantic_fts';
+        llmTruncated = ftsHits.length > limit;
+        for (const hit of ftsHits.slice(0, limit)) {
+          if (seen.has(hit.id)) continue;
+          seen.add(hit.id);
+          const node = soul.getNode(hit.id);
+          // Inheritance-aware pointer, identical to what attachLlm folds onto BM25 hits — a
+          // discovery ranked for its FILE's prose must not read as the symbol's own meaning.
+          const { read, via, inherited } = this.llm.readInherited(hit.id);
+          const proj =
+            args.withLlm === true ? llmProjection(read) : llmPointer(read, { via, inherited });
+          if (!proj) continue;
+          llmHits.push({
+            id: hit.id,
+            kind: node?.kind ?? 'symbol',
+            grounding: 'semantic', // authored meaning is what ranked this discovery
+            semanticMatch: true,
+            snippet: node ? rehydrate(this.deps.repoRoot, node) : '',
+            llm: proj,
+          });
+        }
+      } else {
+        llmSource = 'matchText';
+        const llmArtifacts = this.llm.matchText(args.q, limit + 1);
+        llmTruncated = llmArtifacts.length > limit;
+        for (const artifact of llmArtifacts.slice(0, limit)) {
+          if (seen.has(artifact.targetId)) continue;
+          seen.add(artifact.targetId);
+          const node = soul.getNode(artifact.targetId);
+          const read = { artifact, missing: false, stale: false };
+          const proj = args.withLlm === true ? llmProjection(read) : llmPointer(read);
+          if (!proj) continue;
+          llmHits.push({
+            id: artifact.targetId,
+            kind: node?.kind ?? 'symbol',
+            grounding: 'semantic', // every llmHit carries an artifact by construction
+            snippet: node ? rehydrate(this.deps.repoRoot, node) : '',
+            llm: proj,
+          });
+        }
+      }
     }
 
+    // Honest self-report over the RETURNED payload (hits + llmHits), mirroring brief.coverage:
+    // how much of this answer is backed by authored meaning rather than source alone. Omitted when
+    // withLlm:false — the caller opted the semantic layer out, so reporting a 0-ratio desert would
+    // blame them for a choice they made. Below LOW_COVERAGE_RATIO the response carries an explicit
+    // caller-facing `hint` instead of relying on the reader to interpret the ratio.
+    const coverage = args.withLlm === false ? undefined : coverageOf([...hits, ...llmHits]);
     const baseTruncated = bm25Truncated || llmTruncated;
+    const tail: Record<string, unknown> = {
+      truncated: baseTruncated,
+      // Only when there is something for it to describe. `llmSource` names the ranker that served
+      // the discoveries; reporting the provenance of an EMPTY list is noise, and on a tight budget
+      // it is noise that crowds out the fields a caller needs to page.
+      ...(llmSource !== undefined && llmHits.length > 0 ? { llmSource } : {}),
+      ...(coverage !== undefined ? { coverage, ...lowCoverageHint(coverage) } : {}),
+    };
     // M1.2 response-wide token budget (opt-in). When maxTokens is set, fit the hits list to the
-    // largest leading prefix whose serialized response fits (chars/4); llmHits + the fixed
-    // `truncated` flag are counted in the estimate. The non-maxTokens path is byte-identical to
-    // before (no cursor / no budgetExhausted) so existing callers + tests are unchanged.
+    // largest leading prefix whose serialized response fits (chars/4); llmHits + the fixed tail
+    // fields are counted in the estimate. The non-maxTokens path adds no cursor / no
+    // budgetExhausted so existing callers + tests are unchanged.
     if (args.maxTokens === undefined) {
-      return { hits, llmHits, truncated: baseTruncated };
+      return { hits, llmHits, ...tail };
     }
     const maxTokens = capMaxTokens(args.maxTokens);
     const fitted = fitTokenBudget(hits, maxTokens, (prefix) =>
       JSON.stringify({
         hits: prefix,
         llmHits,
-        truncated: baseTruncated,
+        ...tail,
         budgetExhausted: true,
         cursor: String(offset + prefix.length),
       }),
     );
     const more = fitted.budgetExhausted || bm25Truncated;
-    return {
+    const result: Record<string, unknown> = {
       hits: fitted.items,
       llmHits,
-      truncated: baseTruncated,
+      ...tail,
       // when maxTokens is opted in, always report budgetExhausted (true/false); cursor only when more.
       budgetExhausted: fitted.budgetExhausted,
       ...(more ? { cursor: String(offset + fitted.items.length) } : {}),
     };
+    // `maxTokens` is a ceiling, not a suggestion — the fitter can only trim `hits`, so on a budget
+    // too small for even an empty-hits response the ADVISORY tail must yield. `coverage` and its
+    // `hint` describe a payload that has just been trimmed to nothing, so they are the first things
+    // worth dropping; `truncated`, `budgetExhausted` and `cursor` stay, because without them the
+    // caller cannot tell a small answer from a truncated one, or page to get the rest.
+    if (estimateTokens(JSON.stringify(result)) > maxTokens) {
+      const { coverage: _c, hint: _h, ...rest } = result;
+      return rest;
+    }
+    return result;
   }
 
   /**
@@ -2047,21 +2109,28 @@ export class Verbs {
       ...memories.map((view) => ({ group: 'mem' as const, view })),
     ];
     const maxTokens = args.maxTokens === undefined ? 2000 : capMaxTokens(args.maxTokens);
-    const fitted = fitTokenBudget(items, maxTokens, (prefix) =>
-      JSON.stringify({
+    const fitted = fitTokenBudget(items, maxTokens, (prefix) => {
+      // coverage + retrieval describe the candidate prefix, so the estimate counts the real
+      // fixed fields the wire response carries (a low-coverage `hint` is one of them).
+      const cov = coverageOf(prefix.filter((i) => i.group !== 'mem').map((i) => i.view));
+      return JSON.stringify({
         codeHits: prefix.filter((i) => i.group === 'code').map((i) => i.view),
         instructions: prefix.filter((i) => i.group === 'instr').map((i) => i.view),
         memories: prefix.filter((i) => i.group === 'mem').map((i) => i.view),
         conflicts,
         ...(memoryProvenance ? { provenance: memoryProvenance } : {}),
+        coverage: cov,
+        retrieval: retrievalOf(prefix.filter((i) => i.group !== 'mem').map((i) => i.view)),
+        ...lowCoverageHint(cov),
         truncated: true,
         budgetExhausted: true,
-      }),
-    );
+      });
+    });
     const keptCode = fitted.items.filter((i) => i.group === 'code').map((i) => i.view);
     const keptInstr = fitted.items.filter((i) => i.group === 'instr').map((i) => i.view);
     const keptMem = fitted.items.filter((i) => i.group === 'mem').map((i) => i.view);
     const more = moreCode || fitted.budgetExhausted;
+    const coverage = coverageOf([...keptCode, ...keptInstr]);
     const result: Record<string, unknown> = {
       codeHits: keptCode,
       instructions: keptInstr,
@@ -2069,12 +2138,14 @@ export class Verbs {
       conflicts,
       ...(memoryProvenance ? { provenance: memoryProvenance } : {}),
       // Honest self-report: how much of THIS answer came from authored meaning rather than source.
-      // A low ratio is the signal to go read code instead of trusting thin prose.
+      // Below the low-coverage floor the response says so explicitly (`hint`) instead of relying
+      // on the caller to interpret the ratio.
       //
       // Counted over the items actually RETURNED (post token-budget trim), not the wider set that
       // was fetched — coverage has to describe the payload the caller is holding, or it would
       // overstate grounding whenever the budget dropped the semantic hits.
-      coverage: coverageOf([...keptCode, ...keptInstr]),
+      coverage,
+      ...lowCoverageHint(coverage),
       // `retrieval` answers a DIFFERENT question from `coverage`, and the difference matters.
       // `coverage` says how many hits carry prose — which saturates at 100% once most files are
       // described, because a symbol inherits its file's purpose whether or not it is relevant.
@@ -2842,6 +2913,11 @@ export class Verbs {
     const { read, via, inherited } = this.llm.readInherited(targetId);
     const projection =
       withLlm === true ? llmProjection(read) : llmPointer(read, { via, inherited });
+    // The same discriminator `brief` stamps per hit, grounded through the same readInherited
+    // resolver: 'semantic' = authored prose backs this answer (directly or inherited from the
+    // owning symbol/file/cluster), 'code' = the caller is holding structure and snippets only.
+    // On single-symbol responses (context/dossier) this lands once on the response root.
+    result.grounding = read.artifact === undefined ? 'code' : 'semantic';
     if (projection) result.llm = projection;
   }
 
@@ -3032,6 +3108,20 @@ function coverageOf(views: Array<Record<string, unknown>>): Record<string, unkno
     total,
     ...(total > 0 ? { ratio: Math.round((semantic / total) * 100) / 100 } : {}),
   };
+}
+
+/**
+ * Below this grounded fraction the semantic layer is NOT answering the question, and the honest
+ * move is to read source. Half the payload ungrounded is the floor; a coverage ratio is otherwise
+ * easy to misread as a grade rather than a routing signal, so the hint spells the action out.
+ */
+const LOW_COVERAGE_RATIO = 0.5;
+const LOW_COVERAGE_HINT = 'low semantic coverage — fall back to reading code for these hits';
+
+/** The caller-facing low-coverage hint, present only when the ratio says so (absent at total 0). */
+function lowCoverageHint(coverage: Record<string, unknown>): Record<string, unknown> {
+  const ratio = coverage.ratio as number | undefined;
+  return ratio !== undefined && ratio < LOW_COVERAGE_RATIO ? { hint: LOW_COVERAGE_HINT } : {};
 }
 
 function notFound(id: string): Record<string, unknown> {

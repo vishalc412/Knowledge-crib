@@ -11,10 +11,17 @@
  *  - warm query p50 latency                                           < MAX_QUERY_P50_MS
  *  - cold index time on a 50-file fixture                             < MAX_INDEX_MS
  *
- * MAX_RUNTIME_DEPS is 6, not lower, because `web-tree-sitter` (the PHP extractor's WASM engine,
- * P3) is currently the 6th external runtime dependency — a deliberate, disclosed tradeoff (see
- * NOTICE), not headroom to spend carelessly. MAX_PARSERS_PACKAGE_BYTES exists for the same reason:
- * a future grammar addition that quietly balloons this package should fail the build, not slip in.
+ * MAX_RUNTIME_DEPS is 9, and every one of the nine is a deliberate, disclosed tradeoff (see
+ * NOTICE) rather than headroom to spend carelessly. It was 6 when `web-tree-sitter` (the PHP
+ * extractor's WASM engine, P3) was the sixth. MuleSoft support then added three more — `saxes`
+ * (streaming SAX XML for Mule 3/4 configs), `yaml` (RAML and descriptor parsing) and `yauzl` (ZIP
+ * reader for project archives) — and the cap was never moved with them, so this gate has failed on
+ * every branch since. All three are pure-JS with no native build, which is the property this budget
+ * exists to protect; raising the cap records a decision already shipped rather than permitting a
+ * new one. The next addition should still have to argue for itself here.
+ *
+ * MAX_PARSERS_PACKAGE_BYTES exists for the same reason: a future grammar addition that quietly
+ * balloons this package should fail the build, not slip in.
  */
 import { execFileSync } from 'node:child_process';
 import {
@@ -31,7 +38,7 @@ import { dirname, join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { sessionCost } from './lib/pricing.mjs';
 
-const MAX_RUNTIME_DEPS = 6;
+const MAX_RUNTIME_DEPS = 9;
 const MAX_PACKAGE_BYTES = 5 * 1024 * 1024; // 5 MB, mcp+cli combined
 const MAX_PARSERS_PACKAGE_BYTES = 3 * 1024 * 1024; // 3 MB — today's actual is ~0.6 MB; headroom for a
 // couple more small vendored grammars before this becomes a real conversation, not silent bloat.
