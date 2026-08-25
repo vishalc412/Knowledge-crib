@@ -1,0 +1,38 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://knowledge-crib.dev/schema/memory-1/manifest.schema.json",
+  "title": "MemoryManifest",
+  "description": "Per-store memory manifest (local repo, global, team). Mirrors the soul Manifest shape for memory-1.",
+  "type": "object",
+  "required": ["memoryFormatVersion", "schemaVersion", "store", "counts", "lastUpdated"],
+  "properties": {
+    "memoryFormatVersion": { "type": "string", "const": "1" },
+    "schemaVersion": { "type": "string", "const": "1" },
+    "store": { "type": "string", "enum": ["local", "global", "team"] },
+    "repo": {
+      "type": "object",
+      "required": ["id", "root"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "root": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "counts": {
+      "type": "object",
+      "required": ["records", "candidates", "attempts", "receipts", "decisions", "feedback"],
+      "properties": {
+        "records": { "type": "integer", "minimum": 0 },
+        "candidates": { "type": "integer", "minimum": 0 },
+        "attempts": { "type": "integer", "minimum": 0 },
+        "receipts": { "type": "integer", "minimum": 0 },
+        "decisions": { "type": "integer", "minimum": 0 },
+        "feedback": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": false
+    },
+    "lastUpdated": { "type": "string" },
+    "meta": { "type": "object" }
+  },
+  "additionalProperties": true
+}

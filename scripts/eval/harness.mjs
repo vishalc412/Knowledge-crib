@@ -21,7 +21,7 @@
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { CONCEPTUAL_PACKS } from './conceptual.mjs';
 import { mean, scorePair } from './metrics.mjs';
 import { seedGoldenPairs } from './seed.mjs';
@@ -65,8 +65,15 @@ export function defaultFixturesRoot() {
  */
 async function loadCore() {
   const root = repoRoot();
-  const core = await import(resolve(root, 'packages', 'core', 'dist', 'index.js'));
-  const pipeline = await import(resolve(root, 'packages', 'pipeline', 'dist', 'index.js'));
+  // dynamic import() needs a file:// URL on win32: a bare `D:\...\index.js` is rejected with
+  // "Only URLs with a scheme in: file, data, and node ... Received protocol 'd:'". pathToFileURL
+  // produces a file:// URL on every platform (posix → `file:///...`), so import() resolves on both.
+  const core = await import(
+    pathToFileURL(resolve(root, 'packages', 'core', 'dist', 'index.js')).href
+  );
+  const pipeline = await import(
+    pathToFileURL(resolve(root, 'packages', 'pipeline', 'dist', 'index.js')).href
+  );
   return { core, pipeline };
 }
 

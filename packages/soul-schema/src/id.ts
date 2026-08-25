@@ -26,6 +26,9 @@ import type { Rel } from './enums.js';
  *   cursor             cursor:<file>#<name>@L<line>
  *   assignment         assign:<file>@L<line>
  *   case-branch        case:<file>@L<line>      (one per CASE WHEN, keyed by the WHEN line)
+ *
+ * 1.6 (AI-artifact graph):
+ *   agent-artifact     art:<path>#<name>        (a tracked instruction/skill/agent/command/rule/mcp-server)
  */
 import { blake3Hex } from './hash.js';
 
@@ -58,7 +61,11 @@ export type IdSpec =
   // 1.5 cross-repo federation: an outbound HTTP client call site. Mirrors the `route` id grammar
   // (`route:<method> <path>@<file>#L<line>`) so a runtime federation layer matches repo-A calls to
   // repo-B routes by method+path without a committed cross-repo edge.
-  | { kind: 'http-call'; httpMethod: string; routePath: string; file: string; line: number };
+  | { kind: 'http-call'; httpMethod: string; routePath: string; file: string; line: number }
+  // 1.6 AI-artifact graph: a tracked AI artifact (instruction/skill/agent/command/rule/mcp-server).
+  // Keyed by path + the artifact's stable name (the skill/agent/command name, or a slug of the
+  // file stem for nameless artifacts) so a renamed body keeps its id while a renamed file does not.
+  | { kind: 'agent-artifact'; path: string; name: string };
 
 /** ID prefix per node kind. `column` deliberately uses `col:` (data-model reconciliation #6). */
 export const ID_PREFIX = {
@@ -82,6 +89,7 @@ export const ID_PREFIX = {
   component: 'comp',
   owner: 'owner',
   'http-call': 'http-call',
+  'agent-artifact': 'art',
 } as const;
 
 /** Build the deterministic id for a node from its identifying parts. */
@@ -131,6 +139,8 @@ export function idFor(spec: IdSpec): string {
       return `owner:name:${slugify(spec.name)}`;
     case 'http-call':
       return `http-call:${spec.httpMethod} ${spec.routePath}@${spec.file}#L${spec.line}`;
+    case 'agent-artifact':
+      return `art:${spec.path}#${spec.name}`;
   }
 }
 

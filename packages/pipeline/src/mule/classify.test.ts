@@ -1,0 +1,306 @@
+import { describe, expect, it } from 'vitest';
+import { classifyMuleFiles } from './classify.js';
+
+const meta = (path: string) => ({ path, bytes: 1, mtime: 1 });
+
+describe('classifyMuleFiles', () => {
+  it('classifies independent Mule 3 and Mule 4 roots', () => {
+    const result = classifyMuleFiles(
+      [
+        meta('modern/mule-artifact.json'),
+        meta('modern/src/main/mule/api.xml'),
+        meta('legacy/src/main/app/legacy.xml'),
+        meta('legacy/src/test/munit/order-test.xml'),
+      ],
+      new Map([
+        ['modern/mule-artifact.json', '{}'],
+        [
+          'modern/src/main/mule/api.xml',
+          '<mule xmlns="http://www.mulesoft.org/schema/mule/core"/>',
+        ],
+        [
+          'legacy/src/main/app/legacy.xml',
+          '<mule xmlns="http://www.mulesoft.org/schema/mule/core"><inbound-endpoint/></mule>',
+        ],
+        [
+          'legacy/src/test/munit/order-test.xml',
+          '<munit:config xmlns:munit="http://www.mulesoft.org/schema/mule/munit"/>',
+        ],
+      ]),
+    );
+    expect(result.files.get('modern/src/main/mule/api.xml')).toMatchObject({
+      dialect: 'mule4',
+      role: 'config',
+    });
+    expect(result.files.get('legacy/src/main/app/legacy.xml')).toMatchObject({
+      dialect: 'mule3',
+      role: 'config',
+    });
+    expect(result.files.get('legacy/src/test/munit/order-test.xml')).toMatchObject({
+      dialect: 'mule3',
+      role: 'munit',
+    });
+  });
+
+  it('does not semantically classify a root with conflicting strong signals', () => {
+    const result = classifyMuleFiles(
+      [meta('app/mule-artifact.json'), meta('app/src/main/app/api.xml')],
+      new Map([
+        ['app/mule-artifact.json', '{}'],
+        ['app/src/main/app/api.xml', '<mule><inbound-endpoint/></mule>'],
+      ]),
+    );
+    expect(result.files.has('app/src/main/app/api.xml')).toBe(false);
+    expect(result.diagnostics).toContainEqual(
+      expect.objectContaining({ code: 'mule:ambiguous-dialect', severity: 'error' }),
+    );
+  });
+
+  it('assigns roles by extension and path', () => {
+    const result = classifyMuleFiles(
+      [
+        meta('app/mule-artifact.json'),
+        meta('app/pom.xml'),
+        meta('app/src/main/mule/flow.xml'),
+        meta('app/src/main/resources/transform.dwl'),
+        meta('app/src/main/resources/api.raml'),
+        meta('app/src/main/resources/secure.properties'),
+        meta('app/src/main/app/app.properties'),
+      ],
+      new Map([
+        ['app/mule-artifact.json', '{}'],
+        ['app/pom.xml', '<project><packaging>mule-application</packaging></project>'],
+        ['app/src/main/mule/flow.xml', '<mule/>'],
+        ['app/src/main/resources/transform.dwl', '%dw 2.0'],
+        ['app/src/main/resources/api.raml', '#%RAML 1.0'],
+        ['app/src/main/resources/secure.properties', 'db.password=x'],
+        ['app/src/main/app/app.properties', 'key=val'],
+      ]),
+    );
+    expect(result.files.get('app/mule-artifact.json')?.role).toBe('descriptor');
+    expect(result.files.get('app/pom.xml')?.role).toBe('descriptor');
+    expect(result.files.get('app/src/main/resources/transform.dwl')?.role).toBe('dataweave');
+    expect(result.files.get('app/src/main/resources/api.raml')?.role).toBe('raml');
+    expect(result.files.get('app/src/main/resources/secure.properties')).toMatchObject({
+      role: 'properties',
+      sensitive: true,
+    });
+    expect(result.files.get('app/src/main/app/app.properties')?.role).toBe('properties');
+  });
+
+  it('detects a Mule project from a packaging pom without standard layout', () => {
+    const result = classifyMuleFiles(
+      [meta('flat/pom.xml'), meta('flat/flows.xml')],
+      new Map([
+        ['flat/pom.xml', '<project><packaging>mule-application</packaging></project>'],
+        ['flat/flows.xml', '<mule xmlns="http://www.mulesoft.org/schema/mule/core"/>'],
+      ]),
+    );
+    expect(result.files.get('flat/flows.xml')).toMatchObject({
+      dialect: 'mule4',
+      role: 'config',
+      projectRoot: 'flat',
+    });
+  });
+
+  it('detects a Mule 3 project from a mule-project.xml descriptor', () => {
+    const result = classifyMuleFiles(
+      [meta('legacy/mule-project.xml'), meta('legacy/src/main/app/flow.xml')],
+      new Map([
+        [
+          'legacy/mule-project.xml',
+          '<mule-project><description>legacy</description></mule-project>',
+        ],
+        [
+          'legacy/src/main/app/flow.xml',
+          '<mule xmlns="http://www.mulesoft.org/schema/mule/core"><inbound-endpoint/></mule>',
+        ],
+      ]),
+    );
+    expect(result.files.get('legacy/mule-project.xml')).toMatchObject({
+      dialect: 'mule3',
+      role: 'descriptor',
+      projectRoot: 'legacy',
+    });
+    expect(result.files.get('legacy/src/main/app/flow.xml')).toMatchObject({
+      dialect: 'mule3',
+      role: 'config',
+      projectRoot: 'legacy',
+    });
+  });
+
+  it('a Mule 3 mule-project.xml root beside a Mule 4 mule-artifact.json root stays independently classified', () => {
+    const result = classifyMuleFiles(
+      [
+        meta('m3/mule-project.xml'),
+        meta('m3/src/main/app/legacy.xml'),
+        meta('m4/mule-artifact.json'),
+        meta('m4/src/main/mule/api.xml'),
+      ],
+      new Map([
+        ['m3/mule-project.xml', '<mule-project/>'],
+        [
+          'm3/src/main/app/legacy.xml',
+          '<mule xmlns="http://www.mulesoft.org/schema/mule/core"><inbound-endpoint/></mule>',
+        ],
+        ['m4/mule-artifact.json', '{}'],
+        ['m4/src/main/mule/api.xml', '<mule xmlns="http://www.mulesoft.org/schema/mule/core"/>'],
+      ]),
+    );
+    expect(result.files.get('m3/src/main/app/legacy.xml')).toMatchObject({
+      dialect: 'mule3',
+      projectRoot: 'm3',
+    });
+    expect(result.files.get('m4/src/main/mule/api.xml')).toMatchObject({
+      dialect: 'mule4',
+      projectRoot: 'm4',
+    });
+    expect(result.diagnostics).toHaveLength(0);
+  });
+
+  it('classifies MUnit + config files for a project at the repo root (no leading slash)', () => {
+    // A Mule project indexed at its own directory (`crib index <project-dir>`) has projectRoot ''
+    // so every file path lacks a leading slash. The leading-slash segment checks must still detect
+    // MUnit files (`src/test/munit/suite.xml` → role 'munit', not 'config') and the layout bonuses
+    // (`src/main/mule/`) must contribute to dialect scoring.
+    const result = classifyMuleFiles(
+      [
+        meta('mule-artifact.json'),
+        meta('pom.xml'),
+        meta('src/main/mule/configs.xml'),
+        meta('src/main/mule/flows.xml'),
+        meta('src/test/munit/suite.xml'),
+      ],
+      new Map([
+        ['mule-artifact.json', '{}'],
+        ['pom.xml', '<project><packaging>mule-application</packaging></project>'],
+        ['src/main/mule/configs.xml', '<mule xmlns="http://www.mulesoft.org/schema/mule/core"/>'],
+        ['src/main/mule/flows.xml', '<mule xmlns="http://www.mulesoft.org/schema/mule/core"/>'],
+        [
+          'src/test/munit/suite.xml',
+          '<mule xmlns:munit="http://www.mulesoft.org/schema/mule/munit"><munit:test name="t"/></mule>',
+        ],
+      ]),
+    );
+    expect(result.files.get('mule-artifact.json')?.role).toBe('descriptor');
+    expect(result.files.get('src/main/mule/configs.xml')).toMatchObject({
+      dialect: 'mule4',
+      role: 'config',
+      projectRoot: '',
+    });
+    // THE REGRESSION: MUnit at the repo root must classify as 'munit', not 'config'.
+    expect(result.files.get('src/test/munit/suite.xml')).toMatchObject({
+      dialect: 'mule4',
+      role: 'munit',
+      projectRoot: '',
+    });
+    expect(result.diagnostics).toHaveLength(0);
+  });
+
+  it('ignores non-Mule files entirely', () => {
+    const result = classifyMuleFiles(
+      [meta('src/index.ts'), meta('README.md')],
+      new Map([
+        ['src/index.ts', 'export {}'],
+        ['README.md', '# hi'],
+      ]),
+    );
+    expect(result.files.size).toBe(0);
+    expect(result.diagnostics).toHaveLength(0);
+  });
+
+  describe('deployable-JAR attached-source dedup', () => {
+    const mule4xml = '<mule xmlns="http://www.mulesoft.org/schema/mule/core"/>';
+
+    // A deployable JAR carries the canonical config under META-INF/mule-src (attached source) and a
+    // packaged copy under classes/. They describe the same project-relative file: attached source
+    // wins, the packaged duplicate is skipped with a bounded warning diagnostic.
+    it('attached source wins over a packaged classes duplicate (same logical key)', () => {
+      const result = classifyMuleFiles(
+        [
+          meta('mule-artifact.json'),
+          meta('classes/api.xml'),
+          meta('META-INF/mule-src/main/mule/api.xml'),
+        ],
+        new Map([
+          ['mule-artifact.json', '{}'],
+          ['classes/api.xml', mule4xml],
+          ['META-INF/mule-src/main/mule/api.xml', mule4xml],
+        ]),
+      );
+      // Attached source is classified for semantic extraction.
+      expect(result.files.get('META-INF/mule-src/main/mule/api.xml')).toMatchObject({
+        dialect: 'mule4',
+        role: 'config',
+        projectId: '.',
+      });
+      // The packaged duplicate is dropped from classification.
+      expect(result.files.has('classes/api.xml')).toBe(false);
+      // A single bounded warning names the skipped packaged path.
+      const skipped = result.diagnostics.filter(
+        (d) => d.code === 'mule:packaged-duplicate-skipped',
+      );
+      expect(skipped).toHaveLength(1);
+      expect(skipped[0]?.severity).toBe('warning');
+      expect(skipped[0]?.file).toBe('classes/api.xml');
+    });
+
+    it('keeps both when packaged and attached paths describe different files', () => {
+      const result = classifyMuleFiles(
+        [
+          meta('mule-artifact.json'),
+          meta('classes/api.xml'),
+          meta('META-INF/mule-src/main/mule/orders.xml'),
+        ],
+        new Map([
+          ['mule-artifact.json', '{}'],
+          ['classes/api.xml', mule4xml],
+          ['META-INF/mule-src/main/mule/orders.xml', mule4xml],
+        ]),
+      );
+      expect(result.files.has('classes/api.xml')).toBe(true);
+      expect(result.files.has('META-INF/mule-src/main/mule/orders.xml')).toBe(true);
+      expect(
+        result.diagnostics.filter((d) => d.code === 'mule:packaged-duplicate-skipped'),
+      ).toHaveLength(0);
+    });
+
+    it('keeps a packaged config when no attached source counterpart exists', () => {
+      const result = classifyMuleFiles(
+        [meta('mule-artifact.json'), meta('classes/api.xml')],
+        new Map([
+          ['mule-artifact.json', '{}'],
+          ['classes/api.xml', mule4xml],
+        ]),
+      );
+      expect(result.files.get('classes/api.xml')).toMatchObject({
+        dialect: 'mule4',
+        role: 'config',
+      });
+      expect(
+        result.diagnostics.filter((d) => d.code === 'mule:packaged-duplicate-skipped'),
+      ).toHaveLength(0);
+    });
+
+    it('does not dedup descriptor or properties files (only semantic XML configs)', () => {
+      const result = classifyMuleFiles(
+        [
+          meta('mule-artifact.json'),
+          meta('classes/app.properties'),
+          meta('META-INF/mule-src/app.properties'),
+        ],
+        new Map([
+          ['mule-artifact.json', '{}'],
+          ['classes/app.properties', 'key=val'],
+          ['META-INF/mule-src/app.properties', 'key=val'],
+        ]),
+      );
+      // Both property files are classified — dedup is scoped to semantic XML (config/munit).
+      expect(result.files.has('classes/app.properties')).toBe(true);
+      expect(result.files.has('META-INF/mule-src/app.properties')).toBe(true);
+      expect(
+        result.diagnostics.filter((d) => d.code === 'mule:packaged-duplicate-skipped'),
+      ).toHaveLength(0);
+    });
+  });
+});

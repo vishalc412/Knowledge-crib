@@ -19,6 +19,12 @@ function run(cmd, args, opts = {}) {
     encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'pipe'],
     maxBuffer: 64 * 1024 * 1024,
+    // Windows ships corepack as a .cmd shim; execFileSync(shell:false) cannot launch .cmd files
+    // (spawnSync ENOENT). shell:true on win32 routes through cmd.exe so the .cmd resolves. No-op
+    // on posix (shell:false is the execFileSync default → byte-identical). Same fix as
+    // release-verify.mjs + build-installers.mjs. `tar` is tar.exe (not a .cmd) so shell:true is
+    // harmless for it on win32 too.
+    shell: process.platform === 'win32',
     ...opts,
   });
 }

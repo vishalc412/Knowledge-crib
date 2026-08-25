@@ -6,9 +6,11 @@
  */
 import type { IndexStore, SoulStore } from '@knowledge-crib/core';
 import { ExtractorRegistry } from '@knowledge-crib/parsers';
-import type { Extractor } from '@knowledge-crib/parsers';
+import type { ExtractDiagnostic, Extractor } from '@knowledge-crib/parsers';
 import { defaultExtractors } from './extractors.js';
 export { defaultExtractors } from './extractors.js';
+import { runArtifactGraph } from './artifacts.js';
+import type { ArtifactGraphOpts, ArtifactStats } from './artifacts.js';
 import { runCluster } from './cluster/index.js';
 import type { ClusterStats } from './cluster/index.js';
 import { runDossiers } from './dossiers.js';
@@ -17,6 +19,7 @@ import { runLink } from './linker/index.js';
 import type { LinkStats } from './linker/index.js';
 import type { SemanticStats } from './linker/index.js';
 import { runSemanticLink } from './linker/index.js';
+import { classifyMuleDiscovery } from './mule/discover.js';
 import { runMultimodal } from './multimodal/index.js';
 import type { MultimodalPhaseOpts, MultimodalReport } from './multimodal/index.js';
 import { isMediaPath } from './multimodal/ingest.js';
@@ -75,6 +78,12 @@ export interface IndexOpts {
    *  Output is byte-identical to serial (results persist in discovery order). Set false to force
    *  serial (determinism cross-check, single-file index, environments without worker_threads). */
   parallel?: boolean;
+  /** W1 (AI-artifact graph): run the committed + (opt-in) local-overlay artifact scanner after the
+   *  doc linker, emitting `agent-artifact` nodes (skills/agents/commands/rules/instructions/MCP
+   *  servers) + `governs`/`requires`/`invokes` edges. Default ON — a clean no-op on repos with no
+   *  allowlist-matching tracked artifacts (the common test-fixture case), so the deterministic path
+   *  is unchanged. `false` skips; an object passes through {@link ArtifactGraphOpts} (e.g. localRoots). */
+  artifacts?: boolean | ArtifactGraphOpts;
 }
 
 export interface IndexReport {
@@ -88,6 +97,24 @@ export interface IndexReport {
   cluster: ClusterStats;
   semantic: SemanticStats;
   ownership: OwnershipStats;
+  artifacts: ArtifactStats;
+  /** MuleSoft pre-pass summary. Present (non-null) only when at least one Mule file was classified;
+   *  absent for a non-Mule repo so the deterministic path is unchanged. Surfaces the classification
+   *  diagnostics (`mule:ambiguous-dialect`, `mule:packaged-duplicate-skipped`) that the parse phase
+   *  does not aggregate, plus project + per-dialect file counts the CLI folds into its summary. */
+  mule?: MuleReport;
+}
+
+/** MuleSoft classification summary computed in the structure pre-pass, before parse. The
+ *  parse-time Mule diagnostics live in {@link ParseStats}; this carries the classification-time
+ *  diagnostics + the project/dialect counts derived from the stamped FileClassification. */
+export interface MuleReport {
+  /** Distinct detected Mule project roots (FileClassification.projectId). */
+  projects: number;
+  /** Classified files per dialect (a file routed to a dialect counts once). */
+  dialectFiles: { mule3: number; mule4: number };
+  /** Classification-time diagnostics (ambiguous-dialect errors, packaged-duplicate warnings). */
+  diagnostics: ExtractDiagnostic[];
 }
 
 /** Full index of a repo through the deterministic linker, then (optional) index build. */
@@ -106,6 +133,13 @@ export async function indexRepo(
   if (opts.packageRoots && opts.packageRoots.length > 0)
     discoverOpts.packageRoots = opts.packageRoots;
   const files = discoverFiles(root, discoverOpts);
+  // Mule pre-pass (Foundation Task 4): stamp a clone-safe FileClassification + role lang onto Mule
+  // files so MuleExtractor.supports() can dispatch disjointly (Task 13) and fileNode can hash
+  // sensitive config by KEYS only. The classification diagnostics (ambiguous-dialect errors +
+  // packaged-duplicate warnings) are NOT aggregated by the parse phase (only parse-time mule:*
+  // codes are) — capture them here and surface them via the report's `mule` field (Task 7).
+  const muleDiagnostics = classifyMuleDiscovery(root, files);
+  const mule = muleReport(files, muleDiagnostics);
   runStructure(soul, root, files); // Phase 1
   // defaultRegistry = the fleet came from defaultExtractors() (no custom opts.extractors) → the
   // parallel pool can ship it. Custom extractors force the serial path (workers can't receive them).
@@ -122,6 +156,22 @@ export async function indexRepo(
     ? await runMultimodal(soul, root, opts.multimodal, mediaPaths)
     : { ingest: { files: 0, segments: 0, dropped: 0 }, link: { describes: 0, references: 0 } };
   const link = runLink(soul, root, opts.linkThreshold); // Phase 4
+  // Phase 4a (W1): the AI-artifact graph — discovers tracked skills/agents/commands/rules/instructions
+  // + MCP-server configs that the normal walk misses (they live under gitignored tool dirs), emits
+  // `agent-artifact` nodes, and resolves `governs`/`requires`/`invokes` edges against the indexed
+  // symbol/file/doc graph. A clean no-op on repos with no allowlist-matching artifacts.
+  const artifacts =
+    opts.artifacts === false
+      ? {
+          artifacts: 0,
+          governs: 0,
+          requires: 0,
+          invokes: 0,
+          mcpServers: 0,
+          localOverlay: 0,
+          diagnostics: [],
+        }
+      : runArtifactGraph(soul, root, typeof opts.artifacts === 'object' ? opts.artifacts : {});
   const cluster = opts.cluster === false ? { communities: 0, members: 0 } : runCluster(soul); // Phase 4b (M7)
   const semantic = opts.semantic ? runSemanticLink(soul, root) : { added: 0 }; // Phase 4c (M7, INFERRED)
   // Phase 4d (M3.1): `git blame` → symbol→owner `owned-by` EXTRACTED edges. Clean no-op in a non-git
@@ -162,5 +212,28 @@ export async function indexRepo(
     cluster,
     semantic,
     ownership,
+    artifacts,
+    mule,
   };
+}
+
+/** Build the {@link MuleReport} from the classified FileMetas + the classification diagnostics.
+ *  Pure over `files` (reads the in-place-stamped `classification`) + the diagnostics array. Returns
+ *  undefined when no Mule file was classified so non-Mule repos see no change. */
+function muleReport(
+  files: { classification?: { projectId: string; dialect: 'mule3' | 'mule4' } }[],
+  diagnostics: ExtractDiagnostic[],
+): MuleReport | undefined {
+  let mule3 = 0;
+  let mule4 = 0;
+  const projects = new Set<string>();
+  for (const f of files) {
+    const c = f.classification;
+    if (!c) continue;
+    projects.add(c.projectId);
+    if (c.dialect === 'mule3') mule3++;
+    else mule4++;
+  }
+  if (projects.size === 0 && diagnostics.length === 0) return undefined;
+  return { projects: projects.size, dialectFiles: { mule3, mule4 }, diagnostics };
 }

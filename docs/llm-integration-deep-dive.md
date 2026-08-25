@@ -8,7 +8,7 @@
 
 Knowledge-crib implements a **dual-store** architecture: the **SoulStore** (in-memory `Map` objects + chunked JSONL shards persisted under `.crib/`) is the source of truth; the **IndexStore** (a derived SQLite database with FTS5 BM25 full-text search + materialized adjacency) is rebuilt from the soul on every `buildFromSoul` call. The IndexStore serves all deterministic queries (BM25 text search, blast-radius impact analysis, neighbor walking, shortest-path). It is 100% derived — delete it and `buildFromSoul(soul, repoRoot)` rebuilds it byte-for-byte.
 
-LLM integration is **opt-in, off the hot path, and never called server-side**. The MCP stdio server (`crib serve`) exposes 24 tools: 21 deterministic verbs (query, context, dossier, impact, neighbors, shortestPath, gaps, extractRules, enrichStatus, enrichNext, enrichSave, etc.) and 3 system tools. None of these verbs invoke an LLM. The `enrich_*` tools expose a **work queue** (`enrich_next`) and a **persistence surface** (`enrich_save`) so the host IDE's selected agent model can author a semantic graph grounded in the deterministic soul.
+LLM integration is **opt-in, off the hot path, and never called server-side**. The MCP stdio server (`crib serve`) exposes 24 tools: 21 deterministic verbs (query, context, dossier, impact, neighbors, shortestPath, gaps, extractRules, enrichStatus, enrichNext, enrichSave, etc.) and 3 system tools. None of these verbs invoke an LLM. The `enrich_*` tools expose a **work queue** (`enrich({op:'next'})`) and a **persistence surface** (`enrich({op:'save'})`) so the host IDE's selected agent model can author a semantic graph grounded in the deterministic soul.
 
 The enrichment operates over **four layers**: symbol (per-symbol deep analysis), file (file-level synthesis from symbol analyses), cluster (inter-module dependencies), and system (whole-repo architecture bible). Each work item carries a **seed** (dossier + decision table + coverage + source body), a **lower-layer** artifact (the layer below in the hierarchy), an **output schema** (JSON Schema for the expected LLM response), and **instructions** (layer-specific prompt text). The saved output is validated, graph endpoints are resolved (soul ID or previous LLM node), and a `LlmArtifact` is persisted under `.crib/llm/analysis/{layer}/{shard}/` with hash-based staleness detection.
 
@@ -103,11 +103,11 @@ argv → cmdMcp()
                         │           │               (24 tools,
                         │           │                zero LLM calls)
                         ▼           ▼
-              tool call (any verb)   tool call (enrich_next/enrich_save)
+              tool call (any verb)   tool call (enrich({op:'next'})/enrich({op:'save'}))
                     │                           │
                     ▼                           ▼
               deterministic query          agent generates graph/analysis
-              over soul + index            writes back via enrich_save
+              over soul + index            writes back via enrich({op:'save'})
 ```
 
 ---
@@ -116,9 +116,9 @@ argv → cmdMcp()
 
 ### 3.1 How a Request Reaches the LLM
 
-#### 3.1.1 The Enrichment Work Queue (`enrich_next`)
+#### 3.1.1 The Enrichment Work Queue (`enrich({op:'next'})`)
 
-**Entry point** — MCP tool `enrich_next` or CLI `crib enrich --next`:
+**Entry point** — MCP tool `enrich({op:'next'})` or CLI `crib enrich --next`:
 
 ```typescript
 // packages/mcp/src/verbs.ts:624-631
@@ -257,7 +257,7 @@ The `buildDossier` call (packages/core/src/dossier/builder.ts, line 148) assembl
 
 #### 3.1.3 The Scope Picker (Graphify-Style)
 
-When `enrich_status scopes:true` is called with no active scope and total pending > `ENRICH_SCOPE_THRESHOLD` (200), the response includes ranked scopes:
+When `enrich({op:'status'}) scopes:true` is called with no active scope and total pending > `ENRICH_SCOPE_THRESHOLD` (200), the response includes ranked scopes:
 
 ```typescript
 // packages/mcp/src/enrichment.ts:585-633
@@ -274,9 +274,9 @@ This lets the IDE agent pick which subdirectory to enrich first, rather than bli
 
 ### 3.2 How a Response Returns from the LLM
 
-#### 3.2.1 The `enrich_save` Validation Pipeline
+#### 3.2.1 The `enrich({op:'save'})` Validation Pipeline
 
-**Entry point** — MCP tool `enrich_save` or CLI `crib enrich --save <file>`:
+**Entry point** — MCP tool `enrich({op:'save'})` or CLI `crib enrich --save <file>`:
 
 ```typescript
 // packages/mcp/src/verbs.ts:634-648
@@ -419,7 +419,7 @@ Staleness has two triggers:
 1. **`nodeHash` mismatch**: the soul node's content changed (source was edited, new nodes added). Since `node.hash` is a blake3 hash of the node's content, any content change produces a different ID and forces re-enrichment.
 2. **`schemaVersion` mismatch**: the soul schema was upgraded (e.g., 1.2 → 1.3). Old LLM artifacts don't understand new node fields, so they're invalidated.
 
-The `nodeHash` in the `LlmArtifact` is captured at SAVE time (from the target's live hash). On a subsequent `enrich_next`, the system reads each candidate artifact and compares its stored `nodeHash` against the LIVE `target.hash`. Mismatch → stale → reissued in the work queue.
+The `nodeHash` in the `LlmArtifact` is captured at SAVE time (from the target's live hash). On a subsequent `enrich({op:'next'})`, the system reads each candidate artifact and compares its stored `nodeHash` against the LIVE `target.hash`. Mismatch → stale → reissued in the work queue.
 
 #### 3.2.4 Graph Projection — The LLM Semantic Graph Gets Its Own Storage
 
@@ -438,7 +438,7 @@ writeGraphProjection(artifact) {
 This produces `.crib/graph/nodes/{2-prefix}/{safeName}.jsonl` and `.crib/graph/edges/{2-prefix}/{safeName}.jsonl`. The projection enables:
 - A separate graph database to consume the LLM semantic overlay
 - `overview.json` to aggregate across all LLM artifacts
-- `llm_neighbors` tool to walk the semantic graph around any soul ID
+- `neighbors({op:'llm'})` tool to walk the semantic graph around any soul ID
 
 ### 3.3 The Enrichment Layer Queue — Priority, Ordering, Stopping
 
@@ -474,11 +474,11 @@ const previousBatchId = manifest?.lastIssued?.[key]?.batchId;
 const zeroProgress = previousBatchId !== undefined && previousBatchId === batchId;
 ```
 
-Key invariant: **same pending set → same batchId**. This prevents infinite churn when a context-compacted host (LLM with limited context window) re-issues `enrich_next` without remembering the last `batchId`. The manifest stores `lastIssued[layer:key] = { batchId }` after each `next()` call. If the next `next()` returns the identical batchId, `zeroProgress: true` is set — the driver MUST stop and check the save path.
+Key invariant: **same pending set → same batchId**. This prevents infinite churn when a context-compacted host (LLM with limited context window) re-issues `enrich({op:'next'})` without remembering the last `batchId`. The manifest stores `lastIssued[layer:key] = { batchId }` after each `next()` call. If the next `next()` returns the identical batchId, `zeroProgress: true` is set — the driver MUST stop and check the save path.
 
 #### 3.3.3 Scope Picker for Large Repos
 
-When total pending > `ENRICH_SCOPE_THRESHOLD` (200 by default), `enrich_status scopes:true` returns ranked path-prefix scopes:
+When total pending > `ENRICH_SCOPE_THRESHOLD` (200 by default), `enrich({op:'status'}) scopes:true` returns ranked path-prefix scopes:
 
 ```typescript
 // packages/mcp/src/enrichment.ts:585-633
@@ -690,7 +690,7 @@ repoRoot/
 ```
 IDE Agent                          MCP Server (stdio)                      SQLite Index
     │                                     │                                    │
-    │── enrich_next({layer:"symbol"}) ─→│                                    │
+    │── enrich({op:'next', layer:"symbol"}) ─→│                                    │
     │                                    │── targets('symbol', scope)        │
     │                                    │  ├── soul.iterate('symbol')       │
     │                                    │  └── read(layer, id, hash)        │←─ .crib/llm/...
@@ -701,7 +701,7 @@ IDE Agent                          MCP Server (stdio)                      SQLit
     │ (LLM processes, generates)       │                                    │
     │ (saves to file via skill)        │                                    │
     │                                    │                                    │
-    │── enrich_save({batchId,item}) ─→│                                    │
+    │── enrich({op:'save', batchId,item}) ─→│                                    │
     │                                    │── targetFor(item.targetId)        │
     │                                    │  └── soul.getNode(id)            │
     │                                    │── validateSaveItem(item)          │
@@ -739,7 +739,7 @@ with an LLM artifact is ~1.3 KB default vs ~10.3 KB with the full blob (~7.7× s
 `llmHits` field (ranked by term-overlap, de-duplicated against `hits`) so they never override BM25
 ranking.
 
-### C. LLM Enrichment Flow: enrich_next → Work Item with Seed → LLM Models Output → enrich_save → Artifact
+### C. LLM Enrichment Flow: enrich({op:'next'}) → Work Item with Seed → LLM Models Output → enrich({op:'save'}) → Artifact
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -767,7 +767,7 @@ ranking.
   Agent processes each item (writes to temp file via /crib-enrich skill or MCP):
     LlmSaveItem { targetId, analysis: {...}, graph: {nodes:[...], edges:[...]}, evidence }
 
-  CLI/Agent calls enrich_save with batch file:
+  CLI/Agent calls enrich({op:'save'}) with batch file:
     .crib/llm/analysis/{layer}/{shard-prefix}/{safeName}_{nodeHash}.json
       └── LlmArtifact { version, layer, targetId, nodeHash, schemaVersion, builtAt,
                          analysis, graph.nodes[], graph.edges[], evidence }
@@ -798,7 +798,7 @@ ranking.
 | `packages/pipeline/src/structure.ts` | discoverFiles(root) — recursive file walk with DEFAULT_IGNORES baseline + .gitignore layers | Phase 1: writes file nodes. The file list is the starting point for all downstream extraction. |
 | `packages/pipeline/src/pipeline.ts` | indexRepo() — full orchestration: structure→parse→resolve→link→cluster; updateRepo() — incremental | THE PIPELINE ORCHESTRATOR. Wires extractors, resolvers, CFG passes into a pipeline that writes the soul and builds the index. |
 | `packages/pipeline/src/vcs.ts` | currentHead(root) + changedFilesSince(root, since) | VCS adapter: git HEAD + diff for incremental updates. Used by detect_changes verb and updateRepo(). |
-| `packages/mcp/src/enrichment.ts` | EnrichmentStore: 4-layer work queue (symbol→file→cluster→system), seed assembly, save validation, staleness detection | THE LLM SURFACE. enrich_next / enrich_save / enrich_status / overview / llm_neighbors. Never calls an LLM; serves deterministic artifacts TO the LLM. |
+| `packages/mcp/src/enrichment.ts` | EnrichmentStore: 4-layer work queue (symbol→file→cluster→system), seed assembly, save validation, staleness detection | THE LLM SURFACE. enrich({op:'next'}) / enrich({op:'save'}) / enrich({op:'status'}) / overview / neighbors({op:'llm'}). Never calls an LLM; serves deterministic artifacts TO the LLM. |
 | `packages/mcp/src/verbs.ts` | Verbs class: 21 deterministic tools over SoulStore + IndexStore (query, context, dossier, impact, gaps, etc.) | The MCP product surface. All handlers are thin wrappers over core functions. attachLlm() folds a tiered LLM projection onto responses: lightweight pointer by default, full analysis+graph+evidence on withLlm=true, none on withLlm=false. query() returns {hits, llmHits, truncated} with honest over-fetch-based truncation. |
 | `packages/mcp/src/server.ts` | buildServer(verbs) — registers all 24 tools with Zod schemas; serveStdio(verbs) — connects to stdio transport | MCP server construction. Never calls an LLM; the stdio transport is bidirectional (tools in, results back). |
 | `packages/mcp/src/index.ts` | Barrel exports: verbs, enrichment types, server functions | Single import for all MCP consumers (CLI and tests). |
@@ -813,7 +813,7 @@ ranking.
 | Dimension | Score | Rationale |
 |-----------|-------|-----------|
 | **Correctness** | 95% | Every code path traced to line numbers in actual source files. ID grammar, staleness mechanism (nodeHash comparison), enrichment layer ordering, and save validation all verified against `enrichment.ts`. MCP tool registration verified against `server.ts`. Pipeline phase order verified against `pipeline.ts`. SoulStore commit protocol verified against `soul-store.ts`. |
-| **Completeness** | 95% | All three command paths traced (`index`, `serve`, `mcp`). Full enrichment lifecycle covered (`enrich_next` seed assembly → save validation → staleness detection). Extension points documented with file paths and line numbers. ASCII diagrams for indexing, querying, and enrichment flows included. Missing: Kuzu backend internals (interface-level only, not deeply tested). |
+| **Completeness** | 95% | All three command paths traced (`index`, `serve`, `mcp`). Full enrichment lifecycle covered (`enrich({op:'next'})` seed assembly → save validation → staleness detection). Extension points documented with file paths and line numbers. ASCII diagrams for indexing, querying, and enrichment flows included. Missing: Kuzu backend internals (interface-level only, not deeply tested). |
 | **Clarity** | 90% | Structure follows requested format exactly. Tables reference actual interfaces (`EnrichWorkItem`, `LlmArtifact`, `Extractor`). Code snippets extracted from live source. Some sections (especially the CLI root resolution priority chain) could use a decision tree diagram for faster comprehension. |
 | **Production Hardiness** | 95% | Atomic write protocol (tmp + rename) documented across SoulStore and LLM artifact persistence. WAL mode on SQLite. Zero-progress detection prevents infinite churn. Staleness detects both node hash change AND schema version mismatch. Merge driver handles concurrent .crib edits. |
 | **Testability** | 90% | All public interfaces mapped to test files (soul-store.test.ts, sqlite-index.test.ts, server.test.ts, enrichment tests implied by `*.test.ts` pattern). Extensibility points reference specific lines for adding extractors/verbs/layers. |

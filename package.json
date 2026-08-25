@@ -22,10 +22,11 @@
     "cost:report": "node scripts/crib-cost-report.mjs",
     "ab:task": "node scripts/crib-ab-task.mjs",
     "cache:stability": "node scripts/crib-cache-stability.test.mjs",
+    "check:mule-sample": "node scripts/check-mule-sample.mjs",
     "publish:dry-run": "corepack pnpm@9.15.0 -r publish --dry-run --no-git-checks",
     "installer:build": "node scripts/build-installers.mjs",
     "installer:smoke": "node scripts/install-smoke.mjs",
-    "installer:test": "node scripts/build-installers.test.mjs && node scripts/install-smoke.test.mjs && node scripts/package-runtime-deps.test.mjs && node scripts/ci-workflow.test.mjs && node scripts/release-cli-smoke.test.mjs && node scripts/test-python.test.mjs && node scripts/budget-check.test.mjs && node scripts/crib-cache-stability.test.mjs && node scripts/crib-cost-report.test.mjs && node scripts/eval-check.test.mjs",
+    "installer:test": "node scripts/build-installers.test.mjs && node scripts/install-smoke.test.mjs && node scripts/package-runtime-deps.test.mjs && node scripts/ci-workflow.test.mjs && node scripts/release-cli-smoke.test.mjs && node scripts/test-python.test.mjs && node scripts/budget-check.test.mjs && node scripts/crib-cache-stability.test.mjs && node scripts/crib-cost-report.test.mjs && node scripts/eval-check.test.mjs && node scripts/check-mule-sample.test.mjs",
     "release:metadata": "node scripts/release-metadata.test.mjs",
     "release:verify": "node scripts/release-verify.mjs",
     "lint": "biome check .",
@@ -33,6 +34,9 @@
     "typecheck": "corepack pnpm@9.15.0 -r run typecheck",
     "clean": "corepack pnpm@9.15.0 -r exec rm -rf dist coverage .crib",
     "eval:check": "node scripts/eval-check.mjs",
+    "eval:semantic": "node scripts/eval/semantic-retrieval-eval.mjs",
+    "cost:gate": "node scripts/cost-gate.mjs",
+    "swarm:gate": "node scripts/swarm/swarm-gate.mjs",
     "semantic:check": "node scripts/semantic-check.mjs",
     "rerank:check": "node scripts/rerank-check.mjs",
     "linker:check": "node scripts/linker-check.mjs",
@@ -61,7 +65,13 @@
     "@types/node": "^22.5.0",
     "fast-check": "^4.9.0",
     "typescript": "^5.6.0",
-    "vitest": "^2.1.0"
+    "vitest": "^3.2.6"
+  },
+  "pnpm": {
+    "overrides": {
+      "vite": "^6.4.3",
+      "esbuild": "^0.25.0"
+    }
   },
   "repository": {
     "type": "git",

@@ -14,10 +14,17 @@
  * Returns `null` when there is no anchor (fresh soul) or the repo isn't git — the caller degrades to a
  * full `indexRepo`. Does NOT touch the index; the caller applies `delta` via `index.applyDelta`.
  */
-import { buildDelta, fileScopedIds, pathFromId } from '@knowledge-crib/core';
+import {
+  buildDelta,
+  fileScopedIds,
+  pathFromId,
+  pruneSemanticArtifacts,
+} from '@knowledge-crib/core';
 import type { IndexDelta, SoulStore } from '@knowledge-crib/core';
 import { ExtractorRegistry } from '@knowledge-crib/parsers';
 import type { Extractor } from '@knowledge-crib/parsers';
+import { runArtifactGraph } from './artifacts.js';
+import type { ArtifactStats } from './artifacts.js';
 import { runCluster } from './cluster/index.js';
 import type { ClusterStats } from './cluster/index.js';
 import { runDossiers } from './dossiers.js';
@@ -26,9 +33,10 @@ import { runLink } from './linker/index.js';
 import type { LinkStats } from './linker/index.js';
 import type { SemanticStats } from './linker/index.js';
 import { runSemanticLink } from './linker/index.js';
+import { classifyMuleDiscovery } from './mule/discover.js';
 import { runOwnership } from './ownership.js';
 import type { OwnershipStats } from './ownership.js';
-import { runParse } from './parse.js';
+import { emptyParseStats, runParse } from './parse.js';
 import type { ParseStats } from './parse.js';
 import { defaultExtractors } from './pipeline.js';
 import { runResolve } from './resolve/index.js';
@@ -86,6 +94,11 @@ export interface UpdateReport {
   semantic: SemanticStats;
   dossiers: DossierStats;
   ownership: OwnershipStats;
+  artifacts: ArtifactStats;
+  /** count of persisted LLM semantic artifacts whose target node no longer exists, deleted by this
+   *  update's orphan-prune (the semantic-layer analogue of `dossiers.pruned`). Zero when nothing was
+   *  orphaned; bumped `manifest.generation.semantic` only when > 0. */
+  semanticPruned: number;
 }
 
 export interface UpdateNoopReport {
@@ -98,7 +111,7 @@ export interface UpdateNoopReport {
 
 export type UpdateResult = UpdateReport | UpdateNoopReport | null;
 
-const EMPTY_PARSE: ParseStats = { filesParsed: 0, nodes: 0, edges: 0 };
+const EMPTY_PARSE: ParseStats = emptyParseStats();
 const EMPTY_RESOLVE: ResolveStats = {
   imports: 0,
   calls: 0,
@@ -106,7 +119,16 @@ const EMPTY_RESOLVE: ResolveStats = {
   implements: 0,
   dropped: 0,
 };
-const EMPTY_LINK: LinkStats = { describes: 0, references: 0 };
+const EMPTY_LINK: LinkStats = { describes: 0, references: 0, diagnostics: [] };
+const EMPTY_ARTIFACTS: ArtifactStats = {
+  artifacts: 0,
+  governs: 0,
+  requires: 0,
+  invokes: 0,
+  mcpServers: 0,
+  localOverlay: 0,
+  diagnostics: [],
+};
 
 /** Scoped re-extract since the manifest's VCS anchor. `null` ⇒ caller does a full `indexRepo`. */
 export async function updateRepo(
@@ -190,6 +212,9 @@ export async function updateRepo(
     registry.register(e);
   }
   const changedMetas = metaForPaths(root, changedPaths);
+  // Mule pre-pass: stamp classification on changed Mule files so fileNode hashes sensitive config by
+  // keys only and the Mule extractor (Task 13) dispatches. Full-index path (pipeline.ts) does the same.
+  classifyMuleDiscovery(root, changedMetas);
   runStructure(soul, root, changedMetas);
   // Incremental: the changed set is small (often 1-3 files). Worker-boot cost would dominate, and
   // the pool is torn down per call, so force the serial path here — parallel is for full-index only.
@@ -211,6 +236,17 @@ export async function updateRepo(
 
   // Semantic pass (M7, INFERRED): scoped to the docs in scope, like the deterministic re-link.
   const semantic = opts.semantic ? runSemanticLink(soul, root, scopeDocFiles) : { added: 0 };
+
+  // W1 artifact graph: a changed artifact file (a tracked skill under .claude/ — gitignored, so not
+  // in `changedMetas`/`scopeMetas`) had its node + incoming edges dropped by `removeByFile`. A changed
+  // SYMBOL may also be the target of a `governs`/`requires`/`invokes` edge from an unchanged artifact
+  // (captured in the reverse-dep closure, but the artifact file itself isn't re-extracted by runParse
+  // — it isn't in the registry). A full re-scan is idempotent + cheap (artifacts are few) and re-emits
+  // every artifact node + edge, so a body-only symbol edit produces no spurious artifact-edge delta
+  // (unchanged artifacts rewrite byte-identical shards) while a changed/added/deleted artifact is
+  // correctly re-emitted or dropped. Local overlay is OFF here — incremental updates refresh the
+  // committed soul only; the working overlay (W7) re-applies on read.
+  const artifacts = runArtifactGraph(soul, root);
 
   // Ownership (M3.1): re-blame only the CHANGED files — their old `owned-by` edges were dropped by
   // `removeByFile`, so a body edit re-attributes ownership instead of leaving symbols ownerless. The
@@ -235,6 +271,22 @@ export async function updateRepo(
 
   const committedAt = opts.now ?? soul.getManifest().stats.lastUpdated;
   const dossiers = runDossiers(soul, root, committedAt);
+
+  // Semantic orphan-prune (the missing delta path): `soul.commit()` above has already written the
+  // refreshed soul, so symbols removed by `removeByFile` are gone from the graph but their persisted
+  // LLM artifacts linger under .crib/graph/semantic/artifacts (the enrich queue only re-offers STALE
+  // artifacts — a target node that simply vanished is never re-offered, and query/context still serve
+  // its stale analysis as if the code existed). Pruning orphans here — using the post-commit live node
+  // set — keeps the semantic cache consistent with the soul exactly once per update, mirroring what
+  // `runDossiers` already does for dossiers. Bumping `generation.semantic` only when something was
+  // pruned invalidates `graphFingerprint`'s semanticHash-derived half so semantic readers don't serve
+  // a stale composite cache; a zero-prune update (no symbols deleted) leaves the counter untouched so
+  // pure-additive edits don't needlessly invalidate the semantic cache.
+  const liveNodeIds = new Set<string>();
+  for (const node of soul.iterate()) liveNodeIds.add(node.id);
+  const semanticPruned = pruneSemanticArtifacts(soul.cribDir, liveNodeIds);
+  if (semanticPruned > 0) soul.bumpSemanticGeneration();
+
   const delta = buildDelta(soul, before, scope);
   return {
     delta,
@@ -249,5 +301,7 @@ export async function updateRepo(
     semantic,
     dossiers,
     ownership,
+    artifacts,
+    semanticPruned,
   };
 }

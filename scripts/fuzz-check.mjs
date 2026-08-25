@@ -35,7 +35,7 @@ import { execFileSync } from 'node:child_process';
  */
 import { existsSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO = resolve(__dirname, '..');
@@ -63,7 +63,7 @@ if (!existsSync(PARSERS_DIST)) {
 }
 
 const { runFuzz, runFakeselfTest, FUZZ_EXTRACTORS } = await import(
-  resolve(REPO, 'packages', 'parsers', 'dist', 'index.js')
+  pathToFileURL(resolve(REPO, 'packages', 'parsers', 'dist', 'index.js')).href
 );
 
 let failed = 0;

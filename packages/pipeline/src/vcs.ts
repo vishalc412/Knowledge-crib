@@ -75,6 +75,48 @@ export function hasUncommittedChanges(root: string): boolean {
   return uncommittedChanges(root).length > 0;
 }
 
+/**
+ * Repo-relative POSIX paths of UNtracked-but-not-gitignored files
+ * (`git ls-files --others --exclude-standard`). The W6 working overlay indexes these so a brand-new
+ * file under a package root is queryable BEFORE its first commit — but ignored build artifacts stay
+ * excluded because git already filters them via `--exclude-standard`. Returns [] for a non-git repo
+ * (the caller skips the untracked overlay there). Does NOT include tracked files.
+ *
+ * Unlike {@link uncommittedChanges}, this set is NOT zero on a clean checkout of a new branch: it
+ * captures files git doesn't yet know about, which is exactly the watch-mode "new file appeared" signal.
+ */
+export function untrackedFiles(root: string): string[] {
+  const out = git(root, ['ls-files', '--others', '--exclude-standard']);
+  if (out === undefined) return []; // non-git
+  return out
+    .split('\n')
+    .map((l) => l.trim())
+    .filter((l) => l.length > 0)
+    .map(toPosix);
+}
+
+/**
+ * Repo-relative POSIX paths of ALL files tracked by git (`git ls-files`). Used by the W1 committed
+ * AI-artifact scanner: unlike {@link discoverFiles}, this lists tracked files EVEN WHEN they sit
+ * under a `.gitignore`d tool directory (`.claude/`, `.cursor/`) — because `.gitignore` only hides
+ * UNtracked files, and a tracked artifact stays listed. That is the PRD line-194 case: "uses
+ * tracked-file enumeration plus a safe allowlist, even when a tracked artifact resides under a
+ * normally ignored tool directory."
+ *
+ * Returns [] if `root` is not a git work tree (the caller falls back to the normal discovered file
+ * set filtered by the artifact allowlist). Does NOT include untracked files — those are not yet
+ * committed facts and indexing them could leak ignored build artifacts.
+ */
+export function trackedFiles(root: string): string[] {
+  const out = git(root, ['ls-files']);
+  if (out === undefined) return []; // non-git
+  return out
+    .split('\n')
+    .map((l) => l.trim())
+    .filter((l) => l.length > 0)
+    .map(toPosix);
+}
+
 /** One `git blame` attribution record per source line (1-based `line`). `commit` is the short sha
  *  the line was last touched by; `name`/`email` the author (email undefined when blame exposed no
  *  email — rare, e.g. a malformed mailmap). Used by the M3.1 ownership phase to map symbols → owners. */
@@ -131,6 +173,45 @@ function git(root: string, args: string[]): string | undefined {
   } catch {
     return undefined;
   }
+}
+
+// ─── W4 trusted-ref helpers (PRD lines 250–280, 340–350) ─────────────────────
+//
+// `crib memory check` derives team trust from blobs present in a trusted Git ref and loads policy
+// from the merge base (never the untrusted PR version). These are thin, deterministic wrappers over
+// git plumbing — all use execFileSync with shell:false (the PRD line-273 execution rule applies to
+// the gate runner; these read-only git calls follow the same no-shell discipline).
+
+/** True if a git ref resolves (branch/tag/HEAD/ref). `refs/remotes/origin/HEAD`, a sha, etc. */
+export function refExists(root: string, ref: string): boolean {
+  return git(root, ['rev-parse', '--verify', '--quiet', ref]) !== undefined;
+}
+
+/** The merge-base commit sha of `a` and `b`, or undefined if either ref is missing. */
+export function mergeBase(root: string, a: string, b: string): string | undefined {
+  return git(root, ['merge-base', a, b]);
+}
+
+/** The commit sha a ref resolves to, or undefined (used to pin the trusted-ref head for receipts). */
+export function revParse(root: string, ref: string): string | undefined {
+  return git(root, ['rev-parse', ref]);
+}
+
+/** Repo-relative POSIX paths of all files under `pathPrefix` as they exist in `ref`'s tree. */
+export function lsTreeFiles(root: string, ref: string, pathPrefix: string): string[] {
+  const out = git(root, ['ls-tree', '-r', '--full-tree', '--name-only', ref, '--', pathPrefix]);
+  if (out === undefined) return [];
+  return out
+    .split('\n')
+    .map((l) => l.trim())
+    .filter((l) => l.length > 0)
+    .map(toPosix);
+}
+
+/** The full contents of `path` (repo-relative) as it exists in `ref`'s tree, or undefined. */
+export function showFileAtRef(root: string, ref: string, path: string): string | undefined {
+  // `git show` returns the blob contents; ref:path uses the path-in-tree syntax.
+  return git(root, ['show', `${ref}:${path}`]);
 }
 
 function toPosix(p: string): string {

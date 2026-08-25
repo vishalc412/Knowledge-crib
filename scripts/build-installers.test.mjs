@@ -16,14 +16,23 @@ assert.match(installSh(['knowledge-crib-0.1.0.tgz']), /NODE_MAJOR/);
 assert.match(installSh(['knowledge-crib-0.1.0.tgz']), /SHA256SUMS\.txt/);
 assert.match(installSh(['knowledge-crib-0.1.0.tgz']), /shasum -a 256 -c/);
 assert.match(installSh(['knowledge-crib-0.1.0.tgz']), /sha256sum -c/);
+// Tarball specs are `./<name>` (forward-slash, relative), resolved against the bundle dir via
+// Push-Location $PSScriptRoot — NOT `"$PSScriptRoot\<name>"`, which PS 5.1 + the npm.cmd batch shim
+// mangle in the native-arg stream (middle path segments stripped -> npm sees `D:\<name>` -> ENOENT).
 assert.match(
   installPs1(['@knowledge-crib-core-0.1.0.tgz', 'knowledge-crib-0.1.0.tgz']),
-  /npm install -g --cache "\$CacheDir" --no-audit --no-fund "\$PSScriptRoot[\\/]@knowledge-crib-core-0\.1\.0\.tgz" "\$PSScriptRoot[\\/]knowledge-crib-0\.1\.0\.tgz"/,
+  /npm install -g --cache "\$CacheDir" --no-audit --no-fund "\.\/@knowledge-crib-core-0\.1\.0\.tgz" "\.\/knowledge-crib-0\.1\.0\.tgz"/,
 );
+assert.match(installPs1(['knowledge-crib-0.1.0.tgz']), /Push-Location -LiteralPath \$PSScriptRoot/);
+assert.match(installPs1(['knowledge-crib-0.1.0.tgz']), /Pop-Location/);
 assert.match(installPs1(['knowledge-crib-0.1.0.tgz']), /--cache "\$CacheDir"/);
 assert.match(installPs1(['knowledge-crib-0.1.0.tgz']), /NodeMajor/);
 assert.match(installPs1(['knowledge-crib-0.1.0.tgz']), /SHA256SUMS\.txt/);
-assert.match(installPs1(['knowledge-crib-0.1.0.tgz']), /Get-FileHash/);
+// Checksum verification uses the .NET SHA256 API (Get-KcFileHash wrapper), not the Get-FileHash
+// cmdlet — Get-FileHash is not auto-loaded on some stock Windows PowerShell 5.1 hosts (e.g. GitHub
+// windows-latest runners under `powershell.exe -NoProfile`), which broke the installer there.
+assert.match(installPs1(['knowledge-crib-0.1.0.tgz']), /Get-KcFileHash/);
+assert.match(installPs1(['knowledge-crib-0.1.0.tgz']), /SHA256\]::Create/);
 assert.match(
   installPs1(['knowledge-crib-0.1.0.tgz']),
   /\$LASTEXITCODE/,

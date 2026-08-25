@@ -64,25 +64,133 @@ export function identifierSignal(section: MdSection, index: InvertedIndex): Sign
   });
 }
 
-/** Signal 3 — path/link: a MD link to a source file → references to all symbols in that file. */
-export function pathSignal(section: MdSection, docFile: string, index: InvertedIndex): SignalHit[] {
+/**
+ * Signal 3 — link: an internal Markdown link resolves to ONE target node (file / doc-section /
+ * symbol), preserving the `#fragment`. Replaces the W0 path fan-out (one link → every symbol in the
+ * file) which let a generic doc link masquerade as N describes/references. PRD W1 markdown fidelity:
+ * a source-file link points at the FILE node; `path#anchor` points at the doc-section; `path#name`
+ * points at the one symbol named `name` (ambiguous → diagnostic). Unresolved links are diagnostics,
+ * never guessed edges. External (http/mailto) targets are ignored, not diagnosed.
+ */
+export interface LinkDiagnostic {
+  /** repo-relative doc file containing the link. */
+  docFile: string;
+  /** anchor of the doc-section the link lives in. */
+  anchor: string;
+  /** raw MD link target as written. */
+  target: string;
+  kind: 'unresolved' | 'ambiguous';
+  reason: string;
+}
+
+export interface LinkSignalResult {
+  hits: SignalHit[];
+  diagnostics: LinkDiagnostic[];
+}
+
+const SOURCE_EXTS = [...JS_EXTS, ...TS_EXTS];
+
+export function linkSignal(
+  section: MdSection,
+  docFile: string,
+  index: InvertedIndex,
+): LinkSignalResult {
   const hits: SignalHit[] = [];
-  for (const link of section.links) {
-    for (const resolved of resolveCandidates(docFile, link)) {
-      for (const sym of index.symbolsInFile(resolved)) {
-        hits.push({ symbol: sym, method: 'path', conf: 0.5 });
+  const diagnostics: LinkDiagnostic[] = [];
+  for (const raw of section.links) {
+    if (raw.startsWith('http') || raw.startsWith('mailto:')) continue;
+
+    // split `path#anchor` (or in-page `#anchor`); preserve the fragment.
+    let pathPart: string;
+    let anchor: string | undefined;
+    if (raw.startsWith('#')) {
+      pathPart = docFile;
+      anchor = raw.slice(1);
+    } else {
+      const hashIdx = raw.indexOf('#');
+      if (hashIdx >= 0) {
+        pathPart = raw.slice(0, hashIdx);
+        anchor = raw.slice(hashIdx + 1);
+      } else {
+        pathPart = raw;
+        anchor = undefined;
+      }
+    }
+
+    if (anchor !== undefined && anchor.length > 0) {
+      // `path#anchor` → doc-section first (a heading slug); else a symbol named `anchor` in a
+      // source file (`path#symbolName`); else unresolved/ambiguous diagnostic.
+      let resolved = false;
+      for (const cand of resolveCandidates(docFile, pathPart)) {
+        const ds = index.docSection(cand, anchor);
+        if (ds) {
+          hits.push({ symbol: ds, method: 'path', conf: 0.8 });
+          resolved = true;
+          break;
+        }
+      }
+      if (!resolved && SOURCE_EXTS.some((e) => pathPart.endsWith(e))) {
+        let matched: Node[] = [];
+        for (const cand of resolveCandidates(docFile, pathPart)) {
+          const syms = index.symbolsInFile(cand).filter((s) => s.name === anchor);
+          if (syms.length > 0) {
+            matched = syms;
+            break;
+          }
+        }
+        if (matched.length === 1) {
+          hits.push({ symbol: matched[0]!, method: 'path', conf: 0.8 });
+          resolved = true;
+        } else if (matched.length > 1) {
+          diagnostics.push({
+            docFile,
+            anchor: section.anchor,
+            target: raw,
+            kind: 'ambiguous',
+            reason: `${matched.length} symbols named '${anchor}' in ${pathPart}`,
+          });
+          resolved = true;
+        }
+      }
+      if (!resolved) {
+        diagnostics.push({
+          docFile,
+          anchor: section.anchor,
+          target: raw,
+          kind: 'unresolved',
+          reason: `no doc-section or symbol '${anchor}' at ${pathPart}`,
+        });
+      }
+    } else {
+      // bare path → the FILE node (ONE references edge, no fan-out). PRD #2.
+      let resolved = false;
+      for (const cand of resolveCandidates(docFile, pathPart)) {
+        const fn = index.fileNode(cand);
+        if (fn) {
+          hits.push({ symbol: fn, method: 'path', conf: 0.7 });
+          resolved = true;
+          break;
+        }
+      }
+      if (!resolved) {
+        diagnostics.push({
+          docFile,
+          anchor: section.anchor,
+          target: raw,
+          kind: 'unresolved',
+          reason: `no indexed file at ${pathPart}`,
+        });
       }
     }
   }
-  return hits;
+  return { hits, diagnostics };
 }
 
-/** Candidate repo-relative file paths a doc link could mean (handles relative + .js→.ts). */
-function resolveCandidates(docFile: string, link: string): string[] {
-  const clean = link.split('#')[0] ?? link;
-  if (!clean) return [];
+/** Candidate repo-relative file paths a doc link's path part could mean (relative + .js→.ts). */
+function resolveCandidates(docFile: string, pathPart: string): string[] {
+  if (!pathPart) return [];
   const baseDir = dirname(docFile);
-  const target = clean.startsWith('.') ? norm(join(baseDir, clean)) : clean;
+  const target = pathPart.startsWith('.') ? norm(join(baseDir, pathPart)) : pathPart;
   const jsExt = JS_EXTS.find((e) => target.endsWith(e));
   const bare = jsExt ? target.slice(0, -jsExt.length) : target;
   const out = new Set<string>([target, bare]);

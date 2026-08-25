@@ -1,10 +1,22 @@
 import { execFileSync, spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  realpathSync,
+  rmSync,
+  symlinkSync,
+  utimesSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { crc32 } from 'node:zlib';
 import { SoulStore, newManifest, openIndex } from '@knowledge-crib/core';
 import { indexRepo } from '@knowledge-crib/pipeline';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { syntheticMuleProject } from '../../../scripts/fixtures/synthetic-mule-project.mjs';
 
 /**
  * End-to-end CLI dispatch tests for the P2 surface: `context --package <pkg>` (WS-4 bulk dossierByScope)
@@ -155,6 +167,355 @@ describe('read commands use an existing derived index instead of rebuilding it',
   });
 });
 
+describe('crib index --crib-dir', () => {
+  it('indexes into an external crib directory and registers that directory', () => {
+    const sourceRoot = mkdtempSync(join(tmpdir(), 'crib-cli-external-source-'));
+    const cribDir = mkdtempSync(join(tmpdir(), 'crib-cli-external-store-'));
+    const registryDir = mkdtempSync(join(tmpdir(), 'crib-cli-external-registry-'));
+    try {
+      writeFileSync(join(sourceRoot, 'hello.ts'), 'export const hello = "world";\n');
+      const result = (() => {
+        try {
+          const stdout = execFileSync(
+            process.execPath,
+            [CLI, 'index', sourceRoot, '--crib-dir', cribDir],
+            {
+              cwd: sourceRoot,
+              encoding: 'utf8',
+              env: { ...process.env, KCRIB_REGISTRY_DIR: registryDir },
+              stdio: ['ignore', 'pipe', 'pipe'],
+            },
+          );
+          return { status: 0, stdout, stderr: '' };
+        } catch (e) {
+          const err = e as { status?: number; stdout?: string; stderr?: string };
+          return { status: err.status ?? 1, stdout: err.stdout ?? '', stderr: err.stderr ?? '' };
+        }
+      })();
+
+      expect(result.status, result.stderr).toBe(0);
+      expect(existsSync(join(sourceRoot, '.crib'))).toBe(false);
+      expect(existsSync(join(cribDir, 'crib.json'))).toBe(true);
+      const registry = JSON.parse(readFileSync(join(registryDir, 'registry.json'), 'utf8')) as {
+        projects: Record<string, { cribDir: string }>;
+      };
+      expect(registry.projects[sourceRoot]?.cribDir).toBe(realpathSync(cribDir));
+    } finally {
+      rmSync(sourceRoot, { recursive: true, force: true });
+      rmSync(cribDir, { recursive: true, force: true });
+      rmSync(registryDir, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects relative paths and paths inside the source .git directory', () => {
+    const sourceRoot = mkdtempSync(join(tmpdir(), 'crib-cli-external-invalid-'));
+    try {
+      writeFileSync(join(sourceRoot, 'hello.ts'), 'export const hello = "world";\n');
+      mkdirSync(join(sourceRoot, '.git'));
+      for (const cribDir of ['relative-crib', join(sourceRoot, '.git', 'crib')]) {
+        const result = (() => {
+          try {
+            execFileSync(process.execPath, [CLI, 'index', sourceRoot, '--crib-dir', cribDir], {
+              cwd: sourceRoot,
+              encoding: 'utf8',
+              stdio: ['ignore', 'pipe', 'pipe'],
+            });
+            return { status: 0, stderr: '' };
+          } catch (e) {
+            const err = e as { status?: number; stderr?: string };
+            return { status: err.status ?? 1, stderr: err.stderr ?? '' };
+          }
+        })();
+        expect(result.status).toBe(2);
+        expect(result.stderr).toContain('--crib-dir');
+      }
+      expect(existsSync(join(sourceRoot, '.crib'))).toBe(false);
+    } finally {
+      rmSync(sourceRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('uses the registered external crib directory when update omits --crib-dir', () => {
+    const sourceRoot = mkdtempSync(join(tmpdir(), 'crib-cli-external-update-source-'));
+    const cribDir = mkdtempSync(join(tmpdir(), 'crib-cli-external-update-store-'));
+    const registryDir = mkdtempSync(join(tmpdir(), 'crib-cli-external-update-registry-'));
+    const env = { ...process.env, KCRIB_REGISTRY_DIR: registryDir };
+    try {
+      writeFileSync(join(sourceRoot, 'hello.ts'), 'export const hello = "world";\n');
+      execFileSync(process.execPath, [CLI, 'index', sourceRoot, '--crib-dir', cribDir], {
+        cwd: sourceRoot,
+        encoding: 'utf8',
+        env,
+        stdio: ['ignore', 'pipe', 'pipe'],
+      });
+      const result = (() => {
+        try {
+          execFileSync(process.execPath, [CLI, 'update', sourceRoot], {
+            cwd: sourceRoot,
+            encoding: 'utf8',
+            env,
+            stdio: ['ignore', 'pipe', 'pipe'],
+          });
+          return { status: 0, stderr: '' };
+        } catch (e) {
+          const err = e as { status?: number; stderr?: string };
+          return { status: err.status ?? 1, stderr: err.stderr ?? '' };
+        }
+      })();
+      expect(result.status, result.stderr).toBe(0);
+      expect(existsSync(join(sourceRoot, '.crib'))).toBe(false);
+    } finally {
+      rmSync(sourceRoot, { recursive: true, force: true });
+      rmSync(cribDir, { recursive: true, force: true });
+      rmSync(registryDir, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects a symlinked external path that resolves inside source .git', () => {
+    const sourceRoot = mkdtempSync(join(tmpdir(), 'crib-cli-external-symlink-source-'));
+    const outsideRoot = mkdtempSync(join(tmpdir(), 'crib-cli-external-symlink-outside-'));
+    try {
+      writeFileSync(join(sourceRoot, 'hello.ts'), 'export const hello = "world";\n');
+      mkdirSync(join(sourceRoot, '.git'));
+      const link = join(outsideRoot, 'git-link');
+      symlinkSync(join(sourceRoot, '.git'), link, 'dir');
+      const result = (() => {
+        try {
+          execFileSync(
+            process.execPath,
+            [CLI, 'index', sourceRoot, '--crib-dir', join(link, 'crib')],
+            {
+              cwd: sourceRoot,
+              encoding: 'utf8',
+              stdio: ['ignore', 'pipe', 'pipe'],
+            },
+          );
+          return { status: 0, stderr: '' };
+        } catch (e) {
+          const err = e as { status?: number; stderr?: string };
+          return { status: err.status ?? 1, stderr: err.stderr ?? '' };
+        }
+      })();
+      expect(result.status).toBe(2);
+      expect(result.stderr).toContain('--crib-dir');
+      expect(existsSync(join(sourceRoot, '.git', 'crib'))).toBe(false);
+    } finally {
+      rmSync(sourceRoot, { recursive: true, force: true });
+      rmSync(outsideRoot, { recursive: true, force: true });
+    }
+  });
+});
+
+/**
+ * Build a minimal STORED (uncompressed, method 0) ZIP in memory so the archive CLI path can be
+ * exercised end-to-end without a zip library (yazl is a pipeline devDep, not resolvable from the cli
+ * package). Real archives use deflate; yauzl in the pipeline handles both — the stored layout is the
+ * simplest valid container and proves the extract → index → register → resolve round-trip.
+ */
+function buildStoredZip(entries: Array<{ name: string; data: Buffer }>): Buffer {
+  const dos = (d: Date): number =>
+    (d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >>> 1);
+  const dosDate = (d: Date): number =>
+    ((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate();
+  const now = new Date();
+  const time = dos(now);
+  const date = dosDate(now);
+  const locals: Buffer[] = [];
+  const offsets: number[] = [];
+  let cursor = 0;
+  const central: Buffer[] = [];
+  for (const { name, data } of entries) {
+    const nameBuf = Buffer.from(name, 'utf8');
+    const crc = crc32(data) >>> 0;
+    offsets.push(cursor);
+    const local = Buffer.concat([
+      Buffer.from([0x50, 0x4b, 0x03, 0x04]), // local file header sig
+      Buffer.from([20, 0]), // version needed = 2.0
+      Buffer.from([0, 0]), // flags
+      Buffer.from([0, 0]), // method = stored
+      Buffer.from([time & 0xff, (time >>> 8) & 0xff]), // mod time
+      Buffer.from([date & 0xff, (date >>> 8) & 0xff]), // mod date
+      Buffer.from(uint32(crc)),
+      Buffer.from(uint32(data.length)),
+      Buffer.from(uint32(data.length)),
+      Buffer.from(uint16(nameBuf.length)),
+      Buffer.from([0, 0]), // extra len
+      nameBuf,
+      data,
+    ]);
+    locals.push(local);
+    cursor += local.length;
+    const centralRec = Buffer.concat([
+      Buffer.from([0x50, 0x4b, 0x01, 0x02]), // central dir header sig
+      Buffer.from([20, 0]), // version made by
+      Buffer.from([20, 0]), // version needed
+      Buffer.from([0, 0]), // flags
+      Buffer.from([0, 0]), // method
+      Buffer.from([time & 0xff, (time >>> 8) & 0xff]),
+      Buffer.from([date & 0xff, (date >>> 8) & 0xff]),
+      Buffer.from(uint32(crc)),
+      Buffer.from(uint32(data.length)),
+      Buffer.from(uint32(data.length)),
+      Buffer.from(uint16(nameBuf.length)),
+      Buffer.from([0, 0]), // extra len
+      Buffer.from([0, 0]), // comment len
+      Buffer.from([0, 0]), // disk start
+      Buffer.from([0, 0]), // internal attrs
+      Buffer.from(uint32(0)), // external attrs
+      Buffer.from(uint32(offsets[offsets.length - 1]!)), // local header offset
+      nameBuf,
+    ]);
+    central.push(centralRec);
+  }
+  const centralBlob = Buffer.concat(central);
+  const cdOffset = cursor;
+  const eocd = Buffer.concat([
+    Buffer.from([0x50, 0x4b, 0x05, 0x06]), // EOCD sig
+    Buffer.from([0, 0]), // disk number
+    Buffer.from([0, 0]), // disk with central dir
+    Buffer.from(uint16(entries.length)), // entries on this disk
+    Buffer.from(uint16(entries.length)), // total entries
+    Buffer.from(uint32(centralBlob.length)),
+    Buffer.from(uint32(cdOffset)),
+    Buffer.from([0, 0]), // comment len
+  ]);
+  return Buffer.concat([...locals, centralBlob, eocd]);
+}
+
+function uint16(n: number): Buffer {
+  const b = Buffer.alloc(2);
+  b.writeUInt16LE(n & 0xffff, 0);
+  return b;
+}
+function uint32(n: number): Buffer {
+  const b = Buffer.alloc(4);
+  b.writeUInt32LE(n >>> 0, 0);
+  return b;
+}
+
+describe('crib index <archive> — archive identity round-trip', () => {
+  let importsDir: string;
+  let registryDir: string;
+  let env: NodeJS.ProcessEnv;
+  const runArchive = (args: string[]): { status: number; stdout: string; stderr: string } => {
+    const r = spawnSync(process.execPath, [CLI, ...args], {
+      encoding: 'utf8',
+      maxBuffer: 32 * 1024 * 1024,
+      env,
+    });
+    const strip = (s: string): string =>
+      s
+        .split('\n')
+        .filter((l) => !/ExperimentalWarning|trace-warnings|DEP00/.test(l))
+        .join('\n')
+        .trim();
+    return { status: r.status ?? 1, stdout: strip(r.stdout ?? ''), stderr: strip(r.stderr ?? '') };
+  };
+
+  beforeEach(() => {
+    importsDir = mkdtempSync(join(tmpdir(), 'crib-cli-imports-'));
+    registryDir = mkdtempSync(join(tmpdir(), 'crib-cli-archive-reg-'));
+    env = { ...process.env, KCRIB_IMPORTS_DIR: importsDir, KCRIB_REGISTRY_DIR: registryDir };
+  });
+  afterEach(() => {
+    rmSync(importsDir, { recursive: true, force: true });
+    rmSync(registryDir, { recursive: true, force: true });
+  });
+
+  it('indexes a ZIP, registers archive identity, and resolves read commands from the registry (no re-extract)', () => {
+    const archiveDir = mkdtempSync(join(tmpdir(), 'crib-cli-archive-src-'));
+    try {
+      const zip = join(archiveDir, 'app.zip');
+      writeFileSync(
+        zip,
+        buildStoredZip([
+          {
+            name: 'hello.ts',
+            data: Buffer.from('export function greet(): string {\n  return "hi";\n}\n'),
+          },
+        ]),
+      );
+
+      const indexed = runArchive(['index', zip]);
+      expect(indexed.status, indexed.stderr).toBe(0);
+      expect(indexed.stdout).toMatch(/indexed \d+ files/);
+      // No `.crib` is created next to the archive — the soul lives in the imports cache.
+      expect(existsSync(join(archiveDir, '.crib'))).toBe(false);
+
+      // The registry records the archive identity under the archive path (projectKey).
+      const registry = JSON.parse(readFileSync(join(registryDir, 'registry.json'), 'utf8')) as {
+        projects: Record<
+          string,
+          { cribDir: string; sourceRoot: string; sourceArchive: string; sourceFingerprint: string }
+        >;
+      };
+      const entry = registry.projects[zip]!;
+      expect(entry).toBeDefined();
+      expect(entry.sourceArchive).toBe(zip);
+      expect(entry.sourceFingerprint).toMatch(/^[0-9a-f]{64}$/);
+      // sourceRoot + cribDir live inside the imports cache, not next to the archive.
+      expect(entry.sourceRoot.startsWith(importsDir)).toBe(true);
+      expect(entry.cribDir.startsWith(importsDir)).toBe(true);
+      expect(existsSync(join(entry.cribDir, 'crib.json'))).toBe(true);
+
+      // A read command using the ARCHIVE PATH resolves via the registry without re-extracting:
+      // status reports indexed:true against the cached soul (no `.crib` next to the zip to find).
+      const status = runArchive(['status', zip]);
+      expect(status.status, status.stderr).toBe(0);
+      const parsed = JSON.parse(status.stdout) as { indexed: boolean };
+      expect(parsed.indexed).toBe(true);
+    } finally {
+      rmSync(archiveDir, { recursive: true, force: true });
+    }
+  });
+
+  it('update on an unchanged archive is a no-op (fingerprint cache hit), and re-index keeps identity', () => {
+    const archiveDir = mkdtempSync(join(tmpdir(), 'crib-cli-archive-upd-'));
+    try {
+      const zip = join(archiveDir, 'app.zip');
+      writeFileSync(
+        zip,
+        buildStoredZip([{ name: 'a.ts', data: Buffer.from('export const a = 1;\n') }]),
+      );
+      const first = runArchive(['index', zip]);
+      expect(first.status, first.stderr).toBe(0);
+      const registry = () =>
+        (
+          JSON.parse(readFileSync(join(registryDir, 'registry.json'), 'utf8')) as {
+            projects: Record<string, { sourceFingerprint: string }>;
+          }
+        ).projects[zip]?.sourceFingerprint;
+      const fp1 = registry();
+      expect(fp1).toMatch(/^[0-9a-f]{64}$/);
+
+      // Unchanged archive → no-op, identity preserved.
+      const upd = runArchive(['update', zip]);
+      expect(upd.status, upd.stderr).toBe(0);
+      expect(upd.stdout).toContain('up to date (archive unchanged)');
+      expect(registry()).toBe(fp1);
+    } finally {
+      rmSync(archiveDir, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects --watch on an archive input (no work tree to observe)', () => {
+    const archiveDir = mkdtempSync(join(tmpdir(), 'crib-cli-archive-watch-'));
+    try {
+      const zip = join(archiveDir, 'app.zip');
+      writeFileSync(
+        zip,
+        buildStoredZip([{ name: 'a.ts', data: Buffer.from('export const a = 1;\n') }]),
+      );
+      runArchive(['index', zip]);
+      const r = runArchive(['serve', zip, '--watch']);
+      expect(r.status).toBe(2);
+      expect(r.stderr).toContain('watch is not supported for archive inputs');
+    } finally {
+      rmSync(archiveDir, { recursive: true, force: true });
+    }
+  });
+});
+
 describe('crib reconstruct (WS-6) — CLI dispatch + maxSymbols guard (Blocker 2 regression)', () => {
   it('markdown emits the 30/80 thresholds + expectedBodyFile + members', () => {
     const out = runCli(['reconstruct', pkgQname, '--format', 'markdown']);
@@ -275,48 +636,61 @@ describe('crib enrich --scope / --scope-cluster / --save flag guards (scope-pick
   });
 });
 
-describe('crib enrich --auto — bounded autonomous loop (WP2b)', () => {
-  // --auto stub-authors + saves each batch headlessly (no model). Three independent stop conditions
-  // (token ceiling, max-batches, layer boundary) plus the zero-progress churn-trap break. Each test
-  // drives the BUILT dist/cli.js against a freshly-indexed temp repo so the enrich queue is non-empty.
+describe('crib enrich --auto — bare (no --provider) prints guidance, no stub loop (W7)', () => {
+  // W7 removed the autonomous confidence-0.1 stub loop: only grounded `verified` artifacts satisfy
+  // coverage now, so a stub would not advance the queue (it would spin to zero-progress). Bare
+  // `--auto` (no --provider) reports real pending + points at the provider loop / MCP skill and exits
+  // OK. The bounded loop's stop conditions (layer boundary, max-batches, max-tokens, zero-progress)
+  // now live behind `crib enrich run --provider <name>` (covered in enrich-cli.test.ts). Each test
+  // drives the BUILT dist/cli.js against the shared freshly-indexed temp repo (non-empty queue).
 
-  it('stops at the layer boundary (default budget packs the symbol layer in one batch, next batch is file)', () => {
+  it('bare --auto prints pending + guidance and exits OK (no stub-authoring loop)', () => {
     const r = runCliResult(['enrich', '--auto']);
     expect(r.status).toBe(0);
-    // First batch drains the symbol layer; the second batch is the file layer → stop for review.
-    expect(r.stdout).toContain('auto batch 1');
-    expect(r.stdout).toContain('layer boundary');
-    expect(r.stdout).toContain('stopping for review');
+    expect(r.stdout).toContain('no longer writes stubs');
+    expect(r.stdout).toContain('provider loop: crib enrich run --provider <name>');
+    expect(r.stdout).toMatch(/pending targets: \d+/);
+    expect(r.stdout).not.toContain('auto batch 1');
   });
 
-  it('stops at --max-batches (caps the batch count before the layer boundary would fire)', () => {
-    const r = runCliResult(['enrich', '--auto', '--max-batches', '1']);
+  it('--auto ignores loop-budget flags (no loop runs; still guidance + exit 0)', () => {
+    // --max-batches / --max-tokens / --budget-tokens only govern the provider loop; with no
+    // --provider they are inert — bare --auto still prints guidance and exits OK.
+    const r = runCliResult([
+      'enrich',
+      '--auto',
+      '--max-batches',
+      '1',
+      '--max-tokens',
+      '1',
+      '--budget-tokens',
+      '1',
+    ]);
     expect(r.status).toBe(0);
-    expect(r.stdout).toContain('auto batch 1');
-    expect(r.stdout).toContain('max-batches reached (1)');
-    // The max-batches check ends the loop at the bottom of iteration 1, so the layer-boundary branch
-    // (top of iteration 2) never runs.
-    expect(r.stdout).not.toContain('layer boundary');
+    expect(r.stdout).toContain('no longer writes stubs');
+    expect(r.stdout).not.toContain('auto batch 1');
+    expect(r.stdout).not.toContain('max-batches reached');
+    expect(r.stdout).not.toContain('token ceiling');
   });
 
-  it('stops at the --max-tokens turn ceiling (first batch always runs, subsequent batches stop before overshooting)', () => {
-    // --budget-tokens 1 splits the symbol layer into one-item batches so iteration 2 stays in the
-    // symbol layer (no layer-boundary interference); --max-tokens 1 then trips the turn ceiling after
-    // the first batch. Robust to exact per-item costs: any C>0 gives spent+C > 1 on iteration 2.
-    const r = runCliResult(['enrich', '--auto', '--budget-tokens', '1', '--max-tokens', '1']);
+  it('bare --auto writes no stub artifacts (the W7 stub-freshness fix, end-to-end through the CLI)', () => {
+    const r = runCliResult(['enrich', '--auto']);
     expect(r.status).toBe(0);
-    expect(r.stdout).toContain('auto batch 1');
-    expect(r.stdout).toContain('token ceiling');
+    // No confidence-0.1 stubs were authored: the audit finds zero LLM artifacts on disk.
+    const audit = runCli(['audit-llm']);
+    expect(audit).toContain('no LLM artifacts on disk');
   });
 
-  it('breaks on zeroProgress rather than spinning (exit non-zero when a primed batch re-issues with no save)', () => {
-    // Prime: `--next` issues a batch and persists lastIssued to disk WITHOUT saving. The next process
-    // sees the same batchId re-issued → zero-progress → the churn trap. --auto MUST break non-zero
-    // instead of looping forever on a batch it cannot advance.
+  it('bare --auto does not spin on a primed zero-progress batch (guidance, exit 0)', () => {
+    // Prime: `--next` issues a batch and persists lastIssued WITHOUT saving. The old stub loop would
+    // then re-issue the same batchId → zero-progress churn. Bare --auto never calls next() (it only
+    // reads status), so it prints guidance and exits OK regardless of the primed marker — the
+    // zero-progress guard now governs only the provider loop (run --provider).
     runCliResult(['enrich', '--next']);
     const r = runCliResult(['enrich', '--auto']);
-    expect(r.status).toBe(1);
-    expect(r.stderr).toContain('zero-progress');
+    expect(r.status).toBe(0);
+    expect(r.stdout).toContain('no longer writes stubs');
+    expect(r.stderr).not.toContain('zero-progress');
   });
 });
 
@@ -499,6 +873,20 @@ describe('crib skill install --dest — cross-client skill installation', () => 
     expect(result.status).toBe(2);
     expect(result.stderr).toContain('usage: crib skill install [name] [--dest <dir>]');
   });
+
+  it('rejects --client all (skill install targets one client, not a sentinel)', () => {
+    const r = runCliResult(['skill', 'install', '--client', 'all']);
+    expect(r.status).toBe(2);
+    expect(r.stderr).toMatch(/unknown --client: all/);
+  });
+
+  it('rejects an unknown --client with a clean usage error (no stack trace)', () => {
+    const r = runCliResult(['skill', 'install', '--client', 'foo']);
+    expect(r.status).toBe(2);
+    expect(r.stderr).toMatch(/unknown --client: foo/);
+    expect(r.stderr).not.toMatch(/no adapter for client/); // no ungraceful throw
+    expect(r.stderr).not.toMatch(/at .*:\d+/); // no stack trace
+  });
 });
 
 describe('crib update --package (P4 multi-package federation) — CLI dispatch', () => {
@@ -674,5 +1062,252 @@ describe('crib federated-impact (M3.2) — CLI dispatch + id-parse regression', 
     const r = runCliResult(['federated-impact', '--dir', 'down']);
     expect(r.status).not.toBe(0);
     expect(r.stderr).toMatch(/usage:/);
+  });
+});
+
+// ─── W8 — cross-agent onboarding adapters + doctor memory-loop (PRD line 394/408) ───────────────
+//
+// These exercise the BUILT dist end-to-end: `crib adapters install --client all` writes every
+// client instruction file preserving sibling content, `crib adapters remove` leaves the others +
+// memory intact, `crib doctor` reports the 7th agent-memory-loop check (non-fatal when not
+// initialized). They depend on the cli package's pretest/verify having rebuilt dist first.
+
+describe('crib adapters (W8) — CLI dispatch', () => {
+  it('install --client all writes all six instruction files + reports vscode as no-target', () => {
+    const out = runCli(['adapters', 'install', '--client', 'all']);
+    // six clients get a file written; vscode gets a note with an empty path.
+    expect(out).toContain('claude: installed');
+    expect(out).toContain('cursor: installed');
+    expect(out).toContain('copilot: installed');
+    expect(out).toContain('codex: installed');
+    expect(out).toContain('windsurf: installed');
+    expect(out).toContain('gemini: installed');
+    expect(out).toMatch(/vscode:.*no project-scope instruction file|MCP wiring/);
+    // the files exist and carry the managed block.
+    expect(existsSync(join(repo, 'CLAUDE.md'))).toBe(true);
+    expect(existsSync(join(repo, 'AGENTS.md'))).toBe(true);
+    expect(existsSync(join(repo, 'GEMINI.md'))).toBe(true);
+    expect(existsSync(join(repo, '.cursor', 'rules', 'crib.mdc'))).toBe(true);
+    expect(existsSync(join(repo, '.github', 'copilot-instructions.md'))).toBe(true);
+    expect(existsSync(join(repo, '.windsurfrules'))).toBe(true);
+    expect(readFileSync(join(repo, 'CLAUDE.md'), 'utf8')).toContain('<!-- crib:start -->');
+  });
+
+  it('install preserves pre-existing sibling content in AGENTS.md', () => {
+    writeFileSync(join(repo, 'AGENTS.md'), '# Existing\n\nuser prose\n');
+    runCli(['adapters', 'install', '--client', 'codex']);
+    const out = readFileSync(join(repo, 'AGENTS.md'), 'utf8');
+    expect(out).toContain('# Existing');
+    expect(out).toContain('user prose');
+    expect(out).toContain('<!-- crib:start -->');
+  });
+
+  it('is idempotent — a second install reports "up to date"', () => {
+    runCli(['adapters', 'install', '--client', 'claude']);
+    const second = runCli(['adapters', 'install', '--client', 'claude']);
+    expect(second).toContain('claude: up to date');
+  });
+
+  it('list reports present after install', () => {
+    runCli(['adapters', 'install', '--client', 'all']);
+    const out = runCli(['adapters', 'list', '--client', 'all']);
+    expect(out).toContain('claude: present');
+    expect(out).toContain('codex: present');
+  });
+
+  it('remove --client claude leaves the other instruction files + memory intact', () => {
+    runCli(['adapters', 'install', '--client', 'all']);
+    const out = runCli(['adapters', 'remove', '--client', 'claude']);
+    expect(out).toContain('claude: removed');
+    expect(existsSync(join(repo, 'CLAUDE.md'))).toBe(false);
+    // siblings untouched.
+    expect(existsSync(join(repo, 'AGENTS.md'))).toBe(true);
+    expect(existsSync(join(repo, 'GEMINI.md'))).toBe(true);
+  });
+
+  it('rejects an unknown --client with BAD_ARGS', () => {
+    const r = runCliResult(['adapters', 'install', '--client', 'nope']);
+    expect(r.status).not.toBe(0);
+    expect(r.stderr).toMatch(/unknown --client/);
+  });
+});
+
+describe('crib doctor (W8) — agent-memory loop check', () => {
+  // doctor exits non-zero when OTHER checks fail (git hooks / IDE wiring absent in the temp repo),
+  // so use runCliResult (captures non-zero) and assert on stdout — the memory-loop CHECK state is
+  // what we're verifying, not doctor's overall exit code.
+  it('reports the memory-loop check as non-fatal (✓) when memory is not initialized', () => {
+    const r = runCliResult(['doctor']);
+    expect(r.stdout).toContain('agent-memory loop');
+    expect(r.stdout).toMatch(/✓ agent-memory loop — not initialized/);
+    // overall doctor ran all 8 checks (memory is opt-in → its ✓ does not cause failure by itself).
+    expect(r.stdout).toMatch(/crib doctor: \d+\/8 checks passed/);
+  });
+
+  it('flags the memory loop as failing when policy.json exists but no adapter is installed', () => {
+    // Simulate `crib memory init` having run (policy + team dir) WITHOUT any adapter installed.
+    const memDir = join(repo, '.crib', 'memory');
+    mkdirSync(join(memDir, 'team'), { recursive: true });
+    writeFileSync(join(memDir, 'policy.json'), '{"version":1,"profiles":{}}\n');
+    const r = runCliResult(['doctor']);
+    expect(r.stdout).toContain('agent-memory loop');
+    expect(r.stdout).toMatch(/✗ agent-memory loop/);
+    expect(r.stdout).toMatch(/crib adapters install/);
+  });
+
+  it('passes the memory loop when policy + team dir + an adapter are all present', () => {
+    const memDir = join(repo, '.crib', 'memory');
+    mkdirSync(join(memDir, 'team'), { recursive: true });
+    writeFileSync(join(memDir, 'policy.json'), '{"version":1,"profiles":{}}\n');
+    runCli(['adapters', 'install', '--client', 'claude']);
+    const r = runCliResult(['doctor']);
+    expect(r.stdout).toMatch(/✓ agent-memory loop — policy ✓, team store ✓/);
+  });
+});
+
+describe('crib doctor — stale build artifacts (WARN-class, report-only)', () => {
+  // doctor exits non-zero when OTHER checks fail (git hooks / IDE wiring absent in the temp repo),
+  // so assert on stdout like the memory-loop block above. The 8th check must never itself fail:
+  // stale `.crib-build-*` builds are auto-reclaimed by the build-time sweep (runtime.ts); doctor
+  // only surfaces the backlog.
+  /** Write a `.crib-build-*` temp db (+ sidecars) into the temp repo's index dir. */
+  function plantBuild(name: string, ageMs: number): string {
+    const indexDir = join(repo, '.crib', 'index');
+    mkdirSync(indexDir, { recursive: true });
+    const full = join(indexDir, name);
+    writeFileSync(full, Buffer.alloc(2048));
+    writeFileSync(`${full}-wal`, Buffer.alloc(1024));
+    writeFileSync(`${full}-shm`, Buffer.alloc(64));
+    const mtime = new Date(Date.now() - ageMs);
+    for (const p of [full, `${full}-wal`, `${full}-shm`]) utimesSync(p, mtime, mtime);
+    return full;
+  }
+
+  it('reports a stale build (name, count, size incl. sidecars) as a non-failing ✓ check', () => {
+    plantBuild('.crib-build-999-stale.sqlite', 2 * 60 * 60 * 1000);
+    const r = runCliResult(['doctor']);
+    expect(r.stdout).toMatch(
+      /✓ stale build artifacts — 1 stale \.crib-build-\* build \(3\.1 KiB incl\. -wal\/-shm\)/,
+    );
+  });
+
+  it('never deletes the stale artifacts it reports — deletion is the runtime sweep', () => {
+    const full = plantBuild('.crib-build-999-stale.sqlite', 2 * 60 * 60 * 1000);
+    runCliResult(['doctor']);
+    expect(existsSync(full)).toBe(true);
+    expect(existsSync(`${full}-wal`)).toBe(true);
+    expect(existsSync(`${full}-shm`)).toBe(true);
+  });
+
+  it('treats a fresh .crib-build-* file as an in-progress build, not a stale one', () => {
+    plantBuild('.crib-build-123-live.sqlite', 5 * 1000);
+    const r = runCliResult(['doctor']);
+    expect(r.stdout).toMatch(/✓ stale build artifacts — none/);
+  });
+
+  it('reports "none" when the index dir holds no build artifacts', () => {
+    const r = runCliResult(['doctor']);
+    expect(r.stdout).toMatch(/✓ stale build artifacts — none/);
+    // the 8th check is included in the total
+    expect(r.stdout).toMatch(/crib doctor: \d+\/8 checks passed/);
+  });
+});
+
+describe('crib index — MuleSoft summary (Task 7)', () => {
+  let muleRoot: string;
+  beforeEach(() => {
+    muleRoot = mkdtempSync(join(tmpdir(), 'crib-cli-mule-'));
+    syntheticMuleProject(muleRoot);
+  });
+  afterEach(() => rmSync(muleRoot, { recursive: true, force: true }));
+
+  const runMule = (args: string[]): { status: number; stdout: string; stderr: string } => {
+    const r = spawnSync(process.execPath, [CLI, ...args], {
+      cwd: muleRoot,
+      encoding: 'utf8',
+      maxBuffer: 32 * 1024 * 1024,
+    });
+    const stripNoise = (s: string): string =>
+      s
+        .split('\n')
+        .filter((l) => !/ExperimentalWarning|trace-warnings/.test(l))
+        .join('\n')
+        .trim();
+    return {
+      status: r.status ?? 1,
+      stdout: stripNoise(r.stdout ?? ''),
+      stderr: stripNoise(r.stderr ?? ''),
+    };
+  };
+
+  it('the human line appends a Mule summary with project, dialect, flows, subflows, munit, unresolved', () => {
+    const r = runMule(['index', '.']);
+    expect(r.status).toBe(0);
+    expect(r.stdout).toMatch(/indexed \d+ files → \d+ nodes, \d+ edges/);
+    expect(r.stdout).toContain('· mule:');
+    // 1 project, Mule 4 (the synthetic corpus is a single mule4 app at the repo root).
+    expect(r.stdout).toContain('1 project');
+    expect(r.stdout).toContain('mule4:');
+    expect(r.stdout).toContain('18 flows');
+    expect(r.stdout).toContain('7 subflows');
+    expect(r.stdout).toContain('6 munit tests');
+    // 3 unresolved flow-ref targets → "3 unresolved".
+    expect(r.stdout).toContain('3 unresolved');
+  });
+
+  it('--json emits the full report with a mulesoft key and unchanged top-level fields', () => {
+    const r = runMule(['index', '.', '--json']);
+    expect(r.status).toBe(0);
+    const obj = JSON.parse(r.stdout);
+    // Existing top-level fields are preserved (the JSON contract: no top-level change).
+    for (const k of [
+      'files',
+      'parse',
+      'resolve',
+      'cfg',
+      'link',
+      'cluster',
+      'ownership',
+      'artifacts',
+    ])
+      expect(obj[k]).toBeDefined();
+    expect(obj.mulesoft).toBeDefined();
+    const m = obj.mulesoft;
+    expect(m.projects).toBe(1);
+    expect(m.dialectFiles).toEqual({ mule3: 0, mule4: expect.any(Number) });
+    expect(m.dialectFiles.mule4).toBeGreaterThan(0);
+    expect(m.flows).toBe(18);
+    expect(m.subflows).toBe(7);
+    expect(m.flowRefs).toBe(39);
+    expect(m.transforms).toBe(27);
+    expect(m.munitTests).toBe(6);
+    expect(m.externalTargets).toBe(3);
+    // routes = 2 http:listeners + 8 RAML API operations = 10.
+    expect(m.routes).toBe(10);
+    expect(m.references).toEqual({ resolved: 36, unresolved: 3 });
+    // The synthetic corpus has no ambiguous-dialect / packaged-duplicate diagnostics.
+    expect(m.diagnostics).toEqual({ warnings: 0, errors: 0 });
+  });
+
+  it('a non-Mule repo emits no mule segment and mulesoft is null under --json', () => {
+    const plain = mkdtempSync(join(tmpdir(), 'crib-cli-nomule-'));
+    try {
+      writeFileSync(join(plain, 'index.ts'), 'export const x = 1;\n');
+      const r = spawnSync(process.execPath, [CLI, 'index', '.', '--json'], {
+        cwd: plain,
+        encoding: 'utf8',
+        maxBuffer: 32 * 1024 * 1024,
+      });
+      expect(r.status ?? 1).toBe(0);
+      const out = (r.stdout ?? '')
+        .split('\n')
+        .filter((l) => !/ExperimentalWarning|trace-warnings/.test(l))
+        .join('\n')
+        .trim();
+      const obj = JSON.parse(out);
+      expect(obj.mulesoft).toBeNull();
+    } finally {
+      rmSync(plain, { recursive: true, force: true });
+    }
   });
 });

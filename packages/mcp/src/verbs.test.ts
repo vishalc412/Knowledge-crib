@@ -355,6 +355,22 @@ describe('verbs', () => {
     expect(res.error.code).toBe('NOT_FOUND');
   });
 
+  it('source verb redacts property values for a redact-properties node', () => {
+    writeFileSync(join(repo, 'secure.properties'), 'db.user=alice\ndb.password=swordfish');
+    const props = sym('secure.properties', 'secure.properties', 1, {
+      kind: 'file' as const,
+      type: 'property',
+      meta: { sourcePolicy: 'redact-properties' },
+    });
+    soul.putNodes([props]);
+    soul.commit('2026-01-01T00:00:00.000Z');
+    const res = verbs.source({ id: props.id }) as unknown as SourceResult;
+    expect(res.source.text).toContain('db.password=<redacted>');
+    expect(res.source.text).toContain('db.user=<redacted>');
+    expect(res.source.text).not.toContain('swordfish');
+    expect(res.source.text).not.toContain('alice');
+  });
+
   it('source verb respects the char budget + signals truncation', () => {
     const res = verbs.source({ id: login.id, maxChars: 5 }) as unknown as SourceResult;
     expect(res.source.truncated).toBe(true);
@@ -555,6 +571,18 @@ describe('verbs', () => {
     expect(batch.items[0]!.seed.sourceBody?.text.length).toBeGreaterThan(0);
     expect(batch.items[0]!.outputSchema).toHaveProperty('type', 'object');
 
+    // W7: only a grounded (verbatim-quoted) artifact is `verified` and counts as `fresh`; an
+    // ungrounded save reads as `legacy` → still pending. Lift the longest line of the rehydrated
+    // span as the quote so the saved symbol graph is grounded — the seed sourceBody IS the
+    // rehydrated anchor span, so any line of it overlaps (whitespace-normalized) and grounds.
+    const spanText = batch.items[0]!.seed.sourceBody?.text ?? '';
+    const quote =
+      spanText
+        .split('\n')
+        .map((l) => l.trim())
+        .filter((l) => l.length > 0)
+        .sort((a, b) => b.length - a.length)[0] ?? '';
+
     const save = verbs.enrichSave({
       batchId: batch.batchId,
       items: [
@@ -603,7 +631,10 @@ describe('verbs', () => {
               },
             ],
           },
-          evidence: [{ soulId: batch.items[0]!.targetId, why: 'Dossier source and callers.' }],
+          evidence: [
+            { soulId: batch.items[0]!.targetId, quote },
+            { soulId: batch.items[0]!.targetId, why: 'Dossier source and callers.' },
+          ],
         },
       ],
     }) as unknown as EnrichSaveResult;
@@ -1766,7 +1797,10 @@ describe('enrich skeleton system pass (outcome C, Phase 0.5)', () => {
           model: 'host-model',
           analysis: { purpose: 'real bible', responsibilities: ['arch'], confidence: 0.9 },
           graph: { nodes: [], edges: [] },
-          evidence: [],
+          // W7: a full system pass satisfies the layer only when `verified` (grounded). Ground it
+          // against the login symbol's rehydrated span (`return issue(user, pass)`) so the full
+          // bible is `verified` → fresh, not a `legacy` stub still pending.
+          evidence: [{ soulId: login.id, quote: 'return issue(user, pass)' }],
         },
       ],
     });
@@ -3204,5 +3238,759 @@ describe('M3.3 stats — Proxy interceptor wires live counters to real verb call
     expect(bodyA).toEqual(bodyB);
     // And the hash itself is stable (deterministic fingerprint, interceptor-transparent).
     expect(a.hash).toEqual(b.hash);
+  });
+});
+
+// Phase 2 — `brief` is the primary recall surface and must return MEANING first, paying for source
+// tokens only when no authored meaning exists for the target or anything that owns it.
+describe('brief — semantic-first retrieval', () => {
+  interface BriefResult {
+    codeHits: Array<{
+      id: string;
+      grounding: 'semantic' | 'code';
+      snippet?: string;
+      llm?: { purpose: string; inherited?: boolean; via?: string; quality?: string };
+    }>;
+    coverage: { semantic: number; total: number; ratio?: number };
+  }
+
+  /** Author a minimal-but-valid artifact for one target on `layer`. */
+  function authorArtifact(layer: 'symbol' | 'file' | 'cluster', targetId: string, purpose: string) {
+    const batch = verbs.enrichNext({ layer, limit: 50 }) as unknown as EnrichNextResult;
+    const item = batch.items.find((i) => i.targetId === targetId);
+    if (!item) throw new Error(`no ${layer} work item for ${targetId}`);
+    const save = verbs.enrichSave({
+      batchId: batch.batchId,
+      items: [
+        {
+          targetId,
+          model: 'test-model',
+          analysis: {
+            purpose,
+            responsibilities: [],
+            businessRules: [],
+            inputs: [],
+            outputs: [],
+            sideEffects: [],
+            errorBehavior: [],
+            invariants: [],
+            preconditions: [],
+            postconditions: [],
+            risks: [],
+            whatToDistrust: [],
+            confidence: 0.8,
+          },
+          graph: { nodes: [], edges: [] },
+          evidence: [{ soulId: targetId, why: 'unit test fixture' }],
+        },
+      ],
+    }) as unknown as EnrichSaveResult;
+    expect(save.rejected).toEqual([]);
+  }
+
+  const hitFor = (res: BriefResult, id: string) => res.codeHits.find((h) => h.id === id);
+
+  it('with nothing authored, hits are grounded in code and carry a snippet', () => {
+    const res = verbs.brief({ q: 'login' }) as unknown as BriefResult;
+    const hit = hitFor(res, login.id);
+    expect(hit?.grounding).toBe('code');
+    expect(hit?.snippet).toBeTruthy();
+    expect(hit?.llm).toBeUndefined();
+    expect(res.coverage.semantic).toBe(0);
+  });
+
+  it('an authored symbol carries purpose ALONGSIDE its snippet', () => {
+    authorArtifact('symbol', login.id, 'Authenticates a user and issues a session.');
+    const res = verbs.brief({ q: 'login' }) as unknown as BriefResult;
+    const hit = hitFor(res, login.id);
+    expect(hit?.grounding).toBe('semantic');
+    expect(hit?.llm?.purpose).toBe('Authenticates a user and issues a session.');
+    expect(hit?.llm?.inherited).toBeUndefined(); // authored for this exact symbol
+    // The snippet is one trimmed line (~11 tokens) and is real signal — prose is added, not
+    // swapped in. Suppressing it to add a larger `llm` pointer would grow the payload.
+    expect(hit?.snippet).toBeTruthy();
+    expect(res.coverage.semantic).toBeGreaterThanOrEqual(1);
+  });
+
+  it('a symbol with no artifact inherits its FILE prose, flagged as inherited', () => {
+    const fileId = fileNode('src/auth.ts').id;
+    authorArtifact('file', fileId, 'Authentication module: credentials in, sessions out.');
+    const res = verbs.brief({ q: 'login' }) as unknown as BriefResult;
+    const hit = hitFor(res, login.id);
+    expect(hit?.grounding).toBe('semantic');
+    expect(hit?.llm?.purpose).toBe('Authentication module: credentials in, sessions out.');
+    // Tagged, so a reader cannot mistake the file's purpose for the symbol's own.
+    expect(hit?.llm?.inherited).toBe(true);
+    expect(hit?.llm?.via).toBe('file');
+  });
+
+  it('a symbol prefers its OWN prose over its file prose', () => {
+    const fileId = fileNode('src/auth.ts').id;
+    authorArtifact('file', fileId, 'File-level purpose.');
+    authorArtifact('symbol', login.id, 'Symbol-level purpose.');
+    const res = verbs.brief({ q: 'login' }) as unknown as BriefResult;
+    const hit = hitFor(res, login.id);
+    expect(hit?.llm?.purpose).toBe('Symbol-level purpose.');
+    expect(hit?.llm?.inherited).toBeUndefined();
+  });
+
+  it('coverage reports the grounded fraction so a semantic desert is visible', () => {
+    const before = verbs.brief({ q: 'login session' }) as unknown as BriefResult;
+    expect(before.coverage.ratio).toBe(0);
+    expect(before.coverage.semantic).toBe(0);
+
+    authorArtifact('symbol', login.id, 'Authenticates a user.');
+    const after = verbs.brief({ q: 'login session' }) as unknown as BriefResult;
+    expect(after.coverage.semantic).toBeGreaterThan(before.coverage.semantic);
+    expect(after.coverage.ratio).toBeGreaterThan(0);
+    // `total` spans EVERY hit the query returned, code and doc-section alike — coverage describes
+    // the whole answer, not just its code half.
+    const briefed = after as unknown as { instructions: unknown[] };
+    expect(after.coverage.total).toBe(after.codeHits.length + briefed.instructions.length);
+    expect(after.coverage.semantic).toBeLessThanOrEqual(after.coverage.total);
+  });
+
+  it('coverage describes the RETURNED payload, not the wider set that was fetched', () => {
+    authorArtifact('symbol', login.id, 'Authenticates a user.');
+    // A budget tight enough to drop hits: coverage must still tally only what survived, or it
+    // would overstate grounding exactly when the caller has least to work with.
+    const trimmed = verbs.brief({ q: 'login session', maxTokens: 1 }) as unknown as BriefResult & {
+      instructions: unknown[];
+    };
+    expect(trimmed.coverage.total).toBe(trimmed.codeHits.length + trimmed.instructions.length);
+    const grounded = trimmed.codeHits.filter((h) => h.grounding === 'semantic').length;
+    expect(trimmed.coverage.semantic).toBe(grounded);
+  });
+});
+
+// Phase 3 — the enrich queue must TERMINATE. Ungated it offered every symbol in the repo, so
+// `done` was unreachable and progress unmeasurable.
+describe('enrich queue — symbol importance gate', () => {
+  interface GatedStatus {
+    layers: { symbol: { total: number } } & Record<string, { total: number }>;
+    gate?: {
+      symbolPercentile: number;
+      minImportance: number;
+      includedSymbols: number;
+      excludedSymbols: number;
+    };
+  }
+
+  it('reports the gate on every status so the cap is never silent', () => {
+    const st = verbs.enrichStatus({}) as unknown as GatedStatus;
+    expect(st.gate).toBeDefined();
+    expect(st.gate?.symbolPercentile).toBe(0.15);
+    expect(st.gate?.includedSymbols).toBe(st.layers.symbol.total);
+  });
+
+  it('a small repo is enriched exhaustively — a percentile must not starve it', () => {
+    // The fixture has a handful of symbols, all below any absolute importance floor worth setting
+    // on a large repo. Falling under MIN_SYMBOL_TARGETS means every symbol is still queued.
+    const st = verbs.enrichStatus({}) as unknown as GatedStatus;
+    expect(st.layers.symbol.total).toBeGreaterThan(0);
+    expect(st.gate?.excludedSymbols).toBe(0);
+    expect(st.gate?.minImportance).toBe(0);
+  });
+
+  it('symbolPercentile:1 queues every symbol', () => {
+    const all = new Verbs({ soul, index, repoRoot: repo, symbolPercentile: 1 });
+    const st = all.enrichStatus({}) as unknown as GatedStatus;
+    expect(st.gate?.excludedSymbols).toBe(0);
+    expect(st.gate?.includedSymbols).toBe(st.layers.symbol.total);
+  });
+
+  it('the gated count and the queue agree — status can never overstate what is enrichable', () => {
+    const st = verbs.enrichStatus({}) as unknown as GatedStatus;
+    const batch = verbs.enrichNext({ layer: 'symbol', limit: 200 }) as unknown as EnrichNextResult;
+    expect(batch.items.length + batch.remaining).toBe(st.layers.symbol.total);
+  });
+});
+
+// The queue is importance-ranked, so it serves the most-referenced symbols FIRST — precisely the
+// ones with the longest caller lists. Uncapped, one such seed filled an entire batch on its own and
+// the symbol queue emitted a single item per turn.
+describe('enrich seed — reference lists are capped and the cut is reported', () => {
+  interface Seeded {
+    items: Array<{
+      targetId: string;
+      seed: {
+        callers?: unknown[];
+        callees?: unknown[];
+        callersTotal?: number;
+        calleesTotal?: number;
+      };
+    }>;
+  }
+
+  it('caps embedded callers and reports the true total when it truncates', () => {
+    // Give `issue` more callers than the cap so truncation actually triggers.
+    const extras: Node[] = [];
+    for (let i = 0; i < 30; i++) {
+      const caller = sym('src/http.ts', `Http.caller${i}`, 100 + i);
+      extras.push(caller);
+    }
+    soul.putNodes(extras);
+    soul.putEdges(extras.map((c) => edge(c.id, issue.id, 'calls')));
+    soul.commit('2026-01-02T00:00:00.000Z');
+    index.buildFromSoul(soul, repo);
+    const fresh = new Verbs({ soul, index, repoRoot: repo, symbolPercentile: 1 });
+
+    const batch = fresh.enrichNext({ layer: 'symbol', limit: 60 }) as unknown as Seeded;
+    const item = batch.items.find((i) => i.targetId === issue.id);
+    expect(item).toBeDefined();
+    expect(item?.seed.callers?.length).toBeLessThanOrEqual(20);
+    // Truncation must be visible — an author reasoning from a 20-of-31 sample has to know.
+    // 31 = the 30 added here plus the fixture's own login -> issue call.
+    expect(item?.seed.callersTotal).toBe(31);
+  });
+
+  it('does not report a total when nothing was truncated', () => {
+    const batch = verbs.enrichNext({ layer: 'symbol', limit: 60 }) as unknown as Seeded;
+    const item = batch.items[0];
+    expect(item).toBeDefined();
+    expect(item?.seed.callersTotal).toBeUndefined();
+  });
+});
+
+// File-layer prose is what every symbol inside that file inherits, so the file queue's order
+// decides how fast coverage accrues. File nodes have no in-degree, so the generic importance map
+// scored them all 0 and the queue fell back to alphabetical — putting LICENSE and package.json
+// ahead of every source file.
+describe('enrich queue — file targets rank by symbol density', () => {
+  interface Batch {
+    items: Array<{ targetId: string; seed: { symbols?: unknown[] } }>;
+  }
+
+  it('offers symbol-dense files before symbol-less ones', () => {
+    // src/auth.ts holds two symbols in the fixture; docs/auth.md holds none.
+    const batch = verbs.enrichNext({ layer: 'file', limit: 60 }) as unknown as Batch;
+    const counts = batch.items.map((i) => (i.seed.symbols ?? []).length);
+    // Non-increasing: the densest files come first.
+    for (let i = 1; i < counts.length; i++) {
+      expect(counts[i - 1]!).toBeGreaterThanOrEqual(counts[i]!);
+    }
+    expect(counts[0]).toBeGreaterThan(0);
+  });
+
+  it('ranks symbol-less files last rather than dropping them', () => {
+    // A README carries knowledge even with no symbols to inherit it — this is ordering, not a filter.
+    const batch = verbs.enrichNext({ layer: 'file', limit: 60 }) as unknown as Batch;
+    const ids = batch.items.map((i) => i.targetId);
+    const docFile = ids.find((id) => id.includes('docs/auth.md'));
+    const srcFile = ids.find((id) => id.includes('src/auth.ts'));
+    expect(docFile).toBeDefined(); // still offered
+    expect(srcFile).toBeDefined();
+    expect(ids.indexOf(srcFile!)).toBeLessThan(ids.indexOf(docFile!));
+  });
+});
+
+// Generated bundles are dense, so density ranking floats them to the TOP of the enrich backlog —
+// `support.js` (93 symbols, "GENERATED ... do not edit") sat at the head and would have consumed an
+// authoring slot in every batch. Deprioritized like tests, not excluded: still searchable.
+describe('enrich queue — generated files are deprioritized', () => {
+  interface Batch {
+    items: Array<{ targetId: string }>;
+  }
+
+  it('ranks a file that declares itself generated below ordinary source', () => {
+    // A dense generated file: more symbols than auth.ts, so density alone would rank it first.
+    writeFileSync(
+      join(repo, 'src', 'bundle.js'),
+      `// GENERATED from src/*.ts — do not edit.\n${'function z(){}\n'.repeat(3)}`,
+    );
+    const gen = fileNode('src/bundle.js');
+    const genSyms = Array.from({ length: 20 }, (_, i) => sym('src/bundle.js', `Gen.f${i}`, i + 2));
+    soul.putNodes([gen, ...genSyms]);
+    soul.commit('2026-01-03T00:00:00.000Z');
+    index.buildFromSoul(soul, repo);
+
+    const fresh = new Verbs({ soul, index, repoRoot: repo });
+    const ids = (fresh.enrichNext({ layer: 'file', limit: 60 }) as unknown as Batch).items.map(
+      (i) => i.targetId,
+    );
+    const genIdx = ids.indexOf(gen.id);
+    const srcIdx = ids.indexOf(fileNode('src/auth.ts').id);
+    expect(genIdx).toBeGreaterThanOrEqual(0); // still offered — not excluded
+    expect(srcIdx).toBeGreaterThanOrEqual(0);
+    // ...but behind real source, despite holding far more symbols.
+    expect(srcIdx).toBeLessThan(genIdx);
+  });
+});
+
+// Behaviour nodes — statements, conditions, assignments, explanations — are 82% of a real graph
+// (23,947 of 29,328 nodes here) and are what a CONTENT query matches, because they carry the rule
+// expressions. They are not symbols, so a symbol-only inheritance chain left them permanently
+// ungrounded: `brief` coverage sat at 13% even with 42 files authored, and rose to 70% once they
+// could inherit. Each is reached from its enclosing symbol by an explicit edge.
+describe('semantic inheritance reaches behaviour nodes, not just symbols', () => {
+  interface BriefResult {
+    codeHits: Array<{
+      id: string;
+      grounding: 'semantic' | 'code';
+      llm?: { purpose: string; inherited?: boolean; via?: string };
+    }>;
+  }
+
+  function authorFile(path: string, purpose: string) {
+    const batch = verbs.enrichNext({ layer: 'file', limit: 60 }) as unknown as EnrichNextResult;
+    const targetId = `file:${path}`;
+    expect(batch.items.some((i) => i.targetId === targetId)).toBe(true);
+    const save = verbs.enrichSave({
+      batchId: batch.batchId,
+      items: [
+        {
+          targetId,
+          model: 'test-model',
+          analysis: {
+            purpose,
+            responsibilities: [],
+            businessRules: [],
+            inputs: [],
+            outputs: [],
+            sideEffects: [],
+            errorBehavior: [],
+            invariants: [],
+            preconditions: [],
+            postconditions: [],
+            risks: [],
+            whatToDistrust: [],
+            confidence: 0.8,
+          },
+          graph: { nodes: [], edges: [] },
+          evidence: [{ soulId: targetId, why: 'unit test fixture' }],
+        },
+      ],
+    }) as unknown as EnrichSaveResult;
+    expect(save.rejected).toEqual([]);
+  }
+
+  /** Author a SYMBOL-layer artifact, so the symbol step of the chain can be tested in isolation
+   *  from the file step (a file artifact would ground the statement either way). */
+  function authorSymbol(targetId: string, purpose: string) {
+    const batch = verbs.enrichNext({ layer: 'symbol', limit: 60 }) as unknown as EnrichNextResult;
+    expect(batch.items.some((i) => i.targetId === targetId)).toBe(true);
+    const save = verbs.enrichSave({
+      batchId: batch.batchId,
+      items: [
+        {
+          targetId,
+          model: 'test-model',
+          analysis: {
+            purpose,
+            responsibilities: [],
+            businessRules: [],
+            inputs: [],
+            outputs: [],
+            sideEffects: [],
+            errorBehavior: [],
+            invariants: [],
+            preconditions: [],
+            postconditions: [],
+            risks: [],
+            whatToDistrust: [],
+            confidence: 0.8,
+          },
+          graph: { nodes: [], edges: [] },
+          evidence: [{ soulId: targetId, why: 'unit test fixture' }],
+        },
+      ],
+    }) as unknown as EnrichSaveResult;
+    expect(save.rejected).toEqual([]);
+  }
+
+  it('a statement inherits from the SYMBOL that executes it, tagged via:symbol', () => {
+    const stmt: Node = {
+      id: 'stmt:src/auth.ts@L11',
+      kind: 'statement',
+      file: 'src/auth.ts',
+      span: { start: 11, end: 11 },
+      hash: contentHash('stmt:src/auth.ts@L11'),
+      name: 'issueSession',
+    } as Node;
+    soul.putNodes([stmt]);
+    soul.putEdges([edge(login.id, stmt.id, 'executes')]);
+    soul.commit('2026-01-04T00:00:00.000Z');
+    index.buildFromSoul(soul, repo);
+    const fresh = new Verbs({ soul, index, repoRoot: repo });
+
+    const before = fresh.brief({ q: 'issueSession' }) as unknown as BriefResult;
+    expect(before.codeHits.find((h) => h.id === stmt.id)?.grounding).toBe('code');
+
+    // ONLY the enclosing symbol is authored — no file artifact — so if the symbol step of the
+    // chain is missing, this statement stays ungrounded.
+    authorSymbol(login.id, 'Authenticates a user and issues a session.');
+
+    const after = fresh.brief({ q: 'issueSession' }) as unknown as BriefResult;
+    const hit = after.codeHits.find((h) => h.id === stmt.id);
+    expect(hit?.grounding).toBe('semantic');
+    expect(hit?.llm?.purpose).toBe('Authenticates a user and issues a session.');
+    expect(hit?.llm?.via).toBe('symbol'); // came from the executing symbol, not the file
+    expect(hit?.llm?.inherited).toBe(true); // never presented as the statement's own purpose
+  });
+
+  it('a behaviour node with no owning symbol and no owning file stays honestly ungrounded', () => {
+    const orphan: Node = {
+      id: 'stmt:src/nowhere.ts@L1',
+      kind: 'statement',
+      file: 'src/nowhere.ts',
+      span: { start: 1, end: 1 },
+      hash: contentHash('orphan'),
+      name: 'orphanStatement',
+    } as Node;
+    soul.putNodes([orphan]);
+    soul.commit('2026-01-05T00:00:00.000Z');
+    index.buildFromSoul(soul, repo);
+    const fresh = new Verbs({ soul, index, repoRoot: repo });
+    const r = fresh.brief({ q: 'orphanStatement' }) as unknown as BriefResult;
+    const hit = r.codeHits.find((h) => h.id === orphan.id);
+    expect(hit?.grounding).toBe('code');
+    expect(hit?.llm).toBeUndefined();
+  });
+});
+
+// A file node has NO span, so evidence anchored to a `file:` id can never overlap anything and is
+// rejected as hallucination. File-layer evidence must quote a SYMBOL inside the file — but the
+// seed's symbol list carries only metadata, so an author had no quotable text and no way to pass
+// the gate without separately reading the file. The seed now ships verified anchor/quote pairs.
+describe('file work items ship usable grounding anchors', () => {
+  interface Seeded {
+    batchId: string;
+    items: Array<{
+      targetId: string;
+      seed: { quotableEvidence?: Array<{ soulId: string; quote: string }> };
+    }>;
+  }
+
+  it('supplies quotes lifted from real symbol spans, not from the file id', () => {
+    const batch = verbs.enrichNext({ layer: 'file', limit: 60 }) as unknown as Seeded;
+    const item = batch.items.find((i) => i.targetId === fileNode('src/auth.ts').id);
+    expect(item).toBeDefined();
+    const ev = item?.seed.quotableEvidence ?? [];
+    expect(ev.length).toBeGreaterThan(0);
+    for (const e of ev) {
+      expect(e.soulId.startsWith('sym:')).toBe(true); // anchored to a symbol, never the file
+      expect(e.quote.length).toBeGreaterThan(0);
+    }
+  });
+
+  it('the supplied quotes actually pass the grounding gate', () => {
+    // The whole point: an author can paste these straight back and be verified, rather than
+    // guessing at a quote and being rejected.
+    const batch = verbs.enrichNext({ layer: 'file', limit: 60 }) as unknown as Seeded;
+    const item = batch.items.find((i) => i.targetId === fileNode('src/auth.ts').id);
+    const evidence = item?.seed.quotableEvidence ?? [];
+    expect(evidence.length).toBeGreaterThan(0);
+
+    const save = verbs.enrichSave({
+      batchId: batch.batchId,
+      items: [
+        {
+          targetId: item!.targetId,
+          model: 'test-model',
+          analysis: {
+            purpose: 'Authentication module.',
+            responsibilities: [],
+            businessRules: [],
+            inputs: [],
+            outputs: [],
+            sideEffects: [],
+            errorBehavior: [],
+            invariants: [],
+            preconditions: [],
+            postconditions: [],
+            risks: [],
+            whatToDistrust: [],
+            confidence: 0.8,
+          },
+          graph: { nodes: [], edges: [] },
+          evidence,
+        },
+      ],
+    }) as unknown as EnrichSaveResult;
+    expect(save.rejected).toEqual([]);
+    expect(save.accepted).toHaveLength(1);
+  });
+});
+
+// A file that owns no node carrying a span (LICENSE, an image, CI YAML) has nothing to quote, so
+// the grounding gate can never be satisfied for it. Left at the front of the queue, 126 such files
+// in this repo blocked the head — handing an agent work it structurally could not complete while
+// 199 groundable targets waited behind them.
+describe('enrich queue — ungroundable files cannot block the head', () => {
+  interface Batch {
+    items: Array<{ targetId: string; seed: { quotableEvidence?: unknown[] } }>;
+  }
+
+  it('ranks a file with no quotable node behind files that have one', () => {
+    // A LICENSE-like file: a file node with no symbols and no doc-sections beneath it.
+    const bare = fileNode('LICENSE');
+    soul.putNodes([bare]);
+    soul.commit('2026-01-06T00:00:00.000Z');
+    index.buildFromSoul(soul, repo);
+    const fresh = new Verbs({ soul, index, repoRoot: repo });
+
+    const batch = fresh.enrichNext({ layer: 'file', limit: 60 }) as unknown as Batch;
+    const ids = batch.items.map((i) => i.targetId);
+    const bareIdx = ids.indexOf(bare.id);
+    const realIdx = ids.indexOf(fileNode('src/auth.ts').id);
+    expect(bareIdx).toBeGreaterThanOrEqual(0); // still offered, not dropped
+    expect(realIdx).toBeGreaterThanOrEqual(0);
+    expect(realIdx).toBeLessThan(bareIdx);
+  });
+
+  it('ranks an ungroundable file BEHIND a test file that has quotable symbols', () => {
+    // This is the case density ranking alone gets wrong. A LICENSE has no symbols, so it scores 0
+    // importance — but so does nothing else outside the test group, which means it outranks every
+    // TEST file (pushed last by the test flag) even though a test file can actually be grounded
+    // and a LICENSE never can. In this repo 126 such files sat ahead of 199 groundable targets.
+    writeFileSync(
+      join(repo, 'src', 'auth.test.ts'),
+      "import { login } from './auth';\ndescribe('auth', () => { it('issues a session', () => {}); });\n",
+    );
+    const testFile = fileNode('src/auth.test.ts');
+    const testSyms = [sym('src/auth.test.ts', 'AuthSuite.issues', 2)];
+    const bare = fileNode('LICENSE');
+    soul.putNodes([testFile, ...testSyms, bare]);
+    soul.commit('2026-01-08T00:00:00.000Z');
+    index.buildFromSoul(soul, repo);
+    const fresh = new Verbs({ soul, index, repoRoot: repo });
+
+    const ids = (fresh.enrichNext({ layer: 'file', limit: 60 }) as unknown as Batch).items.map(
+      (i) => i.targetId,
+    );
+    const testIdx = ids.indexOf(testFile.id);
+    const bareIdx = ids.indexOf(bare.id);
+    expect(testIdx).toBeGreaterThanOrEqual(0);
+    expect(bareIdx).toBeGreaterThanOrEqual(0);
+    expect(testIdx).toBeLessThan(bareIdx);
+  });
+
+  it('keeps definitively ungroundable files out of a small head batch', () => {
+    soul.putNodes([fileNode('LICENSE'), fileNode('NOTICE')]);
+    soul.commit('2026-01-07T00:00:00.000Z');
+    index.buildFromSoul(soul, repo);
+    const fresh = new Verbs({ soul, index, repoRoot: repo });
+
+    // The guarantee is about ORDER: a file owning nothing quotable never occupies the head while
+    // real targets wait. It is deliberately NOT "every head item yields a quote" — the rank check
+    // uses span presence, a cheap proxy, and a node whose file is missing from disk still has a
+    // span but rehydrates to nothing. Making the proxy exact would mean reading every file on
+    // every ranking pass.
+    const ids = (fresh.enrichNext({ layer: 'file', limit: 3 }) as unknown as Batch).items.map(
+      (i) => i.targetId,
+    );
+    expect(ids).not.toContain(fileNode('LICENSE').id);
+    expect(ids).not.toContain(fileNode('NOTICE').id);
+  });
+});
+
+// `overview` is the orientation call, and it had no cap on `analyses` — one entry per authored
+// artifact. At 494 artifacts a single default call returned 43,328 tokens, more than a whole
+// conversation's budget, from a call the caller had no reason to think was expensive.
+describe('overview stays within a token budget', () => {
+  interface Ov {
+    modules?: unknown[];
+    analyses?: unknown[];
+    analysisCount?: { shown: number; total: number };
+    truncated?: boolean;
+    cursor?: string;
+  }
+
+  /**
+   * Author `count` DISTINCT files.
+   *
+   * Uses the anchors the seed supplies rather than an evidence stub: an artifact with no quote
+   * never reaches `verified`, so the queue correctly re-offers that same target forever and the
+   * loop authors one file `count` times instead of `count` files.
+   */
+  function authorMany(count: number) {
+    const done = new Set<string>();
+    for (let round = 0; round < count * 3 && done.size < count; round++) {
+      const batch = verbs.enrichNext({ layer: 'file', limit: 5 }) as unknown as {
+        batchId: string;
+        items: Array<{
+          targetId: string;
+          seed: { quotableEvidence?: Array<Record<string, unknown>> };
+        }>;
+      };
+      const item = batch.items.find(
+        (i) => !done.has(i.targetId) && (i.seed.quotableEvidence ?? []).length > 0,
+      );
+      if (!item) return;
+      const save = verbs.enrichSave({
+        batchId: batch.batchId,
+        items: [
+          {
+            targetId: item.targetId,
+            model: 'test-model',
+            analysis: {
+              purpose: `Purpose number ${round} with enough words to occupy a measurable amount of the response budget.`,
+              responsibilities: ['One', 'Two'],
+              businessRules: [],
+              inputs: [],
+              outputs: [],
+              sideEffects: [],
+              errorBehavior: [],
+              invariants: [],
+              preconditions: [],
+              postconditions: [],
+              risks: [],
+              whatToDistrust: [],
+              confidence: 0.8,
+            },
+            graph: { nodes: [], edges: [] },
+            evidence: item.seed.quotableEvidence ?? [],
+          },
+        ],
+      }) as unknown as EnrichSaveResult;
+      if (save.accepted.length > 0) done.add(item.targetId);
+    }
+  }
+
+  it('reports how many analyses it showed out of the true total', () => {
+    authorMany(3);
+    const ov = verbs.overview({}) as unknown as Ov;
+    expect(ov.analysisCount).toBeDefined();
+    expect(ov.analysisCount?.total).toBeGreaterThanOrEqual(ov.analysisCount?.shown ?? 0);
+  });
+
+  it('always returns some analyses — a budget spent entirely on the envelope is useless', () => {
+    authorMany(3);
+    // Even at an absurdly tight budget the caller gets entries, not an empty list that is
+    // technically within budget and tells them nothing.
+    const ov = verbs.overview({ maxTokens: 1 }) as unknown as Ov;
+    expect((ov.analyses ?? []).length).toBeGreaterThan(0);
+  });
+
+  it('pages rather than silently truncating', () => {
+    authorMany(4);
+    const first = verbs.overview({ limit: 1 }) as unknown as Ov;
+    // Assert the SETUP first. Wrapping the real assertions in `if (total > 1)` made this test skip
+    // itself whenever the fixture produced too few artifacts — and a conditional assertion cannot
+    // fail, so removing the paging cursor entirely still passed.
+    expect(first.analysisCount?.total ?? 0).toBeGreaterThan(1);
+    expect(first.analyses).toHaveLength(1);
+    expect(first.truncated).toBe(true);
+    expect(first.cursor).toBe('1');
+
+    const second = verbs.overview({ limit: 1, cursor: first.cursor }) as unknown as Ov;
+    expect(second.analyses).toHaveLength(1);
+    expect(second.analyses?.[0]).not.toEqual(first.analyses?.[0]);
+  });
+
+  it('keeps the module map whole — it is what a caller orients by', () => {
+    authorMany(2);
+    const tight = verbs.overview({ maxTokens: 1 }) as unknown as Ov;
+    const loose = verbs.overview({ maxTokens: 50000 }) as unknown as Ov;
+    expect((tight.modules ?? []).length).toBe((loose.modules ?? []).length);
+  });
+});
+
+// `status` is a health check an agent calls freely, but it materialized the entire composite graph
+// and re-read every semantic artifact on every call, purely to report counts — 43ms, growing with
+// enrichment, making a health check the slowest verb on the surface.
+describe('status caches its expensive facts but never goes stale', () => {
+  it('returns identical facts on a repeat call', () => {
+    const a = verbs.status() as Record<string, unknown>;
+    const b = verbs.status() as Record<string, unknown>;
+    expect(b).toEqual(a);
+  });
+
+  it('reflects a new artifact rather than serving a stale cached answer', () => {
+    const before = verbs.status() as { capabilities?: { llmGraph?: boolean } };
+    expect(before.capabilities?.llmGraph).toBe(false); // nothing authored yet
+
+    const batch = verbs.enrichNext({ layer: 'file', limit: 1 }) as unknown as EnrichNextResult;
+    const item = batch.items[0]!;
+    verbs.enrichSave({
+      batchId: batch.batchId,
+      items: [
+        {
+          targetId: item.targetId,
+          model: 'test-model',
+          analysis: {
+            purpose: 'Something authored.',
+            responsibilities: [],
+            businessRules: [],
+            inputs: [],
+            outputs: [],
+            sideEffects: [],
+            errorBehavior: [],
+            invariants: [],
+            preconditions: [],
+            postconditions: [],
+            risks: [],
+            whatToDistrust: [],
+            confidence: 0.8,
+          },
+          graph: { nodes: [], edges: [] },
+          evidence: [{ soulId: item.targetId, why: 'fixture' }],
+        },
+      ],
+    });
+
+    // The save bumped generation.semantic, so the cache MUST have been invalidated.
+    const after = verbs.status() as { capabilities?: { llmGraph?: boolean } };
+    expect(after.capabilities?.llmGraph).toBe(true);
+  });
+});
+
+// The whole-repo overview is cached on disk. It was keyed on the COMMIT alone, so authoring
+// artifacts never invalidated it: every save bumps `generation.semantic` but leaves the head
+// untouched, and a stale overview was served until the next git commit. Enrichment appeared to do
+// nothing — which is how a knowledge tool loses a user's trust.
+describe('overview cache invalidates when meaning changes, not just when code does', () => {
+  interface Ov {
+    analysisCount?: { total: number };
+  }
+
+  function authorOne(): boolean {
+    const batch = verbs.enrichNext({ layer: 'file', limit: 5 }) as unknown as {
+      batchId: string;
+      items: Array<{
+        targetId: string;
+        seed: { quotableEvidence?: Array<Record<string, unknown>> };
+      }>;
+    };
+    const item = batch.items.find((i) => (i.seed.quotableEvidence ?? []).length > 0);
+    if (!item) return false;
+    const save = verbs.enrichSave({
+      batchId: batch.batchId,
+      items: [
+        {
+          targetId: item.targetId,
+          model: 'test-model',
+          analysis: {
+            purpose: 'Authored after the overview was first cached.',
+            responsibilities: [],
+            businessRules: [],
+            inputs: [],
+            outputs: [],
+            sideEffects: [],
+            errorBehavior: [],
+            invariants: [],
+            preconditions: [],
+            postconditions: [],
+            risks: [],
+            whatToDistrust: [],
+            confidence: 0.8,
+          },
+          graph: { nodes: [], edges: [] },
+          evidence: item.seed.quotableEvidence ?? [],
+        },
+      ],
+    }) as unknown as EnrichSaveResult;
+    return save.accepted.length > 0;
+  }
+
+  it('reflects a newly authored artifact without needing a commit', () => {
+    // Warm the on-disk cache first — the bug only appears on the second call.
+    const before = verbs.overview({}) as unknown as Ov;
+    const beforeTotal = before.analysisCount?.total ?? 0;
+
+    expect(authorOne()).toBe(true); // no commit happens here; only generation.semantic moves
+
+    const after = verbs.overview({}) as unknown as Ov;
+    expect(after.analysisCount?.total ?? 0).toBeGreaterThan(beforeTotal);
   });
 });

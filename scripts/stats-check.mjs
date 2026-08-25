@@ -23,7 +23,7 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO = resolve(__dirname, '..');
@@ -31,9 +31,13 @@ const NOW = '2026-01-01T00:00:00.000Z';
 const AUTHOR_NAME = 'Stats Gate';
 const AUTHOR_EMAIL = 'stats@crib.dev';
 
-const core = await import(resolve(REPO, 'packages', 'core', 'dist', 'index.js'));
-const pipeline = await import(resolve(REPO, 'packages', 'pipeline', 'dist', 'index.js'));
-const mcp = await import(resolve(REPO, 'packages', 'mcp', 'dist', 'index.js'));
+const core = await import(
+  pathToFileURL(resolve(REPO, 'packages', 'core', 'dist', 'index.js')).href
+);
+const pipeline = await import(
+  pathToFileURL(resolve(REPO, 'packages', 'pipeline', 'dist', 'index.js')).href
+);
+const mcp = await import(pathToFileURL(resolve(REPO, 'packages', 'mcp', 'dist', 'index.js')).href);
 const { SoulStore, newManifest, SqliteIndexStore } = core;
 const { indexRepo } = pipeline;
 const { Verbs } = mcp;
@@ -87,13 +91,22 @@ const buildRepo = () => {
 };
 
 try {
-  // (4) The `stats` MCP tool is registered in buildServer — anchored to executable syntax.
+  // (4) The observability surface is REACHABLE over MCP — anchored to executable syntax.
+  //
+  // Checks the capability, not a tool name. `stats` used to be its own tool; it is now an operation
+  // on `status` (`status({op:'stats'})`), because every registered tool costs name + description +
+  // schema in the tool list of every session whether or not it is used. Pinning the old literal
+  // would have failed a rename that changed nothing about whether the numbers ship — which is what
+  // this gate is actually for.
   const serverSrc = readFileSync(resolve(REPO, 'packages', 'mcp', 'src', 'server.ts'), 'utf8');
-  if (!/server\.registerTool\(\s*'stats'/.test(serverSrc))
-    fail("server.ts does not register a 'stats' MCP tool");
+  const statsReachable =
+    /server\.registerTool\(\s*'stats'/.test(serverSrc) ||
+    (/server\.registerTool\(\s*'status'/.test(serverSrc) && /'stats'/.test(serverSrc));
+  if (!statsReachable)
+    fail("server.ts exposes no stats surface (neither a 'stats' tool nor a status op)");
   if (!/verbs\.getStats\(\)\.snapshot\(\)/.test(serverSrc))
-    fail('server.ts stats tool does not call verbs.getStats().snapshot()');
-  else process.stdout.write('  stats:check — stats MCP tool wired in buildServer\n');
+    fail('server.ts stats surface does not call verbs.getStats().snapshot()');
+  else process.stdout.write('  stats:check — stats surface wired in buildServer\n');
 
   // (4b) The Stats interceptor is wired in verbs.ts (the Proxy + PUBLIC_VERBS whitelist).
   const verbsSrc = readFileSync(resolve(REPO, 'packages', 'mcp', 'src', 'verbs.ts'), 'utf8');

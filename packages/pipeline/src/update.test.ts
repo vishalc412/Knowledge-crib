@@ -1,5 +1,13 @@
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
@@ -438,5 +446,70 @@ describe('updateRepo — packageRoots (P4 multi-package federation)', () => {
     const report = result as UpdateReport;
     expect(report.excludedPaths).toEqual([]);
     expect(soulFor().getManifest().repo.vcsHead).toBe(h2);
+  });
+});
+
+describe('updateRepo — semantic orphan auto-prune (W7 delta update)', () => {
+  it('prunes orphaned semantic artifacts when a symbol is removed, reports semanticPruned, and bumps generation.semantic', async () => {
+    await indexAndCommit();
+    const indexed = soulFor();
+    const greet = [...indexed.iterate('symbol')].find((n) => n.qualifiedName === 'greet')!;
+    expect(greet).toBeTruthy();
+    const genBefore = indexed.getManifest().generation?.semantic ?? 0;
+
+    // Persist a semantic artifact for `greet` at the canonical artifacts path. The pipeline has no mcp
+    // dep, so we stub the on-disk shape directly — `pruneSemanticArtifacts` only reads `targetId`, so a
+    // minimal stub is enough (the real EnrichmentStore writes the full LlmArtifact at this layout).
+    const shardDir = join(repo, '.crib', 'graph', 'semantic', 'artifacts', 'symbol', '00');
+    mkdirSync(shardDir, { recursive: true });
+    const artifactPath = join(shardDir, 'greet_dead.json');
+    writeFileSync(artifactPath, JSON.stringify({ targetId: greet.id }));
+
+    // Delete a.ts entirely → greet's symbol is removed by `removeByFile` → its artifact orphans.
+    rmSync(join(repo, 'src', 'a.ts'));
+    // b.ts still imports greet; rewrite it so it parses without the now-missing import.
+    writeFileSync(join(repo, 'src', 'b.ts'), "export function main(): string { return 'done'; }\n");
+    git(repo, ['add', '-A']);
+    git(repo, [
+      '-c',
+      'user.email=t@t.test',
+      '-c',
+      'user.name=T',
+      'commit',
+      '-q',
+      '-m',
+      'drop greet',
+    ]);
+
+    const soul = soulFor();
+    const result = await updateRepo(soul, repo, {
+      now: '2026-01-02T00:00:00.000Z',
+      ownership: false,
+    });
+    expect(result).not.toBeNull();
+    expect(result && 'noop' in result).toBe(false);
+    const report = result as UpdateReport;
+    expect(report.semanticPruned).toBeGreaterThanOrEqual(1);
+    // The orphaned artifact file is gone.
+    expect(existsSync(artifactPath)).toBe(false);
+    // generation.semantic was bumped exactly once (single writer → survives the commit).
+    expect(soulFor().getManifest().generation?.semantic ?? 0).toBe(genBefore + 1);
+  });
+
+  it('reports semanticPruned: 0 (field present) on a body-only edit that removes no symbol', async () => {
+    await indexAndCommit();
+    writeFileSync(
+      join(repo, 'src', 'a.ts'),
+      "export function greet(): string { return 'hello'; }\n",
+    );
+    git(repo, ['add', 'src/a.ts']);
+    git(repo, ['-c', 'user.email=t@t.test', '-c', 'user.name=T', 'commit', '-q', '-m', 'edit']);
+    const soul = soulFor();
+    const result = await updateRepo(soul, repo, {
+      now: '2026-01-02T00:00:00.000Z',
+      ownership: false,
+    });
+    const report = result as UpdateReport;
+    expect(report.semanticPruned).toBe(0);
   });
 });
