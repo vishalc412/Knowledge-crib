@@ -2590,7 +2590,9 @@ export class Verbs {
           kind: rec.kind,
           subject,
           claim,
-          actor: (rec.provenance as Record<string, unknown> | undefined)?.actor ?? rec.actor,
+          // MemoryCandidate ships the actor at `authorship.actor` (memory-1 schema); the id is
+          // content-addressed over the same field, so this is the only place attribution lives.
+          actor: (rec.authorship as { actor?: string } | undefined)?.actor,
           // Stated on every entry, not just in the group name, because a single view can be
           // copied out of its group and lose that context.
           trust: 'untrusted',

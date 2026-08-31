@@ -38,3 +38,7 @@ export * from './trusted-ref.js';
 export * from './attempt.js';
 export * from './tombstone.js';
 export * from './feedback.js';
+export * from './bench/metrics.js';
+export * from './bench/corpus.js';
+export * from './bench/scenarios.js';
+export * from './bench/run.js';

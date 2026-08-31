@@ -857,6 +857,24 @@ describe('memoryRecall — shared pending observations for a swarm', () => {
     }
   });
 
+  it('attributes each pending observation to the actor that authored it (authorship.actor)', () => {
+    // Regression (J2): the view read `provenance?.actor ?? rec.actor` but MemoryCandidate ships the
+    // actor at `authorship.actor` — every pending entry rendered with actor: undefined, so the
+    // swarm overlay could not show who observed what.
+    const local = localStore();
+    const v = verbsWithLocal(local);
+    try {
+      observe(v, 'parser-hangs', 'Hangs are caught by a killable worker.', 'agent-A');
+      const res = v.memoryRecall({ q: 'killable worker', includePending: true }) as {
+        pending?: Array<Record<string, unknown>>;
+      };
+      expect(res.pending).toHaveLength(1);
+      expect(res.pending?.[0]?.actor).toBe('agent-A');
+    } finally {
+      rmSync(home, { recursive: true, force: true });
+    }
+  });
+
   it('degrades to no pending group when no local store is wired', () => {
     const v = verbsWithLocal(localStore());
     try {

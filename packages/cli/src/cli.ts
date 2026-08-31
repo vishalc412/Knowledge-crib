@@ -52,6 +52,8 @@ import type {
 import {
   type AttemptOutcome,
   type AttemptPhase,
+  BENCH_SCALE_DEFAULT,
+  BENCH_SCALE_FAST,
   type GateReceipt,
   type MemoryCandidate,
   type MemoryDecision,
@@ -76,6 +78,7 @@ import {
   contradictedForReview,
   decisionId,
   evaluateCandidate,
+  formatBenchReport,
   gcUnpromotedAttempts,
   isFeedbackSignal,
   isTeamTrustedRecord,
@@ -90,6 +93,7 @@ import {
   readRepoId,
   resolveProfile,
   runGate,
+  runMemoryBench,
   runMemoryCheck,
   tombstoneLocalForTeamPromotion,
   trustedRefOf,
@@ -3152,11 +3156,13 @@ async function cmdMemory(args: string[], ctx?: CmdCtx): Promise<number> {
       return cmdMemoryGc(rest, ctx);
     case 'migrate':
       return cmdMemoryMigrate(rest, ctx);
+    case 'bench':
+      return cmdMemoryBench(rest, ctx);
     case undefined:
     case '-h':
     case '--help':
       process.stderr.write(
-        'crib memory init | evaluate <candidate> --profile <name> | activate <candidate> | propose <memory-id> | attest <candidate> | check | audit [--repair-local] | feedback <mem-id> --signal <useful|unhelpful|contradicted> [--actor <id>] [--context <text>] [--counter-evidence <json-file>] | gc [--max-age-days N] [--dry-run] | migrate\n',
+        'crib memory init | evaluate <candidate> --profile <name> | activate <candidate> | propose <memory-id> | attest <candidate> | check | audit [--repair-local] | feedback <mem-id> --signal <useful|unhelpful|contradicted> [--actor <id>] [--context <text>] [--counter-evidence <json-file>] | gc [--max-age-days N] [--dry-run] | migrate | bench [--fast] [--json] [--out <path>]\n',
       );
       return EXIT.OK;
     default:
@@ -3203,6 +3209,31 @@ function cmdMemoryInit(args: string[], ctx?: CmdCtx): number {
   process.stdout.write(
     `repoId: ${repoId}\nteam store:  ${join(resolved.cribDir, 'memory', 'team')}\nlocal store: ~/.crib/memory/repos/${repoId}\n`,
   );
+  return EXIT.OK;
+}
+
+/**
+ * `crib memory bench [--fast] [--json] [--out <path>]` — the P0 memory benchmark (the ruler every
+ * phase measures against): recall relevance (exact vs word-disjoint paraphrase), refactor survival,
+ * cross-writer dedupe + conflict surfacing, trust-gradient discipline, and the per-phase latency
+ * curve over real stores. `--fast` shrinks the corpus for a quick smoke; the default publishes the
+ * 10k-record scale. Each scenario runs against a throwaway store directory — never the repo's.
+ */
+function cmdMemoryBench(args: string[], ctx?: CmdCtx): number {
+  const json = args.includes('--json');
+  const fast = args.includes('--fast');
+  const outIdx = args.indexOf('--out');
+  const outPath = outIdx >= 0 && args[outIdx + 1] ? args[outIdx + 1] : undefined;
+  const report = runMemoryBench(fast ? BENCH_SCALE_FAST : BENCH_SCALE_DEFAULT, {
+    now: () => new Date().toISOString(),
+  });
+  if (outPath) writeFileSync(outPath, `${JSON.stringify(report, null, 2)}\n`);
+  if (json) process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
+  else {
+    process.stdout.write(
+      `${formatBenchReport(report)}\n${outPath ? `report saved → ${outPath}\n` : ''}`,
+    );
+  }
   return EXIT.OK;
 }
 
