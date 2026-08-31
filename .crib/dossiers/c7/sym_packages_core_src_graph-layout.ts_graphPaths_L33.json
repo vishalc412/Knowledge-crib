@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/core/src/graph-layout.ts#graphPaths@L33",
-  "schemaVersion": "1.5",
+  "schemaVersion": "1.6",
   "nodeHash": "blake3:daef4fe5fe49d4ab00dbbc5a8f16609b98d9ee39d9b2a13fbac1a277ed285ac2",
-  "builtAt": "2026-07-16T14:53:52.220Z",
+  "builtAt": "2026-08-31T17:37:23.222Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/core/src/graph-layout.ts#graphPaths@L33",
@@ -68,42 +68,42 @@
   },
   "callers": [
     {
-      "id": "sym:packages/core/src/soul-store.ts#SoulStore.extractedRoot@L392",
+      "id": "sym:packages/core/src/soul-store.ts#SoulStore.extractedRoot@L480",
       "confidence": 1,
       "name": "extractedRoot",
       "qualifiedName": "SoulStore.extractedRoot",
       "type": "getter",
       "file": "packages/core/src/soul-store.ts",
-      "line": 392
+      "line": 480
     },
     {
-      "id": "sym:packages/core/src/soul-store.ts#SoulStore.manifestPath@L386",
+      "id": "sym:packages/core/src/soul-store.ts#SoulStore.manifestPath@L474",
       "confidence": 1,
       "name": "manifestPath",
       "qualifiedName": "SoulStore.manifestPath",
       "type": "getter",
       "file": "packages/core/src/soul-store.ts",
-      "line": 386
+      "line": 474
     },
     {
-      "id": "sym:packages/cli/src/cli.ts#freshSoulForRebuild@L544",
+      "id": "sym:packages/core/src/working-overlay.ts#canonicalFingerprint@L53",
       "confidence": 1,
-      "name": "freshSoulForRebuild",
-      "qualifiedName": "freshSoulForRebuild",
-      "signature": "freshSoulForRebuild(cribDir: string): SoulStore",
+      "name": "canonicalFingerprint",
+      "qualifiedName": "canonicalFingerprint",
+      "signature": "canonicalFingerprint(cribDir: string): CanonicalFingerprint | null",
       "type": "function",
-      "file": "packages/cli/src/cli.ts",
-      "line": 544
+      "file": "packages/core/src/working-overlay.ts",
+      "line": 53
     },
     {
-      "id": "sym:packages/core/src/graph-store.ts#graphFingerprint@L148",
+      "id": "sym:packages/core/src/graph-store.ts#graphFingerprint@L200",
       "confidence": 1,
       "name": "graphFingerprint",
       "qualifiedName": "graphFingerprint",
       "signature": "graphFingerprint(soul: SoulStore): GraphFingerprint",
       "type": "function",
       "file": "packages/core/src/graph-store.ts",
-      "line": 148
+      "line": 200
     },
     {
       "id": "sym:packages/core/src/graph-layout.ts#hasCanonicalGraph@L51",
@@ -136,14 +136,24 @@
       "line": 70
     },
     {
-      "id": "sym:packages/cli/src/runtime.ts#openIndexOnly@L160",
+      "id": "sym:packages/cli/src/runtime.ts#openIndexForServe@L390",
+      "confidence": 1,
+      "name": "openIndexForServe",
+      "qualifiedName": "openIndexForServe",
+      "signature": "openIndexForServe(rt: Runtime): IndexStore",
+      "type": "function",
+      "file": "packages/cli/src/runtime.ts",
+      "line": 390
+    },
+    {
+      "id": "sym:packages/cli/src/runtime.ts#openIndexOnly@L356",
       "confidence": 1,
       "name": "openIndexOnly",
       "qualifiedName": "openIndexOnly",
       "signature": "openIndexOnly(rt: Runtime): IndexStore",
       "type": "function",
       "file": "packages/cli/src/runtime.ts",
-      "line": 160
+      "line": 356
     },
     {
       "id": "sym:packages/core/src/llm-overlay.ts#readLlmOverlay@L63",
@@ -156,14 +166,14 @@
       "line": 63
     },
     {
-      "id": "sym:packages/core/src/graph-store.ts#readSemantic@L173",
+      "id": "sym:packages/core/src/graph-store.ts#readSemantic@L225",
       "confidence": 1,
       "name": "readSemantic",
       "qualifiedName": "readSemantic",
       "signature": "readSemantic(soul: SoulStore): GraphSnapshot",
       "type": "function",
       "file": "packages/core/src/graph-store.ts",
-      "line": 173
+      "line": 225
     },
     {
       "id": "sym:packages/core/src/aliases.ts#writeAliases@L119",
@@ -255,14 +265,14 @@
     "status": "implemented",
     "executesCount": 4,
     "referencedByFiles": [
-      "packages/cli/src/cli.ts",
       "packages/cli/src/runtime.ts",
       "packages/core/src/aliases.ts",
       "packages/core/src/graph-layout.ts",
       "packages/core/src/graph-store.ts",
       "packages/core/src/llm-overlay.ts",
       "packages/core/src/materialize.test.ts",
-      "packages/core/src/soul-store.ts"
+      "packages/core/src/soul-store.ts",
+      "packages/core/src/working-overlay.ts"
     ]
   },
   "coverage": {

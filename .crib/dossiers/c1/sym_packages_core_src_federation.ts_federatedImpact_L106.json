@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/core/src/federation.ts#federatedImpact@L106",
-  "schemaVersion": "1.5",
+  "schemaVersion": "1.6",
   "nodeHash": "blake3:8c14fdd49bd6b00fdf5e99f0366764df027bab66dec0ce31f7aaac5b55a018d4",
-  "builtAt": "2026-07-16T16:35:16.098Z",
+  "builtAt": "2026-08-31T17:37:23.222Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/core/src/federation.ts#federatedImpact@L106",
@@ -108,24 +108,14 @@
   },
   "callers": [
     {
-      "id": "sym:packages/mcp/src/server.ts#buildServer@L28",
+      "id": "sym:packages/mcp/src/server.ts#buildServer@L116",
       "confidence": 1,
       "name": "buildServer",
       "qualifiedName": "buildServer",
       "signature": "buildServer(verbs: Verbs, version = '0.1.0'): McpServer",
       "type": "function",
       "file": "packages/mcp/src/server.ts",
-      "line": 28
-    },
-    {
-      "id": "sym:packages/cli/src/cli.ts#cmdFederatedImpact@L952",
-      "confidence": 1,
-      "name": "cmdFederatedImpact",
-      "qualifiedName": "cmdFederatedImpact",
-      "signature": "cmdFederatedImpact(args: string[], ctx?: CmdCtx): Promise<number>",
-      "type": "function",
-      "file": "packages/cli/src/cli.ts",
-      "line": 952
+      "line": 116
     }
   ],
   "callees": [
@@ -190,14 +180,14 @@
       "line": 38
     },
     {
-      "id": "sym:packages/pipeline/src/linker/linker.test.ts#key@L57",
+      "id": "sym:packages/pipeline/src/resolve/mule-resolver.ts#key@L157",
       "confidence": 1,
       "name": "key",
       "qualifiedName": "key",
-      "signature": "key(…)",
+      "signature": "key(proj: string, bucket: Bucket, name: string): string",
       "type": "function",
-      "file": "packages/pipeline/src/linker/linker.test.ts",
-      "line": 57
+      "file": "packages/pipeline/src/resolve/mule-resolver.ts",
+      "line": 157
     },
     {
       "id": "sym:packages/core/src/federation.ts#push@L303",
@@ -210,14 +200,14 @@
       "line": 303
     },
     {
-      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
       "confidence": 1,
       "name": "push",
       "qualifiedName": "push",
       "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
       "type": "function",
       "file": "packages/pipeline/src/linker/inverted-index.ts",
-      "line": 39
+      "line": 70
     }
   ],
   "docs": [
@@ -230,10 +220,10 @@
       "confidence": 1
     },
     {
-      "sectionId": "doc:docs/knowledge-crib-user-guide.md#the-remaining-deterministic-verbs-compact",
-      "heading": "The remaining deterministic verbs (compact)",
-      "anchor": "the-remaining-deterministic-verbs-compact",
-      "snippet": "The remaining deterministic verbs (compact)",
+      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#tool-consolidation-current-surface-15-tools",
+      "heading": "Tool consolidation (current surface: 15 tools)",
+      "anchor": "tool-consolidation-current-surface-15-tools",
+      "snippet": "Tool consolidation (current surface: 15 tools)",
       "edgeType": "describes",
       "method": "explicit",
       "provenance": "EXTRACTED",
@@ -379,6 +369,20 @@
         "inException": false,
         "action": {
           "kind": "calls",
+          "edgeId": "e:74cd4abce10c3bbf24e50abaf85b449c45668ae77d8729244d623e19e08129a0",
+          "target": "sym:packages/pipeline/src/resolve/mule-resolver.ts#key@L157",
+          "expr": "key",
+          "line": 126
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/federation.ts#federatedImpact@L106",
+        "procedureName": "federatedImpact",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
           "edgeId": "e:777797be4e1c3343d380540530cd606b063da612462c4dbefeb11bc2f8e011ac",
           "target": "sym:packages/parsers/fixtures/python/rules.py#add@L16",
           "expr": "add",
@@ -411,20 +415,6 @@
           "kind": "calls",
           "edgeId": "e:85cae4ae6dcf68d3d8f54c80d9dce530d9eae7e64f763dd78197af86c333e1e4",
           "target": "sym:packages/core/src/federation.ts#federatedImpact.key@L124",
-          "expr": "key",
-          "line": 126
-        }
-      },
-      {
-        "procedure": "sym:packages/core/src/federation.ts#federatedImpact@L106",
-        "procedureName": "federatedImpact",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:a12d17c921142dba2165cd99529606aaf2978f31e0398480800a78fa8713fdb2",
-          "target": "sym:packages/pipeline/src/linker/linker.test.ts#key@L57",
           "expr": "key",
           "line": 126
         }
@@ -619,8 +609,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:e8d6ef135b49558d6039478b9b7a15f512c7791c71516821ee5baf13e69ae57b",
-          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "edgeId": "e:ef0a8e44c5fbb15b8acda4e8f31e8cb3cd8f8f7313f4265b7b91cae3449e4681",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
           "expr": "push",
           "line": 145
         }
@@ -800,7 +790,6 @@
     "status": "implemented",
     "executesCount": 17,
     "referencedByFiles": [
-      "packages/cli/src/cli.ts",
       "packages/mcp/src/server.ts"
     ]
   },

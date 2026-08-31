@@ -1,0 +1,542 @@
+{
+  "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseDecls@L226",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:a45493c96cc2b81b1179606adc6053f071c84a23ee0ad8e1f7862cd26a20101d",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseDecls@L226",
+    "kind": "symbol",
+    "type": "method",
+    "name": "parseDecls",
+    "qualifiedName": "Parser.parseDecls",
+    "signature": "parseDecls(topLevel: boolean): { defs: CsharpDef[]; closeLine: number }",
+    "lang": "typescript",
+    "file": "packages/parsers/src/csharp/parser.ts",
+    "span": {
+      "start": 226,
+      "end": 250
+    },
+    "callSites": [
+      {
+        "callee": "peek",
+        "line": 231
+      },
+      {
+        "callee": "next",
+        "line": 232
+      },
+      {
+        "callee": "skipBraces",
+        "line": 237
+      },
+      {
+        "callee": "next",
+        "line": 241
+      },
+      {
+        "callee": "parseDecl",
+        "line": 245
+      },
+      {
+        "callee": "push",
+        "line": 246
+      },
+      {
+        "callee": "next",
+        "line": 247
+      }
+    ]
+  },
+  "source": {
+    "text": "  private parseDecls(topLevel: boolean): { defs: CsharpDef[]; closeLine: number } {\n    const defs: CsharpDef[] = [];\n    let closeLine = 0;\n    while (!this.atEnd()) {\n      if (this.isOp('}')) {\n        closeLine = this.peek().line;\n        if (!topLevel) this.next();\n        break;\n      }\n      if (this.isOp('{')) {\n        // bare block (stray initializer) — skip it.\n        this.skipBraces();\n        continue;\n      }\n      if (this.isOp(';') || this.isOp(',')) {\n        this.next(); // stray terminator\n        continue;\n      }\n      const before = this.i;\n      const d = this.parseDecl();\n      if (d) defs.push(d);\n      else if (this.i === before && !this.atEnd()) this.next(); // progress guard\n    }\n    return { defs, closeLine };\n  }",
+    "truncated": false,
+    "totalLines": 25,
+    "startLine": 226
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseNamespace@L284",
+      "confidence": 1,
+      "name": "parseNamespace",
+      "qualifiedName": "Parser.parseNamespace",
+      "signature": "parseNamespace(startLine: number, attributes: string[], modifiers: string[]): CsharpDef | null",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 284
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseProgram@L216",
+      "confidence": 1,
+      "name": "parseProgram",
+      "qualifiedName": "Parser.parseProgram",
+      "signature": "parseProgram(): { defs: CsharpDef[]; excluded: Set<number> }",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 216
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseRecord@L325",
+      "confidence": 1,
+      "name": "parseRecord",
+      "qualifiedName": "Parser.parseRecord",
+      "signature": "parseRecord(startLine: number, attributes: string[], modifiers: string[]): CsharpDef | null",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 325
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseType@L371",
+      "confidence": 1,
+      "name": "parseType",
+      "qualifiedName": "Parser.parseType",
+      "signature": "parseType(kind: 'class' | 'interface' | 'struct' | 'enum', startLine: number, attributes: string[], modifiers: string[]): CsharpDef | null",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 371
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.atEnd@L1537",
+      "confidence": 1,
+      "name": "atEnd",
+      "qualifiedName": "Parser.atEnd",
+      "signature": "atEnd(): boolean",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 1537
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.isOp@L1516",
+      "confidence": 1,
+      "name": "isOp",
+      "qualifiedName": "Parser.isOp",
+      "signature": "isOp(v: string): boolean",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 1516
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.next@L1529",
+      "confidence": 1,
+      "name": "next",
+      "qualifiedName": "Parser.next",
+      "signature": "next(): Token",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 1529
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseDecl@L253",
+      "confidence": 1,
+      "name": "parseDecl",
+      "qualifiedName": "Parser.parseDecl",
+      "signature": "parseDecl(): CsharpDef | null",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 253
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.peek@L1534",
+      "confidence": 1,
+      "name": "peek",
+      "qualifiedName": "Parser.peek",
+      "signature": "peek(offset = 0): Token",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 1534
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.skipBraces@L985",
+      "confidence": 1,
+      "name": "skipBraces",
+      "qualifiedName": "Parser.skipBraces",
+      "signature": "skipBraces(): number",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 985
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/csharp/parser.ts@L221",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseDecls@L226",
+    "procedureName": "Parser.parseDecls",
+    "conditions": [
+      "cond:packages/parsers/src/csharp/parser.ts@L229",
+      "cond:packages/parsers/src/csharp/parser.ts@L230",
+      "cond:packages/parsers/src/csharp/parser.ts@L232",
+      "cond:packages/parsers/src/csharp/parser.ts@L246",
+      "cond:packages/parsers/src/csharp/parser.ts@L247",
+      "cond:packages/parsers/src/csharp/parser.ts@L235",
+      "cond:packages/parsers/src/csharp/parser.ts@L240"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseDecls@L226",
+        "procedureName": "Parser.parseDecls",
+        "guard": "cond:packages/parsers/src/csharp/parser.ts@L230",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L229",
+            "expr": "!this.atEnd()"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L230",
+            "expr": "this.isOp('}')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:345c6d2760470426ee31f118d09b7131f4aefed24fb61a311585d352ffc90f1a",
+          "target": "assign:packages/parsers/src/csharp/parser.ts@L231",
+          "line": 231,
+          "expr": "closeLine = this.peek().line;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseDecls@L226",
+        "procedureName": "Parser.parseDecls",
+        "guard": "cond:packages/parsers/src/csharp/parser.ts@L230",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L229",
+            "expr": "!this.atEnd()"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L230",
+            "expr": "this.isOp('}')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:ad7a74d0b7be855eb7b02578927dc293cfe141812596459a7dfa984f5f13fe74",
+          "target": "sym:packages/parsers/src/csharp/parser.ts#Parser.peek@L1534",
+          "expr": "peek",
+          "line": 231
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseDecls@L226",
+        "procedureName": "Parser.parseDecls",
+        "guard": "cond:packages/parsers/src/csharp/parser.ts@L232",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L229",
+            "expr": "!this.atEnd()"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L230",
+            "expr": "this.isOp('}')"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L232",
+            "expr": "!topLevel",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0ca3cf00a5647287c23714c5fcdad4af6dabc6099be238f68222336506a684e2",
+          "target": "stmt:packages/parsers/src/csharp/parser.ts@L232",
+          "line": 232,
+          "expr": "this.next();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseDecls@L226",
+        "procedureName": "Parser.parseDecls",
+        "guard": "cond:packages/parsers/src/csharp/parser.ts@L247",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L229",
+            "expr": "!this.atEnd()"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L246",
+            "expr": "d"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L247",
+            "expr": "this.i === before && !this.atEnd()",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:699c6fb0786efea73172e522d6f8e73a4ef250967c63cd59c2f232f1e9e2c331",
+          "target": "sym:packages/parsers/src/csharp/parser.ts#Parser.next@L1529",
+          "expr": "next",
+          "line": 232
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseDecls@L226",
+        "procedureName": "Parser.parseDecls",
+        "guard": "cond:packages/parsers/src/csharp/parser.ts@L235",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L229",
+            "expr": "!this.atEnd()"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L235",
+            "expr": "this.isOp('{')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:141f9236d6bbeeb98da23460c1016e0c0ed80e55d6bd228b61ef17b802edd82f",
+          "target": "sym:packages/parsers/src/csharp/parser.ts#Parser.skipBraces@L985",
+          "expr": "skipBraces",
+          "line": 237
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseDecls@L226",
+        "procedureName": "Parser.parseDecls",
+        "guard": "cond:packages/parsers/src/csharp/parser.ts@L235",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L229",
+            "expr": "!this.atEnd()"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L235",
+            "expr": "this.isOp('{')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:42aa775c6738d8d0abbcf3fcd41bf0accbbda0980204aa018d3f3aaa643a70db",
+          "target": "stmt:packages/parsers/src/csharp/parser.ts@L237",
+          "line": 237,
+          "expr": "this.skipBraces();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseDecls@L226",
+        "procedureName": "Parser.parseDecls",
+        "guard": "cond:packages/parsers/src/csharp/parser.ts@L240",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L229",
+            "expr": "!this.atEnd()"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L240",
+            "expr": "this.isOp(';') || this.isOp(',')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2a20253e9c53209a137567a806a23447cba6230ee97138bf00a3600691b33c6f",
+          "target": "stmt:packages/parsers/src/csharp/parser.ts@L241",
+          "line": 241,
+          "expr": "this.next();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseDecls@L226",
+        "procedureName": "Parser.parseDecls",
+        "guard": "cond:packages/parsers/src/csharp/parser.ts@L229",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L229",
+            "expr": "!this.atEnd()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bb848286d01ba9d731f498059f73cd50f5e81d5e78d07001682099b9660d3d86",
+          "target": "stmt:packages/parsers/src/csharp/parser.ts@L245",
+          "line": 245,
+          "expr": "const d = this.parseDecl();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseDecls@L226",
+        "procedureName": "Parser.parseDecls",
+        "guard": "cond:packages/parsers/src/csharp/parser.ts@L229",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L229",
+            "expr": "!this.atEnd()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:d6c3a2d448c9b8a4fbaf8ee904a57fb6a44ac4671d63790be36708baeef3c2a4",
+          "target": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseDecl@L253",
+          "expr": "parseDecl",
+          "line": 245
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseDecls@L226",
+        "procedureName": "Parser.parseDecls",
+        "guard": "cond:packages/parsers/src/csharp/parser.ts@L246",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L229",
+            "expr": "!this.atEnd()"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L246",
+            "expr": "d",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2f1f7d2d3c9a018a6246dedebab6391dd721da09db1ea8a40b8ced48292b8fb6",
+          "target": "stmt:packages/parsers/src/csharp/parser.ts@L246",
+          "line": 246,
+          "expr": "defs.push(d);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseDecls@L226",
+        "procedureName": "Parser.parseDecls",
+        "guard": "cond:packages/parsers/src/csharp/parser.ts@L247",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L229",
+            "expr": "!this.atEnd()"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L246",
+            "expr": "d"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L247",
+            "expr": "this.i === before && !this.atEnd()",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:66aad4a30703d44b6431588f3f1a77ec3c804283b5b3233bdbbb6a14cc01a8f9",
+          "target": "stmt:packages/parsers/src/csharp/parser.ts@L247",
+          "line": 247,
+          "expr": "this.next();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseDecls@L226",
+        "procedureName": "Parser.parseDecls",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4934b4e5a2a5d5c0f657dcc14f54f5d8e2fd5ae41e752270917f635bcdb7c7bf",
+          "target": "stmt:packages/parsers/src/csharp/parser.ts@L249",
+          "line": 249,
+          "expr": "return { defs, closeLine };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseDecls@L226",
+        "procedureName": "Parser.parseDecls",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:d14f18e185f59843cd1762fb621d8f7118fb61a9e9fa71e52645751bd5927f77",
+          "target": "sym:packages/parsers/src/csharp/parser.ts#Parser.isOp@L1516",
+          "expr": "isOp"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseDecls@L226",
+        "procedureName": "Parser.parseDecls",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:5ae3523fb8aa041e68547ff9705c3b4acc02f63a3bac78586a24c8ff7b658bbe",
+          "target": "sym:packages/parsers/src/csharp/parser.ts#Parser.atEnd@L1537",
+          "expr": "atEnd"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 8,
+    "referencedByFiles": [
+      "packages/parsers/src/csharp/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 8,
+    "assignments": 1,
+    "conditions": 7,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 6,
+      "recorded": 7,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

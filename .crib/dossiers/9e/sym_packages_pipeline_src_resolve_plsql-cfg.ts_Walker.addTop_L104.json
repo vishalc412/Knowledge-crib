@@ -1,0 +1,143 @@
+{
+  "id": "sym:packages/pipeline/src/resolve/plsql-cfg.ts#Walker.addTop@L104",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:0ca3845558cc00ab919c13797a25dd738b606ff4c1ab6ffccb8cd9893dbd54eb",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/resolve/plsql-cfg.ts#Walker.addTop@L104",
+    "kind": "symbol",
+    "type": "method",
+    "name": "addTop",
+    "qualifiedName": "Walker.addTop",
+    "signature": "addTop(top: { kind: string }): void",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/resolve/plsql-cfg.ts",
+    "span": {
+      "start": 104,
+      "end": 107
+    },
+    "callSites": [
+      {
+        "callee": "walkUnit",
+        "line": 106
+      }
+    ]
+  },
+  "source": {
+    "text": "  addTop(top: { kind: string }): void {\n    if (top.kind === 'table-ddl') return; // tables have no body to walk\n    this.walkUnit(top as unknown as Unit, '');\n  }",
+    "truncated": false,
+    "totalLines": 4,
+    "startLine": 104
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/src/resolve/plsql-cfg.ts#PlSqlCfgPass.run@L31",
+      "confidence": 1,
+      "name": "run",
+      "qualifiedName": "PlSqlCfgPass.run",
+      "signature": "run(ctx: CfgContext): CfgStats",
+      "type": "method",
+      "file": "packages/pipeline/src/resolve/plsql-cfg.ts",
+      "line": 31
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/pipeline/src/resolve/plsql-cfg.ts#Walker.walkUnit@L109",
+      "confidence": 1,
+      "name": "walkUnit",
+      "qualifiedName": "Walker.walkUnit",
+      "signature": "walkUnit(u: Unit, qualifier: string): void",
+      "type": "method",
+      "file": "packages/pipeline/src/resolve/plsql-cfg.ts",
+      "line": 109
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/resolve/plsql-cfg.ts#Walker.addTop@L104",
+    "procedureName": "Walker.addTop",
+    "conditions": [
+      "cond:packages/pipeline/src/resolve/plsql-cfg.ts@L105"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/plsql-cfg.ts#Walker.addTop@L104",
+        "procedureName": "Walker.addTop",
+        "guard": "cond:packages/pipeline/src/resolve/plsql-cfg.ts@L105",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/plsql-cfg.ts@L105",
+            "expr": "top.kind === 'table-ddl'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3d17f03adf6893632435ff2dbf748e05c3be21ded0fba5147e2762b170ca7786",
+          "target": "stmt:packages/pipeline/src/resolve/plsql-cfg.ts@L105",
+          "line": 105,
+          "expr": "return;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/plsql-cfg.ts#Walker.addTop@L104",
+        "procedureName": "Walker.addTop",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1b33976033390f8c023a4e1eb510960dff5160b3f5bff47dc867ac6998a0f676",
+          "target": "stmt:packages/pipeline/src/resolve/plsql-cfg.ts@L106",
+          "line": 106,
+          "expr": "this.walkUnit(top as unknown as Unit, '');"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/plsql-cfg.ts#Walker.addTop@L104",
+        "procedureName": "Walker.addTop",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:276a4fe6654b5b98c8ce632058edc46a4f87337f96fe4ae8704a966815c57713",
+          "target": "sym:packages/pipeline/src/resolve/plsql-cfg.ts#Walker.walkUnit@L109",
+          "expr": "walkUnit",
+          "line": 106
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/pipeline/src/resolve/plsql-cfg.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

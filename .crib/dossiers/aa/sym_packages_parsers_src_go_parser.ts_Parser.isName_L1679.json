@@ -1,0 +1,183 @@
+{
+  "id": "sym:packages/parsers/src/go/parser.ts#Parser.isName@L1679",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:2a31c93f4365904a100c6eaced137c5cb5e3f8fd9986bad532dc23c04bd4590e",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/go/parser.ts#Parser.isName@L1679",
+    "kind": "symbol",
+    "type": "method",
+    "name": "isName",
+    "qualifiedName": "Parser.isName",
+    "signature": "isName(v: string): boolean",
+    "lang": "typescript",
+    "file": "packages/parsers/src/go/parser.ts",
+    "span": {
+      "start": 1679,
+      "end": 1681
+    },
+    "callSites": [
+      {
+        "callee": "peek",
+        "line": 1680
+      },
+      {
+        "callee": "peek",
+        "line": 1680
+      }
+    ]
+  },
+  "source": {
+    "text": "  private isName(v: string): boolean {\n    return this.peek().type === 'NAME' && this.peek().value === v;\n  }",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 1679
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/go/parser.ts#Parser.collectCaseBody@L1290",
+      "confidence": 1,
+      "name": "collectCaseBody",
+      "qualifiedName": "Parser.collectCaseBody",
+      "signature": "collectCaseBody(): GoBodyStmt[]",
+      "type": "method",
+      "file": "packages/parsers/src/go/parser.ts",
+      "line": 1290
+    },
+    {
+      "id": "sym:packages/parsers/src/go/parser.ts#Parser.collectSimpleUntilSemi@L1498",
+      "confidence": 1,
+      "name": "collectSimpleUntilSemi",
+      "qualifiedName": "Parser.collectSimpleUntilSemi",
+      "signature": "collectSimpleUntilSemi(): {\n    text: string;\n    callee?: GoCallee;\n    hasAssign: boolean;\n    isPanic: boolean;\n    lhs: string;\n  }",
+      "type": "method",
+      "file": "packages/parsers/src/go/parser.ts",
+      "line": 1498
+    },
+    {
+      "id": "sym:packages/parsers/src/go/parser.ts#Parser.parseCases@L1226",
+      "confidence": 1,
+      "name": "parseCases",
+      "qualifiedName": "Parser.parseCases",
+      "signature": "parseCases(): GoCaseClause[]",
+      "type": "method",
+      "file": "packages/parsers/src/go/parser.ts",
+      "line": 1226
+    },
+    {
+      "id": "sym:packages/parsers/src/go/parser.ts#Parser.parseDecl@L304",
+      "confidence": 1,
+      "name": "parseDecl",
+      "qualifiedName": "Parser.parseDecl",
+      "signature": "parseDecl(): GoDef | GoDef[] | null",
+      "type": "method",
+      "file": "packages/parsers/src/go/parser.ts",
+      "line": 304
+    },
+    {
+      "id": "sym:packages/parsers/src/go/parser.ts#Parser.parseDefer@L1379",
+      "confidence": 1,
+      "name": "parseDefer",
+      "qualifiedName": "Parser.parseDefer",
+      "signature": "parseDefer(): GoBodyStmt",
+      "type": "method",
+      "file": "packages/parsers/src/go/parser.ts",
+      "line": 1379
+    },
+    {
+      "id": "sym:packages/parsers/src/go/parser.ts#Parser.parseIf@L1095",
+      "confidence": 1,
+      "name": "parseIf",
+      "qualifiedName": "Parser.parseIf",
+      "signature": "parseIf(): GoIfStmt",
+      "type": "method",
+      "file": "packages/parsers/src/go/parser.ts",
+      "line": 1095
+    },
+    {
+      "id": "sym:packages/parsers/src/go/parser.ts#Parser.parseTypeDecl@L477",
+      "confidence": 1,
+      "name": "parseTypeDecl",
+      "qualifiedName": "Parser.parseTypeDecl",
+      "signature": "parseTypeDecl(startLine: number): GoDef | null",
+      "type": "method",
+      "file": "packages/parsers/src/go/parser.ts",
+      "line": 477
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/go/parser.ts#Parser.peek@L1695",
+      "confidence": 1,
+      "name": "peek",
+      "qualifiedName": "Parser.peek",
+      "signature": "peek(): Token",
+      "type": "method",
+      "file": "packages/parsers/src/go/parser.ts",
+      "line": 1695
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.isName@L1679",
+    "procedureName": "Parser.isName",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.isName@L1679",
+        "procedureName": "Parser.isName",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7460ada24467b0dbb799a27b4baacba293b773fe55cf01a28399f3e8daa02092",
+          "target": "stmt:packages/parsers/src/go/parser.ts@L1680",
+          "line": 1680,
+          "expr": "return this.peek().type === 'NAME' && this.peek().value === v;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.isName@L1679",
+        "procedureName": "Parser.isName",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:cd7334fbbd47bc529455b2f454540e08423906399c3fe99d041f542b201b4dc4",
+          "target": "sym:packages/parsers/src/go/parser.ts#Parser.peek@L1695",
+          "expr": "peek",
+          "line": 1680
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/parsers/src/go/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 2,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

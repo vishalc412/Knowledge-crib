@@ -1,0 +1,148 @@
+{
+  "id": "sym:packages/pipeline/src/gitignore.ts#GitignoreMatcher.isIgnored@L130",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:436fce9fd300c97cd51ce680150109ebe7405b254541d9554f0ccaa81aa45c33",
+  "builtAt": "2026-08-25T20:55:11.863Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/gitignore.ts#GitignoreMatcher.isIgnored@L130",
+    "kind": "symbol",
+    "type": "method",
+    "name": "isIgnored",
+    "qualifiedName": "GitignoreMatcher.isIgnored",
+    "signature": "isIgnored(relPath: string, isDir: boolean): boolean",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/gitignore.ts",
+    "span": {
+      "start": 130,
+      "end": 143
+    },
+    "callSites": [
+      {
+        "callee": "slice",
+        "line": 136
+      }
+    ]
+  },
+  "source": {
+    "text": "  isIgnored(relPath: string, isDir: boolean): boolean {\n    let ignored = false;\n    for (const layer of this.layers) {\n      if (layer.dir !== '' && !(relPath === layer.dir || relPath.startsWith(`${layer.dir}/`))) {\n        continue; // path is outside this layer's subtree\n      }\n      const rel = layer.dir === '' ? relPath : relPath.slice(layer.dir.length + 1);\n      for (const rule of layer.rules) {\n        if (rule.dirOnly && !isDir) continue;\n        if (rule.re.test(rel)) ignored = !rule.negated;\n      }\n    }\n    return ignored;\n  }",
+    "truncated": false,
+    "totalLines": 14,
+    "startLine": 130
+  },
+  "callers": [],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/pipeline/src/gitignore.ts@L125",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/gitignore.ts#GitignoreMatcher.isIgnored@L130",
+    "procedureName": "GitignoreMatcher.isIgnored",
+    "conditions": [
+      "cond:packages/pipeline/src/gitignore.ts@L132",
+      "cond:packages/pipeline/src/gitignore.ts@L137",
+      "cond:packages/pipeline/src/gitignore.ts@L139"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/gitignore.ts#GitignoreMatcher.isIgnored@L130",
+        "procedureName": "GitignoreMatcher.isIgnored",
+        "guard": "cond:packages/pipeline/src/gitignore.ts@L132",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/gitignore.ts@L132",
+            "expr": "this.layers",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:74d5d2386351107f71c2fadc7b8175e4bbdedb874f4666401ed250aad82c9df5",
+          "target": "stmt:packages/pipeline/src/gitignore.ts@L136",
+          "line": 136,
+          "expr": "const rel = layer.dir === '' ? relPath : relPath.slice(layer.dir.length + 1);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/gitignore.ts#GitignoreMatcher.isIgnored@L130",
+        "procedureName": "GitignoreMatcher.isIgnored",
+        "guard": "cond:packages/pipeline/src/gitignore.ts@L139",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/gitignore.ts@L132",
+            "expr": "this.layers"
+          },
+          {
+            "id": "cond:packages/pipeline/src/gitignore.ts@L137",
+            "expr": "layer.rules"
+          },
+          {
+            "id": "cond:packages/pipeline/src/gitignore.ts@L139",
+            "expr": "rule.re.test(rel)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:45208b70355d51afef4730380d4336e2c12dd9c6046a6ffb0311537d5edb1172",
+          "target": "assign:packages/pipeline/src/gitignore.ts@L139",
+          "line": 139,
+          "expr": "ignored = !rule.negated;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/gitignore.ts#GitignoreMatcher.isIgnored@L130",
+        "procedureName": "GitignoreMatcher.isIgnored",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:27bc4b6ff8e0a87060e78ca7f140506f094348893bd2e73dbcec45181eab4ebf",
+          "target": "stmt:packages/pipeline/src/gitignore.ts@L142",
+          "line": 142,
+          "expr": "return ignored;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 1,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 1,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

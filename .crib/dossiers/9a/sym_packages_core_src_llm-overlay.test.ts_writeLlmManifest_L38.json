@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/core/src/llm-overlay.test.ts#writeLlmManifest@L38",
-  "schemaVersion": "1.5",
+  "schemaVersion": "1.6",
   "nodeHash": "blake3:a5d6658797c3a3e74f4bc37c05c865242096edb1f1851dcd32c48c4cc8b6594b",
-  "builtAt": "2026-07-13T11:04:33.459Z",
+  "builtAt": "2026-08-25T20:55:11.863Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/core/src/llm-overlay.test.ts#writeLlmManifest@L38",
@@ -47,7 +47,18 @@
     "startLine": 38
   },
   "callers": [],
-  "callees": [],
+  "callees": [
+    {
+      "id": "sym:packages/pipeline/src/mule/classify.ts#dirname@L163",
+      "confidence": 1,
+      "name": "dirname",
+      "qualifiedName": "dirname",
+      "signature": "dirname(path: string): string",
+      "type": "function",
+      "file": "packages/pipeline/src/mule/classify.ts",
+      "line": 163
+    }
+  ],
   "docs": [],
   "rules": {
     "procedure": "sym:packages/core/src/llm-overlay.test.ts#writeLlmManifest@L38",
@@ -89,6 +100,20 @@
         "inLoop": false,
         "inException": false,
         "action": {
+          "kind": "calls",
+          "edgeId": "e:fe8795dc7fd7545de20ee56b463547f37e018b245d20940e6ace87366b0c8668",
+          "target": "sym:packages/pipeline/src/mule/classify.ts#dirname@L163",
+          "expr": "dirname",
+          "line": 40
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/llm-overlay.test.ts#writeLlmManifest@L38",
+        "procedureName": "writeLlmManifest",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
           "kind": "executes",
           "edgeId": "e:732f3565d2075b8b458088c0de0e4a8bc4c62f6545f28a9ad53a92e5a6880cf9",
           "target": "stmt:packages/core/src/llm-overlay.test.ts@L41",
@@ -114,14 +139,14 @@
     "cursors": 0,
     "caseBranches": 0,
     "calls": {
-      "resolved": 0,
+      "resolved": 1,
       "recorded": 5,
-      "unresolved": 5
+      "unresolved": 4
     },
     "recursive": false,
     "exprTruncated": 0,
     "caveats": [
-      "5 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+      "4 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
     ]
   }
 }

@@ -1,0 +1,263 @@
+{
+  "id": "sym:packages/parsers/src/go/GoExtractor.ts#GoExtractor.collectCalls@L291",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:a7190eb4a51c4a705c3a439553da45632462f1ff2087fb6b58290a8ab62499d9",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/go/GoExtractor.ts#GoExtractor.collectCalls@L291",
+    "kind": "symbol",
+    "type": "method",
+    "name": "collectCalls",
+    "qualifiedName": "GoExtractor.collectCalls",
+    "signature": "collectCalls(calls: GoCallSite[], symbols: LocalSymbol[], byKey: Map<string, string>, edges: Edge[]): void",
+    "lang": "typescript",
+    "file": "packages/parsers/src/go/GoExtractor.ts",
+    "span": {
+      "start": 291,
+      "end": 319
+    },
+    "callSites": [
+      {
+        "callee": "get",
+        "line": 300
+      },
+      {
+        "callee": "get",
+        "line": 300
+      },
+      {
+        "callee": "enclosingSymbolId",
+        "line": 302
+      },
+      {
+        "callee": "edgeId",
+        "line": 305
+      },
+      {
+        "callee": "add",
+        "line": 315
+      },
+      {
+        "callee": "push",
+        "line": 316
+      }
+    ]
+  },
+  "source": {
+    "text": "  private collectCalls(\n    calls: GoCallSite[],\n    symbols: LocalSymbol[],\n    byKey: Map<string, string>,\n    edges: Edge[],\n  ): void {\n    const seen = new Set<string>();\n    for (const c of calls) {\n      if (c.tail.length > 0) continue; // dotted — resolver / inference territory\n      const dstId = byKey.get(c.name) ?? byKey.get(c.head);\n      if (!dstId) continue;\n      const caller = enclosingSymbolId(c.line, symbols);\n      if (!caller || caller === dstId) continue; // skip self-recursion\n      const e = {\n        id: edgeId(caller, dstId, 'calls'),\n        src: caller,\n        dst: dstId,\n        rel: 'calls' as const,\n        method: 'static' as const,\n        provenance: 'EXTRACTED' as const,\n        confidence: 1,\n        evidence: { by: this.name, snippet: c.head },\n      };\n      if (!seen.has(e.id)) {\n        seen.add(e.id);\n        edges.push(e);\n      }\n    }\n  }",
+    "truncated": false,
+    "totalLines": 29,
+    "startLine": 291
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/go/GoExtractor.ts#GoExtractor.parse@L99",
+      "confidence": 1,
+      "name": "parse",
+      "qualifiedName": "GoExtractor.parse",
+      "signature": "parse(path: string, fileId: string, text: string, ctx: ExtractCtx): ExtractResult",
+      "type": "method",
+      "file": "packages/parsers/src/go/GoExtractor.ts",
+      "line": 99
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/go/GoExtractor.ts#enclosingSymbolId@L329",
+      "confidence": 1,
+      "name": "enclosingSymbolId",
+      "qualifiedName": "enclosingSymbolId",
+      "signature": "enclosingSymbolId(line: number, symbols: LocalSymbol[]): string | undefined",
+      "type": "function",
+      "file": "packages/parsers/src/go/GoExtractor.ts",
+      "line": 329
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/go/GoExtractor.ts@L284",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/go/GoExtractor.ts#GoExtractor.collectCalls@L291",
+    "procedureName": "GoExtractor.collectCalls",
+    "conditions": [
+      "cond:packages/parsers/src/go/GoExtractor.ts@L298",
+      "cond:packages/parsers/src/go/GoExtractor.ts@L314"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/go/GoExtractor.ts#GoExtractor.collectCalls@L291",
+        "procedureName": "GoExtractor.collectCalls",
+        "guard": "cond:packages/parsers/src/go/GoExtractor.ts@L298",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/GoExtractor.ts@L298",
+            "expr": "calls",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8f69525c4c8beac6f435e7d7a2cada4ba45572afcfc1b2ec9ab26893b49906c2",
+          "target": "stmt:packages/parsers/src/go/GoExtractor.ts@L300",
+          "line": 300,
+          "expr": "const dstId = byKey.get(c.name) ?? byKey.get(c.head);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/GoExtractor.ts#GoExtractor.collectCalls@L291",
+        "procedureName": "GoExtractor.collectCalls",
+        "guard": "cond:packages/parsers/src/go/GoExtractor.ts@L298",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/GoExtractor.ts@L298",
+            "expr": "calls",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bb82b886eff6a2a0c86da3b6f6ef303153f08b92b808082804b41e4cfb486429",
+          "target": "stmt:packages/parsers/src/go/GoExtractor.ts@L302",
+          "line": 302,
+          "expr": "const caller = enclosingSymbolId(c.line, symbols);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/GoExtractor.ts#GoExtractor.collectCalls@L291",
+        "procedureName": "GoExtractor.collectCalls",
+        "guard": "cond:packages/parsers/src/go/GoExtractor.ts@L298",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/GoExtractor.ts@L298",
+            "expr": "calls",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:c7c602f4dfe8a142abeb6ff4fda5be918edeb30d595dfeb1050cfec7afe12904",
+          "target": "sym:packages/parsers/src/go/GoExtractor.ts#enclosingSymbolId@L329",
+          "expr": "enclosingSymbolId",
+          "line": 302
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/GoExtractor.ts#GoExtractor.collectCalls@L291",
+        "procedureName": "GoExtractor.collectCalls",
+        "guard": "cond:packages/parsers/src/go/GoExtractor.ts@L298",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/GoExtractor.ts@L298",
+            "expr": "calls",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:37483b4a20449296dd099661c75a6a23a30ad222806621ca477b6bb57f4c7626",
+          "target": "stmt:packages/parsers/src/go/GoExtractor.ts@L304",
+          "line": 304,
+          "expr": "const e = {\n        id: edgeId(caller, dstId, 'calls'),\n        src: caller,\n        dst: dstId,\n        rel: 'calls' as const,\n        method: 'static' as const,\n        provenance: 'EXTRACTED' as const,\n        confidence: 1,\n        evidence: { by: this.name, snippet: c.head },\n      };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/GoExtractor.ts#GoExtractor.collectCalls@L291",
+        "procedureName": "GoExtractor.collectCalls",
+        "guard": "cond:packages/parsers/src/go/GoExtractor.ts@L314",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/GoExtractor.ts@L298",
+            "expr": "calls"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/GoExtractor.ts@L314",
+            "expr": "!seen.has(e.id)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ace150ea6fefc9b7d3b5707d7d05b26de3cf14a63f8d8de93c1922c844318433",
+          "target": "stmt:packages/parsers/src/go/GoExtractor.ts@L315",
+          "line": 315,
+          "expr": "seen.add(e.id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/GoExtractor.ts#GoExtractor.collectCalls@L291",
+        "procedureName": "GoExtractor.collectCalls",
+        "guard": "cond:packages/parsers/src/go/GoExtractor.ts@L314",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/GoExtractor.ts@L298",
+            "expr": "calls"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/GoExtractor.ts@L314",
+            "expr": "!seen.has(e.id)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d75ff2837aa6caa87e723da6715ba51a9f2144b144119ac3a2355daa19ee989b",
+          "target": "stmt:packages/parsers/src/go/GoExtractor.ts@L316",
+          "line": 316,
+          "expr": "edges.push(e);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 5,
+    "referencedByFiles": [
+      "packages/parsers/src/go/GoExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 5,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 6,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

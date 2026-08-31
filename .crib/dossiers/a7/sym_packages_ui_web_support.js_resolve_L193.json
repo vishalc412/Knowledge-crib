@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/ui/web/support.js#resolve@L193",
-  "schemaVersion": "1.5",
+  "schemaVersion": "1.6",
   "nodeHash": "blake3:b899f567fee85e562a1fe663648c5e1cf45425741f653d529bc10e1f1e4375fb",
-  "builtAt": "2026-07-16T16:35:16.098Z",
+  "builtAt": "2026-08-31T17:37:23.222Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/ui/web/support.js#resolve@L193",
@@ -85,94 +85,14 @@
   },
   "callers": [
     {
-      "id": "sym:scripts/budget-check.mjs#buildFixture@L341",
+      "id": "sym:scripts/budget-check.mjs#buildFixture@L366",
       "confidence": 1,
       "name": "buildFixture",
       "qualifiedName": "buildFixture",
       "signature": "buildFixture()",
       "type": "function",
       "file": "scripts/budget-check.mjs",
-      "line": 341
-    },
-    {
-      "id": "sym:media/teaser/render.mjs#capture@L25",
-      "confidence": 1,
-      "name": "capture",
-      "qualifiedName": "capture",
-      "signature": "capture(scene)",
-      "type": "function",
-      "file": "media/teaser/render.mjs",
-      "line": 25
-    },
-    {
-      "id": "sym:media/teaser/render.mjs#capture.check@L43",
-      "confidence": 1,
-      "name": "check",
-      "qualifiedName": "capture.check",
-      "signature": "check(…)",
-      "type": "function",
-      "file": "media/teaser/render.mjs",
-      "line": 43
-    },
-    {
-      "id": "sym:packages/cli/src/cli.ts#cmdDoctor@L1255",
-      "confidence": 1,
-      "name": "cmdDoctor",
-      "qualifiedName": "cmdDoctor",
-      "signature": "cmdDoctor(args: string[], ctx?: CmdCtx): number",
-      "type": "function",
-      "file": "packages/cli/src/cli.ts",
-      "line": 1255
-    },
-    {
-      "id": "sym:packages/cli/src/cli.ts#cmdIndex@L500",
-      "confidence": 1,
-      "name": "cmdIndex",
-      "qualifiedName": "cmdIndex",
-      "signature": "cmdIndex(args: string[], ctx?: CmdCtx): Promise<number>",
-      "type": "function",
-      "file": "packages/cli/src/cli.ts",
-      "line": 500
-    },
-    {
-      "id": "sym:packages/cli/src/cli.ts#cmdInit@L1200",
-      "confidence": 1,
-      "name": "cmdInit",
-      "qualifiedName": "cmdInit",
-      "signature": "cmdInit(args: string[], ctx?: CmdCtx): Promise<number>",
-      "type": "function",
-      "file": "packages/cli/src/cli.ts",
-      "line": 1200
-    },
-    {
-      "id": "sym:packages/cli/src/cli.ts#cmdInstallHooks@L1405",
-      "confidence": 1,
-      "name": "cmdInstallHooks",
-      "qualifiedName": "cmdInstallHooks",
-      "signature": "cmdInstallHooks(args: string[], ctx?: CmdCtx): number",
-      "type": "function",
-      "file": "packages/cli/src/cli.ts",
-      "line": 1405
-    },
-    {
-      "id": "sym:packages/cli/src/cli.ts#cmdMcp@L1421",
-      "confidence": 1,
-      "name": "cmdMcp",
-      "qualifiedName": "cmdMcp",
-      "signature": "cmdMcp(args: string[], ctx?: CmdCtx): number",
-      "type": "function",
-      "file": "packages/cli/src/cli.ts",
-      "line": 1421
-    },
-    {
-      "id": "sym:packages/cli/src/cli.ts#cmdReindex@L1160",
-      "confidence": 1,
-      "name": "cmdReindex",
-      "qualifiedName": "cmdReindex",
-      "signature": "cmdReindex(args: string[], ctx?: CmdCtx): Promise<number>",
-      "type": "function",
-      "file": "packages/cli/src/cli.ts",
-      "line": 1160
+      "line": 366
     },
     {
       "id": "sym:packages/ui/web/support.js#compileAttr@L355",
@@ -215,34 +135,44 @@
       "line": 1329
     },
     {
-      "id": "sym:packages/cli/src/hooks.ts#gitDir@L41",
+      "id": "sym:packages/pipeline/src/input/archive.ts#extractArchive@L150",
+      "confidence": 1,
+      "name": "extractArchive",
+      "qualifiedName": "extractArchive",
+      "signature": "extractArchive(archivePath: string, destRoot: string, limits: ArchiveLimits = ARCHIVE_LIMITS): Promise<ExtractionResult>",
+      "type": "function",
+      "file": "packages/pipeline/src/input/archive.ts",
+      "line": 150
+    },
+    {
+      "id": "sym:packages/cli/src/hooks.ts#gitDir@L74",
       "confidence": 1,
       "name": "gitDir",
       "qualifiedName": "gitDir",
       "signature": "gitDir(root: string): string",
       "type": "function",
       "file": "packages/cli/src/hooks.ts",
-      "line": 41
+      "line": 74
     },
     {
-      "id": "sym:packages/cli/src/mcp-install.ts#installMcp@L171",
+      "id": "sym:packages/cli/src/mcp-install.ts#installMcp@L194",
       "confidence": 1,
       "name": "installMcp",
       "qualifiedName": "installMcp",
       "signature": "installMcp(repoRoot: string, opts: McpInstallOptions): McpInstallResult[]",
       "type": "function",
       "file": "packages/cli/src/mcp-install.ts",
-      "line": 171
+      "line": 194
     },
     {
-      "id": "sym:packages/cli/src/mcp-install.ts#listMcp@L256",
+      "id": "sym:packages/cli/src/mcp-install.ts#listMcp@L284",
       "confidence": 1,
       "name": "listMcp",
       "qualifiedName": "listMcp",
       "signature": "listMcp(repoRoot: string, opts: { ide?: McpIde | 'all'; scope?: McpScope } = {}): McpListEntry[]",
       "type": "function",
       "file": "packages/cli/src/mcp-install.ts",
-      "line": 256
+      "line": 284
     },
     {
       "id": "sym:scripts/eval/harness.mjs#loadCore@L66",
@@ -265,24 +195,64 @@
       "line": 1516
     },
     {
-      "id": "sym:packages/parsers/src/fuzz/extractor-fuzz.ts#raceBudget@L114",
+      "id": "sym:packages/memory/src/paths.ts#memoryHome@L29",
+      "confidence": 1,
+      "name": "memoryHome",
+      "qualifiedName": "memoryHome",
+      "signature": "memoryHome(env: NodeJS.ProcessEnv = process.env): string",
+      "type": "function",
+      "file": "packages/memory/src/paths.ts",
+      "line": 29
+    },
+    {
+      "id": "sym:packages/pipeline/src/input/archive.ts#openEntryStream@L122",
+      "confidence": 1,
+      "name": "openEntryStream",
+      "qualifiedName": "openEntryStream",
+      "signature": "openEntryStream(zip: yauzl.ZipFile, entry: yauzl.Entry): Promise<import('node:stream').Readable>",
+      "type": "function",
+      "file": "packages/pipeline/src/input/archive.ts",
+      "line": 122
+    },
+    {
+      "id": "sym:packages/pipeline/src/input/archive.ts#openZip@L108",
+      "confidence": 1,
+      "name": "openZip",
+      "qualifiedName": "openZip",
+      "signature": "openZip(archivePath: string): Promise<yauzl.ZipFile>",
+      "type": "function",
+      "file": "packages/pipeline/src/input/archive.ts",
+      "line": 108
+    },
+    {
+      "id": "sym:packages/pipeline/src/input/prepared-source.ts#prepareSourceInput@L103",
+      "confidence": 1,
+      "name": "prepareSourceInput",
+      "qualifiedName": "prepareSourceInput",
+      "signature": "prepareSourceInput(input: string, opts: PrepareSourceOptions = {}): Promise<PreparedSourceInput>",
+      "type": "function",
+      "file": "packages/pipeline/src/input/prepared-source.ts",
+      "line": 103
+    },
+    {
+      "id": "sym:packages/parsers/src/fuzz/extractor-fuzz.ts#raceBudget@L115",
       "confidence": 1,
       "name": "raceBudget",
       "qualifiedName": "raceBudget",
       "signature": "raceBudget(w: Worker, idx: number, text: string, budgetMs: number): Promise<SlotResult>",
       "type": "function",
       "file": "packages/parsers/src/fuzz/extractor-fuzz.ts",
-      "line": 114
+      "line": 115
     },
     {
-      "id": "sym:packages/parsers/src/fuzz/extractor-fuzz.ts#raceBudget.onMsg@L123",
+      "id": "sym:packages/parsers/src/fuzz/extractor-fuzz.ts#raceBudget.onMsg@L124",
       "confidence": 1,
       "name": "onMsg",
       "qualifiedName": "raceBudget.onMsg",
       "signature": "onMsg(…)",
       "type": "function",
       "file": "packages/parsers/src/fuzz/extractor-fuzz.ts",
-      "line": 123
+      "line": 124
     },
     {
       "id": "sym:scripts/crib-bench.mjs#rawFileReadTokens@L62",
@@ -305,24 +275,44 @@
       "line": 56
     },
     {
-      "id": "sym:packages/cli/src/registry.ts#registryDir@L49",
+      "id": "sym:packages/cli/src/registry.ts#registryDir@L60",
       "confidence": 1,
       "name": "registryDir",
       "qualifiedName": "registryDir",
       "signature": "registryDir(env: NodeJS.ProcessEnv = process.env): string",
       "type": "function",
       "file": "packages/cli/src/registry.ts",
-      "line": 49
+      "line": 60
     },
     {
-      "id": "sym:packages/cli/src/mcp-install.ts#removeMcp@L281",
+      "id": "sym:packages/memory/src/paths.ts#registryDir@L60",
+      "confidence": 1,
+      "name": "registryDir",
+      "qualifiedName": "registryDir",
+      "signature": "registryDir(env: NodeJS.ProcessEnv): string",
+      "type": "function",
+      "file": "packages/memory/src/paths.ts",
+      "line": 60
+    },
+    {
+      "id": "sym:packages/memory/src/paths.ts#registryRepoIdForCribDir@L78",
+      "confidence": 1,
+      "name": "registryRepoIdForCribDir",
+      "qualifiedName": "registryRepoIdForCribDir",
+      "signature": "registryRepoIdForCribDir(cribDir: string, env: NodeJS.ProcessEnv): string | undefined",
+      "type": "function",
+      "file": "packages/memory/src/paths.ts",
+      "line": 78
+    },
+    {
+      "id": "sym:packages/cli/src/mcp-install.ts#removeMcp@L309",
       "confidence": 1,
       "name": "removeMcp",
       "qualifiedName": "removeMcp",
       "signature": "removeMcp(repoRoot: string, opts: McpInstallOptions): McpInstallResult[]",
       "type": "function",
       "file": "packages/cli/src/mcp-install.ts",
-      "line": 281
+      "line": 309
     },
     {
       "id": "sym:scripts/eval/harness.mjs#repoRoot@L51",
@@ -345,14 +335,14 @@
       "line": 61
     },
     {
-      "id": "sym:packages/cli/src/runtime.ts#resolveIndexPath@L178",
+      "id": "sym:packages/cli/src/runtime.ts#resolveIndexPath@L410",
       "confidence": 1,
       "name": "resolveIndexPath",
       "qualifiedName": "resolveIndexPath",
       "signature": "resolveIndexPath(rel: string, repoRoot: string, cribDir: string): string",
       "type": "function",
       "file": "packages/cli/src/runtime.ts",
-      "line": 178
+      "line": 410
     },
     {
       "id": "sym:packages/ui/web/support.js#resolvePath@L251",
@@ -365,14 +355,14 @@
       "line": 251
     },
     {
-      "id": "sym:packages/cli/src/runtime.ts#resolveProjectRoot@L53",
+      "id": "sym:packages/cli/src/runtime.ts#resolveProjectRoot@L94",
       "confidence": 1,
       "name": "resolveProjectRoot",
       "qualifiedName": "resolveProjectRoot",
       "signature": "resolveProjectRoot(opts: ResolveOpts): ResolvedRoot",
       "type": "function",
       "file": "packages/cli/src/runtime.ts",
-      "line": 53
+      "line": 94
     },
     {
       "id": "sym:packages/cli/src/viz-server.ts#resolveVizAsset@L100",
@@ -385,74 +375,104 @@
       "line": 100
     },
     {
-      "id": "sym:packages/pipeline/src/parse.ts#runParse@L41",
+      "id": "sym:scripts/cost-gate.mjs#rpc@L38",
+      "confidence": 1,
+      "name": "rpc",
+      "qualifiedName": "rpc",
+      "signature": "rpc(proc, pending, method, params, id)",
+      "type": "function",
+      "file": "scripts/cost-gate.mjs",
+      "line": 38
+    },
+    {
+      "id": "sym:packages/memory/src/gate-runner.ts#runGate@L121",
+      "confidence": 1,
+      "name": "runGate",
+      "qualifiedName": "runGate",
+      "signature": "runGate(input: GateRunInput): Promise<GateRunOutcome>",
+      "type": "function",
+      "file": "packages/memory/src/gate-runner.ts",
+      "line": 121
+    },
+    {
+      "id": "sym:packages/pipeline/src/parse.ts#runParse@L132",
       "confidence": 1,
       "name": "runParse",
       "qualifiedName": "runParse",
-      "signature": "runParse(soul: SoulStore, registry: ExtractorRegistry, root: string, files: FileMeta[], opts: { parallel?: boolean; defaultRegistry?: boolean; concurrency?: number } = {}): Promise<ParseStats>",
+      "signature": "runParse(soul: SoulStore, registry: ExtractorRegistry, root: string, files: FileMeta[], opts: {\n    parallel?: boolean;\n    defaultRegistry?: boolean;\n    concurrency?: number;\n    diagnosticLimit?: number;\n  } = {}): Promise<ParseStats>",
       "type": "function",
       "file": "packages/pipeline/src/parse.ts",
-      "line": 41
+      "line": 132
     },
     {
-      "id": "sym:packages/pipeline/src/parse-concurrent.ts#runParseConcurrent@L36",
+      "id": "sym:packages/pipeline/src/parse-concurrent.ts#runParseConcurrent@L37",
       "confidence": 1,
       "name": "runParseConcurrent",
       "qualifiedName": "runParseConcurrent",
-      "signature": "runParseConcurrent(soul: SoulStore, registry: ExtractorRegistry, root: string, files: FileMeta[], concurrency = DEFAULT_CONCURRENCY): Promise<ParseStats>",
+      "signature": "runParseConcurrent(soul: SoulStore, registry: ExtractorRegistry, root: string, files: FileMeta[], concurrency = DEFAULT_CONCURRENCY, diagnosticLimit = DEFAULT_DIAGNOSTIC_LIMIT): Promise<ParseStats>",
       "type": "function",
       "file": "packages/pipeline/src/parse-concurrent.ts",
-      "line": 36
+      "line": 37
     },
     {
-      "id": "sym:packages/pipeline/src/parse-concurrent.ts#runParseConcurrent.runner@L60",
+      "id": "sym:packages/pipeline/src/parse-concurrent.ts#runParseConcurrent.runner@L64",
       "confidence": 1,
       "name": "runner",
       "qualifiedName": "runParseConcurrent.runner",
       "signature": "runner(…)",
       "type": "function",
       "file": "packages/pipeline/src/parse-concurrent.ts",
-      "line": 60
+      "line": 64
     },
     {
-      "id": "sym:packages/pipeline/src/parse-pool.ts#runParseParallel@L71",
+      "id": "sym:packages/pipeline/src/parse-pool.ts#runParseParallel@L78",
       "confidence": 1,
       "name": "runParseParallel",
       "qualifiedName": "runParseParallel",
-      "signature": "runParseParallel(soul: SoulStore, root: string, files: FileMeta[], size = defaultPoolSize(files.length)): Promise<ParseStats>",
+      "signature": "runParseParallel(soul: SoulStore, root: string, files: FileMeta[], size = defaultPoolSize(files.length), diagnosticLimit = DEFAULT_DIAGNOSTIC_LIMIT): Promise<ParseStats>",
       "type": "function",
       "file": "packages/pipeline/src/parse-pool.ts",
-      "line": 71
+      "line": 78
     },
     {
-      "id": "sym:packages/pipeline/src/parse-pool.ts#runParseParallel.onReady@L100",
+      "id": "sym:packages/pipeline/src/parse-pool.ts#runParseParallel.onReady@L108",
       "confidence": 1,
       "name": "onReady",
       "qualifiedName": "runParseParallel.onReady",
       "signature": "onReady(…)",
       "type": "function",
       "file": "packages/pipeline/src/parse-pool.ts",
-      "line": 100
+      "line": 108
     },
     {
-      "id": "sym:packages/pipeline/src/parse-pool.ts#runParseParallel.workerLoop@L122",
+      "id": "sym:packages/pipeline/src/parse-pool.ts#runParseParallel.workerLoop@L130",
       "confidence": 1,
       "name": "workerLoop",
       "qualifiedName": "runParseParallel.workerLoop",
       "signature": "workerLoop(…)",
       "type": "function",
       "file": "packages/pipeline/src/parse-pool.ts",
-      "line": 122
+      "line": 130
     },
     {
-      "id": "sym:packages/pipeline/src/parse-pool.ts#runParseParallel.workerLoop.onMsg@L126",
+      "id": "sym:packages/pipeline/src/parse-pool.ts#runParseParallel.workerLoop.onMsg@L134",
       "confidence": 1,
       "name": "onMsg",
       "qualifiedName": "runParseParallel.workerLoop.onMsg",
       "signature": "onMsg(…)",
       "type": "function",
       "file": "packages/pipeline/src/parse-pool.ts",
-      "line": 126
+      "line": 134
+    },
+    {
+      "id": "sym:packages/cli/src/enrich-provider.ts#runProviderOnce@L201",
+      "confidence": 1,
+      "name": "runProviderOnce",
+      "qualifiedName": "runProviderOnce",
+      "signature": "runProviderOnce(def: ProviderDef, workItem: EnrichWorkItem, opts: { timeoutMs?: number } = {}): Promise<EnrichSaveItem>",
+      "type": "function",
+      "file": "packages/cli/src/enrich-provider.ts",
+      "line": 201
     },
     {
       "id": "sym:scripts/test-python.mjs#runPythonTests@L31",
@@ -465,14 +485,14 @@
       "line": 31
     },
     {
-      "id": "sym:packages/pipeline/src/resolve/index.ts#runResolve@L71",
+      "id": "sym:packages/pipeline/src/resolve/index.ts#runResolve@L79",
       "confidence": 1,
       "name": "runResolve",
       "qualifiedName": "runResolve",
       "signature": "runResolve(soul: SoulStore, root: string, files: FileMeta[], resolvers?: Resolver[]): ResolveStats",
       "type": "function",
       "file": "packages/pipeline/src/resolve/index.ts",
-      "line": 71
+      "line": 79
     },
     {
       "id": "sym:packages/pipeline/src/multimodal/worker.ts#runWorker@L74",
@@ -495,24 +515,64 @@
       "line": 91
     },
     {
-      "id": "sym:packages/parsers/src/fuzz/extractor-fuzz.ts#spawnInit@L95",
+      "id": "sym:packages/mcp/src/server.ts#serveHttp@L602",
+      "confidence": 1,
+      "name": "serveHttp",
+      "qualifiedName": "serveHttp",
+      "signature": "serveHttp(verbs: Verbs, opts: { port?: number; host?: string; version?: string } = {}): Promise<{ port: number; close: () => Promise<void> }>",
+      "type": "function",
+      "file": "packages/mcp/src/server.ts",
+      "line": 602
+    },
+    {
+      "id": "sym:scripts/check-mule-sample.mjs#sourceRootFor@L88",
+      "confidence": 1,
+      "name": "sourceRootFor",
+      "qualifiedName": "sourceRootFor",
+      "signature": "sourceRootFor(archivePath)",
+      "type": "function",
+      "file": "scripts/check-mule-sample.mjs",
+      "line": 88
+    },
+    {
+      "id": "sym:packages/parsers/src/fuzz/extractor-fuzz.ts#spawnInit@L96",
       "confidence": 1,
       "name": "spawnInit",
       "qualifiedName": "spawnInit",
       "signature": "spawnInit(url: string, extractorName: string): Promise<Worker>",
       "type": "function",
       "file": "packages/parsers/src/fuzz/extractor-fuzz.ts",
-      "line": 95
+      "line": 96
     },
     {
-      "id": "sym:packages/parsers/src/fuzz/extractor-fuzz.ts#spawnInit.onReady@L98",
+      "id": "sym:packages/parsers/src/fuzz/extractor-fuzz.ts#spawnInit.onReady@L99",
       "confidence": 1,
       "name": "onReady",
       "qualifiedName": "spawnInit.onReady",
       "signature": "onReady(…)",
       "type": "function",
       "file": "packages/parsers/src/fuzz/extractor-fuzz.ts",
-      "line": 98
+      "line": 99
+    },
+    {
+      "id": "sym:packages/cli/src/watch.test.ts#waitForDirty@L50",
+      "confidence": 1,
+      "name": "waitForDirty",
+      "qualifiedName": "waitForDirty",
+      "signature": "waitForDirty(path: string, timeoutMs = 4000): { promise: Promise<OverlayRefreshResult>; onRefresh: (r: OverlayRefreshResult) => void }",
+      "type": "function",
+      "file": "packages/cli/src/watch.test.ts",
+      "line": 50
+    },
+    {
+      "id": "sym:packages/cli/src/watch.test.ts#waitForDirty.onRefresh@L64",
+      "confidence": 1,
+      "name": "onRefresh",
+      "qualifiedName": "waitForDirty.onRefresh",
+      "signature": "onRefresh(…)",
+      "type": "function",
+      "file": "packages/cli/src/watch.test.ts",
+      "line": 64
     },
     {
       "id": "sym:packages/ui/web/support.js#walkText@L459",
@@ -525,14 +585,14 @@
       "line": 459
     },
     {
-      "id": "sym:packages/cli/src/runtime.ts#walkUpForCrib@L87",
+      "id": "sym:packages/cli/src/runtime.ts#walkUpForCrib@L214",
       "confidence": 1,
       "name": "walkUpForCrib",
       "qualifiedName": "walkUpForCrib",
       "signature": "walkUpForCrib(start: string): string | undefined",
       "type": "function",
       "file": "packages/cli/src/runtime.ts",
-      "line": 87
+      "line": 214
     }
   ],
   "callees": [
@@ -569,6 +629,36 @@
   ],
   "docs": [
     {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-4-extraction.md#task-7-resolve-mule-references-across-files",
+      "heading": "Task 7: Resolve Mule references across files",
+      "anchor": "task-7-resolve-mule-references-across-files",
+      "snippet": "Task 7: Resolve Mule references across files",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:docs/mulesoft.md#archive-cache",
+      "heading": "Archive cache",
+      "anchor": "archive-cache",
+      "snippet": "Archive cache",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-3-extraction.md#task-6-resolve-legacy-endpoint-strategy-and-flow-references",
+      "heading": "Task 6: Resolve legacy endpoint, strategy, and flow references",
+      "anchor": "task-6-resolve-legacy-endpoint-strategy-and-flow-references",
+      "snippet": "Task 6: Resolve legacy endpoint, strategy, and flow references",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
       "sectionId": "doc:docs/knowledge-crib-architecture.md#4-data-flow-indexing-pipeline",
       "heading": "4. Data flow — indexing pipeline",
       "anchor": "4-data-flow-indexing-pipeline",
@@ -593,6 +683,46 @@
       "heading": "3. Component view (monorepo packages)",
       "anchor": "3-component-view-monorepo-packages",
       "snippet": "3. Component view (monorepo packages)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:README.md#repo-layout",
+      "heading": "Repo layout",
+      "anchor": "repo-layout",
+      "snippet": "Repo layout",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#11-architecture",
+      "heading": "11. Architecture",
+      "anchor": "11-architecture",
+      "snippet": "11. Architecture",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-foundation.md#task-3-prepare-directory-zip-and-jar-inputs-safely",
+      "heading": "Task 3: Prepare directory, ZIP, and JAR inputs safely",
+      "anchor": "task-3-prepare-directory-zip-and-jar-inputs-safely",
+      "snippet": "Task 3: Prepare directory, ZIP, and JAR inputs safely",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/README.md#repo-layout",
+      "heading": "Repo layout",
+      "anchor": "repo-layout",
+      "snippet": "Repo layout",
       "edgeType": "describes",
       "method": "explicit",
       "provenance": "EXTRACTED",
@@ -629,41 +759,11 @@
       "confidence": 0.95
     },
     {
-      "sectionId": "doc:README.md#repo-layout",
-      "heading": "Repo layout",
-      "anchor": "repo-layout",
-      "snippet": "Repo layout",
-      "edgeType": "describes",
-      "method": "explicit",
-      "provenance": "EXTRACTED",
-      "confidence": 0.95
-    },
-    {
-      "sectionId": "doc:docs/README.md#repo-layout",
-      "heading": "Repo layout",
-      "anchor": "repo-layout",
-      "snippet": "Repo layout",
-      "edgeType": "describes",
-      "method": "explicit",
-      "provenance": "EXTRACTED",
-      "confidence": 0.95
-    },
-    {
-      "sectionId": "doc:docs/knowledge-crib-user-guide.md#11-architecture",
-      "heading": "11. Architecture",
-      "anchor": "11-architecture",
-      "snippet": "11. Architecture",
-      "edgeType": "describes",
-      "method": "explicit",
-      "provenance": "EXTRACTED",
-      "confidence": 0.95
-    },
-    {
       "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#what-was-built",
       "heading": "What was built",
       "anchor": "what-was-built",
       "snippet": "What was built",
-      "edgeType": "describes",
+      "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
       "confidence": 0.8
@@ -673,7 +773,7 @@
       "heading": "What the curve says — two different shapes",
       "anchor": "what-the-curve-says-two-different-shapes",
       "snippet": "What the curve says — two different shapes",
-      "edgeType": "describes",
+      "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
       "confidence": 0.8
@@ -683,7 +783,7 @@
       "heading": "Per-module souls — YES, driven by INDEX TIME (not memory)",
       "anchor": "per-module-souls-yes-driven-by-index-time-not-memory",
       "snippet": "Per-module souls — YES, driven by INDEX TIME (not memory)",
-      "edgeType": "describes",
+      "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
       "confidence": 0.8
@@ -693,7 +793,7 @@
       "heading": "Java / Spring Boot track (built + tested, schema 1.3)",
       "anchor": "java-spring-boot-track-built-tested-schema-1-3",
       "snippet": "Java / Spring Boot track (built + tested, schema 1.3)",
-      "edgeType": "describes",
+      "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
       "confidence": 0.8
@@ -703,67 +803,7 @@
       "heading": "5. Milestones (each = one flagged PR + test gate)",
       "anchor": "5-milestones-each-one-flagged-pr-test-gate",
       "snippet": "5. Milestones (each = one flagged PR + test gate)",
-      "edgeType": "describes",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.8
-    },
-    {
-      "sectionId": "doc:docs/llm-integration-deep-dive.md#7-the-complete-code-map-quick-reference",
-      "heading": "7. The Complete Code Map (Quick Reference)",
-      "anchor": "7-the-complete-code-map-quick-reference",
-      "snippet": "7. The Complete Code Map (Quick Reference)",
-      "edgeType": "describes",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.8
-    },
-    {
-      "sectionId": "doc:docs/knowledge-crib-cli.md#root-resolution-req-1",
-      "heading": "Root resolution (REQ-1)",
-      "anchor": "root-resolution-req-1",
-      "snippet": "Root resolution (REQ-1)",
-      "edgeType": "describes",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.8
-    },
-    {
-      "sectionId": "doc:packages/cli/skills/crib-enrich/SKILL.md#tools",
-      "heading": "Tools",
-      "anchor": "tools",
-      "snippet": "Tools",
-      "edgeType": "describes",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.8
-    },
-    {
-      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m14-framework-semantics-layer-schema-1-3",
-      "heading": "M14 — Framework-semantics layer (schema 1.3)",
-      "anchor": "m14-framework-semantics-layer-schema-1-3",
-      "snippet": "M14 — Framework-semantics layer (schema 1.3)",
-      "edgeType": "describes",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.8
-    },
-    {
-      "sectionId": "doc:docs/knowledge-crib-refined-vs-existing-assessment.md#2-3-solution-architect",
-      "heading": "2.3 Solution Architect",
-      "anchor": "2-3-solution-architect",
-      "snippet": "2.3 Solution Architect",
-      "edgeType": "describes",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.8
-    },
-    {
-      "sectionId": "doc:CHANGELOG.md#added",
-      "heading": "Added",
-      "anchor": "added",
-      "snippet": "Added",
-      "edgeType": "describes",
+      "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
       "confidence": 0.8
@@ -773,16 +813,96 @@
       "heading": "Document index (read in order)",
       "anchor": "document-index-read-in-order",
       "snippet": "Document index (read in order)",
-      "edgeType": "describes",
+      "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
       "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#7-the-complete-code-map-quick-reference",
+      "heading": "7. The Complete Code Map (Quick Reference)",
+      "anchor": "7-the-complete-code-map-quick-reference",
+      "snippet": "7. The Complete Code Map (Quick Reference)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-cli.md#root-resolution-req-1",
+      "heading": "Root resolution (REQ-1)",
+      "anchor": "root-resolution-req-1",
+      "snippet": "Root resolution (REQ-1)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:packages/cli/skills/crib-enrich/SKILL.md#tools",
+      "heading": "Tools",
+      "anchor": "tools",
+      "snippet": "Tools",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:CHANGELOG.md#added",
+      "heading": "Added",
+      "anchor": "added",
+      "snippet": "Added",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m14-framework-semantics-layer-schema-1-3",
+      "heading": "M14 — Framework-semantics layer (schema 1.3)",
+      "anchor": "m14-framework-semantics-layer-schema-1-3",
+      "snippet": "M14 — Framework-semantics layer (schema 1.3)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-refined-vs-existing-assessment.md#2-3-solution-architect",
+      "heading": "2.3 Solution Architect",
+      "anchor": "2-3-solution-architect",
+      "snippet": "2.3 Solution Architect",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:README.md#install",
+      "heading": "Install",
+      "anchor": "install",
+      "snippet": "Install",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
     },
     {
       "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#what-was-built-3",
       "heading": "What was built",
       "anchor": "what-was-built-3",
       "snippet": "What was built",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-4-extraction.md#task-5-parse-raml-and-apikit-mappings",
+      "heading": "Task 5: Parse RAML and APIKit mappings",
+      "anchor": "task-5-parse-raml-and-apikit-mappings",
+      "snippet": "Task 5: Parse RAML and APIKit mappings",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
@@ -809,10 +929,10 @@
       "confidence": 0.6
     },
     {
-      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#gaps-missing-asset-detection",
-      "heading": "`gaps` *(missing-asset detection)*",
-      "anchor": "gaps-missing-asset-detection",
-      "snippet": "`gaps` *(missing-asset detection)*",
+      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#status-op-gaps-missing-asset-detection",
+      "heading": "`status({op:'gaps'})` *(missing-asset detection)*",
+      "anchor": "status-op-gaps-missing-asset-detection",
+      "snippet": "`status({op:'gaps'})` *(missing-asset detection)*",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
@@ -843,6 +963,16 @@
       "heading": "4d. Dossier — the persisted reusable deep context (Workstream D/E)",
       "anchor": "4d-dossier-the-persisted-reusable-deep-context-workstream-d-e",
       "snippet": "4d. Dossier — the persisted reusable deep context (Workstream D/E)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/mulesoft.md#index-summary",
+      "heading": "Index summary",
+      "anchor": "index-summary",
+      "snippet": "Index summary",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
@@ -969,10 +1099,10 @@
       "confidence": 0.6
     },
     {
-      "sectionId": "doc:README.md#install",
-      "heading": "Install",
-      "anchor": "install",
-      "snippet": "Install",
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-munit-hardening.md#task-3-emit-and-resolve-munit-migration-evidence",
+      "heading": "Task 3: Emit and resolve MUnit migration evidence",
+      "anchor": "task-3-emit-and-resolve-munit-migration-evidence",
+      "snippet": "Task 3: Emit and resolve MUnit migration evidence",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
@@ -1471,14 +1601,19 @@
     "status": "implemented",
     "executesCount": 21,
     "referencedByFiles": [
-      "media/teaser/render.mjs",
-      "packages/cli/src/cli.ts",
+      "packages/cli/src/enrich-provider.ts",
       "packages/cli/src/hooks.ts",
       "packages/cli/src/mcp-install.ts",
       "packages/cli/src/registry.ts",
       "packages/cli/src/runtime.ts",
       "packages/cli/src/viz-server.ts",
+      "packages/cli/src/watch.test.ts",
+      "packages/mcp/src/server.ts",
+      "packages/memory/src/gate-runner.ts",
+      "packages/memory/src/paths.ts",
       "packages/parsers/src/fuzz/extractor-fuzz.ts",
+      "packages/pipeline/src/input/archive.ts",
+      "packages/pipeline/src/input/prepared-source.ts",
       "packages/pipeline/src/multimodal/worker.ts",
       "packages/pipeline/src/parse-concurrent.ts",
       "packages/pipeline/src/parse-pool.ts",
@@ -1486,6 +1621,8 @@
       "packages/pipeline/src/resolve/index.ts",
       "packages/ui/web/support.js",
       "scripts/budget-check.mjs",
+      "scripts/check-mule-sample.mjs",
+      "scripts/cost-gate.mjs",
       "scripts/crib-bench.mjs",
       "scripts/eval/harness.mjs",
       "scripts/test-python.mjs"

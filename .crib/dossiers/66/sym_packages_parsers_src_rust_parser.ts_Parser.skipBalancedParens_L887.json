@@ -1,0 +1,364 @@
+{
+  "id": "sym:packages/parsers/src/rust/parser.ts#Parser.skipBalancedParens@L887",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:5b7bdd15d5cbc3be330640faebd7f05a35536145e25e2aff79008a8210714383",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/rust/parser.ts#Parser.skipBalancedParens@L887",
+    "kind": "symbol",
+    "type": "method",
+    "name": "skipBalancedParens",
+    "qualifiedName": "Parser.skipBalancedParens",
+    "signature": "skipBalancedParens(): void",
+    "lang": "typescript",
+    "file": "packages/parsers/src/rust/parser.ts",
+    "span": {
+      "start": 887,
+      "end": 901
+    },
+    "callSites": [
+      {
+        "callee": "peek",
+        "line": 891
+      },
+      {
+        "callee": "next",
+        "line": 895
+      },
+      {
+        "callee": "next",
+        "line": 899
+      }
+    ]
+  },
+  "source": {
+    "text": "  private skipBalancedParens(): void {\n    if (!this.isOp('(')) return;\n    let depth = 0;\n    while (!this.atEnd()) {\n      const tk = this.peek();\n      if (tk.type === 'OP' && tk.value === '(') depth++;\n      else if (tk.type === 'OP' && tk.value === ')') {\n        depth--;\n        this.next();\n        if (depth === 0) return;\n        continue;\n      }\n      this.next();\n    }\n  }",
+    "truncated": false,
+    "totalLines": 15,
+    "startLine": 887
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/rust/parser.ts#Parser.consumeVisibility@L345",
+      "confidence": 1,
+      "name": "consumeVisibility",
+      "qualifiedName": "Parser.consumeVisibility",
+      "signature": "consumeVisibility(): string",
+      "type": "method",
+      "file": "packages/parsers/src/rust/parser.ts",
+      "line": 345
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/parser.ts#Parser.parseMacroRules@L604",
+      "confidence": 1,
+      "name": "parseMacroRules",
+      "qualifiedName": "Parser.parseMacroRules",
+      "signature": "parseMacroRules(startLine: number, attributes: string[], modifiers: string[]): RustDef | null",
+      "type": "method",
+      "file": "packages/parsers/src/rust/parser.ts",
+      "line": 604
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/parser.ts#Parser.parseStruct@L396",
+      "confidence": 1,
+      "name": "parseStruct",
+      "qualifiedName": "Parser.parseStruct",
+      "signature": "parseStruct(startLine: number, attributes: string[], modifiers: string[], kind: 'struct' | 'enum'): RustDef | null",
+      "type": "method",
+      "file": "packages/parsers/src/rust/parser.ts",
+      "line": 396
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/rust/parser.ts#Parser.atEnd@L1489",
+      "confidence": 1,
+      "name": "atEnd",
+      "qualifiedName": "Parser.atEnd",
+      "signature": "atEnd(): boolean",
+      "type": "method",
+      "file": "packages/parsers/src/rust/parser.ts",
+      "line": 1489
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/parser.ts#Parser.isOp@L1465",
+      "confidence": 1,
+      "name": "isOp",
+      "qualifiedName": "Parser.isOp",
+      "signature": "isOp(v: string): boolean",
+      "type": "method",
+      "file": "packages/parsers/src/rust/parser.ts",
+      "line": 1465
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/parser.ts#Parser.next@L1478",
+      "confidence": 1,
+      "name": "next",
+      "qualifiedName": "Parser.next",
+      "signature": "next(): Token",
+      "type": "method",
+      "file": "packages/parsers/src/rust/parser.ts",
+      "line": 1478
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/parser.ts#Parser.peek@L1483",
+      "confidence": 1,
+      "name": "peek",
+      "qualifiedName": "Parser.peek",
+      "signature": "peek(): Token",
+      "type": "method",
+      "file": "packages/parsers/src/rust/parser.ts",
+      "line": 1483
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/rust/parser.ts@L886",
+      "snippet": "/** From a `(` skip to its matching `)`. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/rust/parser.ts#Parser.skipBalancedParens@L887",
+    "procedureName": "Parser.skipBalancedParens",
+    "conditions": [
+      "cond:packages/parsers/src/rust/parser.ts@L888",
+      "cond:packages/parsers/src/rust/parser.ts@L890",
+      "cond:packages/parsers/src/rust/parser.ts@L892",
+      "cond:packages/parsers/src/rust/parser.ts@L893",
+      "cond:packages/parsers/src/rust/parser.ts@L896"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/rust/parser.ts#Parser.skipBalancedParens@L887",
+        "procedureName": "Parser.skipBalancedParens",
+        "guard": "cond:packages/parsers/src/rust/parser.ts@L888",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L888",
+            "expr": "!this.isOp('(')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5b376fd78d1fe728613ed57cd09fa271abea6ee3063809102c32950f369b5037",
+          "target": "stmt:packages/parsers/src/rust/parser.ts@L888",
+          "line": 888,
+          "expr": "return;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/parser.ts#Parser.skipBalancedParens@L887",
+        "procedureName": "Parser.skipBalancedParens",
+        "guard": "cond:packages/parsers/src/rust/parser.ts@L890",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L890",
+            "expr": "!this.atEnd()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:178ce569ee1f96d506aa2c703f3e6764719c53c6f34d14791e6fa25beec2b863",
+          "target": "stmt:packages/parsers/src/rust/parser.ts@L891",
+          "line": 891,
+          "expr": "const tk = this.peek();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/parser.ts#Parser.skipBalancedParens@L887",
+        "procedureName": "Parser.skipBalancedParens",
+        "guard": "cond:packages/parsers/src/rust/parser.ts@L890",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L890",
+            "expr": "!this.atEnd()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:c17b9e256efda1f51fa06d4c62ac45692377d7c6ad25409c50b5810ac0d28fed",
+          "target": "sym:packages/parsers/src/rust/parser.ts#Parser.peek@L1483",
+          "expr": "peek",
+          "line": 891
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/parser.ts#Parser.skipBalancedParens@L887",
+        "procedureName": "Parser.skipBalancedParens",
+        "guard": "cond:packages/parsers/src/rust/parser.ts@L893",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L890",
+            "expr": "!this.atEnd()"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L892",
+            "expr": "tk.type === 'OP' && tk.value === '('"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L893",
+            "expr": "tk.type === 'OP' && tk.value === ')'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5c40bc38236dfaf267d4a751e25119211e6e8d28e5af801bb3a5bb9a0bb6ee29",
+          "target": "stmt:packages/parsers/src/rust/parser.ts@L895",
+          "line": 895,
+          "expr": "this.next();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/parser.ts#Parser.skipBalancedParens@L887",
+        "procedureName": "Parser.skipBalancedParens",
+        "guard": "cond:packages/parsers/src/rust/parser.ts@L890",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L890",
+            "expr": "!this.atEnd()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:7ee241a5edbd3458555ff50cfe653a53562349141fc479f848ff840e6bad7cef",
+          "target": "sym:packages/parsers/src/rust/parser.ts#Parser.next@L1478",
+          "expr": "next",
+          "line": 895
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/parser.ts#Parser.skipBalancedParens@L887",
+        "procedureName": "Parser.skipBalancedParens",
+        "guard": "cond:packages/parsers/src/rust/parser.ts@L896",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L890",
+            "expr": "!this.atEnd()"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L892",
+            "expr": "tk.type === 'OP' && tk.value === '('"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L893",
+            "expr": "tk.type === 'OP' && tk.value === ')'"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L896",
+            "expr": "depth === 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b016ee39f67556f853747598b7ac9be7756125039d362eb2de21b9dbcf9ab2de",
+          "target": "stmt:packages/parsers/src/rust/parser.ts@L896",
+          "line": 896,
+          "expr": "return;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/parser.ts#Parser.skipBalancedParens@L887",
+        "procedureName": "Parser.skipBalancedParens",
+        "guard": "cond:packages/parsers/src/rust/parser.ts@L890",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L890",
+            "expr": "!this.atEnd()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d16ddb7cd2cf957d862648e0299127aa3f6137fb0f8d89540f8b8fa1e9d97afa",
+          "target": "stmt:packages/parsers/src/rust/parser.ts@L899",
+          "line": 899,
+          "expr": "this.next();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/parser.ts#Parser.skipBalancedParens@L887",
+        "procedureName": "Parser.skipBalancedParens",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:41ed1e0694c2cbf62be22d37b41f867cb0c39372fdcefd565f3bac383ad5e24d",
+          "target": "sym:packages/parsers/src/rust/parser.ts#Parser.isOp@L1465",
+          "expr": "isOp"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/parser.ts#Parser.skipBalancedParens@L887",
+        "procedureName": "Parser.skipBalancedParens",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:0ce887258e6993a58e94388bc900251ff3846b01b83b77df3b653be46d889e92",
+          "target": "sym:packages/parsers/src/rust/parser.ts#Parser.atEnd@L1489",
+          "expr": "atEnd"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 5,
+    "referencedByFiles": [
+      "packages/parsers/src/rust/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 5,
+    "assignments": 0,
+    "conditions": 4,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 4,
+      "recorded": 3,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

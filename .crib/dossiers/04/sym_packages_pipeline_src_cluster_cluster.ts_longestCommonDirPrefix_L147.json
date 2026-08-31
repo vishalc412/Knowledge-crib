@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/pipeline/src/cluster/cluster.ts#longestCommonDirPrefix@L147",
-  "schemaVersion": "1.5",
+  "schemaVersion": "1.6",
   "nodeHash": "blake3:1787868c08c74fc96e0012a0fa42301b216c72eaf9a731127f57f61b8d943130",
-  "builtAt": "2026-07-16T16:35:16.098Z",
+  "builtAt": "2026-08-31T17:37:23.222Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/pipeline/src/cluster/cluster.ts#longestCommonDirPrefix@L147",
@@ -68,14 +68,24 @@
   ],
   "callees": [
     {
-      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "id": "sym:packages/pipeline/src/mule/classify.ts#dirname@L163",
+      "confidence": 1,
+      "name": "dirname",
+      "qualifiedName": "dirname",
+      "signature": "dirname(path: string): string",
+      "type": "function",
+      "file": "packages/pipeline/src/mule/classify.ts",
+      "line": 163
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
       "confidence": 1,
       "name": "push",
       "qualifiedName": "push",
       "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
       "type": "function",
       "file": "packages/pipeline/src/linker/inverted-index.ts",
-      "line": 39
+      "line": 70
     }
   ],
   "docs": [
@@ -97,6 +107,20 @@
       "cond:packages/pipeline/src/cluster/cluster.ts@L155"
     ],
     "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/cluster/cluster.ts#longestCommonDirPrefix@L147",
+        "procedureName": "longestCommonDirPrefix",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:d91b6d2fbcc4ab52e97e1d0fe0b26d8bdca04dbce90fe668210c4e913531b13b",
+          "target": "sym:packages/pipeline/src/mule/classify.ts#dirname@L163",
+          "expr": "dirname",
+          "line": 148
+        }
+      },
       {
         "procedure": "sym:packages/pipeline/src/cluster/cluster.ts#longestCommonDirPrefix@L147",
         "procedureName": "longestCommonDirPrefix",
@@ -155,8 +179,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:3d31d9f3816e55be64920ffcadbb3b34264ec34fa4dc30d08de1ba83effdbfd9",
-          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "edgeId": "e:33b97e65c7b4e451a8a372de999aea1d06adf48d36ee3f56da36aa5071317c96",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
           "expr": "push",
           "line": 155
         }
@@ -221,14 +245,14 @@
     "cursors": 0,
     "caseBranches": 0,
     "calls": {
-      "resolved": 1,
+      "resolved": 2,
       "recorded": 7,
-      "unresolved": 6
+      "unresolved": 5
     },
     "recursive": false,
     "exprTruncated": 0,
     "caveats": [
-      "6 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+      "5 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
     ]
   }
 }

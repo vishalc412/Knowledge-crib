@@ -1,0 +1,274 @@
+{
+  "id": "sym:packages/core/src/dossier/framework.ts#collectRenders@L663",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:235435c67a52a4add07055052a58f09fa37ac17e0d6b8b542e0dc0f7df94a3da",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/dossier/framework.ts#collectRenders@L663",
+    "kind": "symbol",
+    "type": "function",
+    "name": "collectRenders",
+    "qualifiedName": "collectRenders",
+    "signature": "collectRenders(ownerId: string, outgoing: Map<string, Edge[]>, keep: (e: Edge) => boolean, soul: SoulStore, brief: (id: string, c: number) => AdjacentBrief, seen: Set<string>, out: DossierRenders[]): void",
+    "lang": "typescript",
+    "file": "packages/core/src/dossier/framework.ts",
+    "span": {
+      "start": 663,
+      "end": 684
+    },
+    "callSites": [
+      {
+        "callee": "add",
+        "line": 675
+      },
+      {
+        "callee": "getNode",
+        "line": 676
+      },
+      {
+        "callee": "push",
+        "line": 677
+      },
+      {
+        "callee": "brief",
+        "line": 680
+      }
+    ]
+  },
+  "source": {
+    "text": "function collectRenders(\n  ownerId: string,\n  outgoing: Map<string, Edge[]>,\n  keep: (e: Edge) => boolean,\n  soul: SoulStore,\n  brief: (id: string, c: number) => AdjacentBrief,\n  seen: Set<string>,\n  out: DossierRenders[],\n): void {\n  for (const e of outgoing.get(ownerId) ?? []) {\n    if (e.rel !== 'renders' || !keep(e)) continue;\n    if (seen.has(e.dst)) continue;\n    seen.add(e.dst);\n    const cn = soul.getNode(e.dst);\n    out.push({\n      id: e.dst,\n      confidence: e.confidence,\n      brief: brief(e.dst, e.confidence),\n      ...(cn?.framework ? { framework: cn.framework } : {}),\n    });\n  }\n}",
+    "truncated": false,
+    "totalLines": 22,
+    "startLine": 663
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+      "confidence": 1,
+      "name": "frameworkSemantics",
+      "qualifiedName": "frameworkSemantics",
+      "signature": "frameworkSemantics(soul: SoulStore, nodeId: string, opts: FrameworkSemanticsOpts = {}): DossierFrameworkSemantics | undefined",
+      "type": "function",
+      "file": "packages/core/src/dossier/framework.ts",
+      "line": 203
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/fixtures/python/rules.py#add@L16",
+      "confidence": 1,
+      "name": "add",
+      "qualifiedName": "add",
+      "signature": "add(a, b)",
+      "type": "function",
+      "file": "packages/parsers/fixtures/python/rules.py",
+      "line": 16
+    },
+    {
+      "id": "sym:packages/core/src/dossier/builder.ts#brief@L339",
+      "confidence": 1,
+      "name": "brief",
+      "qualifiedName": "brief",
+      "signature": "brief(soul: SoulStore, id: string, confidence: number): AdjacentBrief",
+      "type": "function",
+      "file": "packages/core/src/dossier/builder.ts",
+      "line": 339
+    },
+    {
+      "id": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics.brief@L241",
+      "confidence": 1,
+      "name": "brief",
+      "qualifiedName": "frameworkSemantics.brief",
+      "signature": "brief(…)",
+      "type": "function",
+      "file": "packages/core/src/dossier/framework.ts",
+      "line": 241
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 70
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/core/src/dossier/framework.ts@L662",
+      "snippet": "/** Collect renders edges from `ownerId` into `renders` (dedup by dst id). */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/dossier/framework.ts#collectRenders@L663",
+    "procedureName": "collectRenders",
+    "conditions": [
+      "cond:packages/core/src/dossier/framework.ts@L672"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#collectRenders@L663",
+        "procedureName": "collectRenders",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:4eed4a0c729d32086b40733dd8e74ebeb18c4e9ac33216ea7368e731671cf514",
+          "target": "sym:packages/parsers/fixtures/python/rules.py#add@L16",
+          "expr": "add",
+          "line": 675
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#collectRenders@L663",
+        "procedureName": "collectRenders",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L672",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L672",
+            "expr": "outgoing.get(ownerId) ?? []",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d36e78cfbbf05d9193ba5991870402bba99c8ce888e027215b8f99297ccbda47",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L675",
+          "line": 675,
+          "expr": "seen.add(e.dst);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#collectRenders@L663",
+        "procedureName": "collectRenders",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L672",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L672",
+            "expr": "outgoing.get(ownerId) ?? []",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:251b949256041d595fbb36c82c108ef1c7cbb10e275807d0c123f61c53050b2e",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L676",
+          "line": 676,
+          "expr": "const cn = soul.getNode(e.dst);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#collectRenders@L663",
+        "procedureName": "collectRenders",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L672",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L672",
+            "expr": "outgoing.get(ownerId) ?? []",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:208af785bf79920e2a3a21bb986a3ac50d4cbcc6ca7ee066951a89436f6ac745",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L677",
+          "line": 677,
+          "expr": "out.push({\n      id: e.dst,\n      confidence: e.confidence,\n      brief: brief(e.dst, e.confidence),\n      ...(cn?.framework ? { framework: cn.framework } : {}),\n    });"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#collectRenders@L663",
+        "procedureName": "collectRenders",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:4ec4c18a8b410ecbf6794b929fd4e7af18d0c4ac846c381450d55ef46c1a805f",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
+          "expr": "push",
+          "line": 677
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#collectRenders@L663",
+        "procedureName": "collectRenders",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L672",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L672",
+            "expr": "outgoing.get(ownerId) ?? []",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:a3162b311e71cc8000034b777911c5d25599ffbdc3845cf4d8068d284c8707e5",
+          "target": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics.brief@L241",
+          "expr": "brief",
+          "line": 680
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#collectRenders@L663",
+        "procedureName": "collectRenders",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:f38d4e7f60ec485715d03e53d7157a68d274aa2b1924a4944d7652be00d9a256",
+          "target": "sym:packages/core/src/dossier/builder.ts#brief@L339",
+          "expr": "brief",
+          "line": 680
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/core/src/dossier/framework.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 4,
+      "recorded": 4,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

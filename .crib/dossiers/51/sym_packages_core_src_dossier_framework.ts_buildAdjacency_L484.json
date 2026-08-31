@@ -1,0 +1,241 @@
+{
+  "id": "sym:packages/core/src/dossier/framework.ts#buildAdjacency@L484",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:4c5ac852629ad4a37fc97dcca6a570954a3e36a6ab4b84e27fd14822ecc85ee1",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/dossier/framework.ts#buildAdjacency@L484",
+    "kind": "symbol",
+    "type": "function",
+    "name": "buildAdjacency",
+    "qualifiedName": "buildAdjacency",
+    "signature": "buildAdjacency(soul: SoulStore, dir: 'out' | 'in'): Map<string, Edge[]>",
+    "lang": "typescript",
+    "file": "packages/core/src/dossier/framework.ts",
+    "span": {
+      "start": 484,
+      "end": 494
+    },
+    "callSites": [
+      {
+        "callee": "get",
+        "line": 489
+      },
+      {
+        "callee": "push",
+        "line": 490
+      },
+      {
+        "callee": "set",
+        "line": 491
+      }
+    ]
+  },
+  "source": {
+    "text": "function buildAdjacency(soul: SoulStore, dir: 'out' | 'in'): Map<string, Edge[]> {\n  const m = new Map<string, Edge[]>();\n  for (const e of soul.iterateEdges()) {\n    if (!FRAMEWORK_RELS.has(e.rel)) continue;\n    const key = dir === 'out' ? e.src : e.dst;\n    const arr = m.get(key);\n    if (arr) arr.push(e);\n    else m.set(key, [e]);\n  }\n  return m;\n}",
+    "truncated": false,
+    "totalLines": 11,
+    "startLine": 484
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/dossier/builder.ts#buildDossier@L148",
+      "confidence": 1,
+      "name": "buildDossier",
+      "qualifiedName": "buildDossier",
+      "signature": "buildDossier(soul: SoulStore, repoRoot: string, nodeId: string, now: string, opts: DossierOpts = {}): Dossier | undefined",
+      "type": "function",
+      "file": "packages/core/src/dossier/builder.ts",
+      "line": 148
+    },
+    {
+      "id": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+      "confidence": 1,
+      "name": "frameworkSemantics",
+      "qualifiedName": "frameworkSemantics",
+      "signature": "frameworkSemantics(soul: SoulStore, nodeId: string, opts: FrameworkSemanticsOpts = {}): DossierFrameworkSemantics | undefined",
+      "type": "function",
+      "file": "packages/core/src/dossier/framework.ts",
+      "line": 203
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+      "confidence": 1,
+      "name": "get",
+      "qualifiedName": "createRegistry.get",
+      "signature": "get(name)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 1300
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 70
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/core/src/dossier/framework.ts#buildAdjacency@L484",
+    "procedureName": "buildAdjacency",
+    "conditions": [
+      "cond:packages/core/src/dossier/framework.ts@L486",
+      "cond:packages/core/src/dossier/framework.ts@L490"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#buildAdjacency@L484",
+        "procedureName": "buildAdjacency",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L486",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L486",
+            "expr": "soul.iterateEdges()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a23fe7556f900668962d9ed880eb1259b056fc2891a58f7ae3ec93d487ffdb5a",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L489",
+          "line": 489,
+          "expr": "const arr = m.get(key);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#buildAdjacency@L484",
+        "procedureName": "buildAdjacency",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:d11f1e2ba8a485c215287015c8ed35acdb8b12a5100f969af1ea93ad3e1c78d9",
+          "target": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+          "expr": "get",
+          "line": 489
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#buildAdjacency@L484",
+        "procedureName": "buildAdjacency",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:2a2e3e644a2accbd70484821bf52ea83dcc6c82aa49947ac8aaf88b022316bcb",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
+          "expr": "push",
+          "line": 490
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#buildAdjacency@L484",
+        "procedureName": "buildAdjacency",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L490",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L486",
+            "expr": "soul.iterateEdges()"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L490",
+            "expr": "arr",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:571014f17363109a416d013f1dd3ec6525c38b35afc9334f6e112ab7d76fb627",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L490",
+          "line": 490,
+          "expr": "arr.push(e);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#buildAdjacency@L484",
+        "procedureName": "buildAdjacency",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L490",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L486",
+            "expr": "soul.iterateEdges()"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L490",
+            "expr": "arr",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7ff20a0feaf1c79ffb46e0d09ba6aa83f2fd5817433db9fb7a56f506230dd175",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L491",
+          "line": 491,
+          "expr": "m.set(key, [e]);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#buildAdjacency@L484",
+        "procedureName": "buildAdjacency",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:140561fa425252670f3b9f1dd893be7df3ee033dcdbeea0400722873812d3a20",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L493",
+          "line": 493,
+          "expr": "return m;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": [
+      "packages/core/src/dossier/builder.ts",
+      "packages/core/src/dossier/framework.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 3,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

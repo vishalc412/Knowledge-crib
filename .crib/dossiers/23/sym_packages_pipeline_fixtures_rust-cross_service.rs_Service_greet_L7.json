@@ -1,0 +1,84 @@
+{
+  "id": "sym:packages/pipeline/fixtures/rust-cross/service.rs#Service::greet@L7",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:1e9c83c01daa930fd4b0eeb9ff4c4135491973beaac31c0a935116395635abdd",
+  "builtAt": "2026-08-25T20:55:11.863Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/fixtures/rust-cross/service.rs#Service::greet@L7",
+    "kind": "symbol",
+    "type": "method",
+    "name": "greet",
+    "qualifiedName": "Service::greet",
+    "signature": "fn greet(user)",
+    "lang": "rust",
+    "file": "packages/pipeline/fixtures/rust-cross/service.rs",
+    "span": {
+      "start": 7,
+      "end": 9
+    },
+    "callSites": [
+      {
+        "callee": "format",
+        "line": 8
+      }
+    ],
+    "params": [
+      "user"
+    ]
+  },
+  "source": {
+    "text": "    fn greet(&self, user: &str) -> String {\n        format!(\"hi {}\", user)\n    }",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 7
+  },
+  "callers": [],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/pipeline/fixtures/rust-cross/service.rs#Service::greet@L7",
+    "procedureName": "Service::greet",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/fixtures/rust-cross/service.rs#Service::greet@L7",
+        "procedureName": "Service::greet",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5959a0699b532c834a334e283005a3de13317083c3d80232f6e0d80028868adf",
+          "target": "stmt:packages/pipeline/fixtures/rust-cross/service.rs@L8",
+          "line": 8,
+          "expr": "format!(\"hi {}\", user)"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

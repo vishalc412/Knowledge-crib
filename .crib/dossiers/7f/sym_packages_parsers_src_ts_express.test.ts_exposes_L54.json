@@ -1,0 +1,405 @@
+{
+  "id": "sym:packages/parsers/src/ts/express.test.ts#exposes@L54",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:289776bce40b3990395f8a546d4e62564ad948418966757483988152fc8150a5",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/ts/express.test.ts#exposes@L54",
+    "kind": "symbol",
+    "type": "function",
+    "name": "exposes",
+    "qualifiedName": "exposes",
+    "signature": "exposes(…)",
+    "lang": "typescript",
+    "file": "packages/parsers/src/ts/express.test.ts",
+    "span": {
+      "start": 54,
+      "end": 61
+    },
+    "callSites": [
+      {
+        "callee": "label",
+        "line": 55
+      },
+      {
+        "callee": "map",
+        "line": 56
+      },
+      {
+        "callee": "filter",
+        "line": 56
+      },
+      {
+        "callee": "sort",
+        "line": 57
+      },
+      {
+        "callee": "map",
+        "line": 57
+      },
+      {
+        "callee": "filter",
+        "line": 57
+      },
+      {
+        "callee": "lbl",
+        "line": 59
+      },
+      {
+        "callee": "get",
+        "line": 59
+      }
+    ]
+  },
+  "source": {
+    "text": "const exposes = (r: ExtractResult): string[] => {\n  const lbl = label(r);\n  const routeById = new Map(r.nodes.filter((n) => n.kind === 'route').map((n) => [n.id, n]));\n  return r.edges\n    .filter((e) => e.rel === 'exposes')\n    .map((e) => `${lbl(e.src)} -> ${routeById.get(e.dst)?.name ?? e.dst}`)\n    .sort();\n};",
+    "truncated": false,
+    "totalLines": 8,
+    "startLine": 54
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+      "confidence": 1,
+      "name": "get",
+      "qualifiedName": "createRegistry.get",
+      "signature": "get(name)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 1300
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/express.test.ts#label@L35",
+      "confidence": 1,
+      "name": "label",
+      "qualifiedName": "label",
+      "signature": "label(r: ExtractResult): (id: string) => string",
+      "type": "function",
+      "file": "packages/parsers/src/ts/express.test.ts",
+      "line": 35
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/sql-resolver.test.ts#label@L202",
+      "confidence": 1,
+      "name": "label",
+      "qualifiedName": "label",
+      "signature": "label(soul: SoulStore, id: string): string",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/sql-resolver.test.ts",
+      "line": 202
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/CsharpExtractor.test.ts#lbl@L313",
+      "confidence": 1,
+      "name": "lbl",
+      "qualifiedName": "lbl",
+      "signature": "lbl(…)",
+      "type": "function",
+      "file": "packages/parsers/src/csharp/CsharpExtractor.test.ts",
+      "line": 313
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/ts/express.test.ts@L53",
+      "snippet": "/** all `exposes` edges: handler → `METHOD /path`. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#9-known-issues-limits",
+      "heading": "9. Known issues & limits",
+      "anchor": "9-known-issues-limits",
+      "snippet": "9. Known issues & limits",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/mulesoft.md#index-summary",
+      "heading": "Index summary",
+      "anchor": "index-summary",
+      "snippet": "Index summary",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#java-spring-boot-track-built-tested-schema-1-3",
+      "heading": "Java / Spring Boot track (built + tested, schema 1.3)",
+      "anchor": "java-spring-boot-track-built-tested-schema-1-3",
+      "snippet": "Java / Spring Boot track (built + tested, schema 1.3)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:SECURITY.md#network-surface-inventory-the-whole-product",
+      "heading": "Network surface inventory (the whole product)",
+      "anchor": "network-surface-inventory-the-whole-product",
+      "snippet": "Network surface inventory (the whole product)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#7-risks",
+      "heading": "7. Risks",
+      "anchor": "7-risks",
+      "snippet": "7. Risks",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/superpowers/specs/2026-06-26-large-project-viz-design.md#user-experience",
+      "heading": "User Experience",
+      "anchor": "user-experience",
+      "snippet": "User Experience",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prompts.md#7-codex-specific-notes-local-openai-codex-cli",
+      "heading": "7. Codex-specific notes (local OpenAI/Codex CLI)",
+      "anchor": "7-codex-specific-notes-local-openai-codex-cli",
+      "snippet": "7. Codex-specific notes (local OpenAI/Codex CLI)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_MAKE_A_BEATS_B_EVERY_EXTRACTOR.md#1-why-plan-a-still-loses-to-plan-b-today-universal-gaps",
+      "heading": "1. Why Plan A still loses to Plan B today (universal gaps)",
+      "anchor": "1-why-plan-a-still-loses-to-plan-b-today-universal-gaps",
+      "snippet": "1. Why Plan A still loses to Plan B today (universal gaps)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#query-time-merge-lightweight-by-default-full-on-withllm",
+      "heading": "Query-time merge — lightweight by default, full on `withLlm`",
+      "anchor": "query-time-merge-lightweight-by-default-full-on-withllm",
+      "snippet": "Query-time merge — lightweight by default, full on `withLlm`",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#enrich-op-status-llm-graph-generation-queue",
+      "heading": "`enrich({op:'status'})` *(LLM graph generation queue)*",
+      "anchor": "enrich-op-status-llm-graph-generation-queue",
+      "snippet": "`enrich({op:'status'})` *(LLM graph generation queue)*",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#1-executive-summary",
+      "heading": "1. Executive Summary",
+      "anchor": "1-executive-summary",
+      "snippet": "1. Executive Summary",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-cli.md#knowledge-crib-cli-spec",
+      "heading": "Knowledge-crib — CLI Spec",
+      "anchor": "knowledge-crib-cli-spec",
+      "snippet": "Knowledge-crib — CLI Spec",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-technical-pitch.md#agent-and-llm-design",
+      "heading": "Agent and LLM design",
+      "anchor": "agent-and-llm-design",
+      "snippet": "Agent and LLM design",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:packages/cli/skills/crib-enrich/SKILL.md#crib-enrich-author-knowledge-crib-s-llm-semantic-graph",
+      "heading": "crib-enrich — author knowledge-crib's LLM semantic graph",
+      "anchor": "crib-enrich-author-knowledge-crib-s-llm-semantic-graph",
+      "snippet": "crib-enrich — author knowledge-crib's LLM semantic graph",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-production-readiness.md#fixed-for-release",
+      "heading": "Fixed For Release",
+      "anchor": "fixed-for-release",
+      "snippet": "Fixed For Release",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#1-3-the-gaps-that-make-plan-a-plan-b-today",
+      "heading": "1.3 The gaps that make Plan A < Plan B today",
+      "anchor": "1-3-the-gaps-that-make-plan-a-plan-b-today",
+      "snippet": "1.3 The gaps that make Plan A < Plan B today",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/ts/express.test.ts#exposes@L54",
+    "procedureName": "exposes",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/ts/express.test.ts#exposes@L54",
+        "procedureName": "exposes",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:94879a2640820d9be9a7af3771ca5ab1d831ed4e2f551019977cfdf66a2f3d22",
+          "target": "sym:packages/parsers/src/ts/express.test.ts#label@L35",
+          "expr": "label",
+          "line": 55
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/express.test.ts#exposes@L54",
+        "procedureName": "exposes",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:accb987eabdcd20b06e8dcab7f5bd2ae947ba47a7d167f3eaa7ff8b68bdf370b",
+          "target": "stmt:packages/parsers/src/ts/express.test.ts@L55",
+          "line": 55,
+          "expr": "const lbl = label(r);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/express.test.ts#exposes@L54",
+        "procedureName": "exposes",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:bd4c256e677320203df40c2b5bf143324b40b18d2eb1b3574e6596eb9ce50145",
+          "target": "sym:packages/pipeline/src/resolve/sql-resolver.test.ts#label@L202",
+          "expr": "label",
+          "line": 55
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/express.test.ts#exposes@L54",
+        "procedureName": "exposes",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d0d5b700d67a3951cea4ce689ffaae3ab398bfe5eb6d6d9be808480e00ef0a55",
+          "target": "stmt:packages/parsers/src/ts/express.test.ts@L56",
+          "line": 56,
+          "expr": "const routeById = new Map(r.nodes.filter((n) => n.kind === 'route').map((n) => [n.id, n]));"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/express.test.ts#exposes@L54",
+        "procedureName": "exposes",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:135c9daba8f3f942a260fe8df0b8a57b5f627deb22c7995bcbab8d9c0d476aec",
+          "target": "stmt:packages/parsers/src/ts/express.test.ts@L57",
+          "line": 57,
+          "expr": "return r.edges\n    .filter((e) => e.rel === 'exposes')\n    .map((e) => `${lbl(e.src)} -> ${routeById.get(e.dst)?.name ?? e.dst}`)\n    .sort();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/express.test.ts#exposes@L54",
+        "procedureName": "exposes",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:6d3c63f74c08d14185458723c54fcc5f504115ade9c720e03312527c1ab9ff4c",
+          "target": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+          "expr": "get",
+          "line": 59
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/express.test.ts#exposes@L54",
+        "procedureName": "exposes",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:ea51fab54b69dc48540ded5f9966141872c0c7c4cea5a093f8cfa5134c6cba1f",
+          "target": "sym:packages/parsers/src/csharp/CsharpExtractor.test.ts#lbl@L313",
+          "expr": "lbl",
+          "line": 59
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 4,
+      "recorded": 8,
+      "unresolved": 5
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "5 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

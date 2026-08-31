@@ -1,0 +1,679 @@
+{
+  "id": "sym:packages/parsers/src/java/JavaExtractor.ts#JavaExtractor.parse.visit@L83",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:b1f5c7e2a80b754cdfda6137383b19ba78a16fde3b45f00bd1d52dfaff35bb8b",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/java/JavaExtractor.ts#JavaExtractor.parse.visit@L83",
+    "kind": "symbol",
+    "type": "function",
+    "name": "visit",
+    "qualifiedName": "JavaExtractor.parse.visit",
+    "signature": "visit(…)",
+    "lang": "typescript",
+    "file": "packages/parsers/src/java/JavaExtractor.ts",
+    "span": {
+      "start": 83,
+      "end": 148
+    },
+    "recursive": true,
+    "callSites": [
+      {
+        "callee": "join",
+        "line": 85
+      },
+      {
+        "callee": "join",
+        "line": 86
+      },
+      {
+        "callee": "idFor",
+        "line": 91
+      },
+      {
+        "callee": "push",
+        "line": 92
+      },
+      {
+        "callee": "hash",
+        "line": 100
+      },
+      {
+        "callee": "defText",
+        "line": 100
+      },
+      {
+        "callee": "signature",
+        "line": 102
+      },
+      {
+        "callee": "push",
+        "line": 109
+      },
+      {
+        "callee": "memberOf",
+        "line": 109
+      },
+      {
+        "callee": "push",
+        "line": 110
+      },
+      {
+        "callee": "idFor",
+        "line": 113
+      },
+      {
+        "callee": "hash",
+        "line": 123
+      },
+      {
+        "callee": "defText",
+        "line": 123
+      },
+      {
+        "callee": "signature",
+        "line": 124
+      },
+      {
+        "callee": "push",
+        "line": 134
+      },
+      {
+        "callee": "set",
+        "line": 140
+      },
+      {
+        "callee": "push",
+        "line": 141
+      },
+      {
+        "callee": "push",
+        "line": 143
+      },
+      {
+        "callee": "visit",
+        "line": 145
+      }
+    ]
+  },
+  "source": {
+    "text": "    const visit = (defs: JavaDef[], qualifier: string[], ownerId?: string): void => {\n      for (const d of defs) {\n        const qualifiedName = [...qualifier, d.name].join('.');\n        const parentQ = qualifier.join('.');\n        // 1.3: a field becomes a `field` NODE (kind:'field', dataType, member-of its class), NOT a\n        // call-resolvable `symbol` — so the entity model / DI graph is queryable without polluting\n        // the symbol table or shifting call resolution.\n        if (d.kind === 'field') {\n          const fid = ctx.idFor('field', { path, qualifiedName, startLine: d.startLine });\n          fieldNodes.push({\n            id: fid,\n            kind: 'field',\n            name: d.name,\n            qualifiedName,\n            file: path,\n            span: { start: d.startLine, end: d.endLine },\n            lang: 'java',\n            hash: ctx.hash(this.defText(d, text)),\n            ...(d.fieldType ? { dataType: d.fieldType } : {}),\n            signature: this.signature(d),\n            meta: {\n              parentQualifier: parentQ,\n              ...(d.modifiers.length ? { modifiers: d.modifiers } : {}),\n              ...(d.annotations.length ? { annotations: d.annotations } : {}),\n            },\n          });\n          if (ownerId) fieldEdges.push(this.memberOf({ id: fid } as Node, ownerId));\n          if (ownerId) fieldDefs.push({ def: d, id: fid, ownerId, ownerQ: parentQ });\n          continue;\n        }\n        const id = ctx.idFor('symbol', { path, qualifiedName, startLine: d.startLine });\n        const node: Node = {\n          id,\n          kind: 'symbol',\n          type: d.kind,\n          name: d.name,\n          qualifiedName,\n          file: path,\n          span: { start: d.startLine, end: d.endLine },\n          lang: 'java',\n          hash: ctx.hash(this.defText(d, text)),\n          signature: this.signature(d),\n          meta: {\n            parentQualifier: parentQ,\n            ...(d.modifiers.length ? { modifiers: d.modifiers } : {}),\n            ...(d.annotations.length ? { annotations: d.annotations } : {}),\n            ...(d.bases.length ? { bases: d.bases } : {}),\n            ...(d.implements.length ? { implements: d.implements } : {}),\n            ...(d.params.length ? { params: d.params } : {}),\n          },\n        };\n        symbols.push({\n          node,\n          keys: [qualifiedName, d.name],\n          simpleName: d.name,\n          parentQualifier: parentQ,\n        });\n        for (const k of [qualifiedName, d.name]) if (!byKey.has(k)) byKey.set(k, id);\n        if (d.kind === 'method' || d.kind === 'constructor') procDefs.push({ def: d, procId: id });\n        if (TYPE_KINDS.has(d.kind)) {\n          classDefs.push({ def: d, id, qualifiedName });\n          // only TYPE declarations nest further; pass this type's id as the owner for its fields.\n          visit(d.body, [...qualifier, d.name], id);\n        }\n      }\n    };",
+    "truncated": false,
+    "totalLines": 66,
+    "startLine": 83
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/java/JavaExtractor.ts#JavaExtractor.parse@L68",
+      "confidence": 1,
+      "name": "parse",
+      "qualifiedName": "JavaExtractor.parse",
+      "signature": "parse(path: string, fileId: string, text: string, ctx: ExtractCtx): ExtractResult",
+      "type": "method",
+      "file": "packages/parsers/src/java/JavaExtractor.ts",
+      "line": 68
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/java/JavaExtractor.ts#JavaExtractor.defText@L336",
+      "confidence": 1,
+      "name": "defText",
+      "qualifiedName": "JavaExtractor.defText",
+      "signature": "defText(d: JavaDef, src: string): string",
+      "type": "method",
+      "file": "packages/parsers/src/java/JavaExtractor.ts",
+      "line": 336
+    },
+    {
+      "id": "sym:packages/parsers/src/java/JavaExtractor.ts#JavaExtractor.memberOf@L231",
+      "confidence": 1,
+      "name": "memberOf",
+      "qualifiedName": "JavaExtractor.memberOf",
+      "signature": "memberOf(child: Node, parentId: string): Edge",
+      "type": "method",
+      "file": "packages/parsers/src/java/JavaExtractor.ts",
+      "line": 231
+    },
+    {
+      "id": "sym:packages/parsers/src/java/JavaExtractor.ts#JavaExtractor.signature@L207",
+      "confidence": 1,
+      "name": "signature",
+      "qualifiedName": "JavaExtractor.signature",
+      "signature": "signature(d: JavaDef): string",
+      "type": "method",
+      "file": "packages/parsers/src/java/JavaExtractor.ts",
+      "line": 207
+    },
+    {
+      "id": "sym:packages/soul-schema/src/id.ts#idFor@L96",
+      "confidence": 1,
+      "name": "idFor",
+      "qualifiedName": "idFor",
+      "signature": "idFor(spec: IdSpec): string",
+      "type": "function",
+      "file": "packages/soul-schema/src/id.ts",
+      "line": 96
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/nest.ts#memberOf@L606",
+      "confidence": 1,
+      "name": "memberOf",
+      "qualifiedName": "memberOf",
+      "signature": "memberOf(childId: string, parentId: string): Edge",
+      "type": "function",
+      "file": "packages/parsers/src/ts/nest.ts",
+      "line": 606
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 70
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/java/JavaExtractor.ts@L82",
+      "snippet": "// --- pass 1: declarations + member-of, walking the nesting tree ---",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#JavaExtractor.parse.visit@L83",
+    "procedureName": "JavaExtractor.parse.visit",
+    "conditions": [
+      "cond:packages/parsers/src/java/JavaExtractor.ts@L84",
+      "cond:packages/parsers/src/java/JavaExtractor.ts@L90",
+      "cond:packages/parsers/src/java/JavaExtractor.ts@L109",
+      "cond:packages/parsers/src/java/JavaExtractor.ts@L110",
+      "cond:packages/parsers/src/java/JavaExtractor.ts@L140",
+      "cond:packages/parsers/src/java/JavaExtractor.ts@L141",
+      "cond:packages/parsers/src/java/JavaExtractor.ts@L142"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#JavaExtractor.parse.visit@L83",
+        "procedureName": "JavaExtractor.parse.visit",
+        "guard": "cond:packages/parsers/src/java/JavaExtractor.ts@L84",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/JavaExtractor.ts@L84",
+            "expr": "defs",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2e9c454bdc5eb85b7eaa2a8395bee4a2dd214518939de63c3cecdd3af5459fd2",
+          "target": "stmt:packages/parsers/src/java/JavaExtractor.ts@L85",
+          "line": 85,
+          "expr": "const qualifiedName = [...qualifier, d.name].join('.');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#JavaExtractor.parse.visit@L83",
+        "procedureName": "JavaExtractor.parse.visit",
+        "guard": "cond:packages/parsers/src/java/JavaExtractor.ts@L84",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/JavaExtractor.ts@L84",
+            "expr": "defs",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:aaa0c642fb1a48f0057aedeeae318f2ccc1f9547718a0fde9de340cdab7919b7",
+          "target": "stmt:packages/parsers/src/java/JavaExtractor.ts@L86",
+          "line": 86,
+          "expr": "const parentQ = qualifier.join('.');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#JavaExtractor.parse.visit@L83",
+        "procedureName": "JavaExtractor.parse.visit",
+        "guard": "cond:packages/parsers/src/java/JavaExtractor.ts@L90",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/JavaExtractor.ts@L84",
+            "expr": "defs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/JavaExtractor.ts@L90",
+            "expr": "d.kind === 'field'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c705b6ae9205d1460d3649171c0b22876e96ef852416dcbb2a26921ed3863673",
+          "target": "stmt:packages/parsers/src/java/JavaExtractor.ts@L91",
+          "line": 91,
+          "expr": "const fid = ctx.idFor('field', { path, qualifiedName, startLine: d.startLine });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#JavaExtractor.parse.visit@L83",
+        "procedureName": "JavaExtractor.parse.visit",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:d71e98030cd3560463497f91aa52c829b07b1151137da8475588c9ce8b08feca",
+          "target": "sym:packages/soul-schema/src/id.ts#idFor@L96",
+          "expr": "idFor",
+          "line": 91
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#JavaExtractor.parse.visit@L83",
+        "procedureName": "JavaExtractor.parse.visit",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:8da61af74190f2b2b824635fef8d08dd24b8a20c8515acdc3c0874de1558d5ec",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
+          "expr": "push",
+          "line": 92
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#JavaExtractor.parse.visit@L83",
+        "procedureName": "JavaExtractor.parse.visit",
+        "guard": "cond:packages/parsers/src/java/JavaExtractor.ts@L90",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/JavaExtractor.ts@L84",
+            "expr": "defs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/JavaExtractor.ts@L90",
+            "expr": "d.kind === 'field'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c237c476cf5280a122ef9156f0cc8406776aabfc04b62ce3451d75f0efc6fa28",
+          "target": "stmt:packages/parsers/src/java/JavaExtractor.ts@L92",
+          "line": 92,
+          "expr": "fieldNodes.push({\n            id: fid,\n            kind: 'field',\n            name: d.name,\n            qualifiedName,\n            file: path,\n            span: { start: d.startLine, end: d.endLine },\n            lang: 'java',\n            hash: ctx.hash(this.defText(d, text)),\n            ...(d.fieldType ? { dataType: d.fieldType } : {}),\n            signature: this.signature(d),\n            meta: {\n              parentQualifier: parentQ,\n              ...(d.modifiers.length ? { modifiers: d.modifiers } : {}),\n              ...(d.annotations.length ? { annotations: d.annotations } : {}),\n            },\n          });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#JavaExtractor.parse.visit@L83",
+        "procedureName": "JavaExtractor.parse.visit",
+        "guard": "cond:packages/parsers/src/java/JavaExtractor.ts@L84",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/JavaExtractor.ts@L84",
+            "expr": "defs",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:84e2e705c007c0bd0a4af0d09f8ae8e5a7857df6f55b242047e0dfc5f50ce911",
+          "target": "sym:packages/parsers/src/java/JavaExtractor.ts#JavaExtractor.defText@L336",
+          "expr": "defText",
+          "line": 100
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#JavaExtractor.parse.visit@L83",
+        "procedureName": "JavaExtractor.parse.visit",
+        "guard": "cond:packages/parsers/src/java/JavaExtractor.ts@L84",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/JavaExtractor.ts@L84",
+            "expr": "defs",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:3ffa043728da29624f205565fc6e064426bc3809cb7615e2c7648e90a5c80807",
+          "target": "sym:packages/parsers/src/java/JavaExtractor.ts#JavaExtractor.signature@L207",
+          "expr": "signature",
+          "line": 102
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#JavaExtractor.parse.visit@L83",
+        "procedureName": "JavaExtractor.parse.visit",
+        "guard": "cond:packages/parsers/src/java/JavaExtractor.ts@L109",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/JavaExtractor.ts@L84",
+            "expr": "defs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/JavaExtractor.ts@L90",
+            "expr": "d.kind === 'field'"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/JavaExtractor.ts@L109",
+            "expr": "ownerId",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9814924ba69bdd1394c9067c0ae31ac02264640e48fa5530f3e5b61c128d491f",
+          "target": "stmt:packages/parsers/src/java/JavaExtractor.ts@L109",
+          "line": 109,
+          "expr": "fieldEdges.push(this.memberOf({ id: fid } as Node, ownerId));"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#JavaExtractor.parse.visit@L83",
+        "procedureName": "JavaExtractor.parse.visit",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:a9f3426278e7abd12c2e8283e3a020e89d646d20c18dbf9c72be3c8de9a22b2f",
+          "target": "sym:packages/parsers/src/ts/nest.ts#memberOf@L606",
+          "expr": "memberOf",
+          "line": 109
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#JavaExtractor.parse.visit@L83",
+        "procedureName": "JavaExtractor.parse.visit",
+        "guard": "cond:packages/parsers/src/java/JavaExtractor.ts@L109",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/JavaExtractor.ts@L84",
+            "expr": "defs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/JavaExtractor.ts@L90",
+            "expr": "d.kind === 'field'"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/JavaExtractor.ts@L109",
+            "expr": "ownerId",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:fc5e936ffbb33daafd30edfaa62a4cffdbad555b05d9123fadbb6d5bec388f10",
+          "target": "sym:packages/parsers/src/java/JavaExtractor.ts#JavaExtractor.memberOf@L231",
+          "expr": "memberOf",
+          "line": 109
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#JavaExtractor.parse.visit@L83",
+        "procedureName": "JavaExtractor.parse.visit",
+        "guard": "cond:packages/parsers/src/java/JavaExtractor.ts@L110",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/JavaExtractor.ts@L84",
+            "expr": "defs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/JavaExtractor.ts@L90",
+            "expr": "d.kind === 'field'"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/JavaExtractor.ts@L110",
+            "expr": "ownerId",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7ea5d9f94e7029525652a9665559f75b9ad8f19fed6f5fd183f67c0b60b1442a",
+          "target": "stmt:packages/parsers/src/java/JavaExtractor.ts@L110",
+          "line": 110,
+          "expr": "fieldDefs.push({ def: d, id: fid, ownerId, ownerQ: parentQ });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#JavaExtractor.parse.visit@L83",
+        "procedureName": "JavaExtractor.parse.visit",
+        "guard": "cond:packages/parsers/src/java/JavaExtractor.ts@L84",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/JavaExtractor.ts@L84",
+            "expr": "defs",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a574dcd5c17f204703c35e51fa7d1e0dff1040416db21614affcf5d231fe221a",
+          "target": "stmt:packages/parsers/src/java/JavaExtractor.ts@L113",
+          "line": 113,
+          "expr": "const id = ctx.idFor('symbol', { path, qualifiedName, startLine: d.startLine });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#JavaExtractor.parse.visit@L83",
+        "procedureName": "JavaExtractor.parse.visit",
+        "guard": "cond:packages/parsers/src/java/JavaExtractor.ts@L84",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/JavaExtractor.ts@L84",
+            "expr": "defs",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:694c2d1a0f9e5fae1004b67efe907b223d74063870a8c9fcfa830622d1617d80",
+          "target": "stmt:packages/parsers/src/java/JavaExtractor.ts@L114",
+          "line": 114,
+          "expr": "const node: Node = {\n          id,\n          kind: 'symbol',\n          type: d.kind,\n          name: d.name,\n          qualifiedName,\n          file: path,\n          span: { start: d.startLine, end: d.endLine },\n          lang: 'java',\n          hash: ctx.hash(this.defText(d, text)),\n          signature: this.signature(d),\n          meta: {\n            parentQualifier: parentQ,\n            ...(d.modifiers.length ? { modifiers: d.modifiers } : {}),\n            ...(d.annotations.length ? { annotations: d.annotations } : {}),\n            ...(d.bases.length ? { bases: d.bases } : {}),\n            ...(d.implements.length ? { implements: d.implements } : {}),\n            ...(d.params.length ? { params: d.params } : {}),\n          },\n        };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#JavaExtractor.parse.visit@L83",
+        "procedureName": "JavaExtractor.parse.visit",
+        "guard": "cond:packages/parsers/src/java/JavaExtractor.ts@L84",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/JavaExtractor.ts@L84",
+            "expr": "defs",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0d932c89bc08fccd9e2166b65c4e58a6b3986be3df70671f9bb109290cd54457",
+          "target": "stmt:packages/parsers/src/java/JavaExtractor.ts@L134",
+          "line": 134,
+          "expr": "symbols.push({\n          node,\n          keys: [qualifiedName, d.name],\n          simpleName: d.name,\n          parentQualifier: parentQ,\n        });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#JavaExtractor.parse.visit@L83",
+        "procedureName": "JavaExtractor.parse.visit",
+        "guard": "cond:packages/parsers/src/java/JavaExtractor.ts@L140",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/JavaExtractor.ts@L84",
+            "expr": "defs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/JavaExtractor.ts@L140",
+            "expr": "[qualifiedName, d.name]"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/JavaExtractor.ts@L140",
+            "expr": "[qualifiedName, d.name]",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:192478c5ad775154a3843103f34b1b6972867ee92f203252239657f5459db9f9",
+          "target": "stmt:packages/parsers/src/java/JavaExtractor.ts@L140",
+          "line": 140,
+          "expr": "byKey.set(k, id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#JavaExtractor.parse.visit@L83",
+        "procedureName": "JavaExtractor.parse.visit",
+        "guard": "cond:packages/parsers/src/java/JavaExtractor.ts@L141",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/JavaExtractor.ts@L84",
+            "expr": "defs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/JavaExtractor.ts@L141",
+            "expr": "d.kind === 'method' || d.kind === 'constructor'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3ede8247ccdd4421041518440623b6892f723185743b73b91d0a3e63fbe15a0a",
+          "target": "stmt:packages/parsers/src/java/JavaExtractor.ts@L141",
+          "line": 141,
+          "expr": "procDefs.push({ def: d, procId: id });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#JavaExtractor.parse.visit@L83",
+        "procedureName": "JavaExtractor.parse.visit",
+        "guard": "cond:packages/parsers/src/java/JavaExtractor.ts@L142",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/JavaExtractor.ts@L84",
+            "expr": "defs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/JavaExtractor.ts@L142",
+            "expr": "TYPE_KINDS.has(d.kind)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2593ef8b3a2aade5ca604d214f33b58c7b4076b7e47e17a50baf77b0189bbef0",
+          "target": "stmt:packages/parsers/src/java/JavaExtractor.ts@L143",
+          "line": 143,
+          "expr": "classDefs.push({ def: d, id, qualifiedName });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#JavaExtractor.parse.visit@L83",
+        "procedureName": "JavaExtractor.parse.visit",
+        "guard": "cond:packages/parsers/src/java/JavaExtractor.ts@L142",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/JavaExtractor.ts@L84",
+            "expr": "defs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/JavaExtractor.ts@L142",
+            "expr": "TYPE_KINDS.has(d.kind)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7c801797b6db8aad27d77ee6f15db43498fc3216ca78f3221e9eb50feb9593e1",
+          "target": "stmt:packages/parsers/src/java/JavaExtractor.ts@L145",
+          "line": 145,
+          "expr": "visit(d.body, [...qualifier, d.name], id);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 13,
+    "referencedByFiles": [
+      "packages/parsers/src/java/JavaExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 13,
+    "assignments": 0,
+    "conditions": 7,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 6,
+      "recorded": 19,
+      "unresolved": 3
+    },
+    "recursive": true,
+    "exprTruncated": 0,
+    "caveats": [
+      "3 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

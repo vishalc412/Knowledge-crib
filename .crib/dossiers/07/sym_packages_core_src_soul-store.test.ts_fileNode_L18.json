@@ -1,0 +1,168 @@
+{
+  "id": "sym:packages/core/src/soul-store.test.ts#fileNode@L18",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:9136dc683b8d0a373df3d2a0fc691b7d25b95eb8c59af43ca147f3052dcf60db",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/soul-store.test.ts#fileNode@L18",
+    "kind": "symbol",
+    "type": "function",
+    "name": "fileNode",
+    "qualifiedName": "fileNode",
+    "signature": "fileNode(path: string): Node",
+    "lang": "typescript",
+    "file": "packages/core/src/soul-store.test.ts",
+    "span": {
+      "start": 18,
+      "end": 26
+    },
+    "callSites": [
+      {
+        "callee": "idFor",
+        "line": 20
+      },
+      {
+        "callee": "contentHash",
+        "line": 23
+      }
+    ]
+  },
+  "source": {
+    "text": "function fileNode(path: string): Node {\n  return {\n    id: idFor({ kind: 'file', path }),\n    kind: 'file',\n    file: path,\n    hash: contentHash(path),\n    lang: 'typescript',\n  };\n}",
+    "truncated": false,
+    "totalLines": 9,
+    "startLine": 18
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/soul-store.test.ts#build@L82",
+      "confidence": 1,
+      "name": "build",
+      "qualifiedName": "build",
+      "signature": "build(…)",
+      "type": "function",
+      "file": "packages/core/src/soul-store.test.ts",
+      "line": 82
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/soul-schema/src/hash.ts#contentHash@L21",
+      "confidence": 1,
+      "name": "contentHash",
+      "qualifiedName": "contentHash",
+      "signature": "contentHash(input: string): string",
+      "type": "function",
+      "file": "packages/soul-schema/src/hash.ts",
+      "line": 21
+    },
+    {
+      "id": "sym:packages/soul-schema/src/id.ts#idFor@L96",
+      "confidence": 1,
+      "name": "idFor",
+      "qualifiedName": "idFor",
+      "signature": "idFor(spec: IdSpec): string",
+      "type": "function",
+      "file": "packages/soul-schema/src/id.ts",
+      "line": 96
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-foundation.md#task-6-enforce-property-redaction-in-source-and-fts",
+      "heading": "Task 6: Enforce property redaction in source and FTS",
+      "anchor": "task-6-enforce-property-redaction-in-source-and-fts",
+      "snippet": "Task 6: Enforce property redaction in source and FTS",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-foundation.md#task-4-classify-discovery-and-make-sensitive-hashes-key-only",
+      "heading": "Task 4: Classify discovery and make sensitive hashes key-only",
+      "anchor": "task-4-classify-discovery-and-make-sensitive-hashes-key-only",
+      "snippet": "Task 4: Classify discovery and make sensitive hashes key-only",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/soul-store.test.ts#fileNode@L18",
+    "procedureName": "fileNode",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/soul-store.test.ts#fileNode@L18",
+        "procedureName": "fileNode",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e1a185d6a1937dde6abc41293f5685856479efd554ac4229f1e9181fbe32f521",
+          "target": "stmt:packages/core/src/soul-store.test.ts@L19",
+          "line": 19,
+          "expr": "return {\n    id: idFor({ kind: 'file', path }),\n    kind: 'file',\n    file: path,\n    hash: contentHash(path),\n    lang: 'typescript',\n  };"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.test.ts#fileNode@L18",
+        "procedureName": "fileNode",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:11b7550e7beb84c746d668a743d26f37600abffca54b16c246a6d344c7fc870e",
+          "target": "sym:packages/soul-schema/src/id.ts#idFor@L96",
+          "expr": "idFor",
+          "line": 20
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/soul-store.test.ts#fileNode@L18",
+        "procedureName": "fileNode",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:33801cf1895467d256a9d8707295d3a2404f5aac2cc6437658af3e73d44465c4",
+          "target": "sym:packages/soul-schema/src/hash.ts#contentHash@L21",
+          "expr": "contentHash",
+          "line": 23
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/core/src/soul-store.test.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 2,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/ts/express.ts#extractExpressRoutes.visit@L65",
-  "schemaVersion": "1.5",
+  "schemaVersion": "1.6",
   "nodeHash": "blake3:92eef48ecec04082182ae3fde30fa2e46d339b0b4349746183697702e4980dc3",
-  "builtAt": "2026-07-16T16:35:16.098Z",
+  "builtAt": "2026-08-31T17:37:23.222Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/ts/express.ts#extractExpressRoutes.visit@L65",
@@ -68,14 +68,14 @@
   ],
   "callees": [
     {
-      "id": "sym:packages/ui/src/viz.test.ts#edge@L27",
+      "id": "sym:packages/ui/src/viz.test.ts#edge@L33",
       "confidence": 1,
       "name": "edge",
       "qualifiedName": "edge",
       "signature": "edge(src: string, dst: string, rel: Edge['rel']): Edge",
       "type": "function",
       "file": "packages/ui/src/viz.test.ts",
-      "line": 27
+      "line": 33
     },
     {
       "id": "sym:packages/parsers/src/ts/express.ts#edge@L176",
@@ -88,14 +88,14 @@
       "line": 176
     },
     {
-      "id": "sym:packages/soul-schema/src/id.ts#idFor@L88",
+      "id": "sym:packages/soul-schema/src/id.ts#idFor@L96",
       "confidence": 1,
       "name": "idFor",
       "qualifiedName": "idFor",
       "signature": "idFor(spec: IdSpec): string",
       "type": "function",
       "file": "packages/soul-schema/src/id.ts",
-      "line": 88
+      "line": 96
     },
     {
       "id": "sym:packages/parsers/src/ts/express.ts#matchRouteCall@L107",
@@ -108,14 +108,14 @@
       "line": 107
     },
     {
-      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
       "confidence": 1,
       "name": "push",
       "qualifiedName": "push",
       "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
       "type": "function",
       "file": "packages/pipeline/src/linker/inverted-index.ts",
-      "line": 39
+      "line": 70
     }
   ],
   "docs": [],
@@ -212,8 +212,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:72ba6ff86d97f07ee0db7e75b2d3bd6f1564adac0d9139996df481d6821a0403",
-          "target": "sym:packages/soul-schema/src/id.ts#idFor@L88",
+          "edgeId": "e:d3719dad9764fe47ab7dead98917a21288b8a6d6dd807957e9cffb0571c83f6b",
+          "target": "sym:packages/soul-schema/src/id.ts#idFor@L96",
           "expr": "idFor",
           "line": 71
         }
@@ -260,10 +260,24 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:fa22d7bb5a51a30a4d40b4d407ee6423e8dbe227a64fba31902425640933d982",
-          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "edgeId": "e:2c10ee73db33c0fd0b63f831786afaf2ae7e40a06dd6f5d7e9211af3fe6c62e4",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
           "expr": "push",
           "line": 81
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/express.ts#extractExpressRoutes.visit@L65",
+        "procedureName": "extractExpressRoutes.visit",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:196f05dc89505ba216a4142ebaecc18671b5a3721536615039e0e5581bf516be",
+          "target": "sym:packages/ui/src/viz.test.ts#edge@L33",
+          "expr": "edge",
+          "line": 95
         }
       },
       {
@@ -298,20 +312,6 @@
           "target": "stmt:packages/parsers/src/ts/express.ts@L95",
           "line": 95,
           "expr": "edges.push(edge(handlerId, routeId, 'exposes', `${verb} ${p}`));"
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/ts/express.ts#extractExpressRoutes.visit@L65",
-        "procedureName": "extractExpressRoutes.visit",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:4ff1a7e6fe13ef56409f6d394f8cfbf9bfd2c572d40fa4dbdceb8fe6a0d8d21b",
-          "target": "sym:packages/ui/src/viz.test.ts#edge@L27",
-          "expr": "edge",
-          "line": 95
         }
       },
       {

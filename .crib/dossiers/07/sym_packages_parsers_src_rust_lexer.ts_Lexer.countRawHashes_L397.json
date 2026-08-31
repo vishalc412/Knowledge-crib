@@ -1,0 +1,128 @@
+{
+  "id": "sym:packages/parsers/src/rust/lexer.ts#Lexer.countRawHashes@L397",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:5601cd4191e15eed81b08458aabbcacc9a5c5f36f311e98f55a919cb7d0ba5d2",
+  "builtAt": "2026-08-25T20:55:11.863Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/rust/lexer.ts#Lexer.countRawHashes@L397",
+    "kind": "symbol",
+    "type": "method",
+    "name": "countRawHashes",
+    "qualifiedName": "Lexer.countRawHashes",
+    "signature": "countRawHashes(from: number): number | undefined",
+    "lang": "typescript",
+    "file": "packages/parsers/src/rust/lexer.ts",
+    "span": {
+      "start": 397,
+      "end": 405
+    },
+    "callSites": [
+      {
+        "callee": "peek",
+        "line": 404
+      }
+    ]
+  },
+  "source": {
+    "text": "  private countRawHashes(from: number): number | undefined {\n    let j = from;\n    let n = 0;\n    while (this.peek(j) === '#') {\n      j++;\n      n++;\n    }\n    return this.peek(j) === '\"' ? n : undefined;\n  }",
+    "truncated": false,
+    "totalLines": 9,
+    "startLine": 397
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/rust/lexer.ts#Lexer.tryScanStringish@L343",
+      "confidence": 1,
+      "name": "tryScanStringish",
+      "qualifiedName": "Lexer.tryScanStringish",
+      "signature": "tryScanStringish(): boolean",
+      "type": "method",
+      "file": "packages/parsers/src/rust/lexer.ts",
+      "line": 343
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/rust/lexer.ts#Lexer.peek@L455",
+      "confidence": 1,
+      "name": "peek",
+      "qualifiedName": "Lexer.peek",
+      "signature": "peek(offset = 0): string",
+      "type": "method",
+      "file": "packages/parsers/src/rust/lexer.ts",
+      "line": 455
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/rust/lexer.ts@L393",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.countRawHashes@L397",
+    "procedureName": "Lexer.countRawHashes",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.countRawHashes@L397",
+        "procedureName": "Lexer.countRawHashes",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:826e533331164c352ec7a24b08751676e67bbbb5601d3d3b5c98c788e1c92aa5",
+          "target": "sym:packages/parsers/src/rust/lexer.ts#Lexer.peek@L455",
+          "expr": "peek",
+          "line": 404
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.countRawHashes@L397",
+        "procedureName": "Lexer.countRawHashes",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9c3fc50ec8fed527863b01e68828b7fda8707ce92d9f7fb9418305b30648524c",
+          "target": "stmt:packages/parsers/src/rust/lexer.ts@L404",
+          "line": 404,
+          "expr": "return this.peek(j) === '\"' ? n : undefined;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/parsers/src/rust/lexer.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

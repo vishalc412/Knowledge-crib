@@ -1,0 +1,165 @@
+{
+  "id": "sym:packages/pipeline/src/dossiers.ts#sameDossierContent@L82",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:59b720b4898ee0dff0bee748ea21bea3a69f65d7e1f2fe14a7c7085569c7c864",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/dossiers.ts#sameDossierContent@L82",
+    "kind": "symbol",
+    "type": "function",
+    "name": "sameDossierContent",
+    "qualifiedName": "sameDossierContent",
+    "signature": "sameDossierContent(existing: Dossier, current: Dossier): boolean",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/dossiers.ts",
+    "span": {
+      "start": 82,
+      "end": 86
+    },
+    "callSites": [
+      {
+        "callee": "stringify",
+        "line": 83
+      },
+      {
+        "callee": "stringify",
+        "line": 84
+      },
+      {
+        "callee": "isDeepStrictEqual",
+        "line": 85
+      },
+      {
+        "callee": "parse",
+        "line": 85
+      },
+      {
+        "callee": "parse",
+        "line": 85
+      }
+    ]
+  },
+  "source": {
+    "text": "function sameDossierContent(existing: Dossier, current: Dossier): boolean {\n  const persisted = JSON.stringify({ ...existing, builtAt: undefined });\n  const rebuilt = JSON.stringify({ ...current, builtAt: undefined });\n  return isDeepStrictEqual(JSON.parse(persisted), JSON.parse(rebuilt));\n}",
+    "truncated": false,
+    "totalLines": 5,
+    "startLine": 82
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/src/dossiers.ts#runDossiers@L43",
+      "confidence": 1,
+      "name": "runDossiers",
+      "qualifiedName": "runDossiers",
+      "signature": "runDossiers(soul: SoulStore, repoRoot: string, now: string): DossierStats",
+      "type": "function",
+      "file": "packages/pipeline/src/dossiers.ts",
+      "line": 43
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/pipeline/fixtures/plain-js/src/legacy.cjs#parse@L4",
+      "confidence": 1,
+      "name": "parse",
+      "qualifiedName": "parse",
+      "signature": "parse(input)",
+      "type": "function",
+      "file": "packages/pipeline/fixtures/plain-js/src/legacy.cjs",
+      "line": 4
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/dossiers.ts#sameDossierContent@L82",
+    "procedureName": "sameDossierContent",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/dossiers.ts#sameDossierContent@L82",
+        "procedureName": "sameDossierContent",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c65f610b24302af77b994c6500ca4d8a41a9ffbd39992ecb76a2179598d58e4d",
+          "target": "stmt:packages/pipeline/src/dossiers.ts@L83",
+          "line": 83,
+          "expr": "const persisted = JSON.stringify({ ...existing, builtAt: undefined });"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/dossiers.ts#sameDossierContent@L82",
+        "procedureName": "sameDossierContent",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c713ccfd48d34fb829b66c93fcbcded94edfb1eba645b10483d32e5eae74ac93",
+          "target": "stmt:packages/pipeline/src/dossiers.ts@L84",
+          "line": 84,
+          "expr": "const rebuilt = JSON.stringify({ ...current, builtAt: undefined });"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/dossiers.ts#sameDossierContent@L82",
+        "procedureName": "sameDossierContent",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:50ccc6d648f5fd7d043c59f752c38d8fe40616e4c8a04871e88be1b548b0e886",
+          "target": "sym:packages/pipeline/fixtures/plain-js/src/legacy.cjs#parse@L4",
+          "expr": "parse",
+          "line": 85
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/dossiers.ts#sameDossierContent@L82",
+        "procedureName": "sameDossierContent",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:aa58750ad6b41f53b1425c46ee5d13f3895be87658d51a5834a065c71033b0a6",
+          "target": "stmt:packages/pipeline/src/dossiers.ts@L85",
+          "line": 85,
+          "expr": "return isDeepStrictEqual(JSON.parse(persisted), JSON.parse(rebuilt));"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/pipeline/src/dossiers.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 5,
+      "unresolved": 3
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "3 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

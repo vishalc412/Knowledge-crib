@@ -1,0 +1,129 @@
+{
+  "id": "sym:packages/parsers/src/go/parser.ts#Parser.isNameToken@L1682",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:40e1acf0a2f11e5745257724fc29063039b76b10fc6750b6ae19e15ea0217a6b",
+  "builtAt": "2026-08-25T20:55:11.863Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/go/parser.ts#Parser.isNameToken@L1682",
+    "kind": "symbol",
+    "type": "method",
+    "name": "isNameToken",
+    "qualifiedName": "Parser.isNameToken",
+    "signature": "isNameToken(): boolean",
+    "lang": "typescript",
+    "file": "packages/parsers/src/go/parser.ts",
+    "span": {
+      "start": 1682,
+      "end": 1684
+    },
+    "callSites": [
+      {
+        "callee": "peek",
+        "line": 1683
+      }
+    ]
+  },
+  "source": {
+    "text": "  private isNameToken(): boolean {\n    return this.peek().type === 'NAME';\n  }",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 1682
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/go/parser.ts#Parser.parseFunc@L326",
+      "confidence": 1,
+      "name": "parseFunc",
+      "qualifiedName": "Parser.parseFunc",
+      "signature": "parseFunc(startLine: number): GoDef | null",
+      "type": "method",
+      "file": "packages/parsers/src/go/parser.ts",
+      "line": 326
+    },
+    {
+      "id": "sym:packages/parsers/src/go/parser.ts#Parser.parseTypeDecl@L477",
+      "confidence": 1,
+      "name": "parseTypeDecl",
+      "qualifiedName": "Parser.parseTypeDecl",
+      "signature": "parseTypeDecl(startLine: number): GoDef | null",
+      "type": "method",
+      "file": "packages/parsers/src/go/parser.ts",
+      "line": 477
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/go/parser.ts#Parser.peek@L1695",
+      "confidence": 1,
+      "name": "peek",
+      "qualifiedName": "Parser.peek",
+      "signature": "peek(): Token",
+      "type": "method",
+      "file": "packages/parsers/src/go/parser.ts",
+      "line": 1695
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.isNameToken@L1682",
+    "procedureName": "Parser.isNameToken",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.isNameToken@L1682",
+        "procedureName": "Parser.isNameToken",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:7fffa65c9f7f38339f6cb246b02a3f7e6ebd740c5a0af237b0c12b5960b51fba",
+          "target": "sym:packages/parsers/src/go/parser.ts#Parser.peek@L1695",
+          "expr": "peek",
+          "line": 1683
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.isNameToken@L1682",
+        "procedureName": "Parser.isNameToken",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d90dce360d7d919b16d45da234dc1d4d459fe4385ce95efc03e397af2756d65a",
+          "target": "stmt:packages/parsers/src/go/parser.ts@L1683",
+          "line": 1683,
+          "expr": "return this.peek().type === 'NAME';"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/parsers/src/go/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

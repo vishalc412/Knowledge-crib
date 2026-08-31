@@ -1,0 +1,134 @@
+{
+  "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.test.ts#runText@L524",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:cd981ffd1c584b581bb532122d7fadbdb6389908140df7ab75374f454e933800",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.test.ts#runText@L524",
+    "kind": "symbol",
+    "type": "function",
+    "name": "runText",
+    "qualifiedName": "runText",
+    "signature": "runText(text: string): Promise<ExtractResult>",
+    "lang": "typescript",
+    "file": "packages/parsers/src/plsql/PlSqlExtractor.test.ts",
+    "span": {
+      "start": 524,
+      "end": 532
+    },
+    "callSites": [
+      {
+        "callee": "extract",
+        "line": 531
+      },
+      {
+        "callee": "ctxFor",
+        "line": 531
+      }
+    ]
+  },
+  "source": {
+    "text": "  async function runText(text: string): Promise<ExtractResult> {\n    const meta: FileMeta = {\n      path: 'fixtures/plsql/recursive.pkb',\n      lang: 'plsql',\n      bytes: text.length,\n      mtime: 0,\n    };\n    return new PlSqlExtractor().extract(meta, ctxFor(text));\n  }",
+    "truncated": false,
+    "totalLines": 9,
+    "startLine": 524
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/ts/react.test.ts#ctxFor@L17",
+      "confidence": 1,
+      "name": "ctxFor",
+      "qualifiedName": "ctxFor",
+      "signature": "ctxFor(text: string): ExtractCtx",
+      "type": "function",
+      "file": "packages/parsers/src/ts/react.test.ts",
+      "line": 17
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.test.ts#ctxFor@L12",
+      "confidence": 1,
+      "name": "ctxFor",
+      "qualifiedName": "ctxFor",
+      "signature": "ctxFor(text: string): ExtractCtx",
+      "type": "function",
+      "file": "packages/parsers/src/plsql/PlSqlExtractor.test.ts",
+      "line": 12
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.test.ts#runText@L524",
+    "procedureName": "runText",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.test.ts#runText@L524",
+        "procedureName": "runText",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0aed47d4d664b1fbd8a582e3c7a12d936e1e8e8e898604d2aa9419ec426108fa",
+          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.test.ts@L531",
+          "line": 531,
+          "expr": "return new PlSqlExtractor().extract(meta, ctxFor(text));"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.test.ts#runText@L524",
+        "procedureName": "runText",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:4c5d1f3028dba92973a07335d336ec9819e0c56bc7e417aa92b5a265762a1dd4",
+          "target": "sym:packages/parsers/src/ts/react.test.ts#ctxFor@L17",
+          "expr": "ctxFor",
+          "line": 531
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.test.ts#runText@L524",
+        "procedureName": "runText",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:a57872ecc2d1222c895a5e3b32c922e3cd0218149d14cbb20a883a37d910946c",
+          "target": "sym:packages/parsers/src/plsql/PlSqlExtractor.test.ts#ctxFor@L12",
+          "expr": "ctxFor",
+          "line": 531
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 2,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

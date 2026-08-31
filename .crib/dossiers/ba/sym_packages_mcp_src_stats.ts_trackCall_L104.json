@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/mcp/src/stats.ts#trackCall@L104",
-  "schemaVersion": "1.5",
+  "schemaVersion": "1.6",
   "nodeHash": "blake3:9c517e63e19d7fde7881c3b56e2ca9db078cd6977ed6f470164705fdc4d29d37",
-  "builtAt": "2026-07-16T14:40:07.112Z",
+  "builtAt": "2026-08-31T17:37:23.222Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/mcp/src/stats.ts#trackCall@L104",
@@ -72,14 +72,14 @@
   },
   "callers": [
     {
-      "id": "sym:packages/mcp/src/verbs.ts#Verbs.get@L252",
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.get@L351",
       "confidence": 1,
       "name": "get",
       "qualifiedName": "Verbs.get",
       "signature": "get(target, prop, receiver)",
       "type": "method",
       "file": "packages/mcp/src/verbs.ts",
-      "line": 252
+      "line": 351
     }
   ],
   "callees": [
@@ -94,14 +94,14 @@
       "line": 46
     },
     {
-      "id": "sym:packages/pipeline/fixtures/mixed/schema.sql#event_pkg.record@L8",
+      "id": "sym:packages/memory/src/tombstone.test.ts#record@L70",
       "confidence": 1,
       "name": "record",
-      "qualifiedName": "event_pkg.record",
-      "signature": "recordp_name VARCHAR2",
-      "type": "procedure",
-      "file": "packages/pipeline/fixtures/mixed/schema.sql",
-      "line": 8
+      "qualifiedName": "record",
+      "signature": "record(opts: {\n  trust?: Verdicts['trust'];\n  subject?: string;\n  claim?: string;\n  kind?: MemoryRecordKind;\n}): MemoryRecord",
+      "type": "function",
+      "file": "packages/memory/src/tombstone.test.ts",
+      "line": 70
     }
   ],
   "docs": [
@@ -176,11 +176,11 @@
         "procedureName": "trackCall",
         "conditions": [],
         "inLoop": false,
-        "inException": true,
+        "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:50785cb6547974734857f7e01b99d18dbb186634c90064a7637814ba6a3b04ed",
-          "target": "sym:packages/mcp/src/stats.ts#Stats.record@L46",
+          "edgeId": "e:0c7bd77759d2dfd45e2bf9db9839a6cece65dee4c6fd4c70dc0be1e41804f638",
+          "target": "sym:packages/memory/src/tombstone.test.ts#record@L70",
           "expr": "record",
           "line": 112
         }
@@ -190,11 +190,11 @@
         "procedureName": "trackCall",
         "conditions": [],
         "inLoop": false,
-        "inException": false,
+        "inException": true,
         "action": {
           "kind": "calls",
-          "edgeId": "e:f02d6ddccf871b3a8114e8f5ca33fc8f3cec75ef4f5fd1064fdc057ff14c06ef",
-          "target": "sym:packages/pipeline/fixtures/mixed/schema.sql#event_pkg.record@L8",
+          "edgeId": "e:50785cb6547974734857f7e01b99d18dbb186634c90064a7637814ba6a3b04ed",
+          "target": "sym:packages/mcp/src/stats.ts#Stats.record@L46",
           "expr": "record",
           "line": 112
         }

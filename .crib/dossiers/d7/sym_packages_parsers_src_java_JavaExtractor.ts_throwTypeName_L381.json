@@ -1,0 +1,151 @@
+{
+  "id": "sym:packages/parsers/src/java/JavaExtractor.ts#throwTypeName@L381",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:7665a2ae038b11ef548f7d28b353c6367ab135095f62d1b2b0a59d151f2d494e",
+  "builtAt": "2026-08-25T20:55:11.863Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/java/JavaExtractor.ts#throwTypeName@L381",
+    "kind": "symbol",
+    "type": "function",
+    "name": "throwTypeName",
+    "qualifiedName": "throwTypeName",
+    "signature": "throwTypeName(text: string | undefined): string",
+    "lang": "typescript",
+    "file": "packages/parsers/src/java/JavaExtractor.ts",
+    "span": {
+      "start": 381,
+      "end": 385
+    },
+    "callSites": [
+      {
+        "callee": "match",
+        "line": 383
+      },
+      {
+        "callee": "pop",
+        "line": 384
+      },
+      {
+        "callee": "split",
+        "line": 384
+      }
+    ]
+  },
+  "source": {
+    "text": "function throwTypeName(text: string | undefined): string {\n  if (!text) return '';\n  const m = text.match(/throw\\s+new\\s+([A-Za-z_$][\\w$.]*)/);\n  return m ? (m[1]!.split('.').pop() ?? '') : '';\n}",
+    "truncated": false,
+    "totalLines": 5,
+    "startLine": 381
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.addRaise@L580",
+      "confidence": 1,
+      "name": "addRaise",
+      "qualifiedName": "BodyWalker.addRaise",
+      "signature": "addRaise(s: JavaStmt, procId: string, guardStack: string[], inLoop: boolean, inException: boolean): void",
+      "type": "method",
+      "file": "packages/parsers/src/java/JavaExtractor.ts",
+      "line": 580
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/java/JavaExtractor.ts@L376",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#throwTypeName@L381",
+    "procedureName": "throwTypeName",
+    "conditions": [
+      "cond:packages/parsers/src/java/JavaExtractor.ts@L382"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#throwTypeName@L381",
+        "procedureName": "throwTypeName",
+        "guard": "cond:packages/parsers/src/java/JavaExtractor.ts@L382",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/JavaExtractor.ts@L382",
+            "expr": "!text",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:395801d33e2e7f1f6b8abc755508d82daa668bcc11ea3a331df0662456e5079c",
+          "target": "stmt:packages/parsers/src/java/JavaExtractor.ts@L382",
+          "line": 382,
+          "expr": "return '';"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#throwTypeName@L381",
+        "procedureName": "throwTypeName",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f9e84208dbb3abf6025e97bef170fa44f97532c6eed0d866eb00b637763d4c15",
+          "target": "stmt:packages/parsers/src/java/JavaExtractor.ts@L383",
+          "line": 383,
+          "expr": "const m = text.match(/throw\\s+new\\s+([A-Za-z_$][\\w$.]*)/);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#throwTypeName@L381",
+        "procedureName": "throwTypeName",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8106fd2a00d5db12e3913b226784c555a2ae7c6134a6c2913473ec97508a3661",
+          "target": "stmt:packages/parsers/src/java/JavaExtractor.ts@L384",
+          "line": 384,
+          "expr": "return m ? (m[1]!.split('.').pop() ?? '') : '';"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/parsers/src/java/JavaExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 3,
+      "unresolved": 3
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "3 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

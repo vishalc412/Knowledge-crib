@@ -1,0 +1,493 @@
+{
+  "id": "sym:packages/parsers/src/rust/parser.ts#collectCallSites@L1590",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:ce7152ce70f49ede47554426e7ecb5446f5f6d34ea32963d355a07776d29acc4",
+  "builtAt": "2026-08-25T20:55:11.863Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/rust/parser.ts#collectCallSites@L1590",
+    "kind": "symbol",
+    "type": "function",
+    "name": "collectCallSites",
+    "qualifiedName": "collectCallSites",
+    "signature": "collectCallSites(tokens: Token[], excluded: Set<number>): RustCallSite[]",
+    "lang": "typescript",
+    "file": "packages/parsers/src/rust/parser.ts",
+    "span": {
+      "start": 1590,
+      "end": 1645
+    },
+    "callSites": [
+      {
+        "callee": "push",
+        "line": 1607
+      },
+      {
+        "callee": "push",
+        "line": 1608
+      },
+      {
+        "callee": "push",
+        "line": 1613
+      },
+      {
+        "callee": "push",
+        "line": 1614
+      },
+      {
+        "callee": "push",
+        "line": 1629
+      },
+      {
+        "callee": "push",
+        "line": 1637
+      }
+    ]
+  },
+  "source": {
+    "text": "export function collectCallSites(tokens: Token[], excluded: Set<number>): RustCallSite[] {\n  const calls: RustCallSite[] = [];\n  let i = 0;\n  while (i < tokens.length) {\n    const tk = tokens[i]!;\n    if (tk.type !== 'NAME') {\n      i++;\n      continue;\n    }\n    const head = tk.value;\n    const line = tk.line;\n    const segments: string[] = [];\n    const seps: string[] = [];\n    let j = i + 1;\n    while (j < tokens.length) {\n      const op = tokens[j]!;\n      if (op.type === 'OP' && op.value === '::' && tokens[j + 1]?.type === 'NAME') {\n        seps.push('::');\n        segments.push(tokens[j + 1]!.value);\n        j += 2;\n        continue;\n      }\n      if (op.type === 'OP' && op.value === '.' && tokens[j + 1]?.type === 'NAME') {\n        seps.push('.');\n        segments.push(tokens[j + 1]!.value);\n        j += 2;\n        continue;\n      }\n      break;\n    }\n    const name = segments.length ? segments[segments.length - 1]! : head;\n    // macro call: `!` immediately before `(`\n    if (\n      tokens[j]?.type === 'OP' &&\n      tokens[j]?.value === '!' &&\n      tokens[j + 1]?.type === 'OP' &&\n      tokens[j + 1]?.value === '('\n    ) {\n      if (!excluded.has(j + 1)) {\n        calls.push({ head, segments, seps, name, line, macro: true });\n      }\n      i = j + 2;\n      continue;\n    }\n    // regular call: `(` immediately after the chain\n    if (tokens[j]?.type === 'OP' && tokens[j]?.value === '(') {\n      if (!excluded.has(j)) {\n        calls.push({ head, segments, seps, name, line, macro: false });\n      }\n      i = j + 1;\n      continue;\n    }\n    i++;\n  }\n  return calls;\n}",
+    "truncated": false,
+    "totalLines": 56,
+    "startLine": 1590
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#parseCsharp@L176",
+      "confidence": 1,
+      "name": "parseCsharp",
+      "qualifiedName": "parseCsharp",
+      "signature": "parseCsharp(src: string): CsharpModule",
+      "type": "function",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 176
+    },
+    {
+      "id": "sym:packages/parsers/src/go/parser.ts#parseGo@L231",
+      "confidence": 1,
+      "name": "parseGo",
+      "qualifiedName": "parseGo",
+      "signature": "parseGo(src: string): GoModule",
+      "type": "function",
+      "file": "packages/parsers/src/go/parser.ts",
+      "line": 231
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#parseJava@L194",
+      "confidence": 1,
+      "name": "parseJava",
+      "qualifiedName": "parseJava",
+      "signature": "parseJava(src: string): JavaModule",
+      "type": "function",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 194
+    },
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#parsePython@L177",
+      "confidence": 1,
+      "name": "parsePython",
+      "qualifiedName": "parsePython",
+      "signature": "parsePython(src: string): PyModule",
+      "type": "function",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 177
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/parser.ts#parseRust@L192",
+      "confidence": 1,
+      "name": "parseRust",
+      "qualifiedName": "parseRust",
+      "signature": "parseRust(src: string): RustModule",
+      "type": "function",
+      "file": "packages/parsers/src/rust/parser.ts",
+      "line": 192
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 70
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/rust/parser.ts@L1584",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/rust/parser.ts#collectCallSites@L1590",
+    "procedureName": "collectCallSites",
+    "conditions": [
+      "cond:packages/parsers/src/rust/parser.ts@L1593",
+      "cond:packages/parsers/src/rust/parser.ts@L1604",
+      "cond:packages/parsers/src/rust/parser.ts@L1606",
+      "cond:packages/parsers/src/rust/parser.ts@L1612",
+      "cond:packages/parsers/src/rust/parser.ts@L1622",
+      "cond:packages/parsers/src/rust/parser.ts@L1628",
+      "cond:packages/parsers/src/rust/parser.ts@L1635",
+      "cond:packages/parsers/src/rust/parser.ts@L1636"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/rust/parser.ts#collectCallSites@L1590",
+        "procedureName": "collectCallSites",
+        "guard": "cond:packages/parsers/src/rust/parser.ts@L1606",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L1593",
+            "expr": "i < tokens.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L1604",
+            "expr": "j < tokens.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L1606",
+            "expr": "op.type === 'OP' && op.value === '::' && tokens[j + 1]?.type === 'NAME'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b84f415ab3c573ec60e89e93f0b7ac2348c0a6c73b93740a27217dd9e59fdbf7",
+          "target": "stmt:packages/parsers/src/rust/parser.ts@L1607",
+          "line": 1607,
+          "expr": "seps.push('::');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/parser.ts#collectCallSites@L1590",
+        "procedureName": "collectCallSites",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:fe58734d9326e4b9c070c5eeb6a253b377d181e3e9ba63623d9b6697aac2e899",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
+          "expr": "push",
+          "line": 1607
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/parser.ts#collectCallSites@L1590",
+        "procedureName": "collectCallSites",
+        "guard": "cond:packages/parsers/src/rust/parser.ts@L1606",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L1593",
+            "expr": "i < tokens.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L1604",
+            "expr": "j < tokens.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L1606",
+            "expr": "op.type === 'OP' && op.value === '::' && tokens[j + 1]?.type === 'NAME'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:802083cd3696439929d8701de8defd5094402f29bc40a61d32ebb45d45f74762",
+          "target": "stmt:packages/parsers/src/rust/parser.ts@L1608",
+          "line": 1608,
+          "expr": "segments.push(tokens[j + 1]!.value);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/parser.ts#collectCallSites@L1590",
+        "procedureName": "collectCallSites",
+        "guard": "cond:packages/parsers/src/rust/parser.ts@L1606",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L1593",
+            "expr": "i < tokens.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L1604",
+            "expr": "j < tokens.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L1606",
+            "expr": "op.type === 'OP' && op.value === '::' && tokens[j + 1]?.type === 'NAME'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:55922319feb9f54155b9461dba7e49a594ba073a8472d8a899e3c65181f61619",
+          "target": "assign:packages/parsers/src/rust/parser.ts@L1609",
+          "line": 1609,
+          "expr": "j += 2;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/parser.ts#collectCallSites@L1590",
+        "procedureName": "collectCallSites",
+        "guard": "cond:packages/parsers/src/rust/parser.ts@L1612",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L1593",
+            "expr": "i < tokens.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L1604",
+            "expr": "j < tokens.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L1612",
+            "expr": "op.type === 'OP' && op.value === '.' && tokens[j + 1]?.type === 'NAME'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3c3e9f1e3f9ba1a14105623c511e8ca650841918c8c11dab925deddd22f92eb6",
+          "target": "stmt:packages/parsers/src/rust/parser.ts@L1613",
+          "line": 1613,
+          "expr": "seps.push('.');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/parser.ts#collectCallSites@L1590",
+        "procedureName": "collectCallSites",
+        "guard": "cond:packages/parsers/src/rust/parser.ts@L1612",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L1593",
+            "expr": "i < tokens.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L1604",
+            "expr": "j < tokens.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L1612",
+            "expr": "op.type === 'OP' && op.value === '.' && tokens[j + 1]?.type === 'NAME'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8cc63af014aa30397b2a4e5391799e4c7f73fcbd5d18e7d43f2ac1d47c6cb98e",
+          "target": "stmt:packages/parsers/src/rust/parser.ts@L1614",
+          "line": 1614,
+          "expr": "segments.push(tokens[j + 1]!.value);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/parser.ts#collectCallSites@L1590",
+        "procedureName": "collectCallSites",
+        "guard": "cond:packages/parsers/src/rust/parser.ts@L1612",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L1593",
+            "expr": "i < tokens.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L1604",
+            "expr": "j < tokens.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L1612",
+            "expr": "op.type === 'OP' && op.value === '.' && tokens[j + 1]?.type === 'NAME'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:39b18ccb51b724f6008f586aed20a6c9c226d2a9ccbad609b2ada6d0178e11b0",
+          "target": "assign:packages/parsers/src/rust/parser.ts@L1615",
+          "line": 1615,
+          "expr": "j += 2;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/parser.ts#collectCallSites@L1590",
+        "procedureName": "collectCallSites",
+        "guard": "cond:packages/parsers/src/rust/parser.ts@L1628",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L1593",
+            "expr": "i < tokens.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L1622",
+            "expr": "tokens[j]?.type === 'OP' &&\n      tokens[j]?.value === '!' &&\n      tokens[j + 1]?.type === 'OP' &&\n      tokens[j + 1]?.value === '('"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L1628",
+            "expr": "!excluded.has(j + 1)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e8ad2c41a7cd5d480846d0cc6538fb45045b1df326574532919e1ce16fb16792",
+          "target": "stmt:packages/parsers/src/rust/parser.ts@L1629",
+          "line": 1629,
+          "expr": "calls.push({ head, segments, seps, name, line, macro: true });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/parser.ts#collectCallSites@L1590",
+        "procedureName": "collectCallSites",
+        "guard": "cond:packages/parsers/src/rust/parser.ts@L1622",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L1593",
+            "expr": "i < tokens.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L1622",
+            "expr": "tokens[j]?.type === 'OP' &&\n      tokens[j]?.value === '!' &&\n      tokens[j + 1]?.type === 'OP' &&\n      tokens[j + 1]?.value === '('",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ee3341ad3da15c9fb97d3625eaaab01caf764304626c0ab523f34c7403d323e2",
+          "target": "assign:packages/parsers/src/rust/parser.ts@L1631",
+          "line": 1631,
+          "expr": "i = j + 2;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/parser.ts#collectCallSites@L1590",
+        "procedureName": "collectCallSites",
+        "guard": "cond:packages/parsers/src/rust/parser.ts@L1636",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L1593",
+            "expr": "i < tokens.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L1635",
+            "expr": "tokens[j]?.type === 'OP' && tokens[j]?.value === '('"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L1636",
+            "expr": "!excluded.has(j)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3c3f35febfa427e106cc302b4512c50e1d46a750ad713ca2ace8a2a6be0f5677",
+          "target": "stmt:packages/parsers/src/rust/parser.ts@L1637",
+          "line": 1637,
+          "expr": "calls.push({ head, segments, seps, name, line, macro: false });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/parser.ts#collectCallSites@L1590",
+        "procedureName": "collectCallSites",
+        "guard": "cond:packages/parsers/src/rust/parser.ts@L1635",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L1593",
+            "expr": "i < tokens.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L1635",
+            "expr": "tokens[j]?.type === 'OP' && tokens[j]?.value === '('",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:db24a3cc5964c97e51ac44a9931c15dbf28bd7e84dea8d07920e5ea0fa8178e1",
+          "target": "assign:packages/parsers/src/rust/parser.ts@L1639",
+          "line": 1639,
+          "expr": "i = j + 1;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/parser.ts#collectCallSites@L1590",
+        "procedureName": "collectCallSites",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ba640c5e5a4e5e797ec8402212d4e884265c8e28ac5440826f5ed08475dcb8f7",
+          "target": "stmt:packages/parsers/src/rust/parser.ts@L1644",
+          "line": 1644,
+          "expr": "return calls;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 11,
+    "referencedByFiles": [
+      "packages/parsers/src/csharp/parser.ts",
+      "packages/parsers/src/go/parser.ts",
+      "packages/parsers/src/java/parser.ts",
+      "packages/parsers/src/python/parser.ts",
+      "packages/parsers/src/rust/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 11,
+    "assignments": 4,
+    "conditions": 6,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 6,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

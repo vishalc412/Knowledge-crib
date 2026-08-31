@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/ui/web/support.js#walkComponent@L551",
-  "schemaVersion": "1.5",
+  "schemaVersion": "1.6",
   "nodeHash": "blake3:56c89d6cbb4b9be956ba0e7d5d46f632adb83ab11178b96bac691c0d870836a2",
-  "builtAt": "2026-07-13T11:04:33.459Z",
+  "builtAt": "2026-08-25T20:55:11.863Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/ui/web/support.js#walkComponent@L551",
@@ -112,26 +112,6 @@
   ],
   "callees": [
     {
-      "id": "sym:packages/ui/web/vendor/react.production.min.js#B@L12",
-      "confidence": 1,
-      "name": "B",
-      "qualifiedName": "B",
-      "signature": "B(a, b, e, m, d)",
-      "type": "function",
-      "file": "packages/ui/web/vendor/react.production.min.js",
-      "line": 12
-    },
-    {
-      "id": "sym:packages/ui/web/vendor/react-dom.production.min.js#G@L201",
-      "confidence": 1,
-      "name": "G",
-      "qualifiedName": "G",
-      "signature": "G(a, b, c)",
-      "type": "function",
-      "file": "packages/ui/web/vendor/react-dom.production.min.js",
-      "line": 201
-    },
-    {
       "id": "sym:packages/ui/web/support.js#collectProps@L369",
       "confidence": 1,
       "name": "collectProps",
@@ -150,6 +130,16 @@
       "type": "function",
       "file": "packages/ui/web/support.js",
       "line": 355
+    },
+    {
+      "id": "sym:scripts/federation-check.mjs#gitInit.g@L58",
+      "confidence": 1,
+      "name": "g",
+      "qualifiedName": "gitInit.g",
+      "signature": "g(…)",
+      "type": "function",
+      "file": "scripts/federation-check.mjs",
+      "line": 58
     },
     {
       "id": "sym:packages/ui/web/support.js#hostPositionStyle@L411",
@@ -392,24 +382,10 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:774bf6556e7c0af7854e02c3e06527c507f4e44a81f506852f778ea57f2eb586",
-          "target": "sym:packages/ui/web/vendor/react-dom.production.min.js#G@L201",
-          "expr": "G",
+          "edgeId": "e:9e66d8ea1704cc59fec77c40b00425409a5d7900ee202021c69ec96c9fa185bd",
+          "target": "sym:scripts/federation-check.mjs#gitInit.g@L58",
+          "expr": "g",
           "line": 569
-        }
-      },
-      {
-        "procedure": "sym:packages/ui/web/support.js#walkComponent@L551",
-        "procedureName": "walkComponent",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:016ed0537475de8281f0f96aef8e964da41f701f226237b7b8572b207b56eaec",
-          "target": "sym:packages/ui/web/vendor/react.production.min.js#B@L12",
-          "expr": "B",
-          "line": 576
         }
       },
       {
@@ -446,14 +422,14 @@
     "cursors": 0,
     "caseBranches": 0,
     "calls": {
-      "resolved": 7,
+      "resolved": 6,
       "recorded": 18,
-      "unresolved": 11
+      "unresolved": 12
     },
     "recursive": false,
     "exprTruncated": 0,
     "caveats": [
-      "11 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+      "12 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
     ]
   }
 }

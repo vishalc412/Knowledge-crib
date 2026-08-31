@@ -1,0 +1,218 @@
+{
+  "id": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.addStatement@L627",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:b9f37a40c298489507bad75c86dd4c418d1a7603b23f3b7ce3ce3379b4893eb2",
+  "builtAt": "2026-08-25T20:55:11.863Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.addStatement@L627",
+    "kind": "symbol",
+    "type": "method",
+    "name": "addStatement",
+    "qualifiedName": "BodyWalker.addStatement",
+    "signature": "addStatement(line: number, type: 'call' | 'return' | 'assign' | 'throw' | 'expr' | 'plain', expr: string, head: string, proc: ProcCtx, guardStack: string[], branch: string | undefined, inLoop: boolean, inException: boolean): void",
+    "lang": "typescript",
+    "file": "packages/parsers/src/go/GoExtractor.ts",
+    "span": {
+      "start": 627,
+      "end": 684
+    },
+    "callSites": [
+      {
+        "callee": "idFor",
+        "line": 638
+      },
+      {
+        "callee": "push",
+        "line": 639
+      },
+      {
+        "callee": "exprFields",
+        "line": 643
+      },
+      {
+        "callee": "hash",
+        "line": 647
+      },
+      {
+        "callee": "push",
+        "line": 656
+      },
+      {
+        "callee": "edgeId",
+        "line": 657
+      },
+      {
+        "callee": "slice",
+        "line": 664
+      },
+      {
+        "callee": "slice",
+        "line": 665
+      },
+      {
+        "callee": "push",
+        "line": 673
+      },
+      {
+        "callee": "edgeId",
+        "line": 674
+      }
+    ]
+  },
+  "source": {
+    "text": "  private addStatement(\n    line: number,\n    type: 'call' | 'return' | 'assign' | 'throw' | 'expr' | 'plain',\n    expr: string,\n    head: string,\n    proc: ProcCtx,\n    guardStack: string[],\n    branch: string | undefined,\n    inLoop: boolean,\n    inException: boolean,\n  ): void {\n    const id = this.ctx.idFor('statement', { file: this.path, line });\n    this.nodes.push({\n      id,\n      kind: 'statement',\n      type,\n      ...exprFields(expr),\n      file: this.path,\n      span: { start: line, end: line },\n      lang: 'go',\n      hash: this.ctx.hash(`${this.path}:${line}:${type}`),\n      meta: {\n        ...(head ? { head } : {}),\n        inLoop,\n        inException,\n        ...(guardStack.length > 0 ? { branch: 'GUARDED' } : {}),\n      },\n    });\n    const guard = guardStack.length > 0 ? guardStack[guardStack.length - 1] : undefined;\n    this.edges.push({\n      id: edgeId(proc.procId, id, 'executes'),\n      src: proc.procId,\n      dst: id,\n      rel: 'executes',\n      method: 'static',\n      provenance: 'EXTRACTED',\n      confidence: 1,\n      evidence: { by: 'lang:go', snippet: head || expr.slice(0, 40) },\n      cfgPath: guardStack.slice(),\n      ...(guard !== undefined ? { guard } : {}),\n      ...(guard !== undefined && branch !== undefined ? { branch } : {}),\n      inLoop,\n      inException,\n    });\n    // guarded-by: statement → innermost enclosing condition (graph completeness).\n    if (guard !== undefined) {\n      this.edges.push({\n        id: edgeId(id, guard, 'guarded-by'),\n        src: id,\n        dst: guard,\n        rel: 'guarded-by',\n        method: 'static',\n        provenance: 'EXTRACTED',\n        confidence: 1,\n        evidence: { by: 'lang:go', snippet: branch ?? 'IF' },\n      });\n    }\n  }",
+    "truncated": false,
+    "totalLines": 58,
+    "startLine": 627
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.walkStmt@L426",
+      "confidence": 1,
+      "name": "walkStmt",
+      "qualifiedName": "BodyWalker.walkStmt",
+      "signature": "walkStmt(s: GoBodyStmt, proc: ProcCtx, guardStack: string[], branch: string | undefined, inLoop: boolean, inException: boolean): void",
+      "type": "method",
+      "file": "packages/parsers/src/go/GoExtractor.ts",
+      "line": 426
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/go/GoExtractor.ts#exprFields@L49",
+      "confidence": 1,
+      "name": "exprFields",
+      "qualifiedName": "exprFields",
+      "signature": "exprFields(raw: string | undefined): { expr?: string; exprTruncated?: true }",
+      "type": "function",
+      "file": "packages/parsers/src/go/GoExtractor.ts",
+      "line": 49
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/go/GoExtractor.ts@L626",
+      "snippet": "/** Emit a statement node + an executes edge proc→stmt carrying the full guard chain. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.addStatement@L627",
+    "procedureName": "BodyWalker.addStatement",
+    "conditions": [
+      "cond:packages/parsers/src/go/GoExtractor.ts@L672"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.addStatement@L627",
+        "procedureName": "BodyWalker.addStatement",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8f3d3b6fb1318251a7f8915cd6c65bf4324f908379e4977bb5c0e496ebcc0d43",
+          "target": "stmt:packages/parsers/src/go/GoExtractor.ts@L638",
+          "line": 638,
+          "expr": "const id = this.ctx.idFor('statement', { file: this.path, line });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.addStatement@L627",
+        "procedureName": "BodyWalker.addStatement",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:64e82870bcfe1fee8e5b75cfeb167626da26724c0c56f3b017d42ccf76e8ab69",
+          "target": "stmt:packages/parsers/src/go/GoExtractor.ts@L639",
+          "line": 639,
+          "expr": "this.nodes.push({\n      id,\n      kind: 'statement',\n      type,\n      ...exprFields(expr),\n      file: this.path,\n      span: { start: line, end: line },\n      lang: 'go',\n      hash: this.ctx.hash(`${this.path}:${line}:${type}`),\n      meta: {\n        ...(head ? { head } : {}),\n        inLoop,\n        inException,\n        ...(guardStack.length > 0 ? { branch: 'GUARDED' } : {}),\n      },\n    });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.addStatement@L627",
+        "procedureName": "BodyWalker.addStatement",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:557158d774929220d15db89a13d5e31d53f520791f1cb50dff9f2d85edb42a89",
+          "target": "sym:packages/parsers/src/go/GoExtractor.ts#exprFields@L49",
+          "expr": "exprFields",
+          "line": 643
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.addStatement@L627",
+        "procedureName": "BodyWalker.addStatement",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:eb05136094a36976383b7dc2d65501dd41f924e1d8e95c5aa256c638bbacf821",
+          "target": "stmt:packages/parsers/src/go/GoExtractor.ts@L656",
+          "line": 656,
+          "expr": "this.edges.push({\n      id: edgeId(proc.procId, id, 'executes'),\n      src: proc.procId,\n      dst: id,\n      rel: 'executes',\n      method: 'static',\n      provenance: 'EXTRACTED',\n      confidence: 1,\n      evidence: { by: 'lang:go', snippet: head || expr.slice(0, 40) },\n      cfgPath: guardStack.slice(),\n      ...(guard !== undefined ? { guard } : {}),\n      ...(guard !== undefined && branch !== undefined ? { branch } : {}),\n      inLoop,\n      inException,\n    });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.addStatement@L627",
+        "procedureName": "BodyWalker.addStatement",
+        "guard": "cond:packages/parsers/src/go/GoExtractor.ts@L672",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/GoExtractor.ts@L672",
+            "expr": "guard !== undefined",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a61c1b4d4221845a8825aeed8206ca3574ffb67c20ebf9f902db4da558609458",
+          "target": "stmt:packages/parsers/src/go/GoExtractor.ts@L673",
+          "line": 673,
+          "expr": "this.edges.push({\n        id: edgeId(id, guard, 'guarded-by'),\n        src: id,\n        dst: guard,\n        rel: 'guarded-by',\n        method: 'static',\n        provenance: 'EXTRACTED',\n        confidence: 1,\n        evidence: { by: 'lang:go', snippet: branch ?? 'IF' },\n      });"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": [
+      "packages/parsers/src/go/GoExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 10,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

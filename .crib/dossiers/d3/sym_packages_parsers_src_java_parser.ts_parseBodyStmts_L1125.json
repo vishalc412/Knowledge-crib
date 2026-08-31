@@ -1,0 +1,160 @@
+{
+  "id": "sym:packages/parsers/src/java/parser.ts#parseBodyStmts@L1125",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:0e745b3f6c2a1422c63597e33538ae6592d8e730d625d3f16205c3d5b37a1e59",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/java/parser.ts#parseBodyStmts@L1125",
+    "kind": "symbol",
+    "type": "function",
+    "name": "parseBodyStmts",
+    "qualifiedName": "parseBodyStmts",
+    "signature": "parseBodyStmts(tokens: Token[], src: string, lineStarts: number[], openIdx: number): JavaStmt[]",
+    "lang": "typescript",
+    "file": "packages/parsers/src/java/parser.ts",
+    "span": {
+      "start": 1125,
+      "end": 1136
+    },
+    "callSites": [
+      {
+        "callee": "parseBody",
+        "line": 1132
+      }
+    ]
+  },
+  "source": {
+    "text": "export function parseBodyStmts(\n  tokens: Token[],\n  src: string,\n  lineStarts: number[],\n  openIdx: number,\n): JavaStmt[] {\n  try {\n    return new BodyParser(tokens, src, lineStarts).parseBody(openIdx);\n  } catch {\n    return [];\n  }\n}",
+    "truncated": false,
+    "totalLines": 12,
+    "startLine": 1125
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#Parser.parseMember@L375",
+      "confidence": 1,
+      "name": "parseMember",
+      "qualifiedName": "Parser.parseMember",
+      "signature": "parseMember(startLine: number, annotations: string[], modifiers: string[], annos: JavaAnno[] = []): JavaDef | null",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 375
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#BodyParser.parseBody@L1163",
+      "confidence": 1,
+      "name": "parseBody",
+      "qualifiedName": "BodyParser.parseBody",
+      "signature": "parseBody(openIdx: number): JavaStmt[]",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 1163
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/java/parser.ts@L1124",
+      "snippet": "/** Parse a method body's compound statements. `openIdx` is the index of the body's opening `{`. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/java/parser.ts#parseBodyStmts@L1125",
+    "procedureName": "parseBodyStmts",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#parseBodyStmts@L1125",
+        "procedureName": "parseBodyStmts",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0b8b30984c725c555bdb149a41aa964567e94db1670f525869f4b7d0c1bcfca8",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L1132",
+          "line": 1132,
+          "expr": "return new BodyParser(tokens, src, lineStarts).parseBody(openIdx);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#parseBodyStmts@L1125",
+        "procedureName": "parseBodyStmts",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:330c13a8600f9c62d05fb356ceeb4c9ae9d8703b919d143c13f3fae55debe9e0",
+          "target": "sym:packages/parsers/src/java/parser.ts#BodyParser.parseBody@L1163",
+          "expr": "parseBody",
+          "line": 1132
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#parseBodyStmts@L1125",
+        "procedureName": "parseBodyStmts",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:63b1a470209b5cfa0987dea99d37eee447d9f4e302337a911176acda561b17b2",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L1134",
+          "line": 1134,
+          "expr": "return [];"
+        }
+      }
+    ]
+  },
+  "controlFlow": {
+    "raises": [],
+    "handles": [
+      {
+        "id": "exc:packages/parsers/src/java/parser.ts@L1133",
+        "kind": "exception-handler",
+        "lang": "typescript",
+        "file": "packages/parsers/src/java/parser.ts",
+        "span": {
+          "start": 1133,
+          "end": 1133
+        },
+        "confidence": 1
+      }
+    ],
+    "iterates": [],
+    "declares": []
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/parsers/src/java/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 1,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

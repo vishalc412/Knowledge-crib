@@ -1,0 +1,361 @@
+{
+  "id": "sym:packages/pipeline/src/vcs.ts#uncommittedChanges@L60",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:8b0d0f86efaa64e3fe4c8c99f2dd045a6b0a7aeb19e06711f5f2a16aeef01c31",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/vcs.ts#uncommittedChanges@L60",
+    "kind": "symbol",
+    "type": "function",
+    "name": "uncommittedChanges",
+    "qualifiedName": "uncommittedChanges",
+    "signature": "uncommittedChanges(root: string): string[]",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/vcs.ts",
+    "span": {
+      "start": 60,
+      "end": 71
+    },
+    "callSites": [
+      {
+        "callee": "git",
+        "line": 61
+      },
+      {
+        "callee": "git",
+        "line": 62
+      },
+      {
+        "callee": "trim",
+        "line": 66
+      },
+      {
+        "callee": "add",
+        "line": 67
+      },
+      {
+        "callee": "toPosix",
+        "line": 67
+      },
+      {
+        "callee": "sort",
+        "line": 70
+      }
+    ]
+  },
+  "source": {
+    "text": "export function uncommittedChanges(root: string): string[] {\n  const cached = git(root, ['diff', '--cached', '--name-only', '--no-renames']) ?? '';\n  const unstaged = git(root, ['diff', '--name-only', '--no-renames']) ?? '';\n  const set = new Set<string>();\n  for (const block of [cached, unstaged]) {\n    for (const line of block.split('\\n')) {\n      const trimmed = line.trim();\n      if (trimmed.length > 0) set.add(toPosix(trimmed));\n    }\n  }\n  return [...set].sort();\n}",
+    "truncated": false,
+    "totalLines": 12,
+    "startLine": 60
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/src/vcs.ts#hasUncommittedChanges@L74",
+      "confidence": 1,
+      "name": "hasUncommittedChanges",
+      "qualifiedName": "hasUncommittedChanges",
+      "signature": "hasUncommittedChanges(root: string): boolean",
+      "type": "function",
+      "file": "packages/pipeline/src/vcs.ts",
+      "line": 74
+    },
+    {
+      "id": "sym:packages/pipeline/src/update.ts#updateRepo@L134",
+      "confidence": 1,
+      "name": "updateRepo",
+      "qualifiedName": "updateRepo",
+      "signature": "updateRepo(soul: SoulStore, root: string, opts: UpdateOpts = {}): Promise<UpdateResult>",
+      "type": "function",
+      "file": "packages/pipeline/src/update.ts",
+      "line": 134
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/fixtures/python/rules.py#add@L16",
+      "confidence": 1,
+      "name": "add",
+      "qualifiedName": "add",
+      "signature": "add(a, b)",
+      "type": "function",
+      "file": "packages/parsers/fixtures/python/rules.py",
+      "line": 16
+    },
+    {
+      "id": "sym:packages/pipeline/src/vcs.ts#git@L167",
+      "confidence": 1,
+      "name": "git",
+      "qualifiedName": "git",
+      "signature": "git(root: string, args: string[]): string | undefined",
+      "type": "function",
+      "file": "packages/pipeline/src/vcs.ts",
+      "line": 167
+    },
+    {
+      "id": "sym:scripts/soul-refresh-check.mjs#git@L93",
+      "confidence": 1,
+      "name": "git",
+      "qualifiedName": "git",
+      "signature": "git(…)",
+      "type": "function",
+      "file": "scripts/soul-refresh-check.mjs",
+      "line": 93
+    },
+    {
+      "id": "sym:packages/pipeline/src/workspace.ts#toPosix@L337",
+      "confidence": 1,
+      "name": "toPosix",
+      "qualifiedName": "toPosix",
+      "signature": "toPosix(p: string): string",
+      "type": "function",
+      "file": "packages/pipeline/src/workspace.ts",
+      "line": 337
+    },
+    {
+      "id": "sym:packages/pipeline/src/vcs.ts#toPosix@L217",
+      "confidence": 1,
+      "name": "toPosix",
+      "qualifiedName": "toPosix",
+      "signature": "toPosix(p: string): string",
+      "type": "function",
+      "file": "packages/pipeline/src/vcs.ts",
+      "line": 217
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/pipeline/src/vcs.ts@L54",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/vcs.ts#uncommittedChanges@L60",
+    "procedureName": "uncommittedChanges",
+    "conditions": [
+      "cond:packages/pipeline/src/vcs.ts@L64",
+      "cond:packages/pipeline/src/vcs.ts@L65",
+      "cond:packages/pipeline/src/vcs.ts@L67"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/vcs.ts#uncommittedChanges@L60",
+        "procedureName": "uncommittedChanges",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:0ad3b3389839644f6e6ba25762a84b97461407a294dc0c91be1c98e7d14f916b",
+          "target": "sym:packages/pipeline/src/vcs.ts#git@L167",
+          "expr": "git",
+          "line": 61
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/vcs.ts#uncommittedChanges@L60",
+        "procedureName": "uncommittedChanges",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:576dd04fada1db95d874ae49715b705f7edc1f6e6bde483a099ee47c86f24e39",
+          "target": "sym:scripts/soul-refresh-check.mjs#git@L93",
+          "expr": "git",
+          "line": 61
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/vcs.ts#uncommittedChanges@L60",
+        "procedureName": "uncommittedChanges",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8818239ed56e28454704e9c656627c22aedd4b4801de6ac87a1b8487f161e927",
+          "target": "stmt:packages/pipeline/src/vcs.ts@L61",
+          "line": 61,
+          "expr": "const cached = git(root, ['diff', '--cached', '--name-only', '--no-renames']) ?? '';"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/vcs.ts#uncommittedChanges@L60",
+        "procedureName": "uncommittedChanges",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:75b14c91d174bd7e1fe8fc4816bf2f136a84649c2a00e10b5fddd44c20604b12",
+          "target": "stmt:packages/pipeline/src/vcs.ts@L62",
+          "line": 62,
+          "expr": "const unstaged = git(root, ['diff', '--name-only', '--no-renames']) ?? '';"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/vcs.ts#uncommittedChanges@L60",
+        "procedureName": "uncommittedChanges",
+        "guard": "cond:packages/pipeline/src/vcs.ts@L65",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/vcs.ts@L64",
+            "expr": "[cached, unstaged]"
+          },
+          {
+            "id": "cond:packages/pipeline/src/vcs.ts@L65",
+            "expr": "block.split('\\n')",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:daf83b3e80433e8e6ec953f4a7b2bbf8a07ee3614582fbfbd770438939e9175d",
+          "target": "stmt:packages/pipeline/src/vcs.ts@L66",
+          "line": 66,
+          "expr": "const trimmed = line.trim();"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/vcs.ts#uncommittedChanges@L60",
+        "procedureName": "uncommittedChanges",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:650e8ff220232ff35df0b2c98ca3e35cc08286848596749fcad20f480403a7f9",
+          "target": "sym:packages/parsers/fixtures/python/rules.py#add@L16",
+          "expr": "add",
+          "line": 67
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/vcs.ts#uncommittedChanges@L60",
+        "procedureName": "uncommittedChanges",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:6922875e1cb2e804a8d8676c22396e637f6de02e9c8653c4e578ee2c856d3b5e",
+          "target": "sym:packages/pipeline/src/workspace.ts#toPosix@L337",
+          "expr": "toPosix",
+          "line": 67
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/vcs.ts#uncommittedChanges@L60",
+        "procedureName": "uncommittedChanges",
+        "guard": "cond:packages/pipeline/src/vcs.ts@L67",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/vcs.ts@L64",
+            "expr": "[cached, unstaged]"
+          },
+          {
+            "id": "cond:packages/pipeline/src/vcs.ts@L65",
+            "expr": "block.split('\\n')"
+          },
+          {
+            "id": "cond:packages/pipeline/src/vcs.ts@L67",
+            "expr": "trimmed.length > 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:7b1861295df86c59482e1dd74db47d9ad56e3f8995b3fca5bf61baa295c91fdc",
+          "target": "sym:packages/pipeline/src/vcs.ts#toPosix@L217",
+          "expr": "toPosix",
+          "line": 67
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/vcs.ts#uncommittedChanges@L60",
+        "procedureName": "uncommittedChanges",
+        "guard": "cond:packages/pipeline/src/vcs.ts@L67",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/vcs.ts@L64",
+            "expr": "[cached, unstaged]"
+          },
+          {
+            "id": "cond:packages/pipeline/src/vcs.ts@L65",
+            "expr": "block.split('\\n')"
+          },
+          {
+            "id": "cond:packages/pipeline/src/vcs.ts@L67",
+            "expr": "trimmed.length > 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:eb9cf5cdd94743cf5ac4319e65646d334d58e526e0c90c0b76a468451d9fdd1d",
+          "target": "stmt:packages/pipeline/src/vcs.ts@L67",
+          "line": 67,
+          "expr": "set.add(toPosix(trimmed));"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/vcs.ts#uncommittedChanges@L60",
+        "procedureName": "uncommittedChanges",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fac2a4d5d05b8842cc6a7ca0ddbb56da7a8b10accb02673bef1c12fae2a767eb",
+          "target": "stmt:packages/pipeline/src/vcs.ts@L70",
+          "line": 70,
+          "expr": "return [...set].sort();"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 5,
+    "referencedByFiles": [
+      "packages/pipeline/src/update.ts",
+      "packages/pipeline/src/vcs.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 5,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 5,
+      "recorded": 6,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

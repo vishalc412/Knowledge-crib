@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/core/src/lock.ts#withCribLockAsync@L196",
-  "schemaVersion": "1.5",
+  "schemaVersion": "1.6",
   "nodeHash": "blake3:96f85459afe2fdf2019342ae39e9e1dcf404a59424de7b6fe1735bb3f94d3c28",
-  "builtAt": "2026-07-16T16:35:16.098Z",
+  "builtAt": "2026-08-31T17:37:23.222Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/core/src/lock.ts#withCribLockAsync@L196",
@@ -38,18 +38,7 @@
     "totalLines": 12,
     "startLine": 196
   },
-  "callers": [
-    {
-      "id": "sym:packages/cli/src/cli.ts#runLocked@L407",
-      "confidence": 1,
-      "name": "runLocked",
-      "qualifiedName": "runLocked",
-      "signature": "runLocked(cribDir: string, fn: () => number | Promise<number>): Promise<number>",
-      "type": "function",
-      "file": "packages/cli/src/cli.ts",
-      "line": 407
-    }
-  ],
+  "callers": [],
   "callees": [
     {
       "id": "sym:packages/core/src/lock.ts#CribLock.acquire@L100",
@@ -162,9 +151,7 @@
   "implementation": {
     "status": "implemented",
     "executesCount": 3,
-    "referencedByFiles": [
-      "packages/cli/src/cli.ts"
-    ]
+    "referencedByFiles": []
   },
   "coverage": {
     "readiness": "partial",

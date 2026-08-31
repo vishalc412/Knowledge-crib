@@ -1,0 +1,86 @@
+{
+  "id": "sym:packages/parsers/fixtures/go/auth.go#Service.Greet@L55",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:7843cdb93deff72f2f265e607557f5f877fc946043d0697e762e230d23f2fdec",
+  "builtAt": "2026-08-25T20:55:11.863Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/fixtures/go/auth.go#Service.Greet@L55",
+    "kind": "symbol",
+    "type": "method",
+    "name": "Greet",
+    "qualifiedName": "Service.Greet",
+    "signature": "func (s Service) Greet(user)",
+    "lang": "go",
+    "file": "packages/parsers/fixtures/go/auth.go",
+    "span": {
+      "start": 55,
+      "end": 57
+    },
+    "callSites": [
+      {
+        "callee": "TrimSpace",
+        "line": 56
+      }
+    ],
+    "params": [
+      "user"
+    ]
+  },
+  "source": {
+    "text": "func (s *Service) Greet(user string) string {\n\treturn \"hi \" + strings.TrimSpace(user)\n}",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 55
+  },
+  "callers": [],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/fixtures/go/auth.go#Service.Greet@L55",
+    "procedureName": "Service.Greet",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/fixtures/go/auth.go#Service.Greet@L55",
+        "procedureName": "Service.Greet",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:35071667c3b340e41ffce8cf6ea064922fe05a8c43757671527813c4f486aa11",
+          "target": "stmt:packages/parsers/fixtures/go/auth.go@L56",
+          "line": 56,
+          "expr": "\"hi \" + strings.TrimSpace(user)"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 1,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

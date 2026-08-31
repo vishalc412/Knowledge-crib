@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/pipeline/src/ownership.ts#runOwnership@L77",
-  "schemaVersion": "1.5",
+  "schemaVersion": "1.6",
   "nodeHash": "blake3:9f784704e70b84c03725026e8d46bb6df6a6dbae5abbde924389e951effbe175",
-  "builtAt": "2026-07-16T16:35:16.098Z",
+  "builtAt": "2026-08-31T17:37:23.222Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/pipeline/src/ownership.ts#runOwnership@L77",
@@ -88,36 +88,36 @@
   },
   "callers": [
     {
-      "id": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L94",
+      "id": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L121",
       "confidence": 1,
       "name": "indexRepo",
       "qualifiedName": "indexRepo",
       "signature": "indexRepo(soul: SoulStore, root: string, opts: IndexOpts = {}): Promise<IndexReport>",
       "type": "function",
       "file": "packages/pipeline/src/pipeline.ts",
-      "line": 94
+      "line": 121
     },
     {
-      "id": "sym:packages/pipeline/src/update.ts#updateRepo@L112",
+      "id": "sym:packages/pipeline/src/update.ts#updateRepo@L134",
       "confidence": 1,
       "name": "updateRepo",
       "qualifiedName": "updateRepo",
       "signature": "updateRepo(soul: SoulStore, root: string, opts: UpdateOpts = {}): Promise<UpdateResult>",
       "type": "function",
       "file": "packages/pipeline/src/update.ts",
-      "line": 112
+      "line": 134
     }
   ],
   "callees": [
     {
-      "id": "sym:packages/pipeline/src/vcs.ts#blameLines@L94",
+      "id": "sym:packages/pipeline/src/vcs.ts#blameLines@L136",
       "confidence": 1,
       "name": "blameLines",
       "qualifiedName": "blameLines",
       "signature": "blameLines(root: string, path: string): BlameLine[]",
       "type": "function",
       "file": "packages/pipeline/src/vcs.ts",
-      "line": 94
+      "line": 136
     },
     {
       "id": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
@@ -140,14 +140,14 @@
       "line": 33
     },
     {
-      "id": "sym:packages/soul-schema/src/id.ts#edgeId@L141",
+      "id": "sym:packages/soul-schema/src/id.ts#edgeId@L151",
       "confidence": 1,
       "name": "edgeId",
       "qualifiedName": "edgeId",
       "signature": "edgeId(src: string, dst: string, rel: Rel): string",
       "type": "function",
       "file": "packages/soul-schema/src/id.ts",
-      "line": 141
+      "line": 151
     },
     {
       "id": "sym:packages/pipeline/src/vcs.ts#isGitRepo@L19",
@@ -180,14 +180,14 @@
       "line": 33
     },
     {
-      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
       "confidence": 1,
       "name": "push",
       "qualifiedName": "push",
       "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
       "type": "function",
       "file": "packages/pipeline/src/linker/inverted-index.ts",
-      "line": 39
+      "line": 70
     }
   ],
   "docs": [
@@ -332,6 +332,20 @@
       {
         "procedure": "sym:packages/pipeline/src/ownership.ts#runOwnership@L77",
         "procedureName": "runOwnership",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:a4656db8cd10e28330269c703020f898e4a176da5829436b034815a37aae67f2",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
+          "expr": "push",
+          "line": 97
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/ownership.ts#runOwnership@L77",
+        "procedureName": "runOwnership",
         "guard": "cond:packages/pipeline/src/ownership.ts@L97",
         "branch": "THEN",
         "conditions": [
@@ -353,20 +367,6 @@
           "target": "stmt:packages/pipeline/src/ownership.ts@L97",
           "line": 97,
           "expr": "list.push(node);"
-        }
-      },
-      {
-        "procedure": "sym:packages/pipeline/src/ownership.ts#runOwnership@L77",
-        "procedureName": "runOwnership",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:e3efa46077f20749565171e33248d5e5c0c4cc12b8769b2bdc129632dbd0ada6",
-          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
-          "expr": "push",
-          "line": 97
         }
       },
       {
@@ -398,6 +398,20 @@
       {
         "procedure": "sym:packages/pipeline/src/ownership.ts#runOwnership@L77",
         "procedureName": "runOwnership",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:7bc6af47c2b24d9703cb434d8a5ff8f58e30b1e050828094f9563013bc5a6eaf",
+          "target": "sym:packages/pipeline/src/vcs.ts#blameLines@L136",
+          "expr": "blameLines",
+          "line": 106
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/ownership.ts#runOwnership@L77",
+        "procedureName": "runOwnership",
         "guard": "cond:packages/pipeline/src/ownership.ts@L105",
         "branch": "LOOP",
         "conditions": [
@@ -415,20 +429,6 @@
           "target": "stmt:packages/pipeline/src/ownership.ts@L106",
           "line": 106,
           "expr": "const blame = blameLines(root, file);"
-        }
-      },
-      {
-        "procedure": "sym:packages/pipeline/src/ownership.ts#runOwnership@L77",
-        "procedureName": "runOwnership",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:cd9c20381ff12dc3e6a7ff92717959809f53abf7dbc2bc62dc39a1de4f23deda",
-          "target": "sym:packages/pipeline/src/vcs.ts#blameLines@L94",
-          "expr": "blameLines",
-          "line": 106
         }
       },
       {
@@ -685,8 +685,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:82e497f7b73312df3d48a7ea97232f6c547c73306f4a36783ffc7894be893f06",
-          "target": "sym:packages/soul-schema/src/id.ts#edgeId@L141",
+          "edgeId": "e:f344ee0aa7cc39442d5080f0131c905cefa3dba8931b8f6864d246c3e53ec0a4",
+          "target": "sym:packages/soul-schema/src/id.ts#edgeId@L151",
           "expr": "edgeId",
           "line": 128
         }

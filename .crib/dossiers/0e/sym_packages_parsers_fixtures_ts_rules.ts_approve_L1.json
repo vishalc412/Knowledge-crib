@@ -1,0 +1,240 @@
+{
+  "id": "sym:packages/parsers/fixtures/ts/rules.ts#approve@L1",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:9d5d3e7fbf4749fe9c4b68f2ec8f572e27c7fb93e4b0380c12f635d457a24423",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/fixtures/ts/rules.ts#approve@L1",
+    "kind": "symbol",
+    "type": "function",
+    "name": "approve",
+    "qualifiedName": "approve",
+    "signature": "approve(amount: number): string",
+    "lang": "typescript",
+    "file": "packages/parsers/fixtures/ts/rules.ts",
+    "span": {
+      "start": 1,
+      "end": 8
+    },
+    "callSites": [
+      {
+        "callee": "log",
+        "line": 3
+      },
+      {
+        "callee": "issue",
+        "line": 4
+      },
+      {
+        "callee": "deny",
+        "line": 6
+      }
+    ]
+  },
+  "source": {
+    "text": "export function approve(amount: number): string {\n  if (amount > 100) {\n    log(amount);\n    return issue(amount);\n  } else {\n    deny(amount);\n  }\n}",
+    "truncated": false,
+    "totalLines": 8,
+    "startLine": 1
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/fixtures/ts/rules.ts#deny@L24",
+      "confidence": 1,
+      "name": "deny",
+      "qualifiedName": "deny",
+      "signature": "deny(x: number): void",
+      "type": "function",
+      "file": "packages/parsers/fixtures/ts/rules.ts",
+      "line": 24
+    },
+    {
+      "id": "sym:packages/parsers/fixtures/ts/rules.ts#issue@L20",
+      "confidence": 1,
+      "name": "issue",
+      "qualifiedName": "issue",
+      "signature": "issue(amount: number): string",
+      "type": "function",
+      "file": "packages/parsers/fixtures/ts/rules.ts",
+      "line": 20
+    },
+    {
+      "id": "sym:packages/parsers/fixtures/ts/rules.ts#log@L16",
+      "confidence": 1,
+      "name": "log",
+      "qualifiedName": "log",
+      "signature": "log(x: number): void",
+      "type": "function",
+      "file": "packages/parsers/fixtures/ts/rules.ts",
+      "line": 16
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/fixtures/ts/rules.ts#approve@L1",
+    "procedureName": "approve",
+    "conditions": [
+      "cond:packages/parsers/fixtures/ts/rules.ts@L2"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/fixtures/ts/rules.ts#approve@L1",
+        "procedureName": "approve",
+        "guard": "cond:packages/parsers/fixtures/ts/rules.ts@L2",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/fixtures/ts/rules.ts@L2",
+            "expr": "amount > 100",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:7fee0cb74b62f714ccd63d892c8361e96ac4abf157691a0f4b59b083add3f0ec",
+          "target": "sym:packages/parsers/fixtures/ts/rules.ts#log@L16",
+          "expr": "log",
+          "line": 3
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/fixtures/ts/rules.ts#approve@L1",
+        "procedureName": "approve",
+        "guard": "cond:packages/parsers/fixtures/ts/rules.ts@L2",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/fixtures/ts/rules.ts@L2",
+            "expr": "amount > 100",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b33f19c89346c15563d612ea7d600d2b655facb96df57938ecfa283b1a46338f",
+          "target": "stmt:packages/parsers/fixtures/ts/rules.ts@L3",
+          "line": 3,
+          "expr": "log(amount);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/fixtures/ts/rules.ts#approve@L1",
+        "procedureName": "approve",
+        "guard": "cond:packages/parsers/fixtures/ts/rules.ts@L2",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/fixtures/ts/rules.ts@L2",
+            "expr": "amount > 100",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:792cc522e12ae4c2065ca0913446402c8f1a345a9fa55d40c7f585df57f55a5a",
+          "target": "stmt:packages/parsers/fixtures/ts/rules.ts@L4",
+          "line": 4,
+          "expr": "return issue(amount);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/fixtures/ts/rules.ts#approve@L1",
+        "procedureName": "approve",
+        "guard": "cond:packages/parsers/fixtures/ts/rules.ts@L2",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/fixtures/ts/rules.ts@L2",
+            "expr": "amount > 100",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:f34a19b47af56bdd7c12331d4121678890c93fc308d1870ba4eddee436e85254",
+          "target": "sym:packages/parsers/fixtures/ts/rules.ts#issue@L20",
+          "expr": "issue",
+          "line": 4
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/fixtures/ts/rules.ts#approve@L1",
+        "procedureName": "approve",
+        "guard": "cond:packages/parsers/fixtures/ts/rules.ts@L2",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/fixtures/ts/rules.ts@L2",
+            "expr": "amount > 100",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:734663f6bc226400336ac1288c7427167daf2dba8473f99933170770ec107ca7",
+          "target": "sym:packages/parsers/fixtures/ts/rules.ts#deny@L24",
+          "expr": "deny",
+          "line": 6
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/fixtures/ts/rules.ts#approve@L1",
+        "procedureName": "approve",
+        "guard": "cond:packages/parsers/fixtures/ts/rules.ts@L2",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/fixtures/ts/rules.ts@L2",
+            "expr": "amount > 100",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8b721bb5d1c36b76e5ef71f30f57c8fd83ea65e7f2477305b14c650cec6479a3",
+          "target": "stmt:packages/parsers/fixtures/ts/rules.ts@L6",
+          "line": 6,
+          "expr": "deny(amount);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 3,
+      "recorded": 3,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

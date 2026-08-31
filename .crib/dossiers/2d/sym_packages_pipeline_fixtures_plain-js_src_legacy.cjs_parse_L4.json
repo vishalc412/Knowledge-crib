@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/pipeline/fixtures/plain-js/src/legacy.cjs#parse@L4",
-  "schemaVersion": "1.5",
+  "schemaVersion": "1.6",
   "nodeHash": "blake3:91ab8fdb3c61b53ba40e2bdf695c51ff15775a5060a1dd3e267b978d281b4ae1",
-  "builtAt": "2026-07-16T16:35:16.098Z",
+  "builtAt": "2026-08-31T17:37:23.222Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/pipeline/fixtures/plain-js/src/legacy.cjs#parse@L4",
@@ -42,14 +42,24 @@
       "line": 488
     },
     {
-      "id": "sym:packages/cli/src/cli.ts#cmdEnrich@L1712",
+      "id": "sym:packages/mcp/src/server.test.ts#callMemory@L50",
       "confidence": 1,
-      "name": "cmdEnrich",
-      "qualifiedName": "cmdEnrich",
-      "signature": "cmdEnrich(args: string[], ctx?: CmdCtx): Promise<number>",
+      "name": "callMemory",
+      "qualifiedName": "callMemory",
+      "signature": "callMemory(args: Record<string, unknown>): Promise<unknown>",
       "type": "function",
-      "file": "packages/cli/src/cli.ts",
-      "line": 1712
+      "file": "packages/mcp/src/server.test.ts",
+      "line": 50
+    },
+    {
+      "id": "sym:packages/core/src/working-overlay.ts#canonicalFingerprint@L53",
+      "confidence": 1,
+      "name": "canonicalFingerprint",
+      "qualifiedName": "canonicalFingerprint",
+      "signature": "canonicalFingerprint(cribDir: string): CanonicalFingerprint | null",
+      "type": "function",
+      "file": "packages/core/src/working-overlay.ts",
+      "line": 53
     },
     {
       "id": "sym:packages/parsers/src/tree-sitter-pool.ts#createParserHandle@L79",
@@ -92,16 +102,6 @@
       "line": 106
     },
     {
-      "id": "sym:packages/cli/src/cli.ts#freshSoulForRebuild@L544",
-      "confidence": 1,
-      "name": "freshSoulForRebuild",
-      "qualifiedName": "freshSoulForRebuild",
-      "signature": "freshSoulForRebuild(cribDir: string): SoulStore",
-      "type": "function",
-      "file": "packages/cli/src/cli.ts",
-      "line": 544
-    },
-    {
       "id": "sym:packages/core/src/aliases.ts#loadAliases@L47",
       "confidence": 1,
       "name": "loadAliases",
@@ -112,6 +112,26 @@
       "line": 47
     },
     {
+      "id": "sym:packages/memory/src/policy.ts#loadPolicyJson@L227",
+      "confidence": 1,
+      "name": "loadPolicyJson",
+      "qualifiedName": "loadPolicyJson",
+      "signature": "loadPolicyJson(text: string): MemoryPolicy",
+      "type": "function",
+      "file": "packages/memory/src/policy.ts",
+      "line": 227
+    },
+    {
+      "id": "sym:packages/cli/src/enrich-provider.ts#loadProviders@L69",
+      "confidence": 1,
+      "name": "loadProviders",
+      "qualifiedName": "loadProviders",
+      "signature": "loadProviders(pathOverride?: string): {\n  providers: Record<string, ProviderDef>;\n  path: string;\n}",
+      "type": "function",
+      "file": "packages/cli/src/enrich-provider.ts",
+      "line": 69
+    },
+    {
       "id": "sym:scripts/crib-cost-report.mjs#loadRuns@L33",
       "confidence": 1,
       "name": "loadRuns",
@@ -120,6 +140,16 @@
       "type": "function",
       "file": "scripts/crib-cost-report.mjs",
       "line": 33
+    },
+    {
+      "id": "sym:scripts/cost-gate.mjs#main@L51",
+      "confidence": 1,
+      "name": "main",
+      "qualifiedName": "main",
+      "signature": "main()",
+      "type": "function",
+      "file": "scripts/cost-gate.mjs",
+      "line": 51
     },
     {
       "id": "sym:scripts/crib-self-hosted-e2e.mjs#main@L165",
@@ -142,6 +172,16 @@
       "line": 70
     },
     {
+      "id": "sym:scripts/determinism-mule-par.mjs#normalizeSummary@L40",
+      "confidence": 1,
+      "name": "normalizeSummary",
+      "qualifiedName": "normalizeSummary",
+      "signature": "normalizeSummary(json)",
+      "type": "function",
+      "file": "scripts/determinism-mule-par.mjs",
+      "line": 40
+    },
+    {
       "id": "sym:packages/pipeline/src/workspace.ts#packageNameAt@L301",
       "confidence": 1,
       "name": "packageNameAt",
@@ -152,14 +192,14 @@
       "line": 301
     },
     {
-      "id": "sym:packages/cli/src/mcp-install.test.ts#parse@L31",
+      "id": "sym:packages/cli/src/mcp-install.test.ts#parse@L43",
       "confidence": 1,
       "name": "parse",
       "qualifiedName": "parse",
       "signature": "parse(path: string): Record<string, unknown>",
       "type": "function",
       "file": "packages/cli/src/mcp-install.test.ts",
-      "line": 31
+      "line": 43
     },
     {
       "id": "sym:packages/core/src/merge.ts#parseChunk@L30",
@@ -182,6 +222,46 @@
       "line": 56
     },
     {
+      "id": "sym:packages/pipeline/src/artifacts.ts#parseMcpConfig@L302",
+      "confidence": 1,
+      "name": "parseMcpConfig",
+      "qualifiedName": "parseMcpConfig",
+      "signature": "parseMcpConfig(file: string, text: string, hash: string): Node[]",
+      "type": "function",
+      "file": "packages/pipeline/src/artifacts.ts",
+      "line": 302
+    },
+    {
+      "id": "sym:packages/core/src/memory-merge.ts#parseMemoryChunk@L50",
+      "confidence": 1,
+      "name": "parseMemoryChunk",
+      "qualifiedName": "parseMemoryChunk",
+      "signature": "parseMemoryChunk(text: string, source: string): ParsedMemoryChunk",
+      "type": "function",
+      "file": "packages/core/src/memory-merge.ts",
+      "line": 50
+    },
+    {
+      "id": "sym:packages/memory/src/loader.ts#parseMemoryShard@L40",
+      "confidence": 1,
+      "name": "parseMemoryShard",
+      "qualifiedName": "parseMemoryShard",
+      "signature": "parseMemoryShard(text: string, source: string): ParsedMemoryShard",
+      "type": "function",
+      "file": "packages/memory/src/loader.ts",
+      "line": 40
+    },
+    {
+      "id": "sym:packages/parsers/src/mule/descriptors.ts#parseMuleArtifact@L94",
+      "confidence": 1,
+      "name": "parseMuleArtifact",
+      "qualifiedName": "parseMuleArtifact",
+      "signature": "parseMuleArtifact(source: string): MuleArtifactResult",
+      "type": "function",
+      "file": "packages/parsers/src/mule/descriptors.ts",
+      "line": 94
+    },
+    {
       "id": "sym:scripts/crib-cost-report.test.mjs#parseReport@L28",
       "confidence": 1,
       "name": "parseReport",
@@ -190,6 +270,16 @@
       "type": "function",
       "file": "scripts/crib-cost-report.test.mjs",
       "line": 28
+    },
+    {
+      "id": "sym:packages/mcp/src/server.test.ts#payload@L437",
+      "confidence": 1,
+      "name": "payload",
+      "qualifiedName": "payload",
+      "signature": "payload(…)",
+      "type": "function",
+      "file": "packages/mcp/src/server.test.ts",
+      "line": 437
     },
     {
       "id": "sym:packages/core/src/dossier/persist.ts#pruneDossiers@L99",
@@ -202,14 +292,24 @@
       "line": 99
     },
     {
-      "id": "sym:scripts/build-installers.mjs#readCliPackage@L161",
+      "id": "sym:packages/core/src/llm-prune.ts#pruneSemanticArtifacts@L46",
+      "confidence": 1,
+      "name": "pruneSemanticArtifacts",
+      "qualifiedName": "pruneSemanticArtifacts",
+      "signature": "pruneSemanticArtifacts(cribDir: string, liveNodeIds: ReadonlySet<string>): number",
+      "type": "function",
+      "file": "packages/core/src/llm-prune.ts",
+      "line": 46
+    },
+    {
+      "id": "sym:scripts/build-installers.mjs#readCliPackage@L205",
       "confidence": 1,
       "name": "readCliPackage",
       "qualifiedName": "readCliPackage",
       "signature": "readCliPackage()",
       "type": "function",
       "file": "scripts/build-installers.mjs",
-      "line": 161
+      "line": 205
     },
     {
       "id": "sym:packages/core/src/dossier/persist.ts#readDossier@L65",
@@ -222,14 +322,14 @@
       "line": 65
     },
     {
-      "id": "sym:packages/core/src/graph-store.ts#readJson@L282",
+      "id": "sym:packages/core/src/graph-store.ts#readJson@L334",
       "confidence": 1,
       "name": "readJson",
       "qualifiedName": "readJson",
       "signature": "readJson(path: string): T | undefined",
       "type": "function",
       "file": "packages/core/src/graph-store.ts",
-      "line": 282
+      "line": 334
     },
     {
       "id": "sym:packages/core/src/llm-overlay.ts#readJson@L172",
@@ -242,34 +342,84 @@
       "line": 172
     },
     {
-      "id": "sym:packages/cli/src/mcp-install.ts#readJson@L84",
+      "id": "sym:packages/cli/src/mcp-install.ts#readJson@L85",
       "confidence": 1,
       "name": "readJson",
       "qualifiedName": "readJson",
       "signature": "readJson(path: string): Record<string, unknown>",
       "type": "function",
       "file": "packages/cli/src/mcp-install.ts",
-      "line": 84
+      "line": 85
     },
     {
-      "id": "sym:packages/mcp/src/enrichment.ts#readJson@L1824",
+      "id": "sym:packages/mcp/src/enrichment.ts#readJson@L2597",
       "confidence": 1,
       "name": "readJson",
       "qualifiedName": "readJson",
       "signature": "readJson(path: string): T | undefined",
       "type": "function",
       "file": "packages/mcp/src/enrichment.ts",
-      "line": 1824
+      "line": 2597
     },
     {
-      "id": "sym:packages/cli/src/registry.ts#readRegistry@L60",
+      "id": "sym:packages/pipeline/src/input/prepared-source.ts#readManifest@L171",
+      "confidence": 1,
+      "name": "readManifest",
+      "qualifiedName": "readManifest",
+      "signature": "readManifest(path: string): Promise<PreparedInputManifest | null>",
+      "type": "function",
+      "file": "packages/pipeline/src/input/prepared-source.ts",
+      "line": 171
+    },
+    {
+      "id": "sym:packages/cli/src/registry.ts#readRegistry@L71",
       "confidence": 1,
       "name": "readRegistry",
       "qualifiedName": "readRegistry",
       "signature": "readRegistry(env: NodeJS.ProcessEnv = process.env): Registry",
       "type": "function",
       "file": "packages/cli/src/registry.ts",
-      "line": 60
+      "line": 71
+    },
+    {
+      "id": "sym:packages/memory/src/paths.ts#readRepoId@L101",
+      "confidence": 1,
+      "name": "readRepoId",
+      "qualifiedName": "readRepoId",
+      "signature": "readRepoId(cribDir: string, env: NodeJS.ProcessEnv = process.env): string | undefined",
+      "type": "function",
+      "file": "packages/memory/src/paths.ts",
+      "line": 101
+    },
+    {
+      "id": "sym:scripts/check-mule-sample.mjs#readShards@L57",
+      "confidence": 1,
+      "name": "readShards",
+      "qualifiedName": "readShards",
+      "signature": "readShards(dir)",
+      "type": "function",
+      "file": "scripts/check-mule-sample.mjs",
+      "line": 57
+    },
+    {
+      "id": "sym:packages/memory/src/paths.ts#registryRepoIdForCribDir@L78",
+      "confidence": 1,
+      "name": "registryRepoIdForCribDir",
+      "qualifiedName": "registryRepoIdForCribDir",
+      "signature": "registryRepoIdForCribDir(cribDir: string, env: NodeJS.ProcessEnv): string | undefined",
+      "type": "function",
+      "file": "packages/memory/src/paths.ts",
+      "line": 78
+    },
+    {
+      "id": "sym:packages/cli/src/enrich-provider.ts#runProviderOnce@L201",
+      "confidence": 1,
+      "name": "runProviderOnce",
+      "qualifiedName": "runProviderOnce",
+      "signature": "runProviderOnce(def: ProviderDef, workItem: EnrichWorkItem, opts: { timeoutMs?: number } = {}): Promise<EnrichSaveItem>",
+      "type": "function",
+      "file": "packages/cli/src/enrich-provider.ts",
+      "line": 201
     },
     {
       "id": "sym:packages/pipeline/src/multimodal/worker.ts#runWorker@L74",
@@ -292,6 +442,16 @@
       "line": 82
     },
     {
+      "id": "sym:packages/mcp/src/server.ts#serveHttp@L602",
+      "confidence": 1,
+      "name": "serveHttp",
+      "qualifiedName": "serveHttp",
+      "signature": "serveHttp(verbs: Verbs, opts: { port?: number; host?: string; version?: string } = {}): Promise<{ port: number; close: () => Promise<void> }>",
+      "type": "function",
+      "file": "packages/mcp/src/server.ts",
+      "line": 602
+    },
+    {
       "id": "sym:scripts/release-cli-smoke.mjs#smokeCli@L7",
       "confidence": 1,
       "name": "smokeCli",
@@ -302,14 +462,24 @@
       "line": 7
     },
     {
-      "id": "sym:scripts/install-smoke.mjs#smokeInstall@L135",
+      "id": "sym:scripts/install-smoke.mjs#smokeInstall@L145",
       "confidence": 1,
       "name": "smokeInstall",
       "qualifiedName": "smokeInstall",
       "signature": "smokeInstall({ outRoot = join(repoRoot, 'dist', 'installers') } = {})",
       "type": "function",
       "file": "scripts/install-smoke.mjs",
-      "line": 135
+      "line": 145
+    },
+    {
+      "id": "sym:packages/memory/src/attempt.ts#unpromotedAttemptIds@L66",
+      "confidence": 1,
+      "name": "unpromotedAttemptIds",
+      "qualifiedName": "unpromotedAttemptIds",
+      "signature": "unpromotedAttemptIds(events: readonly AttemptEvent[], maxAgeMs: number, now: string): string[]",
+      "type": "function",
+      "file": "packages/memory/src/attempt.ts",
+      "line": 66
     },
     {
       "id": "sym:packages/core/src/graph-layout.ts#validateStaging@L166",
@@ -345,6 +515,26 @@
       "confidence": 0.95
     },
     {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-4-extraction.md#task-1-add-secure-span-aware-xml-parsing",
+      "heading": "Task 1: Add secure, span-aware XML parsing",
+      "anchor": "task-1-add-secure-span-aware-xml-parsing",
+      "snippet": "Task 1: Add secure, span-aware XML parsing",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-4-extraction.md#task-6-emit-mule-4-graph-nodes-and-intra-file-edges",
+      "heading": "Task 6: Emit Mule 4 graph nodes and intra-file edges",
+      "anchor": "task-6-emit-mule-4-graph-nodes-and-intra-file-edges",
+      "snippet": "Task 6: Emit Mule 4 graph nodes and intra-file edges",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
       "sectionId": "doc:docs/llm-integration-deep-dive.md#4-4-adding-a-new-pipeline-phase",
       "heading": "4.4 Adding a New Pipeline Phase",
       "anchor": "4-4-adding-a-new-pipeline-phase",
@@ -363,6 +553,16 @@
       "method": "explicit",
       "provenance": "EXTRACTED",
       "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:README.md#architecture",
+      "heading": "Architecture",
+      "anchor": "architecture",
+      "snippet": "Architecture",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
     },
     {
       "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#what-was-built-2",
@@ -395,6 +595,26 @@
       "confidence": 0.6
     },
     {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_MAKE_A_BEATS_B_EVERY_EXTRACTOR.md#phase-0-universal-cfg-parity-finish-s65-6-days",
+      "heading": "Phase 0 — Universal CFG parity (finish S65)  ~6 days",
+      "anchor": "phase-0-universal-cfg-parity-finish-s65-6-days",
+      "snippet": "Phase 0 — Universal CFG parity (finish S65)  ~6 days",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#1-what-it-is",
+      "heading": "1. What it is",
+      "anchor": "1-what-it-is",
+      "snippet": "1. What it is",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
       "sectionId": "doc:docs/bench/scale-curve.md#reading-the-curve",
       "heading": "Reading the curve",
       "anchor": "reading-the-curve",
@@ -415,10 +635,30 @@
       "confidence": 0.6
     },
     {
+      "sectionId": "doc:docs/mulesoft.md#index-summary",
+      "heading": "Index summary",
+      "anchor": "index-summary",
+      "snippet": "Index summary",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
       "sectionId": "doc:docs/knowledge-crib-deep-extraction.md#1-why-this-is-its-own-capability",
       "heading": "1. Why this is its own capability",
       "anchor": "1-why-this-is-its-own-capability",
       "snippet": "1. Why this is its own capability",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/mulesoft.md#diagnostics",
+      "heading": "Diagnostics",
+      "anchor": "diagnostics",
+      "snippet": "Diagnostics",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
@@ -495,6 +735,26 @@
       "confidence": 0.6
     },
     {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-foundation.md#task-8-verify-the-foundation-phase",
+      "heading": "Task 8: Verify the foundation phase",
+      "anchor": "task-8-verify-the-foundation-phase",
+      "snippet": "Task 8: Verify the foundation phase",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-foundation.md#task-7-aggregate-diagnostics-in-serial-concurrent-and-worker-parsing",
+      "heading": "Task 7: Aggregate diagnostics in serial, concurrent, and worker parsing",
+      "anchor": "task-7-aggregate-diagnostics-in-serial-concurrent-and-worker-parsing",
+      "snippet": "Task 7: Aggregate diagnostics in serial, concurrent, and worker parsing",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
       "sectionId": "doc:docs/knowledge-crib-soul-format.md#java-spring-boot-track-built-tested-schema-1-3",
       "heading": "Java / Spring Boot track (built + tested, schema 1.3)",
       "anchor": "java-spring-boot-track-built-tested-schema-1-3",
@@ -539,6 +799,26 @@
       "heading": "The gold pattern (already proven): `PlSqlExtractor`",
       "anchor": "the-gold-pattern-already-proven-plsqlextractor",
       "snippet": "The gold pattern (already proven): `PlSqlExtractor`",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/specs/2026-08-14-mulesoft-first-class-extractor-design.md#10-error-handling-and-diagnostics",
+      "heading": "10. Error Handling and Diagnostics",
+      "anchor": "10-error-handling-and-diagnostics",
+      "snippet": "10. Error Handling and Diagnostics",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/specs/2026-08-14-mulesoft-first-class-extractor-design.md#12-performance-and-determinism",
+      "heading": "12. Performance and Determinism",
+      "anchor": "12-performance-and-determinism",
+      "snippet": "12. Performance and Determinism",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
@@ -605,30 +885,10 @@
       "confidence": 0.6
     },
     {
-      "sectionId": "doc:README.md#architecture",
-      "heading": "Architecture",
-      "anchor": "architecture",
-      "snippet": "Architecture",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
-    },
-    {
-      "sectionId": "doc:docs/knowledge-crib-user-guide.md#1-what-it-is",
-      "heading": "1. What it is",
-      "anchor": "1-what-it-is",
-      "snippet": "1. What it is",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
-    },
-    {
-      "sectionId": "doc:docs/superpowers/plans/PLAN_MAKE_A_BEATS_B_EVERY_EXTRACTOR.md#phase-0-universal-cfg-parity-finish-s65-6-days",
-      "heading": "Phase 0 — Universal CFG parity (finish S65)  ~6 days",
-      "anchor": "phase-0-universal-cfg-parity-finish-s65-6-days",
-      "snippet": "Phase 0 — Universal CFG parity (finish S65)  ~6 days",
+      "sectionId": "doc:docs/knowledge-crib-extractor-plugins.md#1-contract",
+      "heading": "1. Contract",
+      "anchor": "1-contract",
+      "snippet": "1. Contract",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
@@ -660,7 +920,7 @@
     "status": "implemented",
     "executesCount": 1,
     "referencedByFiles": [
-      "packages/cli/src/cli.ts",
+      "packages/cli/src/enrich-provider.ts",
       "packages/cli/src/mcp-install.test.ts",
       "packages/cli/src/mcp-install.ts",
       "packages/cli/src/registry.ts",
@@ -669,18 +929,33 @@
       "packages/core/src/graph-layout.ts",
       "packages/core/src/graph-store.ts",
       "packages/core/src/llm-overlay.ts",
+      "packages/core/src/llm-prune.ts",
+      "packages/core/src/memory-merge.ts",
       "packages/core/src/merge.ts",
+      "packages/core/src/working-overlay.ts",
       "packages/mcp/src/enrichment.ts",
+      "packages/mcp/src/server.test.ts",
+      "packages/mcp/src/server.ts",
+      "packages/memory/src/attempt.ts",
+      "packages/memory/src/loader.ts",
+      "packages/memory/src/paths.ts",
+      "packages/memory/src/policy.ts",
       "packages/parsers/src/java/parser.test.ts",
+      "packages/parsers/src/mule/descriptors.ts",
       "packages/parsers/src/tree-sitter-pool.ts",
+      "packages/pipeline/src/artifacts.ts",
       "packages/pipeline/src/dossiers.ts",
+      "packages/pipeline/src/input/prepared-source.ts",
       "packages/pipeline/src/multimodal/worker.ts",
       "packages/pipeline/src/workspace.ts",
       "packages/ui/web/support.js",
       "scripts/build-installers.mjs",
+      "scripts/check-mule-sample.mjs",
+      "scripts/cost-gate.mjs",
       "scripts/crib-cost-report.mjs",
       "scripts/crib-cost-report.test.mjs",
       "scripts/crib-self-hosted-e2e.mjs",
+      "scripts/determinism-mule-par.mjs",
       "scripts/install-smoke.mjs",
       "scripts/release-cli-smoke.mjs"
     ]

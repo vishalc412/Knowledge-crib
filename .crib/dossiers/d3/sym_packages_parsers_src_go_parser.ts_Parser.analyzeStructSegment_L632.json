@@ -1,0 +1,218 @@
+{
+  "id": "sym:packages/parsers/src/go/parser.ts#Parser.analyzeStructSegment@L632",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:0fca24e07c0e5f86d12ef144f81d1981d59e692770bbbc69b0fa824dd8150e8d",
+  "builtAt": "2026-08-25T20:55:11.863Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/go/parser.ts#Parser.analyzeStructSegment@L632",
+    "kind": "symbol",
+    "type": "method",
+    "name": "analyzeStructSegment",
+    "qualifiedName": "Parser.analyzeStructSegment",
+    "signature": "analyzeStructSegment(seg: Token[], bases: string[]): void",
+    "lang": "typescript",
+    "file": "packages/parsers/src/go/parser.ts",
+    "span": {
+      "start": 632,
+      "end": 670
+    },
+    "callSites": [
+      {
+        "callee": "push",
+        "line": 669
+      }
+    ]
+  },
+  "source": {
+    "text": "  private analyzeStructSegment(seg: Token[], bases: string[]): void {\n    if (seg.length === 0) return;\n    let i = 0;\n    if (seg[i]!.type === 'OP' && seg[i]!.value === '*') i++;\n    if (i >= seg.length || seg[i]!.type !== 'NAME') return;\n    let name = seg[i]!.value;\n    i++;\n    // dotted qualifier `pkg.Type`\n    while (\n      i + 1 < seg.length &&\n      seg[i]!.type === 'OP' &&\n      seg[i]!.value === '.' &&\n      seg[i + 1]!.type === 'NAME'\n    ) {\n      name = seg[i + 1]!.value;\n      i += 2;\n    }\n    // optional type-arg list `[...]` — skip balanced\n    if (i < seg.length && seg[i]!.type === 'OP' && seg[i]!.value === '[') {\n      let bd = 0;\n      while (i < seg.length) {\n        if (seg[i]!.type === 'OP' && seg[i]!.value === '[') {\n          bd++;\n          i++;\n        } else if (seg[i]!.type === 'OP' && seg[i]!.value === ']') {\n          bd--;\n          i++;\n          if (bd <= 0) break;\n        } else {\n          i++;\n        }\n      }\n    }\n    // skip trailing struct-tag STRING(s)\n    while (i < seg.length && seg[i]!.type === 'STRING') i++;\n    // anything non-STRING left ⇒ this was `name type` (a field), not an embedding\n    if (i < seg.length) return;\n    bases.push(name);\n  }",
+    "truncated": false,
+    "totalLines": 39,
+    "startLine": 632
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/go/parser.ts#Parser.parseStructBody@L603",
+      "confidence": 1,
+      "name": "parseStructBody",
+      "qualifiedName": "Parser.parseStructBody",
+      "signature": "parseStructBody(): { bases: string[]; closeLine: number }",
+      "type": "method",
+      "file": "packages/parsers/src/go/parser.ts",
+      "line": 603
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/go/parser.ts@L627",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.analyzeStructSegment@L632",
+    "procedureName": "Parser.analyzeStructSegment",
+    "conditions": [
+      "cond:packages/parsers/src/go/parser.ts@L633",
+      "cond:packages/parsers/src/go/parser.ts@L636",
+      "cond:packages/parsers/src/go/parser.ts@L640",
+      "cond:packages/parsers/src/go/parser.ts@L668"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.analyzeStructSegment@L632",
+        "procedureName": "Parser.analyzeStructSegment",
+        "guard": "cond:packages/parsers/src/go/parser.ts@L633",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L633",
+            "expr": "seg.length === 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:426e17c90d20e5bcb6ee1c6785cd982ca3c932a984e06f26be2555ee541fe9bc",
+          "target": "stmt:packages/parsers/src/go/parser.ts@L633",
+          "line": 633,
+          "expr": "return;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.analyzeStructSegment@L632",
+        "procedureName": "Parser.analyzeStructSegment",
+        "guard": "cond:packages/parsers/src/go/parser.ts@L636",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L636",
+            "expr": "i >= seg.length || seg[i]!.type !== 'NAME'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2339e7947494ac2faa5edf75faa3f60c511966c3ee492f80bb1f86b89494e4ad",
+          "target": "stmt:packages/parsers/src/go/parser.ts@L636",
+          "line": 636,
+          "expr": "return;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.analyzeStructSegment@L632",
+        "procedureName": "Parser.analyzeStructSegment",
+        "guard": "cond:packages/parsers/src/go/parser.ts@L640",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L640",
+            "expr": "i + 1 < seg.length &&\n      seg[i]!.type === 'OP' &&\n      seg[i]!.value === '.' &&\n      seg[i + 1]!.type === 'NAME'",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c9f353daa55c2b1c27df3cc36572f17fdb24bd92b572c00d6d5b561ad25b2c5b",
+          "target": "assign:packages/parsers/src/go/parser.ts@L646",
+          "line": 646,
+          "expr": "name = seg[i + 1]!.value;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.analyzeStructSegment@L632",
+        "procedureName": "Parser.analyzeStructSegment",
+        "guard": "cond:packages/parsers/src/go/parser.ts@L640",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L640",
+            "expr": "i + 1 < seg.length &&\n      seg[i]!.type === 'OP' &&\n      seg[i]!.value === '.' &&\n      seg[i + 1]!.type === 'NAME'",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ea73e98af427bf7300bea6c62b15a042897c2eaf7adbadc6523305cc2db4807d",
+          "target": "assign:packages/parsers/src/go/parser.ts@L647",
+          "line": 647,
+          "expr": "i += 2;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.analyzeStructSegment@L632",
+        "procedureName": "Parser.analyzeStructSegment",
+        "guard": "cond:packages/parsers/src/go/parser.ts@L668",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L668",
+            "expr": "i < seg.length",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:73150c997a0aa8546abdf8c3ce834cd72448324644e3c734688550ad94eb7380",
+          "target": "stmt:packages/parsers/src/go/parser.ts@L668",
+          "line": 668,
+          "expr": "return;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.analyzeStructSegment@L632",
+        "procedureName": "Parser.analyzeStructSegment",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7210f6a113457ed12a68739b8c5ba18dd7f1714c1c7875dc8ba7c5568f084a5a",
+          "target": "stmt:packages/parsers/src/go/parser.ts@L669",
+          "line": 669,
+          "expr": "bases.push(name);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 6,
+    "referencedByFiles": [
+      "packages/parsers/src/go/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 6,
+    "assignments": 2,
+    "conditions": 4,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/pipeline/src/linker/semantic.test.ts#docSymbolEdges@L34",
-  "schemaVersion": "1.5",
+  "schemaVersion": "1.6",
   "nodeHash": "blake3:28326c8b164f15b9cf14e580d1200eba2c42610a64b5a98181a1d43f34a65378",
-  "builtAt": "2026-07-13T11:04:33.459Z",
+  "builtAt": "2026-08-31T17:37:23.222Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/pipeline/src/linker/semantic.test.ts#docSymbolEdges@L34",
@@ -37,14 +37,14 @@
   "callers": [],
   "callees": [
     {
-      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
       "confidence": 1,
       "name": "push",
       "qualifiedName": "push",
       "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
       "type": "function",
       "file": "packages/pipeline/src/linker/inverted-index.ts",
-      "line": 39
+      "line": 70
     }
   ],
   "docs": [
@@ -65,6 +65,20 @@
       "cond:packages/pipeline/src/linker/semantic.test.ts@L37"
     ],
     "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/linker/semantic.test.ts#docSymbolEdges@L34",
+        "procedureName": "docSymbolEdges",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:7977b42194fb986288c216749d5db8d9ce2ed76e1f46b2adedbb53b7364af93c",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
+          "expr": "push",
+          "line": 38
+        }
+      },
       {
         "procedure": "sym:packages/pipeline/src/linker/semantic.test.ts#docSymbolEdges@L34",
         "procedureName": "docSymbolEdges",
@@ -89,20 +103,6 @@
           "target": "stmt:packages/pipeline/src/linker/semantic.test.ts@L38",
           "line": 38,
           "expr": "out.push({ src: e.src, dst: e.dst, rel });"
-        }
-      },
-      {
-        "procedure": "sym:packages/pipeline/src/linker/semantic.test.ts#docSymbolEdges@L34",
-        "procedureName": "docSymbolEdges",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:e503b545eb41051f9cf6b5622df255933c8a840ca40b86099bc4cca65e06d450",
-          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
-          "expr": "push",
-          "line": 38
         }
       },
       {

@@ -1,0 +1,237 @@
+{
+  "id": "sym:packages/pipeline/src/resolve/java-resolver.ts#resolveJava.push@L70",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:72d8c73477f99c62043f640347ad333f46a78cdfedee193694012a72b49935ca",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/resolve/java-resolver.ts#resolveJava.push@L70",
+    "kind": "symbol",
+    "type": "function",
+    "name": "push",
+    "qualifiedName": "resolveJava.push",
+    "signature": "push(…)",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/resolve/java-resolver.ts",
+    "span": {
+      "start": 70,
+      "end": 84
+    },
+    "callSites": [
+      {
+        "callee": "edgeId",
+        "line": 71
+      },
+      {
+        "callee": "add",
+        "line": 73
+      },
+      {
+        "callee": "push",
+        "line": 74
+      }
+    ]
+  },
+  "source": {
+    "text": "  const push = (src: string, dst: string, rel: Rel, snippet: string): void => {\n    const id = edgeId(src, dst, rel);\n    if (seen.has(id)) return;\n    seen.add(id);\n    edges.push({\n      id,\n      src,\n      dst,\n      rel,\n      method: 'static',\n      provenance: 'EXTRACTED',\n      confidence: 1,\n      evidence: { by: 'java-resolver', snippet },\n    });\n  };",
+    "truncated": false,
+    "totalLines": 15,
+    "startLine": 70
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/src/resolve/java-resolver.ts#resolveJava@L53",
+      "confidence": 1,
+      "name": "resolveJava",
+      "qualifiedName": "resolveJava",
+      "signature": "resolveJava(table: SymbolTable, root: string, files: FileMeta[]): { edges: Edge[]; stats: ResolveStats }",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/java-resolver.ts",
+      "line": 53
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/java-resolver.ts#resolveJava.visitDef@L137",
+      "confidence": 1,
+      "name": "visitDef",
+      "qualifiedName": "resolveJava.visitDef",
+      "signature": "visitDef(…)",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/java-resolver.ts",
+      "line": 137
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/fixtures/python/rules.py#add@L16",
+      "confidence": 1,
+      "name": "add",
+      "qualifiedName": "add",
+      "signature": "add(a, b)",
+      "type": "function",
+      "file": "packages/parsers/fixtures/python/rules.py",
+      "line": 16
+    },
+    {
+      "id": "sym:packages/soul-schema/src/id.ts#edgeId@L151",
+      "confidence": 1,
+      "name": "edgeId",
+      "qualifiedName": "edgeId",
+      "signature": "edgeId(src: string, dst: string, rel: Rel): string",
+      "type": "function",
+      "file": "packages/soul-schema/src/id.ts",
+      "line": 151
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 70
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/resolve/java-resolver.ts#resolveJava.push@L70",
+    "procedureName": "resolveJava.push",
+    "conditions": [
+      "cond:packages/pipeline/src/resolve/java-resolver.ts@L72"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/java-resolver.ts#resolveJava.push@L70",
+        "procedureName": "resolveJava.push",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:8c991e05149b568b37e685e05a77bfde67011559adae64f4add97826ca15ff87",
+          "target": "sym:packages/soul-schema/src/id.ts#edgeId@L151",
+          "expr": "edgeId",
+          "line": 71
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/java-resolver.ts#resolveJava.push@L70",
+        "procedureName": "resolveJava.push",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e1c865cf4ffe28075328999fa5d723bc75eec84c26b7a2cf35105d1d94698874",
+          "target": "stmt:packages/pipeline/src/resolve/java-resolver.ts@L71",
+          "line": 71,
+          "expr": "const id = edgeId(src, dst, rel);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/java-resolver.ts#resolveJava.push@L70",
+        "procedureName": "resolveJava.push",
+        "guard": "cond:packages/pipeline/src/resolve/java-resolver.ts@L72",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/java-resolver.ts@L72",
+            "expr": "seen.has(id)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:516a3869759851278b2583624536419e53ff8099e71230f6c4245b84d0dcb327",
+          "target": "stmt:packages/pipeline/src/resolve/java-resolver.ts@L72",
+          "line": 72,
+          "expr": "return;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/java-resolver.ts#resolveJava.push@L70",
+        "procedureName": "resolveJava.push",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:375172961fc2f1c26d5c1079668cf15850a906306880b4e15f980fae87e8d8d1",
+          "target": "stmt:packages/pipeline/src/resolve/java-resolver.ts@L73",
+          "line": 73,
+          "expr": "seen.add(id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/java-resolver.ts#resolveJava.push@L70",
+        "procedureName": "resolveJava.push",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:e34b31b275ac626660cd8a0a84e5b22a94fa0607c53c7b5e51bb3f0084315e5a",
+          "target": "sym:packages/parsers/fixtures/python/rules.py#add@L16",
+          "expr": "add",
+          "line": 73
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/java-resolver.ts#resolveJava.push@L70",
+        "procedureName": "resolveJava.push",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:18f5f5758eca1e0e3f5ba627a8d1832445abfdb5f597d406fbf2501468ca0779",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
+          "expr": "push",
+          "line": 74
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/java-resolver.ts#resolveJava.push@L70",
+        "procedureName": "resolveJava.push",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:92f3e4124d6f7399fa88c1c59fef88e57fa382b16420277c64e1f59eabfb7494",
+          "target": "stmt:packages/pipeline/src/resolve/java-resolver.ts@L74",
+          "line": 74,
+          "expr": "edges.push({\n      id,\n      src,\n      dst,\n      rel,\n      method: 'static',\n      provenance: 'EXTRACTED',\n      confidence: 1,\n      evidence: { by: 'java-resolver', snippet },\n    });"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": [
+      "packages/pipeline/src/resolve/java-resolver.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 3,
+      "recorded": 3,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

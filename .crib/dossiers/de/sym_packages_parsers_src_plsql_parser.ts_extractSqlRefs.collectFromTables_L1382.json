@@ -1,0 +1,213 @@
+{
+  "id": "sym:packages/parsers/src/plsql/parser.ts#extractSqlRefs.collectFromTables@L1382",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:1c3c8db5c9119db34ad6e34430b62f903707e1d0db4c97bf817fe70e8e44654c",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/plsql/parser.ts#extractSqlRefs.collectFromTables@L1382",
+    "kind": "symbol",
+    "type": "function",
+    "name": "collectFromTables",
+    "qualifiedName": "extractSqlRefs.collectFromTables",
+    "signature": "collectFromTables(…)",
+    "lang": "typescript",
+    "file": "packages/parsers/src/plsql/parser.ts",
+    "span": {
+      "start": 1382,
+      "end": 1389
+    },
+    "callSites": [
+      {
+        "callee": "tokAt",
+        "line": 1384
+      },
+      {
+        "callee": "pushFromTable",
+        "line": 1387
+      }
+    ]
+  },
+  "source": {
+    "text": "  const collectFromTables = (): void => {\n    for (let i = 0; i < toks.length; i++) {\n      const t = tokAt(toks, i);\n      if (!t || t.type !== 'word') continue;\n      if (t.text === 'from' || t.text === 'join' || t.text === 'using')\n        pushFromTable(toks, i, tables);\n    }\n  };",
+    "truncated": false,
+    "totalLines": 8,
+    "startLine": 1382
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/plsql/parser.ts#extractSqlRefs@L1373",
+      "confidence": 1,
+      "name": "extractSqlRefs",
+      "qualifiedName": "extractSqlRefs",
+      "signature": "extractSqlRefs(verb: string, toks: Token[]): { tables: string[]; columns: string[]; intoTarget?: string }",
+      "type": "function",
+      "file": "packages/parsers/src/plsql/parser.ts",
+      "line": 1373
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/plsql/parser.ts#pushFromTable@L1354",
+      "confidence": 1,
+      "name": "pushFromTable",
+      "qualifiedName": "pushFromTable",
+      "signature": "pushFromTable(toks: Token[], i: number, tables: string[]): void",
+      "type": "function",
+      "file": "packages/parsers/src/plsql/parser.ts",
+      "line": 1354
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/parser.ts#tokAt@L1331",
+      "confidence": 1,
+      "name": "tokAt",
+      "qualifiedName": "tokAt",
+      "signature": "tokAt(toks: Token[], k: number): Token | undefined",
+      "type": "function",
+      "file": "packages/parsers/src/plsql/parser.ts",
+      "line": 1331
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/plsql/parser.ts@L1381",
+      "snippet": "// collect every table referenced by a FROM/JOIN/USING anchor (read sources)",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/plsql/parser.ts#extractSqlRefs.collectFromTables@L1382",
+    "procedureName": "extractSqlRefs.collectFromTables",
+    "conditions": [
+      "cond:packages/parsers/src/plsql/parser.ts@L1383",
+      "cond:packages/parsers/src/plsql/parser.ts@L1386"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#extractSqlRefs.collectFromTables@L1382",
+        "procedureName": "extractSqlRefs.collectFromTables",
+        "guard": "cond:packages/parsers/src/plsql/parser.ts@L1383",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/parser.ts@L1383",
+            "expr": "i < toks.length",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0c35fb48b89554f7d36c1e69d6b94ff0c0bb271f741e363f7c717211e3076181",
+          "target": "stmt:packages/parsers/src/plsql/parser.ts@L1384",
+          "line": 1384,
+          "expr": "const t = tokAt(toks, i);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#extractSqlRefs.collectFromTables@L1382",
+        "procedureName": "extractSqlRefs.collectFromTables",
+        "guard": "cond:packages/parsers/src/plsql/parser.ts@L1383",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/parser.ts@L1383",
+            "expr": "i < toks.length",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:391c28ae93c828f66c89811566edbe0534a60eea158d3f9374a62919b60a854b",
+          "target": "sym:packages/parsers/src/plsql/parser.ts#tokAt@L1331",
+          "expr": "tokAt",
+          "line": 1384
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#extractSqlRefs.collectFromTables@L1382",
+        "procedureName": "extractSqlRefs.collectFromTables",
+        "guard": "cond:packages/parsers/src/plsql/parser.ts@L1386",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/parser.ts@L1383",
+            "expr": "i < toks.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/plsql/parser.ts@L1386",
+            "expr": "t.text === 'from' || t.text === 'join' || t.text === 'using'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9870d1e4e58c8399884c3fe80d85471ab6b68f63ddf7e01862d7d1409f6dbdfa",
+          "target": "stmt:packages/parsers/src/plsql/parser.ts@L1387",
+          "line": 1387,
+          "expr": "pushFromTable(toks, i, tables);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#extractSqlRefs.collectFromTables@L1382",
+        "procedureName": "extractSqlRefs.collectFromTables",
+        "guard": "cond:packages/parsers/src/plsql/parser.ts@L1386",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/parser.ts@L1383",
+            "expr": "i < toks.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/plsql/parser.ts@L1386",
+            "expr": "t.text === 'from' || t.text === 'join' || t.text === 'using'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:b91c6d27f72095bd28c46b561dd7d762f717d3d7f597d2f9dc8bb3555e8a800b",
+          "target": "sym:packages/parsers/src/plsql/parser.ts#pushFromTable@L1354",
+          "expr": "pushFromTable",
+          "line": 1387
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/parsers/src/plsql/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 2,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/ui/web/support.js#collectProps@L369",
-  "schemaVersion": "1.5",
+  "schemaVersion": "1.6",
   "nodeHash": "blake3:73557c21fdb8224abedbfac76feda771a6753967a7e87e8fcc0077b72ec9a343",
-  "builtAt": "2026-07-16T16:35:16.098Z",
+  "builtAt": "2026-08-25T20:55:11.863Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/ui/web/support.js#collectProps@L369",
@@ -120,14 +120,14 @@
       "line": 342
     },
     {
-      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
       "confidence": 1,
       "name": "push",
       "qualifiedName": "push",
       "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
       "type": "function",
       "file": "packages/pipeline/src/linker/inverted-index.ts",
-      "line": 39
+      "line": 70
     }
   ],
   "docs": [
@@ -240,20 +240,6 @@
       {
         "procedure": "sym:packages/ui/web/support.js#collectProps@L369",
         "procedureName": "collectProps",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:1f788484e1bcda3be49abee68280aef74c53c3783b1e2446ce5f32a98ed8663b",
-          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
-          "expr": "push",
-          "line": 383
-        }
-      },
-      {
-        "procedure": "sym:packages/ui/web/support.js#collectProps@L369",
-        "procedureName": "collectProps",
         "guard": "cond:packages/ui/web/support.js@L382",
         "branch": "THEN",
         "conditions": [
@@ -275,6 +261,20 @@
           "target": "stmt:packages/ui/web/support.js@L383",
           "line": 383,
           "expr": "pseudoClasses.push(host.pseudoClass(key.slice(6), value));"
+        }
+      },
+      {
+        "procedure": "sym:packages/ui/web/support.js#collectProps@L369",
+        "procedureName": "collectProps",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:d36b62e8b9d8b01458a64d765c24ddb6b908ffe1079cd03eef91e696495e6be9",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
+          "expr": "push",
+          "line": 383
         }
       },
       {

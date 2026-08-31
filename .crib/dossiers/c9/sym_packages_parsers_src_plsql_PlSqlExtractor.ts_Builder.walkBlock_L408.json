@@ -1,0 +1,177 @@
+{
+  "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.walkBlock@L408",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:dc6798265cce522c85e1d14ad6e46f46fbf84816cf508da27a91599f8e7cb09b",
+  "builtAt": "2026-08-25T20:55:11.863Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.walkBlock@L408",
+    "kind": "symbol",
+    "type": "method",
+    "name": "walkBlock",
+    "qualifiedName": "Builder.walkBlock",
+    "signature": "walkBlock(block: Block, proc: ProcCtx, env: { inLoop: boolean; inException: boolean; guard: string | undefined }): void",
+    "lang": "typescript",
+    "file": "packages/parsers/src/plsql/PlSqlExtractor.ts",
+    "span": {
+      "start": 408,
+      "end": 414
+    },
+    "callSites": [
+      {
+        "callee": "walkStmt",
+        "line": 413
+      }
+    ]
+  },
+  "source": {
+    "text": "  private walkBlock(\n    block: Block,\n    proc: ProcCtx,\n    env: { inLoop: boolean; inException: boolean; guard: string | undefined },\n  ): void {\n    for (const s of block.statements) this.walkStmt(s, proc, env);\n  }",
+    "truncated": false,
+    "totalLines": 7,
+    "startLine": 408
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addUnit@L270",
+      "confidence": 1,
+      "name": "addUnit",
+      "qualifiedName": "Builder.addUnit",
+      "signature": "addUnit(u: Unit, enclosingId: string, qualifier: string): void",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/PlSqlExtractor.ts",
+      "line": 270
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.walkCase@L641",
+      "confidence": 1,
+      "name": "walkCase",
+      "qualifiedName": "Builder.walkCase",
+      "signature": "walkCase(s: CaseStmt, proc: ProcCtx, env: { inLoop: boolean; inException: boolean; guard: string | undefined }): void",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/PlSqlExtractor.ts",
+      "line": 641
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.walkException@L659",
+      "confidence": 1,
+      "name": "walkException",
+      "qualifiedName": "Builder.walkException",
+      "signature": "walkException(s: ExceptionBlock, proc: ProcCtx, env: { inLoop: boolean; inException: boolean; guard: string | undefined }): void",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/PlSqlExtractor.ts",
+      "line": 659
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.walkIf@L604",
+      "confidence": 1,
+      "name": "walkIf",
+      "qualifiedName": "Builder.walkIf",
+      "signature": "walkIf(s: IfStmt, proc: ProcCtx, env: { inLoop: boolean; inException: boolean; guard: string | undefined }): void",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/PlSqlExtractor.ts",
+      "line": 604
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.walkLoop@L622",
+      "confidence": 1,
+      "name": "walkLoop",
+      "qualifiedName": "Builder.walkLoop",
+      "signature": "walkLoop(s: LoopStmt, proc: ProcCtx, env: { inLoop: boolean; inException: boolean; guard: string | undefined }): void",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/PlSqlExtractor.ts",
+      "line": 622
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.walkStmt@L416",
+      "confidence": 1,
+      "name": "walkStmt",
+      "qualifiedName": "Builder.walkStmt",
+      "signature": "walkStmt(s: Stmt, proc: ProcCtx, env: { inLoop: boolean; inException: boolean; guard: string | undefined }): void",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/PlSqlExtractor.ts",
+      "line": 416
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.walkBlock@L408",
+    "procedureName": "Builder.walkBlock",
+    "conditions": [
+      "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L413"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.walkBlock@L408",
+        "procedureName": "Builder.walkBlock",
+        "guard": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L413",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L413",
+            "expr": "block.statements",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:d7c53cde8b935e3288388e91fe357c6b44b35eaeb8d5ad170837e26418bccdd3",
+          "target": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.walkStmt@L416",
+          "expr": "walkStmt",
+          "line": 413
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.walkBlock@L408",
+        "procedureName": "Builder.walkBlock",
+        "guard": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L413",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L413",
+            "expr": "block.statements",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f82c80a1cdad24713d7c4730459511183d0d8c79918c58a88d4475e7291851e3",
+          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L413",
+          "line": 413,
+          "expr": "this.walkStmt(s, proc, env);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/parsers/src/plsql/PlSqlExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

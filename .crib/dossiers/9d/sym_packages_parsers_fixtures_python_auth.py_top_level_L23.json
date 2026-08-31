@@ -1,0 +1,124 @@
+{
+  "id": "sym:packages/parsers/fixtures/python/auth.py#top_level@L23",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:cc287767308cf539ce71c5ff275e7a9f8a458b46eca0dbe3586b5810519c2049",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/fixtures/python/auth.py#top_level@L23",
+    "kind": "symbol",
+    "type": "function",
+    "name": "top_level",
+    "qualifiedName": "top_level",
+    "signature": "top_level()",
+    "lang": "python",
+    "file": "packages/parsers/fixtures/python/auth.py",
+    "span": {
+      "start": 23,
+      "end": 25
+    },
+    "callSites": [
+      {
+        "callee": "Auth",
+        "line": 24
+      },
+      {
+        "callee": "login",
+        "line": 25
+      }
+    ]
+  },
+  "source": {
+    "text": "def top_level():\n    a = Auth()\n    return a.login(\"x\")",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 23
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/fixtures/python/auth.py#Auth@L12",
+      "confidence": 1,
+      "name": "Auth",
+      "qualifiedName": "Auth",
+      "signature": "class Auth(Base)",
+      "type": "class",
+      "file": "packages/parsers/fixtures/python/auth.py",
+      "line": 12
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/fixtures/python/auth.py#top_level@L23",
+    "procedureName": "top_level",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/fixtures/python/auth.py#top_level@L23",
+        "procedureName": "top_level",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4389f407f674d320eec8e773392c23fd21b6557a4177fcc171226529886f8e12",
+          "target": "assign:packages/parsers/fixtures/python/auth.py@L24",
+          "line": 24,
+          "expr": "a = Auth()"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/fixtures/python/auth.py#top_level@L23",
+        "procedureName": "top_level",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:574f4e7756f3ac2c74c8354c366879f2da049335a705b9ce848da4fbb3638fb3",
+          "target": "sym:packages/parsers/fixtures/python/auth.py#Auth@L12",
+          "expr": "Auth",
+          "line": 24
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/fixtures/python/auth.py#top_level@L23",
+        "procedureName": "top_level",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:978a1ac8bb7fb76aaf97bd55d8c064b66ff7250508bc58661b3f1e9e4a65990b",
+          "target": "stmt:packages/parsers/fixtures/python/auth.py@L25",
+          "line": 25,
+          "expr": "return a.login(\"x\")"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 1,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 2,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

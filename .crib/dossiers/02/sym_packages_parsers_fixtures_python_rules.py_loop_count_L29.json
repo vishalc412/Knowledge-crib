@@ -1,0 +1,155 @@
+{
+  "id": "sym:packages/parsers/fixtures/python/rules.py#loop_count@L29",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:09d038749b35318340a8ec9b0cc7b68a74a89779aafcd11f4a9a7d44a1f12a70",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/fixtures/python/rules.py#loop_count@L29",
+    "kind": "symbol",
+    "type": "function",
+    "name": "loop_count",
+    "qualifiedName": "loop_count",
+    "signature": "loop_count(items)",
+    "lang": "python",
+    "file": "packages/parsers/fixtures/python/rules.py",
+    "span": {
+      "start": 29,
+      "end": 33
+    },
+    "callSites": [
+      {
+        "callee": "add",
+        "line": 32
+      }
+    ],
+    "params": [
+      "items"
+    ]
+  },
+  "source": {
+    "text": "def loop_count(items):\n    total = 0\n    for x in items:\n        total = add(total, x)\n    return total",
+    "truncated": false,
+    "totalLines": 5,
+    "startLine": 29
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/fixtures/python/rules.py#add@L16",
+      "confidence": 1,
+      "name": "add",
+      "qualifiedName": "add",
+      "signature": "add(a, b)",
+      "type": "function",
+      "file": "packages/parsers/fixtures/python/rules.py",
+      "line": 16
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/fixtures/python/rules.py#loop_count@L29",
+    "procedureName": "loop_count",
+    "conditions": [
+      "cond:packages/parsers/fixtures/python/rules.py@L31"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/fixtures/python/rules.py#loop_count@L29",
+        "procedureName": "loop_count",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b8f048db29bc01454a8c3787bac3491e290336fdbf9bd59718b310bc27867cb5",
+          "target": "assign:packages/parsers/fixtures/python/rules.py@L30",
+          "line": 30,
+          "expr": "total = 0"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/fixtures/python/rules.py#loop_count@L29",
+        "procedureName": "loop_count",
+        "guard": "cond:packages/parsers/fixtures/python/rules.py@L31",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/fixtures/python/rules.py@L31",
+            "expr": "x in items",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:23b6237d7ea20d23dd848d1c6b6928c882c4dba08a8331e1334249fb4aad1353",
+          "target": "assign:packages/parsers/fixtures/python/rules.py@L32",
+          "line": 32,
+          "expr": "total = add(total, x)"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/fixtures/python/rules.py#loop_count@L29",
+        "procedureName": "loop_count",
+        "guard": "cond:packages/parsers/fixtures/python/rules.py@L31",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/fixtures/python/rules.py@L31",
+            "expr": "x in items",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:86547b6f14f1917f79225f07b6030f8feec4adcf425cf016ec84f927e5ff810b",
+          "target": "sym:packages/parsers/fixtures/python/rules.py#add@L16",
+          "expr": "add",
+          "line": 32
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/fixtures/python/rules.py#loop_count@L29",
+        "procedureName": "loop_count",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b8b71042de2b6eb0bc95ead4933de004abf9b88d1cde3133b60caac972a1dec2",
+          "target": "stmt:packages/parsers/fixtures/python/rules.py@L33",
+          "line": 33,
+          "expr": "return total"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 2,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

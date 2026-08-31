@@ -1,0 +1,287 @@
+{
+  "id": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.addAssign@L611",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:4de0cef80a3d37c97f422fc0fa814f040f7d7e6aacfdc3b43df8295b79748e48",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.addAssign@L611",
+    "kind": "symbol",
+    "type": "method",
+    "name": "addAssign",
+    "qualifiedName": "BodyWalker.addAssign",
+    "signature": "addAssign(s: JavaStmt, procId: string, guardStack: string[], innerBranch: string | undefined, inLoop: boolean, inException: boolean): void",
+    "lang": "typescript",
+    "file": "packages/parsers/src/java/JavaExtractor.ts",
+    "span": {
+      "start": 611,
+      "end": 650
+    },
+    "callSites": [
+      {
+        "callee": "idFor",
+        "line": 619
+      },
+      {
+        "callee": "add",
+        "line": 621
+      },
+      {
+        "callee": "push",
+        "line": 623
+      },
+      {
+        "callee": "hash",
+        "line": 629
+      },
+      {
+        "callee": "exprFields",
+        "line": 631
+      },
+      {
+        "callee": "push",
+        "line": 634
+      },
+      {
+        "callee": "edgeId",
+        "line": 635
+      },
+      {
+        "callee": "slice",
+        "line": 643
+      },
+      {
+        "callee": "push",
+        "line": 649
+      },
+      {
+        "callee": "edge",
+        "line": 649
+      }
+    ]
+  },
+  "source": {
+    "text": "  private addAssign(\n    s: JavaStmt,\n    procId: string,\n    guardStack: string[],\n    innerBranch: string | undefined,\n    inLoop: boolean,\n    inException: boolean,\n  ): void {\n    const id = this.ctx.idFor('assignment', { file: this.path, line: s.startLine });\n    if (this.assignSeen.has(id)) return;\n    this.assignSeen.add(id);\n    const guard = guardStack.length > 0 ? guardStack[guardStack.length - 1] : undefined;\n    this.nodes.push({\n      id,\n      kind: 'assignment',\n      file: this.path,\n      span: { start: s.startLine, end: s.endLine },\n      lang: 'java',\n      hash: this.ctx.hash(`${this.path}:${s.startLine}:assign`),\n      ...(s.assignTarget ? { assignTarget: s.assignTarget } : {}),\n      ...exprFields(s.text),\n      meta: { inLoop, inException, ...(guardStack.length > 0 ? { branch: 'GUARDED' } : {}) },\n    });\n    this.edges.push({\n      id: edgeId(procId, id, 'executes'),\n      src: procId,\n      dst: id,\n      rel: 'executes',\n      method: 'static',\n      provenance: 'EXTRACTED',\n      confidence: 1,\n      evidence: { by: 'java-extractor', snippet: s.text ?? 'assign' },\n      cfgPath: guardStack.slice(),\n      ...(guard !== undefined ? { guard } : {}),\n      ...(guardStack.length > 0 ? { branch: innerBranch } : {}),\n      inLoop,\n      inException,\n    });\n    if (guard) this.edges.push(this.edge(id, guard, 'guarded-by', 'assign'));\n  }",
+    "truncated": false,
+    "totalLines": 40,
+    "startLine": 611
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.walkStmt@L479",
+      "confidence": 1,
+      "name": "walkStmt",
+      "qualifiedName": "BodyWalker.walkStmt",
+      "signature": "walkStmt(s: JavaStmt, procId: string, guardStack: string[], innerBranch: string | undefined, inLoop: boolean, inException: boolean): void",
+      "type": "method",
+      "file": "packages/parsers/src/java/JavaExtractor.ts",
+      "line": 479
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.edge@L653",
+      "confidence": 1,
+      "name": "edge",
+      "qualifiedName": "BodyWalker.edge",
+      "signature": "edge(src: string, dst: string, rel: Edge['rel'], snippet: string): Edge",
+      "type": "method",
+      "file": "packages/parsers/src/java/JavaExtractor.ts",
+      "line": 653
+    },
+    {
+      "id": "sym:packages/parsers/src/java/JavaExtractor.ts#exprFields@L32",
+      "confidence": 1,
+      "name": "exprFields",
+      "qualifiedName": "exprFields",
+      "signature": "exprFields(raw: string | undefined): { expr?: string; exprTruncated?: true }",
+      "type": "function",
+      "file": "packages/parsers/src/java/JavaExtractor.ts",
+      "line": 32
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/java/JavaExtractor.ts@L608",
+      "snippet": "/** 1.2: an `lhs = rhs` (no embedded call) emits an `assignment` node + executes + guarded-by,",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.addAssign@L611",
+    "procedureName": "BodyWalker.addAssign",
+    "conditions": [
+      "cond:packages/parsers/src/java/JavaExtractor.ts@L620",
+      "cond:packages/parsers/src/java/JavaExtractor.ts@L649"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.addAssign@L611",
+        "procedureName": "BodyWalker.addAssign",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4b97ab325acf62ec36b83e9fbeea9a6c97a4f6df8019223ccaa9fd6f1e727ad1",
+          "target": "stmt:packages/parsers/src/java/JavaExtractor.ts@L619",
+          "line": 619,
+          "expr": "const id = this.ctx.idFor('assignment', { file: this.path, line: s.startLine });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.addAssign@L611",
+        "procedureName": "BodyWalker.addAssign",
+        "guard": "cond:packages/parsers/src/java/JavaExtractor.ts@L620",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/JavaExtractor.ts@L620",
+            "expr": "this.assignSeen.has(id)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c93d29142a8ce7cec7dc898108e7fff7ff4e67dfe68edd8fbc41ba272c245fa9",
+          "target": "stmt:packages/parsers/src/java/JavaExtractor.ts@L620",
+          "line": 620,
+          "expr": "return;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.addAssign@L611",
+        "procedureName": "BodyWalker.addAssign",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:12512721c53ed9d1134f360e86f94e7a0172b959e997c053d9d6bd8750853b2b",
+          "target": "stmt:packages/parsers/src/java/JavaExtractor.ts@L621",
+          "line": 621,
+          "expr": "this.assignSeen.add(id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.addAssign@L611",
+        "procedureName": "BodyWalker.addAssign",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a8c6fd22387d5b89804d4a5bbc4dbc1fb3e370fbcc6039bdfe04a1cca6c12bf4",
+          "target": "stmt:packages/parsers/src/java/JavaExtractor.ts@L623",
+          "line": 623,
+          "expr": "this.nodes.push({\n      id,\n      kind: 'assignment',\n      file: this.path,\n      span: { start: s.startLine, end: s.endLine },\n      lang: 'java',\n      hash: this.ctx.hash(`${this.path}:${s.startLine}:assign`),\n      ...(s.assignTarget ? { assignTarget: s.assignTarget } : {}),\n      ...exprFields(s.text),\n      meta: { inLoop, inException, ...(guardStack.length > 0 ? { branch: 'GUARDED' } : {}) },\n    });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.addAssign@L611",
+        "procedureName": "BodyWalker.addAssign",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:3342b4ae414ecb67be1b9ed70b24e3adb90c1bb51f5007e30da2d7b86bcc3b21",
+          "target": "sym:packages/parsers/src/java/JavaExtractor.ts#exprFields@L32",
+          "expr": "exprFields",
+          "line": 631
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.addAssign@L611",
+        "procedureName": "BodyWalker.addAssign",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7c57830b1e9d243faddadf9915afd91f80a1d960ba33b3f888502ebb4256280f",
+          "target": "stmt:packages/parsers/src/java/JavaExtractor.ts@L634",
+          "line": 634,
+          "expr": "this.edges.push({\n      id: edgeId(procId, id, 'executes'),\n      src: procId,\n      dst: id,\n      rel: 'executes',\n      method: 'static',\n      provenance: 'EXTRACTED',\n      confidence: 1,\n      evidence: { by: 'java-extractor', snippet: s.text ?? 'assign' },\n      cfgPath: guardStack.slice(),\n      ...(guard !== undefined ? { guard } : {}),\n      ...(guardStack.length > 0 ? { branch: innerBranch } : {}),\n      inLoop,\n      inException,\n    });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.addAssign@L611",
+        "procedureName": "BodyWalker.addAssign",
+        "guard": "cond:packages/parsers/src/java/JavaExtractor.ts@L649",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/JavaExtractor.ts@L649",
+            "expr": "guard",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:736c17e0f22d652629aeb2b589b4602822fd812afd788e11cc79642845a9460c",
+          "target": "stmt:packages/parsers/src/java/JavaExtractor.ts@L649",
+          "line": 649,
+          "expr": "this.edges.push(this.edge(id, guard, 'guarded-by', 'assign'));"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.addAssign@L611",
+        "procedureName": "BodyWalker.addAssign",
+        "guard": "cond:packages/parsers/src/java/JavaExtractor.ts@L649",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/JavaExtractor.ts@L649",
+            "expr": "guard",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:a01aa9de8e9e87bc5c7ea96a1d1b3998c67a59c808befa24e7cc2eb460b6cc93",
+          "target": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.edge@L653",
+          "expr": "edge",
+          "line": 649
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 6,
+    "referencedByFiles": [
+      "packages/parsers/src/java/JavaExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 6,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 10,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

@@ -1,0 +1,96 @@
+{
+  "id": "sym:packages/core/src/dossier/framework.ts#isCallableSymbol@L519",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:38a561354d8c067c68f3bc806ade0ff06a7f534500d6278f509ccb4b9a696ef1",
+  "builtAt": "2026-08-25T20:55:11.863Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/dossier/framework.ts#isCallableSymbol@L519",
+    "kind": "symbol",
+    "type": "function",
+    "name": "isCallableSymbol",
+    "qualifiedName": "isCallableSymbol",
+    "signature": "isCallableSymbol(n: Node): boolean",
+    "lang": "typescript",
+    "file": "packages/core/src/dossier/framework.ts",
+    "span": {
+      "start": 519,
+      "end": 521
+    },
+    "callSites": [
+      {
+        "callee": "has",
+        "line": 520
+      }
+    ]
+  },
+  "source": {
+    "text": "function isCallableSymbol(n: Node): boolean {\n  return n.kind === 'symbol' && !!n.type && CALLABLE_TYPES.has(n.type);\n}",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 519
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+      "confidence": 1,
+      "name": "frameworkSemantics",
+      "qualifiedName": "frameworkSemantics",
+      "signature": "frameworkSemantics(soul: SoulStore, nodeId: string, opts: FrameworkSemanticsOpts = {}): DossierFrameworkSemantics | undefined",
+      "type": "function",
+      "file": "packages/core/src/dossier/framework.ts",
+      "line": 203
+    }
+  ],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/core/src/dossier/framework.ts#isCallableSymbol@L519",
+    "procedureName": "isCallableSymbol",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#isCallableSymbol@L519",
+        "procedureName": "isCallableSymbol",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:070a41ed4f11e968f2002f2fd4228ec941535844c2dfad556bc8c0895925dc3d",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L520",
+          "line": 520,
+          "expr": "return n.kind === 'symbol' && !!n.type && CALLABLE_TYPES.has(n.type);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/core/src/dossier/framework.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 1,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

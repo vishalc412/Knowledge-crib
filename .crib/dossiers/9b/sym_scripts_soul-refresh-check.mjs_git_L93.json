@@ -1,8 +1,8 @@
 {
   "id": "sym:scripts/soul-refresh-check.mjs#git@L93",
-  "schemaVersion": "1.5",
+  "schemaVersion": "1.6",
   "nodeHash": "blake3:93278ac7ca43509abeeaa4ab40c22f69a75ce821732f7f3882358b65a9f9dc48",
-  "builtAt": "2026-07-16T16:35:16.098Z",
+  "builtAt": "2026-08-31T17:37:23.222Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:scripts/soul-refresh-check.mjs#git@L93",
@@ -26,14 +26,14 @@
   },
   "callers": [
     {
-      "id": "sym:packages/pipeline/src/vcs.ts#blameLines@L94",
+      "id": "sym:packages/pipeline/src/vcs.ts#blameLines@L136",
       "confidence": 1,
       "name": "blameLines",
       "qualifiedName": "blameLines",
       "signature": "blameLines(root: string, path: string): BlameLine[]",
       "type": "function",
       "file": "packages/pipeline/src/vcs.ts",
-      "line": 94
+      "line": 136
     },
     {
       "id": "sym:packages/pipeline/src/vcs.ts#changedFilesSince@L44",
@@ -46,6 +46,16 @@
       "line": 44
     },
     {
+      "id": "sym:packages/cli/src/memory-check.test.ts#commitAll@L179",
+      "confidence": 1,
+      "name": "commitAll",
+      "qualifiedName": "commitAll",
+      "signature": "commitAll(message: string): string",
+      "type": "function",
+      "file": "packages/cli/src/memory-check.test.ts",
+      "line": 179
+    },
+    {
       "id": "sym:packages/pipeline/src/vcs.ts#currentHead@L33",
       "confidence": 1,
       "name": "currentHead",
@@ -56,14 +66,84 @@
       "line": 33
     },
     {
-      "id": "sym:packages/pipeline/src/update.test.ts#indexAndCommit@L72",
+      "id": "sym:packages/pipeline/src/update.test.ts#indexAndCommit@L80",
       "confidence": 1,
       "name": "indexAndCommit",
       "qualifiedName": "indexAndCommit",
       "signature": "indexAndCommit(): Promise<void>",
       "type": "function",
       "file": "packages/pipeline/src/update.test.ts",
-      "line": 72
+      "line": 80
+    },
+    {
+      "id": "sym:packages/pipeline/src/vcs.ts#lsTreeFiles@L201",
+      "confidence": 1,
+      "name": "lsTreeFiles",
+      "qualifiedName": "lsTreeFiles",
+      "signature": "lsTreeFiles(root: string, ref: string, pathPrefix: string): string[]",
+      "type": "function",
+      "file": "packages/pipeline/src/vcs.ts",
+      "line": 201
+    },
+    {
+      "id": "sym:packages/pipeline/src/vcs.ts#mergeBase@L191",
+      "confidence": 1,
+      "name": "mergeBase",
+      "qualifiedName": "mergeBase",
+      "signature": "mergeBase(root: string, a: string, b: string): string | undefined",
+      "type": "function",
+      "file": "packages/pipeline/src/vcs.ts",
+      "line": 191
+    },
+    {
+      "id": "sym:packages/pipeline/src/vcs.ts#refExists@L186",
+      "confidence": 1,
+      "name": "refExists",
+      "qualifiedName": "refExists",
+      "signature": "refExists(root: string, ref: string): boolean",
+      "type": "function",
+      "file": "packages/pipeline/src/vcs.ts",
+      "line": 186
+    },
+    {
+      "id": "sym:packages/pipeline/src/vcs.ts#revParse@L196",
+      "confidence": 1,
+      "name": "revParse",
+      "qualifiedName": "revParse",
+      "signature": "revParse(root: string, ref: string): string | undefined",
+      "type": "function",
+      "file": "packages/pipeline/src/vcs.ts",
+      "line": 196
+    },
+    {
+      "id": "sym:packages/cli/src/memory-check.test.ts#setupBase@L223",
+      "confidence": 1,
+      "name": "setupBase",
+      "qualifiedName": "setupBase",
+      "signature": "setupBase(opts: {\n  policy?: MemoryPolicy;\n  trusted?: Array<{ rec: MemoryRecord; rcpt: GateReceipt }>;\n}): { baseSha: string; team: MemoryStore }",
+      "type": "function",
+      "file": "packages/cli/src/memory-check.test.ts",
+      "line": 223
+    },
+    {
+      "id": "sym:packages/pipeline/src/vcs.ts#showFileAtRef@L212",
+      "confidence": 1,
+      "name": "showFileAtRef",
+      "qualifiedName": "showFileAtRef",
+      "signature": "showFileAtRef(root: string, ref: string, path: string): string | undefined",
+      "type": "function",
+      "file": "packages/pipeline/src/vcs.ts",
+      "line": 212
+    },
+    {
+      "id": "sym:packages/pipeline/src/vcs.ts#trackedFiles@L110",
+      "confidence": 1,
+      "name": "trackedFiles",
+      "qualifiedName": "trackedFiles",
+      "signature": "trackedFiles(root: string): string[]",
+      "type": "function",
+      "file": "packages/pipeline/src/vcs.ts",
+      "line": 110
     },
     {
       "id": "sym:packages/pipeline/src/vcs.ts#uncommittedChanges@L60",
@@ -74,10 +154,30 @@
       "type": "function",
       "file": "packages/pipeline/src/vcs.ts",
       "line": 60
+    },
+    {
+      "id": "sym:packages/pipeline/src/vcs.ts#untrackedFiles@L88",
+      "confidence": 1,
+      "name": "untrackedFiles",
+      "qualifiedName": "untrackedFiles",
+      "signature": "untrackedFiles(root: string): string[]",
+      "type": "function",
+      "file": "packages/pipeline/src/vcs.ts",
+      "line": 88
     }
   ],
   "callees": [],
   "docs": [
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#2-install",
+      "heading": "2. Install",
+      "anchor": "2-install",
+      "snippet": "2. Install",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
     {
       "sectionId": "doc:docs/knowledge-crib-soul-format.md#2-on-disk-layout",
       "heading": "2. On-disk layout",
@@ -109,10 +209,110 @@
       "confidence": 0.99
     },
     {
+      "sectionId": "doc:README.md#install",
+      "heading": "Install",
+      "anchor": "install",
+      "snippet": "Install",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-4-extraction.md#task-5-parse-raml-and-apikit-mappings",
+      "heading": "Task 5: Parse RAML and APIKit mappings",
+      "anchor": "task-5-parse-raml-and-apikit-mappings",
+      "snippet": "Task 5: Parse RAML and APIKit mappings",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-4-extraction.md#task-3-parse-dataweave-2-without-evaluating-it",
+      "heading": "Task 3: Parse DataWeave 2 without evaluating it",
+      "anchor": "task-3-parse-dataweave-2-without-evaluating-it",
+      "snippet": "Task 3: Parse DataWeave 2 without evaluating it",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-4-extraction.md#task-4-parse-descriptors-dependencies-and-property-keys",
+      "heading": "Task 4: Parse descriptors, dependencies, and property keys",
+      "anchor": "task-4-parse-descriptors-dependencies-and-property-keys",
+      "snippet": "Task 4: Parse descriptors, dependencies, and property keys",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-4-extraction.md#task-1-add-secure-span-aware-xml-parsing",
+      "heading": "Task 1: Add secure, span-aware XML parsing",
+      "anchor": "task-1-add-secure-span-aware-xml-parsing",
+      "snippet": "Task 1: Add secure, span-aware XML parsing",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-4-extraction.md#task-6-emit-mule-4-graph-nodes-and-intra-file-edges",
+      "heading": "Task 6: Emit Mule 4 graph nodes and intra-file edges",
+      "anchor": "task-6-emit-mule-4-graph-nodes-and-intra-file-edges",
+      "snippet": "Task 6: Emit Mule 4 graph nodes and intra-file edges",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-4-extraction.md#task-7-resolve-mule-references-across-files",
+      "heading": "Task 7: Resolve Mule references across files",
+      "anchor": "task-7-resolve-mule-references-across-files",
+      "snippet": "Task 7: Resolve Mule references across files",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-4-extraction.md#task-2-normalize-mule-4-elements-into-a-semantic-document",
+      "heading": "Task 2: Normalize Mule 4 elements into a semantic document",
+      "anchor": "task-2-normalize-mule-4-elements-into-a-semantic-document",
+      "snippet": "Task 2: Normalize Mule 4 elements into a semantic document",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-4-extraction.md#task-8-register-the-built-in-extractor-and-resolver",
+      "heading": "Task 8: Register the built-in extractor and resolver",
+      "anchor": "task-8-register-the-built-in-extractor-and-resolver",
+      "snippet": "Task 8: Register the built-in extractor and resolver",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
       "sectionId": "doc:docs/launch/demo-recipe.md#prep-one-time-3-min",
       "heading": "Prep (one-time, ~3 min)",
       "anchor": "prep-one-time-3-min",
       "snippet": "Prep (one-time, ~3 min)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#detect-changes-dry-run-delta-since-a-git-ref",
+      "heading": "`detect_changes` — dry-run delta since a git ref",
+      "anchor": "detect-changes-dry-run-delta-since-a-git-ref",
+      "snippet": "`detect_changes` — dry-run delta since a git ref",
       "edgeType": "describes",
       "method": "explicit",
       "provenance": "EXTRACTED",
@@ -133,6 +333,86 @@
       "heading": "`detect_changes`",
       "anchor": "detect-changes",
       "snippet": "`detect_changes`",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/mulesoft.md#updating",
+      "heading": "Updating",
+      "anchor": "updating",
+      "snippet": "Updating",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-foundation.md#task-4-classify-discovery-and-make-sensitive-hashes-key-only",
+      "heading": "Task 4: Classify discovery and make sensitive hashes key-only",
+      "anchor": "task-4-classify-discovery-and-make-sensitive-hashes-key-only",
+      "snippet": "Task 4: Classify discovery and make sensitive hashes key-only",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-foundation.md#task-5-preserve-archive-identity-in-cli-resolution-and-registry",
+      "heading": "Task 5: Preserve archive identity in CLI resolution and registry",
+      "anchor": "task-5-preserve-archive-identity-in-cli-resolution-and-registry",
+      "snippet": "Task 5: Preserve archive identity in CLI resolution and registry",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-foundation.md#task-6-enforce-property-redaction-in-source-and-fts",
+      "heading": "Task 6: Enforce property redaction in source and FTS",
+      "anchor": "task-6-enforce-property-redaction-in-source-and-fts",
+      "snippet": "Task 6: Enforce property redaction in source and FTS",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-foundation.md#task-2-detect-and-classify-mule-projects",
+      "heading": "Task 2: Detect and classify Mule projects",
+      "anchor": "task-2-detect-and-classify-mule-projects",
+      "snippet": "Task 2: Detect and classify Mule projects",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-foundation.md#task-1-add-classification-and-diagnostic-contracts",
+      "heading": "Task 1: Add classification and diagnostic contracts",
+      "anchor": "task-1-add-classification-and-diagnostic-contracts",
+      "snippet": "Task 1: Add classification and diagnostic contracts",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-foundation.md#task-7-aggregate-diagnostics-in-serial-concurrent-and-worker-parsing",
+      "heading": "Task 7: Aggregate diagnostics in serial, concurrent, and worker parsing",
+      "anchor": "task-7-aggregate-diagnostics-in-serial-concurrent-and-worker-parsing",
+      "snippet": "Task 7: Aggregate diagnostics in serial, concurrent, and worker parsing",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-foundation.md#task-3-prepare-directory-zip-and-jar-inputs-safely",
+      "heading": "Task 3: Prepare directory, ZIP, and JAR inputs safely",
+      "anchor": "task-3-prepare-directory-zip-and-jar-inputs-safely",
+      "snippet": "Task 3: Prepare directory, ZIP, and JAR inputs safely",
       "edgeType": "describes",
       "method": "explicit",
       "provenance": "EXTRACTED",
@@ -219,6 +499,136 @@
       "confidence": 0.95
     },
     {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-3-extraction.md#task-5-dispatch-mule-3-files-through-the-shared-extractor",
+      "heading": "Task 5: Dispatch Mule 3 files through the shared extractor",
+      "anchor": "task-5-dispatch-mule-3-files-through-the-shared-extractor",
+      "snippet": "Task 5: Dispatch Mule 3 files through the shared extractor",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-3-extraction.md#task-3-scan-mel-expressions-honestly",
+      "heading": "Task 3: Scan MEL expressions honestly",
+      "anchor": "task-3-scan-mel-expressions-honestly",
+      "snippet": "Task 3: Scan MEL expressions honestly",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-3-extraction.md#task-1-lock-mule-3-detection-with-fixtures",
+      "heading": "Task 1: Lock Mule 3 detection with fixtures",
+      "anchor": "task-1-lock-mule-3-detection-with-fixtures",
+      "snippet": "Task 1: Lock Mule 3 detection with fixtures",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-3-extraction.md#task-2-normalize-mule-3-transports-and-exception-strategies",
+      "heading": "Task 2: Normalize Mule 3 transports and exception strategies",
+      "anchor": "task-2-normalize-mule-3-transports-and-exception-strategies",
+      "snippet": "Task 2: Normalize Mule 3 transports and exception strategies",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-3-extraction.md#task-6-resolve-legacy-endpoint-strategy-and-flow-references",
+      "heading": "Task 6: Resolve legacy endpoint, strategy, and flow references",
+      "anchor": "task-6-resolve-legacy-endpoint-strategy-and-flow-references",
+      "snippet": "Task 6: Resolve legacy endpoint, strategy, and flow references",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-3-extraction.md#task-4-extend-dataweave-scanning-to-version-1",
+      "heading": "Task 4: Extend DataWeave scanning to version 1",
+      "anchor": "task-4-extend-dataweave-scanning-to-version-1",
+      "snippet": "Task 4: Extend DataWeave scanning to version 1",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-munit-hardening.md#task-5-complete-the-archive-attack-matrix",
+      "heading": "Task 5: Complete the archive attack matrix",
+      "anchor": "task-5-complete-the-archive-attack-matrix",
+      "snippet": "Task 5: Complete the archive attack matrix",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-munit-hardening.md#task-6-add-local-sample-project-acceptance-checking",
+      "heading": "Task 6: Add local sample-project acceptance checking",
+      "anchor": "task-6-add-local-sample-project-acceptance-checking",
+      "snippet": "Task 6: Add local sample-project acceptance checking",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-munit-hardening.md#task-1-normalize-mule-4-munit-tests",
+      "heading": "Task 1: Normalize Mule 4 MUnit tests",
+      "anchor": "task-1-normalize-mule-4-munit-tests",
+      "snippet": "Task 1: Normalize Mule 4 MUnit tests",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-munit-hardening.md#task-3-emit-and-resolve-munit-migration-evidence",
+      "heading": "Task 3: Emit and resolve MUnit migration evidence",
+      "anchor": "task-3-emit-and-resolve-munit-migration-evidence",
+      "snippet": "Task 3: Emit and resolve MUnit migration evidence",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-munit-hardening.md#task-2-add-mule-3-munit-compatibility",
+      "heading": "Task 2: Add Mule 3 MUnit compatibility",
+      "anchor": "task-2-add-mule-3-munit-compatibility",
+      "snippet": "Task 2: Add Mule 3 MUnit compatibility",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-munit-hardening.md#task-7-document-support-and-expose-concise-diagnostics",
+      "heading": "Task 7: Document support and expose concise diagnostics",
+      "anchor": "task-7-document-support-and-expose-concise-diagnostics",
+      "snippet": "Task 7: Document support and expose concise diagnostics",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-munit-hardening.md#task-4-add-the-mule-extractor-to-deterministic-fuzzing",
+      "heading": "Task 4: Add the Mule extractor to deterministic fuzzing",
+      "anchor": "task-4-add-the-mule-extractor-to-deterministic-fuzzing",
+      "snippet": "Task 4: Add the Mule extractor to deterministic fuzzing",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
       "sectionId": "doc:docs/knowledge-crib-prd.md#5-architecture",
       "heading": "5. Architecture",
       "anchor": "5-architecture",
@@ -273,6 +683,36 @@
       "heading": "Shot 1 — the graph (viz)  · ~20s",
       "anchor": "shot-1-the-graph-viz-20s",
       "snippet": "Shot 1 — the graph (viz)  · ~20s",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#the-remaining-deterministic-verbs-compact",
+      "heading": "The remaining deterministic verbs (compact)",
+      "anchor": "the-remaining-deterministic-verbs-compact",
+      "snippet": "The remaining deterministic verbs (compact)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#1-what-it-is",
+      "heading": "1. What it is",
+      "anchor": "1-what-it-is",
+      "snippet": "1. What it is",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/mulesoft.md#non-goals",
+      "heading": "Non-goals",
+      "anchor": "non-goals",
+      "snippet": "Non-goals",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
@@ -429,6 +869,16 @@
       "confidence": 0.6
     },
     {
+      "sectionId": "doc:docs/superpowers/specs/2026-08-14-mulesoft-first-class-extractor-design.md#8-discovery-and-generated-noise",
+      "heading": "8. Discovery and Generated Noise",
+      "anchor": "8-discovery-and-generated-noise",
+      "snippet": "8. Discovery and Generated Noise",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
       "sectionId": "doc:docs/llm-integration-deep-dive.md#2-1-monorepo-package-map",
       "heading": "2.1 Monorepo Package Map",
       "anchor": "2-1-monorepo-package-map",
@@ -529,6 +979,26 @@
       "confidence": 0.6
     },
     {
+      "sectionId": "doc:CHANGELOG.md#added-2",
+      "heading": "Added",
+      "anchor": "added-2",
+      "snippet": "Added",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:CHANGELOG.md#added",
+      "heading": "Added",
+      "anchor": "added",
+      "snippet": "Added",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
       "sectionId": "doc:docs/launch/show-hn.md#body",
       "heading": "Body",
       "anchor": "body",
@@ -559,36 +1029,6 @@
       "confidence": 0.6
     },
     {
-      "sectionId": "doc:CHANGELOG.md#added",
-      "heading": "Added",
-      "anchor": "added",
-      "snippet": "Added",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
-    },
-    {
-      "sectionId": "doc:CHANGELOG.md#added-2",
-      "heading": "Added",
-      "anchor": "added-2",
-      "snippet": "Added",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
-    },
-    {
-      "sectionId": "doc:docs/knowledge-crib-user-guide.md#1-what-it-is",
-      "heading": "1. What it is",
-      "anchor": "1-what-it-is",
-      "snippet": "1. What it is",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
-    },
-    {
       "sectionId": "doc:docs/knowledge-crib-user-guide.md#2-install",
       "heading": "2. Install",
       "anchor": "2-install",
@@ -599,10 +1039,30 @@
       "confidence": 0.6
     },
     {
-      "sectionId": "doc:docs/knowledge-crib-user-guide.md#the-remaining-deterministic-verbs-compact",
-      "heading": "The remaining deterministic verbs (compact)",
-      "anchor": "the-remaining-deterministic-verbs-compact",
-      "snippet": "The remaining deterministic verbs (compact)",
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#2-on-disk-layout",
+      "heading": "2. On-disk layout",
+      "anchor": "2-on-disk-layout",
+      "snippet": "2. On-disk layout",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-06-27-knowledgecrib-linkedin-demo-video.md#task-1-scaffold-the-reproducible-media-workspace",
+      "heading": "Task 1: Scaffold The Reproducible Media Workspace",
+      "anchor": "task-1-scaffold-the-reproducible-media-workspace",
+      "snippet": "Task 1: Scaffold The Reproducible Media Workspace",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/launch/publish-runbook.md#publish-sequence-user-executes-in-dependency-order",
+      "heading": "Publish sequence (user executes, in dependency order)",
+      "anchor": "publish-sequence-user-executes-in-dependency-order",
+      "snippet": "Publish sequence (user executes, in dependency order)",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
@@ -619,6 +1079,7 @@
     "status": "unimplemented",
     "executesCount": 0,
     "referencedByFiles": [
+      "packages/cli/src/memory-check.test.ts",
       "packages/pipeline/src/update.test.ts",
       "packages/pipeline/src/vcs.ts"
     ]

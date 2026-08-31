@@ -1,0 +1,84 @@
+{
+  "id": "sym:packages/core/src/conflict-rule.ts#passesThreshold@L55",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:0c65e8fb04fbd06ea9b98033c20e81139a1bb49645f5f25e939602c4d9754788",
+  "builtAt": "2026-08-25T20:55:11.863Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/conflict-rule.ts#passesThreshold@L55",
+    "kind": "symbol",
+    "type": "function",
+    "name": "passesThreshold",
+    "qualifiedName": "passesThreshold",
+    "signature": "passesThreshold(edge: Edge, threshold = DEFAULT_LINK_THRESHOLD): boolean",
+    "lang": "typescript",
+    "file": "packages/core/src/conflict-rule.ts",
+    "span": {
+      "start": 55,
+      "end": 57
+    }
+  },
+  "source": {
+    "text": "export function passesThreshold(edge: Edge, threshold = DEFAULT_LINK_THRESHOLD): boolean {\n  return edge.confidence >= threshold;\n}",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 55
+  },
+  "callers": [],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/core/src/conflict-rule.ts@L54",
+      "snippet": "/** Whether a survivor edge clears the link threshold and should be persisted. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/conflict-rule.ts#passesThreshold@L55",
+    "procedureName": "passesThreshold",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/conflict-rule.ts#passesThreshold@L55",
+        "procedureName": "passesThreshold",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:67d21cd9abab7435b311d9f12bc189942b92f80191d3343062b3b827b5f7be3c",
+          "target": "stmt:packages/core/src/conflict-rule.ts@L56",
+          "line": 56,
+          "expr": "return edge.confidence >= threshold;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

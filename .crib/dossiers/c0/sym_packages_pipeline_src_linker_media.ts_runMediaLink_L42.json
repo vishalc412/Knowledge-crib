@@ -1,0 +1,585 @@
+{
+  "id": "sym:packages/pipeline/src/linker/media.ts#runMediaLink@L42",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:37cb3dd03e80a9d343a8162b88c1d23051875090e7414a103123f9fa538f5e91",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/linker/media.ts#runMediaLink@L42",
+    "kind": "symbol",
+    "type": "function",
+    "name": "runMediaLink",
+    "qualifiedName": "runMediaLink",
+    "signature": "runMediaLink(soul: SoulStore, threshold?: number, mediaFiles?: string[]): MediaLinkStats",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/linker/media.ts",
+    "span": {
+      "start": 42,
+      "end": 99
+    },
+    "callSites": [
+      {
+        "callee": "String",
+        "line": 55
+      },
+      {
+        "callee": "extractDotted",
+        "line": 66
+      },
+      {
+        "callee": "explicitSignal",
+        "line": 72
+      },
+      {
+        "callee": "identifierSignal",
+        "line": 72
+      },
+      {
+        "callee": "get",
+        "line": 74
+      },
+      {
+        "callee": "push",
+        "line": 75
+      },
+      {
+        "callee": "set",
+        "line": 76
+      },
+      {
+        "callee": "scoreLink",
+        "line": 80
+      },
+      {
+        "callee": "push",
+        "line": 82
+      },
+      {
+        "callee": "edgeId",
+        "line": 83
+      },
+      {
+        "callee": "snippet",
+        "line": 90
+      },
+      {
+        "callee": "putEdges",
+        "line": 97
+      }
+    ]
+  },
+  "source": {
+    "text": "export function runMediaLink(\n  soul: SoulStore,\n  threshold?: number,\n  mediaFiles?: string[],\n): MediaLinkStats {\n  const index = new InvertedIndex(soul);\n  const scope = mediaFiles ? new Set(mediaFiles) : undefined;\n\n  const edges: Edge[] = [];\n  const stats: MediaLinkStats = { describes: 0, references: 0 };\n\n  for (const seg of soul.iterate('media-seg')) {\n    if (seg.file && scope && !scope.has(seg.file)) continue;\n    const text = String(seg.meta?.text ?? '');\n    if (!text) continue;\n\n    // synthesize an MdSection so the existing signals + scorer apply unchanged\n    const section: MdSection = {\n      heading: seg.name ?? 'media-seg',\n      level: 1,\n      anchor: seg.id,\n      startLine: 1,\n      endLine: 1,\n      parent: -1,\n      codeRefs: extractDotted(text),\n      links: [],\n      prose: text,\n    };\n\n    const bySymbol = new Map<string, SignalHit[]>();\n    const allHits = [...explicitSignal(section, index), ...identifierSignal(section, index)];\n    for (const hit of allHits) {\n      const list = bySymbol.get(hit.symbol.id) ?? [];\n      list.push(hit);\n      bySymbol.set(hit.symbol.id, list);\n    }\n\n    for (const [symbolId, hits] of bySymbol) {\n      const scored = scoreLink(hits, threshold);\n      if (!scored) continue;\n      edges.push({\n        id: edgeId(seg.id, symbolId, scored.rel),\n        src: seg.id,\n        dst: symbolId,\n        rel: scored.rel,\n        method: scored.method,\n        provenance: 'EXTRACTED',\n        confidence: scored.confidence,\n        evidence: { by: 'media-linker', snippet: snippet(text) },\n      });\n      if (scored.rel === 'describes') stats.describes++;\n      else stats.references++;\n    }\n  }\n\n  if (edges.length > 0) soul.putEdges(edges);\n  return stats;\n}",
+    "truncated": false,
+    "totalLines": 58,
+    "startLine": 42
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/src/multimodal/index.ts#runMultimodal@L36",
+      "confidence": 1,
+      "name": "runMultimodal",
+      "qualifiedName": "runMultimodal",
+      "signature": "runMultimodal(soul: SoulStore, root: string, opts: MultimodalPhaseOpts = {}, mediaPaths?: string[]): Promise<MultimodalReport>",
+      "type": "function",
+      "file": "packages/pipeline/src/multimodal/index.ts",
+      "line": 36
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+      "confidence": 1,
+      "name": "get",
+      "qualifiedName": "createRegistry.get",
+      "signature": "get(name)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 1300
+    },
+    {
+      "id": "sym:packages/soul-schema/src/id.ts#edgeId@L151",
+      "confidence": 1,
+      "name": "edgeId",
+      "qualifiedName": "edgeId",
+      "signature": "edgeId(src: string, dst: string, rel: Rel): string",
+      "type": "function",
+      "file": "packages/soul-schema/src/id.ts",
+      "line": 151
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/signals.ts#explicitSignal@L23",
+      "confidence": 1,
+      "name": "explicitSignal",
+      "qualifiedName": "explicitSignal",
+      "signature": "explicitSignal(section: MdSection, index: InvertedIndex): SignalHit[]",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/signals.ts",
+      "line": 23
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/media.ts#extractDotted@L33",
+      "confidence": 1,
+      "name": "extractDotted",
+      "qualifiedName": "extractDotted",
+      "signature": "extractDotted(text: string): string[]",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/media.ts",
+      "line": 33
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/signals.ts#identifierSignal@L50",
+      "confidence": 1,
+      "name": "identifierSignal",
+      "qualifiedName": "identifierSignal",
+      "signature": "identifierSignal(section: MdSection, index: InvertedIndex): SignalHit[]",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/signals.ts",
+      "line": 50
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 70
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/score.ts#scoreLink@L27",
+      "confidence": 1,
+      "name": "scoreLink",
+      "qualifiedName": "scoreLink",
+      "signature": "scoreLink(hits: SignalHit[], threshold = DEFAULT_LINK_THRESHOLD): ScoredLink | null",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/score.ts",
+      "line": 27
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/media.ts#snippet@L102",
+      "confidence": 1,
+      "name": "snippet",
+      "qualifiedName": "snippet",
+      "signature": "snippet(text: string): string",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/media.ts",
+      "line": 102
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/pipeline/src/linker/media.ts@L37",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/linker/media.ts#runMediaLink@L42",
+    "procedureName": "runMediaLink",
+    "conditions": [
+      "cond:packages/pipeline/src/linker/media.ts@L53",
+      "cond:packages/pipeline/src/linker/media.ts@L73",
+      "cond:packages/pipeline/src/linker/media.ts@L79",
+      "cond:packages/pipeline/src/linker/media.ts@L97"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/linker/media.ts#runMediaLink@L42",
+        "procedureName": "runMediaLink",
+        "guard": "cond:packages/pipeline/src/linker/media.ts@L53",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/linker/media.ts@L53",
+            "expr": "soul.iterate('media-seg')",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:986ba1803c51cfcbaeb561692ca9de245d6a1919edd5a895e287c37d80c706d1",
+          "target": "stmt:packages/pipeline/src/linker/media.ts@L55",
+          "line": 55,
+          "expr": "const text = String(seg.meta?.text ?? '');"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/media.ts#runMediaLink@L42",
+        "procedureName": "runMediaLink",
+        "guard": "cond:packages/pipeline/src/linker/media.ts@L53",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/linker/media.ts@L53",
+            "expr": "soul.iterate('media-seg')",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:642d8eee64191205bfa72dbfecc962a5f988fe058fe8c109f263953d276c5e0f",
+          "target": "stmt:packages/pipeline/src/linker/media.ts@L59",
+          "line": 59,
+          "expr": "const section: MdSection = {\n      heading: seg.name ?? 'media-seg',\n      level: 1,\n      anchor: seg.id,\n      startLine: 1,\n      endLine: 1,\n      parent: -1,\n      codeRefs: extractDotted(text),\n      links: [],\n      prose: text,\n    };"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/media.ts#runMediaLink@L42",
+        "procedureName": "runMediaLink",
+        "guard": "cond:packages/pipeline/src/linker/media.ts@L53",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/linker/media.ts@L53",
+            "expr": "soul.iterate('media-seg')",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:6cadc3310f7022931d42a7d7c0e4b5405c3767b889ddc51035b574c4171ddaf9",
+          "target": "sym:packages/pipeline/src/linker/media.ts#extractDotted@L33",
+          "expr": "extractDotted",
+          "line": 66
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/media.ts#runMediaLink@L42",
+        "procedureName": "runMediaLink",
+        "guard": "cond:packages/pipeline/src/linker/media.ts@L53",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/linker/media.ts@L53",
+            "expr": "soul.iterate('media-seg')",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c04633c7d353e5b3d19ff786f486dbbb96986f970c9c2fc56df62551fb6de53e",
+          "target": "stmt:packages/pipeline/src/linker/media.ts@L72",
+          "line": 72,
+          "expr": "const allHits = [...explicitSignal(section, index), ...identifierSignal(section, index)];"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/media.ts#runMediaLink@L42",
+        "procedureName": "runMediaLink",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:e29c5d2241b16cdac9ba0dbf14c2f86542f77fce20169b76ebaca4230a97578e",
+          "target": "sym:packages/pipeline/src/linker/signals.ts#explicitSignal@L23",
+          "expr": "explicitSignal",
+          "line": 72
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/media.ts#runMediaLink@L42",
+        "procedureName": "runMediaLink",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:e320a398c97177c8d9b2eb9af72eaeded45125b4243239194c59444f080cc840",
+          "target": "sym:packages/pipeline/src/linker/signals.ts#identifierSignal@L50",
+          "expr": "identifierSignal",
+          "line": 72
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/media.ts#runMediaLink@L42",
+        "procedureName": "runMediaLink",
+        "guard": "cond:packages/pipeline/src/linker/media.ts@L73",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/linker/media.ts@L53",
+            "expr": "soul.iterate('media-seg')"
+          },
+          {
+            "id": "cond:packages/pipeline/src/linker/media.ts@L73",
+            "expr": "allHits",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5c9a46a2c785e8b98b79043aea7b989e6e40045afa95d4e12fd92465996d1783",
+          "target": "stmt:packages/pipeline/src/linker/media.ts@L74",
+          "line": 74,
+          "expr": "const list = bySymbol.get(hit.symbol.id) ?? [];"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/media.ts#runMediaLink@L42",
+        "procedureName": "runMediaLink",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:b9290d7fd4dd9e8a284b339da74b89a1fe34d0246828c4065cd9e2f951de1c27",
+          "target": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+          "expr": "get",
+          "line": 74
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/media.ts#runMediaLink@L42",
+        "procedureName": "runMediaLink",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:61dece671791b06198e5d58993f01c647b7bda697343d594b928319d5bdfda6f",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
+          "expr": "push",
+          "line": 75
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/media.ts#runMediaLink@L42",
+        "procedureName": "runMediaLink",
+        "guard": "cond:packages/pipeline/src/linker/media.ts@L73",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/linker/media.ts@L53",
+            "expr": "soul.iterate('media-seg')"
+          },
+          {
+            "id": "cond:packages/pipeline/src/linker/media.ts@L73",
+            "expr": "allHits",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a44a0383896a015f078891e7404c4741ddeec24a0f04904889f74e483d49a361",
+          "target": "stmt:packages/pipeline/src/linker/media.ts@L75",
+          "line": 75,
+          "expr": "list.push(hit);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/media.ts#runMediaLink@L42",
+        "procedureName": "runMediaLink",
+        "guard": "cond:packages/pipeline/src/linker/media.ts@L73",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/linker/media.ts@L53",
+            "expr": "soul.iterate('media-seg')"
+          },
+          {
+            "id": "cond:packages/pipeline/src/linker/media.ts@L73",
+            "expr": "allHits",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1a4fca240c69cde0966eadf3df1d619b62c15cda39657908a9a39e9021dde61a",
+          "target": "stmt:packages/pipeline/src/linker/media.ts@L76",
+          "line": 76,
+          "expr": "bySymbol.set(hit.symbol.id, list);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/media.ts#runMediaLink@L42",
+        "procedureName": "runMediaLink",
+        "guard": "cond:packages/pipeline/src/linker/media.ts@L79",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/linker/media.ts@L53",
+            "expr": "soul.iterate('media-seg')"
+          },
+          {
+            "id": "cond:packages/pipeline/src/linker/media.ts@L79",
+            "expr": "bySymbol",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1ed31ac917607ff1a4c24d74ba5f02cff544aea38a2edec66f3c629ad12ba5b2",
+          "target": "stmt:packages/pipeline/src/linker/media.ts@L80",
+          "line": 80,
+          "expr": "const scored = scoreLink(hits, threshold);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/media.ts#runMediaLink@L42",
+        "procedureName": "runMediaLink",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:df27a6f80bbc5ee4e9291c3a8c78c80eb1fc3331b92a5f51f52b665cb68659e5",
+          "target": "sym:packages/pipeline/src/linker/score.ts#scoreLink@L27",
+          "expr": "scoreLink",
+          "line": 80
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/media.ts#runMediaLink@L42",
+        "procedureName": "runMediaLink",
+        "guard": "cond:packages/pipeline/src/linker/media.ts@L79",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/linker/media.ts@L53",
+            "expr": "soul.iterate('media-seg')"
+          },
+          {
+            "id": "cond:packages/pipeline/src/linker/media.ts@L79",
+            "expr": "bySymbol",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:865c397ba463fe66b1595402eaf192a6b2858f240f7790edba7d51207c0957b1",
+          "target": "stmt:packages/pipeline/src/linker/media.ts@L82",
+          "line": 82,
+          "expr": "edges.push({\n        id: edgeId(seg.id, symbolId, scored.rel),\n        src: seg.id,\n        dst: symbolId,\n        rel: scored.rel,\n        method: scored.method,\n        provenance: 'EXTRACTED',\n        confidence: scored.confidence,\n        evidence: { by: 'media-linker', snippet: snippet(text) },\n      });"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/media.ts#runMediaLink@L42",
+        "procedureName": "runMediaLink",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:3ca90009118da915538fc72acac1f8039b9a7eee8461d024a1b8cd9c54353f02",
+          "target": "sym:packages/soul-schema/src/id.ts#edgeId@L151",
+          "expr": "edgeId",
+          "line": 83
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/media.ts#runMediaLink@L42",
+        "procedureName": "runMediaLink",
+        "guard": "cond:packages/pipeline/src/linker/media.ts@L79",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/linker/media.ts@L53",
+            "expr": "soul.iterate('media-seg')"
+          },
+          {
+            "id": "cond:packages/pipeline/src/linker/media.ts@L79",
+            "expr": "bySymbol",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:e253beb97366e4959f7ae542bf30a90199d506204d6a507d65d80db96427a2da",
+          "target": "sym:packages/pipeline/src/linker/media.ts#snippet@L102",
+          "expr": "snippet",
+          "line": 90
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/media.ts#runMediaLink@L42",
+        "procedureName": "runMediaLink",
+        "guard": "cond:packages/pipeline/src/linker/media.ts@L97",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/linker/media.ts@L97",
+            "expr": "edges.length > 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:61a7b0c0a59c3365f87662013398eaad998a27449ac79f44b7e2b19cbbd5a751",
+          "target": "stmt:packages/pipeline/src/linker/media.ts@L97",
+          "line": 97,
+          "expr": "soul.putEdges(edges);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/media.ts#runMediaLink@L42",
+        "procedureName": "runMediaLink",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d78931a16337946c3336ab19a2bc5049c4dbd360e5b5dc1396fdcd4149e7cb6e",
+          "target": "stmt:packages/pipeline/src/linker/media.ts@L98",
+          "line": 98,
+          "expr": "return stats;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 10,
+    "referencedByFiles": [
+      "packages/pipeline/src/multimodal/index.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 10,
+    "assignments": 0,
+    "conditions": 4,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 8,
+      "recorded": 12,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

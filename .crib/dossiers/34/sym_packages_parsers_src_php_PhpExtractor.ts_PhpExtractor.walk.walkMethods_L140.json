@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/php/PhpExtractor.ts#PhpExtractor.walk.walkMethods@L140",
-  "schemaVersion": "1.5",
+  "schemaVersion": "1.6",
   "nodeHash": "blake3:64e2cd6e15d76991250324b8631481d7a4ff8d832f16baa60d3bb29e17ecc51e",
-  "builtAt": "2026-07-16T16:35:16.098Z",
+  "builtAt": "2026-08-31T17:37:23.222Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/php/PhpExtractor.ts#PhpExtractor.walk.walkMethods@L140",
@@ -144,14 +144,14 @@
       "line": 606
     },
     {
-      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
       "confidence": 1,
       "name": "push",
       "qualifiedName": "push",
       "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
       "type": "function",
       "file": "packages/pipeline/src/linker/inverted-index.ts",
-      "line": 39
+      "line": 70
     }
   ],
   "docs": [
@@ -344,20 +344,6 @@
       {
         "procedure": "sym:packages/parsers/src/php/PhpExtractor.ts#PhpExtractor.walk.walkMethods@L140",
         "procedureName": "PhpExtractor.walk.walkMethods",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:1cd1e0e47286a19caa34b319b611806ab9350ca2225d38990d8c0c878c029c04",
-          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
-          "expr": "push",
-          "line": 157
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/php/PhpExtractor.ts#PhpExtractor.walk.walkMethods@L140",
-        "procedureName": "PhpExtractor.walk.walkMethods",
         "guard": "cond:packages/parsers/src/php/PhpExtractor.ts@L143",
         "branch": "LOOP",
         "conditions": [
@@ -397,6 +383,20 @@
           "target": "stmt:packages/parsers/src/php/PhpExtractor.ts@L157",
           "line": 157,
           "expr": "symbols.push({ node, startLine: startLineOf(child), endLine: endLineOf(child) });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/php/PhpExtractor.ts#PhpExtractor.walk.walkMethods@L140",
+        "procedureName": "PhpExtractor.walk.walkMethods",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:71c64237de61cf0af206c1e92a79df18e3c263351ae851bb5b0837088bdaf895",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
+          "expr": "push",
+          "line": 157
         }
       },
       {

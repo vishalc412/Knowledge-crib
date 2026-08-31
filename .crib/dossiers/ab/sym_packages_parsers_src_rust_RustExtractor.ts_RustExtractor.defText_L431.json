@@ -1,0 +1,137 @@
+{
+  "id": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.defText@L431",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:3665a67c1e7a3c6dd07850976c4d3eac3d56bed6a6dee8679f3658341eaf2f8c",
+  "builtAt": "2026-08-25T20:55:11.863Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.defText@L431",
+    "kind": "symbol",
+    "type": "method",
+    "name": "defText",
+    "qualifiedName": "RustExtractor.defText",
+    "signature": "defText(d: RustDef, src: string): string",
+    "lang": "typescript",
+    "file": "packages/parsers/src/rust/RustExtractor.ts",
+    "span": {
+      "start": 431,
+      "end": 434
+    },
+    "callSites": [
+      {
+        "callee": "split",
+        "line": 432
+      },
+      {
+        "callee": "join",
+        "line": 433
+      },
+      {
+        "callee": "slice",
+        "line": 433
+      }
+    ]
+  },
+  "source": {
+    "text": "  private defText(d: RustDef, src: string): string {\n    const lines = src.split('\\n');\n    return lines.slice(d.startLine - 1, d.endLine).join('\\n');\n  }",
+    "truncated": false,
+    "totalLines": 4,
+    "startLine": 431
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.parse.visit@L147",
+      "confidence": 1,
+      "name": "visit",
+      "qualifiedName": "RustExtractor.parse.visit",
+      "signature": "visit(…)",
+      "type": "function",
+      "file": "packages/parsers/src/rust/RustExtractor.ts",
+      "line": 147
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.parse.visitImplBody@L236",
+      "confidence": 1,
+      "name": "visitImplBody",
+      "qualifiedName": "RustExtractor.parse.visitImplBody",
+      "signature": "visitImplBody(…)",
+      "type": "function",
+      "file": "packages/parsers/src/rust/RustExtractor.ts",
+      "line": 236
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/rust/RustExtractor.ts@L430",
+      "snippet": "/** Best-effort source text for a def — used only for hashing (change detection), needs no precision. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.defText@L431",
+    "procedureName": "RustExtractor.defText",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.defText@L431",
+        "procedureName": "RustExtractor.defText",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0187c0c7aae23060f451c53c64962611de3617b820483947b5c990197f27e2cb",
+          "target": "stmt:packages/parsers/src/rust/RustExtractor.ts@L432",
+          "line": 432,
+          "expr": "const lines = src.split('\\n');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.defText@L431",
+        "procedureName": "RustExtractor.defText",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1ecc85c9ace6a84316778920c61584eea4ac6316ea21509b9a102937eefbb9c7",
+          "target": "stmt:packages/parsers/src/rust/RustExtractor.ts@L433",
+          "line": 433,
+          "expr": "return lines.slice(d.startLine - 1, d.endLine).join('\\n');"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/parsers/src/rust/RustExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 3,
+      "unresolved": 3
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "3 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

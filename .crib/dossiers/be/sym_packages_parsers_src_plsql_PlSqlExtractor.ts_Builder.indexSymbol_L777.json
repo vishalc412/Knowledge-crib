@@ -1,0 +1,134 @@
+{
+  "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.indexSymbol@L777",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:c2afad969b194df77177bff370cf69f5109157151dbee95d6583b22fefae57e2",
+  "builtAt": "2026-08-25T20:55:11.863Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.indexSymbol@L777",
+    "kind": "symbol",
+    "type": "method",
+    "name": "indexSymbol",
+    "qualifiedName": "Builder.indexSymbol",
+    "signature": "indexSymbol(name: string, qualifiedName: string, id: string): void",
+    "lang": "typescript",
+    "file": "packages/parsers/src/plsql/PlSqlExtractor.ts",
+    "span": {
+      "start": 777,
+      "end": 780
+    },
+    "callSites": [
+      {
+        "callee": "set",
+        "line": 778
+      },
+      {
+        "callee": "set",
+        "line": 779
+      }
+    ]
+  },
+  "source": {
+    "text": "  private indexSymbol(name: string, qualifiedName: string, id: string): void {\n    if (!this.symbols.has(name)) this.symbols.set(name, id);\n    this.symbols.set(qualifiedName, id);\n  }",
+    "truncated": false,
+    "totalLines": 4,
+    "startLine": 777
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addType@L213",
+      "confidence": 1,
+      "name": "addType",
+      "qualifiedName": "Builder.addType",
+      "signature": "addType(def: TypeDef): void",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/PlSqlExtractor.ts",
+      "line": 213
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addUnit@L270",
+      "confidence": 1,
+      "name": "addUnit",
+      "qualifiedName": "Builder.addUnit",
+      "signature": "addUnit(u: Unit, enclosingId: string, qualifier: string): void",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/PlSqlExtractor.ts",
+      "line": 270
+    }
+  ],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.indexSymbol@L777",
+    "procedureName": "Builder.indexSymbol",
+    "conditions": [
+      "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L778"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.indexSymbol@L777",
+        "procedureName": "Builder.indexSymbol",
+        "guard": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L778",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L778",
+            "expr": "!this.symbols.has(name)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4250e9ba3363b9ce1ecece4c1638d94a8572c37284c7bbaad6ece181e658a940",
+          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L778",
+          "line": 778,
+          "expr": "this.symbols.set(name, id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.indexSymbol@L777",
+        "procedureName": "Builder.indexSymbol",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:95cb00e6a2dbef5f4c0e0a28bfd9c5b068112eacf1849813d888f1b2092da7ef",
+          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L779",
+          "line": 779,
+          "expr": "this.symbols.set(qualifiedName, id);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/parsers/src/plsql/PlSqlExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 2,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

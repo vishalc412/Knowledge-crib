@@ -1,0 +1,107 @@
+{
+  "id": "sym:packages/parsers/src/python/parser.ts#countNewlines@L898",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:85427415716e75988af5bdfa89ca0d0b0b3a981d19f842d6b367c79d7b4a48fd",
+  "builtAt": "2026-08-25T20:55:11.863Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/python/parser.ts#countNewlines@L898",
+    "kind": "symbol",
+    "type": "function",
+    "name": "countNewlines",
+    "qualifiedName": "countNewlines",
+    "signature": "countNewlines(s: string): number",
+    "lang": "typescript",
+    "file": "packages/parsers/src/python/parser.ts",
+    "span": {
+      "start": 898,
+      "end": 902
+    }
+  },
+  "source": {
+    "text": "function countNewlines(s: string): number {\n  let n = 0;\n  for (let i = 0; i < s.length; i++) if (s.charCodeAt(i) === 10) n++;\n  return n;\n}",
+    "truncated": false,
+    "totalLines": 5,
+    "startLine": 898
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#Parser.next@L781",
+      "confidence": 1,
+      "name": "next",
+      "qualifiedName": "Parser.next",
+      "signature": "next(): Token",
+      "type": "method",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 781
+    },
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#Parser.parseAction@L595",
+      "confidence": 1,
+      "name": "parseAction",
+      "qualifiedName": "Parser.parseAction",
+      "signature": "parseAction(): PyStmt | null",
+      "type": "method",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 595
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/python/parser.ts@L897",
+      "snippet": "/** Number of `\\n` in a string literal's raw token value (for multiline triple-quoted span math). */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/python/parser.ts#countNewlines@L898",
+    "procedureName": "countNewlines",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#countNewlines@L898",
+        "procedureName": "countNewlines",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:367e895e7121e1768e6aae0c5eb6ef1974b243be0f95ecfdce650892881cf2c1",
+          "target": "stmt:packages/parsers/src/python/parser.ts@L901",
+          "line": 901,
+          "expr": "return n;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/parsers/src/python/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

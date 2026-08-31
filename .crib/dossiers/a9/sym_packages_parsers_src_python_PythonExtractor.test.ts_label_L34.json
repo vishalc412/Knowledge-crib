@@ -1,0 +1,175 @@
+{
+  "id": "sym:packages/parsers/src/python/PythonExtractor.test.ts#label@L34",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:41c3520b432556d72ce5eb628261281ee351b32e1e9259a123ca01041696a1e0",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/python/PythonExtractor.test.ts#label@L34",
+    "kind": "symbol",
+    "type": "function",
+    "name": "label",
+    "qualifiedName": "label",
+    "signature": "label(r: ExtractResult): (id: string) => string",
+    "lang": "typescript",
+    "file": "packages/parsers/src/python/PythonExtractor.test.ts",
+    "span": {
+      "start": 34,
+      "end": 39
+    },
+    "callSites": [
+      {
+        "callee": "find",
+        "line": 36
+      }
+    ]
+  },
+  "source": {
+    "text": "function label(r: ExtractResult): (id: string) => string {\n  return (id: string): string => {\n    const n = r.nodes.find((x) => x.id === id);\n    return n?.kind === 'symbol' ? (n.qualifiedName ?? n.name ?? id) : (n?.kind ?? id);\n  };\n}",
+    "truncated": false,
+    "totalLines": 6,
+    "startLine": 34
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
+      "confidence": 1,
+      "name": "find",
+      "qualifiedName": "find",
+      "signature": "find(…)",
+      "type": "function",
+      "file": "packages/parsers/src/java/parser.test.ts",
+      "line": 38
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/python/PythonExtractor.test.ts@L33",
+      "snippet": "/** label a node id for readable assertions: the symbol's qualified name. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-4-extraction.md#task-3-parse-dataweave-2-without-evaluating-it",
+      "heading": "Task 3: Parse DataWeave 2 without evaluating it",
+      "anchor": "task-3-parse-dataweave-2-without-evaluating-it",
+      "snippet": "Task 3: Parse DataWeave 2 without evaluating it",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-testing.md#4-link-precision-measurement-m4-the-trust-gate",
+      "heading": "4. Link-precision measurement (M4 — the trust gate)",
+      "anchor": "4-link-precision-measurement-m4-the-trust-gate",
+      "snippet": "4. Link-precision measurement (M4 — the trust gate)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-track3-spec.md#the-body-walk-the-core-algorithm-each-extractor-adds",
+      "heading": "The body-walk (the core algorithm each extractor adds)",
+      "anchor": "the-body-walk-the-core-algorithm-each-extractor-adds",
+      "snippet": "The body-walk (the core algorithm each extractor adds)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/specs/2026-06-27-knowledgecrib-linkedin-demo-video-design.md#creative-direction-signal-grid",
+      "heading": "Creative Direction: Signal Grid",
+      "anchor": "creative-direction-signal-grid",
+      "snippet": "Creative Direction: Signal Grid",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/specs/2026-06-27-knowledgecrib-linkedin-demo-video-design.md#4-9-seconds-the-product",
+      "heading": "4-9 seconds: The Product",
+      "anchor": "4-9-seconds-the-product",
+      "snippet": "4-9 seconds: The Product",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m7-clustering-deterministic-embeddings-web-ui",
+      "heading": "M7 — Clustering + deterministic embeddings + web UI",
+      "anchor": "m7-clustering-deterministic-embeddings-web-ui",
+      "snippet": "M7 — Clustering + deterministic embeddings + web UI",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/python/PythonExtractor.test.ts#label@L34",
+    "procedureName": "label",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/python/PythonExtractor.test.ts#label@L34",
+        "procedureName": "label",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e002f539cf826fac0bac691eda4ef97e6cfe7bb1b4d7b7cb74fdd7f0f04f231e",
+          "target": "stmt:packages/parsers/src/python/PythonExtractor.test.ts@L35",
+          "line": 35,
+          "expr": "return (id: string): string => {\n    const n = r.nodes.find((x) => x.id === id);\n    return n?.kind === 'symbol' ? (n.qualifiedName ?? n.name ?? id) : (n?.kind ?? id);\n  };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/PythonExtractor.test.ts#label@L34",
+        "procedureName": "label",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:cb0554b3d8a0437d99b6d2870264bfeff6d21352fa8d679c1579d9cdfe143630",
+          "target": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
+          "expr": "find",
+          "line": 36
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

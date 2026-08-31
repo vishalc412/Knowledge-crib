@@ -1,0 +1,186 @@
+{
+  "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#exprFields@L33",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:93bdb14b1ebade7ab11cf304af634f307ccccd5d1147134302c74257aa3550b0",
+  "builtAt": "2026-08-25T20:55:11.863Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#exprFields@L33",
+    "kind": "symbol",
+    "type": "function",
+    "name": "exprFields",
+    "qualifiedName": "exprFields",
+    "signature": "exprFields(raw: string | undefined): { expr?: string; exprTruncated?: true }",
+    "lang": "typescript",
+    "file": "packages/parsers/src/csharp/CsharpExtractor.ts",
+    "span": {
+      "start": 33,
+      "end": 37
+    },
+    "callSites": [
+      {
+        "callee": "clampExpr",
+        "line": 35
+      }
+    ]
+  },
+  "source": {
+    "text": "function exprFields(raw: string | undefined): { expr?: string; exprTruncated?: true } {\n  if (!raw) return {};\n  const { expr, truncated } = clampExpr(raw);\n  return truncated ? { expr, exprTruncated: true } : { expr };\n}",
+    "truncated": false,
+    "totalLines": 5,
+    "startLine": 33
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.addAssignStatement@L663",
+      "confidence": 1,
+      "name": "addAssignStatement",
+      "qualifiedName": "BodyWalker.addAssignStatement",
+      "signature": "addAssignStatement(s: CsharpStmt, procId: string, env: WalkEnv): void",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/CsharpExtractor.ts",
+      "line": 663
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.addCallStatement@L633",
+      "confidence": 1,
+      "name": "addCallStatement",
+      "qualifiedName": "BodyWalker.addCallStatement",
+      "signature": "addCallStatement(s: CsharpStmt, procId: string, env: WalkEnv): void",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/CsharpExtractor.ts",
+      "line": 633
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.addStatement@L600",
+      "confidence": 1,
+      "name": "addStatement",
+      "qualifiedName": "BodyWalker.addStatement",
+      "signature": "addStatement(s: CsharpStmt, procId: string, env: WalkEnv): void",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/CsharpExtractor.ts",
+      "line": 600
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/types.ts#clampExpr@L30",
+      "confidence": 1,
+      "name": "clampExpr",
+      "qualifiedName": "clampExpr",
+      "signature": "clampExpr(s: string, max = EXPR_MAX_CHARS): { expr: string; truncated: boolean }",
+      "type": "function",
+      "file": "packages/parsers/src/types.ts",
+      "line": 30
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/csharp/CsharpExtractor.ts@L32",
+      "snippet": "/** Spread an `expr` field plus its `exprTruncated` honesty flag from a raw expression string. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#exprFields@L33",
+    "procedureName": "exprFields",
+    "conditions": [
+      "cond:packages/parsers/src/csharp/CsharpExtractor.ts@L34"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#exprFields@L33",
+        "procedureName": "exprFields",
+        "guard": "cond:packages/parsers/src/csharp/CsharpExtractor.ts@L34",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/CsharpExtractor.ts@L34",
+            "expr": "!raw",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ec7fdc4f6c225d1cc995951e22e1c3effd652f718d9b5b01a3b49912926fe1a0",
+          "target": "stmt:packages/parsers/src/csharp/CsharpExtractor.ts@L34",
+          "line": 34,
+          "expr": "return {};"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#exprFields@L33",
+        "procedureName": "exprFields",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4f70f7213b16026a83e9b9d6aa099025af0655b87d90928540bb405970ed5659",
+          "target": "stmt:packages/parsers/src/csharp/CsharpExtractor.ts@L35",
+          "line": 35,
+          "expr": "const { expr, truncated } = clampExpr(raw);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#exprFields@L33",
+        "procedureName": "exprFields",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:c4fab055b884f42b22b7f2a275833bb7d1b940bbe9d658ccb07af4805da5eaf5",
+          "target": "sym:packages/parsers/src/types.ts#clampExpr@L30",
+          "expr": "clampExpr",
+          "line": 35
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#exprFields@L33",
+        "procedureName": "exprFields",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:80a6197bef2be251d2a3ba884b8b699db6324f80cfa15b0f4c70510ef270be88",
+          "target": "stmt:packages/parsers/src/csharp/CsharpExtractor.ts@L36",
+          "line": 36,
+          "expr": "return truncated ? { expr, exprTruncated: true } : { expr };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/parsers/src/csharp/CsharpExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

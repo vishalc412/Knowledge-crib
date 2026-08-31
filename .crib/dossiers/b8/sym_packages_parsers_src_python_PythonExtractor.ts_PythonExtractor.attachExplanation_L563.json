@@ -1,0 +1,447 @@
+{
+  "id": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.attachExplanation@L563",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:65b56ec68765e142c75d1498cd7a67141cbfd01a95ae16282f9f87bdbda2e220",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.attachExplanation@L563",
+    "kind": "symbol",
+    "type": "method",
+    "name": "attachExplanation",
+    "qualifiedName": "PythonExtractor.attachExplanation",
+    "signature": "attachExplanation(symId: string, def: PyDef, path: string, ctx: ExtractCtx, nodes: Node[], edges: Edge[], explSeen: Set<string>, comments: CommentBlock[]): void",
+    "lang": "typescript",
+    "file": "packages/parsers/src/python/PythonExtractor.ts",
+    "span": {
+      "start": 563,
+      "end": 612
+    },
+    "callSites": [
+      {
+        "callee": "idFor",
+        "line": 574
+      },
+      {
+        "callee": "add",
+        "line": 576
+      },
+      {
+        "callee": "stringLiteralInner",
+        "line": 577
+      },
+      {
+        "callee": "push",
+        "line": 578
+      },
+      {
+        "callee": "hash",
+        "line": 588
+      },
+      {
+        "callee": "push",
+        "line": 591
+      },
+      {
+        "callee": "edge",
+        "line": 591
+      },
+      {
+        "callee": "find",
+        "line": 594
+      },
+      {
+        "callee": "idFor",
+        "line": 596
+      },
+      {
+        "callee": "add",
+        "line": 598
+      },
+      {
+        "callee": "push",
+        "line": 599
+      },
+      {
+        "callee": "hash",
+        "line": 606
+      },
+      {
+        "callee": "push",
+        "line": 609
+      },
+      {
+        "callee": "edge",
+        "line": 609
+      }
+    ]
+  },
+  "source": {
+    "text": "  private attachExplanation(\n    symId: string,\n    def: PyDef,\n    path: string,\n    ctx: ExtractCtx,\n    nodes: Node[],\n    edges: Edge[],\n    explSeen: Set<string>,\n    comments: CommentBlock[],\n  ): void {\n    if (def.docstring) {\n      const id = ctx.idFor('explanation', { path, startLine: def.docstring.startLine });\n      if (!explSeen.has(id)) {\n        explSeen.add(id);\n        const inner = stringLiteralInner(def.docstring.text);\n        nodes.push({\n          id,\n          kind: 'explanation',\n          commentRef: {\n            file: path,\n            span: { start: def.docstring.startLine, end: def.docstring.endLine },\n          },\n          file: path,\n          span: { start: def.docstring.startLine, end: def.docstring.endLine },\n          lang: 'python',\n          hash: ctx.hash(`${path}:${def.docstring.startLine}:${inner}`),\n          meta: { text: inner },\n        });\n        edges.push(this.edge(id, symId, 'describes', 'DOCSTRING'));\n      }\n    }\n    const block = comments.find((c) => c.end === def.startLine - 1);\n    if (block?.text) {\n      const id = ctx.idFor('explanation', { path, startLine: block.start });\n      if (!explSeen.has(id)) {\n        explSeen.add(id);\n        nodes.push({\n          id,\n          kind: 'explanation',\n          commentRef: { file: path, span: { start: block.start, end: block.end } },\n          file: path,\n          span: { start: block.start, end: block.end },\n          lang: 'python',\n          hash: ctx.hash(`${path}:${block.start}:${block.text}`),\n          meta: { text: block.text },\n        });\n        edges.push(this.edge(id, symId, 'describes', 'COMMENT'));\n      }\n    }\n  }",
+    "truncated": false,
+    "totalLines": 50,
+    "startLine": 563
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.parse.visit@L100",
+      "confidence": 1,
+      "name": "visit",
+      "qualifiedName": "PythonExtractor.parse.visit",
+      "signature": "visit(…)",
+      "type": "function",
+      "file": "packages/parsers/src/python/PythonExtractor.ts",
+      "line": 100
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.edge@L650",
+      "confidence": 1,
+      "name": "edge",
+      "qualifiedName": "PythonExtractor.edge",
+      "signature": "edge(src: string, dst: string, rel: Edge['rel'], snippet: string): Edge",
+      "type": "method",
+      "file": "packages/parsers/src/python/PythonExtractor.ts",
+      "line": 650
+    },
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#stringLiteralInner@L919",
+      "confidence": 1,
+      "name": "stringLiteralInner",
+      "qualifiedName": "stringLiteralInner",
+      "signature": "stringLiteralInner(v: string): string",
+      "type": "function",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 919
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/python/PythonExtractor.ts@L556",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.attachExplanation@L563",
+    "procedureName": "PythonExtractor.attachExplanation",
+    "conditions": [
+      "cond:packages/parsers/src/python/PythonExtractor.ts@L573",
+      "cond:packages/parsers/src/python/PythonExtractor.ts@L575",
+      "cond:packages/parsers/src/python/PythonExtractor.ts@L595",
+      "cond:packages/parsers/src/python/PythonExtractor.ts@L597"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.attachExplanation@L563",
+        "procedureName": "PythonExtractor.attachExplanation",
+        "guard": "cond:packages/parsers/src/python/PythonExtractor.ts@L573",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/PythonExtractor.ts@L573",
+            "expr": "def.docstring",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:17c51c235cd9c1d7237fd7972474deea2e785acd99b0a1768961f756ca5cdeca",
+          "target": "stmt:packages/parsers/src/python/PythonExtractor.ts@L574",
+          "line": 574,
+          "expr": "const id = ctx.idFor('explanation', { path, startLine: def.docstring.startLine });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.attachExplanation@L563",
+        "procedureName": "PythonExtractor.attachExplanation",
+        "guard": "cond:packages/parsers/src/python/PythonExtractor.ts@L575",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/PythonExtractor.ts@L573",
+            "expr": "def.docstring"
+          },
+          {
+            "id": "cond:packages/parsers/src/python/PythonExtractor.ts@L575",
+            "expr": "!explSeen.has(id)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:991d7387b1489398bab346556f9b16306b720de371ef3b7062870a3af4dc2a28",
+          "target": "stmt:packages/parsers/src/python/PythonExtractor.ts@L576",
+          "line": 576,
+          "expr": "explSeen.add(id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.attachExplanation@L563",
+        "procedureName": "PythonExtractor.attachExplanation",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:ab6d1b3f7f4efba4426044bb43e229746479d46c4234cba588304ed13357b49b",
+          "target": "sym:packages/parsers/src/python/parser.ts#stringLiteralInner@L919",
+          "expr": "stringLiteralInner",
+          "line": 577
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.attachExplanation@L563",
+        "procedureName": "PythonExtractor.attachExplanation",
+        "guard": "cond:packages/parsers/src/python/PythonExtractor.ts@L575",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/PythonExtractor.ts@L573",
+            "expr": "def.docstring"
+          },
+          {
+            "id": "cond:packages/parsers/src/python/PythonExtractor.ts@L575",
+            "expr": "!explSeen.has(id)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b674ba0159923928bbc3e020801c7cc67f87ab9174f32cf9154314f8a72bb2a0",
+          "target": "stmt:packages/parsers/src/python/PythonExtractor.ts@L577",
+          "line": 577,
+          "expr": "const inner = stringLiteralInner(def.docstring.text);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.attachExplanation@L563",
+        "procedureName": "PythonExtractor.attachExplanation",
+        "guard": "cond:packages/parsers/src/python/PythonExtractor.ts@L575",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/PythonExtractor.ts@L573",
+            "expr": "def.docstring"
+          },
+          {
+            "id": "cond:packages/parsers/src/python/PythonExtractor.ts@L575",
+            "expr": "!explSeen.has(id)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:89fab309193524a136816350e8390fdb4460b17801532364edb76022c16c985d",
+          "target": "stmt:packages/parsers/src/python/PythonExtractor.ts@L578",
+          "line": 578,
+          "expr": "nodes.push({\n          id,\n          kind: 'explanation',\n          commentRef: {\n            file: path,\n            span: { start: def.docstring.startLine, end: def.docstring.endLine },\n          },\n          file: path,\n          span: { start: def.docstring.startLine, end: def.docstring.endLine },\n          lang: 'python',\n          hash: ctx.hash(`${path}:${def.docstring.startLine}:${inner}`),\n          meta: { text: inner },\n        });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.attachExplanation@L563",
+        "procedureName": "PythonExtractor.attachExplanation",
+        "guard": "cond:packages/parsers/src/python/PythonExtractor.ts@L597",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/PythonExtractor.ts@L595",
+            "expr": "block?.text"
+          },
+          {
+            "id": "cond:packages/parsers/src/python/PythonExtractor.ts@L597",
+            "expr": "!explSeen.has(id)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:532f4ce72a7f9483980aa23d71d8ef61455e9b84471929cb98352031fb6e58ea",
+          "target": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.edge@L650",
+          "expr": "edge",
+          "line": 591
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.attachExplanation@L563",
+        "procedureName": "PythonExtractor.attachExplanation",
+        "guard": "cond:packages/parsers/src/python/PythonExtractor.ts@L575",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/PythonExtractor.ts@L573",
+            "expr": "def.docstring"
+          },
+          {
+            "id": "cond:packages/parsers/src/python/PythonExtractor.ts@L575",
+            "expr": "!explSeen.has(id)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:98ec4e88dcd0472a9a7224e0d3fdc65ecdb84ea604f944e952efa6ea936a4a4d",
+          "target": "stmt:packages/parsers/src/python/PythonExtractor.ts@L591",
+          "line": 591,
+          "expr": "edges.push(this.edge(id, symId, 'describes', 'DOCSTRING'));"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.attachExplanation@L563",
+        "procedureName": "PythonExtractor.attachExplanation",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4b07aecfedad9578ec09a9f1261a4c448eed2cce2dab25745a3aca48e838c586",
+          "target": "stmt:packages/parsers/src/python/PythonExtractor.ts@L594",
+          "line": 594,
+          "expr": "const block = comments.find((c) => c.end === def.startLine - 1);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.attachExplanation@L563",
+        "procedureName": "PythonExtractor.attachExplanation",
+        "guard": "cond:packages/parsers/src/python/PythonExtractor.ts@L595",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/PythonExtractor.ts@L595",
+            "expr": "block?.text",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:df2bd474a6b3973dc767ffa2227661fc03955e3658d4e7ce49201b6a74c2f08e",
+          "target": "stmt:packages/parsers/src/python/PythonExtractor.ts@L596",
+          "line": 596,
+          "expr": "const id = ctx.idFor('explanation', { path, startLine: block.start });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.attachExplanation@L563",
+        "procedureName": "PythonExtractor.attachExplanation",
+        "guard": "cond:packages/parsers/src/python/PythonExtractor.ts@L597",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/PythonExtractor.ts@L595",
+            "expr": "block?.text"
+          },
+          {
+            "id": "cond:packages/parsers/src/python/PythonExtractor.ts@L597",
+            "expr": "!explSeen.has(id)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:beaa7e4baecec2407c5088954a3703c79e915e1480aa35320db95b4bddc23f08",
+          "target": "stmt:packages/parsers/src/python/PythonExtractor.ts@L598",
+          "line": 598,
+          "expr": "explSeen.add(id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.attachExplanation@L563",
+        "procedureName": "PythonExtractor.attachExplanation",
+        "guard": "cond:packages/parsers/src/python/PythonExtractor.ts@L597",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/PythonExtractor.ts@L595",
+            "expr": "block?.text"
+          },
+          {
+            "id": "cond:packages/parsers/src/python/PythonExtractor.ts@L597",
+            "expr": "!explSeen.has(id)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fd66862c6e1e17759c8b6c6865084f651a510899d495c2fb63aa6f4a23fbdbd1",
+          "target": "stmt:packages/parsers/src/python/PythonExtractor.ts@L599",
+          "line": 599,
+          "expr": "nodes.push({\n          id,\n          kind: 'explanation',\n          commentRef: { file: path, span: { start: block.start, end: block.end } },\n          file: path,\n          span: { start: block.start, end: block.end },\n          lang: 'python',\n          hash: ctx.hash(`${path}:${block.start}:${block.text}`),\n          meta: { text: block.text },\n        });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.attachExplanation@L563",
+        "procedureName": "PythonExtractor.attachExplanation",
+        "guard": "cond:packages/parsers/src/python/PythonExtractor.ts@L597",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/PythonExtractor.ts@L595",
+            "expr": "block?.text"
+          },
+          {
+            "id": "cond:packages/parsers/src/python/PythonExtractor.ts@L597",
+            "expr": "!explSeen.has(id)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2c165c98c05fe9ce1ba4eea9aa0f39efc24fd781fab251304f490ed19caf6a60",
+          "target": "stmt:packages/parsers/src/python/PythonExtractor.ts@L609",
+          "line": 609,
+          "expr": "edges.push(this.edge(id, symId, 'describes', 'COMMENT'));"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 10,
+    "referencedByFiles": [
+      "packages/parsers/src/python/PythonExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 10,
+    "assignments": 0,
+    "conditions": 4,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 14,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

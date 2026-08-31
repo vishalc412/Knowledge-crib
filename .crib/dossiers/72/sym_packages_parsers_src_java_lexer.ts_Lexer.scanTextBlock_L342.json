@@ -1,0 +1,555 @@
+{
+  "id": "sym:packages/parsers/src/java/lexer.ts#Lexer.scanTextBlock@L342",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:b4232903d5720e7ba66d483432f1e80c48f7445c02ff8ec94eae4174d5881e4a",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/java/lexer.ts#Lexer.scanTextBlock@L342",
+    "kind": "symbol",
+    "type": "method",
+    "name": "scanTextBlock",
+    "qualifiedName": "Lexer.scanTextBlock",
+    "signature": "scanTextBlock(sl: number, sc: number): void",
+    "lang": "typescript",
+    "file": "packages/parsers/src/java/lexer.ts",
+    "span": {
+      "start": 342,
+      "end": 368
+    },
+    "callSites": [
+      {
+        "callee": "advance",
+        "line": 343
+      },
+      {
+        "callee": "advance",
+        "line": 344
+      },
+      {
+        "callee": "peek",
+        "line": 347
+      },
+      {
+        "callee": "advance",
+        "line": 350
+      },
+      {
+        "callee": "peek",
+        "line": 352
+      },
+      {
+        "callee": "advance",
+        "line": 353
+      },
+      {
+        "callee": "advance",
+        "line": 359
+      },
+      {
+        "callee": "advance",
+        "line": 360
+      },
+      {
+        "callee": "advance",
+        "line": 361
+      },
+      {
+        "callee": "advance",
+        "line": 365
+      },
+      {
+        "callee": "emit",
+        "line": 367
+      }
+    ]
+  },
+  "source": {
+    "text": "  private scanTextBlock(sl: number, sc: number): void {\n    this.advance(); // 2nd \"\n    this.advance(); // 3rd \"\n    let value = '\"\"\"';\n    while (this.pos < this.src.length) {\n      const c = this.peek();\n      if (c === '\\\\') {\n        value += c;\n        this.advance();\n        if (this.pos < this.src.length) {\n          value += this.peek();\n          this.advance();\n        }\n        continue;\n      }\n      if (c === '\"' && this.peek(1) === '\"' && this.peek(2) === '\"') {\n        value += '\"\"\"';\n        this.advance();\n        this.advance();\n        this.advance();\n        break;\n      }\n      value += c;\n      this.advance();\n    }\n    this.emit('STRING', value, sl, sc);\n  }",
+    "truncated": false,
+    "totalLines": 27,
+    "startLine": 342
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/java/lexer.ts#Lexer.scanString@L312",
+      "confidence": 1,
+      "name": "scanString",
+      "qualifiedName": "Lexer.scanString",
+      "signature": "scanString(): void",
+      "type": "method",
+      "file": "packages/parsers/src/java/lexer.ts",
+      "line": 312
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/java/lexer.ts#Lexer.advance@L441",
+      "confidence": 1,
+      "name": "advance",
+      "qualifiedName": "Lexer.advance",
+      "signature": "advance(): void",
+      "type": "method",
+      "file": "packages/parsers/src/java/lexer.ts",
+      "line": 441
+    },
+    {
+      "id": "sym:packages/parsers/src/java/lexer.ts#Lexer.emit@L452",
+      "confidence": 1,
+      "name": "emit",
+      "qualifiedName": "Lexer.emit",
+      "signature": "emit(type: TokenType, value: string, line: number, col: number): void",
+      "type": "method",
+      "file": "packages/parsers/src/java/lexer.ts",
+      "line": 452
+    },
+    {
+      "id": "sym:packages/parsers/src/java/lexer.ts#Lexer.peek@L430",
+      "confidence": 1,
+      "name": "peek",
+      "qualifiedName": "Lexer.peek",
+      "signature": "peek(offset = 0): string",
+      "type": "method",
+      "file": "packages/parsers/src/java/lexer.ts",
+      "line": 430
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/java/lexer.ts@L341",
+      "snippet": "/** A Java text block begins with `\"\"\"` (already consumed opener) optionally a newline, ends `\"\"\"`. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/java/lexer.ts#Lexer.scanTextBlock@L342",
+    "procedureName": "Lexer.scanTextBlock",
+    "conditions": [
+      "cond:packages/parsers/src/java/lexer.ts@L346",
+      "cond:packages/parsers/src/java/lexer.ts@L348",
+      "cond:packages/parsers/src/java/lexer.ts@L351",
+      "cond:packages/parsers/src/java/lexer.ts@L357"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/java/lexer.ts#Lexer.scanTextBlock@L342",
+        "procedureName": "Lexer.scanTextBlock",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6931a0dd612e612e0e721a1be654fb1d61038c1023a46214cd72b9d667e46d32",
+          "target": "stmt:packages/parsers/src/java/lexer.ts@L343",
+          "line": 343,
+          "expr": "this.advance();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/lexer.ts#Lexer.scanTextBlock@L342",
+        "procedureName": "Lexer.scanTextBlock",
+        "guard": "cond:packages/parsers/src/java/lexer.ts@L346",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/lexer.ts@L346",
+            "expr": "this.pos < this.src.length",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:72e63ea415ddbbf2c4783322380068b9067d248d2b4eb6942708c6bca565726c",
+          "target": "sym:packages/parsers/src/java/lexer.ts#Lexer.advance@L441",
+          "expr": "advance",
+          "line": 343
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/lexer.ts#Lexer.scanTextBlock@L342",
+        "procedureName": "Lexer.scanTextBlock",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5fd9ce8f56ec5019ebdda8f2e18ef4a85c0cddc241bc023a372c906c8a2a685d",
+          "target": "stmt:packages/parsers/src/java/lexer.ts@L344",
+          "line": 344,
+          "expr": "this.advance();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/lexer.ts#Lexer.scanTextBlock@L342",
+        "procedureName": "Lexer.scanTextBlock",
+        "guard": "cond:packages/parsers/src/java/lexer.ts@L346",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/lexer.ts@L346",
+            "expr": "this.pos < this.src.length",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1c72b5bdf87fd39c2c99a40fa847cc4d0aec4ed3dc1814801e170f276522ba94",
+          "target": "stmt:packages/parsers/src/java/lexer.ts@L347",
+          "line": 347,
+          "expr": "const c = this.peek();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/lexer.ts#Lexer.scanTextBlock@L342",
+        "procedureName": "Lexer.scanTextBlock",
+        "guard": "cond:packages/parsers/src/java/lexer.ts@L351",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/lexer.ts@L346",
+            "expr": "this.pos < this.src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/lexer.ts@L348",
+            "expr": "c === '\\\\'"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/lexer.ts@L351",
+            "expr": "this.pos < this.src.length",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:37de3b377bfa11c11038ea396e4dd6ebf4f9512dbad40858e191d555688e548e",
+          "target": "sym:packages/parsers/src/java/lexer.ts#Lexer.peek@L430",
+          "expr": "peek",
+          "line": 347
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/lexer.ts#Lexer.scanTextBlock@L342",
+        "procedureName": "Lexer.scanTextBlock",
+        "guard": "cond:packages/parsers/src/java/lexer.ts@L348",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/lexer.ts@L346",
+            "expr": "this.pos < this.src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/lexer.ts@L348",
+            "expr": "c === '\\\\'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6308f7b73c7f90a51b2756282eb5e169cbfc4ada28d419b043680a9cbfdb7044",
+          "target": "assign:packages/parsers/src/java/lexer.ts@L349",
+          "line": 349,
+          "expr": "value += c;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/lexer.ts#Lexer.scanTextBlock@L342",
+        "procedureName": "Lexer.scanTextBlock",
+        "guard": "cond:packages/parsers/src/java/lexer.ts@L348",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/lexer.ts@L346",
+            "expr": "this.pos < this.src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/lexer.ts@L348",
+            "expr": "c === '\\\\'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:299d63b94e49b2a72410a208f16b85a2160f8befe3cd9b509265856cab852147",
+          "target": "stmt:packages/parsers/src/java/lexer.ts@L350",
+          "line": 350,
+          "expr": "this.advance();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/lexer.ts#Lexer.scanTextBlock@L342",
+        "procedureName": "Lexer.scanTextBlock",
+        "guard": "cond:packages/parsers/src/java/lexer.ts@L351",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/lexer.ts@L346",
+            "expr": "this.pos < this.src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/lexer.ts@L348",
+            "expr": "c === '\\\\'"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/lexer.ts@L351",
+            "expr": "this.pos < this.src.length",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1dea2f7d18db10845e0c4fb0922e01ec1aeb43e8283aa651580966f887d7d751",
+          "target": "assign:packages/parsers/src/java/lexer.ts@L352",
+          "line": 352,
+          "expr": "value += this.peek();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/lexer.ts#Lexer.scanTextBlock@L342",
+        "procedureName": "Lexer.scanTextBlock",
+        "guard": "cond:packages/parsers/src/java/lexer.ts@L351",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/lexer.ts@L346",
+            "expr": "this.pos < this.src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/lexer.ts@L348",
+            "expr": "c === '\\\\'"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/lexer.ts@L351",
+            "expr": "this.pos < this.src.length",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:11754578a443f2e97583174bbcee4f8260e201b09e767ceaa3e2c82e70d2f73e",
+          "target": "stmt:packages/parsers/src/java/lexer.ts@L353",
+          "line": 353,
+          "expr": "this.advance();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/lexer.ts#Lexer.scanTextBlock@L342",
+        "procedureName": "Lexer.scanTextBlock",
+        "guard": "cond:packages/parsers/src/java/lexer.ts@L357",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/lexer.ts@L346",
+            "expr": "this.pos < this.src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/lexer.ts@L357",
+            "expr": "c === '\"' && this.peek(1) === '\"' && this.peek(2) === '\"'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:72a396d2b07612dda15761bf6619aa1f650b0564576b540e579b3c75c692c423",
+          "target": "assign:packages/parsers/src/java/lexer.ts@L358",
+          "line": 358,
+          "expr": "value += '\"\"\"';"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/lexer.ts#Lexer.scanTextBlock@L342",
+        "procedureName": "Lexer.scanTextBlock",
+        "guard": "cond:packages/parsers/src/java/lexer.ts@L357",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/lexer.ts@L346",
+            "expr": "this.pos < this.src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/lexer.ts@L357",
+            "expr": "c === '\"' && this.peek(1) === '\"' && this.peek(2) === '\"'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:66f3557996bb8282c27558638d87bc8853bdf0535629300dab6649132d53c446",
+          "target": "stmt:packages/parsers/src/java/lexer.ts@L359",
+          "line": 359,
+          "expr": "this.advance();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/lexer.ts#Lexer.scanTextBlock@L342",
+        "procedureName": "Lexer.scanTextBlock",
+        "guard": "cond:packages/parsers/src/java/lexer.ts@L357",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/lexer.ts@L346",
+            "expr": "this.pos < this.src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/lexer.ts@L357",
+            "expr": "c === '\"' && this.peek(1) === '\"' && this.peek(2) === '\"'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:696ca3acbd257d57315c0cd0ab4ebf108ef3654af6bb0e8e60d29c7a9f6a83fd",
+          "target": "stmt:packages/parsers/src/java/lexer.ts@L360",
+          "line": 360,
+          "expr": "this.advance();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/lexer.ts#Lexer.scanTextBlock@L342",
+        "procedureName": "Lexer.scanTextBlock",
+        "guard": "cond:packages/parsers/src/java/lexer.ts@L357",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/lexer.ts@L346",
+            "expr": "this.pos < this.src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/lexer.ts@L357",
+            "expr": "c === '\"' && this.peek(1) === '\"' && this.peek(2) === '\"'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:099564eeb7d8f9ba0586b903653f9757be45acd8a4ec617f5c3cb1ee768b5d92",
+          "target": "stmt:packages/parsers/src/java/lexer.ts@L361",
+          "line": 361,
+          "expr": "this.advance();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/lexer.ts#Lexer.scanTextBlock@L342",
+        "procedureName": "Lexer.scanTextBlock",
+        "guard": "cond:packages/parsers/src/java/lexer.ts@L346",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/lexer.ts@L346",
+            "expr": "this.pos < this.src.length",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:33b05d758d0994694091e12ccce9d53c945c09dcf493ea6c776a5af122166742",
+          "target": "assign:packages/parsers/src/java/lexer.ts@L364",
+          "line": 364,
+          "expr": "value += c;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/lexer.ts#Lexer.scanTextBlock@L342",
+        "procedureName": "Lexer.scanTextBlock",
+        "guard": "cond:packages/parsers/src/java/lexer.ts@L346",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/lexer.ts@L346",
+            "expr": "this.pos < this.src.length",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1c4db99dff57784cfba6257ac0507f882a8bd71e1aa40d2d8554ea11a64092df",
+          "target": "stmt:packages/parsers/src/java/lexer.ts@L365",
+          "line": 365,
+          "expr": "this.advance();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/lexer.ts#Lexer.scanTextBlock@L342",
+        "procedureName": "Lexer.scanTextBlock",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:6193519989b77a3eb8a7a654956e97cd4112b8860c298759bb841fd15b8bbad5",
+          "target": "sym:packages/parsers/src/java/lexer.ts#Lexer.emit@L452",
+          "expr": "emit",
+          "line": 367
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/lexer.ts#Lexer.scanTextBlock@L342",
+        "procedureName": "Lexer.scanTextBlock",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fe742698f361a98e0b4ba866d8785806d08963af05a6e9e21b5539679edb71d3",
+          "target": "stmt:packages/parsers/src/java/lexer.ts@L367",
+          "line": 367,
+          "expr": "this.emit('STRING', value, sl, sc);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 14,
+    "referencedByFiles": [
+      "packages/parsers/src/java/lexer.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 14,
+    "assignments": 4,
+    "conditions": 4,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 3,
+      "recorded": 11,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

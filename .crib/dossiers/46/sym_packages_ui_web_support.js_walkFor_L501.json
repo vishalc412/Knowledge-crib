@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/ui/web/support.js#walkFor@L501",
-  "schemaVersion": "1.5",
+  "schemaVersion": "1.6",
   "nodeHash": "blake3:0d559bef16356f33e97ee28d3e2cf94f0b708d1be4a73f4c0068068a59f3a297",
-  "builtAt": "2026-07-16T16:35:16.098Z",
+  "builtAt": "2026-08-31T17:37:23.222Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/ui/web/support.js#walkFor@L501",
@@ -115,16 +115,6 @@
     }
   ],
   "callees": [
-    {
-      "id": "sym:packages/ui/web/vendor/react.production.min.js#B@L12",
-      "confidence": 1,
-      "name": "B",
-      "qualifiedName": "B",
-      "signature": "B(a, b, e, m, d)",
-      "type": "function",
-      "file": "packages/ui/web/vendor/react.production.min.js",
-      "line": 12
-    },
     {
       "id": "sym:packages/ui/web/support.js#compileAttr@L355",
       "confidence": 1,
@@ -335,20 +325,6 @@
           "expr": "getReact",
           "line": 523
         }
-      },
-      {
-        "procedure": "sym:packages/ui/web/support.js#walkFor@L501",
-        "procedureName": "walkFor",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:c7459bc1b20e4d50dbb064904b4a9ae4483d122baccb926d44b9373301a69818",
-          "target": "sym:packages/ui/web/vendor/react.production.min.js#B@L12",
-          "expr": "B",
-          "line": 530
-        }
       }
     ]
   },
@@ -370,14 +346,14 @@
     "cursors": 0,
     "caseBranches": 0,
     "calls": {
-      "resolved": 6,
+      "resolved": 5,
       "recorded": 19,
-      "unresolved": 11
+      "unresolved": 12
     },
     "recursive": false,
     "exprTruncated": 0,
     "caveats": [
-      "11 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+      "12 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
     ]
   }
 }

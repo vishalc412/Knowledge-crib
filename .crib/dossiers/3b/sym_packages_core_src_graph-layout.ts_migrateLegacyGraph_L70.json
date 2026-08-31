@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/core/src/graph-layout.ts#migrateLegacyGraph@L70",
-  "schemaVersion": "1.5",
+  "schemaVersion": "1.6",
   "nodeHash": "blake3:6211e496eb5c5a13c7fe624caf6d7cb365e65c97d40157fe5fd74f564ff572d2",
-  "builtAt": "2026-07-16T16:35:16.098Z",
+  "builtAt": "2026-08-31T17:37:23.222Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/core/src/graph-layout.ts#migrateLegacyGraph@L70",
@@ -206,28 +206,7 @@
     "totalLines": 95,
     "startLine": 70
   },
-  "callers": [
-    {
-      "id": "sym:packages/cli/src/cli.ts#cmdMigrateGraph@L344",
-      "confidence": 1,
-      "name": "cmdMigrateGraph",
-      "qualifiedName": "cmdMigrateGraph",
-      "signature": "cmdMigrateGraph(args: string[], ctx?: CmdCtx): Promise<number>",
-      "type": "function",
-      "file": "packages/cli/src/cli.ts",
-      "line": 344
-    },
-    {
-      "id": "sym:packages/cli/src/cli.ts#freshSoulForRebuild@L544",
-      "confidence": 1,
-      "name": "freshSoulForRebuild",
-      "qualifiedName": "freshSoulForRebuild",
-      "signature": "freshSoulForRebuild(cribDir: string): SoulStore",
-      "type": "function",
-      "file": "packages/cli/src/cli.ts",
-      "line": 544
-    }
-  ],
+  "callers": [],
   "callees": [
     {
       "id": "sym:packages/core/src/graph-layout.ts#countFiles@L216",
@@ -238,6 +217,16 @@
       "type": "function",
       "file": "packages/core/src/graph-layout.ts",
       "line": 216
+    },
+    {
+      "id": "sym:packages/pipeline/src/mule/classify.ts#dirname@L163",
+      "confidence": 1,
+      "name": "dirname",
+      "qualifiedName": "dirname",
+      "signature": "dirname(path: string): string",
+      "type": "function",
+      "file": "packages/pipeline/src/mule/classify.ts",
+      "line": 163
     },
     {
       "id": "sym:packages/core/src/graph-layout.ts#graphPaths@L33",
@@ -888,6 +877,20 @@
         "procedureName": "migrateLegacyGraph",
         "conditions": [],
         "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:fff2dd7300c03a871b1041b4c50b68c4fab75b7ac7ae2e4b1373e070a6e9a862",
+          "target": "sym:packages/pipeline/src/mule/classify.ts#dirname@L163",
+          "expr": "dirname",
+          "line": 148
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/graph-layout.ts#migrateLegacyGraph@L70",
+        "procedureName": "migrateLegacyGraph",
+        "conditions": [],
+        "inLoop": false,
         "inException": true,
         "action": {
           "kind": "executes",
@@ -1060,9 +1063,7 @@
   "implementation": {
     "status": "implemented",
     "executesCount": 35,
-    "referencedByFiles": [
-      "packages/cli/src/cli.ts"
-    ]
+    "referencedByFiles": []
   },
   "coverage": {
     "readiness": "partial",
@@ -1075,14 +1076,14 @@
     "cursors": 0,
     "caseBranches": 0,
     "calls": {
-      "resolved": 5,
+      "resolved": 6,
       "recorded": 45,
-      "unresolved": 40
+      "unresolved": 39
     },
     "recursive": false,
     "exprTruncated": 0,
     "caveats": [
-      "40 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+      "39 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
     ]
   }
 }

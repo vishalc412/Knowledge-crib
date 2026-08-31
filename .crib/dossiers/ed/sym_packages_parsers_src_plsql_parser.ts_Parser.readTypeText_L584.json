@@ -1,0 +1,202 @@
+{
+  "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.readTypeText@L584",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:3498521eed87f792234a0109fd7eed166e623952934fcff675b7dd6b07d842a9",
+  "builtAt": "2026-08-25T20:55:11.863Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.readTypeText@L584",
+    "kind": "symbol",
+    "type": "method",
+    "name": "readTypeText",
+    "qualifiedName": "Parser.readTypeText",
+    "signature": "readTypeText(): string",
+    "lang": "typescript",
+    "file": "packages/parsers/src/plsql/parser.ts",
+    "span": {
+      "start": 584,
+      "end": 596
+    },
+    "callSites": [
+      {
+        "callee": "push",
+        "line": 592
+      },
+      {
+        "callee": "at",
+        "line": 592
+      },
+      {
+        "callee": "join",
+        "line": 595
+      }
+    ]
+  },
+  "source": {
+    "text": "  private readTypeText(): string {\n    const parts: string[] = [];\n    while (\n      this.at().type !== 'eof' &&\n      !this.isPunct(',') &&\n      !this.isPunct(';') &&\n      !this.isPunct(')')\n    ) {\n      if (this.at().type === 'word' || this.at().type === 'number') parts.push(this.at().raw);\n      this.pos++;\n    }\n    return parts.join(' ');\n  }",
+    "truncated": false,
+    "totalLines": 13,
+    "startLine": 584
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseCreateType@L437",
+      "confidence": 1,
+      "name": "parseCreateType",
+      "qualifiedName": "Parser.parseCreateType",
+      "signature": "parseCreateType(startLine: number): TypeDef | null",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/parser.ts",
+      "line": 437
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.at@L119",
+      "confidence": 1,
+      "name": "at",
+      "qualifiedName": "Parser.at",
+      "signature": "at(): Token",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/parser.ts",
+      "line": 119
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.isPunct@L129",
+      "confidence": 1,
+      "name": "isPunct",
+      "qualifiedName": "Parser.isPunct",
+      "signature": "isPunct(c: string): boolean",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/parser.ts",
+      "line": 129
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/plsql/parser.ts@L582",
+      "snippet": "/** Read a single type reference (one or more words, e.g. `NUMBER` / `T_LINE` / `VARCHAR2(20)`) up",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.readTypeText@L584",
+    "procedureName": "Parser.readTypeText",
+    "conditions": [
+      "cond:packages/parsers/src/plsql/parser.ts@L586",
+      "cond:packages/parsers/src/plsql/parser.ts@L592"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.readTypeText@L584",
+        "procedureName": "Parser.readTypeText",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:b2566619c4fbd647f287304ae87061f1e8087fd89105de3381299448d7ad5a68",
+          "target": "sym:packages/parsers/src/plsql/parser.ts#Parser.isPunct@L129",
+          "expr": "isPunct"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.readTypeText@L584",
+        "procedureName": "Parser.readTypeText",
+        "guard": "cond:packages/parsers/src/plsql/parser.ts@L592",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/parser.ts@L586",
+            "expr": "this.at().type !== 'eof' &&\n      !this.isPunct(',') &&\n      !this.isPunct(';') &&\n      !this.isPunct(')')"
+          },
+          {
+            "id": "cond:packages/parsers/src/plsql/parser.ts@L592",
+            "expr": "this.at().type === 'word' || this.at().type === 'number'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:1a6f4a2b738766b12904bd808dcbc8a355b2136b16c14699433447627dafebd9",
+          "target": "sym:packages/parsers/src/plsql/parser.ts#Parser.at@L119",
+          "expr": "at",
+          "line": 592
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.readTypeText@L584",
+        "procedureName": "Parser.readTypeText",
+        "guard": "cond:packages/parsers/src/plsql/parser.ts@L592",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/parser.ts@L586",
+            "expr": "this.at().type !== 'eof' &&\n      !this.isPunct(',') &&\n      !this.isPunct(';') &&\n      !this.isPunct(')')"
+          },
+          {
+            "id": "cond:packages/parsers/src/plsql/parser.ts@L592",
+            "expr": "this.at().type === 'word' || this.at().type === 'number'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bd5c8b897d48aa47c4e082cf0005c2fca6055c0cb414b91ea1f00b34c505cb86",
+          "target": "stmt:packages/parsers/src/plsql/parser.ts@L592",
+          "line": 592,
+          "expr": "parts.push(this.at().raw);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.readTypeText@L584",
+        "procedureName": "Parser.readTypeText",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:07372cfca2482d24af4ed545efa22ad678f0791938b1cbbf93226eb63919208b",
+          "target": "stmt:packages/parsers/src/plsql/parser.ts@L595",
+          "line": 595,
+          "expr": "return parts.join(' ');"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/parsers/src/plsql/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 3,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

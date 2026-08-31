@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/ts/http-client.ts#matchHttpCall@L118",
-  "schemaVersion": "1.5",
+  "schemaVersion": "1.6",
   "nodeHash": "blake3:b342f92c6bb0838afb4023353528f6963b7e8b70b07e8dd024c539ae36331815",
-  "builtAt": "2026-07-16T16:35:16.098Z",
+  "builtAt": "2026-08-31T17:37:23.222Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/ts/http-client.ts#matchHttpCall@L118",
@@ -90,14 +90,14 @@
   ],
   "callees": [
     {
-      "id": "sym:packages/core/src/rules/extract.ts#lineOf@L265",
+      "id": "sym:packages/parsers/src/mule/raml.ts#lineOf@L88",
       "confidence": 1,
       "name": "lineOf",
       "qualifiedName": "lineOf",
-      "signature": "lineOf(soul: SoulStore, e: Edge, callLines: Map<string, number>): number",
+      "signature": "lineOf(offset: number, lineStarts: number[]): number",
       "type": "function",
-      "file": "packages/core/src/rules/extract.ts",
-      "line": 265
+      "file": "packages/parsers/src/mule/raml.ts",
+      "line": 88
     },
     {
       "id": "sym:packages/parsers/src/ts/http-client.ts#matchAxios@L165",
@@ -174,8 +174,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:9da0e5a83224f11ff324b1e19cac73d1293cbfda21a611828d49de358d4ec6e0",
-          "target": "sym:packages/core/src/rules/extract.ts#lineOf@L265",
+          "edgeId": "e:b52f8ec69789ea473ad5382bb127a8989f0d394806fdca6ff1d91dd6d8e93023",
+          "target": "sym:packages/parsers/src/mule/raml.ts#lineOf@L88",
           "expr": "lineOf",
           "line": 134
         }

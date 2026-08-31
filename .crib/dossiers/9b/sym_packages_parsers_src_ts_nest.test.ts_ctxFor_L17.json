@@ -1,0 +1,130 @@
+{
+  "id": "sym:packages/parsers/src/ts/nest.test.ts#ctxFor@L17",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:7dff3969b22661799819630d0ba7df570c32eadcf3b545cb6b6a209654e17975",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/ts/nest.test.ts#ctxFor@L17",
+    "kind": "symbol",
+    "type": "function",
+    "name": "ctxFor",
+    "qualifiedName": "ctxFor",
+    "signature": "ctxFor(text: string): ExtractCtx",
+    "lang": "typescript",
+    "file": "packages/parsers/src/ts/nest.test.ts",
+    "span": {
+      "start": 17,
+      "end": 28
+    },
+    "callSites": [
+      {
+        "callee": "idFor",
+        "line": 26
+      }
+    ]
+  },
+  "source": {
+    "text": "function ctxFor(text: string): ExtractCtx {\n  return {\n    async readText() {\n      return text;\n    },\n    treeSitter() {\n      throw new Error('not used — TypeScript uses the TS compiler API');\n    },\n    hash: contentHash,\n    idFor: (kind: NodeKind, parts) => idFor({ kind, ...parts } as IdSpec),\n  };\n}",
+    "truncated": false,
+    "totalLines": 12,
+    "startLine": 17
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/ts/nest.test.ts#run@L30",
+      "confidence": 1,
+      "name": "run",
+      "qualifiedName": "run",
+      "signature": "run(src: string): Promise<ExtractResult>",
+      "type": "function",
+      "file": "packages/parsers/src/ts/nest.test.ts",
+      "line": 30
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/soul-schema/src/id.ts#idFor@L96",
+      "confidence": 1,
+      "name": "idFor",
+      "qualifiedName": "idFor",
+      "signature": "idFor(spec: IdSpec): string",
+      "type": "function",
+      "file": "packages/soul-schema/src/id.ts",
+      "line": 96
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "doc:docs/knowledge-crib-track3-spec.md#tests-each-language-add-to-the-existing-extractor-test-ts",
+      "heading": "Tests (each language — add to the existing `Extractor.test.ts`)",
+      "anchor": "tests-each-language-add-to-the-existing-extractor-test-ts",
+      "snippet": "Tests (each language — add to the existing `Extractor.test.ts`)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/ts/nest.test.ts#ctxFor@L17",
+    "procedureName": "ctxFor",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.test.ts#ctxFor@L17",
+        "procedureName": "ctxFor",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e087eafb4b8e9e01f70f54e54da8bbc6be43810694c81bf79333d9144a6febe2",
+          "target": "stmt:packages/parsers/src/ts/nest.test.ts@L18",
+          "line": 18,
+          "expr": "return {\n    async readText() {\n      return text;\n    },\n    treeSitter() {\n      throw new Error('not used — TypeScript uses the TS compiler API');\n    },\n    hash: contentHash,\n    idFor: (kind: NodeKind, parts) => idFor({ kind, ...parts } as IdSpec),\n  };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.test.ts#ctxFor@L17",
+        "procedureName": "ctxFor",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:09378e923de79234239d03a64f6921c1640fdf5df2a855dba7fb06994e0aad25",
+          "target": "sym:packages/soul-schema/src/id.ts#idFor@L96",
+          "expr": "idFor",
+          "line": 26
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/parsers/src/ts/nest.test.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

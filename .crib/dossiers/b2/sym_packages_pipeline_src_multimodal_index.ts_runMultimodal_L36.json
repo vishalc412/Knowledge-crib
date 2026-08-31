@@ -1,0 +1,292 @@
+{
+  "id": "sym:packages/pipeline/src/multimodal/index.ts#runMultimodal@L36",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:1394b3f08b2ec9350e8137e428b32de0138c8009b1670cef0882363603808425",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/multimodal/index.ts#runMultimodal@L36",
+    "kind": "symbol",
+    "type": "function",
+    "name": "runMultimodal",
+    "qualifiedName": "runMultimodal",
+    "signature": "runMultimodal(soul: SoulStore, root: string, opts: MultimodalPhaseOpts = {}, mediaPaths?: string[]): Promise<MultimodalReport>",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/multimodal/index.ts",
+    "span": {
+      "start": 36,
+      "end": 56
+    },
+    "callSites": [
+      {
+        "callee": "map",
+        "line": 44
+      },
+      {
+        "callee": "filter",
+        "line": 44
+      },
+      {
+        "callee": "discoverFiles",
+        "line": 44
+      },
+      {
+        "callee": "isMediaPath",
+        "line": 45
+      },
+      {
+        "callee": "ingestStaging",
+        "line": 48
+      },
+      {
+        "callee": "runMediaLink",
+        "line": 50
+      },
+      {
+        "callee": "setCapabilities",
+        "line": 54
+      }
+    ]
+  },
+  "source": {
+    "text": "export async function runMultimodal(\n  soul: SoulStore,\n  root: string,\n  opts: MultimodalPhaseOpts = {},\n  mediaPaths?: string[],\n): Promise<MultimodalReport> {\n  const paths =\n    mediaPaths ??\n    discoverFiles(root)\n      .filter((f) => isMediaPath(f.path))\n      .map((f) => f.path);\n  const { link = true, linkThreshold, ...workerOpts } = opts;\n  const ingest = await ingestStaging(soul, root, paths, workerOpts);\n  const linkStats = link\n    ? runMediaLink(soul, linkThreshold, paths)\n    : { describes: 0, references: 0 };\n  // flip the capability only when we actually produced segments — a fully-degraded run (no worker,\n  // no models) leaves the manifest honest: no media nodes, capability stays false.\n  if (ingest.segments > 0) soul.setCapabilities({ multimodal: true });\n  return { ingest, link: linkStats };\n}",
+    "truncated": false,
+    "totalLines": 21,
+    "startLine": 36
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L121",
+      "confidence": 1,
+      "name": "indexRepo",
+      "qualifiedName": "indexRepo",
+      "signature": "indexRepo(soul: SoulStore, root: string, opts: IndexOpts = {}): Promise<IndexReport>",
+      "type": "function",
+      "file": "packages/pipeline/src/pipeline.ts",
+      "line": 121
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/pipeline/src/structure.ts#discoverFiles@L118",
+      "confidence": 1,
+      "name": "discoverFiles",
+      "qualifiedName": "discoverFiles",
+      "signature": "discoverFiles(root: string, opts: DiscoverOpts = {}): FileMeta[]",
+      "type": "function",
+      "file": "packages/pipeline/src/structure.ts",
+      "line": 118
+    },
+    {
+      "id": "sym:packages/pipeline/src/multimodal/ingest.ts#ingestStaging@L57",
+      "confidence": 1,
+      "name": "ingestStaging",
+      "qualifiedName": "ingestStaging",
+      "signature": "ingestStaging(soul: SoulStore, root: string, mediaPaths: string[], opts: WorkerOpts = {}): Promise<MultimodalStats>",
+      "type": "function",
+      "file": "packages/pipeline/src/multimodal/ingest.ts",
+      "line": 57
+    },
+    {
+      "id": "sym:packages/pipeline/src/multimodal/ingest.ts#isMediaPath@L48",
+      "confidence": 1,
+      "name": "isMediaPath",
+      "qualifiedName": "isMediaPath",
+      "signature": "isMediaPath(p: string): boolean",
+      "type": "function",
+      "file": "packages/pipeline/src/multimodal/ingest.ts",
+      "line": 48
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/media.ts#runMediaLink@L42",
+      "confidence": 1,
+      "name": "runMediaLink",
+      "qualifiedName": "runMediaLink",
+      "signature": "runMediaLink(soul: SoulStore, threshold?: number, mediaFiles?: string[]): MediaLinkStats",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/media.ts",
+      "line": 42
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/pipeline/src/multimodal/index.ts@L31",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/multimodal/index.ts#runMultimodal@L36",
+    "procedureName": "runMultimodal",
+    "conditions": [
+      "cond:packages/pipeline/src/multimodal/index.ts@L54"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/multimodal/index.ts#runMultimodal@L36",
+        "procedureName": "runMultimodal",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7906c48ecafcb56c1dd17b38e15eee8c257f67b9ecd45ae2d8d03391f6e2393f",
+          "target": "stmt:packages/pipeline/src/multimodal/index.ts@L42",
+          "line": 42,
+          "expr": "const paths =\n    mediaPaths ??\n    discoverFiles(root)\n      .filter((f) => isMediaPath(f.path))\n      .map((f) => f.path);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/multimodal/index.ts#runMultimodal@L36",
+        "procedureName": "runMultimodal",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:f6c06d54434f40ba08fedb93d177fa0a7b0f8de86554ba04879d56c7f0aca420",
+          "target": "sym:packages/pipeline/src/structure.ts#discoverFiles@L118",
+          "expr": "discoverFiles",
+          "line": 44
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/multimodal/index.ts#runMultimodal@L36",
+        "procedureName": "runMultimodal",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:51566c886970b0f7b997d37ab17eea1b447f45d62d85c7b46d8fd7bac8e959a8",
+          "target": "sym:packages/pipeline/src/multimodal/ingest.ts#isMediaPath@L48",
+          "expr": "isMediaPath",
+          "line": 45
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/multimodal/index.ts#runMultimodal@L36",
+        "procedureName": "runMultimodal",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:dad0307b3957b50ca9a91ce380b686f626687ea27cefced173efaa0bdd308590",
+          "target": "sym:packages/pipeline/src/multimodal/ingest.ts#ingestStaging@L57",
+          "expr": "ingestStaging",
+          "line": 48
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/multimodal/index.ts#runMultimodal@L36",
+        "procedureName": "runMultimodal",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:eabf6a4c518e8cf43f3e2805b409f2f8e3a3ee5582ccfde7864547674e7e03c4",
+          "target": "stmt:packages/pipeline/src/multimodal/index.ts@L48",
+          "line": 48,
+          "expr": "const ingest = await ingestStaging(soul, root, paths, workerOpts);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/multimodal/index.ts#runMultimodal@L36",
+        "procedureName": "runMultimodal",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:65d1d1372106c6c2a98265aae9c0f503b491c2c05c5163dd4d31af148ac8ae13",
+          "target": "stmt:packages/pipeline/src/multimodal/index.ts@L49",
+          "line": 49,
+          "expr": "const linkStats = link\n    ? runMediaLink(soul, linkThreshold, paths)\n    : { describes: 0, references: 0 };"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/multimodal/index.ts#runMultimodal@L36",
+        "procedureName": "runMultimodal",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:0bdbe8a8917543012ef6e28ca5abd93cc489e3a992013aa24dcd1d39e0338da6",
+          "target": "sym:packages/pipeline/src/linker/media.ts#runMediaLink@L42",
+          "expr": "runMediaLink",
+          "line": 50
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/multimodal/index.ts#runMultimodal@L36",
+        "procedureName": "runMultimodal",
+        "guard": "cond:packages/pipeline/src/multimodal/index.ts@L54",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/multimodal/index.ts@L54",
+            "expr": "ingest.segments > 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c5757bba4696acb6b8ffecdc2894e664aa4c54e931db3c1d86f6c0ffe6d90dcc",
+          "target": "stmt:packages/pipeline/src/multimodal/index.ts@L54",
+          "line": 54,
+          "expr": "soul.setCapabilities({ multimodal: true });"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/multimodal/index.ts#runMultimodal@L36",
+        "procedureName": "runMultimodal",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d0c8b3de40e45dac2a3d2f43c044dbaadce6426db4837e1ca2de18ebe121675d",
+          "target": "stmt:packages/pipeline/src/multimodal/index.ts@L55",
+          "line": 55,
+          "expr": "return { ingest, link: linkStats };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 5,
+    "referencedByFiles": [
+      "packages/pipeline/src/pipeline.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 5,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 4,
+      "recorded": 7,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

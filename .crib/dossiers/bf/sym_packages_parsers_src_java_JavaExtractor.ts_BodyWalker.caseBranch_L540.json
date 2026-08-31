@@ -1,0 +1,175 @@
+{
+  "id": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.caseBranch@L540",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:e5e9384579baf9b63dde12348f5ef56089afdf6bd42924452b279fa136a0ff11",
+  "builtAt": "2026-08-25T20:55:11.863Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.caseBranch@L540",
+    "kind": "symbol",
+    "type": "method",
+    "name": "caseBranch",
+    "qualifiedName": "BodyWalker.caseBranch",
+    "signature": "caseBranch(predicate: string | undefined, line: number): string",
+    "lang": "typescript",
+    "file": "packages/parsers/src/java/JavaExtractor.ts",
+    "span": {
+      "start": 540,
+      "end": 556
+    },
+    "callSites": [
+      {
+        "callee": "idFor",
+        "line": 541
+      },
+      {
+        "callee": "add",
+        "line": 543
+      },
+      {
+        "callee": "push",
+        "line": 544
+      },
+      {
+        "callee": "hash",
+        "line": 552
+      }
+    ]
+  },
+  "source": {
+    "text": "  private caseBranch(predicate: string | undefined, line: number): string {\n    const id = this.ctx.idFor('case-branch', { file: this.path, line });\n    if (!this.caseBranchSeen.has(id)) {\n      this.caseBranchSeen.add(id);\n      this.nodes.push({\n        id,\n        kind: 'case-branch',\n        branch: 'CASE',\n        ...(predicate ? { expr: predicate, whenSelector: predicate } : {}),\n        file: this.path,\n        span: { start: line, end: line },\n        lang: 'java',\n        hash: this.ctx.hash(`${this.path}:case:${line}:${predicate ?? ''}`),\n      });\n    }\n    return id;\n  }",
+    "truncated": false,
+    "totalLines": 17,
+    "startLine": 540
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.walkSwitch@L700",
+      "confidence": 1,
+      "name": "walkSwitch",
+      "qualifiedName": "BodyWalker.walkSwitch",
+      "signature": "walkSwitch(s: JavaStmt, procId: string, guardStack: string[], inLoop: boolean, inException: boolean): void",
+      "type": "method",
+      "file": "packages/parsers/src/java/JavaExtractor.ts",
+      "line": 700
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/java/JavaExtractor.ts@L538",
+      "snippet": "/** 1.2: emit a `case-branch` node (deduped by file+line) — whenSelector = the case value, omitted",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.caseBranch@L540",
+    "procedureName": "BodyWalker.caseBranch",
+    "conditions": [
+      "cond:packages/parsers/src/java/JavaExtractor.ts@L542"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.caseBranch@L540",
+        "procedureName": "BodyWalker.caseBranch",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:17ed5ca0d7499206db65a0d17337ebb5f7897b65ae29aeb721bf48eaca4146bd",
+          "target": "stmt:packages/parsers/src/java/JavaExtractor.ts@L541",
+          "line": 541,
+          "expr": "const id = this.ctx.idFor('case-branch', { file: this.path, line });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.caseBranch@L540",
+        "procedureName": "BodyWalker.caseBranch",
+        "guard": "cond:packages/parsers/src/java/JavaExtractor.ts@L542",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/JavaExtractor.ts@L542",
+            "expr": "!this.caseBranchSeen.has(id)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d94c75d74f480173549cecaf6c39bbf7240b9e31f39c6d96ba6a69c4009f5fc9",
+          "target": "stmt:packages/parsers/src/java/JavaExtractor.ts@L543",
+          "line": 543,
+          "expr": "this.caseBranchSeen.add(id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.caseBranch@L540",
+        "procedureName": "BodyWalker.caseBranch",
+        "guard": "cond:packages/parsers/src/java/JavaExtractor.ts@L542",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/JavaExtractor.ts@L542",
+            "expr": "!this.caseBranchSeen.has(id)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:20325439602d38502a440cd0bb41df100cb406252106be3deb011a4ba20d48d9",
+          "target": "stmt:packages/parsers/src/java/JavaExtractor.ts@L544",
+          "line": 544,
+          "expr": "this.nodes.push({\n        id,\n        kind: 'case-branch',\n        branch: 'CASE',\n        ...(predicate ? { expr: predicate, whenSelector: predicate } : {}),\n        file: this.path,\n        span: { start: line, end: line },\n        lang: 'java',\n        hash: this.ctx.hash(`${this.path}:case:${line}:${predicate ?? ''}`),\n      });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.caseBranch@L540",
+        "procedureName": "BodyWalker.caseBranch",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4b0b4e0bff4132cdfbfea1a92db53ca355204c4149ae8b47597bd589716d4491",
+          "target": "stmt:packages/parsers/src/java/JavaExtractor.ts@L555",
+          "line": 555,
+          "expr": "return id;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": [
+      "packages/parsers/src/java/JavaExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 4,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

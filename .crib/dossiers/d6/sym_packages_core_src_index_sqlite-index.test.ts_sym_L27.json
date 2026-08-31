@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/core/src/index/sqlite-index.test.ts#sym@L27",
-  "schemaVersion": "1.5",
+  "schemaVersion": "1.6",
   "nodeHash": "blake3:11ffa769d4cae2b9a95ec4e248a1c1a435b1f3508e0f0ad9f00a2971e3dccf21",
-  "builtAt": "2026-07-13T11:04:33.459Z",
+  "builtAt": "2026-08-25T20:55:11.863Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/core/src/index/sqlite-index.test.ts#sym@L27",
@@ -42,7 +42,18 @@
     "totalLines": 14,
     "startLine": 27
   },
-  "callers": [],
+  "callers": [
+    {
+      "id": "sym:packages/core/src/index/sqlite-index.test.ts#seedUnique@L166",
+      "confidence": 1,
+      "name": "seedUnique",
+      "qualifiedName": "seedUnique",
+      "signature": "seedUnique(token: string): Node",
+      "type": "function",
+      "file": "packages/core/src/index/sqlite-index.test.ts",
+      "line": 166
+    }
+  ],
   "callees": [
     {
       "id": "sym:packages/soul-schema/src/hash.ts#contentHash@L21",
@@ -55,14 +66,14 @@
       "line": 21
     },
     {
-      "id": "sym:packages/soul-schema/src/id.ts#idFor@L88",
+      "id": "sym:packages/soul-schema/src/id.ts#idFor@L96",
       "confidence": 1,
       "name": "idFor",
       "qualifiedName": "idFor",
       "signature": "idFor(spec: IdSpec): string",
       "type": "function",
       "file": "packages/soul-schema/src/id.ts",
-      "line": 88
+      "line": 96
     }
   ],
   "docs": [
@@ -71,7 +82,7 @@
       "heading": "Node",
       "anchor": "node",
       "snippet": "Node",
-      "edgeType": "describes",
+      "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
       "confidence": 0.8
@@ -81,7 +92,7 @@
       "heading": "7. The Complete Code Map (Quick Reference)",
       "anchor": "7-the-complete-code-map-quick-reference",
       "snippet": "7. The Complete Code Map (Quick Reference)",
-      "edgeType": "describes",
+      "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
       "confidence": 0.8
@@ -114,8 +125,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:85b78e6c3570f5ac54c975adba202b48cbd0726d2fac7e82502c0bcf0f807a1e",
-          "target": "sym:packages/soul-schema/src/id.ts#idFor@L88",
+          "edgeId": "e:739b097d9728349def5863ca573201ccf00843e30823219816f0b5e52dd2e635",
+          "target": "sym:packages/soul-schema/src/id.ts#idFor@L96",
           "expr": "idFor",
           "line": 29
         }
@@ -139,7 +150,9 @@
   "implementation": {
     "status": "implemented",
     "executesCount": 1,
-    "referencedByFiles": []
+    "referencedByFiles": [
+      "packages/core/src/index/sqlite-index.test.ts"
+    ]
   },
   "coverage": {
     "readiness": "partial",

@@ -1,8 +1,8 @@
 {
   "id": "sym:scripts/docs-site-check.mjs#fail@L41",
-  "schemaVersion": "1.5",
+  "schemaVersion": "1.6",
   "nodeHash": "blake3:a03834478bd12d192bbbc1f88cd31a98e04e01327b6d4fb5c658c7bb9ffca441",
-  "builtAt": "2026-07-16T16:35:16.098Z",
+  "builtAt": "2026-08-31T17:37:23.222Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:scripts/docs-site-check.mjs#fail@L41",
@@ -33,14 +33,14 @@
   "callers": [],
   "callees": [
     {
-      "id": "sym:packages/cli/src/hooks.test.ts#write@L54",
+      "id": "sym:scripts/fixtures/synthetic-mule-project.mjs#write@L64",
       "confidence": 1,
       "name": "write",
       "qualifiedName": "write",
-      "signature": "write(path: string, records: Array<Record<string, unknown>>): void",
+      "signature": "write(root, rel, content)",
       "type": "function",
-      "file": "packages/cli/src/hooks.test.ts",
-      "line": 54
+      "file": "scripts/fixtures/synthetic-mule-project.mjs",
+      "line": 64
     }
   ],
   "docs": [
@@ -55,10 +55,20 @@
       "confidence": 0.6
     },
     {
-      "sectionId": "doc:docs/superpowers/specs/2026-06-27-knowledgecrib-linkedin-demo-video-design.md#production-architecture",
-      "heading": "Production Architecture",
-      "anchor": "production-architecture",
-      "snippet": "Production Architecture",
+      "sectionId": "doc:docs/superpowers/specs/2026-08-14-mulesoft-first-class-extractor-design.md#10-error-handling-and-diagnostics",
+      "heading": "10. Error Handling and Diagnostics",
+      "anchor": "10-error-handling-and-diagnostics",
+      "snippet": "10. Error Handling and Diagnostics",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/specs/2026-08-14-mulesoft-first-class-extractor-design.md#15-acceptance-criteria",
+      "heading": "15. Acceptance Criteria",
+      "anchor": "15-acceptance-criteria",
+      "snippet": "15. Acceptance Criteria",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
@@ -69,6 +79,16 @@
       "heading": "WS-A5 — Automated parity / golden-file test generation",
       "anchor": "ws-a5-automated-parity-golden-file-test-generation",
       "snippet": "WS-A5 — Automated parity / golden-file test generation",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/specs/2026-06-27-knowledgecrib-linkedin-demo-video-design.md#production-architecture",
+      "heading": "Production Architecture",
+      "anchor": "production-architecture",
+      "snippet": "Production Architecture",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
@@ -88,8 +108,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:8af0b035cde408553946c7897188322ae568d0c85f3b3c103362a250c54ab4e7",
-          "target": "sym:packages/cli/src/hooks.test.ts#write@L54",
+          "edgeId": "e:36ee31755db5531c433fba60c8479f39cdef1ba777b27270e04ec854b60bf71a",
+          "target": "sym:scripts/fixtures/synthetic-mule-project.mjs#write@L64",
           "expr": "write",
           "line": 42
         }

@@ -1,0 +1,228 @@
+{
+  "id": "sym:packages/parsers/src/java/parser.ts#BodyParser.readUntilColon@L1534",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:21722bd58465de82d248004dac6e8fcf97281b2de6525460e1e18fa61bc07bf2",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/java/parser.ts#BodyParser.readUntilColon@L1534",
+    "kind": "symbol",
+    "type": "method",
+    "name": "readUntilColon",
+    "qualifiedName": "BodyParser.readUntilColon",
+    "signature": "readUntilColon(closeIdx: number): string | undefined",
+    "lang": "typescript",
+    "file": "packages/parsers/src/java/parser.ts",
+    "span": {
+      "start": 1534,
+      "end": 1552
+    },
+    "callSites": [
+      {
+        "callee": "max",
+        "line": 1544
+      },
+      {
+        "callee": "trim",
+        "line": 1549
+      },
+      {
+        "callee": "sliceText",
+        "line": 1549
+      }
+    ]
+  },
+  "source": {
+    "text": "  private readUntilColon(closeIdx: number): string | undefined {\n    const startIdx = this.i;\n    let depth = 0;\n    let j = this.i;\n    for (; j < closeIdx; j++) {\n      const tk = this.t[j]!;\n      if (tk.type === 'EOF') break;\n      if (tk.type === 'OP') {\n        if (tk.value === '(' || tk.value === '[' || tk.value === '{') depth++;\n        else if (tk.value === ')' || tk.value === ']' || tk.value === '}')\n          depth = Math.max(0, depth - 1);\n        else if (depth === 0 && tk.value === ':') break;\n      }\n    }\n    if (j >= closeIdx) return undefined;\n    const text = j > startIdx ? this.sliceText(startIdx, j - 1).trim() : '';\n    this.i = j + 1; // past :\n    return text;\n  }",
+    "truncated": false,
+    "totalLines": 19,
+    "startLine": 1534
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#BodyParser.parseSwitch@L1298",
+      "confidence": 1,
+      "name": "parseSwitch",
+      "qualifiedName": "BodyParser.parseSwitch",
+      "signature": "parseSwitch(startLine: number): JavaStmt",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 1298
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#BodyParser.sliceText@L1644",
+      "confidence": 1,
+      "name": "sliceText",
+      "qualifiedName": "BodyParser.sliceText",
+      "signature": "sliceText(startIdx: number, endIdx: number): string",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 1644
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/java/parser.ts@L1533",
+      "snippet": "/** Read a `case` predicate up to its `:`; advances past the `:`. Returns undefined if no `:`. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/java/parser.ts#BodyParser.readUntilColon@L1534",
+    "procedureName": "BodyParser.readUntilColon",
+    "conditions": [
+      "cond:packages/parsers/src/java/parser.ts@L1538",
+      "cond:packages/parsers/src/java/parser.ts@L1541",
+      "cond:packages/parsers/src/java/parser.ts@L1542",
+      "cond:packages/parsers/src/java/parser.ts@L1543",
+      "cond:packages/parsers/src/java/parser.ts@L1548"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#BodyParser.readUntilColon@L1534",
+        "procedureName": "BodyParser.readUntilColon",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L1543",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L1538",
+            "expr": "j < closeIdx"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L1541",
+            "expr": "tk.type === 'OP'"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L1542",
+            "expr": "tk.value === '(' || tk.value === '[' || tk.value === '{'"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L1543",
+            "expr": "tk.value === ')' || tk.value === ']' || tk.value === '}'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:af5472a92f91bdfd4c42864c7d89fcc7e993e0c41013bde91eda8ca86f1da3c2",
+          "target": "assign:packages/parsers/src/java/parser.ts@L1544",
+          "line": 1544,
+          "expr": "depth = Math.max(0, depth - 1);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#BodyParser.readUntilColon@L1534",
+        "procedureName": "BodyParser.readUntilColon",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L1548",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L1548",
+            "expr": "j >= closeIdx",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d5c1ae4845e410b4d78a8b3c96fd44d0327ad4a3a3a7bb6bbc397882a20b9cee",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L1548",
+          "line": 1548,
+          "expr": "return undefined;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#BodyParser.readUntilColon@L1534",
+        "procedureName": "BodyParser.readUntilColon",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:22d63d6f050513384c711c6c12ee5a56e5b6331b7fae41190cbd58a422664afe",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L1549",
+          "line": 1549,
+          "expr": "const text = j > startIdx ? this.sliceText(startIdx, j - 1).trim() : '';"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#BodyParser.readUntilColon@L1534",
+        "procedureName": "BodyParser.readUntilColon",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:b0ab296ce3992b9a726a2ed42dc6329c871fd0c6564c1f0f9b91229036f8dcb8",
+          "target": "sym:packages/parsers/src/java/parser.ts#BodyParser.sliceText@L1644",
+          "expr": "sliceText",
+          "line": 1549
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#BodyParser.readUntilColon@L1534",
+        "procedureName": "BodyParser.readUntilColon",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:04faa9de8757b3052ae3b15d681efcf00d96e2ad8d24137cce02fabdbd3a14a9",
+          "target": "assign:packages/parsers/src/java/parser.ts@L1550",
+          "line": 1550,
+          "expr": "this.i = j + 1;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#BodyParser.readUntilColon@L1534",
+        "procedureName": "BodyParser.readUntilColon",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:db751eefd219333850d7776b17cefb502fa51ebc914689b58ac62d491c558dab",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L1551",
+          "line": 1551,
+          "expr": "return text;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 5,
+    "referencedByFiles": [
+      "packages/parsers/src/java/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 5,
+    "assignments": 2,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 3,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

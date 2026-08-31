@@ -1,0 +1,272 @@
+{
+  "id": "sym:packages/pipeline/src/cfg/basic-block.ts#segmentBlock@L29",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:027dc5257a13ec0862ad4f50a47e403b75f04c74d80a3198851658e14b12ad80",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/cfg/basic-block.ts#segmentBlock@L29",
+    "kind": "symbol",
+    "type": "function",
+    "name": "segmentBlock",
+    "qualifiedName": "segmentBlock",
+    "signature": "segmentBlock(block: Block): BasicBlock[]",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/cfg/basic-block.ts",
+    "span": {
+      "start": 29,
+      "end": 44
+    },
+    "callSites": [
+      {
+        "callee": "push",
+        "line": 35
+      },
+      {
+        "callee": "push",
+        "line": 39
+      },
+      {
+        "callee": "push",
+        "line": 42
+      }
+    ]
+  },
+  "source": {
+    "text": "export function segmentBlock(block: Block): BasicBlock[] {\n  const blocks: BasicBlock[] = [];\n  let run: Stmt[] = [];\n  for (const s of block.statements) {\n    if (isCompound(s)) {\n      if (run.length > 0) {\n        blocks.push({ statements: run });\n        run = [];\n      }\n    } else {\n      run.push(s);\n    }\n  }\n  if (run.length > 0) blocks.push({ statements: run });\n  return blocks;\n}",
+    "truncated": false,
+    "totalLines": 16,
+    "startLine": 29
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/src/resolve/plsql-cfg.ts#Walker.walkBlock@L138",
+      "confidence": 1,
+      "name": "walkBlock",
+      "qualifiedName": "Walker.walkBlock",
+      "signature": "walkBlock(block: Block, procId: string, frames: GuardFrame[]): void",
+      "type": "method",
+      "file": "packages/pipeline/src/resolve/plsql-cfg.ts",
+      "line": 138
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/pipeline/src/cfg/basic-block.ts#isCompound@L20",
+      "confidence": 1,
+      "name": "isCompound",
+      "qualifiedName": "isCompound",
+      "signature": "isCompound(s: Stmt): boolean",
+      "type": "function",
+      "file": "packages/pipeline/src/cfg/basic-block.ts",
+      "line": 20
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 70
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/pipeline/src/cfg/basic-block.ts@L24",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/cfg/basic-block.ts#segmentBlock@L29",
+    "procedureName": "segmentBlock",
+    "conditions": [
+      "cond:packages/pipeline/src/cfg/basic-block.ts@L32",
+      "cond:packages/pipeline/src/cfg/basic-block.ts@L33",
+      "cond:packages/pipeline/src/cfg/basic-block.ts@L34",
+      "cond:packages/pipeline/src/cfg/basic-block.ts@L42"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/cfg/basic-block.ts#segmentBlock@L29",
+        "procedureName": "segmentBlock",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:1bb80bfe6abd8e85832d7ee28d9dfc2cd5f26a26a7b55daabf543d5dff93244f",
+          "target": "sym:packages/pipeline/src/cfg/basic-block.ts#isCompound@L20",
+          "expr": "isCompound"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/cfg/basic-block.ts#segmentBlock@L29",
+        "procedureName": "segmentBlock",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:b4e8042b2cea68ab34a17ccba07eccc0aba704d209292e19f64ad67e7a2bec31",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
+          "expr": "push",
+          "line": 35
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/cfg/basic-block.ts#segmentBlock@L29",
+        "procedureName": "segmentBlock",
+        "guard": "cond:packages/pipeline/src/cfg/basic-block.ts@L34",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/cfg/basic-block.ts@L32",
+            "expr": "block.statements"
+          },
+          {
+            "id": "cond:packages/pipeline/src/cfg/basic-block.ts@L33",
+            "expr": "isCompound(s)"
+          },
+          {
+            "id": "cond:packages/pipeline/src/cfg/basic-block.ts@L34",
+            "expr": "run.length > 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d5e80236f887ba3a2a5702e023c42de4f249aa3ea53c102be819efd0a0c5e553",
+          "target": "stmt:packages/pipeline/src/cfg/basic-block.ts@L35",
+          "line": 35,
+          "expr": "blocks.push({ statements: run });"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/cfg/basic-block.ts#segmentBlock@L29",
+        "procedureName": "segmentBlock",
+        "guard": "cond:packages/pipeline/src/cfg/basic-block.ts@L34",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/cfg/basic-block.ts@L32",
+            "expr": "block.statements"
+          },
+          {
+            "id": "cond:packages/pipeline/src/cfg/basic-block.ts@L33",
+            "expr": "isCompound(s)"
+          },
+          {
+            "id": "cond:packages/pipeline/src/cfg/basic-block.ts@L34",
+            "expr": "run.length > 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7aff350e6d63957d48a4a107f4421026dda51412a37139b94fccbfd195217ed4",
+          "target": "assign:packages/pipeline/src/cfg/basic-block.ts@L36",
+          "line": 36,
+          "expr": "run = [];"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/cfg/basic-block.ts#segmentBlock@L29",
+        "procedureName": "segmentBlock",
+        "guard": "cond:packages/pipeline/src/cfg/basic-block.ts@L33",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/cfg/basic-block.ts@L32",
+            "expr": "block.statements"
+          },
+          {
+            "id": "cond:packages/pipeline/src/cfg/basic-block.ts@L33",
+            "expr": "isCompound(s)",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bdbb0fe030d43a93f52f3011f25c17690a192b2bc463d03fefdddc3d07c1ad70",
+          "target": "stmt:packages/pipeline/src/cfg/basic-block.ts@L39",
+          "line": 39,
+          "expr": "run.push(s);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/cfg/basic-block.ts#segmentBlock@L29",
+        "procedureName": "segmentBlock",
+        "guard": "cond:packages/pipeline/src/cfg/basic-block.ts@L42",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/cfg/basic-block.ts@L42",
+            "expr": "run.length > 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:96dcc05ff2452374110055cd520f95774a7fd9c6286d24776c98853d2ab9ee7d",
+          "target": "stmt:packages/pipeline/src/cfg/basic-block.ts@L42",
+          "line": 42,
+          "expr": "blocks.push({ statements: run });"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/cfg/basic-block.ts#segmentBlock@L29",
+        "procedureName": "segmentBlock",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:09102e83b8e34fa1ce2ea2d27019bb673c93f231e9b2dd2c58e37cd9112e25ab",
+          "target": "stmt:packages/pipeline/src/cfg/basic-block.ts@L43",
+          "line": 43,
+          "expr": "return blocks;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 5,
+    "referencedByFiles": [
+      "packages/pipeline/src/resolve/plsql-cfg.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 5,
+    "assignments": 1,
+    "conditions": 3,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 3,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

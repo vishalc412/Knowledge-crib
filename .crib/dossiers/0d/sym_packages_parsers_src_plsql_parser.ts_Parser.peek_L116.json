@@ -1,0 +1,84 @@
+{
+  "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.peek@L116",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:abed5c20cb7e169cb986fd7bfe6b729b758b61299481e2783b3f1376dc0da2b0",
+  "builtAt": "2026-08-25T20:55:11.863Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.peek@L116",
+    "kind": "symbol",
+    "type": "method",
+    "name": "peek",
+    "qualifiedName": "Parser.peek",
+    "signature": "peek(): Token",
+    "lang": "typescript",
+    "file": "packages/parsers/src/plsql/parser.ts",
+    "span": {
+      "start": 116,
+      "end": 118
+    }
+  },
+  "source": {
+    "text": "  private peek(): Token {\n    return this.toks[this.pos] ?? EOF_TOKEN;\n  }",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 116
+  },
+  "callers": [],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/plsql/parser.ts@L115",
+      "snippet": "// --- cursor helpers ---",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.peek@L116",
+    "procedureName": "Parser.peek",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#Parser.peek@L116",
+        "procedureName": "Parser.peek",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5363dcd89dfccde1effa5af3badb22c6ea616059b3a6ac2b62bd2f88d3297e6a",
+          "target": "stmt:packages/parsers/src/plsql/parser.ts@L117",
+          "line": 117,
+          "expr": "return this.toks[this.pos] ?? EOF_TOKEN;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

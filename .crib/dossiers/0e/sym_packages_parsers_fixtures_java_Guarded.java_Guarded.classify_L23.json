@@ -1,0 +1,205 @@
+{
+  "id": "sym:packages/parsers/fixtures/java/Guarded.java#Guarded.classify@L23",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:ff866dc415074316216daf000bf0c1786360ab1628f883b9b89f6cde78bb304b",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/fixtures/java/Guarded.java#Guarded.classify@L23",
+    "kind": "symbol",
+    "type": "method",
+    "name": "classify",
+    "qualifiedName": "Guarded.classify",
+    "signature": "classify(day)",
+    "lang": "java",
+    "file": "packages/parsers/fixtures/java/Guarded.java",
+    "span": {
+      "start": 23,
+      "end": 30
+    },
+    "callSites": [
+      {
+        "callee": "weekday",
+        "line": 26
+      },
+      {
+        "callee": "weekend",
+        "line": 28
+      }
+    ],
+    "params": [
+      "day"
+    ]
+  },
+  "source": {
+    "text": "    public String classify(int day) {\n        switch (day) {\n            case 1:\n                return weekday();\n            default:\n                return weekend();\n        }\n    }",
+    "truncated": false,
+    "totalLines": 8,
+    "startLine": 23
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/fixtures/java/Guarded.java#Guarded.weekday@L43",
+      "confidence": 1,
+      "name": "weekday",
+      "qualifiedName": "Guarded.weekday",
+      "signature": "weekday()",
+      "type": "method",
+      "file": "packages/parsers/fixtures/java/Guarded.java",
+      "line": 43
+    },
+    {
+      "id": "sym:packages/parsers/fixtures/java/Guarded.java#Guarded.weekend@L44",
+      "confidence": 1,
+      "name": "weekend",
+      "qualifiedName": "Guarded.weekend",
+      "signature": "weekend()",
+      "type": "method",
+      "file": "packages/parsers/fixtures/java/Guarded.java",
+      "line": 44
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-foundation.md#task-2-detect-and-classify-mule-projects",
+      "heading": "Task 2: Detect and classify Mule projects",
+      "anchor": "task-2-detect-and-classify-mule-projects",
+      "snippet": "Task 2: Detect and classify Mule projects",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-3-extraction.md#task-1-lock-mule-3-detection-with-fixtures",
+      "heading": "Task 1: Lock Mule 3 detection with fixtures",
+      "anchor": "task-1-lock-mule-3-detection-with-fixtures",
+      "snippet": "Task 1: Lock Mule 3 detection with fixtures",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/fixtures/java/Guarded.java#Guarded.classify@L23",
+    "procedureName": "Guarded.classify",
+    "conditions": [
+      "case:packages/parsers/fixtures/java/Guarded.java@L25",
+      "case:packages/parsers/fixtures/java/Guarded.java@L27"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/fixtures/java/Guarded.java#Guarded.classify@L23",
+        "procedureName": "Guarded.classify",
+        "guard": "case:packages/parsers/fixtures/java/Guarded.java@L25",
+        "branch": "CASE",
+        "conditions": [
+          {
+            "id": "case:packages/parsers/fixtures/java/Guarded.java@L25",
+            "expr": "1",
+            "polarity": "CASE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:30a53f78924ce03876bed7fb85e9f7225cae8ab872579e3d17cc62de4a161ddf",
+          "target": "stmt:packages/parsers/fixtures/java/Guarded.java@L26",
+          "line": 26,
+          "expr": "return weekday()"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/fixtures/java/Guarded.java#Guarded.classify@L23",
+        "procedureName": "Guarded.classify",
+        "guard": "case:packages/parsers/fixtures/java/Guarded.java@L25",
+        "branch": "CASE",
+        "conditions": [
+          {
+            "id": "case:packages/parsers/fixtures/java/Guarded.java@L25",
+            "expr": "1",
+            "polarity": "CASE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:c40518caab85831360819ab26796665c282a24bb6f3d3de79117d903d6fad417",
+          "target": "sym:packages/parsers/fixtures/java/Guarded.java#Guarded.weekday@L43",
+          "expr": "weekday",
+          "line": 26
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/fixtures/java/Guarded.java#Guarded.classify@L23",
+        "procedureName": "Guarded.classify",
+        "guard": "case:packages/parsers/fixtures/java/Guarded.java@L27",
+        "branch": "CASE",
+        "conditions": [
+          {
+            "id": "case:packages/parsers/fixtures/java/Guarded.java@L27",
+            "polarity": "CASE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:922567526bbcbaf3694d37d9a3de49f32517cd45d118b18a2f32be11973b78dc",
+          "target": "sym:packages/parsers/fixtures/java/Guarded.java#Guarded.weekend@L44",
+          "expr": "weekend",
+          "line": 28
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/fixtures/java/Guarded.java#Guarded.classify@L23",
+        "procedureName": "Guarded.classify",
+        "guard": "case:packages/parsers/fixtures/java/Guarded.java@L27",
+        "branch": "CASE",
+        "conditions": [
+          {
+            "id": "case:packages/parsers/fixtures/java/Guarded.java@L27",
+            "polarity": "CASE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:969a5ecd8d6192ca0e5185e021447afbc102275a53e256e231b1400d71485fbf",
+          "target": "stmt:packages/parsers/fixtures/java/Guarded.java@L28",
+          "line": 28,
+          "expr": "return weekend()"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 2,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

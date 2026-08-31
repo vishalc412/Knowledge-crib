@@ -1,0 +1,201 @@
+{
+  "id": "sym:packages/core/src/rules/extract.ts#callLineIndex@L185",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:10c7d880a1d7506df3861999adb2f27bcd115d575cb26b8867aad73465196848",
+  "builtAt": "2026-08-25T20:55:11.863Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/rules/extract.ts#callLineIndex@L185",
+    "kind": "symbol",
+    "type": "function",
+    "name": "callLineIndex",
+    "qualifiedName": "callLineIndex",
+    "signature": "callLineIndex(proc: Node): Map<string, number>",
+    "lang": "typescript",
+    "file": "packages/core/src/rules/extract.ts",
+    "span": {
+      "start": 185,
+      "end": 194
+    },
+    "callSites": [
+      {
+        "callee": "toLowerCase",
+        "line": 190
+      },
+      {
+        "callee": "pop",
+        "line": 190
+      },
+      {
+        "callee": "split",
+        "line": 190
+      },
+      {
+        "callee": "set",
+        "line": 191
+      }
+    ]
+  },
+  "source": {
+    "text": "function callLineIndex(proc: Node): Map<string, number> {\n  const idx = new Map<string, number>();\n  const sites = proc.meta?.calls as Array<{ callee: string; line: number }> | undefined;\n  if (!Array.isArray(sites)) return idx;\n  for (const s of sites) {\n    const key = (s.callee.split('.').pop() ?? s.callee).toLowerCase();\n    if (!idx.has(key)) idx.set(key, s.line);\n  }\n  return idx;\n}",
+    "truncated": false,
+    "totalLines": 10,
+    "startLine": 185
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/rules/extract.ts#extractRules@L134",
+      "confidence": 1,
+      "name": "extractRules",
+      "qualifiedName": "extractRules",
+      "signature": "extractRules(soul: SoulStore, procedure: string, opts: ExtractRulesOpts = {}): RuleRecord[]",
+      "type": "function",
+      "file": "packages/core/src/rules/extract.ts",
+      "line": 134
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/core/src/rules/extract.ts@L180",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-track3-spec.md#4-calls-edges-procedure-callee-symbol-intra-file-resolved-annotate-record-call-sites",
+      "heading": "4. `calls` edges — procedure → callee symbol (intra-file resolved) — annotate + record call sites",
+      "anchor": "4-calls-edges-procedure-callee-symbol-intra-file-resolved-annotate-record-call-sites",
+      "snippet": "4. `calls` edges — procedure → callee symbol (intra-file resolved) — annotate + record call sites",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/rules/extract.ts#callLineIndex@L185",
+    "procedureName": "callLineIndex",
+    "conditions": [
+      "cond:packages/core/src/rules/extract.ts@L188",
+      "cond:packages/core/src/rules/extract.ts@L189",
+      "cond:packages/core/src/rules/extract.ts@L191"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/rules/extract.ts#callLineIndex@L185",
+        "procedureName": "callLineIndex",
+        "guard": "cond:packages/core/src/rules/extract.ts@L188",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/rules/extract.ts@L188",
+            "expr": "!Array.isArray(sites)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f15979ff8c69b55cfefbca88d4d88c9ccb81e6642663a02319a31ce6c4e140f4",
+          "target": "stmt:packages/core/src/rules/extract.ts@L188",
+          "line": 188,
+          "expr": "return idx;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/rules/extract.ts#callLineIndex@L185",
+        "procedureName": "callLineIndex",
+        "guard": "cond:packages/core/src/rules/extract.ts@L189",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/rules/extract.ts@L189",
+            "expr": "sites",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8ad1c1a56a6c340545fadf6f9f617e2992d1af6cb2409c6295f5c1e5fb31c000",
+          "target": "stmt:packages/core/src/rules/extract.ts@L190",
+          "line": 190,
+          "expr": "const key = (s.callee.split('.').pop() ?? s.callee).toLowerCase();"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/rules/extract.ts#callLineIndex@L185",
+        "procedureName": "callLineIndex",
+        "guard": "cond:packages/core/src/rules/extract.ts@L191",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/rules/extract.ts@L189",
+            "expr": "sites"
+          },
+          {
+            "id": "cond:packages/core/src/rules/extract.ts@L191",
+            "expr": "!idx.has(key)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1da5cef49d87903430f20bea7c2eebc3bc6b37debafad212ffbdd6d293f91804",
+          "target": "stmt:packages/core/src/rules/extract.ts@L191",
+          "line": 191,
+          "expr": "idx.set(key, s.line);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/rules/extract.ts#callLineIndex@L185",
+        "procedureName": "callLineIndex",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f34227451047157009895cb16b2a4ea7b1326034bca673ae9b2761485e91c67f",
+          "target": "stmt:packages/core/src/rules/extract.ts@L193",
+          "line": 193,
+          "expr": "return idx;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": [
+      "packages/core/src/rules/extract.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 0,
+    "conditions": 3,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 4,
+      "unresolved": 4
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "4 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

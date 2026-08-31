@@ -1,0 +1,88 @@
+{
+  "id": "sym:packages/parsers/src/rust/lexer.ts#Lexer.isNumberStart@L487",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:5e4fc976073dc6f52a05cb8b6405c4d5ec27ee5bd5c3ac68f90b1e11098b0cb6",
+  "builtAt": "2026-08-25T20:55:11.863Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/rust/lexer.ts#Lexer.isNumberStart@L487",
+    "kind": "symbol",
+    "type": "method",
+    "name": "isNumberStart",
+    "qualifiedName": "Lexer.isNumberStart",
+    "signature": "isNumberStart(c: string): boolean",
+    "lang": "typescript",
+    "file": "packages/parsers/src/rust/lexer.ts",
+    "span": {
+      "start": 487,
+      "end": 489
+    }
+  },
+  "source": {
+    "text": "  private isNumberStart(c: string): boolean {\n    return c >= '0' && c <= '9';\n  }",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 487
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/rust/lexer.ts#Lexer.tokens@L157",
+      "confidence": 1,
+      "name": "tokens",
+      "qualifiedName": "Lexer.tokens",
+      "signature": "tokens(): Token[]",
+      "type": "method",
+      "file": "packages/parsers/src/rust/lexer.ts",
+      "line": 157
+    }
+  ],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.isNumberStart@L487",
+    "procedureName": "Lexer.isNumberStart",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.isNumberStart@L487",
+        "procedureName": "Lexer.isNumberStart",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:029e7c4e6ef851b27a5c88d63ef5155acd3963bd683da1a0b69ab274cc00bcd7",
+          "target": "stmt:packages/parsers/src/rust/lexer.ts@L488",
+          "line": 488,
+          "expr": "return c >= '0' && c <= '9';"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/parsers/src/rust/lexer.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

@@ -1,0 +1,198 @@
+{
+  "id": "sym:packages/parsers/fixtures/python/auth.py#Auth.issue@L18",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:4042da02784ce2ca14e1de0b1768bd08a5f34cff3a13791c09643d12ff413458",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/fixtures/python/auth.py#Auth.issue@L18",
+    "kind": "symbol",
+    "type": "method",
+    "name": "issue",
+    "qualifiedName": "Auth.issue",
+    "signature": "issue(self, user)",
+    "lang": "python",
+    "file": "packages/parsers/fixtures/python/auth.py",
+    "span": {
+      "start": 18,
+      "end": 20
+    },
+    "callSites": [
+      {
+        "callee": "helper",
+        "line": 19
+      }
+    ],
+    "params": [
+      "self",
+      "user"
+    ]
+  },
+  "source": {
+    "text": "    async def issue(self, user):\n        tokens = helper(user)\n        return tokens",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 18
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/fixtures/python/auth.py#Auth.login@L15",
+      "confidence": 1,
+      "name": "login",
+      "qualifiedName": "Auth.login",
+      "signature": "login(self, user)",
+      "type": "method",
+      "file": "packages/parsers/fixtures/python/auth.py",
+      "line": 15
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/fixtures/python/auth.py#helper@L7",
+      "confidence": 1,
+      "name": "helper",
+      "qualifiedName": "helper",
+      "signature": "helper(value)",
+      "type": "function",
+      "file": "packages/parsers/fixtures/python/auth.py",
+      "line": 7
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#what-was-built",
+      "heading": "What was built",
+      "anchor": "what-was-built",
+      "snippet": "What was built",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#enrich-op-next-grounded-work-batch-for-the-host-agent-model",
+      "heading": "`enrich({op:'next'})` *(grounded work batch for the host agent model)*",
+      "anchor": "enrich-op-next-grounded-work-batch-for-the-host-agent-model",
+      "snippet": "`enrich({op:'next'})` *(grounded work batch for the host agent model)*",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:SECURITY.md#reporting-a-vulnerability",
+      "heading": "Reporting a Vulnerability",
+      "anchor": "reporting-a-vulnerability",
+      "snippet": "Reporting a Vulnerability",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-06-26-beta-installers.md#task-4-verification",
+      "heading": "Task 4: Verification",
+      "anchor": "task-4-verification",
+      "snippet": "Task 4: Verification",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-client-setup.md#root-resolution-one-entry-every-project",
+      "heading": "Root resolution — one entry, every project",
+      "anchor": "root-resolution-one-entry-every-project",
+      "snippet": "Root resolution — one entry, every project",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:packages/pipeline/fixtures/docs-linked/docs/auth.md#authentication",
+      "heading": "Authentication",
+      "anchor": "authentication",
+      "snippet": "Authentication",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/fixtures/python/auth.py#Auth.issue@L18",
+    "procedureName": "Auth.issue",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/fixtures/python/auth.py#Auth.issue@L18",
+        "procedureName": "Auth.issue",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:042a0450a73ffca9a5e7dc51ee7e967f128b4107b142eafba5be23f8e4da29db",
+          "target": "sym:packages/parsers/fixtures/python/auth.py#helper@L7",
+          "expr": "helper",
+          "line": 19
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/fixtures/python/auth.py#Auth.issue@L18",
+        "procedureName": "Auth.issue",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5ccedc22c908a7abe692c7249ba765b6e965b3e57f4c7ee593afcfd2758184ad",
+          "target": "assign:packages/parsers/fixtures/python/auth.py@L19",
+          "line": 19,
+          "expr": "tokens = helper(user)"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/fixtures/python/auth.py#Auth.issue@L18",
+        "procedureName": "Auth.issue",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bd4d5fda9517cdbdf2c6433cd16abd9c8acd9516fc0f3d42baf20d94d4ae7acb",
+          "target": "stmt:packages/parsers/fixtures/python/auth.py@L20",
+          "line": 20,
+          "expr": "return tokens"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/parsers/fixtures/python/auth.py"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 1,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

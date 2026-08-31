@@ -1,0 +1,85 @@
+{
+  "id": "sym:packages/pipeline/vitest.config.ts#resolveId@L8",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:d50028030eca5f25238ff4b827ba7e6b4e36fc2c1867abd3219d31c06221d7bc",
+  "builtAt": "2026-08-25T20:55:11.863Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/vitest.config.ts#resolveId@L8",
+    "kind": "symbol",
+    "type": "method",
+    "name": "resolveId",
+    "qualifiedName": "resolveId",
+    "signature": "resolveId(id)",
+    "lang": "typescript",
+    "file": "packages/pipeline/vitest.config.ts",
+    "span": {
+      "start": 8,
+      "end": 14
+    }
+  },
+  "source": {
+    "text": "      resolveId(id) {\n        // Vite 5 does not recognize node:sqlite as a built-in and strips the node: prefix,\n        // trying to resolve a package named \"sqlite\". Canonicalize it so our load hook runs.\n        if (id === 'node:sqlite' || id === 'sqlite') {\n          return 'node:sqlite';\n        }\n      },",
+    "truncated": false,
+    "totalLines": 7,
+    "startLine": 8
+  },
+  "callers": [],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/pipeline/vitest.config.ts#resolveId@L8",
+    "procedureName": "resolveId",
+    "conditions": [
+      "cond:packages/pipeline/vitest.config.ts@L11"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/vitest.config.ts#resolveId@L8",
+        "procedureName": "resolveId",
+        "guard": "cond:packages/pipeline/vitest.config.ts@L11",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/vitest.config.ts@L11",
+            "expr": "id === 'node:sqlite' || id === 'sqlite'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f309956ff6a6da39b3f5cfe7fccfadb4cb7f506d7fd925471921f28c237fdfe4",
+          "target": "stmt:packages/pipeline/vitest.config.ts@L12",
+          "line": 12,
+          "expr": "return 'node:sqlite';"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

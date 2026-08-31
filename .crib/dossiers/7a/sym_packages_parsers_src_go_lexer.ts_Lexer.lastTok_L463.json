@@ -1,0 +1,88 @@
+{
+  "id": "sym:packages/parsers/src/go/lexer.ts#Lexer.lastTok@L463",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:373f3fd2d77b0bf008a585c6d3ad698aa833c25520c30cd5ce8d1a8140ac3829",
+  "builtAt": "2026-08-25T20:55:11.863Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/go/lexer.ts#Lexer.lastTok@L463",
+    "kind": "symbol",
+    "type": "method",
+    "name": "lastTok",
+    "qualifiedName": "Lexer.lastTok",
+    "signature": "lastTok(): Token | undefined",
+    "lang": "typescript",
+    "file": "packages/parsers/src/go/lexer.ts",
+    "span": {
+      "start": 463,
+      "end": 465
+    }
+  },
+  "source": {
+    "text": "  private lastTok(): Token | undefined {\n    return this.out.length ? this.out[this.out.length - 1] : undefined;\n  }",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 463
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/go/lexer.ts#Lexer.tokens@L257",
+      "confidence": 1,
+      "name": "tokens",
+      "qualifiedName": "Lexer.tokens",
+      "signature": "tokens(): Token[]",
+      "type": "method",
+      "file": "packages/parsers/src/go/lexer.ts",
+      "line": 257
+    }
+  ],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/go/lexer.ts#Lexer.lastTok@L463",
+    "procedureName": "Lexer.lastTok",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/go/lexer.ts#Lexer.lastTok@L463",
+        "procedureName": "Lexer.lastTok",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0f03fbd25666c453eb740876c9caae91261468b9943c962888c84230fa90a1cc",
+          "target": "stmt:packages/parsers/src/go/lexer.ts@L464",
+          "line": 464,
+          "expr": "return this.out.length ? this.out[this.out.length - 1] : undefined;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/parsers/src/go/lexer.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

@@ -1,0 +1,87 @@
+{
+  "id": "sym:packages/cli/src/hooks.test.ts#gitConfig@L16",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:edae1d41d5789e29a984cee1c8e091506514e1a6190c0a3a730b758c6acac703",
+  "builtAt": "2026-08-25T20:55:11.863Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/cli/src/hooks.test.ts#gitConfig@L16",
+    "kind": "symbol",
+    "type": "function",
+    "name": "gitConfig",
+    "qualifiedName": "gitConfig",
+    "signature": "gitConfig(key: string): string",
+    "lang": "typescript",
+    "file": "packages/cli/src/hooks.test.ts",
+    "span": {
+      "start": 16,
+      "end": 18
+    },
+    "callSites": [
+      {
+        "callee": "trim",
+        "line": 17
+      },
+      {
+        "callee": "execFileSync",
+        "line": 17
+      }
+    ]
+  },
+  "source": {
+    "text": "function gitConfig(key: string): string {\n  return execFileSync('git', ['-C', repo, 'config', '--get', key], { encoding: 'utf8' }).trim();\n}",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 16
+  },
+  "callers": [],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/cli/src/hooks.test.ts#gitConfig@L16",
+    "procedureName": "gitConfig",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/cli/src/hooks.test.ts#gitConfig@L16",
+        "procedureName": "gitConfig",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:dad430299b9149ae07628827ac22614ab7264b7e56e3bfc5b3d478f3377b2fc6",
+          "target": "stmt:packages/cli/src/hooks.test.ts@L17",
+          "line": 17,
+          "expr": "return execFileSync('git', ['-C', repo, 'config', '--get', key], { encoding: 'utf8' }).trim();"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 2,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

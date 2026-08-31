@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/mcp/src/grounding.ts#verifyArtifact@L100",
-  "schemaVersion": "1.5",
+  "schemaVersion": "1.6",
   "nodeHash": "blake3:9dd450e3ae964ff462cf434a52a2309147b9d426f98e221ee3fd5dcd91d21ad2",
-  "builtAt": "2026-07-16T16:35:16.098Z",
+  "builtAt": "2026-08-31T17:37:23.222Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/mcp/src/grounding.ts#verifyArtifact@L100",
@@ -36,26 +36,36 @@
   },
   "callers": [
     {
-      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.auditLlm@L870",
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.auditLlm@L1365",
       "confidence": 1,
       "name": "auditLlm",
       "qualifiedName": "EnrichmentStore.auditLlm",
       "signature": "auditLlm(): AuditLlmResult",
       "type": "method",
       "file": "packages/mcp/src/enrichment.ts",
-      "line": 870
+      "line": 1365
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.semanticDelta@L1294",
+      "confidence": 1,
+      "name": "semanticDelta",
+      "qualifiedName": "EnrichmentStore.semanticDelta",
+      "signature": "semanticDelta(args: SemanticDeltaArgs = {}): SemanticDeltaReport",
+      "type": "method",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 1294
     }
   ],
   "callees": [
     {
-      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
       "confidence": 1,
       "name": "push",
       "qualifiedName": "push",
       "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
       "type": "function",
       "file": "packages/pipeline/src/linker/inverted-index.ts",
-      "line": 39
+      "line": 70
     },
     {
       "id": "sym:packages/mcp/src/grounding.ts#verifyEvidence@L65",
@@ -159,8 +169,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:d279a3000be620e133b5ad6b362dee38ca43dfaf1321c1f2038ec7793f9cd5f6",
-          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "edgeId": "e:b4832fc07616e53409cae2940f61813f0295a67a985c608bc095141e3004ecc7",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
           "expr": "push",
           "line": 111
         }

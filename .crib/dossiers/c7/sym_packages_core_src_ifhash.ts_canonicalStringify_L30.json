@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/core/src/ifhash.ts#canonicalStringify@L30",
-  "schemaVersion": "1.5",
+  "schemaVersion": "1.6",
   "nodeHash": "blake3:f02e644df1a2641f0a12dd0c09834dc2242218326ecc41bf79d6639d8872dde6",
-  "builtAt": "2026-07-13T11:04:33.459Z",
+  "builtAt": "2026-08-31T17:37:23.222Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/core/src/ifhash.ts#canonicalStringify@L30",
@@ -48,6 +48,16 @@
   ],
   "callees": [
     {
+      "id": "sym:packages/memory/src/serialization.ts#sortKeys@L9",
+      "confidence": 1,
+      "name": "sortKeys",
+      "qualifiedName": "sortKeys",
+      "signature": "sortKeys(value: unknown): unknown",
+      "type": "function",
+      "file": "packages/memory/src/serialization.ts",
+      "line": 9
+    },
+    {
       "id": "sym:packages/core/src/ifhash.ts#sortKeys@L35",
       "confidence": 1,
       "name": "sortKeys",
@@ -56,16 +66,6 @@
       "type": "function",
       "file": "packages/core/src/ifhash.ts",
       "line": 35
-    },
-    {
-      "id": "sym:packages/core/src/merge.ts#sortKeys@L147",
-      "confidence": 1,
-      "name": "sortKeys",
-      "qualifiedName": "sortKeys",
-      "signature": "sortKeys(value: unknown): unknown",
-      "type": "function",
-      "file": "packages/core/src/merge.ts",
-      "line": 147
     }
   ],
   "docs": [
@@ -115,6 +115,20 @@
         "inException": false,
         "action": {
           "kind": "calls",
+          "edgeId": "e:4d7d3fbdc23b629c186edcc1076c295d7d8b44b193b8c404f57f5daf5c34ab37",
+          "target": "sym:packages/memory/src/serialization.ts#sortKeys@L9",
+          "expr": "sortKeys",
+          "line": 32
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/ifhash.ts#canonicalStringify@L30",
+        "procedureName": "canonicalStringify",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
           "edgeId": "e:9c57244597495af09722dd1e30f20f1a5a4b25342751f9a377a610fa720c3eff",
           "target": "sym:packages/core/src/ifhash.ts#sortKeys@L35",
           "expr": "sortKeys",
@@ -133,20 +147,6 @@
           "target": "stmt:packages/core/src/ifhash.ts@L32",
           "line": 32,
           "expr": "return JSON.stringify(sortKeys(value));"
-        }
-      },
-      {
-        "procedure": "sym:packages/core/src/ifhash.ts#canonicalStringify@L30",
-        "procedureName": "canonicalStringify",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:cb5aa9f1f0d0f2d6da66f1286fa59e4eb6b8ef40ec096e1c0661e050d71a3a24",
-          "target": "sym:packages/core/src/merge.ts#sortKeys@L147",
-          "expr": "sortKeys",
-          "line": 32
         }
       }
     ]

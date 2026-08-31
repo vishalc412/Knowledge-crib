@@ -1,0 +1,388 @@
+{
+  "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.addCallStatement@L633",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:774fce6e23268af7216ab8238a71f3b97499b46f54e16a2fd34612c8a5d13452",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.addCallStatement@L633",
+    "kind": "symbol",
+    "type": "method",
+    "name": "addCallStatement",
+    "qualifiedName": "BodyWalker.addCallStatement",
+    "signature": "addCallStatement(s: CsharpStmt, procId: string, env: WalkEnv): void",
+    "lang": "typescript",
+    "file": "packages/parsers/src/csharp/CsharpExtractor.ts",
+    "span": {
+      "start": 633,
+      "end": 658
+    },
+    "callSites": [
+      {
+        "callee": "idFor",
+        "line": 634
+      },
+      {
+        "callee": "exprFields",
+        "line": 639
+      },
+      {
+        "callee": "hash",
+        "line": 643
+      },
+      {
+        "callee": "push",
+        "line": 651
+      },
+      {
+        "callee": "emitExecutes",
+        "line": 652
+      },
+      {
+        "callee": "emitGuardedBy",
+        "line": 654
+      },
+      {
+        "callee": "annotateCallEdge",
+        "line": 656
+      },
+      {
+        "callee": "emitSwitchArms",
+        "line": 657
+      }
+    ]
+  },
+  "source": {
+    "text": "  private addCallStatement(s: CsharpStmt, procId: string, env: WalkEnv): void {\n    const id = this.ctx.idFor('statement', { file: this.path, line: s.startLine });\n    const node: Node = {\n      id,\n      kind: 'statement',\n      type: 'call',\n      ...exprFields(s.expr),\n      file: this.path,\n      span: { start: s.startLine, end: s.endLine },\n      lang: 'csharp',\n      hash: this.ctx.hash(`${this.path}:${s.startLine}:call`),\n      meta: {\n        head: s.head ?? '',\n        inLoop: env.inLoop,\n        inException: env.inException,\n        branch: env.guardStack.length ? 'GUARDED' : undefined,\n      },\n    };\n    this.nodes.push(node);\n    this.emitExecutes(procId, id, s, env);\n    if (env.guardStack.length) {\n      this.emitGuardedBy(id, env.guardStack[env.guardStack.length - 1]!, 'CALL');\n    }\n    if (s.callSite) this.annotateCallEdge(s.callSite, procId, env);\n    if (s.switchArms) this.emitSwitchArms(s.switchArms);\n  }",
+    "truncated": false,
+    "totalLines": 26,
+    "startLine": 633
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.walkStmt@L463",
+      "confidence": 1,
+      "name": "walkStmt",
+      "qualifiedName": "BodyWalker.walkStmt",
+      "signature": "walkStmt(s: CsharpStmt, procId: string, env: WalkEnv): void",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/CsharpExtractor.ts",
+      "line": 463
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.annotateCallEdge@L821",
+      "confidence": 1,
+      "name": "annotateCallEdge",
+      "qualifiedName": "BodyWalker.annotateCallEdge",
+      "signature": "annotateCallEdge(c: CsharpCallSite, procId: string, env: WalkEnv): void",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/CsharpExtractor.ts",
+      "line": 821
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.emitExecutes@L779",
+      "confidence": 1,
+      "name": "emitExecutes",
+      "qualifiedName": "BodyWalker.emitExecutes",
+      "signature": "emitExecutes(procId: string, stmtId: string, s: CsharpStmt, env: WalkEnv): void",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/CsharpExtractor.ts",
+      "line": 779
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.emitGuardedBy@L801",
+      "confidence": 1,
+      "name": "emitGuardedBy",
+      "qualifiedName": "BodyWalker.emitGuardedBy",
+      "signature": "emitGuardedBy(stmtId: string, guardId: string, snippet: string): void",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/CsharpExtractor.ts",
+      "line": 801
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.emitSwitchArms@L757",
+      "confidence": 1,
+      "name": "emitSwitchArms",
+      "qualifiedName": "BodyWalker.emitSwitchArms",
+      "signature": "emitSwitchArms(arms: CsharpSwitchCase[]): void",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/CsharpExtractor.ts",
+      "line": 757
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#exprFields@L33",
+      "confidence": 1,
+      "name": "exprFields",
+      "qualifiedName": "exprFields",
+      "signature": "exprFields(raw: string | undefined): { expr?: string; exprTruncated?: true }",
+      "type": "function",
+      "file": "packages/parsers/src/csharp/CsharpExtractor.ts",
+      "line": 33
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/csharp/CsharpExtractor.ts@L628",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.addCallStatement@L633",
+    "procedureName": "BodyWalker.addCallStatement",
+    "conditions": [
+      "cond:packages/parsers/src/csharp/CsharpExtractor.ts@L653",
+      "cond:packages/parsers/src/csharp/CsharpExtractor.ts@L656",
+      "cond:packages/parsers/src/csharp/CsharpExtractor.ts@L657"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.addCallStatement@L633",
+        "procedureName": "BodyWalker.addCallStatement",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e85baf2c3cb8a283ad62de2c82bb2058ced7ac5a8d5c69c863da63bb22252413",
+          "target": "stmt:packages/parsers/src/csharp/CsharpExtractor.ts@L634",
+          "line": 634,
+          "expr": "const id = this.ctx.idFor('statement', { file: this.path, line: s.startLine });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.addCallStatement@L633",
+        "procedureName": "BodyWalker.addCallStatement",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:69c692c5fac3abd3aedc63834477c2659333fa93e43a2a8c427e2117fc8a3667",
+          "target": "stmt:packages/parsers/src/csharp/CsharpExtractor.ts@L635",
+          "line": 635,
+          "expr": "const node: Node = {\n      id,\n      kind: 'statement',\n      type: 'call',\n      ...exprFields(s.expr),\n      file: this.path,\n      span: { start: s.startLine, end: s.endLine },\n      lang: 'csharp',\n      hash: this.ctx.hash(`${this.path}:${s.startLine}:call`),\n      meta: {\n        head: s.head ?? '',\n        inLoop: env.inLoop,\n        inException: env.inException,\n        branch: env.guardStack.length ? 'GUARDED' : undefined,\n      },\n    };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.addCallStatement@L633",
+        "procedureName": "BodyWalker.addCallStatement",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:2622c96745f5bf49d2687db950bfb02386c0a839f20dbcd0f7d3fd2bcda78225",
+          "target": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#exprFields@L33",
+          "expr": "exprFields",
+          "line": 639
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.addCallStatement@L633",
+        "procedureName": "BodyWalker.addCallStatement",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2f421d12582305d6544e7ec3c83d530b6a1f9f8e28ffb7722779829d60cc8a29",
+          "target": "stmt:packages/parsers/src/csharp/CsharpExtractor.ts@L651",
+          "line": 651,
+          "expr": "this.nodes.push(node);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.addCallStatement@L633",
+        "procedureName": "BodyWalker.addCallStatement",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d4238c76441b62701867527ab2d06c2d9d8805ea52e4cad3112e27e09bc531c4",
+          "target": "stmt:packages/parsers/src/csharp/CsharpExtractor.ts@L652",
+          "line": 652,
+          "expr": "this.emitExecutes(procId, id, s, env);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.addCallStatement@L633",
+        "procedureName": "BodyWalker.addCallStatement",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:e533eb7b0934f03f480e1fd4fade8036e9ceb75e3576dbe104611f6df0da2562",
+          "target": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.emitExecutes@L779",
+          "expr": "emitExecutes",
+          "line": 652
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.addCallStatement@L633",
+        "procedureName": "BodyWalker.addCallStatement",
+        "guard": "cond:packages/parsers/src/csharp/CsharpExtractor.ts@L653",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/CsharpExtractor.ts@L653",
+            "expr": "env.guardStack.length",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1b79789aedf067b37d25b3ba3f499dfab9a42c06bf04c487033549d0992a3254",
+          "target": "stmt:packages/parsers/src/csharp/CsharpExtractor.ts@L654",
+          "line": 654,
+          "expr": "this.emitGuardedBy(id, env.guardStack[env.guardStack.length - 1]!, 'CALL');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.addCallStatement@L633",
+        "procedureName": "BodyWalker.addCallStatement",
+        "guard": "cond:packages/parsers/src/csharp/CsharpExtractor.ts@L653",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/CsharpExtractor.ts@L653",
+            "expr": "env.guardStack.length",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:d06d70b341b5f1106db40015fe635259ad1d43e9852d59f39883607242c300d4",
+          "target": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.emitGuardedBy@L801",
+          "expr": "emitGuardedBy",
+          "line": 654
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.addCallStatement@L633",
+        "procedureName": "BodyWalker.addCallStatement",
+        "guard": "cond:packages/parsers/src/csharp/CsharpExtractor.ts@L656",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/CsharpExtractor.ts@L656",
+            "expr": "s.callSite",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:70923abcdb03c08a5f58031e4c95c112f7f53fe8ee91c9a7ab5b3564717c3fd4",
+          "target": "stmt:packages/parsers/src/csharp/CsharpExtractor.ts@L656",
+          "line": 656,
+          "expr": "this.annotateCallEdge(s.callSite, procId, env);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.addCallStatement@L633",
+        "procedureName": "BodyWalker.addCallStatement",
+        "guard": "cond:packages/parsers/src/csharp/CsharpExtractor.ts@L656",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/CsharpExtractor.ts@L656",
+            "expr": "s.callSite",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:8cecc7bdf530bbb7abb460ffa85b034ab6d34174b5bfd3472ab9597aba7e68c0",
+          "target": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.annotateCallEdge@L821",
+          "expr": "annotateCallEdge",
+          "line": 656
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.addCallStatement@L633",
+        "procedureName": "BodyWalker.addCallStatement",
+        "guard": "cond:packages/parsers/src/csharp/CsharpExtractor.ts@L657",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/CsharpExtractor.ts@L657",
+            "expr": "s.switchArms",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:c320652caab11092b8e735575e19fa11f700c58bc9d503765f5635ac0438f0f5",
+          "target": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.emitSwitchArms@L757",
+          "expr": "emitSwitchArms",
+          "line": 657
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.addCallStatement@L633",
+        "procedureName": "BodyWalker.addCallStatement",
+        "guard": "cond:packages/parsers/src/csharp/CsharpExtractor.ts@L657",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/CsharpExtractor.ts@L657",
+            "expr": "s.switchArms",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d1c8f28eeb64ad34d8e78355b122ec95c649a05a0a9d39358e1ae084860fb66e",
+          "target": "stmt:packages/parsers/src/csharp/CsharpExtractor.ts@L657",
+          "line": 657,
+          "expr": "this.emitSwitchArms(s.switchArms);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 7,
+    "referencedByFiles": [
+      "packages/parsers/src/csharp/CsharpExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 7,
+    "assignments": 0,
+    "conditions": 3,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 5,
+      "recorded": 8,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/tree-sitter-pool.test.ts#file@L5",
-  "schemaVersion": "1.5",
+  "schemaVersion": "1.6",
   "nodeHash": "blake3:b33c4f1aae6799c37d5896ca9e620a9f50ef4d5f81b8a88557d1151d797570e7",
-  "builtAt": "2026-07-16T16:35:16.098Z",
+  "builtAt": "2026-08-31T17:37:23.222Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/tree-sitter-pool.test.ts#file@L5",
@@ -24,7 +24,28 @@
     "totalLines": 3,
     "startLine": 5
   },
-  "callers": [],
+  "callers": [
+    {
+      "id": "sym:scripts/check-mule-sample.mjs#measure@L102",
+      "confidence": 1,
+      "name": "measure",
+      "qualifiedName": "measure",
+      "signature": "measure(nodes, sourceRoot)",
+      "type": "function",
+      "file": "scripts/check-mule-sample.mjs",
+      "line": 102
+    },
+    {
+      "id": "sym:packages/core/src/index/sqlite-index.test.ts#seedUnique@L166",
+      "confidence": 1,
+      "name": "seedUnique",
+      "qualifiedName": "seedUnique",
+      "signature": "seedUnique(token: string): Node",
+      "type": "function",
+      "file": "packages/core/src/index/sqlite-index.test.ts",
+      "line": 166
+    }
+  ],
   "callees": [],
   "docs": [
     {
@@ -42,6 +63,26 @@
       "heading": "1. Contract",
       "anchor": "1-contract",
       "snippet": "1. Contract",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-foundation.md#task-7-aggregate-diagnostics-in-serial-concurrent-and-worker-parsing",
+      "heading": "Task 7: Aggregate diagnostics in serial, concurrent, and worker parsing",
+      "anchor": "task-7-aggregate-diagnostics-in-serial-concurrent-and-worker-parsing",
+      "snippet": "Task 7: Aggregate diagnostics in serial, concurrent, and worker parsing",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-foundation.md#task-2-detect-and-classify-mule-projects",
+      "heading": "Task 2: Detect and classify Mule projects",
+      "anchor": "task-2-detect-and-classify-mule-projects",
+      "snippet": "Task 2: Detect and classify Mule projects",
       "edgeType": "describes",
       "method": "explicit",
       "provenance": "EXTRACTED",
@@ -108,6 +149,16 @@
       "confidence": 0.99
     },
     {
+      "sectionId": "doc:docs/superpowers/specs/2026-08-14-mulesoft-first-class-extractor-design.md#10-error-handling-and-diagnostics",
+      "heading": "10. Error Handling and Diagnostics",
+      "anchor": "10-error-handling-and-diagnostics",
+      "snippet": "10. Error Handling and Diagnostics",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
       "sectionId": "doc:docs/llm-integration-deep-dive.md#4-1-adding-a-new-language-parser-8th-language",
       "heading": "4.1 Adding a New Language Parser (8th Language)",
       "anchor": "4-1-adding-a-new-language-parser-8th-language",
@@ -158,6 +209,16 @@
       "confidence": 0.99
     },
     {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#ws-4-bulk-package-level-context-closes-g4",
+      "heading": "WS-4 — Bulk / package-level context (closes G4)",
+      "anchor": "ws-4-bulk-package-level-context-closes-g4",
+      "snippet": "WS-4 — Bulk / package-level context (closes G4)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
       "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m6-incremental-update-git-anchored-scoped-re-extract-merge-driver",
       "heading": "M6 — Incremental update (git-anchored scoped re-extract) + merge driver",
       "anchor": "m6-incremental-update-git-anchored-scoped-re-extract-merge-driver",
@@ -188,6 +249,76 @@
       "confidence": 0.95
     },
     {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-4-extraction.md#task-6-emit-mule-4-graph-nodes-and-intra-file-edges",
+      "heading": "Task 6: Emit Mule 4 graph nodes and intra-file edges",
+      "anchor": "task-6-emit-mule-4-graph-nodes-and-intra-file-edges",
+      "snippet": "Task 6: Emit Mule 4 graph nodes and intra-file edges",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-4-extraction.md#task-1-add-secure-span-aware-xml-parsing",
+      "heading": "Task 1: Add secure, span-aware XML parsing",
+      "anchor": "task-1-add-secure-span-aware-xml-parsing",
+      "snippet": "Task 1: Add secure, span-aware XML parsing",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#the-layer-model-bottom-up",
+      "heading": "The layer model — bottom-up",
+      "anchor": "the-layer-model-bottom-up",
+      "snippet": "The layer model — bottom-up",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#driving-the-loop",
+      "heading": "Driving the loop",
+      "anchor": "driving-the-loop",
+      "snippet": "Driving the loop",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#context-360-for-one-symbol",
+      "heading": "`context` — 360° for one symbol",
+      "anchor": "context-360-for-one-symbol",
+      "snippet": "`context` — 360° for one symbol",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#5-5-successful-index-the-demo-graph",
+      "heading": "5.5 Successful index (the demo graph)",
+      "anchor": "5-5-successful-index-the-demo-graph",
+      "snippet": "5.5 Successful index (the demo graph)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#5-7-mcp-server-verification-the-real-test",
+      "heading": "5.7 MCP server verification (the real test)",
+      "anchor": "5-7-mcp-server-verification-the-real-test",
+      "snippet": "5.7 MCP server verification (the real test)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
       "sectionId": "doc:docs/knowledge-crib-mcp-api.md#dossier-symbol-deep-context-persisted-workstream-d-e",
       "heading": "`dossier(symbol)` *(deep-context, persisted — Workstream D/E)*",
       "anchor": "dossier-symbol-deep-context-persisted-workstream-d-e",
@@ -198,10 +329,10 @@
       "confidence": 0.95
     },
     {
-      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#enrich-status-llm-graph-generation-queue",
-      "heading": "`enrich_status` *(LLM graph generation queue)*",
-      "anchor": "enrich-status-llm-graph-generation-queue",
-      "snippet": "`enrich_status` *(LLM graph generation queue)*",
+      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#enrich-op-status-llm-graph-generation-queue",
+      "heading": "`enrich({op:'status'})` *(LLM graph generation queue)*",
+      "anchor": "enrich-op-status-llm-graph-generation-queue",
+      "snippet": "`enrich({op:'status'})` *(LLM graph generation queue)*",
       "edgeType": "describes",
       "method": "explicit",
       "provenance": "EXTRACTED",
@@ -222,6 +353,36 @@
       "heading": "4a. Serving-layer deep context (universal, all languages)",
       "anchor": "4a-serving-layer-deep-context-universal-all-languages",
       "snippet": "4a. Serving-layer deep context (universal, all languages)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-foundation.md#task-1-add-classification-and-diagnostic-contracts",
+      "heading": "Task 1: Add classification and diagnostic contracts",
+      "anchor": "task-1-add-classification-and-diagnostic-contracts",
+      "snippet": "Task 1: Add classification and diagnostic contracts",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-foundation.md#task-6-enforce-property-redaction-in-source-and-fts",
+      "heading": "Task 6: Enforce property redaction in source and FTS",
+      "anchor": "task-6-enforce-property-redaction-in-source-and-fts",
+      "snippet": "Task 6: Enforce property redaction in source and FTS",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-foundation.md#task-4-classify-discovery-and-make-sensitive-hashes-key-only",
+      "heading": "Task 4: Classify discovery and make sensitive hashes key-only",
+      "anchor": "task-4-classify-discovery-and-make-sensitive-hashes-key-only",
+      "snippet": "Task 4: Classify discovery and make sensitive hashes key-only",
       "edgeType": "describes",
       "method": "explicit",
       "provenance": "EXTRACTED",
@@ -268,6 +429,16 @@
       "confidence": 0.95
     },
     {
+      "sectionId": "doc:docs/superpowers/specs/2026-08-14-mulesoft-first-class-extractor-design.md#5-architecture",
+      "heading": "5. Architecture",
+      "anchor": "5-architecture",
+      "snippet": "5. Architecture",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
       "sectionId": "doc:docs/llm-integration-deep-dive.md#add-a-new-enrichment-layer",
       "heading": "Add a New Enrichment Layer",
       "anchor": "add-a-new-enrichment-layer",
@@ -298,20 +469,20 @@
       "confidence": 0.95
     },
     {
-      "sectionId": "doc:docs/llm-integration-deep-dive.md#3-1-1-the-enrichment-work-queue-enrich-next",
-      "heading": "3.1.1 The Enrichment Work Queue (`enrich_next`)",
-      "anchor": "3-1-1-the-enrichment-work-queue-enrich-next",
-      "snippet": "3.1.1 The Enrichment Work Queue (`enrich_next`)",
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#b-query-flow-mcp-tool-call-verb-handler-soulstore-indexstore-response",
+      "heading": "B. Query Flow: MCP Tool Call → Verb Handler → SoulStore/IndexStore → Response",
+      "anchor": "b-query-flow-mcp-tool-call-verb-handler-soulstore-indexstore-response",
+      "snippet": "B. Query Flow: MCP Tool Call → Verb Handler → SoulStore/IndexStore → Response",
       "edgeType": "describes",
       "method": "explicit",
       "provenance": "EXTRACTED",
       "confidence": 0.95
     },
     {
-      "sectionId": "doc:docs/llm-integration-deep-dive.md#b-query-flow-mcp-tool-call-verb-handler-soulstore-indexstore-response",
-      "heading": "B. Query Flow: MCP Tool Call → Verb Handler → SoulStore/IndexStore → Response",
-      "anchor": "b-query-flow-mcp-tool-call-verb-handler-soulstore-indexstore-response",
-      "snippet": "B. Query Flow: MCP Tool Call → Verb Handler → SoulStore/IndexStore → Response",
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#3-2-1-the-enrich-op-save-validation-pipeline",
+      "heading": "3.2.1 The `enrich({op:'save'})` Validation Pipeline",
+      "anchor": "3-2-1-the-enrich-op-save-validation-pipeline",
+      "snippet": "3.2.1 The `enrich({op:'save'})` Validation Pipeline",
       "edgeType": "describes",
       "method": "explicit",
       "provenance": "EXTRACTED",
@@ -338,6 +509,16 @@
       "confidence": 0.95
     },
     {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#3-1-1-the-enrichment-work-queue-enrich-op-next",
+      "heading": "3.1.1 The Enrichment Work Queue (`enrich({op:'next'})`)",
+      "anchor": "3-1-1-the-enrichment-work-queue-enrich-op-next",
+      "snippet": "3.1.1 The Enrichment Work Queue (`enrich({op:'next'})`)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
       "sectionId": "doc:docs/llm-integration-deep-dive.md#a-indexing-flow-file-extractor-nodes-edges-jsonl-shards-sqlite-fts5",
       "heading": "A. Indexing Flow: File → Extractor → Nodes/Edges → JSONL Shards + SQLite FTS5",
       "anchor": "a-indexing-flow-file-extractor-nodes-edges-jsonl-shards-sqlite-fts5",
@@ -348,20 +529,10 @@
       "confidence": 0.95
     },
     {
-      "sectionId": "doc:docs/llm-integration-deep-dive.md#c-llm-enrichment-flow-enrich-next-work-item-with-seed-llm-models-output-enrich-save-artifact",
-      "heading": "C. LLM Enrichment Flow: enrich_next → Work Item with Seed → LLM Models Output → enrich_save → Artifact",
-      "anchor": "c-llm-enrichment-flow-enrich-next-work-item-with-seed-llm-models-output-enrich-save-artifact",
-      "snippet": "C. LLM Enrichment Flow: enrich_next → Work Item with Seed → LLM Models Output → enrich_save → Artifact",
-      "edgeType": "describes",
-      "method": "explicit",
-      "provenance": "EXTRACTED",
-      "confidence": 0.95
-    },
-    {
-      "sectionId": "doc:docs/llm-integration-deep-dive.md#3-2-1-the-enrich-save-validation-pipeline",
-      "heading": "3.2.1 The `enrich_save` Validation Pipeline",
-      "anchor": "3-2-1-the-enrich-save-validation-pipeline",
-      "snippet": "3.2.1 The `enrich_save` Validation Pipeline",
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#c-llm-enrichment-flow-enrich-op-next-work-item-with-seed-llm-models-output-enrich-op-save-artifact",
+      "heading": "C. LLM Enrichment Flow: enrich({op:'next'}) → Work Item with Seed → LLM Models Output → enrich({op:'save'}) → Artifact",
+      "anchor": "c-llm-enrichment-flow-enrich-op-next-work-item-with-seed-llm-models-output-enrich-op-save-artifact",
+      "snippet": "C. LLM Enrichment Flow: enrich({op:'next'}) → Work Item with Seed → LLM Models Output → enrich({op:'save'}) → Artifact",
       "edgeType": "describes",
       "method": "explicit",
       "provenance": "EXTRACTED",
@@ -408,10 +579,40 @@
       "confidence": 0.95
     },
     {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-3-extraction.md#task-1-lock-mule-3-detection-with-fixtures",
+      "heading": "Task 1: Lock Mule 3 detection with fixtures",
+      "anchor": "task-1-lock-mule-3-detection-with-fixtures",
+      "snippet": "Task 1: Lock Mule 3 detection with fixtures",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
       "sectionId": "doc:docs/knowledge-crib-data-model.md#node-example",
       "heading": "Node example",
       "anchor": "node-example",
       "snippet": "Node example",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#4-architecture-invariants-to-preserve-do-not-break",
+      "heading": "4. Architecture invariants to preserve (do NOT break)",
+      "anchor": "4-architecture-invariants-to-preserve-do-not-break",
+      "snippet": "4. Architecture invariants to preserve (do NOT break)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#1-1-the-lean-soul-rehydrate-design-good-foundation",
+      "heading": "1.1 The lean-soul + rehydrate design (good foundation)",
+      "anchor": "1-1-the-lean-soul-rehydrate-design-good-foundation",
+      "snippet": "1.1 The lean-soul + rehydrate design (good foundation)",
       "edgeType": "describes",
       "method": "explicit",
       "provenance": "EXTRACTED",
@@ -448,6 +649,16 @@
       "confidence": 0.6
     },
     {
+      "sectionId": "doc:README.md#measured-not-projected-run-it-yourself",
+      "heading": "Measured, not projected (run it yourself)",
+      "anchor": "measured-not-projected-run-it-yourself",
+      "snippet": "Measured, not projected (run it yourself)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
       "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#what-was-built-3",
       "heading": "What was built",
       "anchor": "what-was-built-3",
@@ -462,6 +673,26 @@
       "heading": "What was built",
       "anchor": "what-was-built-2",
       "snippet": "What was built",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-4-extraction.md#mulesoft-4-extraction-implementation-plan",
+      "heading": "MuleSoft 4 Extraction Implementation Plan",
+      "anchor": "mulesoft-4-extraction-implementation-plan",
+      "snippet": "MuleSoft 4 Extraction Implementation Plan",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-4-extraction.md#file-map",
+      "heading": "File map",
+      "anchor": "file-map",
+      "snippet": "File map",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
@@ -518,6 +749,36 @@
       "confidence": 0.6
     },
     {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_MAKE_A_BEATS_B_EVERY_EXTRACTOR.md#plan-make-plan-a-always-beat-plan-b-universal-extractor-edition",
+      "heading": "Plan: Make Plan A Always Beat Plan B — Universal Extractor Edition",
+      "anchor": "plan-make-plan-a-always-beat-plan-b-universal-extractor-edition",
+      "snippet": "Plan: Make Plan A Always Beat Plan B — Universal Extractor Edition",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_MAKE_A_BEATS_B_EVERY_EXTRACTOR.md#6-why-this-makes-plan-a-strictly-better-than-plan-b-for-every-extractor",
+      "heading": "6. Why this makes Plan A strictly better than Plan B — for every extractor",
+      "anchor": "6-why-this-makes-plan-a-strictly-better-than-plan-b-for-every-extractor",
+      "snippet": "6. Why this makes Plan A strictly better than Plan B — for every extractor",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_MAKE_A_BEATS_B_EVERY_EXTRACTOR.md#5-risks-and-guards",
+      "heading": "5. Risks and guards",
+      "anchor": "5-risks-and-guards",
+      "snippet": "5. Risks and guards",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
       "sectionId": "doc:docs/launch/demo-recipe.md#knowledge-crib-demo-recording-recipe",
       "heading": "Knowledge-crib — demo recording recipe",
       "anchor": "knowledge-crib-demo-recording-recipe",
@@ -528,10 +789,60 @@
       "confidence": 0.6
     },
     {
-      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#gaps-missing-asset-detection",
-      "heading": "`gaps` *(missing-asset detection)*",
-      "anchor": "gaps-missing-asset-detection",
-      "snippet": "`gaps` *(missing-asset detection)*",
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#honesty-in-the-authored-layer",
+      "heading": "Honesty in the authored layer",
+      "anchor": "honesty-in-the-authored-layer",
+      "snippet": "Honesty in the authored layer",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#what-gets-indexed",
+      "heading": "What gets indexed",
+      "anchor": "what-gets-indexed",
+      "snippet": "What gets indexed",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#9-known-issues-limits",
+      "heading": "9. Known issues & limits",
+      "anchor": "9-known-issues-limits",
+      "snippet": "9. Known issues & limits",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#8-troubleshooting",
+      "heading": "8. Troubleshooting",
+      "anchor": "8-troubleshooting",
+      "snippet": "8. Troubleshooting",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#5-2-scope-the-target",
+      "heading": "5.2 Scope the target",
+      "anchor": "5-2-scope-the-target",
+      "snippet": "5.2 Scope the target",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#status-op-gaps-missing-asset-detection",
+      "heading": "`status({op:'gaps'})` *(missing-asset detection)*",
+      "anchor": "status-op-gaps-missing-asset-detection",
+      "snippet": "`status({op:'gaps'})` *(missing-asset detection)*",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
@@ -608,6 +919,46 @@
       "confidence": 0.6
     },
     {
+      "sectionId": "doc:docs/mulesoft.md#deployable-jar-attached-source-wins",
+      "heading": "Deployable JAR: attached source wins",
+      "anchor": "deployable-jar-attached-source-wins",
+      "snippet": "Deployable JAR: attached source wins",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/mulesoft.md#diagnostics",
+      "heading": "Diagnostics",
+      "anchor": "diagnostics",
+      "snippet": "Diagnostics",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/mulesoft.md#mule-3-vs-mule-4-detection",
+      "heading": "Mule 3 vs Mule 4 detection",
+      "anchor": "mule-3-vs-mule-4-detection",
+      "snippet": "Mule 3 vs Mule 4 detection",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/mulesoft.md#what-is-extracted",
+      "heading": "What is extracted",
+      "anchor": "what-is-extracted",
+      "snippet": "What is extracted",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
       "sectionId": "doc:docs/adr/ADR-001-parallel-parse.md#option-a-worker-thread-pool-over-file-batches-the-plan-s-original-proposal",
       "heading": "Option A — Worker-thread pool over file batches (the plan's original proposal)",
       "anchor": "option-a-worker-thread-pool-over-file-batches-the-plan-s-original-proposal",
@@ -652,6 +1003,16 @@
       "heading": "Context",
       "anchor": "context",
       "snippet": "Context",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-foundation.md#file-map",
+      "heading": "File map",
+      "anchor": "file-map",
+      "snippet": "File map",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
@@ -838,10 +1199,10 @@
       "confidence": 0.6
     },
     {
-      "sectionId": "doc:docs/launch/repo-identity-decision.md#option-b-vishalc412-personal-account",
-      "heading": "Option B — `vishalc412` personal account",
-      "anchor": "option-b-vishalc412-personal-account",
-      "snippet": "Option B — `vishalc412` personal account",
+      "sectionId": "doc:docs/launch/repo-identity-decision.md#post-decision-gate-zero-mixed-references",
+      "heading": "Post-decision gate — zero mixed references",
+      "anchor": "post-decision-gate-zero-mixed-references",
+      "snippet": "Post-decision gate — zero mixed references",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
@@ -888,6 +1249,26 @@
       "confidence": 0.6
     },
     {
+      "sectionId": "doc:docs/superpowers/specs/2026-08-14-mulesoft-first-class-extractor-design.md#9-1-classification",
+      "heading": "9.1 Classification",
+      "anchor": "9-1-classification",
+      "snippet": "9.1 Classification",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/specs/2026-08-14-mulesoft-first-class-extractor-design.md#5-3-project-and-dialect-detection",
+      "heading": "5.3 Project and dialect detection",
+      "anchor": "5-3-project-and-dialect-detection",
+      "snippet": "5.3 Project and dialect detection",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
       "sectionId": "doc:docs/launch/linkedin-series.md#post-2-the-mechanism-parse-graph-commit-serve",
       "heading": "Post 2 — The mechanism (parse → graph → commit → serve)",
       "anchor": "post-2-the-mechanism-parse-graph-commit-serve",
@@ -898,10 +1279,70 @@
       "confidence": 0.6
     },
     {
+      "sectionId": "doc:docs/superpowers/specs/2026-08-14-mulesoft-first-class-extractor-design.md#9-2-storage-and-search",
+      "heading": "9.2 Storage and search",
+      "anchor": "9-2-storage-and-search",
+      "snippet": "9.2 Storage and search",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
       "sectionId": "doc:docs/launch/linkedin-series.md#post-5-the-honest-limits-the-ask",
       "heading": "Post 5 — The honest limits + the ask",
       "anchor": "post-5-the-honest-limits-the-ask",
       "snippet": "Post 5 — The honest limits + the ask",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/specs/2026-08-14-mulesoft-first-class-extractor-design.md#3-2-operational-goals",
+      "heading": "3.2 Operational goals",
+      "anchor": "3-2-operational-goals",
+      "snippet": "3.2 Operational goals",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/specs/2026-08-14-mulesoft-first-class-extractor-design.md#13-implementation-stages",
+      "heading": "13. Implementation Stages",
+      "anchor": "13-implementation-stages",
+      "snippet": "13. Implementation Stages",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/specs/2026-08-14-mulesoft-first-class-extractor-design.md#12-performance-and-determinism",
+      "heading": "12. Performance and Determinism",
+      "anchor": "12-performance-and-determinism",
+      "snippet": "12. Performance and Determinism",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/specs/2026-08-14-mulesoft-first-class-extractor-design.md#7-data-flow",
+      "heading": "7. Data Flow",
+      "anchor": "7-data-flow",
+      "snippet": "7. Data Flow",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/specs/2026-08-14-mulesoft-first-class-extractor-design.md#15-acceptance-criteria",
+      "heading": "15. Acceptance Criteria",
+      "anchor": "15-acceptance-criteria",
+      "snippet": "15. Acceptance Criteria",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
@@ -1058,6 +1499,66 @@
       "confidence": 0.6
     },
     {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_MAKE_A_BEATS_B.md#6-why-this-makes-plan-a-strictly-better-than-plan-b",
+      "heading": "6. Why this makes Plan A strictly better than Plan B",
+      "anchor": "6-why-this-makes-plan-a-strictly-better-than-plan-b",
+      "snippet": "6. Why this makes Plan A strictly better than Plan B",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_MAKE_A_BEATS_B.md#1-the-equality-gaps-that-remain-plan-a-still-weaker-today",
+      "heading": "1. The equality gaps that remain (Plan A still weaker today)",
+      "anchor": "1-the-equality-gaps-that-remain-plan-a-still-weaker-today",
+      "snippet": "1. The equality gaps that remain (Plan A still weaker today)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_MAKE_A_BEATS_B.md#plan-make-plan-a-always-beat-plan-b-knowledge-crib-supremacy-roadmap",
+      "heading": "Plan: Make Plan A Always Beat Plan B — Knowledge-crib Supremacy Roadmap",
+      "anchor": "plan-make-plan-a-always-beat-plan-b-knowledge-crib-supremacy-roadmap",
+      "snippet": "Plan: Make Plan A Always Beat Plan B — Knowledge-crib Supremacy Roadmap",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_MAKE_A_BEATS_B.md#ws-a7-scale-and-performance-hardening",
+      "heading": "WS-A7 — Scale and performance hardening",
+      "anchor": "ws-a7-scale-and-performance-hardening",
+      "snippet": "WS-A7 — Scale and performance hardening",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_MAKE_A_BEATS_B.md#ws-a10-agent-playbooks-and-migration-skill-packaging",
+      "heading": "WS-A10 — Agent playbooks and migration skill packaging",
+      "anchor": "ws-a10-agent-playbooks-and-migration-skill-packaging",
+      "snippet": "WS-A10 — Agent playbooks and migration skill packaging",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_MAKE_A_BEATS_B.md#4-acceptance-criteria-the-plan-a-plan-b-test",
+      "heading": "4. Acceptance criteria (the \"Plan A > Plan B\" test)",
+      "anchor": "4-acceptance-criteria-the-plan-a-plan-b-test",
+      "snippet": "4. Acceptance criteria (the \"Plan A > Plan B\" test)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
       "sectionId": "doc:docs/knowledge-crib-client-setup.md#5-cursor",
       "heading": "5. Cursor",
       "anchor": "5-cursor",
@@ -1108,6 +1609,56 @@
       "confidence": 0.6
     },
     {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-munit-hardening.md#task-5-complete-the-archive-attack-matrix",
+      "heading": "Task 5: Complete the archive attack matrix",
+      "anchor": "task-5-complete-the-archive-attack-matrix",
+      "snippet": "Task 5: Complete the archive attack matrix",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-munit-hardening.md#task-7-document-support-and-expose-concise-diagnostics",
+      "heading": "Task 7: Document support and expose concise diagnostics",
+      "anchor": "task-7-document-support-and-expose-concise-diagnostics",
+      "snippet": "Task 7: Document support and expose concise diagnostics",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:CHANGELOG.md#changelog",
+      "heading": "Changelog",
+      "anchor": "changelog",
+      "snippet": "Changelog",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:CHANGELOG.md#added",
+      "heading": "Added",
+      "anchor": "added",
+      "snippet": "Added",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:CHANGELOG.md#security",
+      "heading": "Security",
+      "anchor": "security",
+      "snippet": "Security",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
       "sectionId": "doc:docs/superpowers/specs/2026-06-27-knowledgecrib-linkedin-demo-video-design.md#verification",
       "heading": "Verification",
       "anchor": "verification",
@@ -1122,6 +1673,76 @@
       "heading": "Locked Format",
       "anchor": "locked-format",
       "snippet": "Locked Format",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#3-how-this-closes-plan-a-vs-plan-b",
+      "heading": "3. How this closes Plan A vs Plan B",
+      "anchor": "3-how-this-closes-plan-a-vs-plan-b",
+      "snippet": "3. How this closes Plan A vs Plan B",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#ws-6-reconstruction-artifact-closes-g6",
+      "heading": "WS-6 — Reconstruction artifact (closes G6)",
+      "anchor": "ws-6-reconstruction-artifact-closes-g6",
+      "snippet": "WS-6 — Reconstruction artifact (closes G6)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#6-acceptance-criteria-the-plan-a-plan-b-test",
+      "heading": "6. Acceptance criteria (the \"Plan A == Plan B\" test)",
+      "anchor": "6-acceptance-criteria-the-plan-a-plan-b-test",
+      "snippet": "6. Acceptance criteria (the \"Plan A == Plan B\" test)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#1-3-the-gaps-that-make-plan-a-plan-b-today",
+      "heading": "1.3 The gaps that make Plan A < Plan B today",
+      "anchor": "1-3-the-gaps-that-make-plan-a-plan-b-today",
+      "snippet": "1.3 The gaps that make Plan A < Plan B today",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#7-risks",
+      "heading": "7. Risks",
+      "anchor": "7-risks",
+      "snippet": "7. Risks",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#ws-2-query-returns-bodies-rules-closes-g2",
+      "heading": "WS-2 — `query` returns bodies + rules (closes G2)",
+      "anchor": "ws-2-query-returns-bodies-rules-closes-g2",
+      "snippet": "WS-2 — `query` returns bodies + rules (closes G2)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#ws-1-body-searchable-fts-closes-g1-highest-leverage",
+      "heading": "WS-1 — Body-searchable FTS (closes G1)  *[highest leverage]*",
+      "anchor": "ws-1-body-searchable-fts-closes-g1-highest-leverage",
+      "snippet": "WS-1 — Body-searchable FTS (closes G1)  *[highest leverage]*",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
@@ -1278,210 +1899,150 @@
       "confidence": 0.6
     },
     {
-      "sectionId": "doc:CHANGELOG.md#changelog",
-      "heading": "Changelog",
-      "anchor": "changelog",
-      "snippet": "Changelog",
+      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#source-node-deep-context",
+      "heading": "`source(node)` *(deep-context)*",
+      "anchor": "source-node-deep-context",
+      "snippet": "`source(node)` *(deep-context)*",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
       "confidence": 0.6
     },
     {
-      "sectionId": "doc:CHANGELOG.md#added",
-      "heading": "Added",
-      "anchor": "added",
-      "snippet": "Added",
+      "sectionId": "doc:docs/knowledge-crib-extractor-plugins.md#1-contract",
+      "heading": "1. Contract",
+      "anchor": "1-contract",
+      "snippet": "1. Contract",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
       "confidence": 0.6
     },
     {
-      "sectionId": "doc:CHANGELOG.md#security",
-      "heading": "Security",
-      "anchor": "security",
-      "snippet": "Security",
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-foundation.md#task-2-detect-and-classify-mule-projects",
+      "heading": "Task 2: Detect and classify Mule projects",
+      "anchor": "task-2-detect-and-classify-mule-projects",
+      "snippet": "Task 2: Detect and classify Mule projects",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
       "confidence": 0.6
     },
     {
-      "sectionId": "doc:README.md#measured-not-projected-run-it-yourself",
-      "heading": "Measured, not projected (run it yourself)",
-      "anchor": "measured-not-projected-run-it-yourself",
-      "snippet": "Measured, not projected (run it yourself)",
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-foundation.md#task-7-aggregate-diagnostics-in-serial-concurrent-and-worker-parsing",
+      "heading": "Task 7: Aggregate diagnostics in serial, concurrent, and worker parsing",
+      "anchor": "task-7-aggregate-diagnostics-in-serial-concurrent-and-worker-parsing",
+      "snippet": "Task 7: Aggregate diagnostics in serial, concurrent, and worker parsing",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
       "confidence": 0.6
     },
     {
-      "sectionId": "doc:docs/knowledge-crib-user-guide.md#what-gets-indexed",
-      "heading": "What gets indexed",
-      "anchor": "what-gets-indexed",
-      "snippet": "What gets indexed",
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#1-design-goals-choices",
+      "heading": "1. Design goals → choices",
+      "anchor": "1-design-goals-choices",
+      "snippet": "1. Design goals → choices",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
       "confidence": 0.6
     },
     {
-      "sectionId": "doc:docs/knowledge-crib-user-guide.md#5-2-scope-the-target",
-      "heading": "5.2 Scope the target",
-      "anchor": "5-2-scope-the-target",
-      "snippet": "5.2 Scope the target",
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#node",
+      "heading": "Node",
+      "anchor": "node",
+      "snippet": "Node",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
       "confidence": 0.6
     },
     {
-      "sectionId": "doc:docs/knowledge-crib-user-guide.md#8-troubleshooting",
-      "heading": "8. Troubleshooting",
-      "anchor": "8-troubleshooting",
-      "snippet": "8. Troubleshooting",
+      "sectionId": "doc:docs/knowledge-crib-build-plan.md#2-pipeline-original-code-mirrors-the-proven-phases-not-the-source",
+      "heading": "2. Pipeline (original code; mirrors the proven *phases*, not the source)",
+      "anchor": "2-pipeline-original-code-mirrors-the-proven-phases-not-the-source",
+      "snippet": "2. Pipeline (original code; mirrors the proven *phases*, not the source)",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
       "confidence": 0.6
     },
     {
-      "sectionId": "doc:docs/knowledge-crib-user-guide.md#9-known-issues-limits",
-      "heading": "9. Known issues & limits",
-      "anchor": "9-known-issues-limits",
-      "snippet": "9. Known issues & limits",
+      "sectionId": "doc:docs/knowledge-crib-pipeline.md#phase-overview",
+      "heading": "Phase overview",
+      "anchor": "phase-overview",
+      "snippet": "Phase overview",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
       "confidence": 0.6
     },
     {
-      "sectionId": "doc:docs/knowledge-crib-user-guide.md#honesty-in-the-authored-layer",
-      "heading": "Honesty in the authored layer",
-      "anchor": "honesty-in-the-authored-layer",
-      "snippet": "Honesty in the authored layer",
+      "sectionId": "doc:docs/knowledge-crib-pipeline.md#phase-1-structure-map",
+      "heading": "Phase 1 — Structure map",
+      "anchor": "phase-1-structure-map",
+      "snippet": "Phase 1 — Structure map",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
       "confidence": 0.6
     },
     {
-      "sectionId": "doc:docs/superpowers/plans/PLAN_MAKE_A_BEATS_B.md#plan-make-plan-a-always-beat-plan-b-knowledge-crib-supremacy-roadmap",
-      "heading": "Plan: Make Plan A Always Beat Plan B — Knowledge-crib Supremacy Roadmap",
-      "anchor": "plan-make-plan-a-always-beat-plan-b-knowledge-crib-supremacy-roadmap",
-      "snippet": "Plan: Make Plan A Always Beat Plan B — Knowledge-crib Supremacy Roadmap",
+      "sectionId": "doc:docs/knowledge-crib-track3-spec.md#1-condition-nodes-one-per-if-while-for-switch-case-predicate",
+      "heading": "1. `condition` nodes — one per IF / WHILE / FOR / SWITCH-CASE predicate",
+      "anchor": "1-condition-nodes-one-per-if-while-for-switch-case-predicate",
+      "snippet": "1. `condition` nodes — one per IF / WHILE / FOR / SWITCH-CASE predicate",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
       "confidence": 0.6
     },
     {
-      "sectionId": "doc:docs/superpowers/plans/PLAN_MAKE_A_BEATS_B.md#1-the-equality-gaps-that-remain-plan-a-still-weaker-today",
-      "heading": "1. The equality gaps that remain (Plan A still weaker today)",
-      "anchor": "1-the-equality-gaps-that-remain-plan-a-still-weaker-today",
-      "snippet": "1. The equality gaps that remain (Plan A still weaker today)",
+      "sectionId": "doc:docs/superpowers/specs/2026-08-14-mulesoft-first-class-extractor-design.md#10-error-handling-and-diagnostics",
+      "heading": "10. Error Handling and Diagnostics",
+      "anchor": "10-error-handling-and-diagnostics",
+      "snippet": "10. Error Handling and Diagnostics",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
       "confidence": 0.6
     },
     {
-      "sectionId": "doc:docs/superpowers/plans/PLAN_MAKE_A_BEATS_B.md#ws-a7-scale-and-performance-hardening",
-      "heading": "WS-A7 — Scale and performance hardening",
-      "anchor": "ws-a7-scale-and-performance-hardening",
-      "snippet": "WS-A7 — Scale and performance hardening",
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#3-1-2-the-enrichworkitem-interface-what-the-llm-sees",
+      "heading": "3.1.2 The `EnrichWorkItem` Interface — What the LLM Sees",
+      "anchor": "3-1-2-the-enrichworkitem-interface-what-the-llm-sees",
+      "snippet": "3.1.2 The `EnrichWorkItem` Interface — What the LLM Sees",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
       "confidence": 0.6
     },
     {
-      "sectionId": "doc:docs/superpowers/plans/PLAN_MAKE_A_BEATS_B.md#ws-a10-agent-playbooks-and-migration-skill-packaging",
-      "heading": "WS-A10 — Agent playbooks and migration skill packaging",
-      "anchor": "ws-a10-agent-playbooks-and-migration-skill-packaging",
-      "snippet": "WS-A10 — Agent playbooks and migration skill packaging",
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#3-3-1-layer-order-bottom-up",
+      "heading": "3.3.1 Layer Order (Bottom-Up)",
+      "anchor": "3-3-1-layer-order-bottom-up",
+      "snippet": "3.3.1 Layer Order (Bottom-Up)",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
       "confidence": 0.6
     },
     {
-      "sectionId": "doc:docs/superpowers/plans/PLAN_MAKE_A_BEATS_B.md#4-acceptance-criteria-the-plan-a-plan-b-test",
-      "heading": "4. Acceptance criteria (the \"Plan A > Plan B\" test)",
-      "anchor": "4-acceptance-criteria-the-plan-a-plan-b-test",
-      "snippet": "4. Acceptance criteria (the \"Plan A > Plan B\" test)",
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#4-1-adding-a-new-language-parser-8th-language",
+      "heading": "4.1 Adding a New Language Parser (8th Language)",
+      "anchor": "4-1-adding-a-new-language-parser-8th-language",
+      "snippet": "4.1 Adding a New Language Parser (8th Language)",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
       "confidence": 0.6
     },
     {
-      "sectionId": "doc:docs/superpowers/plans/PLAN_MAKE_A_BEATS_B.md#6-why-this-makes-plan-a-strictly-better-than-plan-b",
-      "heading": "6. Why this makes Plan A strictly better than Plan B",
-      "anchor": "6-why-this-makes-plan-a-strictly-better-than-plan-b",
-      "snippet": "6. Why this makes Plan A strictly better than Plan B",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
-    },
-    {
-      "sectionId": "doc:docs/superpowers/plans/PLAN_MAKE_A_BEATS_B_EVERY_EXTRACTOR.md#plan-make-plan-a-always-beat-plan-b-universal-extractor-edition",
-      "heading": "Plan: Make Plan A Always Beat Plan B — Universal Extractor Edition",
-      "anchor": "plan-make-plan-a-always-beat-plan-b-universal-extractor-edition",
-      "snippet": "Plan: Make Plan A Always Beat Plan B — Universal Extractor Edition",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
-    },
-    {
-      "sectionId": "doc:docs/superpowers/plans/PLAN_MAKE_A_BEATS_B_EVERY_EXTRACTOR.md#5-risks-and-guards",
-      "heading": "5. Risks and guards",
-      "anchor": "5-risks-and-guards",
-      "snippet": "5. Risks and guards",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
-    },
-    {
-      "sectionId": "doc:docs/superpowers/plans/PLAN_MAKE_A_BEATS_B_EVERY_EXTRACTOR.md#6-why-this-makes-plan-a-strictly-better-than-plan-b-for-every-extractor",
-      "heading": "6. Why this makes Plan A strictly better than Plan B — for every extractor",
-      "anchor": "6-why-this-makes-plan-a-strictly-better-than-plan-b-for-every-extractor",
-      "snippet": "6. Why this makes Plan A strictly better than Plan B — for every extractor",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
-    },
-    {
-      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#1-3-the-gaps-that-make-plan-a-plan-b-today",
-      "heading": "1.3 The gaps that make Plan A < Plan B today",
-      "anchor": "1-3-the-gaps-that-make-plan-a-plan-b-today",
-      "snippet": "1.3 The gaps that make Plan A < Plan B today",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
-    },
-    {
-      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#ws-1-body-searchable-fts-closes-g1-highest-leverage",
-      "heading": "WS-1 — Body-searchable FTS (closes G1)  *[highest leverage]*",
-      "anchor": "ws-1-body-searchable-fts-closes-g1-highest-leverage",
-      "snippet": "WS-1 — Body-searchable FTS (closes G1)  *[highest leverage]*",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
-    },
-    {
-      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#ws-2-query-returns-bodies-rules-closes-g2",
-      "heading": "WS-2 — `query` returns bodies + rules (closes G2)",
-      "anchor": "ws-2-query-returns-bodies-rules-closes-g2",
-      "snippet": "WS-2 — `query` returns bodies + rules (closes G2)",
+      "sectionId": "doc:docs/knowledge-crib-data-model.md#1-node-kinds",
+      "heading": "1. Node kinds",
+      "anchor": "1-node-kinds",
+      "snippet": "1. Node kinds",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
@@ -1498,40 +2059,10 @@
       "confidence": 0.6
     },
     {
-      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#ws-6-reconstruction-artifact-closes-g6",
-      "heading": "WS-6 — Reconstruction artifact (closes G6)",
-      "anchor": "ws-6-reconstruction-artifact-closes-g6",
-      "snippet": "WS-6 — Reconstruction artifact (closes G6)",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
-    },
-    {
-      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#3-how-this-closes-plan-a-vs-plan-b",
-      "heading": "3. How this closes Plan A vs Plan B",
-      "anchor": "3-how-this-closes-plan-a-vs-plan-b",
-      "snippet": "3. How this closes Plan A vs Plan B",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
-    },
-    {
-      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#6-acceptance-criteria-the-plan-a-plan-b-test",
-      "heading": "6. Acceptance criteria (the \"Plan A == Plan B\" test)",
-      "anchor": "6-acceptance-criteria-the-plan-a-plan-b-test",
-      "snippet": "6. Acceptance criteria (the \"Plan A == Plan B\" test)",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
-    },
-    {
-      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#7-risks",
-      "heading": "7. Risks",
-      "anchor": "7-risks",
-      "snippet": "7. Risks",
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m6-incremental-update-git-anchored-scoped-re-extract-merge-driver",
+      "heading": "M6 — Incremental update (git-anchored scoped re-extract) + merge driver",
+      "anchor": "m6-incremental-update-git-anchored-scoped-re-extract-merge-driver",
+      "snippet": "M6 — Incremental update (git-anchored scoped re-extract) + merge driver",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
@@ -1562,7 +2093,10 @@
   "implementation": {
     "status": "implemented",
     "executesCount": 1,
-    "referencedByFiles": []
+    "referencedByFiles": [
+      "packages/core/src/index/sqlite-index.test.ts",
+      "scripts/check-mule-sample.mjs"
+    ]
   },
   "coverage": {
     "readiness": "complete",

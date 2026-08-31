@@ -1,8 +1,8 @@
 {
   "id": "sym:scripts/rerank-check.mjs#fail@L5",
-  "schemaVersion": "1.5",
+  "schemaVersion": "1.6",
   "nodeHash": "blake3:881ab88f12ebe60fc9201db123a3c0c9d6872ef5806b144535821a7b2ad59682",
-  "builtAt": "2026-07-16T16:35:16.098Z",
+  "builtAt": "2026-08-31T17:37:23.222Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:scripts/rerank-check.mjs#fail@L5",
@@ -33,14 +33,14 @@
   "callers": [],
   "callees": [
     {
-      "id": "sym:packages/cli/src/hooks.test.ts#write@L54",
+      "id": "sym:scripts/fixtures/synthetic-mule-project.mjs#write@L64",
       "confidence": 1,
       "name": "write",
       "qualifiedName": "write",
-      "signature": "write(path: string, records: Array<Record<string, unknown>>): void",
+      "signature": "write(root, rel, content)",
       "type": "function",
-      "file": "packages/cli/src/hooks.test.ts",
-      "line": 54
+      "file": "scripts/fixtures/synthetic-mule-project.mjs",
+      "line": 64
     }
   ],
   "docs": [
@@ -55,10 +55,20 @@
       "confidence": 0.6
     },
     {
-      "sectionId": "doc:docs/superpowers/specs/2026-06-27-knowledgecrib-linkedin-demo-video-design.md#production-architecture",
-      "heading": "Production Architecture",
-      "anchor": "production-architecture",
-      "snippet": "Production Architecture",
+      "sectionId": "doc:docs/superpowers/specs/2026-08-14-mulesoft-first-class-extractor-design.md#15-acceptance-criteria",
+      "heading": "15. Acceptance Criteria",
+      "anchor": "15-acceptance-criteria",
+      "snippet": "15. Acceptance Criteria",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/specs/2026-08-14-mulesoft-first-class-extractor-design.md#10-error-handling-and-diagnostics",
+      "heading": "10. Error Handling and Diagnostics",
+      "anchor": "10-error-handling-and-diagnostics",
+      "snippet": "10. Error Handling and Diagnostics",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
@@ -69,6 +79,16 @@
       "heading": "WS-A5 — Automated parity / golden-file test generation",
       "anchor": "ws-a5-automated-parity-golden-file-test-generation",
       "snippet": "WS-A5 — Automated parity / golden-file test generation",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/specs/2026-06-27-knowledgecrib-linkedin-demo-video-design.md#production-architecture",
+      "heading": "Production Architecture",
+      "anchor": "production-architecture",
+      "snippet": "Production Architecture",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
@@ -87,11 +107,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:0142f9d5c63a31c05c15a0f6d306cea8f17a29647b6e68e58ea914609a576c2c",
-          "target": "sym:packages/cli/src/hooks.test.ts#write@L54",
-          "expr": "write",
-          "line": 6
+          "kind": "executes",
+          "edgeId": "e:09a14a02405bad3b49aba8f10d8337c3059373b6ace0390df432d4b392499ba3",
+          "target": "stmt:scripts/rerank-check.mjs@L6",
+          "line": 6,
+          "expr": "process.stderr.write(`  rerank:check FAIL — ${msg}\\n`);"
         }
       },
       {
@@ -101,11 +121,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:09a14a02405bad3b49aba8f10d8337c3059373b6ace0390df432d4b392499ba3",
-          "target": "stmt:scripts/rerank-check.mjs@L6",
-          "line": 6,
-          "expr": "process.stderr.write(`  rerank:check FAIL — ${msg}\\n`);"
+          "kind": "calls",
+          "edgeId": "e:a7ef1a6bd6954fe20a296e301fb6b31b823bcf91cc9203b6fb3eedf1c6994107",
+          "target": "sym:scripts/fixtures/synthetic-mule-project.mjs#write@L64",
+          "expr": "write",
+          "line": 6
         }
       }
     ]

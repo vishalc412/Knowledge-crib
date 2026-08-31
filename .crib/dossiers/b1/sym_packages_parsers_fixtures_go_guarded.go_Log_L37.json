@@ -1,0 +1,107 @@
+{
+  "id": "sym:packages/parsers/fixtures/go/guarded.go#Log@L37",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:3b52cbca2fb6c15f72dccb8cb3f017a6e25c94292d1c1830539f7f2d53ec0f7b",
+  "builtAt": "2026-08-25T20:55:11.863Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/fixtures/go/guarded.go#Log@L37",
+    "kind": "symbol",
+    "type": "func",
+    "name": "Log",
+    "qualifiedName": "Log",
+    "signature": "func Log(msg)",
+    "lang": "go",
+    "file": "packages/parsers/fixtures/go/guarded.go",
+    "span": {
+      "start": 37,
+      "end": 37
+    },
+    "params": [
+      "msg"
+    ]
+  },
+  "source": {
+    "text": "func Log(msg string) {}",
+    "truncated": false,
+    "totalLines": 1,
+    "startLine": 37
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/fixtures/go/guarded.go#classify@L4",
+      "confidence": 1,
+      "name": "classify",
+      "qualifiedName": "classify",
+      "signature": "func classify(score)",
+      "type": "func",
+      "file": "packages/parsers/fixtures/go/guarded.go",
+      "line": 4
+    },
+    {
+      "id": "sym:packages/parsers/fixtures/go/guarded.go#loopit@L15",
+      "confidence": 1,
+      "name": "loopit",
+      "qualifiedName": "loopit",
+      "signature": "func loopit(items)",
+      "type": "func",
+      "file": "packages/parsers/fixtures/go/guarded.go",
+      "line": 15
+    },
+    {
+      "id": "sym:packages/parsers/fixtures/go/guarded.go#switchy@L22",
+      "confidence": 1,
+      "name": "switchy",
+      "qualifiedName": "switchy",
+      "signature": "func switchy(code)",
+      "type": "func",
+      "file": "packages/parsers/fixtures/go/guarded.go",
+      "line": 22
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/fixtures/go/guarded.go@L36",
+      "snippet": "// Log is the bare-call target (same-file top-level func) for the calls edges above.",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/fixtures/go/guarded.go#Log@L37",
+    "procedureName": "Log",
+    "conditions": [],
+    "rules": []
+  },
+  "implementation": {
+    "status": "unimplemented",
+    "executesCount": 0,
+    "referencedByFiles": [
+      "packages/parsers/fixtures/go/guarded.go"
+    ]
+  },
+  "coverage": {
+    "readiness": "unimplemented",
+    "bodyPresent": false,
+    "executes": 0,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "BODY UNAVAILABLE — no body statements indexed. The implementation may live in a missing file (e.g. a PL/SQL package body) or be a spec-only declaration. Do NOT derive behavior, scoring formulas, or migration logic from this node — locate and index the body first."
+    ]
+  }
+}

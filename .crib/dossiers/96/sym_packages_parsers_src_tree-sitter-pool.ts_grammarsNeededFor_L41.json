@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/tree-sitter-pool.ts#grammarsNeededFor@L41",
-  "schemaVersion": "1.5",
+  "schemaVersion": "1.6",
   "nodeHash": "blake3:7928d8f386db71a3c76fd56a6d461d2be9f25a47a7fa4307ff110212c8669472",
-  "builtAt": "2026-07-13T11:04:33.459Z",
+  "builtAt": "2026-08-25T20:55:11.863Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/tree-sitter-pool.ts#grammarsNeededFor@L41",
@@ -32,26 +32,26 @@
   },
   "callers": [
     {
-      "id": "sym:packages/pipeline/src/parse-pool.ts#runParseParallel@L71",
+      "id": "sym:packages/pipeline/src/parse-pool.ts#runParseParallel@L78",
       "confidence": 1,
       "name": "runParseParallel",
       "qualifiedName": "runParseParallel",
-      "signature": "runParseParallel(soul: SoulStore, root: string, files: FileMeta[], size = defaultPoolSize(files.length)): Promise<ParseStats>",
+      "signature": "runParseParallel(soul: SoulStore, root: string, files: FileMeta[], size = defaultPoolSize(files.length), diagnosticLimit = DEFAULT_DIAGNOSTIC_LIMIT): Promise<ParseStats>",
       "type": "function",
       "file": "packages/pipeline/src/parse-pool.ts",
-      "line": 71
+      "line": 78
     }
   ],
   "callees": [
     {
-      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
       "confidence": 1,
       "name": "push",
       "qualifiedName": "push",
       "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
       "type": "function",
       "file": "packages/pipeline/src/linker/inverted-index.ts",
-      "line": 39
+      "line": 70
     }
   ],
   "docs": [
@@ -106,8 +106,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:d1f1a6d3f5d8336b11750011aab79e53b6fa6a6391a79c7a6e3b1b2064af4565",
-          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "edgeId": "e:b3685ce166bbd71a3416a1befd8b3d95117c6ad1651f7081339337af5375289a",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
           "expr": "push",
           "line": 44
         }

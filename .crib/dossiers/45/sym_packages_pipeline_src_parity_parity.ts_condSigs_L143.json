@@ -1,0 +1,269 @@
+{
+  "id": "sym:packages/pipeline/src/parity/parity.ts#condSigs@L143",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:558eee440232dcbcb32d9bbe46a629a817ff34eb1e9a98e60d70deab6019bb96",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/parity/parity.ts#condSigs@L143",
+    "kind": "symbol",
+    "type": "function",
+    "name": "condSigs",
+    "qualifiedName": "condSigs",
+    "signature": "condSigs(soul: SoulStore, rule: RuleRecord): string[]",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/parity/parity.ts",
+    "span": {
+      "start": 143,
+      "end": 155
+    },
+    "callSites": [
+      {
+        "callee": "getNode",
+        "line": 146
+      },
+      {
+        "callee": "push",
+        "line": 149
+      },
+      {
+        "callee": "push",
+        "line": 151
+      },
+      {
+        "callee": "normExpr",
+        "line": 151
+      },
+      {
+        "callee": "sort",
+        "line": 154
+      }
+    ]
+  },
+  "source": {
+    "text": "function condSigs(soul: SoulStore, rule: RuleRecord): string[] {\n  const out: string[] = [];\n  for (const c of rule.conditions) {\n    const node = soul.getNode(c.id);\n    const expr = node?.expr ?? node?.whenSelector ?? '';\n    if (node?.kind === 'condition' && node.branch === 'LOOP') {\n      out.push('<loop>');\n    } else {\n      out.push(normExpr(expr));\n    }\n  }\n  return out.sort();\n}",
+    "truncated": false,
+    "totalLines": 13,
+    "startLine": 143
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/src/parity/parity.ts#normalizeRules@L162",
+      "confidence": 1,
+      "name": "normalizeRules",
+      "qualifiedName": "normalizeRules",
+      "signature": "normalizeRules(soul: SoulStore, rules: RuleRecord[]): NormalizedRule[]",
+      "type": "function",
+      "file": "packages/pipeline/src/parity/parity.ts",
+      "line": 162
+    },
+    {
+      "id": "sym:packages/pipeline/src/parity/parity.ts#sigOf@L158",
+      "confidence": 1,
+      "name": "sigOf",
+      "qualifiedName": "sigOf",
+      "signature": "sigOf(soul: SoulStore, rule: RuleRecord): string",
+      "type": "function",
+      "file": "packages/pipeline/src/parity/parity.ts",
+      "line": 158
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/pipeline/src/parity/parity.ts#normExpr@L89",
+      "confidence": 1,
+      "name": "normExpr",
+      "qualifiedName": "normExpr",
+      "signature": "normExpr(s: string): string",
+      "type": "function",
+      "file": "packages/pipeline/src/parity/parity.ts",
+      "line": 89
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 70
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/pipeline/src/parity/parity.ts@L141",
+      "snippet": "/** Build the sorted normalized condition signatures for one rule. Loop conditions collapse to",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/parity/parity.ts#condSigs@L143",
+    "procedureName": "condSigs",
+    "conditions": [
+      "cond:packages/pipeline/src/parity/parity.ts@L145",
+      "cond:packages/pipeline/src/parity/parity.ts@L148"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/parity/parity.ts#condSigs@L143",
+        "procedureName": "condSigs",
+        "guard": "cond:packages/pipeline/src/parity/parity.ts@L145",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/parity/parity.ts@L145",
+            "expr": "rule.conditions",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a1cff8df1423b4f333e4ad0e21a4a1381dc0cacb443b7e1556229130707f8c53",
+          "target": "stmt:packages/pipeline/src/parity/parity.ts@L146",
+          "line": 146,
+          "expr": "const node = soul.getNode(c.id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/parity/parity.ts#condSigs@L143",
+        "procedureName": "condSigs",
+        "guard": "cond:packages/pipeline/src/parity/parity.ts@L148",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/parity/parity.ts@L145",
+            "expr": "rule.conditions"
+          },
+          {
+            "id": "cond:packages/pipeline/src/parity/parity.ts@L148",
+            "expr": "node?.kind === 'condition' && node.branch === 'LOOP'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:88cccbd81b316c56a720b6013222055be34afab7967cee03485486bf77170f02",
+          "target": "stmt:packages/pipeline/src/parity/parity.ts@L149",
+          "line": 149,
+          "expr": "out.push('<loop>');"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/parity/parity.ts#condSigs@L143",
+        "procedureName": "condSigs",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:a35ad8e5192fa5338acd14bd7bbc04abda72bcf2493468f112f90d4327f3749c",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
+          "expr": "push",
+          "line": 149
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/parity/parity.ts#condSigs@L143",
+        "procedureName": "condSigs",
+        "guard": "cond:packages/pipeline/src/parity/parity.ts@L148",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/parity/parity.ts@L145",
+            "expr": "rule.conditions"
+          },
+          {
+            "id": "cond:packages/pipeline/src/parity/parity.ts@L148",
+            "expr": "node?.kind === 'condition' && node.branch === 'LOOP'",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1180bead831bf492ebf8e277a05e6c717c2b0a939b2dabdbd390c2169a292f6a",
+          "target": "stmt:packages/pipeline/src/parity/parity.ts@L151",
+          "line": 151,
+          "expr": "out.push(normExpr(expr));"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/parity/parity.ts#condSigs@L143",
+        "procedureName": "condSigs",
+        "guard": "cond:packages/pipeline/src/parity/parity.ts@L148",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/parity/parity.ts@L145",
+            "expr": "rule.conditions"
+          },
+          {
+            "id": "cond:packages/pipeline/src/parity/parity.ts@L148",
+            "expr": "node?.kind === 'condition' && node.branch === 'LOOP'",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:e616ab2eb70cf0ae17b2ac8a65d26f3441872e74974bc2fc7bbaf6382fde197c",
+          "target": "sym:packages/pipeline/src/parity/parity.ts#normExpr@L89",
+          "expr": "normExpr",
+          "line": 151
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/parity/parity.ts#condSigs@L143",
+        "procedureName": "condSigs",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ca38a48202d6454632394014a4865afde543d48f5b1c2ec8eafbbd1a8f2039ba",
+          "target": "stmt:packages/pipeline/src/parity/parity.ts@L154",
+          "line": 154,
+          "expr": "return out.sort();"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": [
+      "packages/pipeline/src/parity/parity.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 5,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

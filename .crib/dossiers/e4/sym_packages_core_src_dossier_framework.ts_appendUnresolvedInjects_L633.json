@@ -1,0 +1,288 @@
+{
+  "id": "sym:packages/core/src/dossier/framework.ts#appendUnresolvedInjects@L633",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:3097c655eb291abf3300cd3ee3ff5222f8f98455adbf3e8c4694f33309a953e7",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/dossier/framework.ts#appendUnresolvedInjects@L633",
+    "kind": "symbol",
+    "type": "function",
+    "name": "appendUnresolvedInjects",
+    "qualifiedName": "appendUnresolvedInjects",
+    "signature": "appendUnresolvedInjects(classNode: Node, outgoing: Map<string, Edge[]>, dependencies: DossierDependency[], seen: Set<string>): void",
+    "lang": "typescript",
+    "file": "packages/core/src/dossier/framework.ts",
+    "span": {
+      "start": 633,
+      "end": 660
+    },
+    "callSites": [
+      {
+        "callee": "isArray",
+        "line": 640
+      },
+      {
+        "callee": "add",
+        "line": 643
+      },
+      {
+        "callee": "some",
+        "line": 647
+      },
+      {
+        "callee": "includes",
+        "line": 647
+      },
+      {
+        "callee": "toLowerCase",
+        "line": 647
+      },
+      {
+        "callee": "toLowerCase",
+        "line": 647
+      },
+      {
+        "callee": "add",
+        "line": 650
+      },
+      {
+        "callee": "push",
+        "line": 651
+      }
+    ]
+  },
+  "source": {
+    "text": "function appendUnresolvedInjects(\n  classNode: Node,\n  outgoing: Map<string, Edge[]>,\n  dependencies: DossierDependency[],\n  seen: Set<string>,\n): void {\n  const m = (classNode.meta ?? {}) as Record<string, unknown>;\n  const list = Array.isArray(m.injects) ? (m.injects as unknown[]) : [];\n  const emitted = new Set<string>();\n  for (const e of outgoing.get(classNode.id) ?? []) {\n    if (e.rel === 'injects') emitted.add(e.dst);\n  }\n  for (const t of list) {\n    if (typeof t !== 'string') continue;\n    const matches = [...emitted].some((id) => id.toLowerCase().includes(t.toLowerCase()));\n    if (matches) continue;\n    if (seen.has(`?${t}`)) continue;\n    seen.add(`?${t}`);\n    dependencies.push({\n      id: '?',\n      confidence: 0,\n      brief: { id: '?', confidence: 0, qualifiedName: t },\n      kind: 'injects',\n      injectedAs: t,\n      unresolved: true,\n    });\n  }\n}",
+    "truncated": false,
+    "totalLines": 28,
+    "startLine": 633
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+      "confidence": 1,
+      "name": "frameworkSemantics",
+      "qualifiedName": "frameworkSemantics",
+      "signature": "frameworkSemantics(soul: SoulStore, nodeId: string, opts: FrameworkSemanticsOpts = {}): DossierFrameworkSemantics | undefined",
+      "type": "function",
+      "file": "packages/core/src/dossier/framework.ts",
+      "line": 203
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/fixtures/python/rules.py#add@L16",
+      "confidence": 1,
+      "name": "add",
+      "qualifiedName": "add",
+      "signature": "add(a, b)",
+      "type": "function",
+      "file": "packages/parsers/fixtures/python/rules.py",
+      "line": 16
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 70
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/core/src/dossier/framework.ts@L632",
+      "snippet": "/** Append unresolved dependency entries from a class node's `meta.injects` type names with no edge. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-decisions.md#decision-log",
+      "heading": "Decision Log",
+      "anchor": "decision-log",
+      "snippet": "Decision Log",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/dossier/framework.ts#appendUnresolvedInjects@L633",
+    "procedureName": "appendUnresolvedInjects",
+    "conditions": [
+      "cond:packages/core/src/dossier/framework.ts@L642",
+      "cond:packages/core/src/dossier/framework.ts@L643",
+      "cond:packages/core/src/dossier/framework.ts@L645"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#appendUnresolvedInjects@L633",
+        "procedureName": "appendUnresolvedInjects",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c0d08e6cfc402f03df35e88488270441422e02873db247911c7e5b1544fcc932",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L640",
+          "line": 640,
+          "expr": "const list = Array.isArray(m.injects) ? (m.injects as unknown[]) : [];"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#appendUnresolvedInjects@L633",
+        "procedureName": "appendUnresolvedInjects",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L643",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L642",
+            "expr": "outgoing.get(classNode.id) ?? []"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L643",
+            "expr": "e.rel === 'injects'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:304fc8a016c1d7420e15746011ba7df71d24594a198bac1e0c2f1390ea37af09",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L643",
+          "line": 643,
+          "expr": "emitted.add(e.dst);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#appendUnresolvedInjects@L633",
+        "procedureName": "appendUnresolvedInjects",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:ecb62a54d5f1d226a22a7a160b505d5b26926c2dd25eadab3dc8a8af7cc5f7f1",
+          "target": "sym:packages/parsers/fixtures/python/rules.py#add@L16",
+          "expr": "add",
+          "line": 643
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#appendUnresolvedInjects@L633",
+        "procedureName": "appendUnresolvedInjects",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L645",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L645",
+            "expr": "list",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:97549f812703aeab4eb54b633bf5e04c9208e894355627cd57a66f686bbdaa6d",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L647",
+          "line": 647,
+          "expr": "const matches = [...emitted].some((id) => id.toLowerCase().includes(t.toLowerCase()));"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#appendUnresolvedInjects@L633",
+        "procedureName": "appendUnresolvedInjects",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L645",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L645",
+            "expr": "list",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:66b3963da2a6e6bf55c05651c4984e1b32db818ba7e90251d87299aeee01f18b",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L650",
+          "line": 650,
+          "expr": "seen.add(`?${t}`);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#appendUnresolvedInjects@L633",
+        "procedureName": "appendUnresolvedInjects",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:4ae6eddf532730b112b387c6d9196b2f398021b3df16aed99ccadbba100afdb0",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
+          "expr": "push",
+          "line": 651
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#appendUnresolvedInjects@L633",
+        "procedureName": "appendUnresolvedInjects",
+        "guard": "cond:packages/core/src/dossier/framework.ts@L645",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/framework.ts@L645",
+            "expr": "list",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9a966f5d15f6f95eba803e46254ec13984993fad0b5f84d853f5083be11dd65f",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L651",
+          "line": 651,
+          "expr": "dependencies.push({\n      id: '?',\n      confidence: 0,\n      brief: { id: '?', confidence: 0, qualifiedName: t },\n      kind: 'injects',\n      injectedAs: t,\n      unresolved: true,\n    });"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 5,
+    "referencedByFiles": [
+      "packages/core/src/dossier/framework.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 5,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 8,
+      "unresolved": 5
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "5 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

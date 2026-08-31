@@ -1,0 +1,234 @@
+{
+  "id": "sym:packages/parsers/src/rust/parser.ts#Parser.sliceTokens@L1454",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:f5484a0adf3bed6bd2bfe1db01ab73d9fe8bc622fb04843b005332f62aee197c",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/rust/parser.ts#Parser.sliceTokens@L1454",
+    "kind": "symbol",
+    "type": "method",
+    "name": "sliceTokens",
+    "qualifiedName": "Parser.sliceTokens",
+    "signature": "sliceTokens(startIdx: number, endIdx: number): string",
+    "lang": "typescript",
+    "file": "packages/parsers/src/rust/parser.ts",
+    "span": {
+      "start": 1454,
+      "end": 1461
+    },
+    "callSites": [
+      {
+        "callee": "tokOff",
+        "line": 1458
+      },
+      {
+        "callee": "tokOff",
+        "line": 1459
+      },
+      {
+        "callee": "slice",
+        "line": 1460
+      },
+      {
+        "callee": "max",
+        "line": 1460
+      }
+    ]
+  },
+  "source": {
+    "text": "  private sliceTokens(startIdx: number, endIdx: number): string {\n    if (startIdx >= endIdx || startIdx >= this.t.length) return '';\n    const first = this.t[startIdx]!;\n    const last = this.t[endIdx - 1] ?? first;\n    const s = this.tokOff(first);\n    const e = this.tokOff(last) + last.value.length;\n    return this.src.slice(s, Math.max(s, e));\n  }",
+    "truncated": false,
+    "totalLines": 8,
+    "startLine": 1454
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/rust/parser.ts#Parser.exprToAction@L1268",
+      "confidence": 1,
+      "name": "exprToAction",
+      "qualifiedName": "Parser.exprToAction",
+      "signature": "exprToAction(line: number, start: number, end: number): RustStmt[]",
+      "type": "method",
+      "file": "packages/parsers/src/rust/parser.ts",
+      "line": 1268
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/parser.ts#Parser.parseExprStmt@L1218",
+      "confidence": 1,
+      "name": "parseExprStmt",
+      "qualifiedName": "Parser.parseExprStmt",
+      "signature": "parseExprStmt(line: number): RustStmt | null",
+      "type": "method",
+      "file": "packages/parsers/src/rust/parser.ts",
+      "line": 1218
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/parser.ts#Parser.parseMatchArm@L1138",
+      "confidence": 1,
+      "name": "parseMatchArm",
+      "qualifiedName": "Parser.parseMatchArm",
+      "signature": "parseMatchArm(): { line: number; pat: string; body: RustStmt[] } | null",
+      "type": "method",
+      "file": "packages/parsers/src/rust/parser.ts",
+      "line": 1138
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/parser.ts#Parser.parseReturn@L1182",
+      "confidence": 1,
+      "name": "parseReturn",
+      "qualifiedName": "Parser.parseReturn",
+      "signature": "parseReturn(line: number): RustStmt",
+      "type": "method",
+      "file": "packages/parsers/src/rust/parser.ts",
+      "line": 1182
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/parser.ts#Parser.readUntilBlock@L1293",
+      "confidence": 1,
+      "name": "readUntilBlock",
+      "qualifiedName": "Parser.readUntilBlock",
+      "signature": "readUntilBlock(): string",
+      "type": "method",
+      "file": "packages/parsers/src/rust/parser.ts",
+      "line": 1293
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/rust/parser.ts#Parser.tokOff@L1449",
+      "confidence": 1,
+      "name": "tokOff",
+      "qualifiedName": "Parser.tokOff",
+      "signature": "tokOff(tk: Token): number",
+      "type": "method",
+      "file": "packages/parsers/src/rust/parser.ts",
+      "line": 1449
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/rust/parser.ts@L1453",
+      "snippet": "/** Best-effort source text spanned by tokens [startIdx, endIdx) — for predicates/expressions. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/rust/parser.ts#Parser.sliceTokens@L1454",
+    "procedureName": "Parser.sliceTokens",
+    "conditions": [
+      "cond:packages/parsers/src/rust/parser.ts@L1455"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/rust/parser.ts#Parser.sliceTokens@L1454",
+        "procedureName": "Parser.sliceTokens",
+        "guard": "cond:packages/parsers/src/rust/parser.ts@L1455",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L1455",
+            "expr": "startIdx >= endIdx || startIdx >= this.t.length",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8f26afc55bb9c4a04cc3c0e9633eeb67094078e7e88c518b711288f9ceb7ee38",
+          "target": "stmt:packages/parsers/src/rust/parser.ts@L1455",
+          "line": 1455,
+          "expr": "return '';"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/parser.ts#Parser.sliceTokens@L1454",
+        "procedureName": "Parser.sliceTokens",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7868ea2f330f194004fd21c1f7a120ce4b9ff330acd4b0ae6da71c08e0079d76",
+          "target": "stmt:packages/parsers/src/rust/parser.ts@L1458",
+          "line": 1458,
+          "expr": "const s = this.tokOff(first);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/parser.ts#Parser.sliceTokens@L1454",
+        "procedureName": "Parser.sliceTokens",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:87a7124241e8be53c5a7f716383f2575b440869bb675c3e529e7be8a6e099801",
+          "target": "sym:packages/parsers/src/rust/parser.ts#Parser.tokOff@L1449",
+          "expr": "tokOff",
+          "line": 1458
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/parser.ts#Parser.sliceTokens@L1454",
+        "procedureName": "Parser.sliceTokens",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0392d514ada247b5adcca2e824cfcf7f31f7dfe0d3f571758d1b5afca4cd8833",
+          "target": "stmt:packages/parsers/src/rust/parser.ts@L1459",
+          "line": 1459,
+          "expr": "const e = this.tokOff(last) + last.value.length;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/parser.ts#Parser.sliceTokens@L1454",
+        "procedureName": "Parser.sliceTokens",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:47e806e2ff22ba46b93b2847dc0bb92203c7e4b3de83d897018708c8fb8f89fe",
+          "target": "stmt:packages/parsers/src/rust/parser.ts@L1460",
+          "line": 1460,
+          "expr": "return this.src.slice(s, Math.max(s, e));"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": [
+      "packages/parsers/src/rust/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 4,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

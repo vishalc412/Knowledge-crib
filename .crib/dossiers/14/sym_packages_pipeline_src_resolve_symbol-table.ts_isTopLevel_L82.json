@@ -1,0 +1,96 @@
+{
+  "id": "sym:packages/pipeline/src/resolve/symbol-table.ts#isTopLevel@L82",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:dcce3f8fee0be6463a82b84839ed905bf7cb2ca4683bf033b55086e388cdcdff",
+  "builtAt": "2026-08-25T20:55:11.863Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/resolve/symbol-table.ts#isTopLevel@L82",
+    "kind": "symbol",
+    "type": "function",
+    "name": "isTopLevel",
+    "qualifiedName": "isTopLevel",
+    "signature": "isTopLevel(node: Node): boolean",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/resolve/symbol-table.ts",
+    "span": {
+      "start": 82,
+      "end": 85
+    }
+  },
+  "source": {
+    "text": "function isTopLevel(node: Node): boolean {\n  const parent = node.meta?.parentQualifier;\n  return parent === undefined || parent === '';\n}",
+    "truncated": false,
+    "totalLines": 4,
+    "startLine": 82
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/src/resolve/symbol-table.ts#SymbolTable@L10",
+      "confidence": 1,
+      "name": "SymbolTable",
+      "qualifiedName": "SymbolTable",
+      "type": "class",
+      "file": "packages/pipeline/src/resolve/symbol-table.ts",
+      "line": 10
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/pipeline/src/resolve/symbol-table.ts@L81",
+      "snippet": "/** Top-level = declared directly under the file (no enclosing symbol). */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/resolve/symbol-table.ts#isTopLevel@L82",
+    "procedureName": "isTopLevel",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/symbol-table.ts#isTopLevel@L82",
+        "procedureName": "isTopLevel",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:710b8ec3e2eb1e23e3a49bb38b2779ca44275e4e1c731a7f12c5738aa0526f02",
+          "target": "stmt:packages/pipeline/src/resolve/symbol-table.ts@L84",
+          "line": 84,
+          "expr": "return parent === undefined || parent === '';"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/pipeline/src/resolve/symbol-table.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

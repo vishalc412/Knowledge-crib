@@ -1,0 +1,106 @@
+{
+  "id": "sym:packages/pipeline/fixtures/python-module-imports/pkg/client.py#use_helper@L18",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:e8456ac74d175270b0905fdda6247ae057ef98dbbcd7affaeb648916ece96570",
+  "builtAt": "2026-08-25T20:55:11.863Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/fixtures/python-module-imports/pkg/client.py#use_helper@L18",
+    "kind": "symbol",
+    "type": "function",
+    "name": "use_helper",
+    "qualifiedName": "use_helper",
+    "signature": "use_helper()",
+    "lang": "python",
+    "file": "packages/pipeline/fixtures/python-module-imports/pkg/client.py",
+    "span": {
+      "start": 18,
+      "end": 19
+    },
+    "callSites": [
+      {
+        "callee": "do",
+        "line": 19
+      }
+    ]
+  },
+  "source": {
+    "text": "def use_helper():\n    return helper.do()",
+    "truncated": false,
+    "totalLines": 2,
+    "startLine": 18
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/pipeline/fixtures/python-module-imports/pkg/helper.py#do@L1",
+      "confidence": 1,
+      "name": "do",
+      "qualifiedName": "do",
+      "signature": "do()",
+      "type": "function",
+      "file": "packages/pipeline/fixtures/python-module-imports/pkg/helper.py",
+      "line": 1
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/pipeline/fixtures/python-module-imports/pkg/client.py#use_helper@L18",
+    "procedureName": "use_helper",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/fixtures/python-module-imports/pkg/client.py#use_helper@L18",
+        "procedureName": "use_helper",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8d7e2bba3ab5760d0a472f2940ff40633cc363522f9707a86277eff0030e2f30",
+          "target": "stmt:packages/pipeline/fixtures/python-module-imports/pkg/client.py@L19",
+          "line": 19,
+          "expr": "return helper.do()"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/fixtures/python-module-imports/pkg/client.py#use_helper@L18",
+        "procedureName": "use_helper",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:96da6ebaa3e139394ebc4a6a75680f84f60531fad063822b78e438029b995154",
+          "target": "sym:packages/pipeline/fixtures/python-module-imports/pkg/helper.py#do@L1",
+          "expr": "do",
+          "line": 19
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

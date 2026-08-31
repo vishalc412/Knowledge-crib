@@ -1,0 +1,319 @@
+{
+  "id": "sym:packages/parsers/src/rust/parser.ts#Parser.parseBlockBody@L1312",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:92df83e0dedd6b90747b49641434a5dc1198d087de00454f75ab6b99afb18986",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/rust/parser.ts#Parser.parseBlockBody@L1312",
+    "kind": "symbol",
+    "type": "method",
+    "name": "parseBlockBody",
+    "qualifiedName": "Parser.parseBlockBody",
+    "signature": "parseBlockBody(): RustStmt[]",
+    "lang": "typescript",
+    "file": "packages/parsers/src/rust/parser.ts",
+    "span": {
+      "start": 1312,
+      "end": 1321
+    },
+    "callSites": [
+      {
+        "callee": "skipToSemiOrClose",
+        "line": 1315
+      },
+      {
+        "callee": "next",
+        "line": 1318
+      },
+      {
+        "callee": "parseStmtBlock",
+        "line": 1319
+      }
+    ]
+  },
+  "source": {
+    "text": "  private parseBlockBody(): RustStmt[] {\n    if (!this.isOp('{')) {\n      // malformed body (no brace) — skip to `;`/`}` and degrade to an empty body (lossy, no throw)\n      this.skipToSemiOrClose();\n      return [];\n    }\n    this.next(); // {\n    const res = this.parseStmtBlock();\n    return res.stmts;\n  }",
+    "truncated": false,
+    "totalLines": 10,
+    "startLine": 1312
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/rust/parser.ts#Parser.parseFor@L1092",
+      "confidence": 1,
+      "name": "parseFor",
+      "qualifiedName": "Parser.parseFor",
+      "signature": "parseFor(line: number): RustStmt",
+      "type": "method",
+      "file": "packages/parsers/src/rust/parser.ts",
+      "line": 1092
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/parser.ts#Parser.parseIf@L1073",
+      "confidence": 1,
+      "name": "parseIf",
+      "qualifiedName": "Parser.parseIf",
+      "signature": "parseIf(line: number): RustStmt",
+      "type": "method",
+      "file": "packages/parsers/src/rust/parser.ts",
+      "line": 1073
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/parser.ts#Parser.parseLoopStmt@L1104",
+      "confidence": 1,
+      "name": "parseLoopStmt",
+      "qualifiedName": "Parser.parseLoopStmt",
+      "signature": "parseLoopStmt(line: number): RustStmt",
+      "type": "method",
+      "file": "packages/parsers/src/rust/parser.ts",
+      "line": 1104
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/parser.ts#Parser.parseWhile@L1098",
+      "confidence": 1,
+      "name": "parseWhile",
+      "qualifiedName": "Parser.parseWhile",
+      "signature": "parseWhile(line: number): RustStmt",
+      "type": "method",
+      "file": "packages/parsers/src/rust/parser.ts",
+      "line": 1098
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/rust/parser.ts#Parser.isOp@L1465",
+      "confidence": 1,
+      "name": "isOp",
+      "qualifiedName": "Parser.isOp",
+      "signature": "isOp(v: string): boolean",
+      "type": "method",
+      "file": "packages/parsers/src/rust/parser.ts",
+      "line": 1465
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/parser.ts#Parser.next@L1478",
+      "confidence": 1,
+      "name": "next",
+      "qualifiedName": "Parser.next",
+      "signature": "next(): Token",
+      "type": "method",
+      "file": "packages/parsers/src/rust/parser.ts",
+      "line": 1478
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/parser.ts#Parser.parseStmtBlock@L1013",
+      "confidence": 1,
+      "name": "parseStmtBlock",
+      "qualifiedName": "Parser.parseStmtBlock",
+      "signature": "parseStmtBlock(): { stmts: RustStmt[]; closeLine: number }",
+      "type": "method",
+      "file": "packages/parsers/src/rust/parser.ts",
+      "line": 1013
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/parser.ts#Parser.skipToSemiOrClose@L979",
+      "confidence": 1,
+      "name": "skipToSemiOrClose",
+      "qualifiedName": "Parser.skipToSemiOrClose",
+      "signature": "skipToSemiOrClose(): void",
+      "type": "method",
+      "file": "packages/parsers/src/rust/parser.ts",
+      "line": 979
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/rust/parser.ts@L1311",
+      "snippet": "/** Parse a block body: expects `{`, consumes it + the matching `}`, returns the body stmts. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/rust/parser.ts#Parser.parseBlockBody@L1312",
+    "procedureName": "Parser.parseBlockBody",
+    "conditions": [
+      "cond:packages/parsers/src/rust/parser.ts@L1313"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/rust/parser.ts#Parser.parseBlockBody@L1312",
+        "procedureName": "Parser.parseBlockBody",
+        "guard": "cond:packages/parsers/src/rust/parser.ts@L1313",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L1313",
+            "expr": "!this.isOp('{')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:726c8f08c794a5bd6033de0ec2c85c7c5f61608b69e8833c9b44dadebdc766f5",
+          "target": "sym:packages/parsers/src/rust/parser.ts#Parser.skipToSemiOrClose@L979",
+          "expr": "skipToSemiOrClose",
+          "line": 1315
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/parser.ts#Parser.parseBlockBody@L1312",
+        "procedureName": "Parser.parseBlockBody",
+        "guard": "cond:packages/parsers/src/rust/parser.ts@L1313",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L1313",
+            "expr": "!this.isOp('{')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ce7090a920e2abac393a0dfea7070e1cf2f584a7739750af0646bc96f201a668",
+          "target": "stmt:packages/parsers/src/rust/parser.ts@L1315",
+          "line": 1315,
+          "expr": "this.skipToSemiOrClose();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/parser.ts#Parser.parseBlockBody@L1312",
+        "procedureName": "Parser.parseBlockBody",
+        "guard": "cond:packages/parsers/src/rust/parser.ts@L1313",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L1313",
+            "expr": "!this.isOp('{')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9adb0fcb3e00bd40263f9f4503cf4b4a9d3f638bb4c3249f8190a6adc66dd359",
+          "target": "stmt:packages/parsers/src/rust/parser.ts@L1316",
+          "line": 1316,
+          "expr": "return [];"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/parser.ts#Parser.parseBlockBody@L1312",
+        "procedureName": "Parser.parseBlockBody",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7c4e0e08da21bf36e61caeab67244c89b2331ccc84cc2cd7742667016c886a84",
+          "target": "stmt:packages/parsers/src/rust/parser.ts@L1318",
+          "line": 1318,
+          "expr": "this.next();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/parser.ts#Parser.parseBlockBody@L1312",
+        "procedureName": "Parser.parseBlockBody",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:b87201219c46d52e2fab3580533f7f2ca020a40a36a019597510270c12896397",
+          "target": "sym:packages/parsers/src/rust/parser.ts#Parser.next@L1478",
+          "expr": "next",
+          "line": 1318
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/parser.ts#Parser.parseBlockBody@L1312",
+        "procedureName": "Parser.parseBlockBody",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e6045608347fcf6385e8c84ed421a4a7114f68ae177010a97a70e2453c041c01",
+          "target": "stmt:packages/parsers/src/rust/parser.ts@L1319",
+          "line": 1319,
+          "expr": "const res = this.parseStmtBlock();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/parser.ts#Parser.parseBlockBody@L1312",
+        "procedureName": "Parser.parseBlockBody",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:fbfd3477f9079e460765542f95aa2c898cde2783319aa819b3b841530fcac1e0",
+          "target": "sym:packages/parsers/src/rust/parser.ts#Parser.parseStmtBlock@L1013",
+          "expr": "parseStmtBlock",
+          "line": 1319
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/parser.ts#Parser.parseBlockBody@L1312",
+        "procedureName": "Parser.parseBlockBody",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:cc4745a6cf9bbff0209193cf0d5e8bb78bbd4d54da2bbfd58a746dd2fff1b901",
+          "target": "stmt:packages/parsers/src/rust/parser.ts@L1320",
+          "line": 1320,
+          "expr": "return res.stmts;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/parser.ts#Parser.parseBlockBody@L1312",
+        "procedureName": "Parser.parseBlockBody",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:2de18d57a3d4092d7650a4c991ada07ae388a8fefba55ee0654a36463fa7d3df",
+          "target": "sym:packages/parsers/src/rust/parser.ts#Parser.isOp@L1465",
+          "expr": "isOp"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 5,
+    "referencedByFiles": [
+      "packages/parsers/src/rust/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 5,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 4,
+      "recorded": 3,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

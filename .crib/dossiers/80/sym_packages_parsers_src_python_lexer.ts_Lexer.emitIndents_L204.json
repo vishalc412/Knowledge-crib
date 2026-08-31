@@ -1,0 +1,266 @@
+{
+  "id": "sym:packages/parsers/src/python/lexer.ts#Lexer.emitIndents@L204",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:948a176941d5cc66f88e859d797723709e4d1351731916d972968f7c236939ec",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/python/lexer.ts#Lexer.emitIndents@L204",
+    "kind": "symbol",
+    "type": "method",
+    "name": "emitIndents",
+    "qualifiedName": "Lexer.emitIndents",
+    "signature": "emitIndents(indent: number): void",
+    "lang": "typescript",
+    "file": "packages/parsers/src/python/lexer.ts",
+    "span": {
+      "start": 204,
+      "end": 218
+    },
+    "callSites": [
+      {
+        "callee": "push",
+        "line": 207
+      },
+      {
+        "callee": "emit",
+        "line": 208
+      },
+      {
+        "callee": "padStart",
+        "line": 208
+      },
+      {
+        "callee": "pop",
+        "line": 213
+      },
+      {
+        "callee": "emit",
+        "line": 214
+      }
+    ]
+  },
+  "source": {
+    "text": "  private emitIndents(indent: number): void {\n    const top = this.indents[this.indents.length - 1]!;\n    if (indent > top) {\n      this.indents.push(indent);\n      this.emit('INDENT', ''.padStart(indent));\n      return;\n    }\n    if (indent < top) {\n      while (this.indents.length > 1 && (this.indents[this.indents.length - 1] ?? 0) > indent) {\n        this.indents.pop();\n        this.emit('DEDENT', '');\n      }\n      // tolerant: if the indent doesn't match an existing level, just continue (no error token).\n    }\n  }",
+    "truncated": false,
+    "totalLines": 15,
+    "startLine": 204
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/python/lexer.ts#Lexer.handleLineStart@L161",
+      "confidence": 1,
+      "name": "handleLineStart",
+      "qualifiedName": "Lexer.handleLineStart",
+      "signature": "handleLineStart(): void",
+      "type": "method",
+      "file": "packages/parsers/src/python/lexer.ts",
+      "line": 161
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/python/lexer.ts#Lexer.emit@L405",
+      "confidence": 1,
+      "name": "emit",
+      "qualifiedName": "Lexer.emit",
+      "signature": "emit(type: TokenType, value: string, line?: number, col?: number): void",
+      "type": "method",
+      "file": "packages/parsers/src/python/lexer.ts",
+      "line": 405
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/python/lexer.ts@L203",
+      "snippet": "/** Emit INDENT/DEDENT to move from the current stack to `indent`. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.emitIndents@L204",
+    "procedureName": "Lexer.emitIndents",
+    "conditions": [
+      "cond:packages/parsers/src/python/lexer.ts@L206",
+      "cond:packages/parsers/src/python/lexer.ts@L211",
+      "cond:packages/parsers/src/python/lexer.ts@L212"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.emitIndents@L204",
+        "procedureName": "Lexer.emitIndents",
+        "guard": "cond:packages/parsers/src/python/lexer.ts@L206",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L206",
+            "expr": "indent > top",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3910bc7b10c5bd2616f96704ac49a13d1f91c61abcc24946ba358d768800483a",
+          "target": "stmt:packages/parsers/src/python/lexer.ts@L207",
+          "line": 207,
+          "expr": "this.indents.push(indent);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.emitIndents@L204",
+        "procedureName": "Lexer.emitIndents",
+        "guard": "cond:packages/parsers/src/python/lexer.ts@L206",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L206",
+            "expr": "indent > top",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:627c9d7533e86d35527043347288cf6af3c1181fff51d7365ae549cfdc6b45e8",
+          "target": "stmt:packages/parsers/src/python/lexer.ts@L208",
+          "line": 208,
+          "expr": "this.emit('INDENT', ''.padStart(indent));"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.emitIndents@L204",
+        "procedureName": "Lexer.emitIndents",
+        "guard": "cond:packages/parsers/src/python/lexer.ts@L212",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L211",
+            "expr": "indent < top"
+          },
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L212",
+            "expr": "this.indents.length > 1 && (this.indents[this.indents.length - 1] ?? 0) > indent",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:7e72a52399ff5e7e8014cdb17aefea5817d22e37d233085b2ccd5781d48a815e",
+          "target": "sym:packages/parsers/src/python/lexer.ts#Lexer.emit@L405",
+          "expr": "emit",
+          "line": 208
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.emitIndents@L204",
+        "procedureName": "Lexer.emitIndents",
+        "guard": "cond:packages/parsers/src/python/lexer.ts@L206",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L206",
+            "expr": "indent > top",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c9f41868426055168e12da12707647dcadd50098ff45e32a2967dc783252d624",
+          "target": "stmt:packages/parsers/src/python/lexer.ts@L209",
+          "line": 209,
+          "expr": "return;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.emitIndents@L204",
+        "procedureName": "Lexer.emitIndents",
+        "guard": "cond:packages/parsers/src/python/lexer.ts@L212",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L211",
+            "expr": "indent < top"
+          },
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L212",
+            "expr": "this.indents.length > 1 && (this.indents[this.indents.length - 1] ?? 0) > indent",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e13c02393f1e887ecf7d37dca81472f1b6b6e19170b4114860eaa077a6183be9",
+          "target": "stmt:packages/parsers/src/python/lexer.ts@L213",
+          "line": 213,
+          "expr": "this.indents.pop();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.emitIndents@L204",
+        "procedureName": "Lexer.emitIndents",
+        "guard": "cond:packages/parsers/src/python/lexer.ts@L212",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L211",
+            "expr": "indent < top"
+          },
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L212",
+            "expr": "this.indents.length > 1 && (this.indents[this.indents.length - 1] ?? 0) > indent",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7f3a7b294ec4e78f19dae8efea986e4b952980eb3cb80e8ab035ecd567cecf11",
+          "target": "stmt:packages/parsers/src/python/lexer.ts@L214",
+          "line": 214,
+          "expr": "this.emit('DEDENT', '');"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 5,
+    "referencedByFiles": [
+      "packages/parsers/src/python/lexer.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 5,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 5,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

@@ -1,0 +1,549 @@
+{
+  "id": "sym:packages/parsers/src/python/parser.ts#Parser.parseFunction@L307",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:a3f20823ae80a4fb50de24d7ef34fbcc00d9da40b0a081ed7312de0141117377",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/python/parser.ts#Parser.parseFunction@L307",
+    "kind": "symbol",
+    "type": "method",
+    "name": "parseFunction",
+    "qualifiedName": "Parser.parseFunction",
+    "signature": "parseFunction(async: boolean): PyDef | null",
+    "lang": "typescript",
+    "file": "packages/parsers/src/python/parser.ts",
+    "span": {
+      "start": 307,
+      "end": 335
+    },
+    "callSites": [
+      {
+        "callee": "peek",
+        "line": 308
+      },
+      {
+        "callee": "next",
+        "line": 309
+      },
+      {
+        "callee": "peek",
+        "line": 311
+      },
+      {
+        "callee": "next",
+        "line": 312
+      },
+      {
+        "callee": "push",
+        "line": 315
+      },
+      {
+        "callee": "parseParamList",
+        "line": 315
+      },
+      {
+        "callee": "popDecorators",
+        "line": 317
+      },
+      {
+        "callee": "parseSuite",
+        "line": 319
+      },
+      {
+        "callee": "stmtsEnd",
+        "line": 320
+      },
+      {
+        "callee": "collectDefs",
+        "line": 331
+      },
+      {
+        "callee": "extractDocstring",
+        "line": 333
+      }
+    ]
+  },
+  "source": {
+    "text": "  private parseFunction(async: boolean): PyDef | null {\n    const startLine = this.peek().line;\n    this.next(); // 'def'\n    if (!this.is('NAME')) return null;\n    const name = this.peek().value;\n    this.next();\n    const params: string[] = [];\n    if (this.is('OP') && this.peek().value === '(') {\n      params.push(...this.parseParamList());\n    }\n    const decorators = this.popDecorators();\n    if (!this.consumeColon()) return null;\n    const statements = this.parseSuite();\n    const endLine = stmtsEnd(statements, this.lastContentLine, startLine);\n    return {\n      // kind is refined by the extractor (method vs function) using the nesting context.\n      kind: 'function',\n      name,\n      startLine,\n      endLine,\n      async,\n      decorators,\n      bases: [],\n      params,\n      body: collectDefs(statements),\n      statements,\n      ...extractDocstring(statements),\n    };\n  }",
+    "truncated": false,
+    "totalLines": 29,
+    "startLine": 307
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#Parser.parseStatement@L236",
+      "confidence": 1,
+      "name": "parseStatement",
+      "qualifiedName": "Parser.parseStatement",
+      "signature": "parseStatement(): PyStmt | null",
+      "type": "method",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 236
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#Parser.consumeColon@L767",
+      "confidence": 1,
+      "name": "consumeColon",
+      "qualifiedName": "Parser.consumeColon",
+      "signature": "consumeColon(): boolean",
+      "type": "method",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 767
+    },
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#Parser.is@L795",
+      "confidence": 1,
+      "name": "is",
+      "qualifiedName": "Parser.is",
+      "signature": "is(type: Token['type']): boolean",
+      "type": "method",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 795
+    },
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#Parser.next@L781",
+      "confidence": 1,
+      "name": "next",
+      "qualifiedName": "Parser.next",
+      "signature": "next(): Token",
+      "type": "method",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 781
+    },
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#Parser.parseParamList@L369",
+      "confidence": 1,
+      "name": "parseParamList",
+      "qualifiedName": "Parser.parseParamList",
+      "signature": "parseParamList(): string[]",
+      "type": "method",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 369
+    },
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#Parser.parseSuite@L415",
+      "confidence": 1,
+      "name": "parseSuite",
+      "qualifiedName": "Parser.parseSuite",
+      "signature": "parseSuite(): PyStmt[]",
+      "type": "method",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 415
+    },
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#Parser.peek@L801",
+      "confidence": 1,
+      "name": "peek",
+      "qualifiedName": "Parser.peek",
+      "signature": "peek(offset = 0): Token",
+      "type": "method",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 801
+    },
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#Parser.popDecorators@L743",
+      "confidence": 1,
+      "name": "popDecorators",
+      "qualifiedName": "Parser.popDecorators",
+      "signature": "popDecorators(): string[]",
+      "type": "method",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 743
+    },
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#collectDefs@L826",
+      "confidence": 1,
+      "name": "collectDefs",
+      "qualifiedName": "collectDefs",
+      "signature": "collectDefs(stmts: PyStmt[]): PyDef[]",
+      "type": "function",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 826
+    },
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#extractDocstring@L1030",
+      "confidence": 1,
+      "name": "extractDocstring",
+      "qualifiedName": "extractDocstring",
+      "signature": "extractDocstring(statements: PyStmt[]): { docstring?: PyDef['docstring'] }",
+      "type": "function",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 1030
+    },
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#stmtsEnd@L814",
+      "confidence": 1,
+      "name": "stmtsEnd",
+      "qualifiedName": "stmtsEnd",
+      "signature": "stmtsEnd(stmts: PyStmt[], lastContentLine: number, startLine: number): number",
+      "type": "function",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 814
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseFunction@L307",
+    "procedureName": "Parser.parseFunction",
+    "conditions": [
+      "cond:packages/parsers/src/python/parser.ts@L310",
+      "cond:packages/parsers/src/python/parser.ts@L314",
+      "cond:packages/parsers/src/python/parser.ts@L318"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseFunction@L307",
+        "procedureName": "Parser.parseFunction",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:3457d184e89c7d843e80167f7102a9f55c189135599a44f2d47113638878a026",
+          "target": "sym:packages/parsers/src/python/parser.ts#Parser.peek@L801",
+          "expr": "peek",
+          "line": 308
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseFunction@L307",
+        "procedureName": "Parser.parseFunction",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:48bd3c6806eaab65fdf476e81d2d0b9bfddc6f1409bef9307d13f3a367615be7",
+          "target": "stmt:packages/parsers/src/python/parser.ts@L308",
+          "line": 308,
+          "expr": "const startLine = this.peek().line;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseFunction@L307",
+        "procedureName": "Parser.parseFunction",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:6f9370ed94a88d3f5091adf1644384ed8275aa063f035a8878baa11a71b00f8e",
+          "target": "sym:packages/parsers/src/python/parser.ts#Parser.next@L781",
+          "expr": "next",
+          "line": 309
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseFunction@L307",
+        "procedureName": "Parser.parseFunction",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f47b657d8beace8c3c378da0cc623f3181df29197d54a5386d0a9661990fbe29",
+          "target": "stmt:packages/parsers/src/python/parser.ts@L309",
+          "line": 309,
+          "expr": "this.next();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseFunction@L307",
+        "procedureName": "Parser.parseFunction",
+        "guard": "cond:packages/parsers/src/python/parser.ts@L310",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/parser.ts@L310",
+            "expr": "!this.is('NAME')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0d79ed76a95997450543b8e2b117df8502fedb6533d5d2129836f9b456a03223",
+          "target": "stmt:packages/parsers/src/python/parser.ts@L310",
+          "line": 310,
+          "expr": "return null;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseFunction@L307",
+        "procedureName": "Parser.parseFunction",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c2cc7587ccd92ecc3c2528be3e502494e0caf893b765333bc7d4a0221c759697",
+          "target": "stmt:packages/parsers/src/python/parser.ts@L311",
+          "line": 311,
+          "expr": "const name = this.peek().value;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseFunction@L307",
+        "procedureName": "Parser.parseFunction",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a568de94953949b0bfd59cacee9b061aac8ff99aef430c508811426034217ec3",
+          "target": "stmt:packages/parsers/src/python/parser.ts@L312",
+          "line": 312,
+          "expr": "this.next();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseFunction@L307",
+        "procedureName": "Parser.parseFunction",
+        "guard": "cond:packages/parsers/src/python/parser.ts@L314",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/parser.ts@L314",
+            "expr": "this.is('OP') && this.peek().value === '('",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3f131c1f6a19362f40419998e562f239a45abe434c0814a16b1c7f4221ce7427",
+          "target": "stmt:packages/parsers/src/python/parser.ts@L315",
+          "line": 315,
+          "expr": "params.push(...this.parseParamList());"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseFunction@L307",
+        "procedureName": "Parser.parseFunction",
+        "guard": "cond:packages/parsers/src/python/parser.ts@L314",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/parser.ts@L314",
+            "expr": "this.is('OP') && this.peek().value === '('",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:d44e702e9d2eedd596ce5bd9f27e8b5a92e40092c2020bf533aa4d0b161b554a",
+          "target": "sym:packages/parsers/src/python/parser.ts#Parser.parseParamList@L369",
+          "expr": "parseParamList",
+          "line": 315
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseFunction@L307",
+        "procedureName": "Parser.parseFunction",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:0a6540cfc9b0500ed157af3e2f7e367afac0c0486e2c9d06d5e8f2b9025e1f5a",
+          "target": "sym:packages/parsers/src/python/parser.ts#Parser.popDecorators@L743",
+          "expr": "popDecorators",
+          "line": 317
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseFunction@L307",
+        "procedureName": "Parser.parseFunction",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f8665f8d022bd4c27537a4b44fad5a2463a99a1859f949fadcbc5f099907ead5",
+          "target": "stmt:packages/parsers/src/python/parser.ts@L317",
+          "line": 317,
+          "expr": "const decorators = this.popDecorators();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseFunction@L307",
+        "procedureName": "Parser.parseFunction",
+        "guard": "cond:packages/parsers/src/python/parser.ts@L318",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/parser.ts@L318",
+            "expr": "!this.consumeColon()",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:593129982d7c2e22ba2d353969cf255f926d5306f60c08a30b7fe71e1066a9ed",
+          "target": "stmt:packages/parsers/src/python/parser.ts@L318",
+          "line": 318,
+          "expr": "return null;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseFunction@L307",
+        "procedureName": "Parser.parseFunction",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:021ea020968eefd195923373d7a5fe2584906026e5f14121a9d2ccf1ae832fab",
+          "target": "stmt:packages/parsers/src/python/parser.ts@L319",
+          "line": 319,
+          "expr": "const statements = this.parseSuite();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseFunction@L307",
+        "procedureName": "Parser.parseFunction",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:9e571d73a33ff6c93804765726e703e2971f8721b0fdd30d133673c3eeccdee2",
+          "target": "sym:packages/parsers/src/python/parser.ts#Parser.parseSuite@L415",
+          "expr": "parseSuite",
+          "line": 319
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseFunction@L307",
+        "procedureName": "Parser.parseFunction",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:42459f79c1a88672b47654deb56d786013659e7c7ae94c72a3633d1b674d01de",
+          "target": "stmt:packages/parsers/src/python/parser.ts@L320",
+          "line": 320,
+          "expr": "const endLine = stmtsEnd(statements, this.lastContentLine, startLine);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseFunction@L307",
+        "procedureName": "Parser.parseFunction",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:d7df291acfbd5fc42d9302f5a34d881f08b85bbc80d5613dc68f7b6f98aaca3b",
+          "target": "sym:packages/parsers/src/python/parser.ts#stmtsEnd@L814",
+          "expr": "stmtsEnd",
+          "line": 320
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseFunction@L307",
+        "procedureName": "Parser.parseFunction",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1f564bdec32a63f690cd708aa312f489b8d3b94c445f7fc5fbcc5c3fc8180ca3",
+          "target": "stmt:packages/parsers/src/python/parser.ts@L321",
+          "line": 321,
+          "expr": "return {\n      // kind is refined by the extractor (method vs function) using the nesting context.\n      kind: 'function',\n      name,\n      startLine,\n      endLine,\n      async,\n      decorators,\n      bases: [],\n      params,\n      body: collectDefs(statements),\n      statements,\n      ...extractDocstring(statements),\n    };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseFunction@L307",
+        "procedureName": "Parser.parseFunction",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:665d4a15b9316a2bea81ae8401becfa7bbecb02ece3d377e222b83b18f0abf03",
+          "target": "sym:packages/parsers/src/python/parser.ts#collectDefs@L826",
+          "expr": "collectDefs",
+          "line": 331
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseFunction@L307",
+        "procedureName": "Parser.parseFunction",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:36bf9a222a13b0532e851aa019d103c0ac36671d67d6745abd9480bcead856a5",
+          "target": "sym:packages/parsers/src/python/parser.ts#extractDocstring@L1030",
+          "expr": "extractDocstring",
+          "line": 333
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseFunction@L307",
+        "procedureName": "Parser.parseFunction",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:197447a65497d7fb7f5c60f9178474213e314ac690a57bc2c8bd9dd1123ff778",
+          "target": "sym:packages/parsers/src/python/parser.ts#Parser.consumeColon@L767",
+          "expr": "consumeColon"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseFunction@L307",
+        "procedureName": "Parser.parseFunction",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:95cb7bde0120e65a202e0ad0a714e27f1da1f8ace75ac502ae85f90a364b45dc",
+          "target": "sym:packages/parsers/src/python/parser.ts#Parser.is@L795",
+          "expr": "is"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 11,
+    "referencedByFiles": [
+      "packages/parsers/src/python/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 11,
+    "assignments": 0,
+    "conditions": 3,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 10,
+      "recorded": 11,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

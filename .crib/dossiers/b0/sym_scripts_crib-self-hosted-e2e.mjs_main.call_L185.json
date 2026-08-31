@@ -1,8 +1,8 @@
 {
   "id": "sym:scripts/crib-self-hosted-e2e.mjs#main.call@L185",
-  "schemaVersion": "1.5",
+  "schemaVersion": "1.6",
   "nodeHash": "blake3:b9d19cdfa1ed5331cce3a3594462650788e482e60b757d159ae6f4238555d420",
-  "builtAt": "2026-07-16T16:35:16.098Z",
+  "builtAt": "2026-08-31T17:37:23.222Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:scripts/crib-self-hosted-e2e.mjs#main.call@L185",
@@ -40,86 +40,6 @@
   },
   "callers": [
     {
-      "id": "sym:packages/ui/web/vendor/react.production.min.js#C@L14",
-      "confidence": 1,
-      "name": "C",
-      "qualifiedName": "C",
-      "signature": "C(a, b, e)",
-      "type": "function",
-      "file": "packages/ui/web/vendor/react.production.min.js",
-      "line": 14
-    },
-    {
-      "id": "sym:packages/ui/web/vendor/react-dom.production.min.js#Dh.I@L91",
-      "confidence": 1,
-      "name": "I",
-      "qualifiedName": "Dh.I",
-      "signature": "I(e, g, h, k)",
-      "type": "function",
-      "file": "packages/ui/web/vendor/react-dom.production.min.js",
-      "line": 91
-    },
-    {
-      "id": "sym:packages/ui/web/vendor/react-dom.production.min.js#Hh@L102",
-      "confidence": 1,
-      "name": "Hh",
-      "qualifiedName": "Hh",
-      "signature": "Hh(a, b, c)",
-      "type": "function",
-      "file": "packages/ui/web/vendor/react-dom.production.min.js",
-      "line": 102
-    },
-    {
-      "id": "sym:packages/ui/web/vendor/react-dom.production.min.js#Wd@L213",
-      "confidence": 1,
-      "name": "Wd",
-      "qualifiedName": "Wd",
-      "signature": "Wd(a, b, c, d, e)",
-      "type": "function",
-      "file": "packages/ui/web/vendor/react-dom.production.min.js",
-      "line": 213
-    },
-    {
-      "id": "sym:packages/ui/web/vendor/react-dom.production.min.js#Zk@L212",
-      "confidence": 1,
-      "name": "Zk",
-      "qualifiedName": "Zk",
-      "signature": "Zk(a, b, c, d, e)",
-      "type": "function",
-      "file": "packages/ui/web/vendor/react-dom.production.min.js",
-      "line": 212
-    },
-    {
-      "id": "sym:packages/ui/web/vendor/react-dom.production.min.js#be@L17",
-      "confidence": 1,
-      "name": "be",
-      "qualifiedName": "be",
-      "signature": "be(a, b)",
-      "type": "function",
-      "file": "packages/ui/web/vendor/react-dom.production.min.js",
-      "line": 17
-    },
-    {
-      "id": "sym:packages/ui/web/vendor/react-dom.production.min.js#hj@L23",
-      "confidence": 1,
-      "name": "hj",
-      "qualifiedName": "hj",
-      "signature": "hj(a)",
-      "type": "function",
-      "file": "packages/ui/web/vendor/react-dom.production.min.js",
-      "line": 23
-    },
-    {
-      "id": "sym:packages/ui/web/vendor/react-dom.production.min.js#kj@L223",
-      "confidence": 1,
-      "name": "kj",
-      "qualifiedName": "kj",
-      "signature": "kj(…)",
-      "type": "function",
-      "file": "packages/ui/web/vendor/react-dom.production.min.js",
-      "line": 223
-    },
-    {
       "id": "sym:scripts/crib-self-hosted-e2e.mjs#main@L165",
       "confidence": 1,
       "name": "main",
@@ -128,16 +48,6 @@
       "type": "function",
       "file": "scripts/crib-self-hosted-e2e.mjs",
       "line": 165
-    },
-    {
-      "id": "sym:packages/ui/web/vendor/react-dom.production.min.js#qd@L84",
-      "confidence": 1,
-      "name": "qd",
-      "qualifiedName": "qd",
-      "signature": "qd(a, b)",
-      "type": "function",
-      "file": "packages/ui/web/vendor/react-dom.production.min.js",
-      "line": 84
     }
   ],
   "callees": [
@@ -162,14 +72,14 @@
       "line": 160
     },
     {
-      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
       "confidence": 1,
       "name": "push",
       "qualifiedName": "push",
       "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
       "type": "function",
       "file": "packages/pipeline/src/linker/inverted-index.ts",
-      "line": 39
+      "line": 70
     }
   ],
   "docs": [
@@ -218,6 +128,26 @@
       "heading": "1. Onboarding / \"explain this repo to me\" — *without reading every file*",
       "anchor": "1-onboarding-explain-this-repo-to-me-without-reading-every-file",
       "snippet": "1. Onboarding / \"explain this repo to me\" — *without reading every file*",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-4-extraction.md#task-2-normalize-mule-4-elements-into-a-semantic-document",
+      "heading": "Task 2: Normalize Mule 4 elements into a semantic document",
+      "anchor": "task-2-normalize-mule-4-elements-into-a-semantic-document",
+      "snippet": "Task 2: Normalize Mule 4 elements into a semantic document",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#the-author-contract-per-item",
+      "heading": "The author contract (per item)",
+      "anchor": "the-author-contract-per-item",
+      "snippet": "The author contract (per item)",
       "edgeType": "describes",
       "method": "explicit",
       "provenance": "EXTRACTED",
@@ -284,10 +214,30 @@
       "confidence": 0.95
     },
     {
-      "sectionId": "doc:docs/knowledge-crib-user-guide.md#the-author-contract-per-item",
-      "heading": "The author contract (per item)",
-      "anchor": "the-author-contract-per-item",
-      "snippet": "The author contract (per item)",
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-3-extraction.md#task-2-normalize-mule-3-transports-and-exception-strategies",
+      "heading": "Task 2: Normalize Mule 3 transports and exception strategies",
+      "anchor": "task-2-normalize-mule-3-transports-and-exception-strategies",
+      "snippet": "Task 2: Normalize Mule 3 transports and exception strategies",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-munit-hardening.md#task-1-normalize-mule-4-munit-tests",
+      "heading": "Task 1: Normalize Mule 4 MUnit tests",
+      "anchor": "task-1-normalize-mule-4-munit-tests",
+      "snippet": "Task 1: Normalize Mule 4 MUnit tests",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-munit-hardening.md#task-2-add-mule-3-munit-compatibility",
+      "heading": "Task 2: Add Mule 3 MUnit compatibility",
+      "anchor": "task-2-add-mule-3-munit-compatibility",
+      "snippet": "Task 2: Add Mule 3 MUnit compatibility",
       "edgeType": "describes",
       "method": "explicit",
       "provenance": "EXTRACTED",
@@ -298,7 +248,17 @@
       "heading": "Network surface inventory (the whole product)",
       "anchor": "network-surface-inventory-the-whole-product",
       "snippet": "Network surface inventory (the whole product)",
-      "edgeType": "describes",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/superpowers/specs/2026-08-14-mulesoft-first-class-extractor-design.md#6-graph-mapping",
+      "heading": "6. Graph Mapping",
+      "anchor": "6-graph-mapping",
+      "snippet": "6. Graph Mapping",
+      "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
       "confidence": 0.8
@@ -308,7 +268,7 @@
       "heading": "8. Verify it works (any client)",
       "anchor": "8-verify-it-works-any-client",
       "snippet": "8. Verify it works (any client)",
-      "edgeType": "describes",
+      "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
       "confidence": 0.8
@@ -318,10 +278,30 @@
       "heading": "Body",
       "anchor": "body",
       "snippet": "Body",
-      "edgeType": "describes",
+      "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
       "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:README.md#the-token-cost-benefit-concretely",
+      "heading": "The token-cost benefit, concretely",
+      "anchor": "the-token-cost-benefit-concretely",
+      "snippet": "The token-cost benefit, concretely",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:README.md#measured-not-projected-run-it-yourself",
+      "heading": "Measured, not projected (run it yourself)",
+      "anchor": "measured-not-projected-run-it-yourself",
+      "snippet": "Measured, not projected (run it yourself)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
     },
     {
       "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#what-was-built-3",
@@ -364,10 +344,30 @@
       "confidence": 0.6
     },
     {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-4-extraction.md#gitnexus-execution-preconditions",
+      "heading": "GitNexus execution preconditions",
+      "anchor": "gitnexus-execution-preconditions",
+      "snippet": "GitNexus execution preconditions",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
       "sectionId": "doc:docs/adr/ADR-002-scale-storage.md#dossiers-in-git-keep-committed",
       "heading": "Dossiers-in-git — KEEP committed",
       "anchor": "dossiers-in-git-keep-committed",
       "snippet": "Dossiers-in-git — KEEP committed",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_MAKE_A_BEATS_B_EVERY_EXTRACTOR.md#4-acceptance-criteria-the-universal-plan-a-plan-b-test",
+      "heading": "4. Acceptance criteria (the universal \"Plan A > Plan B\" test)",
+      "anchor": "4-acceptance-criteria-the-universal-plan-a-plan-b-test",
+      "snippet": "4. Acceptance criteria (the universal \"Plan A > Plan B\" test)",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
@@ -384,10 +384,80 @@
       "confidence": 0.6
     },
     {
-      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#gaps-missing-asset-detection",
-      "heading": "`gaps` *(missing-asset detection)*",
-      "anchor": "gaps-missing-asset-detection",
-      "snippet": "`gaps` *(missing-asset detection)*",
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#commands",
+      "heading": "Commands",
+      "anchor": "commands",
+      "snippet": "Commands",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#5-7-mcp-server-verification-the-real-test",
+      "heading": "5.7 MCP server verification (the real test)",
+      "anchor": "5-7-mcp-server-verification-the-real-test",
+      "snippet": "5.7 MCP server verification (the real test)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#context-360-for-one-symbol",
+      "heading": "`context` — 360° for one symbol",
+      "anchor": "context-360-for-one-symbol",
+      "snippet": "`context` — 360° for one symbol",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#10-the-llm-semantic-graph-layer-the-grove-plan",
+      "heading": "10. The LLM semantic-graph layer (the grove plan)",
+      "anchor": "10-the-llm-semantic-graph-layer-the-grove-plan",
+      "snippet": "10. The LLM semantic-graph layer (the grove plan)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#the-remaining-deterministic-verbs-compact",
+      "heading": "The remaining deterministic verbs (compact)",
+      "anchor": "the-remaining-deterministic-verbs-compact",
+      "snippet": "The remaining deterministic verbs (compact)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#knowledge-crib-user-guide",
+      "heading": "Knowledge-crib — User Guide",
+      "anchor": "knowledge-crib-user-guide",
+      "snippet": "Knowledge-crib — User Guide",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#status-op-gaps-missing-asset-detection",
+      "heading": "`status({op:'gaps'})` *(missing-asset detection)*",
+      "anchor": "status-op-gaps-missing-asset-detection",
+      "snippet": "`status({op:'gaps'})` *(missing-asset detection)*",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#tool-consolidation-current-surface-15-tools",
+      "heading": "Tool consolidation (current surface: 15 tools)",
+      "anchor": "tool-consolidation-current-surface-15-tools",
+      "snippet": "Tool consolidation (current surface: 15 tools)",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
@@ -408,6 +478,16 @@
       "heading": "New edge relations",
       "anchor": "new-edge-relations",
       "snippet": "New edge relations",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/mulesoft.md#what-is-extracted",
+      "heading": "What is extracted",
+      "anchor": "what-is-extracted",
+      "snippet": "What is extracted",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
@@ -464,6 +544,16 @@
       "confidence": 0.6
     },
     {
+      "sectionId": "doc:docs/mulesoft.md#properties-secrets-keys-only",
+      "heading": "Properties & secrets (keys only)",
+      "anchor": "properties-secrets-keys-only",
+      "snippet": "Properties & secrets (keys only)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
       "sectionId": "doc:docs/knowledge-crib-deep-extraction.md#3-pipeline-additions-see-pipeline-knowledge-crib-pipeline-md-phases-3c-3d",
       "heading": "3. Pipeline additions (see [pipeline](knowledge-crib-pipeline.md) Phases 3c/3d)",
       "anchor": "3-pipeline-additions-see-pipeline-knowledge-crib-pipeline-md-phases-3c-3d",
@@ -478,6 +568,16 @@
       "heading": "Decision",
       "anchor": "decision",
       "snippet": "Decision",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-foundation.md#gitnexus-execution-preconditions",
+      "heading": "GitNexus execution preconditions",
+      "anchor": "gitnexus-execution-preconditions",
+      "snippet": "GitNexus execution preconditions",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
@@ -544,6 +644,16 @@
       "confidence": 0.6
     },
     {
+      "sectionId": "doc:docs/README.md#why",
+      "heading": "Why",
+      "anchor": "why",
+      "snippet": "Why",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
       "sectionId": "doc:docs/launch/comparison.md#the-7-column-matrix",
       "heading": "The 7-column matrix",
       "anchor": "the-7-column-matrix",
@@ -558,6 +668,56 @@
       "heading": "4. `calls` edges — procedure → callee symbol (intra-file resolved) — annotate + record call sites",
       "anchor": "4-calls-edges-procedure-callee-symbol-intra-file-resolved-annotate-record-call-sites",
       "snippet": "4. `calls` edges — procedure → callee symbol (intra-file resolved) — annotate + record call sites",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/specs/2026-08-14-mulesoft-first-class-extractor-design.md#14-5-sample-acceptance",
+      "heading": "14.5 Sample acceptance",
+      "anchor": "14-5-sample-acceptance",
+      "snippet": "14.5 Sample acceptance",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/specs/2026-08-14-mulesoft-first-class-extractor-design.md#7-data-flow",
+      "heading": "7. Data Flow",
+      "anchor": "7-data-flow",
+      "snippet": "7. Data Flow",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/specs/2026-08-14-mulesoft-first-class-extractor-design.md#5-4-parser-family",
+      "heading": "5.4 Parser family",
+      "anchor": "5-4-parser-family",
+      "snippet": "5.4 Parser family",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/specs/2026-08-14-mulesoft-first-class-extractor-design.md#14-1-unit-and-golden-tests",
+      "heading": "14.1 Unit and golden tests",
+      "anchor": "14-1-unit-and-golden-tests",
+      "snippet": "14.1 Unit and golden tests",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/specs/2026-08-14-mulesoft-first-class-extractor-design.md#3-1-functional-goals",
+      "heading": "3.1 Functional goals",
+      "anchor": "3-1-functional-goals",
+      "snippet": "3.1 Functional goals",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
@@ -654,6 +814,16 @@
       "confidence": 0.6
     },
     {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_MAKE_A_BEATS_B.md#ws-a2-body-present-data-flow-verification-finish-ws-7",
+      "heading": "WS-A2 — Body-present data-flow verification (finish WS-7)",
+      "anchor": "ws-a2-body-present-data-flow-verification-finish-ws-7",
+      "snippet": "WS-A2 — Body-present data-flow verification (finish WS-7)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
       "sectionId": "doc:docs/knowledge-crib-client-setup.md#10-the-llm-semantic-graph-layer-optional-build-the-bible",
       "heading": "10. The LLM semantic-graph layer (optional — \"build the bible\")",
       "anchor": "10-the-llm-semantic-graph-layer-optional-build-the-bible",
@@ -674,6 +844,16 @@
       "confidence": 0.6
     },
     {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_MAKE_A_BEATS_B.md#4-acceptance-criteria-the-plan-a-plan-b-test",
+      "heading": "4. Acceptance criteria (the \"Plan A > Plan B\" test)",
+      "anchor": "4-acceptance-criteria-the-plan-a-plan-b-test",
+      "snippet": "4. Acceptance criteria (the \"Plan A > Plan B\" test)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
       "sectionId": "doc:docs/knowledge-crib-decisions.md#decision-log",
       "heading": "Decision Log",
       "anchor": "decision-log",
@@ -684,10 +864,60 @@
       "confidence": 0.6
     },
     {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-3-extraction.md#task-7-run-dialect-parity-and-package-gates",
+      "heading": "Task 7: Run dialect parity and package gates",
+      "anchor": "task-7-run-dialect-parity-and-package-gates",
+      "snippet": "Task 7: Run dialect parity and package gates",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-3-extraction.md#file-map",
+      "heading": "File map",
+      "anchor": "file-map",
+      "snippet": "File map",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-3-extraction.md#gitnexus-execution-preconditions",
+      "heading": "GitNexus execution preconditions",
+      "anchor": "gitnexus-execution-preconditions",
+      "snippet": "GitNexus execution preconditions",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
       "sectionId": "doc:docs/knowledge-crib-data-model.md#2-edge-relations-rel",
       "heading": "2. Edge relations (`rel`)",
       "anchor": "2-edge-relations-rel",
       "snippet": "2. Edge relations (`rel`)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-munit-hardening.md#gitnexus-execution-preconditions",
+      "heading": "GitNexus execution preconditions",
+      "anchor": "gitnexus-execution-preconditions",
+      "snippet": "GitNexus execution preconditions",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:CHANGELOG.md#added",
+      "heading": "Added",
+      "anchor": "added",
+      "snippet": "Added",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
@@ -718,6 +948,76 @@
       "heading": "16-24 seconds: See The Architecture",
       "anchor": "16-24-seconds-see-the-architecture",
       "snippet": "16-24 seconds: See The Architecture",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#3-how-this-closes-plan-a-vs-plan-b",
+      "heading": "3. How this closes Plan A vs Plan B",
+      "anchor": "3-how-this-closes-plan-a-vs-plan-b",
+      "snippet": "3. How this closes Plan A vs Plan B",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#6-acceptance-criteria-the-plan-a-plan-b-test",
+      "heading": "6. Acceptance criteria (the \"Plan A == Plan B\" test)",
+      "anchor": "6-acceptance-criteria-the-plan-a-plan-b-test",
+      "snippet": "6. Acceptance criteria (the \"Plan A == Plan B\" test)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#ws-4-bulk-package-level-context-closes-g4",
+      "heading": "WS-4 — Bulk / package-level context (closes G4)",
+      "anchor": "ws-4-bulk-package-level-context-closes-g4",
+      "snippet": "WS-4 — Bulk / package-level context (closes G4)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#1-2-the-mcp-server-is-already-plan-b-capable-per-symbol-mcp-src-verbs-ts",
+      "heading": "1.2 The MCP server is already Plan-B-capable *per symbol* (`mcp/src/verbs.ts`)",
+      "anchor": "1-2-the-mcp-server-is-already-plan-b-capable-per-symbol-mcp-src-verbs-ts",
+      "snippet": "1.2 The MCP server is already Plan-B-capable *per symbol* (`mcp/src/verbs.ts`)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#ws-3-optional-vector-semantic-search-closes-g3",
+      "heading": "WS-3 — Optional vector/semantic search (closes G3)",
+      "anchor": "ws-3-optional-vector-semantic-search-closes-g3",
+      "snippet": "WS-3 — Optional vector/semantic search (closes G3)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#ws-2-query-returns-bodies-rules-closes-g2",
+      "heading": "WS-2 — `query` returns bodies + rules (closes G2)",
+      "anchor": "ws-2-query-returns-bodies-rules-closes-g2",
+      "snippet": "WS-2 — `query` returns bodies + rules (closes G2)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#5-phasing-effort",
+      "heading": "5. Phasing & effort",
+      "anchor": "5-phasing-effort",
+      "snippet": "5. Phasing & effort",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
@@ -854,200 +1154,20 @@
       "confidence": 0.6
     },
     {
-      "sectionId": "doc:CHANGELOG.md#added",
-      "heading": "Added",
-      "anchor": "added",
-      "snippet": "Added",
+      "sectionId": "doc:docs/bench/memory.md#headline",
+      "heading": "Headline",
+      "anchor": "headline",
+      "snippet": "Headline",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
       "confidence": 0.6
     },
     {
-      "sectionId": "doc:README.md#the-token-cost-benefit-concretely",
-      "heading": "The token-cost benefit, concretely",
-      "anchor": "the-token-cost-benefit-concretely",
-      "snippet": "The token-cost benefit, concretely",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
-    },
-    {
-      "sectionId": "doc:README.md#measured-not-projected-run-it-yourself",
-      "heading": "Measured, not projected (run it yourself)",
-      "anchor": "measured-not-projected-run-it-yourself",
-      "snippet": "Measured, not projected (run it yourself)",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
-    },
-    {
-      "sectionId": "doc:docs/README.md#why",
-      "heading": "Why",
-      "anchor": "why",
-      "snippet": "Why",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
-    },
-    {
-      "sectionId": "doc:docs/knowledge-crib-user-guide.md#knowledge-crib-user-guide",
-      "heading": "Knowledge-crib — User Guide",
-      "anchor": "knowledge-crib-user-guide",
-      "snippet": "Knowledge-crib — User Guide",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
-    },
-    {
-      "sectionId": "doc:docs/knowledge-crib-user-guide.md#commands",
-      "heading": "Commands",
-      "anchor": "commands",
-      "snippet": "Commands",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
-    },
-    {
-      "sectionId": "doc:docs/knowledge-crib-user-guide.md#context-360-for-one-symbol",
-      "heading": "`context` — 360° for one symbol",
-      "anchor": "context-360-for-one-symbol",
-      "snippet": "`context` — 360° for one symbol",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
-    },
-    {
-      "sectionId": "doc:docs/knowledge-crib-user-guide.md#the-remaining-deterministic-verbs-compact",
-      "heading": "The remaining deterministic verbs (compact)",
-      "anchor": "the-remaining-deterministic-verbs-compact",
-      "snippet": "The remaining deterministic verbs (compact)",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
-    },
-    {
-      "sectionId": "doc:docs/knowledge-crib-user-guide.md#5-7-mcp-server-verification-the-real-test",
-      "heading": "5.7 MCP server verification (the real test)",
-      "anchor": "5-7-mcp-server-verification-the-real-test",
-      "snippet": "5.7 MCP server verification (the real test)",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
-    },
-    {
-      "sectionId": "doc:docs/knowledge-crib-user-guide.md#10-the-llm-semantic-graph-layer-the-grove-plan",
-      "heading": "10. The LLM semantic-graph layer (the grove plan)",
-      "anchor": "10-the-llm-semantic-graph-layer-the-grove-plan",
-      "snippet": "10. The LLM semantic-graph layer (the grove plan)",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
-    },
-    {
-      "sectionId": "doc:docs/superpowers/plans/PLAN_MAKE_A_BEATS_B.md#ws-a2-body-present-data-flow-verification-finish-ws-7",
-      "heading": "WS-A2 — Body-present data-flow verification (finish WS-7)",
-      "anchor": "ws-a2-body-present-data-flow-verification-finish-ws-7",
-      "snippet": "WS-A2 — Body-present data-flow verification (finish WS-7)",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
-    },
-    {
-      "sectionId": "doc:docs/superpowers/plans/PLAN_MAKE_A_BEATS_B.md#4-acceptance-criteria-the-plan-a-plan-b-test",
-      "heading": "4. Acceptance criteria (the \"Plan A > Plan B\" test)",
-      "anchor": "4-acceptance-criteria-the-plan-a-plan-b-test",
-      "snippet": "4. Acceptance criteria (the \"Plan A > Plan B\" test)",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
-    },
-    {
-      "sectionId": "doc:docs/superpowers/plans/PLAN_MAKE_A_BEATS_B_EVERY_EXTRACTOR.md#4-acceptance-criteria-the-universal-plan-a-plan-b-test",
-      "heading": "4. Acceptance criteria (the universal \"Plan A > Plan B\" test)",
-      "anchor": "4-acceptance-criteria-the-universal-plan-a-plan-b-test",
-      "snippet": "4. Acceptance criteria (the universal \"Plan A > Plan B\" test)",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
-    },
-    {
-      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#1-2-the-mcp-server-is-already-plan-b-capable-per-symbol-mcp-src-verbs-ts",
-      "heading": "1.2 The MCP server is already Plan-B-capable *per symbol* (`mcp/src/verbs.ts`)",
-      "anchor": "1-2-the-mcp-server-is-already-plan-b-capable-per-symbol-mcp-src-verbs-ts",
-      "snippet": "1.2 The MCP server is already Plan-B-capable *per symbol* (`mcp/src/verbs.ts`)",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
-    },
-    {
-      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#ws-2-query-returns-bodies-rules-closes-g2",
-      "heading": "WS-2 — `query` returns bodies + rules (closes G2)",
-      "anchor": "ws-2-query-returns-bodies-rules-closes-g2",
-      "snippet": "WS-2 — `query` returns bodies + rules (closes G2)",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
-    },
-    {
-      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#ws-3-optional-vector-semantic-search-closes-g3",
-      "heading": "WS-3 — Optional vector/semantic search (closes G3)",
-      "anchor": "ws-3-optional-vector-semantic-search-closes-g3",
-      "snippet": "WS-3 — Optional vector/semantic search (closes G3)",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
-    },
-    {
-      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#ws-4-bulk-package-level-context-closes-g4",
-      "heading": "WS-4 — Bulk / package-level context (closes G4)",
-      "anchor": "ws-4-bulk-package-level-context-closes-g4",
-      "snippet": "WS-4 — Bulk / package-level context (closes G4)",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
-    },
-    {
-      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#3-how-this-closes-plan-a-vs-plan-b",
-      "heading": "3. How this closes Plan A vs Plan B",
-      "anchor": "3-how-this-closes-plan-a-vs-plan-b",
-      "snippet": "3. How this closes Plan A vs Plan B",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
-    },
-    {
-      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#5-phasing-effort",
-      "heading": "5. Phasing & effort",
-      "anchor": "5-phasing-effort",
-      "snippet": "5. Phasing & effort",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
-    },
-    {
-      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#6-acceptance-criteria-the-plan-a-plan-b-test",
-      "heading": "6. Acceptance criteria (the \"Plan A == Plan B\" test)",
-      "anchor": "6-acceptance-criteria-the-plan-a-plan-b-test",
-      "snippet": "6. Acceptance criteria (the \"Plan A == Plan B\" test)",
+      "sectionId": "doc:docs/bench/memory.md#reading-the-three-lines-that-matter",
+      "heading": "Reading the three lines that matter",
+      "anchor": "reading-the-three-lines-that-matter",
+      "snippet": "Reading the three lines that matter",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
@@ -1095,8 +1215,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:9db54a52b999491fe17391c1183c246a56befbde944c63f8435469fb91ea2b29",
-          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "edgeId": "e:664e41a24867f8e4fc42afb1fa24f723e99e5d775f4116262fdf5cd6dd289924",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
           "expr": "push",
           "line": 187
         }
@@ -1149,8 +1269,6 @@
     "status": "implemented",
     "executesCount": 3,
     "referencedByFiles": [
-      "packages/ui/web/vendor/react-dom.production.min.js",
-      "packages/ui/web/vendor/react.production.min.js",
       "scripts/crib-self-hosted-e2e.mjs"
     ]
   },

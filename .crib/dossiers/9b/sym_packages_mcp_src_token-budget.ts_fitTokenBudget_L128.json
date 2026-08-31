@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/mcp/src/token-budget.ts#fitTokenBudget@L128",
-  "schemaVersion": "1.5",
+  "schemaVersion": "1.6",
   "nodeHash": "blake3:bf4aec684bd1a29b42bcf70deb1b4fedeea18c7fc830c37c1691415cccd9ac9f",
-  "builtAt": "2026-07-16T14:40:07.112Z",
+  "builtAt": "2026-08-25T20:55:11.863Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/mcp/src/token-budget.ts#fitTokenBudget@L128",
@@ -36,24 +36,54 @@
   },
   "callers": [
     {
-      "id": "sym:packages/mcp/src/verbs.ts#Verbs.dossierByScope@L608",
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.brief@L2036",
+      "confidence": 1,
+      "name": "brief",
+      "qualifiedName": "Verbs.brief",
+      "signature": "brief(args: {\n    q: string;\n    paths?: string[];\n    targetIds?: string[];\n    sources?: MemorySource[];\n    maxTokens?: number;\n    cursor?: string;\n    ifHash?: string;\n  }): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 2036
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.dossierByScope@L705",
       "confidence": 1,
       "name": "dossierByScope",
       "qualifiedName": "Verbs.dossierByScope",
       "signature": "dossierByScope(args: {\n    /** the scope kind: 'package' (the package's member symbols), 'file' (a file's symbols), or\n     *  'cluster' (a cluster's symbols). */\n    scope: 'package' | 'file' | 'cluster';\n    /** the scope node id, OR — for a package — the qualified/simple name (parity with the other node\n     *  verbs); for a file, the path (with or without the `file:` prefix); for a cluster, the slug. */\n    id: string;\n    extractedOnly?: boolean;\n    /** resolve reads/writes table names in each callable's decision table (extra lookups). */\n    includeTables?: boolean;\n    /** cap on the number of per-symbol dossiers returned (default 1000; `truncated` flags a cap). */\n    maxSymbols?: number;\n    sourceMaxChars?: number;\n    sourceMaxLines?: number;\n    format?: 'json' | 'markdown';\n    /** resume cursor (a prior response's `cursor`) — skip the first N resolved symbols. Decoupled\n     *  from `maxTokens` (paging works without a budget), but a cursor is only RETURNED when `maxTokens`\n     *  is set (the opt-in budget path). (M1.2) */\n    cursor?: string;\n    /** response-wide token budget (chars/4). When set, the dossiers list is trimmed to the largest\n     *  leading prefix that fits and `budgetExhausted:true` + a `cursor` resume point are returned.\n     *  (M1.2) */\n    maxTokens?: number;\n  }): Record<string, unknown>",
       "type": "method",
       "file": "packages/mcp/src/verbs.ts",
-      "line": 608
+      "line": 705
     },
     {
-      "id": "sym:packages/mcp/src/verbs.ts#Verbs.query@L848",
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.memoryRecall@L2170",
+      "confidence": 1,
+      "name": "memoryRecall",
+      "qualifiedName": "Verbs.memoryRecall",
+      "signature": "memoryRecall(args: {\n    q?: string;\n    targetIds?: string[];\n    sources?: MemorySource[];\n    limit?: number;\n    maxTokens?: number;\n    withEvidence?: boolean;\n    includePending?: boolean;\n    ifHash?: string;\n  }): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 2170
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.overview@L1464",
+      "confidence": 1,
+      "name": "overview",
+      "qualifiedName": "Verbs.overview",
+      "signature": "overview(args: {\n      scope?: { pathPrefix?: string; cluster?: string };\n      withLlm?: boolean;\n      maxTokens?: number;\n      limit?: number;\n      cursor?: string;\n    } = {}): Record<string, unknown>",
+      "type": "method",
+      "file": "packages/mcp/src/verbs.ts",
+      "line": 1464
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.query@L945",
       "confidence": 1,
       "name": "query",
       "qualifiedName": "Verbs.query",
       "signature": "query(args: {\n    q: string;\n    kinds?: NodeKind[];\n    limit?: number;\n    /** restrict rules/framework edges to EXTRACTED provenance (parity with `context`). */\n    extractedOnly?: boolean;\n    /** include the full rehydrated source body per hit (budgeted; see sourceMaxChars/Lines). */\n    withSource?: boolean;\n    /** char cap for each hit's rehydrated source body (default {@link DEFAULT_BODY_MAX_CHARS}). */\n    sourceMaxChars?: number;\n    /** line cap for each hit's rehydrated source body (default {@link DEFAULT_BODY_MAX_LINES}). */\n    sourceMaxLines?: number;\n    /** for a callable hit, fold in its decision table + coverage readiness. */\n    withRules?: boolean;\n    /** fold in framework-semantics (routes/beans/DI/relations) per hit, when present. */\n    withFramework?: boolean;\n    /** include saved LLM semantic analysis on hits and search LLM analysis text too. */\n    withLlm?: boolean;\n    /** resume cursor (a prior response's `cursor`) — skip the first N BM25-ranked hits (FTS5 OFFSET).\n     *  Decoupled from `maxTokens`: paging works without a budget, but a cursor is only RETURNED when\n     *  `maxTokens` is set (the opt-in budget path). (M1.2) */\n    cursor?: string;\n    /** response-wide token budget (chars/4). When set, the hits list is trimmed to the largest\n     *  leading prefix that fits and `budgetExhausted:true` + a `cursor` resume point are returned.\n     *  (M1.2) */\n    maxTokens?: number;\n  }): Record<string, unknown>",
       "type": "method",
       "file": "packages/mcp/src/verbs.ts",
-      "line": 848
+      "line": 945
     }
   ],
   "callees": [

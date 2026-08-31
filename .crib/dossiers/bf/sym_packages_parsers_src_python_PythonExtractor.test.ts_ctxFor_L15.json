@@ -1,0 +1,139 @@
+{
+  "id": "sym:packages/parsers/src/python/PythonExtractor.test.ts#ctxFor@L15",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:19775a01bcaace7760b0c3e41578ddbc4cd54952de4920e91e3869101e657f46",
+  "builtAt": "2026-08-25T20:55:11.863Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/python/PythonExtractor.test.ts#ctxFor@L15",
+    "kind": "symbol",
+    "type": "function",
+    "name": "ctxFor",
+    "qualifiedName": "ctxFor",
+    "signature": "ctxFor(text: string): ExtractCtx",
+    "lang": "typescript",
+    "file": "packages/parsers/src/python/PythonExtractor.test.ts",
+    "span": {
+      "start": 15,
+      "end": 26
+    },
+    "callSites": [
+      {
+        "callee": "idFor",
+        "line": 24
+      }
+    ]
+  },
+  "source": {
+    "text": "function ctxFor(text: string): ExtractCtx {\n  return {\n    async readText() {\n      return text;\n    },\n    treeSitter() {\n      throw new Error('not used — Python is hand-rolled, no tree-sitter');\n    },\n    hash: contentHash,\n    idFor: (kind: NodeKind, parts) => idFor({ kind, ...parts } as IdSpec),\n  };\n}",
+    "truncated": false,
+    "totalLines": 12,
+    "startLine": 15
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/python/PythonExtractor.test.ts#run@L28",
+      "confidence": 1,
+      "name": "run",
+      "qualifiedName": "run",
+      "signature": "run(text = readFileSync(FIXTURE, 'utf8')): Promise<ExtractResult>",
+      "type": "function",
+      "file": "packages/parsers/src/python/PythonExtractor.test.ts",
+      "line": 28
+    },
+    {
+      "id": "sym:packages/parsers/src/python/PythonExtractor.test.ts#runBehavior@L392",
+      "confidence": 1,
+      "name": "runBehavior",
+      "qualifiedName": "runBehavior",
+      "signature": "runBehavior(): Promise<ExtractResult>",
+      "type": "function",
+      "file": "packages/parsers/src/python/PythonExtractor.test.ts",
+      "line": 392
+    },
+    {
+      "id": "sym:packages/parsers/src/python/PythonExtractor.test.ts#runRules@L186",
+      "confidence": 1,
+      "name": "runRules",
+      "qualifiedName": "runRules",
+      "signature": "runRules(): Promise<ExtractResult>",
+      "type": "function",
+      "file": "packages/parsers/src/python/PythonExtractor.test.ts",
+      "line": 186
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/soul-schema/src/id.ts#idFor@L96",
+      "confidence": 1,
+      "name": "idFor",
+      "qualifiedName": "idFor",
+      "signature": "idFor(spec: IdSpec): string",
+      "type": "function",
+      "file": "packages/soul-schema/src/id.ts",
+      "line": 96
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/python/PythonExtractor.test.ts#ctxFor@L15",
+    "procedureName": "ctxFor",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/python/PythonExtractor.test.ts#ctxFor@L15",
+        "procedureName": "ctxFor",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:36ce792b88bb6107b2c5fb4226e9cb39e5e4e3a14fb42c0da1f91f0f370ac03a",
+          "target": "stmt:packages/parsers/src/python/PythonExtractor.test.ts@L16",
+          "line": 16,
+          "expr": "return {\n    async readText() {\n      return text;\n    },\n    treeSitter() {\n      throw new Error('not used — Python is hand-rolled, no tree-sitter');\n    },\n    hash: contentHash,\n    idFor: (kind: NodeKind, parts) => idFor({ kind, ...parts } as IdSpec),\n  };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/PythonExtractor.test.ts#ctxFor@L15",
+        "procedureName": "ctxFor",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:9f52495a9ef14155df0458bc7a62e5683f55277a23e0936db37726e21ac07154",
+          "target": "sym:packages/soul-schema/src/id.ts#idFor@L96",
+          "expr": "idFor",
+          "line": 24
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/parsers/src/python/PythonExtractor.test.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

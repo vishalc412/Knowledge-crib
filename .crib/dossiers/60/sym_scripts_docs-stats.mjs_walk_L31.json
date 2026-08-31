@@ -1,8 +1,8 @@
 {
   "id": "sym:scripts/docs-stats.mjs#walk@L31",
-  "schemaVersion": "1.5",
+  "schemaVersion": "1.6",
   "nodeHash": "blake3:1a03bc4c969d28ab52fee16bb9c05a1917b77f6d989d1a979b43b60dcd45d8d8",
-  "builtAt": "2026-07-16T16:35:16.098Z",
+  "builtAt": "2026-08-31T17:37:23.222Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:scripts/docs-stats.mjs#walk@L31",
@@ -45,54 +45,114 @@
   },
   "callers": [
     {
-      "id": "sym:scripts/scale-bench.mjs#countLoc@L109",
+      "id": "sym:packages/memory/src/secrets.ts#collectStrings@L52",
+      "confidence": 1,
+      "name": "collectStrings",
+      "qualifiedName": "collectStrings",
+      "signature": "collectStrings(value: unknown): string[]",
+      "type": "function",
+      "file": "packages/memory/src/secrets.ts",
+      "line": 52
+    },
+    {
+      "id": "sym:packages/memory/src/secrets.ts#collectStrings.walk@L54",
+      "confidence": 1,
+      "name": "walk",
+      "qualifiedName": "collectStrings.walk",
+      "signature": "walk(…)",
+      "type": "function",
+      "file": "packages/memory/src/secrets.ts",
+      "line": 54
+    },
+    {
+      "id": "sym:packages/cli/src/watch.test.ts#committedBytes@L86",
+      "confidence": 1,
+      "name": "committedBytes",
+      "qualifiedName": "committedBytes",
+      "signature": "committedBytes(): string",
+      "type": "function",
+      "file": "packages/cli/src/watch.test.ts",
+      "line": 86
+    },
+    {
+      "id": "sym:packages/cli/src/watch.test.ts#committedBytes.walk@L89",
+      "confidence": 1,
+      "name": "walk",
+      "qualifiedName": "committedBytes.walk",
+      "signature": "walk(…)",
+      "type": "function",
+      "file": "packages/cli/src/watch.test.ts",
+      "line": 89
+    },
+    {
+      "id": "sym:scripts/check-mule-sample.mjs#countInlineDw2@L71",
+      "confidence": 1,
+      "name": "countInlineDw2",
+      "qualifiedName": "countInlineDw2",
+      "signature": "countInlineDw2(sourceRoot)",
+      "type": "function",
+      "file": "scripts/check-mule-sample.mjs",
+      "line": 71
+    },
+    {
+      "id": "sym:scripts/check-mule-sample.mjs#countInlineDw2.walk@L73",
+      "confidence": 1,
+      "name": "walk",
+      "qualifiedName": "countInlineDw2.walk",
+      "signature": "walk(…)",
+      "type": "function",
+      "file": "scripts/check-mule-sample.mjs",
+      "line": 73
+    },
+    {
+      "id": "sym:scripts/scale-bench.mjs#countLoc@L114",
       "confidence": 1,
       "name": "countLoc",
       "qualifiedName": "countLoc",
       "signature": "countLoc(root)",
       "type": "function",
       "file": "scripts/scale-bench.mjs",
-      "line": 109
+      "line": 114
     },
     {
-      "id": "sym:scripts/scale-bench.mjs#countLoc.walk@L112",
+      "id": "sym:scripts/scale-bench.mjs#countLoc.walk@L117",
       "confidence": 1,
       "name": "walk",
       "qualifiedName": "countLoc.walk",
       "signature": "walk(…)",
       "type": "function",
       "file": "scripts/scale-bench.mjs",
-      "line": 112
+      "line": 117
     },
     {
-      "id": "sym:packages/cli/src/skill-install.ts#dirEquals@L124",
+      "id": "sym:packages/cli/src/skill-install.ts#dirEquals@L142",
       "confidence": 1,
       "name": "dirEquals",
       "qualifiedName": "dirEquals",
       "signature": "dirEquals(a: string, b: string): boolean",
       "type": "function",
       "file": "packages/cli/src/skill-install.ts",
-      "line": 124
+      "line": 142
     },
     {
-      "id": "sym:packages/pipeline/src/structure.ts#discoverFiles@L98",
+      "id": "sym:packages/pipeline/src/structure.ts#discoverFiles@L118",
       "confidence": 1,
       "name": "discoverFiles",
       "qualifiedName": "discoverFiles",
       "signature": "discoverFiles(root: string, opts: DiscoverOpts = {}): FileMeta[]",
       "type": "function",
       "file": "packages/pipeline/src/structure.ts",
-      "line": 98
+      "line": 118
     },
     {
-      "id": "sym:packages/pipeline/src/structure.ts#discoverFiles.walk@L119",
+      "id": "sym:packages/pipeline/src/structure.ts#discoverFiles.walk@L139",
       "confidence": 1,
       "name": "walk",
       "qualifiedName": "discoverFiles.walk",
       "signature": "walk(…)",
       "type": "function",
       "file": "packages/pipeline/src/structure.ts",
-      "line": 119
+      "line": 139
     },
     {
       "id": "sym:packages/pipeline/src/workspace.ts#globDirs@L225",
@@ -115,6 +175,26 @@
       "line": 227
     },
     {
+      "id": "sym:scripts/determinism-mule-par.mjs#readSoul@L79",
+      "confidence": 1,
+      "name": "readSoul",
+      "qualifiedName": "readSoul",
+      "signature": "readSoul(crib)",
+      "type": "function",
+      "file": "scripts/determinism-mule-par.mjs",
+      "line": 79
+    },
+    {
+      "id": "sym:scripts/determinism-mule-par.mjs#readSoul.walk@L87",
+      "confidence": 1,
+      "name": "walk",
+      "qualifiedName": "readSoul.walk",
+      "signature": "walk(…)",
+      "type": "function",
+      "file": "scripts/determinism-mule-par.mjs",
+      "line": 87
+    },
+    {
       "id": "sym:packages/pipeline/src/resolve/ts-resolver.ts#resolveTypeScript@L52",
       "confidence": 1,
       "name": "resolveTypeScript",
@@ -125,64 +205,64 @@
       "line": 52
     },
     {
-      "id": "sym:scripts/parallel-check.mjs#snap@L79",
+      "id": "sym:scripts/parallel-check.mjs#snap@L96",
       "confidence": 1,
       "name": "snap",
       "qualifiedName": "snap",
       "signature": "snap(repo)",
       "type": "function",
       "file": "scripts/parallel-check.mjs",
-      "line": 79
+      "line": 96
     },
     {
-      "id": "sym:scripts/parallel-check.mjs#snap.walk@L82",
+      "id": "sym:scripts/parallel-check.mjs#snap.walk@L99",
       "confidence": 1,
       "name": "walk",
       "qualifiedName": "snap.walk",
       "signature": "walk(…)",
       "type": "function",
       "file": "scripts/parallel-check.mjs",
-      "line": 82
+      "line": 99
     },
     {
-      "id": "sym:packages/core/src/index/sqlite-index.test.ts#snapshot@L350",
+      "id": "sym:packages/core/src/index/sqlite-index.test.ts#snapshot@L396",
       "confidence": 1,
       "name": "snapshot",
       "qualifiedName": "snapshot",
       "signature": "snapshot(…)",
       "type": "function",
       "file": "packages/core/src/index/sqlite-index.test.ts",
-      "line": 350
+      "line": 396
     },
     {
-      "id": "sym:packages/core/src/index/sqlite-index.test.ts#snapshot.walk@L352",
+      "id": "sym:packages/core/src/index/sqlite-index.test.ts#snapshot.walk@L398",
       "confidence": 1,
       "name": "walk",
       "qualifiedName": "snapshot.walk",
       "signature": "walk(…)",
       "type": "function",
       "file": "packages/core/src/index/sqlite-index.test.ts",
-      "line": 352
+      "line": 398
     },
     {
-      "id": "sym:packages/pipeline/src/parse-concurrent.test.ts#snapshotCrib@L67",
+      "id": "sym:packages/pipeline/src/parse-concurrent.test.ts#snapshotCrib@L71",
       "confidence": 1,
       "name": "snapshotCrib",
       "qualifiedName": "snapshotCrib",
       "signature": "snapshotCrib(repo: string): string",
       "type": "function",
       "file": "packages/pipeline/src/parse-concurrent.test.ts",
-      "line": 67
+      "line": 71
     },
     {
-      "id": "sym:packages/pipeline/src/parse-concurrent.test.ts#snapshotCrib.walk@L70",
+      "id": "sym:packages/pipeline/src/parse-concurrent.test.ts#snapshotCrib.walk@L74",
       "confidence": 1,
       "name": "walk",
       "qualifiedName": "snapshotCrib.walk",
       "signature": "walk(…)",
       "type": "function",
       "file": "packages/pipeline/src/parse-concurrent.test.ts",
-      "line": 70
+      "line": 74
     },
     {
       "id": "sym:packages/core/src/soul-store.test.ts#snapshotJsonl@L383",
@@ -205,24 +285,24 @@
       "line": 386
     },
     {
-      "id": "sym:scripts/budget-check.mjs#walk@L317",
+      "id": "sym:scripts/budget-check.mjs#walk@L342",
       "confidence": 1,
       "name": "walk",
       "qualifiedName": "walk",
       "signature": "walk(dir)",
       "type": "function",
       "file": "scripts/budget-check.mjs",
-      "line": 317
+      "line": 342
     },
     {
-      "id": "sym:packages/cli/src/skill-install.ts#walk@L139",
+      "id": "sym:packages/cli/src/skill-install.ts#walk@L157",
       "confidence": 1,
       "name": "walk",
       "qualifiedName": "walk",
       "signature": "walk(root: string, base = ''): string[]",
       "type": "function",
       "file": "packages/cli/src/skill-install.ts",
-      "line": 139
+      "line": 157
     },
     {
       "id": "sym:packages/pipeline/src/resolve/ts-resolver.ts#walk@L200",
@@ -247,14 +327,14 @@
   ],
   "callees": [
     {
-      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
       "confidence": 1,
       "name": "push",
       "qualifiedName": "push",
       "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
       "type": "function",
       "file": "packages/pipeline/src/linker/inverted-index.ts",
-      "line": 39
+      "line": 70
     }
   ],
   "docs": [
@@ -267,6 +347,16 @@
       "method": "explicit",
       "provenance": "EXTRACTED",
       "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#monorepos-scope-indexing-to-one-package-package",
+      "heading": "Monorepos: scope indexing to one package (`--package`)",
+      "anchor": "monorepos-scope-indexing-to-one-package-package",
+      "snippet": "Monorepos: scope indexing to one package (`--package`)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
     },
     {
       "sectionId": "doc:docs/llm-integration-deep-dive.md#2-2-the-three-command-paths",
@@ -339,6 +429,26 @@
       "confidence": 0.6
     },
     {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#one-ide-entry-for-every-project-root-resolution",
+      "heading": "One IDE entry for every project (root resolution)",
+      "anchor": "one-ide-entry-for-every-project-root-resolution",
+      "snippet": "One IDE entry for every project (root resolution)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#the-6-llm-graph-verbs",
+      "heading": "The 6 LLM-graph verbs",
+      "anchor": "the-6-llm-graph-verbs",
+      "snippet": "The 6 LLM-graph verbs",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
       "sectionId": "doc:docs/knowledge-crib-track3-spec.md#what-each-language-extractor-must-emit-additive-keep-existing-symbol-member-of-calls-behavior",
       "heading": "What each language extractor must emit (additive — keep existing symbol/member-of/calls behavior)",
       "anchor": "what-each-language-extractor-must-emit-additive-keep-existing-symbol-member-of-calls-behavior",
@@ -353,6 +463,16 @@
       "heading": "Per-language parser work",
       "anchor": "per-language-parser-work",
       "snippet": "Per-language parser work",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/specs/2026-08-14-mulesoft-first-class-extractor-design.md#7-data-flow",
+      "heading": "7. Data Flow",
+      "anchor": "7-data-flow",
+      "snippet": "7. Data Flow",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
@@ -429,6 +549,16 @@
       "confidence": 0.6
     },
     {
+      "sectionId": "doc:CHANGELOG.md#added",
+      "heading": "Added",
+      "anchor": "added",
+      "snippet": "Added",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
       "sectionId": "doc:docs/knowledge-crib-refined-vs-existing-assessment.md#2-1-principal-engineer",
       "heading": "2.1 Principal Engineer",
       "anchor": "2-1-principal-engineer",
@@ -459,30 +589,10 @@
       "confidence": 0.6
     },
     {
-      "sectionId": "doc:CHANGELOG.md#added",
-      "heading": "Added",
-      "anchor": "added",
-      "snippet": "Added",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
-    },
-    {
-      "sectionId": "doc:docs/knowledge-crib-user-guide.md#one-ide-entry-for-every-project-root-resolution",
-      "heading": "One IDE entry for every project (root resolution)",
-      "anchor": "one-ide-entry-for-every-project-root-resolution",
-      "snippet": "One IDE entry for every project (root resolution)",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
-    },
-    {
-      "sectionId": "doc:docs/knowledge-crib-user-guide.md#the-6-llm-graph-verbs",
-      "heading": "The 6 LLM-graph verbs",
-      "anchor": "the-6-llm-graph-verbs",
-      "snippet": "The 6 LLM-graph verbs",
+      "sectionId": "doc:docs/knowledge-crib-cli.md#crib-index-path",
+      "heading": "`crib index [path]`",
+      "anchor": "crib-index-path",
+      "snippet": "`crib index [path]`",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
@@ -576,8 +686,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:06e1a11781119b38097b218e21e1c1b3574ecf8a494d8351d1d9752e5dbbdc04",
-          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "edgeId": "e:206054bf7779f300fe08896db2001a9957a7333f688c4125cf7075ce6700444a",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
           "expr": "push",
           "line": 39
         }
@@ -633,14 +743,18 @@
     "executesCount": 5,
     "referencedByFiles": [
       "packages/cli/src/skill-install.ts",
+      "packages/cli/src/watch.test.ts",
       "packages/core/src/index/sqlite-index.test.ts",
       "packages/core/src/soul-store.test.ts",
+      "packages/memory/src/secrets.ts",
       "packages/pipeline/src/parse-concurrent.test.ts",
       "packages/pipeline/src/resolve/ts-resolver.ts",
       "packages/pipeline/src/structure.ts",
       "packages/pipeline/src/workspace.ts",
       "packages/ui/web/support.js",
       "scripts/budget-check.mjs",
+      "scripts/check-mule-sample.mjs",
+      "scripts/determinism-mule-par.mjs",
       "scripts/parallel-check.mjs",
       "scripts/scale-bench.mjs"
     ]

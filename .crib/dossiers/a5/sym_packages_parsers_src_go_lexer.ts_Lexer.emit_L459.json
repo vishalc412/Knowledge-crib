@@ -1,0 +1,405 @@
+{
+  "id": "sym:packages/parsers/src/go/lexer.ts#Lexer.emit@L459",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:30e9e8fe7e6afa887e16e966e42c58ea5e24afec28f7fe8a06e124b826abb4e1",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/go/lexer.ts#Lexer.emit@L459",
+    "kind": "symbol",
+    "type": "method",
+    "name": "emit",
+    "qualifiedName": "Lexer.emit",
+    "signature": "emit(type: TokenType, value: string, line: number, col: number): void",
+    "lang": "typescript",
+    "file": "packages/parsers/src/go/lexer.ts",
+    "span": {
+      "start": 459,
+      "end": 461
+    },
+    "callSites": [
+      {
+        "callee": "push",
+        "line": 460
+      }
+    ]
+  },
+  "source": {
+    "text": "  private emit(type: TokenType, value: string, line: number, col: number): void {\n    this.out.push({ type, value, line, col });\n  }",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 459
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/go/lexer.ts#Lexer.scanChar@L377",
+      "confidence": 1,
+      "name": "scanChar",
+      "qualifiedName": "Lexer.scanChar",
+      "signature": "scanChar(): void",
+      "type": "method",
+      "file": "packages/parsers/src/go/lexer.ts",
+      "line": 377
+    },
+    {
+      "id": "sym:packages/parsers/src/go/lexer.ts#Lexer.scanIdent@L317",
+      "confidence": 1,
+      "name": "scanIdent",
+      "qualifiedName": "Lexer.scanIdent",
+      "signature": "scanIdent(): void",
+      "type": "method",
+      "file": "packages/parsers/src/go/lexer.ts",
+      "line": 317
+    },
+    {
+      "id": "sym:packages/parsers/src/go/lexer.ts#Lexer.scanNumber@L325",
+      "confidence": 1,
+      "name": "scanNumber",
+      "qualifiedName": "Lexer.scanNumber",
+      "signature": "scanNumber(): void",
+      "type": "method",
+      "file": "packages/parsers/src/go/lexer.ts",
+      "line": 325
+    },
+    {
+      "id": "sym:packages/parsers/src/go/lexer.ts#Lexer.scanOp@L401",
+      "confidence": 1,
+      "name": "scanOp",
+      "qualifiedName": "Lexer.scanOp",
+      "signature": "scanOp(): void",
+      "type": "method",
+      "file": "packages/parsers/src/go/lexer.ts",
+      "line": 401
+    },
+    {
+      "id": "sym:packages/parsers/src/go/lexer.ts#Lexer.scanRawString@L359",
+      "confidence": 1,
+      "name": "scanRawString",
+      "qualifiedName": "Lexer.scanRawString",
+      "signature": "scanRawString(): void",
+      "type": "method",
+      "file": "packages/parsers/src/go/lexer.ts",
+      "line": 359
+    },
+    {
+      "id": "sym:packages/parsers/src/go/lexer.ts#Lexer.scanString@L334",
+      "confidence": 1,
+      "name": "scanString",
+      "qualifiedName": "Lexer.scanString",
+      "signature": "scanString(): void",
+      "type": "method",
+      "file": "packages/parsers/src/go/lexer.ts",
+      "line": 334
+    },
+    {
+      "id": "sym:packages/parsers/src/go/lexer.ts#Lexer.tokens@L257",
+      "confidence": 1,
+      "name": "tokens",
+      "qualifiedName": "Lexer.tokens",
+      "signature": "tokens(): Token[]",
+      "type": "method",
+      "file": "packages/parsers/src/go/lexer.ts",
+      "line": 257
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "doc:docs/knowledge-crib-track3-spec.md#2-statement-nodes-one-per-action-line-in-the-body-call-return-assign-throw-raise",
+      "heading": "2. `statement` nodes — one per \"action\" line in the body (call / return / assign / throw / raise)",
+      "anchor": "2-statement-nodes-one-per-action-line-in-the-body-call-return-assign-throw-raise",
+      "snippet": "2. `statement` nodes — one per \"action\" line in the body (call / return / assign / throw / raise)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/superpowers/specs/2026-08-14-mulesoft-first-class-extractor-design.md#9-2-storage-and-search",
+      "heading": "9.2 Storage and search",
+      "anchor": "9-2-storage-and-search",
+      "snippet": "9.2 Storage and search",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-munit-hardening.md#task-3-emit-and-resolve-munit-migration-evidence",
+      "heading": "Task 3: Emit and resolve MUnit migration evidence",
+      "anchor": "task-3-emit-and-resolve-munit-migration-evidence",
+      "snippet": "Task 3: Emit and resolve MUnit migration evidence",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#1-3-the-gaps-that-make-plan-a-plan-b-today",
+      "heading": "1.3 The gaps that make Plan A < Plan B today",
+      "anchor": "1-3-the-gaps-that-make-plan-a-plan-b-today",
+      "snippet": "1.3 The gaps that make Plan A < Plan B today",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#what-was-built-3",
+      "heading": "What was built",
+      "anchor": "what-was-built-3",
+      "snippet": "What was built",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_MAKE_A_BEATS_B_EVERY_EXTRACTOR.md#1-why-plan-a-still-loses-to-plan-b-today-universal-gaps",
+      "heading": "1. Why Plan A still loses to Plan B today (universal gaps)",
+      "anchor": "1-why-plan-a-still-loses-to-plan-b-today-universal-gaps",
+      "snippet": "1. Why Plan A still loses to Plan B today (universal gaps)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_MAKE_A_BEATS_B_EVERY_EXTRACTOR.md#phase-0-universal-cfg-parity-finish-s65-6-days",
+      "heading": "Phase 0 — Universal CFG parity (finish S65)  ~6 days",
+      "anchor": "phase-0-universal-cfg-parity-finish-s65-6-days",
+      "snippet": "Phase 0 — Universal CFG parity (finish S65)  ~6 days",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_MAKE_A_BEATS_B_EVERY_EXTRACTOR.md#phase-1-language-agnostic-migration-core-8-days",
+      "heading": "Phase 1 — Language-agnostic migration core  ~8 days",
+      "anchor": "phase-1-language-agnostic-migration-core-8-days",
+      "snippet": "Phase 1 — Language-agnostic migration core  ~8 days",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_MAKE_A_BEATS_B_EVERY_EXTRACTOR.md#3-per-extractor-impact-the-every-extractor-guarantee",
+      "heading": "3. Per-extractor impact (the \"every extractor\" guarantee)",
+      "anchor": "3-per-extractor-impact-the-every-extractor-guarantee",
+      "snippet": "3. Per-extractor impact (the \"every extractor\" guarantee)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-extractor-plugins.md#4-adding-a-language-worked-rust",
+      "heading": "4. Adding a language (worked: Rust)",
+      "anchor": "4-adding-a-language-worked-rust",
+      "snippet": "4. Adding a language (worked: Rust)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/mulesoft.md#mulesoft-extraction",
+      "heading": "MuleSoft extraction",
+      "anchor": "mulesoft-extraction",
+      "snippet": "MuleSoft extraction",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/mulesoft.md#mule-3-vs-mule-4-detection",
+      "heading": "Mule 3 vs Mule 4 detection",
+      "anchor": "mule-3-vs-mule-4-detection",
+      "snippet": "Mule 3 vs Mule 4 detection",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-deep-extraction.md#3-pipeline-additions-see-pipeline-knowledge-crib-pipeline-md-phases-3c-3d",
+      "heading": "3. Pipeline additions (see [pipeline](knowledge-crib-pipeline.md) Phases 3c/3d)",
+      "anchor": "3-pipeline-additions-see-pipeline-knowledge-crib-pipeline-md-phases-3c-3d",
+      "snippet": "3. Pipeline additions (see [pipeline](knowledge-crib-pipeline.md) Phases 3c/3d)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#java-spring-boot-track-built-tested-schema-1-3",
+      "heading": "Java / Spring Boot track (built + tested, schema 1.3)",
+      "anchor": "java-spring-boot-track-built-tested-schema-1-3",
+      "snippet": "Java / Spring Boot track (built + tested, schema 1.3)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-pipeline.md#phase-2-parse-tree-sitter-wasm",
+      "heading": "Phase 2 — Parse (tree-sitter, WASM)",
+      "anchor": "phase-2-parse-tree-sitter-wasm",
+      "snippet": "Phase 2 — Parse (tree-sitter, WASM)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-pipeline.md#phase-3b-doc-extract-markdown-mvp",
+      "heading": "Phase 3b — Doc-extract (Markdown, MVP)",
+      "anchor": "phase-3b-doc-extract-markdown-mvp",
+      "snippet": "Phase 3b — Doc-extract (Markdown, MVP)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-track3-spec.md#what-each-language-extractor-must-emit-additive-keep-existing-symbol-member-of-calls-behavior",
+      "heading": "What each language extractor must emit (additive — keep existing symbol/member-of/calls behavior)",
+      "anchor": "what-each-language-extractor-must-emit-additive-keep-existing-symbol-member-of-calls-behavior",
+      "snippet": "What each language extractor must emit (additive — keep existing symbol/member-of/calls behavior)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-track3-spec.md#track-3-statement-condition-cfg-extraction-for-all-parsers-design-spec",
+      "heading": "Track 3 — Statement/Condition/CFG extraction for all parsers (design spec)",
+      "anchor": "track-3-statement-condition-cfg-extraction-for-all-parsers-design-spec",
+      "snippet": "Track 3 — Statement/Condition/CFG extraction for all parsers (design spec)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-track3-spec.md#wiring-minimal",
+      "heading": "Wiring (minimal)",
+      "anchor": "wiring-minimal",
+      "snippet": "Wiring (minimal)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/specs/2026-08-14-mulesoft-first-class-extractor-design.md#10-error-handling-and-diagnostics",
+      "heading": "10. Error Handling and Diagnostics",
+      "anchor": "10-error-handling-and-diagnostics",
+      "snippet": "10. Error Handling and Diagnostics",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:packages/cli/skills/crib-enrich/SKILL.md#per-layer-guidance",
+      "heading": "Per-layer guidance",
+      "anchor": "per-layer-guidance",
+      "snippet": "Per-layer guidance",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_MAKE_A_BEATS_B.md#ws-a4-rule-semantic-extraction",
+      "heading": "WS-A4 — Rule semantic extraction",
+      "anchor": "ws-a4-rule-semantic-extraction",
+      "snippet": "WS-A4 — Rule semantic extraction",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#ws-7-verify-extend-sql-data-flow-edges-defense-in-depth",
+      "heading": "WS-7 — Verify/extend SQL data-flow edges (defense-in-depth)",
+      "anchor": "ws-7-verify-extend-sql-data-flow-edges-defense-in-depth",
+      "snippet": "WS-7 — Verify/extend SQL data-flow edges (defense-in-depth)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m11-cfg-pass-guard-chain-condition-nodes",
+      "heading": "M11 — CFG pass + guard chain + condition nodes",
+      "anchor": "m11-cfg-pass-guard-chain-condition-nodes",
+      "snippet": "M11 — CFG pass + guard chain + condition nodes",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m13-offline-multimodal-worker-pdf-image-whisper-audio",
+      "heading": "M13 — Offline multimodal worker (PDF/image/whisper audio)",
+      "anchor": "m13-offline-multimodal-worker-pdf-image-whisper-audio",
+      "snippet": "M13 — Offline multimodal worker (PDF/image/whisper audio)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/go/lexer.ts#Lexer.emit@L459",
+    "procedureName": "Lexer.emit",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/go/lexer.ts#Lexer.emit@L459",
+        "procedureName": "Lexer.emit",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ddc7de75e9448ff84b6632710e5c1eeeea6b02775f97543053b58cc324ee99d5",
+          "target": "stmt:packages/parsers/src/go/lexer.ts@L460",
+          "line": 460,
+          "expr": "this.out.push({ type, value, line, col });"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/parsers/src/go/lexer.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

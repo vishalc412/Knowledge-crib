@@ -1,0 +1,239 @@
+{
+  "id": "sym:packages/parsers/src/go/parser.ts#Parser.collectParamName@L914",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:90fe24f0f6394b2944427cea84856f4d431ea4dbe76a402268e563d48714dade",
+  "builtAt": "2026-08-25T20:55:11.863Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/go/parser.ts#Parser.collectParamName@L914",
+    "kind": "symbol",
+    "type": "method",
+    "name": "collectParamName",
+    "qualifiedName": "Parser.collectParamName",
+    "signature": "collectParamName(seg: Token[], params: string[]): void",
+    "lang": "typescript",
+    "file": "packages/parsers/src/go/parser.ts",
+    "span": {
+      "start": 914,
+      "end": 930
+    },
+    "callSites": [
+      {
+        "callee": "max",
+        "line": 923
+      },
+      {
+        "callee": "max",
+        "line": 924
+      },
+      {
+        "callee": "push",
+        "line": 926
+      },
+      {
+        "callee": "push",
+        "line": 929
+      }
+    ]
+  },
+  "source": {
+    "text": "  private collectParamName(seg: Token[], params: string[]): void {\n    const names: string[] = [];\n    let bdepth = 0;\n    let pdepth = 0;\n    for (const tk of seg) {\n      if (tk.type === 'OP' && (tk.value === '[' || tk.value === '(' || tk.value === '{')) {\n        if (tk.value === '[') bdepth++;\n        else if (tk.value === '(') pdepth++;\n      } else if (tk.type === 'OP' && (tk.value === ']' || tk.value === ')' || tk.value === '}')) {\n        if (tk.value === ']') bdepth = Math.max(0, bdepth - 1);\n        else if (tk.value === ')') pdepth = Math.max(0, pdepth - 1);\n      } else if (tk.type === 'NAME' && bdepth === 0 && pdepth === 0) {\n        names.push(tk.value);\n      }\n    }\n    if (names.length >= 2) params.push(names[0]!);\n  }",
+    "truncated": false,
+    "totalLines": 17,
+    "startLine": 914
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/go/parser.ts#Parser.parseParamTokens@L874",
+      "confidence": 1,
+      "name": "parseParamTokens",
+      "qualifiedName": "Parser.parseParamTokens",
+      "signature": "parseParamTokens(tokens: Token[], openIdx: number): string[]",
+      "type": "method",
+      "file": "packages/parsers/src/go/parser.ts",
+      "line": 874
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/go/parser.ts@L913",
+      "snippet": "/** Count NAMEs in a segment at depth 0; if >= 2, the first is the Go param name. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.collectParamName@L914",
+    "procedureName": "Parser.collectParamName",
+    "conditions": [
+      "cond:packages/parsers/src/go/parser.ts@L918",
+      "cond:packages/parsers/src/go/parser.ts@L919",
+      "cond:packages/parsers/src/go/parser.ts@L922",
+      "cond:packages/parsers/src/go/parser.ts@L923",
+      "cond:packages/parsers/src/go/parser.ts@L924",
+      "cond:packages/parsers/src/go/parser.ts@L925",
+      "cond:packages/parsers/src/go/parser.ts@L929"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.collectParamName@L914",
+        "procedureName": "Parser.collectParamName",
+        "guard": "cond:packages/parsers/src/go/parser.ts@L923",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L918",
+            "expr": "seg"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L919",
+            "expr": "tk.type === 'OP' && (tk.value === '[' || tk.value === '(' || tk.value === '{')"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L922",
+            "expr": "tk.type === 'OP' && (tk.value === ']' || tk.value === ')' || tk.value === '}')"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L923",
+            "expr": "tk.value === ']'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a845b6c8fd486f51fe28ba640b85e826534efcc459790e6d6a856ec85d929a61",
+          "target": "assign:packages/parsers/src/go/parser.ts@L923",
+          "line": 923,
+          "expr": "bdepth = Math.max(0, bdepth - 1);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.collectParamName@L914",
+        "procedureName": "Parser.collectParamName",
+        "guard": "cond:packages/parsers/src/go/parser.ts@L924",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L918",
+            "expr": "seg"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L919",
+            "expr": "tk.type === 'OP' && (tk.value === '[' || tk.value === '(' || tk.value === '{')"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L922",
+            "expr": "tk.type === 'OP' && (tk.value === ']' || tk.value === ')' || tk.value === '}')"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L923",
+            "expr": "tk.value === ']'"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L924",
+            "expr": "tk.value === ')'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3103dd2b9e0bab894fa0b3d35e24a6bf080f1655736f4f1e1ac7c0357ff4da01",
+          "target": "assign:packages/parsers/src/go/parser.ts@L924",
+          "line": 924,
+          "expr": "pdepth = Math.max(0, pdepth - 1);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.collectParamName@L914",
+        "procedureName": "Parser.collectParamName",
+        "guard": "cond:packages/parsers/src/go/parser.ts@L925",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L918",
+            "expr": "seg"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L919",
+            "expr": "tk.type === 'OP' && (tk.value === '[' || tk.value === '(' || tk.value === '{')"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L922",
+            "expr": "tk.type === 'OP' && (tk.value === ']' || tk.value === ')' || tk.value === '}')"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L925",
+            "expr": "tk.type === 'NAME' && bdepth === 0 && pdepth === 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ac8edea48e7d7d4dfaf2626a58f0514950875b542ec978cc31aff514c13f3a99",
+          "target": "stmt:packages/parsers/src/go/parser.ts@L926",
+          "line": 926,
+          "expr": "names.push(tk.value);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.collectParamName@L914",
+        "procedureName": "Parser.collectParamName",
+        "guard": "cond:packages/parsers/src/go/parser.ts@L929",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L929",
+            "expr": "names.length >= 2",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3f4d443ddac41e1f91cef444373cfe600d6c7968609fcadac413e21d5c914a1b",
+          "target": "stmt:packages/parsers/src/go/parser.ts@L929",
+          "line": 929,
+          "expr": "params.push(names[0]!);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": [
+      "packages/parsers/src/go/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 2,
+    "conditions": 4,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 4,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

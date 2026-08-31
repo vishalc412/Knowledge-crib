@@ -1,0 +1,175 @@
+{
+  "id": "sym:packages/parsers/src/rust/RustExtractor.ts#BodyWalker.caseBranch@L711",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:e849c48f8a84106f792decad8295e333f0037705a141e7a412b911f15d6c2534",
+  "builtAt": "2026-08-25T20:55:11.863Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/rust/RustExtractor.ts#BodyWalker.caseBranch@L711",
+    "kind": "symbol",
+    "type": "method",
+    "name": "caseBranch",
+    "qualifiedName": "BodyWalker.caseBranch",
+    "signature": "caseBranch(pat: string, line: number): string",
+    "lang": "typescript",
+    "file": "packages/parsers/src/rust/RustExtractor.ts",
+    "span": {
+      "start": 711,
+      "end": 728
+    },
+    "callSites": [
+      {
+        "callee": "idFor",
+        "line": 712
+      },
+      {
+        "callee": "add",
+        "line": 714
+      },
+      {
+        "callee": "push",
+        "line": 715
+      },
+      {
+        "callee": "hash",
+        "line": 723
+      }
+    ]
+  },
+  "source": {
+    "text": "  private caseBranch(pat: string, line: number): string {\n    const id = this.ctx.idFor('case-branch', { file: this.path, line });\n    if (!this.caseBranchSeen.has(id)) {\n      this.caseBranchSeen.add(id);\n      this.nodes.push({\n        id,\n        kind: 'case-branch',\n        branch: 'CASE',\n        expr: pat,\n        file: this.path,\n        span: { start: line, end: line },\n        lang: 'rust',\n        hash: this.ctx.hash(`${this.path}:case:${line}:${pat}`),\n        whenSelector: pat,\n      });\n    }\n    return id;\n  }",
+    "truncated": false,
+    "totalLines": 18,
+    "startLine": 711
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/rust/RustExtractor.ts#BodyWalker.walkMatch@L588",
+      "confidence": 1,
+      "name": "walkMatch",
+      "qualifiedName": "BodyWalker.walkMatch",
+      "signature": "walkMatch(s: RustStmt & { kind: 'match' }, procId: string, guardStack: GuardFrame[], inLoop: boolean, inException: boolean, sites: GuardedCallSite[]): void",
+      "type": "method",
+      "file": "packages/parsers/src/rust/RustExtractor.ts",
+      "line": 588
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/rust/RustExtractor.ts@L709",
+      "snippet": "/** 1.2: emit a `case-branch` node (deduped by file+line) and return its id. `whenSelector` is the",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/rust/RustExtractor.ts#BodyWalker.caseBranch@L711",
+    "procedureName": "BodyWalker.caseBranch",
+    "conditions": [
+      "cond:packages/parsers/src/rust/RustExtractor.ts@L713"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/rust/RustExtractor.ts#BodyWalker.caseBranch@L711",
+        "procedureName": "BodyWalker.caseBranch",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:786c4215ab05bf5fb2b907e319e8a9e40b4911d3d57e6a27d749c70a43af3795",
+          "target": "stmt:packages/parsers/src/rust/RustExtractor.ts@L712",
+          "line": 712,
+          "expr": "const id = this.ctx.idFor('case-branch', { file: this.path, line });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/RustExtractor.ts#BodyWalker.caseBranch@L711",
+        "procedureName": "BodyWalker.caseBranch",
+        "guard": "cond:packages/parsers/src/rust/RustExtractor.ts@L713",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/RustExtractor.ts@L713",
+            "expr": "!this.caseBranchSeen.has(id)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:49f76eaabda81d3a8ac6de870d1b53eba4b0ed814b598d72f56f170f29a14438",
+          "target": "stmt:packages/parsers/src/rust/RustExtractor.ts@L714",
+          "line": 714,
+          "expr": "this.caseBranchSeen.add(id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/RustExtractor.ts#BodyWalker.caseBranch@L711",
+        "procedureName": "BodyWalker.caseBranch",
+        "guard": "cond:packages/parsers/src/rust/RustExtractor.ts@L713",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/RustExtractor.ts@L713",
+            "expr": "!this.caseBranchSeen.has(id)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:854f85450ad17f65110349447d0f5ca694a54c38885093f375b32c7b44de1f86",
+          "target": "stmt:packages/parsers/src/rust/RustExtractor.ts@L715",
+          "line": 715,
+          "expr": "this.nodes.push({\n        id,\n        kind: 'case-branch',\n        branch: 'CASE',\n        expr: pat,\n        file: this.path,\n        span: { start: line, end: line },\n        lang: 'rust',\n        hash: this.ctx.hash(`${this.path}:case:${line}:${pat}`),\n        whenSelector: pat,\n      });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/RustExtractor.ts#BodyWalker.caseBranch@L711",
+        "procedureName": "BodyWalker.caseBranch",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9102ecb4cace0cd3dd77279402c0621e3d5a24289c7f24e3ec662bc653c98dc7",
+          "target": "stmt:packages/parsers/src/rust/RustExtractor.ts@L727",
+          "line": 727,
+          "expr": "return id;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": [
+      "packages/parsers/src/rust/RustExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 4,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

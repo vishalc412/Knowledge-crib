@@ -1,0 +1,1205 @@
+{
+  "id": "sym:packages/pipeline/src/resolve/sql-resolver.ts#SqlResolver.resolve@L41",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:5384c2e9bc1b7c2b44cd32ea13af917ae6cb1abb29cb1ba1da3719731c668dd9",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/resolve/sql-resolver.ts#SqlResolver.resolve@L41",
+    "kind": "symbol",
+    "type": "method",
+    "name": "resolve",
+    "qualifiedName": "SqlResolver.resolve",
+    "signature": "resolve(ctx: ResolveContext): ResolveResult",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/resolve/sql-resolver.ts",
+    "span": {
+      "start": 41,
+      "end": 159
+    },
+    "callSites": [
+      {
+        "callee": "toLowerCase",
+        "line": 60
+      },
+      {
+        "callee": "toLowerCase",
+        "line": 61
+      },
+      {
+        "callee": "set",
+        "line": 62
+      },
+      {
+        "callee": "get",
+        "line": 64
+      },
+      {
+        "callee": "push",
+        "line": 65
+      },
+      {
+        "callee": "set",
+        "line": 66
+      },
+      {
+        "callee": "edgeId",
+        "line": 78
+      },
+      {
+        "callee": "has",
+        "line": 79
+      },
+      {
+        "callee": "getEdge",
+        "line": 80
+      },
+      {
+        "callee": "add",
+        "line": 81
+      },
+      {
+        "callee": "add",
+        "line": 84
+      },
+      {
+        "callee": "push",
+        "line": 85
+      },
+      {
+        "callee": "sqlRoles",
+        "line": 102
+      },
+      {
+        "callee": "resolveTable",
+        "line": 104
+      },
+      {
+        "callee": "emit",
+        "line": 105
+      },
+      {
+        "callee": "resolveTable",
+        "line": 109
+      },
+      {
+        "callee": "emit",
+        "line": 110
+      },
+      {
+        "callee": "resolveTable",
+        "line": 120
+      },
+      {
+        "callee": "emit",
+        "line": 121
+      },
+      {
+        "callee": "resolveTable",
+        "line": 132
+      },
+      {
+        "callee": "emit",
+        "line": 133
+      },
+      {
+        "callee": "resolveCallee",
+        "line": 143
+      },
+      {
+        "callee": "emit",
+        "line": 145
+      }
+    ]
+  },
+  "source": {
+    "text": "  resolve(ctx: ResolveContext): ResolveResult {\n    const edges: Edge[] = [];\n    const stats: Record<string, number> = {\n      reads: 0,\n      writes: 0,\n      calls: 0,\n      references: 0,\n      dropped: 0,\n    };\n    const catalog = new SchemaCatalog(ctx.soul);\n    // local dropped counter (Record<string, number> indexing yields `number | undefined` under\n    // noUncheckedIndexedAccess; a plain local avoids `?? 0` on every miss).\n    let dropped = 0;\n\n    // procedure index for cross-file calls: qualified name + simple name (file-aware).\n    const byQualified = new Map<string, string>();\n    const bySimple = new Map<string, { id: string; file: string }[]>();\n    for (const s of ctx.soul.iterate('symbol')) {\n      if (s.type !== 'procedure' && s.type !== 'function') continue;\n      const q = (s.qualifiedName ?? '').toLowerCase();\n      const simple = (s.name ?? '').toLowerCase();\n      if (q) byQualified.set(q, s.id);\n      if (simple && s.file) {\n        const list = bySimple.get(simple) ?? [];\n        list.push({ id: s.id, file: s.file });\n        bySimple.set(simple, list);\n      }\n    }\n\n    const seen = new Set<string>();\n    const emit = (\n      src: string,\n      dst: string,\n      rel: Edge['rel'],\n      snippet: string,\n      statKey: string,\n    ): void => {\n      const id = edgeId(src, dst, rel);\n      if (seen.has(id)) return;\n      if (ctx.soul.getEdge(id)) {\n        seen.add(id); // already emitted by the extractor (same-file) — count once\n        return;\n      }\n      seen.add(id);\n      edges.push({\n        id,\n        src,\n        dst,\n        rel,\n        method: 'static',\n        provenance: 'EXTRACTED',\n        confidence: 1,\n        evidence: { by: this.name, snippet },\n      });\n      stats[statKey] = (stats[statKey] ?? 0) + 1;\n    };\n\n    // statement → table reads/writes (cross-file; same-file already in the soul).\n    for (const stmt of ctx.soul.iterate('statement')) {\n      const tables = (stmt.meta?.tables as string[] | undefined) ?? [];\n      if (tables.length === 0) continue;\n      const { reads, writes } = sqlRoles(stmt.sqlKind ?? '', tables);\n      for (const t of reads) {\n        const dst = catalog.resolveTable(t);\n        if (dst) emit(stmt.id, dst, 'reads', t, 'reads');\n        else dropped++;\n      }\n      for (const t of writes) {\n        const dst = catalog.resolveTable(t);\n        if (dst) emit(stmt.id, dst, 'writes', t, 'writes');\n        else dropped++;\n      }\n    }\n\n    // cursor → table reads (cross-file; same-file already in the soul). A cursor's SELECT reads its\n    // row-source tables; the extractor mined them into `meta.tables` on the cursor node (WS-7).\n    for (const cur of ctx.soul.iterate('cursor')) {\n      const tables = (cur.meta?.tables as string[] | undefined) ?? [];\n      for (const t of tables) {\n        const dst = catalog.resolveTable(t);\n        if (dst) emit(cur.id, dst, 'reads', t, 'reads');\n        else dropped++;\n      }\n    }\n\n    // table → table references (cross-file FK; same-file already in the soul). The extractor mined\n    // each FK into `meta.foreignKeys` on the child table node; resolve the parent against the\n    // catalog and emit a `references` edge child → parent (WS-7 — the schema's referential structure).\n    for (const tbl of ctx.soul.iterate('table')) {\n      const fks = (tbl.meta?.foreignKeys as FkMeta[] | undefined) ?? [];\n      for (const fk of fks) {\n        const dst = catalog.resolveTable(fk.refTable);\n        if (dst) emit(tbl.id, dst, 'references', fk.refTable, 'references');\n        else dropped++;\n      }\n    }\n\n    // procedure → procedure calls (cross-file; same-file already in the soul).\n    for (const sym of ctx.soul.iterate('symbol')) {\n      if (sym.type !== 'procedure' && sym.type !== 'function') continue;\n      const calls = (sym.meta?.calls as CallSite[] | undefined) ?? [];\n      for (const site of calls) {\n        const dst = resolveCallee(site.callee, sym.file ?? '', byQualified, bySimple);",
+    "truncated": true,
+    "totalLines": 119,
+    "startLine": 41,
+    "nextLine": 144
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/pipeline/src/resolve/sql-resolver.ts#SqlResolver.resolve.emit@L71",
+      "confidence": 1,
+      "name": "emit",
+      "qualifiedName": "SqlResolver.resolve.emit",
+      "signature": "emit(…)",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/sql-resolver.ts",
+      "line": 71
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/sql-resolver.ts#resolveCallee@L163",
+      "confidence": 1,
+      "name": "resolveCallee",
+      "qualifiedName": "resolveCallee",
+      "signature": "resolveCallee(callee: string, callerFile: string, byQualified: Map<string, string>, bySimple: Map<string, { id: string; file: string }[]>): string | undefined",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/sql-resolver.ts",
+      "line": 163
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#what-was-built-3",
+      "heading": "What was built",
+      "anchor": "what-was-built-3",
+      "snippet": "What was built",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-4-extraction.md#task-7-resolve-mule-references-across-files",
+      "heading": "Task 7: Resolve Mule references across files",
+      "anchor": "task-7-resolve-mule-references-across-files",
+      "snippet": "Task 7: Resolve Mule references across files",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#status-op-gaps-missing-asset-detection",
+      "heading": "`status({op:'gaps'})` *(missing-asset detection)*",
+      "anchor": "status-op-gaps-missing-asset-detection",
+      "snippet": "`status({op:'gaps'})` *(missing-asset detection)*",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-deep-extraction.md#3-pipeline-additions-see-pipeline-knowledge-crib-pipeline-md-phases-3c-3d",
+      "heading": "3. Pipeline additions (see [pipeline](knowledge-crib-pipeline.md) Phases 3c/3d)",
+      "anchor": "3-pipeline-additions-see-pipeline-knowledge-crib-pipeline-md-phases-3c-3d",
+      "snippet": "3. Pipeline additions (see [pipeline](knowledge-crib-pipeline.md) Phases 3c/3d)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#java-spring-boot-track-built-tested-schema-1-3",
+      "heading": "Java / Spring Boot track (built + tested, schema 1.3)",
+      "anchor": "java-spring-boot-track-built-tested-schema-1-3",
+      "snippet": "Java / Spring Boot track (built + tested, schema 1.3)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:packages/cli/skills/crib-enrich/SKILL.md#per-layer-guidance",
+      "heading": "Per-layer guidance",
+      "anchor": "per-layer-guidance",
+      "snippet": "Per-layer guidance",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-munit-hardening.md#task-3-emit-and-resolve-munit-migration-evidence",
+      "heading": "Task 3: Emit and resolve MUnit migration evidence",
+      "anchor": "task-3-emit-and-resolve-munit-migration-evidence",
+      "snippet": "Task 3: Emit and resolve MUnit migration evidence",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:CHANGELOG.md#added",
+      "heading": "Added",
+      "anchor": "added",
+      "snippet": "Added",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m14-framework-semantics-layer-schema-1-3",
+      "heading": "M14 — Framework-semantics layer (schema 1.3)",
+      "anchor": "m14-framework-semantics-layer-schema-1-3",
+      "snippet": "M14 — Framework-semantics layer (schema 1.3)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:README.md#install",
+      "heading": "Install",
+      "anchor": "install",
+      "snippet": "Install",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#what-was-built",
+      "heading": "What was built",
+      "anchor": "what-was-built",
+      "snippet": "What was built",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-4-extraction.md#task-5-parse-raml-and-apikit-mappings",
+      "heading": "Task 5: Parse RAML and APIKit mappings",
+      "anchor": "task-5-parse-raml-and-apikit-mappings",
+      "snippet": "Task 5: Parse RAML and APIKit mappings",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/adr/ADR-002-scale-storage.md#option-b-per-module-souls-lazy-shard-loading",
+      "heading": "Option B — Per-module souls + lazy shard loading",
+      "anchor": "option-b-per-module-souls-lazy-shard-loading",
+      "snippet": "Option B — Per-module souls + lazy shard loading",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/adr/ADR-002-scale-storage.md#what-the-curve-says-two-different-shapes",
+      "heading": "What the curve says — two different shapes",
+      "anchor": "what-the-curve-says-two-different-shapes",
+      "snippet": "What the curve says — two different shapes",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/adr/ADR-002-scale-storage.md#per-module-souls-yes-driven-by-index-time-not-memory",
+      "heading": "Per-module souls — YES, driven by INDEX TIME (not memory)",
+      "anchor": "per-module-souls-yes-driven-by-index-time-not-memory",
+      "snippet": "Per-module souls — YES, driven by INDEX TIME (not memory)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#dossier-symbol-deep-context-persisted-workstream-d-e",
+      "heading": "`dossier(symbol)` *(deep-context, persisted — Workstream D/E)*",
+      "anchor": "dossier-symbol-deep-context-persisted-workstream-d-e",
+      "snippet": "`dossier(symbol)` *(deep-context, persisted — Workstream D/E)*",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/mulesoft.md#index-summary",
+      "heading": "Index summary",
+      "anchor": "index-summary",
+      "snippet": "Index summary",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-deep-extraction.md#4d-dossier-the-persisted-reusable-deep-context-workstream-d-e",
+      "heading": "4d. Dossier — the persisted reusable deep context (Workstream D/E)",
+      "anchor": "4d-dossier-the-persisted-reusable-deep-context-workstream-d-e",
+      "snippet": "4d. Dossier — the persisted reusable deep context (Workstream D/E)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/mulesoft.md#archive-cache",
+      "heading": "Archive cache",
+      "anchor": "archive-cache",
+      "snippet": "Archive cache",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-deep-extraction.md#1-why-this-is-its-own-capability",
+      "heading": "1. Why this is its own capability",
+      "anchor": "1-why-this-is-its-own-capability",
+      "snippet": "1. Why this is its own capability",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/adr/ADR-001-parallel-parse.md#determinism-trick-load-bearing",
+      "heading": "Determinism trick (load-bearing)",
+      "anchor": "determinism-trick-load-bearing",
+      "snippet": "Determinism trick (load-bearing)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-build-plan.md#5-milestones-each-one-flagged-pr-test-gate",
+      "heading": "5. Milestones (each = one flagged PR + test gate)",
+      "anchor": "5-milestones-each-one-flagged-pr-test-gate",
+      "snippet": "5. Milestones (each = one flagged PR + test gate)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-build-plan.md#0-repo-stack",
+      "heading": "0. Repo & stack",
+      "anchor": "0-repo-stack",
+      "snippet": "0. Repo & stack",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-pipeline.md#phase-2b-framework-semantics-1-3-the-above-sql-tier-for-app-frameworks",
+      "heading": "Phase 2b — Framework-semantics *(1.3, the \"above SQL\" tier for app frameworks)*",
+      "anchor": "phase-2b-framework-semantics-1-3-the-above-sql-tier-for-app-frameworks",
+      "snippet": "Phase 2b — Framework-semantics *(1.3, the \"above SQL\" tier for app frameworks)*",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-pipeline.md#phase-3c-sql-data-flow-deep-extraction-migration-track",
+      "heading": "Phase 3c — SQL data-flow *(deep-extraction / migration track)*",
+      "anchor": "phase-3c-sql-data-flow-deep-extraction-migration-track",
+      "snippet": "Phase 3c — SQL data-flow *(deep-extraction / migration track)*",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-pipeline.md#phase-3-resolve-the-deep-part",
+      "heading": "Phase 3 — Resolve (the deep part)",
+      "anchor": "phase-3-resolve-the-deep-part",
+      "snippet": "Phase 3 — Resolve (the deep part)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/README.md#document-index-read-in-order",
+      "heading": "Document index (read in order)",
+      "anchor": "document-index-read-in-order",
+      "snippet": "Document index (read in order)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/launch/publish-runbook.md#publish-sequence-user-executes-in-dependency-order",
+      "heading": "Publish sequence (user executes, in dependency order)",
+      "anchor": "publish-sequence-user-executes-in-dependency-order",
+      "snippet": "Publish sequence (user executes, in dependency order)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#7-the-complete-code-map-quick-reference",
+      "heading": "7. The Complete Code Map (Quick Reference)",
+      "anchor": "7-the-complete-code-map-quick-reference",
+      "snippet": "7. The Complete Code Map (Quick Reference)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#2-1-monorepo-package-map",
+      "heading": "2.1 Monorepo Package Map",
+      "anchor": "2-1-monorepo-package-map",
+      "snippet": "2.1 Monorepo Package Map",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-cli.md#monorepo-workspace-detection-package",
+      "heading": "Monorepo / workspace detection (`--package`)",
+      "anchor": "monorepo-workspace-detection-package",
+      "snippet": "Monorepo / workspace detection (`--package`)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-cli.md#root-resolution-req-1",
+      "heading": "Root resolution (REQ-1)",
+      "anchor": "root-resolution-req-1",
+      "snippet": "Root resolution (REQ-1)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:packages/cli/skills/crib-enrich/SKILL.md#tools",
+      "heading": "Tools",
+      "anchor": "tools",
+      "snippet": "Tools",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:packages/cli/skills/crib-enrich/SKILL.md#grounding-rule-anti-hallucination-the-server-enforces-this-on-save",
+      "heading": "Grounding rule (anti-hallucination) — the server enforces this on save",
+      "anchor": "grounding-rule-anti-hallucination-the-server-enforces-this-on-save",
+      "snippet": "Grounding rule (anti-hallucination) — the server enforces this on save",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-client-setup.md#path-gotcha-for-gui-launched-clients",
+      "heading": "PATH gotcha for GUI-launched clients",
+      "anchor": "path-gotcha-for-gui-launched-clients",
+      "snippet": "PATH gotcha for GUI-launched clients",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-client-setup.md#monorepos-index-one-package-at-a-time-package",
+      "heading": "Monorepos: index one package at a time (`--package`)",
+      "anchor": "monorepos-index-one-package-at-a-time-package",
+      "snippet": "Monorepos: index one package at a time (`--package`)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-3-extraction.md#task-6-resolve-legacy-endpoint-strategy-and-flow-references",
+      "heading": "Task 6: Resolve legacy endpoint, strategy, and flow references",
+      "anchor": "task-6-resolve-legacy-endpoint-strategy-and-flow-references",
+      "snippet": "Task 6: Resolve legacy endpoint, strategy, and flow references",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-refined-vs-existing-assessment.md#2-3-solution-architect",
+      "heading": "2.3 Solution Architect",
+      "anchor": "2-3-solution-architect",
+      "snippet": "2.3 Solution Architect",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/resolve/sql-resolver.ts#SqlResolver.resolve@L41",
+    "procedureName": "SqlResolver.resolve",
+    "conditions": [
+      "cond:packages/pipeline/src/resolve/sql-resolver.ts@L58",
+      "cond:packages/pipeline/src/resolve/sql-resolver.ts@L62",
+      "cond:packages/pipeline/src/resolve/sql-resolver.ts@L63",
+      "cond:packages/pipeline/src/resolve/sql-resolver.ts@L99",
+      "cond:packages/pipeline/src/resolve/sql-resolver.ts@L103",
+      "cond:packages/pipeline/src/resolve/sql-resolver.ts@L139",
+      "cond:packages/pipeline/src/resolve/sql-resolver.ts@L142",
+      "cond:packages/pipeline/src/resolve/sql-resolver.ts@L144",
+      "cond:packages/pipeline/src/resolve/sql-resolver.ts@L105",
+      "cond:packages/pipeline/src/resolve/sql-resolver.ts@L108",
+      "cond:packages/pipeline/src/resolve/sql-resolver.ts@L110",
+      "cond:packages/pipeline/src/resolve/sql-resolver.ts@L117",
+      "cond:packages/pipeline/src/resolve/sql-resolver.ts@L119",
+      "cond:packages/pipeline/src/resolve/sql-resolver.ts@L121",
+      "cond:packages/pipeline/src/resolve/sql-resolver.ts@L129",
+      "cond:packages/pipeline/src/resolve/sql-resolver.ts@L131",
+      "cond:packages/pipeline/src/resolve/sql-resolver.ts@L133",
+      "cond:packages/pipeline/src/resolve/sql-resolver.ts@L146",
+      "cond:packages/pipeline/src/resolve/sql-resolver.ts@L149",
+      "cond:packages/pipeline/src/resolve/sql-resolver.ts@L150"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/sql-resolver.ts#SqlResolver.resolve@L41",
+        "procedureName": "SqlResolver.resolve",
+        "guard": "cond:packages/pipeline/src/resolve/sql-resolver.ts@L58",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/sql-resolver.ts@L58",
+            "expr": "ctx.soul.iterate('symbol')",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:34b197bd1fc588104926783d3fb661ab966166d0263bbee24b9747a040f6d862",
+          "target": "stmt:packages/pipeline/src/resolve/sql-resolver.ts@L60",
+          "line": 60,
+          "expr": "const q = (s.qualifiedName ?? '').toLowerCase();"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/sql-resolver.ts#SqlResolver.resolve@L41",
+        "procedureName": "SqlResolver.resolve",
+        "guard": "cond:packages/pipeline/src/resolve/sql-resolver.ts@L58",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/sql-resolver.ts@L58",
+            "expr": "ctx.soul.iterate('symbol')",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4841dad7dd8759c9959b981bc770a9dfabd3893d0642acceb6d4ac2ac618f7f0",
+          "target": "stmt:packages/pipeline/src/resolve/sql-resolver.ts@L61",
+          "line": 61,
+          "expr": "const simple = (s.name ?? '').toLowerCase();"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/sql-resolver.ts#SqlResolver.resolve@L41",
+        "procedureName": "SqlResolver.resolve",
+        "guard": "cond:packages/pipeline/src/resolve/sql-resolver.ts@L62",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/sql-resolver.ts@L58",
+            "expr": "ctx.soul.iterate('symbol')"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/sql-resolver.ts@L62",
+            "expr": "q",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5b3b5a84bccaf5eb29c43043bdaff797c2d6eb15260af08cb60e146e5ec0c42d",
+          "target": "stmt:packages/pipeline/src/resolve/sql-resolver.ts@L62",
+          "line": 62,
+          "expr": "byQualified.set(q, s.id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/sql-resolver.ts#SqlResolver.resolve@L41",
+        "procedureName": "SqlResolver.resolve",
+        "guard": "cond:packages/pipeline/src/resolve/sql-resolver.ts@L63",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/sql-resolver.ts@L58",
+            "expr": "ctx.soul.iterate('symbol')"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/sql-resolver.ts@L63",
+            "expr": "simple && s.file",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:69a926e5dd9f93972d05e372e1a24345d7b09ec3dd3c0c2ecad16fefcb15ff7b",
+          "target": "stmt:packages/pipeline/src/resolve/sql-resolver.ts@L64",
+          "line": 64,
+          "expr": "const list = bySimple.get(simple) ?? [];"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/sql-resolver.ts#SqlResolver.resolve@L41",
+        "procedureName": "SqlResolver.resolve",
+        "guard": "cond:packages/pipeline/src/resolve/sql-resolver.ts@L63",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/sql-resolver.ts@L58",
+            "expr": "ctx.soul.iterate('symbol')"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/sql-resolver.ts@L63",
+            "expr": "simple && s.file",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:11497b561547cff8fdb81e13852dca54663db35b514890304eaf8ddf76a4f4ac",
+          "target": "stmt:packages/pipeline/src/resolve/sql-resolver.ts@L65",
+          "line": 65,
+          "expr": "list.push({ id: s.id, file: s.file });"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/sql-resolver.ts#SqlResolver.resolve@L41",
+        "procedureName": "SqlResolver.resolve",
+        "guard": "cond:packages/pipeline/src/resolve/sql-resolver.ts@L63",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/sql-resolver.ts@L58",
+            "expr": "ctx.soul.iterate('symbol')"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/sql-resolver.ts@L63",
+            "expr": "simple && s.file",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:36f8c8ee2e9755d8e921d9ed9b7dffe1b39707ed15e102b536ad8aa503d9c419",
+          "target": "stmt:packages/pipeline/src/resolve/sql-resolver.ts@L66",
+          "line": 66,
+          "expr": "bySimple.set(simple, list);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/sql-resolver.ts#SqlResolver.resolve@L41",
+        "procedureName": "SqlResolver.resolve",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:803adb9c32cefcb3ba06d7766e7d22a8ff737bc1e7659c36f2379fe75b9d0a9d",
+          "target": "stmt:packages/pipeline/src/resolve/sql-resolver.ts@L71",
+          "line": 71,
+          "expr": "const emit = (\n      src: string,\n      dst: string,\n      rel: Edge['rel'],\n      snippet: string,\n      statKey: string,\n    ): void => {\n      const id = edgeId(src, dst, rel);\n      if (seen.has(id)) return;\n      if (ctx.soul.getEdge(id)) {\n        seen.add(id); // already emitted by the extractor (same-file) — count once\n        return;\n      }\n      seen.add(id);\n      edges.push({\n        id,\n        src,\n        dst,\n        rel,\n        method: 'static',\n        provenance: 'EXTRACTED',\n        confidence: 1,\n        evidence: { by: this.name, snippet },\n      });\n      stats[statKey] = (stats[statKey] ?? 0) + 1;\n    };"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/sql-resolver.ts#SqlResolver.resolve@L41",
+        "procedureName": "SqlResolver.resolve",
+        "guard": "cond:packages/pipeline/src/resolve/sql-resolver.ts@L99",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/sql-resolver.ts@L99",
+            "expr": "ctx.soul.iterate('statement')",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f22b4a256bbd8a3fa9776e6497918869e7d9f023c35b145d196ad9c0252a4eed",
+          "target": "stmt:packages/pipeline/src/resolve/sql-resolver.ts@L102",
+          "line": 102,
+          "expr": "const { reads, writes } = sqlRoles(stmt.sqlKind ?? '', tables);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/sql-resolver.ts#SqlResolver.resolve@L41",
+        "procedureName": "SqlResolver.resolve",
+        "guard": "cond:packages/pipeline/src/resolve/sql-resolver.ts@L103",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/sql-resolver.ts@L99",
+            "expr": "ctx.soul.iterate('statement')"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/sql-resolver.ts@L103",
+            "expr": "reads",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d8495c5b93d75f4c128405039a038836eece67363b74852847276af32b60b705",
+          "target": "stmt:packages/pipeline/src/resolve/sql-resolver.ts@L104",
+          "line": 104,
+          "expr": "const dst = catalog.resolveTable(t);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/sql-resolver.ts#SqlResolver.resolve@L41",
+        "procedureName": "SqlResolver.resolve",
+        "guard": "cond:packages/pipeline/src/resolve/sql-resolver.ts@L144",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/sql-resolver.ts@L139",
+            "expr": "ctx.soul.iterate('symbol')"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/sql-resolver.ts@L142",
+            "expr": "calls"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/sql-resolver.ts@L144",
+            "expr": "dst && dst !== sym.id",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:0ec6f2419e8afbccb818d66c8f34b8cf801ff7b32fe056370527d3e145e5fb4d",
+          "target": "sym:packages/pipeline/src/resolve/sql-resolver.ts#SqlResolver.resolve.emit@L71",
+          "expr": "emit",
+          "line": 105
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/sql-resolver.ts#SqlResolver.resolve@L41",
+        "procedureName": "SqlResolver.resolve",
+        "guard": "cond:packages/pipeline/src/resolve/sql-resolver.ts@L105",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/sql-resolver.ts@L99",
+            "expr": "ctx.soul.iterate('statement')"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/sql-resolver.ts@L103",
+            "expr": "reads"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/sql-resolver.ts@L105",
+            "expr": "dst",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5342760f6daa91bd9aa20b98594a5f442f7c544b53ce07c35596cb5308f444af",
+          "target": "stmt:packages/pipeline/src/resolve/sql-resolver.ts@L105",
+          "line": 105,
+          "expr": "emit(stmt.id, dst, 'reads', t, 'reads');"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/sql-resolver.ts#SqlResolver.resolve@L41",
+        "procedureName": "SqlResolver.resolve",
+        "guard": "cond:packages/pipeline/src/resolve/sql-resolver.ts@L108",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/sql-resolver.ts@L99",
+            "expr": "ctx.soul.iterate('statement')"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/sql-resolver.ts@L108",
+            "expr": "writes",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5aa5028f83c802ba90772cad41ec927547d24e9d59bf0136147d4eb54f606847",
+          "target": "stmt:packages/pipeline/src/resolve/sql-resolver.ts@L109",
+          "line": 109,
+          "expr": "const dst = catalog.resolveTable(t);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/sql-resolver.ts#SqlResolver.resolve@L41",
+        "procedureName": "SqlResolver.resolve",
+        "guard": "cond:packages/pipeline/src/resolve/sql-resolver.ts@L110",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/sql-resolver.ts@L99",
+            "expr": "ctx.soul.iterate('statement')"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/sql-resolver.ts@L108",
+            "expr": "writes"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/sql-resolver.ts@L110",
+            "expr": "dst",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a19a06cac7d0d1d769937cc7e93f9b16fbc8b1078331adffd76884f07fa62926",
+          "target": "stmt:packages/pipeline/src/resolve/sql-resolver.ts@L110",
+          "line": 110,
+          "expr": "emit(stmt.id, dst, 'writes', t, 'writes');"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/sql-resolver.ts#SqlResolver.resolve@L41",
+        "procedureName": "SqlResolver.resolve",
+        "guard": "cond:packages/pipeline/src/resolve/sql-resolver.ts@L119",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/sql-resolver.ts@L117",
+            "expr": "ctx.soul.iterate('cursor')"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/sql-resolver.ts@L119",
+            "expr": "tables",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:66c6a4fb88b1c7e8dd7c6db89ff5a04ce923d189f04373a5fec5ccf7b4c528c5",
+          "target": "stmt:packages/pipeline/src/resolve/sql-resolver.ts@L120",
+          "line": 120,
+          "expr": "const dst = catalog.resolveTable(t);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/sql-resolver.ts#SqlResolver.resolve@L41",
+        "procedureName": "SqlResolver.resolve",
+        "guard": "cond:packages/pipeline/src/resolve/sql-resolver.ts@L121",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/sql-resolver.ts@L117",
+            "expr": "ctx.soul.iterate('cursor')"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/sql-resolver.ts@L119",
+            "expr": "tables"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/sql-resolver.ts@L121",
+            "expr": "dst",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8bd222aab403539cd850a73df2c17340daa28c99d6b924a6ae34dcb01cbc9f46",
+          "target": "stmt:packages/pipeline/src/resolve/sql-resolver.ts@L121",
+          "line": 121,
+          "expr": "emit(cur.id, dst, 'reads', t, 'reads');"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/sql-resolver.ts#SqlResolver.resolve@L41",
+        "procedureName": "SqlResolver.resolve",
+        "guard": "cond:packages/pipeline/src/resolve/sql-resolver.ts@L131",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/sql-resolver.ts@L129",
+            "expr": "ctx.soul.iterate('table')"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/sql-resolver.ts@L131",
+            "expr": "fks",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8bdac2aaf30f620d590f1ecc3c2bd395cf639427b42f4fc5b4008719dd380d47",
+          "target": "stmt:packages/pipeline/src/resolve/sql-resolver.ts@L132",
+          "line": 132,
+          "expr": "const dst = catalog.resolveTable(fk.refTable);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/sql-resolver.ts#SqlResolver.resolve@L41",
+        "procedureName": "SqlResolver.resolve",
+        "guard": "cond:packages/pipeline/src/resolve/sql-resolver.ts@L133",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/sql-resolver.ts@L129",
+            "expr": "ctx.soul.iterate('table')"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/sql-resolver.ts@L131",
+            "expr": "fks"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/sql-resolver.ts@L133",
+            "expr": "dst",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f5f440b55ba082b11c66ed8b2d30e09e8d967dca7d6a179240eeec791700535e",
+          "target": "stmt:packages/pipeline/src/resolve/sql-resolver.ts@L133",
+          "line": 133,
+          "expr": "emit(tbl.id, dst, 'references', fk.refTable, 'references');"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/sql-resolver.ts#SqlResolver.resolve@L41",
+        "procedureName": "SqlResolver.resolve",
+        "guard": "cond:packages/pipeline/src/resolve/sql-resolver.ts@L142",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/sql-resolver.ts@L139",
+            "expr": "ctx.soul.iterate('symbol')"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/sql-resolver.ts@L142",
+            "expr": "calls",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:e7f100f061f6a332cb76ee739f81fb0d545a178f0394a3204c24ad3b107b5c45",
+          "target": "sym:packages/pipeline/src/resolve/sql-resolver.ts#resolveCallee@L163",
+          "expr": "resolveCallee",
+          "line": 143
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/sql-resolver.ts#SqlResolver.resolve@L41",
+        "procedureName": "SqlResolver.resolve",
+        "guard": "cond:packages/pipeline/src/resolve/sql-resolver.ts@L142",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/sql-resolver.ts@L139",
+            "expr": "ctx.soul.iterate('symbol')"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/sql-resolver.ts@L142",
+            "expr": "calls",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:eff541a3f7e56af920d40e5dcf1258a509a1cdaa9b16d4838cb4ff2f82dbcd97",
+          "target": "stmt:packages/pipeline/src/resolve/sql-resolver.ts@L143",
+          "line": 143,
+          "expr": "const dst = resolveCallee(site.callee, sym.file ?? '', byQualified, bySimple);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/sql-resolver.ts#SqlResolver.resolve@L41",
+        "procedureName": "SqlResolver.resolve",
+        "guard": "cond:packages/pipeline/src/resolve/sql-resolver.ts@L144",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/sql-resolver.ts@L139",
+            "expr": "ctx.soul.iterate('symbol')"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/sql-resolver.ts@L142",
+            "expr": "calls"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/sql-resolver.ts@L144",
+            "expr": "dst && dst !== sym.id",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:95f68f28b3ac6dffdfebb07359e2a5c4e7b335ec81c9ee0ec9138430b57ddf04",
+          "target": "stmt:packages/pipeline/src/resolve/sql-resolver.ts@L145",
+          "line": 145,
+          "expr": "emit(sym.id, dst, 'calls', site.callee, 'calls');"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/sql-resolver.ts#SqlResolver.resolve@L41",
+        "procedureName": "SqlResolver.resolve",
+        "guard": "cond:packages/pipeline/src/resolve/sql-resolver.ts@L149",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/sql-resolver.ts@L139",
+            "expr": "ctx.soul.iterate('symbol')"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/sql-resolver.ts@L142",
+            "expr": "calls"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/sql-resolver.ts@L144",
+            "expr": "dst && dst !== sym.id"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/sql-resolver.ts@L146",
+            "expr": "dst === sym.id"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/sql-resolver.ts@L149",
+            "expr": "!sym.meta",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2732efd9eaef1f5944657574e2f8bebd1e951f459c0bec373f68ed6bb8a0abc2",
+          "target": "assign:packages/pipeline/src/resolve/sql-resolver.ts@L149",
+          "line": 149,
+          "expr": "sym.meta = {};"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/sql-resolver.ts#SqlResolver.resolve@L41",
+        "procedureName": "SqlResolver.resolve",
+        "guard": "cond:packages/pipeline/src/resolve/sql-resolver.ts@L150",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/sql-resolver.ts@L139",
+            "expr": "ctx.soul.iterate('symbol')"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/sql-resolver.ts@L142",
+            "expr": "calls"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/sql-resolver.ts@L144",
+            "expr": "dst && dst !== sym.id"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/sql-resolver.ts@L146",
+            "expr": "dst === sym.id"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/sql-resolver.ts@L150",
+            "expr": "!sym.meta.recursive",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5c0310d00a6c58b2152b008d2e351829e9bd3b2bd712afa7f67d712571b52486",
+          "target": "assign:packages/pipeline/src/resolve/sql-resolver.ts@L150",
+          "line": 150,
+          "expr": "sym.meta.recursive = true;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/sql-resolver.ts#SqlResolver.resolve@L41",
+        "procedureName": "SqlResolver.resolve",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8a4f87aad30d966810657f838482d32b1220255e2c3a29504c1b04bf0b8bfe95",
+          "target": "assign:packages/pipeline/src/resolve/sql-resolver.ts@L157",
+          "line": 157,
+          "expr": "stats.dropped = dropped;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/sql-resolver.ts#SqlResolver.resolve@L41",
+        "procedureName": "SqlResolver.resolve",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b6cf9352965dc5d08974f32ff0756e1daa69eb97e7f0aa68d1de653acfb523ab",
+          "target": "stmt:packages/pipeline/src/resolve/sql-resolver.ts@L158",
+          "line": 158,
+          "expr": "return { edges, stats };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 22,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 22,
+    "assignments": 3,
+    "conditions": 16,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 23,
+      "unresolved": 5
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "5 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

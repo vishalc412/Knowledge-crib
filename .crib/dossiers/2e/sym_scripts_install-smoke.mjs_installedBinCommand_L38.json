@@ -1,8 +1,8 @@
 {
   "id": "sym:scripts/install-smoke.mjs#installedBinCommand@L38",
-  "schemaVersion": "1.5",
-  "nodeHash": "blake3:71f6c7f2cc8fcfab825e98d7505c84e25f184f649b8fea82e04701f1789cdbf5",
-  "builtAt": "2026-07-13T11:04:33.459Z",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:f2b66c6efa17c49909b943acadab76157e1cbcd112245f8b79d271f3174bf7ef",
+  "builtAt": "2026-08-25T20:55:11.863Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:scripts/install-smoke.mjs#installedBinCommand@L38",
@@ -15,25 +15,25 @@
     "file": "scripts/install-smoke.mjs",
     "span": {
       "start": 38,
-      "end": 47
+      "end": 57
     }
   },
   "source": {
-    "text": "export function installedBinCommand(bin, platform = process.platform, env = process.env) {\n  if (platform === 'win32') {\n    return {\n      command: env.ComSpec || 'cmd.exe',\n      args: ['/d', '/s', '/c', `\"${bin}\" --help`],\n    };\n  }\n\n  return { command: bin, args: ['--help'] };\n}",
+    "text": "export function installedBinCommand(bin, platform = process.platform, env = process.env) {\n  if (platform === 'win32') {\n    // Pass the .cmd path and --help as SEPARATE args (no pre-quoting, no /s). run() invokes this\n    // via execFileSync with shell:false, so Node escapes each arg for the cmd.exe command line\n    // itself. The earlier form — a single pre-quoted arg `\"/c\", `\"${bin}\" --help\"` — was double-\n    // escaped: Node re-wrapped that one arg (spaces + embedded quotes) and escaped the inner\n    // quotes to `\\\"`, so cmd.exe /s /c received `\\\"C:\\…\\crib.cmd\\\" --help` and treated the literal\n    // `\\\"…\\\"` as the program name (\"is not recognized as an internal or external command\").\n    // With separate args Node quotes only a spaced path (`\"C:\\Program Files\\…\\crib.cmd\"`), and\n    // cmd.exe /c's quote rule resolves the program + passes --help through — for both spaced and\n    // non-spaced paths. /s is dropped: it disabled the helpful /c quote-stripping that made the\n    // spaced-path case work.\n    return {\n      command: env.ComSpec || 'cmd.exe',\n      args: ['/d', '/c', bin, '--help'],\n    };\n  }\n\n  return { command: bin, args: ['--help'] };\n}",
     "truncated": false,
-    "totalLines": 10,
+    "totalLines": 20,
     "startLine": 38
   },
   "callers": [
     {
-      "id": "sym:scripts/install-smoke.mjs#smokeInstall@L135",
+      "id": "sym:scripts/install-smoke.mjs#smokeInstall@L145",
       "confidence": 1,
       "name": "smokeInstall",
       "qualifiedName": "smokeInstall",
       "signature": "smokeInstall({ outRoot = join(repoRoot, 'dist', 'installers') } = {})",
       "type": "function",
       "file": "scripts/install-smoke.mjs",
-      "line": 135
+      "line": 145
     }
   ],
   "callees": [],
@@ -61,10 +61,10 @@
         "inException": false,
         "action": {
           "kind": "executes",
-          "edgeId": "e:682563fa68c06e89809f331f3ee0fb63b41a20c730952a184a69dc8bbe3ba7f3",
-          "target": "stmt:scripts/install-smoke.mjs@L40",
-          "line": 40,
-          "expr": "return {\n      command: env.ComSpec || 'cmd.exe',\n      args: ['/d', '/s', '/c', `\"${bin}\" --help`],\n    };"
+          "edgeId": "e:542ba7469e5b61966888f1239b4cc030ea2722a491fcbeb9b57fde125887b175",
+          "target": "stmt:scripts/install-smoke.mjs@L50",
+          "line": 50,
+          "expr": "return {\n      command: env.ComSpec || 'cmd.exe',\n      args: ['/d', '/c', bin, '--help'],\n    };"
         }
       },
       {
@@ -75,9 +75,9 @@
         "inException": false,
         "action": {
           "kind": "executes",
-          "edgeId": "e:1e27ca8f93700fe7fe91b96f362c027993f5a28c65508e208a86570571bdb8f4",
-          "target": "stmt:scripts/install-smoke.mjs@L46",
-          "line": 46,
+          "edgeId": "e:8aa5c28502f8e58079f3f5e0acb9d01dfd8d3f9c3b4aa9eb6b948c45601d68fb",
+          "target": "stmt:scripts/install-smoke.mjs@L56",
+          "line": 56,
           "expr": "return { command: bin, args: ['--help'] };"
         }
       }

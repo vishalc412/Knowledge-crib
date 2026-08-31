@@ -1,0 +1,361 @@
+{
+  "id": "sym:packages/soul-schema/src/hash.ts#blake3Hex@L15",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:9744367d47133209519c55d9779bfb49e3363a1ecb8366fa886685f1819a8ea5",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/soul-schema/src/hash.ts#blake3Hex@L15",
+    "kind": "symbol",
+    "type": "function",
+    "name": "blake3Hex",
+    "qualifiedName": "blake3Hex",
+    "signature": "blake3Hex(input: string): string",
+    "lang": "typescript",
+    "file": "packages/soul-schema/src/hash.ts",
+    "span": {
+      "start": 15,
+      "end": 18
+    },
+    "callSites": [
+      {
+        "callee": "blake3",
+        "line": 16
+      },
+      {
+        "callee": "bytesToHex",
+        "line": 17
+      }
+    ]
+  },
+  "source": {
+    "text": "export function blake3Hex(input: string): string {\n  const bytes = blake3(input, { dkLen: DIGEST_BYTES });\n  return bytesToHex(bytes);\n}",
+    "truncated": false,
+    "totalLines": 4,
+    "startLine": 15
+  },
+  "callers": [
+    {
+      "id": "sym:packages/memory/src/ids.ts#attemptEventId@L136",
+      "confidence": 1,
+      "name": "attemptEventId",
+      "qualifiedName": "attemptEventId",
+      "signature": "attemptEventId(event: {\n  attemptId: string;\n  phase: AttemptEvent['phase'];\n  subject?: string;\n  observation?: AttemptEvent['observation'];\n  action?: AttemptEvent['action'];\n  outcome?: AttemptEvent['outcome'];\n  candidateId?: string;\n  evaluationId?: string;\n}): string",
+      "type": "function",
+      "file": "packages/memory/src/ids.ts",
+      "line": 136
+    },
+    {
+      "id": "sym:packages/memory/src/ids.ts#attemptGroupId@L165",
+      "confidence": 1,
+      "name": "attemptGroupId",
+      "qualifiedName": "attemptGroupId",
+      "signature": "attemptGroupId(seed: {\n  subject?: string;\n  actor: string;\n  startedAt: string;\n  origin: 'observe' | 'attempt';\n}): string",
+      "type": "function",
+      "file": "packages/memory/src/ids.ts",
+      "line": 165
+    },
+    {
+      "id": "sym:packages/soul-schema/src/hash.ts#contentHash@L21",
+      "confidence": 1,
+      "name": "contentHash",
+      "qualifiedName": "contentHash",
+      "signature": "contentHash(input: string): string",
+      "type": "function",
+      "file": "packages/soul-schema/src/hash.ts",
+      "line": 21
+    },
+    {
+      "id": "sym:packages/memory/src/ids.ts#decisionId@L204",
+      "confidence": 1,
+      "name": "decisionId",
+      "qualifiedName": "decisionId",
+      "signature": "decisionId(decision: {\n  kind: MemoryDecision['kind'];\n  subject: string;\n  successor?: string;\n  actor: string;\n  reason?: string;\n}): string",
+      "type": "function",
+      "file": "packages/memory/src/ids.ts",
+      "line": 204
+    },
+    {
+      "id": "sym:packages/core/src/dossier/persist.ts#dossierPath@L34",
+      "confidence": 1,
+      "name": "dossierPath",
+      "qualifiedName": "dossierPath",
+      "signature": "dossierPath(cribDir: string, nodeId: string): string",
+      "type": "function",
+      "file": "packages/core/src/dossier/persist.ts",
+      "line": 34
+    },
+    {
+      "id": "sym:packages/soul-schema/src/id.ts#edgeId@L151",
+      "confidence": 1,
+      "name": "edgeId",
+      "qualifiedName": "edgeId",
+      "signature": "edgeId(src: string, dst: string, rel: Rel): string",
+      "type": "function",
+      "file": "packages/soul-schema/src/id.ts",
+      "line": 151
+    },
+    {
+      "id": "sym:packages/memory/src/ids.ts#feedbackId@L223",
+      "confidence": 1,
+      "name": "feedbackId",
+      "qualifiedName": "feedbackId",
+      "signature": "feedbackId(feedback: {\n  signal: MemoryFeedback['signal'];\n  subject: string;\n  actor: string;\n  context?: string;\n}): string",
+      "type": "function",
+      "file": "packages/memory/src/ids.ts",
+      "line": 223
+    },
+    {
+      "id": "sym:packages/core/src/graph-store.ts#graphFingerprint@L200",
+      "confidence": 1,
+      "name": "graphFingerprint",
+      "qualifiedName": "graphFingerprint",
+      "signature": "graphFingerprint(soul: SoulStore): GraphFingerprint",
+      "type": "function",
+      "file": "packages/core/src/graph-store.ts",
+      "line": 200
+    },
+    {
+      "id": "sym:packages/core/src/graph-store.ts#hashFiles@L361",
+      "confidence": 1,
+      "name": "hashFiles",
+      "qualifiedName": "hashFiles",
+      "signature": "hashFiles(files: string[]): string",
+      "type": "function",
+      "file": "packages/core/src/graph-store.ts",
+      "line": 361
+    },
+    {
+      "id": "sym:packages/memory/src/ids.ts#memoryCandidateId@L123",
+      "confidence": 1,
+      "name": "memoryCandidateId",
+      "qualifiedName": "memoryCandidateId",
+      "signature": "memoryCandidateId(candidate: {\n  kind: MemoryCandidate['kind'];\n  subject: string;\n  claim: string;\n  scope: MemoryScope;\n  appliesTo: string[];\n  evidence: MemoryEvidence[];\n  authorship: MemoryCandidate['authorship'];\n}): string",
+      "type": "function",
+      "file": "packages/memory/src/ids.ts",
+      "line": 123
+    },
+    {
+      "id": "sym:packages/memory/src/ids.ts#memoryRecordId@L109",
+      "confidence": 1,
+      "name": "memoryRecordId",
+      "qualifiedName": "memoryRecordId",
+      "signature": "memoryRecordId(record: {\n  kind: MemoryRecord['kind'];\n  subject: string;\n  claim: string;\n  scope: MemoryScope;\n  appliesTo: string[];\n  evidence: MemoryEvidence[];\n  authorship: MemoryRecord['authorship'];\n}): string",
+      "type": "function",
+      "file": "packages/memory/src/ids.ts",
+      "line": 109
+    },
+    {
+      "id": "sym:packages/memory/src/ids.ts#memoryShard@L247",
+      "confidence": 1,
+      "name": "memoryShard",
+      "qualifiedName": "memoryShard",
+      "signature": "memoryShard(id: string, digits = 2): string",
+      "type": "function",
+      "file": "packages/memory/src/ids.ts",
+      "line": 247
+    },
+    {
+      "id": "sym:packages/memory/src/policy.ts#policyHash@L111",
+      "confidence": 1,
+      "name": "policyHash",
+      "qualifiedName": "policyHash",
+      "signature": "policyHash(policy: MemoryPolicy): string",
+      "type": "function",
+      "file": "packages/memory/src/policy.ts",
+      "line": 111
+    },
+    {
+      "id": "sym:packages/memory/src/policy.ts#profileHash@L106",
+      "confidence": 1,
+      "name": "profileHash",
+      "qualifiedName": "profileHash",
+      "signature": "profileHash(profile: GateProfile): string",
+      "type": "function",
+      "file": "packages/memory/src/policy.ts",
+      "line": 106
+    },
+    {
+      "id": "sym:packages/core/src/graph-store.ts#readSemantic@L225",
+      "confidence": 1,
+      "name": "readSemantic",
+      "qualifiedName": "readSemantic",
+      "signature": "readSemantic(soul: SoulStore): GraphSnapshot",
+      "type": "function",
+      "file": "packages/core/src/graph-store.ts",
+      "line": 225
+    },
+    {
+      "id": "sym:packages/memory/src/ids.ts#receiptId@L175",
+      "confidence": 1,
+      "name": "receiptId",
+      "qualifiedName": "receiptId",
+      "signature": "receiptId(receipt: {\n  policyHash: string;\n  profileHash: string;\n  executable: string;\n  args: string[];\n  head: string;\n  worktreeDigest: string;\n  exitCode: number;\n  outputDigest: string;\n  assertions: GateReceipt['assertions'];\n  runner: GateReceipt['runner'];\n}): string",
+      "type": "function",
+      "file": "packages/memory/src/ids.ts",
+      "line": 175
+    },
+    {
+      "id": "sym:packages/memory/src/gate-runner.ts#runGate@L121",
+      "confidence": 1,
+      "name": "runGate",
+      "qualifiedName": "runGate",
+      "signature": "runGate(input: GateRunInput): Promise<GateRunOutcome>",
+      "type": "function",
+      "file": "packages/memory/src/gate-runner.ts",
+      "line": 121
+    },
+    {
+      "id": "sym:packages/core/src/dossier/persist.ts#safeName@L129",
+      "confidence": 1,
+      "name": "safeName",
+      "qualifiedName": "safeName",
+      "signature": "safeName(nodeId: string): string",
+      "type": "function",
+      "file": "packages/core/src/dossier/persist.ts",
+      "line": 129
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#shard@L2564",
+      "confidence": 1,
+      "name": "shard",
+      "qualifiedName": "shard",
+      "signature": "shard(id: string): string",
+      "type": "function",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 2564
+    },
+    {
+      "id": "sym:packages/soul-schema/src/hash.ts#shardFor@L29",
+      "confidence": 1,
+      "name": "shardFor",
+      "qualifiedName": "shardFor",
+      "signature": "shardFor(sourcePath: string, digits = 2): string",
+      "type": "function",
+      "file": "packages/soul-schema/src/hash.ts",
+      "line": 29
+    },
+    {
+      "id": "sym:packages/core/src/shard.ts#shardOf@L60",
+      "confidence": 1,
+      "name": "shardOf",
+      "qualifiedName": "shardOf",
+      "signature": "shardOf(key: string, shardHexDigits: number): string",
+      "type": "function",
+      "file": "packages/core/src/shard.ts",
+      "line": 60
+    },
+    {
+      "id": "sym:packages/soul-schema/src/hash.ts#shortHash@L34",
+      "confidence": 1,
+      "name": "shortHash",
+      "qualifiedName": "shortHash",
+      "signature": "shortHash(input: string): string",
+      "type": "function",
+      "file": "packages/soul-schema/src/hash.ts",
+      "line": 34
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/soul-schema/src/hash.ts@L14",
+      "snippet": "/** Raw 64-char hex of blake3(input), no prefix. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#3-3-2-within-a-layer-missing-before-stale-hash-deterministic-ordering",
+      "heading": "3.3.2 Within a Layer: Missing Before Stale, Hash-Deterministic Ordering",
+      "anchor": "3-3-2-within-a-layer-missing-before-stale-hash-deterministic-ordering",
+      "snippet": "3.3.2 Within a Layer: Missing Before Stale, Hash-Deterministic Ordering",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#3-1-1-the-enrichment-work-queue-enrich-op-next",
+      "heading": "3.1.1 The Enrichment Work Queue (`enrich({op:'next'})`)",
+      "anchor": "3-1-1-the-enrichment-work-queue-enrich-op-next",
+      "snippet": "3.1.1 The Enrichment Work Queue (`enrich({op:'next'})`)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/soul-schema/src/hash.ts#blake3Hex@L15",
+    "procedureName": "blake3Hex",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/soul-schema/src/hash.ts#blake3Hex@L15",
+        "procedureName": "blake3Hex",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a498d7f7bb842298330787f15be6082eddb069ab431c8af5a582f1c692562c6e",
+          "target": "stmt:packages/soul-schema/src/hash.ts@L16",
+          "line": 16,
+          "expr": "const bytes = blake3(input, { dkLen: DIGEST_BYTES });"
+        }
+      },
+      {
+        "procedure": "sym:packages/soul-schema/src/hash.ts#blake3Hex@L15",
+        "procedureName": "blake3Hex",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9c1266242541674cf0f34ff9f32f2bfb89ff9e2b021afa1f9ca4e27a97841cc7",
+          "target": "stmt:packages/soul-schema/src/hash.ts@L17",
+          "line": 17,
+          "expr": "return bytesToHex(bytes);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/core/src/dossier/persist.ts",
+      "packages/core/src/graph-store.ts",
+      "packages/core/src/shard.ts",
+      "packages/mcp/src/enrichment.ts",
+      "packages/memory/src/gate-runner.ts",
+      "packages/memory/src/ids.ts",
+      "packages/memory/src/policy.ts",
+      "packages/soul-schema/src/hash.ts",
+      "packages/soul-schema/src/id.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 2,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

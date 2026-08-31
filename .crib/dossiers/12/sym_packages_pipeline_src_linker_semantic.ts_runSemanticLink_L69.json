@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/pipeline/src/linker/semantic.ts#runSemanticLink@L69",
-  "schemaVersion": "1.5",
+  "schemaVersion": "1.6",
   "nodeHash": "blake3:65428fa7c8189515960d65894c81d3f856afa4bb0524be360c5be5a0b72d9d43",
-  "builtAt": "2026-07-16T16:35:16.098Z",
+  "builtAt": "2026-08-31T17:37:23.222Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/pipeline/src/linker/semantic.ts#runSemanticLink@L69",
@@ -84,34 +84,34 @@
   },
   "callers": [
     {
-      "id": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L94",
+      "id": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L121",
       "confidence": 1,
       "name": "indexRepo",
       "qualifiedName": "indexRepo",
       "signature": "indexRepo(soul: SoulStore, root: string, opts: IndexOpts = {}): Promise<IndexReport>",
       "type": "function",
       "file": "packages/pipeline/src/pipeline.ts",
-      "line": 94
+      "line": 121
     },
     {
-      "id": "sym:scripts/linker-check.mjs#runMode@L62",
+      "id": "sym:scripts/linker-check.mjs#runMode@L69",
       "confidence": 1,
       "name": "runMode",
       "qualifiedName": "runMode",
       "signature": "runMode(…)",
       "type": "function",
       "file": "scripts/linker-check.mjs",
-      "line": 62
+      "line": 69
     },
     {
-      "id": "sym:packages/pipeline/src/update.ts#updateRepo@L112",
+      "id": "sym:packages/pipeline/src/update.ts#updateRepo@L134",
       "confidence": 1,
       "name": "updateRepo",
       "qualifiedName": "updateRepo",
       "signature": "updateRepo(soul: SoulStore, root: string, opts: UpdateOpts = {}): Promise<UpdateResult>",
       "type": "function",
       "file": "packages/pipeline/src/update.ts",
-      "line": 112
+      "line": 134
     }
   ],
   "callees": [
@@ -126,34 +126,34 @@
       "line": 16
     },
     {
-      "id": "sym:packages/soul-schema/src/id.ts#edgeId@L141",
+      "id": "sym:packages/soul-schema/src/id.ts#edgeId@L151",
       "confidence": 1,
       "name": "edgeId",
       "qualifiedName": "edgeId",
       "signature": "edgeId(src: string, dst: string, rel: Rel): string",
       "type": "function",
       "file": "packages/soul-schema/src/id.ts",
-      "line": 141
+      "line": 151
     },
     {
-      "id": "sym:packages/soul-schema/src/id.ts#idFor@L88",
+      "id": "sym:packages/soul-schema/src/id.ts#idFor@L96",
       "confidence": 1,
       "name": "idFor",
       "qualifiedName": "idFor",
       "signature": "idFor(spec: IdSpec): string",
       "type": "function",
       "file": "packages/soul-schema/src/id.ts",
-      "line": 88
+      "line": 96
     },
     {
-      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
       "confidence": 1,
       "name": "push",
       "qualifiedName": "push",
       "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
       "type": "function",
       "file": "packages/pipeline/src/linker/inverted-index.ts",
-      "line": 39
+      "line": 70
     },
     {
       "id": "sym:packages/pipeline/src/linker/semantic.ts#round2@L127",
@@ -343,8 +343,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:34639f364c4b389db2659396c7f569d53a40fd0948f63b346aa97d1ab163465f",
-          "target": "sym:packages/soul-schema/src/id.ts#idFor@L88",
+          "edgeId": "e:44b0efae69c489e045dfedd88482e44fc6b8b3b9318aa4f1efc13924873d5faf",
+          "target": "sym:packages/soul-schema/src/id.ts#idFor@L96",
           "expr": "idFor",
           "line": 104
         }
@@ -469,8 +469,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:e196e7e4baf8d4e84d9a49d6c90bd7868aeb710d56bafe5530e2dd3403062b51",
-          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "edgeId": "e:f282d964c5a2bd9d505e349a873d87269448753e037fe34a79bb400cbd5c18de",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
           "expr": "push",
           "line": 109
         }
@@ -483,8 +483,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:838d7a90339b97c4fcb8d44ad7674ce9a6009035f9384cfce4e5c5183bab474f",
-          "target": "sym:packages/soul-schema/src/id.ts#edgeId@L141",
+          "edgeId": "e:c54257452719391c51044ea95d61e558702cd4ff1918259aaffc9696934b342b",
+          "target": "sym:packages/soul-schema/src/id.ts#edgeId@L151",
           "expr": "edgeId",
           "line": 110
         }

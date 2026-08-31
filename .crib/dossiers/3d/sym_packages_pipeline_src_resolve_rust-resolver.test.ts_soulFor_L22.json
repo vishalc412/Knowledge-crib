@@ -1,0 +1,162 @@
+{
+  "id": "sym:packages/pipeline/src/resolve/rust-resolver.test.ts#soulFor@L22",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:af9e5ca2a90c740b827651094c8db846c24eface4f47c6ef36f8b3453cafc5e7",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/resolve/rust-resolver.test.ts#soulFor@L22",
+    "kind": "symbol",
+    "type": "function",
+    "name": "soulFor",
+    "qualifiedName": "soulFor",
+    "signature": "soulFor(): SoulStore",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/resolve/rust-resolver.test.ts",
+    "span": {
+      "start": 22,
+      "end": 26
+    },
+    "callSites": [
+      {
+        "callee": "newManifest",
+        "line": 23
+      },
+      {
+        "callee": "load",
+        "line": 24
+      }
+    ]
+  },
+  "source": {
+    "text": "function soulFor(): SoulStore {\n  const s = new SoulStore(cribDir, { manifest: newManifest({ now: NOW }) });\n  s.load();\n  return s;\n}",
+    "truncated": false,
+    "totalLines": 5,
+    "startLine": 22
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/ui/web/support.js#createExternalModules.load@L1028",
+      "confidence": 1,
+      "name": "load",
+      "qualifiedName": "createExternalModules.load",
+      "signature": "load(kind, url)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 1028
+    },
+    {
+      "id": "sym:packages/core/src/manifest.ts#newManifest@L28",
+      "confidence": 1,
+      "name": "newManifest",
+      "qualifiedName": "newManifest",
+      "signature": "newManifest(opts: NewManifestOpts = {}): Manifest",
+      "type": "function",
+      "file": "packages/core/src/manifest.ts",
+      "line": 28
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/resolve/rust-resolver.test.ts#soulFor@L22",
+    "procedureName": "soulFor",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/rust-resolver.test.ts#soulFor@L22",
+        "procedureName": "soulFor",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:3822e7186f5c03c40564283576d3ebc37bcdfa4eefb6ef8beefd8042b78e0d3d",
+          "target": "sym:packages/core/src/manifest.ts#newManifest@L28",
+          "expr": "newManifest",
+          "line": 23
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/rust-resolver.test.ts#soulFor@L22",
+        "procedureName": "soulFor",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b1890fbee634f1f25d717450df45a8180c58983b2139f904fd62b6fe3f1456b7",
+          "target": "stmt:packages/pipeline/src/resolve/rust-resolver.test.ts@L23",
+          "line": 23,
+          "expr": "const s = new SoulStore(cribDir, { manifest: newManifest({ now: NOW }) });"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/rust-resolver.test.ts#soulFor@L22",
+        "procedureName": "soulFor",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2929193dd23db699f5f19e20cdf57fc2551e59cfeabdbc8000935eed32044351",
+          "target": "stmt:packages/pipeline/src/resolve/rust-resolver.test.ts@L24",
+          "line": 24,
+          "expr": "s.load();"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/rust-resolver.test.ts#soulFor@L22",
+        "procedureName": "soulFor",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:7b9851665d183fe8bb4257c4adb1a522c0cc76e2614c2682f207f7d2469c3460",
+          "target": "sym:packages/ui/web/support.js#createExternalModules.load@L1028",
+          "expr": "load",
+          "line": 24
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/rust-resolver.test.ts#soulFor@L22",
+        "procedureName": "soulFor",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8ad6536e5ace71aa75917a139f2ed6e7658e6063e76eb7a99d06d895d15fc29f",
+          "target": "stmt:packages/pipeline/src/resolve/rust-resolver.test.ts@L25",
+          "line": 25,
+          "expr": "return s;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 2,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

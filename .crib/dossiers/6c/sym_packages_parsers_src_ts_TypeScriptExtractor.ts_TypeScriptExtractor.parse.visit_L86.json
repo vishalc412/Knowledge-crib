@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.parse.visit@L86",
-  "schemaVersion": "1.5",
+  "schemaVersion": "1.6",
   "nodeHash": "blake3:2b29b359d30a9768d0c6407a257418b4782978bb0680dbbb8190994465e6317e",
-  "builtAt": "2026-07-16T16:35:16.098Z",
+  "builtAt": "2026-08-31T17:37:23.222Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.parse.visit@L86",
@@ -79,14 +79,14 @@
       "line": 198
     },
     {
-      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
       "confidence": 1,
       "name": "push",
       "qualifiedName": "push",
       "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
       "type": "function",
       "file": "packages/pipeline/src/linker/inverted-index.ts",
-      "line": 39
+      "line": 70
     }
   ],
   "docs": [],
@@ -129,6 +129,20 @@
       {
         "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.parse.visit@L86",
         "procedureName": "TypeScriptExtractor.parse.visit",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:1d1678603ee9d0ee817be570c570e5cd5b21397d4af8ef3019a14b75799bfadb",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
+          "expr": "push",
+          "line": 89
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.parse.visit@L86",
+        "procedureName": "TypeScriptExtractor.parse.visit",
         "guard": "cond:packages/parsers/src/ts/TypeScriptExtractor.ts@L88",
         "branch": "THEN",
         "conditions": [
@@ -146,20 +160,6 @@
           "target": "stmt:packages/parsers/src/ts/TypeScriptExtractor.ts@L89",
           "line": 89,
           "expr": "symbols.push(decl.local);"
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/ts/TypeScriptExtractor.ts#TypeScriptExtractor.parse.visit@L86",
-        "procedureName": "TypeScriptExtractor.parse.visit",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:cb97a292208dd0f7a66587d44f458f603cf4da7920abbf17e6bcd5fbeda1383e",
-          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
-          "expr": "push",
-          "line": 89
         }
       },
       {

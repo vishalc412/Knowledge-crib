@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/ts/nest.ts#routeParamsOf@L414",
-  "schemaVersion": "1.5",
+  "schemaVersion": "1.6",
   "nodeHash": "blake3:3082262da7814e718077ff273cfafe0d93647678cdea9ce2efb5c79127be28bf",
-  "builtAt": "2026-07-16T16:35:16.098Z",
+  "builtAt": "2026-08-31T17:37:23.222Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/ts/nest.ts#routeParamsOf@L414",
@@ -112,14 +112,14 @@
       "line": 546
     },
     {
-      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
       "confidence": 1,
       "name": "push",
       "qualifiedName": "push",
       "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
       "type": "function",
       "file": "packages/pipeline/src/linker/inverted-index.ts",
-      "line": 39
+      "line": 70
     },
     {
       "id": "sym:packages/parsers/src/ts/nest.ts#simpleName@L571",
@@ -320,6 +320,20 @@
       {
         "procedure": "sym:packages/parsers/src/ts/nest.ts#routeParamsOf@L414",
         "procedureName": "routeParamsOf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:1e285cf8d69826cf3c7db77e45995d7617b6f02448895004fd9b5d139689d83b",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
+          "expr": "push",
+          "line": 424
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.ts#routeParamsOf@L414",
+        "procedureName": "routeParamsOf",
         "guard": "cond:packages/parsers/src/ts/nest.ts@L418",
         "branch": "LOOP",
         "conditions": [
@@ -337,20 +351,6 @@
           "target": "stmt:packages/parsers/src/ts/nest.ts@L424",
           "line": 424,
           "expr": "out.push({ name, ...(type ? { type } : {}), in: loc });"
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/ts/nest.ts#routeParamsOf@L414",
-        "procedureName": "routeParamsOf",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:a235d280f9a13a1f0a6929d2e30ae091ccfb0abf7aa994520dc91f5a55c1784b",
-          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
-          "expr": "push",
-          "line": 424
         }
       },
       {

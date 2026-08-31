@@ -1,0 +1,668 @@
+{
+  "id": "sym:packages/parsers/src/python/parser.ts#Parser.parseAction@L595",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:98f78dfc212039e923631d9055042c28a7d7af4fe48fefc80ac48859ec0e7090",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/python/parser.ts#Parser.parseAction@L595",
+    "kind": "symbol",
+    "type": "method",
+    "name": "parseAction",
+    "qualifiedName": "Parser.parseAction",
+    "signature": "parseAction(): PyStmt | null",
+    "lang": "typescript",
+    "file": "packages/parsers/src/python/parser.ts",
+    "span": {
+      "start": 595,
+      "end": 651
+    },
+    "callSites": [
+      {
+        "callee": "collectLineTokens",
+        "line": 605
+      },
+      {
+        "callee": "findAllCallChains",
+        "line": 612
+      },
+      {
+        "callee": "truncate",
+        "line": 613
+      },
+      {
+        "callee": "sliceSrc",
+        "line": 614
+      },
+      {
+        "callee": "parseRaise",
+        "line": 628
+      },
+      {
+        "callee": "findAssignOp",
+        "line": 638
+      },
+      {
+        "callee": "sliceSrc",
+        "line": 640
+      },
+      {
+        "callee": "cleanAssignTarget",
+        "line": 641
+      },
+      {
+        "callee": "countNewlines",
+        "line": 648
+      }
+    ]
+  },
+  "source": {
+    "text": "  private parseAction(): PyStmt | null {\n    if (\n      this.atEnd() ||\n      this.is('NEWLINE') ||\n      this.is('NL') ||\n      this.is('DEDENT') ||\n      this.is('ENDMARKER')\n    ) {\n      return null;\n    }\n    const toks = this.collectLineTokens();\n    if (toks.length === 0) return null;\n    const first = toks[0]!;\n    const last = toks[toks.length - 1]!;\n    const line = first.line;\n    // collect EVERY call chain on the line (a `return foo()` carries a call even though its type is\n    // 'return'); the extractor records call sites + annotates calls edges from these.\n    const calls = findAllCallChains(toks);\n    const text = truncate(\n      this.sliceSrc(first.line, first.col, last.line, last.col + last.value.length),\n      EXPR_MAX_CHARS,\n    );\n    // shared shape for every action line; each branch spreads `base` + its action subtype + extras.\n    const base = {\n      kind: 'action' as const,\n      line,\n      endLine: last.line,\n      text,\n      ...(calls.length ? { calls } : {}),\n    };\n\n    // raise <Exception>(...) / bare raise → 'throw' with the exception name + message (schema 1.2).\n    if (first.type === 'NAME' && first.value === 'raise') {\n      const { name, message } = parseRaise(toks);\n      return {\n        ...base,\n        action: 'throw',\n        ...(name ? { raiseName: name } : {}),\n        ...(message !== undefined ? { raiseMessage: message } : {}),\n      };\n    }\n    // assignment `lhs = rhs` / `lhs := rhs` / augmented `lhs += rhs` (any `=` or `:=` at bracket\n    // depth 0) → 'assign' with the cleaned LHS target; the RHS call (if any) is still recorded.\n    const assign = findAssignOp(toks);\n    if (assign) {\n      const lhsText = this.sliceSrc(first.line, first.col, assign.opStartLine, assign.opStartCol);\n      return { ...base, action: 'assign', assignTarget: cleanAssignTarget(lhsText) };\n    }\n    if (first.type === 'NAME' && first.value === 'return') return { ...base, action: 'return' };\n    if (calls.length > 0) return { ...base, action: 'call', head: calls[0]!.callee };\n    // a bare string expression (docstring convention: first statement of a suite) → 'expr' carrying\n    // the raw literal; multiline triple-quoted literals derive endLine from embedded newlines.\n    if (first.type === 'STRING') {\n      return { ...base, action: 'expr', endLine: first.line + countNewlines(first.value) };\n    }\n    return null;\n  }",
+    "truncated": false,
+    "totalLines": 57,
+    "startLine": 595
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#Parser.parseStatement@L236",
+      "confidence": 1,
+      "name": "parseStatement",
+      "qualifiedName": "Parser.parseStatement",
+      "signature": "parseStatement(): PyStmt | null",
+      "type": "method",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 236
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#Parser.atEnd@L808",
+      "confidence": 1,
+      "name": "atEnd",
+      "qualifiedName": "Parser.atEnd",
+      "signature": "atEnd(): boolean",
+      "type": "method",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 808
+    },
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#Parser.collectLineTokens@L655",
+      "confidence": 1,
+      "name": "collectLineTokens",
+      "qualifiedName": "Parser.collectLineTokens",
+      "signature": "collectLineTokens(): Token[]",
+      "type": "method",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 655
+    },
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#Parser.is@L795",
+      "confidence": 1,
+      "name": "is",
+      "qualifiedName": "Parser.is",
+      "signature": "is(type: Token['type']): boolean",
+      "type": "method",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 795
+    },
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#Parser.sliceSrc@L712",
+      "confidence": 1,
+      "name": "sliceSrc",
+      "qualifiedName": "Parser.sliceSrc",
+      "signature": "sliceSrc(startLine: number, startCol: number, endLine: number, endCol: number): string",
+      "type": "method",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 712
+    },
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#cleanAssignTarget@L1014",
+      "confidence": 1,
+      "name": "cleanAssignTarget",
+      "qualifiedName": "cleanAssignTarget",
+      "signature": "cleanAssignTarget(s: string): string",
+      "type": "function",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 1014
+    },
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#countNewlines@L898",
+      "confidence": 1,
+      "name": "countNewlines",
+      "qualifiedName": "countNewlines",
+      "signature": "countNewlines(s: string): number",
+      "type": "function",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 898
+    },
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#findAllCallChains@L862",
+      "confidence": 1,
+      "name": "findAllCallChains",
+      "qualifiedName": "findAllCallChains",
+      "signature": "findAllCallChains(toks: Token[]): PyCallRef[]",
+      "type": "function",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 862
+    },
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#findAssignOp@L991",
+      "confidence": 1,
+      "name": "findAssignOp",
+      "qualifiedName": "findAssignOp",
+      "signature": "findAssignOp(toks: Token[]): { opStartLine: number; opStartCol: number } | null",
+      "type": "function",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 991
+    },
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#parseRaise@L940",
+      "confidence": 1,
+      "name": "parseRaise",
+      "qualifiedName": "parseRaise",
+      "signature": "parseRaise(toks: Token[]): { name?: string; message?: string }",
+      "type": "function",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 940
+    },
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#truncate@L893",
+      "confidence": 1,
+      "name": "truncate",
+      "qualifiedName": "truncate",
+      "signature": "truncate(s: string, max: number): string",
+      "type": "function",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 893
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/python/parser.ts@L585",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseAction@L595",
+    "procedureName": "Parser.parseAction",
+    "conditions": [
+      "cond:packages/parsers/src/python/parser.ts@L596",
+      "cond:packages/parsers/src/python/parser.ts@L606",
+      "cond:packages/parsers/src/python/parser.ts@L639",
+      "cond:packages/parsers/src/python/parser.ts@L627",
+      "cond:packages/parsers/src/python/parser.ts@L643",
+      "cond:packages/parsers/src/python/parser.ts@L644",
+      "cond:packages/parsers/src/python/parser.ts@L647"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseAction@L595",
+        "procedureName": "Parser.parseAction",
+        "guard": "cond:packages/parsers/src/python/parser.ts@L596",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/parser.ts@L596",
+            "expr": "this.atEnd() ||\n      this.is('NEWLINE') ||\n      this.is('NL') ||\n      this.is('DEDENT') ||\n      this.is('ENDMARKER')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c8bdd443865e47e65b6800d6c58961f191776e16a46937cd73dc1e93326bad4c",
+          "target": "stmt:packages/parsers/src/python/parser.ts@L603",
+          "line": 603,
+          "expr": "return null;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseAction@L595",
+        "procedureName": "Parser.parseAction",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a138c59a97ff97c31294880a323a62b284b33d51c84a407b130eb0a7bb5544b2",
+          "target": "stmt:packages/parsers/src/python/parser.ts@L605",
+          "line": 605,
+          "expr": "const toks = this.collectLineTokens();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseAction@L595",
+        "procedureName": "Parser.parseAction",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:c9053e5f270818ced654547569f67f40b00f1ab292cad3fe326e99c14936fa87",
+          "target": "sym:packages/parsers/src/python/parser.ts#Parser.collectLineTokens@L655",
+          "expr": "collectLineTokens",
+          "line": 605
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseAction@L595",
+        "procedureName": "Parser.parseAction",
+        "guard": "cond:packages/parsers/src/python/parser.ts@L606",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/parser.ts@L606",
+            "expr": "toks.length === 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:df4e85a340ce9f06d3fd13c83601e81c2cf9679928dacd63c44b6c77ed4472e9",
+          "target": "stmt:packages/parsers/src/python/parser.ts@L606",
+          "line": 606,
+          "expr": "return null;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseAction@L595",
+        "procedureName": "Parser.parseAction",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:699fc2e4714a69b620e485db05f87a38f420f2859cf7dcad152956684e96d2cb",
+          "target": "sym:packages/parsers/src/python/parser.ts#findAllCallChains@L862",
+          "expr": "findAllCallChains",
+          "line": 612
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseAction@L595",
+        "procedureName": "Parser.parseAction",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d3fdec1e0d8fc5d390138964c6ab458528a4ee42976a45c7b69cfc4e52790730",
+          "target": "stmt:packages/parsers/src/python/parser.ts@L612",
+          "line": 612,
+          "expr": "const calls = findAllCallChains(toks);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseAction@L595",
+        "procedureName": "Parser.parseAction",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f5ec4ce29212bc9d900ca1abb13662d7770b44f25fb34e4bd586e3af7662ecea",
+          "target": "stmt:packages/parsers/src/python/parser.ts@L613",
+          "line": 613,
+          "expr": "const text = truncate(\n      this.sliceSrc(first.line, first.col, last.line, last.col + last.value.length),\n      EXPR_MAX_CHARS,\n    );"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseAction@L595",
+        "procedureName": "Parser.parseAction",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:fe43d7d10198778834855d1105ed2e63bbc017983590989574de270894484702",
+          "target": "sym:packages/parsers/src/python/parser.ts#truncate@L893",
+          "expr": "truncate",
+          "line": 613
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseAction@L595",
+        "procedureName": "Parser.parseAction",
+        "guard": "cond:packages/parsers/src/python/parser.ts@L639",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/parser.ts@L639",
+            "expr": "assign",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:c136fa5aa35d2b7e87210ed82a173ae59862b8b91408ba4330090787434a026a",
+          "target": "sym:packages/parsers/src/python/parser.ts#Parser.sliceSrc@L712",
+          "expr": "sliceSrc",
+          "line": 614
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseAction@L595",
+        "procedureName": "Parser.parseAction",
+        "guard": "cond:packages/parsers/src/python/parser.ts@L627",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/parser.ts@L627",
+            "expr": "first.type === 'NAME' && first.value === 'raise'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a8e27e8d121d11ac7d2849e6e76aeed26eed5c997cb746bdc221faeee92d9df6",
+          "target": "stmt:packages/parsers/src/python/parser.ts@L628",
+          "line": 628,
+          "expr": "const { name, message } = parseRaise(toks);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseAction@L595",
+        "procedureName": "Parser.parseAction",
+        "guard": "cond:packages/parsers/src/python/parser.ts@L627",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/parser.ts@L627",
+            "expr": "first.type === 'NAME' && first.value === 'raise'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:e58cd7a54570f4b330e54eaaad6d82ff4111bfea03e43aaf194c9b7043136da2",
+          "target": "sym:packages/parsers/src/python/parser.ts#parseRaise@L940",
+          "expr": "parseRaise",
+          "line": 628
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseAction@L595",
+        "procedureName": "Parser.parseAction",
+        "guard": "cond:packages/parsers/src/python/parser.ts@L627",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/parser.ts@L627",
+            "expr": "first.type === 'NAME' && first.value === 'raise'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:808ee1e5a8d9cdc391b93d43c9cb3285620f47c5fb25bdd252ad82b71e301004",
+          "target": "stmt:packages/parsers/src/python/parser.ts@L629",
+          "line": 629,
+          "expr": "return {\n        ...base,\n        action: 'throw',\n        ...(name ? { raiseName: name } : {}),\n        ...(message !== undefined ? { raiseMessage: message } : {}),\n      };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseAction@L595",
+        "procedureName": "Parser.parseAction",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:2aedbd2e8028551bf31cf20da0cbb321a8be9b334da1b502fc856670fdc2465d",
+          "target": "sym:packages/parsers/src/python/parser.ts#findAssignOp@L991",
+          "expr": "findAssignOp",
+          "line": 638
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseAction@L595",
+        "procedureName": "Parser.parseAction",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f9a257362c8b1cf5a1df705d9d931120fdd5f30023aa3b4347e3a2b61e1eaad4",
+          "target": "stmt:packages/parsers/src/python/parser.ts@L638",
+          "line": 638,
+          "expr": "const assign = findAssignOp(toks);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseAction@L595",
+        "procedureName": "Parser.parseAction",
+        "guard": "cond:packages/parsers/src/python/parser.ts@L639",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/parser.ts@L639",
+            "expr": "assign",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7b4f4c7d5e549e21d5133809af2d651acf6db9092ef85c3a9d11b6d1e105eca3",
+          "target": "stmt:packages/parsers/src/python/parser.ts@L640",
+          "line": 640,
+          "expr": "const lhsText = this.sliceSrc(first.line, first.col, assign.opStartLine, assign.opStartCol);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseAction@L595",
+        "procedureName": "Parser.parseAction",
+        "guard": "cond:packages/parsers/src/python/parser.ts@L639",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/parser.ts@L639",
+            "expr": "assign",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:2c9e951f3b86c0c17e13b07469fa206ba765fb13a1f03693346a38e44e5429a2",
+          "target": "sym:packages/parsers/src/python/parser.ts#cleanAssignTarget@L1014",
+          "expr": "cleanAssignTarget",
+          "line": 641
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseAction@L595",
+        "procedureName": "Parser.parseAction",
+        "guard": "cond:packages/parsers/src/python/parser.ts@L639",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/parser.ts@L639",
+            "expr": "assign",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a16fd619bd90e642cfd33afbbeeb5919f9d3f713b76fb38e3e8cf11718762c81",
+          "target": "stmt:packages/parsers/src/python/parser.ts@L641",
+          "line": 641,
+          "expr": "return { ...base, action: 'assign', assignTarget: cleanAssignTarget(lhsText) };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseAction@L595",
+        "procedureName": "Parser.parseAction",
+        "guard": "cond:packages/parsers/src/python/parser.ts@L643",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/parser.ts@L643",
+            "expr": "first.type === 'NAME' && first.value === 'return'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a071b310e22e329553b2de78038733fbed1ac5993361d8f89efe7eaaefad7d21",
+          "target": "stmt:packages/parsers/src/python/parser.ts@L643",
+          "line": 643,
+          "expr": "return { ...base, action: 'return' };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseAction@L595",
+        "procedureName": "Parser.parseAction",
+        "guard": "cond:packages/parsers/src/python/parser.ts@L644",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/parser.ts@L644",
+            "expr": "calls.length > 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4e3bdac69105e5c6a027934b5b76c94509cf0a8fc351ace669631f0e39933c98",
+          "target": "stmt:packages/parsers/src/python/parser.ts@L644",
+          "line": 644,
+          "expr": "return { ...base, action: 'call', head: calls[0]!.callee };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseAction@L595",
+        "procedureName": "Parser.parseAction",
+        "guard": "cond:packages/parsers/src/python/parser.ts@L647",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/parser.ts@L647",
+            "expr": "first.type === 'STRING'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:60fae7e6c45dfb639f94386a143d93a0d28372dac398a72e4fdc005705546723",
+          "target": "sym:packages/parsers/src/python/parser.ts#countNewlines@L898",
+          "expr": "countNewlines",
+          "line": 648
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseAction@L595",
+        "procedureName": "Parser.parseAction",
+        "guard": "cond:packages/parsers/src/python/parser.ts@L647",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/parser.ts@L647",
+            "expr": "first.type === 'STRING'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:82cff113df21f69da4a223c7d02db5dfd23c03dcea25a6a00c66f3c17ab13e8f",
+          "target": "stmt:packages/parsers/src/python/parser.ts@L648",
+          "line": 648,
+          "expr": "return { ...base, action: 'expr', endLine: first.line + countNewlines(first.value) };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseAction@L595",
+        "procedureName": "Parser.parseAction",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:26a221c491aab366778d5cbbe67142b28223c65b0f1206619824f4f5d6c8f884",
+          "target": "stmt:packages/parsers/src/python/parser.ts@L650",
+          "line": 650,
+          "expr": "return null;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseAction@L595",
+        "procedureName": "Parser.parseAction",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:6ee819dd7609ceb7981f5b2db06ea5dc7338f66c31ea6cb8f156abf96c822548",
+          "target": "sym:packages/parsers/src/python/parser.ts#Parser.is@L795",
+          "expr": "is"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseAction@L595",
+        "procedureName": "Parser.parseAction",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:0d9ed6feb605298a78d74fe5410d5c73d8ba16acd9f7a0cd8518c9bec6e3ab70",
+          "target": "sym:packages/parsers/src/python/parser.ts#Parser.atEnd@L808",
+          "expr": "atEnd"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 14,
+    "referencedByFiles": [
+      "packages/parsers/src/python/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 14,
+    "assignments": 0,
+    "conditions": 7,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 10,
+      "recorded": 9,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

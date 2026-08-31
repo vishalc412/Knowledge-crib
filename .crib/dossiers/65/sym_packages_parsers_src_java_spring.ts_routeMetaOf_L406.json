@@ -1,0 +1,279 @@
+{
+  "id": "sym:packages/parsers/src/java/spring.ts#routeMetaOf@L406",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:c2cb3af3026f8ec7c55f41e2de5f56919315a1260229f3646e9ecea91b5dd054",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/java/spring.ts#routeMetaOf@L406",
+    "kind": "symbol",
+    "type": "function",
+    "name": "routeMetaOf",
+    "qualifiedName": "routeMetaOf",
+    "signature": "routeMetaOf(m: JavaDef): Record<string, unknown>",
+    "lang": "typescript",
+    "file": "packages/parsers/src/java/spring.ts",
+    "span": {
+      "start": 406,
+      "end": 413
+    },
+    "callSites": [
+      {
+        "callee": "routeParamsOf",
+        "line": 408
+      },
+      {
+        "callee": "securityOf",
+        "line": 410
+      }
+    ]
+  },
+  "source": {
+    "text": "function routeMetaOf(m: JavaDef): Record<string, unknown> {\n  const meta: Record<string, unknown> = {};\n  const params = routeParamsOf(m);\n  if (params.length) meta.params = params;\n  const sec = securityOf(m);\n  if (sec) meta.security = sec;\n  return meta;\n}",
+    "truncated": false,
+    "totalLines": 8,
+    "startLine": 406
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+      "confidence": 1,
+      "name": "extractSpringSemantics",
+      "qualifiedName": "extractSpringSemantics",
+      "signature": "extractSpringSemantics(input: SpringPassInput): void",
+      "type": "function",
+      "file": "packages/parsers/src/java/spring.ts",
+      "line": 100
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/java/spring.ts#routeParamsOf@L418",
+      "confidence": 1,
+      "name": "routeParamsOf",
+      "qualifiedName": "routeParamsOf",
+      "signature": "routeParamsOf(m: JavaDef): Array<{ name: string; type?: string; in: string }>",
+      "type": "function",
+      "file": "packages/parsers/src/java/spring.ts",
+      "line": 418
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/nest.ts#routeParamsOf@L414",
+      "confidence": 1,
+      "name": "routeParamsOf",
+      "qualifiedName": "routeParamsOf",
+      "signature": "routeParamsOf(m: ts.MethodDeclaration): Array<{ name: string; type?: string; in: string }>",
+      "type": "function",
+      "file": "packages/parsers/src/ts/nest.ts",
+      "line": 414
+    },
+    {
+      "id": "sym:packages/parsers/src/java/spring.ts#securityOf@L438",
+      "confidence": 1,
+      "name": "securityOf",
+      "qualifiedName": "securityOf",
+      "signature": "securityOf(m: JavaDef): Record<string, string> | undefined",
+      "type": "function",
+      "file": "packages/parsers/src/java/spring.ts",
+      "line": 438
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/nest.ts#securityOf@L431",
+      "confidence": 1,
+      "name": "securityOf",
+      "qualifiedName": "securityOf",
+      "signature": "securityOf(decs: ts.Decorator[]): Record<string, string> | undefined",
+      "type": "function",
+      "file": "packages/parsers/src/ts/nest.ts",
+      "line": 431
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/java/spring.ts@L405",
+      "snippet": "/** The route-param contract + security for a handler method, as a `meta` object for its route node. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/java/spring.ts#routeMetaOf@L406",
+    "procedureName": "routeMetaOf",
+    "conditions": [
+      "cond:packages/parsers/src/java/spring.ts@L409",
+      "cond:packages/parsers/src/java/spring.ts@L411"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#routeMetaOf@L406",
+        "procedureName": "routeMetaOf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:024d6f9d98e95381179aacb7b40b51b90d27be2d94d02719cee4432f2dfe5b0b",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L408",
+          "line": 408,
+          "expr": "const params = routeParamsOf(m);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#routeMetaOf@L406",
+        "procedureName": "routeMetaOf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:b095208d6057c6044fd2f05b0e5193acd96eda6a49bfe92cc8095dd07c05b85d",
+          "target": "sym:packages/parsers/src/java/spring.ts#routeParamsOf@L418",
+          "expr": "routeParamsOf",
+          "line": 408
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#routeMetaOf@L406",
+        "procedureName": "routeMetaOf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:cc65357f09bbce558dc99fdf2c9aaa3d6cbc213f316f3e26cf61e8c1f323ef48",
+          "target": "sym:packages/parsers/src/ts/nest.ts#routeParamsOf@L414",
+          "expr": "routeParamsOf",
+          "line": 408
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#routeMetaOf@L406",
+        "procedureName": "routeMetaOf",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L409",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L409",
+            "expr": "params.length",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b7a02703d1026b90fc09580e9dd90e66e54c5e3bd8232ffa7b3b2c45f982f796",
+          "target": "assign:packages/parsers/src/java/spring.ts@L409",
+          "line": 409,
+          "expr": "meta.params = params;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#routeMetaOf@L406",
+        "procedureName": "routeMetaOf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:11cd18463f7ca38ae5f8b7fb1f2d4aa774fa88f6f0191864e3a1951cb4de165c",
+          "target": "sym:packages/parsers/src/java/spring.ts#securityOf@L438",
+          "expr": "securityOf",
+          "line": 410
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#routeMetaOf@L406",
+        "procedureName": "routeMetaOf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:9c4b2ad7c99ed54e615df397f3601eda1b53900f80059a8300a0bafcf48cc738",
+          "target": "sym:packages/parsers/src/ts/nest.ts#securityOf@L431",
+          "expr": "securityOf",
+          "line": 410
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#routeMetaOf@L406",
+        "procedureName": "routeMetaOf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d0bc5f3d388ff790fbcb345b8638bd48d5b7846a789115053a6d2fcc99824583",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L410",
+          "line": 410,
+          "expr": "const sec = securityOf(m);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#routeMetaOf@L406",
+        "procedureName": "routeMetaOf",
+        "guard": "cond:packages/parsers/src/java/spring.ts@L411",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/spring.ts@L411",
+            "expr": "sec",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:405c331f7563eaf139c37fbe3a444ffebadb9b039cbaf92771a99837c168eeb2",
+          "target": "assign:packages/parsers/src/java/spring.ts@L411",
+          "line": 411,
+          "expr": "meta.security = sec;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/spring.ts#routeMetaOf@L406",
+        "procedureName": "routeMetaOf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fd608d4e700d65d1518e2b0931fa5213a51fed20593c3eec90477c7070a7dca6",
+          "target": "stmt:packages/parsers/src/java/spring.ts@L412",
+          "line": 412,
+          "expr": "return meta;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 5,
+    "referencedByFiles": [
+      "packages/parsers/src/java/spring.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 5,
+    "assignments": 2,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 4,
+      "recorded": 2,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

@@ -1,0 +1,1216 @@
+{
+  "id": "sym:packages/core/src/dossier/coverage.ts#computeCoverage@L63",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:65723eeb368d2f446c5c0b50dbdbbd85bed346f3d805c1543d4523ba685e5236",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/dossier/coverage.ts#computeCoverage@L63",
+    "kind": "symbol",
+    "type": "function",
+    "name": "computeCoverage",
+    "qualifiedName": "computeCoverage",
+    "signature": "computeCoverage(soul: SoulStore, nodeId: string, opts: {\n    keep?: (e: Edge) => boolean;\n    outgoing?: Map<string, Edge[]>;\n    incoming?: Map<string, Edge[]>;\n    /** lowercased simple + qualified name index for call-site resolution. Hoist it (e.g.\n     *  `buildDossiersByScope` builds it ONCE from a single `iterate('symbol')` pass and shares it\n     *  across N callables) so the bulk path does NOT re-scan all symbol nodes per callable. Absent →\n     *  built here (single-callable path). */\n    nameIndex?: ReadonlySet<string>;\n  } = {}): CallableCoverage",
+    "lang": "typescript",
+    "file": "packages/core/src/dossier/coverage.ts",
+    "span": {
+      "start": 63,
+      "end": 236
+    },
+    "callSites": [
+      {
+        "callee": "get",
+        "line": 82
+      },
+      {
+        "callee": "push",
+        "line": 83
+      },
+      {
+        "callee": "set",
+        "line": 84
+      },
+      {
+        "callee": "filter",
+        "line": 87
+      },
+      {
+        "callee": "get",
+        "line": 87
+      },
+      {
+        "callee": "add",
+        "line": 98
+      },
+      {
+        "callee": "add",
+        "line": 101
+      },
+      {
+        "callee": "add",
+        "line": 104
+      },
+      {
+        "callee": "add",
+        "line": 106
+      },
+      {
+        "callee": "getNode",
+        "line": 123
+      },
+      {
+        "callee": "tally",
+        "line": 124
+      },
+      {
+        "callee": "add",
+        "line": 126
+      },
+      {
+        "callee": "getNode",
+        "line": 131
+      },
+      {
+        "callee": "add",
+        "line": 134
+      },
+      {
+        "callee": "bodyNodeIdsOfKind",
+        "line": 139
+      },
+      {
+        "callee": "max",
+        "line": 142
+      },
+      {
+        "callee": "get",
+        "line": 149
+      },
+      {
+        "callee": "push",
+        "line": 150
+      },
+      {
+        "callee": "set",
+        "line": 151
+      },
+      {
+        "callee": "add",
+        "line": 157
+      },
+      {
+        "callee": "getNode",
+        "line": 169
+      },
+      {
+        "callee": "toLowerCase",
+        "line": 171
+      },
+      {
+        "callee": "add",
+        "line": 172
+      },
+      {
+        "callee": "add",
+        "line": 175
+      },
+      {
+        "callee": "pop",
+        "line": 175
+      },
+      {
+        "callee": "split",
+        "line": 175
+      },
+      {
+        "callee": "getNode",
+        "line": 178
+      },
+      {
+        "callee": "buildNameIndex",
+        "line": 180
+      },
+      {
+        "callee": "toLowerCase",
+        "line": 183
+      },
+      {
+        "callee": "pop",
+        "line": 183
+      },
+      {
+        "callee": "split",
+        "line": 183
+      },
+      {
+        "callee": "push",
+        "line": 198
+      },
+      {
+        "callee": "push",
+        "line": 205
+      },
+      {
+        "callee": "push",
+        "line": 210
+      }
+    ]
+  },
+  "source": {
+    "text": "export function computeCoverage(\n  soul: SoulStore,\n  nodeId: string,\n  opts: {\n    keep?: (e: Edge) => boolean;\n    outgoing?: Map<string, Edge[]>;\n    incoming?: Map<string, Edge[]>;\n    /** lowercased simple + qualified name index for call-site resolution. Hoist it (e.g.\n     *  `buildDossiersByScope` builds it ONCE from a single `iterate('symbol')` pass and shares it\n     *  across N callables) so the bulk path does NOT re-scan all symbol nodes per callable. Absent →\n     *  built here (single-callable path). */\n    nameIndex?: ReadonlySet<string>;\n  } = {},\n): CallableCoverage {\n  const keep = opts.keep ?? (() => true);\n  let outgoing = opts.outgoing;\n  if (!outgoing) {\n    outgoing = new Map<string, Edge[]>();\n    for (const e of soul.iterateEdges()) {\n      const o = outgoing.get(e.src);\n      if (o) o.push(e);\n      else outgoing.set(e.src, [e]);\n    }\n  }\n  const out = (outgoing.get(nodeId) ?? []).filter(keep);\n\n  // body statement nodes (executes dsts) + the proc-direct behavior nodes (raises / declared cursors).\n  const bodyNodeIds = new Set<string>();\n  let executes = 0;\n  let raises = 0;\n  let declaredCursors = 0;\n  const callEdgeDsts = new Set<string>();\n  for (const e of out) {\n    if (e.rel === 'executes') {\n      executes++;\n      bodyNodeIds.add(e.dst);\n    } else if (e.rel === 'raises') {\n      raises++;\n      bodyNodeIds.add(e.dst);\n    } else if (e.rel === 'declares') {\n      declaredCursors++;\n      bodyNodeIds.add(e.dst);\n    } else if (e.rel === 'calls') {\n      callEdgeDsts.add(e.dst);\n    }\n  }\n\n  // classify the body nodes by kind + tally fidelity loss; gather their guard conditions + cursors.\n  let assignments = 0;\n  let caseBranches = 0;\n  let exprTruncated = 0;\n  const conditionIds = new Set<string>();\n  const iteratedCursorIds = new Set<string>();\n  const tally = (n: Node | undefined): void => {\n    if (!n) return;\n    if (n.exprTruncated) exprTruncated++;\n    if (n.kind === 'assignment') assignments++;\n    else if (n.kind === 'case-branch') caseBranches++;\n  };\n  for (const id of bodyNodeIds) {\n    const n = soul.getNode(id);\n    tally(n);\n    for (const e of (outgoing.get(id) ?? []).filter(keep)) {\n      if (e.rel === 'guarded-by') conditionIds.add(e.dst);\n    }\n  }\n  // each guard condition may iterate a cursor (cond → cursor) and may itself be expr-truncated.\n  for (const cid of conditionIds) {\n    const c = soul.getNode(cid);\n    if (c?.exprTruncated) exprTruncated++;\n    for (const e of (outgoing.get(cid) ?? []).filter(keep)) {\n      if (e.rel === 'iterates') iteratedCursorIds.add(e.dst);\n    }\n  }\n  const cursors = new Set<string>([\n    ...iteratedCursorIds,\n    ...bodyNodeIdsOfKind(soul, bodyNodeIds, 'cursor'),\n  ]);\n  // declared cursors are reached via `declares`; count the union of declared + iterated.\n  const cursorCount = Math.max(declaredCursors, cursors.size);\n\n  // exception handlers that guard a body node (handler → node; the proc is not the src).\n  let incoming = opts.incoming;\n  if (!incoming) {\n    incoming = new Map<string, Edge[]>();\n    for (const e of soul.iterateEdges()) {\n      const i = incoming.get(e.dst);\n      if (i) i.push(e);\n      else incoming.set(e.dst, [e]);\n    }\n  }\n  const handlerIds = new Set<string>();\n  for (const id of bodyNodeIds) {\n    for (const e of (incoming.get(id) ?? []).filter(keep)) {\n      if (e.rel === 'handles') handlerIds.add(e.src);\n    }\n  }\n\n  // call resolution: recorded sites (meta.calls) vs. resolved `calls` edges vs. unresolved sites.\n  // A call that constructs a raised exception (`throw new X()` / `raise X()`) is NOT a missing\n  // behavioral callee — it is already represented by the body's `raise` node — so exclude call sites\n  // whose simple name matches a raised exception type. This keeps readiness honest about genuinely\n  // missing logic without flagging every `throw new IllegalStateException(...)` as a gap (which would\n  // make raise-heavy code falsely `partial` and break cross-language parity).",
+    "truncated": true,
+    "totalLines": 174,
+    "startLine": 63,
+    "nextLine": 167
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/dossier/builder.ts#buildDossier@L148",
+      "confidence": 1,
+      "name": "buildDossier",
+      "qualifiedName": "buildDossier",
+      "signature": "buildDossier(soul: SoulStore, repoRoot: string, nodeId: string, now: string, opts: DossierOpts = {}): Dossier | undefined",
+      "type": "function",
+      "file": "packages/core/src/dossier/builder.ts",
+      "line": 148
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/fixtures/python/rules.py#add@L16",
+      "confidence": 1,
+      "name": "add",
+      "qualifiedName": "add",
+      "signature": "add(a, b)",
+      "type": "function",
+      "file": "packages/parsers/fixtures/python/rules.py",
+      "line": 16
+    },
+    {
+      "id": "sym:packages/core/src/dossier/coverage.ts#bodyNodeIdsOfKind@L239",
+      "confidence": 1,
+      "name": "bodyNodeIdsOfKind",
+      "qualifiedName": "bodyNodeIdsOfKind",
+      "signature": "bodyNodeIdsOfKind(soul: SoulStore, ids: Set<string>, kind: Node['kind']): string[]",
+      "type": "function",
+      "file": "packages/core/src/dossier/coverage.ts",
+      "line": 239
+    },
+    {
+      "id": "sym:packages/core/src/dossier/coverage.ts#buildNameIndex@L249",
+      "confidence": 1,
+      "name": "buildNameIndex",
+      "qualifiedName": "buildNameIndex",
+      "signature": "buildNameIndex(soul: SoulStore): Set<string>",
+      "type": "function",
+      "file": "packages/core/src/dossier/coverage.ts",
+      "line": 249
+    },
+    {
+      "id": "sym:packages/core/src/dossier/coverage.ts#computeCoverage.tally@L116",
+      "confidence": 1,
+      "name": "tally",
+      "qualifiedName": "computeCoverage.tally",
+      "signature": "tally(…)",
+      "type": "function",
+      "file": "packages/core/src/dossier/coverage.ts",
+      "line": 116
+    },
+    {
+      "id": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+      "confidence": 1,
+      "name": "get",
+      "qualifiedName": "createRegistry.get",
+      "signature": "get(name)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 1300
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 70
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/core/src/dossier/coverage.ts@L59",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#3-1-2-the-enrichworkitem-interface-what-the-llm-sees",
+      "heading": "3.1.2 The `EnrichWorkItem` Interface — What the LLM Sees",
+      "anchor": "3-1-2-the-enrichworkitem-interface-what-the-llm-sees",
+      "snippet": "3.1.2 The `EnrichWorkItem` Interface — What the LLM Sees",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#7-risks",
+      "heading": "7. Risks",
+      "anchor": "7-risks",
+      "snippet": "7. Risks",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#ws-6-reconstruction-artifact-closes-g6",
+      "heading": "WS-6 — Reconstruction artifact (closes G6)",
+      "anchor": "ws-6-reconstruction-artifact-closes-g6",
+      "snippet": "WS-6 — Reconstruction artifact (closes G6)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#ws-2-query-returns-bodies-rules-closes-g2",
+      "heading": "WS-2 — `query` returns bodies + rules (closes G2)",
+      "anchor": "ws-2-query-returns-bodies-rules-closes-g2",
+      "snippet": "WS-2 — `query` returns bodies + rules (closes G2)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/dossier/coverage.ts#computeCoverage@L63",
+    "procedureName": "computeCoverage",
+    "conditions": [
+      "cond:packages/core/src/dossier/coverage.ts@L79",
+      "cond:packages/core/src/dossier/coverage.ts@L81",
+      "cond:packages/core/src/dossier/coverage.ts@L83",
+      "cond:packages/core/src/dossier/coverage.ts@L95",
+      "cond:packages/core/src/dossier/coverage.ts@L96",
+      "cond:packages/core/src/dossier/coverage.ts@L99",
+      "cond:packages/core/src/dossier/coverage.ts@L102",
+      "cond:packages/core/src/dossier/coverage.ts@L105",
+      "cond:packages/core/src/dossier/coverage.ts@L122",
+      "cond:packages/core/src/dossier/coverage.ts@L125",
+      "cond:packages/core/src/dossier/coverage.ts@L126",
+      "cond:packages/core/src/dossier/coverage.ts@L130",
+      "cond:packages/core/src/dossier/coverage.ts@L133",
+      "cond:packages/core/src/dossier/coverage.ts@L134",
+      "cond:packages/core/src/dossier/coverage.ts@L146",
+      "cond:packages/core/src/dossier/coverage.ts@L148",
+      "cond:packages/core/src/dossier/coverage.ts@L150",
+      "cond:packages/core/src/dossier/coverage.ts@L155",
+      "cond:packages/core/src/dossier/coverage.ts@L156",
+      "cond:packages/core/src/dossier/coverage.ts@L157",
+      "cond:packages/core/src/dossier/coverage.ts@L168",
+      "cond:packages/core/src/dossier/coverage.ts@L170",
+      "cond:packages/core/src/dossier/coverage.ts@L182",
+      "cond:packages/core/src/dossier/coverage.ts@L197",
+      "cond:packages/core/src/dossier/coverage.ts@L204",
+      "cond:packages/core/src/dossier/coverage.ts@L209"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/dossier/coverage.ts#computeCoverage@L63",
+        "procedureName": "computeCoverage",
+        "guard": "cond:packages/core/src/dossier/coverage.ts@L79",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/coverage.ts@L79",
+            "expr": "!outgoing",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:44d3edb0a501b6e4b3474cfb2c1eae2a5733e03a6e51cd0efc73592f15bdf721",
+          "target": "assign:packages/core/src/dossier/coverage.ts@L80",
+          "line": 80,
+          "expr": "outgoing = new Map<string, Edge[]>();"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/coverage.ts#computeCoverage@L63",
+        "procedureName": "computeCoverage",
+        "guard": "cond:packages/core/src/dossier/coverage.ts@L81",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/coverage.ts@L79",
+            "expr": "!outgoing"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/coverage.ts@L81",
+            "expr": "soul.iterateEdges()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:49db7393d1bc7707d47cdcb07446106d49601cb2d9a0a09cf3b4bd8484f6d9fc",
+          "target": "stmt:packages/core/src/dossier/coverage.ts@L82",
+          "line": 82,
+          "expr": "const o = outgoing.get(e.src);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/coverage.ts#computeCoverage@L63",
+        "procedureName": "computeCoverage",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:7dcdccb2464c9be85fa0f64d51a76024cfb71c3ebc2bffe2a449b1d8259ca773",
+          "target": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+          "expr": "get",
+          "line": 82
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/coverage.ts#computeCoverage@L63",
+        "procedureName": "computeCoverage",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:280382e0bd4813ed6b8f7449c4e53bf1cb2b27ebb9bb72473f31ac4773d81272",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
+          "expr": "push",
+          "line": 83
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/coverage.ts#computeCoverage@L63",
+        "procedureName": "computeCoverage",
+        "guard": "cond:packages/core/src/dossier/coverage.ts@L83",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/coverage.ts@L79",
+            "expr": "!outgoing"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/coverage.ts@L81",
+            "expr": "soul.iterateEdges()"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/coverage.ts@L83",
+            "expr": "o",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d742b4d33e9c00c9c614e3cbb6e03e4c48ecfff36ab8abd0870683f65b4d75cf",
+          "target": "stmt:packages/core/src/dossier/coverage.ts@L83",
+          "line": 83,
+          "expr": "o.push(e);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/coverage.ts#computeCoverage@L63",
+        "procedureName": "computeCoverage",
+        "guard": "cond:packages/core/src/dossier/coverage.ts@L83",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/coverage.ts@L79",
+            "expr": "!outgoing"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/coverage.ts@L81",
+            "expr": "soul.iterateEdges()"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/coverage.ts@L83",
+            "expr": "o",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c73334d691af7d12bd921336f1e6586b70817722da471aaa38168a0585a6c831",
+          "target": "stmt:packages/core/src/dossier/coverage.ts@L84",
+          "line": 84,
+          "expr": "outgoing.set(e.src, [e]);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/coverage.ts#computeCoverage@L63",
+        "procedureName": "computeCoverage",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9c2b6ba021f33da7dce7ef7d6727a524d19ea00b111d5019276cd8e2fc722e9f",
+          "target": "stmt:packages/core/src/dossier/coverage.ts@L87",
+          "line": 87,
+          "expr": "const out = (outgoing.get(nodeId) ?? []).filter(keep);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/coverage.ts#computeCoverage@L63",
+        "procedureName": "computeCoverage",
+        "guard": "cond:packages/core/src/dossier/coverage.ts@L96",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/coverage.ts@L95",
+            "expr": "out"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/coverage.ts@L96",
+            "expr": "e.rel === 'executes'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:43ec89746b3961371e29b8d79d39693a0ddc76e3e13f5ddb665dbe4e7e3c770c",
+          "target": "stmt:packages/core/src/dossier/coverage.ts@L98",
+          "line": 98,
+          "expr": "bodyNodeIds.add(e.dst);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/coverage.ts#computeCoverage@L63",
+        "procedureName": "computeCoverage",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:7fe0e84238ac997992d4f5a91ca9c7af12e90c61a8973a6cb77f42f1551d1106",
+          "target": "sym:packages/parsers/fixtures/python/rules.py#add@L16",
+          "expr": "add",
+          "line": 98
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/coverage.ts#computeCoverage@L63",
+        "procedureName": "computeCoverage",
+        "guard": "cond:packages/core/src/dossier/coverage.ts@L99",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/coverage.ts@L95",
+            "expr": "out"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/coverage.ts@L96",
+            "expr": "e.rel === 'executes'"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/coverage.ts@L99",
+            "expr": "e.rel === 'raises'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:db0eff21a63eab659fb86304d696cfe211a72d570f8c5e72f50eb5524b4bc75f",
+          "target": "stmt:packages/core/src/dossier/coverage.ts@L101",
+          "line": 101,
+          "expr": "bodyNodeIds.add(e.dst);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/coverage.ts#computeCoverage@L63",
+        "procedureName": "computeCoverage",
+        "guard": "cond:packages/core/src/dossier/coverage.ts@L102",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/coverage.ts@L95",
+            "expr": "out"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/coverage.ts@L96",
+            "expr": "e.rel === 'executes'"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/coverage.ts@L99",
+            "expr": "e.rel === 'raises'"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/coverage.ts@L102",
+            "expr": "e.rel === 'declares'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:36ebd87ee65fd5b98a25c66a913bc92b7db4f52a7ea782485b9349daf7c363d7",
+          "target": "stmt:packages/core/src/dossier/coverage.ts@L104",
+          "line": 104,
+          "expr": "bodyNodeIds.add(e.dst);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/coverage.ts#computeCoverage@L63",
+        "procedureName": "computeCoverage",
+        "guard": "cond:packages/core/src/dossier/coverage.ts@L105",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/coverage.ts@L95",
+            "expr": "out"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/coverage.ts@L96",
+            "expr": "e.rel === 'executes'"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/coverage.ts@L99",
+            "expr": "e.rel === 'raises'"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/coverage.ts@L102",
+            "expr": "e.rel === 'declares'"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/coverage.ts@L105",
+            "expr": "e.rel === 'calls'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a53e5b81cc208c48769ec2a2ad3b1bcda614e7a560eca47216fbdbc3a6023b2d",
+          "target": "stmt:packages/core/src/dossier/coverage.ts@L106",
+          "line": 106,
+          "expr": "callEdgeDsts.add(e.dst);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/coverage.ts#computeCoverage@L63",
+        "procedureName": "computeCoverage",
+        "guard": "cond:packages/core/src/dossier/coverage.ts@L122",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/coverage.ts@L122",
+            "expr": "bodyNodeIds",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d7ebe9275f77a91b565eacce5ac88c40fecac4abeeaef5c6df1a3f05ab5270e6",
+          "target": "stmt:packages/core/src/dossier/coverage.ts@L123",
+          "line": 123,
+          "expr": "const n = soul.getNode(id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/coverage.ts#computeCoverage@L63",
+        "procedureName": "computeCoverage",
+        "guard": "cond:packages/core/src/dossier/coverage.ts@L122",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/coverage.ts@L122",
+            "expr": "bodyNodeIds",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ee3497643975a97378d4452cabeebe8258959832c06bca30c28b45e2f5a8ac2d",
+          "target": "stmt:packages/core/src/dossier/coverage.ts@L124",
+          "line": 124,
+          "expr": "tally(n);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/coverage.ts#computeCoverage@L63",
+        "procedureName": "computeCoverage",
+        "guard": "cond:packages/core/src/dossier/coverage.ts@L122",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/coverage.ts@L122",
+            "expr": "bodyNodeIds",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:f6cbc833b5226a48fec5c52025c142a05b0fd43d4cfe4ea2c3d56202b285a195",
+          "target": "sym:packages/core/src/dossier/coverage.ts#computeCoverage.tally@L116",
+          "expr": "tally",
+          "line": 124
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/coverage.ts#computeCoverage@L63",
+        "procedureName": "computeCoverage",
+        "guard": "cond:packages/core/src/dossier/coverage.ts@L126",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/coverage.ts@L122",
+            "expr": "bodyNodeIds"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/coverage.ts@L125",
+            "expr": "(outgoing.get(id) ?? []).filter(keep)"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/coverage.ts@L126",
+            "expr": "e.rel === 'guarded-by'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9c60154eed1871799346d0a3148cda10babc47d9ba71ddd746a478f0d7da0fd0",
+          "target": "stmt:packages/core/src/dossier/coverage.ts@L126",
+          "line": 126,
+          "expr": "conditionIds.add(e.dst);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/coverage.ts#computeCoverage@L63",
+        "procedureName": "computeCoverage",
+        "guard": "cond:packages/core/src/dossier/coverage.ts@L130",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/coverage.ts@L130",
+            "expr": "conditionIds",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d040456a17a7c29641f39e82aebeb47e82e0e0e685a7b50ee1f31878df298dd2",
+          "target": "stmt:packages/core/src/dossier/coverage.ts@L131",
+          "line": 131,
+          "expr": "const c = soul.getNode(cid);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/coverage.ts#computeCoverage@L63",
+        "procedureName": "computeCoverage",
+        "guard": "cond:packages/core/src/dossier/coverage.ts@L134",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/coverage.ts@L130",
+            "expr": "conditionIds"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/coverage.ts@L133",
+            "expr": "(outgoing.get(cid) ?? []).filter(keep)"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/coverage.ts@L134",
+            "expr": "e.rel === 'iterates'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ee6e4a2941fc7d2d9b4db0960d57425eb4584e71f538d397e176669d098cba14",
+          "target": "stmt:packages/core/src/dossier/coverage.ts@L134",
+          "line": 134,
+          "expr": "iteratedCursorIds.add(e.dst);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/coverage.ts#computeCoverage@L63",
+        "procedureName": "computeCoverage",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bfe6e79d2f5ad9a617419719814439b63c65bbead8dc5662d46e62b822a47932",
+          "target": "stmt:packages/core/src/dossier/coverage.ts@L137",
+          "line": 137,
+          "expr": "const cursors = new Set<string>([\n    ...iteratedCursorIds,\n    ...bodyNodeIdsOfKind(soul, bodyNodeIds, 'cursor'),\n  ]);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/coverage.ts#computeCoverage@L63",
+        "procedureName": "computeCoverage",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:5c2e5b9b89c4e93bb87ef993137d9d7808a31622a7255075fb86f79b4df876d0",
+          "target": "sym:packages/core/src/dossier/coverage.ts#bodyNodeIdsOfKind@L239",
+          "expr": "bodyNodeIdsOfKind",
+          "line": 139
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/coverage.ts#computeCoverage@L63",
+        "procedureName": "computeCoverage",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:341acebe4bd3b96bf62a79e0d630d3523eaa510f3cb0592155c47c5bc8c27a17",
+          "target": "stmt:packages/core/src/dossier/coverage.ts@L142",
+          "line": 142,
+          "expr": "const cursorCount = Math.max(declaredCursors, cursors.size);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/coverage.ts#computeCoverage@L63",
+        "procedureName": "computeCoverage",
+        "guard": "cond:packages/core/src/dossier/coverage.ts@L146",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/coverage.ts@L146",
+            "expr": "!incoming",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0cc0d112ad92bdfb83c47833ce319ccc6764d539322b1754bd2a7bb1af049b68",
+          "target": "assign:packages/core/src/dossier/coverage.ts@L147",
+          "line": 147,
+          "expr": "incoming = new Map<string, Edge[]>();"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/coverage.ts#computeCoverage@L63",
+        "procedureName": "computeCoverage",
+        "guard": "cond:packages/core/src/dossier/coverage.ts@L148",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/coverage.ts@L146",
+            "expr": "!incoming"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/coverage.ts@L148",
+            "expr": "soul.iterateEdges()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fa5d2996a5356acf2001249af71030972a03e345a35cd089e11aeb2efa70bb06",
+          "target": "stmt:packages/core/src/dossier/coverage.ts@L149",
+          "line": 149,
+          "expr": "const i = incoming.get(e.dst);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/coverage.ts#computeCoverage@L63",
+        "procedureName": "computeCoverage",
+        "guard": "cond:packages/core/src/dossier/coverage.ts@L150",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/coverage.ts@L146",
+            "expr": "!incoming"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/coverage.ts@L148",
+            "expr": "soul.iterateEdges()"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/coverage.ts@L150",
+            "expr": "i",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3eac66796574776d4fb90f7465697b4b30606f43d457120e9d853f8a152c7825",
+          "target": "stmt:packages/core/src/dossier/coverage.ts@L150",
+          "line": 150,
+          "expr": "i.push(e);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/coverage.ts#computeCoverage@L63",
+        "procedureName": "computeCoverage",
+        "guard": "cond:packages/core/src/dossier/coverage.ts@L150",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/coverage.ts@L146",
+            "expr": "!incoming"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/coverage.ts@L148",
+            "expr": "soul.iterateEdges()"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/coverage.ts@L150",
+            "expr": "i",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f7c86e03fb113807d0660ebf21a554a20cdcb1c4ba961182cb7dc7205f4be4bf",
+          "target": "stmt:packages/core/src/dossier/coverage.ts@L151",
+          "line": 151,
+          "expr": "incoming.set(e.dst, [e]);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/coverage.ts#computeCoverage@L63",
+        "procedureName": "computeCoverage",
+        "guard": "cond:packages/core/src/dossier/coverage.ts@L157",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/coverage.ts@L155",
+            "expr": "bodyNodeIds"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/coverage.ts@L156",
+            "expr": "(incoming.get(id) ?? []).filter(keep)"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/coverage.ts@L157",
+            "expr": "e.rel === 'handles'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3dc9cd19637639208771038ce6e70bb2dc223d742e4b7710795fb9876654f745",
+          "target": "stmt:packages/core/src/dossier/coverage.ts@L157",
+          "line": 157,
+          "expr": "handlerIds.add(e.src);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/coverage.ts#computeCoverage@L63",
+        "procedureName": "computeCoverage",
+        "guard": "cond:packages/core/src/dossier/coverage.ts@L168",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/coverage.ts@L168",
+            "expr": "bodyNodeIds",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:36ab60ec24740b9a0530a10bf01d4b1f00d9c938ba812167ccd1088a8e90cb17",
+          "target": "stmt:packages/core/src/dossier/coverage.ts@L169",
+          "line": 169,
+          "expr": "const n = soul.getNode(id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/coverage.ts#computeCoverage@L63",
+        "procedureName": "computeCoverage",
+        "guard": "cond:packages/core/src/dossier/coverage.ts@L170",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/coverage.ts@L168",
+            "expr": "bodyNodeIds"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/coverage.ts@L170",
+            "expr": "n?.kind === 'raise' && n.name",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:199674bd5acdd625d9c462b92ec5ebf19f2c4002c6993213881b341b7e600c0e",
+          "target": "stmt:packages/core/src/dossier/coverage.ts@L171",
+          "line": 171,
+          "expr": "const lower = n.name.toLowerCase();"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/coverage.ts#computeCoverage@L63",
+        "procedureName": "computeCoverage",
+        "guard": "cond:packages/core/src/dossier/coverage.ts@L170",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/coverage.ts@L168",
+            "expr": "bodyNodeIds"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/coverage.ts@L170",
+            "expr": "n?.kind === 'raise' && n.name",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6df19e3ec23599458cc83acac7f1de4ca53311c88ce8dae825e1f8a3524790d7",
+          "target": "stmt:packages/core/src/dossier/coverage.ts@L172",
+          "line": 172,
+          "expr": "raisedTypes.add(lower);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/coverage.ts#computeCoverage@L63",
+        "procedureName": "computeCoverage",
+        "guard": "cond:packages/core/src/dossier/coverage.ts@L170",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/coverage.ts@L168",
+            "expr": "bodyNodeIds"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/coverage.ts@L170",
+            "expr": "n?.kind === 'raise' && n.name",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5a1912f85307bf5488a671beaaecc150f420e2215b2c8bd97edd5009bc80b09c",
+          "target": "stmt:packages/core/src/dossier/coverage.ts@L175",
+          "line": 175,
+          "expr": "raisedTypes.add(lower.split('.').pop() ?? lower);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/coverage.ts#computeCoverage@L63",
+        "procedureName": "computeCoverage",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4db76fede75c28f0aaacfa124d817945b6491429eb2d7a7ac6cf1188ec8a6e83",
+          "target": "stmt:packages/core/src/dossier/coverage.ts@L178",
+          "line": 178,
+          "expr": "const node = soul.getNode(nodeId);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/coverage.ts#computeCoverage@L63",
+        "procedureName": "computeCoverage",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:a5c721c7ffe9e3abecd3004e91a6e8dc0cfe365e13e09dc806107e7ff7210e0a",
+          "target": "sym:packages/core/src/dossier/coverage.ts#buildNameIndex@L249",
+          "expr": "buildNameIndex",
+          "line": 180
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/coverage.ts#computeCoverage@L63",
+        "procedureName": "computeCoverage",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c8f56c5c609a72b6bb915cb210ecfbbb4493ccc8c384d67046772742c09568ce",
+          "target": "stmt:packages/core/src/dossier/coverage.ts@L180",
+          "line": 180,
+          "expr": "const nameIndex = opts.nameIndex ?? buildNameIndex(soul);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/coverage.ts#computeCoverage@L63",
+        "procedureName": "computeCoverage",
+        "guard": "cond:packages/core/src/dossier/coverage.ts@L182",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/coverage.ts@L182",
+            "expr": "sites",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c07053a19bf4c5f353449d4f6b180b359be6e093a3f51bde78e262f52bb93dd4",
+          "target": "stmt:packages/core/src/dossier/coverage.ts@L183",
+          "line": 183,
+          "expr": "const simple = (s.callee.split('.').pop() ?? s.callee).toLowerCase();"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/coverage.ts#computeCoverage@L63",
+        "procedureName": "computeCoverage",
+        "guard": "cond:packages/core/src/dossier/coverage.ts@L197",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/coverage.ts@L197",
+            "expr": "!bodyPresent",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3c652d26505dbb0c0ff44353de4af9f97c97215ab95f25af602f723c791178d9",
+          "target": "stmt:packages/core/src/dossier/coverage.ts@L198",
+          "line": 198,
+          "expr": "caveats.push(\n      'BODY UNAVAILABLE — no body statements indexed. The implementation may live in a missing file ' +\n        '(e.g. a PL/SQL package body) or be a spec-only declaration. Do NOT derive behavior, scoring ' +\n        'formulas, or migration logic from this node — locate and index the body first.',\n    );"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/coverage.ts#computeCoverage@L63",
+        "procedureName": "computeCoverage",
+        "guard": "cond:packages/core/src/dossier/coverage.ts@L204",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/coverage.ts@L204",
+            "expr": "unresolved > 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8db3e6c3b09027aa691b8de9fb429a4b2ba94fe2b0861b84ea9277fd0bdd1598",
+          "target": "stmt:packages/core/src/dossier/coverage.ts@L205",
+          "line": 205,
+          "expr": "caveats.push(\n      `${unresolved} call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown.`,\n    );"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/coverage.ts#computeCoverage@L63",
+        "procedureName": "computeCoverage",
+        "guard": "cond:packages/core/src/dossier/coverage.ts@L209",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/coverage.ts@L209",
+            "expr": "exprTruncated > 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6ee8cc332d8006c3d33cff0130175dc97fe74c6dfedb2fe72fd6d3bbc3adb4bc",
+          "target": "stmt:packages/core/src/dossier/coverage.ts@L210",
+          "line": 210,
+          "expr": "caveats.push(\n      `${exprTruncated} expression(s) were clipped at the fidelity cap — rehydrate the source span for the verbatim text before relying on the exact formula/query.`,\n    );"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/coverage.ts#computeCoverage@L63",
+        "procedureName": "computeCoverage",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d726b46e8f3dab0467ed674094256cf045ee365b98b263dded67b00dda34d702",
+          "target": "stmt:packages/core/src/dossier/coverage.ts@L221",
+          "line": 221,
+          "expr": "return {\n    readiness,\n    bodyPresent,\n    executes,\n    assignments,\n    conditions: conditionIds.size,\n    raises,\n    handlers: handlerIds.size,\n    cursors: cursorCount,\n    caseBranches,\n    calls,\n    recursive,\n    exprTruncated,\n    caveats,\n  };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 32,
+    "referencedByFiles": [
+      "packages/core/src/dossier/builder.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 32,
+    "assignments": 2,
+    "conditions": 21,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 6,
+      "recorded": 34,
+      "unresolved": 10
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "10 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

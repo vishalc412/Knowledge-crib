@@ -1,0 +1,104 @@
+{
+  "id": "sym:packages/parsers/src/java/JavaExtractor.ts#JavaExtractor.memberOf@L231",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:2704cb69075be0e8eaa0f8ef0b8d7de34ea0f0bafd5690c1b2ac6d8853dedc88",
+  "builtAt": "2026-08-25T20:55:11.863Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/java/JavaExtractor.ts#JavaExtractor.memberOf@L231",
+    "kind": "symbol",
+    "type": "method",
+    "name": "memberOf",
+    "qualifiedName": "JavaExtractor.memberOf",
+    "signature": "memberOf(child: Node, parentId: string): Edge",
+    "lang": "typescript",
+    "file": "packages/parsers/src/java/JavaExtractor.ts",
+    "span": {
+      "start": 231,
+      "end": 242
+    },
+    "callSites": [
+      {
+        "callee": "edgeId",
+        "line": 233
+      }
+    ]
+  },
+  "source": {
+    "text": "  private memberOf(child: Node, parentId: string): Edge {\n    return {\n      id: edgeId(child.id, parentId, 'member-of'),\n      src: child.id,\n      dst: parentId,\n      rel: 'member-of',\n      method: 'static',\n      provenance: 'EXTRACTED',\n      confidence: 1,\n      evidence: { by: this.name },\n    };\n  }",
+    "truncated": false,
+    "totalLines": 12,
+    "startLine": 231
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/java/JavaExtractor.ts#JavaExtractor.parse@L68",
+      "confidence": 1,
+      "name": "parse",
+      "qualifiedName": "JavaExtractor.parse",
+      "signature": "parse(path: string, fileId: string, text: string, ctx: ExtractCtx): ExtractResult",
+      "type": "method",
+      "file": "packages/parsers/src/java/JavaExtractor.ts",
+      "line": 68
+    },
+    {
+      "id": "sym:packages/parsers/src/java/JavaExtractor.ts#JavaExtractor.parse.visit@L83",
+      "confidence": 1,
+      "name": "visit",
+      "qualifiedName": "JavaExtractor.parse.visit",
+      "signature": "visit(…)",
+      "type": "function",
+      "file": "packages/parsers/src/java/JavaExtractor.ts",
+      "line": 83
+    }
+  ],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#JavaExtractor.memberOf@L231",
+    "procedureName": "JavaExtractor.memberOf",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#JavaExtractor.memberOf@L231",
+        "procedureName": "JavaExtractor.memberOf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9e877f52b030b87a304f724e8f42defd83bb18998ab10c4b74c2ca9dc0ad8765",
+          "target": "stmt:packages/parsers/src/java/JavaExtractor.ts@L232",
+          "line": 232,
+          "expr": "return {\n      id: edgeId(child.id, parentId, 'member-of'),\n      src: child.id,\n      dst: parentId,\n      rel: 'member-of',\n      method: 'static',\n      provenance: 'EXTRACTED',\n      confidence: 1,\n      evidence: { by: this.name },\n    };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/parsers/src/java/JavaExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

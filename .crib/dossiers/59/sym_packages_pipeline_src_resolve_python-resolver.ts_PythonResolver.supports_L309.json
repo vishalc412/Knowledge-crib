@@ -1,0 +1,148 @@
+{
+  "id": "sym:packages/pipeline/src/resolve/python-resolver.ts#PythonResolver.supports@L309",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:b1a8d3bb7834ca25a7dbc3917f3f155b4cfd4d2730fbe0a40d39fbd0b4e8a977",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/resolve/python-resolver.ts#PythonResolver.supports@L309",
+    "kind": "symbol",
+    "type": "method",
+    "name": "supports",
+    "qualifiedName": "PythonResolver.supports",
+    "signature": "supports(file: FileMeta): boolean",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/resolve/python-resolver.ts",
+    "span": {
+      "start": 309,
+      "end": 311
+    },
+    "callSites": [
+      {
+        "callee": "some",
+        "line": 310
+      },
+      {
+        "callee": "endsWith",
+        "line": 310
+      }
+    ]
+  },
+  "source": {
+    "text": "  supports(file: FileMeta): boolean {\n    return PY_EXTS.some((e) => file.path.endsWith(e));\n  }",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 309
+  },
+  "callers": [],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#cypher-optional-index-backend-dependent",
+      "heading": "`cypher` *(optional, index-backend-dependent)*",
+      "anchor": "cypher-optional-index-backend-dependent",
+      "snippet": "`cypher` *(optional, index-backend-dependent)*",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#8-confidence-self-assessment",
+      "heading": "8. Confidence Self-Assessment",
+      "anchor": "8-confidence-self-assessment",
+      "snippet": "8. Confidence Self-Assessment",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-technical-pitch.md#market-position-accurate-comparison",
+      "heading": "Market position — accurate comparison",
+      "anchor": "market-position-accurate-comparison",
+      "snippet": "Market position — accurate comparison",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-technical-pitch.md#technical-depth",
+      "heading": "Technical depth",
+      "anchor": "technical-depth",
+      "snippet": "Technical depth",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-client-setup.md#6-github-copilot-vs-code-ghcp",
+      "heading": "6. GitHub Copilot (VS Code, \"ghcp\")",
+      "anchor": "6-github-copilot-vs-code-ghcp",
+      "snippet": "6. GitHub Copilot (VS Code, \"ghcp\")",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-munit-hardening.md#task-4-add-the-mule-extractor-to-deterministic-fuzzing",
+      "heading": "Task 4: Add the Mule extractor to deterministic fuzzing",
+      "anchor": "task-4-add-the-mule-extractor-to-deterministic-fuzzing",
+      "snippet": "Task 4: Add the Mule extractor to deterministic fuzzing",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/resolve/python-resolver.ts#PythonResolver.supports@L309",
+    "procedureName": "PythonResolver.supports",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/python-resolver.ts#PythonResolver.supports@L309",
+        "procedureName": "PythonResolver.supports",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c0457f9835f795385f0d5bf1795e909989ff81f6b2f4255466e0f80f48abd3da",
+          "target": "stmt:packages/pipeline/src/resolve/python-resolver.ts@L310",
+          "line": 310,
+          "expr": "return PY_EXTS.some((e) => file.path.endsWith(e));"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 2,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

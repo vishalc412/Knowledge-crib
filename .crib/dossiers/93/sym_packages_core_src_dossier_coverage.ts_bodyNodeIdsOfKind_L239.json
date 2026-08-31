@@ -1,0 +1,183 @@
+{
+  "id": "sym:packages/core/src/dossier/coverage.ts#bodyNodeIdsOfKind@L239",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:b9557c3d4c99672b5724c9fac3284081e27e40f28a01fd50d68cbb3b80060fca",
+  "builtAt": "2026-08-25T20:55:11.863Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/dossier/coverage.ts#bodyNodeIdsOfKind@L239",
+    "kind": "symbol",
+    "type": "function",
+    "name": "bodyNodeIdsOfKind",
+    "qualifiedName": "bodyNodeIdsOfKind",
+    "signature": "bodyNodeIdsOfKind(soul: SoulStore, ids: Set<string>, kind: Node['kind']): string[]",
+    "lang": "typescript",
+    "file": "packages/core/src/dossier/coverage.ts",
+    "span": {
+      "start": 239,
+      "end": 246
+    },
+    "callSites": [
+      {
+        "callee": "getNode",
+        "line": 242
+      },
+      {
+        "callee": "push",
+        "line": 243
+      }
+    ]
+  },
+  "source": {
+    "text": "function bodyNodeIdsOfKind(soul: SoulStore, ids: Set<string>, kind: Node['kind']): string[] {\n  const out: string[] = [];\n  for (const id of ids) {\n    const n = soul.getNode(id);\n    if (n?.kind === kind) out.push(id);\n  }\n  return out;\n}",
+    "truncated": false,
+    "totalLines": 8,
+    "startLine": 239
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/dossier/coverage.ts#computeCoverage@L63",
+      "confidence": 1,
+      "name": "computeCoverage",
+      "qualifiedName": "computeCoverage",
+      "signature": "computeCoverage(soul: SoulStore, nodeId: string, opts: {\n    keep?: (e: Edge) => boolean;\n    outgoing?: Map<string, Edge[]>;\n    incoming?: Map<string, Edge[]>;\n    /** lowercased simple + qualified name index for call-site resolution. Hoist it (e.g.\n     *  `buildDossiersByScope` builds it ONCE from a single `iterate('symbol')` pass and shares it\n     *  across N callables) so the bulk path does NOT re-scan all symbol nodes per callable. Absent →\n     *  built here (single-callable path). */\n    nameIndex?: ReadonlySet<string>;\n  } = {}): CallableCoverage",
+      "type": "function",
+      "file": "packages/core/src/dossier/coverage.ts",
+      "line": 63
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 70
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/core/src/dossier/coverage.ts@L238",
+      "snippet": "/** Count body nodes of a given kind (used to union declared + iterated cursors). */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/dossier/coverage.ts#bodyNodeIdsOfKind@L239",
+    "procedureName": "bodyNodeIdsOfKind",
+    "conditions": [
+      "cond:packages/core/src/dossier/coverage.ts@L241",
+      "cond:packages/core/src/dossier/coverage.ts@L243"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/dossier/coverage.ts#bodyNodeIdsOfKind@L239",
+        "procedureName": "bodyNodeIdsOfKind",
+        "guard": "cond:packages/core/src/dossier/coverage.ts@L241",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/coverage.ts@L241",
+            "expr": "ids",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:305ea6722c201573582b221f5de45ec0f523428402327f220f01d500607f7fcd",
+          "target": "stmt:packages/core/src/dossier/coverage.ts@L242",
+          "line": 242,
+          "expr": "const n = soul.getNode(id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/coverage.ts#bodyNodeIdsOfKind@L239",
+        "procedureName": "bodyNodeIdsOfKind",
+        "guard": "cond:packages/core/src/dossier/coverage.ts@L243",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/coverage.ts@L241",
+            "expr": "ids"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/coverage.ts@L243",
+            "expr": "n?.kind === kind",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2774391b14ff7028b52a2497370e94f5e5382ab36154e71cc2af03ef5bc88c39",
+          "target": "stmt:packages/core/src/dossier/coverage.ts@L243",
+          "line": 243,
+          "expr": "out.push(id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/coverage.ts#bodyNodeIdsOfKind@L239",
+        "procedureName": "bodyNodeIdsOfKind",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:c3db143e7496fb4a9bb20b4a25db3012c0d5a3d8b3493be8a5cf98cde5101b4a",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
+          "expr": "push",
+          "line": 243
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/coverage.ts#bodyNodeIdsOfKind@L239",
+        "procedureName": "bodyNodeIdsOfKind",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c00268de4ad9288dedf5bb5b8622e32c0bc15a2c878b06daddc072a7fe38ac86",
+          "target": "stmt:packages/core/src/dossier/coverage.ts@L245",
+          "line": 245,
+          "expr": "return out;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/core/src/dossier/coverage.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 2,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

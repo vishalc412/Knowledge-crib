@@ -1,0 +1,431 @@
+{
+  "id": "sym:packages/pipeline/src/gitignore.ts#compileGlob@L79",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:6b23ad864b7f3633d70f476356627eaddf8a5ef04a454419b03071f225cf54fd",
+  "builtAt": "2026-08-25T20:55:11.863Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/gitignore.ts#compileGlob@L79",
+    "kind": "symbol",
+    "type": "function",
+    "name": "compileGlob",
+    "qualifiedName": "compileGlob",
+    "signature": "compileGlob(pattern: string, anchored: boolean): RegExp",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/gitignore.ts",
+    "span": {
+      "start": 79,
+      "end": 110
+    },
+    "callSites": [
+      {
+        "callee": "indexOf",
+        "line": 96
+      },
+      {
+        "callee": "slice",
+        "line": 100
+      }
+    ]
+  },
+  "source": {
+    "text": "function compileGlob(pattern: string, anchored: boolean): RegExp {\n  let src = '';\n  for (let i = 0; i < pattern.length; i++) {\n    const c = pattern[i]!; // loop bound guarantees this is defined (noUncheckedIndexedAccess)\n    if (c === '*') {\n      if (pattern[i + 1] === '*') {\n        // `**` matches across path separators. Consume an optional following slash so a mid-path\n        // double-glob collapses to a single `.*` rather than leaving a double slash (never a match).\n        src += '.*';\n        i++;\n        if (pattern[i + 1] === '/') i++;\n      } else {\n        src += '[^/]*';\n      }\n    } else if (c === '?') {\n      src += '[^/]';\n    } else if (c === '[') {\n      const end = pattern.indexOf(']', i + 1);\n      if (end === -1) {\n        src += '\\\\['; // unterminated — treat as a literal bracket\n      } else {\n        src += pattern.slice(i, end + 1); // char class copies through verbatim\n        i = end;\n      }\n    } else if (/[.+^$(){}|\\\\]/.test(c)) {\n      src += `\\\\${c}`;\n    } else {\n      src += c;\n    }\n  }\n  return anchored ? new RegExp(`^${src}$`) : new RegExp(`(^|/)${src}$`);\n}",
+    "truncated": false,
+    "totalLines": 32,
+    "startLine": 79
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/src/gitignore.ts#parseGitignore@L48",
+      "confidence": 1,
+      "name": "parseGitignore",
+      "qualifiedName": "parseGitignore",
+      "signature": "parseGitignore(text: string): GitignoreRule[]",
+      "type": "function",
+      "file": "packages/pipeline/src/gitignore.ts",
+      "line": 48
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/pipeline/src/gitignore.ts@L74",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/gitignore.ts#compileGlob@L79",
+    "procedureName": "compileGlob",
+    "conditions": [
+      "cond:packages/pipeline/src/gitignore.ts@L81",
+      "cond:packages/pipeline/src/gitignore.ts@L83",
+      "cond:packages/pipeline/src/gitignore.ts@L84",
+      "cond:packages/pipeline/src/gitignore.ts@L93",
+      "cond:packages/pipeline/src/gitignore.ts@L95",
+      "cond:packages/pipeline/src/gitignore.ts@L97",
+      "cond:packages/pipeline/src/gitignore.ts@L103"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/gitignore.ts#compileGlob@L79",
+        "procedureName": "compileGlob",
+        "guard": "cond:packages/pipeline/src/gitignore.ts@L84",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/gitignore.ts@L81",
+            "expr": "i < pattern.length"
+          },
+          {
+            "id": "cond:packages/pipeline/src/gitignore.ts@L83",
+            "expr": "c === '*'"
+          },
+          {
+            "id": "cond:packages/pipeline/src/gitignore.ts@L84",
+            "expr": "pattern[i + 1] === '*'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:959cdacd3371e3b050150938f9f6c47a227fb1f7ae716bc545b526c88930b8af",
+          "target": "assign:packages/pipeline/src/gitignore.ts@L87",
+          "line": 87,
+          "expr": "src += '.*';"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/gitignore.ts#compileGlob@L79",
+        "procedureName": "compileGlob",
+        "guard": "cond:packages/pipeline/src/gitignore.ts@L84",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/gitignore.ts@L81",
+            "expr": "i < pattern.length"
+          },
+          {
+            "id": "cond:packages/pipeline/src/gitignore.ts@L83",
+            "expr": "c === '*'"
+          },
+          {
+            "id": "cond:packages/pipeline/src/gitignore.ts@L84",
+            "expr": "pattern[i + 1] === '*'",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2db025cdb9cbed84fa3226e7b1a70a26d79f53d88d803f0665867523221d3352",
+          "target": "assign:packages/pipeline/src/gitignore.ts@L91",
+          "line": 91,
+          "expr": "src += '[^/]*';"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/gitignore.ts#compileGlob@L79",
+        "procedureName": "compileGlob",
+        "guard": "cond:packages/pipeline/src/gitignore.ts@L93",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/gitignore.ts@L81",
+            "expr": "i < pattern.length"
+          },
+          {
+            "id": "cond:packages/pipeline/src/gitignore.ts@L83",
+            "expr": "c === '*'"
+          },
+          {
+            "id": "cond:packages/pipeline/src/gitignore.ts@L93",
+            "expr": "c === '?'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9f9fc0b248cd5227bee9e8e56712d2335a278e4138555400f5843c6f431fbf8e",
+          "target": "assign:packages/pipeline/src/gitignore.ts@L94",
+          "line": 94,
+          "expr": "src += '[^/]';"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/gitignore.ts#compileGlob@L79",
+        "procedureName": "compileGlob",
+        "guard": "cond:packages/pipeline/src/gitignore.ts@L95",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/gitignore.ts@L81",
+            "expr": "i < pattern.length"
+          },
+          {
+            "id": "cond:packages/pipeline/src/gitignore.ts@L83",
+            "expr": "c === '*'"
+          },
+          {
+            "id": "cond:packages/pipeline/src/gitignore.ts@L93",
+            "expr": "c === '?'"
+          },
+          {
+            "id": "cond:packages/pipeline/src/gitignore.ts@L95",
+            "expr": "c === '['",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2bc7cf9c861661e38514fd3d6191a62ff3e662cc6c386a9c3aec9efc467852ca",
+          "target": "stmt:packages/pipeline/src/gitignore.ts@L96",
+          "line": 96,
+          "expr": "const end = pattern.indexOf(']', i + 1);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/gitignore.ts#compileGlob@L79",
+        "procedureName": "compileGlob",
+        "guard": "cond:packages/pipeline/src/gitignore.ts@L97",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/gitignore.ts@L81",
+            "expr": "i < pattern.length"
+          },
+          {
+            "id": "cond:packages/pipeline/src/gitignore.ts@L83",
+            "expr": "c === '*'"
+          },
+          {
+            "id": "cond:packages/pipeline/src/gitignore.ts@L93",
+            "expr": "c === '?'"
+          },
+          {
+            "id": "cond:packages/pipeline/src/gitignore.ts@L95",
+            "expr": "c === '['"
+          },
+          {
+            "id": "cond:packages/pipeline/src/gitignore.ts@L97",
+            "expr": "end === -1",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3b6ff970454e5cf352ba672c182fb96d3bb66626e329660bcea1e2a5f558d0df",
+          "target": "assign:packages/pipeline/src/gitignore.ts@L98",
+          "line": 98,
+          "expr": "src += '\\\\[';"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/gitignore.ts#compileGlob@L79",
+        "procedureName": "compileGlob",
+        "guard": "cond:packages/pipeline/src/gitignore.ts@L97",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/gitignore.ts@L81",
+            "expr": "i < pattern.length"
+          },
+          {
+            "id": "cond:packages/pipeline/src/gitignore.ts@L83",
+            "expr": "c === '*'"
+          },
+          {
+            "id": "cond:packages/pipeline/src/gitignore.ts@L93",
+            "expr": "c === '?'"
+          },
+          {
+            "id": "cond:packages/pipeline/src/gitignore.ts@L95",
+            "expr": "c === '['"
+          },
+          {
+            "id": "cond:packages/pipeline/src/gitignore.ts@L97",
+            "expr": "end === -1",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c71c382de0f5c2924b74e16e6936186e5c3e48a5a0ac876fb48458ecfb17d450",
+          "target": "assign:packages/pipeline/src/gitignore.ts@L100",
+          "line": 100,
+          "expr": "src += pattern.slice(i, end + 1);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/gitignore.ts#compileGlob@L79",
+        "procedureName": "compileGlob",
+        "guard": "cond:packages/pipeline/src/gitignore.ts@L97",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/gitignore.ts@L81",
+            "expr": "i < pattern.length"
+          },
+          {
+            "id": "cond:packages/pipeline/src/gitignore.ts@L83",
+            "expr": "c === '*'"
+          },
+          {
+            "id": "cond:packages/pipeline/src/gitignore.ts@L93",
+            "expr": "c === '?'"
+          },
+          {
+            "id": "cond:packages/pipeline/src/gitignore.ts@L95",
+            "expr": "c === '['"
+          },
+          {
+            "id": "cond:packages/pipeline/src/gitignore.ts@L97",
+            "expr": "end === -1",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6263ca010223271c0cd6db270875359262f3c8629bfabfb11b3494a1ba3aa0a3",
+          "target": "assign:packages/pipeline/src/gitignore.ts@L101",
+          "line": 101,
+          "expr": "i = end;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/gitignore.ts#compileGlob@L79",
+        "procedureName": "compileGlob",
+        "guard": "cond:packages/pipeline/src/gitignore.ts@L103",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/gitignore.ts@L81",
+            "expr": "i < pattern.length"
+          },
+          {
+            "id": "cond:packages/pipeline/src/gitignore.ts@L83",
+            "expr": "c === '*'"
+          },
+          {
+            "id": "cond:packages/pipeline/src/gitignore.ts@L93",
+            "expr": "c === '?'"
+          },
+          {
+            "id": "cond:packages/pipeline/src/gitignore.ts@L95",
+            "expr": "c === '['"
+          },
+          {
+            "id": "cond:packages/pipeline/src/gitignore.ts@L103",
+            "expr": "/[.+^$(){}|\\\\]/.test(c)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1c500a9257f742458183be2b9a361568ee82911f947ab506506a75d2be66f614",
+          "target": "assign:packages/pipeline/src/gitignore.ts@L104",
+          "line": 104,
+          "expr": "src += `\\\\${c}`;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/gitignore.ts#compileGlob@L79",
+        "procedureName": "compileGlob",
+        "guard": "cond:packages/pipeline/src/gitignore.ts@L103",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/gitignore.ts@L81",
+            "expr": "i < pattern.length"
+          },
+          {
+            "id": "cond:packages/pipeline/src/gitignore.ts@L83",
+            "expr": "c === '*'"
+          },
+          {
+            "id": "cond:packages/pipeline/src/gitignore.ts@L93",
+            "expr": "c === '?'"
+          },
+          {
+            "id": "cond:packages/pipeline/src/gitignore.ts@L95",
+            "expr": "c === '['"
+          },
+          {
+            "id": "cond:packages/pipeline/src/gitignore.ts@L103",
+            "expr": "/[.+^$(){}|\\\\]/.test(c)",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8e28b6363eecd73808b60d82145115248b21733df13b99a36917910eb24e6ca1",
+          "target": "assign:packages/pipeline/src/gitignore.ts@L106",
+          "line": 106,
+          "expr": "src += c;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/gitignore.ts#compileGlob@L79",
+        "procedureName": "compileGlob",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7fe4106bdd7075ffa76b166276a408dd799d1b5f2bd7fd1963a3ff519d9a1811",
+          "target": "stmt:packages/pipeline/src/gitignore.ts@L109",
+          "line": 109,
+          "expr": "return anchored ? new RegExp(`^${src}$`) : new RegExp(`(^|/)${src}$`);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 10,
+    "referencedByFiles": [
+      "packages/pipeline/src/gitignore.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 10,
+    "assignments": 8,
+    "conditions": 5,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 2,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

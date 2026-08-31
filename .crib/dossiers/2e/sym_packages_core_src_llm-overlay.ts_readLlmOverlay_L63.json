@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/core/src/llm-overlay.ts#readLlmOverlay@L63",
-  "schemaVersion": "1.5",
+  "schemaVersion": "1.6",
   "nodeHash": "blake3:76bc38a40b3d415b4f5cea2c94e2685b4a344effe031d72b12f5bea5ed0b72f6",
-  "builtAt": "2026-07-16T16:35:16.098Z",
+  "builtAt": "2026-08-31T17:37:23.222Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/core/src/llm-overlay.ts#readLlmOverlay@L63",
@@ -102,14 +102,14 @@
       "line": 74
     },
     {
-      "id": "sym:packages/ui/src/viz.ts#buildVizGraph@L223",
+      "id": "sym:packages/ui/src/viz.ts#buildVizGraph@L231",
       "confidence": 1,
       "name": "buildVizGraph",
       "qualifiedName": "buildVizGraph",
-      "signature": "buildVizGraph(soul: SoulStore): VizGraph",
+      "signature": "buildVizGraph(soul: SoulStore, memory?: { nodes: CompositeNode[]; edges: CompositeEdge[] }): VizGraph",
       "type": "function",
       "file": "packages/ui/src/viz.ts",
-      "line": 223
+      "line": 231
     }
   ],
   "callees": [
@@ -154,14 +154,14 @@
       "line": 141
     },
     {
-      "id": "sym:packages/mcp/src/enrichment.ts#readJson@L1824",
+      "id": "sym:packages/mcp/src/enrichment.ts#readJson@L2597",
       "confidence": 1,
       "name": "readJson",
       "qualifiedName": "readJson",
       "signature": "readJson(path: string): T | undefined",
       "type": "function",
       "file": "packages/mcp/src/enrichment.ts",
-      "line": 1824
+      "line": 2597
     },
     {
       "id": "sym:packages/core/src/llm-overlay.ts#readJson@L172",
@@ -302,8 +302,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:51790b948af560823565a9237d38767cdfab506078d14944b919624d703059c6",
-          "target": "sym:packages/mcp/src/enrichment.ts#readJson@L1824",
+          "edgeId": "e:43d249c558a2744354c0fd3ae2a3aadfc809a150caf8aef75495352d5c234b63",
+          "target": "sym:packages/mcp/src/enrichment.ts#readJson@L2597",
           "expr": "readJson",
           "line": 72
         }

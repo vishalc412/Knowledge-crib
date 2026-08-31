@@ -1,0 +1,188 @@
+{
+  "id": "sym:packages/parsers/src/python/lexer.ts#Lexer.advance@L394",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:99a047594a4312f51f91b1576138dd68b7e3553ad10ee5d6d31e744eeb6b28d4",
+  "builtAt": "2026-08-25T20:55:11.863Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/python/lexer.ts#Lexer.advance@L394",
+    "kind": "symbol",
+    "type": "method",
+    "name": "advance",
+    "qualifiedName": "Lexer.advance",
+    "signature": "advance(): void",
+    "lang": "typescript",
+    "file": "packages/parsers/src/python/lexer.ts",
+    "span": {
+      "start": 394,
+      "end": 403
+    }
+  },
+  "source": {
+    "text": "  private advance(): void {\n    const c = this.src[this.pos];\n    this.pos++;\n    if (c === '\\n') {\n      this.line++;\n      this.col = 1;\n    } else {\n      this.col++;\n    }\n  }",
+    "truncated": false,
+    "totalLines": 10,
+    "startLine": 394
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/python/lexer.ts#Lexer.handleLineStart@L161",
+      "confidence": 1,
+      "name": "handleLineStart",
+      "qualifiedName": "Lexer.handleLineStart",
+      "signature": "handleLineStart(): void",
+      "type": "method",
+      "file": "packages/parsers/src/python/lexer.ts",
+      "line": 161
+    },
+    {
+      "id": "sym:packages/parsers/src/python/lexer.ts#Lexer.matchQuote@L422",
+      "confidence": 1,
+      "name": "matchQuote",
+      "qualifiedName": "Lexer.matchQuote",
+      "signature": "matchQuote(): { delim: string; triple: boolean } | null",
+      "type": "method",
+      "file": "packages/parsers/src/python/lexer.ts",
+      "line": 422
+    },
+    {
+      "id": "sym:packages/parsers/src/python/lexer.ts#Lexer.scanIdent@L222",
+      "confidence": 1,
+      "name": "scanIdent",
+      "qualifiedName": "Lexer.scanIdent",
+      "signature": "scanIdent(): void",
+      "type": "method",
+      "file": "packages/parsers/src/python/lexer.ts",
+      "line": 222
+    },
+    {
+      "id": "sym:packages/parsers/src/python/lexer.ts#Lexer.scanInsideTriple@L305",
+      "confidence": 1,
+      "name": "scanInsideTriple",
+      "qualifiedName": "Lexer.scanInsideTriple",
+      "signature": "scanInsideTriple(startLine?: number, startCol?: number, openToken?: string): void",
+      "type": "method",
+      "file": "packages/parsers/src/python/lexer.ts",
+      "line": 305
+    },
+    {
+      "id": "sym:packages/parsers/src/python/lexer.ts#Lexer.scanNumber@L230",
+      "confidence": 1,
+      "name": "scanNumber",
+      "qualifiedName": "Lexer.scanNumber",
+      "signature": "scanNumber(): void",
+      "type": "method",
+      "file": "packages/parsers/src/python/lexer.ts",
+      "line": 230
+    },
+    {
+      "id": "sym:packages/parsers/src/python/lexer.ts#Lexer.scanOp@L340",
+      "confidence": 1,
+      "name": "scanOp",
+      "qualifiedName": "Lexer.scanOp",
+      "signature": "scanOp(): void",
+      "type": "method",
+      "file": "packages/parsers/src/python/lexer.ts",
+      "line": 340
+    },
+    {
+      "id": "sym:packages/parsers/src/python/lexer.ts#Lexer.scanSingleString@L270",
+      "confidence": 1,
+      "name": "scanSingleString",
+      "qualifiedName": "Lexer.scanSingleString",
+      "signature": "scanSingleString(delim: string, startLine: number, startCol: number, prefix: string): void",
+      "type": "method",
+      "file": "packages/parsers/src/python/lexer.ts",
+      "line": 270
+    },
+    {
+      "id": "sym:packages/parsers/src/python/lexer.ts#Lexer.scanString@L239",
+      "confidence": 1,
+      "name": "scanString",
+      "qualifiedName": "Lexer.scanString",
+      "signature": "scanString(): void",
+      "type": "method",
+      "file": "packages/parsers/src/python/lexer.ts",
+      "line": 239
+    },
+    {
+      "id": "sym:packages/parsers/src/python/lexer.ts#Lexer.skipComment@L383",
+      "confidence": 1,
+      "name": "skipComment",
+      "qualifiedName": "Lexer.skipComment",
+      "signature": "skipComment(): void",
+      "type": "method",
+      "file": "packages/parsers/src/python/lexer.ts",
+      "line": 383
+    },
+    {
+      "id": "sym:packages/parsers/src/python/lexer.ts#Lexer.tokens@L102",
+      "confidence": 1,
+      "name": "tokens",
+      "qualifiedName": "Lexer.tokens",
+      "signature": "tokens(): Token[]",
+      "type": "method",
+      "file": "packages/parsers/src/python/lexer.ts",
+      "line": 102
+    }
+  ],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.advance@L394",
+    "procedureName": "Lexer.advance",
+    "conditions": [
+      "cond:packages/parsers/src/python/lexer.ts@L397"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.advance@L394",
+        "procedureName": "Lexer.advance",
+        "guard": "cond:packages/parsers/src/python/lexer.ts@L397",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L397",
+            "expr": "c === '\\n'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6bf9572f63cb53a0d90ba71a7f97b40ca50d6b7f4db9b18a8e8564d42ed2f928",
+          "target": "assign:packages/parsers/src/python/lexer.ts@L399",
+          "line": 399,
+          "expr": "this.col = 1;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/parsers/src/python/lexer.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 1,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

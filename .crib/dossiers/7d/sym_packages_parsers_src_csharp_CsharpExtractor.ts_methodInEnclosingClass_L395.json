@@ -1,0 +1,242 @@
+{
+  "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#methodInEnclosingClass@L395",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:3668016a29b7d9223079dbb85d16c5eaaa2c838a057af4878b8ec2978496e6d4",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#methodInEnclosingClass@L395",
+    "kind": "symbol",
+    "type": "function",
+    "name": "methodInEnclosingClass",
+    "qualifiedName": "methodInEnclosingClass",
+    "signature": "methodInEnclosingClass(line: number, name: string, symbols: LocalSymbol[]): string | undefined",
+    "lang": "typescript",
+    "file": "packages/parsers/src/csharp/CsharpExtractor.ts",
+    "span": {
+      "start": 395,
+      "end": 410
+    },
+    "callSites": [
+      {
+        "callee": "enclosingTypeId",
+        "line": 400
+      },
+      {
+        "callee": "find",
+        "line": 403
+      }
+    ]
+  },
+  "source": {
+    "text": "function methodInEnclosingClass(\n  line: number,\n  name: string,\n  symbols: LocalSymbol[],\n): string | undefined {\n  const cls = enclosingTypeId(line, symbols);\n  if (!cls) return undefined;\n  const enclosingQ = cls.node.qualifiedName;\n  const match = symbols.find(\n    (s) =>\n      s.simpleName === name &&\n      s.parentQualifier === enclosingQ &&\n      (s.node.type === 'method' || s.node.type === 'constructor'),\n  );\n  return match?.node.id;\n}",
+    "truncated": false,
+    "totalLines": 16,
+    "startLine": 395
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.resolveCall@L836",
+      "confidence": 1,
+      "name": "resolveCall",
+      "qualifiedName": "BodyWalker.resolveCall",
+      "signature": "resolveCall(c: CsharpCallSite, procId: string): string | undefined",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/CsharpExtractor.ts",
+      "line": 836
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#CsharpExtractor.collectCalls@L226",
+      "confidence": 1,
+      "name": "collectCalls",
+      "qualifiedName": "CsharpExtractor.collectCalls",
+      "signature": "collectCalls(calls: CsharpCallSite[], symbols: LocalSymbol[], byKey: Map<string, string>, edges: Edge[]): void",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/CsharpExtractor.ts",
+      "line": 226
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/java/JavaExtractor.ts#enclosingTypeId@L403",
+      "confidence": 1,
+      "name": "enclosingTypeId",
+      "qualifiedName": "enclosingTypeId",
+      "signature": "enclosingTypeId(line: number, symbols: LocalSymbol[]): LocalSymbol | undefined",
+      "type": "function",
+      "file": "packages/parsers/src/java/JavaExtractor.ts",
+      "line": 403
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#enclosingTypeId@L374",
+      "confidence": 1,
+      "name": "enclosingTypeId",
+      "qualifiedName": "enclosingTypeId",
+      "signature": "enclosingTypeId(line: number, symbols: LocalSymbol[]): LocalSymbol | undefined",
+      "type": "function",
+      "file": "packages/parsers/src/csharp/CsharpExtractor.ts",
+      "line": 374
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
+      "confidence": 1,
+      "name": "find",
+      "qualifiedName": "find",
+      "signature": "find(…)",
+      "type": "function",
+      "file": "packages/parsers/src/java/parser.test.ts",
+      "line": 38
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/csharp/CsharpExtractor.ts@L389",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#methodInEnclosingClass@L395",
+    "procedureName": "methodInEnclosingClass",
+    "conditions": [
+      "cond:packages/parsers/src/csharp/CsharpExtractor.ts@L401"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#methodInEnclosingClass@L395",
+        "procedureName": "methodInEnclosingClass",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:ba334ad0192ac8ecdefd5faedd73b70b4c66ed83a605bc44f6c9b8189418e413",
+          "target": "sym:packages/parsers/src/java/JavaExtractor.ts#enclosingTypeId@L403",
+          "expr": "enclosingTypeId",
+          "line": 400
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#methodInEnclosingClass@L395",
+        "procedureName": "methodInEnclosingClass",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:be10735491701b4c9cef6cbba8c6347767d39c9bcaf3d2a70f53cdb3f43db878",
+          "target": "stmt:packages/parsers/src/csharp/CsharpExtractor.ts@L400",
+          "line": 400,
+          "expr": "const cls = enclosingTypeId(line, symbols);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#methodInEnclosingClass@L395",
+        "procedureName": "methodInEnclosingClass",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:c04093dbd7bfad736d17261ddea0c2d5e41be55b5de63bac8d8290c9fc4cb58d",
+          "target": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#enclosingTypeId@L374",
+          "expr": "enclosingTypeId",
+          "line": 400
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#methodInEnclosingClass@L395",
+        "procedureName": "methodInEnclosingClass",
+        "guard": "cond:packages/parsers/src/csharp/CsharpExtractor.ts@L401",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/CsharpExtractor.ts@L401",
+            "expr": "!cls",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bac93830f58715b5d51841faf06c0d9cf591d29dfcf99db0e6f6ad531dc74820",
+          "target": "stmt:packages/parsers/src/csharp/CsharpExtractor.ts@L401",
+          "line": 401,
+          "expr": "return undefined;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#methodInEnclosingClass@L395",
+        "procedureName": "methodInEnclosingClass",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:d372b1beb62bdc81981c8e22000482e9fbe31b71d285acc8a356719da4546a9a",
+          "target": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
+          "expr": "find",
+          "line": 403
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#methodInEnclosingClass@L395",
+        "procedureName": "methodInEnclosingClass",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f6afeb6b4373cf2582fc76ad8c649f9ebe36bd1ae3d10bbdfd4a983286c78a1c",
+          "target": "stmt:packages/parsers/src/csharp/CsharpExtractor.ts@L403",
+          "line": 403,
+          "expr": "const match = symbols.find(\n    (s) =>\n      s.simpleName === name &&\n      s.parentQualifier === enclosingQ &&\n      (s.node.type === 'method' || s.node.type === 'constructor'),\n  );"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#methodInEnclosingClass@L395",
+        "procedureName": "methodInEnclosingClass",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0ca27c6967e57f0eccd7960ea75d213072e53071c93aed9914933c2d7b207828",
+          "target": "stmt:packages/parsers/src/csharp/CsharpExtractor.ts@L409",
+          "line": 409,
+          "expr": "return match?.node.id;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": [
+      "packages/parsers/src/csharp/CsharpExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 3,
+      "recorded": 2,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

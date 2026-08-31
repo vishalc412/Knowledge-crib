@@ -1,0 +1,166 @@
+{
+  "id": "sym:packages/pipeline/src/cfg/guard-chain.ts#pathCondition@L45",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:766dbaadd31d32633850ddb2b7f49ba15598b26d6f326f424c9a8257eb34e588",
+  "builtAt": "2026-08-25T20:55:11.863Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/cfg/guard-chain.ts#pathCondition@L45",
+    "kind": "symbol",
+    "type": "function",
+    "name": "pathCondition",
+    "qualifiedName": "pathCondition",
+    "signature": "pathCondition(frames: readonly GuardFrame[]): PathCondition",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/cfg/guard-chain.ts",
+    "span": {
+      "start": 45,
+      "end": 56
+    },
+    "callSites": [
+      {
+        "callee": "push",
+        "line": 47
+      },
+      {
+        "callee": "some",
+        "line": 53
+      },
+      {
+        "callee": "some",
+        "line": 54
+      }
+    ]
+  },
+  "source": {
+    "text": "export function pathCondition(frames: readonly GuardFrame[]): PathCondition {\n  const cfgPath: string[] = [];\n  for (const f of frames) if (f.condId !== undefined) cfgPath.push(f.condId);\n  const inner = frames.length > 0 ? frames[frames.length - 1] : undefined;\n  return {\n    cfgPath,\n    guard: cfgPath.length > 0 ? cfgPath[cfgPath.length - 1] : undefined,\n    branch: inner?.branch,\n    inLoop: frames.some((f) => f.loop),\n    inException: frames.some((f) => f.exception),\n  };\n}",
+    "truncated": false,
+    "totalLines": 12,
+    "startLine": 45
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/src/resolve/plsql-cfg.ts#Walker.walkBlock@L138",
+      "confidence": 1,
+      "name": "walkBlock",
+      "qualifiedName": "Walker.walkBlock",
+      "signature": "walkBlock(block: Block, procId: string, frames: GuardFrame[]): void",
+      "type": "method",
+      "file": "packages/pipeline/src/resolve/plsql-cfg.ts",
+      "line": 138
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 70
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/pipeline/src/cfg/guard-chain.ts@L44",
+      "snippet": "/** Fold a frame stack into the {@link PathCondition} for the statement those frames enclose. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/cfg/guard-chain.ts#pathCondition@L45",
+    "procedureName": "pathCondition",
+    "conditions": [
+      "cond:packages/pipeline/src/cfg/guard-chain.ts@L47"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/cfg/guard-chain.ts#pathCondition@L45",
+        "procedureName": "pathCondition",
+        "guard": "cond:packages/pipeline/src/cfg/guard-chain.ts@L47",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/cfg/guard-chain.ts@L47",
+            "expr": "frames"
+          },
+          {
+            "id": "cond:packages/pipeline/src/cfg/guard-chain.ts@L47",
+            "expr": "frames",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0596e3f6419281db65247d5c5526fb6b7be64cbd019f28c7e4a927c884f3a0e7",
+          "target": "stmt:packages/pipeline/src/cfg/guard-chain.ts@L47",
+          "line": 47,
+          "expr": "cfgPath.push(f.condId);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/cfg/guard-chain.ts#pathCondition@L45",
+        "procedureName": "pathCondition",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:4c9c006cecf6dbf2ad64a75e08860c539c1bc3b034ffe5b171e642c6fdf106e8",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
+          "expr": "push",
+          "line": 47
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/cfg/guard-chain.ts#pathCondition@L45",
+        "procedureName": "pathCondition",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9a909f5fff8ba4a7d7b82b1007c14ba5911a8b67cce2079ae658c79663fada2c",
+          "target": "stmt:packages/pipeline/src/cfg/guard-chain.ts@L49",
+          "line": 49,
+          "expr": "return {\n    cfgPath,\n    guard: cfgPath.length > 0 ? cfgPath[cfgPath.length - 1] : undefined,\n    branch: inner?.branch,\n    inLoop: frames.some((f) => f.loop),\n    inException: frames.some((f) => f.exception),\n  };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/pipeline/src/resolve/plsql-cfg.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 3,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

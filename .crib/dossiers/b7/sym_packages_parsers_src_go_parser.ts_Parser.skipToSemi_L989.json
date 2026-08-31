@@ -1,0 +1,423 @@
+{
+  "id": "sym:packages/parsers/src/go/parser.ts#Parser.skipToSemi@L989",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:11a6e1f79d017fbf03164295ccb74700f7b9335994ec8e8c62694f89ee8cacbc",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/go/parser.ts#Parser.skipToSemi@L989",
+    "kind": "symbol",
+    "type": "method",
+    "name": "skipToSemi",
+    "qualifiedName": "Parser.skipToSemi",
+    "signature": "skipToSemi(): void",
+    "lang": "typescript",
+    "file": "packages/parsers/src/go/parser.ts",
+    "span": {
+      "start": 989,
+      "end": 1006
+    },
+    "callSites": [
+      {
+        "callee": "next",
+        "line": 995
+      },
+      {
+        "callee": "max",
+        "line": 999
+      },
+      {
+        "callee": "max",
+        "line": 1001
+      },
+      {
+        "callee": "max",
+        "line": 1003
+      },
+      {
+        "callee": "next",
+        "line": 1004
+      }
+    ]
+  },
+  "source": {
+    "text": "  private skipToSemi(): void {\n    let pdepth = 0;\n    let bdepth = 0;\n    let brdepth = 0;\n    while (!this.atEnd()) {\n      if (pdepth === 0 && bdepth === 0 && brdepth === 0 && this.isOp(';')) {\n        this.next();\n        return;\n      }\n      if (this.isOp('(')) pdepth++;\n      else if (this.isOp(')')) pdepth = Math.max(0, pdepth - 1);\n      else if (this.isOp('[')) bdepth++;\n      else if (this.isOp(']')) bdepth = Math.max(0, bdepth - 1);\n      else if (this.isOp('{')) brdepth++;\n      else if (this.isOp('}')) brdepth = Math.max(0, brdepth - 1);\n      this.next();\n    }\n  }",
+    "truncated": false,
+    "totalLines": 18,
+    "startLine": 989
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/go/parser.ts#Parser.collectCaseBody@L1290",
+      "confidence": 1,
+      "name": "collectCaseBody",
+      "qualifiedName": "Parser.collectCaseBody",
+      "signature": "collectCaseBody(): GoBodyStmt[]",
+      "type": "method",
+      "file": "packages/parsers/src/go/parser.ts",
+      "line": 1290
+    },
+    {
+      "id": "sym:packages/parsers/src/go/parser.ts#Parser.parseDecl@L304",
+      "confidence": 1,
+      "name": "parseDecl",
+      "qualifiedName": "Parser.parseDecl",
+      "signature": "parseDecl(): GoDef | GoDef[] | null",
+      "type": "method",
+      "file": "packages/parsers/src/go/parser.ts",
+      "line": 304
+    },
+    {
+      "id": "sym:packages/parsers/src/go/parser.ts#Parser.parseFor@L1178",
+      "confidence": 1,
+      "name": "parseFor",
+      "qualifiedName": "Parser.parseFor",
+      "signature": "parseFor(): GoForStmt",
+      "type": "method",
+      "file": "packages/parsers/src/go/parser.ts",
+      "line": 1178
+    },
+    {
+      "id": "sym:packages/parsers/src/go/parser.ts#Parser.parseIf@L1095",
+      "confidence": 1,
+      "name": "parseIf",
+      "qualifiedName": "Parser.parseIf",
+      "signature": "parseIf(): GoIfStmt",
+      "type": "method",
+      "file": "packages/parsers/src/go/parser.ts",
+      "line": 1095
+    },
+    {
+      "id": "sym:packages/parsers/src/go/parser.ts#Parser.parseStmts@L1026",
+      "confidence": 1,
+      "name": "parseStmts",
+      "qualifiedName": "Parser.parseStmts",
+      "signature": "parseStmts(topLevel: boolean): { stmts: GoBodyStmt[]; closeLine: number }",
+      "type": "method",
+      "file": "packages/parsers/src/go/parser.ts",
+      "line": 1026
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/go/parser.ts#Parser.atEnd@L1698",
+      "confidence": 1,
+      "name": "atEnd",
+      "qualifiedName": "Parser.atEnd",
+      "signature": "atEnd(): boolean",
+      "type": "method",
+      "file": "packages/parsers/src/go/parser.ts",
+      "line": 1698
+    },
+    {
+      "id": "sym:packages/parsers/src/go/parser.ts#Parser.isOp@L1676",
+      "confidence": 1,
+      "name": "isOp",
+      "qualifiedName": "Parser.isOp",
+      "signature": "isOp(v: string): boolean",
+      "type": "method",
+      "file": "packages/parsers/src/go/parser.ts",
+      "line": 1676
+    },
+    {
+      "id": "sym:packages/parsers/src/go/parser.ts#Parser.next@L1690",
+      "confidence": 1,
+      "name": "next",
+      "qualifiedName": "Parser.next",
+      "signature": "next(): Token",
+      "type": "method",
+      "file": "packages/parsers/src/go/parser.ts",
+      "line": 1690
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/go/parser.ts@L988",
+      "snippet": "/** Skip tokens up to and consuming the next `;` at depth 0 (for const/var/package/import). */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.skipToSemi@L989",
+    "procedureName": "Parser.skipToSemi",
+    "conditions": [
+      "cond:packages/parsers/src/go/parser.ts@L993",
+      "cond:packages/parsers/src/go/parser.ts@L994",
+      "cond:packages/parsers/src/go/parser.ts@L998",
+      "cond:packages/parsers/src/go/parser.ts@L999",
+      "cond:packages/parsers/src/go/parser.ts@L1000",
+      "cond:packages/parsers/src/go/parser.ts@L1001",
+      "cond:packages/parsers/src/go/parser.ts@L1002",
+      "cond:packages/parsers/src/go/parser.ts@L1003"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.skipToSemi@L989",
+        "procedureName": "Parser.skipToSemi",
+        "guard": "cond:packages/parsers/src/go/parser.ts@L994",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L993",
+            "expr": "!this.atEnd()"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L994",
+            "expr": "pdepth === 0 && bdepth === 0 && brdepth === 0 && this.isOp(';')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:29a5b57b027bac5280abc9706b63eb0e0f452d83c83713d6535b48cb4809efff",
+          "target": "stmt:packages/parsers/src/go/parser.ts@L995",
+          "line": 995,
+          "expr": "this.next();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.skipToSemi@L989",
+        "procedureName": "Parser.skipToSemi",
+        "guard": "cond:packages/parsers/src/go/parser.ts@L993",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L993",
+            "expr": "!this.atEnd()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:f142b52774b0f6084e75556cd1ac7d1cb909cdf66d81253aa834276df64c907b",
+          "target": "sym:packages/parsers/src/go/parser.ts#Parser.next@L1690",
+          "expr": "next",
+          "line": 995
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.skipToSemi@L989",
+        "procedureName": "Parser.skipToSemi",
+        "guard": "cond:packages/parsers/src/go/parser.ts@L994",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L993",
+            "expr": "!this.atEnd()"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L994",
+            "expr": "pdepth === 0 && bdepth === 0 && brdepth === 0 && this.isOp(';')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fdc73b6ba37463051abd304ba8f8f6f6890fc2cf2bc93514ab8ba0baa1305bec",
+          "target": "stmt:packages/parsers/src/go/parser.ts@L996",
+          "line": 996,
+          "expr": "return;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.skipToSemi@L989",
+        "procedureName": "Parser.skipToSemi",
+        "guard": "cond:packages/parsers/src/go/parser.ts@L999",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L993",
+            "expr": "!this.atEnd()"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L998",
+            "expr": "this.isOp('(')"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L999",
+            "expr": "this.isOp(')')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3f460a5b07b92adbe6b2f903f7ce5e15178cbfbe3703494be62b619f25ac87aa",
+          "target": "assign:packages/parsers/src/go/parser.ts@L999",
+          "line": 999,
+          "expr": "pdepth = Math.max(0, pdepth - 1);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.skipToSemi@L989",
+        "procedureName": "Parser.skipToSemi",
+        "guard": "cond:packages/parsers/src/go/parser.ts@L1001",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L993",
+            "expr": "!this.atEnd()"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L998",
+            "expr": "this.isOp('(')"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L999",
+            "expr": "this.isOp(')')"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L1000",
+            "expr": "this.isOp('[')"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L1001",
+            "expr": "this.isOp(']')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:33ecf51f572eda5803a326677416140b5cb8d9f234d062024c82776bc49d5399",
+          "target": "assign:packages/parsers/src/go/parser.ts@L1001",
+          "line": 1001,
+          "expr": "bdepth = Math.max(0, bdepth - 1);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.skipToSemi@L989",
+        "procedureName": "Parser.skipToSemi",
+        "guard": "cond:packages/parsers/src/go/parser.ts@L1003",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L993",
+            "expr": "!this.atEnd()"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L998",
+            "expr": "this.isOp('(')"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L999",
+            "expr": "this.isOp(')')"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L1000",
+            "expr": "this.isOp('[')"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L1001",
+            "expr": "this.isOp(']')"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L1002",
+            "expr": "this.isOp('{')"
+          },
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L1003",
+            "expr": "this.isOp('}')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:aee3971372edea033390c338951cd12eee50179391fcf9e180854c7c2fa71135",
+          "target": "assign:packages/parsers/src/go/parser.ts@L1003",
+          "line": 1003,
+          "expr": "brdepth = Math.max(0, brdepth - 1);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.skipToSemi@L989",
+        "procedureName": "Parser.skipToSemi",
+        "guard": "cond:packages/parsers/src/go/parser.ts@L993",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/parser.ts@L993",
+            "expr": "!this.atEnd()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e9d3baa18931f59047111f4720b393ef62b5808f4f13bbc98b034e17edced1fb",
+          "target": "stmt:packages/parsers/src/go/parser.ts@L1004",
+          "line": 1004,
+          "expr": "this.next();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.skipToSemi@L989",
+        "procedureName": "Parser.skipToSemi",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:93974cdd29bbe17b398072530db48769e17bbd87c9964ac7a497315ff37930d3",
+          "target": "sym:packages/parsers/src/go/parser.ts#Parser.isOp@L1676",
+          "expr": "isOp"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/parser.ts#Parser.skipToSemi@L989",
+        "procedureName": "Parser.skipToSemi",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:101b5131b3a9f4d434bc333d439bde32a7304109164b99073db94c43cd95c8f2",
+          "target": "sym:packages/parsers/src/go/parser.ts#Parser.atEnd@L1698",
+          "expr": "atEnd"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 6,
+    "referencedByFiles": [
+      "packages/parsers/src/go/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 6,
+    "assignments": 3,
+    "conditions": 5,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 3,
+      "recorded": 5,
+      "unresolved": 3
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "3 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

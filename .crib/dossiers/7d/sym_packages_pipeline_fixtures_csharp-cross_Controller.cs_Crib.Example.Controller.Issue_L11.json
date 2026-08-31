@@ -1,0 +1,109 @@
+{
+  "id": "sym:packages/pipeline/fixtures/csharp-cross/Controller.cs#Crib.Example.Controller.Issue@L11",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:5a57b735da46034176b1b49b318813bf93aaaae08b9b1b59166e2c9b694d4e0a",
+  "builtAt": "2026-08-25T20:55:11.863Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/fixtures/csharp-cross/Controller.cs#Crib.Example.Controller.Issue@L11",
+    "kind": "symbol",
+    "type": "method",
+    "name": "Issue",
+    "qualifiedName": "Crib.Example.Controller.Issue",
+    "signature": "Issue(input)",
+    "lang": "csharp",
+    "file": "packages/pipeline/fixtures/csharp-cross/Controller.cs",
+    "span": {
+      "start": 11,
+      "end": 14
+    },
+    "callSites": [
+      {
+        "callee": "Token",
+        "line": 13
+      }
+    ],
+    "params": [
+      "input"
+    ]
+  },
+  "source": {
+    "text": "    public Token Issue(string input)\n    {\n        return new Token(input);\n    }",
+    "truncated": false,
+    "totalLines": 4,
+    "startLine": 11
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/pipeline/fixtures/csharp-cross/Token.cs#Crib.Example.Token@L3",
+      "confidence": 1,
+      "name": "Token",
+      "qualifiedName": "Crib.Example.Token",
+      "signature": "record Token(Value)",
+      "type": "record",
+      "file": "packages/pipeline/fixtures/csharp-cross/Token.cs",
+      "line": 3
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/pipeline/fixtures/csharp-cross/Controller.cs#Crib.Example.Controller.Issue@L11",
+    "procedureName": "Crib.Example.Controller.Issue",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/fixtures/csharp-cross/Controller.cs#Crib.Example.Controller.Issue@L11",
+        "procedureName": "Crib.Example.Controller.Issue",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0d8e496a2f0731c228748f3269d8b5f7746a3c1126dffe6f781650df28cc301f",
+          "target": "stmt:packages/pipeline/fixtures/csharp-cross/Controller.cs@L13",
+          "line": 13,
+          "expr": "return new Token(input)"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/fixtures/csharp-cross/Controller.cs#Crib.Example.Controller.Issue@L11",
+        "procedureName": "Crib.Example.Controller.Issue",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:d9c1ca535703e3b13fb5252fa39e81444678421d29252c9a5d9e0bce229a1277",
+          "target": "sym:packages/pipeline/fixtures/csharp-cross/Token.cs#Crib.Example.Token@L3",
+          "expr": "Token",
+          "line": 13
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

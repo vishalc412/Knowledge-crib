@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/mcp/src/token-budget.ts#clampMax@L99",
-  "schemaVersion": "1.5",
+  "schemaVersion": "1.6",
   "nodeHash": "blake3:cdaeddd7f0f3540472d3802c7cf5e5e3552b14f3500b6bb31bd41c89c0dbc85d",
-  "builtAt": "2026-07-16T14:40:07.112Z",
+  "builtAt": "2026-08-25T20:55:11.863Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/mcp/src/token-budget.ts#clampMax@L99",
@@ -26,34 +26,34 @@
   },
   "callers": [
     {
-      "id": "sym:packages/mcp/src/verbs.ts#Verbs.dossier@L487",
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.dossier@L584",
       "confidence": 1,
       "name": "dossier",
       "qualifiedName": "Verbs.dossier",
       "signature": "dossier(args: {\n    id: string;\n    includeTables?: boolean;\n    sourceMaxChars?: number;\n    sourceMaxLines?: number;\n    /** absolute file line to start the source page at (paging cursor; default = span start) */\n    sourceStartLine?: number;\n    extractedOnly?: boolean;\n    /** fold in saved LLM-authored semantic graph analysis; default-on when present. */\n    withLlm?: boolean;\n    format?: 'json' | 'markdown';\n    /** M2.6 change-aware cache. Echo the `hash` a prior call returned to short-circuit an unchanged\n     *  response (works for both `json` and `markdown` formats). Stateless (deterministic BLAKE3). */\n    ifHash?: string;\n  }): Record<string, unknown>",
       "type": "method",
       "file": "packages/mcp/src/verbs.ts",
-      "line": 487
+      "line": 584
     },
     {
-      "id": "sym:packages/mcp/src/verbs.ts#Verbs.dossierByScope@L608",
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.dossierByScope@L705",
       "confidence": 1,
       "name": "dossierByScope",
       "qualifiedName": "Verbs.dossierByScope",
       "signature": "dossierByScope(args: {\n    /** the scope kind: 'package' (the package's member symbols), 'file' (a file's symbols), or\n     *  'cluster' (a cluster's symbols). */\n    scope: 'package' | 'file' | 'cluster';\n    /** the scope node id, OR — for a package — the qualified/simple name (parity with the other node\n     *  verbs); for a file, the path (with or without the `file:` prefix); for a cluster, the slug. */\n    id: string;\n    extractedOnly?: boolean;\n    /** resolve reads/writes table names in each callable's decision table (extra lookups). */\n    includeTables?: boolean;\n    /** cap on the number of per-symbol dossiers returned (default 1000; `truncated` flags a cap). */\n    maxSymbols?: number;\n    sourceMaxChars?: number;\n    sourceMaxLines?: number;\n    format?: 'json' | 'markdown';\n    /** resume cursor (a prior response's `cursor`) — skip the first N resolved symbols. Decoupled\n     *  from `maxTokens` (paging works without a budget), but a cursor is only RETURNED when `maxTokens`\n     *  is set (the opt-in budget path). (M1.2) */\n    cursor?: string;\n    /** response-wide token budget (chars/4). When set, the dossiers list is trimmed to the largest\n     *  leading prefix that fits and `budgetExhausted:true` + a `cursor` resume point are returned.\n     *  (M1.2) */\n    maxTokens?: number;\n  }): Record<string, unknown>",
       "type": "method",
       "file": "packages/mcp/src/verbs.ts",
-      "line": 608
+      "line": 705
     },
     {
-      "id": "sym:packages/mcp/src/verbs.ts#Verbs.reconstruct@L562",
+      "id": "sym:packages/mcp/src/verbs.ts#Verbs.reconstruct@L659",
       "confidence": 1,
       "name": "reconstruct",
       "qualifiedName": "Verbs.reconstruct",
       "signature": "reconstruct(args: {\n    id: string;\n    extractedOnly?: boolean;\n    /** include the referenced-tables section (default true) */\n    includeTables?: boolean;\n    /** cap on the number of member entries (default 1000; `truncated` flags a cap) */\n    maxSymbols?: number;\n    format?: 'json' | 'markdown';\n  }): Record<string, unknown>",
       "type": "method",
       "file": "packages/mcp/src/verbs.ts",
-      "line": 562
+      "line": 659
     }
   ],
   "callees": [],

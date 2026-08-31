@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/pipeline/src/extract-ctx.ts#makeExtractCtx@L12",
-  "schemaVersion": "1.5",
+  "schemaVersion": "1.6",
   "nodeHash": "blake3:aa2be49d8c3f04e533a70a0ef6a06250ce605572052e307250f142ccd2feda88",
-  "builtAt": "2026-07-13T11:14:06.943Z",
+  "builtAt": "2026-08-25T20:55:11.863Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/pipeline/src/extract-ctx.ts#makeExtractCtx@L12",
@@ -48,34 +48,34 @@
   },
   "callers": [
     {
-      "id": "sym:packages/pipeline/src/parse.ts#runParse@L41",
+      "id": "sym:packages/pipeline/src/parse.ts#runParse@L132",
       "confidence": 1,
       "name": "runParse",
       "qualifiedName": "runParse",
-      "signature": "runParse(soul: SoulStore, registry: ExtractorRegistry, root: string, files: FileMeta[], opts: { parallel?: boolean; defaultRegistry?: boolean; concurrency?: number } = {}): Promise<ParseStats>",
+      "signature": "runParse(soul: SoulStore, registry: ExtractorRegistry, root: string, files: FileMeta[], opts: {\n    parallel?: boolean;\n    defaultRegistry?: boolean;\n    concurrency?: number;\n    diagnosticLimit?: number;\n  } = {}): Promise<ParseStats>",
       "type": "function",
       "file": "packages/pipeline/src/parse.ts",
-      "line": 41
+      "line": 132
     },
     {
-      "id": "sym:packages/pipeline/src/parse-concurrent.ts#runParseConcurrent@L36",
+      "id": "sym:packages/pipeline/src/parse-concurrent.ts#runParseConcurrent@L37",
       "confidence": 1,
       "name": "runParseConcurrent",
       "qualifiedName": "runParseConcurrent",
-      "signature": "runParseConcurrent(soul: SoulStore, registry: ExtractorRegistry, root: string, files: FileMeta[], concurrency = DEFAULT_CONCURRENCY): Promise<ParseStats>",
+      "signature": "runParseConcurrent(soul: SoulStore, registry: ExtractorRegistry, root: string, files: FileMeta[], concurrency = DEFAULT_CONCURRENCY, diagnosticLimit = DEFAULT_DIAGNOSTIC_LIMIT): Promise<ParseStats>",
       "type": "function",
       "file": "packages/pipeline/src/parse-concurrent.ts",
-      "line": 36
+      "line": 37
     },
     {
-      "id": "sym:packages/pipeline/src/parse-concurrent.ts#runParseConcurrent.runner@L60",
+      "id": "sym:packages/pipeline/src/parse-concurrent.ts#runParseConcurrent.runner@L64",
       "confidence": 1,
       "name": "runner",
       "qualifiedName": "runParseConcurrent.runner",
       "signature": "runner(…)",
       "type": "function",
       "file": "packages/pipeline/src/parse-concurrent.ts",
-      "line": 60
+      "line": 64
     }
   ],
   "callees": [
@@ -100,14 +100,14 @@
       "line": 79
     },
     {
-      "id": "sym:packages/soul-schema/src/id.ts#idFor@L88",
+      "id": "sym:packages/soul-schema/src/id.ts#idFor@L96",
       "confidence": 1,
       "name": "idFor",
       "qualifiedName": "idFor",
       "signature": "idFor(spec: IdSpec): string",
       "type": "function",
       "file": "packages/soul-schema/src/id.ts",
-      "line": 88
+      "line": 96
     }
   ],
   "docs": [],
@@ -166,8 +166,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:ae5faba9fc3d3300ef0fc9b0b9ddc82fe10c9052710e57404fc847de08d36b32",
-          "target": "sym:packages/soul-schema/src/id.ts#idFor@L88",
+          "edgeId": "e:ca4b6a3ec558f7bb3a06f075cce63d5def8a508ce7e00aec024f343d8d4037e2",
+          "target": "sym:packages/soul-schema/src/id.ts#idFor@L96",
           "expr": "idFor",
           "line": 28
         }

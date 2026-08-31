@@ -1,0 +1,335 @@
+{
+  "id": "sym:packages/parsers/src/python/parser.ts#Parser.skipParens@L751",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:61dafaf2244cae49088436d0c3eae095f43a8b6814ea79a2c9dc4e1c18bf7650",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/python/parser.ts#Parser.skipParens@L751",
+    "kind": "symbol",
+    "type": "method",
+    "name": "skipParens",
+    "qualifiedName": "Parser.skipParens",
+    "signature": "skipParens(): void",
+    "lang": "typescript",
+    "file": "packages/parsers/src/python/parser.ts",
+    "span": {
+      "start": 751,
+      "end": 765
+    },
+    "callSites": [
+      {
+        "callee": "peek",
+        "line": 755
+      },
+      {
+        "callee": "next",
+        "line": 759
+      },
+      {
+        "callee": "next",
+        "line": 763
+      }
+    ]
+  },
+  "source": {
+    "text": "  private skipParens(): void {\n    if (!(this.is('OP') && this.peek().value === '(')) return;\n    let depth = 0;\n    while (!this.atEnd()) {\n      const tk = this.peek();\n      if (tk.type === 'OP' && tk.value === '(') depth++;\n      else if (tk.type === 'OP' && tk.value === ')') {\n        depth--;\n        this.next();\n        if (depth === 0) return;\n        continue;\n      }\n      this.next();\n    }\n  }",
+    "truncated": false,
+    "totalLines": 15,
+    "startLine": 751
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#Parser.skipDecorators@L722",
+      "confidence": 1,
+      "name": "skipDecorators",
+      "qualifiedName": "Parser.skipDecorators",
+      "signature": "skipDecorators(): void",
+      "type": "method",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 722
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#Parser.atEnd@L808",
+      "confidence": 1,
+      "name": "atEnd",
+      "qualifiedName": "Parser.atEnd",
+      "signature": "atEnd(): boolean",
+      "type": "method",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 808
+    },
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#Parser.is@L795",
+      "confidence": 1,
+      "name": "is",
+      "qualifiedName": "Parser.is",
+      "signature": "is(type: Token['type']): boolean",
+      "type": "method",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 795
+    },
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#Parser.next@L781",
+      "confidence": 1,
+      "name": "next",
+      "qualifiedName": "Parser.next",
+      "signature": "next(): Token",
+      "type": "method",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 781
+    },
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#Parser.peek@L801",
+      "confidence": 1,
+      "name": "peek",
+      "qualifiedName": "Parser.peek",
+      "signature": "peek(offset = 0): Token",
+      "type": "method",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 801
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.skipParens@L751",
+    "procedureName": "Parser.skipParens",
+    "conditions": [
+      "cond:packages/parsers/src/python/parser.ts@L752",
+      "cond:packages/parsers/src/python/parser.ts@L754",
+      "cond:packages/parsers/src/python/parser.ts@L756",
+      "cond:packages/parsers/src/python/parser.ts@L757",
+      "cond:packages/parsers/src/python/parser.ts@L760"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.skipParens@L751",
+        "procedureName": "Parser.skipParens",
+        "guard": "cond:packages/parsers/src/python/parser.ts@L752",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/parser.ts@L752",
+            "expr": "!(this.is('OP') && this.peek().value === '(')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:75aa66d04d05af0c29aa8ca11b9b934d630cae1857fc0cccfddb52c83a8a9ad8",
+          "target": "stmt:packages/parsers/src/python/parser.ts@L752",
+          "line": 752,
+          "expr": "return;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.skipParens@L751",
+        "procedureName": "Parser.skipParens",
+        "guard": "cond:packages/parsers/src/python/parser.ts@L754",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/parser.ts@L754",
+            "expr": "!this.atEnd()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:cbd4c8ce20fe5be739c2f1897dd576a9b58889bc4b5fa1039e8efe8fb71cbaa4",
+          "target": "sym:packages/parsers/src/python/parser.ts#Parser.peek@L801",
+          "expr": "peek",
+          "line": 755
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.skipParens@L751",
+        "procedureName": "Parser.skipParens",
+        "guard": "cond:packages/parsers/src/python/parser.ts@L754",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/parser.ts@L754",
+            "expr": "!this.atEnd()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:dac835d58026534a855e20ea249ffa38f6c05f9af42abd197b6e682a959a6737",
+          "target": "stmt:packages/parsers/src/python/parser.ts@L755",
+          "line": 755,
+          "expr": "const tk = this.peek();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.skipParens@L751",
+        "procedureName": "Parser.skipParens",
+        "guard": "cond:packages/parsers/src/python/parser.ts@L757",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/parser.ts@L754",
+            "expr": "!this.atEnd()"
+          },
+          {
+            "id": "cond:packages/parsers/src/python/parser.ts@L756",
+            "expr": "tk.type === 'OP' && tk.value === '('"
+          },
+          {
+            "id": "cond:packages/parsers/src/python/parser.ts@L757",
+            "expr": "tk.type === 'OP' && tk.value === ')'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3e3fe953372c7468839a75abcc6d79d63d7af91008e5176f5b65d8e12beb6fba",
+          "target": "stmt:packages/parsers/src/python/parser.ts@L759",
+          "line": 759,
+          "expr": "this.next();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.skipParens@L751",
+        "procedureName": "Parser.skipParens",
+        "guard": "cond:packages/parsers/src/python/parser.ts@L754",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/parser.ts@L754",
+            "expr": "!this.atEnd()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:a1f4615e8e50c5575b73268766d34b44defd4ad9a17e4cb0c84e88427395d0cb",
+          "target": "sym:packages/parsers/src/python/parser.ts#Parser.next@L781",
+          "expr": "next",
+          "line": 759
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.skipParens@L751",
+        "procedureName": "Parser.skipParens",
+        "guard": "cond:packages/parsers/src/python/parser.ts@L760",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/parser.ts@L754",
+            "expr": "!this.atEnd()"
+          },
+          {
+            "id": "cond:packages/parsers/src/python/parser.ts@L756",
+            "expr": "tk.type === 'OP' && tk.value === '('"
+          },
+          {
+            "id": "cond:packages/parsers/src/python/parser.ts@L757",
+            "expr": "tk.type === 'OP' && tk.value === ')'"
+          },
+          {
+            "id": "cond:packages/parsers/src/python/parser.ts@L760",
+            "expr": "depth === 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8f93fa8a8278eda620bb651ddb94d64d7bcc065546bba6eb4d44e92a4294d93d",
+          "target": "stmt:packages/parsers/src/python/parser.ts@L760",
+          "line": 760,
+          "expr": "return;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.skipParens@L751",
+        "procedureName": "Parser.skipParens",
+        "guard": "cond:packages/parsers/src/python/parser.ts@L754",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/parser.ts@L754",
+            "expr": "!this.atEnd()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6cc49edf5f2e50eb2c388928fc3f6c72dc75956ce0aa42f1a24f1be2f7645b0e",
+          "target": "stmt:packages/parsers/src/python/parser.ts@L763",
+          "line": 763,
+          "expr": "this.next();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.skipParens@L751",
+        "procedureName": "Parser.skipParens",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:a53521d409cd208852e0556d542f9117a5e9c0857d5bcd94f3c24ff3c6db51e9",
+          "target": "sym:packages/parsers/src/python/parser.ts#Parser.is@L795",
+          "expr": "is"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.skipParens@L751",
+        "procedureName": "Parser.skipParens",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:816cfb4dbb426260eb14dbdfee7f351dbb0f199d7f527ca5ab5bd7cc50ecb112",
+          "target": "sym:packages/parsers/src/python/parser.ts#Parser.atEnd@L808",
+          "expr": "atEnd"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 5,
+    "referencedByFiles": [
+      "packages/parsers/src/python/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 5,
+    "assignments": 0,
+    "conditions": 4,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 4,
+      "recorded": 3,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

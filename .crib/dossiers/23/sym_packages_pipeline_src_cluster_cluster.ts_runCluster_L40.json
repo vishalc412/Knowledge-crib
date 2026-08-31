@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/pipeline/src/cluster/cluster.ts#runCluster@L40",
-  "schemaVersion": "1.5",
+  "schemaVersion": "1.6",
   "nodeHash": "blake3:b1a6fd181bb39331c7bf698de344c3ab3bc7e85fa2c3827ec9192b7b21a197bf",
-  "builtAt": "2026-07-16T16:35:16.098Z",
+  "builtAt": "2026-08-31T17:37:23.222Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/pipeline/src/cluster/cluster.ts#runCluster@L40",
@@ -156,34 +156,34 @@
   },
   "callers": [
     {
-      "id": "sym:packages/cli/src/cli.ts#cmdViz@L1574",
-      "confidence": 1,
-      "name": "cmdViz",
-      "qualifiedName": "cmdViz",
-      "signature": "cmdViz(args: string[], ctx?: CmdCtx): Promise<number>",
-      "type": "function",
-      "file": "packages/cli/src/cli.ts",
-      "line": 1574
-    },
-    {
-      "id": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L94",
+      "id": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L121",
       "confidence": 1,
       "name": "indexRepo",
       "qualifiedName": "indexRepo",
       "signature": "indexRepo(soul: SoulStore, root: string, opts: IndexOpts = {}): Promise<IndexReport>",
       "type": "function",
       "file": "packages/pipeline/src/pipeline.ts",
-      "line": 94
+      "line": 121
     },
     {
-      "id": "sym:packages/pipeline/src/update.ts#updateRepo@L112",
+      "id": "sym:packages/pipeline/src/working-overlay-refresh.ts#refreshWorkingOverlay@L66",
+      "confidence": 1,
+      "name": "refreshWorkingOverlay",
+      "qualifiedName": "refreshWorkingOverlay",
+      "signature": "refreshWorkingOverlay(overlay: WorkingOverlay, canonical: SoulStore, root: string, opts: { extractors?: Extractor[]; cluster?: boolean } = {}): Promise<OverlayRefreshResult>",
+      "type": "function",
+      "file": "packages/pipeline/src/working-overlay-refresh.ts",
+      "line": 66
+    },
+    {
+      "id": "sym:packages/pipeline/src/update.ts#updateRepo@L134",
       "confidence": 1,
       "name": "updateRepo",
       "qualifiedName": "updateRepo",
       "signature": "updateRepo(soul: SoulStore, root: string, opts: UpdateOpts = {}): Promise<UpdateResult>",
       "type": "function",
       "file": "packages/pipeline/src/update.ts",
-      "line": 112
+      "line": 134
     }
   ],
   "callees": [
@@ -218,14 +218,14 @@
       "line": 1300
     },
     {
-      "id": "sym:packages/soul-schema/src/id.ts#edgeId@L141",
+      "id": "sym:packages/soul-schema/src/id.ts#edgeId@L151",
       "confidence": 1,
       "name": "edgeId",
       "qualifiedName": "edgeId",
       "signature": "edgeId(src: string, dst: string, rel: Rel): string",
       "type": "function",
       "file": "packages/soul-schema/src/id.ts",
-      "line": 141
+      "line": 151
     },
     {
       "id": "sym:packages/pipeline/src/cluster/cluster.ts#fallbackQualifiedName@L185",
@@ -248,14 +248,14 @@
       "line": 137
     },
     {
-      "id": "sym:packages/soul-schema/src/id.ts#idFor@L88",
+      "id": "sym:packages/soul-schema/src/id.ts#idFor@L96",
       "confidence": 1,
       "name": "idFor",
       "qualifiedName": "idFor",
       "signature": "idFor(spec: IdSpec): string",
       "type": "function",
       "file": "packages/soul-schema/src/id.ts",
-      "line": 88
+      "line": 96
     },
     {
       "id": "sym:packages/pipeline/src/cluster/louvain.ts#louvain@L52",
@@ -268,14 +268,14 @@
       "line": 52
     },
     {
-      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
       "confidence": 1,
       "name": "push",
       "qualifiedName": "push",
       "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
       "type": "function",
       "file": "packages/pipeline/src/linker/inverted-index.ts",
-      "line": 39
+      "line": 70
     }
   ],
   "docs": [
@@ -538,6 +538,20 @@
       {
         "procedure": "sym:packages/pipeline/src/cluster/cluster.ts#runCluster@L40",
         "procedureName": "runCluster",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:09eb2ad41bc724c45c67f6b7b9320a4e97cede712ac1df9e7e64e2d41a72bec2",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
+          "expr": "push",
+          "line": 65
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/cluster/cluster.ts#runCluster@L40",
+        "procedureName": "runCluster",
         "guard": "cond:packages/pipeline/src/cluster/cluster.ts@L63",
         "branch": "LOOP",
         "conditions": [
@@ -555,20 +569,6 @@
           "target": "stmt:packages/pipeline/src/cluster/cluster.ts@L65",
           "line": 65,
           "expr": "edges.push([a, b, w]);"
-        }
-      },
-      {
-        "procedure": "sym:packages/pipeline/src/cluster/cluster.ts#runCluster@L40",
-        "procedureName": "runCluster",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:bc22ce9ee98b7570f13565e164b14c44ae19105e493fe5364036f65f68b67a48",
-          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
-          "expr": "push",
-          "line": 65
         }
       },
       {
@@ -807,8 +807,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:89190f61d22ac830c52c3897ca24a270d8ac678af2ae9f4c85ce76830fee1552",
-          "target": "sym:packages/soul-schema/src/id.ts#idFor@L88",
+          "edgeId": "e:ed8315d9ec34e576ce97b05d1db750d393428e40521b9b9c6322c33699e7433b",
+          "target": "sym:packages/soul-schema/src/id.ts#idFor@L96",
           "expr": "idFor",
           "line": 92
         }
@@ -957,8 +957,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:476600f49a27b410e32d40fc469a912351dc442602a177e2fe66a529d885981d",
-          "target": "sym:packages/soul-schema/src/id.ts#edgeId@L141",
+          "edgeId": "e:09ebc82a19734c5834977e29aa4b293872735b033d2969d28d8107c3cded14cb",
+          "target": "sym:packages/soul-schema/src/id.ts#edgeId@L151",
           "expr": "edgeId",
           "line": 114
         }
@@ -997,9 +997,9 @@
     "status": "implemented",
     "executesCount": 24,
     "referencedByFiles": [
-      "packages/cli/src/cli.ts",
       "packages/pipeline/src/pipeline.ts",
-      "packages/pipeline/src/update.ts"
+      "packages/pipeline/src/update.ts",
+      "packages/pipeline/src/working-overlay-refresh.ts"
     ]
   },
   "coverage": {

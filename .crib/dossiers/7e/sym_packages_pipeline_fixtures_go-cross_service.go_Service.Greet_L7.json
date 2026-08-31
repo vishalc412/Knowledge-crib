@@ -1,0 +1,78 @@
+{
+  "id": "sym:packages/pipeline/fixtures/go-cross/service.go#Service.Greet@L7",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:8122dd172039b8e575e7728b3843b0ebfba1c3e09acf81c9b44b86fc6fe0ce16",
+  "builtAt": "2026-08-25T20:55:11.863Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/fixtures/go-cross/service.go#Service.Greet@L7",
+    "kind": "symbol",
+    "type": "method",
+    "name": "Greet",
+    "qualifiedName": "Service.Greet",
+    "signature": "func (s Service) Greet(user)",
+    "lang": "go",
+    "file": "packages/pipeline/fixtures/go-cross/service.go",
+    "span": {
+      "start": 7,
+      "end": 9
+    },
+    "params": [
+      "user"
+    ]
+  },
+  "source": {
+    "text": "func (s *Service) Greet(user string) string {\n\treturn user\n}",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 7
+  },
+  "callers": [],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/pipeline/fixtures/go-cross/service.go#Service.Greet@L7",
+    "procedureName": "Service.Greet",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/fixtures/go-cross/service.go#Service.Greet@L7",
+        "procedureName": "Service.Greet",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:965608957280d64c867adc9ab3b56c9b176404610f9bfad9509bf39abfc8fc7c",
+          "target": "stmt:packages/pipeline/fixtures/go-cross/service.go@L8",
+          "line": 8,
+          "expr": "user"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

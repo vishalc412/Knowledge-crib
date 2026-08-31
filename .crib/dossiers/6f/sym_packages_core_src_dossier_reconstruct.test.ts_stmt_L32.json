@@ -1,0 +1,195 @@
+{
+  "id": "sym:packages/core/src/dossier/reconstruct.test.ts#stmt@L32",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:b1733194244dc21f3714af348ccca90d5661e31a82a7b69ccb329185aea2f8a9",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/dossier/reconstruct.test.ts#stmt@L32",
+    "kind": "symbol",
+    "type": "function",
+    "name": "stmt",
+    "qualifiedName": "stmt",
+    "signature": "stmt(path: string, line: number, sqlKind: string, expr: string): Node",
+    "lang": "typescript",
+    "file": "packages/core/src/dossier/reconstruct.test.ts",
+    "span": {
+      "start": 32,
+      "end": 44
+    },
+    "callSites": [
+      {
+        "callee": "idFor",
+        "line": 34
+      },
+      {
+        "callee": "contentHash",
+        "line": 42
+      }
+    ]
+  },
+  "source": {
+    "text": "function stmt(path: string, line: number, sqlKind: string, expr: string): Node {\n  return {\n    id: idFor({ kind: 'statement', file: path, line }),\n    kind: 'statement',\n    type: 'statement',\n    sqlKind,\n    expr,\n    file: path,\n    span: { start: line, end: line },\n    lang: 'plsql',\n    hash: contentHash(`${path}:${line}:statement`),\n  };\n}",
+    "truncated": false,
+    "totalLines": 13,
+    "startLine": 32
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/soul-schema/src/hash.ts#contentHash@L21",
+      "confidence": 1,
+      "name": "contentHash",
+      "qualifiedName": "contentHash",
+      "signature": "contentHash(input: string): string",
+      "type": "function",
+      "file": "packages/soul-schema/src/hash.ts",
+      "line": 21
+    },
+    {
+      "id": "sym:packages/soul-schema/src/id.ts#idFor@L96",
+      "confidence": 1,
+      "name": "idFor",
+      "qualifiedName": "idFor",
+      "signature": "idFor(spec: IdSpec): string",
+      "type": "function",
+      "file": "packages/soul-schema/src/id.ts",
+      "line": 96
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "doc:docs/knowledge-crib-deep-extraction.md#5-the-example-fully-represented",
+      "heading": "5. The example, fully represented",
+      "anchor": "5-the-example-fully-represented",
+      "snippet": "5. The example, fully represented",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-track3-spec.md#2-statement-nodes-one-per-action-line-in-the-body-call-return-assign-throw-raise",
+      "heading": "2. `statement` nodes — one per \"action\" line in the body (call / return / assign / throw / raise)",
+      "anchor": "2-statement-nodes-one-per-action-line-in-the-body-call-return-assign-throw-raise",
+      "snippet": "2. `statement` nodes — one per \"action\" line in the body (call / return / assign / throw / raise)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-track3-spec.md#the-body-walk-the-core-algorithm-each-extractor-adds",
+      "heading": "The body-walk (the core algorithm each extractor adds)",
+      "anchor": "the-body-walk-the-core-algorithm-each-extractor-adds",
+      "snippet": "The body-walk (the core algorithm each extractor adds)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-deep-extraction.md#4b-schema-1-2-behavior-bearing-fidelity-the-detailed-level-part",
+      "heading": "4b. Schema 1.2 — behavior-bearing fidelity (the \"detailed-level\" part)",
+      "anchor": "4b-schema-1-2-behavior-bearing-fidelity-the-detailed-level-part",
+      "snippet": "4b. Schema 1.2 — behavior-bearing fidelity (the \"detailed-level\" part)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-deep-extraction.md#new-node-kinds",
+      "heading": "New node kinds",
+      "anchor": "new-node-kinds",
+      "snippet": "New node kinds",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#node",
+      "heading": "Node",
+      "anchor": "node",
+      "snippet": "Node",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/dossier/reconstruct.test.ts#stmt@L32",
+    "procedureName": "stmt",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/dossier/reconstruct.test.ts#stmt@L32",
+        "procedureName": "stmt",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4e1c7dbc1f23f1bc42079aa12950a5519cc9df9c2b83dd2f24cb163f1fc0e007",
+          "target": "stmt:packages/core/src/dossier/reconstruct.test.ts@L33",
+          "line": 33,
+          "expr": "return {\n    id: idFor({ kind: 'statement', file: path, line }),\n    kind: 'statement',\n    type: 'statement',\n    sqlKind,\n    expr,\n    file: path,\n    span: { start: line, end: line },\n    lang: 'plsql',\n    hash: contentHash(`${path}:${line}:statement`),\n  };"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/reconstruct.test.ts#stmt@L32",
+        "procedureName": "stmt",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:35062dc274272ea68f831b4d39e4a7380174503060b4c54278ee8bf0143c066e",
+          "target": "sym:packages/soul-schema/src/id.ts#idFor@L96",
+          "expr": "idFor",
+          "line": 34
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/reconstruct.test.ts#stmt@L32",
+        "procedureName": "stmt",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:0e2b071ed6f4e100d9abdbae831b5e907e0408c1538e4ec76e00ff3d4661e762",
+          "target": "sym:packages/soul-schema/src/hash.ts#contentHash@L21",
+          "expr": "contentHash",
+          "line": 42
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 2,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

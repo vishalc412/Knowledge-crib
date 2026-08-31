@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/mcp/src/grounding.ts#verifyEvidence@L65",
-  "schemaVersion": "1.5",
+  "schemaVersion": "1.6",
   "nodeHash": "blake3:200f37d5e1e11f0717f734b9619ba3145a6a5cf45bf42564104faca893153861",
-  "builtAt": "2026-07-16T16:35:16.098Z",
+  "builtAt": "2026-08-31T17:37:23.222Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/mcp/src/grounding.ts#verifyEvidence@L65",
@@ -44,14 +44,14 @@
   },
   "callers": [
     {
-      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.save@L690",
+      "id": "sym:packages/mcp/src/enrichment.ts#EnrichmentStore.save@L974",
       "confidence": 1,
       "name": "save",
       "qualifiedName": "EnrichmentStore.save",
       "signature": "save(args: EnrichSaveArgs): EnrichSaveResult",
       "type": "method",
       "file": "packages/mcp/src/enrichment.ts",
-      "line": 690
+      "line": 974
     },
     {
       "id": "sym:packages/mcp/src/grounding.ts#verifyArtifact@L100",
@@ -86,14 +86,14 @@
       "line": 196
     },
     {
-      "id": "sym:packages/core/src/source.ts#rehydrateBody@L64",
+      "id": "sym:packages/core/src/source.ts#rehydrateBody@L85",
       "confidence": 1,
       "name": "rehydrateBody",
       "qualifiedName": "rehydrateBody",
       "signature": "rehydrateBody(repoRoot: string, node: Node | undefined, opts: {\n    maxChars?: number;\n    maxLines?: number;\n    startLine?: number;\n    readLines?: (file: string) => string[] | undefined;\n  } = {}): RehydratedBody",
       "type": "function",
       "file": "packages/core/src/source.ts",
-      "line": 64
+      "line": 85
     }
   ],
   "docs": [
@@ -182,11 +182,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:11fcbfe820b3a49123916ab0bfc70f8a1b73c7e1daca2b15599a5c188e73d47e",
-          "target": "sym:packages/core/src/source.ts#rehydrateBody@L64",
-          "expr": "rehydrateBody",
-          "line": 78
+          "kind": "executes",
+          "edgeId": "e:493f49c6f8a4671164d350efab4d3bb0e90f60233dc40cef18899e88c0ee14e3",
+          "target": "stmt:packages/mcp/src/grounding.ts@L78",
+          "line": 78,
+          "expr": "const body = rehydrateBody(repoRoot, node, {\n    maxChars: VERIFY_MAX_CHARS,\n    maxLines: Number.MAX_SAFE_INTEGER,\n    ...(evidence.startLine ? { startLine: evidence.startLine } : {}),\n  });"
         }
       },
       {
@@ -196,11 +196,11 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:493f49c6f8a4671164d350efab4d3bb0e90f60233dc40cef18899e88c0ee14e3",
-          "target": "stmt:packages/mcp/src/grounding.ts@L78",
-          "line": 78,
-          "expr": "const body = rehydrateBody(repoRoot, node, {\n    maxChars: VERIFY_MAX_CHARS,\n    maxLines: Number.MAX_SAFE_INTEGER,\n    ...(evidence.startLine ? { startLine: evidence.startLine } : {}),\n  });"
+          "kind": "calls",
+          "edgeId": "e:74cf6be4705824be69c8cc275fe1742921e4f54179095173ab105e70ec78b0eb",
+          "target": "sym:packages/core/src/source.ts#rehydrateBody@L85",
+          "expr": "rehydrateBody",
+          "line": 78
         }
       },
       {

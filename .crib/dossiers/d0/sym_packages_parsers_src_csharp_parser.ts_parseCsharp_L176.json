@@ -1,0 +1,483 @@
+{
+  "id": "sym:packages/parsers/src/csharp/parser.ts#parseCsharp@L176",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:8c5c794b08dd7006c681e85218f2e1e2fd5e9066edc28273aee1752e6b565563",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/csharp/parser.ts#parseCsharp@L176",
+    "kind": "symbol",
+    "type": "function",
+    "name": "parseCsharp",
+    "qualifiedName": "parseCsharp",
+    "signature": "parseCsharp(src: string): CsharpModule",
+    "lang": "typescript",
+    "file": "packages/parsers/src/csharp/parser.ts",
+    "span": {
+      "start": 176,
+      "end": 195
+    },
+    "callSites": [
+      {
+        "callee": "tokenize",
+        "line": 178
+      },
+      {
+        "callee": "parseProgram",
+        "line": 180
+      },
+      {
+        "callee": "collectCallSites",
+        "line": 181
+      },
+      {
+        "callee": "collectImports",
+        "line": 182
+      },
+      {
+        "callee": "findIndex",
+        "line": 184
+      },
+      {
+        "callee": "filter",
+        "line": 187
+      },
+      {
+        "callee": "max",
+        "line": 188
+      },
+      {
+        "callee": "map",
+        "line": 188
+      }
+    ]
+  },
+  "source": {
+    "text": "export function parseCsharp(src: string): CsharpModule {\n  try {\n    const tokens = tokenize(src);\n    const p = new Parser(tokens, src);\n    const { defs, excluded } = p.parseProgram();\n    const calls = collectCallSites(tokens, excluded);\n    const { pkg, imports } = collectImports(tokens);\n    // wrap a file-scoped namespace: all other top-level defs become its body.\n    const fsIdx = defs.findIndex((d) => d.kind === 'namespace' && d.fileScoped);\n    if (fsIdx >= 0) {\n      const ns = defs[fsIdx]!;\n      ns.body = defs.filter((_, i) => i !== fsIdx);\n      ns.endLine = Math.max(ns.endLine, ...ns.body.map((b) => b.endLine), ns.startLine);\n      return { defs: [ns], calls, imports, pkg: pkg || ns.name };\n    }\n    return { defs, calls, imports, pkg };\n  } catch {\n    return { defs: [], calls: [], imports: [], pkg: '' };\n  }\n}",
+    "truncated": false,
+    "totalLines": 20,
+    "startLine": 176
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#CsharpExtractor.parse@L97",
+      "confidence": 1,
+      "name": "parse",
+      "qualifiedName": "CsharpExtractor.parse",
+      "signature": "parse(path: string, fileId: string, text: string, ctx: ExtractCtx): ExtractResult",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/CsharpExtractor.ts",
+      "line": 97
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/csharp-resolver.ts#resolveCsharp@L50",
+      "confidence": 1,
+      "name": "resolveCsharp",
+      "qualifiedName": "resolveCsharp",
+      "signature": "resolveCsharp(table: SymbolTable, root: string, files: FileMeta[]): { edges: Edge[]; stats: ResolveStats }",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/csharp-resolver.ts",
+      "line": 50
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseProgram@L216",
+      "confidence": 1,
+      "name": "parseProgram",
+      "qualifiedName": "Parser.parseProgram",
+      "signature": "parseProgram(): { defs: CsharpDef[]; excluded: Set<number> }",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 216
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#collectCallSites@L1693",
+      "confidence": 1,
+      "name": "collectCallSites",
+      "qualifiedName": "collectCallSites",
+      "signature": "collectCallSites(tokens: Token[], excluded: Set<number>): CsharpCallSite[]",
+      "type": "function",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 1693
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/parser.ts#collectCallSites@L1590",
+      "confidence": 1,
+      "name": "collectCallSites",
+      "qualifiedName": "collectCallSites",
+      "signature": "collectCallSites(tokens: Token[], excluded: Set<number>): RustCallSite[]",
+      "type": "function",
+      "file": "packages/parsers/src/rust/parser.ts",
+      "line": 1590
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/ts-resolver.ts#collectImports@L150",
+      "confidence": 1,
+      "name": "collectImports",
+      "qualifiedName": "collectImports",
+      "signature": "collectImports(sf: ts.SourceFile, fromPath: string, table: SymbolTable): Map<string, ImportBinding>",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/ts-resolver.ts",
+      "line": 150
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#collectImports@L1733",
+      "confidence": 1,
+      "name": "collectImports",
+      "qualifiedName": "collectImports",
+      "signature": "collectImports(tokens: Token[]): { pkg: string; imports: CsharpImport[] }",
+      "type": "function",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 1733
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/tfidf.ts#tokenize@L80",
+      "confidence": 1,
+      "name": "tokenize",
+      "qualifiedName": "tokenize",
+      "signature": "tokenize(text: string): string[]",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/tfidf.ts",
+      "line": 80
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/lexer.ts#tokenize@L173",
+      "confidence": 1,
+      "name": "tokenize",
+      "qualifiedName": "tokenize",
+      "signature": "tokenize(src: string): Token[]",
+      "type": "function",
+      "file": "packages/parsers/src/csharp/lexer.ts",
+      "line": 173
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/csharp/parser.ts@L175",
+      "snippet": "/** Parse C# source into a declaration tree + call sites + usings + namespace (never throws). */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/csharp/parser.ts#parseCsharp@L176",
+    "procedureName": "parseCsharp",
+    "conditions": [
+      "cond:packages/parsers/src/csharp/parser.ts@L185"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#parseCsharp@L176",
+        "procedureName": "parseCsharp",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:165af677fe27d3d0d3fc14ef4517b7fc22ae9e0d47e2e9ee1637a9140e3d78d5",
+          "target": "sym:packages/pipeline/src/linker/tfidf.ts#tokenize@L80",
+          "expr": "tokenize",
+          "line": 178
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#parseCsharp@L176",
+        "procedureName": "parseCsharp",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:4f57a1b21436d9f2f3bf408ba65c44c1d30fd2271add7ed1493a5c344082c259",
+          "target": "sym:packages/parsers/src/csharp/lexer.ts#tokenize@L173",
+          "expr": "tokenize",
+          "line": 178
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#parseCsharp@L176",
+        "procedureName": "parseCsharp",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9229a68ca9d3cc649a784a040d8c88c9c6795c853844bfce4880a6a4a0db518d",
+          "target": "stmt:packages/parsers/src/csharp/parser.ts@L178",
+          "line": 178,
+          "expr": "const tokens = tokenize(src);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#parseCsharp@L176",
+        "procedureName": "parseCsharp",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1c85b482cda98cf50d760a48f44f38ecdcc1e2494db7e1fa46d0c9cbda1a0c17",
+          "target": "stmt:packages/parsers/src/csharp/parser.ts@L180",
+          "line": 180,
+          "expr": "const { defs, excluded } = p.parseProgram();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#parseCsharp@L176",
+        "procedureName": "parseCsharp",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:8e7866ed5b030e5d9aa453518ae52269ffb80fe750f13e393f6172a24121d40a",
+          "target": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseProgram@L216",
+          "expr": "parseProgram",
+          "line": 180
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#parseCsharp@L176",
+        "procedureName": "parseCsharp",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:5eb05bda742fa18a18f43f4c190cd4ff9598790b3010c8ec1760ac4fd49e162b",
+          "target": "sym:packages/parsers/src/csharp/parser.ts#collectCallSites@L1693",
+          "expr": "collectCallSites",
+          "line": 181
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#parseCsharp@L176",
+        "procedureName": "parseCsharp",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5fab143361165429df7a11455b76aaf1c7420ff9224fa3ce482dee22a9369a33",
+          "target": "stmt:packages/parsers/src/csharp/parser.ts@L181",
+          "line": 181,
+          "expr": "const calls = collectCallSites(tokens, excluded);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#parseCsharp@L176",
+        "procedureName": "parseCsharp",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:6af6e32ffe69192a21e0a7e86f9954a55f02d436eaff8927836935181e824cad",
+          "target": "sym:packages/parsers/src/rust/parser.ts#collectCallSites@L1590",
+          "expr": "collectCallSites",
+          "line": 181
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#parseCsharp@L176",
+        "procedureName": "parseCsharp",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:136b56b6ce184b73b004c6bc02d8881b8e315b012f658669ec8811f0bcb915d5",
+          "target": "sym:packages/pipeline/src/resolve/ts-resolver.ts#collectImports@L150",
+          "expr": "collectImports",
+          "line": 182
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#parseCsharp@L176",
+        "procedureName": "parseCsharp",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:5808943d816fb6bf589b9516d2db5eabb0de99756d781ba5456c12958ad43301",
+          "target": "sym:packages/parsers/src/csharp/parser.ts#collectImports@L1733",
+          "expr": "collectImports",
+          "line": 182
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#parseCsharp@L176",
+        "procedureName": "parseCsharp",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7d1029898b6416752109db34a95750e69698b31fcac77c225acf8ce7c7a088ed",
+          "target": "stmt:packages/parsers/src/csharp/parser.ts@L182",
+          "line": 182,
+          "expr": "const { pkg, imports } = collectImports(tokens);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#parseCsharp@L176",
+        "procedureName": "parseCsharp",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b3dd097db3a0576f5a61b6f1db32acfc4411afb6633f1f62dbb1257ff798030c",
+          "target": "stmt:packages/parsers/src/csharp/parser.ts@L184",
+          "line": 184,
+          "expr": "const fsIdx = defs.findIndex((d) => d.kind === 'namespace' && d.fileScoped);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#parseCsharp@L176",
+        "procedureName": "parseCsharp",
+        "guard": "cond:packages/parsers/src/csharp/parser.ts@L185",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L185",
+            "expr": "fsIdx >= 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:aad1ad16f29d7a3ad6da37434b7d94eac809145370b236b26c2868fa9a9e6ece",
+          "target": "assign:packages/parsers/src/csharp/parser.ts@L187",
+          "line": 187,
+          "expr": "ns.body = defs.filter((_, i) => i !== fsIdx);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#parseCsharp@L176",
+        "procedureName": "parseCsharp",
+        "guard": "cond:packages/parsers/src/csharp/parser.ts@L185",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L185",
+            "expr": "fsIdx >= 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:703409d25ca6ca6ac8c15bd7d8a745d45e6c7ef0f172f2319f7ffbc46af9263d",
+          "target": "assign:packages/parsers/src/csharp/parser.ts@L188",
+          "line": 188,
+          "expr": "ns.endLine = Math.max(ns.endLine, ...ns.body.map((b) => b.endLine), ns.startLine);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#parseCsharp@L176",
+        "procedureName": "parseCsharp",
+        "guard": "cond:packages/parsers/src/csharp/parser.ts@L185",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L185",
+            "expr": "fsIdx >= 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b1265e42993eb129fa2b4685961c5c85114fee4b914ae579e404a70729dc2a45",
+          "target": "stmt:packages/parsers/src/csharp/parser.ts@L189",
+          "line": 189,
+          "expr": "return { defs: [ns], calls, imports, pkg: pkg || ns.name };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#parseCsharp@L176",
+        "procedureName": "parseCsharp",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:43fd68cfb8fd1a63c44a50795bf6dacc04e925f77f898e9f046da5e7b53e2373",
+          "target": "stmt:packages/parsers/src/csharp/parser.ts@L191",
+          "line": 191,
+          "expr": "return { defs, calls, imports, pkg };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#parseCsharp@L176",
+        "procedureName": "parseCsharp",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:da4957f9d9d025c361f994b35fff6fb70530aefdfc5dd18cb0f7ad6605333219",
+          "target": "stmt:packages/parsers/src/csharp/parser.ts@L193",
+          "line": 193,
+          "expr": "return { defs: [], calls: [], imports: [], pkg: '' };"
+        }
+      }
+    ]
+  },
+  "controlFlow": {
+    "raises": [],
+    "handles": [
+      {
+        "id": "exc:packages/parsers/src/csharp/parser.ts@L192",
+        "kind": "exception-handler",
+        "lang": "typescript",
+        "file": "packages/parsers/src/csharp/parser.ts",
+        "span": {
+          "start": 192,
+          "end": 192
+        },
+        "confidence": 1
+      }
+    ],
+    "iterates": [],
+    "declares": []
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 10,
+    "referencedByFiles": [
+      "packages/parsers/src/csharp/CsharpExtractor.ts",
+      "packages/pipeline/src/resolve/csharp-resolver.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 10,
+    "assignments": 2,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 1,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 7,
+      "recorded": 8,
+      "unresolved": 4
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "4 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

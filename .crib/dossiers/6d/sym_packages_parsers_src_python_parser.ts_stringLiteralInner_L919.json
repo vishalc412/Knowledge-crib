@@ -1,0 +1,255 @@
+{
+  "id": "sym:packages/parsers/src/python/parser.ts#stringLiteralInner@L919",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:bdf64aacedeeed5e139bf13fc9fd18481e17b6b7f41bd378ac344f277b4fc87e",
+  "builtAt": "2026-08-25T20:55:11.863Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/python/parser.ts#stringLiteralInner@L919",
+    "kind": "symbol",
+    "type": "function",
+    "name": "stringLiteralInner",
+    "qualifiedName": "stringLiteralInner",
+    "signature": "stringLiteralInner(v: string): string",
+    "lang": "typescript",
+    "file": "packages/parsers/src/python/parser.ts",
+    "span": {
+      "start": 919,
+      "end": 933
+    },
+    "callSites": [
+      {
+        "callee": "slice",
+        "line": 922
+      },
+      {
+        "callee": "slice",
+        "line": 928
+      },
+      {
+        "callee": "slice",
+        "line": 931
+      }
+    ]
+  },
+  "source": {
+    "text": "export function stringLiteralInner(v: string): string {\n  let i = 0;\n  while (i < v.length && isStringPrefixChar(v[i]!)) i++;\n  const rest = v.slice(i);\n  if (rest.length < 2) return rest;\n  const q = rest[0]!;\n  if (q !== '\"' && q !== \"'\") return rest;\n  // triple-quoted: opening + closing run of three\n  if (rest.length >= 6 && rest[1] === q && rest[2] === q && rest.endsWith(q.repeat(3))) {\n    return rest.slice(3, rest.length - 3);\n  }\n  // single-quoted\n  if (rest.endsWith(q)) return rest.slice(1, rest.length - 1);\n  return rest; // unterminated — return what we have\n}",
+    "truncated": false,
+    "totalLines": 15,
+    "startLine": 919
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.attachExplanation@L563",
+      "confidence": 1,
+      "name": "attachExplanation",
+      "qualifiedName": "PythonExtractor.attachExplanation",
+      "signature": "attachExplanation(symId: string, def: PyDef, path: string, ctx: ExtractCtx, nodes: Node[], edges: Edge[], explSeen: Set<string>, comments: CommentBlock[]): void",
+      "type": "method",
+      "file": "packages/parsers/src/python/PythonExtractor.ts",
+      "line": 563
+    },
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#parseRaise@L940",
+      "confidence": 1,
+      "name": "parseRaise",
+      "qualifiedName": "parseRaise",
+      "signature": "parseRaise(toks: Token[]): { name?: string; message?: string }",
+      "type": "function",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 940
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#isStringPrefixChar@L909",
+      "confidence": 1,
+      "name": "isStringPrefixChar",
+      "qualifiedName": "isStringPrefixChar",
+      "signature": "isStringPrefixChar(c: string): boolean",
+      "type": "function",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 909
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/python/parser.ts@L914",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/python/parser.ts#stringLiteralInner@L919",
+    "procedureName": "stringLiteralInner",
+    "conditions": [
+      "cond:packages/parsers/src/python/parser.ts@L923",
+      "cond:packages/parsers/src/python/parser.ts@L925",
+      "cond:packages/parsers/src/python/parser.ts@L927",
+      "cond:packages/parsers/src/python/parser.ts@L931"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#stringLiteralInner@L919",
+        "procedureName": "stringLiteralInner",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:66ff6de4a35f07d53b0f32cf880edab912c4b288b14c41db61ea6dd783635198",
+          "target": "sym:packages/parsers/src/python/parser.ts#isStringPrefixChar@L909",
+          "expr": "isStringPrefixChar"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#stringLiteralInner@L919",
+        "procedureName": "stringLiteralInner",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:52e215810b609e4af6328ef630e4432991923a91d9ec24deb7871d9d6baf715b",
+          "target": "stmt:packages/parsers/src/python/parser.ts@L922",
+          "line": 922,
+          "expr": "const rest = v.slice(i);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#stringLiteralInner@L919",
+        "procedureName": "stringLiteralInner",
+        "guard": "cond:packages/parsers/src/python/parser.ts@L923",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/parser.ts@L923",
+            "expr": "rest.length < 2",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:da8a8801ca3449468f710d757b4412f4dcf61acb5eb9339ea71e069d8791d6a0",
+          "target": "stmt:packages/parsers/src/python/parser.ts@L923",
+          "line": 923,
+          "expr": "return rest;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#stringLiteralInner@L919",
+        "procedureName": "stringLiteralInner",
+        "guard": "cond:packages/parsers/src/python/parser.ts@L925",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/parser.ts@L925",
+            "expr": "q !== '\"' && q !== \"'\"",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0da8530b2124d77e2932e00569a90343bce3dafafa7cfeea3c92aa4898d0106a",
+          "target": "stmt:packages/parsers/src/python/parser.ts@L925",
+          "line": 925,
+          "expr": "return rest;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#stringLiteralInner@L919",
+        "procedureName": "stringLiteralInner",
+        "guard": "cond:packages/parsers/src/python/parser.ts@L927",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/parser.ts@L927",
+            "expr": "rest.length >= 6 && rest[1] === q && rest[2] === q && rest.endsWith(q.repeat(3))",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:843edef59d1ca53e8b43a0d78cf037144e0801b53b0ef23804d3317b26c73c36",
+          "target": "stmt:packages/parsers/src/python/parser.ts@L928",
+          "line": 928,
+          "expr": "return rest.slice(3, rest.length - 3);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#stringLiteralInner@L919",
+        "procedureName": "stringLiteralInner",
+        "guard": "cond:packages/parsers/src/python/parser.ts@L931",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/parser.ts@L931",
+            "expr": "rest.endsWith(q)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f889acf4b3763c1aa9c1d04d975f973c7a7b3a6fa963ec1d079147a83db36821",
+          "target": "stmt:packages/parsers/src/python/parser.ts@L931",
+          "line": 931,
+          "expr": "return rest.slice(1, rest.length - 1);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#stringLiteralInner@L919",
+        "procedureName": "stringLiteralInner",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:10ff98bf2fd9acfcc4c4a037624b3b8314f79ab5158c95fe29a7986017cfc10b",
+          "target": "stmt:packages/parsers/src/python/parser.ts@L932",
+          "line": 932,
+          "expr": "return rest;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 6,
+    "referencedByFiles": [
+      "packages/parsers/src/python/PythonExtractor.ts",
+      "packages/parsers/src/python/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 6,
+    "assignments": 0,
+    "conditions": 4,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 3,
+      "unresolved": 3
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "3 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

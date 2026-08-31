@@ -1,8 +1,8 @@
 {
   "id": "sym:scripts/semantic-check.mjs#check@L42",
-  "schemaVersion": "1.5",
+  "schemaVersion": "1.6",
   "nodeHash": "blake3:1e051a9b9d51d0b0359c6987fe0b358d0e716854c73f3ac0ff5ee3a5c687652f",
-  "builtAt": "2026-07-16T16:35:16.098Z",
+  "builtAt": "2026-08-31T17:37:23.222Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:scripts/semantic-check.mjs#check@L42",
@@ -42,38 +42,27 @@
     "totalLines": 10,
     "startLine": 42
   },
-  "callers": [
-    {
-      "id": "sym:media/teaser/render.mjs#capture@L25",
-      "confidence": 1,
-      "name": "capture",
-      "qualifiedName": "capture",
-      "signature": "capture(scene)",
-      "type": "function",
-      "file": "media/teaser/render.mjs",
-      "line": 25
-    }
-  ],
+  "callers": [],
   "callees": [
     {
-      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
       "confidence": 1,
       "name": "push",
       "qualifiedName": "push",
       "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
       "type": "function",
       "file": "packages/pipeline/src/linker/inverted-index.ts",
-      "line": 39
+      "line": 70
     },
     {
-      "id": "sym:packages/cli/src/hooks.test.ts#write@L54",
+      "id": "sym:scripts/fixtures/synthetic-mule-project.mjs#write@L64",
       "confidence": 1,
       "name": "write",
       "qualifiedName": "write",
-      "signature": "write(path: string, records: Array<Record<string, unknown>>): void",
+      "signature": "write(root, rel, content)",
       "type": "function",
-      "file": "packages/cli/src/hooks.test.ts",
-      "line": 54
+      "file": "scripts/fixtures/synthetic-mule-project.mjs",
+      "line": 64
     }
   ],
   "docs": [
@@ -96,26 +85,6 @@
       "method": "explicit",
       "provenance": "EXTRACTED",
       "confidence": 0.99
-    },
-    {
-      "sectionId": "doc:docs/superpowers/plans/2026-06-27-knowledgecrib-linkedin-demo-video.md#task-7-inspect-the-final-video-end-to-end",
-      "heading": "Task 7: Inspect The Final Video End To End",
-      "anchor": "task-7-inspect-the-final-video-end-to-end",
-      "snippet": "Task 7: Inspect The Final Video End To End",
-      "edgeType": "describes",
-      "method": "explicit",
-      "provenance": "EXTRACTED",
-      "confidence": 0.95
-    },
-    {
-      "sectionId": "doc:docs/llm-integration-deep-dive.md#3-1-1-the-enrichment-work-queue-enrich-next",
-      "heading": "3.1.1 The Enrichment Work Queue (`enrich_next`)",
-      "anchor": "3-1-1-the-enrichment-work-queue-enrich-next",
-      "snippet": "3.1.1 The Enrichment Work Queue (`enrich_next`)",
-      "edgeType": "describes",
-      "method": "explicit",
-      "provenance": "EXTRACTED",
-      "confidence": 0.95
     },
     {
       "sectionId": "doc:README.md#install",
@@ -148,6 +117,36 @@
       "confidence": 0.95
     },
     {
+      "sectionId": "doc:docs/mulesoft.md#archive-cache",
+      "heading": "Archive cache",
+      "anchor": "archive-cache",
+      "snippet": "Archive cache",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-06-27-knowledgecrib-linkedin-demo-video.md#task-7-inspect-the-final-video-end-to-end",
+      "heading": "Task 7: Inspect The Final Video End To End",
+      "anchor": "task-7-inspect-the-final-video-end-to-end",
+      "snippet": "Task 7: Inspect The Final Video End To End",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#3-1-1-the-enrichment-work-queue-enrich-op-next",
+      "heading": "3.1.1 The Enrichment Work Queue (`enrich({op:'next'})`)",
+      "anchor": "3-1-1-the-enrichment-work-queue-enrich-op-next",
+      "snippet": "3.1.1 The Enrichment Work Queue (`enrich({op:'next'})`)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
       "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#what-was-built-2",
       "heading": "What was built",
       "anchor": "what-was-built-2",
@@ -162,6 +161,36 @@
       "heading": "The measured curve",
       "anchor": "the-measured-curve",
       "snippet": "The measured curve",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#commands",
+      "heading": "Commands",
+      "anchor": "commands",
+      "snippet": "Commands",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/mulesoft.md#index-summary",
+      "heading": "Index summary",
+      "anchor": "index-summary",
+      "snippet": "Index summary",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-foundation.md#task-8-verify-the-foundation-phase",
+      "heading": "Task 8: Verify the foundation phase",
+      "anchor": "task-8-verify-the-foundation-phase",
+      "snippet": "Task 8: Verify the foundation phase",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
@@ -188,10 +217,30 @@
       "confidence": 0.6
     },
     {
+      "sectionId": "doc:docs/superpowers/plans/2026-06-27-knowledgecrib-linkedin-demo-video.md#task-1-scaffold-the-reproducible-media-workspace",
+      "heading": "Task 1: Scaffold The Reproducible Media Workspace",
+      "anchor": "task-1-scaffold-the-reproducible-media-workspace",
+      "snippet": "Task 1: Scaffold The Reproducible Media Workspace",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
       "sectionId": "doc:docs/launch/linkedin-series.md#post-4-the-proof-reproducible-not-vibes",
       "heading": "Post 4 — The proof (reproducible, not vibes)",
       "anchor": "post-4-the-proof-reproducible-not-vibes",
       "snippet": "Post 4 — The proof (reproducible, not vibes)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#3-2-3-staleness-detection-how-the-system-knows-llm-artifacts-are-outdated",
+      "heading": "3.2.3 Staleness Detection — How the System Knows LLM Artifacts Are Outdated",
+      "anchor": "3-2-3-staleness-detection-how-the-system-knows-llm-artifacts-are-outdated",
+      "snippet": "3.2.3 Staleness Detection — How the System Knows LLM Artifacts Are Outdated",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
@@ -248,10 +297,50 @@
       "confidence": 0.6
     },
     {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_MAKE_A_BEATS_B.md#ws-a9-deterministic-self-hosting-crib-eats-its-own-soul",
+      "heading": "WS-A9 — Deterministic self-hosting: crib eats its own soul",
+      "anchor": "ws-a9-deterministic-self-hosting-crib-eats-its-own-soul",
+      "snippet": "WS-A9 — Deterministic self-hosting: crib eats its own soul",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
       "sectionId": "doc:docs/knowledge-crib-production-readiness.md#release-gate",
       "heading": "Release Gate",
       "anchor": "release-gate",
       "snippet": "Release Gate",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-munit-hardening.md#mulesoft-munit-and-release-hardening-implementation-plan",
+      "heading": "MuleSoft MUnit and Release Hardening Implementation Plan",
+      "anchor": "mulesoft-munit-and-release-hardening-implementation-plan",
+      "snippet": "MuleSoft MUnit and Release Hardening Implementation Plan",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-munit-hardening.md#task-4-add-the-mule-extractor-to-deterministic-fuzzing",
+      "heading": "Task 4: Add the Mule extractor to deterministic fuzzing",
+      "anchor": "task-4-add-the-mule-extractor-to-deterministic-fuzzing",
+      "snippet": "Task 4: Add the Mule extractor to deterministic fuzzing",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-munit-hardening.md#task-6-add-local-sample-project-acceptance-checking",
+      "heading": "Task 6: Add local sample-project acceptance checking",
+      "anchor": "task-6-add-local-sample-project-acceptance-checking",
+      "snippet": "Task 6: Add local sample-project acceptance checking",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
@@ -306,26 +395,6 @@
       "method": "identifier",
       "provenance": "EXTRACTED",
       "confidence": 0.6
-    },
-    {
-      "sectionId": "doc:docs/knowledge-crib-user-guide.md#commands",
-      "heading": "Commands",
-      "anchor": "commands",
-      "snippet": "Commands",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
-    },
-    {
-      "sectionId": "doc:docs/superpowers/plans/PLAN_MAKE_A_BEATS_B.md#ws-a9-deterministic-self-hosting-crib-eats-its-own-soul",
-      "heading": "WS-A9 — Deterministic self-hosting: crib eats its own soul",
-      "anchor": "ws-a9-deterministic-self-hosting-crib-eats-its-own-soul",
-      "snippet": "WS-A9 — Deterministic self-hosting: crib eats its own soul",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
     }
   ],
   "rules": {
@@ -355,8 +424,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:afbb0d5cbd770a022fd780cdbda47570316eab0982ef489381a096a53a4c773c",
-          "target": "sym:packages/cli/src/hooks.test.ts#write@L54",
+          "edgeId": "e:3d720ff33253b6ba11ca1ea153852eb6eb893d8b3cfff3aa9377d87b87d73e6b",
+          "target": "sym:scripts/fixtures/synthetic-mule-project.mjs#write@L64",
           "expr": "write",
           "line": 45
         }
@@ -380,20 +449,6 @@
         "procedureName": "check",
         "conditions": [],
         "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:12b4ca76d475819d67f9915e705c89b0fc69647f6fa706f0471afb7f687d20bd",
-          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
-          "expr": "push",
-          "line": 48
-        }
-      },
-      {
-        "procedure": "sym:scripts/semantic-check.mjs#check@L42",
-        "procedureName": "check",
-        "conditions": [],
-        "inLoop": false,
         "inException": true,
         "action": {
           "kind": "executes",
@@ -401,6 +456,20 @@
           "target": "stmt:scripts/semantic-check.mjs@L48",
           "line": 48,
           "expr": "failures.push(`${name}: ${msg}`);"
+        }
+      },
+      {
+        "procedure": "sym:scripts/semantic-check.mjs#check@L42",
+        "procedureName": "check",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:7115edee8ee8528a6812920ef610ea5d95bdc142dd678b7b1db436b60944430f",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
+          "expr": "push",
+          "line": 48
         }
       },
       {
@@ -440,9 +509,7 @@
   "implementation": {
     "status": "implemented",
     "executesCount": 4,
-    "referencedByFiles": [
-      "media/teaser/render.mjs"
-    ]
+    "referencedByFiles": []
   },
   "coverage": {
     "readiness": "partial",

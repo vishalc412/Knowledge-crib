@@ -1,0 +1,246 @@
+{
+  "id": "sym:packages/pipeline/src/workspace.ts#detectPnpm@L69",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:c3f728d1c77e45a9ec6536fb4adc7ec1001772883f4407e233e09bf8040cc691",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/workspace.ts#detectPnpm@L69",
+    "kind": "symbol",
+    "type": "function",
+    "name": "detectPnpm",
+    "qualifiedName": "detectPnpm",
+    "signature": "detectPnpm(root: string): WorkspaceLayout | null",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/workspace.ts",
+    "span": {
+      "start": 69,
+      "end": 76
+    },
+    "callSites": [
+      {
+        "callee": "join",
+        "line": 70
+      },
+      {
+        "callee": "parsePnpmWorkspacePatterns",
+        "line": 72
+      },
+      {
+        "callee": "readFileSync",
+        "line": 72
+      },
+      {
+        "callee": "expandPatterns",
+        "line": 73
+      }
+    ]
+  },
+  "source": {
+    "text": "function detectPnpm(root: string): WorkspaceLayout | null {\n  const file = join(root, 'pnpm-workspace.yaml');\n  if (!existsSync(file)) return null;\n  const patterns = parsePnpmWorkspacePatterns(readFileSync(file, 'utf8'));\n  const packages = expandPatterns(root, patterns);\n  if (packages.length === 0) return null;\n  return { tool: 'pnpm', packages };\n}",
+    "truncated": false,
+    "totalLines": 8,
+    "startLine": 69
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/src/workspace.ts#detectWorkspace@L40",
+      "confidence": 1,
+      "name": "detectWorkspace",
+      "qualifiedName": "detectWorkspace",
+      "signature": "detectWorkspace(root: string): WorkspaceLayout | null",
+      "type": "function",
+      "file": "packages/pipeline/src/workspace.ts",
+      "line": 40
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/pipeline/src/workspace.ts#expandPatterns@L208",
+      "confidence": 1,
+      "name": "expandPatterns",
+      "qualifiedName": "expandPatterns",
+      "signature": "expandPatterns(root: string, patterns: string[]): WorkspacePackage[]",
+      "type": "function",
+      "file": "packages/pipeline/src/workspace.ts",
+      "line": 208
+    },
+    {
+      "id": "sym:packages/pipeline/src/workspace.ts#parsePnpmWorkspacePatterns@L134",
+      "confidence": 1,
+      "name": "parsePnpmWorkspacePatterns",
+      "qualifiedName": "parsePnpmWorkspacePatterns",
+      "signature": "parsePnpmWorkspacePatterns(content: string): string[]",
+      "type": "function",
+      "file": "packages/pipeline/src/workspace.ts",
+      "line": 134
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/workspace.ts#detectPnpm@L69",
+    "procedureName": "detectPnpm",
+    "conditions": [
+      "cond:packages/pipeline/src/workspace.ts@L71",
+      "cond:packages/pipeline/src/workspace.ts@L74"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/workspace.ts#detectPnpm@L69",
+        "procedureName": "detectPnpm",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1b2f38534fbbc5329dae8252aadaa4b1abad0e0a825925a2411305972a57d804",
+          "target": "stmt:packages/pipeline/src/workspace.ts@L70",
+          "line": 70,
+          "expr": "const file = join(root, 'pnpm-workspace.yaml');"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/workspace.ts#detectPnpm@L69",
+        "procedureName": "detectPnpm",
+        "guard": "cond:packages/pipeline/src/workspace.ts@L71",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/workspace.ts@L71",
+            "expr": "!existsSync(file)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:aba18b6d73ca58f9831a54ff1840c1c45c24f0605081eb80a3f2f23475bc9ea6",
+          "target": "stmt:packages/pipeline/src/workspace.ts@L71",
+          "line": 71,
+          "expr": "return null;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/workspace.ts#detectPnpm@L69",
+        "procedureName": "detectPnpm",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:52e2f966f8818bbecc08d80ccaf52dfd21762ea71c4e1654409df9325e84c120",
+          "target": "stmt:packages/pipeline/src/workspace.ts@L72",
+          "line": 72,
+          "expr": "const patterns = parsePnpmWorkspacePatterns(readFileSync(file, 'utf8'));"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/workspace.ts#detectPnpm@L69",
+        "procedureName": "detectPnpm",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:ea64a623e2c74cecb36f5f3eb9384ba78420f601e885ba618573b6a284bf2979",
+          "target": "sym:packages/pipeline/src/workspace.ts#parsePnpmWorkspacePatterns@L134",
+          "expr": "parsePnpmWorkspacePatterns",
+          "line": 72
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/workspace.ts#detectPnpm@L69",
+        "procedureName": "detectPnpm",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1d39daf98cd7a674435d7e2ceeac8f09edcb2f44d26520a93ee884d1a7ce74a6",
+          "target": "stmt:packages/pipeline/src/workspace.ts@L73",
+          "line": 73,
+          "expr": "const packages = expandPatterns(root, patterns);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/workspace.ts#detectPnpm@L69",
+        "procedureName": "detectPnpm",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:c424090da9b322bb0516701a149a9616ddc136182706eed46f931bf30b9c6b05",
+          "target": "sym:packages/pipeline/src/workspace.ts#expandPatterns@L208",
+          "expr": "expandPatterns",
+          "line": 73
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/workspace.ts#detectPnpm@L69",
+        "procedureName": "detectPnpm",
+        "guard": "cond:packages/pipeline/src/workspace.ts@L74",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/workspace.ts@L74",
+            "expr": "packages.length === 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:81987419113bed4d4c239c7052ba7896f8f1acb7af5d6498c395157dd45b5e45",
+          "target": "stmt:packages/pipeline/src/workspace.ts@L74",
+          "line": 74,
+          "expr": "return null;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/workspace.ts#detectPnpm@L69",
+        "procedureName": "detectPnpm",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0327f137294ebbdef029c410cc247b83d1082ef82352ba56d9224209555702d8",
+          "target": "stmt:packages/pipeline/src/workspace.ts@L75",
+          "line": 75,
+          "expr": "return { tool: 'pnpm', packages };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 6,
+    "referencedByFiles": [
+      "packages/pipeline/src/workspace.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 6,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 4,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

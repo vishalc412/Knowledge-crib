@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/pipeline/src/workspace.ts#expandPatterns@L208",
-  "schemaVersion": "1.5",
+  "schemaVersion": "1.6",
   "nodeHash": "blake3:5e1f549fa9f7d1ba7c580bc7c292009fa1e88533efcf975f44e9cbd1e159e50a",
-  "builtAt": "2026-07-16T16:35:16.098Z",
+  "builtAt": "2026-08-25T20:55:11.863Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/pipeline/src/workspace.ts#expandPatterns@L208",
@@ -134,14 +134,14 @@
       "line": 301
     },
     {
-      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
       "confidence": 1,
       "name": "push",
       "qualifiedName": "push",
       "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
       "type": "function",
       "file": "packages/pipeline/src/linker/inverted-index.ts",
-      "line": 39
+      "line": 70
     }
   ],
   "docs": [
@@ -279,20 +279,6 @@
       {
         "procedure": "sym:packages/pipeline/src/workspace.ts#expandPatterns@L208",
         "procedureName": "expandPatterns",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:2d532afcaa2a80da438b0376b4fef5ca3f18f84f75d7c5b430749f5a97d63150",
-          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
-          "expr": "push",
-          "line": 218
-        }
-      },
-      {
-        "procedure": "sym:packages/pipeline/src/workspace.ts#expandPatterns@L208",
-        "procedureName": "expandPatterns",
         "guard": "cond:packages/pipeline/src/workspace.ts@L213",
         "branch": "LOOP",
         "conditions": [
@@ -314,6 +300,20 @@
           "target": "stmt:packages/pipeline/src/workspace.ts@L218",
           "line": 218,
           "expr": "out.push({ name: packageNameAt(dir, rel), dir, rel });"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/workspace.ts#expandPatterns@L208",
+        "procedureName": "expandPatterns",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:d26317b261d66d14080341fc1a0bfbd072e1ed20f4be21dca292e0a70d9e0339",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
+          "expr": "push",
+          "line": 218
         }
       },
       {

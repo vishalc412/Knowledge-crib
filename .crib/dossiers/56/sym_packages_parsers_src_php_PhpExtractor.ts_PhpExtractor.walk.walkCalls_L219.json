@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/php/PhpExtractor.ts#PhpExtractor.walk.walkCalls@L219",
-  "schemaVersion": "1.5",
+  "schemaVersion": "1.6",
   "nodeHash": "blake3:604eea073b3a21dcaeb0a7f88e1a21d50816e9818d4dec3156cf24f3915dfdb4",
-  "builtAt": "2026-07-16T16:35:16.098Z",
+  "builtAt": "2026-08-31T17:37:23.222Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/php/PhpExtractor.ts#PhpExtractor.walk.walkCalls@L219",
@@ -113,14 +113,14 @@
       "line": 1300
     },
     {
-      "id": "sym:packages/soul-schema/src/id.ts#edgeId@L141",
+      "id": "sym:packages/soul-schema/src/id.ts#edgeId@L151",
       "confidence": 1,
       "name": "edgeId",
       "qualifiedName": "edgeId",
       "signature": "edgeId(src: string, dst: string, rel: Rel): string",
       "type": "function",
       "file": "packages/soul-schema/src/id.ts",
-      "line": 141
+      "line": 151
     },
     {
       "id": "sym:packages/parsers/src/rust/RustExtractor.ts#enclosingSymbolId@L438",
@@ -133,14 +133,14 @@
       "line": 438
     },
     {
-      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
       "confidence": 1,
       "name": "push",
       "qualifiedName": "push",
       "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
       "type": "function",
       "file": "packages/pipeline/src/linker/inverted-index.ts",
-      "line": 39
+      "line": 70
     }
   ],
   "docs": [],
@@ -347,8 +347,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:bfc6241844847fcadf070efd11a4362c38b95a9b2a78b961bedc9b1c7269cfc8",
-          "target": "sym:packages/soul-schema/src/id.ts#edgeId@L141",
+          "edgeId": "e:68da86ba2fc556ebcecbdf4326320361432de1c813382268b4f3028de245ec4f",
+          "target": "sym:packages/soul-schema/src/id.ts#edgeId@L151",
           "expr": "edgeId",
           "line": 227
         }
@@ -404,6 +404,20 @@
       {
         "procedure": "sym:packages/parsers/src/php/PhpExtractor.ts#PhpExtractor.walk.walkCalls@L219",
         "procedureName": "PhpExtractor.walk.walkCalls",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:38d87745b30a8d55fab06839f6dcffa9acb52ba10c5dcfc94c2e23e4e996a8d5",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
+          "expr": "push",
+          "line": 238
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/php/PhpExtractor.ts#PhpExtractor.walk.walkCalls@L219",
+        "procedureName": "PhpExtractor.walk.walkCalls",
         "guard": "cond:packages/parsers/src/php/PhpExtractor.ts@L236",
         "branch": "THEN",
         "conditions": [
@@ -433,20 +447,6 @@
           "target": "stmt:packages/parsers/src/php/PhpExtractor.ts@L238",
           "line": 238,
           "expr": "edges.push(e);"
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/php/PhpExtractor.ts#PhpExtractor.walk.walkCalls@L219",
-        "procedureName": "PhpExtractor.walk.walkCalls",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:ce77b0e2bb1125e7ad3abd51a001a8153c66b696000a8e0312032eba2479e7c4",
-          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
-          "expr": "push",
-          "line": 238
         }
       },
       {

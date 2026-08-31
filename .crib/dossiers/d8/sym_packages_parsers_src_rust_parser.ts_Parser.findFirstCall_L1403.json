@@ -1,0 +1,373 @@
+{
+  "id": "sym:packages/parsers/src/rust/parser.ts#Parser.findFirstCall@L1403",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:03aea5aa4cb8cf07d895539e7a192e8612695d076e39166439c6d80faf3dd0be",
+  "builtAt": "2026-08-25T20:55:11.863Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/rust/parser.ts#Parser.findFirstCall@L1403",
+    "kind": "symbol",
+    "type": "method",
+    "name": "findFirstCall",
+    "qualifiedName": "Parser.findFirstCall",
+    "signature": "findFirstCall(start: number, end: number): { callee: string; line: number; macro: boolean } | undefined",
+    "lang": "typescript",
+    "file": "packages/parsers/src/rust/parser.ts",
+    "span": {
+      "start": 1403,
+      "end": 1446
+    },
+    "callSites": [
+      {
+        "callee": "push",
+        "line": 1420
+      },
+      {
+        "callee": "push",
+        "line": 1421
+      },
+      {
+        "callee": "push",
+        "line": 1426
+      },
+      {
+        "callee": "push",
+        "line": 1427
+      },
+      {
+        "callee": "includes",
+        "line": 1440
+      },
+      {
+        "callee": "join",
+        "line": 1441
+      }
+    ]
+  },
+  "source": {
+    "text": "  private findFirstCall(\n    start: number,\n    end: number,\n  ): { callee: string; line: number; macro: boolean } | undefined {\n    let k = start;\n    while (k < end) {\n      const tk = this.t[k]!;\n      if (tk.type !== 'NAME' || STMT_KEYWORDS.has(tk.value)) {\n        k++;\n        continue;\n      }\n      const segs: string[] = [tk.value];\n      const seps: string[] = [];\n      let j = k + 1;\n      while (j < end) {\n        const op = this.t[j]!;\n        if (op.type === 'OP' && op.value === '::' && this.t[j + 1]?.type === 'NAME') {\n          seps.push('::');\n          segs.push(this.t[j + 1]!.value);\n          j += 2;\n          continue;\n        }\n        if (op.type === 'OP' && op.value === '.' && this.t[j + 1]?.type === 'NAME') {\n          seps.push('.');\n          segs.push(this.t[j + 1]!.value);\n          j += 2;\n          continue;\n        }\n        break;\n      }\n      const macro =\n        this.t[j]?.type === 'OP' &&\n        this.t[j]?.value === '!' &&\n        this.t[j + 1]?.type === 'OP' &&\n        this.t[j + 1]?.value === '(';\n      const regular = this.t[j]?.type === 'OP' && this.t[j]?.value === '(';\n      if (macro || regular) {\n        const sep = seps.includes('.') ? '.' : '::';\n        return { callee: segs.join(sep), line: tk.line, macro };\n      }\n      k++;\n    }\n    return undefined;\n  }",
+    "truncated": false,
+    "totalLines": 44,
+    "startLine": 1403
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/rust/parser.ts#Parser.exprToAction@L1268",
+      "confidence": 1,
+      "name": "exprToAction",
+      "qualifiedName": "Parser.exprToAction",
+      "signature": "exprToAction(line: number, start: number, end: number): RustStmt[]",
+      "type": "method",
+      "file": "packages/parsers/src/rust/parser.ts",
+      "line": 1268
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/parser.ts#Parser.parseReturn@L1182",
+      "confidence": 1,
+      "name": "parseReturn",
+      "qualifiedName": "Parser.parseReturn",
+      "signature": "parseReturn(line: number): RustStmt",
+      "type": "method",
+      "file": "packages/parsers/src/rust/parser.ts",
+      "line": 1182
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/rust/parser.ts@L1398",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/rust/parser.ts#Parser.findFirstCall@L1403",
+    "procedureName": "Parser.findFirstCall",
+    "conditions": [
+      "cond:packages/parsers/src/rust/parser.ts@L1408",
+      "cond:packages/parsers/src/rust/parser.ts@L1417",
+      "cond:packages/parsers/src/rust/parser.ts@L1419",
+      "cond:packages/parsers/src/rust/parser.ts@L1425",
+      "cond:packages/parsers/src/rust/parser.ts@L1439"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/rust/parser.ts#Parser.findFirstCall@L1403",
+        "procedureName": "Parser.findFirstCall",
+        "guard": "cond:packages/parsers/src/rust/parser.ts@L1419",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L1408",
+            "expr": "k < end"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L1417",
+            "expr": "j < end"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L1419",
+            "expr": "op.type === 'OP' && op.value === '::' && this.t[j + 1]?.type === 'NAME'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0736184873b03d8ac8294137df5ee610864cdc8a9ede9962bd717223a7cf2c1c",
+          "target": "stmt:packages/parsers/src/rust/parser.ts@L1420",
+          "line": 1420,
+          "expr": "seps.push('::');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/parser.ts#Parser.findFirstCall@L1403",
+        "procedureName": "Parser.findFirstCall",
+        "guard": "cond:packages/parsers/src/rust/parser.ts@L1419",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L1408",
+            "expr": "k < end"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L1417",
+            "expr": "j < end"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L1419",
+            "expr": "op.type === 'OP' && op.value === '::' && this.t[j + 1]?.type === 'NAME'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fa5254a30776ad3e4c48415638cc0b2a899e35de361e9c8644babf9e40f9bb5e",
+          "target": "stmt:packages/parsers/src/rust/parser.ts@L1421",
+          "line": 1421,
+          "expr": "segs.push(this.t[j + 1]!.value);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/parser.ts#Parser.findFirstCall@L1403",
+        "procedureName": "Parser.findFirstCall",
+        "guard": "cond:packages/parsers/src/rust/parser.ts@L1419",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L1408",
+            "expr": "k < end"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L1417",
+            "expr": "j < end"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L1419",
+            "expr": "op.type === 'OP' && op.value === '::' && this.t[j + 1]?.type === 'NAME'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b494911ddc39c0ec08f8f3e3eeea5d755def3f089be76861c6f3214acdfbf4ff",
+          "target": "assign:packages/parsers/src/rust/parser.ts@L1422",
+          "line": 1422,
+          "expr": "j += 2;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/parser.ts#Parser.findFirstCall@L1403",
+        "procedureName": "Parser.findFirstCall",
+        "guard": "cond:packages/parsers/src/rust/parser.ts@L1425",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L1408",
+            "expr": "k < end"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L1417",
+            "expr": "j < end"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L1425",
+            "expr": "op.type === 'OP' && op.value === '.' && this.t[j + 1]?.type === 'NAME'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:464277776fac50e320d98b39c8d6e25ab9af327217d8b518d920dd0779c42821",
+          "target": "stmt:packages/parsers/src/rust/parser.ts@L1426",
+          "line": 1426,
+          "expr": "seps.push('.');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/parser.ts#Parser.findFirstCall@L1403",
+        "procedureName": "Parser.findFirstCall",
+        "guard": "cond:packages/parsers/src/rust/parser.ts@L1425",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L1408",
+            "expr": "k < end"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L1417",
+            "expr": "j < end"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L1425",
+            "expr": "op.type === 'OP' && op.value === '.' && this.t[j + 1]?.type === 'NAME'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2dd47d69c77fbed8f94f85c5fc269a7ca4365c92f8c192ea5f6771f6e9cd45d8",
+          "target": "stmt:packages/parsers/src/rust/parser.ts@L1427",
+          "line": 1427,
+          "expr": "segs.push(this.t[j + 1]!.value);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/parser.ts#Parser.findFirstCall@L1403",
+        "procedureName": "Parser.findFirstCall",
+        "guard": "cond:packages/parsers/src/rust/parser.ts@L1425",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L1408",
+            "expr": "k < end"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L1417",
+            "expr": "j < end"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L1425",
+            "expr": "op.type === 'OP' && op.value === '.' && this.t[j + 1]?.type === 'NAME'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:12fdebe81b75b41e0b50d70caaba0fb7d2791a4dab7e69563703bba4b14fa720",
+          "target": "assign:packages/parsers/src/rust/parser.ts@L1428",
+          "line": 1428,
+          "expr": "j += 2;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/parser.ts#Parser.findFirstCall@L1403",
+        "procedureName": "Parser.findFirstCall",
+        "guard": "cond:packages/parsers/src/rust/parser.ts@L1439",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L1408",
+            "expr": "k < end"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L1439",
+            "expr": "macro || regular",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2901ca9a21f6ba33f7c5a0ec51870c5327655bcf8351e49f3e9ca2ec8ff5ffbd",
+          "target": "stmt:packages/parsers/src/rust/parser.ts@L1440",
+          "line": 1440,
+          "expr": "const sep = seps.includes('.') ? '.' : '::';"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/parser.ts#Parser.findFirstCall@L1403",
+        "procedureName": "Parser.findFirstCall",
+        "guard": "cond:packages/parsers/src/rust/parser.ts@L1439",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L1408",
+            "expr": "k < end"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L1439",
+            "expr": "macro || regular",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fa1b0c0ecc4a4b6f3811ed7559c851274ce206648a8d9b1e91e5790275b702b3",
+          "target": "stmt:packages/parsers/src/rust/parser.ts@L1441",
+          "line": 1441,
+          "expr": "return { callee: segs.join(sep), line: tk.line, macro };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/parser.ts#Parser.findFirstCall@L1403",
+        "procedureName": "Parser.findFirstCall",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e488ba2beff1a12d64f38bea9fa108d5e280d79619f5f8819fb46bcf4f8f8ca8",
+          "target": "stmt:packages/parsers/src/rust/parser.ts@L1445",
+          "line": 1445,
+          "expr": "return undefined;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 9,
+    "referencedByFiles": [
+      "packages/parsers/src/rust/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 9,
+    "assignments": 2,
+    "conditions": 3,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 6,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

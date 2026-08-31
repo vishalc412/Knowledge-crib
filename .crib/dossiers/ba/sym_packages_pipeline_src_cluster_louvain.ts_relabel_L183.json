@@ -1,0 +1,233 @@
+{
+  "id": "sym:packages/pipeline/src/cluster/louvain.ts#relabel@L183",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:16099860f0ab6b92c0f37b27b2f735b2ca51b861c9956e8c4556b4c19a264089",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/cluster/louvain.ts#relabel@L183",
+    "kind": "symbol",
+    "type": "function",
+    "name": "relabel",
+    "qualifiedName": "relabel",
+    "signature": "relabel(communities: Int32Array): Int32Array",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/cluster/louvain.ts",
+    "span": {
+      "start": 183,
+      "end": 197
+    },
+    "callSites": [
+      {
+        "callee": "get",
+        "line": 189
+      },
+      {
+        "callee": "set",
+        "line": 192
+      }
+    ]
+  },
+  "source": {
+    "text": "function relabel(communities: Int32Array): Int32Array {\n  const map = new Map<number, number>();\n  let next = 0;\n  const out = new Int32Array(communities.length);\n  for (let i = 0; i < communities.length; i++) {\n    const c = communities[i]!;\n    let v = map.get(c);\n    if (v === undefined) {\n      v = next++;\n      map.set(c, v);\n    }\n    out[i] = v;\n  }\n  return out;\n}",
+    "truncated": false,
+    "totalLines": 15,
+    "startLine": 183
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/src/cluster/louvain.ts#louvain@L52",
+      "confidence": 1,
+      "name": "louvain",
+      "qualifiedName": "louvain",
+      "signature": "louvain(graph: LouvainGraph): Int32Array",
+      "type": "function",
+      "file": "packages/pipeline/src/cluster/louvain.ts",
+      "line": 52
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+      "confidence": 1,
+      "name": "get",
+      "qualifiedName": "createRegistry.get",
+      "signature": "get(name)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 1300
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/pipeline/src/cluster/louvain.ts@L182",
+      "snippet": "/** Relabel community labels to a dense 0..k-1 range in first-seen order (stable output). */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/cluster/louvain.ts#relabel@L183",
+    "procedureName": "relabel",
+    "conditions": [
+      "cond:packages/pipeline/src/cluster/louvain.ts@L187",
+      "cond:packages/pipeline/src/cluster/louvain.ts@L190"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/cluster/louvain.ts#relabel@L183",
+        "procedureName": "relabel",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:117458318025e9f65bd03bd558cb3124d59ac678e783577a14c6a8ca159cb96e",
+          "target": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+          "expr": "get",
+          "line": 189
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/cluster/louvain.ts#relabel@L183",
+        "procedureName": "relabel",
+        "guard": "cond:packages/pipeline/src/cluster/louvain.ts@L187",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/cluster/louvain.ts@L187",
+            "expr": "i < communities.length",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8aa50d4b2213051fc57834c6a46776a4228380dedd21394eda69c168036c9b1b",
+          "target": "stmt:packages/pipeline/src/cluster/louvain.ts@L189",
+          "line": 189,
+          "expr": "let v = map.get(c);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/cluster/louvain.ts#relabel@L183",
+        "procedureName": "relabel",
+        "guard": "cond:packages/pipeline/src/cluster/louvain.ts@L190",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/cluster/louvain.ts@L187",
+            "expr": "i < communities.length"
+          },
+          {
+            "id": "cond:packages/pipeline/src/cluster/louvain.ts@L190",
+            "expr": "v === undefined",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e05dc22737941a23bc6d3fe2e348144146a38f3a46b8587976d98b1ca3cda51f",
+          "target": "assign:packages/pipeline/src/cluster/louvain.ts@L191",
+          "line": 191,
+          "expr": "v = next++;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/cluster/louvain.ts#relabel@L183",
+        "procedureName": "relabel",
+        "guard": "cond:packages/pipeline/src/cluster/louvain.ts@L190",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/cluster/louvain.ts@L187",
+            "expr": "i < communities.length"
+          },
+          {
+            "id": "cond:packages/pipeline/src/cluster/louvain.ts@L190",
+            "expr": "v === undefined",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d54bc2023faf9c065831a076a13d75c315d7968967881492b55816c1e691d15d",
+          "target": "stmt:packages/pipeline/src/cluster/louvain.ts@L192",
+          "line": 192,
+          "expr": "map.set(c, v);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/cluster/louvain.ts#relabel@L183",
+        "procedureName": "relabel",
+        "guard": "cond:packages/pipeline/src/cluster/louvain.ts@L187",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/cluster/louvain.ts@L187",
+            "expr": "i < communities.length",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2328c08468a0d98faf6005a85af9bae250ec094d9154482e20c24127e4d89b7a",
+          "target": "assign:packages/pipeline/src/cluster/louvain.ts@L194",
+          "line": 194,
+          "expr": "out[i] = v;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/cluster/louvain.ts#relabel@L183",
+        "procedureName": "relabel",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a844cda71a58f03ccf0e1da2c8be13b91b9d3ad178b7a1e9ad7b59f569db3524",
+          "target": "stmt:packages/pipeline/src/cluster/louvain.ts@L196",
+          "line": 196,
+          "expr": "return out;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 5,
+    "referencedByFiles": [
+      "packages/pipeline/src/cluster/louvain.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 5,
+    "assignments": 2,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 2,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

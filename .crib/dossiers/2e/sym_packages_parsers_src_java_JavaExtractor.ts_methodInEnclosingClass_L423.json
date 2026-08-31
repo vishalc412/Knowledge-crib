@@ -1,0 +1,218 @@
+{
+  "id": "sym:packages/parsers/src/java/JavaExtractor.ts#methodInEnclosingClass@L423",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:3668016a29b7d9223079dbb85d16c5eaaa2c838a057af4878b8ec2978496e6d4",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/java/JavaExtractor.ts#methodInEnclosingClass@L423",
+    "kind": "symbol",
+    "type": "function",
+    "name": "methodInEnclosingClass",
+    "qualifiedName": "methodInEnclosingClass",
+    "signature": "methodInEnclosingClass(line: number, name: string, symbols: LocalSymbol[]): string | undefined",
+    "lang": "typescript",
+    "file": "packages/parsers/src/java/JavaExtractor.ts",
+    "span": {
+      "start": 423,
+      "end": 438
+    },
+    "callSites": [
+      {
+        "callee": "enclosingTypeId",
+        "line": 428
+      },
+      {
+        "callee": "find",
+        "line": 431
+      }
+    ]
+  },
+  "source": {
+    "text": "function methodInEnclosingClass(\n  line: number,\n  name: string,\n  symbols: LocalSymbol[],\n): string | undefined {\n  const cls = enclosingTypeId(line, symbols);\n  if (!cls) return undefined;\n  const enclosingQ = cls.node.qualifiedName;\n  const match = symbols.find(\n    (s) =>\n      s.simpleName === name &&\n      s.parentQualifier === enclosingQ &&\n      (s.node.type === 'method' || s.node.type === 'constructor'),\n  );\n  return match?.node.id;\n}",
+    "truncated": false,
+    "totalLines": 16,
+    "startLine": 423
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.resolveCallee@L868",
+      "confidence": 1,
+      "name": "resolveCallee",
+      "qualifiedName": "BodyWalker.resolveCallee",
+      "signature": "resolveCallee(chain: string[], line: number): string | undefined",
+      "type": "method",
+      "file": "packages/parsers/src/java/JavaExtractor.ts",
+      "line": 868
+    },
+    {
+      "id": "sym:packages/parsers/src/java/JavaExtractor.ts#JavaExtractor.collectCalls@L292",
+      "confidence": 1,
+      "name": "collectCalls",
+      "qualifiedName": "JavaExtractor.collectCalls",
+      "signature": "collectCalls(calls: JavaCallSite[], symbols: LocalSymbol[], byKey: Map<string, string>, edges: Edge[], callsEdgeById: Map<string, Edge>): void",
+      "type": "method",
+      "file": "packages/parsers/src/java/JavaExtractor.ts",
+      "line": 292
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/java/JavaExtractor.ts#enclosingTypeId@L403",
+      "confidence": 1,
+      "name": "enclosingTypeId",
+      "qualifiedName": "enclosingTypeId",
+      "signature": "enclosingTypeId(line: number, symbols: LocalSymbol[]): LocalSymbol | undefined",
+      "type": "function",
+      "file": "packages/parsers/src/java/JavaExtractor.ts",
+      "line": 403
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
+      "confidence": 1,
+      "name": "find",
+      "qualifiedName": "find",
+      "signature": "find(…)",
+      "type": "function",
+      "file": "packages/parsers/src/java/parser.test.ts",
+      "line": 38
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/java/JavaExtractor.ts@L418",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#methodInEnclosingClass@L423",
+    "procedureName": "methodInEnclosingClass",
+    "conditions": [
+      "cond:packages/parsers/src/java/JavaExtractor.ts@L429"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#methodInEnclosingClass@L423",
+        "procedureName": "methodInEnclosingClass",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:db80cf44ec7730d8fca7b2db304092a5ae187b4ddbe3cdf14697305ddfb807e7",
+          "target": "sym:packages/parsers/src/java/JavaExtractor.ts#enclosingTypeId@L403",
+          "expr": "enclosingTypeId",
+          "line": 428
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#methodInEnclosingClass@L423",
+        "procedureName": "methodInEnclosingClass",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f73671a98f9ceacba8ef367a9003f9a1b5931c86b4e3e360482c67c9bc5d2b66",
+          "target": "stmt:packages/parsers/src/java/JavaExtractor.ts@L428",
+          "line": 428,
+          "expr": "const cls = enclosingTypeId(line, symbols);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#methodInEnclosingClass@L423",
+        "procedureName": "methodInEnclosingClass",
+        "guard": "cond:packages/parsers/src/java/JavaExtractor.ts@L429",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/JavaExtractor.ts@L429",
+            "expr": "!cls",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ad1a70953b0bad56573bf89da81b2f0063d3254a894b032fe3a3a0239d3cdd1f",
+          "target": "stmt:packages/parsers/src/java/JavaExtractor.ts@L429",
+          "line": 429,
+          "expr": "return undefined;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#methodInEnclosingClass@L423",
+        "procedureName": "methodInEnclosingClass",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:4055623c709c0a65b0b32a8fb44399ea9e05e13ccc1f9927d28cee7a58f4e21e",
+          "target": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
+          "expr": "find",
+          "line": 431
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#methodInEnclosingClass@L423",
+        "procedureName": "methodInEnclosingClass",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a66897317db052f9e7816cbcbc3a7de4e15f8a712906334b548a841fd02f29d9",
+          "target": "stmt:packages/parsers/src/java/JavaExtractor.ts@L431",
+          "line": 431,
+          "expr": "const match = symbols.find(\n    (s) =>\n      s.simpleName === name &&\n      s.parentQualifier === enclosingQ &&\n      (s.node.type === 'method' || s.node.type === 'constructor'),\n  );"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#methodInEnclosingClass@L423",
+        "procedureName": "methodInEnclosingClass",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b88b13b11101f033862afdb04a5cb40e3eb15e26ebe827ec299c4259ffe6405d",
+          "target": "stmt:packages/parsers/src/java/JavaExtractor.ts@L437",
+          "line": 437,
+          "expr": "return match?.node.id;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": [
+      "packages/parsers/src/java/JavaExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 2,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

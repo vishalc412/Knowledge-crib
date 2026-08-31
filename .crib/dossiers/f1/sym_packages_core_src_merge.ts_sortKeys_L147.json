@@ -1,0 +1,199 @@
+{
+  "id": "sym:packages/core/src/merge.ts#sortKeys@L147",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:5ffacc9a8be8bc4afb46b482a080d18c6198f74b4113bec18e9ab02bc77fdd88",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/merge.ts#sortKeys@L147",
+    "kind": "symbol",
+    "type": "function",
+    "name": "sortKeys",
+    "qualifiedName": "sortKeys",
+    "signature": "sortKeys(value: unknown): unknown",
+    "lang": "typescript",
+    "file": "packages/core/src/merge.ts",
+    "span": {
+      "start": 147,
+      "end": 156
+    },
+    "callSites": [
+      {
+        "callee": "map",
+        "line": 148
+      },
+      {
+        "callee": "sortKeys",
+        "line": 152
+      }
+    ]
+  },
+  "source": {
+    "text": "function sortKeys(value: unknown): unknown {\n  if (Array.isArray(value)) return value.map(sortKeys);\n  if (value !== null && typeof value === 'object') {\n    const obj = value as Record<string, unknown>;\n    const out: Record<string, unknown> = {};\n    for (const k of Object.keys(obj).sort()) out[k] = sortKeys(obj[k]);\n    return out;\n  }\n  return value;\n}",
+    "truncated": false,
+    "totalLines": 10,
+    "startLine": 147
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/merge.ts#stable@L143",
+      "confidence": 1,
+      "name": "stable",
+      "qualifiedName": "stable",
+      "signature": "stable(value: unknown): string",
+      "type": "function",
+      "file": "packages/core/src/merge.ts",
+      "line": 143
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/memory/src/serialization.ts#sortKeys@L9",
+      "confidence": 1,
+      "name": "sortKeys",
+      "qualifiedName": "sortKeys",
+      "signature": "sortKeys(value: unknown): unknown",
+      "type": "function",
+      "file": "packages/memory/src/serialization.ts",
+      "line": 9
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/core/src/merge.ts#sortKeys@L147",
+    "procedureName": "sortKeys",
+    "conditions": [
+      "cond:packages/core/src/merge.ts@L148",
+      "cond:packages/core/src/merge.ts@L149",
+      "cond:packages/core/src/merge.ts@L152"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/merge.ts#sortKeys@L147",
+        "procedureName": "sortKeys",
+        "guard": "cond:packages/core/src/merge.ts@L148",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/merge.ts@L148",
+            "expr": "Array.isArray(value)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:39c52fe3dfcbf1ddb2c017b261bbe7d9a88c3220ab96f082a813e1a62bb5dd75",
+          "target": "stmt:packages/core/src/merge.ts@L148",
+          "line": 148,
+          "expr": "return value.map(sortKeys);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/merge.ts#sortKeys@L147",
+        "procedureName": "sortKeys",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:6aded7226ee606ee0e0e9de0e28236580f6e9cb7a79c2a9c51c38aecf5375a8a",
+          "target": "sym:packages/memory/src/serialization.ts#sortKeys@L9",
+          "expr": "sortKeys",
+          "line": 152
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/merge.ts#sortKeys@L147",
+        "procedureName": "sortKeys",
+        "guard": "cond:packages/core/src/merge.ts@L152",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/merge.ts@L149",
+            "expr": "value !== null && typeof value === 'object'"
+          },
+          {
+            "id": "cond:packages/core/src/merge.ts@L152",
+            "expr": "Object.keys(obj).sort()",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9a052454b793c607d9ffa2471a980d4a8a4c7d1ccfb5c9b2d98974b4d5d39469",
+          "target": "assign:packages/core/src/merge.ts@L152",
+          "line": 152,
+          "expr": "out[k] = sortKeys(obj[k]);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/merge.ts#sortKeys@L147",
+        "procedureName": "sortKeys",
+        "guard": "cond:packages/core/src/merge.ts@L149",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/merge.ts@L149",
+            "expr": "value !== null && typeof value === 'object'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:21b4c4f3a646dafe5234ba110fe1eb19a09779e24c594e9e7c5d8ceb1754cda6",
+          "target": "stmt:packages/core/src/merge.ts@L153",
+          "line": 153,
+          "expr": "return out;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/merge.ts#sortKeys@L147",
+        "procedureName": "sortKeys",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:cc078fc251a262f755d8a96145d06f3e2d134da0c57f3a8f0580da18d6475995",
+          "target": "stmt:packages/core/src/merge.ts@L155",
+          "line": 155,
+          "expr": "return value;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": [
+      "packages/core/src/merge.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 1,
+    "conditions": 3,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 2,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

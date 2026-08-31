@@ -1,0 +1,129 @@
+{
+  "id": "sym:packages/parsers/src/ts/nest.test.ts#metaInjects@L94",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:78e72dea404db2f01d409739de17381549e8fcfd0597f39931644c40f371273b",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/ts/nest.test.ts#metaInjects@L94",
+    "kind": "symbol",
+    "type": "function",
+    "name": "metaInjects",
+    "qualifiedName": "metaInjects",
+    "signature": "metaInjects(…)",
+    "lang": "typescript",
+    "file": "packages/parsers/src/ts/nest.test.ts",
+    "span": {
+      "start": 94,
+      "end": 97
+    },
+    "callSites": [
+      {
+        "callee": "find",
+        "line": 95
+      }
+    ]
+  },
+  "source": {
+    "text": "const metaInjects = (r: ExtractResult, q: string): string[] => {\n  const n = r.nodes.find((x) => x.qualifiedName === q);\n  return (n?.meta?.injects as string[] | undefined) ?? [];\n};",
+    "truncated": false,
+    "totalLines": 4,
+    "startLine": 94
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
+      "confidence": 1,
+      "name": "find",
+      "qualifiedName": "find",
+      "signature": "find(…)",
+      "type": "function",
+      "file": "packages/parsers/src/java/parser.test.ts",
+      "line": 38
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/ts/nest.test.ts@L93",
+      "snippet": "/** `meta.injects` for a class qualified name. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/ts/nest.test.ts#metaInjects@L94",
+    "procedureName": "metaInjects",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.test.ts#metaInjects@L94",
+        "procedureName": "metaInjects",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:0c15c069131c282ff6dea9a033b76a9c5a3a63f389d2fa12cf056d94f5d5f93f",
+          "target": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
+          "expr": "find",
+          "line": 95
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.test.ts#metaInjects@L94",
+        "procedureName": "metaInjects",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b82f6c9763f7b2f7cf9a347d1955f6a9c10c18c52de851556269af1ad738b2fb",
+          "target": "stmt:packages/parsers/src/ts/nest.test.ts@L95",
+          "line": 95,
+          "expr": "const n = r.nodes.find((x) => x.qualifiedName === q);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.test.ts#metaInjects@L94",
+        "procedureName": "metaInjects",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c2898162c7c6a8bec563b5f9a8fd16ca942cdac793ddeddf7f7cfe390b6533df",
+          "target": "stmt:packages/parsers/src/ts/nest.test.ts@L96",
+          "line": 96,
+          "expr": "return (n?.meta?.injects as string[] | undefined) ?? [];"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/ts/nest.ts#extractNestSemantics@L104",
-  "schemaVersion": "1.5",
+  "schemaVersion": "1.6",
   "nodeHash": "blake3:25e960a718a522a1cbac7ea7c8ee7ba19c25a97cc106a3062ff20adc44f1b054",
-  "builtAt": "2026-07-16T16:35:16.098Z",
+  "builtAt": "2026-08-31T17:37:23.222Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/ts/nest.ts#extractNestSemantics@L104",
@@ -499,14 +499,14 @@
       "line": 622
     },
     {
-      "id": "sym:packages/ui/src/viz.test.ts#edge@L27",
+      "id": "sym:packages/ui/src/viz.test.ts#edge@L33",
       "confidence": 1,
       "name": "edge",
       "qualifiedName": "edge",
       "signature": "edge(src: string, dst: string, rel: Edge['rel']): Edge",
       "type": "function",
       "file": "packages/ui/src/viz.test.ts",
-      "line": 27
+      "line": 33
     },
     {
       "id": "sym:packages/parsers/src/ts/nest.ts#emitInject@L315",
@@ -559,14 +559,14 @@
       "line": 363
     },
     {
-      "id": "sym:packages/soul-schema/src/id.ts#idFor@L88",
+      "id": "sym:packages/soul-schema/src/id.ts#idFor@L96",
       "confidence": 1,
       "name": "idFor",
       "qualifiedName": "idFor",
       "signature": "idFor(spec: IdSpec): string",
       "type": "function",
       "file": "packages/soul-schema/src/id.ts",
-      "line": 88
+      "line": 96
     },
     {
       "id": "sym:packages/parsers/src/ts/nest.ts#joinPath@L551",
@@ -579,14 +579,14 @@
       "line": 551
     },
     {
-      "id": "sym:packages/core/src/rules/extract.ts#lineOf@L265",
+      "id": "sym:packages/parsers/src/mule/raml.ts#lineOf@L88",
       "confidence": 1,
       "name": "lineOf",
       "qualifiedName": "lineOf",
-      "signature": "lineOf(soul: SoulStore, e: Edge, callLines: Map<string, number>): number",
+      "signature": "lineOf(offset: number, lineStarts: number[]): number",
       "type": "function",
-      "file": "packages/core/src/rules/extract.ts",
-      "line": 265
+      "file": "packages/parsers/src/mule/raml.ts",
+      "line": 88
     },
     {
       "id": "sym:packages/parsers/src/ts/nest.ts#memberOf@L606",
@@ -639,14 +639,14 @@
       "line": 546
     },
     {
-      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
       "confidence": 1,
       "name": "push",
       "qualifiedName": "push",
       "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
       "type": "function",
       "file": "packages/pipeline/src/linker/inverted-index.ts",
-      "line": 39
+      "line": 70
     },
     {
       "id": "sym:packages/parsers/src/ts/nest.ts#routeMetaOf@L404",
@@ -1306,20 +1306,6 @@
       {
         "procedure": "sym:packages/parsers/src/ts/nest.ts#extractNestSemantics@L104",
         "procedureName": "extractNestSemantics",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:466783daa2e33b8fdafefe33932096ea71123c5e61a164f15fe6e8a99ab8a5e9",
-          "target": "sym:packages/core/src/rules/extract.ts#lineOf@L265",
-          "expr": "lineOf",
-          "line": 137
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/ts/nest.ts#extractNestSemantics@L104",
-        "procedureName": "extractNestSemantics",
         "guard": "cond:packages/parsers/src/ts/nest.ts@L127",
         "branch": "LOOP",
         "conditions": [
@@ -1345,6 +1331,20 @@
           "target": "stmt:packages/parsers/src/ts/nest.ts@L137",
           "line": 137,
           "expr": "const methodLine = lineOf(m.getStart());"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.ts#extractNestSemantics@L104",
+        "procedureName": "extractNestSemantics",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:dfaf6bec1d96ee6cc2b9e447b86f6a46c05ac3ed97dc15d00c06fd85e08b33a2",
+          "target": "sym:packages/parsers/src/mule/raml.ts#lineOf@L88",
+          "expr": "lineOf",
+          "line": 137
         }
       },
       {
@@ -1453,8 +1453,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:8061f281606f342a1fa5232f853e8bef6bbd95749b5a0696bcaff9e29a4df654",
-          "target": "sym:packages/soul-schema/src/id.ts#idFor@L88",
+          "edgeId": "e:6fed3606556248c753263e9c8699ed7a3d36de3932fcf9155f0ee4e9cbaf258d",
+          "target": "sym:packages/soul-schema/src/id.ts#idFor@L96",
           "expr": "idFor",
           "line": 141
         }
@@ -1535,8 +1535,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:24f369bab9000e91fb822e56643c8582584387196db181825ededd0e657a67fe",
-          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "edgeId": "e:740969290ddfc5ff28275cb4e459a3c7e44c4f26ef01cd560b00d569b073c1a2",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
           "expr": "push",
           "line": 147
         }
@@ -1659,8 +1659,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:93c84d259fa8e1f56d9cf3a47cb0eee89b8cc22c6391be72ffd21738ac7bd0bf",
-          "target": "sym:packages/ui/src/viz.test.ts#edge@L27",
+          "edgeId": "e:8fea3fd32253c9461eb1607ba7ab4a6e30545993e465a7aa7bb97ce3a5f4b73d",
+          "target": "sym:packages/ui/src/viz.test.ts#edge@L33",
           "expr": "edge",
           "line": 162
         }

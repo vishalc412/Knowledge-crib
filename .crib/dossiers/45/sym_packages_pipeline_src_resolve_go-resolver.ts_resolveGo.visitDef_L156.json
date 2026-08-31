@@ -1,0 +1,373 @@
+{
+  "id": "sym:packages/pipeline/src/resolve/go-resolver.ts#resolveGo.visitDef@L156",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:ad1dbc915b76ec3ac6284736bcdea89592096a0a657813bb6294d6879f72b3a1",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/resolve/go-resolver.ts#resolveGo.visitDef@L156",
+    "kind": "symbol",
+    "type": "function",
+    "name": "visitDef",
+    "qualifiedName": "resolveGo.visitDef",
+    "signature": "visitDef(…)",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/resolve/go-resolver.ts",
+    "span": {
+      "start": 156,
+      "end": 172
+    },
+    "recursive": true,
+    "callSites": [
+      {
+        "callee": "enclosingSymbolId",
+        "line": 158
+      },
+      {
+        "callee": "resolveTypeName",
+        "line": 161
+      },
+      {
+        "callee": "push",
+        "line": 163
+      },
+      {
+        "callee": "visitDef",
+        "line": 171
+      }
+    ]
+  },
+  "source": {
+    "text": "    const visitDef = (d: GoDef): void => {\n      if (d.kind === 'struct' || d.kind === 'interface') {\n        const id = table.enclosingSymbolId(path, d.startLine);\n        if (id) {\n          for (const base of d.bases) {\n            const target = resolveTypeName(base, path, pkgFileList, nameBindings, table);\n            if (target) {\n              push(id, target, 'inherits', `embed ${base}`);\n              stats.inherits++;\n            } else {\n              stats.dropped++;\n            }\n          }\n        }\n      }\n      for (const child of d.body) visitDef(child);\n    };",
+    "truncated": false,
+    "totalLines": 17,
+    "startLine": 156
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/src/resolve/go-resolver.ts#resolveGo@L50",
+      "confidence": 1,
+      "name": "resolveGo",
+      "qualifiedName": "resolveGo",
+      "signature": "resolveGo(table: SymbolTable, root: string, files: FileMeta[]): { edges: Edge[]; stats: ResolveStats }",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/go-resolver.ts",
+      "line": 50
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/rust/RustExtractor.ts#enclosingSymbolId@L438",
+      "confidence": 1,
+      "name": "enclosingSymbolId",
+      "qualifiedName": "enclosingSymbolId",
+      "signature": "enclosingSymbolId(line: number, symbols: LocalSymbol[]): string | undefined",
+      "type": "function",
+      "file": "packages/parsers/src/rust/RustExtractor.ts",
+      "line": 438
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 70
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/go-resolver.ts#resolveGo.push@L59",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "resolveGo.push",
+      "signature": "push(…)",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/go-resolver.ts",
+      "line": 59
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/ts-resolver.ts#resolveTypeName@L138",
+      "confidence": 1,
+      "name": "resolveTypeName",
+      "qualifiedName": "resolveTypeName",
+      "signature": "resolveTypeName(name: string, file: string, imports: Map<string, ImportBinding>, table: SymbolTable): string | undefined",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/ts-resolver.ts",
+      "line": 138
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/go-resolver.ts#resolveTypeName@L206",
+      "confidence": 1,
+      "name": "resolveTypeName",
+      "qualifiedName": "resolveTypeName",
+      "signature": "resolveTypeName(name: string, file: string, pkgFileList: string[], imports: Map<string, NameBinding>, table: SymbolTable): string | undefined",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/go-resolver.ts",
+      "line": 206
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/pipeline/src/resolve/go-resolver.ts@L155",
+      "snippet": "// --- inherits (embedding): struct/interface → embedded type ---",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/resolve/go-resolver.ts#resolveGo.visitDef@L156",
+    "procedureName": "resolveGo.visitDef",
+    "conditions": [
+      "cond:packages/pipeline/src/resolve/go-resolver.ts@L157",
+      "cond:packages/pipeline/src/resolve/go-resolver.ts@L159",
+      "cond:packages/pipeline/src/resolve/go-resolver.ts@L160",
+      "cond:packages/pipeline/src/resolve/go-resolver.ts@L162",
+      "cond:packages/pipeline/src/resolve/go-resolver.ts@L171"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/go-resolver.ts#resolveGo.visitDef@L156",
+        "procedureName": "resolveGo.visitDef",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:a70ef5a1f3135acea2233cf07ab95d4667270e30c13c67165c64c948f7e1cdf2",
+          "target": "sym:packages/parsers/src/rust/RustExtractor.ts#enclosingSymbolId@L438",
+          "expr": "enclosingSymbolId",
+          "line": 158
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/go-resolver.ts#resolveGo.visitDef@L156",
+        "procedureName": "resolveGo.visitDef",
+        "guard": "cond:packages/pipeline/src/resolve/go-resolver.ts@L157",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/go-resolver.ts@L157",
+            "expr": "d.kind === 'struct' || d.kind === 'interface'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e8b7f74e325912031e857a27caf7bf4c18ef3a9f2721bb401e62b853e9283b61",
+          "target": "stmt:packages/pipeline/src/resolve/go-resolver.ts@L158",
+          "line": 158,
+          "expr": "const id = table.enclosingSymbolId(path, d.startLine);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/go-resolver.ts#resolveGo.visitDef@L156",
+        "procedureName": "resolveGo.visitDef",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:6f66f054cf48a732b22a824091d146e49fa92c4bbc28bccf7d8eae1122f43247",
+          "target": "sym:packages/pipeline/src/resolve/ts-resolver.ts#resolveTypeName@L138",
+          "expr": "resolveTypeName",
+          "line": 161
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/go-resolver.ts#resolveGo.visitDef@L156",
+        "procedureName": "resolveGo.visitDef",
+        "guard": "cond:packages/pipeline/src/resolve/go-resolver.ts@L160",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/go-resolver.ts@L157",
+            "expr": "d.kind === 'struct' || d.kind === 'interface'"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/go-resolver.ts@L159",
+            "expr": "id"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/go-resolver.ts@L160",
+            "expr": "d.bases",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:97369735f8fe0e1bf1893e1d7038bef4098ee1f25949b91424f0cc1237639b92",
+          "target": "sym:packages/pipeline/src/resolve/go-resolver.ts#resolveTypeName@L206",
+          "expr": "resolveTypeName",
+          "line": 161
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/go-resolver.ts#resolveGo.visitDef@L156",
+        "procedureName": "resolveGo.visitDef",
+        "guard": "cond:packages/pipeline/src/resolve/go-resolver.ts@L160",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/go-resolver.ts@L157",
+            "expr": "d.kind === 'struct' || d.kind === 'interface'"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/go-resolver.ts@L159",
+            "expr": "id"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/go-resolver.ts@L160",
+            "expr": "d.bases",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c932c74f847604c431612680d06572482098192bc3df4d5fce0d44f32a7e9498",
+          "target": "stmt:packages/pipeline/src/resolve/go-resolver.ts@L161",
+          "line": 161,
+          "expr": "const target = resolveTypeName(base, path, pkgFileList, nameBindings, table);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/go-resolver.ts#resolveGo.visitDef@L156",
+        "procedureName": "resolveGo.visitDef",
+        "guard": "cond:packages/pipeline/src/resolve/go-resolver.ts@L162",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/go-resolver.ts@L157",
+            "expr": "d.kind === 'struct' || d.kind === 'interface'"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/go-resolver.ts@L159",
+            "expr": "id"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/go-resolver.ts@L160",
+            "expr": "d.bases"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/go-resolver.ts@L162",
+            "expr": "target",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:7bf30bf5ceb797bc1d7530f31d754a5f858cd5def57aa190fcbc678bb5c946f8",
+          "target": "sym:packages/pipeline/src/resolve/go-resolver.ts#resolveGo.push@L59",
+          "expr": "push",
+          "line": 163
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/go-resolver.ts#resolveGo.visitDef@L156",
+        "procedureName": "resolveGo.visitDef",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:c4fcb8110aae4001f7c60e576a2058d3ede2d5019ec0f05db3b113b9475147c8",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
+          "expr": "push",
+          "line": 163
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/go-resolver.ts#resolveGo.visitDef@L156",
+        "procedureName": "resolveGo.visitDef",
+        "guard": "cond:packages/pipeline/src/resolve/go-resolver.ts@L162",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/go-resolver.ts@L157",
+            "expr": "d.kind === 'struct' || d.kind === 'interface'"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/go-resolver.ts@L159",
+            "expr": "id"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/go-resolver.ts@L160",
+            "expr": "d.bases"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/go-resolver.ts@L162",
+            "expr": "target",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ead2ecfdd7319186ae6c6b7eab3109629436e6f02e008eed0430a9b8c4b26f3d",
+          "target": "stmt:packages/pipeline/src/resolve/go-resolver.ts@L163",
+          "line": 163,
+          "expr": "push(id, target, 'inherits', `embed ${base}`);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/go-resolver.ts#resolveGo.visitDef@L156",
+        "procedureName": "resolveGo.visitDef",
+        "guard": "cond:packages/pipeline/src/resolve/go-resolver.ts@L171",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/go-resolver.ts@L171",
+            "expr": "d.body",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8471fbe81392b9b6fb20ab0fc0175e234bb114db336cb14e2090f93c14ebd0a6",
+          "target": "stmt:packages/pipeline/src/resolve/go-resolver.ts@L171",
+          "line": 171,
+          "expr": "visitDef(child);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": [
+      "packages/pipeline/src/resolve/go-resolver.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 0,
+    "conditions": 4,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 5,
+      "recorded": 4,
+      "unresolved": 0
+    },
+    "recursive": true,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

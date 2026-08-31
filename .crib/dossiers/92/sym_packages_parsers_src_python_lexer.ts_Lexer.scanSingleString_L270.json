@@ -1,0 +1,445 @@
+{
+  "id": "sym:packages/parsers/src/python/lexer.ts#Lexer.scanSingleString@L270",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:97ba8950b2dcdc97f580a409d4caad7c2e335e8c10032025d2c670ee1bd6df22",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/python/lexer.ts#Lexer.scanSingleString@L270",
+    "kind": "symbol",
+    "type": "method",
+    "name": "scanSingleString",
+    "qualifiedName": "Lexer.scanSingleString",
+    "signature": "scanSingleString(delim: string, startLine: number, startCol: number, prefix: string): void",
+    "lang": "typescript",
+    "file": "packages/parsers/src/python/lexer.ts",
+    "span": {
+      "start": 270,
+      "end": 299
+    },
+    "callSites": [
+      {
+        "callee": "peek",
+        "line": 278
+      },
+      {
+        "callee": "advance",
+        "line": 281
+      },
+      {
+        "callee": "peek",
+        "line": 283
+      },
+      {
+        "callee": "advance",
+        "line": 285
+      },
+      {
+        "callee": "advance",
+        "line": 286
+      },
+      {
+        "callee": "advance",
+        "line": 295
+      },
+      {
+        "callee": "emit",
+        "line": 298
+      }
+    ]
+  },
+  "source": {
+    "text": "  private scanSingleString(\n    delim: string,\n    startLine: number,\n    startCol: number,\n    prefix: string,\n  ): void {\n    let value = prefix + delim;\n    while (this.pos < this.src.length) {\n      const c = this.peek();\n      if (c === '\\\\') {\n        value += c;\n        this.advance();\n        if (this.pos < this.src.length) {\n          value += this.peek();\n          // an escaped newline joins lines but stays inside the string; keep line counter honest.\n          if (this.peek() === '\\n') this.advance();\n          else this.advance();\n        }\n        continue;\n      }\n      if (c === '\\n' || c === '\\r') {\n        // unterminated single-line string — tolerate: emit what we have and stop.\n        break;\n      }\n      value += c;\n      this.advance();\n      if (c === delim) break;\n    }\n    this.emit('STRING', value, startLine, startCol);\n  }",
+    "truncated": false,
+    "totalLines": 30,
+    "startLine": 270
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/python/lexer.ts#Lexer.scanString@L239",
+      "confidence": 1,
+      "name": "scanString",
+      "qualifiedName": "Lexer.scanString",
+      "signature": "scanString(): void",
+      "type": "method",
+      "file": "packages/parsers/src/python/lexer.ts",
+      "line": 239
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/python/lexer.ts#Lexer.advance@L394",
+      "confidence": 1,
+      "name": "advance",
+      "qualifiedName": "Lexer.advance",
+      "signature": "advance(): void",
+      "type": "method",
+      "file": "packages/parsers/src/python/lexer.ts",
+      "line": 394
+    },
+    {
+      "id": "sym:packages/parsers/src/python/lexer.ts#Lexer.emit@L405",
+      "confidence": 1,
+      "name": "emit",
+      "qualifiedName": "Lexer.emit",
+      "signature": "emit(type: TokenType, value: string, line?: number, col?: number): void",
+      "type": "method",
+      "file": "packages/parsers/src/python/lexer.ts",
+      "line": 405
+    },
+    {
+      "id": "sym:packages/parsers/src/python/lexer.ts#Lexer.peek@L390",
+      "confidence": 1,
+      "name": "peek",
+      "qualifiedName": "Lexer.peek",
+      "signature": "peek(offset = 0): string",
+      "type": "method",
+      "file": "packages/parsers/src/python/lexer.ts",
+      "line": 390
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/python/lexer.ts@L269",
+      "snippet": "/** Consume a single-line string until its matching quote (no embedded newline allowed). */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.scanSingleString@L270",
+    "procedureName": "Lexer.scanSingleString",
+    "conditions": [
+      "cond:packages/parsers/src/python/lexer.ts@L277",
+      "cond:packages/parsers/src/python/lexer.ts@L279",
+      "cond:packages/parsers/src/python/lexer.ts@L282",
+      "cond:packages/parsers/src/python/lexer.ts@L285"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.scanSingleString@L270",
+        "procedureName": "Lexer.scanSingleString",
+        "guard": "cond:packages/parsers/src/python/lexer.ts@L282",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L277",
+            "expr": "this.pos < this.src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L279",
+            "expr": "c === '\\\\'"
+          },
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L282",
+            "expr": "this.pos < this.src.length",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:72e6a1d30f352a12c92c8af89656446ca48f94d8465200a24316782ad3eacdf6",
+          "target": "sym:packages/parsers/src/python/lexer.ts#Lexer.peek@L390",
+          "expr": "peek",
+          "line": 278
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.scanSingleString@L270",
+        "procedureName": "Lexer.scanSingleString",
+        "guard": "cond:packages/parsers/src/python/lexer.ts@L277",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L277",
+            "expr": "this.pos < this.src.length",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c7cc43da3028733426b520b3b7c0dd9f68dbd35c35b1e1f7c154d1e729c7b508",
+          "target": "stmt:packages/parsers/src/python/lexer.ts@L278",
+          "line": 278,
+          "expr": "const c = this.peek();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.scanSingleString@L270",
+        "procedureName": "Lexer.scanSingleString",
+        "guard": "cond:packages/parsers/src/python/lexer.ts@L279",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L277",
+            "expr": "this.pos < this.src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L279",
+            "expr": "c === '\\\\'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c59897b618d42505b0efed0efcdeefd7c8f80b32fbc982f7f5afd3a6beb36b1d",
+          "target": "assign:packages/parsers/src/python/lexer.ts@L280",
+          "line": 280,
+          "expr": "value += c;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.scanSingleString@L270",
+        "procedureName": "Lexer.scanSingleString",
+        "guard": "cond:packages/parsers/src/python/lexer.ts@L277",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L277",
+            "expr": "this.pos < this.src.length",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:b75feaec3c3ce0ab258df8134e3e59d4302c5959d8cddc9e1eb11225763d96ae",
+          "target": "sym:packages/parsers/src/python/lexer.ts#Lexer.advance@L394",
+          "expr": "advance",
+          "line": 281
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.scanSingleString@L270",
+        "procedureName": "Lexer.scanSingleString",
+        "guard": "cond:packages/parsers/src/python/lexer.ts@L279",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L277",
+            "expr": "this.pos < this.src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L279",
+            "expr": "c === '\\\\'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e7c67ff0bbbdda290ed30dcc63ccfe42a2f5c86f92293e069c30924bc69ef505",
+          "target": "stmt:packages/parsers/src/python/lexer.ts@L281",
+          "line": 281,
+          "expr": "this.advance();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.scanSingleString@L270",
+        "procedureName": "Lexer.scanSingleString",
+        "guard": "cond:packages/parsers/src/python/lexer.ts@L282",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L277",
+            "expr": "this.pos < this.src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L279",
+            "expr": "c === '\\\\'"
+          },
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L282",
+            "expr": "this.pos < this.src.length",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:dc72bb0689318905ac593237e6125cc722a35c0c00ac4fa24b4d03964b2a5d13",
+          "target": "assign:packages/parsers/src/python/lexer.ts@L283",
+          "line": 283,
+          "expr": "value += this.peek();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.scanSingleString@L270",
+        "procedureName": "Lexer.scanSingleString",
+        "guard": "cond:packages/parsers/src/python/lexer.ts@L285",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L277",
+            "expr": "this.pos < this.src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L279",
+            "expr": "c === '\\\\'"
+          },
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L282",
+            "expr": "this.pos < this.src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L285",
+            "expr": "this.peek() === '\\n'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7c809e495128b9a0b80eae05ac083d2e7994d4447b286114c075c0a101d91524",
+          "target": "stmt:packages/parsers/src/python/lexer.ts@L285",
+          "line": 285,
+          "expr": "this.advance();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.scanSingleString@L270",
+        "procedureName": "Lexer.scanSingleString",
+        "guard": "cond:packages/parsers/src/python/lexer.ts@L285",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L277",
+            "expr": "this.pos < this.src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L279",
+            "expr": "c === '\\\\'"
+          },
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L282",
+            "expr": "this.pos < this.src.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L285",
+            "expr": "this.peek() === '\\n'",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7dc575424e372ed58c25770f6831dac3cba886fa913740f24fb3fb3d5c5f19b8",
+          "target": "stmt:packages/parsers/src/python/lexer.ts@L286",
+          "line": 286,
+          "expr": "this.advance();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.scanSingleString@L270",
+        "procedureName": "Lexer.scanSingleString",
+        "guard": "cond:packages/parsers/src/python/lexer.ts@L277",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L277",
+            "expr": "this.pos < this.src.length",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3d58c7ef220f8f63b835e2023a87af5c1bf614a687b036bfb5d481fafbc66fee",
+          "target": "assign:packages/parsers/src/python/lexer.ts@L294",
+          "line": 294,
+          "expr": "value += c;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.scanSingleString@L270",
+        "procedureName": "Lexer.scanSingleString",
+        "guard": "cond:packages/parsers/src/python/lexer.ts@L277",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/lexer.ts@L277",
+            "expr": "this.pos < this.src.length",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:89d431440206d95e42dadfe7d648a6434f5e3478d48b7ef95bdf2417a067097a",
+          "target": "stmt:packages/parsers/src/python/lexer.ts@L295",
+          "line": 295,
+          "expr": "this.advance();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.scanSingleString@L270",
+        "procedureName": "Lexer.scanSingleString",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:07fb5cfa21562ff776972c4a7a10d45bb4c76865e2dfaaf24b1db2b9c29242d8",
+          "target": "stmt:packages/parsers/src/python/lexer.ts@L298",
+          "line": 298,
+          "expr": "this.emit('STRING', value, startLine, startCol);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/lexer.ts#Lexer.scanSingleString@L270",
+        "procedureName": "Lexer.scanSingleString",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:6f45b3b017cae400cf58bfa83dfb9e331bb631ecf092b0d729584a624f4483ed",
+          "target": "sym:packages/parsers/src/python/lexer.ts#Lexer.emit@L405",
+          "expr": "emit",
+          "line": 298
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 9,
+    "referencedByFiles": [
+      "packages/parsers/src/python/lexer.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 9,
+    "assignments": 3,
+    "conditions": 4,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 3,
+      "recorded": 7,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

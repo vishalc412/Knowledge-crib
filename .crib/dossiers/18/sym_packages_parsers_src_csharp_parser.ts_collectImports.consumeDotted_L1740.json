@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/csharp/parser.ts#collectImports.consumeDotted@L1740",
-  "schemaVersion": "1.5",
+  "schemaVersion": "1.6",
   "nodeHash": "blake3:a6344500409675f2ca273969e2df83da832aea4f3e51afb24088d38a07106e48",
-  "builtAt": "2026-07-16T16:35:16.098Z",
+  "builtAt": "2026-08-25T20:55:11.863Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/csharp/parser.ts#collectImports.consumeDotted@L1740",
@@ -54,14 +54,14 @@
       "line": 1516
     },
     {
-      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
       "confidence": 1,
       "name": "push",
       "qualifiedName": "push",
       "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
       "type": "function",
       "file": "packages/pipeline/src/linker/inverted-index.ts",
-      "line": 39
+      "line": 70
     }
   ],
   "docs": [],
@@ -88,20 +88,6 @@
       {
         "procedure": "sym:packages/parsers/src/csharp/parser.ts#collectImports.consumeDotted@L1740",
         "procedureName": "collectImports.consumeDotted",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:0e532eede1b3d32053127a47e9b37a0931d8dd30156f85e6ef80af3e2947cf19",
-          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
-          "expr": "push",
-          "line": 1744
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/csharp/parser.ts#collectImports.consumeDotted@L1740",
-        "procedureName": "collectImports.consumeDotted",
         "guard": "cond:packages/parsers/src/csharp/parser.ts@L1743",
         "branch": "LOOP",
         "conditions": [
@@ -119,6 +105,20 @@
           "target": "stmt:packages/parsers/src/csharp/parser.ts@L1744",
           "line": 1744,
           "expr": "parts.push(tokens[j]!.value);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#collectImports.consumeDotted@L1740",
+        "procedureName": "collectImports.consumeDotted",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:fb898fe833143a7fedb61c533f0fe60746d9c492e84c3d45787dddcbe60361eb",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
+          "expr": "push",
+          "line": 1744
         }
       },
       {

@@ -1,0 +1,128 @@
+{
+  "id": "sym:packages/parsers/fixtures/rust/rules.rs#grant@L21",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:d7f72dcc4a011ab643fa5124f2adbfb66d2539146c0a6f74e6dcc975b295d552",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/fixtures/rust/rules.rs#grant@L21",
+    "kind": "symbol",
+    "type": "fn",
+    "name": "grant",
+    "qualifiedName": "grant",
+    "signature": "fn grant(user)",
+    "lang": "rust",
+    "file": "packages/parsers/fixtures/rust/rules.rs",
+    "span": {
+      "start": 21,
+      "end": 23
+    },
+    "callSites": [
+      {
+        "callee": "format",
+        "line": 22
+      }
+    ],
+    "params": [
+      "user"
+    ]
+  },
+  "source": {
+    "text": "pub fn grant(user: &str) -> String {\n    format!(\"grant {}\", user)\n}",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 21
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/fixtures/rust/rules.rs#authorize@L6",
+      "confidence": 1,
+      "name": "authorize",
+      "qualifiedName": "authorize",
+      "signature": "fn authorize(user)",
+      "type": "fn",
+      "file": "packages/parsers/fixtures/rust/rules.rs",
+      "line": 6
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "doc:docs/knowledge-crib-decisions.md#decision-log",
+      "heading": "Decision Log",
+      "anchor": "decision-log",
+      "snippet": "Decision Log",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-questionnaire.md#clarifications-i-need-answer-alongside-some-are-blockers",
+      "heading": "Clarifications I need (answer alongside — some are blockers)",
+      "anchor": "clarifications-i-need-answer-alongside-some-are-blockers",
+      "snippet": "Clarifications I need (answer alongside — some are blockers)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prd.md#8-license-open-source-q26-q37",
+      "heading": "8. License & Open Source [Q26, Q37]",
+      "anchor": "8-license-open-source-q26-q37",
+      "snippet": "8. License & Open Source [Q26, Q37]",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/fixtures/rust/rules.rs#grant@L21",
+    "procedureName": "grant",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/fixtures/rust/rules.rs#grant@L21",
+        "procedureName": "grant",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a99e050d52238513feec16d34a6126926d41ad291e7a2613f01cfe6c687bfc46",
+          "target": "stmt:packages/parsers/fixtures/rust/rules.rs@L22",
+          "line": 22,
+          "expr": "format!(\"grant {}\", user)"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/parsers/fixtures/rust/rules.rs"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

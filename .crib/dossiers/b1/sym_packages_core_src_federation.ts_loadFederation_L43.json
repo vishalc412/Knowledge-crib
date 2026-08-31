@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/core/src/federation.ts#loadFederation@L43",
-  "schemaVersion": "1.5",
+  "schemaVersion": "1.6",
   "nodeHash": "blake3:3530b4c749cba188b90d2f8cac926f2da7dcddf0668a2f62efceeff4f06a62b7",
-  "builtAt": "2026-07-16T16:35:16.098Z",
+  "builtAt": "2026-08-31T17:37:23.222Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/core/src/federation.ts#loadFederation@L43",
@@ -103,14 +103,14 @@
       "line": 303
     },
     {
-      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
       "confidence": 1,
       "name": "push",
       "qualifiedName": "push",
       "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
       "type": "function",
       "file": "packages/pipeline/src/linker/inverted-index.ts",
-      "line": 39
+      "line": 70
     },
     {
       "id": "sym:packages/core/src/federation.ts#routeKey@L284",
@@ -232,20 +232,6 @@
       {
         "procedure": "sym:packages/core/src/federation.ts#loadFederation@L43",
         "procedureName": "loadFederation",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:bd74009ead1048fdac5288a7337ed846b8fd61e3c6dc697f8d5803649f62ea22",
-          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
-          "expr": "push",
-          "line": 49
-        }
-      },
-      {
-        "procedure": "sym:packages/core/src/federation.ts#loadFederation@L43",
-        "procedureName": "loadFederation",
         "guard": "cond:packages/core/src/federation.ts@L45",
         "branch": "LOOP",
         "conditions": [
@@ -263,6 +249,20 @@
           "target": "stmt:packages/core/src/federation.ts@L49",
           "line": 49,
           "expr": "souls.push({ root, soul });"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/federation.ts#loadFederation@L43",
+        "procedureName": "loadFederation",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:fde0206acbdc5ca87a316aa7d9a14a4a4cc45adca47fea939b45f33b2c72ce09",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
+          "expr": "push",
+          "line": 49
         }
       },
       {

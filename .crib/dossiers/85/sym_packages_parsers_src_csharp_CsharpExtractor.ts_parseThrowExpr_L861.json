@@ -1,0 +1,201 @@
+{
+  "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#parseThrowExpr@L861",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:abdc7e0c19b053f7bdab50749c1fbf4b92bdcdabafdeee77012413af4f0ca4c7",
+  "builtAt": "2026-08-25T20:55:11.863Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#parseThrowExpr@L861",
+    "kind": "symbol",
+    "type": "function",
+    "name": "parseThrowExpr",
+    "qualifiedName": "parseThrowExpr",
+    "signature": "parseThrowExpr(expr: string): { name: string; errorMessage: string }",
+    "lang": "typescript",
+    "file": "packages/parsers/src/csharp/CsharpExtractor.ts",
+    "span": {
+      "start": 861,
+      "end": 870
+    },
+    "callSites": [
+      {
+        "callee": "trim",
+        "line": 862
+      },
+      {
+        "callee": "replace",
+        "line": 862
+      },
+      {
+        "callee": "exec",
+        "line": 864
+      },
+      {
+        "callee": "exec",
+        "line": 865
+      },
+      {
+        "callee": "exec",
+        "line": 867
+      }
+    ]
+  },
+  "source": {
+    "text": "function parseThrowExpr(expr: string): { name: string; errorMessage: string } {\n  const body = expr.replace(/^throw\\s+/, '').trim();\n  if (!body) return { name: '', errorMessage: '' }; // bare `throw;` rethrow\n  const newMatch = /\\bnew\\s+([A-Za-z_][\\w.]*)/.exec(body);\n  const bareMatch = /^([A-Za-z_]\\w*)/.exec(body);\n  const name = newMatch ? (newMatch[1] ?? '') : bareMatch ? (bareMatch[1] ?? '') : '';\n  const strMatch = /\"((?:[^\"\\\\]|\\\\.)*)\"/.exec(body);\n  const errorMessage = strMatch ? (strMatch[1] ?? '') : body;\n  return { name, errorMessage };\n}",
+    "truncated": false,
+    "totalLines": 10,
+    "startLine": 861
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.addRaise@L692",
+      "confidence": 1,
+      "name": "addRaise",
+      "qualifiedName": "BodyWalker.addRaise",
+      "signature": "addRaise(s: CsharpStmt, procId: string, env: WalkEnv): void",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/CsharpExtractor.ts",
+      "line": 692
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/csharp/CsharpExtractor.ts@L854",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#parseThrowExpr@L861",
+    "procedureName": "parseThrowExpr",
+    "conditions": [
+      "cond:packages/parsers/src/csharp/CsharpExtractor.ts@L863"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#parseThrowExpr@L861",
+        "procedureName": "parseThrowExpr",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bffd928ba1e86847ada36d07d73b5adb998f91f3e60cd5f2b2ebfd3ee304833a",
+          "target": "stmt:packages/parsers/src/csharp/CsharpExtractor.ts@L862",
+          "line": 862,
+          "expr": "const body = expr.replace(/^throw\\s+/, '').trim();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#parseThrowExpr@L861",
+        "procedureName": "parseThrowExpr",
+        "guard": "cond:packages/parsers/src/csharp/CsharpExtractor.ts@L863",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/CsharpExtractor.ts@L863",
+            "expr": "!body",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7f2fbdaa6ddd49f198089392537ef03b6fe00487d459f98f62cdcbf2e773f5c8",
+          "target": "stmt:packages/parsers/src/csharp/CsharpExtractor.ts@L863",
+          "line": 863,
+          "expr": "return { name: '', errorMessage: '' };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#parseThrowExpr@L861",
+        "procedureName": "parseThrowExpr",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5ee23a9072298d9a6f85d20420b146b20160d6188f934f3601104a4e33d0112e",
+          "target": "stmt:packages/parsers/src/csharp/CsharpExtractor.ts@L864",
+          "line": 864,
+          "expr": "const newMatch = /\\bnew\\s+([A-Za-z_][\\w.]*)/.exec(body);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#parseThrowExpr@L861",
+        "procedureName": "parseThrowExpr",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ef8cee89da7c5c8708e4d6ca8592b667d6c60966cb5cc8dc7268a438632eaea4",
+          "target": "stmt:packages/parsers/src/csharp/CsharpExtractor.ts@L865",
+          "line": 865,
+          "expr": "const bareMatch = /^([A-Za-z_]\\w*)/.exec(body);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#parseThrowExpr@L861",
+        "procedureName": "parseThrowExpr",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4025ab46433460f7b7361110dda7e8696f1231666e59414509ae36954b3ad08b",
+          "target": "stmt:packages/parsers/src/csharp/CsharpExtractor.ts@L867",
+          "line": 867,
+          "expr": "const strMatch = /\"((?:[^\"\\\\]|\\\\.)*)\"/.exec(body);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#parseThrowExpr@L861",
+        "procedureName": "parseThrowExpr",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ba6d77c3b82b5a143419671b5156718822b999dee86c9b64a01e3bfa05cf3565",
+          "target": "stmt:packages/parsers/src/csharp/CsharpExtractor.ts@L869",
+          "line": 869,
+          "expr": "return { name, errorMessage };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 6,
+    "referencedByFiles": [
+      "packages/parsers/src/csharp/CsharpExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 6,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 5,
+      "unresolved": 5
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "5 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

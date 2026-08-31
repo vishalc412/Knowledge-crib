@@ -1,8 +1,8 @@
 {
   "id": "sym:scripts/release-verify.mjs#run@L3",
-  "schemaVersion": "1.5",
-  "nodeHash": "blake3:ffd8401bec1cd2492f608a0d6f9d0c2db3be44eca145529ec771d3c6861955af",
-  "builtAt": "2026-07-16T16:35:16.098Z",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:66107a1d811b58c6c516e2aad6b1f8873d07cff8f08a0863177dcd74f18fb94b",
+  "builtAt": "2026-08-31T17:37:23.222Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:scripts/release-verify.mjs#run@L3",
@@ -15,7 +15,7 @@
     "file": "scripts/release-verify.mjs",
     "span": {
       "start": 3,
-      "end": 12
+      "end": 18
     },
     "callSites": [
       {
@@ -28,167 +28,47 @@
       },
       {
         "callee": "execFileSync",
-        "line": 7
+        "line": 13
       }
     ]
   },
   "source": {
-    "text": "function run(cmd, args, opts = {}) {\n  process.stdout.write(`\\n$ ${[cmd, ...args].join(' ')}\\n`);\n  // On Windows, `corepack` is a .cmd shim; execFileSync (shell: false) cannot launch .cmd files\n  // directly (ENOENT). Use a shell there so the matrix CI cell (windows-latest) stays green.\n  execFileSync(cmd, args, {\n    stdio: 'inherit',\n    shell: process.platform === 'win32',\n    ...opts,\n  });\n}",
+    "text": "function run(cmd, args, opts = {}) {\n  process.stdout.write(`\\n$ ${[cmd, ...args].join(' ')}\\n`);\n  // `corepack` (and other node-distributed CLIs) ship as .cmd shims on Windows;\n  // execFileSync(shell:false) can't launch them (ENOENT), so shell them on win32.\n  // `node` is a real .exe and never needs a shell — and a shell would MANGLE inline\n  // `-e` scripts containing double-quotes: cmd.exe re-parses the arg string and\n  // truncates the script at the first \", yielding `SyntaxError: Unexpected end of\n  // input`. So shell only the .cmd-shim commands, not `node`. Posix is unaffected\n  // (the `&& win32` guard short-circuits to shell:false, byte-identical to before).\n  const needsShell = cmd !== 'node' && process.platform === 'win32';\n  execFileSync(cmd, args, {\n    stdio: 'inherit',\n    shell: needsShell,\n    ...opts,\n  });\n}",
     "truncated": false,
-    "totalLines": 10,
+    "totalLines": 16,
     "startLine": 3
   },
   "callers": [
     {
-      "id": "sym:scripts/build-installers.mjs#buildInstallers@L175",
-      "confidence": 1,
-      "name": "buildInstallers",
-      "qualifiedName": "buildInstallers",
-      "signature": "buildInstallers({ outRoot = join(repoRoot, 'dist', 'installers') } = {})",
-      "type": "function",
-      "file": "scripts/build-installers.mjs",
-      "line": 175
-    },
-    {
-      "id": "sym:packages/core/src/materialize.ts#materializeComposite@L16",
-      "confidence": 1,
-      "name": "materializeComposite",
-      "qualifiedName": "materializeComposite",
-      "signature": "materializeComposite(soul: SoulStore): MaterializeResult",
-      "type": "function",
-      "file": "packages/core/src/materialize.ts",
-      "line": 16
-    },
-    {
-      "id": "sym:scripts/release-verify.mjs#pnpm@L14",
+      "id": "sym:scripts/release-verify.mjs#pnpm@L20",
       "confidence": 1,
       "name": "pnpm",
       "qualifiedName": "pnpm",
       "signature": "pnpm(args)",
       "type": "function",
       "file": "scripts/release-verify.mjs",
-      "line": 14
-    },
-    {
-      "id": "sym:packages/pipeline/src/resolve/index.ts#runCfg@L176",
-      "confidence": 1,
-      "name": "runCfg",
-      "qualifiedName": "runCfg",
-      "signature": "runCfg(soul: SoulStore, root: string, files: FileMeta[], passes?: CfgPass[]): { annotated: number; skipped: number }",
-      "type": "function",
-      "file": "packages/pipeline/src/resolve/index.ts",
-      "line": 176
-    },
-    {
-      "id": "sym:scripts/install-smoke.mjs#smokeInstall@L135",
-      "confidence": 1,
-      "name": "smokeInstall",
-      "qualifiedName": "smokeInstall",
-      "signature": "smokeInstall({ outRoot = join(repoRoot, 'dist', 'installers') } = {})",
-      "type": "function",
-      "file": "scripts/install-smoke.mjs",
-      "line": 135
+      "line": 20
     }
   ],
   "callees": [
     {
-      "id": "sym:packages/cli/src/hooks.test.ts#write@L54",
+      "id": "sym:scripts/fixtures/synthetic-mule-project.mjs#write@L64",
       "confidence": 1,
       "name": "write",
       "qualifiedName": "write",
-      "signature": "write(path: string, records: Array<Record<string, unknown>>): void",
+      "signature": "write(root, rel, content)",
       "type": "function",
-      "file": "packages/cli/src/hooks.test.ts",
-      "line": 54
+      "file": "scripts/fixtures/synthetic-mule-project.mjs",
+      "line": 64
     }
   ],
   "docs": [
-    {
-      "sectionId": "doc:docs/launch/demo-recipe.md#prep-one-time-3-min",
-      "heading": "Prep (one-time, ~3 min)",
-      "anchor": "prep-one-time-3-min",
-      "snippet": "Prep (one-time, ~3 min)",
-      "edgeType": "describes",
-      "method": "explicit",
-      "provenance": "EXTRACTED",
-      "confidence": 0.95
-    },
-    {
-      "sectionId": "doc:docs/superpowers/plans/2026-06-26-beta-installers.md#task-2-installer-smoke-verification",
-      "heading": "Task 2: Installer Smoke Verification",
-      "anchor": "task-2-installer-smoke-verification",
-      "snippet": "Task 2: Installer Smoke Verification",
-      "edgeType": "describes",
-      "method": "explicit",
-      "provenance": "EXTRACTED",
-      "confidence": 0.95
-    },
-    {
-      "sectionId": "doc:docs/launch/publish-runbook.md#post-publish-verification-the-m4-1-gate",
-      "heading": "Post-publish verification (the M4.1 gate)",
-      "anchor": "post-publish-verification-the-m4-1-gate",
-      "snippet": "Post-publish verification (the M4.1 gate)",
-      "edgeType": "describes",
-      "method": "explicit",
-      "provenance": "EXTRACTED",
-      "confidence": 0.95
-    },
-    {
-      "sectionId": "doc:docs/launch/publish-runbook.md#publish-sequence-user-executes-in-dependency-order",
-      "heading": "Publish sequence (user executes, in dependency order)",
-      "anchor": "publish-sequence-user-executes-in-dependency-order",
-      "snippet": "Publish sequence (user executes, in dependency order)",
-      "edgeType": "describes",
-      "method": "explicit",
-      "provenance": "EXTRACTED",
-      "confidence": 0.95
-    },
-    {
-      "sectionId": "doc:docs/launch/publish-runbook.md#rollback-if-a-package-is-broken-post-publish",
-      "heading": "Rollback (if a package is broken post-publish)",
-      "anchor": "rollback-if-a-package-is-broken-post-publish",
-      "snippet": "Rollback (if a package is broken post-publish)",
-      "edgeType": "describes",
-      "method": "explicit",
-      "provenance": "EXTRACTED",
-      "confidence": 0.95
-    },
-    {
-      "sectionId": "doc:docs/knowledge-crib-cli.md#crib-index-path",
-      "heading": "`crib index [path]`",
-      "anchor": "crib-index-path",
-      "snippet": "`crib index [path]`",
-      "edgeType": "describes",
-      "method": "explicit",
-      "provenance": "EXTRACTED",
-      "confidence": 0.95
-    },
-    {
-      "sectionId": "doc:packages/cli/skills/crib-enrich/SKILL.md#phase-1-one-batch-author-save-stop-the-default-loop-per-turn",
-      "heading": "Phase 1 — one batch, author, save, stop (the default loop, per turn)",
-      "anchor": "phase-1-one-batch-author-save-stop-the-default-loop-per-turn",
-      "snippet": "Phase 1 — one batch, author, save, stop (the default loop, per turn)",
-      "edgeType": "describes",
-      "method": "explicit",
-      "provenance": "EXTRACTED",
-      "confidence": 0.95
-    },
-    {
-      "sectionId": "doc:docs/knowledge-crib-client-setup.md#10-the-llm-semantic-graph-layer-optional-build-the-bible",
-      "heading": "10. The LLM semantic-graph layer (optional — \"build the bible\")",
-      "anchor": "10-the-llm-semantic-graph-layer-optional-build-the-bible",
-      "snippet": "10. The LLM semantic-graph layer (optional — \"build the bible\")",
-      "edgeType": "describes",
-      "method": "explicit",
-      "provenance": "EXTRACTED",
-      "confidence": 0.95
-    },
     {
       "sectionId": "doc:docs/superpowers/plans/2026-06-27-knowledgecrib-linkedin-demo-video.md#task-3-capture-real-product-evidence",
       "heading": "Task 3: Capture Real Product Evidence",
       "anchor": "task-3-capture-real-product-evidence",
       "snippet": "Task 3: Capture Real Product Evidence",
-      "edgeType": "describes",
+      "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
       "confidence": 0.8
@@ -198,7 +78,7 @@
       "heading": "Reporting Issues",
       "anchor": "reporting-issues",
       "snippet": "Reporting Issues",
-      "edgeType": "describes",
+      "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
       "confidence": 0.8
@@ -208,7 +88,17 @@
       "heading": "Security",
       "anchor": "security",
       "snippet": "Security",
-      "edgeType": "describes",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/bench/memory.md#reading-the-three-lines-that-matter",
+      "heading": "Reading the three lines that matter",
+      "anchor": "reading-the-three-lines-that-matter",
+      "snippet": "Reading the three lines that matter",
+      "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
       "confidence": 0.8
@@ -228,6 +118,16 @@
       "heading": "Branch 3 — Unified Graph & Data Architecture",
       "anchor": "branch-3-unified-graph-data-architecture",
       "snippet": "Branch 3 — Unified Graph & Data Architecture",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-4-extraction.md#gitnexus-execution-preconditions",
+      "heading": "GitNexus execution preconditions",
+      "anchor": "gitnexus-execution-preconditions",
+      "snippet": "GitNexus execution preconditions",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
@@ -284,6 +184,46 @@
       "confidence": 0.6
     },
     {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#8-troubleshooting",
+      "heading": "8. Troubleshooting",
+      "anchor": "8-troubleshooting",
+      "snippet": "8. Troubleshooting",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#the-layer-model-bottom-up",
+      "heading": "The layer model — bottom-up",
+      "anchor": "the-layer-model-bottom-up",
+      "snippet": "The layer model — bottom-up",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#driving-the-loop",
+      "heading": "Driving the loop",
+      "anchor": "driving-the-loop",
+      "snippet": "Driving the loop",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#5-4-fixes-applied-to-knowledge-crib-so-other-projects-work-too",
+      "heading": "5.4 Fixes applied to Knowledge-crib (so other projects work too)",
+      "anchor": "5-4-fixes-applied-to-knowledge-crib-so-other-projects-work-too",
+      "snippet": "5.4 Fixes applied to Knowledge-crib (so other projects work too)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
       "sectionId": "doc:docs/knowledge-crib-extractor-plugins.md#5-testing-a-plugin-required-for-merge",
       "heading": "5. Testing a plugin (required for merge)",
       "anchor": "5-testing-a-plugin-required-for-merge",
@@ -308,6 +248,16 @@
       "heading": "Scale curve — `crib index` time + peak RSS vs corpus LOC",
       "anchor": "scale-curve-crib-index-time-peak-rss-vs-corpus-loc",
       "snippet": "Scale curve — `crib index` time + peak RSS vs corpus LOC",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/mulesoft.md#properties-secrets-keys-only",
+      "heading": "Properties & secrets (keys only)",
+      "anchor": "properties-secrets-keys-only",
+      "snippet": "Properties & secrets (keys only)",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
@@ -348,6 +298,16 @@
       "heading": "Option B — Bounded-concurrency async pool (the shipped default)",
       "anchor": "option-b-bounded-concurrency-async-pool-the-shipped-default",
       "snippet": "Option B — Bounded-concurrency async pool (the shipped default)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-foundation.md#gitnexus-execution-preconditions",
+      "heading": "GitNexus execution preconditions",
+      "anchor": "gitnexus-execution-preconditions",
+      "snippet": "GitNexus execution preconditions",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
@@ -424,16 +384,6 @@
       "confidence": 0.6
     },
     {
-      "sectionId": "doc:docs/launch/repo-identity-decision.md#option-a-knowledgecrib-github-org-recommended",
-      "heading": "Option A — `KnowledgeCrib` GitHub org (RECOMMENDED)",
-      "anchor": "option-a-knowledgecrib-github-org-recommended",
-      "snippet": "Option A — `KnowledgeCrib` GitHub org (RECOMMENDED)",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
-    },
-    {
       "sectionId": "doc:docs/knowledge-crib-track3-spec.md#tests-each-language-add-to-the-existing-extractor-test-ts",
       "heading": "Tests (each language — add to the existing `Extractor.test.ts`)",
       "anchor": "tests-each-language-add-to-the-existing-extractor-test-ts",
@@ -448,6 +398,26 @@
       "heading": "Before Opening a Pull Request",
       "anchor": "before-opening-a-pull-request",
       "snippet": "Before Opening a Pull Request",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/specs/2026-08-14-mulesoft-first-class-extractor-design.md#14-5-sample-acceptance",
+      "heading": "14.5 Sample acceptance",
+      "anchor": "14-5-sample-acceptance",
+      "snippet": "14.5 Sample acceptance",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/specs/2026-08-14-mulesoft-first-class-extractor-design.md#12-performance-and-determinism",
+      "heading": "12. Performance and Determinism",
+      "anchor": "12-performance-and-determinism",
+      "snippet": "12. Performance and Determinism",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
@@ -544,6 +514,16 @@
       "confidence": 0.6
     },
     {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_MAKE_A_BEATS_B.md#1-the-equality-gaps-that-remain-plan-a-still-weaker-today",
+      "heading": "1. The equality gaps that remain (Plan A still weaker today)",
+      "anchor": "1-the-equality-gaps-that-remain-plan-a-still-weaker-today",
+      "snippet": "1. The equality gaps that remain (Plan A still weaker today)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
       "sectionId": "doc:docs/knowledge-crib-client-setup.md#3-the-mcp-server-the-clients-connect-to",
       "heading": "3. The MCP server the clients connect to",
       "anchor": "3-the-mcp-server-the-clients-connect-to",
@@ -584,6 +564,16 @@
       "confidence": 0.6
     },
     {
+      "sectionId": "doc:CHANGELOG.md#added",
+      "heading": "Added",
+      "anchor": "added",
+      "snippet": "Added",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
       "sectionId": "doc:docs/launch/signing-deferral-adr.md#decision-proposed",
       "heading": "Decision (proposed)",
       "anchor": "decision-proposed",
@@ -598,6 +588,16 @@
       "heading": "Consequences",
       "anchor": "consequences",
       "snippet": "Consequences",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#7-risks",
+      "heading": "7. Risks",
+      "anchor": "7-risks",
+      "snippet": "7. Risks",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
@@ -682,76 +682,6 @@
       "method": "identifier",
       "provenance": "EXTRACTED",
       "confidence": 0.6
-    },
-    {
-      "sectionId": "doc:CHANGELOG.md#added",
-      "heading": "Added",
-      "anchor": "added",
-      "snippet": "Added",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
-    },
-    {
-      "sectionId": "doc:docs/knowledge-crib-user-guide.md#5-4-fixes-applied-to-knowledge-crib-so-other-projects-work-too",
-      "heading": "5.4 Fixes applied to Knowledge-crib (so other projects work too)",
-      "anchor": "5-4-fixes-applied-to-knowledge-crib-so-other-projects-work-too",
-      "snippet": "5.4 Fixes applied to Knowledge-crib (so other projects work too)",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
-    },
-    {
-      "sectionId": "doc:docs/knowledge-crib-user-guide.md#8-troubleshooting",
-      "heading": "8. Troubleshooting",
-      "anchor": "8-troubleshooting",
-      "snippet": "8. Troubleshooting",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
-    },
-    {
-      "sectionId": "doc:docs/knowledge-crib-user-guide.md#the-layer-model-bottom-up",
-      "heading": "The layer model — bottom-up",
-      "anchor": "the-layer-model-bottom-up",
-      "snippet": "The layer model — bottom-up",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
-    },
-    {
-      "sectionId": "doc:docs/knowledge-crib-user-guide.md#driving-the-loop",
-      "heading": "Driving the loop",
-      "anchor": "driving-the-loop",
-      "snippet": "Driving the loop",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
-    },
-    {
-      "sectionId": "doc:docs/superpowers/plans/PLAN_MAKE_A_BEATS_B.md#1-the-equality-gaps-that-remain-plan-a-still-weaker-today",
-      "heading": "1. The equality gaps that remain (Plan A still weaker today)",
-      "anchor": "1-the-equality-gaps-that-remain-plan-a-still-weaker-today",
-      "snippet": "1. The equality gaps that remain (Plan A still weaker today)",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
-    },
-    {
-      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#7-risks",
-      "heading": "7. Risks",
-      "anchor": "7-risks",
-      "snippet": "7. Risks",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
     }
   ],
   "rules": {
@@ -767,8 +697,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:c03a937a224e9b636ab670dd229792935c92e9631be833c1422f7fbda21f0503",
-          "target": "sym:packages/cli/src/hooks.test.ts#write@L54",
+          "edgeId": "e:1f12af418056004a96070058492483ef47fa10938c4012535c4d930021e2bc91",
+          "target": "sym:scripts/fixtures/synthetic-mule-project.mjs#write@L64",
           "expr": "write",
           "line": 4
         }
@@ -795,10 +725,10 @@
         "inException": false,
         "action": {
           "kind": "executes",
-          "edgeId": "e:bcda39dcc82d15e74b40dbfbbe79b607fa73b9f19faf70699f1287f9b0168537",
-          "target": "stmt:scripts/release-verify.mjs@L7",
-          "line": 7,
-          "expr": "execFileSync(cmd, args, {\n    stdio: 'inherit',\n    shell: process.platform === 'win32',\n    ...opts,\n  });"
+          "edgeId": "e:e095f4d83582a27f6de7788bb4d5b0fde83d4cee1dd9a099a2b8b05a13e65a52",
+          "target": "stmt:scripts/release-verify.mjs@L13",
+          "line": 13,
+          "expr": "execFileSync(cmd, args, {\n    stdio: 'inherit',\n    shell: needsShell,\n    ...opts,\n  });"
         }
       }
     ]
@@ -807,10 +737,6 @@
     "status": "implemented",
     "executesCount": 2,
     "referencedByFiles": [
-      "packages/core/src/materialize.ts",
-      "packages/pipeline/src/resolve/index.ts",
-      "scripts/build-installers.mjs",
-      "scripts/install-smoke.mjs",
       "scripts/release-verify.mjs"
     ]
   },

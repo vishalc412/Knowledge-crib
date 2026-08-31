@@ -1,0 +1,177 @@
+{
+  "id": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.walkBody@L468",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:52d72c891d7b3c017f39d22dcb24cc103d3319b0a846297c24566ca38624b024",
+  "builtAt": "2026-08-25T20:55:11.863Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.walkBody@L468",
+    "kind": "symbol",
+    "type": "method",
+    "name": "walkBody",
+    "qualifiedName": "BodyWalker.walkBody",
+    "signature": "walkBody(stmts: JavaStmt[], procId: string, guardStack: string[], innerBranch: string | undefined, inLoop: boolean, inException: boolean): void",
+    "lang": "typescript",
+    "file": "packages/parsers/src/java/JavaExtractor.ts",
+    "span": {
+      "start": 468,
+      "end": 477
+    },
+    "callSites": [
+      {
+        "callee": "walkStmt",
+        "line": 476
+      }
+    ]
+  },
+  "source": {
+    "text": "  walkBody(\n    stmts: JavaStmt[],\n    procId: string,\n    guardStack: string[],\n    innerBranch: string | undefined,\n    inLoop: boolean,\n    inException: boolean,\n  ): void {\n    for (const s of stmts) this.walkStmt(s, procId, guardStack, innerBranch, inLoop, inException);\n  }",
+    "truncated": false,
+    "totalLines": 10,
+    "startLine": 468
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.walkIf@L667",
+      "confidence": 1,
+      "name": "walkIf",
+      "qualifiedName": "BodyWalker.walkIf",
+      "signature": "walkIf(s: JavaStmt, procId: string, guardStack: string[], inLoop: boolean, inException: boolean): void",
+      "type": "method",
+      "file": "packages/parsers/src/java/JavaExtractor.ts",
+      "line": 667
+    },
+    {
+      "id": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.walkLoop@L684",
+      "confidence": 1,
+      "name": "walkLoop",
+      "qualifiedName": "BodyWalker.walkLoop",
+      "signature": "walkLoop(s: JavaStmt, procId: string, guardStack: string[], inLoop: boolean, inException: boolean): void",
+      "type": "method",
+      "file": "packages/parsers/src/java/JavaExtractor.ts",
+      "line": 684
+    },
+    {
+      "id": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.walkSwitch@L700",
+      "confidence": 1,
+      "name": "walkSwitch",
+      "qualifiedName": "BodyWalker.walkSwitch",
+      "signature": "walkSwitch(s: JavaStmt, procId: string, guardStack: string[], inLoop: boolean, inException: boolean): void",
+      "type": "method",
+      "file": "packages/parsers/src/java/JavaExtractor.ts",
+      "line": 700
+    },
+    {
+      "id": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.walkTry@L720",
+      "confidence": 1,
+      "name": "walkTry",
+      "qualifiedName": "BodyWalker.walkTry",
+      "signature": "walkTry(s: JavaStmt, procId: string, guardStack: string[], inLoop: boolean, inException: boolean): void",
+      "type": "method",
+      "file": "packages/parsers/src/java/JavaExtractor.ts",
+      "line": 720
+    },
+    {
+      "id": "sym:packages/parsers/src/java/JavaExtractor.ts#JavaExtractor.parse@L68",
+      "confidence": 1,
+      "name": "parse",
+      "qualifiedName": "JavaExtractor.parse",
+      "signature": "parse(path: string, fileId: string, text: string, ctx: ExtractCtx): ExtractResult",
+      "type": "method",
+      "file": "packages/parsers/src/java/JavaExtractor.ts",
+      "line": 68
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.walkStmt@L479",
+      "confidence": 1,
+      "name": "walkStmt",
+      "qualifiedName": "BodyWalker.walkStmt",
+      "signature": "walkStmt(s: JavaStmt, procId: string, guardStack: string[], innerBranch: string | undefined, inLoop: boolean, inException: boolean): void",
+      "type": "method",
+      "file": "packages/parsers/src/java/JavaExtractor.ts",
+      "line": 479
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.walkBody@L468",
+    "procedureName": "BodyWalker.walkBody",
+    "conditions": [
+      "cond:packages/parsers/src/java/JavaExtractor.ts@L476"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.walkBody@L468",
+        "procedureName": "BodyWalker.walkBody",
+        "guard": "cond:packages/parsers/src/java/JavaExtractor.ts@L476",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/JavaExtractor.ts@L476",
+            "expr": "stmts",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:6318bc43dbdbd1a6102306b1e71e426e0ef648b91fb2f7c0809d69f73d956414",
+          "target": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.walkStmt@L479",
+          "expr": "walkStmt",
+          "line": 476
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.walkBody@L468",
+        "procedureName": "BodyWalker.walkBody",
+        "guard": "cond:packages/parsers/src/java/JavaExtractor.ts@L476",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/JavaExtractor.ts@L476",
+            "expr": "stmts",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a41ca50d6c0deeef877be23ac8b1f83575ad6a169489ea13b373caef13d5335a",
+          "target": "stmt:packages/parsers/src/java/JavaExtractor.ts@L476",
+          "line": 476,
+          "expr": "this.walkStmt(s, procId, guardStack, innerBranch, inLoop, inException);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/parsers/src/java/JavaExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

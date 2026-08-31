@@ -1,0 +1,197 @@
+{
+  "id": "sym:packages/pipeline/fixtures/docs-linked/src/auth.ts#AuthService.login@L2",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:7dba52d44d2570d36c7b9c381ddae373cbbceb336a9f7b9b2f500cd25099955f",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/fixtures/docs-linked/src/auth.ts#AuthService.login@L2",
+    "kind": "symbol",
+    "type": "method",
+    "name": "login",
+    "qualifiedName": "AuthService.login",
+    "signature": "login(email: string): Session",
+    "lang": "typescript",
+    "file": "packages/pipeline/fixtures/docs-linked/src/auth.ts",
+    "span": {
+      "start": 2,
+      "end": 4
+    },
+    "callSites": [
+      {
+        "callee": "issue",
+        "line": 3
+      }
+    ]
+  },
+  "source": {
+    "text": "  login(email: string): Session {\n    return this.issue(email);\n  }",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 2
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/pipeline/fixtures/docs-linked/src/auth.ts#AuthService.issue@L6",
+      "confidence": 1,
+      "name": "issue",
+      "qualifiedName": "AuthService.issue",
+      "signature": "issue(email: string): Session",
+      "type": "method",
+      "file": "packages/pipeline/fixtures/docs-linked/src/auth.ts",
+      "line": 6
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#context-symbol",
+      "heading": "`context(symbol)`",
+      "anchor": "context-symbol",
+      "snippet": "`context(symbol)`",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-data-model.md#edge-example",
+      "heading": "Edge example",
+      "anchor": "edge-example",
+      "snippet": "Edge example",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#dossier-symbol-deep-context-persisted-workstream-d-e",
+      "heading": "`dossier(symbol)` *(deep-context, persisted — Workstream D/E)*",
+      "anchor": "dossier-symbol-deep-context-persisted-workstream-d-e",
+      "snippet": "`dossier(symbol)` *(deep-context, persisted — Workstream D/E)*",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#neighbors-op-llm-llm-semantic-graph-walk",
+      "heading": "`neighbors({op:'llm'})` *(LLM semantic-graph walk)*",
+      "anchor": "neighbors-op-llm-llm-semantic-graph-walk",
+      "snippet": "`neighbors({op:'llm'})` *(LLM semantic-graph walk)*",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#node",
+      "heading": "Node",
+      "anchor": "node",
+      "snippet": "Node",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-data-model.md#node-example",
+      "heading": "Node example",
+      "anchor": "node-example",
+      "snippet": "Node example",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m13-offline-multimodal-worker-pdf-image-whisper-audio",
+      "heading": "M13 — Offline multimodal worker (PDF/image/whisper audio)",
+      "anchor": "m13-offline-multimodal-worker-pdf-image-whisper-audio",
+      "snippet": "M13 — Offline multimodal worker (PDF/image/whisper audio)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#context-symbol",
+      "heading": "`context(symbol)`",
+      "anchor": "context-symbol",
+      "snippet": "`context(symbol)`",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-data-model.md#edge-example",
+      "heading": "Edge example",
+      "anchor": "edge-example",
+      "snippet": "Edge example",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/fixtures/docs-linked/src/auth.ts#AuthService.login@L2",
+    "procedureName": "AuthService.login",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/fixtures/docs-linked/src/auth.ts#AuthService.login@L2",
+        "procedureName": "AuthService.login",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:9486f765be6e296fa715cec220f109eb8fb203224834af84b05ad65e57e87b94",
+          "target": "sym:packages/pipeline/fixtures/docs-linked/src/auth.ts#AuthService.issue@L6",
+          "expr": "issue",
+          "line": 3
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/fixtures/docs-linked/src/auth.ts#AuthService.login@L2",
+        "procedureName": "AuthService.login",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e9eedeea8f572b4f151f46a4f37a29f2d0648e401ca3ae3cc79d75dca6a50ace",
+          "target": "stmt:packages/pipeline/fixtures/docs-linked/src/auth.ts@L3",
+          "line": 3,
+          "expr": "return this.issue(email);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

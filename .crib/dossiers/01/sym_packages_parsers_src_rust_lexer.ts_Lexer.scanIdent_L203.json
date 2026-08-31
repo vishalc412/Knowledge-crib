@@ -1,0 +1,231 @@
+{
+  "id": "sym:packages/parsers/src/rust/lexer.ts#Lexer.scanIdent@L203",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:e921cbfc6aadf4632695160fa54ed7c4015a71f98d04f9f7f199b479c7af7f75",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/rust/lexer.ts#Lexer.scanIdent@L203",
+    "kind": "symbol",
+    "type": "method",
+    "name": "scanIdent",
+    "qualifiedName": "Lexer.scanIdent",
+    "signature": "scanIdent(): void",
+    "lang": "typescript",
+    "file": "packages/parsers/src/rust/lexer.ts",
+    "span": {
+      "start": 203,
+      "end": 209
+    },
+    "callSites": [
+      {
+        "callee": "advance",
+        "line": 207
+      },
+      {
+        "callee": "emit",
+        "line": 208
+      },
+      {
+        "callee": "slice",
+        "line": 208
+      }
+    ]
+  },
+  "source": {
+    "text": "  private scanIdent(): void {\n    const start = this.pos;\n    const sl = this.line;\n    const sc = this.col;\n    while (this.pos < this.src.length && this.isIdentPart(this.peek())) this.advance();\n    this.emit('NAME', this.src.slice(start, this.pos), sl, sc);\n  }",
+    "truncated": false,
+    "totalLines": 7,
+    "startLine": 203
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/rust/lexer.ts#Lexer.tokens@L157",
+      "confidence": 1,
+      "name": "tokens",
+      "qualifiedName": "Lexer.tokens",
+      "signature": "tokens(): Token[]",
+      "type": "method",
+      "file": "packages/parsers/src/rust/lexer.ts",
+      "line": 157
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/rust/lexer.ts#Lexer.advance@L466",
+      "confidence": 1,
+      "name": "advance",
+      "qualifiedName": "Lexer.advance",
+      "signature": "advance(): void",
+      "type": "method",
+      "file": "packages/parsers/src/rust/lexer.ts",
+      "line": 466
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/lexer.ts#Lexer.emit@L477",
+      "confidence": 1,
+      "name": "emit",
+      "qualifiedName": "Lexer.emit",
+      "signature": "emit(type: TokenType, value: string, line: number, col: number): void",
+      "type": "method",
+      "file": "packages/parsers/src/rust/lexer.ts",
+      "line": 477
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/lexer.ts#Lexer.isIdentPart@L484",
+      "confidence": 1,
+      "name": "isIdentPart",
+      "qualifiedName": "Lexer.isIdentPart",
+      "signature": "isIdentPart(c: string): boolean",
+      "type": "method",
+      "file": "packages/parsers/src/rust/lexer.ts",
+      "line": 484
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/lexer.ts#Lexer.peek@L455",
+      "confidence": 1,
+      "name": "peek",
+      "qualifiedName": "Lexer.peek",
+      "signature": "peek(offset = 0): string",
+      "type": "method",
+      "file": "packages/parsers/src/rust/lexer.ts",
+      "line": 455
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.scanIdent@L203",
+    "procedureName": "Lexer.scanIdent",
+    "conditions": [
+      "cond:packages/parsers/src/rust/lexer.ts@L207"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.scanIdent@L203",
+        "procedureName": "Lexer.scanIdent",
+        "guard": "cond:packages/parsers/src/rust/lexer.ts@L207",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L207",
+            "expr": "this.pos < this.src.length && this.isIdentPart(this.peek())",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3d33f3df5128b7ce1c401c6a4a5a56dec6d443318b5ca7a453dc131150ed281f",
+          "target": "stmt:packages/parsers/src/rust/lexer.ts@L207",
+          "line": 207,
+          "expr": "this.advance();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.scanIdent@L203",
+        "procedureName": "Lexer.scanIdent",
+        "guard": "cond:packages/parsers/src/rust/lexer.ts@L207",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/lexer.ts@L207",
+            "expr": "this.pos < this.src.length && this.isIdentPart(this.peek())",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:f4e05df07fffafd96d4b714642312b49bc91df0e4a2ad1e1d587e0c4f766850a",
+          "target": "sym:packages/parsers/src/rust/lexer.ts#Lexer.advance@L466",
+          "expr": "advance",
+          "line": 207
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.scanIdent@L203",
+        "procedureName": "Lexer.scanIdent",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:68241cacbf14d726b1b001bf6fcc220a5eb7058b5306e31a578ef4202e4c04db",
+          "target": "sym:packages/parsers/src/rust/lexer.ts#Lexer.emit@L477",
+          "expr": "emit",
+          "line": 208
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.scanIdent@L203",
+        "procedureName": "Lexer.scanIdent",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f16e7ff3ab5d2a029f495392cdb1cb8a520157c1c7229e3628b5b0a06d9bdd0b",
+          "target": "stmt:packages/parsers/src/rust/lexer.ts@L208",
+          "line": 208,
+          "expr": "this.emit('NAME', this.src.slice(start, this.pos), sl, sc);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.scanIdent@L203",
+        "procedureName": "Lexer.scanIdent",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:da7a86eb27c4015846a17af606de39467739aae5e9763016be3778f796d71f8e",
+          "target": "sym:packages/parsers/src/rust/lexer.ts#Lexer.peek@L455",
+          "expr": "peek"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.scanIdent@L203",
+        "procedureName": "Lexer.scanIdent",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:9a287d7b8ee4dceb04d18074c67e98e28e0aee132d70859b5d95eecd37b39401",
+          "target": "sym:packages/parsers/src/rust/lexer.ts#Lexer.isIdentPart@L484",
+          "expr": "isIdentPart"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/parsers/src/rust/lexer.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 4,
+      "recorded": 3,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

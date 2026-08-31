@@ -1,8 +1,8 @@
 {
   "id": "sym:scripts/security-doc-check.mjs#assertContains@L49",
-  "schemaVersion": "1.5",
+  "schemaVersion": "1.6",
   "nodeHash": "blake3:14e38416f127849735fff327474d1a66cfdb0e9ea5c0e9b9207d344f1c7b81d7",
-  "builtAt": "2026-07-16T16:35:16.098Z",
+  "builtAt": "2026-08-31T17:37:23.222Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:scripts/security-doc-check.mjs#assertContains@L49",
@@ -47,24 +47,24 @@
       "line": 45
     },
     {
-      "id": "sym:scripts/tier-check.mjs#fail@L41",
+      "id": "sym:scripts/tier-check.mjs#fail@L45",
       "confidence": 1,
       "name": "fail",
       "qualifiedName": "fail",
       "signature": "fail(…)",
       "type": "function",
       "file": "scripts/tier-check.mjs",
-      "line": 41
+      "line": 45
     },
     {
-      "id": "sym:packages/cli/src/hooks.test.ts#write@L54",
+      "id": "sym:scripts/fixtures/synthetic-mule-project.mjs#write@L64",
       "confidence": 1,
       "name": "write",
       "qualifiedName": "write",
-      "signature": "write(path: string, records: Array<Record<string, unknown>>): void",
+      "signature": "write(root, rel, content)",
       "type": "function",
-      "file": "packages/cli/src/hooks.test.ts",
-      "line": 54
+      "file": "scripts/fixtures/synthetic-mule-project.mjs",
+      "line": 64
     }
   ],
   "docs": [],
@@ -105,8 +105,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:6371fe1cbcdde61a991de0c4a85aeb12f0e56b7002bb7550a14cfff71adfb8df",
-          "target": "sym:scripts/tier-check.mjs#fail@L41",
+          "edgeId": "e:c5e794f213f0914f75eab6f9a713f7b126d3826bc4e2f1c67928f09902086fb2",
+          "target": "sym:scripts/tier-check.mjs#fail@L45",
           "expr": "fail",
           "line": 51
         }
@@ -163,8 +163,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:f6ac2b5623ff7bda93203800109ce4d19f573801cacdc3702ec997570846f9ec",
-          "target": "sym:packages/cli/src/hooks.test.ts#write@L54",
+          "edgeId": "e:7c77fc3912af73e18eaecf3662afea3e92cea922bbf5fe9019401fbaf2fd5f61",
+          "target": "sym:scripts/fixtures/synthetic-mule-project.mjs#write@L64",
           "expr": "write",
           "line": 53
         }

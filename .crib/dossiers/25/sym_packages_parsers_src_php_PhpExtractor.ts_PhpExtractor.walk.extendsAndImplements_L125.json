@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/php/PhpExtractor.ts#PhpExtractor.walk.extendsAndImplements@L125",
-  "schemaVersion": "1.5",
+  "schemaVersion": "1.6",
   "nodeHash": "blake3:f717aa46ea7b4b43163a5fd0a3c57247f6513a6da4e076d6cbe53736f114c65c",
-  "builtAt": "2026-07-13T11:04:33.459Z",
+  "builtAt": "2026-08-31T17:37:23.222Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/php/PhpExtractor.ts#PhpExtractor.walk.extendsAndImplements@L125",
@@ -56,14 +56,14 @@
   ],
   "callees": [
     {
-      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
       "confidence": 1,
       "name": "push",
       "qualifiedName": "push",
       "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
       "type": "function",
       "file": "packages/pipeline/src/linker/inverted-index.ts",
-      "line": 39
+      "line": 70
     }
   ],
   "docs": [
@@ -88,6 +88,20 @@
       {
         "procedure": "sym:packages/parsers/src/php/PhpExtractor.ts#PhpExtractor.walk.extendsAndImplements@L125",
         "procedureName": "PhpExtractor.walk.extendsAndImplements",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:4427dab9fdc7b968ff234ad773f4031f6a8e23a239f5976ef830a10ba531b6df",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
+          "expr": "push",
+          "line": 131
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/php/PhpExtractor.ts#PhpExtractor.walk.extendsAndImplements@L125",
+        "procedureName": "PhpExtractor.walk.extendsAndImplements",
         "guard": "cond:packages/parsers/src/php/PhpExtractor.ts@L131",
         "branch": "THEN",
         "conditions": [
@@ -109,20 +123,6 @@
           "target": "stmt:packages/parsers/src/php/PhpExtractor.ts@L131",
           "line": 131,
           "expr": "bases.push(...child.namedChildren.map((c) => c.text));"
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/php/PhpExtractor.ts#PhpExtractor.walk.extendsAndImplements@L125",
-        "procedureName": "PhpExtractor.walk.extendsAndImplements",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:8b40debc4ed70e8d454cffaae53afa355762fc3ef17c9649ee0e30dd7fec6e40",
-          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
-          "expr": "push",
-          "line": 131
         }
       },
       {

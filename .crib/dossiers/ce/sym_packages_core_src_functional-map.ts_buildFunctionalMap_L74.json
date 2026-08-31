@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/core/src/functional-map.ts#buildFunctionalMap@L74",
-  "schemaVersion": "1.5",
+  "schemaVersion": "1.6",
   "nodeHash": "blake3:f09bf267a913ceb72e1ead10080e674d8ecd4eed912ba4c4123fe10c13033f79",
-  "builtAt": "2026-07-16T16:35:16.098Z",
+  "builtAt": "2026-08-31T17:37:23.222Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/core/src/functional-map.ts#buildFunctionalMap@L74",
@@ -301,14 +301,14 @@
   },
   "callers": [
     {
-      "id": "sym:packages/ui/src/viz.ts#buildVizOverview@L392",
+      "id": "sym:packages/ui/src/viz.ts#buildVizOverview@L452",
       "confidence": 1,
       "name": "buildVizOverview",
       "qualifiedName": "buildVizOverview",
       "signature": "buildVizOverview(soul: SoulStore): VizOverview",
       "type": "function",
       "file": "packages/ui/src/viz.ts",
-      "line": 392
+      "line": 452
     }
   ],
   "callees": [
@@ -333,14 +333,14 @@
       "line": 127
     },
     {
-      "id": "sym:packages/core/src/cluster-hash.ts#clusterMembers@L14",
+      "id": "sym:packages/core/src/cluster-hash.ts#clusterMembers@L45",
       "confidence": 1,
       "name": "clusterMembers",
       "qualifiedName": "clusterMembers",
       "signature": "clusterMembers(soul: SoulStore, cluster: Node): Node[]",
       "type": "function",
       "file": "packages/core/src/cluster-hash.ts",
-      "line": 14
+      "line": 45
     },
     {
       "id": "sym:packages/core/src/importance.ts#computeImportance@L102",
@@ -433,14 +433,14 @@
       "line": 300
     },
     {
-      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
       "confidence": 1,
       "name": "push",
       "qualifiedName": "push",
       "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
       "type": "function",
       "file": "packages/pipeline/src/linker/inverted-index.ts",
-      "line": 39
+      "line": 70
     },
     {
       "id": "sym:packages/core/src/llm-overlay.ts#readLlmOverlay@L63",
@@ -797,6 +797,20 @@
       {
         "procedure": "sym:packages/core/src/functional-map.ts#buildFunctionalMap@L74",
         "procedureName": "buildFunctionalMap",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:2ddcedae04cf91ab098da1e688fe0d461020a60197a334458e16d9164083497b",
+          "target": "sym:packages/core/src/cluster-hash.ts#clusterMembers@L45",
+          "expr": "clusterMembers",
+          "line": 112
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/functional-map.ts#buildFunctionalMap@L74",
+        "procedureName": "buildFunctionalMap",
         "guard": "cond:packages/core/src/functional-map.ts@L110",
         "branch": "LOOP",
         "conditions": [
@@ -814,20 +828,6 @@
           "target": "stmt:packages/core/src/functional-map.ts@L112",
           "line": 112,
           "expr": "const members = clusterMembers(soul, cluster);"
-        }
-      },
-      {
-        "procedure": "sym:packages/core/src/functional-map.ts#buildFunctionalMap@L74",
-        "procedureName": "buildFunctionalMap",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:acc6aa2fa23407f0cfd78425dbf2395833676c9fd434c7c0b590cde3d04f4c8c",
-          "target": "sym:packages/core/src/cluster-hash.ts#clusterMembers@L14",
-          "expr": "clusterMembers",
-          "line": 112
         }
       },
       {
@@ -1571,20 +1571,6 @@
       {
         "procedure": "sym:packages/core/src/functional-map.ts#buildFunctionalMap@L74",
         "procedureName": "buildFunctionalMap",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:0024e577e5b408ccbf8d73c26105ef4b9ba87f2705522688f964966744d5db74",
-          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
-          "expr": "push",
-          "line": 220
-        }
-      },
-      {
-        "procedure": "sym:packages/core/src/functional-map.ts#buildFunctionalMap@L74",
-        "procedureName": "buildFunctionalMap",
         "guard": "cond:packages/core/src/functional-map.ts@L126",
         "branch": "LOOP",
         "conditions": [
@@ -1602,6 +1588,20 @@
           "target": "stmt:packages/core/src/functional-map.ts@L220",
           "line": 220,
           "expr": "modules.push({\n      id: `module:${pathPrefix || '(root)'}`,\n      name,\n      pathPrefix,\n      source,\n      counts: {\n        files: moduleFiles.length,\n        symbols: moduleSymbols.length,\n        clusters: clusterIds.length,\n        routes: moduleRoutes.length,\n        docSections: moduleDocs.length,\n      },\n      stereotypes,\n      clusterIds,\n      topSymbols,\n      ...(readme ? { readme } : {}),\n      ...(purpose ? { purpose } : {}),\n      coverage,\n      _summedImportance: summedImportance,\n    });"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/functional-map.ts#buildFunctionalMap@L74",
+        "procedureName": "buildFunctionalMap",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:e0b5d1178d009f888feef7d43186db8541201b0706614a9a63f05ff93f40d52b",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
+          "expr": "push",
+          "line": 220
         }
       },
       {

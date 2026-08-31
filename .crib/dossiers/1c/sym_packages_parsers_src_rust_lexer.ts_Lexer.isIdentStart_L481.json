@@ -1,0 +1,116 @@
+{
+  "id": "sym:packages/parsers/src/rust/lexer.ts#Lexer.isIdentStart@L481",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:51a64652f7d350c4be491ef83fe65b9d1090b25edda3b7b0b170cfa65acf6287",
+  "builtAt": "2026-08-25T20:55:11.863Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/rust/lexer.ts#Lexer.isIdentStart@L481",
+    "kind": "symbol",
+    "type": "method",
+    "name": "isIdentStart",
+    "qualifiedName": "Lexer.isIdentStart",
+    "signature": "isIdentStart(c: string): boolean",
+    "lang": "typescript",
+    "file": "packages/parsers/src/rust/lexer.ts",
+    "span": {
+      "start": 481,
+      "end": 483
+    },
+    "callSites": [
+      {
+        "callee": "charCodeAt",
+        "line": 482
+      }
+    ]
+  },
+  "source": {
+    "text": "  private isIdentStart(c: string): boolean {\n    return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c === '_' || c.charCodeAt(0) > 127;\n  }",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 481
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/rust/lexer.ts#Lexer.isIdentPart@L484",
+      "confidence": 1,
+      "name": "isIdentPart",
+      "qualifiedName": "Lexer.isIdentPart",
+      "signature": "isIdentPart(c: string): boolean",
+      "type": "method",
+      "file": "packages/parsers/src/rust/lexer.ts",
+      "line": 484
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/lexer.ts#Lexer.scanCharOrLifetime@L287",
+      "confidence": 1,
+      "name": "scanCharOrLifetime",
+      "qualifiedName": "Lexer.scanCharOrLifetime",
+      "signature": "scanCharOrLifetime(byte = false): void",
+      "type": "method",
+      "file": "packages/parsers/src/rust/lexer.ts",
+      "line": 287
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/lexer.ts#Lexer.tokens@L157",
+      "confidence": 1,
+      "name": "tokens",
+      "qualifiedName": "Lexer.tokens",
+      "signature": "tokens(): Token[]",
+      "type": "method",
+      "file": "packages/parsers/src/rust/lexer.ts",
+      "line": 157
+    }
+  ],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.isIdentStart@L481",
+    "procedureName": "Lexer.isIdentStart",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#Lexer.isIdentStart@L481",
+        "procedureName": "Lexer.isIdentStart",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:1a2a2b4b9af362561a035295ead4f958d1b14a80f96c717d9642c5c21cd9ff56",
+          "target": "stmt:packages/parsers/src/rust/lexer.ts@L482",
+          "line": 482,
+          "expr": "return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c === '_' || c.charCodeAt(0) > 127;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/parsers/src/rust/lexer.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 1,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

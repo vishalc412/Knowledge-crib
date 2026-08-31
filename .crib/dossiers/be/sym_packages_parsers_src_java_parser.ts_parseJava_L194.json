@@ -1,0 +1,394 @@
+{
+  "id": "sym:packages/parsers/src/java/parser.ts#parseJava@L194",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:4d8f067b43315d4c708218d3589b8730b9da294896428d91c5df41e9b5b9ff06",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/java/parser.ts#parseJava@L194",
+    "kind": "symbol",
+    "type": "function",
+    "name": "parseJava",
+    "qualifiedName": "parseJava",
+    "signature": "parseJava(src: string): JavaModule",
+    "lang": "typescript",
+    "file": "packages/parsers/src/java/parser.ts",
+    "span": {
+      "start": 194,
+      "end": 205
+    },
+    "callSites": [
+      {
+        "callee": "tokenize",
+        "line": 196
+      },
+      {
+        "callee": "parseProgram",
+        "line": 198
+      },
+      {
+        "callee": "collectCallSites",
+        "line": 199
+      },
+      {
+        "callee": "collectImports",
+        "line": 200
+      }
+    ]
+  },
+  "source": {
+    "text": "export function parseJava(src: string): JavaModule {\n  try {\n    const tokens = tokenize(src);\n    const p = new Parser(tokens, src);\n    const { defs, excluded } = p.parseProgram();\n    const calls = collectCallSites(tokens, excluded);\n    const { pkg, imports } = collectImports(tokens);\n    return { defs, calls, imports, pkg };\n  } catch {\n    return { defs: [], calls: [], imports: [], pkg: '' };\n  }\n}",
+    "truncated": false,
+    "totalLines": 12,
+    "startLine": 194
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/java/JavaExtractor.ts#JavaExtractor.parse@L68",
+      "confidence": 1,
+      "name": "parse",
+      "qualifiedName": "JavaExtractor.parse",
+      "signature": "parse(path: string, fileId: string, text: string, ctx: ExtractCtx): ExtractResult",
+      "type": "method",
+      "file": "packages/parsers/src/java/JavaExtractor.ts",
+      "line": 68
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.test.ts#parse@L35",
+      "confidence": 1,
+      "name": "parse",
+      "qualifiedName": "parse",
+      "signature": "parse(…)",
+      "type": "function",
+      "file": "packages/parsers/src/java/parser.test.ts",
+      "line": 35
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/java-resolver.ts#resolveJava@L53",
+      "confidence": 1,
+      "name": "resolveJava",
+      "qualifiedName": "resolveJava",
+      "signature": "resolveJava(table: SymbolTable, root: string, files: FileMeta[]): { edges: Edge[]; stats: ResolveStats }",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/java-resolver.ts",
+      "line": 53
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#Parser.parseProgram@L222",
+      "confidence": 1,
+      "name": "parseProgram",
+      "qualifiedName": "Parser.parseProgram",
+      "signature": "parseProgram(): { defs: JavaDef[]; excluded: Set<number> }",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 222
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/parser.ts#collectCallSites@L1590",
+      "confidence": 1,
+      "name": "collectCallSites",
+      "qualifiedName": "collectCallSites",
+      "signature": "collectCallSites(tokens: Token[], excluded: Set<number>): RustCallSite[]",
+      "type": "function",
+      "file": "packages/parsers/src/rust/parser.ts",
+      "line": 1590
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#collectCallSites@L1002",
+      "confidence": 1,
+      "name": "collectCallSites",
+      "qualifiedName": "collectCallSites",
+      "signature": "collectCallSites(tokens: Token[], excluded: Set<number>): JavaCallSite[]",
+      "type": "function",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 1002
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/ts-resolver.ts#collectImports@L150",
+      "confidence": 1,
+      "name": "collectImports",
+      "qualifiedName": "collectImports",
+      "signature": "collectImports(sf: ts.SourceFile, fromPath: string, table: SymbolTable): Map<string, ImportBinding>",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/ts-resolver.ts",
+      "line": 150
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#collectImports@L1043",
+      "confidence": 1,
+      "name": "collectImports",
+      "qualifiedName": "collectImports",
+      "signature": "collectImports(tokens: Token[]): { pkg: string; imports: JavaImport[] }",
+      "type": "function",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 1043
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/tfidf.ts#tokenize@L80",
+      "confidence": 1,
+      "name": "tokenize",
+      "qualifiedName": "tokenize",
+      "signature": "tokenize(text: string): string[]",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/tfidf.ts",
+      "line": 80
+    },
+    {
+      "id": "sym:packages/parsers/src/java/lexer.ts#tokenize@L201",
+      "confidence": 1,
+      "name": "tokenize",
+      "qualifiedName": "tokenize",
+      "signature": "tokenize(src: string): Token[]",
+      "type": "function",
+      "file": "packages/parsers/src/java/lexer.ts",
+      "line": 201
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/java/parser.ts@L193",
+      "snippet": "/** Parse Java source into a declaration tree + call sites + imports + package (never throws). */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/java/parser.ts#parseJava@L194",
+    "procedureName": "parseJava",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#parseJava@L194",
+        "procedureName": "parseJava",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:4aff8dd39a26b982bda9a749ff10eb27e201c8a42eeac325c5714c9f7d856a46",
+          "target": "sym:packages/pipeline/src/linker/tfidf.ts#tokenize@L80",
+          "expr": "tokenize",
+          "line": 196
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#parseJava@L194",
+        "procedureName": "parseJava",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:514f54ab93ac6f3cf9005ddc31520b5081f1e2d59aa7bc6996b2b5e507cb145b",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L196",
+          "line": 196,
+          "expr": "const tokens = tokenize(src);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#parseJava@L194",
+        "procedureName": "parseJava",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:f1fc5ed05d4faef2ec79b6b4845a5bb8e2b7c97913d3342515f1e7b7e373b2ce",
+          "target": "sym:packages/parsers/src/java/lexer.ts#tokenize@L201",
+          "expr": "tokenize",
+          "line": 196
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#parseJava@L194",
+        "procedureName": "parseJava",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2b55a93eb650a2cd4a52955ad9198332ec590c87b83dfd4f8a2fec7ec928662e",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L198",
+          "line": 198,
+          "expr": "const { defs, excluded } = p.parseProgram();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#parseJava@L194",
+        "procedureName": "parseJava",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:e27fd13354282f1238b35d5c281b5a390a5cf3178e7039d6b8093802a4658f9c",
+          "target": "sym:packages/parsers/src/java/parser.ts#Parser.parseProgram@L222",
+          "expr": "parseProgram",
+          "line": 198
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#parseJava@L194",
+        "procedureName": "parseJava",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:18249f27dee30a2457b8704ba5b0ab32395ef7075420725d45e929d6abb150e5",
+          "target": "sym:packages/parsers/src/rust/parser.ts#collectCallSites@L1590",
+          "expr": "collectCallSites",
+          "line": 199
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#parseJava@L194",
+        "procedureName": "parseJava",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e1e397aeeafc49aceb820fad0d30b9d5b558fc3b2abeb03df2f956b44ba2a579",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L199",
+          "line": 199,
+          "expr": "const calls = collectCallSites(tokens, excluded);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#parseJava@L194",
+        "procedureName": "parseJava",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:f61c624096e392f62a15117520b7e3ffa8eab6b8af69e1f0479748ad59f33dec",
+          "target": "sym:packages/parsers/src/java/parser.ts#collectCallSites@L1002",
+          "expr": "collectCallSites",
+          "line": 199
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#parseJava@L194",
+        "procedureName": "parseJava",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:80b4f3dfd90f9ab725101abedab3af17dea4fd57aa36c74f2783f6762d817b4d",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L200",
+          "line": 200,
+          "expr": "const { pkg, imports } = collectImports(tokens);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#parseJava@L194",
+        "procedureName": "parseJava",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:a1ff0bc2dcf895c555741774e80a8d66375383dd99d673c0fee19f80158f2135",
+          "target": "sym:packages/pipeline/src/resolve/ts-resolver.ts#collectImports@L150",
+          "expr": "collectImports",
+          "line": 200
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#parseJava@L194",
+        "procedureName": "parseJava",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:de5a2b2194052269cdecdebb8dfeceeb8cf8ec34fc5fa2df2c753d6f22266b2f",
+          "target": "sym:packages/parsers/src/java/parser.ts#collectImports@L1043",
+          "expr": "collectImports",
+          "line": 200
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#parseJava@L194",
+        "procedureName": "parseJava",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a04c255c24737e266d1ae17e50d2be63f2ecce0c8645430035c5f48c0bb71835",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L201",
+          "line": 201,
+          "expr": "return { defs, calls, imports, pkg };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#parseJava@L194",
+        "procedureName": "parseJava",
+        "conditions": [],
+        "inLoop": false,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ed66a4f899def5dd32abc9ad200b4d460430759e530d62a07b799edc7de27780",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L203",
+          "line": 203,
+          "expr": "return { defs: [], calls: [], imports: [], pkg: '' };"
+        }
+      }
+    ]
+  },
+  "controlFlow": {
+    "raises": [],
+    "handles": [
+      {
+        "id": "exc:packages/parsers/src/java/parser.ts@L202",
+        "kind": "exception-handler",
+        "lang": "typescript",
+        "file": "packages/parsers/src/java/parser.ts",
+        "span": {
+          "start": 202,
+          "end": 202
+        },
+        "confidence": 1
+      }
+    ],
+    "iterates": [],
+    "declares": []
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 6,
+    "referencedByFiles": [
+      "packages/parsers/src/java/JavaExtractor.ts",
+      "packages/parsers/src/java/parser.test.ts",
+      "packages/pipeline/src/resolve/java-resolver.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 6,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 1,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 7,
+      "recorded": 4,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

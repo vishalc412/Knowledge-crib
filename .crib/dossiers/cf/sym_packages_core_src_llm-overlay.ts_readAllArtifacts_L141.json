@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/core/src/llm-overlay.ts#readAllArtifacts@L141",
-  "schemaVersion": "1.5",
+  "schemaVersion": "1.6",
   "nodeHash": "blake3:2a0525ffe03e815dae1d2933f64f44b2d27aff3dbb1e694a3210343210590f5e",
-  "builtAt": "2026-07-16T16:35:16.098Z",
+  "builtAt": "2026-08-31T17:37:23.222Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/core/src/llm-overlay.ts#readAllArtifacts@L141",
@@ -48,24 +48,24 @@
   ],
   "callees": [
     {
-      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
       "confidence": 1,
       "name": "push",
       "qualifiedName": "push",
       "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
       "type": "function",
       "file": "packages/pipeline/src/linker/inverted-index.ts",
-      "line": 39
+      "line": 70
     },
     {
-      "id": "sym:packages/mcp/src/enrichment.ts#readJson@L1824",
+      "id": "sym:packages/mcp/src/enrichment.ts#readJson@L2597",
       "confidence": 1,
       "name": "readJson",
       "qualifiedName": "readJson",
       "signature": "readJson(path: string): T | undefined",
       "type": "function",
       "file": "packages/mcp/src/enrichment.ts",
-      "line": 1824
+      "line": 2597
     },
     {
       "id": "sym:packages/core/src/llm-overlay.ts#readJson@L172",
@@ -126,8 +126,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:945cf546f10658809775ff64c2b0c15fb3a687447e12d8041b802cfbc86bf4d0",
-          "target": "sym:packages/mcp/src/enrichment.ts#readJson@L1824",
+          "edgeId": "e:b520029de67683e71718886f841780ad4c93a4d8a13f5485f201e31832c1003b",
+          "target": "sym:packages/mcp/src/enrichment.ts#readJson@L2597",
           "expr": "readJson",
           "line": 144
         }
@@ -162,8 +162,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:3f2e61db140b7bb877fc8cb9503442fb0cc6f2fc601ffd450fe25b29b212bb7c",
-          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "edgeId": "e:ba01b0ead3534dfc1f670ae762d13cfda364f284592eed3985b4db8504747708",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
           "expr": "push",
           "line": 147
         }

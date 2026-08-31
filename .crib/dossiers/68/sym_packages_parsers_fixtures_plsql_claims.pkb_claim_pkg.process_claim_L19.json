@@ -1,0 +1,172 @@
+{
+  "id": "sym:packages/parsers/fixtures/plsql/claims.pkb#claim_pkg.process_claim@L19",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:89e3440b78673a6ba08298d7ab7e2ef97b1bd452ae3ca44af30fb72d10684a69",
+  "builtAt": "2026-08-25T20:55:11.863Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/fixtures/plsql/claims.pkb#claim_pkg.process_claim@L19",
+    "kind": "symbol",
+    "type": "procedure",
+    "name": "process_claim",
+    "qualifiedName": "claim_pkg.process_claim",
+    "signature": "process_claimp_id NUMBER",
+    "lang": "plsql",
+    "file": "packages/parsers/fixtures/plsql/claims.pkb",
+    "span": {
+      "start": 19,
+      "end": 30
+    },
+    "callSites": [
+      {
+        "callee": "validate_claim",
+        "line": 22
+      }
+    ],
+    "variables": [
+      {
+        "name": "v_amt",
+        "dataType": "NUMBER"
+      }
+    ]
+  },
+  "source": {
+    "text": "  PROCEDURE process_claim(p_id NUMBER) IS\n    v_amt NUMBER;\n  BEGIN\n    validate_claim(p_id);\n    SELECT amount INTO v_amt FROM claims WHERE id = p_id;\n    IF v_amt > 1000 THEN\n      INSERT INTO claims (id, amount, status) VALUES (p_id, v_amt, 'BIG');\n    ELSE\n      DELETE FROM claims WHERE id = p_id;\n    END IF;\n  END process_claim;\nEND claim_pkg;",
+    "truncated": false,
+    "totalLines": 12,
+    "startLine": 19
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/fixtures/plsql/claims.pkb#claim_pkg.validate_claim@L10",
+      "confidence": 1,
+      "name": "validate_claim",
+      "qualifiedName": "claim_pkg.validate_claim",
+      "signature": "validate_claimp_id NUMBER",
+      "type": "procedure",
+      "file": "packages/parsers/fixtures/plsql/claims.pkb",
+      "line": 10
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "doc:docs/knowledge-crib-deep-extraction.md#5-the-example-fully-represented",
+      "heading": "5. The example, fully represented",
+      "anchor": "5-the-example-fully-represented",
+      "snippet": "5. The example, fully represented",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/fixtures/plsql/claims.pkb#claim_pkg.process_claim@L19",
+    "procedureName": "claim_pkg.process_claim",
+    "conditions": [
+      "cond:packages/parsers/fixtures/plsql/claims.pkb@L24"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/fixtures/plsql/claims.pkb#claim_pkg.process_claim@L19",
+        "procedureName": "claim_pkg.process_claim",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:7eb0ec087d821d259ed0704d6d15137397e8197a6a328095a26ca99d656aca0b",
+          "target": "sym:packages/parsers/fixtures/plsql/claims.pkb#claim_pkg.validate_claim@L10",
+          "expr": "validate_claim",
+          "line": 22
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/fixtures/plsql/claims.pkb#claim_pkg.process_claim@L19",
+        "procedureName": "claim_pkg.process_claim",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fb42405e1b66d1201d54178b4b16f69e4911b66c0a27a54ec2748bf3c70a07a8",
+          "target": "stmt:packages/parsers/fixtures/plsql/claims.pkb@L23",
+          "line": 23,
+          "sqlKind": "select",
+          "expr": "SELECT amount INTO v_amt FROM claims WHERE id = p_id;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/fixtures/plsql/claims.pkb#claim_pkg.process_claim@L19",
+        "procedureName": "claim_pkg.process_claim",
+        "guard": "cond:packages/parsers/fixtures/plsql/claims.pkb@L24",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/fixtures/plsql/claims.pkb@L24",
+            "expr": "v_amt > 1000",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4f38c8ea727ea16a9bc90ba1e8a026c4277169e9d72c1219d263d86bf4936ef6",
+          "target": "stmt:packages/parsers/fixtures/plsql/claims.pkb@L25",
+          "line": 25,
+          "sqlKind": "insert",
+          "expr": "INSERT INTO claims (id, amount, status) VALUES (p_id, v_amt, 'BIG');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/fixtures/plsql/claims.pkb#claim_pkg.process_claim@L19",
+        "procedureName": "claim_pkg.process_claim",
+        "guard": "cond:packages/parsers/fixtures/plsql/claims.pkb@L24",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/fixtures/plsql/claims.pkb@L24",
+            "expr": "v_amt > 1000",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ce32510d0654dfe4a91f2545d872b6c9299e118ea3246570f7a04796a08532cb",
+          "target": "stmt:packages/parsers/fixtures/plsql/claims.pkb@L27",
+          "line": 27,
+          "sqlKind": "delete",
+          "expr": "DELETE FROM claims WHERE id = p_id;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

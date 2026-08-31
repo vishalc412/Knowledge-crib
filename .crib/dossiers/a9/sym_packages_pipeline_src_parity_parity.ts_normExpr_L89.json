@@ -1,0 +1,155 @@
+{
+  "id": "sym:packages/pipeline/src/parity/parity.ts#normExpr@L89",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:e3160afde6f9655c74409a2a74552bce4dd75c20ad48508d16feba5df765b5eb",
+  "builtAt": "2026-08-25T20:55:11.863Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/parity/parity.ts#normExpr@L89",
+    "kind": "symbol",
+    "type": "function",
+    "name": "normExpr",
+    "qualifiedName": "normExpr",
+    "signature": "normExpr(s: string): string",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/parity/parity.ts",
+    "span": {
+      "start": 89,
+      "end": 102
+    },
+    "callSites": [
+      {
+        "callee": "trim",
+        "line": 90
+      },
+      {
+        "callee": "replace",
+        "line": 90
+      },
+      {
+        "callee": "replace",
+        "line": 90
+      },
+      {
+        "callee": "replace",
+        "line": 90
+      },
+      {
+        "callee": "replace",
+        "line": 90
+      },
+      {
+        "callee": "replace",
+        "line": 90
+      },
+      {
+        "callee": "replace",
+        "line": 90
+      },
+      {
+        "callee": "replace",
+        "line": 90
+      },
+      {
+        "callee": "replace",
+        "line": 90
+      },
+      {
+        "callee": "replace",
+        "line": 90
+      },
+      {
+        "callee": "toLowerCase",
+        "line": 90
+      }
+    ]
+  },
+  "source": {
+    "text": "function normExpr(s: string): string {\n  return s\n    .toLowerCase()\n    .replace(/\\bv_/g, '') // strip PL/SQL local-variable prefix\n    .replace(/_/g, '') // snake/camel unification\n    .replace(/:=/g, '=') // PL/SQL assignment\n    .replace(/\\band\\b/g, '&&')\n    .replace(/\\bor\\b/g, '||')\n    .replace(/'/g, '\"') // quote unify\n    .replace(/;/g, '') // statement terminator — not semantically meaningful\n    .replace(/\\s*([=<>!&|(),.])\\s*/g, '$1') // strip spaces around operators / dotted\n    .replace(/\\s+/g, ' ')\n    .trim();\n}",
+    "truncated": false,
+    "totalLines": 14,
+    "startLine": 89
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/src/parity/parity.ts#actionSig@L122",
+      "confidence": 1,
+      "name": "actionSig",
+      "qualifiedName": "actionSig",
+      "signature": "actionSig(soul: SoulStore, rule: RuleRecord): string",
+      "type": "function",
+      "file": "packages/pipeline/src/parity/parity.ts",
+      "line": 122
+    },
+    {
+      "id": "sym:packages/pipeline/src/parity/parity.ts#condSigs@L143",
+      "confidence": 1,
+      "name": "condSigs",
+      "qualifiedName": "condSigs",
+      "signature": "condSigs(soul: SoulStore, rule: RuleRecord): string[]",
+      "type": "function",
+      "file": "packages/pipeline/src/parity/parity.ts",
+      "line": 143
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/pipeline/src/parity/parity.ts@L88",
+      "snippet": "/** Normalize an expression to its comparable form (see module doc). */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/parity/parity.ts#normExpr@L89",
+    "procedureName": "normExpr",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/parity/parity.ts#normExpr@L89",
+        "procedureName": "normExpr",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c8cc6ee4da10f241327ce5228c14dcf16d508dcc9806c49386c6961b2c879990",
+          "target": "stmt:packages/pipeline/src/parity/parity.ts@L90",
+          "line": 90,
+          "expr": "return s\n    .toLowerCase()\n    .replace(/\\bv_/g, '') // strip PL/SQL local-variable prefix\n    .replace(/_/g, '') // snake/camel unification\n    .replace(/:=/g, '=') // PL/SQL assignment\n    .replace(/\\band\\b/g, '&&')\n    .replace(/\\bor\\b/g, '||')\n    .replace(/'/g, '\"') // quote unify\n    .replace(/;/g, '') // statement terminator — not semantically meaningful\n    .replace(/\\s*([=<>!&|(),.])\\s*/g, '$1') // strip spaces around operators / dotted\n    .replace(/\\s+/g, ' ')\n    .trim();"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/pipeline/src/parity/parity.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 11,
+      "unresolved": 11
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "11 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

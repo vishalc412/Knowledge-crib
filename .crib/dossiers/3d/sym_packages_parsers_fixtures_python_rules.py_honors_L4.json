@@ -1,0 +1,99 @@
+{
+  "id": "sym:packages/parsers/fixtures/python/rules.py#honors@L4",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:98c8e90addf69850629efe8b3172ab39bec740d409319dfe98a6a6b857eda1bc",
+  "builtAt": "2026-08-25T20:55:11.863Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/fixtures/python/rules.py#honors@L4",
+    "kind": "symbol",
+    "type": "function",
+    "name": "honors",
+    "qualifiedName": "honors",
+    "signature": "honors()",
+    "lang": "python",
+    "file": "packages/parsers/fixtures/python/rules.py",
+    "span": {
+      "start": 4,
+      "end": 5
+    }
+  },
+  "source": {
+    "text": "def honors():\n    return \"A\"",
+    "truncated": false,
+    "totalLines": 2,
+    "startLine": 4
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/fixtures/python/rules.py#grade@L20",
+      "confidence": 1,
+      "name": "grade",
+      "qualifiedName": "grade",
+      "signature": "grade(score)",
+      "type": "function",
+      "file": "packages/parsers/fixtures/python/rules.py",
+      "line": 20
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "doc:docs/adr/ADR-001-parallel-parse.md#consequences",
+      "heading": "Consequences",
+      "anchor": "consequences",
+      "snippet": "Consequences",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/fixtures/python/rules.py#honors@L4",
+    "procedureName": "honors",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/fixtures/python/rules.py#honors@L4",
+        "procedureName": "honors",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:68527c9ef1e6ee0bcdf714e2b307f49409eac6b7e34491eabfd10ccb97e6494c",
+          "target": "stmt:packages/parsers/fixtures/python/rules.py@L5",
+          "line": 5,
+          "expr": "return \"A\""
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/parsers/fixtures/python/rules.py"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

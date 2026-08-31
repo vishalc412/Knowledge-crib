@@ -1,8 +1,8 @@
 {
   "id": "sym:scripts/eval-check.mjs#check@L35",
-  "schemaVersion": "1.5",
+  "schemaVersion": "1.6",
   "nodeHash": "blake3:1e051a9b9d51d0b0359c6987fe0b358d0e716854c73f3ac0ff5ee3a5c687652f",
-  "builtAt": "2026-07-16T16:35:16.098Z",
+  "builtAt": "2026-08-31T17:37:23.222Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:scripts/eval-check.mjs#check@L35",
@@ -45,24 +45,24 @@
   "callers": [],
   "callees": [
     {
-      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
       "confidence": 1,
       "name": "push",
       "qualifiedName": "push",
       "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
       "type": "function",
       "file": "packages/pipeline/src/linker/inverted-index.ts",
-      "line": 39
+      "line": 70
     },
     {
-      "id": "sym:packages/cli/src/hooks.test.ts#write@L54",
+      "id": "sym:scripts/fixtures/synthetic-mule-project.mjs#write@L64",
       "confidence": 1,
       "name": "write",
       "qualifiedName": "write",
-      "signature": "write(path: string, records: Array<Record<string, unknown>>): void",
+      "signature": "write(root, rel, content)",
       "type": "function",
-      "file": "packages/cli/src/hooks.test.ts",
-      "line": 54
+      "file": "scripts/fixtures/synthetic-mule-project.mjs",
+      "line": 64
     }
   ],
   "docs": [
@@ -81,6 +81,36 @@
       "heading": "The measured curve",
       "anchor": "the-measured-curve",
       "snippet": "The measured curve",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#commands",
+      "heading": "Commands",
+      "anchor": "commands",
+      "snippet": "Commands",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/mulesoft.md#index-summary",
+      "heading": "Index summary",
+      "anchor": "index-summary",
+      "snippet": "Index summary",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-foundation.md#task-8-verify-the-foundation-phase",
+      "heading": "Task 8: Verify the foundation phase",
+      "anchor": "task-8-verify-the-foundation-phase",
+      "snippet": "Task 8: Verify the foundation phase",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
@@ -187,10 +217,50 @@
       "confidence": 0.6
     },
     {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_MAKE_A_BEATS_B.md#ws-a9-deterministic-self-hosting-crib-eats-its-own-soul",
+      "heading": "WS-A9 — Deterministic self-hosting: crib eats its own soul",
+      "anchor": "ws-a9-deterministic-self-hosting-crib-eats-its-own-soul",
+      "snippet": "WS-A9 — Deterministic self-hosting: crib eats its own soul",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
       "sectionId": "doc:docs/knowledge-crib-production-readiness.md#release-gate",
       "heading": "Release Gate",
       "anchor": "release-gate",
       "snippet": "Release Gate",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-munit-hardening.md#task-4-add-the-mule-extractor-to-deterministic-fuzzing",
+      "heading": "Task 4: Add the Mule extractor to deterministic fuzzing",
+      "anchor": "task-4-add-the-mule-extractor-to-deterministic-fuzzing",
+      "snippet": "Task 4: Add the Mule extractor to deterministic fuzzing",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-munit-hardening.md#mulesoft-munit-and-release-hardening-implementation-plan",
+      "heading": "MuleSoft MUnit and Release Hardening Implementation Plan",
+      "anchor": "mulesoft-munit-and-release-hardening-implementation-plan",
+      "snippet": "MuleSoft MUnit and Release Hardening Implementation Plan",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-munit-hardening.md#task-6-add-local-sample-project-acceptance-checking",
+      "heading": "Task 6: Add local sample-project acceptance checking",
+      "anchor": "task-6-add-local-sample-project-acceptance-checking",
+      "snippet": "Task 6: Add local sample-project acceptance checking",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
@@ -245,26 +315,6 @@
       "method": "identifier",
       "provenance": "EXTRACTED",
       "confidence": 0.6
-    },
-    {
-      "sectionId": "doc:docs/knowledge-crib-user-guide.md#commands",
-      "heading": "Commands",
-      "anchor": "commands",
-      "snippet": "Commands",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
-    },
-    {
-      "sectionId": "doc:docs/superpowers/plans/PLAN_MAKE_A_BEATS_B.md#ws-a9-deterministic-self-hosting-crib-eats-its-own-soul",
-      "heading": "WS-A9 — Deterministic self-hosting: crib eats its own soul",
-      "anchor": "ws-a9-deterministic-self-hosting-crib-eats-its-own-soul",
-      "snippet": "WS-A9 — Deterministic self-hosting: crib eats its own soul",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
     }
   ],
   "rules": {
@@ -280,8 +330,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:cba9ac2ad683c31e61c1a6dcb264ec4b0500081001685eff7f672aa189135726",
-          "target": "sym:packages/cli/src/hooks.test.ts#write@L54",
+          "edgeId": "e:81c64195577c14d84165da2263bf609d194845690e8a7599b9163a1af3d83a72",
+          "target": "sym:scripts/fixtures/synthetic-mule-project.mjs#write@L64",
           "expr": "write",
           "line": 38
         }
@@ -319,13 +369,13 @@
         "procedureName": "check",
         "conditions": [],
         "inLoop": false,
-        "inException": true,
+        "inException": false,
         "action": {
-          "kind": "executes",
-          "edgeId": "e:77b72a5ce85e5f924054736186097d3449add4490b93b855956cd30fa562ec04",
-          "target": "stmt:scripts/eval-check.mjs@L41",
-          "line": 41,
-          "expr": "failures.push(`${name}: ${msg}`);"
+          "kind": "calls",
+          "edgeId": "e:4c4a615ca9efa1c72dd4540bec819c8604ba181a82d826ef3ffe6e598399a075",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
+          "expr": "push",
+          "line": 41
         }
       },
       {
@@ -333,13 +383,13 @@
         "procedureName": "check",
         "conditions": [],
         "inLoop": false,
-        "inException": false,
+        "inException": true,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:89a88d567cc0f9bd8f140350159ad611c54e65f18975c256a8ad6fc666304e57",
-          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
-          "expr": "push",
-          "line": 41
+          "kind": "executes",
+          "edgeId": "e:77b72a5ce85e5f924054736186097d3449add4490b93b855956cd30fa562ec04",
+          "target": "stmt:scripts/eval-check.mjs@L41",
+          "line": 41,
+          "expr": "failures.push(`${name}: ${msg}`);"
         }
       },
       {

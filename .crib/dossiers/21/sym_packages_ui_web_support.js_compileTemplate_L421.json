@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/ui/web/support.js#compileTemplate@L421",
-  "schemaVersion": "1.5",
+  "schemaVersion": "1.6",
   "nodeHash": "blake3:b58590730ffd1f36e7f4c6d8657b1fc01e113d15865e432a40d6ad54539f65a2",
-  "builtAt": "2026-07-13T11:04:33.459Z",
+  "builtAt": "2026-08-25T20:55:11.863Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/ui/web/support.js#compileTemplate@L421",
@@ -71,16 +71,6 @@
     }
   ],
   "callees": [
-    {
-      "id": "sym:packages/ui/web/vendor/react.production.min.js#B@L12",
-      "confidence": 1,
-      "name": "B",
-      "qualifiedName": "B",
-      "signature": "B(a, b, e, m, d)",
-      "type": "function",
-      "file": "packages/ui/web/vendor/react.production.min.js",
-      "line": 12
-    },
     {
       "id": "sym:packages/ui/web/support.js#encodeCase@L323",
       "confidence": 1,
@@ -213,20 +203,6 @@
         "inLoop": false,
         "inException": false,
         "action": {
-          "kind": "calls",
-          "edgeId": "e:5b66db884fabb848d5e93cefa93b2a2b7acfb71bced9f14e9520732a8de5dca2",
-          "target": "sym:packages/ui/web/vendor/react.production.min.js#B@L12",
-          "expr": "B",
-          "line": 433
-        }
-      },
-      {
-        "procedure": "sym:packages/ui/web/support.js#compileTemplate@L421",
-        "procedureName": "compileTemplate",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
           "kind": "executes",
           "edgeId": "e:95e58aff1b01504e3aa4f051ca7b049aef3270e3d14cdc16a4b4e9e506a7054c",
           "target": "assign:packages/ui/web/support.js@L434",
@@ -268,14 +244,14 @@
     "cursors": 0,
     "caseBranches": 0,
     "calls": {
-      "resolved": 3,
+      "resolved": 2,
       "recorded": 8,
-      "unresolved": 5
+      "unresolved": 6
     },
     "recursive": false,
     "exprTruncated": 0,
     "caveats": [
-      "5 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+      "6 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
     ]
   }
 }

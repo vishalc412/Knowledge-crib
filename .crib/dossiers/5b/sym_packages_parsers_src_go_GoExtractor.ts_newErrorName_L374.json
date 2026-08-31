@@ -1,0 +1,144 @@
+{
+  "id": "sym:packages/parsers/src/go/GoExtractor.ts#newErrorName@L374",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:c3397509523b19d7dd320dc7093d3004277a331f2937d54350a530f92cc71d01",
+  "builtAt": "2026-08-25T20:55:11.863Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/go/GoExtractor.ts#newErrorName@L374",
+    "kind": "symbol",
+    "type": "function",
+    "name": "newErrorName",
+    "qualifiedName": "newErrorName",
+    "signature": "newErrorName(expr: string): string",
+    "lang": "typescript",
+    "file": "packages/parsers/src/go/GoExtractor.ts",
+    "span": {
+      "start": 374,
+      "end": 378
+    }
+  },
+  "source": {
+    "text": "function newErrorName(expr: string): string {\n  if (/^\\s*errors\\.New\\s*\\(/.test(expr)) return 'errors.New';\n  if (/^\\s*fmt\\.Errorf\\s*\\(/.test(expr)) return 'fmt.Errorf';\n  return 'error';\n}",
+    "truncated": false,
+    "totalLines": 5,
+    "startLine": 374
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.walkStmt@L426",
+      "confidence": 1,
+      "name": "walkStmt",
+      "qualifiedName": "BodyWalker.walkStmt",
+      "signature": "walkStmt(s: GoBodyStmt, proc: ProcCtx, guardStack: string[], branch: string | undefined, inLoop: boolean, inException: boolean): void",
+      "type": "method",
+      "file": "packages/parsers/src/go/GoExtractor.ts",
+      "line": 426
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/go/GoExtractor.ts@L373",
+      "snippet": "/** The error-construction name for a return-of-new-error expr (`errors.New` / `fmt.Errorf`). */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/go/GoExtractor.ts#newErrorName@L374",
+    "procedureName": "newErrorName",
+    "conditions": [
+      "cond:packages/parsers/src/go/GoExtractor.ts@L375",
+      "cond:packages/parsers/src/go/GoExtractor.ts@L376"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/go/GoExtractor.ts#newErrorName@L374",
+        "procedureName": "newErrorName",
+        "guard": "cond:packages/parsers/src/go/GoExtractor.ts@L375",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/GoExtractor.ts@L375",
+            "expr": "/^\\s*errors\\.New\\s*\\(/.test(expr)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fcd54e84c25ab87a7d1400dfbf6c7c75d863ca9932318ac1f0facf3d7373c55f",
+          "target": "stmt:packages/parsers/src/go/GoExtractor.ts@L375",
+          "line": 375,
+          "expr": "return 'errors.New';"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/GoExtractor.ts#newErrorName@L374",
+        "procedureName": "newErrorName",
+        "guard": "cond:packages/parsers/src/go/GoExtractor.ts@L376",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/GoExtractor.ts@L376",
+            "expr": "/^\\s*fmt\\.Errorf\\s*\\(/.test(expr)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a6b4e0b59e0184dc8149ed7d0a2e9daabd2af6b45135e8040ffa00077ad3b9c5",
+          "target": "stmt:packages/parsers/src/go/GoExtractor.ts@L376",
+          "line": 376,
+          "expr": "return 'fmt.Errorf';"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/GoExtractor.ts#newErrorName@L374",
+        "procedureName": "newErrorName",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:193a039fc23227a55ce122d813810d0a81211ef294b3055bfaaa712bf4868656",
+          "target": "stmt:packages/parsers/src/go/GoExtractor.ts@L377",
+          "line": 377,
+          "expr": "return 'error';"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/parsers/src/go/GoExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

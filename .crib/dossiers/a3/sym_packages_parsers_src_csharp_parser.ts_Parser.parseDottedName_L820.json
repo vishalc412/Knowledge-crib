@@ -1,0 +1,359 @@
+{
+  "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseDottedName@L820",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:a187b8e45ffa98a67255a1c6b9d9d82867066a8e8018ee421615cacfb9cea643",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseDottedName@L820",
+    "kind": "symbol",
+    "type": "method",
+    "name": "parseDottedName",
+    "qualifiedName": "Parser.parseDottedName",
+    "signature": "parseDottedName(): string | undefined",
+    "lang": "typescript",
+    "file": "packages/parsers/src/csharp/parser.ts",
+    "span": {
+      "start": 820,
+      "end": 830
+    },
+    "callSites": [
+      {
+        "callee": "peek",
+        "line": 822
+      },
+      {
+        "callee": "next",
+        "line": 823
+      },
+      {
+        "callee": "next",
+        "line": 825
+      },
+      {
+        "callee": "push",
+        "line": 826
+      },
+      {
+        "callee": "peek",
+        "line": 826
+      },
+      {
+        "callee": "next",
+        "line": 827
+      },
+      {
+        "callee": "join",
+        "line": 829
+      }
+    ]
+  },
+  "source": {
+    "text": "  private parseDottedName(): string | undefined {\n    if (!this.isNameToken() || HARD_KEYWORDS.has(this.peek().value)) return undefined;\n    const parts: string[] = [this.peek().value];\n    this.next();\n    while (this.isOp('.') && this.peek(1).type === 'NAME') {\n      this.next(); // .\n      parts.push(this.peek().value);\n      this.next();\n    }\n    return parts.join('.');\n  }",
+    "truncated": false,
+    "totalLines": 11,
+    "startLine": 820
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseNamespace@L284",
+      "confidence": 1,
+      "name": "parseNamespace",
+      "qualifiedName": "Parser.parseNamespace",
+      "signature": "parseNamespace(startLine: number, attributes: string[], modifiers: string[]): CsharpDef | null",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 284
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.isNameToken@L1526",
+      "confidence": 1,
+      "name": "isNameToken",
+      "qualifiedName": "Parser.isNameToken",
+      "signature": "isNameToken(): boolean",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 1526
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.isOp@L1516",
+      "confidence": 1,
+      "name": "isOp",
+      "qualifiedName": "Parser.isOp",
+      "signature": "isOp(v: string): boolean",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 1516
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.next@L1529",
+      "confidence": 1,
+      "name": "next",
+      "qualifiedName": "Parser.next",
+      "signature": "next(): Token",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 1529
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/parser.ts#Parser.peek@L1534",
+      "confidence": 1,
+      "name": "peek",
+      "qualifiedName": "Parser.peek",
+      "signature": "peek(offset = 0): Token",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/parser.ts",
+      "line": 1534
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/csharp/parser.ts@L819",
+      "snippet": "/** Parse a dotted namespace/type name `A.B.C`. Returns the full dotted string or undefined. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseDottedName@L820",
+    "procedureName": "Parser.parseDottedName",
+    "conditions": [
+      "cond:packages/parsers/src/csharp/parser.ts@L821",
+      "cond:packages/parsers/src/csharp/parser.ts@L824"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseDottedName@L820",
+        "procedureName": "Parser.parseDottedName",
+        "guard": "cond:packages/parsers/src/csharp/parser.ts@L821",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L821",
+            "expr": "!this.isNameToken() || HARD_KEYWORDS.has(this.peek().value)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f839de79003cddb8b6b21369597b8cbd32fffec7d6f4fe48740cdd1f8b351b9b",
+          "target": "stmt:packages/parsers/src/csharp/parser.ts@L821",
+          "line": 821,
+          "expr": "return undefined;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseDottedName@L820",
+        "procedureName": "Parser.parseDottedName",
+        "guard": "cond:packages/parsers/src/csharp/parser.ts@L824",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L824",
+            "expr": "this.isOp('.') && this.peek(1).type === 'NAME'",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:1850ac8c4a38dbc12424246b1391d4f00766b32a5311b7e512f8722f4ee4d29d",
+          "target": "sym:packages/parsers/src/csharp/parser.ts#Parser.peek@L1534",
+          "expr": "peek",
+          "line": 822
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseDottedName@L820",
+        "procedureName": "Parser.parseDottedName",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f038b3d1785031492088c3bf3a40e8271da68b5ce0ee95b99c0f430c5fd28f7b",
+          "target": "stmt:packages/parsers/src/csharp/parser.ts@L822",
+          "line": 822,
+          "expr": "const parts: string[] = [this.peek().value];"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseDottedName@L820",
+        "procedureName": "Parser.parseDottedName",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:09c619f4b66f452d498e474775aa0a472c22bd0227d7adf304a3493a40289ddb",
+          "target": "stmt:packages/parsers/src/csharp/parser.ts@L823",
+          "line": 823,
+          "expr": "this.next();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseDottedName@L820",
+        "procedureName": "Parser.parseDottedName",
+        "guard": "cond:packages/parsers/src/csharp/parser.ts@L824",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L824",
+            "expr": "this.isOp('.') && this.peek(1).type === 'NAME'",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:4e251f8277c7a55711ef71dac826f12c106d93ac52a22482d55ccbaf591c73f4",
+          "target": "sym:packages/parsers/src/csharp/parser.ts#Parser.next@L1529",
+          "expr": "next",
+          "line": 823
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseDottedName@L820",
+        "procedureName": "Parser.parseDottedName",
+        "guard": "cond:packages/parsers/src/csharp/parser.ts@L824",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L824",
+            "expr": "this.isOp('.') && this.peek(1).type === 'NAME'",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:968a1183edd160dbae42b43c8bf4fac71478511222921cb55dc8c4c13123992e",
+          "target": "stmt:packages/parsers/src/csharp/parser.ts@L825",
+          "line": 825,
+          "expr": "this.next();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseDottedName@L820",
+        "procedureName": "Parser.parseDottedName",
+        "guard": "cond:packages/parsers/src/csharp/parser.ts@L824",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L824",
+            "expr": "this.isOp('.') && this.peek(1).type === 'NAME'",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2c24d651ba0256c2a0530048a1db2ecb535ad67694d559f609d244564191ee30",
+          "target": "stmt:packages/parsers/src/csharp/parser.ts@L826",
+          "line": 826,
+          "expr": "parts.push(this.peek().value);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseDottedName@L820",
+        "procedureName": "Parser.parseDottedName",
+        "guard": "cond:packages/parsers/src/csharp/parser.ts@L824",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/parser.ts@L824",
+            "expr": "this.isOp('.') && this.peek(1).type === 'NAME'",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:584cf192fc602dda8096380de4d25e7709d97acecdbb9a9895b06593cd6b0694",
+          "target": "stmt:packages/parsers/src/csharp/parser.ts@L827",
+          "line": 827,
+          "expr": "this.next();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseDottedName@L820",
+        "procedureName": "Parser.parseDottedName",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:af0ce082f8b531ab9f7130370df3f3988d54e951a264da491cc232d09c231a44",
+          "target": "stmt:packages/parsers/src/csharp/parser.ts@L829",
+          "line": 829,
+          "expr": "return parts.join('.');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseDottedName@L820",
+        "procedureName": "Parser.parseDottedName",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:23a010864ffc92c61a74f3127b992c7aa249ce334f3f085ee454b298007caad4",
+          "target": "sym:packages/parsers/src/csharp/parser.ts#Parser.isOp@L1516",
+          "expr": "isOp"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/parser.ts#Parser.parseDottedName@L820",
+        "procedureName": "Parser.parseDottedName",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:8c7075f0a539bfbcfca6256123b658483f70925f1d41a9ae7c1cf6ea53ff2904",
+          "target": "sym:packages/parsers/src/csharp/parser.ts#Parser.isNameToken@L1526",
+          "expr": "isNameToken"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 7,
+    "referencedByFiles": [
+      "packages/parsers/src/csharp/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 7,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 4,
+      "recorded": 7,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

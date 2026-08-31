@@ -1,0 +1,761 @@
+{
+  "id": "sym:packages/soul-schema/src/hash.ts#contentHash@L21",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:a520e9576d0bac8dafaa25e23f4d431af0fbc7ab7b5f9f9c13f4e388ecc1cc92",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/soul-schema/src/hash.ts#contentHash@L21",
+    "kind": "symbol",
+    "type": "function",
+    "name": "contentHash",
+    "qualifiedName": "contentHash",
+    "signature": "contentHash(input: string): string",
+    "lang": "typescript",
+    "file": "packages/soul-schema/src/hash.ts",
+    "span": {
+      "start": 21,
+      "end": 23
+    },
+    "callSites": [
+      {
+        "callee": "blake3Hex",
+        "line": 22
+      }
+    ]
+  },
+  "source": {
+    "text": "export function contentHash(input: string): string {\n  return `blake3:${blake3Hex(input)}`;\n}",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 21
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/validate.test.ts#artifactNode@L156",
+      "confidence": 1,
+      "name": "artifactNode",
+      "qualifiedName": "artifactNode",
+      "signature": "artifactNode(): Node",
+      "type": "function",
+      "file": "packages/core/src/validate.test.ts",
+      "line": 156
+    },
+    {
+      "id": "sym:packages/core/src/validate.test.ts#beanMethodNode@L94",
+      "confidence": 1,
+      "name": "beanMethodNode",
+      "qualifiedName": "beanMethodNode",
+      "signature": "beanMethodNode(): Node",
+      "type": "function",
+      "file": "packages/core/src/validate.test.ts",
+      "line": 94
+    },
+    {
+      "id": "sym:scripts/ifhash-check.mjs#buildSoul@L59",
+      "confidence": 1,
+      "name": "buildSoul",
+      "qualifiedName": "buildSoul",
+      "signature": "buildSoul(…)",
+      "type": "function",
+      "file": "scripts/ifhash-check.mjs",
+      "line": 59
+    },
+    {
+      "id": "sym:scripts/tier-check.mjs#buildSoul@L51",
+      "confidence": 1,
+      "name": "buildSoul",
+      "qualifiedName": "buildSoul",
+      "signature": "buildSoul(…)",
+      "type": "function",
+      "file": "scripts/tier-check.mjs",
+      "line": 51
+    },
+    {
+      "id": "sym:scripts/alias-check.mjs#buildSoul@L55",
+      "confidence": 1,
+      "name": "buildSoul",
+      "qualifiedName": "buildSoul",
+      "signature": "buildSoul(…)",
+      "type": "function",
+      "file": "scripts/alias-check.mjs",
+      "line": 55
+    },
+    {
+      "id": "sym:packages/core/src/dossier/framework.test.ts#cls@L22",
+      "confidence": 1,
+      "name": "cls",
+      "qualifiedName": "cls",
+      "signature": "cls(q: string, line: number, stereotype: string, extra: Partial<Node> = {}): Node",
+      "type": "function",
+      "file": "packages/core/src/dossier/framework.test.ts",
+      "line": 22
+    },
+    {
+      "id": "sym:packages/core/src/cluster-hash.ts#clusterContentHash@L74",
+      "confidence": 1,
+      "name": "clusterContentHash",
+      "qualifiedName": "clusterContentHash",
+      "signature": "clusterContentHash(soul: SoulStore, cluster: Node): string",
+      "type": "function",
+      "file": "packages/core/src/cluster-hash.ts",
+      "line": 74
+    },
+    {
+      "id": "sym:packages/core/src/validate.test.ts#componentNode@L75",
+      "confidence": 1,
+      "name": "componentNode",
+      "qualifiedName": "componentNode",
+      "signature": "componentNode(): Node",
+      "type": "function",
+      "file": "packages/core/src/validate.test.ts",
+      "line": 75
+    },
+    {
+      "id": "sym:packages/core/src/dossier/reconstruct.test.ts#doc@L57",
+      "confidence": 1,
+      "name": "doc",
+      "qualifiedName": "doc",
+      "signature": "doc(path: string, anchor: string, heading: string, spanStart: number): Node",
+      "type": "function",
+      "file": "packages/core/src/dossier/reconstruct.test.ts",
+      "line": 57
+    },
+    {
+      "id": "sym:packages/core/src/dossier/framework.test.ts#fieldNode@L53",
+      "confidence": 1,
+      "name": "fieldNode",
+      "qualifiedName": "fieldNode",
+      "signature": "fieldNode(q: string, line: number, extra: Partial<Node> = {}): Node",
+      "type": "function",
+      "file": "packages/core/src/dossier/framework.test.ts",
+      "line": 53
+    },
+    {
+      "id": "sym:packages/core/src/validate.test.ts#fieldNode@L60",
+      "confidence": 1,
+      "name": "fieldNode",
+      "qualifiedName": "fieldNode",
+      "signature": "fieldNode(): Node",
+      "type": "function",
+      "file": "packages/core/src/validate.test.ts",
+      "line": 60
+    },
+    {
+      "id": "sym:packages/core/src/index/sqlite-index.test.ts#file@L41",
+      "confidence": 1,
+      "name": "file",
+      "qualifiedName": "file",
+      "signature": "file(path: string): Node",
+      "type": "function",
+      "file": "packages/core/src/index/sqlite-index.test.ts",
+      "line": 41
+    },
+    {
+      "id": "sym:packages/core/src/working-overlay.test.ts#fileNode@L28",
+      "confidence": 1,
+      "name": "fileNode",
+      "qualifiedName": "fileNode",
+      "signature": "fileNode(path: string): Node",
+      "type": "function",
+      "file": "packages/core/src/working-overlay.test.ts",
+      "line": 28
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.test.ts#fileNode@L199",
+      "confidence": 1,
+      "name": "fileNode",
+      "qualifiedName": "fileNode",
+      "signature": "fileNode(path: string): Node",
+      "type": "function",
+      "file": "packages/mcp/src/verbs.test.ts",
+      "line": 199
+    },
+    {
+      "id": "sym:packages/core/src/soul-store.test.ts#fileNode@L18",
+      "confidence": 1,
+      "name": "fileNode",
+      "qualifiedName": "fileNode",
+      "signature": "fileNode(path: string): Node",
+      "type": "function",
+      "file": "packages/core/src/soul-store.test.ts",
+      "line": 18
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs-detect.test.ts#fileNode@L74",
+      "confidence": 1,
+      "name": "fileNode",
+      "qualifiedName": "fileNode",
+      "signature": "fileNode(path: string): Node",
+      "type": "function",
+      "file": "packages/mcp/src/verbs-detect.test.ts",
+      "line": 74
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/mule-resolver.ts#fixturePlaceholderFor@L419",
+      "confidence": 1,
+      "name": "fixturePlaceholderFor",
+      "qualifiedName": "fixturePlaceholderFor",
+      "signature": "fixturePlaceholderFor(name: string, placeholders: Map<string, Node>): Node",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/mule-resolver.ts",
+      "line": 419
+    },
+    {
+      "id": "sym:packages/core/src/federation.test.ts#fnNode@L44",
+      "confidence": 1,
+      "name": "fnNode",
+      "qualifiedName": "fnNode",
+      "signature": "fnNode(path: string, name: string, line: number): Node",
+      "type": "function",
+      "file": "packages/core/src/federation.test.ts",
+      "line": 44
+    },
+    {
+      "id": "sym:packages/core/src/federation.test.ts#httpCall@L58",
+      "confidence": 1,
+      "name": "httpCall",
+      "qualifiedName": "httpCall",
+      "signature": "httpCall(method: string, path: string, file: string, line: number): Node",
+      "type": "function",
+      "file": "packages/core/src/federation.test.ts",
+      "line": 58
+    },
+    {
+      "id": "sym:packages/core/src/ifhash.ts#ifHash@L51",
+      "confidence": 1,
+      "name": "ifHash",
+      "qualifiedName": "ifHash",
+      "signature": "ifHash(value: unknown): string",
+      "type": "function",
+      "file": "packages/core/src/ifhash.ts",
+      "line": 51
+    },
+    {
+      "id": "sym:packages/pipeline/src/multimodal/ingest.ts#ingestStaging@L57",
+      "confidence": 1,
+      "name": "ingestStaging",
+      "qualifiedName": "ingestStaging",
+      "signature": "ingestStaging(soul: SoulStore, root: string, mediaPaths: string[], opts: WorkerOpts = {}): Promise<MultimodalStats>",
+      "type": "function",
+      "file": "packages/pipeline/src/multimodal/ingest.ts",
+      "line": 57
+    },
+    {
+      "id": "sym:packages/pipeline/src/mule/discover.ts#keyOnlyHash@L90",
+      "confidence": 1,
+      "name": "keyOnlyHash",
+      "qualifiedName": "keyOnlyHash",
+      "signature": "keyOnlyHash(text: string): string",
+      "type": "function",
+      "file": "packages/pipeline/src/mule/discover.ts",
+      "line": 90
+    },
+    {
+      "id": "sym:packages/pipeline/src/extract-ctx.ts#makeExtractCtx@L12",
+      "confidence": 1,
+      "name": "makeExtractCtx",
+      "qualifiedName": "makeExtractCtx",
+      "signature": "makeExtractCtx(repoRoot: string, relPath: string): ExtractCtx",
+      "type": "function",
+      "file": "packages/pipeline/src/extract-ctx.ts",
+      "line": 12
+    },
+    {
+      "id": "sym:packages/parsers/src/fuzz/fuzz-ctx.ts#makeFuzzCtx@L19",
+      "confidence": 1,
+      "name": "makeFuzzCtx",
+      "qualifiedName": "makeFuzzCtx",
+      "signature": "makeFuzzCtx(text: string): ExtractCtx",
+      "type": "function",
+      "file": "packages/parsers/src/fuzz/fuzz-ctx.ts",
+      "line": 19
+    },
+    {
+      "id": "sym:packages/core/src/dossier/framework.test.ts#method@L38",
+      "confidence": 1,
+      "name": "method",
+      "qualifiedName": "method",
+      "signature": "method(q: string, line: number, extra: Partial<Node> = {}): Node",
+      "type": "function",
+      "file": "packages/core/src/dossier/framework.test.ts",
+      "line": 38
+    },
+    {
+      "id": "sym:packages/core/src/cluster-hash.test.ts#mk@L87",
+      "confidence": 1,
+      "name": "mk",
+      "qualifiedName": "mk",
+      "signature": "mk(…)",
+      "type": "function",
+      "file": "packages/core/src/cluster-hash.test.ts",
+      "line": 87
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/mule-resolver.test.ts#mkCtx@L24",
+      "confidence": 1,
+      "name": "mkCtx",
+      "qualifiedName": "mkCtx",
+      "signature": "mkCtx(source: string): ExtractCtx",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/mule-resolver.test.ts",
+      "line": 24
+    },
+    {
+      "id": "sym:packages/cli/src/viz.test.ts#node@L216",
+      "confidence": 1,
+      "name": "node",
+      "qualifiedName": "node",
+      "signature": "node(partial: Partial<Node> & { id: string; kind: Node['kind'] }): Node",
+      "type": "function",
+      "file": "packages/cli/src/viz.test.ts",
+      "line": 216
+    },
+    {
+      "id": "sym:packages/core/src/source.test.ts#node@L30",
+      "confidence": 1,
+      "name": "node",
+      "qualifiedName": "node",
+      "signature": "node(file: string, span: { start: number; end: number }, meta: Record<string, unknown>): Node",
+      "type": "function",
+      "file": "packages/core/src/source.test.ts",
+      "line": 30
+    },
+    {
+      "id": "sym:packages/pipeline/src/ownership.ts#ownerNode@L33",
+      "confidence": 1,
+      "name": "ownerNode",
+      "qualifiedName": "ownerNode",
+      "signature": "ownerNode(name: string, email?: string): Node",
+      "type": "function",
+      "file": "packages/pipeline/src/ownership.ts",
+      "line": 33
+    },
+    {
+      "id": "sym:packages/pipeline/src/mule/discover.ts#pathOnlyHash@L97",
+      "confidence": 1,
+      "name": "pathOnlyHash",
+      "qualifiedName": "pathOnlyHash",
+      "signature": "pathOnlyHash(repoRelativePath: string): string",
+      "type": "function",
+      "file": "packages/pipeline/src/mule/discover.ts",
+      "line": 97
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/mule-resolver.ts#placeholderFor@L395",
+      "confidence": 1,
+      "name": "placeholderFor",
+      "qualifiedName": "placeholderFor",
+      "signature": "placeholderFor(proj: string, name: string, placeholders: Map<string, Node>): Node",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/mule-resolver.ts",
+      "line": 395
+    },
+    {
+      "id": "sym:packages/core/src/federation.test.ts#route@L73",
+      "confidence": 1,
+      "name": "route",
+      "qualifiedName": "route",
+      "signature": "route(method: string, path: string, file: string, line: number): Node",
+      "type": "function",
+      "file": "packages/core/src/federation.test.ts",
+      "line": 73
+    },
+    {
+      "id": "sym:packages/core/src/dossier/framework.test.ts#routeNode@L66",
+      "confidence": 1,
+      "name": "routeNode",
+      "qualifiedName": "routeNode",
+      "signature": "routeNode(verb: string, path: string, line: number, meta: Record<string, unknown> = {}): Node",
+      "type": "function",
+      "file": "packages/core/src/dossier/framework.test.ts",
+      "line": 66
+    },
+    {
+      "id": "sym:packages/core/src/validate.test.ts#routeNode@L42",
+      "confidence": 1,
+      "name": "routeNode",
+      "qualifiedName": "routeNode",
+      "signature": "routeNode(): Node",
+      "type": "function",
+      "file": "packages/core/src/validate.test.ts",
+      "line": 42
+    },
+    {
+      "id": "sym:packages/pipeline/src/artifacts.ts#runArtifactGraph@L132",
+      "confidence": 1,
+      "name": "runArtifactGraph",
+      "qualifiedName": "runArtifactGraph",
+      "signature": "runArtifactGraph(soul: SoulStore, root: string, opts: ArtifactGraphOpts = {}): ArtifactStats",
+      "type": "function",
+      "file": "packages/pipeline/src/artifacts.ts",
+      "line": 132
+    },
+    {
+      "id": "sym:packages/pipeline/src/cluster/cluster.ts#runCluster@L40",
+      "confidence": 1,
+      "name": "runCluster",
+      "qualifiedName": "runCluster",
+      "signature": "runCluster(soul: SoulStore): ClusterStats",
+      "type": "function",
+      "file": "packages/pipeline/src/cluster/cluster.ts",
+      "line": 40
+    },
+    {
+      "id": "sym:packages/pipeline/src/mule/discover.ts#secureContentHash@L108",
+      "confidence": 1,
+      "name": "secureContentHash",
+      "qualifiedName": "secureContentHash",
+      "signature": "secureContentHash(file: FileMeta, content: string): string",
+      "type": "function",
+      "file": "packages/pipeline/src/mule/discover.ts",
+      "line": 108
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/mule-resolver.test.ts#setupMunit@L310",
+      "confidence": 1,
+      "name": "setupMunit",
+      "qualifiedName": "setupMunit",
+      "signature": "setupMunit()",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/mule-resolver.test.ts",
+      "line": 310
+    },
+    {
+      "id": "sym:packages/cli/src/viz-server.test.ts#sourceNode@L15",
+      "confidence": 1,
+      "name": "sourceNode",
+      "qualifiedName": "sourceNode",
+      "signature": "sourceNode(file: string, start = 2, end = 3): Node",
+      "type": "function",
+      "file": "packages/cli/src/viz-server.test.ts",
+      "line": 15
+    },
+    {
+      "id": "sym:packages/core/src/dossier/dossier.test.ts#stmt@L36",
+      "confidence": 1,
+      "name": "stmt",
+      "qualifiedName": "stmt",
+      "signature": "stmt(path: string, line: number, lang = 'plsql'): Node",
+      "type": "function",
+      "file": "packages/core/src/dossier/dossier.test.ts",
+      "line": 36
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.test.ts#stmt@L2077",
+      "confidence": 1,
+      "name": "stmt",
+      "qualifiedName": "stmt",
+      "signature": "stmt(path: string, line: number, sqlKind = 'select'): Node",
+      "type": "function",
+      "file": "packages/mcp/src/verbs.test.ts",
+      "line": 2077
+    },
+    {
+      "id": "sym:packages/core/src/dossier/by-scope.test.ts#stmt@L32",
+      "confidence": 1,
+      "name": "stmt",
+      "qualifiedName": "stmt",
+      "signature": "stmt(path: string, line: number, sqlKind: string, expr: string): Node",
+      "type": "function",
+      "file": "packages/core/src/dossier/by-scope.test.ts",
+      "line": 32
+    },
+    {
+      "id": "sym:packages/core/src/dossier/reconstruct.test.ts#stmt@L32",
+      "confidence": 1,
+      "name": "stmt",
+      "qualifiedName": "stmt",
+      "signature": "stmt(path: string, line: number, sqlKind: string, expr: string): Node",
+      "type": "function",
+      "file": "packages/core/src/dossier/reconstruct.test.ts",
+      "line": 32
+    },
+    {
+      "id": "sym:packages/core/src/functional-map.test.ts#sym@L11",
+      "confidence": 1,
+      "name": "sym",
+      "qualifiedName": "sym",
+      "signature": "sym(path: string, qname: string, line: number, extra: Partial<Node> = {}): Node",
+      "type": "function",
+      "file": "packages/core/src/functional-map.test.ts",
+      "line": 11
+    },
+    {
+      "id": "sym:packages/core/src/dossier/dossier.test.ts#sym@L22",
+      "confidence": 1,
+      "name": "sym",
+      "qualifiedName": "sym",
+      "signature": "sym(path: string, q: string, line: number, extra: Partial<Node> = {}): Node",
+      "type": "function",
+      "file": "packages/core/src/dossier/dossier.test.ts",
+      "line": 22
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.test.ts#sym@L185",
+      "confidence": 1,
+      "name": "sym",
+      "qualifiedName": "sym",
+      "signature": "sym(path: string, q: string, line: number, extra: Partial<Node> = {}): Node",
+      "type": "function",
+      "file": "packages/mcp/src/verbs.test.ts",
+      "line": 185
+    },
+    {
+      "id": "sym:packages/core/src/llm-overlay.test.ts#sym@L11",
+      "confidence": 1,
+      "name": "sym",
+      "qualifiedName": "sym",
+      "signature": "sym(path: string, qname: string, line: number): Node",
+      "type": "function",
+      "file": "packages/core/src/llm-overlay.test.ts",
+      "line": 11
+    },
+    {
+      "id": "sym:packages/core/src/dossier/by-scope.test.ts#sym@L17",
+      "confidence": 1,
+      "name": "sym",
+      "qualifiedName": "sym",
+      "signature": "sym(path: string, q: string, line: number, extra: Partial<Node> = {}): Node",
+      "type": "function",
+      "file": "packages/core/src/dossier/by-scope.test.ts",
+      "line": 17
+    },
+    {
+      "id": "sym:packages/core/src/cluster-hash.test.ts#sym@L17",
+      "confidence": 1,
+      "name": "sym",
+      "qualifiedName": "sym",
+      "signature": "sym(path: string, qname: string, line: number, extra: Partial<Node> = {}): Node",
+      "type": "function",
+      "file": "packages/core/src/cluster-hash.test.ts",
+      "line": 17
+    },
+    {
+      "id": "sym:packages/ui/src/viz.test.ts#sym@L18",
+      "confidence": 1,
+      "name": "sym",
+      "qualifiedName": "sym",
+      "signature": "sym(path: string, qname: string, line: number, extra: Partial<Node> = {}): Node",
+      "type": "function",
+      "file": "packages/ui/src/viz.test.ts",
+      "line": 18
+    },
+    {
+      "id": "sym:packages/core/src/index/sqlite-index.test.ts#sym@L27",
+      "confidence": 1,
+      "name": "sym",
+      "qualifiedName": "sym",
+      "signature": "sym(path: string, name: string, line: number, extra: Partial<Node> = {}): Node",
+      "type": "function",
+      "file": "packages/core/src/index/sqlite-index.test.ts",
+      "line": 27
+    },
+    {
+      "id": "sym:packages/core/src/importance.test.ts#sym@L19",
+      "confidence": 1,
+      "name": "sym",
+      "qualifiedName": "sym",
+      "signature": "sym(path: string, qname: string, line: number, extra: Partial<Node> = {}): Node",
+      "type": "function",
+      "file": "packages/core/src/importance.test.ts",
+      "line": 19
+    },
+    {
+      "id": "sym:packages/core/src/dossier/reconstruct.test.ts#sym@L17",
+      "confidence": 1,
+      "name": "sym",
+      "qualifiedName": "sym",
+      "signature": "sym(path: string, q: string, line: number, extra: Partial<Node> = {}): Node",
+      "type": "function",
+      "file": "packages/core/src/dossier/reconstruct.test.ts",
+      "line": 17
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/recursion.test.ts#sym@L22",
+      "confidence": 1,
+      "name": "sym",
+      "qualifiedName": "sym",
+      "signature": "sym(path: string, q: string, line: number, extra: Partial<Node> = {}): Node",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/recursion.test.ts",
+      "line": 22
+    },
+    {
+      "id": "sym:packages/core/src/working-overlay.test.ts#symNode@L37",
+      "confidence": 1,
+      "name": "symNode",
+      "qualifiedName": "symNode",
+      "signature": "symNode(path: string, name: string, line: number): Node",
+      "type": "function",
+      "file": "packages/core/src/working-overlay.test.ts",
+      "line": 37
+    },
+    {
+      "id": "sym:packages/core/src/soul-store.test.ts#symNode@L27",
+      "confidence": 1,
+      "name": "symNode",
+      "qualifiedName": "symNode",
+      "signature": "symNode(path: string, name: string, line: number): Node",
+      "type": "function",
+      "file": "packages/core/src/soul-store.test.ts",
+      "line": 27
+    },
+    {
+      "id": "sym:packages/core/src/source.test.ts#symbol@L130",
+      "confidence": 1,
+      "name": "symbol",
+      "qualifiedName": "symbol",
+      "signature": "symbol(file: string, type: string, meta: Record<string, unknown> = {}): Node",
+      "type": "function",
+      "file": "packages/core/src/source.test.ts",
+      "line": 130
+    },
+    {
+      "id": "sym:packages/core/src/dossier/by-scope.test.ts#table@L46",
+      "confidence": 1,
+      "name": "table",
+      "qualifiedName": "table",
+      "signature": "table(schema: string, name: string, file: string): Node",
+      "type": "function",
+      "file": "packages/core/src/dossier/by-scope.test.ts",
+      "line": 46
+    },
+    {
+      "id": "sym:packages/core/src/dossier/reconstruct.test.ts#table@L46",
+      "confidence": 1,
+      "name": "table",
+      "qualifiedName": "table",
+      "signature": "table(schema: string, name: string, file: string): Node",
+      "type": "function",
+      "file": "packages/core/src/dossier/reconstruct.test.ts",
+      "line": 46
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/soul-schema/src/hash.ts#blake3Hex@L15",
+      "confidence": 1,
+      "name": "blake3Hex",
+      "qualifiedName": "blake3Hex",
+      "signature": "blake3Hex(input: string): string",
+      "type": "function",
+      "file": "packages/soul-schema/src/hash.ts",
+      "line": 15
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/soul-schema/src/hash.ts@L20",
+      "snippet": "/** Prefixed content hash: \"blake3:<hex>\". Stored on Node.hash. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#7-the-complete-code-map-quick-reference",
+      "heading": "7. The Complete Code Map (Quick Reference)",
+      "anchor": "7-the-complete-code-map-quick-reference",
+      "snippet": "7. The Complete Code Map (Quick Reference)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/soul-schema/src/hash.ts#contentHash@L21",
+    "procedureName": "contentHash",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/soul-schema/src/hash.ts#contentHash@L21",
+        "procedureName": "contentHash",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3dc94560b376ce2190fb8682d6150ca63b05071a58d87107849e42e4d26acbb4",
+          "target": "stmt:packages/soul-schema/src/hash.ts@L22",
+          "line": 22,
+          "expr": "return `blake3:${blake3Hex(input)}`;"
+        }
+      },
+      {
+        "procedure": "sym:packages/soul-schema/src/hash.ts#contentHash@L21",
+        "procedureName": "contentHash",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:7931c72339d8aa018fe0a0a2fdc01bc3e4c02328628fbd07ca3a3223db9ddc0b",
+          "target": "sym:packages/soul-schema/src/hash.ts#blake3Hex@L15",
+          "expr": "blake3Hex",
+          "line": 22
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/cli/src/viz-server.test.ts",
+      "packages/cli/src/viz.test.ts",
+      "packages/core/src/cluster-hash.test.ts",
+      "packages/core/src/cluster-hash.ts",
+      "packages/core/src/dossier/by-scope.test.ts",
+      "packages/core/src/dossier/dossier.test.ts",
+      "packages/core/src/dossier/framework.test.ts",
+      "packages/core/src/dossier/reconstruct.test.ts",
+      "packages/core/src/federation.test.ts",
+      "packages/core/src/functional-map.test.ts",
+      "packages/core/src/ifhash.ts",
+      "packages/core/src/importance.test.ts",
+      "packages/core/src/index/sqlite-index.test.ts",
+      "packages/core/src/llm-overlay.test.ts",
+      "packages/core/src/soul-store.test.ts",
+      "packages/core/src/source.test.ts",
+      "packages/core/src/validate.test.ts",
+      "packages/core/src/working-overlay.test.ts",
+      "packages/mcp/src/verbs-detect.test.ts",
+      "packages/mcp/src/verbs.test.ts",
+      "packages/parsers/src/fuzz/fuzz-ctx.ts",
+      "packages/pipeline/src/artifacts.ts",
+      "packages/pipeline/src/cluster/cluster.ts",
+      "packages/pipeline/src/extract-ctx.ts",
+      "packages/pipeline/src/mule/discover.ts",
+      "packages/pipeline/src/multimodal/ingest.ts",
+      "packages/pipeline/src/ownership.ts",
+      "packages/pipeline/src/resolve/mule-resolver.test.ts",
+      "packages/pipeline/src/resolve/mule-resolver.ts",
+      "packages/pipeline/src/resolve/recursion.test.ts",
+      "packages/ui/src/viz.test.ts",
+      "scripts/alias-check.mjs",
+      "scripts/ifhash-check.mjs",
+      "scripts/tier-check.mjs"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

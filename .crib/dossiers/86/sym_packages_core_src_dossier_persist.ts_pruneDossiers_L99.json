@@ -1,0 +1,345 @@
+{
+  "id": "sym:packages/core/src/dossier/persist.ts#pruneDossiers@L99",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:4d9ff68b6d3e5c9f4967af7cdcc05ff47e8264eee90601e12d7cce17821afc2b",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/dossier/persist.ts#pruneDossiers@L99",
+    "kind": "symbol",
+    "type": "function",
+    "name": "pruneDossiers",
+    "qualifiedName": "pruneDossiers",
+    "signature": "pruneDossiers(cribDir: string, liveNodeIds: ReadonlySet<string>): number",
+    "lang": "typescript",
+    "file": "packages/core/src/dossier/persist.ts",
+    "span": {
+      "start": 99,
+      "end": 122
+    },
+    "callSites": [
+      {
+        "callee": "dossiersDir",
+        "line": 100
+      },
+      {
+        "callee": "join",
+        "line": 105
+      },
+      {
+        "callee": "join",
+        "line": 108
+      },
+      {
+        "callee": "parse",
+        "line": 111
+      },
+      {
+        "callee": "readFileSync",
+        "line": 111
+      },
+      {
+        "callee": "rmSync",
+        "line": 117
+      }
+    ]
+  },
+  "source": {
+    "text": "export function pruneDossiers(cribDir: string, liveNodeIds: ReadonlySet<string>): number {\n  const root = dossiersDir(cribDir);\n  if (!existsSync(root)) return 0;\n  let pruned = 0;\n  for (const shard of readdirSync(root, { withFileTypes: true })) {\n    if (!shard.isDirectory()) continue;\n    const shardPath = join(root, shard.name);\n    for (const entry of readdirSync(shardPath, { withFileTypes: true })) {\n      if (!entry.isFile() || !entry.name.endsWith('.json')) continue;\n      const path = join(shardPath, entry.name);\n      let id: string | undefined;\n      try {\n        const parsed = JSON.parse(readFileSync(path, 'utf8')) as { id?: unknown };\n        if (typeof parsed.id === 'string') id = parsed.id;\n      } catch {\n        // Invalid cache entries are unusable and safe to discard.\n      }\n      if (id !== undefined && liveNodeIds.has(id)) continue;\n      rmSync(path, { force: true });\n      pruned++;\n    }\n  }\n  return pruned;\n}",
+    "truncated": false,
+    "totalLines": 24,
+    "startLine": 99
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/src/dossiers.ts#runDossiers@L43",
+      "confidence": 1,
+      "name": "runDossiers",
+      "qualifiedName": "runDossiers",
+      "signature": "runDossiers(soul: SoulStore, repoRoot: string, now: string): DossierStats",
+      "type": "function",
+      "file": "packages/pipeline/src/dossiers.ts",
+      "line": 43
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/core/src/dossier/persist.ts#dossiersDir@L29",
+      "confidence": 1,
+      "name": "dossiersDir",
+      "qualifiedName": "dossiersDir",
+      "signature": "dossiersDir(cribDir: string): string",
+      "type": "function",
+      "file": "packages/core/src/dossier/persist.ts",
+      "line": 29
+    },
+    {
+      "id": "sym:packages/pipeline/fixtures/plain-js/src/legacy.cjs#parse@L4",
+      "confidence": 1,
+      "name": "parse",
+      "qualifiedName": "parse",
+      "signature": "parse(input)",
+      "type": "function",
+      "file": "packages/pipeline/fixtures/plain-js/src/legacy.cjs",
+      "line": 4
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/core/src/dossier/persist.ts@L98",
+      "snippet": "/** Remove persisted dossiers whose node no longer exists in the live soul. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/dossier/persist.ts#pruneDossiers@L99",
+    "procedureName": "pruneDossiers",
+    "conditions": [
+      "cond:packages/core/src/dossier/persist.ts@L101",
+      "cond:packages/core/src/dossier/persist.ts@L103",
+      "cond:packages/core/src/dossier/persist.ts@L106",
+      "cond:packages/core/src/dossier/persist.ts@L112"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/dossier/persist.ts#pruneDossiers@L99",
+        "procedureName": "pruneDossiers",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b1070986247c98afcae37bb45f87dafc1ef6ed97a2ab464f742c55d3887daf80",
+          "target": "stmt:packages/core/src/dossier/persist.ts@L100",
+          "line": 100,
+          "expr": "const root = dossiersDir(cribDir);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/persist.ts#pruneDossiers@L99",
+        "procedureName": "pruneDossiers",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:efec7b9596397668bb1a7189155b172e059f04ddd2117e014706ffda30e386dc",
+          "target": "sym:packages/core/src/dossier/persist.ts#dossiersDir@L29",
+          "expr": "dossiersDir",
+          "line": 100
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/persist.ts#pruneDossiers@L99",
+        "procedureName": "pruneDossiers",
+        "guard": "cond:packages/core/src/dossier/persist.ts@L101",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/persist.ts@L101",
+            "expr": "!existsSync(root)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:eaeae680ba8df1c66c67fe77c84d5922697ba5c5277339f43f4b20cd45352d32",
+          "target": "stmt:packages/core/src/dossier/persist.ts@L101",
+          "line": 101,
+          "expr": "return 0;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/persist.ts#pruneDossiers@L99",
+        "procedureName": "pruneDossiers",
+        "guard": "cond:packages/core/src/dossier/persist.ts@L103",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/persist.ts@L103",
+            "expr": "readdirSync(root, { withFileTypes: true })",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:621e97ba42f92b8b4d1b1bf7e599efd541025be726ccb6eade04be93d523c291",
+          "target": "stmt:packages/core/src/dossier/persist.ts@L105",
+          "line": 105,
+          "expr": "const shardPath = join(root, shard.name);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/persist.ts#pruneDossiers@L99",
+        "procedureName": "pruneDossiers",
+        "guard": "cond:packages/core/src/dossier/persist.ts@L106",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/persist.ts@L103",
+            "expr": "readdirSync(root, { withFileTypes: true })"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/persist.ts@L106",
+            "expr": "readdirSync(shardPath, { withFileTypes: true })",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9a7459939dd8cd04a56ce6a0c9250d55eafe34222c14183dea7bfecff8756e2b",
+          "target": "stmt:packages/core/src/dossier/persist.ts@L108",
+          "line": 108,
+          "expr": "const path = join(shardPath, entry.name);"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/persist.ts#pruneDossiers@L99",
+        "procedureName": "pruneDossiers",
+        "guard": "cond:packages/core/src/dossier/persist.ts@L106",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/persist.ts@L103",
+            "expr": "readdirSync(root, { withFileTypes: true })"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/persist.ts@L106",
+            "expr": "readdirSync(shardPath, { withFileTypes: true })",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:13ba724bc4dbdeedfdc772023123aab014311e0487114885aadf57757c0f5623",
+          "target": "stmt:packages/core/src/dossier/persist.ts@L111",
+          "line": 111,
+          "expr": "const parsed = JSON.parse(readFileSync(path, 'utf8')) as { id?: unknown };"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/persist.ts#pruneDossiers@L99",
+        "procedureName": "pruneDossiers",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:9063668141273738a08283f3e0d093d1f115acdab7b1b797daeccc9d651da5f3",
+          "target": "sym:packages/pipeline/fixtures/plain-js/src/legacy.cjs#parse@L4",
+          "expr": "parse",
+          "line": 111
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/persist.ts#pruneDossiers@L99",
+        "procedureName": "pruneDossiers",
+        "guard": "cond:packages/core/src/dossier/persist.ts@L112",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/persist.ts@L103",
+            "expr": "readdirSync(root, { withFileTypes: true })"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/persist.ts@L106",
+            "expr": "readdirSync(shardPath, { withFileTypes: true })"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/persist.ts@L112",
+            "expr": "typeof parsed.id === 'string'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": true,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:dfe4d6e15200f00e1f507b93ac7b90d810a22eaa228616474047bf5366bbec4d",
+          "target": "assign:packages/core/src/dossier/persist.ts@L112",
+          "line": 112,
+          "expr": "id = parsed.id;"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/persist.ts#pruneDossiers@L99",
+        "procedureName": "pruneDossiers",
+        "guard": "cond:packages/core/src/dossier/persist.ts@L106",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/persist.ts@L103",
+            "expr": "readdirSync(root, { withFileTypes: true })"
+          },
+          {
+            "id": "cond:packages/core/src/dossier/persist.ts@L106",
+            "expr": "readdirSync(shardPath, { withFileTypes: true })",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b0da116b2413c0d085ad8ea44a63641384f8bb7c53325b98d384fa414ca76fe3",
+          "target": "stmt:packages/core/src/dossier/persist.ts@L117",
+          "line": 117,
+          "expr": "rmSync(path, { force: true });"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/persist.ts#pruneDossiers@L99",
+        "procedureName": "pruneDossiers",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4efa71c13a483a10683170013aed1714d1c72ee5751b6f2110ed6c4f3e11cdfb",
+          "target": "stmt:packages/core/src/dossier/persist.ts@L121",
+          "line": 121,
+          "expr": "return pruned;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 8,
+    "referencedByFiles": [
+      "packages/pipeline/src/dossiers.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 8,
+    "assignments": 1,
+    "conditions": 4,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 6,
+      "unresolved": 4
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "4 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

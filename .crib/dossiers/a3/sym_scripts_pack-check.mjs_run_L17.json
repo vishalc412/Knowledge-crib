@@ -1,8 +1,8 @@
 {
   "id": "sym:scripts/pack-check.mjs#run@L17",
-  "schemaVersion": "1.5",
-  "nodeHash": "blake3:792de0de8fc510df1c15f4d0b1e7d47b210ca64526ce3ad11b42cc36822a5043",
-  "builtAt": "2026-07-16T16:35:16.098Z",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:f376c3ca54da1282288861561d62174f4d095770fc8838c45570b546145a952c",
+  "builtAt": "2026-08-31T17:37:23.222Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:scripts/pack-check.mjs#run@L17",
@@ -15,7 +15,7 @@
     "file": "scripts/pack-check.mjs",
     "span": {
       "start": 17,
-      "end": 24
+      "end": 30
     },
     "callSites": [
       {
@@ -25,9 +25,9 @@
     ]
   },
   "source": {
-    "text": "function run(cmd, args, opts = {}) {\n  return execFileSync(cmd, args, {\n    encoding: 'utf8',\n    stdio: ['ignore', 'pipe', 'pipe'],\n    maxBuffer: 64 * 1024 * 1024,\n    ...opts,\n  });\n}",
+    "text": "function run(cmd, args, opts = {}) {\n  return execFileSync(cmd, args, {\n    encoding: 'utf8',\n    stdio: ['ignore', 'pipe', 'pipe'],\n    maxBuffer: 64 * 1024 * 1024,\n    // Windows ships corepack as a .cmd shim; execFileSync(shell:false) cannot launch .cmd files\n    // (spawnSync ENOENT). shell:true on win32 routes through cmd.exe so the .cmd resolves. No-op\n    // on posix (shell:false is the execFileSync default → byte-identical). Same fix as\n    // release-verify.mjs + build-installers.mjs. `tar` is tar.exe (not a .cmd) so shell:true is\n    // harmless for it on win32 too.\n    shell: process.platform === 'win32',\n    ...opts,\n  });\n}",
     "truncated": false,
-    "totalLines": 8,
+    "totalLines": 14,
     "startLine": 17
   },
   "callers": [],
@@ -48,6 +48,16 @@
       "heading": "Branch 3 — Unified Graph & Data Architecture",
       "anchor": "branch-3-unified-graph-data-architecture",
       "snippet": "Branch 3 — Unified Graph & Data Architecture",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-4-extraction.md#gitnexus-execution-preconditions",
+      "heading": "GitNexus execution preconditions",
+      "anchor": "gitnexus-execution-preconditions",
+      "snippet": "GitNexus execution preconditions",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
@@ -104,6 +114,46 @@
       "confidence": 0.6
     },
     {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#the-layer-model-bottom-up",
+      "heading": "The layer model — bottom-up",
+      "anchor": "the-layer-model-bottom-up",
+      "snippet": "The layer model — bottom-up",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#5-4-fixes-applied-to-knowledge-crib-so-other-projects-work-too",
+      "heading": "5.4 Fixes applied to Knowledge-crib (so other projects work too)",
+      "anchor": "5-4-fixes-applied-to-knowledge-crib-so-other-projects-work-too",
+      "snippet": "5.4 Fixes applied to Knowledge-crib (so other projects work too)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#driving-the-loop",
+      "heading": "Driving the loop",
+      "anchor": "driving-the-loop",
+      "snippet": "Driving the loop",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#8-troubleshooting",
+      "heading": "8. Troubleshooting",
+      "anchor": "8-troubleshooting",
+      "snippet": "8. Troubleshooting",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
       "sectionId": "doc:docs/knowledge-crib-extractor-plugins.md#multimodal-worker-m13-shipped",
       "heading": "Multimodal worker (M13 — shipped)",
       "anchor": "multimodal-worker-m13-shipped",
@@ -128,6 +178,16 @@
       "heading": "Scale curve — `crib index` time + peak RSS vs corpus LOC",
       "anchor": "scale-curve-crib-index-time-peak-rss-vs-corpus-loc",
       "snippet": "Scale curve — `crib index` time + peak RSS vs corpus LOC",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/mulesoft.md#properties-secrets-keys-only",
+      "heading": "Properties & secrets (keys only)",
+      "anchor": "properties-secrets-keys-only",
+      "snippet": "Properties & secrets (keys only)",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
@@ -168,6 +228,16 @@
       "heading": "Crib's parse workload (measured)",
       "anchor": "crib-s-parse-workload-measured",
       "snippet": "Crib's parse workload (measured)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-foundation.md#gitnexus-execution-preconditions",
+      "heading": "GitNexus execution preconditions",
+      "anchor": "gitnexus-execution-preconditions",
+      "snippet": "GitNexus execution preconditions",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
@@ -254,16 +324,6 @@
       "confidence": 0.6
     },
     {
-      "sectionId": "doc:docs/launch/repo-identity-decision.md#option-a-knowledgecrib-github-org-recommended",
-      "heading": "Option A — `KnowledgeCrib` GitHub org (RECOMMENDED)",
-      "anchor": "option-a-knowledgecrib-github-org-recommended",
-      "snippet": "Option A — `KnowledgeCrib` GitHub org (RECOMMENDED)",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
-    },
-    {
       "sectionId": "doc:docs/knowledge-crib-track3-spec.md#tests-each-language-add-to-the-existing-extractor-test-ts",
       "heading": "Tests (each language — add to the existing `Extractor.test.ts`)",
       "anchor": "tests-each-language-add-to-the-existing-extractor-test-ts",
@@ -288,6 +348,26 @@
       "heading": "Before Opening a Pull Request",
       "anchor": "before-opening-a-pull-request",
       "snippet": "Before Opening a Pull Request",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/specs/2026-08-14-mulesoft-first-class-extractor-design.md#12-performance-and-determinism",
+      "heading": "12. Performance and Determinism",
+      "anchor": "12-performance-and-determinism",
+      "snippet": "12. Performance and Determinism",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/specs/2026-08-14-mulesoft-first-class-extractor-design.md#14-5-sample-acceptance",
+      "heading": "14.5 Sample acceptance",
+      "anchor": "14-5-sample-acceptance",
+      "snippet": "14.5 Sample acceptance",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
@@ -384,6 +464,16 @@
       "confidence": 0.6
     },
     {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_MAKE_A_BEATS_B.md#1-the-equality-gaps-that-remain-plan-a-still-weaker-today",
+      "heading": "1. The equality gaps that remain (Plan A still weaker today)",
+      "anchor": "1-the-equality-gaps-that-remain-plan-a-still-weaker-today",
+      "snippet": "1. The equality gaps that remain (Plan A still weaker today)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
       "sectionId": "doc:docs/knowledge-crib-client-setup.md#crib-mcp-auto-wire-the-ide-configs-req-2",
       "heading": "`crib mcp` — auto-wire the IDE configs (REQ-2)",
       "anchor": "crib-mcp-auto-wire-the-ide-configs-req-2",
@@ -424,6 +514,26 @@
       "confidence": 0.6
     },
     {
+      "sectionId": "doc:CHANGELOG.md#added",
+      "heading": "Added",
+      "anchor": "added",
+      "snippet": "Added",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:CHANGELOG.md#security",
+      "heading": "Security",
+      "anchor": "security",
+      "snippet": "Security",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
       "sectionId": "doc:docs/launch/signing-deferral-adr.md#consequences",
       "heading": "Consequences",
       "anchor": "consequences",
@@ -438,6 +548,16 @@
       "heading": "Decision (proposed)",
       "anchor": "decision-proposed",
       "snippet": "Decision (proposed)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#7-risks",
+      "heading": "7. Risks",
+      "anchor": "7-risks",
+      "snippet": "7. Risks",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
@@ -524,80 +644,10 @@
       "confidence": 0.6
     },
     {
-      "sectionId": "doc:CHANGELOG.md#added",
-      "heading": "Added",
-      "anchor": "added",
-      "snippet": "Added",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
-    },
-    {
-      "sectionId": "doc:CHANGELOG.md#security",
-      "heading": "Security",
-      "anchor": "security",
-      "snippet": "Security",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
-    },
-    {
-      "sectionId": "doc:docs/knowledge-crib-user-guide.md#5-4-fixes-applied-to-knowledge-crib-so-other-projects-work-too",
-      "heading": "5.4 Fixes applied to Knowledge-crib (so other projects work too)",
-      "anchor": "5-4-fixes-applied-to-knowledge-crib-so-other-projects-work-too",
-      "snippet": "5.4 Fixes applied to Knowledge-crib (so other projects work too)",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
-    },
-    {
-      "sectionId": "doc:docs/knowledge-crib-user-guide.md#8-troubleshooting",
-      "heading": "8. Troubleshooting",
-      "anchor": "8-troubleshooting",
-      "snippet": "8. Troubleshooting",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
-    },
-    {
-      "sectionId": "doc:docs/knowledge-crib-user-guide.md#the-layer-model-bottom-up",
-      "heading": "The layer model — bottom-up",
-      "anchor": "the-layer-model-bottom-up",
-      "snippet": "The layer model — bottom-up",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
-    },
-    {
-      "sectionId": "doc:docs/knowledge-crib-user-guide.md#driving-the-loop",
-      "heading": "Driving the loop",
-      "anchor": "driving-the-loop",
-      "snippet": "Driving the loop",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
-    },
-    {
-      "sectionId": "doc:docs/superpowers/plans/PLAN_MAKE_A_BEATS_B.md#1-the-equality-gaps-that-remain-plan-a-still-weaker-today",
-      "heading": "1. The equality gaps that remain (Plan A still weaker today)",
-      "anchor": "1-the-equality-gaps-that-remain-plan-a-still-weaker-today",
-      "snippet": "1. The equality gaps that remain (Plan A still weaker today)",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
-    },
-    {
-      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#7-risks",
-      "heading": "7. Risks",
-      "anchor": "7-risks",
-      "snippet": "7. Risks",
+      "sectionId": "doc:docs/bench/memory.md#reading-the-three-lines-that-matter",
+      "heading": "Reading the three lines that matter",
+      "anchor": "reading-the-three-lines-that-matter",
+      "snippet": "Reading the three lines that matter",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
@@ -620,7 +670,7 @@
           "edgeId": "e:3f722e9aac0eb070f2b24931112d55452e3f35c75838a04e155d3dafb29284d3",
           "target": "stmt:scripts/pack-check.mjs@L18",
           "line": 18,
-          "expr": "return execFileSync(cmd, args, {\n    encoding: 'utf8',\n    stdio: ['ignore', 'pipe', 'pipe'],\n    maxBuffer: 64 * 1024 * 1024,\n    ...opts,\n  });"
+          "expr": "return execFileSync(cmd, args, {\n    encoding: 'utf8',\n    stdio: ['ignore', 'pipe', 'pipe'],\n    maxBuffer: 64 * 1024 * 1024,\n    // Windows ships corepack as a .cmd shim; execFileSync(shell:false) cannot launch .cmd files\n    // (spawnSync ENOENT). shell:true on win32 routes through cmd.exe so the .cmd resolves. No-op\n    // on posix (shell:false is the execFileSync default → byte-identical). Same fix as\n    // release-verify.mjs + build-installers.mjs. `tar` is tar.exe (not a .cmd) so shell:true is\n    // harmless for it on win32 too.\n    shell: process.platform === 'win32',\n    ...opts,\n  });"
         }
       }
     ]

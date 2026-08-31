@@ -1,0 +1,248 @@
+{
+  "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addView@L252",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:035b6db9ea5e678e6a6ab6d3063b63c714280e3b256ef80f105a87bdc361fe6f",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addView@L252",
+    "kind": "symbol",
+    "type": "method",
+    "name": "addView",
+    "qualifiedName": "Builder.addView",
+    "signature": "addView(def: ViewDef): void",
+    "lang": "typescript",
+    "file": "packages/parsers/src/plsql/PlSqlExtractor.ts",
+    "span": {
+      "start": 252,
+      "end": 268
+    },
+    "callSites": [
+      {
+        "callee": "idFor",
+        "line": 253
+      },
+      {
+        "callee": "hash",
+        "line": 262
+      },
+      {
+        "callee": "map",
+        "line": 263
+      },
+      {
+        "callee": "push",
+        "line": 265
+      },
+      {
+        "callee": "indexTable",
+        "line": 266
+      },
+      {
+        "callee": "addColumn",
+        "line": 267
+      }
+    ]
+  },
+  "source": {
+    "text": "  private addView(def: ViewDef): void {\n    const id = this.ctx.idFor('table', { schema: def.schema, name: def.name });\n    const tableNode: Node = {\n      id,\n      kind: 'table',\n      schema: def.schema,\n      name: def.name,\n      file: this.path,\n      span: def.span,\n      lang: 'plsql',\n      hash: this.ctx.hash(`${def.schema}.${def.name}`),\n      meta: { kind: 'view', columns: def.columns.map((c) => c.name) },\n    };\n    this.nodes.push(tableNode);\n    this.indexTable(def.schema, def.name, id);\n    for (const col of def.columns) this.addColumn(def.schema, def.name, col, def.span.start, id);\n  }",
+    "truncated": false,
+    "totalLines": 17,
+    "startLine": 252
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addTop@L132",
+      "confidence": 1,
+      "name": "addTop",
+      "qualifiedName": "Builder.addTop",
+      "signature": "addTop(top: TopLevel): void",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/PlSqlExtractor.ts",
+      "line": 132
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addColumn@L182",
+      "confidence": 1,
+      "name": "addColumn",
+      "qualifiedName": "Builder.addColumn",
+      "signature": "addColumn(schema: string, table: string, col: ColumnDef, line: number, tableId: string): void",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/PlSqlExtractor.ts",
+      "line": 182
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.indexTable@L782",
+      "confidence": 1,
+      "name": "indexTable",
+      "qualifiedName": "Builder.indexTable",
+      "signature": "indexTable(schema: string, name: string, id: string): void",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/PlSqlExtractor.ts",
+      "line": 782
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/plsql/PlSqlExtractor.ts@L247",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addView@L252",
+    "procedureName": "Builder.addView",
+    "conditions": [
+      "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L267"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addView@L252",
+        "procedureName": "Builder.addView",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:90054cfc0f985261d5b34025dd91f0dbfb47307d33b987908feb012aeaefb5f0",
+          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L253",
+          "line": 253,
+          "expr": "const id = this.ctx.idFor('table', { schema: def.schema, name: def.name });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addView@L252",
+        "procedureName": "Builder.addView",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5e35302436980452bbe569ea6c739221b99cf1509b6032aef1cd6266832937f4",
+          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L254",
+          "line": 254,
+          "expr": "const tableNode: Node = {\n      id,\n      kind: 'table',\n      schema: def.schema,\n      name: def.name,\n      file: this.path,\n      span: def.span,\n      lang: 'plsql',\n      hash: this.ctx.hash(`${def.schema}.${def.name}`),\n      meta: { kind: 'view', columns: def.columns.map((c) => c.name) },\n    };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addView@L252",
+        "procedureName": "Builder.addView",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:44751da3b3e4df690afcfc3cb7b1ea4dfce05ff9dd31fe45e1483bce16bce6c2",
+          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L265",
+          "line": 265,
+          "expr": "this.nodes.push(tableNode);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addView@L252",
+        "procedureName": "Builder.addView",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:79714978bb14ec95331f90f71214c76043cf01b45531619338f7aea8b80b703d",
+          "target": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.indexTable@L782",
+          "expr": "indexTable",
+          "line": 266
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addView@L252",
+        "procedureName": "Builder.addView",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d75c7bea3020803269e7b26079c770be5b044a63d1f6545f34dc06a4df3b1c34",
+          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L266",
+          "line": 266,
+          "expr": "this.indexTable(def.schema, def.name, id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addView@L252",
+        "procedureName": "Builder.addView",
+        "guard": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L267",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L267",
+            "expr": "def.columns",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:554b7ca87c67019c642fd9c1d4f19e76e9b9f95342082439224fb22628386050",
+          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L267",
+          "line": 267,
+          "expr": "this.addColumn(def.schema, def.name, col, def.span.start, id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addView@L252",
+        "procedureName": "Builder.addView",
+        "guard": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L267",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L267",
+            "expr": "def.columns",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:fa0b04b0d01eab3e39232a2b64f80a5cc928e77d44e3e9f0e14f29470065f722",
+          "target": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.addColumn@L182",
+          "expr": "addColumn",
+          "line": 267
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 5,
+    "referencedByFiles": [
+      "packages/parsers/src/plsql/PlSqlExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 5,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 6,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

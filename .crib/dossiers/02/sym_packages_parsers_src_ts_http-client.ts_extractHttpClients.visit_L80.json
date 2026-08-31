@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/ts/http-client.ts#extractHttpClients.visit@L80",
-  "schemaVersion": "1.5",
+  "schemaVersion": "1.6",
   "nodeHash": "blake3:41a68c09a9eaad9ef05482376e4de5b86816a513f5f3878dd8e6a422ff87e9a7",
-  "builtAt": "2026-07-16T16:35:16.098Z",
+  "builtAt": "2026-08-31T17:37:23.222Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/ts/http-client.ts#extractHttpClients.visit@L80",
@@ -92,14 +92,14 @@
       "line": 329
     },
     {
-      "id": "sym:packages/ui/src/viz.test.ts#edge@L27",
+      "id": "sym:packages/ui/src/viz.test.ts#edge@L33",
       "confidence": 1,
       "name": "edge",
       "qualifiedName": "edge",
       "signature": "edge(src: string, dst: string, rel: Edge['rel']): Edge",
       "type": "function",
       "file": "packages/ui/src/viz.test.ts",
-      "line": 27
+      "line": 33
     },
     {
       "id": "sym:packages/parsers/src/ts/http-client.ts#enclosingCallableId@L250",
@@ -112,14 +112,14 @@
       "line": 250
     },
     {
-      "id": "sym:packages/soul-schema/src/id.ts#idFor@L88",
+      "id": "sym:packages/soul-schema/src/id.ts#idFor@L96",
       "confidence": 1,
       "name": "idFor",
       "qualifiedName": "idFor",
       "signature": "idFor(spec: IdSpec): string",
       "type": "function",
       "file": "packages/soul-schema/src/id.ts",
-      "line": 88
+      "line": 96
     },
     {
       "id": "sym:packages/parsers/src/ts/http-client.ts#matchHttpCall@L118",
@@ -132,14 +132,14 @@
       "line": 118
     },
     {
-      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
       "confidence": 1,
       "name": "push",
       "qualifiedName": "push",
       "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
       "type": "function",
       "file": "packages/pipeline/src/linker/inverted-index.ts",
-      "line": 39
+      "line": 70
     }
   ],
   "docs": [],
@@ -200,20 +200,6 @@
       {
         "procedure": "sym:packages/parsers/src/ts/http-client.ts#extractHttpClients.visit@L80",
         "procedureName": "extractHttpClients.visit",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:0d5f4ea38ef8541bb3105f6412c1ac19a3c17bc2acea35783a8cff04cf1f6f23",
-          "target": "sym:packages/soul-schema/src/id.ts#idFor@L88",
-          "expr": "idFor",
-          "line": 85
-        }
-      },
-      {
-        "procedure": "sym:packages/parsers/src/ts/http-client.ts#extractHttpClients.visit@L80",
-        "procedureName": "extractHttpClients.visit",
         "guard": "cond:packages/parsers/src/ts/http-client.ts@L83",
         "branch": "THEN",
         "conditions": [
@@ -235,6 +221,20 @@
           "target": "stmt:packages/parsers/src/ts/http-client.ts@L85",
           "line": 85,
           "expr": "const callId = ctx.idFor('http-call', {\n          httpMethod: method,\n          routePath,\n          file: path,\n          line: callLine,\n        });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/http-client.ts#extractHttpClients.visit@L80",
+        "procedureName": "extractHttpClients.visit",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:dcf0ff7e18e1ab26a1552ca953fa3f7beee07ce933d6e68fde852f951390dfc1",
+          "target": "sym:packages/soul-schema/src/id.ts#idFor@L96",
+          "expr": "idFor",
+          "line": 85
         }
       },
       {
@@ -275,8 +275,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:fbd07328a5eee763500333e9d72812ca03d4ae34d6c2b0f2c54a0f394a774022",
-          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "edgeId": "e:be0d18640ef0d78a176d66e5107c3c46de1ed90c3a440855d7ba61f18e588fd6",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
           "expr": "push",
           "line": 93
         }
@@ -371,8 +371,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:7957b7d2de6d5c1bdef30a2b57442ce5a6ea4dd2ccf1805a1adb510cf2adc52f",
-          "target": "sym:packages/ui/src/viz.test.ts#edge@L27",
+          "edgeId": "e:c7652759e8794222c57d0f0616496b79d4db4800ea298970fbca8296d672c7c5",
+          "target": "sym:packages/ui/src/viz.test.ts#edge@L33",
           "expr": "edge",
           "line": 108
         }

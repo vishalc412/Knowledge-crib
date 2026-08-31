@@ -1,0 +1,270 @@
+{
+  "id": "sym:packages/parsers/src/python/parser.ts#parseRaise@L940",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:0f61e0a96979b61bfa501477dbb7033c589e315da79fa316a3a956a22a3d1c0b",
+  "builtAt": "2026-08-25T20:55:11.863Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/python/parser.ts#parseRaise@L940",
+    "kind": "symbol",
+    "type": "function",
+    "name": "parseRaise",
+    "qualifiedName": "parseRaise",
+    "signature": "parseRaise(toks: Token[]): { name?: string; message?: string }",
+    "lang": "typescript",
+    "file": "packages/parsers/src/python/parser.ts",
+    "span": {
+      "start": 940,
+      "end": 964
+    },
+    "callSites": [
+      {
+        "callee": "stringLiteralInner",
+        "line": 955
+      }
+    ]
+  },
+  "source": {
+    "text": "function parseRaise(toks: Token[]): { name?: string; message?: string } {\n  let i = 1;\n  const nameTk = toks[i];\n  let name: string | undefined;\n  if (nameTk && nameTk.type === 'NAME' && !isKeyword(nameTk.value)) {\n    name = nameTk.value;\n    i++;\n  }\n  let message: string | undefined;\n  const open = toks[i];\n  if (open && open.type === 'OP' && open.value === '(') {\n    for (let j = i + 1; j < toks.length; j++) {\n      const tk = toks[j]!;\n      if (tk.type === 'OP' && tk.value === ')') break;\n      if (tk.type === 'STRING') {\n        message = stringLiteralInner(tk.value);\n        break;\n      }\n    }\n  }\n  const out: { name?: string; message?: string } = {};\n  if (name) out.name = name;\n  if (message !== undefined) out.message = message;\n  return out;\n}",
+    "truncated": false,
+    "totalLines": 25,
+    "startLine": 940
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#Parser.parseAction@L595",
+      "confidence": 1,
+      "name": "parseAction",
+      "qualifiedName": "Parser.parseAction",
+      "signature": "parseAction(): PyStmt | null",
+      "type": "method",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 595
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/python/lexer.ts#isKeyword@L74",
+      "confidence": 1,
+      "name": "isKeyword",
+      "qualifiedName": "isKeyword",
+      "signature": "isKeyword(value: string): boolean",
+      "type": "function",
+      "file": "packages/parsers/src/python/lexer.ts",
+      "line": 74
+    },
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#stringLiteralInner@L919",
+      "confidence": 1,
+      "name": "stringLiteralInner",
+      "qualifiedName": "stringLiteralInner",
+      "signature": "stringLiteralInner(v: string): string",
+      "type": "function",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 919
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/python/parser.ts@L935",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/python/parser.ts#parseRaise@L940",
+    "procedureName": "parseRaise",
+    "conditions": [
+      "cond:packages/parsers/src/python/parser.ts@L944",
+      "cond:packages/parsers/src/python/parser.ts@L950",
+      "cond:packages/parsers/src/python/parser.ts@L951",
+      "cond:packages/parsers/src/python/parser.ts@L954",
+      "cond:packages/parsers/src/python/parser.ts@L961",
+      "cond:packages/parsers/src/python/parser.ts@L962"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#parseRaise@L940",
+        "procedureName": "parseRaise",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:8b5e06b4f88d16067c07b0c31579d56a0164eb9a72613d9d4e4fd38ae6c06975",
+          "target": "sym:packages/parsers/src/python/lexer.ts#isKeyword@L74",
+          "expr": "isKeyword"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#parseRaise@L940",
+        "procedureName": "parseRaise",
+        "guard": "cond:packages/parsers/src/python/parser.ts@L944",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/parser.ts@L944",
+            "expr": "nameTk && nameTk.type === 'NAME' && !isKeyword(nameTk.value)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d86f85461ecf81dc3f5eb991e57207bae33712e6d3fb1a41c7435faa11137359",
+          "target": "assign:packages/parsers/src/python/parser.ts@L945",
+          "line": 945,
+          "expr": "name = nameTk.value;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#parseRaise@L940",
+        "procedureName": "parseRaise",
+        "guard": "cond:packages/parsers/src/python/parser.ts@L954",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/parser.ts@L950",
+            "expr": "open && open.type === 'OP' && open.value === '('"
+          },
+          {
+            "id": "cond:packages/parsers/src/python/parser.ts@L951",
+            "expr": "j < toks.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/python/parser.ts@L954",
+            "expr": "tk.type === 'STRING'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:c82cffdcba26bc28679a720f991454291f7665de803499eebb7774529dc657f2",
+          "target": "sym:packages/parsers/src/python/parser.ts#stringLiteralInner@L919",
+          "expr": "stringLiteralInner",
+          "line": 955
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#parseRaise@L940",
+        "procedureName": "parseRaise",
+        "guard": "cond:packages/parsers/src/python/parser.ts@L954",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/parser.ts@L950",
+            "expr": "open && open.type === 'OP' && open.value === '('"
+          },
+          {
+            "id": "cond:packages/parsers/src/python/parser.ts@L951",
+            "expr": "j < toks.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/python/parser.ts@L954",
+            "expr": "tk.type === 'STRING'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f5c3bdd249a485ddbb7ccacdb5cf1f992fc6af486da344409a18ae09cc177c47",
+          "target": "assign:packages/parsers/src/python/parser.ts@L955",
+          "line": 955,
+          "expr": "message = stringLiteralInner(tk.value);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#parseRaise@L940",
+        "procedureName": "parseRaise",
+        "guard": "cond:packages/parsers/src/python/parser.ts@L961",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/parser.ts@L961",
+            "expr": "name",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bc0aeaf6694aab118815bf5fb59c3856b26b75b92ffb45b332c55ccec643d3c1",
+          "target": "assign:packages/parsers/src/python/parser.ts@L961",
+          "line": 961,
+          "expr": "out.name = name;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#parseRaise@L940",
+        "procedureName": "parseRaise",
+        "guard": "cond:packages/parsers/src/python/parser.ts@L962",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/parser.ts@L962",
+            "expr": "message !== undefined",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:172944708661a38ecaab4c40472c2cd60e3291a98b177f9941c75c9ad983490c",
+          "target": "assign:packages/parsers/src/python/parser.ts@L962",
+          "line": 962,
+          "expr": "out.message = message;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#parseRaise@L940",
+        "procedureName": "parseRaise",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a41b3e65ac12306aceafe5264f30e03960c185d5d38989f43ae650ba409e6caa",
+          "target": "stmt:packages/parsers/src/python/parser.ts@L963",
+          "line": 963,
+          "expr": "return out;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 5,
+    "referencedByFiles": [
+      "packages/parsers/src/python/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 5,
+    "assignments": 4,
+    "conditions": 4,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

@@ -1,0 +1,113 @@
+{
+  "id": "sym:packages/pipeline/src/linker/media.ts#extractDotted@L33",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:3c08adc29111dfe5a79ed6d3edd18a3894b406e20699022d53a9d0d85575e8a1",
+  "builtAt": "2026-08-25T20:55:11.863Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/linker/media.ts#extractDotted@L33",
+    "kind": "symbol",
+    "type": "function",
+    "name": "extractDotted",
+    "qualifiedName": "extractDotted",
+    "signature": "extractDotted(text: string): string[]",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/linker/media.ts",
+    "span": {
+      "start": 33,
+      "end": 35
+    },
+    "callSites": [
+      {
+        "callee": "map",
+        "line": 34
+      },
+      {
+        "callee": "match",
+        "line": 34
+      },
+      {
+        "callee": "trim",
+        "line": 34
+      }
+    ]
+  },
+  "source": {
+    "text": "export function extractDotted(text: string): string[] {\n  return [...new Set((text.match(DOTTED_REF) ?? []).map((t) => t.trim()))];\n}",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 33
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/src/linker/media.ts#runMediaLink@L42",
+      "confidence": 1,
+      "name": "runMediaLink",
+      "qualifiedName": "runMediaLink",
+      "signature": "runMediaLink(soul: SoulStore, threshold?: number, mediaFiles?: string[]): MediaLinkStats",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/media.ts",
+      "line": 42
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/pipeline/src/linker/media.ts@L32",
+      "snippet": "/** Pull dotted qualified-name refs out of prose so the explicit signal can match them. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/linker/media.ts#extractDotted@L33",
+    "procedureName": "extractDotted",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/linker/media.ts#extractDotted@L33",
+        "procedureName": "extractDotted",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ec20742c8bc46f38ed8509d52441db6d3e3ea04d6f39811518fc2a0621f59fb8",
+          "target": "stmt:packages/pipeline/src/linker/media.ts@L34",
+          "line": 34,
+          "expr": "return [...new Set((text.match(DOTTED_REF) ?? []).map((t) => t.trim()))];"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/pipeline/src/linker/media.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 3,
+      "unresolved": 3
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "3 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

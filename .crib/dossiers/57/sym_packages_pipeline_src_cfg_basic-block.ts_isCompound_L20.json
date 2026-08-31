@@ -1,0 +1,97 @@
+{
+  "id": "sym:packages/pipeline/src/cfg/basic-block.ts#isCompound@L20",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:909e00c7ff616cd88bd2c929c9c796d4c987c99114929fbfc3c90d84759df514",
+  "builtAt": "2026-08-25T20:55:11.863Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/cfg/basic-block.ts#isCompound@L20",
+    "kind": "symbol",
+    "type": "function",
+    "name": "isCompound",
+    "qualifiedName": "isCompound",
+    "signature": "isCompound(s: Stmt): boolean",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/cfg/basic-block.ts",
+    "span": {
+      "start": 20,
+      "end": 22
+    }
+  },
+  "source": {
+    "text": "function isCompound(s: Stmt): boolean {\n  return s.kind === 'if' || s.kind === 'loop' || s.kind === 'case' || s.kind === 'exception';\n}",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 20
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/src/cfg/basic-block.ts#segmentBlock@L29",
+      "confidence": 1,
+      "name": "segmentBlock",
+      "qualifiedName": "segmentBlock",
+      "signature": "segmentBlock(block: Block): BasicBlock[]",
+      "type": "function",
+      "file": "packages/pipeline/src/cfg/basic-block.ts",
+      "line": 29
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/pipeline/src/cfg/basic-block.ts@L19",
+      "snippet": "/** is this statement a control-flow split (an IF / LOOP / CASE / EXCEPTION that starts a sub-CFG)? */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/cfg/basic-block.ts#isCompound@L20",
+    "procedureName": "isCompound",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/cfg/basic-block.ts#isCompound@L20",
+        "procedureName": "isCompound",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d7dea6b7e5f02faf32df6cb8e463a02e515867d6ce3d2f8e467c2fa9bfc6996a",
+          "target": "stmt:packages/pipeline/src/cfg/basic-block.ts@L21",
+          "line": 21,
+          "expr": "return s.kind === 'if' || s.kind === 'loop' || s.kind === 'case' || s.kind === 'exception';"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/pipeline/src/cfg/basic-block.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

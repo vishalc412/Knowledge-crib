@@ -1,0 +1,419 @@
+{
+  "id": "sym:packages/parsers/src/ts/nest.test.ts#injects@L61",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:d9b9d7c0d530e7d0c9995bb562e043101fd5b79df3bcb3abdd414f402f2b4444",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/ts/nest.test.ts#injects@L61",
+    "kind": "symbol",
+    "type": "function",
+    "name": "injects",
+    "qualifiedName": "injects",
+    "signature": "injects(…)",
+    "lang": "typescript",
+    "file": "packages/parsers/src/ts/nest.test.ts",
+    "span": {
+      "start": 61,
+      "end": 67
+    },
+    "callSites": [
+      {
+        "callee": "label",
+        "line": 62
+      },
+      {
+        "callee": "sort",
+        "line": 63
+      },
+      {
+        "callee": "map",
+        "line": 63
+      },
+      {
+        "callee": "filter",
+        "line": 63
+      },
+      {
+        "callee": "lbl",
+        "line": 65
+      },
+      {
+        "callee": "lbl",
+        "line": 65
+      }
+    ]
+  },
+  "source": {
+    "text": "const injects = (r: ExtractResult): string[] => {\n  const lbl = label(r);\n  return r.edges\n    .filter((e) => e.rel === 'injects')\n    .map((e) => `${lbl(e.src)} -> ${lbl(e.dst)}`)\n    .sort();\n};",
+    "truncated": false,
+    "totalLines": 7,
+    "startLine": 61
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/pipeline/src/resolve/sql-resolver.test.ts#label@L202",
+      "confidence": 1,
+      "name": "label",
+      "qualifiedName": "label",
+      "signature": "label(soul: SoulStore, id: string): string",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/sql-resolver.test.ts",
+      "line": 202
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/nest.test.ts#label@L36",
+      "confidence": 1,
+      "name": "label",
+      "qualifiedName": "label",
+      "signature": "label(r: ExtractResult): (id: string) => string",
+      "type": "function",
+      "file": "packages/parsers/src/ts/nest.test.ts",
+      "line": 36
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/CsharpExtractor.test.ts#lbl@L313",
+      "confidence": 1,
+      "name": "lbl",
+      "qualifiedName": "lbl",
+      "signature": "lbl(…)",
+      "type": "function",
+      "file": "packages/parsers/src/csharp/CsharpExtractor.test.ts",
+      "line": 313
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/ts/nest.test.ts@L60",
+      "snippet": "/** all `injects` edges: consumer → dependency, sorted. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#tests-3",
+      "heading": "Tests",
+      "anchor": "tests-3",
+      "snippet": "Tests",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m14-framework-semantics-layer-schema-1-3",
+      "heading": "M14 — Framework-semantics layer (schema 1.3)",
+      "anchor": "m14-framework-semantics-layer-schema-1-3",
+      "snippet": "M14 — Framework-semantics layer (schema 1.3)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.99
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-architecture.md#3-1-framework-semantics-tier-schema-1-3",
+      "heading": "3.1 Framework-semantics tier (schema 1.3)",
+      "anchor": "3-1-framework-semantics-tier-schema-1-3",
+      "snippet": "3.1 Framework-semantics tier (schema 1.3)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#what-was-built-3",
+      "heading": "What was built",
+      "anchor": "what-was-built-3",
+      "snippet": "What was built",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#9-known-issues-limits",
+      "heading": "9. Known issues & limits",
+      "anchor": "9-known-issues-limits",
+      "snippet": "9. Known issues & limits",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#conventions",
+      "heading": "Conventions",
+      "anchor": "conventions",
+      "snippet": "Conventions",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#status-op-gaps-missing-asset-detection",
+      "heading": "`status({op:'gaps'})` *(missing-asset detection)*",
+      "anchor": "status-op-gaps-missing-asset-detection",
+      "snippet": "`status({op:'gaps'})` *(missing-asset detection)*",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#context-symbol",
+      "heading": "`context(symbol)`",
+      "anchor": "context-symbol",
+      "snippet": "`context(symbol)`",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#surfacing-the-verbs-that-make-a-1-3-graph-replace-reading-the-code",
+      "heading": "Surfacing — the verbs that make a 1.3 graph replace reading the code",
+      "anchor": "surfacing-the-verbs-that-make-a-1-3-graph-replace-reading-the-code",
+      "snippet": "Surfacing — the verbs that make a 1.3 graph replace reading the code",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#6-versioning-migration",
+      "heading": "6. Versioning & migration",
+      "anchor": "6-versioning-migration",
+      "snippet": "6. Versioning & migration",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#new-rels",
+      "heading": "New rels",
+      "anchor": "new-rels",
+      "snippet": "New rels",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#planned-tracks-not-yet-built",
+      "heading": "Planned tracks (not yet built)",
+      "anchor": "planned-tracks-not-yet-built",
+      "snippet": "Planned tracks (not yet built)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#new-node-kinds",
+      "heading": "New node kinds",
+      "anchor": "new-node-kinds",
+      "snippet": "New node kinds",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#java-spring-boot-track-built-tested-schema-1-3",
+      "heading": "Java / Spring Boot track (built + tested, schema 1.3)",
+      "anchor": "java-spring-boot-track-built-tested-schema-1-3",
+      "snippet": "Java / Spring Boot track (built + tested, schema 1.3)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-soul-format.md#edge",
+      "heading": "Edge",
+      "anchor": "edge",
+      "snippet": "Edge",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-build-plan.md#5-milestones-each-one-flagged-pr-test-gate",
+      "heading": "5. Milestones (each = one flagged PR + test gate)",
+      "anchor": "5-milestones-each-one-flagged-pr-test-gate",
+      "snippet": "5. Milestones (each = one flagged PR + test gate)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-pipeline.md#phase-2b-framework-semantics-1-3-the-above-sql-tier-for-app-frameworks",
+      "heading": "Phase 2b — Framework-semantics *(1.3, the \"above SQL\" tier for app frameworks)*",
+      "anchor": "phase-2b-framework-semantics-1-3-the-above-sql-tier-for-app-frameworks",
+      "snippet": "Phase 2b — Framework-semantics *(1.3, the \"above SQL\" tier for app frameworks)*",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-pipeline.md#phase-overview",
+      "heading": "Phase overview",
+      "anchor": "phase-overview",
+      "snippet": "Phase overview",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-pipeline.md#phase-3-resolve-the-deep-part",
+      "heading": "Phase 3 — Resolve (the deep part)",
+      "anchor": "phase-3-resolve-the-deep-part",
+      "snippet": "Phase 3 — Resolve (the deep part)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-decisions.md#decision-log",
+      "heading": "Decision Log",
+      "anchor": "decision-log",
+      "snippet": "Decision Log",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-data-model.md#2-edge-relations-rel",
+      "heading": "2. Edge relations (`rel`)",
+      "anchor": "2-edge-relations-rel",
+      "snippet": "2. Edge relations (`rel`)",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-data-model.md#2-1-framework-semantics-edge-field-meta-1-3",
+      "heading": "2.1 Framework-semantics edge & field meta *(1.3)*",
+      "anchor": "2-1-framework-semantics-edge-field-meta-1-3",
+      "snippet": "2.1 Framework-semantics edge & field meta *(1.3)*",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/ts/nest.test.ts#injects@L61",
+    "procedureName": "injects",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.test.ts#injects@L61",
+        "procedureName": "injects",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:0f3b5bbb472f79b89a510bf2690ef82a149cec03b029a6e800db2d04a8ab0349",
+          "target": "sym:packages/pipeline/src/resolve/sql-resolver.test.ts#label@L202",
+          "expr": "label",
+          "line": 62
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.test.ts#injects@L61",
+        "procedureName": "injects",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:88fb77c3513e9028b7114bfe5aee47011a8cf9d29675df5275ee552814947340",
+          "target": "sym:packages/parsers/src/ts/nest.test.ts#label@L36",
+          "expr": "label",
+          "line": 62
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.test.ts#injects@L61",
+        "procedureName": "injects",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b7933f2fa103a50e80c177dee51cbbee701a757e7d0d79f66bcab04f4ed99345",
+          "target": "stmt:packages/parsers/src/ts/nest.test.ts@L62",
+          "line": 62,
+          "expr": "const lbl = label(r);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.test.ts#injects@L61",
+        "procedureName": "injects",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e39d078fd8329e9193e01e156d1359167a57161e133b4450216ee92e5927da51",
+          "target": "stmt:packages/parsers/src/ts/nest.test.ts@L63",
+          "line": 63,
+          "expr": "return r.edges\n    .filter((e) => e.rel === 'injects')\n    .map((e) => `${lbl(e.src)} -> ${lbl(e.dst)}`)\n    .sort();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/ts/nest.test.ts#injects@L61",
+        "procedureName": "injects",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:7fb5dfbd65bcf134641f626dfe20491a3f6d5c3e7e8e389592cc518ece4c816f",
+          "target": "sym:packages/parsers/src/csharp/CsharpExtractor.test.ts#lbl@L313",
+          "expr": "lbl",
+          "line": 65
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 3,
+      "recorded": 6,
+      "unresolved": 3
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "3 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

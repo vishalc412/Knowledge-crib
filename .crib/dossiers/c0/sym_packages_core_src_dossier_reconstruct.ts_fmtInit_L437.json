@@ -1,0 +1,121 @@
+{
+  "id": "sym:packages/core/src/dossier/reconstruct.ts#fmtInit@L437",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:feb7f87a8b7ab253a4e7d35626362f02e5db2efd318eef6583a724abd182d3cf",
+  "builtAt": "2026-08-25T20:55:11.863Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/dossier/reconstruct.ts#fmtInit@L437",
+    "kind": "symbol",
+    "type": "function",
+    "name": "fmtInit",
+    "qualifiedName": "fmtInit",
+    "signature": "fmtInit(init: string | undefined, truncated?: boolean): string",
+    "lang": "typescript",
+    "file": "packages/core/src/dossier/reconstruct.ts",
+    "span": {
+      "start": 437,
+      "end": 440
+    }
+  },
+  "source": {
+    "text": "function fmtInit(init: string | undefined, truncated?: boolean): string {\n  if (init === undefined) return '—';\n  return truncated ? `\\`${init}\\` ⚠ clipped` : `\\`${init}\\``;\n}",
+    "truncated": false,
+    "totalLines": 4,
+    "startLine": 437
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/dossier/reconstruct.ts#reconstructionToMarkdown@L357",
+      "confidence": 1,
+      "name": "reconstructionToMarkdown",
+      "qualifiedName": "reconstructionToMarkdown",
+      "signature": "reconstructionToMarkdown(r: Reconstruction): string",
+      "type": "function",
+      "file": "packages/core/src/dossier/reconstruct.ts",
+      "line": 357
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/core/src/dossier/reconstruct.ts@L436",
+      "snippet": "/** Format an initializer for the markdown table, flagging fidelity-clipped values. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/dossier/reconstruct.ts#fmtInit@L437",
+    "procedureName": "fmtInit",
+    "conditions": [
+      "cond:packages/core/src/dossier/reconstruct.ts@L438"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/dossier/reconstruct.ts#fmtInit@L437",
+        "procedureName": "fmtInit",
+        "guard": "cond:packages/core/src/dossier/reconstruct.ts@L438",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/core/src/dossier/reconstruct.ts@L438",
+            "expr": "init === undefined",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:db6d5f7074ae0f53f45d9c97328503c0a2744a008e0e96d40f3337f1245c2205",
+          "target": "stmt:packages/core/src/dossier/reconstruct.ts@L438",
+          "line": 438,
+          "expr": "return '—';"
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/reconstruct.ts#fmtInit@L437",
+        "procedureName": "fmtInit",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:28edfd4aae4ce13e07c7a7460fdc70afaec9b14c52657b2fee22536eccfb2c12",
+          "target": "stmt:packages/core/src/dossier/reconstruct.ts@L439",
+          "line": 439,
+          "expr": "return truncated ? `\\`${init}\\` ⚠ clipped` : `\\`${init}\\``;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/core/src/dossier/reconstruct.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

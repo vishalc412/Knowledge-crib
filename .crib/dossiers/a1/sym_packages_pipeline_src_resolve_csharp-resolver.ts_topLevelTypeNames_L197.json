@@ -1,0 +1,242 @@
+{
+  "id": "sym:packages/pipeline/src/resolve/csharp-resolver.ts#topLevelTypeNames@L197",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:34eea7889967f2461fb527daa45f66f2fbf39f7a794b4f1ebfff6251944555ab",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/resolve/csharp-resolver.ts#topLevelTypeNames@L197",
+    "kind": "symbol",
+    "type": "function",
+    "name": "topLevelTypeNames",
+    "qualifiedName": "topLevelTypeNames",
+    "signature": "topLevelTypeNames(mod: CsharpModule): string[]",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/resolve/csharp-resolver.ts",
+    "span": {
+      "start": 197,
+      "end": 211
+    },
+    "callSites": [
+      {
+        "callee": "push",
+        "line": 204
+      },
+      {
+        "callee": "push",
+        "line": 207
+      }
+    ]
+  },
+  "source": {
+    "text": "function topLevelTypeNames(mod: CsharpModule): string[] {\n  const out: string[] = [];\n  for (const d of mod.defs) {\n    if (d.kind === 'namespace') {\n      // a file-scoped namespace wraps the file's top-level types in its body; the FQN already includes\n      // the namespace, so recurse into the body but DON'T re-prefix (the FQN map uses mod.pkg).\n      for (const child of d.body) {\n        if (TYPE_KINDS.has(child.kind)) out.push(child.name);\n      }\n    } else if (TYPE_KINDS.has(d.kind)) {\n      out.push(d.name);\n    }\n  }\n  return out;\n}",
+    "truncated": false,
+    "totalLines": 15,
+    "startLine": 197
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/src/resolve/csharp-resolver.ts#resolveCsharp@L50",
+      "confidence": 1,
+      "name": "resolveCsharp",
+      "qualifiedName": "resolveCsharp",
+      "signature": "resolveCsharp(table: SymbolTable, root: string, files: FileMeta[]): { edges: Edge[]; stats: ResolveStats }",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/csharp-resolver.ts",
+      "line": 50
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 70
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/csharp-resolver.ts#resolveCsharp.push@L59",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "resolveCsharp.push",
+      "signature": "push(…)",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/csharp-resolver.ts",
+      "line": 59
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/pipeline/src/resolve/csharp-resolver.ts@L196",
+      "snippet": "/** The top-level TYPE names of a module (skipping namespace wrappers — those aren't FQN-qualified). */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/resolve/csharp-resolver.ts#topLevelTypeNames@L197",
+    "procedureName": "topLevelTypeNames",
+    "conditions": [
+      "cond:packages/pipeline/src/resolve/csharp-resolver.ts@L199",
+      "cond:packages/pipeline/src/resolve/csharp-resolver.ts@L200",
+      "cond:packages/pipeline/src/resolve/csharp-resolver.ts@L203",
+      "cond:packages/pipeline/src/resolve/csharp-resolver.ts@L204",
+      "cond:packages/pipeline/src/resolve/csharp-resolver.ts@L206"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/csharp-resolver.ts#topLevelTypeNames@L197",
+        "procedureName": "topLevelTypeNames",
+        "guard": "cond:packages/pipeline/src/resolve/csharp-resolver.ts@L204",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/csharp-resolver.ts@L199",
+            "expr": "mod.defs"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/csharp-resolver.ts@L200",
+            "expr": "d.kind === 'namespace'"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/csharp-resolver.ts@L203",
+            "expr": "d.body"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/csharp-resolver.ts@L204",
+            "expr": "TYPE_KINDS.has(child.kind)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4980c21a485111569e008e13d5f6b5e9afc953ea540a975db87bfea3070812a2",
+          "target": "stmt:packages/pipeline/src/resolve/csharp-resolver.ts@L204",
+          "line": 204,
+          "expr": "out.push(child.name);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/csharp-resolver.ts#topLevelTypeNames@L197",
+        "procedureName": "topLevelTypeNames",
+        "guard": "cond:packages/pipeline/src/resolve/csharp-resolver.ts@L206",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/csharp-resolver.ts@L199",
+            "expr": "mod.defs"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/csharp-resolver.ts@L200",
+            "expr": "d.kind === 'namespace'"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/csharp-resolver.ts@L206",
+            "expr": "TYPE_KINDS.has(d.kind)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:5d658e4c49ef02c7c8eac42e47ecd4e98b84725cd8473ff158ff468aa0c7ec62",
+          "target": "sym:packages/pipeline/src/resolve/csharp-resolver.ts#resolveCsharp.push@L59",
+          "expr": "push",
+          "line": 204
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/csharp-resolver.ts#topLevelTypeNames@L197",
+        "procedureName": "topLevelTypeNames",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:fa6f47ce290d1d20d29aa71182a16f254f021945a126a2934075ce1881cb49eb",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
+          "expr": "push",
+          "line": 204
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/csharp-resolver.ts#topLevelTypeNames@L197",
+        "procedureName": "topLevelTypeNames",
+        "guard": "cond:packages/pipeline/src/resolve/csharp-resolver.ts@L206",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/csharp-resolver.ts@L199",
+            "expr": "mod.defs"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/csharp-resolver.ts@L200",
+            "expr": "d.kind === 'namespace'"
+          },
+          {
+            "id": "cond:packages/pipeline/src/resolve/csharp-resolver.ts@L206",
+            "expr": "TYPE_KINDS.has(d.kind)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:62b0241c32ffd31da6af688ab5e7406451c507952b16bfbfd4170b4d9d0632ab",
+          "target": "stmt:packages/pipeline/src/resolve/csharp-resolver.ts@L207",
+          "line": 207,
+          "expr": "out.push(d.name);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/csharp-resolver.ts#topLevelTypeNames@L197",
+        "procedureName": "topLevelTypeNames",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2d361f98d694d4ebb25403f3bf913c0a64db658227aae7b259d79a487a16acd6",
+          "target": "stmt:packages/pipeline/src/resolve/csharp-resolver.ts@L210",
+          "line": 210,
+          "expr": "return out;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/pipeline/src/resolve/csharp-resolver.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 2,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

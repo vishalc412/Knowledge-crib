@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/core/src/importance.ts#isTestPath@L135",
-  "schemaVersion": "1.5",
-  "nodeHash": "blake3:73fbcb6dd773aab4852df7e20df6b87a548140ca92d31fabb06fd544a2096caa",
-  "builtAt": "2026-07-13T11:04:33.459Z",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:d88a3b4eeb9317965db8b9221ddd9af0e72ec2f7425e4dfb99b357a5cc3d1fdc",
+  "builtAt": "2026-08-25T20:55:11.863Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/core/src/importance.ts#isTestPath@L135",
@@ -15,19 +15,19 @@
     "file": "packages/core/src/importance.ts",
     "span": {
       "start": 135,
-      "end": 137
+      "end": 149
     },
     "callSites": [
       {
         "callee": "test",
-        "line": 136
+        "line": 145
       }
     ]
   },
   "source": {
-    "text": "export function isTestPath(file?: string): boolean {\n  return !!file && /(\\.test\\.|\\.spec\\.|__tests__|(?:^|\\/)tests?\\/)/.test(file);\n}",
+    "text": "export function isTestPath(file?: string): boolean {\n  // Fixture and golden-data directories are test material too: `packages/parsers/fixtures/go/auth.go`\n  // is a sample input for the Go parser's tests, not shipped code. Before they were recognised, 289\n  // symbols (7% of this repo's graph) ranked alongside production code — surfacing fixture symbols\n  // in top-symbol lists and offering them for enrichment ahead of real modules.\n  //\n  // Only DIRECTORY segments match (the trailing slash), so an ordinary `src/fixtures.ts` module is\n  // untouched. This governs ranking only; nothing here excludes a file from the graph.\n  return (\n    !!file &&\n    /(\\.test\\.|\\.spec\\.|__tests__|(?:^|\\/)tests?\\/|(?:^|\\/)(?:fixtures?|__fixtures__|testdata)\\/)/.test(\n      file,\n    )\n  );\n}",
     "truncated": false,
-    "totalLines": 3,
+    "totalLines": 15,
     "startLine": 135
   },
   "callers": [
@@ -66,10 +66,10 @@
         "inException": false,
         "action": {
           "kind": "executes",
-          "edgeId": "e:f8a64cd7cda63f9a2571b17894428b774c427e5d1380035f7279dbb5649d04b1",
-          "target": "stmt:packages/core/src/importance.ts@L136",
-          "line": 136,
-          "expr": "return !!file && /(\\.test\\.|\\.spec\\.|__tests__|(?:^|\\/)tests?\\/)/.test(file);"
+          "edgeId": "e:3383249ef55bb9f5346c722041836ebe855e1352845306cec81c4e77619d9fc1",
+          "target": "stmt:packages/core/src/importance.ts@L143",
+          "line": 143,
+          "expr": "return (\n    !!file &&\n    /(\\.test\\.|\\.spec\\.|__tests__|(?:^|\\/)tests?\\/|(?:^|\\/)(?:fixtures?|__fixtures__|testdata)\\/)/.test(\n      file,\n    )\n  );"
         }
       }
     ]

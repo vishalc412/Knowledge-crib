@@ -1,0 +1,175 @@
+{
+  "id": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.caseBranch@L765",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:6e62b771f4770ce82d4eba04a7577e782cd14ffa1b4dceb91cd81506d3bfe58c",
+  "builtAt": "2026-08-25T20:55:11.863Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.caseBranch@L765",
+    "kind": "symbol",
+    "type": "method",
+    "name": "caseBranch",
+    "qualifiedName": "BodyWalker.caseBranch",
+    "signature": "caseBranch(expr: string, line: number, isDefault: boolean): string",
+    "lang": "typescript",
+    "file": "packages/parsers/src/go/GoExtractor.ts",
+    "span": {
+      "start": 765,
+      "end": 782
+    },
+    "callSites": [
+      {
+        "callee": "idFor",
+        "line": 766
+      },
+      {
+        "callee": "add",
+        "line": 768
+      },
+      {
+        "callee": "push",
+        "line": 769
+      },
+      {
+        "callee": "hash",
+        "line": 777
+      }
+    ]
+  },
+  "source": {
+    "text": "  private caseBranch(expr: string, line: number, isDefault: boolean): string {\n    const id = this.ctx.idFor('case-branch', { file: this.path, line });\n    if (!this.caseBranchSeen.has(id)) {\n      this.caseBranchSeen.add(id);\n      this.nodes.push({\n        id,\n        kind: 'case-branch',\n        branch: isDefault ? 'DEFAULT' : 'CASE',\n        expr,\n        file: this.path,\n        span: { start: line, end: line },\n        lang: 'go',\n        hash: this.ctx.hash(`${this.path}:case:${line}:${expr}`),\n        ...(!isDefault && expr ? { whenSelector: expr } : {}),\n      });\n    }\n    return id;\n  }",
+    "truncated": false,
+    "totalLines": 18,
+    "startLine": 765
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.walkSwitch@L594",
+      "confidence": 1,
+      "name": "walkSwitch",
+      "qualifiedName": "BodyWalker.walkSwitch",
+      "signature": "walkSwitch(s: GoSwitchStmt, proc: ProcCtx, guardStack: string[], inLoop: boolean, inException: boolean): void",
+      "type": "method",
+      "file": "packages/parsers/src/go/GoExtractor.ts",
+      "line": 594
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/go/GoExtractor.ts@L763",
+      "snippet": "/** 1.2: emit a deduped `case-branch` node (keyed by file+line) and return its id. `whenSelector`",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.caseBranch@L765",
+    "procedureName": "BodyWalker.caseBranch",
+    "conditions": [
+      "cond:packages/parsers/src/go/GoExtractor.ts@L767"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.caseBranch@L765",
+        "procedureName": "BodyWalker.caseBranch",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d192e75191483181190e1d7752ffb37f19a6c1257bbb813c3632b36b4d4acf2a",
+          "target": "stmt:packages/parsers/src/go/GoExtractor.ts@L766",
+          "line": 766,
+          "expr": "const id = this.ctx.idFor('case-branch', { file: this.path, line });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.caseBranch@L765",
+        "procedureName": "BodyWalker.caseBranch",
+        "guard": "cond:packages/parsers/src/go/GoExtractor.ts@L767",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/GoExtractor.ts@L767",
+            "expr": "!this.caseBranchSeen.has(id)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:cb89fadfd8161e26a85f7048a599a76e796a34f45f9d37369954f7a3a7b19043",
+          "target": "stmt:packages/parsers/src/go/GoExtractor.ts@L768",
+          "line": 768,
+          "expr": "this.caseBranchSeen.add(id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.caseBranch@L765",
+        "procedureName": "BodyWalker.caseBranch",
+        "guard": "cond:packages/parsers/src/go/GoExtractor.ts@L767",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/GoExtractor.ts@L767",
+            "expr": "!this.caseBranchSeen.has(id)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:707f831e28f19d290d9edaaff787d1b2241d9eb6a8cd25fd1b9fa3745d443d1a",
+          "target": "stmt:packages/parsers/src/go/GoExtractor.ts@L769",
+          "line": 769,
+          "expr": "this.nodes.push({\n        id,\n        kind: 'case-branch',\n        branch: isDefault ? 'DEFAULT' : 'CASE',\n        expr,\n        file: this.path,\n        span: { start: line, end: line },\n        lang: 'go',\n        hash: this.ctx.hash(`${this.path}:case:${line}:${expr}`),\n        ...(!isDefault && expr ? { whenSelector: expr } : {}),\n      });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.caseBranch@L765",
+        "procedureName": "BodyWalker.caseBranch",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e637b4e03ad0043405a439149596ff5893f941573810e7d725a652e8c4e67e7e",
+          "target": "stmt:packages/parsers/src/go/GoExtractor.ts@L781",
+          "line": 781,
+          "expr": "return id;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": [
+      "packages/parsers/src/go/GoExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 4,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

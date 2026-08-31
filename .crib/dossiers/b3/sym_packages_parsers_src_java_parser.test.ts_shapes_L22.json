@@ -1,0 +1,106 @@
+{
+  "id": "sym:packages/parsers/src/java/parser.test.ts#shapes@L22",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:6e4f0dcc5e2c15a84e9a8d4aff3cd11fbbbff9662273c61700eebf3921e4fc85",
+  "builtAt": "2026-08-25T20:55:11.863Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/java/parser.test.ts#shapes@L22",
+    "kind": "symbol",
+    "type": "function",
+    "name": "shapes",
+    "qualifiedName": "shapes",
+    "signature": "shapes(…)",
+    "lang": "typescript",
+    "file": "packages/parsers/src/java/parser.test.ts",
+    "span": {
+      "start": 22,
+      "end": 25
+    }
+  },
+  "source": {
+    "text": "const shapes = (src: string): string[] =>\n  tokenize(src)\n    .filter((t) => t.type !== 'EOF')\n    .map((t) => `${t.type}:${t.value}`);",
+    "truncated": false,
+    "totalLines": 4,
+    "startLine": 22
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/java/lexer.ts#tokenize@L201",
+      "confidence": 1,
+      "name": "tokenize",
+      "qualifiedName": "tokenize",
+      "signature": "tokenize(src: string): Token[]",
+      "type": "function",
+      "file": "packages/parsers/src/java/lexer.ts",
+      "line": 201
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/java/parser.test.ts@L21",
+      "snippet": "/** Compact shape: each token as `TYPE:value` (numbers/strings/chars keep their literal value). */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-testing.md#1-test-pyramid",
+      "heading": "1. Test pyramid",
+      "anchor": "1-test-pyramid",
+      "snippet": "1. Test pyramid",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/java/parser.test.ts#shapes@L22",
+    "procedureName": "shapes",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.test.ts#shapes@L22",
+        "procedureName": "shapes",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:94cb0f2c1e1f5c15aeb82eee7c4638a765cedb2044fba7edfd672359dc82792a",
+          "target": "sym:packages/parsers/src/java/lexer.ts#tokenize@L201",
+          "expr": "tokenize"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "unimplemented",
+    "executesCount": 0,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "unimplemented",
+    "bodyPresent": false,
+    "executes": 0,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "BODY UNAVAILABLE — no body statements indexed. The implementation may live in a missing file (e.g. a PL/SQL package body) or be a spec-only declaration. Do NOT derive behavior, scoring formulas, or migration logic from this node — locate and index the body first."
+    ]
+  }
+}

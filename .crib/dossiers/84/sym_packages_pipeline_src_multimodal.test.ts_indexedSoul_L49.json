@@ -1,0 +1,176 @@
+{
+  "id": "sym:packages/pipeline/src/multimodal.test.ts#indexedSoul@L49",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:f6b4169b78bca02d1add6f7c91199b5e0d3426bf9205662e9d03ac7ac3816230",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/multimodal.test.ts#indexedSoul@L49",
+    "kind": "symbol",
+    "type": "function",
+    "name": "indexedSoul",
+    "qualifiedName": "indexedSoul",
+    "signature": "indexedSoul(): Promise<SoulStore>",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/multimodal.test.ts",
+    "span": {
+      "start": 49,
+      "end": 53
+    },
+    "callSites": [
+      {
+        "callee": "soulAt",
+        "line": 50
+      }
+    ]
+  },
+  "source": {
+    "text": "async function indexedSoul(): Promise<SoulStore> {\n  const soul = soulAt();\n  await indexRepo(soul, FIXTURE, { now: NOW, cluster: false });\n  return soul;\n}",
+    "truncated": false,
+    "totalLines": 5,
+    "startLine": 49
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L121",
+      "confidence": 1,
+      "name": "indexRepo",
+      "qualifiedName": "indexRepo",
+      "signature": "indexRepo(soul: SoulStore, root: string, opts: IndexOpts = {}): Promise<IndexReport>",
+      "type": "function",
+      "file": "packages/pipeline/src/pipeline.ts",
+      "line": 121
+    },
+    {
+      "id": "sym:packages/pipeline/src/parse-concurrent.test.ts#soulAt@L60",
+      "confidence": 1,
+      "name": "soulAt",
+      "qualifiedName": "soulAt",
+      "signature": "soulAt(repo: string): SoulStore",
+      "type": "function",
+      "file": "packages/pipeline/src/parse-concurrent.test.ts",
+      "line": 60
+    },
+    {
+      "id": "sym:packages/pipeline/src/multimodal.test.ts#soulAt@L42",
+      "confidence": 1,
+      "name": "soulAt",
+      "qualifiedName": "soulAt",
+      "signature": "soulAt(): SoulStore",
+      "type": "function",
+      "file": "packages/pipeline/src/multimodal.test.ts",
+      "line": 42
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/pipeline/src/multimodal.test.ts@L48",
+      "snippet": "/** Index the fixture (structure + parse → symbols) WITHOUT multimodal, so media linking has targets. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/multimodal.test.ts#indexedSoul@L49",
+    "procedureName": "indexedSoul",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/multimodal.test.ts#indexedSoul@L49",
+        "procedureName": "indexedSoul",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:30cee27b97ebe816d91e445c999cee17195070cf28fd7a4b250e8ecbffdbb6f7",
+          "target": "sym:packages/pipeline/src/parse-concurrent.test.ts#soulAt@L60",
+          "expr": "soulAt",
+          "line": 50
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/multimodal.test.ts#indexedSoul@L49",
+        "procedureName": "indexedSoul",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:674e56e7a6b5a78c9d6cce8ea76a193e51091d0c8b509fd6154c916132bcdf50",
+          "target": "stmt:packages/pipeline/src/multimodal.test.ts@L50",
+          "line": 50,
+          "expr": "const soul = soulAt();"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/multimodal.test.ts#indexedSoul@L49",
+        "procedureName": "indexedSoul",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:7ffe2949c86c325b2a597486ade6607add160e01910d1ce30699e9f26898ad35",
+          "target": "sym:packages/pipeline/src/multimodal.test.ts#soulAt@L42",
+          "expr": "soulAt",
+          "line": 50
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/multimodal.test.ts#indexedSoul@L49",
+        "procedureName": "indexedSoul",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c4f454d4cf3bbcec59576003aec5c6ec1cbfd1fb847a7819f71d1549e65c3ca1",
+          "target": "stmt:packages/pipeline/src/multimodal.test.ts@L52",
+          "line": 52,
+          "expr": "return soul;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/multimodal.test.ts#indexedSoul@L49",
+        "procedureName": "indexedSoul",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:5fbad7c1acae5011385a6d4612969c5469b9f7bfaf0db931451c694dc641801a",
+          "target": "sym:packages/pipeline/src/pipeline.ts#indexRepo@L121",
+          "expr": "indexRepo"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 3,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

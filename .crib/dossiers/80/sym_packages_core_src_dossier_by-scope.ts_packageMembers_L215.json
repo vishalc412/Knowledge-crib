@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/core/src/dossier/by-scope.ts#packageMembers@L215",
-  "schemaVersion": "1.5",
+  "schemaVersion": "1.6",
   "nodeHash": "blake3:f02d71c46204419957971cb58b4619a33335d7e114aac142285140a4150dfc8d",
-  "builtAt": "2026-07-16T16:35:16.098Z",
+  "builtAt": "2026-08-31T17:37:23.222Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/core/src/dossier/by-scope.ts#packageMembers@L215",
@@ -66,14 +66,14 @@
       "line": 226
     },
     {
-      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
       "confidence": 1,
       "name": "push",
       "qualifiedName": "push",
       "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
       "type": "function",
       "file": "packages/pipeline/src/linker/inverted-index.ts",
-      "line": 39
+      "line": 70
     }
   ],
   "docs": [
@@ -119,6 +119,20 @@
       {
         "procedure": "sym:packages/core/src/dossier/by-scope.ts#packageMembers@L215",
         "procedureName": "packageMembers",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:2f5b9c0f598784af7781fdba9584c575a25f094c7a96701cd20df01670a412a5",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
+          "expr": "push",
+          "line": 220
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/dossier/by-scope.ts#packageMembers@L215",
+        "procedureName": "packageMembers",
         "guard": "cond:packages/core/src/dossier/by-scope.ts@L220",
         "branch": "THEN",
         "conditions": [
@@ -140,20 +154,6 @@
           "target": "stmt:packages/core/src/dossier/by-scope.ts@L220",
           "line": 220,
           "expr": "out.push(m.id);"
-        }
-      },
-      {
-        "procedure": "sym:packages/core/src/dossier/by-scope.ts#packageMembers@L215",
-        "procedureName": "packageMembers",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:b6c1f50330e6066c751d537846ef42ed43c4b4ea14e141655245f7a7590b4e70",
-          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
-          "expr": "push",
-          "line": 220
         }
       },
       {

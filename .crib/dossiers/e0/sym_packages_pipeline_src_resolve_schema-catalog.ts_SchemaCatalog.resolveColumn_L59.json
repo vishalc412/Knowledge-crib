@@ -1,0 +1,96 @@
+{
+  "id": "sym:packages/pipeline/src/resolve/schema-catalog.ts#SchemaCatalog.resolveColumn@L59",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:04473f2e2ca5447c1c1aeae8e8eef89bfd4209c815cf3c560b860b6e1ff8a7e8",
+  "builtAt": "2026-08-25T20:55:11.863Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/resolve/schema-catalog.ts#SchemaCatalog.resolveColumn@L59",
+    "kind": "symbol",
+    "type": "method",
+    "name": "resolveColumn",
+    "qualifiedName": "SchemaCatalog.resolveColumn",
+    "signature": "resolveColumn(ref: string): string | undefined",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/resolve/schema-catalog.ts",
+    "span": {
+      "start": 59,
+      "end": 61
+    },
+    "callSites": [
+      {
+        "callee": "get",
+        "line": 60
+      },
+      {
+        "callee": "toLowerCase",
+        "line": 60
+      }
+    ]
+  },
+  "source": {
+    "text": "  resolveColumn(ref: string): string | undefined {\n    return this.columns.get(ref.toLowerCase());\n  }",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 59
+  },
+  "callers": [],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/pipeline/src/resolve/schema-catalog.ts@L58",
+      "snippet": "/** Resolve a column reference (\"table.col\" / \"schema.table.col\") to a node id, or undefined. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/resolve/schema-catalog.ts#SchemaCatalog.resolveColumn@L59",
+    "procedureName": "SchemaCatalog.resolveColumn",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/schema-catalog.ts#SchemaCatalog.resolveColumn@L59",
+        "procedureName": "SchemaCatalog.resolveColumn",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:cd77f49c57d1928a32d1536836d823d18f72900bb25337d929e0fdacf05c5720",
+          "target": "stmt:packages/pipeline/src/resolve/schema-catalog.ts@L60",
+          "line": 60,
+          "expr": "return this.columns.get(ref.toLowerCase());"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 2,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

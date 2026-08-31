@@ -1,0 +1,115 @@
+{
+  "id": "sym:packages/core/src/dossier/persist.ts#dossiersDir@L29",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:aa6573c5472d7c5c1a8d487d628261c33ec10f43a6a856d0d0fef40a4d0fa422",
+  "builtAt": "2026-08-25T20:55:11.863Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/dossier/persist.ts#dossiersDir@L29",
+    "kind": "symbol",
+    "type": "function",
+    "name": "dossiersDir",
+    "qualifiedName": "dossiersDir",
+    "signature": "dossiersDir(cribDir: string): string",
+    "lang": "typescript",
+    "file": "packages/core/src/dossier/persist.ts",
+    "span": {
+      "start": 29,
+      "end": 31
+    },
+    "callSites": [
+      {
+        "callee": "join",
+        "line": 30
+      }
+    ]
+  },
+  "source": {
+    "text": "export function dossiersDir(cribDir: string): string {\n  return join(cribDir, 'dossiers');\n}",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 29
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/dossier/persist.ts#dossierPath@L34",
+      "confidence": 1,
+      "name": "dossierPath",
+      "qualifiedName": "dossierPath",
+      "signature": "dossierPath(cribDir: string, nodeId: string): string",
+      "type": "function",
+      "file": "packages/core/src/dossier/persist.ts",
+      "line": 34
+    },
+    {
+      "id": "sym:packages/core/src/dossier/persist.ts#pruneDossiers@L99",
+      "confidence": 1,
+      "name": "pruneDossiers",
+      "qualifiedName": "pruneDossiers",
+      "signature": "pruneDossiers(cribDir: string, liveNodeIds: ReadonlySet<string>): number",
+      "type": "function",
+      "file": "packages/core/src/dossier/persist.ts",
+      "line": 99
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/core/src/dossier/persist.ts@L28",
+      "snippet": "/** The on-disk directory holding all persisted dossiers for one crib. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/dossier/persist.ts#dossiersDir@L29",
+    "procedureName": "dossiersDir",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/dossier/persist.ts#dossiersDir@L29",
+        "procedureName": "dossiersDir",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b6965886715ea321368e19fdd5d91328739eff9226c5f0f3ecea028ba5c31c9e",
+          "target": "stmt:packages/core/src/dossier/persist.ts@L30",
+          "line": 30,
+          "expr": "return join(cribDir, 'dossiers');"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/core/src/dossier/persist.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 1,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

@@ -1,0 +1,954 @@
+{
+  "id": "sym:packages/pipeline/src/linker/tfidf.ts#TfidfIndex.query@L147",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:3015fbab50f597859c819224b9b9588d784333c8ebf5c37afde266e14f44e6aa",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/linker/tfidf.ts#TfidfIndex.query@L147",
+    "kind": "symbol",
+    "type": "method",
+    "name": "query",
+    "qualifiedName": "TfidfIndex.query",
+    "signature": "query(queryText: string, floor: number, k: number): Array<{ id: string; score: number }>",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/linker/tfidf.ts",
+    "span": {
+      "start": 147,
+      "end": 175
+    },
+    "callSites": [
+      {
+        "callee": "termCounts",
+        "line": 148
+      },
+      {
+        "callee": "tokenize",
+        "line": 148
+      },
+      {
+        "callee": "get",
+        "line": 155
+      },
+      {
+        "callee": "log",
+        "line": 158
+      },
+      {
+        "callee": "set",
+        "line": 162
+      },
+      {
+        "callee": "get",
+        "line": 162
+      },
+      {
+        "callee": "sqrt",
+        "line": 165
+      },
+      {
+        "callee": "get",
+        "line": 168
+      },
+      {
+        "callee": "push",
+        "line": 171
+      },
+      {
+        "callee": "sort",
+        "line": 173
+      },
+      {
+        "callee": "slice",
+        "line": 174
+      }
+    ]
+  },
+  "source": {
+    "text": "  query(queryText: string, floor: number, k: number): Array<{ id: string; score: number }> {\n    const qTerms = termCounts(tokenize(queryText));\n    if (qTerms.size === 0 || this.n === 0) return [];\n    // query tf-idf (reuse the index's idf by recomputing from n — we don't store idf per term here, so\n    // approximate idf as ln(1+n/(1+df)). We didn't keep df, but postings length == df. Recompute below.\n    const dot = new Map<string, number>();\n    let qSumSq = 0;\n    for (const [term, tf] of qTerms) {\n      const postings = this.postings.get(term);\n      if (!postings) continue; // term unseen in corpus ⇒ idf would be 0 (ln(1+n/(1+n))=0); skip\n      const df = postings.length;\n      const idf = Math.log(1 + this.n / (1 + df));\n      const qw = tf * idf;\n      if (qw <= 0) continue;\n      qSumSq += qw * qw;\n      for (const p of postings) dot.set(p.id, (dot.get(p.id) ?? 0) + qw * p.weight);\n    }\n    if (qSumSq === 0) return [];\n    const qNorm = Math.sqrt(qSumSq);\n    const scored: Array<{ id: string; score: number }> = [];\n    for (const [id, d] of dot) {\n      const symNorm = this.norm.get(id) ?? 0;\n      if (symNorm === 0) continue;\n      const score = d / (qNorm * symNorm);\n      if (score >= floor) scored.push({ id, score });\n    }\n    scored.sort((a, b) => b.score - a.score || (a.id < b.id ? -1 : 1));\n    return scored.slice(0, k);\n  }",
+    "truncated": false,
+    "totalLines": 29,
+    "startLine": 147
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/pipeline/src/linker/tfidf.ts#termCounts@L178",
+      "confidence": 1,
+      "name": "termCounts",
+      "qualifiedName": "termCounts",
+      "signature": "termCounts(terms: string[]): Map<string, number>",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/tfidf.ts",
+      "line": 178
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/tfidf.ts#tokenize@L80",
+      "confidence": 1,
+      "name": "tokenize",
+      "qualifiedName": "tokenize",
+      "signature": "tokenize(text: string): string[]",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/tfidf.ts",
+      "line": 80
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/pipeline/src/linker/tfidf.ts@L146",
+      "snippet": "/** Top symbols by cosine similarity to `queryText`, each ≥ `floor` (0..1). Deterministic order. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:docs/adr/ADR-002-scale-storage.md#context",
+      "heading": "Context",
+      "anchor": "context",
+      "snippet": "Context",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-executive-brief.md#6-proof-reproducible-not-marketing",
+      "heading": "6. Proof — reproducible, not marketing",
+      "anchor": "6-proof-reproducible-not-marketing",
+      "snippet": "6. Proof — reproducible, not marketing",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:CHANGELOG.md#added",
+      "heading": "Added",
+      "anchor": "added",
+      "snippet": "Added",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#7-risks",
+      "heading": "7. Risks",
+      "anchor": "7-risks",
+      "snippet": "7. Risks",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/launch/show-hn.md#body",
+      "heading": "Body",
+      "anchor": "body",
+      "snippet": "Body",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-architecture.md#1-design-principles",
+      "heading": "1. Design principles",
+      "anchor": "1-design-principles",
+      "snippet": "1. Design principles",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:README.md#measured-not-projected-run-it-yourself",
+      "heading": "Measured, not projected (run it yourself)",
+      "anchor": "measured-not-projected-run-it-yourself",
+      "snippet": "Measured, not projected (run it yourself)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:README.md#architecture",
+      "heading": "Architecture",
+      "anchor": "architecture",
+      "snippet": "Architecture",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#what-was-built-3",
+      "heading": "What was built",
+      "anchor": "what-was-built-3",
+      "snippet": "What was built",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#what-was-built",
+      "heading": "What was built",
+      "anchor": "what-was-built",
+      "snippet": "What was built",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-questionnaire.md#branch-3-unified-graph-data-architecture",
+      "heading": "Branch 3 — Unified Graph & Data Architecture",
+      "anchor": "branch-3-unified-graph-data-architecture",
+      "snippet": "Branch 3 — Unified Graph & Data Architecture",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prompts.md#9-prompt-skeleton-you-can-keep-at-the-top-of-a-session",
+      "heading": "9. Prompt skeleton you can keep at the top of a session",
+      "anchor": "9-prompt-skeleton-you-can-keep-at-the-top-of-a-session",
+      "snippet": "9. Prompt skeleton you can keep at the top of a session",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prompts.md#1-onboarding-explain-this-repo-to-me-without-reading-every-file",
+      "heading": "1. Onboarding / \"explain this repo to me\" — *without reading every file*",
+      "anchor": "1-onboarding-explain-this-repo-to-me-without-reading-every-file",
+      "snippet": "1. Onboarding / \"explain this repo to me\" — *without reading every file*",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prompts.md#5-debugging-let-crib-narrow-the-blast-radius-before-the-model-reads-anything",
+      "heading": "5. Debugging — *let crib narrow the blast radius before the model reads anything*",
+      "anchor": "5-debugging-let-crib-narrow-the-blast-radius-before-the-model-reads-anything",
+      "snippet": "5. Debugging — *let crib narrow the blast radius before the model reads anything*",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/adr/ADR-002-scale-storage.md#lazy-shard-loading-defer-not-warranted-by-data",
+      "heading": "Lazy shard loading — DEFER (not warranted by data)",
+      "anchor": "lazy-shard-loading-defer-not-warranted-by-data",
+      "snippet": "Lazy shard loading — DEFER (not warranted by data)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/adr/ADR-002-scale-storage.md#option-b-per-module-souls-lazy-shard-loading",
+      "heading": "Option B — Per-module souls + lazy shard loading",
+      "anchor": "option-b-per-module-souls-lazy-shard-loading",
+      "snippet": "Option B — Per-module souls + lazy shard loading",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/adr/ADR-002-scale-storage.md#option-a-single-soul-eager-full-load-status-quo",
+      "heading": "Option A — Single soul, eager full load (status quo)",
+      "anchor": "option-a-single-soul-eager-full-load-status-quo",
+      "snippet": "Option A — Single soul, eager full load (status quo)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_MAKE_A_BEATS_B_EVERY_EXTRACTOR.md#phase-4-scale-self-hosting-optional-llm-enrichment-6-days",
+      "heading": "Phase 4 — Scale, self-hosting, optional LLM enrichment  ~6 days",
+      "anchor": "phase-4-scale-self-hosting-optional-llm-enrichment-6-days",
+      "snippet": "Phase 4 — Scale, self-hosting, optional LLM enrichment  ~6 days",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#query-time-merge-lightweight-by-default-full-on-withllm",
+      "heading": "Query-time merge — lightweight by default, full on `withLlm`",
+      "anchor": "query-time-merge-lightweight-by-default-full-on-withllm",
+      "snippet": "Query-time merge — lightweight by default, full on `withLlm`",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#9-known-issues-limits",
+      "heading": "9. Known issues & limits",
+      "anchor": "9-known-issues-limits",
+      "snippet": "9. Known issues & limits",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#1-what-it-is",
+      "heading": "1. What it is",
+      "anchor": "1-what-it-is",
+      "snippet": "1. What it is",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#the-hard-invariant-the-server-never-calls-a-model",
+      "heading": "The hard invariant — the server never calls a model",
+      "anchor": "the-hard-invariant-the-server-never-calls-a-model",
+      "snippet": "The hard invariant — the server never calls a model",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#table-of-contents",
+      "heading": "Table of contents",
+      "anchor": "table-of-contents",
+      "snippet": "Table of contents",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#driving-the-loop",
+      "heading": "Driving the loop",
+      "anchor": "driving-the-loop",
+      "snippet": "Driving the loop",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#conventions",
+      "heading": "Conventions",
+      "anchor": "conventions",
+      "snippet": "Conventions",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#cypher-optional-index-backend-dependent",
+      "heading": "`cypher` *(optional, index-backend-dependent)*",
+      "anchor": "cypher-optional-index-backend-dependent",
+      "snippet": "`cypher` *(optional, index-backend-dependent)*",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-executive-brief.md#5-how-it-works-the-actual-mechanism",
+      "heading": "5. How it works (the actual mechanism)",
+      "anchor": "5-how-it-works-the-actual-mechanism",
+      "snippet": "5. How it works (the actual mechanism)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-executive-brief.md#3-what-it-is-in-plain-terms",
+      "heading": "3. What it is (in plain terms)",
+      "anchor": "3-what-it-is-in-plain-terms",
+      "snippet": "3. What it is (in plain terms)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-build-plan.md#5-milestones-each-one-flagged-pr-test-gate",
+      "heading": "5. Milestones (each = one flagged PR + test gate)",
+      "anchor": "5-milestones-each-one-flagged-pr-test-gate",
+      "snippet": "5. Milestones (each = one flagged PR + test gate)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:SECURITY.md#network-surface-inventory-the-whole-product",
+      "heading": "Network surface inventory (the whole product)",
+      "anchor": "network-surface-inventory-the-whole-product",
+      "snippet": "Network surface inventory (the whole product)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:SECURITY.md#project-security-principles",
+      "heading": "Project Security Principles",
+      "anchor": "project-security-principles",
+      "snippet": "Project Security Principles",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-06-27-knowledgecrib-linkedin-demo-video.md#task-3-capture-real-product-evidence",
+      "heading": "Task 3: Capture Real Product Evidence",
+      "anchor": "task-3-capture-real-product-evidence",
+      "snippet": "Task 3: Capture Real Product Evidence",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-testing.md#1-test-pyramid",
+      "heading": "1. Test pyramid",
+      "anchor": "1-test-pyramid",
+      "snippet": "1. Test pyramid",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/launch/comparison.md#the-7-column-matrix",
+      "heading": "The 7-column matrix",
+      "anchor": "the-7-column-matrix",
+      "snippet": "The 7-column matrix",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/specs/2026-08-14-mulesoft-first-class-extractor-design.md#3-1-functional-goals",
+      "heading": "3.1 Functional goals",
+      "anchor": "3-1-functional-goals",
+      "snippet": "3.1 Functional goals",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#b-query-flow-mcp-tool-call-verb-handler-soulstore-indexstore-response",
+      "heading": "B. Query Flow: MCP Tool Call → Verb Handler → SoulStore/IndexStore → Response",
+      "anchor": "b-query-flow-mcp-tool-call-verb-handler-soulstore-indexstore-response",
+      "snippet": "B. Query Flow: MCP Tool Call → Verb Handler → SoulStore/IndexStore → Response",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#7-the-complete-code-map-quick-reference",
+      "heading": "7. The Complete Code Map (Quick Reference)",
+      "anchor": "7-the-complete-code-map-quick-reference",
+      "snippet": "7. The Complete Code Map (Quick Reference)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#1-executive-summary",
+      "heading": "1. Executive Summary",
+      "anchor": "1-executive-summary",
+      "snippet": "1. Executive Summary",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-cli.md#crib-query-text",
+      "heading": "`crib query <text>`",
+      "anchor": "crib-query-text",
+      "snippet": "`crib query <text>`",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-technical-pitch.md#current-limits-say-before-architects-ask",
+      "heading": "Current limits — say before architects ask",
+      "anchor": "current-limits-say-before-architects-ask",
+      "snippet": "Current limits — say before architects ask",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-technical-pitch.md#agent-and-llm-design",
+      "heading": "Agent and LLM design",
+      "anchor": "agent-and-llm-design",
+      "snippet": "Agent and LLM design",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:packages/cli/skills/crib-enrich/SKILL.md#alias-dictionary-crib-graph-semantic-aliases-json",
+      "heading": "Alias dictionary (`.crib/graph/semantic/aliases.json`)",
+      "anchor": "alias-dictionary-crib-graph-semantic-aliases-json",
+      "snippet": "Alias dictionary (`.crib/graph/semantic/aliases.json`)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_MAKE_A_BEATS_B.md#ws-a7-scale-and-performance-hardening",
+      "heading": "WS-A7 — Scale and performance hardening",
+      "anchor": "ws-a7-scale-and-performance-hardening",
+      "snippet": "WS-A7 — Scale and performance hardening",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_MAKE_A_BEATS_B.md#plan-make-plan-a-always-beat-plan-b-knowledge-crib-supremacy-roadmap",
+      "heading": "Plan: Make Plan A Always Beat Plan B — Knowledge-crib Supremacy Roadmap",
+      "anchor": "plan-make-plan-a-always-beat-plan-b-knowledge-crib-supremacy-roadmap",
+      "snippet": "Plan: Make Plan A Always Beat Plan B — Knowledge-crib Supremacy Roadmap",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-client-setup.md#10-4-capability-flags-what-flips-what-doesn-t",
+      "heading": "10.4 Capability flags — what flips, what doesn't",
+      "anchor": "10-4-capability-flags-what-flips-what-doesn-t",
+      "snippet": "10.4 Capability flags — what flips, what doesn't",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-client-setup.md#3-the-mcp-server-the-clients-connect-to",
+      "heading": "3. The MCP server the clients connect to",
+      "anchor": "3-the-mcp-server-the-clients-connect-to",
+      "snippet": "3. The MCP server the clients connect to",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-decisions.md#decision-log",
+      "heading": "Decision Log",
+      "anchor": "decision-log",
+      "snippet": "Decision Log",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-data-model.md#2-1-framework-semantics-edge-field-meta-1-3",
+      "heading": "2.1 Framework-semantics edge & field meta *(1.3)*",
+      "anchor": "2-1-framework-semantics-edge-field-meta-1-3",
+      "snippet": "2.1 Framework-semantics edge & field meta *(1.3)*",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#5-phasing-effort",
+      "heading": "5. Phasing & effort",
+      "anchor": "5-phasing-effort",
+      "snippet": "5. Phasing & effort",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#ws-2-query-returns-bodies-rules-closes-g2",
+      "heading": "WS-2 — `query` returns bodies + rules (closes G2)",
+      "anchor": "ws-2-query-returns-bodies-rules-closes-g2",
+      "snippet": "WS-2 — `query` returns bodies + rules (closes G2)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prd.md#7-success-metrics-q25",
+      "heading": "7. Success Metrics [Q25]",
+      "anchor": "7-success-metrics-q25",
+      "snippet": "7. Success Metrics [Q25]",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-prd.md#5-architecture",
+      "heading": "5. Architecture",
+      "anchor": "5-architecture",
+      "snippet": "5. Architecture",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m14-framework-semantics-layer-schema-1-3",
+      "heading": "M14 — Framework-semantics layer (schema 1.3)",
+      "anchor": "m14-framework-semantics-layer-schema-1-3",
+      "snippet": "M14 — Framework-semantics layer (schema 1.3)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-m6-m13-build-plan.md#m6-incremental-update-git-anchored-scoped-re-extract-merge-driver",
+      "heading": "M6 — Incremental update (git-anchored scoped re-extract) + merge driver",
+      "anchor": "m6-incremental-update-git-anchored-scoped-re-extract-merge-driver",
+      "snippet": "M6 — Incremental update (git-anchored scoped re-extract) + merge driver",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/linker/tfidf.ts#TfidfIndex.query@L147",
+    "procedureName": "TfidfIndex.query",
+    "conditions": [
+      "cond:packages/pipeline/src/linker/tfidf.ts@L149",
+      "cond:packages/pipeline/src/linker/tfidf.ts@L154",
+      "cond:packages/pipeline/src/linker/tfidf.ts@L162",
+      "cond:packages/pipeline/src/linker/tfidf.ts@L164",
+      "cond:packages/pipeline/src/linker/tfidf.ts@L167",
+      "cond:packages/pipeline/src/linker/tfidf.ts@L171"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/linker/tfidf.ts#TfidfIndex.query@L147",
+        "procedureName": "TfidfIndex.query",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4c121921463976f7fc8b25805f811f7e48966000f5a86b7be7142bfe7b12bd4a",
+          "target": "stmt:packages/pipeline/src/linker/tfidf.ts@L148",
+          "line": 148,
+          "expr": "const qTerms = termCounts(tokenize(queryText));"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/tfidf.ts#TfidfIndex.query@L147",
+        "procedureName": "TfidfIndex.query",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:50f7c1410ecf148423d782f4752904fbe9767508f7c6f1c164120f02f8824223",
+          "target": "sym:packages/pipeline/src/linker/tfidf.ts#tokenize@L80",
+          "expr": "tokenize",
+          "line": 148
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/tfidf.ts#TfidfIndex.query@L147",
+        "procedureName": "TfidfIndex.query",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:c24be17a7a6018cba294076a92ce978bf1f258728a67c2ed99a59e90c95134c5",
+          "target": "sym:packages/pipeline/src/linker/tfidf.ts#termCounts@L178",
+          "expr": "termCounts",
+          "line": 148
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/tfidf.ts#TfidfIndex.query@L147",
+        "procedureName": "TfidfIndex.query",
+        "guard": "cond:packages/pipeline/src/linker/tfidf.ts@L149",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/linker/tfidf.ts@L149",
+            "expr": "qTerms.size === 0 || this.n === 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:af7588e851a16e5339f839e71e84831bc729593bc58e4fbe273819cfd3b6cd0f",
+          "target": "stmt:packages/pipeline/src/linker/tfidf.ts@L149",
+          "line": 149,
+          "expr": "return [];"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/tfidf.ts#TfidfIndex.query@L147",
+        "procedureName": "TfidfIndex.query",
+        "guard": "cond:packages/pipeline/src/linker/tfidf.ts@L154",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/linker/tfidf.ts@L154",
+            "expr": "qTerms",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:cde5a37e6f85825bde88371c3692c6306b73fc81d909a6727f71b2a5b5d07e47",
+          "target": "stmt:packages/pipeline/src/linker/tfidf.ts@L155",
+          "line": 155,
+          "expr": "const postings = this.postings.get(term);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/tfidf.ts#TfidfIndex.query@L147",
+        "procedureName": "TfidfIndex.query",
+        "guard": "cond:packages/pipeline/src/linker/tfidf.ts@L154",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/linker/tfidf.ts@L154",
+            "expr": "qTerms",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8f31b19d4fcc5beb77745ea7cb5484af77595550235c159804554a0db9e54bba",
+          "target": "stmt:packages/pipeline/src/linker/tfidf.ts@L158",
+          "line": 158,
+          "expr": "const idf = Math.log(1 + this.n / (1 + df));"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/tfidf.ts#TfidfIndex.query@L147",
+        "procedureName": "TfidfIndex.query",
+        "guard": "cond:packages/pipeline/src/linker/tfidf.ts@L154",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/linker/tfidf.ts@L154",
+            "expr": "qTerms",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2624c2f1a03109b18898815f8633938ffb74b8783d75df9c7d50c72225ff7bcc",
+          "target": "assign:packages/pipeline/src/linker/tfidf.ts@L161",
+          "line": 161,
+          "expr": "qSumSq += qw * qw;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/tfidf.ts#TfidfIndex.query@L147",
+        "procedureName": "TfidfIndex.query",
+        "guard": "cond:packages/pipeline/src/linker/tfidf.ts@L162",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/linker/tfidf.ts@L154",
+            "expr": "qTerms"
+          },
+          {
+            "id": "cond:packages/pipeline/src/linker/tfidf.ts@L162",
+            "expr": "postings",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6c9e29a88cce6accc470a1aa761df9c89e49a6102b462200f4476706bae188f3",
+          "target": "stmt:packages/pipeline/src/linker/tfidf.ts@L162",
+          "line": 162,
+          "expr": "dot.set(p.id, (dot.get(p.id) ?? 0) + qw * p.weight);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/tfidf.ts#TfidfIndex.query@L147",
+        "procedureName": "TfidfIndex.query",
+        "guard": "cond:packages/pipeline/src/linker/tfidf.ts@L164",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/linker/tfidf.ts@L164",
+            "expr": "qSumSq === 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:73ad76f7016a1190d92649b9f1dd13fad2d7ee6cd6392b236e7294038610aff7",
+          "target": "stmt:packages/pipeline/src/linker/tfidf.ts@L164",
+          "line": 164,
+          "expr": "return [];"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/tfidf.ts#TfidfIndex.query@L147",
+        "procedureName": "TfidfIndex.query",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:cfde77cb0a7b935ee7a8a40b28b8f10567e25e63ea3d0752f1e9612b05734513",
+          "target": "stmt:packages/pipeline/src/linker/tfidf.ts@L165",
+          "line": 165,
+          "expr": "const qNorm = Math.sqrt(qSumSq);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/tfidf.ts#TfidfIndex.query@L147",
+        "procedureName": "TfidfIndex.query",
+        "guard": "cond:packages/pipeline/src/linker/tfidf.ts@L167",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/linker/tfidf.ts@L167",
+            "expr": "dot",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:009e5f1633cb17a56d7bc315a0a2122418647fff4eaabb86c3af9e0032eb6325",
+          "target": "stmt:packages/pipeline/src/linker/tfidf.ts@L168",
+          "line": 168,
+          "expr": "const symNorm = this.norm.get(id) ?? 0;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/tfidf.ts#TfidfIndex.query@L147",
+        "procedureName": "TfidfIndex.query",
+        "guard": "cond:packages/pipeline/src/linker/tfidf.ts@L171",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/linker/tfidf.ts@L167",
+            "expr": "dot"
+          },
+          {
+            "id": "cond:packages/pipeline/src/linker/tfidf.ts@L171",
+            "expr": "score >= floor",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:77335a565344aa81e846f3b78d9e162e345aa0ae153b48bbe6a82de51d9b1347",
+          "target": "stmt:packages/pipeline/src/linker/tfidf.ts@L171",
+          "line": 171,
+          "expr": "scored.push({ id, score });"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/tfidf.ts#TfidfIndex.query@L147",
+        "procedureName": "TfidfIndex.query",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:85eec6559b9b3198b8131dc2a9e59fa5a2889d34ab813a36eb7978714b940451",
+          "target": "stmt:packages/pipeline/src/linker/tfidf.ts@L173",
+          "line": 173,
+          "expr": "scored.sort((a, b) => b.score - a.score || (a.id < b.id ? -1 : 1));"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/linker/tfidf.ts#TfidfIndex.query@L147",
+        "procedureName": "TfidfIndex.query",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:590ed93861fae838f33d534aded141f46f305c0e7fc1b47b0e325a4b86cfb8ab",
+          "target": "stmt:packages/pipeline/src/linker/tfidf.ts@L174",
+          "line": 174,
+          "expr": "return scored.slice(0, k);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 12,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 12,
+    "assignments": 1,
+    "conditions": 6,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 11,
+      "unresolved": 4
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "4 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

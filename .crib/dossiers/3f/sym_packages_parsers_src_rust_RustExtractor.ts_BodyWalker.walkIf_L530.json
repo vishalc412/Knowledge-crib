@@ -1,0 +1,233 @@
+{
+  "id": "sym:packages/parsers/src/rust/RustExtractor.ts#BodyWalker.walkIf@L530",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:1ca0fde684b83acd0b0a2757092d80a9fa2344a6dffd608b8588c61ec9311631",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/rust/RustExtractor.ts#BodyWalker.walkIf@L530",
+    "kind": "symbol",
+    "type": "method",
+    "name": "walkIf",
+    "qualifiedName": "BodyWalker.walkIf",
+    "signature": "walkIf(s: RustStmt & { kind: 'if' }, procId: string, guardStack: GuardFrame[], inLoop: boolean, inException: boolean, sites: GuardedCallSite[]): void",
+    "lang": "typescript",
+    "file": "packages/parsers/src/rust/RustExtractor.ts",
+    "span": {
+      "start": 530,
+      "end": 568
+    },
+    "callSites": [
+      {
+        "callee": "condition",
+        "line": 538
+      },
+      {
+        "callee": "walkBody",
+        "line": 539
+      },
+      {
+        "callee": "walkBody",
+        "line": 549
+      },
+      {
+        "callee": "walkBody",
+        "line": 559
+      }
+    ]
+  },
+  "source": {
+    "text": "  private walkIf(\n    s: RustStmt & { kind: 'if' },\n    procId: string,\n    guardStack: GuardFrame[],\n    inLoop: boolean,\n    inException: boolean,\n    sites: GuardedCallSite[],\n  ): void {\n    const condId = this.condition(s.predicate, s.line, 'THEN');\n    this.walkBody(\n      s.then,\n      procId,\n      [...guardStack, { condId, branch: 'THEN' }],\n      inLoop,\n      inException,\n      sites,\n    );\n    for (const elif of s.elifs) {\n      // elif shares the IF's condId (one-condition-per-IF); edge polarity = ELSIF.\n      this.walkBody(\n        elif.body,\n        procId,\n        [...guardStack, { condId, branch: 'ELSIF' }],\n        inLoop,\n        inException,\n        sites,\n      );\n    }\n    if (s.else) {\n      this.walkBody(\n        s.else,\n        procId,\n        [...guardStack, { condId, branch: 'ELSE' }],\n        inLoop,\n        inException,\n        sites,\n      );\n    }\n  }",
+    "truncated": false,
+    "totalLines": 39,
+    "startLine": 530
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/rust/RustExtractor.ts#BodyWalker.walkStmt@L493",
+      "confidence": 1,
+      "name": "walkStmt",
+      "qualifiedName": "BodyWalker.walkStmt",
+      "signature": "walkStmt(s: RustStmt, procId: string, guardStack: GuardFrame[], inLoop: boolean, inException: boolean, sites: GuardedCallSite[]): void",
+      "type": "method",
+      "file": "packages/parsers/src/rust/RustExtractor.ts",
+      "line": 493
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/rust/RustExtractor.ts#BodyWalker.condition@L691",
+      "confidence": 1,
+      "name": "condition",
+      "qualifiedName": "BodyWalker.condition",
+      "signature": "condition(expr: string, line: number, branch: string): string",
+      "type": "method",
+      "file": "packages/parsers/src/rust/RustExtractor.ts",
+      "line": 691
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/RustExtractor.ts#BodyWalker.walkBody@L482",
+      "confidence": 1,
+      "name": "walkBody",
+      "qualifiedName": "BodyWalker.walkBody",
+      "signature": "walkBody(stmts: RustStmt[], procId: string, guardStack: GuardFrame[], inLoop: boolean, inException: boolean, sites: GuardedCallSite[]): void",
+      "type": "method",
+      "file": "packages/parsers/src/rust/RustExtractor.ts",
+      "line": 482
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/rust/RustExtractor.ts@L526",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/rust/RustExtractor.ts#BodyWalker.walkIf@L530",
+    "procedureName": "BodyWalker.walkIf",
+    "conditions": [
+      "cond:packages/parsers/src/rust/RustExtractor.ts@L558",
+      "cond:packages/parsers/src/rust/RustExtractor.ts@L547"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/rust/RustExtractor.ts#BodyWalker.walkIf@L530",
+        "procedureName": "BodyWalker.walkIf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2e2caeff4b75d2c130af7e9dfd5daf23ef9f1573d10ff0161b45c2b016077105",
+          "target": "stmt:packages/parsers/src/rust/RustExtractor.ts@L538",
+          "line": 538,
+          "expr": "const condId = this.condition(s.predicate, s.line, 'THEN');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/RustExtractor.ts#BodyWalker.walkIf@L530",
+        "procedureName": "BodyWalker.walkIf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:eebaae8e507e3d62c6ef78a465dfb223d84303d2b8f94ae74551c4f8945b4e2a",
+          "target": "sym:packages/parsers/src/rust/RustExtractor.ts#BodyWalker.condition@L691",
+          "expr": "condition",
+          "line": 538
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/RustExtractor.ts#BodyWalker.walkIf@L530",
+        "procedureName": "BodyWalker.walkIf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:38cd76e1519a0f58307e28a00b3286bd3d6c3b3bbd5f089715687bb0c02b8c1b",
+          "target": "stmt:packages/parsers/src/rust/RustExtractor.ts@L539",
+          "line": 539,
+          "expr": "this.walkBody(\n      s.then,\n      procId,\n      [...guardStack, { condId, branch: 'THEN' }],\n      inLoop,\n      inException,\n      sites,\n    );"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/RustExtractor.ts#BodyWalker.walkIf@L530",
+        "procedureName": "BodyWalker.walkIf",
+        "guard": "cond:packages/parsers/src/rust/RustExtractor.ts@L558",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/RustExtractor.ts@L558",
+            "expr": "s.else",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:bb7e9af26e1e5002a6700b6dc7e4369989653c09b93635f5bfb325ec186c295e",
+          "target": "sym:packages/parsers/src/rust/RustExtractor.ts#BodyWalker.walkBody@L482",
+          "expr": "walkBody",
+          "line": 539
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/RustExtractor.ts#BodyWalker.walkIf@L530",
+        "procedureName": "BodyWalker.walkIf",
+        "guard": "cond:packages/parsers/src/rust/RustExtractor.ts@L547",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/RustExtractor.ts@L547",
+            "expr": "s.elifs",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9e4d5e1ef018877f5ae5c82a305ee3ee21265692f86848f40cab54d3611f56f2",
+          "target": "stmt:packages/parsers/src/rust/RustExtractor.ts@L549",
+          "line": 549,
+          "expr": "this.walkBody(\n        elif.body,\n        procId,\n        [...guardStack, { condId, branch: 'ELSIF' }],\n        inLoop,\n        inException,\n        sites,\n      );"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/RustExtractor.ts#BodyWalker.walkIf@L530",
+        "procedureName": "BodyWalker.walkIf",
+        "guard": "cond:packages/parsers/src/rust/RustExtractor.ts@L558",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/RustExtractor.ts@L558",
+            "expr": "s.else",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d1d75b994fe57dc45d7fdf23e4b01005836f2852a2988c98463bd8f257651257",
+          "target": "stmt:packages/parsers/src/rust/RustExtractor.ts@L559",
+          "line": 559,
+          "expr": "this.walkBody(\n        s.else,\n        procId,\n        [...guardStack, { condId, branch: 'ELSE' }],\n        inLoop,\n        inException,\n        sites,\n      );"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": [
+      "packages/parsers/src/rust/RustExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 4,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

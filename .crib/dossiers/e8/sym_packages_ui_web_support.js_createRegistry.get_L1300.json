@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
-  "schemaVersion": "1.5",
+  "schemaVersion": "1.6",
   "nodeHash": "blake3:ad1459b5e8c83995566f526aa23dda14ba7fc0dc2e7a1c76fc15e245f6d09f1d",
-  "builtAt": "2026-07-16T16:35:16.098Z",
+  "builtAt": "2026-08-31T17:37:23.222Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
@@ -25,26 +25,6 @@
     "startLine": 1300
   },
   "callers": [
-    {
-      "id": "sym:packages/ui/web/vendor/react-dom.production.min.js#Ce@L64",
-      "confidence": 1,
-      "name": "Ce",
-      "qualifiedName": "Ce",
-      "signature": "Ce(a, b, c, d, e)",
-      "type": "function",
-      "file": "packages/ui/web/vendor/react-dom.production.min.js",
-      "line": 64
-    },
-    {
-      "id": "sym:packages/ui/web/vendor/react-dom.production.min.js#Dh.p@L89",
-      "confidence": 1,
-      "name": "p",
-      "qualifiedName": "Dh.p",
-      "signature": "p(a, b, c, d, e)",
-      "type": "function",
-      "file": "packages/ui/web/vendor/react-dom.production.min.js",
-      "line": 89
-    },
     {
       "id": "sym:packages/parsers/src/php/PhpExtractor.ts#PhpExtractor.walk.walkCalls@L219",
       "confidence": 1,
@@ -176,14 +156,24 @@
       "line": 187
     },
     {
-      "id": "sym:packages/ui/src/viz.ts#buildVizGraph@L223",
+      "id": "sym:packages/ui/src/viz.ts#buildVizGraph@L231",
       "confidence": 1,
       "name": "buildVizGraph",
       "qualifiedName": "buildVizGraph",
-      "signature": "buildVizGraph(soul: SoulStore): VizGraph",
+      "signature": "buildVizGraph(soul: SoulStore, memory?: { nodes: CompositeNode[]; edges: CompositeEdge[] }): VizGraph",
       "type": "function",
       "file": "packages/ui/src/viz.ts",
-      "line": 223
+      "line": 231
+    },
+    {
+      "id": "sym:packages/mcp/src/server.test.ts#callWire@L342",
+      "confidence": 1,
+      "name": "callWire",
+      "qualifiedName": "callWire",
+      "signature": "callWire(spy: Partial<Record<string, unknown>>, name: string, args: Record<string, unknown> = {}): Promise<unknown>",
+      "type": "function",
+      "file": "packages/mcp/src/server.test.ts",
+      "line": 342
     },
     {
       "id": "sym:packages/parsers/src/ts/http-client.ts#callableSymbolViaVariableStatement@L288",
@@ -206,6 +196,36 @@
       "line": 45
     },
     {
+      "id": "sym:packages/pipeline/src/mule/discover.ts#classifyMuleDiscovery@L50",
+      "confidence": 1,
+      "name": "classifyMuleDiscovery",
+      "qualifiedName": "classifyMuleDiscovery",
+      "signature": "classifyMuleDiscovery(root: string, files: FileMeta[]): ExtractDiagnostic[]",
+      "type": "function",
+      "file": "packages/pipeline/src/mule/discover.ts",
+      "line": 50
+    },
+    {
+      "id": "sym:packages/pipeline/src/mule/classify.ts#classifyMuleFiles@L168",
+      "confidence": 1,
+      "name": "classifyMuleFiles",
+      "qualifiedName": "classifyMuleFiles",
+      "signature": "classifyMuleFiles(files: FileMeta[], textByPath: ReadonlyMap<string, string>): MuleClassificationResult",
+      "type": "function",
+      "file": "packages/pipeline/src/mule/classify.ts",
+      "line": 168
+    },
+    {
+      "id": "sym:packages/core/src/cluster-hash.ts#clusterContentHash@L74",
+      "confidence": 1,
+      "name": "clusterContentHash",
+      "qualifiedName": "clusterContentHash",
+      "signature": "clusterContentHash(soul: SoulStore, cluster: Node): string",
+      "type": "function",
+      "file": "packages/core/src/cluster-hash.ts",
+      "line": 74
+    },
+    {
       "id": "sym:packages/core/src/importance.ts#clusterImportance@L121",
       "confidence": 1,
       "name": "clusterImportance",
@@ -214,16 +234,6 @@
       "type": "function",
       "file": "packages/core/src/importance.ts",
       "line": 121
-    },
-    {
-      "id": "sym:packages/cli/src/cli.ts#cmdViz@L1574",
-      "confidence": 1,
-      "name": "cmdViz",
-      "qualifiedName": "cmdViz",
-      "signature": "cmdViz(args: string[], ctx?: CmdCtx): Promise<number>",
-      "type": "function",
-      "file": "packages/cli/src/cli.ts",
-      "line": 1574
     },
     {
       "id": "sym:packages/core/src/dossier/coverage.ts#computeCoverage@L63",
@@ -244,6 +254,16 @@
       "type": "function",
       "file": "packages/core/src/importance.ts",
       "line": 102
+    },
+    {
+      "id": "sym:packages/memory/src/evaluator.ts#conflictGroups@L732",
+      "confidence": 1,
+      "name": "conflictGroups",
+      "qualifiedName": "conflictGroups",
+      "signature": "conflictGroups(entries: readonly { record: MemoryRecord; verdicts: EffectiveVerdicts }[]): ConflictGroup[]",
+      "type": "function",
+      "file": "packages/memory/src/evaluator.ts",
+      "line": 732
     },
     {
       "id": "sym:packages/core/src/dossier/builder.ts#controlFlow@L366",
@@ -526,6 +546,16 @@
       "line": 190
     },
     {
+      "id": "sym:packages/pipeline/src/mule/classify.ts#dedupAttachedSource@L83",
+      "confidence": 1,
+      "name": "dedupAttachedSource",
+      "qualifiedName": "dedupAttachedSource",
+      "signature": "dedupAttachedSource(members: FileMeta[], projectId: string, diagnostics: ExtractDiagnostic[]): Set<string>",
+      "type": "function",
+      "file": "packages/pipeline/src/mule/classify.ts",
+      "line": 83
+    },
+    {
       "id": "sym:packages/pipeline/src/cluster/cluster.ts#dominantStereotypeOrType@L163",
       "confidence": 1,
       "name": "dominantStereotypeOrType",
@@ -534,6 +564,36 @@
       "type": "function",
       "file": "packages/pipeline/src/cluster/cluster.ts",
       "line": 163
+    },
+    {
+      "id": "sym:packages/parsers/src/mule/MuleExtractor.ts#emitConfig@L277",
+      "confidence": 1,
+      "name": "emitConfig",
+      "qualifiedName": "emitConfig",
+      "signature": "emitConfig(doc: MuleDocument, file: FileMeta, c: FileClassification, ctx: ExtractCtx, fileId: string): ExtractResult",
+      "type": "function",
+      "file": "packages/parsers/src/mule/MuleExtractor.ts",
+      "line": 277
+    },
+    {
+      "id": "sym:packages/parsers/src/mule/MuleExtractor.ts#emitDataWeave@L834",
+      "confidence": 1,
+      "name": "emitDataWeave",
+      "qualifiedName": "emitDataWeave",
+      "signature": "emitDataWeave(source: string, file: FileMeta, c: FileClassification, ctx: ExtractCtx, fileId: string): ExtractResult",
+      "type": "function",
+      "file": "packages/parsers/src/mule/MuleExtractor.ts",
+      "line": 834
+    },
+    {
+      "id": "sym:packages/parsers/src/mule/MuleExtractor.ts#emitFlowRef@L587",
+      "confidence": 1,
+      "name": "emitFlowRef",
+      "qualifiedName": "emitFlowRef",
+      "signature": "emitFlowRef(proc: MuleProcessor, flowId: string, file: FileMeta, c: FileClassification, ctx: ExtractCtx, index: FlowIndex, nodes: Node[], edges: Edge[], guardConditionId?: string): void",
+      "type": "function",
+      "file": "packages/parsers/src/mule/MuleExtractor.ts",
+      "line": 587
     },
     {
       "id": "sym:packages/parsers/src/ts/nest.ts#emitInject@L315",
@@ -566,6 +626,16 @@
       "line": 187
     },
     {
+      "id": "sym:packages/parsers/src/mule/MuleExtractor.ts#emitSourceRoute@L494",
+      "confidence": 1,
+      "name": "emitSourceRoute",
+      "qualifiedName": "emitSourceRoute",
+      "signature": "emitSourceRoute(proc: MuleProcessor, flowId: string, file: FileMeta, ctx: ExtractCtx, index: FlowIndex, nodes: Node[], edges: Edge[]): void",
+      "type": "function",
+      "file": "packages/parsers/src/mule/MuleExtractor.ts",
+      "line": 494
+    },
+    {
       "id": "sym:packages/parsers/src/ts/http-client.ts#enclosingCallableId@L250",
       "confidence": 1,
       "name": "enclosingCallableId",
@@ -576,6 +646,16 @@
       "line": 250
     },
     {
+      "id": "sym:packages/memory/src/promotion.ts#evaluateCandidate@L117",
+      "confidence": 1,
+      "name": "evaluateCandidate",
+      "qualifiedName": "evaluateCandidate",
+      "signature": "evaluateCandidate(candidate: MemoryCandidate, opts: EvaluateCandidateOpts): CandidateEvaluation",
+      "type": "function",
+      "file": "packages/memory/src/promotion.ts",
+      "line": 117
+    },
+    {
       "id": "sym:packages/core/src/index/synonyms.ts#expandToken@L52",
       "confidence": 1,
       "name": "expandToken",
@@ -584,6 +664,16 @@
       "type": "function",
       "file": "packages/core/src/index/synonyms.ts",
       "line": 52
+    },
+    {
+      "id": "sym:scripts/swarm/swarm-gate.mjs#expectedRepoNodes@L105",
+      "confidence": 1,
+      "name": "expectedRepoNodes",
+      "qualifiedName": "expectedRepoNodes",
+      "signature": "expectedRepoNodes(…)",
+      "type": "function",
+      "file": "scripts/swarm/swarm-gate.mjs",
+      "line": 105
     },
     {
       "id": "sym:packages/parsers/src/ts/express.test.ts#exposes@L54",
@@ -656,6 +746,26 @@
       "line": 100
     },
     {
+      "id": "sym:packages/memory/src/evaluator.test.ts#fakeReceipts@L76",
+      "confidence": 1,
+      "name": "fakeReceipts",
+      "qualifiedName": "fakeReceipts",
+      "signature": "fakeReceipts(map: Map<string, EvalReceipt>): MemoryReceiptPort",
+      "type": "function",
+      "file": "packages/memory/src/evaluator.test.ts",
+      "line": 76
+    },
+    {
+      "id": "sym:packages/memory/src/evaluator.test.ts#fakeSoul@L61",
+      "confidence": 1,
+      "name": "fakeSoul",
+      "qualifiedName": "fakeSoul",
+      "signature": "fakeSoul(opts: FakeSoulOpts = {}): MemorySoulPort",
+      "type": "function",
+      "file": "packages/memory/src/evaluator.test.ts",
+      "line": 61
+    },
+    {
       "id": "sym:packages/pipeline/src/cluster/cluster.ts#fallbackQualifiedName@L185",
       "confidence": 1,
       "name": "fallbackQualifiedName",
@@ -676,6 +786,26 @@
       "line": 106
     },
     {
+      "id": "sym:packages/memory/src/recall.ts#feedbackAdjust@L105",
+      "confidence": 1,
+      "name": "feedbackAdjust",
+      "qualifiedName": "feedbackAdjust",
+      "signature": "feedbackAdjust(recordId: string, netFeedback: ReadonlyMap<string, number>, bound: number): number",
+      "type": "function",
+      "file": "packages/memory/src/recall.ts",
+      "line": 105
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/mule-resolver.ts#fixturePlaceholderFor@L419",
+      "confidence": 1,
+      "name": "fixturePlaceholderFor",
+      "qualifiedName": "fixturePlaceholderFor",
+      "signature": "fixturePlaceholderFor(name: string, placeholders: Map<string, Node>): Node",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/mule-resolver.ts",
+      "line": 419
+    },
+    {
       "id": "sym:packages/core/src/functional-map.ts#groupByDepth@L285",
       "confidence": 1,
       "name": "groupByDepth",
@@ -694,6 +824,16 @@
       "type": "function",
       "file": "packages/pipeline/src/linker/signals.ts",
       "line": 50
+    },
+    {
+      "id": "sym:packages/mcp/src/server.ts#installAliasRouter@L79",
+      "confidence": 1,
+      "name": "installAliasRouter",
+      "qualifiedName": "installAliasRouter",
+      "signature": "installAliasRouter(server: McpServer): void",
+      "type": "function",
+      "file": "packages/mcp/src/server.ts",
+      "line": 79
     },
     {
       "id": "sym:packages/core/src/dossier/framework.ts#isClassScope@L511",
@@ -756,6 +896,16 @@
       "line": 333
     },
     {
+      "id": "sym:scripts/cost-gate.mjs#main@L51",
+      "confidence": 1,
+      "name": "main",
+      "qualifiedName": "main",
+      "signature": "main()",
+      "type": "function",
+      "file": "scripts/cost-gate.mjs",
+      "line": 51
+    },
+    {
       "id": "sym:packages/pipeline/src/ownership.ts#majorityAuthor@L46",
       "confidence": 1,
       "name": "majorityAuthor",
@@ -774,6 +924,26 @@
       "type": "function",
       "file": "packages/parsers/src/ts/express.ts",
       "line": 107
+    },
+    {
+      "id": "sym:packages/core/src/memory-merge.ts#mergeMemoryChunk@L126",
+      "confidence": 1,
+      "name": "mergeMemoryChunk",
+      "qualifiedName": "mergeMemoryChunk",
+      "signature": "mergeMemoryChunk(base: ParsedMemoryChunk, ours: ParsedMemoryChunk, theirs: ParsedMemoryChunk): MemoryMergeResult",
+      "type": "function",
+      "file": "packages/core/src/memory-merge.ts",
+      "line": 126
+    },
+    {
+      "id": "sym:packages/core/src/memory-merge.ts#mergeMemoryChunk.bySubject@L177",
+      "confidence": 1,
+      "name": "bySubject",
+      "qualifiedName": "mergeMemoryChunk.bySubject",
+      "signature": "bySubject(…)",
+      "type": "function",
+      "file": "packages/core/src/memory-merge.ts",
+      "line": 177
     },
     {
       "id": "sym:packages/core/src/merge.ts#mergeThreeWay@L64",
@@ -816,24 +986,24 @@
       "line": 36
     },
     {
-      "id": "sym:packages/cli/src/cli.ts#printTokenSavingsHero@L429",
+      "id": "sym:packages/pipeline/src/resolve/mule-resolver.ts#placeholderFor@L395",
       "confidence": 1,
-      "name": "printTokenSavingsHero",
-      "qualifiedName": "printTokenSavingsHero",
-      "signature": "printTokenSavingsHero(verbs: Verbs, soul: SoulStore, repoRoot: string): void",
+      "name": "placeholderFor",
+      "qualifiedName": "placeholderFor",
+      "signature": "placeholderFor(proj: string, name: string, placeholders: Map<string, Node>): Node",
       "type": "function",
-      "file": "packages/cli/src/cli.ts",
-      "line": 429
+      "file": "packages/pipeline/src/resolve/mule-resolver.ts",
+      "line": 395
     },
     {
-      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
       "confidence": 1,
       "name": "push",
       "qualifiedName": "push",
       "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
       "type": "function",
       "file": "packages/pipeline/src/linker/inverted-index.ts",
-      "line": 39
+      "line": 70
     },
     {
       "id": "sym:packages/core/src/federation.ts#push@L303",
@@ -846,6 +1016,16 @@
       "line": 303
     },
     {
+      "id": "sym:packages/pipeline/src/artifacts.ts#pushByName@L450",
+      "confidence": 1,
+      "name": "pushByName",
+      "qualifiedName": "pushByName",
+      "signature": "pushByName(map: Map<string, Node[]>, name: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/artifacts.ts",
+      "line": 450
+    },
+    {
       "id": "sym:packages/core/src/dossier/framework.ts#pushDependency@L580",
       "confidence": 1,
       "name": "pushDependency",
@@ -856,14 +1036,14 @@
       "line": 580
     },
     {
-      "id": "sym:packages/core/src/index/sqlite-index.ts#readCachedLines@L535",
+      "id": "sym:packages/core/src/index/sqlite-index.ts#readCachedLines@L751",
       "confidence": 1,
       "name": "readCachedLines",
       "qualifiedName": "readCachedLines",
       "signature": "readCachedLines(repoRoot: string, file: string, fileCache: FileLineCache): string[] | undefined",
       "type": "function",
       "file": "packages/core/src/index/sqlite-index.ts",
-      "line": 535
+      "line": 751
     },
     {
       "id": "sym:packages/core/src/llm-overlay.ts#readLlmOverlay@L63",
@@ -876,14 +1056,24 @@
       "line": 63
     },
     {
-      "id": "sym:packages/core/src/graph-store.ts#readSemantic@L173",
+      "id": "sym:packages/core/src/graph-store.ts#readSemantic@L225",
       "confidence": 1,
       "name": "readSemantic",
       "qualifiedName": "readSemantic",
       "signature": "readSemantic(soul: SoulStore): GraphSnapshot",
       "type": "function",
       "file": "packages/core/src/graph-store.ts",
-      "line": 173
+      "line": 225
+    },
+    {
+      "id": "sym:packages/memory/src/recall.ts#recallProjection@L338",
+      "confidence": 1,
+      "name": "recallProjection",
+      "qualifiedName": "recallProjection",
+      "signature": "recallProjection(gathered: GatheredRecall, opts: RecallOptions = {}): RecallProjection",
+      "type": "function",
+      "file": "packages/memory/src/recall.ts",
+      "line": 338
     },
     {
       "id": "sym:packages/pipeline/src/cluster/louvain.ts#relabel@L183",
@@ -894,6 +1084,16 @@
       "type": "function",
       "file": "packages/pipeline/src/cluster/louvain.ts",
       "line": 183
+    },
+    {
+      "id": "sym:packages/core/src/memory-merge.ts#renderMemoryConflict@L222",
+      "confidence": 1,
+      "name": "renderMemoryConflict",
+      "qualifiedName": "renderMemoryConflict",
+      "signature": "renderMemoryConflict(base: ParsedMemoryChunk, ours: ParsedMemoryChunk, theirs: ParsedMemoryChunk, result: MemoryMergeResult): string",
+      "type": "function",
+      "file": "packages/core/src/memory-merge.ts",
+      "line": 222
     },
     {
       "id": "sym:packages/pipeline/src/rules/mermaid.ts#renderMermaid@L10",
@@ -956,14 +1156,24 @@
       "line": 50
     },
     {
-      "id": "sym:packages/core/src/graph-store.ts#resolveEndpoint@L264",
+      "id": "sym:packages/core/src/graph-store.ts#resolveEndpoint@L316",
       "confidence": 1,
       "name": "resolveEndpoint",
       "qualifiedName": "resolveEndpoint",
       "signature": "resolveEndpoint(endpoint: string, targetId: string, localIds: Map<string, string>): string",
       "type": "function",
       "file": "packages/core/src/graph-store.ts",
-      "line": 264
+      "line": 316
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/mule-resolver.ts#resolveFlowRef@L220",
+      "confidence": 1,
+      "name": "resolveFlowRef",
+      "qualifiedName": "resolveFlowRef",
+      "signature": "resolveFlowRef(name: string, node: Node, proj: string, soul: SoulStore, table: SymbolTable, index: Map<string, string>, push: (src: string, dst: string, rel: Rel, evidence: Record<string, unknown>) => void, placeholders: Map<string, Node>, stats: ResolveStats): void",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/mule-resolver.ts",
+      "line": 220
     },
     {
       "id": "sym:packages/pipeline/src/resolve/go-resolver.ts#resolveGo@L50",
@@ -996,6 +1206,26 @@
       "line": 107
     },
     {
+      "id": "sym:packages/pipeline/src/resolve/mule-resolver.ts#resolveImport@L340",
+      "confidence": 1,
+      "name": "resolveImport",
+      "qualifiedName": "resolveImport",
+      "signature": "resolveImport(name: string, node: Node, proj: string, index: Map<string, string>, table: SymbolTable, push: (src: string, dst: string, rel: Rel, evidence: Record<string, unknown>) => void, stats: ResolveStats): void",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/mule-resolver.ts",
+      "line": 340
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/mule-resolver.ts#resolveIndexedRef@L320",
+      "confidence": 1,
+      "name": "resolveIndexedRef",
+      "qualifiedName": "resolveIndexedRef",
+      "signature": "resolveIndexedRef(ref: MuleReference, bucket: Bucket, node: Node, proj: string, index: Map<string, string>, push: (src: string, dst: string, rel: Rel, evidence: Record<string, unknown>) => void, referenceKind: string, stats: ResolveStats): void",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/mule-resolver.ts",
+      "line": 320
+    },
+    {
       "id": "sym:packages/pipeline/src/resolve/java-resolver.ts#resolveJava@L53",
       "confidence": 1,
       "name": "resolveJava",
@@ -1004,6 +1234,16 @@
       "type": "function",
       "file": "packages/pipeline/src/resolve/java-resolver.ts",
       "line": 53
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/mule-resolver.ts#resolveMule@L79",
+      "confidence": 1,
+      "name": "resolveMule",
+      "qualifiedName": "resolveMule",
+      "signature": "resolveMule(soul: SoulStore, table: SymbolTable, _root: string, files: FileMeta[]): MuleResolveResult",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/mule-resolver.ts",
+      "line": 79
     },
     {
       "id": "sym:packages/core/src/functional-map.ts#resolvePurpose@L343",
@@ -1026,6 +1266,16 @@
       "line": 56
     },
     {
+      "id": "sym:packages/pipeline/src/artifacts.ts#resolveRef@L354",
+      "confidence": 1,
+      "name": "resolveRef",
+      "qualifiedName": "resolveRef",
+      "signature": "resolveRef(raw: string, index: InvertedIndex, byName: Map<string, Node[]>): RefResolution",
+      "type": "function",
+      "file": "packages/pipeline/src/artifacts.ts",
+      "line": 354
+    },
+    {
       "id": "sym:packages/pipeline/src/resolve/rust-resolver.ts#resolveRust@L53",
       "confidence": 1,
       "name": "resolveRust",
@@ -1036,14 +1286,24 @@
       "line": 53
     },
     {
-      "id": "sym:packages/pipeline/src/resolve/index.ts#resolveSelfCallee@L154",
+      "id": "sym:packages/pipeline/src/resolve/index.ts#resolveSelfCallee@L169",
       "confidence": 1,
       "name": "resolveSelfCallee",
       "qualifiedName": "resolveSelfCallee",
       "signature": "resolveSelfCallee(callee: string, callerFile: string, byQualified: Map<string, string>, bySimple: Map<string, { id: string; file: string }[]>): string | undefined",
       "type": "function",
       "file": "packages/pipeline/src/resolve/index.ts",
-      "line": 154
+      "line": 169
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/mule-resolver.ts#resolveTestTarget@L261",
+      "confidence": 1,
+      "name": "resolveTestTarget",
+      "qualifiedName": "resolveTestTarget",
+      "signature": "resolveTestTarget(name: string, node: Node, proj: string, index: Map<string, string>, push: (src: string, dst: string, rel: Rel, evidence: Record<string, unknown>) => void, placeholders: Map<string, Node>, stats: ResolveStats): void",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/mule-resolver.ts",
+      "line": 261
     },
     {
       "id": "sym:packages/pipeline/src/resolve/python-resolver.ts#resolveTypeName@L229",
@@ -1116,24 +1376,24 @@
       "line": 52
     },
     {
-      "id": "sym:packages/core/src/index/sqlite-index.ts#rrfFuse@L61",
+      "id": "sym:packages/core/src/index/sqlite-index.ts#rrfFuse@L62",
       "confidence": 1,
       "name": "rrfFuse",
       "qualifiedName": "rrfFuse",
       "signature": "rrfFuse(bm25: Hit[], vec: Hit[]): Hit[]",
       "type": "function",
       "file": "packages/core/src/index/sqlite-index.ts",
-      "line": 61
+      "line": 62
     },
     {
-      "id": "sym:packages/core/src/index/sqlite-index.ts#rrfFuse.add@L64",
+      "id": "sym:packages/core/src/index/sqlite-index.ts#rrfFuse.add@L65",
       "confidence": 1,
       "name": "add",
       "qualifiedName": "rrfFuse.add",
       "signature": "add(…)",
       "type": "function",
       "file": "packages/core/src/index/sqlite-index.ts",
-      "line": 64
+      "line": 65
     },
     {
       "id": "sym:packages/pipeline/src/cluster/cluster.ts#runCluster@L40",
@@ -1146,14 +1406,14 @@
       "line": 40
     },
     {
-      "id": "sym:packages/pipeline/src/linker/index.ts#runLink@L44",
+      "id": "sym:packages/pipeline/src/linker/index.ts#runLink@L51",
       "confidence": 1,
       "name": "runLink",
       "qualifiedName": "runLink",
       "signature": "runLink(soul: SoulStore, root: string, threshold?: number, docFiles?: string[]): LinkStats",
       "type": "function",
       "file": "packages/pipeline/src/linker/index.ts",
-      "line": 44
+      "line": 51
     },
     {
       "id": "sym:packages/pipeline/src/linker/media.ts#runMediaLink@L42",
@@ -1164,6 +1424,16 @@
       "type": "function",
       "file": "packages/pipeline/src/linker/media.ts",
       "line": 42
+    },
+    {
+      "id": "sym:packages/memory/src/trusted-ref.ts#runMemoryCheck@L142",
+      "confidence": 1,
+      "name": "runMemoryCheck",
+      "qualifiedName": "runMemoryCheck",
+      "signature": "runMemoryCheck(ctx: MemoryCheckContext): MemoryCheckReport",
+      "type": "function",
+      "file": "packages/memory/src/trusted-ref.ts",
+      "line": 142
     },
     {
       "id": "sym:packages/pipeline/src/ownership.ts#runOwnership@L77",
@@ -1186,14 +1456,14 @@
       "line": 59
     },
     {
-      "id": "sym:packages/pipeline/src/resolve/index.ts#stampRecursion@L116",
+      "id": "sym:packages/pipeline/src/resolve/index.ts#stampRecursion@L131",
       "confidence": 1,
       "name": "stampRecursion",
       "qualifiedName": "stampRecursion",
       "signature": "stampRecursion(soul: SoulStore): number",
       "type": "function",
       "file": "packages/pipeline/src/resolve/index.ts",
-      "line": 116
+      "line": 131
     },
     {
       "id": "sym:packages/pipeline/src/rules/export.ts#surprisingConnections@L54",
@@ -1206,6 +1476,16 @@
       "line": 54
     },
     {
+      "id": "sym:packages/core/src/cluster-hash.ts#symbolsByClusterId@L27",
+      "confidence": 1,
+      "name": "symbolsByClusterId",
+      "qualifiedName": "symbolsByClusterId",
+      "signature": "symbolsByClusterId(soul: SoulStore): Map<string, Node[]>",
+      "type": "function",
+      "file": "packages/core/src/cluster-hash.ts",
+      "line": 27
+    },
+    {
       "id": "sym:packages/pipeline/src/linker/tfidf.ts#termCounts@L178",
       "confidence": 1,
       "name": "termCounts",
@@ -1216,24 +1496,24 @@
       "line": 178
     },
     {
-      "id": "sym:packages/core/src/cluster-hash.ts#validateClusterIntegrity@L39",
+      "id": "sym:packages/memory/src/attempt.ts#unpromotedAttemptIds@L66",
+      "confidence": 1,
+      "name": "unpromotedAttemptIds",
+      "qualifiedName": "unpromotedAttemptIds",
+      "signature": "unpromotedAttemptIds(events: readonly AttemptEvent[], maxAgeMs: number, now: string): string[]",
+      "type": "function",
+      "file": "packages/memory/src/attempt.ts",
+      "line": 66
+    },
+    {
+      "id": "sym:packages/core/src/cluster-hash.ts#validateClusterIntegrity@L101",
       "confidence": 1,
       "name": "validateClusterIntegrity",
       "qualifiedName": "validateClusterIntegrity",
       "signature": "validateClusterIntegrity(soul: SoulStore): ClusterIntegrityReport",
       "type": "function",
       "file": "packages/core/src/cluster-hash.ts",
-      "line": 39
-    },
-    {
-      "id": "sym:packages/ui/web/vendor/react-dom.production.min.js#vj@L43",
-      "confidence": 1,
-      "name": "vj",
-      "qualifiedName": "vj",
-      "signature": "vj(a, b, c, d, e)",
-      "type": "function",
-      "file": "packages/ui/web/vendor/react-dom.production.min.js",
-      "line": 43
+      "line": 101
     }
   ],
   "callees": [],
@@ -1243,30 +1523,10 @@
       "heading": "Body",
       "anchor": "body",
       "snippet": "Body",
-      "edgeType": "describes",
+      "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
       "confidence": 0.8
-    },
-    {
-      "sectionId": "doc:docs/llm-integration-deep-dive.md#4-2-adding-a-new-mcp-verb",
-      "heading": "4.2 Adding a New MCP Verb",
-      "anchor": "4-2-adding-a-new-mcp-verb",
-      "snippet": "4.2 Adding a New MCP Verb",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
-    },
-    {
-      "sectionId": "doc:docs/knowledge-crib-refined-vs-existing-assessment.md#1-1-what-each-model-can-answer-about-one-procedure",
-      "heading": "1.1 What each model can answer about ONE procedure",
-      "anchor": "1-1-what-each-model-can-answer-about-one-procedure",
-      "snippet": "1.1 What each model can answer about ONE procedure",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
     },
     {
       "sectionId": "doc:docs/knowledge-crib-user-guide.md#9-known-issues-limits",
@@ -1289,10 +1549,50 @@
       "confidence": 0.6
     },
     {
+      "sectionId": "doc:docs/mulesoft.md#properties-secrets-keys-only",
+      "heading": "Properties & secrets (keys only)",
+      "anchor": "properties-secrets-keys-only",
+      "snippet": "Properties & secrets (keys only)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/specs/2026-08-14-mulesoft-first-class-extractor-design.md#10-error-handling-and-diagnostics",
+      "heading": "10. Error Handling and Diagnostics",
+      "anchor": "10-error-handling-and-diagnostics",
+      "snippet": "10. Error Handling and Diagnostics",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/llm-integration-deep-dive.md#4-2-adding-a-new-mcp-verb",
+      "heading": "4.2 Adding a New MCP Verb",
+      "anchor": "4-2-adding-a-new-mcp-verb",
+      "snippet": "4.2 Adding a New MCP Verb",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
       "sectionId": "doc:docs/superpowers/plans/PLAN_PLAN_A_EQUALS_B.md#ws-5-expose-rich-verbs-on-the-cli-closes-g5",
       "heading": "WS-5 — Expose rich verbs on the CLI (closes G5)",
       "anchor": "ws-5-expose-rich-verbs-on-the-cli-closes-g5",
       "snippet": "WS-5 — Expose rich verbs on the CLI (closes G5)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-refined-vs-existing-assessment.md#1-1-what-each-model-can-answer-about-one-procedure",
+      "heading": "1.1 What each model can answer about ONE procedure",
+      "anchor": "1-1-what-each-model-can-answer-about-one-procedure",
+      "snippet": "1.1 What each model can answer about ONE procedure",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
@@ -1324,7 +1624,6 @@
     "status": "implemented",
     "executesCount": 1,
     "referencedByFiles": [
-      "packages/cli/src/cli.ts",
       "packages/core/src/cluster-hash.ts",
       "packages/core/src/dossier/builder.ts",
       "packages/core/src/dossier/by-scope.ts",
@@ -1338,12 +1637,22 @@
       "packages/core/src/index/sqlite-index.ts",
       "packages/core/src/index/synonyms.ts",
       "packages/core/src/llm-overlay.ts",
+      "packages/core/src/memory-merge.ts",
       "packages/core/src/merge.ts",
       "packages/core/src/rules/extract.ts",
       "packages/mcp/src/secrets.ts",
+      "packages/mcp/src/server.test.ts",
+      "packages/mcp/src/server.ts",
+      "packages/memory/src/attempt.ts",
+      "packages/memory/src/evaluator.test.ts",
+      "packages/memory/src/evaluator.ts",
+      "packages/memory/src/promotion.ts",
+      "packages/memory/src/recall.ts",
+      "packages/memory/src/trusted-ref.ts",
       "packages/parsers/src/java/spring.test.ts",
       "packages/parsers/src/java/spring.ts",
       "packages/parsers/src/md/markdown.ts",
+      "packages/parsers/src/mule/MuleExtractor.ts",
       "packages/parsers/src/php/PhpExtractor.ts",
       "packages/parsers/src/plsql/PlSqlExtractor.test.ts",
       "packages/parsers/src/tree-sitter-pool.ts",
@@ -1355,6 +1664,7 @@
       "packages/parsers/src/ts/nest.test.ts",
       "packages/parsers/src/ts/nest.ts",
       "packages/parsers/src/ts/react.ts",
+      "packages/pipeline/src/artifacts.ts",
       "packages/pipeline/src/cluster/cluster.ts",
       "packages/pipeline/src/cluster/louvain.ts",
       "packages/pipeline/src/linker/index.ts",
@@ -1362,12 +1672,15 @@
       "packages/pipeline/src/linker/media.ts",
       "packages/pipeline/src/linker/signals.ts",
       "packages/pipeline/src/linker/tfidf.ts",
+      "packages/pipeline/src/mule/classify.ts",
+      "packages/pipeline/src/mule/discover.ts",
       "packages/pipeline/src/ownership.ts",
       "packages/pipeline/src/parity/parity.ts",
       "packages/pipeline/src/resolve/csharp-resolver.ts",
       "packages/pipeline/src/resolve/go-resolver.ts",
       "packages/pipeline/src/resolve/index.ts",
       "packages/pipeline/src/resolve/java-resolver.ts",
+      "packages/pipeline/src/resolve/mule-resolver.ts",
       "packages/pipeline/src/resolve/plsql-cfg.ts",
       "packages/pipeline/src/resolve/python-resolver.ts",
       "packages/pipeline/src/resolve/rust-resolver.ts",
@@ -1377,7 +1690,8 @@
       "packages/pipeline/src/rules/mermaid.ts",
       "packages/ui/src/viz.ts",
       "packages/ui/web/support.js",
-      "packages/ui/web/vendor/react-dom.production.min.js"
+      "scripts/cost-gate.mjs",
+      "scripts/swarm/swarm-gate.mjs"
     ]
   },
   "coverage": {

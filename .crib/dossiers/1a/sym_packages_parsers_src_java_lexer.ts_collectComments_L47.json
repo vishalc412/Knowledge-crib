@@ -1,0 +1,750 @@
+{
+  "id": "sym:packages/parsers/src/java/lexer.ts#collectComments@L47",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:4cc6bec37ee0d202ed84791a1e529511e53c9601ccb956049a4809f96a8df3d1",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/java/lexer.ts#collectComments@L47",
+    "kind": "symbol",
+    "type": "function",
+    "name": "collectComments",
+    "qualifiedName": "collectComments",
+    "signature": "collectComments(src: string): CommentBlock[]",
+    "lang": "typescript",
+    "file": "packages/parsers/src/java/lexer.ts",
+    "span": {
+      "start": 47,
+      "end": 110
+    },
+    "callSites": [
+      {
+        "callee": "split",
+        "line": 49
+      },
+      {
+        "callee": "trim",
+        "line": 52
+      },
+      {
+        "callee": "push",
+        "line": 58
+      },
+      {
+        "callee": "trim",
+        "line": 59
+      },
+      {
+        "callee": "replace",
+        "line": 59
+      },
+      {
+        "callee": "trim",
+        "line": 59
+      },
+      {
+        "callee": "push",
+        "line": 66
+      },
+      {
+        "callee": "join",
+        "line": 66
+      },
+      {
+        "callee": "startsWith",
+        "line": 72
+      },
+      {
+        "callee": "startsWith",
+        "line": 72
+      },
+      {
+        "callee": "trim",
+        "line": 76
+      },
+      {
+        "callee": "replace",
+        "line": 76
+      },
+      {
+        "callee": "replace",
+        "line": 76
+      },
+      {
+        "callee": "push",
+        "line": 80
+      },
+      {
+        "callee": "push",
+        "line": 81
+      },
+      {
+        "callee": "join",
+        "line": 81
+      },
+      {
+        "callee": "trim",
+        "line": 86
+      },
+      {
+        "callee": "replace",
+        "line": 86
+      },
+      {
+        "callee": "push",
+        "line": 87
+      },
+      {
+        "callee": "trim",
+        "line": 90
+      },
+      {
+        "callee": "trim",
+        "line": 92
+      },
+      {
+        "callee": "replace",
+        "line": 92
+      },
+      {
+        "callee": "replace",
+        "line": 92
+      },
+      {
+        "callee": "push",
+        "line": 96
+      },
+      {
+        "callee": "trim",
+        "line": 100
+      },
+      {
+        "callee": "replace",
+        "line": 100
+      },
+      {
+        "callee": "push",
+        "line": 101
+      },
+      {
+        "callee": "push",
+        "line": 104
+      },
+      {
+        "callee": "join",
+        "line": 104
+      }
+    ]
+  },
+  "source": {
+    "text": "export function collectComments(src: string): CommentBlock[] {\n  const out: CommentBlock[] = [];\n  const lines = src.split('\\n');\n  let i = 0;\n  while (i < lines.length) {\n    const trimmed = (lines[i] ?? '').trim();\n    // line comment `//` — merge a maximal contiguous run (no blank line between).\n    if (trimmed.startsWith('//')) {\n      const start = i + 1;\n      const parts: string[] = [];\n      while (i < lines.length && (lines[i] ?? '').trim().startsWith('//')) {\n        parts.push(\n          (lines[i] ?? '')\n            .trim()\n            .replace(/^\\/\\/\\s?/, '')\n            .trim(),\n        );\n        i++;\n      }\n      out.push({ start, end: i, text: parts.join('\\n'), javadoc: false });\n      continue;\n    }\n    // block comment `/* … */` (may span lines; `/** … */` is Javadoc).\n    if (trimmed.startsWith('/*')) {\n      const start = i + 1;\n      const javadoc = trimmed.startsWith('/**') && !trimmed.startsWith('/**/');\n      const parts: string[] = [];\n      // single-line block comment closes on the same line.\n      if (trimmed.endsWith('*/') && trimmed.length > 2) {\n        const inner = trimmed\n          .replace(/^\\/\\*+\\s?/, '')\n          .replace(/\\*+\\/$/, '')\n          .trim();\n        if (inner) parts.push(inner);\n        out.push({ start, end: start, text: parts.join('\\n'), javadoc });\n        i++;\n        continue;\n      }\n      // multi-line: first line (after `/*`) then until a line ending with `*/`.\n      const firstInner = trimmed.replace(/^\\/\\*+\\s?/, '').trim();\n      if (firstInner) parts.push(firstInner);\n      i++;\n      while (i < lines.length) {\n        const l = (lines[i] ?? '').trim();\n        if (l.endsWith('*/')) {\n          const inner = l\n            .replace(/\\*+\\/$/, '')\n            .replace(/^\\s*\\*\\s?/, '')\n            .trim();\n          if (inner) parts.push(inner);\n          i++;\n          break;\n        }\n        const inner = l.replace(/^\\s*\\*\\s?/, '').trim();\n        if (inner) parts.push(inner);\n        i++;\n      }\n      out.push({ start, end: i, text: parts.join('\\n'), javadoc });\n      continue;\n    }\n    i++;\n  }\n  return out;\n}",
+    "truncated": false,
+    "totalLines": 64,
+    "startLine": 47
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/java/JavaExtractor.ts#JavaExtractor.parse@L68",
+      "confidence": 1,
+      "name": "parse",
+      "qualifiedName": "JavaExtractor.parse",
+      "signature": "parse(path: string, fileId: string, text: string, ctx: ExtractCtx): ExtractResult",
+      "type": "method",
+      "file": "packages/parsers/src/java/JavaExtractor.ts",
+      "line": 68
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/java/lexer.ts#Lexer.startsWith@L434",
+      "confidence": 1,
+      "name": "startsWith",
+      "qualifiedName": "Lexer.startsWith",
+      "signature": "startsWith(s: string): boolean",
+      "type": "method",
+      "file": "packages/parsers/src/java/lexer.ts",
+      "line": 434
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 70
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/java/lexer.ts@L41",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/java/lexer.ts#collectComments@L47",
+    "procedureName": "collectComments",
+    "conditions": [
+      "cond:packages/parsers/src/java/lexer.ts@L51",
+      "cond:packages/parsers/src/java/lexer.ts@L54",
+      "cond:packages/parsers/src/java/lexer.ts@L57",
+      "cond:packages/parsers/src/java/lexer.ts@L70",
+      "cond:packages/parsers/src/java/lexer.ts@L75",
+      "cond:packages/parsers/src/java/lexer.ts@L80",
+      "cond:packages/parsers/src/java/lexer.ts@L87",
+      "cond:packages/parsers/src/java/lexer.ts@L89",
+      "cond:packages/parsers/src/java/lexer.ts@L91",
+      "cond:packages/parsers/src/java/lexer.ts@L96",
+      "cond:packages/parsers/src/java/lexer.ts@L101"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/java/lexer.ts#collectComments@L47",
+        "procedureName": "collectComments",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e2c56b778a8b441fd4750ad4dc8c603ef4d39eb8fab7eef0d9f62e4aaba2b932",
+          "target": "stmt:packages/parsers/src/java/lexer.ts@L49",
+          "line": 49,
+          "expr": "const lines = src.split('\\n');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/lexer.ts#collectComments@L47",
+        "procedureName": "collectComments",
+        "guard": "cond:packages/parsers/src/java/lexer.ts@L51",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/lexer.ts@L51",
+            "expr": "i < lines.length",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:cdfff6066be70eb068d23301748be3ca7a23e16fc5cc68d95a26608a856ae46b",
+          "target": "stmt:packages/parsers/src/java/lexer.ts@L52",
+          "line": 52,
+          "expr": "const trimmed = (lines[i] ?? '').trim();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/lexer.ts#collectComments@L47",
+        "procedureName": "collectComments",
+        "guard": "cond:packages/parsers/src/java/lexer.ts@L57",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/lexer.ts@L51",
+            "expr": "i < lines.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/lexer.ts@L54",
+            "expr": "trimmed.startsWith('//')"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/lexer.ts@L57",
+            "expr": "i < lines.length && (lines[i] ?? '').trim().startsWith('//')",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d04dc2b31e3dbe8d1f0945029e0dbd196c8ea9ee3504a99fe8f1cf383d8c016c",
+          "target": "stmt:packages/parsers/src/java/lexer.ts@L58",
+          "line": 58,
+          "expr": "parts.push(\n          (lines[i] ?? '')\n            .trim()\n            .replace(/^\\/\\/\\s?/, '')\n            .trim(),\n        );"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/lexer.ts#collectComments@L47",
+        "procedureName": "collectComments",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:e2462c6e4aa7de37ac78ddda15a403405e7f4755af318614fca309180ad7a554",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
+          "expr": "push",
+          "line": 58
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/lexer.ts#collectComments@L47",
+        "procedureName": "collectComments",
+        "guard": "cond:packages/parsers/src/java/lexer.ts@L54",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/lexer.ts@L51",
+            "expr": "i < lines.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/lexer.ts@L54",
+            "expr": "trimmed.startsWith('//')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:be8301ce4967bcb7fa28dcef17e937844499eb12b0bf47c2a1a33f2e31e04ed8",
+          "target": "stmt:packages/parsers/src/java/lexer.ts@L66",
+          "line": 66,
+          "expr": "out.push({ start, end: i, text: parts.join('\\n'), javadoc: false });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/lexer.ts#collectComments@L47",
+        "procedureName": "collectComments",
+        "guard": "cond:packages/parsers/src/java/lexer.ts@L70",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/lexer.ts@L51",
+            "expr": "i < lines.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/lexer.ts@L70",
+            "expr": "trimmed.startsWith('/*')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4dfb29ab469b00bdcdf73a07488d4c3e75c080229cff13799365226de9031cb0",
+          "target": "stmt:packages/parsers/src/java/lexer.ts@L72",
+          "line": 72,
+          "expr": "const javadoc = trimmed.startsWith('/**') && !trimmed.startsWith('/**/');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/lexer.ts#collectComments@L47",
+        "procedureName": "collectComments",
+        "guard": "cond:packages/parsers/src/java/lexer.ts@L70",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/lexer.ts@L51",
+            "expr": "i < lines.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/lexer.ts@L70",
+            "expr": "trimmed.startsWith('/*')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:dfafe5746a37d77358d451e1b3ee1697111bd2435b7fb4092f4b462c3260fac3",
+          "target": "sym:packages/parsers/src/java/lexer.ts#Lexer.startsWith@L434",
+          "expr": "startsWith",
+          "line": 72
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/lexer.ts#collectComments@L47",
+        "procedureName": "collectComments",
+        "guard": "cond:packages/parsers/src/java/lexer.ts@L75",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/lexer.ts@L51",
+            "expr": "i < lines.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/lexer.ts@L70",
+            "expr": "trimmed.startsWith('/*')"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/lexer.ts@L75",
+            "expr": "trimmed.endsWith('*/') && trimmed.length > 2",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fb6fd77b1f1019a6e8e1aa0228fac262051b3061084fe1fcd6172f05a3308d68",
+          "target": "stmt:packages/parsers/src/java/lexer.ts@L76",
+          "line": 76,
+          "expr": "const inner = trimmed\n          .replace(/^\\/\\*+\\s?/, '')\n          .replace(/\\*+\\/$/, '')\n          .trim();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/lexer.ts#collectComments@L47",
+        "procedureName": "collectComments",
+        "guard": "cond:packages/parsers/src/java/lexer.ts@L80",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/lexer.ts@L51",
+            "expr": "i < lines.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/lexer.ts@L70",
+            "expr": "trimmed.startsWith('/*')"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/lexer.ts@L75",
+            "expr": "trimmed.endsWith('*/') && trimmed.length > 2"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/lexer.ts@L80",
+            "expr": "inner",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:03183c4afaa40cbc45c916ec03f94f5a4c74a42dd44c0b4a3e497584bba4decb",
+          "target": "stmt:packages/parsers/src/java/lexer.ts@L80",
+          "line": 80,
+          "expr": "parts.push(inner);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/lexer.ts#collectComments@L47",
+        "procedureName": "collectComments",
+        "guard": "cond:packages/parsers/src/java/lexer.ts@L75",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/lexer.ts@L51",
+            "expr": "i < lines.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/lexer.ts@L70",
+            "expr": "trimmed.startsWith('/*')"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/lexer.ts@L75",
+            "expr": "trimmed.endsWith('*/') && trimmed.length > 2",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:04009c6837431e864858718cfa67c93a84fa716b636e036ca192eab007ec274b",
+          "target": "stmt:packages/parsers/src/java/lexer.ts@L81",
+          "line": 81,
+          "expr": "out.push({ start, end: start, text: parts.join('\\n'), javadoc });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/lexer.ts#collectComments@L47",
+        "procedureName": "collectComments",
+        "guard": "cond:packages/parsers/src/java/lexer.ts@L70",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/lexer.ts@L51",
+            "expr": "i < lines.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/lexer.ts@L70",
+            "expr": "trimmed.startsWith('/*')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9c0ac0aae82841e24cfa6f20a3bf4daee538057e99082a58ca80e6aa013ebfca",
+          "target": "stmt:packages/parsers/src/java/lexer.ts@L86",
+          "line": 86,
+          "expr": "const firstInner = trimmed.replace(/^\\/\\*+\\s?/, '').trim();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/lexer.ts#collectComments@L47",
+        "procedureName": "collectComments",
+        "guard": "cond:packages/parsers/src/java/lexer.ts@L87",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/lexer.ts@L51",
+            "expr": "i < lines.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/lexer.ts@L70",
+            "expr": "trimmed.startsWith('/*')"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/lexer.ts@L87",
+            "expr": "firstInner",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d383f2ae8b4bc82e578f820562bb5f4a12ffe09f0e923b0fd7314622d13a44b9",
+          "target": "stmt:packages/parsers/src/java/lexer.ts@L87",
+          "line": 87,
+          "expr": "parts.push(firstInner);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/lexer.ts#collectComments@L47",
+        "procedureName": "collectComments",
+        "guard": "cond:packages/parsers/src/java/lexer.ts@L89",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/lexer.ts@L51",
+            "expr": "i < lines.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/lexer.ts@L70",
+            "expr": "trimmed.startsWith('/*')"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/lexer.ts@L89",
+            "expr": "i < lines.length",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:eaba6024eae0e90dfc9c06fd6b569ab4fb87a12f7f05c778971cb63e935601b2",
+          "target": "stmt:packages/parsers/src/java/lexer.ts@L90",
+          "line": 90,
+          "expr": "const l = (lines[i] ?? '').trim();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/lexer.ts#collectComments@L47",
+        "procedureName": "collectComments",
+        "guard": "cond:packages/parsers/src/java/lexer.ts@L91",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/lexer.ts@L51",
+            "expr": "i < lines.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/lexer.ts@L70",
+            "expr": "trimmed.startsWith('/*')"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/lexer.ts@L89",
+            "expr": "i < lines.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/lexer.ts@L91",
+            "expr": "l.endsWith('*/')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c40cc2cbb6fb974d3fdc130dde73eb799fcf19cef5987549119fed8613bf9827",
+          "target": "stmt:packages/parsers/src/java/lexer.ts@L92",
+          "line": 92,
+          "expr": "const inner = l\n            .replace(/\\*+\\/$/, '')\n            .replace(/^\\s*\\*\\s?/, '')\n            .trim();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/lexer.ts#collectComments@L47",
+        "procedureName": "collectComments",
+        "guard": "cond:packages/parsers/src/java/lexer.ts@L96",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/lexer.ts@L51",
+            "expr": "i < lines.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/lexer.ts@L70",
+            "expr": "trimmed.startsWith('/*')"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/lexer.ts@L89",
+            "expr": "i < lines.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/lexer.ts@L91",
+            "expr": "l.endsWith('*/')"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/lexer.ts@L96",
+            "expr": "inner",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:57dcf912445e6e8ccea1705f17d030521701cc66bc9d483f99592683f174b8af",
+          "target": "stmt:packages/parsers/src/java/lexer.ts@L96",
+          "line": 96,
+          "expr": "parts.push(inner);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/lexer.ts#collectComments@L47",
+        "procedureName": "collectComments",
+        "guard": "cond:packages/parsers/src/java/lexer.ts@L89",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/lexer.ts@L51",
+            "expr": "i < lines.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/lexer.ts@L70",
+            "expr": "trimmed.startsWith('/*')"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/lexer.ts@L89",
+            "expr": "i < lines.length",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:71c6038e38c4299869919818c5dd0e8a9d09d81557b10e38a8587198ad212004",
+          "target": "stmt:packages/parsers/src/java/lexer.ts@L100",
+          "line": 100,
+          "expr": "const inner = l.replace(/^\\s*\\*\\s?/, '').trim();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/lexer.ts#collectComments@L47",
+        "procedureName": "collectComments",
+        "guard": "cond:packages/parsers/src/java/lexer.ts@L101",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/lexer.ts@L51",
+            "expr": "i < lines.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/lexer.ts@L70",
+            "expr": "trimmed.startsWith('/*')"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/lexer.ts@L89",
+            "expr": "i < lines.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/lexer.ts@L101",
+            "expr": "inner",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fbdfd71dcc41f4da8adadc0198d8dc1cfb3e7924807238b216fd377fb24903cf",
+          "target": "stmt:packages/parsers/src/java/lexer.ts@L101",
+          "line": 101,
+          "expr": "parts.push(inner);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/lexer.ts#collectComments@L47",
+        "procedureName": "collectComments",
+        "guard": "cond:packages/parsers/src/java/lexer.ts@L70",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/lexer.ts@L51",
+            "expr": "i < lines.length"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/lexer.ts@L70",
+            "expr": "trimmed.startsWith('/*')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:60ea5f6454f090e6e58f031adaba2bd1df06d0e5024e6f5c41eb976a25460574",
+          "target": "stmt:packages/parsers/src/java/lexer.ts@L104",
+          "line": 104,
+          "expr": "out.push({ start, end: i, text: parts.join('\\n'), javadoc });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/lexer.ts#collectComments@L47",
+        "procedureName": "collectComments",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9c2567fd14f1e69e56a751529452e463ffd4cfa00dbf552588dde0bae731c825",
+          "target": "stmt:packages/parsers/src/java/lexer.ts@L109",
+          "line": 109,
+          "expr": "return out;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 17,
+    "referencedByFiles": [
+      "packages/parsers/src/java/JavaExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 17,
+    "assignments": 0,
+    "conditions": 11,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 29,
+      "unresolved": 19
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "19 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

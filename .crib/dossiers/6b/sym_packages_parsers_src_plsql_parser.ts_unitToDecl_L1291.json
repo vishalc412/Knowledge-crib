@@ -1,0 +1,98 @@
+{
+  "id": "sym:packages/parsers/src/plsql/parser.ts#unitToDecl@L1291",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:77afaa2398f9a5e2ff1b40082e644a629f8d6855e5b248e2c4aeda15f0010c06",
+  "builtAt": "2026-08-25T20:55:11.863Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/plsql/parser.ts#unitToDecl@L1291",
+    "kind": "symbol",
+    "type": "function",
+    "name": "unitToDecl",
+    "qualifiedName": "unitToDecl",
+    "signature": "unitToDecl(u: Unit): import('./ast.js').Decl",
+    "lang": "typescript",
+    "file": "packages/parsers/src/plsql/parser.ts",
+    "span": {
+      "start": 1291,
+      "end": 1301
+    }
+  },
+  "source": {
+    "text": "function unitToDecl(u: Unit): import('./ast.js').Decl {\n  return {\n    kind: u.kind === 'function' ? 'function' : 'procedure',\n    name: u.name,\n    params: u.params,\n    returnType: u.returnType,\n    span: u.span,\n    body: u.body,\n    declarations: u.declarations,\n  };\n}",
+    "truncated": false,
+    "totalLines": 11,
+    "startLine": 1291
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.parsePackage@L613",
+      "confidence": 1,
+      "name": "parsePackage",
+      "qualifiedName": "Parser.parsePackage",
+      "signature": "parsePackage(startLine: number, body: boolean): Unit | null",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/parser.ts",
+      "line": 613
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/parser.ts#Parser.parseProcOrFunc@L668",
+      "confidence": 1,
+      "name": "parseProcOrFunc",
+      "qualifiedName": "Parser.parseProcOrFunc",
+      "signature": "parseProcOrFunc(kind: 'procedure' | 'function', startLine: number): Unit | null",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/parser.ts",
+      "line": 668
+    }
+  ],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/plsql/parser.ts#unitToDecl@L1291",
+    "procedureName": "unitToDecl",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/plsql/parser.ts#unitToDecl@L1291",
+        "procedureName": "unitToDecl",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f781613953506f8912d6625bb9213c21c37f32fa2874340b8ff2519e40d3ca58",
+          "target": "stmt:packages/parsers/src/plsql/parser.ts@L1292",
+          "line": 1292,
+          "expr": "return {\n    kind: u.kind === 'function' ? 'function' : 'procedure',\n    name: u.name,\n    params: u.params,\n    returnType: u.returnType,\n    span: u.span,\n    body: u.body,\n    declarations: u.declarations,\n  };"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/parsers/src/plsql/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

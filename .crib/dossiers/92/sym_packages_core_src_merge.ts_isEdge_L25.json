@@ -1,0 +1,97 @@
+{
+  "id": "sym:packages/core/src/merge.ts#isEdge@L25",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:b991c8486f9e02af10f8ad1a01cf7b368bc4e58399d5d9497fb89dada852c585",
+  "builtAt": "2026-08-25T20:55:11.863Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/merge.ts#isEdge@L25",
+    "kind": "symbol",
+    "type": "function",
+    "name": "isEdge",
+    "qualifiedName": "isEdge",
+    "signature": "isEdge(r: ChunkRecord): r is Edge",
+    "lang": "typescript",
+    "file": "packages/core/src/merge.ts",
+    "span": {
+      "start": 25,
+      "end": 27
+    }
+  },
+  "source": {
+    "text": "function isEdge(r: ChunkRecord): r is Edge {\n  return (r as Edge).rel !== undefined && (r as Edge).src !== undefined;\n}",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 25
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/merge.ts#mergeThreeWay@L64",
+      "confidence": 1,
+      "name": "mergeThreeWay",
+      "qualifiedName": "mergeThreeWay",
+      "signature": "mergeThreeWay(base: Map<string, ChunkRecord>, ours: Map<string, ChunkRecord>, theirs: Map<string, ChunkRecord>): MergeResult",
+      "type": "function",
+      "file": "packages/core/src/merge.ts",
+      "line": 64
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/core/src/merge.ts@L24",
+      "snippet": "/** Is this record an edge? Edges carry `rel`; nodes carry `kind` + `hash`. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/merge.ts#isEdge@L25",
+    "procedureName": "isEdge",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/merge.ts#isEdge@L25",
+        "procedureName": "isEdge",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bce5b0be7b3403a7a0f30030cbfd9483381733a0d86e8407b236b3206a46452d",
+          "target": "stmt:packages/core/src/merge.ts@L26",
+          "line": 26,
+          "expr": "return (r as Edge).rel !== undefined && (r as Edge).src !== undefined;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/core/src/merge.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

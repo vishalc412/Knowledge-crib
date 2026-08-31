@@ -1,0 +1,136 @@
+{
+  "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#enclosingSymbolId@L359",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:9ae0a7ee869ecf238575a509fa1cfbc1dd9e01e6bfe34d2bac5691b0647da203",
+  "builtAt": "2026-08-25T20:55:11.863Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#enclosingSymbolId@L359",
+    "kind": "symbol",
+    "type": "function",
+    "name": "enclosingSymbolId",
+    "qualifiedName": "enclosingSymbolId",
+    "signature": "enclosingSymbolId(line: number, symbols: LocalSymbol[]): string | undefined",
+    "lang": "typescript",
+    "file": "packages/parsers/src/csharp/CsharpExtractor.ts",
+    "span": {
+      "start": 359,
+      "end": 371
+    }
+  },
+  "source": {
+    "text": "function enclosingSymbolId(line: number, symbols: LocalSymbol[]): string | undefined {\n  let best: LocalSymbol | undefined;\n  for (const s of symbols) {\n    const span = s.node.span;\n    if (!span || line < span.start || line > span.end) continue;\n    if (\n      !best ||\n      (best.node.span && span.start >= best.node.span.start && span.end <= best.node.span.end)\n    )\n      best = s;\n  }\n  return best?.node.id;\n}",
+    "truncated": false,
+    "totalLines": 13,
+    "startLine": 359
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#CsharpExtractor.collectCalls@L226",
+      "confidence": 1,
+      "name": "collectCalls",
+      "qualifiedName": "CsharpExtractor.collectCalls",
+      "signature": "collectCalls(calls: CsharpCallSite[], symbols: LocalSymbol[], byKey: Map<string, string>, edges: Edge[]): void",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/CsharpExtractor.ts",
+      "line": 226
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#CsharpExtractor.stampCallSites@L279",
+      "confidence": 1,
+      "name": "stampCallSites",
+      "qualifiedName": "CsharpExtractor.stampCallSites",
+      "signature": "stampCallSites(calls: CsharpCallSite[], symbols: LocalSymbol[], nodes: Node[]): void",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/CsharpExtractor.ts",
+      "line": 279
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/csharp/CsharpExtractor.ts@L358",
+      "snippet": "/** Innermost symbol whose span contains `line`; the narrowest wins. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#enclosingSymbolId@L359",
+    "procedureName": "enclosingSymbolId",
+    "conditions": [
+      "cond:packages/parsers/src/csharp/CsharpExtractor.ts@L361",
+      "cond:packages/parsers/src/csharp/CsharpExtractor.ts@L364"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#enclosingSymbolId@L359",
+        "procedureName": "enclosingSymbolId",
+        "guard": "cond:packages/parsers/src/csharp/CsharpExtractor.ts@L364",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/CsharpExtractor.ts@L361",
+            "expr": "symbols"
+          },
+          {
+            "id": "cond:packages/parsers/src/csharp/CsharpExtractor.ts@L364",
+            "expr": "!best ||\n      (best.node.span && span.start >= best.node.span.start && span.end <= best.node.span.end)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:32ca05bf3929c12f37a7ce7f17f2a1426ecab2230a128abd10a962d374223cbe",
+          "target": "assign:packages/parsers/src/csharp/CsharpExtractor.ts@L368",
+          "line": 368,
+          "expr": "best = s;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#enclosingSymbolId@L359",
+        "procedureName": "enclosingSymbolId",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:400567a953ad42475793f9d5fb3771b4ce392cadf7a4061254cb6d6dd90f4cf5",
+          "target": "stmt:packages/parsers/src/csharp/CsharpExtractor.ts@L370",
+          "line": 370,
+          "expr": "return best?.node.id;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/parsers/src/csharp/CsharpExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 1,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

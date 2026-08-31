@@ -1,0 +1,99 @@
+{
+  "id": "sym:packages/pipeline/fixtures/python-module-imports/pkg/helper.py#do@L1",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:efcef21e09e99bc3cbe6cfbf7800a8220fd3b3ec51d444a44708f6c3657abffa",
+  "builtAt": "2026-08-25T20:55:11.863Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/fixtures/python-module-imports/pkg/helper.py#do@L1",
+    "kind": "symbol",
+    "type": "function",
+    "name": "do",
+    "qualifiedName": "do",
+    "signature": "do()",
+    "lang": "python",
+    "file": "packages/pipeline/fixtures/python-module-imports/pkg/helper.py",
+    "span": {
+      "start": 1,
+      "end": 2
+    }
+  },
+  "source": {
+    "text": "def do():\n    return 3",
+    "truncated": false,
+    "totalLines": 2,
+    "startLine": 1
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/fixtures/python-module-imports/pkg/client.py#use_helper@L18",
+      "confidence": 1,
+      "name": "use_helper",
+      "qualifiedName": "use_helper",
+      "signature": "use_helper()",
+      "type": "function",
+      "file": "packages/pipeline/fixtures/python-module-imports/pkg/client.py",
+      "line": 18
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "doc:docs/knowledge-crib-prompts.md#3-migration-rule-extraction-the-wedge-crib-was-built-for",
+      "heading": "3. Migration / rule extraction — *the wedge crib was built for*",
+      "anchor": "3-migration-rule-extraction-the-wedge-crib-was-built-for",
+      "snippet": "3. Migration / rule extraction — *the wedge crib was built for*",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/fixtures/python-module-imports/pkg/helper.py#do@L1",
+    "procedureName": "do",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/fixtures/python-module-imports/pkg/helper.py#do@L1",
+        "procedureName": "do",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0416de4d0f64886d213a93d147793f9deba43e9d998e0943c391713b91d0b6ca",
+          "target": "stmt:packages/pipeline/fixtures/python-module-imports/pkg/helper.py@L2",
+          "line": 2,
+          "expr": "return 3"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/pipeline/fixtures/python-module-imports/pkg/client.py"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

@@ -1,8 +1,8 @@
 {
   "id": "sym:scripts/crib-self-hosted-e2e.mjs#main@L165",
-  "schemaVersion": "1.5",
+  "schemaVersion": "1.6",
   "nodeHash": "blake3:3b1f11ba3a476acc0b5ca8712d8c76f1b0ab09fc51516bdaabab7a0bf656eaa6",
-  "builtAt": "2026-07-16T16:35:16.098Z",
+  "builtAt": "2026-08-31T17:37:23.222Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:scripts/crib-self-hosted-e2e.mjs#main@L165",
@@ -189,6 +189,16 @@
       "line": 160
     },
     {
+      "id": "sym:scripts/tier-check.mjs#fail@L45",
+      "confidence": 1,
+      "name": "fail",
+      "qualifiedName": "fail",
+      "signature": "fail(…)",
+      "type": "function",
+      "file": "scripts/tier-check.mjs",
+      "line": 45
+    },
+    {
       "id": "sym:scripts/crib-self-hosted-e2e.mjs#fail@L49",
       "confidence": 1,
       "name": "fail",
@@ -197,16 +207,6 @@
       "type": "function",
       "file": "scripts/crib-self-hosted-e2e.mjs",
       "line": 49
-    },
-    {
-      "id": "sym:scripts/tier-check.mjs#fail@L41",
-      "confidence": 1,
-      "name": "fail",
-      "qualifiedName": "fail",
-      "signature": "fail(…)",
-      "type": "function",
-      "file": "scripts/tier-check.mjs",
-      "line": 41
     },
     {
       "id": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
@@ -239,14 +239,14 @@
       "line": 4
     },
     {
-      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
       "confidence": 1,
       "name": "push",
       "qualifiedName": "push",
       "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
       "type": "function",
       "file": "packages/pipeline/src/linker/inverted-index.ts",
-      "line": 39
+      "line": 70
     },
     {
       "id": "sym:scripts/crib-self-hosted-e2e.mjs#runCli@L53",
@@ -259,14 +259,14 @@
       "line": 53
     },
     {
-      "id": "sym:packages/cli/src/hooks.test.ts#write@L54",
+      "id": "sym:scripts/fixtures/synthetic-mule-project.mjs#write@L64",
       "confidence": 1,
       "name": "write",
       "qualifiedName": "write",
-      "signature": "write(path: string, records: Array<Record<string, unknown>>): void",
+      "signature": "write(root, rel, content)",
       "type": "function",
-      "file": "packages/cli/src/hooks.test.ts",
-      "line": 54
+      "file": "scripts/fixtures/synthetic-mule-project.mjs",
+      "line": 64
     }
   ],
   "docs": [
@@ -275,10 +275,30 @@
       "heading": "Option A — Worker-thread pool over file batches (the plan's original proposal)",
       "anchor": "option-a-worker-thread-pool-over-file-batches-the-plan-s-original-proposal",
       "snippet": "Option A — Worker-thread pool over file batches (the plan's original proposal)",
-      "edgeType": "describes",
+      "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
       "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#5-3-first-attempt-full-repo-failed-slow",
+      "heading": "5.3 First attempt — full repo (failed: slow)",
+      "anchor": "5-3-first-attempt-full-repo-failed-slow",
+      "snippet": "5.3 First attempt — full repo (failed: slow)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#5-5-successful-index-the-demo-graph",
+      "heading": "5.5 Successful index (the demo graph)",
+      "anchor": "5-5-successful-index-the-demo-graph",
+      "snippet": "5.5 Successful index (the demo graph)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
     },
     {
       "sectionId": "doc:docs/adr/ADR-001-parallel-parse.md#crib-s-parse-workload-measured",
@@ -311,6 +331,26 @@
       "confidence": 0.6
     },
     {
+      "sectionId": "doc:docs/superpowers/specs/2026-08-14-mulesoft-first-class-extractor-design.md#5-3-project-and-dialect-detection",
+      "heading": "5.3 Project and dialect detection",
+      "anchor": "5-3-project-and-dialect-detection",
+      "snippet": "5.3 Project and dialect detection",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/specs/2026-08-14-mulesoft-first-class-extractor-design.md#8-discovery-and-generated-noise",
+      "heading": "8. Discovery and Generated Noise",
+      "anchor": "8-discovery-and-generated-noise",
+      "snippet": "8. Discovery and Generated Noise",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
       "sectionId": "doc:docs/launch/publish-runbook.md#pre-publish-checklist-tick-before-the-first-publish",
       "heading": "Pre-publish checklist (tick before the first `publish`)",
       "anchor": "pre-publish-checklist-tick-before-the-first-publish",
@@ -331,20 +371,10 @@
       "confidence": 0.6
     },
     {
-      "sectionId": "doc:docs/knowledge-crib-user-guide.md#5-3-first-attempt-full-repo-failed-slow",
-      "heading": "5.3 First attempt — full repo (failed: slow)",
-      "anchor": "5-3-first-attempt-full-repo-failed-slow",
-      "snippet": "5.3 First attempt — full repo (failed: slow)",
-      "edgeType": "references",
-      "method": "identifier",
-      "provenance": "EXTRACTED",
-      "confidence": 0.6
-    },
-    {
-      "sectionId": "doc:docs/knowledge-crib-user-guide.md#5-5-successful-index-the-demo-graph",
-      "heading": "5.5 Successful index (the demo graph)",
-      "anchor": "5-5-successful-index-the-demo-graph",
-      "snippet": "5.5 Successful index (the demo graph)",
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-3-extraction.md#task-1-lock-mule-3-detection-with-fixtures",
+      "heading": "Task 1: Lock Mule 3 detection with fixtures",
+      "anchor": "task-1-lock-mule-3-detection-with-fixtures",
+      "snippet": "Task 1: Lock Mule 3 detection with fixtures",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
@@ -388,6 +418,20 @@
           "edgeId": "e:f2fbffc537b4559d7c025a37af889d0dfe04882089bb462f339c586cbb570189",
           "target": "sym:scripts/crib-self-hosted-e2e.mjs#McpStdioClient.close@L143",
           "expr": "close"
+        }
+      },
+      {
+        "procedure": "sym:scripts/crib-self-hosted-e2e.mjs#main@L165",
+        "procedureName": "main",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:1d675f6e54309c5758bf69013836b031785f0505867c9a5c850612d0fcc41c7b",
+          "target": "sym:scripts/tier-check.mjs#fail@L45",
+          "expr": "fail",
+          "line": 166
         }
       },
       {
@@ -437,34 +481,6 @@
       {
         "procedure": "sym:scripts/crib-self-hosted-e2e.mjs#main@L165",
         "procedureName": "main",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:4003389367da5d8162c9da977b15e938f69663db433c23f82881656e1439bde5",
-          "target": "sym:scripts/tier-check.mjs#fail@L41",
-          "expr": "fail",
-          "line": 166
-        }
-      },
-      {
-        "procedure": "sym:scripts/crib-self-hosted-e2e.mjs#main@L165",
-        "procedureName": "main",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:590252ef0ecf5013c50f75b390c415cca46eb676f3df899a3faab15335bce88b",
-          "target": "sym:packages/cli/src/hooks.test.ts#write@L54",
-          "expr": "write",
-          "line": 168
-        }
-      },
-      {
-        "procedure": "sym:scripts/crib-self-hosted-e2e.mjs#main@L165",
-        "procedureName": "main",
         "guard": "cond:scripts/crib-self-hosted-e2e.mjs@L167",
         "branch": "THEN",
         "conditions": [
@@ -482,6 +498,20 @@
           "target": "stmt:scripts/crib-self-hosted-e2e.mjs@L168",
           "line": 168,
           "expr": "process.stdout.write('indexing current monorepo\\n');"
+        }
+      },
+      {
+        "procedure": "sym:scripts/crib-self-hosted-e2e.mjs#main@L165",
+        "procedureName": "main",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:e5e27a40a352888660bc51bfb51444a64ced8f3770a3099b5fbb290ee828f152",
+          "target": "sym:scripts/fixtures/synthetic-mule-project.mjs#write@L64",
+          "expr": "write",
+          "line": 168
         }
       },
       {
@@ -620,8 +650,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:bc562884966fc5dbd8b1940a109d58f03f70b4d442475a0480a0589636e68852",
-          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+          "edgeId": "e:948f04a4466e3a1aad44538b373ea3ef3097984f225b9350c9f68c2a24156a15",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
           "expr": "push",
           "line": 187
         }

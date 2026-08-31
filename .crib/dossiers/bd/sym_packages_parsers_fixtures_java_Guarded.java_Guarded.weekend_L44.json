@@ -1,0 +1,88 @@
+{
+  "id": "sym:packages/parsers/fixtures/java/Guarded.java#Guarded.weekend@L44",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:1bdf54109d71775d07f4c6d4541e7c79cf07cbaa992e6e4671d2e842cbe36e0a",
+  "builtAt": "2026-08-25T20:55:11.863Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/fixtures/java/Guarded.java#Guarded.weekend@L44",
+    "kind": "symbol",
+    "type": "method",
+    "name": "weekend",
+    "qualifiedName": "Guarded.weekend",
+    "signature": "weekend()",
+    "lang": "java",
+    "file": "packages/parsers/fixtures/java/Guarded.java",
+    "span": {
+      "start": 44,
+      "end": 44
+    }
+  },
+  "source": {
+    "text": "    private String weekend() { return \"weekend\"; }",
+    "truncated": false,
+    "totalLines": 1,
+    "startLine": 44
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/fixtures/java/Guarded.java#Guarded.classify@L23",
+      "confidence": 1,
+      "name": "classify",
+      "qualifiedName": "Guarded.classify",
+      "signature": "classify(day)",
+      "type": "method",
+      "file": "packages/parsers/fixtures/java/Guarded.java",
+      "line": 23
+    }
+  ],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/fixtures/java/Guarded.java#Guarded.weekend@L44",
+    "procedureName": "Guarded.weekend",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/fixtures/java/Guarded.java#Guarded.weekend@L44",
+        "procedureName": "Guarded.weekend",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6cab5ba964b038e27a1fae5688652a889b14e70798a455c0049db7152c2119d5",
+          "target": "stmt:packages/parsers/fixtures/java/Guarded.java@L44",
+          "line": 44,
+          "expr": "return \"weekend\""
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/parsers/fixtures/java/Guarded.java"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

@@ -1,0 +1,98 @@
+{
+  "id": "sym:packages/parsers/src/plsql/lexer.ts#isIdentStart@L175",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:a0f7b239917d5038fdabd209f21b0cf8b7a5277aa9a81327f00066a59e88bee6",
+  "builtAt": "2026-08-25T20:55:11.863Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/plsql/lexer.ts#isIdentStart@L175",
+    "kind": "symbol",
+    "type": "function",
+    "name": "isIdentStart",
+    "qualifiedName": "isIdentStart",
+    "signature": "isIdentStart(c: string | undefined): boolean",
+    "lang": "typescript",
+    "file": "packages/parsers/src/plsql/lexer.ts",
+    "span": {
+      "start": 175,
+      "end": 177
+    }
+  },
+  "source": {
+    "text": "function isIdentStart(c: string | undefined): boolean {\n  return c !== undefined && ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c === '_');\n}",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 175
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/plsql/lexer.ts#isIdentPart@L178",
+      "confidence": 1,
+      "name": "isIdentPart",
+      "qualifiedName": "isIdentPart",
+      "signature": "isIdentPart(c: string | undefined): boolean",
+      "type": "function",
+      "file": "packages/parsers/src/plsql/lexer.ts",
+      "line": 178
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/lexer.ts#tokenize@L33",
+      "confidence": 1,
+      "name": "tokenize",
+      "qualifiedName": "tokenize",
+      "signature": "tokenize(src: string): Token[]",
+      "type": "function",
+      "file": "packages/parsers/src/plsql/lexer.ts",
+      "line": 33
+    }
+  ],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/plsql/lexer.ts#isIdentStart@L175",
+    "procedureName": "isIdentStart",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/plsql/lexer.ts#isIdentStart@L175",
+        "procedureName": "isIdentStart",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:479daa1e61ec55b4024d526bdf5a65385cbfd9f2dbd00f64ced9452008769f71",
+          "target": "stmt:packages/parsers/src/plsql/lexer.ts@L176",
+          "line": 176,
+          "expr": "return c !== undefined && ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c === '_');"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/parsers/src/plsql/lexer.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

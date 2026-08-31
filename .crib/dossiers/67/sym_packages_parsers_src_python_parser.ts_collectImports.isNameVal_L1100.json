@@ -1,0 +1,85 @@
+{
+  "id": "sym:packages/parsers/src/python/parser.ts#collectImports.isNameVal@L1100",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:5a30c9021228c9a757c982c1bc26e926a9688af02115df0821482cb01128d0e7",
+  "builtAt": "2026-08-25T20:55:11.863Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/python/parser.ts#collectImports.isNameVal@L1100",
+    "kind": "symbol",
+    "type": "function",
+    "name": "isNameVal",
+    "qualifiedName": "collectImports.isNameVal",
+    "signature": "isNameVal(…)",
+    "lang": "typescript",
+    "file": "packages/parsers/src/python/parser.ts",
+    "span": {
+      "start": 1100,
+      "end": 1100
+    }
+  },
+  "source": {
+    "text": "  const isNameVal = (k: number, v: string) => tokens[k]?.type === 'NAME' && tokens[k]?.value === v;",
+    "truncated": false,
+    "totalLines": 1,
+    "startLine": 1100
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#collectFromNames@L1214",
+      "confidence": 1,
+      "name": "collectFromNames",
+      "qualifiedName": "collectFromNames",
+      "signature": "collectFromNames(tokens: Token[], jIn: number, module: string, relative: number, line: number): PyImport[]",
+      "type": "function",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 1214
+    },
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#collectImports@L1096",
+      "confidence": 1,
+      "name": "collectImports",
+      "qualifiedName": "collectImports",
+      "signature": "collectImports(tokens: Token[]): PyImport[]",
+      "type": "function",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 1096
+    }
+  ],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/python/parser.ts#collectImports.isNameVal@L1100",
+    "procedureName": "collectImports.isNameVal",
+    "conditions": [],
+    "rules": []
+  },
+  "implementation": {
+    "status": "unimplemented",
+    "executesCount": 0,
+    "referencedByFiles": [
+      "packages/parsers/src/python/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "unimplemented",
+    "bodyPresent": false,
+    "executes": 0,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "BODY UNAVAILABLE — no body statements indexed. The implementation may live in a missing file (e.g. a PL/SQL package body) or be a spec-only declaration. Do NOT derive behavior, scoring formulas, or migration logic from this node — locate and index the body first."
+    ]
+  }
+}

@@ -1,0 +1,170 @@
+{
+  "id": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.walkLoop@L684",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:18aee6e6b6130d0157e7c52518d3365bd8d811293d7a575bbaad11e8523bebda",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.walkLoop@L684",
+    "kind": "symbol",
+    "type": "method",
+    "name": "walkLoop",
+    "qualifiedName": "BodyWalker.walkLoop",
+    "signature": "walkLoop(s: JavaStmt, procId: string, guardStack: string[], inLoop: boolean, inException: boolean): void",
+    "lang": "typescript",
+    "file": "packages/parsers/src/java/JavaExtractor.ts",
+    "span": {
+      "start": 684,
+      "end": 693
+    },
+    "callSites": [
+      {
+        "callee": "condition",
+        "line": 691
+      },
+      {
+        "callee": "walkBody",
+        "line": 692
+      }
+    ]
+  },
+  "source": {
+    "text": "  private walkLoop(\n    s: JavaStmt,\n    procId: string,\n    guardStack: string[],\n    inLoop: boolean,\n    inException: boolean,\n  ): void {\n    const condId = this.condition(s.predicate, s.predicateLine ?? s.startLine, 'LOOP');\n    this.walkBody(s.body ?? [], procId, [...guardStack, condId], 'LOOP', true, inException);\n  }",
+    "truncated": false,
+    "totalLines": 10,
+    "startLine": 684
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.walkStmt@L479",
+      "confidence": 1,
+      "name": "walkStmt",
+      "qualifiedName": "BodyWalker.walkStmt",
+      "signature": "walkStmt(s: JavaStmt, procId: string, guardStack: string[], innerBranch: string | undefined, inLoop: boolean, inException: boolean): void",
+      "type": "method",
+      "file": "packages/parsers/src/java/JavaExtractor.ts",
+      "line": 479
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.condition@L520",
+      "confidence": 1,
+      "name": "condition",
+      "qualifiedName": "BodyWalker.condition",
+      "signature": "condition(expr: string | undefined, line: number, branch: string): string",
+      "type": "method",
+      "file": "packages/parsers/src/java/JavaExtractor.ts",
+      "line": 520
+    },
+    {
+      "id": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.walkBody@L468",
+      "confidence": 1,
+      "name": "walkBody",
+      "qualifiedName": "BodyWalker.walkBody",
+      "signature": "walkBody(stmts: JavaStmt[], procId: string, guardStack: string[], innerBranch: string | undefined, inLoop: boolean, inException: boolean): void",
+      "type": "method",
+      "file": "packages/parsers/src/java/JavaExtractor.ts",
+      "line": 468
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/java/JavaExtractor.ts@L683",
+      "snippet": "/** FOR/WHILE/DO: one LOOP condition node; the body is walked with inLoop=true. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.walkLoop@L684",
+    "procedureName": "BodyWalker.walkLoop",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.walkLoop@L684",
+        "procedureName": "BodyWalker.walkLoop",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:2f0852c4fa09e3dfc87ca626a7dc9096113ce9af0be1df123c1453c4cfe6776b",
+          "target": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.condition@L520",
+          "expr": "condition",
+          "line": 691
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.walkLoop@L684",
+        "procedureName": "BodyWalker.walkLoop",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bae19513814c335de2a87c57c806a30d6f25fe6077f6e48b53a921211fb7ad72",
+          "target": "stmt:packages/parsers/src/java/JavaExtractor.ts@L691",
+          "line": 691,
+          "expr": "const condId = this.condition(s.predicate, s.predicateLine ?? s.startLine, 'LOOP');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.walkLoop@L684",
+        "procedureName": "BodyWalker.walkLoop",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a1f332f9ca861cdf01ef06bd4450b9237fa80ee929582ea5314d31d85df0095a",
+          "target": "stmt:packages/parsers/src/java/JavaExtractor.ts@L692",
+          "line": 692,
+          "expr": "this.walkBody(s.body ?? [], procId, [...guardStack, condId], 'LOOP', true, inException);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.walkLoop@L684",
+        "procedureName": "BodyWalker.walkLoop",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:e294d163431b4b02ac3e8e014fe562b0ef97317bed4a1975797f282823d1693e",
+          "target": "sym:packages/parsers/src/java/JavaExtractor.ts#BodyWalker.walkBody@L468",
+          "expr": "walkBody",
+          "line": 692
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/parsers/src/java/JavaExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 2,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

@@ -1,0 +1,163 @@
+{
+  "id": "sym:packages/parsers/src/java/parser.ts#BodyParser.matchParen@L1629",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:215ed84021a1b2d9b8e3bbd5d420bece11faab7faead720edbc064322d5b8b0d",
+  "builtAt": "2026-08-25T20:55:11.863Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/java/parser.ts#BodyParser.matchParen@L1629",
+    "kind": "symbol",
+    "type": "method",
+    "name": "matchParen",
+    "qualifiedName": "BodyParser.matchParen",
+    "signature": "matchParen(openIdx: number, maxIdx: number = this.t.length): number",
+    "lang": "typescript",
+    "file": "packages/parsers/src/java/parser.ts",
+    "span": {
+      "start": 1629,
+      "end": 1641
+    }
+  },
+  "source": {
+    "text": "  private matchParen(openIdx: number, maxIdx: number = this.t.length): number {\n    let depth = 0;\n    for (let j = openIdx; j < maxIdx; j++) {\n      const tk = this.t[j]!;\n      if (tk.type === 'EOF') return -1;\n      if (tk.type === 'OP' && tk.value === '(') depth++;\n      else if (tk.type === 'OP' && tk.value === ')') {\n        depth--;\n        if (depth === 0) return j;\n      }\n    }\n    return -1;\n  }",
+    "truncated": false,
+    "totalLines": 13,
+    "startLine": 1629
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/java/parser.ts#BodyParser.readParenText@L1520",
+      "confidence": 1,
+      "name": "readParenText",
+      "qualifiedName": "BodyParser.readParenText",
+      "signature": "readParenText(): string | undefined",
+      "type": "method",
+      "file": "packages/parsers/src/java/parser.ts",
+      "line": 1520
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/java/parser.ts@L1628",
+      "snippet": "/** Index of the `)` matching the `(` at `openIdx`, or -1 if unmatched within `maxIdx`. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/java/parser.ts#BodyParser.matchParen@L1629",
+    "procedureName": "BodyParser.matchParen",
+    "conditions": [
+      "cond:packages/parsers/src/java/parser.ts@L1631",
+      "cond:packages/parsers/src/java/parser.ts@L1633",
+      "cond:packages/parsers/src/java/parser.ts@L1634",
+      "cond:packages/parsers/src/java/parser.ts@L1635",
+      "cond:packages/parsers/src/java/parser.ts@L1637"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#BodyParser.matchParen@L1629",
+        "procedureName": "BodyParser.matchParen",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L1633",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L1631",
+            "expr": "j < maxIdx"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L1633",
+            "expr": "tk.type === 'EOF'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:77c41db721439d1a6006e552eae480cb67106616cce03b7f769ee1fa3dc23d1c",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L1633",
+          "line": 1633,
+          "expr": "return -1;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#BodyParser.matchParen@L1629",
+        "procedureName": "BodyParser.matchParen",
+        "guard": "cond:packages/parsers/src/java/parser.ts@L1637",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L1631",
+            "expr": "j < maxIdx"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L1634",
+            "expr": "tk.type === 'OP' && tk.value === '('"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L1635",
+            "expr": "tk.type === 'OP' && tk.value === ')'"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.ts@L1637",
+            "expr": "depth === 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b9f320c2de4293ddb08e67e7809443259e218b58fd3b490c01c13c40d62076ac",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L1637",
+          "line": 1637,
+          "expr": "return j;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.ts#BodyParser.matchParen@L1629",
+        "procedureName": "BodyParser.matchParen",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2b88e70d8aa92bccc3c4be2a1d8f6101e86ccf021b1e63702e8464f1310a32ea",
+          "target": "stmt:packages/parsers/src/java/parser.ts@L1640",
+          "line": 1640,
+          "expr": "return -1;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/parsers/src/java/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

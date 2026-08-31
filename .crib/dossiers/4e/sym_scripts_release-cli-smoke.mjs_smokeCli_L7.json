@@ -1,8 +1,8 @@
 {
   "id": "sym:scripts/release-cli-smoke.mjs#smokeCli@L7",
-  "schemaVersion": "1.5",
+  "schemaVersion": "1.6",
   "nodeHash": "blake3:415b035396449401d9dcb7e734f5e03d74d0eba2c0608ad16f1933a2442097d1",
-  "builtAt": "2026-07-16T16:35:16.098Z",
+  "builtAt": "2026-08-31T17:37:23.222Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:scripts/release-cli-smoke.mjs#smokeCli@L7",
@@ -85,6 +85,16 @@
   "callers": [],
   "callees": [
     {
+      "id": "sym:packages/pipeline/src/mule/classify.ts#dirname@L163",
+      "confidence": 1,
+      "name": "dirname",
+      "qualifiedName": "dirname",
+      "signature": "dirname(path: string): string",
+      "type": "function",
+      "file": "packages/pipeline/src/mule/classify.ts",
+      "line": 163
+    },
+    {
       "id": "sym:packages/pipeline/fixtures/plain-js/src/legacy.cjs#parse@L4",
       "confidence": 1,
       "name": "parse",
@@ -155,6 +165,20 @@
           "target": "stmt:scripts/release-cli-smoke.mjs@L15",
           "line": 15,
           "expr": "mkdirSync(dirname(sourcePath), { recursive: true });"
+        }
+      },
+      {
+        "procedure": "sym:scripts/release-cli-smoke.mjs#smokeCli@L7",
+        "procedureName": "smokeCli",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:bc17af7fd7c79ee99ec18be334010e13dcf281ae3ea32990c2799f51c8818536",
+          "target": "sym:packages/pipeline/src/mule/classify.ts#dirname@L163",
+          "expr": "dirname",
+          "line": 15
         }
       },
       {
@@ -259,14 +283,14 @@
     "cursors": 0,
     "caseBranches": 0,
     "calls": {
-      "resolved": 1,
+      "resolved": 2,
       "recorded": 14,
-      "unresolved": 13
+      "unresolved": 12
     },
     "recursive": false,
     "exprTruncated": 0,
     "caveats": [
-      "13 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+      "12 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
     ]
   }
 }

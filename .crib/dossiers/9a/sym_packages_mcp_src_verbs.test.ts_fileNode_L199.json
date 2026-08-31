@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/mcp/src/verbs.test.ts#fileNode@L199",
-  "schemaVersion": "1.5",
+  "schemaVersion": "1.6",
   "nodeHash": "blake3:e0ec40e3e1d202d8ade09067b51213dae25fdc2972f255b826dd59cb8161ea08",
-  "builtAt": "2026-07-16T16:35:16.098Z",
+  "builtAt": "2026-08-31T17:37:23.222Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/mcp/src/verbs.test.ts#fileNode@L199",
@@ -47,22 +47,57 @@
       "line": 21
     },
     {
-      "id": "sym:packages/soul-schema/src/id.ts#idFor@L88",
+      "id": "sym:packages/soul-schema/src/id.ts#idFor@L96",
       "confidence": 1,
       "name": "idFor",
       "qualifiedName": "idFor",
       "signature": "idFor(spec: IdSpec): string",
       "type": "function",
       "file": "packages/soul-schema/src/id.ts",
-      "line": 88
+      "line": 96
     }
   ],
-  "docs": [],
+  "docs": [
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-foundation.md#task-6-enforce-property-redaction-in-source-and-fts",
+      "heading": "Task 6: Enforce property redaction in source and FTS",
+      "anchor": "task-6-enforce-property-redaction-in-source-and-fts",
+      "snippet": "Task 6: Enforce property redaction in source and FTS",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/2026-08-14-mulesoft-foundation.md#task-4-classify-discovery-and-make-sensitive-hashes-key-only",
+      "heading": "Task 4: Classify discovery and make sensitive hashes key-only",
+      "anchor": "task-4-classify-discovery-and-make-sensitive-hashes-key-only",
+      "snippet": "Task 4: Classify discovery and make sensitive hashes key-only",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
   "rules": {
     "procedure": "sym:packages/mcp/src/verbs.test.ts#fileNode@L199",
     "procedureName": "fileNode",
     "conditions": [],
     "rules": [
+      {
+        "procedure": "sym:packages/mcp/src/verbs.test.ts#fileNode@L199",
+        "procedureName": "fileNode",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:13194c1ecdebfae007a726ca96c941e790c0ecefec273db81bfd0d13c2172f0b",
+          "target": "sym:packages/soul-schema/src/id.ts#idFor@L96",
+          "expr": "idFor",
+          "line": 200
+        }
+      },
       {
         "procedure": "sym:packages/mcp/src/verbs.test.ts#fileNode@L199",
         "procedureName": "fileNode",
@@ -89,20 +124,6 @@
           "target": "stmt:packages/mcp/src/verbs.test.ts@L200",
           "line": 200,
           "expr": "return { id: idFor({ kind: 'file', path }), kind: 'file', file: path, hash: contentHash(path) };"
-        }
-      },
-      {
-        "procedure": "sym:packages/mcp/src/verbs.test.ts#fileNode@L199",
-        "procedureName": "fileNode",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:c36517a52cb690b91dfb7624087d48a495988d445ef6f26d27bf1f3bfa7c70c6",
-          "target": "sym:packages/soul-schema/src/id.ts#idFor@L88",
-          "expr": "idFor",
-          "line": 200
         }
       }
     ]

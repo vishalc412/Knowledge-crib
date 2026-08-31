@@ -1,0 +1,373 @@
+{
+  "id": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.scanRegularOrRawString@L307",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:888aeb52803f4c3c9b4a7986790659316da4cd7319bf6e770e7c5548a68db633",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.scanRegularOrRawString@L307",
+    "kind": "symbol",
+    "type": "method",
+    "name": "scanRegularOrRawString",
+    "qualifiedName": "Lexer.scanRegularOrRawString",
+    "signature": "scanRegularOrRawString(): void",
+    "lang": "typescript",
+    "file": "packages/parsers/src/csharp/lexer.ts",
+    "span": {
+      "start": 307,
+      "end": 326
+    },
+    "callSites": [
+      {
+        "callee": "advance",
+        "line": 314
+      },
+      {
+        "callee": "scanRawStringBody",
+        "line": 317
+      },
+      {
+        "callee": "emit",
+        "line": 321
+      },
+      {
+        "callee": "scanRegularStringBody",
+        "line": 325
+      }
+    ]
+  },
+  "source": {
+    "text": "  private scanRegularOrRawString(): void {\n    const sl = this.line;\n    const sc = this.col;\n    // raw string: 3+ opening `\"`s (C# 11). Count the opening run (advancing pos); close with the same count.\n    let quoteRun = 0;\n    while (this.peek() === '\"') {\n      quoteRun++;\n      this.advance();\n    }\n    if (quoteRun >= 3) {\n      this.scanRawStringBody(quoteRun, sl, sc); // opening run already consumed\n      return;\n    }\n    if (quoteRun === 2) {\n      this.emit('STRING', '\"\"', sl, sc); // empty regular string\n      return;\n    }\n    // quoteRun === 1: opening `\"` consumed; scan the body.\n    this.scanRegularStringBody(sl, sc);\n  }",
+    "truncated": false,
+    "totalLines": 20,
+    "startLine": 307
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.tokens@L223",
+      "confidence": 1,
+      "name": "tokens",
+      "qualifiedName": "Lexer.tokens",
+      "signature": "tokens(): Token[]",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/lexer.ts",
+      "line": 223
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.advance@L625",
+      "confidence": 1,
+      "name": "advance",
+      "qualifiedName": "Lexer.advance",
+      "signature": "advance(): void",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/lexer.ts",
+      "line": 625
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.emit@L636",
+      "confidence": 1,
+      "name": "emit",
+      "qualifiedName": "Lexer.emit",
+      "signature": "emit(type: TokenType, value: string, line: number, col: number): void",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/lexer.ts",
+      "line": 636
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.peek@L614",
+      "confidence": 1,
+      "name": "peek",
+      "qualifiedName": "Lexer.peek",
+      "signature": "peek(offset = 0): string",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/lexer.ts",
+      "line": 614
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.scanRawStringBody@L523",
+      "confidence": 1,
+      "name": "scanRawStringBody",
+      "qualifiedName": "Lexer.scanRawStringBody",
+      "signature": "scanRawStringBody(quoteCount: number, sl: number, sc: number): void",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/lexer.ts",
+      "line": 523
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.scanRegularStringBody@L329",
+      "confidence": 1,
+      "name": "scanRegularStringBody",
+      "qualifiedName": "Lexer.scanRegularStringBody",
+      "signature": "scanRegularStringBody(sl: number, sc: number): void",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/lexer.ts",
+      "line": 329
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/csharp/lexer.ts@L306",
+      "snippet": "/** Regular `\"...\"` or raw `\"\"\"...\"\"\"` (C# 11). Dispatched when the current char is `\"`. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.scanRegularOrRawString@L307",
+    "procedureName": "Lexer.scanRegularOrRawString",
+    "conditions": [
+      "cond:packages/parsers/src/csharp/lexer.ts@L312",
+      "cond:packages/parsers/src/csharp/lexer.ts@L316",
+      "cond:packages/parsers/src/csharp/lexer.ts@L320"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.scanRegularOrRawString@L307",
+        "procedureName": "Lexer.scanRegularOrRawString",
+        "guard": "cond:packages/parsers/src/csharp/lexer.ts@L312",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/lexer.ts@L312",
+            "expr": "this.peek() === '\"'",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:ba423fc11ed4b90e9d84f8f1fee99410d43984c5b4fb26b34819cc59008b24df",
+          "target": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.advance@L625",
+          "expr": "advance",
+          "line": 314
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.scanRegularOrRawString@L307",
+        "procedureName": "Lexer.scanRegularOrRawString",
+        "guard": "cond:packages/parsers/src/csharp/lexer.ts@L312",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/lexer.ts@L312",
+            "expr": "this.peek() === '\"'",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ed1f7b37bd82ef4b66bf4f6d9766ae85eba60a7349ac47269c090449cc202ec6",
+          "target": "stmt:packages/parsers/src/csharp/lexer.ts@L314",
+          "line": 314,
+          "expr": "this.advance();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.scanRegularOrRawString@L307",
+        "procedureName": "Lexer.scanRegularOrRawString",
+        "guard": "cond:packages/parsers/src/csharp/lexer.ts@L316",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/lexer.ts@L316",
+            "expr": "quoteRun >= 3",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:b714ab1a13dc3b5331d2aa4ef9a98e1938af8c5b970e6e5ab16b1160f60bc798",
+          "target": "stmt:packages/parsers/src/csharp/lexer.ts@L317",
+          "line": 317,
+          "expr": "this.scanRawStringBody(quoteRun, sl, sc);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.scanRegularOrRawString@L307",
+        "procedureName": "Lexer.scanRegularOrRawString",
+        "guard": "cond:packages/parsers/src/csharp/lexer.ts@L316",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/lexer.ts@L316",
+            "expr": "quoteRun >= 3",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:dadd74f141ab96fdca98fff1f14655c7feb7976ed7196c9aabd1f69f5d81cad5",
+          "target": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.scanRawStringBody@L523",
+          "expr": "scanRawStringBody",
+          "line": 317
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.scanRegularOrRawString@L307",
+        "procedureName": "Lexer.scanRegularOrRawString",
+        "guard": "cond:packages/parsers/src/csharp/lexer.ts@L316",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/lexer.ts@L316",
+            "expr": "quoteRun >= 3",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6a938d6d473caa40bdead27a2e4a9e8944f6ae12e0b527628c4c8d449b016dab",
+          "target": "stmt:packages/parsers/src/csharp/lexer.ts@L318",
+          "line": 318,
+          "expr": "return;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.scanRegularOrRawString@L307",
+        "procedureName": "Lexer.scanRegularOrRawString",
+        "guard": "cond:packages/parsers/src/csharp/lexer.ts@L320",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/lexer.ts@L320",
+            "expr": "quoteRun === 2",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:20edb135bd9c3db6d17cddf98035f50ed55bd7882d877d577c9a4a0054b8188c",
+          "target": "stmt:packages/parsers/src/csharp/lexer.ts@L321",
+          "line": 321,
+          "expr": "this.emit('STRING', '\"\"', sl, sc);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.scanRegularOrRawString@L307",
+        "procedureName": "Lexer.scanRegularOrRawString",
+        "guard": "cond:packages/parsers/src/csharp/lexer.ts@L320",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/lexer.ts@L320",
+            "expr": "quoteRun === 2",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:5d29e957c255238a7048d6d6d1f0519e85737348b6f6c447bd4140b9b4f1cac6",
+          "target": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.emit@L636",
+          "expr": "emit",
+          "line": 321
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.scanRegularOrRawString@L307",
+        "procedureName": "Lexer.scanRegularOrRawString",
+        "guard": "cond:packages/parsers/src/csharp/lexer.ts@L320",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/csharp/lexer.ts@L320",
+            "expr": "quoteRun === 2",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:10a5aef4db38e4d84996a81342f03780a2b29b261991c37d7d2eb57788c44e22",
+          "target": "stmt:packages/parsers/src/csharp/lexer.ts@L322",
+          "line": 322,
+          "expr": "return;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.scanRegularOrRawString@L307",
+        "procedureName": "Lexer.scanRegularOrRawString",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:ac7144238231a969f92b92f48ca881a54bc9ca58eb7025ec2d065a7aba90ba71",
+          "target": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.scanRegularStringBody@L329",
+          "expr": "scanRegularStringBody",
+          "line": 325
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.scanRegularOrRawString@L307",
+        "procedureName": "Lexer.scanRegularOrRawString",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:be47c1ebf1801c77abdbea25c939161c8ecab660fd7f96d2d5b2a8482c853e77",
+          "target": "stmt:packages/parsers/src/csharp/lexer.ts@L325",
+          "line": 325,
+          "expr": "this.scanRegularStringBody(sl, sc);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.scanRegularOrRawString@L307",
+        "procedureName": "Lexer.scanRegularOrRawString",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:9a27ddc614e251d1e9837edbde4ba132e17b221874150dde356f65f815cb52a8",
+          "target": "sym:packages/parsers/src/csharp/lexer.ts#Lexer.peek@L614",
+          "expr": "peek"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 6,
+    "referencedByFiles": [
+      "packages/parsers/src/csharp/lexer.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 6,
+    "assignments": 0,
+    "conditions": 3,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 5,
+      "recorded": 4,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

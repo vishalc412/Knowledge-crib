@@ -1,0 +1,128 @@
+{
+  "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.walkMethod@L450",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:394fc879d054226999766f5270b185c6491097567928ae10223f387fd7462e75",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.walkMethod@L450",
+    "kind": "symbol",
+    "type": "method",
+    "name": "walkMethod",
+    "qualifiedName": "BodyWalker.walkMethod",
+    "signature": "walkMethod(stmts: CsharpStmt[], procId: string): void",
+    "lang": "typescript",
+    "file": "packages/parsers/src/csharp/CsharpExtractor.ts",
+    "span": {
+      "start": 450,
+      "end": 457
+    },
+    "callSites": [
+      {
+        "callee": "walkBody",
+        "line": 451
+      }
+    ]
+  },
+  "source": {
+    "text": "  walkMethod(stmts: CsharpStmt[], procId: string): void {\n    this.walkBody(stmts, procId, {\n      guardStack: [],\n      inLoop: false,\n      inException: false,\n      branch: undefined,\n    });\n  }",
+    "truncated": false,
+    "totalLines": 8,
+    "startLine": 450
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#CsharpExtractor.parse@L97",
+      "confidence": 1,
+      "name": "parse",
+      "qualifiedName": "CsharpExtractor.parse",
+      "signature": "parse(path: string, fileId: string, text: string, ctx: ExtractCtx): ExtractResult",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/CsharpExtractor.ts",
+      "line": 97
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.walkBody@L459",
+      "confidence": 1,
+      "name": "walkBody",
+      "qualifiedName": "BodyWalker.walkBody",
+      "signature": "walkBody(stmts: CsharpStmt[], procId: string, env: WalkEnv): void",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/CsharpExtractor.ts",
+      "line": 459
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/csharp/CsharpExtractor.ts@L449",
+      "snippet": "/** Walk one method body at procedure top level (empty guard stack, no loop, no exception). */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.walkMethod@L450",
+    "procedureName": "BodyWalker.walkMethod",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.walkMethod@L450",
+        "procedureName": "BodyWalker.walkMethod",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:039e1657cae6d86d375df4de0d625b8add2aaf38c78f825b8f724ce6459e7810",
+          "target": "stmt:packages/parsers/src/csharp/CsharpExtractor.ts@L451",
+          "line": 451,
+          "expr": "this.walkBody(stmts, procId, {\n      guardStack: [],\n      inLoop: false,\n      inException: false,\n      branch: undefined,\n    });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.walkMethod@L450",
+        "procedureName": "BodyWalker.walkMethod",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:5b0db1f266cbd2b142d91ddb5e88a2f435817ded1c5250fd55c9f37976c4eb3d",
+          "target": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.walkBody@L459",
+          "expr": "walkBody",
+          "line": 451
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/parsers/src/csharp/CsharpExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

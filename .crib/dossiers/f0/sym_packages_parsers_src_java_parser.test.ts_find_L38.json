@@ -1,0 +1,1174 @@
+{
+  "id": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:e7aef0a05b05388bceb0b95ea7edf89b043bd7522c6204776285be400648fe24",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
+    "kind": "symbol",
+    "type": "function",
+    "name": "find",
+    "qualifiedName": "find",
+    "signature": "find(…)",
+    "lang": "typescript",
+    "file": "packages/parsers/src/java/parser.test.ts",
+    "span": {
+      "start": 38,
+      "end": 45
+    },
+    "recursive": true,
+    "callSites": [
+      {
+        "callee": "find",
+        "line": 41
+      }
+    ]
+  },
+  "source": {
+    "text": "const find = (defs: JavaDef[], name: string): JavaDef | undefined => {\n  for (const d of defs) {\n    if (d.name === name) return d;\n    const nested = find(d.body, name);\n    if (nested) return nested;\n  }\n  return undefined;\n};",
+    "truncated": false,
+    "totalLines": 8,
+    "startLine": 38
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/go/GoExtractor.ts#GoExtractor.parse.attachComment@L186",
+      "confidence": 1,
+      "name": "attachComment",
+      "qualifiedName": "GoExtractor.parse.attachComment",
+      "signature": "attachComment(…)",
+      "type": "function",
+      "file": "packages/parsers/src/go/GoExtractor.ts",
+      "line": 186
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.parse.attachComment@L116",
+      "confidence": 1,
+      "name": "attachComment",
+      "qualifiedName": "RustExtractor.parse.attachComment",
+      "signature": "attachComment(…)",
+      "type": "function",
+      "file": "packages/parsers/src/rust/RustExtractor.ts",
+      "line": 116
+    },
+    {
+      "id": "sym:packages/parsers/src/mule/munit.ts#attr@L162",
+      "confidence": 1,
+      "name": "attr",
+      "qualifiedName": "attr",
+      "signature": "attr(el: MuleXmlElement, local: string): string | undefined",
+      "type": "function",
+      "file": "packages/parsers/src/mule/munit.ts",
+      "line": 162
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.test.ts#authorArtifact@L3258",
+      "confidence": 1,
+      "name": "authorArtifact",
+      "qualifiedName": "authorArtifact",
+      "signature": "authorArtifact(layer: 'symbol' | 'file' | 'cluster', targetId: string, purpose: string)",
+      "type": "function",
+      "file": "packages/mcp/src/verbs.test.ts",
+      "line": 3258
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.test.ts#authorMany@L3806",
+      "confidence": 1,
+      "name": "authorMany",
+      "qualifiedName": "authorMany",
+      "signature": "authorMany(count: number)",
+      "type": "function",
+      "file": "packages/mcp/src/verbs.test.ts",
+      "line": 3806
+    },
+    {
+      "id": "sym:packages/mcp/src/verbs.test.ts#authorOne@L3947",
+      "confidence": 1,
+      "name": "authorOne",
+      "qualifiedName": "authorOne",
+      "signature": "authorOne(): boolean",
+      "type": "function",
+      "file": "packages/mcp/src/verbs.test.ts",
+      "line": 3947
+    },
+    {
+      "id": "sym:packages/parsers/src/java/parser.test.ts#bodyOf@L488",
+      "confidence": 1,
+      "name": "bodyOf",
+      "qualifiedName": "bodyOf",
+      "signature": "bodyOf(…)",
+      "type": "function",
+      "file": "packages/parsers/src/java/parser.test.ts",
+      "line": 488
+    },
+    {
+      "id": "sym:packages/parsers/src/mule/mule4.ts#buildErrorHandlers@L164",
+      "confidence": 1,
+      "name": "buildErrorHandlers",
+      "qualifiedName": "buildErrorHandlers",
+      "signature": "buildErrorHandlers(el: MuleXmlElement): MuleErrorHandler[]",
+      "type": "function",
+      "file": "packages/parsers/src/mule/mule4.ts",
+      "line": 164
+    },
+    {
+      "id": "sym:packages/parsers/src/fuzz/fuzz-worker.ts#buildExtractor@L76",
+      "confidence": 1,
+      "name": "buildExtractor",
+      "qualifiedName": "buildExtractor",
+      "signature": "buildExtractor(name: string): Extractor | null",
+      "type": "function",
+      "file": "packages/parsers/src/fuzz/fuzz-worker.ts",
+      "line": 76
+    },
+    {
+      "id": "sym:scripts/build-installers.mjs#buildInstallers@L227",
+      "confidence": 1,
+      "name": "buildInstallers",
+      "qualifiedName": "buildInstallers",
+      "signature": "buildInstallers({ outRoot = join(repoRoot, 'dist', 'installers') } = {})",
+      "type": "function",
+      "file": "scripts/build-installers.mjs",
+      "line": 227
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/http-client.test.ts#callsEdges@L45",
+      "confidence": 1,
+      "name": "callsEdges",
+      "qualifiedName": "callsEdges",
+      "signature": "callsEdges(…)",
+      "type": "function",
+      "file": "packages/parsers/src/ts/http-client.test.ts",
+      "line": 45
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/http-client.test.ts#callsEdges.nameOf@L47",
+      "confidence": 1,
+      "name": "nameOf",
+      "qualifiedName": "callsEdges.nameOf",
+      "signature": "nameOf(…)",
+      "type": "function",
+      "file": "packages/parsers/src/ts/http-client.test.ts",
+      "line": 47
+    },
+    {
+      "id": "sym:packages/parsers/src/java/spring.ts#classMappingPath@L360",
+      "confidence": 1,
+      "name": "classMappingPath",
+      "qualifiedName": "classMappingPath",
+      "signature": "classMappingPath(def: JavaDef): string",
+      "type": "function",
+      "file": "packages/parsers/src/java/spring.ts",
+      "line": 360
+    },
+    {
+      "id": "sym:packages/parsers/src/fuzz/fuzz-worker.ts#classificationFor@L94",
+      "confidence": 1,
+      "name": "classificationFor",
+      "qualifiedName": "classificationFor",
+      "signature": "classificationFor(name: string): FileClassification | undefined",
+      "type": "function",
+      "file": "packages/parsers/src/fuzz/fuzz-worker.ts",
+      "line": 94
+    },
+    {
+      "id": "sym:packages/pipeline/src/mule/classify.ts#classifyMuleFiles@L168",
+      "confidence": 1,
+      "name": "classifyMuleFiles",
+      "qualifiedName": "classifyMuleFiles",
+      "signature": "classifyMuleFiles(files: FileMeta[], textByPath: ReadonlyMap<string, string>): MuleClassificationResult",
+      "type": "function",
+      "file": "packages/pipeline/src/mule/classify.ts",
+      "line": 168
+    },
+    {
+      "id": "sym:packages/cli/src/adapters.ts#clientAdapter@L167",
+      "confidence": 1,
+      "name": "clientAdapter",
+      "qualifiedName": "clientAdapter",
+      "signature": "clientAdapter(id: ClientId): ClientAdapter",
+      "type": "function",
+      "file": "packages/cli/src/adapters.ts",
+      "line": 167
+    },
+    {
+      "id": "sym:packages/parsers/src/mule/mule3.ts#collectErrorHandlers@L225",
+      "confidence": 1,
+      "name": "collectErrorHandlers",
+      "qualifiedName": "collectErrorHandlers",
+      "signature": "collectErrorHandlers(el: MuleXmlElement, diagnostics: ExtractDiagnostic[]): MuleErrorHandler[]",
+      "type": "function",
+      "file": "packages/parsers/src/mule/mule3.ts",
+      "line": 225
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/nest.ts#columnMetaOf@L457",
+      "confidence": 1,
+      "name": "columnMetaOf",
+      "qualifiedName": "columnMetaOf",
+      "signature": "columnMetaOf(pDecs: ts.Decorator[], names: Set<string>): Record<string, unknown> | undefined",
+      "type": "function",
+      "file": "packages/parsers/src/ts/nest.ts",
+      "line": 457
+    },
+    {
+      "id": "sym:packages/parsers/src/java/spring.ts#columnMetaOf@L483",
+      "confidence": 1,
+      "name": "columnMetaOf",
+      "qualifiedName": "columnMetaOf",
+      "signature": "columnMetaOf(def: JavaDef): Record<string, unknown> | undefined",
+      "type": "function",
+      "file": "packages/parsers/src/java/spring.ts",
+      "line": 483
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/nest.ts#controllerBasePath@L341",
+      "confidence": 1,
+      "name": "controllerBasePath",
+      "qualifiedName": "controllerBasePath",
+      "signature": "controllerBasePath(classDecs: ts.Decorator[]): string",
+      "type": "function",
+      "file": "packages/parsers/src/ts/nest.ts",
+      "line": 341
+    },
+    {
+      "id": "sym:scripts/crib-self-hosted-e2e.mjs#decode@L150",
+      "confidence": 1,
+      "name": "decode",
+      "qualifiedName": "decode",
+      "signature": "decode(result)",
+      "type": "function",
+      "file": "scripts/crib-self-hosted-e2e.mjs",
+      "line": 150
+    },
+    {
+      "id": "sym:packages/parsers/src/fuzz/fuzz-worker.ts#extFor@L83",
+      "confidence": 1,
+      "name": "extFor",
+      "qualifiedName": "extFor",
+      "signature": "extFor(name: string): string",
+      "type": "function",
+      "file": "packages/parsers/src/fuzz/fuzz-worker.ts",
+      "line": 83
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/nest.ts#extractNestSemantics@L104",
+      "confidence": 1,
+      "name": "extractNestSemantics",
+      "qualifiedName": "extractNestSemantics",
+      "signature": "extractNestSemantics(input: NestPassInput): void",
+      "type": "function",
+      "file": "packages/parsers/src/ts/nest.ts",
+      "line": 104
+    },
+    {
+      "id": "sym:packages/parsers/src/java/spring.ts#extractSpringSemantics@L100",
+      "confidence": 1,
+      "name": "extractSpringSemantics",
+      "qualifiedName": "extractSpringSemantics",
+      "signature": "extractSpringSemantics(input: SpringPassInput): void",
+      "type": "function",
+      "file": "packages/parsers/src/java/spring.ts",
+      "line": 100
+    },
+    {
+      "id": "sym:packages/memory/src/evaluator.test.ts#fakeSoul@L61",
+      "confidence": 1,
+      "name": "fakeSoul",
+      "qualifiedName": "fakeSoul",
+      "signature": "fakeSoul(opts: FakeSoulOpts = {}): MemorySoulPort",
+      "type": "function",
+      "file": "packages/memory/src/evaluator.test.ts",
+      "line": 61
+    },
+    {
+      "id": "sym:packages/pipeline/src/cluster/cluster.ts#fallbackQualifiedName@L185",
+      "confidence": 1,
+      "name": "fallbackQualifiedName",
+      "qualifiedName": "fallbackQualifiedName",
+      "signature": "fallbackQualifiedName(members: string[], idxOf: Map<string, number>, degreeByNode: Float64Array, soul: SoulStore, slug: string): string",
+      "type": "function",
+      "file": "packages/pipeline/src/cluster/cluster.ts",
+      "line": 185
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/python-resolver.test.ts#famOf@L161",
+      "confidence": 1,
+      "name": "famOf",
+      "qualifiedName": "famOf",
+      "signature": "famOf(…)",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/python-resolver.test.ts",
+      "line": 161
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/sql-resolver.test.ts#famOf@L117",
+      "confidence": 1,
+      "name": "famOf",
+      "qualifiedName": "famOf",
+      "signature": "famOf(…)",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/sql-resolver.test.ts",
+      "line": 117
+    },
+    {
+      "id": "sym:packages/core/src/federation.ts#federatedImpact@L106",
+      "confidence": 1,
+      "name": "federatedImpact",
+      "qualifiedName": "federatedImpact",
+      "signature": "federatedImpact(fed: Federation, startRoot: string, id: string, dir: Dir, opts: { depth?: number; limit?: number; extractedOnly?: boolean } = {}): FederatedImpactResult",
+      "type": "function",
+      "file": "packages/core/src/federation.ts",
+      "line": 106
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/nest.ts#findDecBy@L347",
+      "confidence": 1,
+      "name": "findDecBy",
+      "qualifiedName": "findDecBy",
+      "signature": "findDecBy(node: ts.Node, names: Record<string, unknown>): ts.Decorator | undefined",
+      "type": "function",
+      "file": "packages/parsers/src/ts/nest.ts",
+      "line": 347
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/csharp-resolver.ts#findFileBySuffix@L253",
+      "confidence": 1,
+      "name": "findFileBySuffix",
+      "qualifiedName": "findFileBySuffix",
+      "signature": "findFileBySuffix(module: string, name: string, parsed: readonly ParsedFile[]): string | undefined",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/csharp-resolver.ts",
+      "line": 253
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/java-resolver.ts#findFileBySuffix@L278",
+      "confidence": 1,
+      "name": "findFileBySuffix",
+      "qualifiedName": "findFileBySuffix",
+      "signature": "findFileBySuffix(module: string, name: string, parsed: readonly ParsedFile[]): string | undefined",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/java-resolver.ts",
+      "line": 278
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/nest.ts#firstStringArg@L592",
+      "confidence": 1,
+      "name": "firstStringArg",
+      "qualifiedName": "firstStringArg",
+      "signature": "firstStringArg(d: ts.Decorator): string | undefined",
+      "type": "function",
+      "file": "packages/parsers/src/ts/nest.ts",
+      "line": 592
+    },
+    {
+      "id": "sym:packages/mcp/src/enrichment.ts#groundingCandidates@L2509",
+      "confidence": 1,
+      "name": "groundingCandidates",
+      "qualifiedName": "groundingCandidates",
+      "signature": "groundingCandidates(symbols: Node[], repoRoot: string, max = 4): Array<{ soulId: string; quote: string }>",
+      "type": "function",
+      "file": "packages/mcp/src/enrichment.ts",
+      "line": 2509
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/python-resolver.test.ts#label@L243",
+      "confidence": 1,
+      "name": "label",
+      "qualifiedName": "label",
+      "signature": "label(soul: SoulStore, id: string): string",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/python-resolver.test.ts",
+      "line": 243
+    },
+    {
+      "id": "sym:packages/parsers/src/go/GoExtractor.test.ts#label@L48",
+      "confidence": 1,
+      "name": "label",
+      "qualifiedName": "label",
+      "signature": "label(r: ExtractResult): (id: string) => string",
+      "type": "function",
+      "file": "packages/parsers/src/go/GoExtractor.test.ts",
+      "line": 48
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/sql-resolver.test.ts#label@L202",
+      "confidence": 1,
+      "name": "label",
+      "qualifiedName": "label",
+      "signature": "label(soul: SoulStore, id: string): string",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/sql-resolver.test.ts",
+      "line": 202
+    },
+    {
+      "id": "sym:packages/parsers/src/python/PythonExtractor.test.ts#label@L34",
+      "confidence": 1,
+      "name": "label",
+      "qualifiedName": "label",
+      "signature": "label(r: ExtractResult): (id: string) => string",
+      "type": "function",
+      "file": "packages/parsers/src/python/PythonExtractor.test.ts",
+      "line": 34
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/express.test.ts#label@L35",
+      "confidence": 1,
+      "name": "label",
+      "qualifiedName": "label",
+      "signature": "label(r: ExtractResult): (id: string) => string",
+      "type": "function",
+      "file": "packages/parsers/src/ts/express.test.ts",
+      "line": 35
+    },
+    {
+      "id": "sym:packages/parsers/src/java/JavaExtractor.test.ts#label@L34",
+      "confidence": 1,
+      "name": "label",
+      "qualifiedName": "label",
+      "signature": "label(r: ExtractResult): (id: string) => string",
+      "type": "function",
+      "file": "packages/parsers/src/java/JavaExtractor.test.ts",
+      "line": 34
+    },
+    {
+      "id": "sym:packages/parsers/src/java/spring.test.ts#label@L36",
+      "confidence": 1,
+      "name": "label",
+      "qualifiedName": "label",
+      "signature": "label(r: ExtractResult): (id: string) => string",
+      "type": "function",
+      "file": "packages/parsers/src/java/spring.test.ts",
+      "line": 36
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/RustExtractor.test.ts#label@L36",
+      "confidence": 1,
+      "name": "label",
+      "qualifiedName": "label",
+      "signature": "label(r: ExtractResult): (id: string) => string",
+      "type": "function",
+      "file": "packages/parsers/src/rust/RustExtractor.test.ts",
+      "line": 36
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/react.test.ts#label@L36",
+      "confidence": 1,
+      "name": "label",
+      "qualifiedName": "label",
+      "signature": "label(r: ExtractResult): (id: string) => string",
+      "type": "function",
+      "file": "packages/parsers/src/ts/react.test.ts",
+      "line": 36
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/rust-resolver.test.ts#label@L161",
+      "confidence": 1,
+      "name": "label",
+      "qualifiedName": "label",
+      "signature": "label(soul: SoulStore, id: string): string",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/rust-resolver.test.ts",
+      "line": 161
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/CsharpExtractor.test.ts#label@L50",
+      "confidence": 1,
+      "name": "label",
+      "qualifiedName": "label",
+      "signature": "label(r: ExtractResult): (id: string) => string",
+      "type": "function",
+      "file": "packages/parsers/src/csharp/CsharpExtractor.test.ts",
+      "line": 50
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/go-resolver.test.ts#label@L138",
+      "confidence": 1,
+      "name": "label",
+      "qualifiedName": "label",
+      "signature": "label(soul: SoulStore, id: string): string",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/go-resolver.test.ts",
+      "line": 138
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/nest.test.ts#label@L36",
+      "confidence": 1,
+      "name": "label",
+      "qualifiedName": "label",
+      "signature": "label(r: ExtractResult): (id: string) => string",
+      "type": "function",
+      "file": "packages/parsers/src/ts/nest.test.ts",
+      "line": 36
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/java-resolver.test.ts#label@L226",
+      "confidence": 1,
+      "name": "label",
+      "qualifiedName": "label",
+      "signature": "label(soul: SoulStore, id: string): string",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/java-resolver.test.ts",
+      "line": 226
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/csharp-resolver.test.ts#label@L166",
+      "confidence": 1,
+      "name": "label",
+      "qualifiedName": "label",
+      "signature": "label(soul: SoulStore, id: string): string",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/csharp-resolver.test.ts",
+      "line": 166
+    },
+    {
+      "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.test.ts#labeler@L31",
+      "confidence": 1,
+      "name": "labeler",
+      "qualifiedName": "labeler",
+      "signature": "labeler(r: ExtractResult): (id: string) => string",
+      "type": "function",
+      "file": "packages/parsers/src/plsql/PlSqlExtractor.test.ts",
+      "line": 31
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/CsharpExtractor.test.ts#lbl@L293",
+      "confidence": 1,
+      "name": "lbl",
+      "qualifiedName": "lbl",
+      "signature": "lbl(…)",
+      "type": "function",
+      "file": "packages/parsers/src/csharp/CsharpExtractor.test.ts",
+      "line": 293
+    },
+    {
+      "id": "sym:scripts/crib-self-hosted-e2e.mjs#main@L165",
+      "confidence": 1,
+      "name": "main",
+      "qualifiedName": "main",
+      "signature": "main()",
+      "type": "function",
+      "file": "scripts/crib-self-hosted-e2e.mjs",
+      "line": 165
+    },
+    {
+      "id": "sym:scripts/eval/harness.mjs#main@L325",
+      "confidence": 1,
+      "name": "main",
+      "qualifiedName": "main",
+      "signature": "main()",
+      "type": "function",
+      "file": "scripts/eval/harness.mjs",
+      "line": 325
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/react.test.ts#metaHooks@L65",
+      "confidence": 1,
+      "name": "metaHooks",
+      "qualifiedName": "metaHooks",
+      "signature": "metaHooks(…)",
+      "type": "function",
+      "file": "packages/parsers/src/ts/react.test.ts",
+      "line": 65
+    },
+    {
+      "id": "sym:packages/parsers/src/java/spring.test.ts#metaInjects@L100",
+      "confidence": 1,
+      "name": "metaInjects",
+      "qualifiedName": "metaInjects",
+      "signature": "metaInjects(…)",
+      "type": "function",
+      "file": "packages/parsers/src/java/spring.test.ts",
+      "line": 100
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/nest.test.ts#metaInjects@L94",
+      "confidence": 1,
+      "name": "metaInjects",
+      "qualifiedName": "metaInjects",
+      "signature": "metaInjects(…)",
+      "type": "function",
+      "file": "packages/parsers/src/ts/nest.test.ts",
+      "line": 94
+    },
+    {
+      "id": "sym:packages/parsers/src/java/spring.test.ts#metaProduces@L88",
+      "confidence": 1,
+      "name": "metaProduces",
+      "qualifiedName": "metaProduces",
+      "signature": "metaProduces(…)",
+      "type": "function",
+      "file": "packages/parsers/src/java/spring.test.ts",
+      "line": 88
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/nest.test.ts#metaProduces@L88",
+      "confidence": 1,
+      "name": "metaProduces",
+      "qualifiedName": "metaProduces",
+      "signature": "metaProduces(…)",
+      "type": "function",
+      "file": "packages/parsers/src/ts/nest.test.ts",
+      "line": 88
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/react.test.ts#metaRenders@L59",
+      "confidence": 1,
+      "name": "metaRenders",
+      "qualifiedName": "metaRenders",
+      "signature": "metaRenders(…)",
+      "type": "function",
+      "file": "packages/parsers/src/ts/react.test.ts",
+      "line": 59
+    },
+    {
+      "id": "sym:packages/parsers/src/java/JavaExtractor.ts#methodInEnclosingClass@L423",
+      "confidence": 1,
+      "name": "methodInEnclosingClass",
+      "qualifiedName": "methodInEnclosingClass",
+      "signature": "methodInEnclosingClass(line: number, name: string, symbols: LocalSymbol[]): string | undefined",
+      "type": "function",
+      "file": "packages/parsers/src/java/JavaExtractor.ts",
+      "line": 423
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#methodInEnclosingClass@L395",
+      "confidence": 1,
+      "name": "methodInEnclosingClass",
+      "qualifiedName": "methodInEnclosingClass",
+      "signature": "methodInEnclosingClass(line: number, name: string, symbols: LocalSymbol[]): string | undefined",
+      "type": "function",
+      "file": "packages/parsers/src/csharp/CsharpExtractor.ts",
+      "line": 395
+    },
+    {
+      "id": "sym:packages/memory/src/migrations.ts#migrateMemoryRecord@L60",
+      "confidence": 1,
+      "name": "migrateMemoryRecord",
+      "qualifiedName": "migrateMemoryRecord",
+      "signature": "migrateMemoryRecord(raw: Record<string, unknown>, fromVersion: string): Record<string, unknown>",
+      "type": "function",
+      "file": "packages/memory/src/migrations.ts",
+      "line": 60
+    },
+    {
+      "id": "sym:packages/core/src/functional-map.ts#moduleName@L315",
+      "confidence": 1,
+      "name": "moduleName",
+      "qualifiedName": "moduleName",
+      "signature": "moduleName(pathPrefix: string, packages: WorkspacePackage[], source: 'workspace' | 'directory'): string",
+      "type": "function",
+      "file": "packages/core/src/functional-map.ts",
+      "line": 315
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/nest.ts#moduleProviders@L372",
+      "confidence": 1,
+      "name": "moduleProviders",
+      "qualifiedName": "moduleProviders",
+      "signature": "moduleProviders(modDec: ts.Decorator | undefined): string[]",
+      "type": "function",
+      "file": "packages/parsers/src/ts/nest.ts",
+      "line": 372
+    },
+    {
+      "id": "sym:packages/parsers/src/mule/mule3.ts#normalizeMule3@L265",
+      "confidence": 1,
+      "name": "normalizeMule3",
+      "qualifiedName": "normalizeMule3",
+      "signature": "normalizeMule3(doc: MuleXmlDocument): Mule3Document",
+      "type": "function",
+      "file": "packages/parsers/src/mule/mule3.ts",
+      "line": 265
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/nest.ts#paramDepType@L353",
+      "confidence": 1,
+      "name": "paramDepType",
+      "qualifiedName": "paramDepType",
+      "signature": "paramDepType(p: ts.ParameterDeclaration): string | undefined",
+      "type": "function",
+      "file": "packages/parsers/src/ts/nest.ts",
+      "line": 353
+    },
+    {
+      "id": "sym:packages/parsers/src/md/MarkdownExtractor.test.ts#parentOf@L43",
+      "confidence": 1,
+      "name": "parentOf",
+      "qualifiedName": "parentOf",
+      "signature": "parentOf(…)",
+      "type": "function",
+      "file": "packages/parsers/src/md/MarkdownExtractor.test.ts",
+      "line": 43
+    },
+    {
+      "id": "sym:packages/parsers/src/mule/mule4.ts#parseMule4@L186",
+      "confidence": 1,
+      "name": "parseMule4",
+      "qualifiedName": "parseMule4",
+      "signature": "parseMule4(xml: string): Mule4Document",
+      "type": "function",
+      "file": "packages/parsers/src/mule/mule4.ts",
+      "line": 186
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/sql-resolver.ts#resolveCallee@L163",
+      "confidence": 1,
+      "name": "resolveCallee",
+      "qualifiedName": "resolveCallee",
+      "signature": "resolveCallee(callee: string, callerFile: string, byQualified: Map<string, string>, bySimple: Map<string, { id: string; file: string }[]>): string | undefined",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/sql-resolver.ts",
+      "line": 163
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/plsql-cfg.ts#resolveCallee@L78",
+      "confidence": 1,
+      "name": "resolveCallee",
+      "qualifiedName": "resolveCallee",
+      "signature": "resolveCallee(callee: string, callerFile: string, byQualified: Map<string, string>, bySimple: Map<string, { id: string; file: string }[]>): string | undefined",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/plsql-cfg.ts",
+      "line": 78
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/signals.ts#resolveCandidates@L190",
+      "confidence": 1,
+      "name": "resolveCandidates",
+      "qualifiedName": "resolveCandidates",
+      "signature": "resolveCandidates(docFile: string, pathPart: string): string[]",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/signals.ts",
+      "line": 190
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/go-resolver.ts#resolveGo@L50",
+      "confidence": 1,
+      "name": "resolveGo",
+      "qualifiedName": "resolveGo",
+      "signature": "resolveGo(table: SymbolTable, root: string, files: FileMeta[]): { edges: Edge[]; stats: ResolveStats }",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/go-resolver.ts",
+      "line": 50
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/go-resolver.ts#resolveGo.firstTopInPkg@L107",
+      "confidence": 1,
+      "name": "firstTopInPkg",
+      "qualifiedName": "resolveGo.firstTopInPkg",
+      "signature": "firstTopInPkg(…)",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/go-resolver.ts",
+      "line": 107
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/python-resolver.ts#resolveModule@L264",
+      "confidence": 1,
+      "name": "resolveModule",
+      "qualifiedName": "resolveModule",
+      "signature": "resolveModule(fromPath: string, spec: string, relative: number, table: SymbolTable): string | undefined",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/python-resolver.ts",
+      "line": 264
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/ts-resolver.ts#resolveModule@L179",
+      "confidence": 1,
+      "name": "resolveModule",
+      "qualifiedName": "resolveModule",
+      "signature": "resolveModule(fromPath: string, spec: string, table: SymbolTable): string | undefined",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/ts-resolver.ts",
+      "line": 179
+    },
+    {
+      "id": "sym:packages/pipeline/src/workspace.ts#resolvePackageArg@L55",
+      "confidence": 1,
+      "name": "resolvePackageArg",
+      "qualifiedName": "resolvePackageArg",
+      "signature": "resolvePackageArg(root: string, arg: string | undefined, layout: WorkspaceLayout | null): { packageRoots: string[] | undefined; all: boolean; unknown?: string }",
+      "type": "function",
+      "file": "packages/pipeline/src/workspace.ts",
+      "line": 55
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/index.ts#resolveSelfCallee@L169",
+      "confidence": 1,
+      "name": "resolveSelfCallee",
+      "qualifiedName": "resolveSelfCallee",
+      "signature": "resolveSelfCallee(callee: string, callerFile: string, byQualified: Map<string, string>, bySimple: Map<string, { id: string; file: string }[]>): string | undefined",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/index.ts",
+      "line": 169
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/nest.ts#routeParamsOf@L414",
+      "confidence": 1,
+      "name": "routeParamsOf",
+      "qualifiedName": "routeParamsOf",
+      "signature": "routeParamsOf(m: ts.MethodDeclaration): Array<{ name: string; type?: string; in: string }>",
+      "type": "function",
+      "file": "packages/parsers/src/ts/nest.ts",
+      "line": 414
+    },
+    {
+      "id": "sym:packages/parsers/src/java/spring.ts#routeParamsOf@L418",
+      "confidence": 1,
+      "name": "routeParamsOf",
+      "qualifiedName": "routeParamsOf",
+      "signature": "routeParamsOf(m: JavaDef): Array<{ name: string; type?: string; in: string }>",
+      "type": "function",
+      "file": "packages/parsers/src/java/spring.ts",
+      "line": 418
+    },
+    {
+      "id": "sym:packages/parsers/src/fuzz/extractor-fuzz.ts#runFuzz@L148",
+      "confidence": 1,
+      "name": "runFuzz",
+      "qualifiedName": "runFuzz",
+      "signature": "runFuzz(extractorName: string, opts: RunFuzzOpts = {}): Promise<FuzzOutcome>",
+      "type": "function",
+      "file": "packages/parsers/src/fuzz/extractor-fuzz.ts",
+      "line": 148
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/mule-resolver.ts#sameFile@L389",
+      "confidence": 1,
+      "name": "sameFile",
+      "qualifiedName": "sameFile",
+      "signature": "sameFile(node: Node, targetId: string, soul: SoulStore): boolean",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/mule-resolver.ts",
+      "line": 389
+    },
+    {
+      "id": "sym:packages/parsers/src/ts/react.test.ts#tagOf@L44",
+      "confidence": 1,
+      "name": "tagOf",
+      "qualifiedName": "tagOf",
+      "signature": "tagOf(…)",
+      "type": "function",
+      "file": "packages/parsers/src/ts/react.test.ts",
+      "line": 44
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/java/parser.test.ts@L37",
+      "snippet": "/** Find a top-level or nested def by name (first match). */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-changelog-req1-req2.md#what-was-built-2",
+      "heading": "What was built",
+      "anchor": "what-was-built-2",
+      "snippet": "What was built",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.8
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-user-guide.md#9-known-issues-limits",
+      "heading": "9. Known issues & limits",
+      "anchor": "9-known-issues-limits",
+      "snippet": "9. Known issues & limits",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/launch/linkedin-series.md#post-3-the-moat-behavior-depth-grounded-llm-semantics",
+      "heading": "Post 3 — The moat (behavior depth + grounded LLM semantics)",
+      "anchor": "post-3-the-moat-behavior-depth-grounded-llm-semantics",
+      "snippet": "Post 3 — The moat (behavior depth + grounded LLM semantics)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/specs/2026-08-14-mulesoft-first-class-extractor-design.md#14-5-sample-acceptance",
+      "heading": "14.5 Sample acceptance",
+      "anchor": "14-5-sample-acceptance",
+      "snippet": "14.5 Sample acceptance",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:packages/cli/skills/crib-enrich/SKILL.md#not-a-search-command",
+      "heading": "Not a search command",
+      "anchor": "not-a-search-command",
+      "snippet": "Not a search command",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-client-setup.md#crib-mcp-auto-wire-the-ide-configs-req-2",
+      "heading": "`crib mcp` — auto-wire the IDE configs (REQ-2)",
+      "anchor": "crib-mcp-auto-wire-the-ide-configs-req-2",
+      "snippet": "`crib mcp` — auto-wire the IDE configs (REQ-2)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/superpowers/plans/PLAN_MAKE_A_BEATS_B.md#ws-a9-deterministic-self-hosting-crib-eats-its-own-soul",
+      "heading": "WS-A9 — Deterministic self-hosting: crib eats its own soul",
+      "anchor": "ws-a9-deterministic-self-hosting-crib-eats-its-own-soul",
+      "snippet": "WS-A9 — Deterministic self-hosting: crib eats its own soul",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-client-setup.md#2-per-project-setup-do-this-once-per-project-you-want-indexed",
+      "heading": "2. Per-project setup (do this once per project you want indexed)",
+      "anchor": "2-per-project-setup-do-this-once-per-project-you-want-indexed",
+      "snippet": "2. Per-project setup (do this once per project you want indexed)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:CLAUDE.md#never-do",
+      "heading": "Never Do",
+      "anchor": "never-do",
+      "snippet": "Never Do",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:CLAUDE.md#always-do",
+      "heading": "Always Do",
+      "anchor": "always-do",
+      "snippet": "Always Do",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/launch/show-hn.md#body",
+      "heading": "Body",
+      "anchor": "body",
+      "snippet": "Body",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:AGENTS.md#always-do",
+      "heading": "Always Do",
+      "anchor": "always-do",
+      "snippet": "Always Do",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:AGENTS.md#never-do",
+      "heading": "Never Do",
+      "anchor": "never-do",
+      "snippet": "Never Do",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
+    "procedureName": "find",
+    "conditions": [
+      "cond:packages/parsers/src/java/parser.test.ts@L39",
+      "cond:packages/parsers/src/java/parser.test.ts@L40",
+      "cond:packages/parsers/src/java/parser.test.ts@L42"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
+        "procedureName": "find",
+        "guard": "cond:packages/parsers/src/java/parser.test.ts@L40",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.test.ts@L39",
+            "expr": "defs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.test.ts@L40",
+            "expr": "d.name === name",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d70e2a9c4345a0825e1a43567ff5e5014e84b3cffe8acf94bd72bbe80021c8f0",
+          "target": "stmt:packages/parsers/src/java/parser.test.ts@L40",
+          "line": 40,
+          "expr": "return d;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
+        "procedureName": "find",
+        "guard": "cond:packages/parsers/src/java/parser.test.ts@L39",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.test.ts@L39",
+            "expr": "defs",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f0b3eb5db0102a155954de4ba58a4dee65988b1662438abae897f31041a52885",
+          "target": "stmt:packages/parsers/src/java/parser.test.ts@L41",
+          "line": 41,
+          "expr": "const nested = find(d.body, name);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
+        "procedureName": "find",
+        "guard": "cond:packages/parsers/src/java/parser.test.ts@L42",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/java/parser.test.ts@L39",
+            "expr": "defs"
+          },
+          {
+            "id": "cond:packages/parsers/src/java/parser.test.ts@L42",
+            "expr": "nested",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f3035a572aee5ebdb85eef7256eafca3c238da0487ede9f85e156c5ad98bf810",
+          "target": "stmt:packages/parsers/src/java/parser.test.ts@L42",
+          "line": 42,
+          "expr": "return nested;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/java/parser.test.ts#find@L38",
+        "procedureName": "find",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ad7ee68a62cac731dbb683924d4aa3d3d3073e054c83e830a6f2edeb7ec697fb",
+          "target": "stmt:packages/parsers/src/java/parser.test.ts@L44",
+          "line": 44,
+          "expr": "return undefined;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": [
+      "packages/cli/src/adapters.ts",
+      "packages/core/src/federation.ts",
+      "packages/core/src/functional-map.ts",
+      "packages/mcp/src/enrichment.ts",
+      "packages/mcp/src/verbs.test.ts",
+      "packages/memory/src/evaluator.test.ts",
+      "packages/memory/src/migrations.ts",
+      "packages/parsers/src/csharp/CsharpExtractor.test.ts",
+      "packages/parsers/src/csharp/CsharpExtractor.ts",
+      "packages/parsers/src/fuzz/extractor-fuzz.ts",
+      "packages/parsers/src/fuzz/fuzz-worker.ts",
+      "packages/parsers/src/go/GoExtractor.test.ts",
+      "packages/parsers/src/go/GoExtractor.ts",
+      "packages/parsers/src/java/JavaExtractor.test.ts",
+      "packages/parsers/src/java/JavaExtractor.ts",
+      "packages/parsers/src/java/parser.test.ts",
+      "packages/parsers/src/java/spring.test.ts",
+      "packages/parsers/src/java/spring.ts",
+      "packages/parsers/src/md/MarkdownExtractor.test.ts",
+      "packages/parsers/src/mule/mule3.ts",
+      "packages/parsers/src/mule/mule4.ts",
+      "packages/parsers/src/mule/munit.ts",
+      "packages/parsers/src/plsql/PlSqlExtractor.test.ts",
+      "packages/parsers/src/python/PythonExtractor.test.ts",
+      "packages/parsers/src/rust/RustExtractor.test.ts",
+      "packages/parsers/src/rust/RustExtractor.ts",
+      "packages/parsers/src/ts/express.test.ts",
+      "packages/parsers/src/ts/http-client.test.ts",
+      "packages/parsers/src/ts/nest.test.ts",
+      "packages/parsers/src/ts/nest.ts",
+      "packages/parsers/src/ts/react.test.ts",
+      "packages/pipeline/src/cluster/cluster.ts",
+      "packages/pipeline/src/linker/signals.ts",
+      "packages/pipeline/src/mule/classify.ts",
+      "packages/pipeline/src/resolve/csharp-resolver.test.ts",
+      "packages/pipeline/src/resolve/csharp-resolver.ts",
+      "packages/pipeline/src/resolve/go-resolver.test.ts",
+      "packages/pipeline/src/resolve/go-resolver.ts",
+      "packages/pipeline/src/resolve/index.ts",
+      "packages/pipeline/src/resolve/java-resolver.test.ts",
+      "packages/pipeline/src/resolve/java-resolver.ts",
+      "packages/pipeline/src/resolve/mule-resolver.ts",
+      "packages/pipeline/src/resolve/plsql-cfg.ts",
+      "packages/pipeline/src/resolve/python-resolver.test.ts",
+      "packages/pipeline/src/resolve/python-resolver.ts",
+      "packages/pipeline/src/resolve/rust-resolver.test.ts",
+      "packages/pipeline/src/resolve/sql-resolver.test.ts",
+      "packages/pipeline/src/resolve/sql-resolver.ts",
+      "packages/pipeline/src/resolve/ts-resolver.ts",
+      "packages/pipeline/src/workspace.ts",
+      "scripts/build-installers.mjs",
+      "scripts/crib-self-hosted-e2e.mjs",
+      "scripts/eval/harness.mjs"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 0,
+    "conditions": 3,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": true,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

@@ -1,0 +1,175 @@
+{
+  "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.caseBranch@L706",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:84c2dd077bb8de803807e5ea342acc7c8f8489a766ad80efbb347c7cf18e66e7",
+  "builtAt": "2026-08-25T20:55:11.863Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.caseBranch@L706",
+    "kind": "symbol",
+    "type": "method",
+    "name": "caseBranch",
+    "qualifiedName": "Builder.caseBranch",
+    "signature": "caseBranch(expr: string, line: number, branch: string): string",
+    "lang": "typescript",
+    "file": "packages/parsers/src/plsql/PlSqlExtractor.ts",
+    "span": {
+      "start": 706,
+      "end": 723
+    },
+    "callSites": [
+      {
+        "callee": "idFor",
+        "line": 707
+      },
+      {
+        "callee": "add",
+        "line": 709
+      },
+      {
+        "callee": "push",
+        "line": 710
+      },
+      {
+        "callee": "hash",
+        "line": 718
+      }
+    ]
+  },
+  "source": {
+    "text": "  private caseBranch(expr: string, line: number, branch: string): string {\n    const id = this.ctx.idFor('case-branch', { file: this.path, line });\n    if (!this.caseBranchSeen.has(id)) {\n      this.caseBranchSeen.add(id);\n      this.nodes.push({\n        id,\n        kind: 'case-branch',\n        branch,\n        expr,\n        file: this.path,\n        span: { start: line, end: line },\n        lang: 'plsql',\n        hash: this.ctx.hash(`${this.path}:case:${line}:${expr}`),\n        ...(expr ? { whenSelector: expr } : {}),\n      });\n    }\n    return id;\n  }",
+    "truncated": false,
+    "totalLines": 18,
+    "startLine": 706
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.walkCase@L641",
+      "confidence": 1,
+      "name": "walkCase",
+      "qualifiedName": "Builder.walkCase",
+      "signature": "walkCase(s: CaseStmt, proc: ProcCtx, env: { inLoop: boolean; inException: boolean; guard: string | undefined }): void",
+      "type": "method",
+      "file": "packages/parsers/src/plsql/PlSqlExtractor.ts",
+      "line": 641
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/plsql/PlSqlExtractor.ts@L702",
+      "snippet": "/** 1.2: emit a `case-branch` condition node (deduped by file+line) and return its id.",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.caseBranch@L706",
+    "procedureName": "Builder.caseBranch",
+    "conditions": [
+      "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L708"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.caseBranch@L706",
+        "procedureName": "Builder.caseBranch",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:0fd10dbe0055763641e2d6cfe59d9824a535c6c497c0929c9275ded0e0386631",
+          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L707",
+          "line": 707,
+          "expr": "const id = this.ctx.idFor('case-branch', { file: this.path, line });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.caseBranch@L706",
+        "procedureName": "Builder.caseBranch",
+        "guard": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L708",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L708",
+            "expr": "!this.caseBranchSeen.has(id)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:67136d0c26b219e42234d46c78f7c0dbbc991a0940475b30161d4b49915b92d7",
+          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L709",
+          "line": 709,
+          "expr": "this.caseBranchSeen.add(id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.caseBranch@L706",
+        "procedureName": "Builder.caseBranch",
+        "guard": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L708",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/plsql/PlSqlExtractor.ts@L708",
+            "expr": "!this.caseBranchSeen.has(id)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:5bdd2fd6d26f69219b2b5dd91dd85a3d0eb089080b377c884efc2c8ce1ac6989",
+          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L710",
+          "line": 710,
+          "expr": "this.nodes.push({\n        id,\n        kind: 'case-branch',\n        branch,\n        expr,\n        file: this.path,\n        span: { start: line, end: line },\n        lang: 'plsql',\n        hash: this.ctx.hash(`${this.path}:case:${line}:${expr}`),\n        ...(expr ? { whenSelector: expr } : {}),\n      });"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/plsql/PlSqlExtractor.ts#Builder.caseBranch@L706",
+        "procedureName": "Builder.caseBranch",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:52060c94f7f41972c599cd3fdfcc36363ab9fe67b6d6fd028dbf406a50b3dac9",
+          "target": "stmt:packages/parsers/src/plsql/PlSqlExtractor.ts@L722",
+          "line": 722,
+          "expr": "return id;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": [
+      "packages/parsers/src/plsql/PlSqlExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 4,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

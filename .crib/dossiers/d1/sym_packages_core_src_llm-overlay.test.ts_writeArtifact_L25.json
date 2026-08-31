@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/core/src/llm-overlay.test.ts#writeArtifact@L25",
-  "schemaVersion": "1.5",
+  "schemaVersion": "1.6",
   "nodeHash": "blake3:c5c7ee27ce17fcf41426e003880a17546d14197e0f4df604c9cd25103e38478d",
-  "builtAt": "2026-07-16T14:53:52.220Z",
+  "builtAt": "2026-08-25T20:55:11.863Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/core/src/llm-overlay.test.ts#writeArtifact@L25",
@@ -47,13 +47,24 @@
     "startLine": 25
   },
   "callers": [],
-  "callees": [],
+  "callees": [
+    {
+      "id": "sym:packages/pipeline/src/mule/classify.ts#dirname@L163",
+      "confidence": 1,
+      "name": "dirname",
+      "qualifiedName": "dirname",
+      "signature": "dirname(path: string): string",
+      "type": "function",
+      "file": "packages/pipeline/src/mule/classify.ts",
+      "line": 163
+    }
+  ],
   "docs": [
     {
-      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#enrich-save-persist-an-externally-authored-batch",
-      "heading": "`enrich_save` *(persist an externally-authored batch)*",
-      "anchor": "enrich-save-persist-an-externally-authored-batch",
-      "snippet": "`enrich_save` *(persist an externally-authored batch)*",
+      "sectionId": "doc:docs/knowledge-crib-mcp-api.md#enrich-op-save-persist-an-externally-authored-batch",
+      "heading": "`enrich({op:'save'})` *(persist an externally-authored batch)*",
+      "anchor": "enrich-op-save-persist-an-externally-authored-batch",
+      "snippet": "`enrich({op:'save'})` *(persist an externally-authored batch)*",
       "edgeType": "references",
       "method": "identifier",
       "provenance": "EXTRACTED",
@@ -100,6 +111,20 @@
         "inLoop": false,
         "inException": false,
         "action": {
+          "kind": "calls",
+          "edgeId": "e:92776b1463eb7f5a6128899e71b4027ca9e3f227108c7ca7194394cfc9f10bca",
+          "target": "sym:packages/pipeline/src/mule/classify.ts#dirname@L163",
+          "expr": "dirname",
+          "line": 35
+        }
+      },
+      {
+        "procedure": "sym:packages/core/src/llm-overlay.test.ts#writeArtifact@L25",
+        "procedureName": "writeArtifact",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
           "kind": "executes",
           "edgeId": "e:6e7bccb87ad130b67e460db96eae5b2a72c5766db099de17610c6ef29fd4a043",
           "target": "stmt:packages/core/src/llm-overlay.test.ts@L36",
@@ -125,14 +150,14 @@
     "cursors": 0,
     "caseBranches": 0,
     "calls": {
-      "resolved": 0,
+      "resolved": 1,
       "recorded": 5,
-      "unresolved": 5
+      "unresolved": 4
     },
     "recursive": false,
     "exprTruncated": 0,
     "caveats": [
-      "5 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+      "4 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
     ]
   }
 }

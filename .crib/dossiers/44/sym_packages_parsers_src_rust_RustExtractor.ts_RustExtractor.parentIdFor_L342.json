@@ -1,0 +1,118 @@
+{
+  "id": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.parentIdFor@L342",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:24c296dff27b315dea637da5560e40ad76f4a507a39261a8a8087fc8c10ea3ef",
+  "builtAt": "2026-08-25T20:55:11.863Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.parentIdFor@L342",
+    "kind": "symbol",
+    "type": "method",
+    "name": "parentIdFor",
+    "qualifiedName": "RustExtractor.parentIdFor",
+    "signature": "parentIdFor(sym: LocalSymbol, byKey: Map<string, string>, fileId: string): string",
+    "lang": "typescript",
+    "file": "packages/parsers/src/rust/RustExtractor.ts",
+    "span": {
+      "start": 342,
+      "end": 346
+    },
+    "callSites": [
+      {
+        "callee": "get",
+        "line": 345
+      }
+    ]
+  },
+  "source": {
+    "text": "  private parentIdFor(sym: LocalSymbol, byKey: Map<string, string>, fileId: string): string {\n    const parentQualifier = sym.node.meta?.parentQualifier as string | undefined;\n    if (!parentQualifier) return fileId;\n    return byKey.get(parentQualifier) ?? fileId;\n  }",
+    "truncated": false,
+    "totalLines": 5,
+    "startLine": 342
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.parse@L101",
+      "confidence": 1,
+      "name": "parse",
+      "qualifiedName": "RustExtractor.parse",
+      "signature": "parse(path: string, fileId: string, text: string, ctx: ExtractCtx): ExtractResult",
+      "type": "method",
+      "file": "packages/parsers/src/rust/RustExtractor.ts",
+      "line": 101
+    }
+  ],
+  "callees": [],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.parentIdFor@L342",
+    "procedureName": "RustExtractor.parentIdFor",
+    "conditions": [
+      "cond:packages/parsers/src/rust/RustExtractor.ts@L344"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.parentIdFor@L342",
+        "procedureName": "RustExtractor.parentIdFor",
+        "guard": "cond:packages/parsers/src/rust/RustExtractor.ts@L344",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/RustExtractor.ts@L344",
+            "expr": "!parentQualifier",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:99b963ba8606939b48c5955dc614476bbf20c86c1f3b06ef38da22cfa41e2399",
+          "target": "stmt:packages/parsers/src/rust/RustExtractor.ts@L344",
+          "line": 344,
+          "expr": "return fileId;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/RustExtractor.ts#RustExtractor.parentIdFor@L342",
+        "procedureName": "RustExtractor.parentIdFor",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:4865a938f50eaf79bb6cd7232267c85a865328edcbab040d6ff234b50c6ebd8d",
+          "target": "stmt:packages/parsers/src/rust/RustExtractor.ts@L345",
+          "line": 345,
+          "expr": "return byKey.get(parentQualifier) ?? fileId;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/parsers/src/rust/RustExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

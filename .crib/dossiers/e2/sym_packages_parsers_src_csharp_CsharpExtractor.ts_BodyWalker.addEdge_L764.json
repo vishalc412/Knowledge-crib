@@ -1,0 +1,143 @@
+{
+  "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.addEdge@L764",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:c9c6b2919365b6d165efad18055431b14e3c23b0f2463e1e5732f2725daf6e1c",
+  "builtAt": "2026-08-25T20:55:11.863Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.addEdge@L764",
+    "kind": "symbol",
+    "type": "method",
+    "name": "addEdge",
+    "qualifiedName": "BodyWalker.addEdge",
+    "signature": "addEdge(src: string, dst: string, rel: Edge['rel'], snippet: string): void",
+    "lang": "typescript",
+    "file": "packages/parsers/src/csharp/CsharpExtractor.ts",
+    "span": {
+      "start": 764,
+      "end": 776
+    },
+    "callSites": [
+      {
+        "callee": "edgeId",
+        "line": 766
+      },
+      {
+        "callee": "set",
+        "line": 775
+      }
+    ]
+  },
+  "source": {
+    "text": "  private addEdge(src: string, dst: string, rel: Edge['rel'], snippet: string): void {\n    const e: Edge = {\n      id: edgeId(src, dst, rel),\n      src,\n      dst,\n      rel,\n      method: 'static',\n      provenance: 'EXTRACTED',\n      confidence: 1,\n      evidence: { by: 'lang:csharp', snippet },\n    };\n    this.edgeById.set(e.id, e);\n  }",
+    "truncated": false,
+    "totalLines": 13,
+    "startLine": 764
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.addRaise@L692",
+      "confidence": 1,
+      "name": "addRaise",
+      "qualifiedName": "BodyWalker.addRaise",
+      "signature": "addRaise(s: CsharpStmt, procId: string, env: WalkEnv): void",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/CsharpExtractor.ts",
+      "line": 692
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.walkLoop@L539",
+      "confidence": 1,
+      "name": "walkLoop",
+      "qualifiedName": "BodyWalker.walkLoop",
+      "signature": "walkLoop(s: CsharpStmt, procId: string, env: WalkEnv): void",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/CsharpExtractor.ts",
+      "line": 539
+    },
+    {
+      "id": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.walkTry@L574",
+      "confidence": 1,
+      "name": "walkTry",
+      "qualifiedName": "BodyWalker.walkTry",
+      "signature": "walkTry(s: CsharpStmt, procId: string, env: WalkEnv): void",
+      "type": "method",
+      "file": "packages/parsers/src/csharp/CsharpExtractor.ts",
+      "line": 574
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/csharp/CsharpExtractor.ts@L763",
+      "snippet": "/** Add (or replace) an edge in the shared edge map. Used for raises/handles/iterates. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.addEdge@L764",
+    "procedureName": "BodyWalker.addEdge",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.addEdge@L764",
+        "procedureName": "BodyWalker.addEdge",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fcf46eb77b939d55338d1aee3e41726c38da49174cbd0fb6816509cb618bb2bc",
+          "target": "stmt:packages/parsers/src/csharp/CsharpExtractor.ts@L765",
+          "line": 765,
+          "expr": "const e: Edge = {\n      id: edgeId(src, dst, rel),\n      src,\n      dst,\n      rel,\n      method: 'static',\n      provenance: 'EXTRACTED',\n      confidence: 1,\n      evidence: { by: 'lang:csharp', snippet },\n    };"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/csharp/CsharpExtractor.ts#BodyWalker.addEdge@L764",
+        "procedureName": "BodyWalker.addEdge",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6c381e698a36dc31319ba6a11787df2e8a9b7ac7937eaa93876ce2cf8183c651",
+          "target": "stmt:packages/parsers/src/csharp/CsharpExtractor.ts@L775",
+          "line": 775,
+          "expr": "this.edgeById.set(e.id, e);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/parsers/src/csharp/CsharpExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 2,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

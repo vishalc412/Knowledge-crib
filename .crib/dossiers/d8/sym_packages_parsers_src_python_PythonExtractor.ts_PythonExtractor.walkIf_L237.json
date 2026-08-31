@@ -1,0 +1,211 @@
+{
+  "id": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.walkIf@L237",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:30a9b448cfc4f3a4c80fcaf90eeba043505885737ea6dd258d93fdf182c867b7",
+  "builtAt": "2026-08-25T20:55:11.863Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.walkIf@L237",
+    "kind": "symbol",
+    "type": "method",
+    "name": "walkIf",
+    "qualifiedName": "PythonExtractor.walkIf",
+    "signature": "walkIf(s: PyStmt, procId: string, guardStack: string[], inLoop: boolean, inException: boolean, w: WalkCtx): void",
+    "lang": "typescript",
+    "file": "packages/parsers/src/python/PythonExtractor.ts",
+    "span": {
+      "start": 237,
+      "end": 253
+    },
+    "callSites": [
+      {
+        "callee": "condition",
+        "line": 248
+      },
+      {
+        "callee": "walkBody",
+        "line": 251
+      }
+    ]
+  },
+  "source": {
+    "text": "  private walkIf(\n    s: PyStmt,\n    procId: string,\n    guardStack: string[],\n    inLoop: boolean,\n    inException: boolean,\n    w: WalkCtx,\n  ): void {\n    const branches = s.branches ?? [];\n    if (branches.length === 0) return;\n    const ifLine = branches[0]!.line;\n    const condId = this.condition(w, branches[0]!.predicate ?? '', ifLine, 'THEN');\n    for (const b of branches) {\n      const polarity = b.polarity === 'then' ? 'THEN' : b.polarity === 'elif' ? 'ELSIF' : 'ELSE';\n      this.walkBody(b.body, procId, [...guardStack, condId], polarity, inLoop, inException, w);\n    }\n  }",
+    "truncated": false,
+    "totalLines": 17,
+    "startLine": 237
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.walkBody@L186",
+      "confidence": 1,
+      "name": "walkBody",
+      "qualifiedName": "PythonExtractor.walkBody",
+      "signature": "walkBody(stmts: PyStmt[], procId: string, guardStack: string[], branch: string | undefined, inLoop: boolean, inException: boolean, w: WalkCtx): void",
+      "type": "method",
+      "file": "packages/parsers/src/python/PythonExtractor.ts",
+      "line": 186
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.condition@L409",
+      "confidence": 1,
+      "name": "condition",
+      "qualifiedName": "PythonExtractor.condition",
+      "signature": "condition(w: WalkCtx, expr: string, line: number, branch: string): string",
+      "type": "method",
+      "file": "packages/parsers/src/python/PythonExtractor.ts",
+      "line": 409
+    },
+    {
+      "id": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.walkBody@L186",
+      "confidence": 1,
+      "name": "walkBody",
+      "qualifiedName": "PythonExtractor.walkBody",
+      "signature": "walkBody(stmts: PyStmt[], procId: string, guardStack: string[], branch: string | undefined, inLoop: boolean, inException: boolean, w: WalkCtx): void",
+      "type": "method",
+      "file": "packages/parsers/src/python/PythonExtractor.ts",
+      "line": 186
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/python/PythonExtractor.ts@L232",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.walkIf@L237",
+    "procedureName": "PythonExtractor.walkIf",
+    "conditions": [
+      "cond:packages/parsers/src/python/PythonExtractor.ts@L246",
+      "cond:packages/parsers/src/python/PythonExtractor.ts@L249"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.walkIf@L237",
+        "procedureName": "PythonExtractor.walkIf",
+        "guard": "cond:packages/parsers/src/python/PythonExtractor.ts@L246",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/PythonExtractor.ts@L246",
+            "expr": "branches.length === 0",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:f280b5e3f6b92f567e13e61c3db7426e3283ad688ba51e591443c804f61085fd",
+          "target": "stmt:packages/parsers/src/python/PythonExtractor.ts@L246",
+          "line": 246,
+          "expr": "return;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.walkIf@L237",
+        "procedureName": "PythonExtractor.walkIf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:1b372e113719178e2ee66290efe5ccb929148495cf1363a2559d7a5a3d57cced",
+          "target": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.condition@L409",
+          "expr": "condition",
+          "line": 248
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.walkIf@L237",
+        "procedureName": "PythonExtractor.walkIf",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:25e61383f9d1184efaf7b20047113e52e3669e10e3f72519c37157d222c0928a",
+          "target": "stmt:packages/parsers/src/python/PythonExtractor.ts@L248",
+          "line": 248,
+          "expr": "const condId = this.condition(w, branches[0]!.predicate ?? '', ifLine, 'THEN');"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.walkIf@L237",
+        "procedureName": "PythonExtractor.walkIf",
+        "guard": "cond:packages/parsers/src/python/PythonExtractor.ts@L249",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/PythonExtractor.ts@L249",
+            "expr": "branches",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:0adbbc087efc3f0914a3523fe0ae605d80822bc9f032d0f51936951fbc15054b",
+          "target": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.walkBody@L186",
+          "expr": "walkBody",
+          "line": 251
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/PythonExtractor.ts#PythonExtractor.walkIf@L237",
+        "procedureName": "PythonExtractor.walkIf",
+        "guard": "cond:packages/parsers/src/python/PythonExtractor.ts@L249",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/PythonExtractor.ts@L249",
+            "expr": "branches",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ffc52b32e0fa877247f1c7dfe97114e993f5ae063cbc11705270e416068daf44",
+          "target": "stmt:packages/parsers/src/python/PythonExtractor.ts@L251",
+          "line": 251,
+          "expr": "this.walkBody(b.body, procId, [...guardStack, condId], polarity, inLoop, inException, w);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": [
+      "packages/parsers/src/python/PythonExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 2,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

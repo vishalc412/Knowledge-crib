@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/core/src/materialize.ts#materializeComposite@L16",
-  "schemaVersion": "1.5",
+  "schemaVersion": "1.6",
   "nodeHash": "blake3:02380b084e3cd6b9e99b73bc59d19a5d2dcf1337bfae0f997881b53f1e52661c",
-  "builtAt": "2026-07-16T16:35:16.098Z",
+  "builtAt": "2026-08-31T17:37:23.222Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/core/src/materialize.ts#materializeComposite@L16",
@@ -146,38 +146,27 @@
     "totalLines": 67,
     "startLine": 16
   },
-  "callers": [
-    {
-      "id": "sym:packages/cli/src/cli.ts#cmdMaterialize@L364",
-      "confidence": 1,
-      "name": "cmdMaterialize",
-      "qualifiedName": "cmdMaterialize",
-      "signature": "cmdMaterialize(args: string[], ctx?: CmdCtx): Promise<number>",
-      "type": "function",
-      "file": "packages/cli/src/cli.ts",
-      "line": 364
-    }
-  ],
+  "callers": [],
   "callees": [
     {
-      "id": "sym:packages/core/src/graph-store.ts#graphFingerprint@L148",
+      "id": "sym:packages/core/src/graph-store.ts#graphFingerprint@L200",
       "confidence": 1,
       "name": "graphFingerprint",
       "qualifiedName": "graphFingerprint",
       "signature": "graphFingerprint(soul: SoulStore): GraphFingerprint",
       "type": "function",
       "file": "packages/core/src/graph-store.ts",
-      "line": 148
+      "line": 200
     },
     {
-      "id": "sym:scripts/release-verify.mjs#run@L3",
+      "id": "sym:scripts/swarm/swarm-gate.mjs#run@L48",
       "confidence": 1,
       "name": "run",
       "qualifiedName": "run",
-      "signature": "run(cmd, args, opts = {})",
+      "signature": "run(…)",
       "type": "function",
-      "file": "scripts/release-verify.mjs",
-      "line": 3
+      "file": "scripts/swarm/swarm-gate.mjs",
+      "line": 48
     }
   ],
   "docs": [],
@@ -239,8 +228,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:ae528a4a10b5bf8b271b33a6f95ce59af1f097aec5fc97462a52d277d4850996",
-          "target": "sym:packages/core/src/graph-store.ts#graphFingerprint@L148",
+          "edgeId": "e:a176f27f37e732ddc72f6a67e9778873c95c45a0c627f1d548d00d9402395a29",
+          "target": "sym:packages/core/src/graph-store.ts#graphFingerprint@L200",
           "expr": "graphFingerprint",
           "line": 20
         }
@@ -365,8 +354,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:8f4033b951295fe1dc3ad2dd377f6fba6fdc7278515e9e2e3c6e01bceb0c330a",
-          "target": "sym:scripts/release-verify.mjs#run@L3",
+          "edgeId": "e:4719ca886ecbb328d67e2f10cc838d51382e094e7f690b920590cb16d697325c",
+          "target": "sym:scripts/swarm/swarm-gate.mjs#run@L48",
           "expr": "run",
           "line": 39
         }
@@ -571,9 +560,7 @@
   "implementation": {
     "status": "implemented",
     "executesCount": 21,
-    "referencedByFiles": [
-      "packages/cli/src/cli.ts"
-    ]
+    "referencedByFiles": []
   },
   "coverage": {
     "readiness": "partial",

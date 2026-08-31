@@ -1,0 +1,97 @@
+{
+  "id": "sym:packages/core/src/dossier/framework.ts#labelOfBrief@L693",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:9f4d0b300c13375df9931f3358a5568e6379def93d0d6a587a4271d219457743",
+  "builtAt": "2026-08-25T20:55:11.863Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/core/src/dossier/framework.ts#labelOfBrief@L693",
+    "kind": "symbol",
+    "type": "function",
+    "name": "labelOfBrief",
+    "qualifiedName": "labelOfBrief",
+    "signature": "labelOfBrief(b: AdjacentBrief | undefined): string",
+    "lang": "typescript",
+    "file": "packages/core/src/dossier/framework.ts",
+    "span": {
+      "start": 693,
+      "end": 695
+    }
+  },
+  "source": {
+    "text": "function labelOfBrief(b: AdjacentBrief | undefined): string {\n  return b?.qualifiedName ?? b?.name ?? b?.id ?? '';\n}",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 693
+  },
+  "callers": [
+    {
+      "id": "sym:packages/core/src/dossier/framework.ts#frameworkSemantics@L203",
+      "confidence": 1,
+      "name": "frameworkSemantics",
+      "qualifiedName": "frameworkSemantics",
+      "signature": "frameworkSemantics(soul: SoulStore, nodeId: string, opts: FrameworkSemanticsOpts = {}): DossierFrameworkSemantics | undefined",
+      "type": "function",
+      "file": "packages/core/src/dossier/framework.ts",
+      "line": 203
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/core/src/dossier/framework.ts@L692",
+      "snippet": "/** Stable label for sorting a brief-bearing entry: qualifiedName → name → id. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/core/src/dossier/framework.ts#labelOfBrief@L693",
+    "procedureName": "labelOfBrief",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/core/src/dossier/framework.ts#labelOfBrief@L693",
+        "procedureName": "labelOfBrief",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:64912708657f94962257e9a83a7d701b31e60cffe36389acf0587a564826e19e",
+          "target": "stmt:packages/core/src/dossier/framework.ts@L694",
+          "line": 694,
+          "expr": "return b?.qualifiedName ?? b?.name ?? b?.id ?? '';"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/core/src/dossier/framework.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

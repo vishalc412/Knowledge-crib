@@ -1,0 +1,153 @@
+{
+  "id": "sym:packages/pipeline/src/parity/parity.ts#normalizeRules@L162",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:b05ca2a03e2e38d4f3fa450cbf8b6258f54181dedbf2a05caf5f95366e4c2ff7",
+  "builtAt": "2026-08-25T20:55:11.863Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/parity/parity.ts#normalizeRules@L162",
+    "kind": "symbol",
+    "type": "function",
+    "name": "normalizeRules",
+    "qualifiedName": "normalizeRules",
+    "signature": "normalizeRules(soul: SoulStore, rules: RuleRecord[]): NormalizedRule[]",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/parity/parity.ts",
+    "span": {
+      "start": 162,
+      "end": 168
+    },
+    "callSites": [
+      {
+        "callee": "map",
+        "line": 163
+      },
+      {
+        "callee": "condSigs",
+        "line": 164
+      },
+      {
+        "callee": "actionSig",
+        "line": 165
+      }
+    ]
+  },
+  "source": {
+    "text": "function normalizeRules(soul: SoulStore, rules: RuleRecord[]): NormalizedRule[] {\n  return rules.map((raw) => ({\n    conditions: condSigs(soul, raw),\n    action: actionSig(soul, raw),\n    raw,\n  }));\n}",
+    "truncated": false,
+    "totalLines": 7,
+    "startLine": 162
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/src/parity/parity.ts#decisionParity@L190",
+      "confidence": 1,
+      "name": "decisionParity",
+      "qualifiedName": "decisionParity",
+      "signature": "decisionParity(opts: ParityOpts): Promise<ParityReport>",
+      "type": "function",
+      "file": "packages/pipeline/src/parity/parity.ts",
+      "line": 190
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/pipeline/src/parity/parity.ts#actionSig@L122",
+      "confidence": 1,
+      "name": "actionSig",
+      "qualifiedName": "actionSig",
+      "signature": "actionSig(soul: SoulStore, rule: RuleRecord): string",
+      "type": "function",
+      "file": "packages/pipeline/src/parity/parity.ts",
+      "line": 122
+    },
+    {
+      "id": "sym:packages/pipeline/src/parity/parity.ts#condSigs@L143",
+      "confidence": 1,
+      "name": "condSigs",
+      "qualifiedName": "condSigs",
+      "signature": "condSigs(soul: SoulStore, rule: RuleRecord): string[]",
+      "type": "function",
+      "file": "packages/pipeline/src/parity/parity.ts",
+      "line": 143
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/parity/parity.ts#normalizeRules@L162",
+    "procedureName": "normalizeRules",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/parity/parity.ts#normalizeRules@L162",
+        "procedureName": "normalizeRules",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c64811cac7df2fa26fc2de576cfb75c1c4d510e1528ad67d081d9e57dab4cea7",
+          "target": "stmt:packages/pipeline/src/parity/parity.ts@L163",
+          "line": 163,
+          "expr": "return rules.map((raw) => ({\n    conditions: condSigs(soul, raw),\n    action: actionSig(soul, raw),\n    raw,\n  }));"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/parity/parity.ts#normalizeRules@L162",
+        "procedureName": "normalizeRules",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:0b14ac4541ccce553b47a0ac39a7e0364f6056565bfd9a633cf773f94f417f58",
+          "target": "sym:packages/pipeline/src/parity/parity.ts#condSigs@L143",
+          "expr": "condSigs",
+          "line": 164
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/parity/parity.ts#normalizeRules@L162",
+        "procedureName": "normalizeRules",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:bacf2e5503166717e04f3e28bd67a45f4b619dd9aba42bed9e291d70f0c2ee3c",
+          "target": "sym:packages/pipeline/src/parity/parity.ts#actionSig@L122",
+          "expr": "actionSig",
+          "line": 165
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/pipeline/src/parity/parity.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 3,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

@@ -1,0 +1,71 @@
+{
+  "id": "sym:packages/parsers/src/ts/nest.test.ts#routeParams@L118",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:01b0aadf00665b6fdcb7528a8ceab748eb117cbdd799a249c448d2194924a9d6",
+  "builtAt": "2026-08-25T20:55:11.863Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/ts/nest.test.ts#routeParams@L118",
+    "kind": "symbol",
+    "type": "function",
+    "name": "routeParams",
+    "qualifiedName": "routeParams",
+    "signature": "routeParams(…)",
+    "lang": "typescript",
+    "file": "packages/parsers/src/ts/nest.test.ts",
+    "span": {
+      "start": 118,
+      "end": 124
+    }
+  },
+  "source": {
+    "text": "const routeParams = (\n  r: ExtractResult,\n  name: string,\n): Array<{ name: string; type?: string; in: string }> | undefined =>\n  r.nodes.find((n) => n.kind === 'route' && n.name === name)?.meta?.params as\n    | Array<{ name: string; type?: string; in: string }>\n    | undefined;",
+    "truncated": false,
+    "totalLines": 7,
+    "startLine": 118
+  },
+  "callers": [],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/ts/nest.test.ts@L117",
+      "snippet": "/** the `meta.params` of a route node by `METHOD /path`, or undefined. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/ts/nest.test.ts#routeParams@L118",
+    "procedureName": "routeParams",
+    "conditions": [],
+    "rules": []
+  },
+  "implementation": {
+    "status": "unimplemented",
+    "executesCount": 0,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "unimplemented",
+    "bodyPresent": false,
+    "executes": 0,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 0,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "BODY UNAVAILABLE — no body statements indexed. The implementation may live in a missing file (e.g. a PL/SQL package body) or be a spec-only declaration. Do NOT derive behavior, scoring formulas, or migration logic from this node — locate and index the body first."
+    ]
+  }
+}

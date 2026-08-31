@@ -1,0 +1,276 @@
+{
+  "id": "sym:packages/parsers/src/python/parser.ts#Parser.consumeColon@L767",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:e5a10d48de025b66ed15aea7419817774c9a749b9f4b96257d5094b366c60805",
+  "builtAt": "2026-08-25T20:55:11.863Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/python/parser.ts#Parser.consumeColon@L767",
+    "kind": "symbol",
+    "type": "method",
+    "name": "consumeColon",
+    "qualifiedName": "Parser.consumeColon",
+    "signature": "consumeColon(): boolean",
+    "lang": "typescript",
+    "file": "packages/parsers/src/python/parser.ts",
+    "span": {
+      "start": 767,
+      "end": 774
+    },
+    "callSites": [
+      {
+        "callee": "next",
+        "line": 768
+      },
+      {
+        "callee": "next",
+        "line": 770
+      }
+    ]
+  },
+  "source": {
+    "text": "  private consumeColon(): boolean {\n    while (this.is('NEWLINE') || this.is('NL')) this.next();\n    if (this.is('OP') && this.peek().value === ':') {\n      this.next();\n      return true;\n    }\n    return false;\n  }",
+    "truncated": false,
+    "totalLines": 8,
+    "startLine": 767
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#Parser.parseClass@L276",
+      "confidence": 1,
+      "name": "parseClass",
+      "qualifiedName": "Parser.parseClass",
+      "signature": "parseClass(): PyDef | null",
+      "type": "method",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 276
+    },
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#Parser.parseFunction@L307",
+      "confidence": 1,
+      "name": "parseFunction",
+      "qualifiedName": "Parser.parseFunction",
+      "signature": "parseFunction(async: boolean): PyDef | null",
+      "type": "method",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 307
+    },
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#Parser.parseIf@L435",
+      "confidence": 1,
+      "name": "parseIf",
+      "qualifiedName": "Parser.parseIf",
+      "signature": "parseIf(): PyStmt | null",
+      "type": "method",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 435
+    },
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#Parser.parseTry@L507",
+      "confidence": 1,
+      "name": "parseTry",
+      "qualifiedName": "Parser.parseTry",
+      "signature": "parseTry(): PyStmt | null",
+      "type": "method",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 507
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#Parser.is@L795",
+      "confidence": 1,
+      "name": "is",
+      "qualifiedName": "Parser.is",
+      "signature": "is(type: Token['type']): boolean",
+      "type": "method",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 795
+    },
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#Parser.next@L781",
+      "confidence": 1,
+      "name": "next",
+      "qualifiedName": "Parser.next",
+      "signature": "next(): Token",
+      "type": "method",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 781
+    },
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#Parser.peek@L801",
+      "confidence": 1,
+      "name": "peek",
+      "qualifiedName": "Parser.peek",
+      "signature": "peek(offset = 0): Token",
+      "type": "method",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 801
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.consumeColon@L767",
+    "procedureName": "Parser.consumeColon",
+    "conditions": [
+      "cond:packages/parsers/src/python/parser.ts@L769",
+      "cond:packages/parsers/src/python/parser.ts@L768"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.consumeColon@L767",
+        "procedureName": "Parser.consumeColon",
+        "guard": "cond:packages/parsers/src/python/parser.ts@L769",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/parser.ts@L769",
+            "expr": "this.is('OP') && this.peek().value === ':'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:3adb861069a6183fa3ee6c6c0b12213d949bc414215de0b3ddfa5e5f457a3195",
+          "target": "sym:packages/parsers/src/python/parser.ts#Parser.next@L781",
+          "expr": "next",
+          "line": 768
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.consumeColon@L767",
+        "procedureName": "Parser.consumeColon",
+        "guard": "cond:packages/parsers/src/python/parser.ts@L768",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/parser.ts@L768",
+            "expr": "this.is('NEWLINE') || this.is('NL')",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:810d905ab7451572868d9a2f5e9c15bebc48c1fb3b18f01657565ad292a98569",
+          "target": "stmt:packages/parsers/src/python/parser.ts@L768",
+          "line": 768,
+          "expr": "this.next();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.consumeColon@L767",
+        "procedureName": "Parser.consumeColon",
+        "guard": "cond:packages/parsers/src/python/parser.ts@L769",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/parser.ts@L769",
+            "expr": "this.is('OP') && this.peek().value === ':'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:9612d5cc713f134f2cfe53277ef015d82c59789c5544742d25c684432c0f39b4",
+          "target": "stmt:packages/parsers/src/python/parser.ts@L770",
+          "line": 770,
+          "expr": "this.next();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.consumeColon@L767",
+        "procedureName": "Parser.consumeColon",
+        "guard": "cond:packages/parsers/src/python/parser.ts@L769",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/python/parser.ts@L769",
+            "expr": "this.is('OP') && this.peek().value === ':'",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8f947eb9464acc7ca90f16be6127df28492f28cc9f62d4945678105d423531e3",
+          "target": "stmt:packages/parsers/src/python/parser.ts@L771",
+          "line": 771,
+          "expr": "return true;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.consumeColon@L767",
+        "procedureName": "Parser.consumeColon",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bca90d487c41de73724cf1b2e763c5af074553539f7288363fffe28f76b1c274",
+          "target": "stmt:packages/parsers/src/python/parser.ts@L773",
+          "line": 773,
+          "expr": "return false;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.consumeColon@L767",
+        "procedureName": "Parser.consumeColon",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:4a4e6b496d3a9421448289c63bf24d3e28e86d59268c95abe1b504ea784d7229",
+          "target": "sym:packages/parsers/src/python/parser.ts#Parser.is@L795",
+          "expr": "is"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.consumeColon@L767",
+        "procedureName": "Parser.consumeColon",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:c5c75e188973c2e77097e2890fe01ec128362e6861e01974bf05965d96a88756",
+          "target": "sym:packages/parsers/src/python/parser.ts#Parser.peek@L801",
+          "expr": "peek"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": [
+      "packages/parsers/src/python/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 0,
+    "conditions": 2,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 3,
+      "recorded": 2,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

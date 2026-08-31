@@ -1,0 +1,162 @@
+{
+  "id": "sym:packages/pipeline/src/resolve/java-resolver.test.ts#soulFor@L30",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:af9e5ca2a90c740b827651094c8db846c24eface4f47c6ef36f8b3453cafc5e7",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/resolve/java-resolver.test.ts#soulFor@L30",
+    "kind": "symbol",
+    "type": "function",
+    "name": "soulFor",
+    "qualifiedName": "soulFor",
+    "signature": "soulFor(): SoulStore",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/resolve/java-resolver.test.ts",
+    "span": {
+      "start": 30,
+      "end": 34
+    },
+    "callSites": [
+      {
+        "callee": "newManifest",
+        "line": 31
+      },
+      {
+        "callee": "load",
+        "line": 32
+      }
+    ]
+  },
+  "source": {
+    "text": "function soulFor(): SoulStore {\n  const s = new SoulStore(cribDir, { manifest: newManifest({ now: NOW }) });\n  s.load();\n  return s;\n}",
+    "truncated": false,
+    "totalLines": 5,
+    "startLine": 30
+  },
+  "callers": [],
+  "callees": [
+    {
+      "id": "sym:packages/ui/web/support.js#createExternalModules.load@L1028",
+      "confidence": 1,
+      "name": "load",
+      "qualifiedName": "createExternalModules.load",
+      "signature": "load(kind, url)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 1028
+    },
+    {
+      "id": "sym:packages/core/src/manifest.ts#newManifest@L28",
+      "confidence": 1,
+      "name": "newManifest",
+      "qualifiedName": "newManifest",
+      "signature": "newManifest(opts: NewManifestOpts = {}): Manifest",
+      "type": "function",
+      "file": "packages/core/src/manifest.ts",
+      "line": 28
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/resolve/java-resolver.test.ts#soulFor@L30",
+    "procedureName": "soulFor",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/java-resolver.test.ts#soulFor@L30",
+        "procedureName": "soulFor",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:0bc187170475fece97a2a22a5e2eac0303bdcaf18c7240867a6040d6c74dd8d7",
+          "target": "sym:packages/core/src/manifest.ts#newManifest@L28",
+          "expr": "newManifest",
+          "line": 31
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/java-resolver.test.ts#soulFor@L30",
+        "procedureName": "soulFor",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2bde57c1f889d36ab63ede37a6ff95eb1b735b849d7de5f430c5452bfb7e4199",
+          "target": "stmt:packages/pipeline/src/resolve/java-resolver.test.ts@L31",
+          "line": 31,
+          "expr": "const s = new SoulStore(cribDir, { manifest: newManifest({ now: NOW }) });"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/java-resolver.test.ts#soulFor@L30",
+        "procedureName": "soulFor",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:35ecf731450501d34c319f0bdc025d17f9cbae827c4716765ed810c89a3fd936",
+          "target": "stmt:packages/pipeline/src/resolve/java-resolver.test.ts@L32",
+          "line": 32,
+          "expr": "s.load();"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/java-resolver.test.ts#soulFor@L30",
+        "procedureName": "soulFor",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:a63d1240988ae88c57b18ddaca19f85b77e8ae23afb8b53c639a8af83391e60b",
+          "target": "sym:packages/ui/web/support.js#createExternalModules.load@L1028",
+          "expr": "load",
+          "line": 32
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/java-resolver.test.ts#soulFor@L30",
+        "procedureName": "soulFor",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a93d352fc8b1058bc5ffd0af4b6c15d4a35c8d71f45a9df40f0dfe5dc10ce41c",
+          "target": "stmt:packages/pipeline/src/resolve/java-resolver.test.ts@L33",
+          "line": 33,
+          "expr": "return s;"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 3,
+    "referencedByFiles": []
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 3,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 2,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

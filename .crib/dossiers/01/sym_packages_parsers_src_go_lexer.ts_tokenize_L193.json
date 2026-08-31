@@ -1,0 +1,128 @@
+{
+  "id": "sym:packages/parsers/src/go/lexer.ts#tokenize@L193",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:e034d03b985521bb6278640575d1e1344aa664b33698bfa7d8eee3f86f2f9784",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/go/lexer.ts#tokenize@L193",
+    "kind": "symbol",
+    "type": "function",
+    "name": "tokenize",
+    "qualifiedName": "tokenize",
+    "signature": "tokenize(src: string): Token[]",
+    "lang": "typescript",
+    "file": "packages/parsers/src/go/lexer.ts",
+    "span": {
+      "start": 193,
+      "end": 195
+    },
+    "callSites": [
+      {
+        "callee": "tokens",
+        "line": 194
+      }
+    ]
+  },
+  "source": {
+    "text": "export function tokenize(src: string): Token[] {\n  return new Lexer(src).tokens();\n}",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 193
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/go/parser.ts#parseGo@L231",
+      "confidence": 1,
+      "name": "parseGo",
+      "qualifiedName": "parseGo",
+      "signature": "parseGo(src: string): GoModule",
+      "type": "function",
+      "file": "packages/parsers/src/go/parser.ts",
+      "line": 231
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/go/lexer.ts#Lexer.tokens@L257",
+      "confidence": 1,
+      "name": "tokens",
+      "qualifiedName": "Lexer.tokens",
+      "signature": "tokens(): Token[]",
+      "type": "method",
+      "file": "packages/parsers/src/go/lexer.ts",
+      "line": 257
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/go/lexer.ts@L192",
+      "snippet": "/** Tokenize Go source into a flat token stream (never throws). */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/go/lexer.ts#tokenize@L193",
+    "procedureName": "tokenize",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/go/lexer.ts#tokenize@L193",
+        "procedureName": "tokenize",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:230fef17475d0bc154819d9ac83913207930f10fd6a4b59689c546ccd0641dc9",
+          "target": "stmt:packages/parsers/src/go/lexer.ts@L194",
+          "line": 194,
+          "expr": "return new Lexer(src).tokens();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/lexer.ts#tokenize@L193",
+        "procedureName": "tokenize",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:2f54146c672ba26326cd6d55178c92ac60d6b315689e581837c7d656cff323bc",
+          "target": "sym:packages/parsers/src/go/lexer.ts#Lexer.tokens@L257",
+          "expr": "tokens",
+          "line": 194
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/parsers/src/go/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 1,
+      "recorded": 1,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

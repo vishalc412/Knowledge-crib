@@ -1,0 +1,463 @@
+{
+  "id": "sym:packages/parsers/src/rust/parser.ts#Parser.readTypePath@L732",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:95869858a9ebb42a71ea18b732af32e57b5361e7139856a80d2f97338400f2b9",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/rust/parser.ts#Parser.readTypePath@L732",
+    "kind": "symbol",
+    "type": "method",
+    "name": "readTypePath",
+    "qualifiedName": "Parser.readTypePath",
+    "signature": "readTypePath(): string",
+    "lang": "typescript",
+    "file": "packages/parsers/src/rust/parser.ts",
+    "span": {
+      "start": 732,
+      "end": 745
+    },
+    "callSites": [
+      {
+        "callee": "peek",
+        "line": 735
+      },
+      {
+        "callee": "next",
+        "line": 736
+      },
+      {
+        "callee": "next",
+        "line": 738
+      },
+      {
+        "callee": "peek",
+        "line": 739
+      },
+      {
+        "callee": "next",
+        "line": 740
+      },
+      {
+        "callee": "skipGenericAngle",
+        "line": 742
+      }
+    ]
+  },
+  "source": {
+    "text": "  private readTypePath(): string {\n    let simple = '';\n    if (this.isNameToken()) {\n      simple = this.peek().value;\n      this.next();\n      while (this.isOp('::') && this.peek1().type === 'NAME') {\n        this.next(); // ::\n        simple = this.peek().value;\n        this.next();\n      }\n      if (this.isOp('<')) this.skipGenericAngle();\n    }\n    return simple;\n  }",
+    "truncated": false,
+    "totalLines": 14,
+    "startLine": 732
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/rust/parser.ts#Parser.parseImpl@L476",
+      "confidence": 1,
+      "name": "parseImpl",
+      "qualifiedName": "Parser.parseImpl",
+      "signature": "parseImpl(startLine: number, attributes: string[], modifiers: string[]): RustDef | null",
+      "type": "method",
+      "file": "packages/parsers/src/rust/parser.ts",
+      "line": 476
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/parser.ts#Parser.parsePathSum@L713",
+      "confidence": 1,
+      "name": "parsePathSum",
+      "qualifiedName": "Parser.parsePathSum",
+      "signature": "parsePathSum(): string[]",
+      "type": "method",
+      "file": "packages/parsers/src/rust/parser.ts",
+      "line": 713
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/rust/parser.ts#Parser.isNameToken@L1475",
+      "confidence": 1,
+      "name": "isNameToken",
+      "qualifiedName": "Parser.isNameToken",
+      "signature": "isNameToken(): boolean",
+      "type": "method",
+      "file": "packages/parsers/src/rust/parser.ts",
+      "line": 1475
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/parser.ts#Parser.isOp@L1465",
+      "confidence": 1,
+      "name": "isOp",
+      "qualifiedName": "Parser.isOp",
+      "signature": "isOp(v: string): boolean",
+      "type": "method",
+      "file": "packages/parsers/src/rust/parser.ts",
+      "line": 1465
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/parser.ts#Parser.next@L1478",
+      "confidence": 1,
+      "name": "next",
+      "qualifiedName": "Parser.next",
+      "signature": "next(): Token",
+      "type": "method",
+      "file": "packages/parsers/src/rust/parser.ts",
+      "line": 1478
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/parser.ts#Parser.peek@L1483",
+      "confidence": 1,
+      "name": "peek",
+      "qualifiedName": "Parser.peek",
+      "signature": "peek(): Token",
+      "type": "method",
+      "file": "packages/parsers/src/rust/parser.ts",
+      "line": 1483
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/parser.ts#Parser.peek1@L1486",
+      "confidence": 1,
+      "name": "peek1",
+      "qualifiedName": "Parser.peek1",
+      "signature": "peek1(): Token",
+      "type": "method",
+      "file": "packages/parsers/src/rust/parser.ts",
+      "line": 1486
+    },
+    {
+      "id": "sym:packages/parsers/src/rust/parser.ts#Parser.skipGenericAngle@L797",
+      "confidence": 1,
+      "name": "skipGenericAngle",
+      "qualifiedName": "Parser.skipGenericAngle",
+      "signature": "skipGenericAngle(): string[]",
+      "type": "method",
+      "file": "packages/parsers/src/rust/parser.ts",
+      "line": 797
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/rust/parser.ts@L727",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/rust/parser.ts#Parser.readTypePath@L732",
+    "procedureName": "Parser.readTypePath",
+    "conditions": [
+      "cond:packages/parsers/src/rust/parser.ts@L734",
+      "cond:packages/parsers/src/rust/parser.ts@L737",
+      "cond:packages/parsers/src/rust/parser.ts@L742"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/rust/parser.ts#Parser.readTypePath@L732",
+        "procedureName": "Parser.readTypePath",
+        "guard": "cond:packages/parsers/src/rust/parser.ts@L734",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L734",
+            "expr": "this.isNameToken()",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:194e8dfb2cc1b66299b784a3c445b2a3679de81e60a464ae1113ae663013f77c",
+          "target": "assign:packages/parsers/src/rust/parser.ts@L735",
+          "line": 735,
+          "expr": "simple = this.peek().value;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/parser.ts#Parser.readTypePath@L732",
+        "procedureName": "Parser.readTypePath",
+        "guard": "cond:packages/parsers/src/rust/parser.ts@L737",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L734",
+            "expr": "this.isNameToken()"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L737",
+            "expr": "this.isOp('::') && this.peek1().type === 'NAME'",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:653c27d1c4b23eb993445650ac1118a2327307b480eeaced1b86e6c1453bff99",
+          "target": "sym:packages/parsers/src/rust/parser.ts#Parser.peek@L1483",
+          "expr": "peek",
+          "line": 735
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/parser.ts#Parser.readTypePath@L732",
+        "procedureName": "Parser.readTypePath",
+        "guard": "cond:packages/parsers/src/rust/parser.ts@L737",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L734",
+            "expr": "this.isNameToken()"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L737",
+            "expr": "this.isOp('::') && this.peek1().type === 'NAME'",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:3006bfeff971bf58bf6ceb8162581c34e2f5c274e0ca89ed8183d11ab462753e",
+          "target": "sym:packages/parsers/src/rust/parser.ts#Parser.next@L1478",
+          "expr": "next",
+          "line": 736
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/parser.ts#Parser.readTypePath@L732",
+        "procedureName": "Parser.readTypePath",
+        "guard": "cond:packages/parsers/src/rust/parser.ts@L734",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L734",
+            "expr": "this.isNameToken()",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:d1309ccbaa11e96b2ffde11b894c71bcb0e0fc6e8637a2c01ab7334cfe868ab1",
+          "target": "stmt:packages/parsers/src/rust/parser.ts@L736",
+          "line": 736,
+          "expr": "this.next();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/parser.ts#Parser.readTypePath@L732",
+        "procedureName": "Parser.readTypePath",
+        "guard": "cond:packages/parsers/src/rust/parser.ts@L737",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L734",
+            "expr": "this.isNameToken()"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L737",
+            "expr": "this.isOp('::') && this.peek1().type === 'NAME'",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:187fc3292385ed9f87767d8feb478e6d22908a90205e89de1490936d3e203470",
+          "target": "stmt:packages/parsers/src/rust/parser.ts@L738",
+          "line": 738,
+          "expr": "this.next();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/parser.ts#Parser.readTypePath@L732",
+        "procedureName": "Parser.readTypePath",
+        "guard": "cond:packages/parsers/src/rust/parser.ts@L737",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L734",
+            "expr": "this.isNameToken()"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L737",
+            "expr": "this.isOp('::') && this.peek1().type === 'NAME'",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:35ab47479c47d559337edd88ce83f4e4fcaccc95bedcea11f384db0f194e1f6f",
+          "target": "assign:packages/parsers/src/rust/parser.ts@L739",
+          "line": 739,
+          "expr": "simple = this.peek().value;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/parser.ts#Parser.readTypePath@L732",
+        "procedureName": "Parser.readTypePath",
+        "guard": "cond:packages/parsers/src/rust/parser.ts@L737",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L734",
+            "expr": "this.isNameToken()"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L737",
+            "expr": "this.isOp('::') && this.peek1().type === 'NAME'",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:796c2a865779075676bfb9c0788efd791de731576b809b8a05d981ec4910bac8",
+          "target": "stmt:packages/parsers/src/rust/parser.ts@L740",
+          "line": 740,
+          "expr": "this.next();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/parser.ts#Parser.readTypePath@L732",
+        "procedureName": "Parser.readTypePath",
+        "guard": "cond:packages/parsers/src/rust/parser.ts@L742",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L734",
+            "expr": "this.isNameToken()"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L742",
+            "expr": "this.isOp('<')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:675aadaa86870b09083b68118cf7376c4ef6bbe21ce177688655b81ce72b0982",
+          "target": "sym:packages/parsers/src/rust/parser.ts#Parser.skipGenericAngle@L797",
+          "expr": "skipGenericAngle",
+          "line": 742
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/parser.ts#Parser.readTypePath@L732",
+        "procedureName": "Parser.readTypePath",
+        "guard": "cond:packages/parsers/src/rust/parser.ts@L742",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L734",
+            "expr": "this.isNameToken()"
+          },
+          {
+            "id": "cond:packages/parsers/src/rust/parser.ts@L742",
+            "expr": "this.isOp('<')",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c5eb9a479274309832133ed352f3624cf63c6321ff70cc09393bbdaead668279",
+          "target": "stmt:packages/parsers/src/rust/parser.ts@L742",
+          "line": 742,
+          "expr": "this.skipGenericAngle();"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/parser.ts#Parser.readTypePath@L732",
+        "procedureName": "Parser.readTypePath",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6377652f51ab39cce44717cc1eda68e3ba5635fefb8a8d391025699831cf94b3",
+          "target": "stmt:packages/parsers/src/rust/parser.ts@L744",
+          "line": 744,
+          "expr": "return simple;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/parser.ts#Parser.readTypePath@L732",
+        "procedureName": "Parser.readTypePath",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:ea7066bbbcc622d06abf22b6d3a7a0f26bd18bc49860d780bde0294a62debb05",
+          "target": "sym:packages/parsers/src/rust/parser.ts#Parser.isOp@L1465",
+          "expr": "isOp"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/parser.ts#Parser.readTypePath@L732",
+        "procedureName": "Parser.readTypePath",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:b6eef7d471e274077724fbbdc7b11582aa84d2172e84b668028c9170784ed0cb",
+          "target": "sym:packages/parsers/src/rust/parser.ts#Parser.isNameToken@L1475",
+          "expr": "isNameToken"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/rust/parser.ts#Parser.readTypePath@L732",
+        "procedureName": "Parser.readTypePath",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:1ce6eebe5e23104444c675823be25baffddaeebbd0e48425f29bcce3b92403f5",
+          "target": "sym:packages/parsers/src/rust/parser.ts#Parser.peek1@L1486",
+          "expr": "peek1"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 7,
+    "referencedByFiles": [
+      "packages/parsers/src/rust/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 7,
+    "assignments": 2,
+    "conditions": 3,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 6,
+      "recorded": 6,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

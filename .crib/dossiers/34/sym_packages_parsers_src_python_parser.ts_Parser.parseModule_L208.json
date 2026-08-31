@@ -1,0 +1,161 @@
+{
+  "id": "sym:packages/parsers/src/python/parser.ts#Parser.parseModule@L208",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:6ea9ffcbaa0c2121bfd6b11ce053555b3fd91dfbd9cfca4798614b65bcca3ce2",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/python/parser.ts#Parser.parseModule@L208",
+    "kind": "symbol",
+    "type": "method",
+    "name": "parseModule",
+    "qualifiedName": "Parser.parseModule",
+    "signature": "parseModule(): PyDef[]",
+    "lang": "typescript",
+    "file": "packages/parsers/src/python/parser.ts",
+    "span": {
+      "start": 208,
+      "end": 211
+    },
+    "callSites": [
+      {
+        "callee": "parseBlock",
+        "line": 209
+      },
+      {
+        "callee": "collectDefs",
+        "line": 210
+      }
+    ]
+  },
+  "source": {
+    "text": "  parseModule(): PyDef[] {\n    const stmts = this.parseBlock(/*stopAtDedent*/ false);\n    return collectDefs(stmts);\n  }",
+    "truncated": false,
+    "totalLines": 4,
+    "startLine": 208
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#parsePython@L177",
+      "confidence": 1,
+      "name": "parsePython",
+      "qualifiedName": "parsePython",
+      "signature": "parsePython(src: string): PyModule",
+      "type": "function",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 177
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#Parser.parseBlock@L214",
+      "confidence": 1,
+      "name": "parseBlock",
+      "qualifiedName": "Parser.parseBlock",
+      "signature": "parseBlock(stopAtDedent: boolean): PyStmt[]",
+      "type": "method",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 214
+    },
+    {
+      "id": "sym:packages/parsers/src/python/parser.ts#collectDefs@L826",
+      "confidence": 1,
+      "name": "collectDefs",
+      "qualifiedName": "collectDefs",
+      "signature": "collectDefs(stmts: PyStmt[]): PyDef[]",
+      "type": "function",
+      "file": "packages/parsers/src/python/parser.ts",
+      "line": 826
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseModule@L208",
+    "procedureName": "Parser.parseModule",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseModule@L208",
+        "procedureName": "Parser.parseModule",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:a1c0f79afebdb173dfdc1be070e3a7b7afe81672511abe7710e76dac7230747d",
+          "target": "sym:packages/parsers/src/python/parser.ts#Parser.parseBlock@L214",
+          "expr": "parseBlock",
+          "line": 209
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseModule@L208",
+        "procedureName": "Parser.parseModule",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:a1d1cb8525f62b31f3fc55f9705cfa12c68c69d46da3073c69c7dbf36cbfc1db",
+          "target": "stmt:packages/parsers/src/python/parser.ts@L209",
+          "line": 209,
+          "expr": "const stmts = this.parseBlock(/*stopAtDedent*/ false);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseModule@L208",
+        "procedureName": "Parser.parseModule",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:68474e99a7eac911f5a2a5b3c533150f7ab3a12dcaaf1302f0e1bdbe8f734712",
+          "target": "stmt:packages/parsers/src/python/parser.ts@L210",
+          "line": 210,
+          "expr": "return collectDefs(stmts);"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/python/parser.ts#Parser.parseModule@L208",
+        "procedureName": "Parser.parseModule",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:76b4c2aed0056d84ec0349ea3207d49fa01020948bf84905f5f2bfcfdf673f76",
+          "target": "sym:packages/parsers/src/python/parser.ts#collectDefs@L826",
+          "expr": "collectDefs",
+          "line": 210
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/parsers/src/python/parser.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 2,
+      "recorded": 2,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

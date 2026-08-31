@@ -1,0 +1,247 @@
+{
+  "id": "sym:packages/pipeline/src/resolve/csharp-resolver.ts#resolveCsharp.push@L59",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:d364689077408f0638167fc741bcd6f58524f6d9bd20e1ef75e93545a99ea2eb",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/resolve/csharp-resolver.ts#resolveCsharp.push@L59",
+    "kind": "symbol",
+    "type": "function",
+    "name": "push",
+    "qualifiedName": "resolveCsharp.push",
+    "signature": "push(…)",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/resolve/csharp-resolver.ts",
+    "span": {
+      "start": 59,
+      "end": 73
+    },
+    "callSites": [
+      {
+        "callee": "edgeId",
+        "line": 60
+      },
+      {
+        "callee": "add",
+        "line": 62
+      },
+      {
+        "callee": "push",
+        "line": 63
+      }
+    ]
+  },
+  "source": {
+    "text": "  const push = (src: string, dst: string, rel: Rel, snippet: string): void => {\n    const id = edgeId(src, dst, rel);\n    if (seen.has(id)) return;\n    seen.add(id);\n    edges.push({\n      id,\n      src,\n      dst,\n      rel,\n      method: 'static',\n      provenance: 'EXTRACTED',\n      confidence: 1,\n      evidence: { by: 'csharp-resolver', snippet },\n    });\n  };",
+    "truncated": false,
+    "totalLines": 15,
+    "startLine": 59
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/src/resolve/csharp-resolver.ts#resolveCsharp@L50",
+      "confidence": 1,
+      "name": "resolveCsharp",
+      "qualifiedName": "resolveCsharp",
+      "signature": "resolveCsharp(table: SymbolTable, root: string, files: FileMeta[]): { edges: Edge[]; stats: ResolveStats }",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/csharp-resolver.ts",
+      "line": 50
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/csharp-resolver.ts#resolveCsharp.visitDef@L126",
+      "confidence": 1,
+      "name": "visitDef",
+      "qualifiedName": "resolveCsharp.visitDef",
+      "signature": "visitDef(…)",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/csharp-resolver.ts",
+      "line": 126
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/csharp-resolver.ts#topLevelTypeNames@L197",
+      "confidence": 1,
+      "name": "topLevelTypeNames",
+      "qualifiedName": "topLevelTypeNames",
+      "signature": "topLevelTypeNames(mod: CsharpModule): string[]",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/csharp-resolver.ts",
+      "line": 197
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/parsers/fixtures/python/rules.py#add@L16",
+      "confidence": 1,
+      "name": "add",
+      "qualifiedName": "add",
+      "signature": "add(a, b)",
+      "type": "function",
+      "file": "packages/parsers/fixtures/python/rules.py",
+      "line": 16
+    },
+    {
+      "id": "sym:packages/soul-schema/src/id.ts#edgeId@L151",
+      "confidence": 1,
+      "name": "edgeId",
+      "qualifiedName": "edgeId",
+      "signature": "edgeId(src: string, dst: string, rel: Rel): string",
+      "type": "function",
+      "file": "packages/soul-schema/src/id.ts",
+      "line": 151
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 70
+    }
+  ],
+  "docs": [],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/resolve/csharp-resolver.ts#resolveCsharp.push@L59",
+    "procedureName": "resolveCsharp.push",
+    "conditions": [
+      "cond:packages/pipeline/src/resolve/csharp-resolver.ts@L61"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/csharp-resolver.ts#resolveCsharp.push@L59",
+        "procedureName": "resolveCsharp.push",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:429a4ee7ca24757b7e8dbdc64255e16ee9475df916c76d9dc92a0ee0803a89e5",
+          "target": "sym:packages/soul-schema/src/id.ts#edgeId@L151",
+          "expr": "edgeId",
+          "line": 60
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/csharp-resolver.ts#resolveCsharp.push@L59",
+        "procedureName": "resolveCsharp.push",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:845aca48d6fe25a7b652b62a14947b45b3fe03cd6082632bf8e28624fece51e9",
+          "target": "stmt:packages/pipeline/src/resolve/csharp-resolver.ts@L60",
+          "line": 60,
+          "expr": "const id = edgeId(src, dst, rel);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/csharp-resolver.ts#resolveCsharp.push@L59",
+        "procedureName": "resolveCsharp.push",
+        "guard": "cond:packages/pipeline/src/resolve/csharp-resolver.ts@L61",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/resolve/csharp-resolver.ts@L61",
+            "expr": "seen.has(id)",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ad6a6465a96f00251a06a0958e1789f65d956a399364ba62ce83c57fe50ff91c",
+          "target": "stmt:packages/pipeline/src/resolve/csharp-resolver.ts@L61",
+          "line": 61,
+          "expr": "return;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/csharp-resolver.ts#resolveCsharp.push@L59",
+        "procedureName": "resolveCsharp.push",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:79b57791581eb8ba2fb99bbc74e4a9ab1655a4f1742f05e49bb5b5d4e3888d02",
+          "target": "stmt:packages/pipeline/src/resolve/csharp-resolver.ts@L62",
+          "line": 62,
+          "expr": "seen.add(id);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/csharp-resolver.ts#resolveCsharp.push@L59",
+        "procedureName": "resolveCsharp.push",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:a010b04228b239b30e44eaea56ff4f5199ccc03f7370cd6c02a9b65222beb3c7",
+          "target": "sym:packages/parsers/fixtures/python/rules.py#add@L16",
+          "expr": "add",
+          "line": 62
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/csharp-resolver.ts#resolveCsharp.push@L59",
+        "procedureName": "resolveCsharp.push",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:73b18764d41971a60ae4ed71c3e80b99dcc83c5adbfa2d342a90b2d180a6c12c",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
+          "expr": "push",
+          "line": 63
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/resolve/csharp-resolver.ts#resolveCsharp.push@L59",
+        "procedureName": "resolveCsharp.push",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:7b280f8f15d3d6ceab0a9832b71c158f0cfff06f0bcd422969662fd952ecfa21",
+          "target": "stmt:packages/pipeline/src/resolve/csharp-resolver.ts@L63",
+          "line": 63,
+          "expr": "edges.push({\n      id,\n      src,\n      dst,\n      rel,\n      method: 'static',\n      provenance: 'EXTRACTED',\n      confidence: 1,\n      evidence: { by: 'csharp-resolver', snippet },\n    });"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 4,
+    "referencedByFiles": [
+      "packages/pipeline/src/resolve/csharp-resolver.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "complete",
+    "bodyPresent": true,
+    "executes": 4,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 3,
+      "recorded": 3,
+      "unresolved": 0
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": []
+  }
+}

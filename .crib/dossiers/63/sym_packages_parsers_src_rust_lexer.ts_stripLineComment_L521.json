@@ -1,0 +1,109 @@
+{
+  "id": "sym:packages/parsers/src/rust/lexer.ts#stripLineComment@L521",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:bbe4d045b994ea02ccf3b333c5b6b6339cb8fcb529c9777431521de7a234ce94",
+  "builtAt": "2026-08-25T20:55:11.863Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/rust/lexer.ts#stripLineComment@L521",
+    "kind": "symbol",
+    "type": "function",
+    "name": "stripLineComment",
+    "qualifiedName": "stripLineComment",
+    "signature": "stripLineComment(line: string): string",
+    "lang": "typescript",
+    "file": "packages/parsers/src/rust/lexer.ts",
+    "span": {
+      "start": 521,
+      "end": 523
+    },
+    "callSites": [
+      {
+        "callee": "trim",
+        "line": 522
+      },
+      {
+        "callee": "replace",
+        "line": 522
+      }
+    ]
+  },
+  "source": {
+    "text": "function stripLineComment(line: string): string {\n  return line.replace(/^\\/\\/[!/!]?\\s?/, '').trim();\n}",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 521
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/rust/lexer.ts#collectRustComments@L556",
+      "confidence": 1,
+      "name": "collectRustComments",
+      "qualifiedName": "collectRustComments",
+      "signature": "collectRustComments(src: string): RustCommentBlock[]",
+      "type": "function",
+      "file": "packages/parsers/src/rust/lexer.ts",
+      "line": 556
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/rust/lexer.ts@L520",
+      "snippet": "/** Strip a `//` / `///` / `//!` line-comment prefix and surrounding whitespace from one line. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/rust/lexer.ts#stripLineComment@L521",
+    "procedureName": "stripLineComment",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/rust/lexer.ts#stripLineComment@L521",
+        "procedureName": "stripLineComment",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:499dcef185382601f0fd525f64ef8c1843899f451935563b476c64e8df07afd5",
+          "target": "stmt:packages/parsers/src/rust/lexer.ts@L522",
+          "line": 522,
+          "expr": "return line.replace(/^\\/\\/[!/!]?\\s?/, '').trim();"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/parsers/src/rust/lexer.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 2,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

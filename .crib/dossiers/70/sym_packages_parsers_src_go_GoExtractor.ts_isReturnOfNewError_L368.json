@@ -1,0 +1,133 @@
+{
+  "id": "sym:packages/parsers/src/go/GoExtractor.ts#isReturnOfNewError@L368",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:21062f20cb36f41ddd1f458e0338306636498e19d5efa573aab6b0353371c66f",
+  "builtAt": "2026-08-25T20:55:11.863Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/src/go/GoExtractor.ts#isReturnOfNewError@L368",
+    "kind": "symbol",
+    "type": "function",
+    "name": "isReturnOfNewError",
+    "qualifiedName": "isReturnOfNewError",
+    "signature": "isReturnOfNewError(expr: string | undefined): boolean",
+    "lang": "typescript",
+    "file": "packages/parsers/src/go/GoExtractor.ts",
+    "span": {
+      "start": 368,
+      "end": 371
+    },
+    "callSites": [
+      {
+        "callee": "test",
+        "line": 370
+      },
+      {
+        "callee": "test",
+        "line": 370
+      }
+    ]
+  },
+  "source": {
+    "text": "function isReturnOfNewError(expr: string | undefined): boolean {\n  if (!expr) return false;\n  return /^\\s*errors\\.New\\s*\\(/.test(expr) || /^\\s*fmt\\.Errorf\\s*\\(/.test(expr);\n}",
+    "truncated": false,
+    "totalLines": 4,
+    "startLine": 368
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/src/go/GoExtractor.ts#BodyWalker.walkStmt@L426",
+      "confidence": 1,
+      "name": "walkStmt",
+      "qualifiedName": "BodyWalker.walkStmt",
+      "signature": "walkStmt(s: GoBodyStmt, proc: ProcCtx, guardStack: string[], branch: string | undefined, inLoop: boolean, inException: boolean): void",
+      "type": "method",
+      "file": "packages/parsers/src/go/GoExtractor.ts",
+      "line": 426
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "expl:packages/parsers/src/go/GoExtractor.ts@L367",
+      "snippet": "/** True iff the return expression is a direct `errors.New(…)` / `fmt.Errorf(…)` (start-anchored). */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/src/go/GoExtractor.ts#isReturnOfNewError@L368",
+    "procedureName": "isReturnOfNewError",
+    "conditions": [
+      "cond:packages/parsers/src/go/GoExtractor.ts@L369"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/src/go/GoExtractor.ts#isReturnOfNewError@L368",
+        "procedureName": "isReturnOfNewError",
+        "guard": "cond:packages/parsers/src/go/GoExtractor.ts@L369",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/parsers/src/go/GoExtractor.ts@L369",
+            "expr": "!expr",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:8da2b261651f4627239ef4ea77205457b49c0312fb15ae18c90e5511d3a4d016",
+          "target": "stmt:packages/parsers/src/go/GoExtractor.ts@L369",
+          "line": 369,
+          "expr": "return false;"
+        }
+      },
+      {
+        "procedure": "sym:packages/parsers/src/go/GoExtractor.ts#isReturnOfNewError@L368",
+        "procedureName": "isReturnOfNewError",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c587b47bcea924a7c66c844f03c2a3af320d96a778b3736047449e0d2dcab3c4",
+          "target": "stmt:packages/parsers/src/go/GoExtractor.ts@L370",
+          "line": 370,
+          "expr": "return /^\\s*errors\\.New\\s*\\(/.test(expr) || /^\\s*fmt\\.Errorf\\s*\\(/.test(expr);"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 2,
+    "referencedByFiles": [
+      "packages/parsers/src/go/GoExtractor.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 2,
+    "assignments": 0,
+    "conditions": 1,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 2,
+      "unresolved": 2
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "2 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

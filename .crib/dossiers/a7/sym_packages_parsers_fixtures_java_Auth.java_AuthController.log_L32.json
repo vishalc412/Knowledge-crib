@@ -1,0 +1,140 @@
+{
+  "id": "sym:packages/parsers/fixtures/java/Auth.java#AuthController.log@L32",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:2a767a0c138c8d6fa925481d26639e8a5551fdfaa41fa4b91bbf13c1afa816d2",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/parsers/fixtures/java/Auth.java#AuthController.log@L32",
+    "kind": "symbol",
+    "type": "method",
+    "name": "log",
+    "qualifiedName": "AuthController.log",
+    "signature": "log(msg)",
+    "lang": "java",
+    "file": "packages/parsers/fixtures/java/Auth.java",
+    "span": {
+      "start": 32,
+      "end": 34
+    },
+    "callSites": [
+      {
+        "callee": "println",
+        "line": 33
+      }
+    ],
+    "params": [
+      "msg"
+    ]
+  },
+  "source": {
+    "text": "    static void log(String msg) {\n        System.out.println(msg);\n    }",
+    "truncated": false,
+    "totalLines": 3,
+    "startLine": 32
+  },
+  "callers": [
+    {
+      "id": "sym:packages/parsers/fixtures/java/Auth.java#AuthController.issue@L19",
+      "confidence": 1,
+      "name": "issue",
+      "qualifiedName": "AuthController.issue",
+      "signature": "issue(req)",
+      "type": "method",
+      "file": "packages/parsers/fixtures/java/Auth.java",
+      "line": 19
+    }
+  ],
+  "callees": [],
+  "docs": [
+    {
+      "sectionId": "doc:docs/launch/demo-recipe.md#shot-1-the-graph-viz-20s",
+      "heading": "Shot 1 — the graph (viz)  · ~20s",
+      "anchor": "shot-1-the-graph-viz-20s",
+      "snippet": "Shot 1 — the graph (viz)  · ~20s",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/launch/linkedin-series.md#post-4-the-proof-reproducible-not-vibes",
+      "heading": "Post 4 — The proof (reproducible, not vibes)",
+      "anchor": "post-4-the-proof-reproducible-not-vibes",
+      "snippet": "Post 4 — The proof (reproducible, not vibes)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/knowledge-crib-client-setup.md#8-verify-it-works-any-client",
+      "heading": "8. Verify it works (any client)",
+      "anchor": "8-verify-it-works-any-client",
+      "snippet": "8. Verify it works (any client)",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    },
+    {
+      "sectionId": "doc:docs/launch/show-hn.md#body",
+      "heading": "Body",
+      "anchor": "body",
+      "snippet": "Body",
+      "edgeType": "references",
+      "method": "identifier",
+      "provenance": "EXTRACTED",
+      "confidence": 0.6
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/parsers/fixtures/java/Auth.java#AuthController.log@L32",
+    "procedureName": "AuthController.log",
+    "conditions": [],
+    "rules": [
+      {
+        "procedure": "sym:packages/parsers/fixtures/java/Auth.java#AuthController.log@L32",
+        "procedureName": "AuthController.log",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fb848c47c4804d935d5a7d99d8cc9bf6bed99179b0f39ac078c1ca1e74e71ff9",
+          "target": "stmt:packages/parsers/fixtures/java/Auth.java@L33",
+          "line": 33,
+          "expr": "System.out.println(msg)"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 1,
+    "referencedByFiles": [
+      "packages/parsers/fixtures/java/Auth.java"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 1,
+    "assignments": 0,
+    "conditions": 0,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 0,
+      "recorded": 1,
+      "unresolved": 1
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "1 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

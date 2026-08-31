@@ -1,0 +1,714 @@
+{
+  "id": "sym:packages/pipeline/src/rules/mermaid.ts#renderMermaid@L10",
+  "schemaVersion": "1.6",
+  "nodeHash": "blake3:c13b20df4a2c295e253f862c3ac0c865e1f031c7ce892e2259c762770fdcd142",
+  "builtAt": "2026-08-31T17:37:23.222Z",
+  "shapeVersion": 2,
+  "node": {
+    "id": "sym:packages/pipeline/src/rules/mermaid.ts#renderMermaid@L10",
+    "kind": "symbol",
+    "type": "function",
+    "name": "renderMermaid",
+    "qualifiedName": "renderMermaid",
+    "signature": "renderMermaid(table: DecisionTable): string",
+    "lang": "typescript",
+    "file": "packages/pipeline/src/rules/mermaid.ts",
+    "span": {
+      "start": 10,
+      "end": 56
+    },
+    "callSites": [
+      {
+        "callee": "get",
+        "line": 15
+      },
+      {
+        "callee": "set",
+        "line": 18
+      },
+      {
+        "callee": "replace",
+        "line": 22
+      },
+      {
+        "callee": "nid",
+        "line": 24
+      },
+      {
+        "callee": "push",
+        "line": 25
+      },
+      {
+        "callee": "label",
+        "line": 25
+      },
+      {
+        "callee": "join",
+        "line": 30
+      },
+      {
+        "callee": "map",
+        "line": 30
+      },
+      {
+        "callee": "get",
+        "line": 31
+      },
+      {
+        "callee": "push",
+        "line": 32
+      },
+      {
+        "callee": "set",
+        "line": 33
+      },
+      {
+        "callee": "push",
+        "line": 39
+      },
+      {
+        "callee": "actionNode",
+        "line": 39
+      },
+      {
+        "callee": "nid",
+        "line": 44
+      },
+      {
+        "callee": "rcondExpr",
+        "line": 46
+      },
+      {
+        "callee": "push",
+        "line": 47
+      },
+      {
+        "callee": "stringify",
+        "line": 47
+      },
+      {
+        "callee": "label",
+        "line": 47
+      },
+      {
+        "callee": "actionNode",
+        "line": 50
+      },
+      {
+        "callee": "push",
+        "line": 52
+      },
+      {
+        "callee": "join",
+        "line": 55
+      }
+    ]
+  },
+  "source": {
+    "text": "export function renderMermaid(table: DecisionTable): string {\n  const lines: string[] = ['flowchart TD'];\n  const ids = new Map<string, string>();\n  let n = 0;\n  const nid = (key: string): string => {\n    let id = ids.get(key);\n    if (id === undefined) {\n      id = `n${n++}`;\n      ids.set(key, id);\n    }\n    return id;\n  };\n  const label = (s: string): string => s.replace(/\"/g, \"'\");\n\n  const procNode = nid(`proc:${table.procedure}`);\n  lines.push(`  ${procNode}[\"${label(table.procedureName ?? table.procedure)}\"]`);\n\n  // group rules by their materialized cfgPath key so each condition rhombus is emitted once\n  const byPath = new Map<string, RuleRecord[]>();\n  for (const r of table.rules) {\n    const key = r.conditions.map((c) => c.id).join('|');\n    const list = byPath.get(key);\n    if (list) list.push(r);\n    else byPath.set(key, [r]);\n  }\n\n  for (const [pathKey, rules] of byPath) {\n    if (pathKey === '') {\n      // top-level actions: straight from the procedure node\n      for (const r of rules) lines.push(`  ${procNode} --> ${actionNode(nid, r)}`);\n      continue;\n    }\n    // guarded actions: route through the innermost condition rhombus, labelled by polarity\n    const guard = rules[0]!.guard;\n    const condNode = guard ? nid(`cond:${guard}`) : procNode;\n    if (guard) {\n      const cond = rcondExpr(table, guard);\n      lines.push(`  ${procNode} --> ${condNode}{${JSON.stringify(label(cond))}}`);\n    }\n    for (const r of rules) {\n      const act = actionNode(nid, r);\n      const polarity = r.branch ?? '*';\n      lines.push(`  ${condNode} -->|${polarity}| ${act}`);\n    }\n  }\n  return lines.join('\\n');\n}",
+    "truncated": false,
+    "totalLines": 47,
+    "startLine": 10
+  },
+  "callers": [
+    {
+      "id": "sym:packages/pipeline/src/rules/export.ts#renderExport@L161",
+      "confidence": 1,
+      "name": "renderExport",
+      "qualifiedName": "renderExport",
+      "signature": "renderExport(soul: SoulStore, format: 'rules' | 'mermaid' | 'graph.json' | 'report', procedure?: string, opts: { extractedOnly?: boolean } = {}): string",
+      "type": "function",
+      "file": "packages/pipeline/src/rules/export.ts",
+      "line": 161
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/pipeline/src/rules/mermaid.ts#actionNode@L66",
+      "confidence": 1,
+      "name": "actionNode",
+      "qualifiedName": "actionNode",
+      "signature": "actionNode(nid: (k: string) => string, r: RuleRecord): string",
+      "type": "function",
+      "file": "packages/pipeline/src/rules/mermaid.ts",
+      "line": 66
+    },
+    {
+      "id": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+      "confidence": 1,
+      "name": "get",
+      "qualifiedName": "createRegistry.get",
+      "signature": "get(name)",
+      "type": "function",
+      "file": "packages/ui/web/support.js",
+      "line": 1300
+    },
+    {
+      "id": "sym:packages/pipeline/src/resolve/sql-resolver.test.ts#label@L202",
+      "confidence": 1,
+      "name": "label",
+      "qualifiedName": "label",
+      "signature": "label(soul: SoulStore, id: string): string",
+      "type": "function",
+      "file": "packages/pipeline/src/resolve/sql-resolver.test.ts",
+      "line": 202
+    },
+    {
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
+      "confidence": 1,
+      "name": "push",
+      "qualifiedName": "push",
+      "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
+      "type": "function",
+      "file": "packages/pipeline/src/linker/inverted-index.ts",
+      "line": 70
+    },
+    {
+      "id": "sym:packages/pipeline/src/rules/mermaid.ts#rcondExpr@L59",
+      "confidence": 1,
+      "name": "rcondExpr",
+      "qualifiedName": "rcondExpr",
+      "signature": "rcondExpr(table: DecisionTable, condId: string): string",
+      "type": "function",
+      "file": "packages/pipeline/src/rules/mermaid.ts",
+      "line": 59
+    },
+    {
+      "id": "sym:packages/pipeline/src/rules/mermaid.ts#renderMermaid.label@L22",
+      "confidence": 1,
+      "name": "label",
+      "qualifiedName": "renderMermaid.label",
+      "signature": "label(…)",
+      "type": "function",
+      "file": "packages/pipeline/src/rules/mermaid.ts",
+      "line": 22
+    },
+    {
+      "id": "sym:packages/pipeline/src/rules/mermaid.ts#renderMermaid.nid@L14",
+      "confidence": 1,
+      "name": "nid",
+      "qualifiedName": "renderMermaid.nid",
+      "signature": "nid(…)",
+      "type": "function",
+      "file": "packages/pipeline/src/rules/mermaid.ts",
+      "line": 14
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/pipeline/src/rules/mermaid.ts@L9",
+      "snippet": "/** Render a decision table as a mermaid flowchart. */",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "rules": {
+    "procedure": "sym:packages/pipeline/src/rules/mermaid.ts#renderMermaid@L10",
+    "procedureName": "renderMermaid",
+    "conditions": [
+      "cond:packages/pipeline/src/rules/mermaid.ts@L36",
+      "cond:packages/pipeline/src/rules/mermaid.ts@L45",
+      "cond:packages/pipeline/src/rules/mermaid.ts@L29",
+      "cond:packages/pipeline/src/rules/mermaid.ts@L32",
+      "cond:packages/pipeline/src/rules/mermaid.ts@L37",
+      "cond:packages/pipeline/src/rules/mermaid.ts@L39",
+      "cond:packages/pipeline/src/rules/mermaid.ts@L49"
+    ],
+    "rules": [
+      {
+        "procedure": "sym:packages/pipeline/src/rules/mermaid.ts#renderMermaid@L10",
+        "procedureName": "renderMermaid",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6fee1ffdf96fe302370bc049d60499ae718083ba3b4e94887c75f6008dc76758",
+          "target": "stmt:packages/pipeline/src/rules/mermaid.ts@L14",
+          "line": 14,
+          "expr": "const nid = (key: string): string => {\n    let id = ids.get(key);\n    if (id === undefined) {\n      id = `n${n++}`;\n      ids.set(key, id);\n    }\n    return id;\n  };"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/rules/mermaid.ts#renderMermaid@L10",
+        "procedureName": "renderMermaid",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:fc47b7e447754c654932d7f9955e8c10df59f87a113ed70ac26069722695186d",
+          "target": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
+          "expr": "get",
+          "line": 15
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/rules/mermaid.ts#renderMermaid@L10",
+        "procedureName": "renderMermaid",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:6e749ca90b1a86596c240c7a34225b664175e0e6162783588354eaf8c9965c13",
+          "target": "stmt:packages/pipeline/src/rules/mermaid.ts@L22",
+          "line": 22,
+          "expr": "const label = (s: string): string => s.replace(/\"/g, \"'\");"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/rules/mermaid.ts#renderMermaid@L10",
+        "procedureName": "renderMermaid",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2e6484b7d043972caadb3fcb5e628561fe757aad9548ff4772813a8f2f04fa21",
+          "target": "stmt:packages/pipeline/src/rules/mermaid.ts@L24",
+          "line": 24,
+          "expr": "const procNode = nid(`proc:${table.procedure}`);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/rules/mermaid.ts#renderMermaid@L10",
+        "procedureName": "renderMermaid",
+        "guard": "cond:packages/pipeline/src/rules/mermaid.ts@L36",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/rules/mermaid.ts@L36",
+            "expr": "byPath",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:c31bd5d7c9a2e2ef9dbea369d1262210777f2e3ef2e540ccb9bece48260fb3c3",
+          "target": "sym:packages/pipeline/src/rules/mermaid.ts#renderMermaid.nid@L14",
+          "expr": "nid",
+          "line": 24
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/rules/mermaid.ts#renderMermaid@L10",
+        "procedureName": "renderMermaid",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:059648a4e9ff07f69605ffd203672a42a9915d53b7a246cc4901773e7cf744b4",
+          "target": "stmt:packages/pipeline/src/rules/mermaid.ts@L25",
+          "line": 25,
+          "expr": "lines.push(`  ${procNode}[\"${label(table.procedureName ?? table.procedure)}\"]`);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/rules/mermaid.ts#renderMermaid@L10",
+        "procedureName": "renderMermaid",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:5a44643e1bdbe85cd7df1afb6776af96156bfceecb721708f57c559884d6c10d",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
+          "expr": "push",
+          "line": 25
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/rules/mermaid.ts#renderMermaid@L10",
+        "procedureName": "renderMermaid",
+        "guard": "cond:packages/pipeline/src/rules/mermaid.ts@L45",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/rules/mermaid.ts@L36",
+            "expr": "byPath"
+          },
+          {
+            "id": "cond:packages/pipeline/src/rules/mermaid.ts@L45",
+            "expr": "guard",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:7684c2044ec5b5e55f650aa1c0d089b558db5dcc4bf41aab2b14d8e0b8046421",
+          "target": "sym:packages/pipeline/src/rules/mermaid.ts#renderMermaid.label@L22",
+          "expr": "label",
+          "line": 25
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/rules/mermaid.ts#renderMermaid@L10",
+        "procedureName": "renderMermaid",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:8b84e3a6be190f3ac8d0f8cdae6763b8b13a9501886cd94f89b7888b62032f28",
+          "target": "sym:packages/pipeline/src/resolve/sql-resolver.test.ts#label@L202",
+          "expr": "label",
+          "line": 25
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/rules/mermaid.ts#renderMermaid@L10",
+        "procedureName": "renderMermaid",
+        "guard": "cond:packages/pipeline/src/rules/mermaid.ts@L29",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/rules/mermaid.ts@L29",
+            "expr": "table.rules",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:71053a7514014e86c36670d5ad4ce612121abc3a7fa0bedb1b5a062b81617bc9",
+          "target": "stmt:packages/pipeline/src/rules/mermaid.ts@L30",
+          "line": 30,
+          "expr": "const key = r.conditions.map((c) => c.id).join('|');"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/rules/mermaid.ts#renderMermaid@L10",
+        "procedureName": "renderMermaid",
+        "guard": "cond:packages/pipeline/src/rules/mermaid.ts@L29",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/rules/mermaid.ts@L29",
+            "expr": "table.rules",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:bda7ef51fe1a393a636e8bc0aaedaeef656121725b7f62eed58ecc661aa56b90",
+          "target": "stmt:packages/pipeline/src/rules/mermaid.ts@L31",
+          "line": 31,
+          "expr": "const list = byPath.get(key);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/rules/mermaid.ts#renderMermaid@L10",
+        "procedureName": "renderMermaid",
+        "guard": "cond:packages/pipeline/src/rules/mermaid.ts@L32",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/rules/mermaid.ts@L29",
+            "expr": "table.rules"
+          },
+          {
+            "id": "cond:packages/pipeline/src/rules/mermaid.ts@L32",
+            "expr": "list",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:fc7a9e0b9a089865ed6b123b3671c2e69aab822989ae96bb4a45232e986b54e9",
+          "target": "stmt:packages/pipeline/src/rules/mermaid.ts@L32",
+          "line": 32,
+          "expr": "list.push(r);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/rules/mermaid.ts#renderMermaid@L10",
+        "procedureName": "renderMermaid",
+        "guard": "cond:packages/pipeline/src/rules/mermaid.ts@L32",
+        "branch": "ELSE",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/rules/mermaid.ts@L29",
+            "expr": "table.rules"
+          },
+          {
+            "id": "cond:packages/pipeline/src/rules/mermaid.ts@L32",
+            "expr": "list",
+            "polarity": "ELSE"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:457ce03c984d63af4db56437422f52ef9a0f6ddde4f94800025961f5d940e8cb",
+          "target": "stmt:packages/pipeline/src/rules/mermaid.ts@L33",
+          "line": 33,
+          "expr": "byPath.set(key, [r]);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/rules/mermaid.ts#renderMermaid@L10",
+        "procedureName": "renderMermaid",
+        "guard": "cond:packages/pipeline/src/rules/mermaid.ts@L39",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/rules/mermaid.ts@L36",
+            "expr": "byPath"
+          },
+          {
+            "id": "cond:packages/pipeline/src/rules/mermaid.ts@L37",
+            "expr": "pathKey === ''"
+          },
+          {
+            "id": "cond:packages/pipeline/src/rules/mermaid.ts@L39",
+            "expr": "rules",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2899b61f6a87eaa8fb72c6eb9aa8a0a9c26a0fabfd968a40d70fb4949251627e",
+          "target": "stmt:packages/pipeline/src/rules/mermaid.ts@L39",
+          "line": 39,
+          "expr": "lines.push(`  ${procNode} --> ${actionNode(nid, r)}`);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/rules/mermaid.ts#renderMermaid@L10",
+        "procedureName": "renderMermaid",
+        "guard": "cond:packages/pipeline/src/rules/mermaid.ts@L49",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/rules/mermaid.ts@L36",
+            "expr": "byPath"
+          },
+          {
+            "id": "cond:packages/pipeline/src/rules/mermaid.ts@L49",
+            "expr": "rules",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:639b263e9c562a8e847c53e67fb8cd305df13506b3a32bec7a5aa7a04260ea00",
+          "target": "sym:packages/pipeline/src/rules/mermaid.ts#actionNode@L66",
+          "expr": "actionNode",
+          "line": 39
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/rules/mermaid.ts#renderMermaid@L10",
+        "procedureName": "renderMermaid",
+        "guard": "cond:packages/pipeline/src/rules/mermaid.ts@L36",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/rules/mermaid.ts@L36",
+            "expr": "byPath",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:80cd2c6f3b78c89dbed23a071bbf7817dd9a088a4ebe6573339e20e58dc2c80f",
+          "target": "stmt:packages/pipeline/src/rules/mermaid.ts@L44",
+          "line": 44,
+          "expr": "const condNode = guard ? nid(`cond:${guard}`) : procNode;"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/rules/mermaid.ts#renderMermaid@L10",
+        "procedureName": "renderMermaid",
+        "guard": "cond:packages/pipeline/src/rules/mermaid.ts@L45",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/rules/mermaid.ts@L36",
+            "expr": "byPath"
+          },
+          {
+            "id": "cond:packages/pipeline/src/rules/mermaid.ts@L45",
+            "expr": "guard",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:f2458b9e0c4860b7bef20d97db3ea9eb498980ec4510c045c84863fa113ff4a9",
+          "target": "sym:packages/pipeline/src/rules/mermaid.ts#rcondExpr@L59",
+          "expr": "rcondExpr",
+          "line": 46
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/rules/mermaid.ts#renderMermaid@L10",
+        "procedureName": "renderMermaid",
+        "guard": "cond:packages/pipeline/src/rules/mermaid.ts@L45",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/rules/mermaid.ts@L36",
+            "expr": "byPath"
+          },
+          {
+            "id": "cond:packages/pipeline/src/rules/mermaid.ts@L45",
+            "expr": "guard",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:ff30e0670c25e66a1874fec40a7894d5e1cb12e0780a8581449699b1b5601dfc",
+          "target": "stmt:packages/pipeline/src/rules/mermaid.ts@L46",
+          "line": 46,
+          "expr": "const cond = rcondExpr(table, guard);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/rules/mermaid.ts#renderMermaid@L10",
+        "procedureName": "renderMermaid",
+        "guard": "cond:packages/pipeline/src/rules/mermaid.ts@L45",
+        "branch": "THEN",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/rules/mermaid.ts@L36",
+            "expr": "byPath"
+          },
+          {
+            "id": "cond:packages/pipeline/src/rules/mermaid.ts@L45",
+            "expr": "guard",
+            "polarity": "THEN"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:c5e5451a1ad9b665428ebb5366cfcdc57ee87a1d2dd16863639bae4f123f298b",
+          "target": "stmt:packages/pipeline/src/rules/mermaid.ts@L47",
+          "line": 47,
+          "expr": "lines.push(`  ${procNode} --> ${condNode}{${JSON.stringify(label(cond))}}`);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/rules/mermaid.ts#renderMermaid@L10",
+        "procedureName": "renderMermaid",
+        "guard": "cond:packages/pipeline/src/rules/mermaid.ts@L49",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/rules/mermaid.ts@L36",
+            "expr": "byPath"
+          },
+          {
+            "id": "cond:packages/pipeline/src/rules/mermaid.ts@L49",
+            "expr": "rules",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:e670f14b57dff2de829bd4029e6cb17e133c9b10b8606909487f8f16674244b8",
+          "target": "stmt:packages/pipeline/src/rules/mermaid.ts@L50",
+          "line": 50,
+          "expr": "const act = actionNode(nid, r);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/rules/mermaid.ts#renderMermaid@L10",
+        "procedureName": "renderMermaid",
+        "guard": "cond:packages/pipeline/src/rules/mermaid.ts@L49",
+        "branch": "LOOP",
+        "conditions": [
+          {
+            "id": "cond:packages/pipeline/src/rules/mermaid.ts@L36",
+            "expr": "byPath"
+          },
+          {
+            "id": "cond:packages/pipeline/src/rules/mermaid.ts@L49",
+            "expr": "rules",
+            "polarity": "LOOP"
+          }
+        ],
+        "inLoop": true,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:3a90377cb1669b99c98a3b6b5573419bcd727ab8db174b24b8a476da7014d891",
+          "target": "stmt:packages/pipeline/src/rules/mermaid.ts@L52",
+          "line": 52,
+          "expr": "lines.push(`  ${condNode} -->|${polarity}| ${act}`);"
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/rules/mermaid.ts#renderMermaid@L10",
+        "procedureName": "renderMermaid",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "executes",
+          "edgeId": "e:2e5cfbc820d1fd7e9f35a4ffab8a3dbc93969ebb72c1833759868fe461808a29",
+          "target": "stmt:packages/pipeline/src/rules/mermaid.ts@L55",
+          "line": 55,
+          "expr": "return lines.join('\\n');"
+        }
+      }
+    ]
+  },
+  "implementation": {
+    "status": "implemented",
+    "executesCount": 15,
+    "referencedByFiles": [
+      "packages/pipeline/src/rules/export.ts"
+    ]
+  },
+  "coverage": {
+    "readiness": "partial",
+    "bodyPresent": true,
+    "executes": 15,
+    "assignments": 0,
+    "conditions": 6,
+    "raises": 0,
+    "handlers": 0,
+    "cursors": 0,
+    "caseBranches": 0,
+    "calls": {
+      "resolved": 7,
+      "recorded": 21,
+      "unresolved": 7
+    },
+    "recursive": false,
+    "exprTruncated": 0,
+    "caveats": [
+      "7 call site(s) resolve to no indexed symbol — those callees' behavior is not in the graph. Index them or treat their effect as unknown."
+    ]
+  }
+}

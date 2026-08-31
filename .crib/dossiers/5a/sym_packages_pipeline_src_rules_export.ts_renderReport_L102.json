@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/pipeline/src/rules/export.ts#renderReport@L102",
-  "schemaVersion": "1.5",
+  "schemaVersion": "1.6",
   "nodeHash": "blake3:9a25031465f256d558febfac22a87cf12639b6c1b3ab43ba58b670489a67c016",
-  "builtAt": "2026-07-16T16:35:16.098Z",
+  "builtAt": "2026-08-31T17:37:23.222Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/pipeline/src/rules/export.ts#renderReport@L102",
@@ -160,14 +160,14 @@
       "line": 197
     },
     {
-      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
       "confidence": 1,
       "name": "push",
       "qualifiedName": "push",
       "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
       "type": "function",
       "file": "packages/pipeline/src/linker/inverted-index.ts",
-      "line": 39
+      "line": 70
     },
     {
       "id": "sym:packages/pipeline/src/rules/export.ts#surprisingConnections@L54",
@@ -223,6 +223,20 @@
       {
         "procedure": "sym:packages/pipeline/src/rules/export.ts#renderReport@L102",
         "procedureName": "renderReport",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:289a357d79cb1ca3da12f861e05b54905a6d9facbbd2237678a11dd2bb53baa3",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
+          "expr": "push",
+          "line": 110
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/rules/export.ts#renderReport@L102",
+        "procedureName": "renderReport",
         "guard": "cond:packages/pipeline/src/rules/export.ts@L110",
         "branch": "THEN",
         "conditions": [
@@ -240,20 +254,6 @@
           "target": "stmt:packages/pipeline/src/rules/export.ts@L110",
           "line": 110,
           "expr": "lines.push(`vcsHead: ${m.repo.vcsHead}`);"
-        }
-      },
-      {
-        "procedure": "sym:packages/pipeline/src/rules/export.ts#renderReport@L102",
-        "procedureName": "renderReport",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:f3e9498e1d8ad16ef897545427eee4b7e1306da1da339329620ccd49d843a197",
-          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
-          "expr": "push",
-          "line": 110
         }
       },
       {

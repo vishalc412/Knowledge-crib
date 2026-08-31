@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/pipeline/src/rules/export.ts#surprisingConnections@L54",
-  "schemaVersion": "1.5",
+  "schemaVersion": "1.6",
   "nodeHash": "blake3:18612277bac419b265db545f580b005af84727a7d67f3cd413d3e5b3f8c4b683",
-  "builtAt": "2026-07-16T16:35:16.098Z",
+  "builtAt": "2026-08-31T17:37:23.222Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/pipeline/src/rules/export.ts#surprisingConnections@L54",
@@ -146,14 +146,14 @@
       "line": 16
     },
     {
-      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
+      "id": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
       "confidence": 1,
       "name": "push",
       "qualifiedName": "push",
       "signature": "push(map: Map<string, Node[]>, key: string, node: Node): void",
       "type": "function",
       "file": "packages/pipeline/src/linker/inverted-index.ts",
-      "line": 39
+      "line": 70
     }
   ],
   "docs": [
@@ -212,20 +212,6 @@
       {
         "procedure": "sym:packages/pipeline/src/rules/export.ts#surprisingConnections@L54",
         "procedureName": "surprisingConnections",
-        "conditions": [],
-        "inLoop": false,
-        "inException": false,
-        "action": {
-          "kind": "calls",
-          "edgeId": "e:09d477e48de896d77a24f47190297bc1e1590552c726b0c1a5c7da2f764e5a67",
-          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L39",
-          "expr": "push",
-          "line": 59
-        }
-      },
-      {
-        "procedure": "sym:packages/pipeline/src/rules/export.ts#surprisingConnections@L54",
-        "procedureName": "surprisingConnections",
         "guard": "cond:packages/pipeline/src/rules/export.ts@L57",
         "branch": "LOOP",
         "conditions": [
@@ -260,6 +246,20 @@
           "edgeId": "e:12349ba2e2eb3eb99ccac68d66ea4ef8255c55e9bad439c279910f361dac98f6",
           "target": "sym:packages/ui/web/support.js#createRegistry.get@L1300",
           "expr": "get",
+          "line": 59
+        }
+      },
+      {
+        "procedure": "sym:packages/pipeline/src/rules/export.ts#surprisingConnections@L54",
+        "procedureName": "surprisingConnections",
+        "conditions": [],
+        "inLoop": false,
+        "inException": false,
+        "action": {
+          "kind": "calls",
+          "edgeId": "e:220ef31a8f3f0e1b856fb683e83b715a980bd0e13f80bffbf9d14149ca058c7f",
+          "target": "sym:packages/pipeline/src/linker/inverted-index.ts#push@L70",
+          "expr": "push",
           "line": 59
         }
       },

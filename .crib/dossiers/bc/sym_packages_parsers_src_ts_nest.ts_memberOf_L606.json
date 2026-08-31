@@ -1,8 +1,8 @@
 {
   "id": "sym:packages/parsers/src/ts/nest.ts#memberOf@L606",
-  "schemaVersion": "1.5",
+  "schemaVersion": "1.6",
   "nodeHash": "blake3:6a0afaaa6840ddaf77f9d663d5801260746cc8e8d9fb99d75ae3ced9dd98b537",
-  "builtAt": "2026-07-13T11:04:33.459Z",
+  "builtAt": "2026-08-25T20:55:11.863Z",
   "shapeVersion": 2,
   "node": {
     "id": "sym:packages/parsers/src/ts/nest.ts#memberOf@L606",
@@ -62,6 +62,86 @@
       "line": 100
     },
     {
+      "id": "sym:packages/parsers/src/mule/MuleExtractor.ts#emitConfig@L277",
+      "confidence": 1,
+      "name": "emitConfig",
+      "qualifiedName": "emitConfig",
+      "signature": "emitConfig(doc: MuleDocument, file: FileMeta, c: FileClassification, ctx: ExtractCtx, fileId: string): ExtractResult",
+      "type": "function",
+      "file": "packages/parsers/src/mule/MuleExtractor.ts",
+      "line": 277
+    },
+    {
+      "id": "sym:packages/parsers/src/mule/MuleExtractor.ts#emitDataWeave@L834",
+      "confidence": 1,
+      "name": "emitDataWeave",
+      "qualifiedName": "emitDataWeave",
+      "signature": "emitDataWeave(source: string, file: FileMeta, c: FileClassification, ctx: ExtractCtx, fileId: string): ExtractResult",
+      "type": "function",
+      "file": "packages/parsers/src/mule/MuleExtractor.ts",
+      "line": 834
+    },
+    {
+      "id": "sym:packages/parsers/src/mule/MuleExtractor.ts#emitDescriptor@L745",
+      "confidence": 1,
+      "name": "emitDescriptor",
+      "qualifiedName": "emitDescriptor",
+      "signature": "emitDescriptor(source: string, file: FileMeta, c: FileClassification, ctx: ExtractCtx, fileId: string): ExtractResult",
+      "type": "function",
+      "file": "packages/parsers/src/mule/MuleExtractor.ts",
+      "line": 745
+    },
+    {
+      "id": "sym:packages/parsers/src/mule/MuleExtractor.ts#emitErrorHandler@L635",
+      "confidence": 1,
+      "name": "emitErrorHandler",
+      "qualifiedName": "emitErrorHandler",
+      "signature": "emitErrorHandler(eh: MuleErrorHandler, flowId: string, file: FileMeta, c: FileClassification, ctx: ExtractCtx, index: FlowIndex, nodes: Node[], edges: Edge[]): void",
+      "type": "function",
+      "file": "packages/parsers/src/mule/MuleExtractor.ts",
+      "line": 635
+    },
+    {
+      "id": "sym:packages/parsers/src/mule/MuleExtractor.ts#emitMUnit@L167",
+      "confidence": 1,
+      "name": "emitMUnit",
+      "qualifiedName": "emitMUnit",
+      "signature": "emitMUnit(suite: MUnitSuite, file: FileMeta, c: FileClassification, ctx: ExtractCtx, fileId: string): ExtractResult",
+      "type": "function",
+      "file": "packages/parsers/src/mule/MuleExtractor.ts",
+      "line": 167
+    },
+    {
+      "id": "sym:packages/parsers/src/mule/MuleExtractor.ts#emitMel@L1009",
+      "confidence": 1,
+      "name": "emitMel",
+      "qualifiedName": "emitMel",
+      "signature": "emitMel(source: string, file: FileMeta, c: FileClassification, ctx: ExtractCtx, fileId: string): ExtractResult",
+      "type": "function",
+      "file": "packages/parsers/src/mule/MuleExtractor.ts",
+      "line": 1009
+    },
+    {
+      "id": "sym:packages/parsers/src/mule/MuleExtractor.ts#emitProperties@L711",
+      "confidence": 1,
+      "name": "emitProperties",
+      "qualifiedName": "emitProperties",
+      "signature": "emitProperties(source: string, file: FileMeta, c: FileClassification, ctx: ExtractCtx, fileId: string): ExtractResult",
+      "type": "function",
+      "file": "packages/parsers/src/mule/MuleExtractor.ts",
+      "line": 711
+    },
+    {
+      "id": "sym:packages/parsers/src/mule/MuleExtractor.ts#emitRaml@L943",
+      "confidence": 1,
+      "name": "emitRaml",
+      "qualifiedName": "emitRaml",
+      "signature": "emitRaml(source: string, file: FileMeta, c: FileClassification, ctx: ExtractCtx, fileId: string): ExtractResult",
+      "type": "function",
+      "file": "packages/parsers/src/mule/MuleExtractor.ts",
+      "line": 943
+    },
+    {
       "id": "sym:packages/parsers/src/ts/nest.ts#extractNestSemantics@L104",
       "confidence": 1,
       "name": "extractNestSemantics",
@@ -74,14 +154,14 @@
   ],
   "callees": [
     {
-      "id": "sym:packages/soul-schema/src/id.ts#edgeId@L141",
+      "id": "sym:packages/soul-schema/src/id.ts#edgeId@L151",
       "confidence": 1,
       "name": "edgeId",
       "qualifiedName": "edgeId",
       "signature": "edgeId(src: string, dst: string, rel: Rel): string",
       "type": "function",
       "file": "packages/soul-schema/src/id.ts",
-      "line": 141
+      "line": 151
     }
   ],
   "docs": [
@@ -121,8 +201,8 @@
         "inException": false,
         "action": {
           "kind": "calls",
-          "edgeId": "e:ee924a0a94a1e967ce273aea9c6418ce3733a5aba96f1aa2980c6af7b23c6228",
-          "target": "sym:packages/soul-schema/src/id.ts#edgeId@L141",
+          "edgeId": "e:a3333c7581ce13185517a8fde23e32f2ba99fea6e08b0b469b725a7f3240c3fb",
+          "target": "sym:packages/soul-schema/src/id.ts#edgeId@L151",
           "expr": "edgeId",
           "line": 608
         }
@@ -134,6 +214,7 @@
     "executesCount": 1,
     "referencedByFiles": [
       "packages/parsers/src/java/JavaExtractor.ts",
+      "packages/parsers/src/mule/MuleExtractor.ts",
       "packages/parsers/src/php/PhpExtractor.ts",
       "packages/parsers/src/python/PythonExtractor.ts",
       "packages/parsers/src/ts/nest.ts"
