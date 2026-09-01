@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Knowledge-crib — 30 second teaser</title>
+  <style>
+    :root {
+      --bg: #050706;
+      --panel: #101411;
+      --panel-hi: #161c18;
+      --line: rgba(184,240,68,.22);
+      --acid: #b8f044;
+      --teal: #43d8c9;
+      --amber: #ffb23f;
+      --ink: #f3f6ef;
+      --muted: #a8b1aa;
+      --dim: #627069;
+      --mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+      --sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: var(--bg); }
+    body { color: var(--ink); font-family: var(--sans); }
+    .frame { width: 1920px; height: 1080px; position: relative; overflow: hidden; background: var(--bg); }
+    .frame::before { content: ""; position: absolute; inset: 0; background-image: linear-gradient(rgba(184,240,68,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(184,240,68,.035) 1px, transparent 1px); background-size: 48px 48px; mask-image: linear-gradient(to bottom, black, transparent 88%); }
+    .frame::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse at 50% 30%, transparent 25%, rgba(0,0,0,.48) 100%); }
+    .scene { display: none; position: absolute; inset: 0; padding: 72px 112px 58px; z-index: 1; }
+    .scene.active { display: block; }
+    .topline { display: flex; justify-content: space-between; align-items: center; color: var(--muted); font: 600 18px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; }
+    .brand { color: var(--ink); letter-spacing: -.04em; text-transform: none; font: 700 28px/1 var(--sans); }
+    .brand i { color: var(--acid); font-style: normal; }
+    .index { color: var(--acid); }
+    h1, h2, p { margin: 0; }
+    h1 { max-width: 1360px; margin-top: 110px; font-size: 101px; line-height: .96; letter-spacing: -.075em; }
+    h1 em { color: var(--acid); font-style: normal; }
+    .lede { max-width: 860px; margin-top: 38px; font-size: 31px; line-height: 1.32; color: var(--muted); letter-spacing: -.02em; }
+    .kicker { display: inline-flex; align-items: center; gap: 12px; color: var(--acid); font: 700 18px/1 var(--mono); text-transform: uppercase; letter-spacing: .11em; }
+    .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--acid); box-shadow: 0 0 22px var(--acid); }
+    .rule { height: 1px; background: linear-gradient(90deg, var(--acid), transparent); opacity: .72; }
+    .chip-row { display: flex; gap: 13px; margin-top: 56px; }
+    .chip { padding: 13px 16px; border: 1px solid rgba(184,240,68,.34); background: rgba(184,240,68,.055); color: var(--acid); font: 700 15px/1 var(--mono); letter-spacing: .04em; }
+    .trace { position: absolute; right: 28px; bottom: -76px; width: 830px; height: 720px; opacity: .88; }
+    .trace line { stroke: rgba(67,216,201,.4); stroke-width: 2; }
+    .trace circle { fill: #0c1614; stroke: var(--teal); stroke-width: 2; }
+    .trace .hot { fill: var(--acid); stroke: var(--acid); filter: drop-shadow(0 0 9px var(--acid)); }
+    .section-title { margin-top: 58px; font-size: 66px; line-height: 1; letter-spacing: -.055em; }
+    .section-title span { color: var(--acid); }
+    .subhead { max-width: 930px; margin-top: 21px; color: var(--muted); font-size: 26px; line-height: 1.36; }
+    .terminal { position: absolute; left: 112px; right: 112px; top: 290px; border: 1px solid rgba(184,240,68,.28); background: rgba(6,10,8,.89); box-shadow: 0 25px 80px rgba(0,0,0,.52); }
+    .term-bar { height: 57px; display: flex; align-items: center; gap: 11px; padding: 0 22px; border-bottom: 1px solid rgba(184,240,68,.16); background: #111812; }
+    .term-dot { width: 12px; height: 12px; border-radius: 50%; background: #ff6b60; } .term-dot.y { background: #ffbd3f; } .term-dot.g { background: #4cdb72; }
+    .term-label { margin-left: 15px; color: var(--dim); font: 600 16px/1 var(--mono); }
+    pre { margin: 0; padding: 45px 50px; color: #d9e3db; font: 24px/1.72 var(--mono); }
+    .prompt { color: var(--acid); } .accent { color: var(--teal); } .soft { color: #86938b; } .warn { color: var(--amber); }
+    .pipeline { display: flex; position: absolute; left: 112px; right: 112px; bottom: 87px; align-items: center; gap: 0; }
+    .pipe { min-width: 224px; padding: 22px; border: 1px solid rgba(184,240,68,.24); background: rgba(16,20,17,.84); }
+    .pipe b { display: block; font: 700 21px/1 var(--sans); } .pipe small { display: block; margin-top: 9px; color: var(--muted); font: 15px/1.2 var(--mono); }
+    .arrow { flex: 1; height: 1px; background: linear-gradient(90deg, var(--acid), rgba(184,240,68,.16)); position: relative; } .arrow::after { content: "›"; position: absolute; right: -1px; top: -18px; color: var(--acid); font: 40px/1 var(--sans); }
+    .product { position: absolute; left: 112px; right: 112px; top: 228px; bottom: 76px; border: 1px solid rgba(184,240,68,.28); background: #0b100d; box-shadow: 0 25px 80px rgba(0,0,0,.5); overflow: hidden; }
+    .product-bar { height: 58px; display: flex; align-items: center; gap: 20px; padding: 0 24px; border-bottom: 1px solid rgba(184,240,68,.15); background: #101711; color: var(--muted); font: 600 16px/1 var(--mono); }
+    .product-bar .live { margin-left: auto; color: var(--acid); }
+    .product-content { position: absolute; inset: 58px 0 0; overflow: hidden; background: #0d1117; }
+    .product-content img { width: 100%; min-height: 100%; object-fit: cover; object-position: center top; opacity: .94; }
+    .ui-callout { position: absolute; z-index: 2; padding: 16px 19px; border-left: 3px solid var(--acid); background: rgba(4,8,6,.9); box-shadow: 0 14px 40px rgba(0,0,0,.42); }
+    .ui-callout b { display: block; color: var(--acid); font: 700 15px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; } .ui-callout span { display: block; margin-top: 7px; font-size: 20px; }
+    .scan { position: absolute; z-index: 2; left: 0; right: 0; height: 2px; top: 38%; background: linear-gradient(90deg, transparent, var(--acid), transparent); box-shadow: 0 0 20px var(--acid); opacity: .82; }
+    .focus-meta { position: absolute; z-index: 2; top: 24px; right: 26px; display: flex; gap: 10px; } .focus-meta div { padding: 10px 12px; border: 1px solid rgba(67,216,201,.36); background: rgba(4,9,8,.8); color: var(--teal); font: 700 13px/1 var(--mono); }
+    .breadcrumb { margin-left: auto; display: flex; gap: 7px; align-items: center; color: var(--dim); font: 700 12px/1 var(--mono); letter-spacing: .04em; }
+    .breadcrumb span { padding: 8px 10px; border: 1px solid rgba(184,240,68,.12); background: rgba(184,240,68,.02); }
+    .breadcrumb .on { border-color: rgba(184,240,68,.48); color: var(--acid); background: rgba(184,240,68,.08); }
+    .breadcrumb i { color: var(--dim); font-style: normal; }
+    .granularity-canvas { position: absolute; inset: 58px 0 0; overflow: hidden; background: radial-gradient(ellipse at 50% 52%, rgba(31,85,78,.16), transparent 42%), #0d1117; }
+    .granularity-canvas::before { content: ""; position: absolute; inset: 0; background-image: linear-gradient(rgba(67,216,201,.045) 1px, transparent 1px), linear-gradient(90deg, rgba(67,216,201,.045) 1px, transparent 1px); background-size: 44px 44px; mask-image: linear-gradient(to bottom, rgba(0,0,0,.9), transparent); }
+    .granularity-lines { position: absolute; inset: 0; width: 100%; height: 100%; }
+    .granularity-lines line { stroke: rgba(67,216,201,.36); stroke-width: 2; }
+    .module-card { position: absolute; width: 270px; min-height: 145px; padding: 20px; border: 1px solid rgba(103,153,255,.48); background: rgba(18,29,43,.93); box-shadow: 0 16px 45px rgba(0,0,0,.26); }
+    .module-card b { display: block; font: 750 22px/1 var(--sans); }
+    .module-card small { display: block; margin-top: 12px; color: var(--muted); font: 14px/1.35 var(--mono); }
+    .module-card .module-stat { display: block; margin-top: 15px; color: var(--teal); font: 700 13px/1 var(--mono); }
+    .module-card.a { left: 11%; top: 19%; border-color: rgba(67,216,201,.56); }
+    .module-card.b { left: 40%; top: 11%; border-color: rgba(184,240,68,.56); }
+    .module-card.c { right: 11%; top: 19%; border-color: rgba(255,178,63,.56); }
+    .module-card.d { left: 40%; bottom: 12%; border-color: rgba(177,135,255,.56); }
+    .member-root { position: absolute; left: 50%; top: 44%; width: 188px; height: 188px; transform: translate(-50%,-50%); display: grid; place-content: center; text-align: center; border: 2px solid var(--acid); border-radius: 50%; background: rgba(184,240,68,.11); box-shadow: 0 0 65px rgba(184,240,68,.24); }
+    .member-root b { font: 800 24px/1.08 var(--sans); } .member-root small { margin-top: 10px; color: var(--acid); font: 700 12px/1.25 var(--mono); letter-spacing: .08em; text-transform: uppercase; }
+    .member-node { position: absolute; min-width: 170px; padding: 14px 16px; border: 1px solid rgba(103,153,255,.46); background: rgba(15,24,35,.95); color: var(--ink); font: 700 16px/1 var(--sans); box-shadow: 0 11px 32px rgba(0,0,0,.28); }
+    .member-node small { display: block; margin-top: 8px; color: var(--teal); font: 600 12px/1 var(--mono); }
+    .member-node.n1 { left: 10%; top: 15%; }.member-node.n2 { left: 10%; bottom: 18%; }.member-node.n3 { left: 41%; bottom: 9%; }.member-node.n4 { right: 10%; bottom: 18%; }.member-node.n5 { right: 10%; top: 15%; }
+    .member-note { position: absolute; right: 32px; top: 28px; padding: 15px 17px; border: 1px solid rgba(67,216,201,.3); background: rgba(5,10,8,.88); color: var(--muted); font: 14px/1.45 var(--mono); }
+    .member-note b { display: block; margin-bottom: 8px; color: var(--teal); font-size: 13px; letter-spacing: .08em; }
+    .mcp-layout { display: grid; grid-template-columns: 1fr 300px 1.34fr; gap: 55px; align-items: center; margin-top: 93px; }
+    .mcp-card { min-height: 365px; padding: 35px; border: 1px solid rgba(184,240,68,.26); background: rgba(16,20,17,.82); }
+    .mcp-card h3 { margin: 0; font: 700 27px/1 var(--sans); letter-spacing: -.03em; } .mcp-card p { margin-top: 16px; color: var(--muted); font-size: 19px; line-height: 1.4; }
+    .soul-file { margin-top: 38px; padding: 24px; background: #070b08; border: 1px solid rgba(67,216,201,.25); color: var(--teal); font: 700 20px/1.45 var(--mono); }
+    .mcp-core { min-height: 190px; display: grid; place-items: center; text-align: center; border: 1px solid var(--acid); background: rgba(184,240,68,.08); box-shadow: 0 0 42px rgba(184,240,68,.15); }
+    .mcp-core b { font: 800 34px/1 var(--sans); } .mcp-core span { display: block; margin-top: 9px; color: var(--acid); font: 700 13px/1 var(--mono); letter-spacing: .11em; }
+    .fan { display: grid; gap: 13px; } .consumer { display: flex; align-items: center; gap: 16px; padding: 17px 21px; border: 1px solid rgba(67,216,201,.26); background: rgba(67,216,201,.04); color: var(--ink); font: 700 20px/1 var(--sans); }
+    .consumer::before { content: ""; width: 10px; height: 10px; background: var(--teal); box-shadow: 0 0 14px var(--teal); }
+    .mcp-note { margin-top: 46px; color: var(--muted); font-size: 24px; } .mcp-note b { color: var(--acid); }
+    .outcome { display: grid; grid-template-columns: 1fr 1fr; gap: 26px; margin-top: 75px; }
+    .out-card { min-height: 300px; padding: 38px; border: 1px solid rgba(184,240,68,.25); background: rgba(16,20,17,.82); } .out-card.no { border-color: rgba(255,178,63,.38); }
+    .out-card h3 { margin: 0; color: var(--acid); font: 800 28px/1 var(--mono); letter-spacing: .02em; } .out-card.no h3 { color: var(--amber); }
+    .out-card ul { margin: 27px 0 0; padding: 0; list-style: none; } .out-card li { margin: 14px 0; color: var(--ink); font-size: 23px; } .out-card li::before { content: "✓"; display: inline-block; width: 31px; color: var(--teal); font-weight: 800; } .out-card.no li::before { content: "—"; color: var(--amber); }
+    .end { position: absolute; bottom: 64px; left: 112px; right: 112px; display: flex; align-items: center; justify-content: space-between; padding-top: 29px; border-top: 1px solid rgba(184,240,68,.25); } .end b { color: var(--acid); font: 700 18px/1 var(--mono); letter-spacing: .07em; } .end span { color: var(--muted); font-size: 19px; }
+  </style>
+</head>
+<body>
+  <main class="frame">
+    <section class="scene" id="scene-1">
+      <div class="topline"><div class="brand">knowledge<i>-</i>crib</div><div><span class="index">01</span> / 07 · project intelligence</div></div>
+      <div class="kicker" style="margin-top:120px"><span class="dot"></span> Your codebase, remembered</div>
+      <h1>Stop making AI<br/>rediscover <em>your system.</em></h1>
+      <p class="lede">Knowledge-crib turns source, docs, rules and relationships into durable, grounded project context.</p>
+      <div class="chip-row"><div class="chip">LOCAL-FIRST</div><div class="chip">GIT-COMMITTABLE</div><div class="chip">AGENT-AGNOSTIC</div></div>
+      <svg class="trace" viewBox="0 0 830 720" aria-hidden="true"><line x1="94" y1="144" x2="392" y2="246"/><line x1="392" y1="246" x2="651" y2="104"/><line x1="392" y1="246" x2="634" y2="476"/><line x1="94" y1="144" x2="278" y2="534"/><line x1="278" y1="534" x2="634" y2="476"/><line x1="651" y1="104" x2="759" y2="376"/><line x1="759" y1="376" x2="634" y2="476"/><circle cx="94" cy="144" r="14"/><circle cx="392" cy="246" r="25" class="hot"/><circle cx="651" cy="104" r="14"/><circle cx="634" cy="476" r="18"/><circle cx="278" cy="534" r="13"/><circle cx="759" cy="376" r="13"/></svg>
+    </section>
+
+    <section class="scene" id="scene-2">
+      <div class="topline"><div class="brand">knowledge<i>-</i>crib</div><div><span class="index">02</span> / 07 · deterministic core</div></div>
+      <h2 class="section-title">Index once. <span>Carry the context.</span></h2>
+      <p class="subhead">The deterministic pipeline parses code and documentation, resolves relationships, then writes a portable project soul.</p>
+      <div class="terminal"><div class="term-bar"><span class="term-dot"></span><span class="term-dot y"></span><span class="term-dot g"></span><span class="term-label">project / terminal</span></div><pre><span class="prompt">$</span> crib index .
+<span class="soft">→</span> parse source + documentation
+<span class="soft">→</span> link <span class="accent">symbols</span>, <span class="accent">dependencies</span>, <span class="accent">rules</span> and <span class="accent">evidence</span>
+<span class="soft">→</span> write <span class="warn">.crib/</span>  <span class="soft">(portable project intelligence)</span>
+
+<span class="prompt">$</span> git add .crib</pre></div>
+      <div class="pipeline"><div class="pipe"><b>Repository</b><small>code · docs · schemas</small></div><div class="arrow"></div><div class="pipe"><b>Deterministic graph</b><small>symbols · links · evidence</small></div><div class="arrow"></div><div class="pipe"><b>Project soul</b><small>.crib/ · commit with code</small></div></div>
+    </section>
+
+    <section class="scene" id="scene-3">
+      <div class="topline"><div class="brand">knowledge<i>-</i>crib</div><div><span class="index">03</span> / 07 · granularity 01</div></div>
+      <h2 class="section-title">System map. <span>Visible.</span></h2>
+      <p class="subhead">Level 01: repository-scale modules and relationships. Start broad. Keep graph structure intact.</p>
+      <div class="product"><div class="product-bar"><span>◉ Knowledge-crib</span><span>Architecture overview</span><span>Search</span><span class="live">● level 01 · system</span></div><div class="product-content"><img src="../../docs/assets/crib-graph-overview.png" alt="Knowledge-crib architecture overview" /></div><div class="scan"></div><div class="ui-callout" style="left:34px;bottom:42px"><b>Granularity 01</b><span>Repository → modules</span></div></div>
+    </section>
+
+    <section class="scene" id="scene-4">
+      <div class="topline"><div class="brand">knowledge<i>-</i>crib</div><div><span class="index">04</span> / 07 · granularity 02</div></div>
+      <h2 class="section-title">Module context. <span>Scoped.</span></h2>
+      <p class="subhead">Level 02: select one module. See high-value capabilities and cross-module links without losing system position.</p>
+      <div class="product"><div class="product-bar"><span>◉ Knowledge-crib</span><span>Module focus</span><div class="breadcrumb"><span>01 SYSTEM</span><i>›</i><span class="on">02 MODULE</span><i>›</i><span>03 CAPABILITY</span><i>›</i><span>04 SYMBOL</span></div></div><div class="granularity-canvas"><svg class="granularity-lines" viewBox="0 0 1600 700" preserveAspectRatio="none"><line x1="330" y1="210" x2="800" y2="150"/><line x1="800" y1="150" x2="1270" y2="210"/><line x1="330" y1="210" x2="800" y2="565"/><line x1="1270" y1="210" x2="800" y2="565"/></svg><div class="module-card a"><b>Public API</b><small>interfaces · contracts · entry points</small><span class="module-stat">148 symbols · 12 links</span></div><div class="module-card b"><b>Workflow engine</b><small>capabilities · rules · orchestration</small><span class="module-stat">316 symbols · 27 links</span></div><div class="module-card c"><b>Integration edge</b><small>events · adapters · external calls</small><span class="module-stat">91 symbols · 9 links</span></div><div class="module-card d"><b>Data core</b><small>models · persistence · migrations</small><span class="module-stat">204 symbols · 18 links</span></div><div class="ui-callout" style="left:34px;bottom:35px"><b>Granularity 02</b><span>Module → capabilities</span></div></div></div>
+    </section>
+
+    <section class="scene" id="scene-5">
+      <div class="topline"><div class="brand">knowledge<i>-</i>crib</div><div><span class="index">05</span> / 07 · granularity 03</div></div>
+      <h2 class="section-title">Capability members. <span>Isolated.</span></h2>
+      <p class="subhead">Level 03: isolate one business capability. Exact member symbols. No unrelated graph noise.</p>
+      <div class="product"><div class="product-bar"><span>◉ Knowledge-crib</span><span>Capability focus</span><div class="breadcrumb"><span>01 SYSTEM</span><i>›</i><span>02 MODULE</span><i>›</i><span class="on">03 CAPABILITY</span><i>›</i><span>04 SYMBOL</span></div></div><div class="granularity-canvas"><svg class="granularity-lines" viewBox="0 0 1600 700" preserveAspectRatio="none"><line x1="800" y1="305" x2="250" y2="135"/><line x1="800" y1="305" x2="250" y2="530"/><line x1="800" y1="305" x2="800" y2="625"/><line x1="800" y1="305" x2="1350" y2="530"/><line x1="800" y1="305" x2="1350" y2="135"/></svg><div class="member-root"><b>Workflow<br/>capability</b><small>5 exact members</small></div><div class="member-node n1">validate input<small>function</small></div><div class="member-node n2">assemble request<small>function</small></div><div class="member-node n3">persist state<small>function</small></div><div class="member-node n4">publish event<small>function</small></div><div class="member-node n5">write audit<small>function</small></div><div class="member-note"><b>COMPOSITION</b>One capability<br/>Five grounded symbols<br/>Members only</div></div></div>
+    </section>
+
+    <section class="scene" id="scene-6">
+      <div class="topline"><div class="brand">knowledge<i>-</i>crib</div><div><span class="index">06</span> / 07 · granularity 04</div></div>
+      <h2 class="section-title">Symbol evidence. <span>Connected.</span></h2>
+      <p class="subhead">Level 04: selected symbol, source, direct neighbours, then opt-in 2-hop impact context.</p>
+      <div class="product"><div class="product-bar"><span>◉ Knowledge-crib</span><span>Symbol focus</span><div class="breadcrumb"><span>01 SYSTEM</span><i>›</i><span>02 MODULE</span><i>›</i><span>03 CAPABILITY</span><i>›</i><span class="on">04 SYMBOL</span></div></div><div class="product-content"><img src="../../docs/assets/crib-graph-focus.png" alt="Knowledge-crib symbol focus view" /></div><div class="focus-meta"><div>DIRECT NEIGHBOURS</div><div>2-HOP CONTEXT</div><div>EVIDENCE</div></div><div class="ui-callout" style="left:35px;bottom:40px"><b>Granularity 04</b><span>Symbol → source → impact</span></div></div>
+    </section>
+
+    <section class="scene" id="scene-7">
+      <div class="topline"><div class="brand">knowledge<i>-</i>crib</div><div><span class="index">07</span> / 07 · right-sized promise</div></div>
+      <h2 class="section-title">Grounded context.<br/><span>Not magic.</span></h2>
+      <div class="outcome"><div class="out-card"><h3>WHAT IT DOES</h3><ul><li>Maps code, docs and relationships</li><li>Keeps project knowledge portable</li><li>Serves context through MCP</li><li>Supports optional LLM enrichment</li></ul></div><div class="out-card no"><h3>WHAT IT DOESN'T</h3><ul><li>Replace engineering judgement</li><li>Invent missing evidence</li><li>Require a cloud copy of your code</li><li>Turn generic chat into certainty</li></ul></div></div>
+      <div class="end"><div><b>KNOWLEDGE-CRIB</b><span style="display:block;margin-top:9px">Persistent project intelligence for AI-assisted engineering.</span></div><span>Index · explore · prove · deliver</span></div>
+    </section>
+  </main>
+  <script>
+    const scene = Math.min(7, Math.max(1, Number(new URLSearchParams(location.search).get('scene')) || 1));
+    document.getElementById(`scene-${scene}`).classList.add('active');
+  </script>
+</body>
+</html>
