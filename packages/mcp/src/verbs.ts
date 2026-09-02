@@ -70,6 +70,7 @@ import {
   llmPointer,
   llmProjection,
 } from './enrichment.js';
+import { verifyEvidence } from './grounding.js';
 import {
   DEFAULT_BODY_MAX_CHARS,
   DEFAULT_BODY_MAX_LINES,
@@ -223,6 +224,83 @@ const EXTERNAL_CALLEE_PATTERNS: readonly RegExp[] = [
 /** The admissible claim kinds for a `memory_observe` candidate (mirrors the candidate schema enum). */
 const MEMORY_CANDIDATE_KINDS = new Set(['fact', 'procedure', 'decision', 'pitfall', 'convention']);
 
+/**
+ * P0.2 — the longest source-quote `memory{op:'capture'}` lifts from an anchor span. Long enough that
+ * the quoted span recognizably IS the node's body, short enough to stay a fair checkable quote.
+ */
+const CAPTURE_QUOTE_MAX_CHARS = 240;
+
+/**
+ * P0.2 — resolve one loose symbol name to a node id. Mirrors {@link Verbs.resolveNodeId}'s
+ * id → qualified-name → simple-name order, but reports AMBIGUITY instead of silently taking the
+ * first simple-name match: a capture anchored to the wrong overload would ground a claim against
+ * unrelated code, which is worse than an unanchored one.
+ */
+function resolveSymbolAnchorId(soul: SoulStore, name: string): { id?: string; ambiguous: boolean } {
+  if (soul.getNode(name)) return { id: name, ambiguous: false };
+  const needle = name.toLowerCase();
+  const qualified: string[] = [];
+  const simple: string[] = [];
+  for (const n of soul.iterate()) {
+    if (n.qualifiedName?.toLowerCase() === needle) qualified.push(n.id);
+    else if (n.name?.toLowerCase() === needle) simple.push(n.id);
+  }
+  if (qualified.length === 1) return { id: qualified[0], ambiguous: false };
+  if (qualified.length > 1) return { ambiguous: true };
+  if (simple.length === 1) return { id: simple[0], ambiguous: false };
+  return { ambiguous: simple.length > 1 };
+}
+
+/** P0.2 — resolve one loose file path to its file node id. A path matches at most one file node, so
+ *  more than one hit is an index anomaly — reported as ambiguous, never guessed. */
+function resolveFileAnchorId(soul: SoulStore, path: string): { id?: string; ambiguous: boolean } {
+  const matches: string[] = [];
+  for (const n of soul.iterate()) {
+    if (n.kind === 'file' && n.file === path) matches.push(n.id);
+  }
+  if (matches.length === 1) return { id: matches[0], ambiguous: false };
+  return { ambiguous: matches.length > 1 };
+}
+
+/** P0.2 — the capture-anchoring outcome over every loose name the caller supplied. */
+interface CaptureAnchors {
+  /** soul ids the observation anchored to (symbols first, then files). */
+  resolved: string[];
+  /** names that matched more than one node — reported, never guessed. */
+  ambiguous: string[];
+  /** names with no node at all, in caller order — the candidate is still written, just unanchored. */
+  unresolvable: string[];
+  /** resolved symbol nodes that carry an on-disk span, in resolution order — the quote source. */
+  spanNodes: Node[];
+}
+
+/** P0.2 — resolve the loose `symbols` / `files` refs of a capture into soul anchors. Pure over the
+ *  soul; a name that resolves to nothing or to several nodes degrades the ANCHOR, never the write. */
+function resolveCaptureAnchors(
+  soul: SoulStore,
+  symbols: string[],
+  files: string[],
+): CaptureAnchors {
+  const out: CaptureAnchors = { resolved: [], ambiguous: [], unresolvable: [], spanNodes: [] };
+  for (const name of symbols) {
+    const hit = resolveSymbolAnchorId(soul, name);
+    if (hit.id) {
+      out.resolved.push(hit.id);
+      const node = soul.getNode(hit.id);
+      // Only symbol nodes with a real on-disk span can back a source-quote evidence item.
+      if (node?.file && node.span) out.spanNodes.push(node);
+    } else if (hit.ambiguous) out.ambiguous.push(name);
+    else out.unresolvable.push(name);
+  }
+  for (const path of files) {
+    const hit = resolveFileAnchorId(soul, path);
+    if (hit.id) out.resolved.push(hit.id);
+    else if (hit.ambiguous) out.ambiguous.push(path);
+    else out.unresolvable.push(path);
+  }
+  return out;
+}
+
 function initGapCategories(): GapCategoryCounts {
   return { project: 0, tests: 0, fixtures: 0, builtin: 0, external: 0 };
 }
@@ -311,6 +389,7 @@ const PUBLIC_VERBS = new Set<string>([
   'memoryRecall',
   'memoryGet',
   'memoryObserve',
+  'memoryCapture',
   'memoryStatus',
   'memoryAudit',
   'memoryFeedback',
@@ -2456,6 +2535,153 @@ export class Verbs {
       status: 'pending',
       origin,
       scope: candidate.scope,
+    });
+  }
+
+  /**
+   * P0.2 — `memory{op:'capture'}`: automatic episodic capture to the candidate tier. `memory_observe`
+   * is the disciplined path — the agent decides what is worth recording and produces grounded evidence
+   * every time — but discipline that depends on agent diligence yields an empty ledger. Capture takes
+   * the LOOSE form agents already have (what was attempted, what happened, which files/symbols were
+   * touched) and writes it as a candidate with ZERO diligence required.
+   *
+   * What makes a capture more than diary text is the auto-anchor: the loose `symbols`/`files` refs are
+   * resolved to soul ids via the same id → qualified-name → simple-name path the node verbs use, and
+   * the first resolvable spanned symbol backs an automatically derived `source-quote` evidence item
+   * (quote lifted verbatim from the rehydrated span, `targetHash` taken from the live node) — turning
+   * a loose observation into a checkable claim. The derived quote is self-checked with the same
+   * `verifyEvidence` grounding gate the enrich path uses before it is stamped `valid`, so the stamp is
+   * earned, not assumed.
+   *
+   * Anchoring NEVER fails the capture (a capture that hard-fails on a typo'd symbol name is a capture
+   * an agent stops making); the result reports `anchorStatus` — `anchored` / `ambiguous` (a name hit
+   * several nodes, nothing guessed) / `unresolvable` / `unanchored` (no refs supplied) — so the caller
+   * knows exactly how checkable the candidate is. The record is still candidate-trust: candidates live
+   * in the LOCAL `candidates` collection and never enter normal recall (only `includePending` shares
+   * them); promotion stays a separate CLI/CI step. Content-addressed like `memory_observe`, so a
+   * repeat capture of the same observation upserts to the same `cand:` id.
+   */
+  memoryCapture(args: {
+    /** the claim's topic key — a soul id, `art:` id, or `topic:<slug>` (mirrors observe). */
+    subject: string;
+    /** what was attempted / what happened, as free text. Becomes the candidate's claim verbatim. */
+    observation: string;
+    /** defaults to `fact` — the least presumptuous kind for a loose observation. */
+    kind?: string;
+    /** loose file paths touched — resolved to file nodes when they exist. */
+    files?: string[];
+    /** loose symbol names touched — resolved to soul ids; the first spanned one backs the evidence. */
+    symbols?: string[];
+    actor: string;
+    tool?: string;
+    scopeBoundary?: 'repo' | 'global';
+    ifHash?: string;
+  }): Record<string, unknown> {
+    const local = this.memory?.local;
+    if (!local) return this.applyIfHash(args, { memory: 'not configured' });
+    const kind = args.kind ?? 'fact';
+    if (!MEMORY_CANDIDATE_KINDS.has(kind)) {
+      return this.applyIfHash(args, {
+        ok: false,
+        error: `invalid kind '${kind}' — expected one of ${[...MEMORY_CANDIDATE_KINDS].join(', ')}`,
+      });
+    }
+    if (typeof args.subject !== 'string' || args.subject.length === 0) {
+      return this.applyIfHash(args, { ok: false, error: 'subject is required' });
+    }
+    if (typeof args.observation !== 'string' || args.observation.length === 0) {
+      return this.applyIfHash(args, { ok: false, error: 'observation is required' });
+    }
+    if (typeof args.actor !== 'string' || args.actor.length === 0) {
+      return this.applyIfHash(args, { ok: false, error: 'actor is required' });
+    }
+    // Scope resolution mirrors memoryObserve exactly — a repo-scoped claim needs a stable repoId or
+    // its content id is unstable across machines (see memoryObserve for the full rationale).
+    const boundary = args.scopeBoundary ?? 'repo';
+    const scope: { boundary: 'repo' | 'global'; repoId?: string } = { boundary };
+    if (boundary === 'repo') {
+      const repoId = readRepoId(this.deps.soul.cribDir);
+      if (!repoId) {
+        return this.applyIfHash(args, {
+          ok: false,
+          error:
+            'could not resolve a stable repoId for this repo — run `crib index` to register it before capturing repo-scoped memory',
+        });
+      }
+      scope.repoId = repoId;
+    }
+    // Auto-anchor: resolve the loose refs, then ground the first spanned symbol with a lifted quote.
+    const anchors = resolveCaptureAnchors(this.deps.soul, args.symbols ?? [], args.files ?? []);
+    const anchorStatus: 'anchored' | 'ambiguous' | 'unresolvable' | 'unanchored' =
+      anchors.resolved.length > 0
+        ? 'anchored'
+        : anchors.ambiguous.length > 0
+          ? 'ambiguous'
+          : anchors.resolved.length + anchors.ambiguous.length + anchors.unresolvable.length > 0
+            ? 'unresolvable'
+            : 'unanchored';
+    const evidence: MemoryEvidence[] = [];
+    if (anchors.spanNodes.length > 0) {
+      const node = anchors.spanNodes[0]!;
+      const body = rehydrateBody(this.deps.repoRoot, node);
+      const quote = body.text.trim().slice(0, CAPTURE_QUOTE_MAX_CHARS);
+      // The quote is lifted from the span by construction, but the 'valid' stamp is only earned if
+      // the SAME quote-overlap gate the enrich path uses confirms it (a redaction policy or an
+      // unreadable file can make the rehydrated text unusable — then no evidence, not bad evidence).
+      if (
+        quote.length > 0 &&
+        verifyEvidence(this.deps.soul, this.deps.repoRoot, { soulId: node.id, quote }).verdict ===
+          'grounded'
+      ) {
+        evidence.push({
+          kind: 'source-quote',
+          verdict: 'valid',
+          checkedAt: new Date().toISOString(),
+          soulId: node.id,
+          quote,
+          targetHash: node.hash,
+          startLine: node.span!.start,
+        });
+      }
+    }
+    // appliesTo carries the canonical ids where the claim reattaches, plus the raw refs that did not
+    // resolve (still the best available pointer for a human promoting the candidate later).
+    const appliesTo = [...new Set([...anchors.resolved, ...anchors.unresolvable])];
+    const input = {
+      kind: kind as MemoryCandidate['kind'],
+      subject: args.subject,
+      claim: args.observation,
+      scope,
+      appliesTo,
+      evidence,
+      authorship: {
+        actor: args.actor,
+        kind: 'agent',
+        ...(args.tool ? { tool: args.tool } : {}),
+      } as MemoryCandidate['authorship'],
+    };
+    const candidate: MemoryCandidate = {
+      id: memoryCandidateId(input),
+      schemaVersion: '1',
+      ...input,
+      // Capture is an observation the agent did not curate — origin 'observe' (the schema's enum),
+      // distinguished from a hand-formed observe by meta.anchorStatus below.
+      origin: 'observe',
+      proposedAt: new Date().toISOString(),
+      meta: { anchorStatus },
+    };
+    // assertWritable (schema validate + secret scan) runs inside upsertEntry; a bad candidate throws.
+    local.upsertEntry('candidates', candidate);
+    return this.applyIfHash(args, {
+      id: candidate.id,
+      status: 'pending',
+      origin: 'observe',
+      scope: candidate.scope,
+      anchorStatus,
+      evidenceAttached: evidence.length > 0,
+      ...(anchors.resolved.length > 0 ? { anchors: anchors.resolved } : {}),
+      ...(anchors.ambiguous.length > 0 ? { ambiguous: anchors.ambiguous } : {}),
+      ...(anchors.unresolvable.length > 0 ? { unresolvable: anchors.unresolvable } : {}),
     });
   }
 

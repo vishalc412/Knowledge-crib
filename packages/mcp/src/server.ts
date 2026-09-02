@@ -305,14 +305,20 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
     'memory',
     {
       description:
-        'Memory ledger operations, selected by `op`. get: one record by id (needs id; withEvidence for full evidence). status: ledger counts by trust/evidence/lifecycle plus recall-eligible, quarantined, and pending. audit: read-only health report - drifted verdicts, conflict groups, a secret re-scan, trust distribution, locally quarantined records. feedback: record LOCAL feedback on a record (needs subject, signal, actor); a `contradicted` signal quarantines only when backed by admissible counterEvidence, and never retracts team memory. To READ memory for a task use `memory_recall`; to WRITE a new claim use `memory_observe`.',
+        'Memory ledger operations, selected by `op`. get: one record by id (needs id; withEvidence for full evidence). status: ledger counts by trust/evidence/lifecycle plus recall-eligible, quarantined, and pending. audit: read-only health report - drifted verdicts, conflict groups, a secret re-scan, trust distribution, locally quarantined records. capture: episodic capture to the candidate tier (needs subject, observation, actor) - loose refs in files/symbols are auto-anchored to a source-quote evidence item when they resolve; the candidate is pending trust and never enters normal recall. feedback: record LOCAL feedback on a record (needs subject, signal, actor); a `contradicted` signal quarantines only when backed by admissible counterEvidence, and never retracts team memory. To READ memory for a task use `memory_recall`; to WRITE a fully-formed grounded claim use `memory_observe`.',
       inputSchema: {
-        op: z.enum(['get', 'status', 'audit', 'feedback']),
+        op: z.enum(['get', 'status', 'audit', 'capture', 'feedback']),
         id: z.string().optional(),
         withEvidence: z.boolean().optional(),
         subject: z.string().optional(),
+        observation: z.string().optional(),
+        kind: z.enum(['fact', 'procedure', 'decision', 'pitfall', 'convention']).optional(),
+        files: z.array(z.string()).optional(),
+        symbols: z.array(z.string()).optional(),
         signal: z.enum(['useful', 'unhelpful', 'contradicted']).optional(),
         actor: z.string().optional(),
+        tool: z.string().optional(),
+        scopeBoundary: z.enum(['repo', 'global']).optional(),
         context: z.string().optional(),
         counterEvidence: z.array(z.record(z.string(), z.unknown())).optional(),
         ifHash: z.string().optional(),
@@ -338,6 +344,28 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
           return TOOL_RESULT(
             verbs.memoryAudit({ ...(a.ifHash !== undefined ? { ifHash: a.ifHash } : {}) }),
           );
+        case 'capture': {
+          if (!a.subject || !a.observation || !a.actor)
+            return TOOL_RESULT({
+              error: {
+                code: 'BAD_REQUEST',
+                message: 'op=capture requires subject, observation, and actor',
+              },
+            });
+          return TOOL_RESULT(
+            verbs.memoryCapture({
+              subject: a.subject,
+              observation: a.observation,
+              actor: a.actor,
+              ...(a.kind !== undefined ? { kind: a.kind } : {}),
+              ...(a.files !== undefined ? { files: a.files } : {}),
+              ...(a.symbols !== undefined ? { symbols: a.symbols } : {}),
+              ...(a.tool !== undefined ? { tool: a.tool } : {}),
+              ...(a.scopeBoundary !== undefined ? { scopeBoundary: a.scopeBoundary } : {}),
+              ...(a.ifHash !== undefined ? { ifHash: a.ifHash } : {}),
+            }),
+          );
+        }
         case 'feedback': {
           if (!a.subject || !a.signal || !a.actor)
             return TOOL_RESULT({

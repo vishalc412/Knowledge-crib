@@ -8,7 +8,7 @@
 import { describe, expect, it } from 'vitest';
 import { mrr, p50p95, percentile, recallAtK } from './metrics.js';
 import { BENCH_SCALE_FAST, type BenchScale, formatBenchReport, runMemoryBench } from './run.js';
-import { relevanceCorpus } from './scenarios.js';
+import { TOPIC_BANK_SIZE, relevanceCorpus } from './scenarios.js';
 
 // ─── metrics ─────────────────────────────────────────────────────────────────
 
@@ -44,12 +44,23 @@ describe('bench corpus', () => {
   });
 
   it('never reuses a content id across instances', () => {
-    const { records } = relevanceCorpus(12);
+    const { records } = relevanceCorpus(TOPIC_BANK_SIZE);
     expect(new Set(records.map((r) => r.id)).size).toBe(records.length);
   });
 
+  it('draws DISTINCT topics only: n above the bank size is capped, one topic per record', () => {
+    const { records, queries } = relevanceCorpus(TOPIC_BANK_SIZE + 20);
+    expect(records.length).toBe(TOPIC_BANK_SIZE);
+    expect(queries.length).toBe(TOPIC_BANK_SIZE * 2);
+    // every query labels exactly one record → recall@5 and MRR both get a clean 1.0 ceiling
+    for (const q of queries) expect(q.relevantIds).toHaveLength(1);
+    // no two records share a claim once the mod token is stripped → the bank was not cycled
+    const stripMod = (claim: string) => claim.replace(/mod\d+/g, '').trim();
+    expect(new Set(records.map((r) => stripMod(r.claim))).size).toBe(records.length);
+  });
+
   it('paraphrase queries share ZERO tokens with their claim (the honest semantic-recall split)', () => {
-    const { records, queries } = relevanceCorpus(12);
+    const { records, queries } = relevanceCorpus(TOPIC_BANK_SIZE);
     const tokens = (s: string) =>
       new Set(
         s
@@ -68,7 +79,7 @@ describe('bench corpus', () => {
   });
 
   it('exact queries DO share claim tokens (the lexical path must stay near-perfect)', () => {
-    const { records, queries } = relevanceCorpus(12);
+    const { records, queries } = relevanceCorpus(TOPIC_BANK_SIZE);
     for (const q of queries) {
       if (q.family !== 'exact') continue;
       const rec = records.find((r) => q.relevantIds.includes(r.id))!;

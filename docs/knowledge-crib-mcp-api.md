@@ -6,13 +6,13 @@
 
 ---
 
-## Tool consolidation (current surface: 15 tools)
+## Tool consolidation (current surface: 14 tools / 32 operations)
 
 Fourteen tools that differed only in which verb they called were folded behind an `op` parameter.
 Every tool costs name + description + JSON schema in the tool list of **every** session whether or
 not it is used, so a family of five rarely-used tools was a permanent tax on every conversation.
-The consolidated surface is 15 tools / ~3,654 tokens, down from 31 / ~6,249 — a 42% cut with no
-capability removed.
+The consolidated surface is 14 tools / 32 operations — down from 31 tools / ~6,249 tokens, a 42%
+token cut with no capability removed.
 
 | Was | Now |
 |---|---|
@@ -28,6 +28,7 @@ capability removed.
 | `dossier` | `dossier({op:'one'})` *(default)* |
 | `reconstruct` | `dossier({op:'package'})` |
 | `dossier_by_scope` | `dossier({op:'scope'})` |
+| `extract_rules` | `dossier({op:'rules'})` |
 | `neighbors` | `neighbors({op:'edges'})` *(default)* |
 | `llm_neighbors` | `neighbors({op:'llm'})` |
 | `describes` | `neighbors({op:'describes'})` |
@@ -36,10 +37,15 @@ capability removed.
 | `gaps` | `status({op:'gaps'})` |
 | `memory_get` / `memory_status` / `memory_audit` / `memory_feedback` | `memory({op:'get'\|'status'\|'audit'\|'feedback'})` |
 
+`memory` also gained `memory({op:'capture'})` — loose one-shot observations (subject + observation,
+optional files/symbols auto-anchored to the first resolvable spanned symbol) written straight to the
+candidate-trust tier, never directly to a trusted store.
+
 Still standalone, deliberately: `brief`, `context`, `query`, `source`, `detect_changes`,
-`extract_rules`, `overview`, `memory_recall`, `memory_observe` — reached for constantly, or named
+`overview`, `memory_recall`, `memory_observe` — reached for constantly, or named
 directly by the installed client protocol and project instructions, where an extra `op` would be
-friction or breakage.
+friction or breakage. (`extract_rules` had no keep-standalone rationale and is now
+`dossier({op:'rules'})`; its name lives on in `RETIRED_ALIASES`.)
 
 An under-specified `op` returns `{ error: { code: 'BAD_REQUEST' } }` rather than forwarding a
 partial call to a verb.

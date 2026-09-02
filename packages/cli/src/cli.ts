@@ -40,7 +40,16 @@ import {
   withCribLockAsync,
 } from '@knowledge-crib/core';
 import type { IndexStore } from '@knowledge-crib/core';
-import { EnrichmentStore, Verbs, estimateTokens, serveHttp, serveStdio } from '@knowledge-crib/mcp';
+import {
+  EnrichmentStore,
+  Verbs,
+  capInt,
+  capMaxTokens,
+  estimateTokens,
+  fitTokenBudget,
+  serveHttp,
+  serveStdio,
+} from '@knowledge-crib/mcp';
 import type {
   EnrichLayer,
   EnrichNextBatch,
@@ -54,16 +63,24 @@ import {
   type AttemptPhase,
   BENCH_SCALE_DEFAULT,
   BENCH_SCALE_FAST,
+  type ConflictGroup,
+  FtsLexicalScorer,
   type GateReceipt,
   type MemoryCandidate,
   type MemoryDecision,
   MemoryEvaluator,
   type MemoryEvidence,
   type MemoryFeedback,
+  MemoryFtsIndex,
   type MemoryPolicy,
   type MemoryRecord,
   type MemoryRecordKind,
+  type MemorySource,
   MemoryStore,
+  type RecallProjection,
+  type RecallProvenance,
+  type RecallScore,
+  type ScoredRecord,
   SoulStoreSoulPort,
   type StructuredSummary,
   type TrustedTeamPresence,
@@ -79,6 +96,7 @@ import {
   decisionId,
   evaluateCandidate,
   formatBenchReport,
+  gatherRecall,
   gcUnpromotedAttempts,
   isFeedbackSignal,
   isTeamTrustedRecord,
@@ -91,6 +109,7 @@ import {
   proposeExisting,
   quarantinedRecordIds,
   readRepoId,
+  recallProjection,
   resolveProfile,
   runGate,
   runMemoryBench,
@@ -186,6 +205,9 @@ const VALUE_FLAGS = new Set([
   '--repo',
   '--dir',
   '--crib-dir',
+  '--sources',
+  '--target',
+  '--max-tokens',
 ]);
 
 /** Collect positional argv tokens, skipping boolean flags AND value-taking flags + their values. */
@@ -3127,17 +3149,22 @@ function findReceipt(local: MemoryStore, id: string): GateReceipt | undefined {
 /**
  * `crib memory` — the evaluation / promotion surface (PRD lines 252–258). Subcommands:
  *   - init                 bootstrap `.crib/memory/policy.json` + report the resolved store layout
+ *   - recall "<query>"     the CLI fallback for the `brief` MCP tool's memory half (P0.1 — the
+ *                          neutral protocol text names this command, so it must exist)
  *   - evaluate <id> -p X   run the gate → evaluate → activate (the happy path); crash-safe
  *   - activate <id>        crash-recovery: re-evaluate + activate against an existing receipt
  *   - propose <mem-id>     write a team record + accept decision (idempotent; CI derives trust)
  *   - attest <id>          TTY-only human attestation: stamp a human-attestation evidence item
  * The MCP server NEVER calls these — only the CLI / CI runner produce evaluation receipts (PRD 68).
+ * `recall` is the one read-only exception: it mirrors the MCP `memory_recall` verb's projection.
  */
 async function cmdMemory(args: string[], ctx?: CmdCtx): Promise<number> {
   const [sub, ...rest] = args;
   switch (sub) {
     case 'init':
       return cmdMemoryInit(rest, ctx);
+    case 'recall':
+      return cmdMemoryRecall(rest, ctx);
     case 'evaluate':
       return cmdMemoryEvaluate(rest, ctx);
     case 'activate':
@@ -3162,13 +3189,289 @@ async function cmdMemory(args: string[], ctx?: CmdCtx): Promise<number> {
     case '-h':
     case '--help':
       process.stderr.write(
-        'crib memory init | evaluate <candidate> --profile <name> | activate <candidate> | propose <memory-id> | attest <candidate> | check | audit [--repair-local] | feedback <mem-id> --signal <useful|unhelpful|contradicted> [--actor <id>] [--context <text>] [--counter-evidence <json-file>] | gc [--max-age-days N] [--dry-run] | migrate | bench [--fast] [--json] [--out <path>]\n',
+        'crib memory init | recall "<query>" [--limit N] [--sources team,local,global] [--target <id>] [--with-evidence] [--include-pending] [--max-tokens N] [--json] | evaluate <candidate> --profile <name> | activate <candidate> | propose <memory-id> | attest <candidate> | check | audit [--repair-local] | feedback <mem-id> --signal <useful|unhelpful|contradicted> [--actor <id>] [--context <text>] [--counter-evidence <json-file>] | gc [--max-age-days N] [--dry-run] | migrate | bench [--fast] [--json] [--out <path>]\n',
       );
       return EXIT.OK;
     default:
       process.stderr.write(`unknown memory subcommand: ${sub}\n`);
       return EXIT.BAD_ARGS;
   }
+}
+
+// ─── P0.1 — `crib memory recall` (the protocol's documented CLI fallback) ─────────
+
+/**
+ * `crib memory recall "<query>"` — the CLI fallback the neutral agent-memory protocol names in
+ * every IDE instruction file (adapters.ts `neutralProtocolBody` tells agents to call
+ * `crib memory recall "<query>"`; before P0.1 that subcommand did not exist, so the documented
+ * fallback was dead). Produces the SAME result the MCP `memory_recall` verb returns: the same
+ * trust-tier eligibility (candidate-trust / quarantined / superseded records never surface in
+ * normal recall), the same 6-criterion rank, the same team + local + global default sources, the
+ * same projection shape (memories + conflicts + provenance + truncated), and the same arg semantics
+ * (limit defaults to 5, capped at 20; max-tokens defaults to 1200; include-pending is opt-in and
+ * returns untrusted candidates in a SEPARATE group).
+ *
+ * The MCP's `recallProjectionOf` is a private method of its verbs class, so the projection is
+ * composed here from @knowledge-crib/memory public exports — the identical gather → disposable
+ * in-memory FTS index → pure projection pipeline (verbs.ts never mixes memory BM25 with the soul's
+ * code BM25, and neither does this).
+ */
+function cmdMemoryRecall(args: string[], ctx?: CmdCtx): number {
+  // Query positionals are the search text, NOT a root (same discipline as `crib query`); root comes
+  // from --cwd / env / cwd walk-up only.
+  const q = positionalsOf(args).join(' ');
+  if (!q) {
+    process.stderr.write(
+      'usage: crib memory recall "<query>" [--limit N] [--sources team,local,global] [--target <id>] [--with-evidence] [--include-pending] [--max-tokens N] [--json]\n',
+    );
+    return EXIT.BAD_ARGS;
+  }
+  const json = args.includes('--json');
+  const withEvidence = args.includes('--with-evidence');
+  const includePending = args.includes('--include-pending');
+  const limitRaw = intFlag(args, '--limit');
+  const maxTokensRaw = intFlag(args, '--max-tokens');
+  const sourcesRaw = stringFlag(args, '--sources');
+  const targets = repeatedFlag(args, '--target');
+  let sources: MemorySource[] | undefined;
+  if (sourcesRaw !== undefined) {
+    const wanted = sourcesRaw
+      .split(',')
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
+    const bad = wanted.filter((s) => s !== 'team' && s !== 'local' && s !== 'global');
+    if (bad.length > 0) {
+      process.stderr.write(
+        `error: unknown source(s) ${bad.join(', ')} — --sources accepts team, local, global\n`,
+      );
+      return EXIT.BAD_ARGS;
+    }
+    if (wanted.length > 0) sources = wanted as MemorySource[];
+  }
+  const resolved = resolveProjectRoot({ explicitRoot: ctx?.cwdOverride });
+  const rt = openSoul(resolved);
+  const deps = createMemoryDeps(rt.soul, resolved.repoRoot, resolved.cribDir);
+  if (!deps) {
+    process.stderr.write('could not resolve repoId for memory — run `crib index` first\n');
+    return EXIT.NOT_INDEXED;
+  }
+  const projection = memoryRecallProjection(deps, {
+    query: q,
+    ...(targets.length > 0 ? { targetIds: targets } : {}),
+    ...(sources ? { sources } : {}),
+  });
+  // limit is the hard count cap (default 5, max 20 — same caps as memory_recall); the token budget
+  // trims within the limited set.
+  const limit = capInt(limitRaw, 5, 20);
+  const limited = projection.memories.slice(0, limit).map((m) => memoryRecallView(m, withEvidence));
+  const conflicts = projection.conflicts.map(memoryConflictView);
+  const maxTokens = maxTokensRaw === undefined ? 1200 : capMaxTokens(maxTokensRaw);
+  const fitted = fitTokenBudget(limited, maxTokens, (prefix) =>
+    JSON.stringify({
+      memories: prefix,
+      conflicts,
+      provenance: projection.provenance,
+      budgetExhausted: true,
+    }),
+  );
+  const result: Record<string, unknown> = {
+    memories: fitted.items,
+    conflicts,
+    provenance: projection.provenance,
+    truncated: fitted.budgetExhausted || projection.memories.length > limit,
+  };
+  // Opt-in, kept in its own group: `memories` stays trusted-only whatever this flag returns.
+  if (includePending) result.pending = pendingMemoryCandidates(deps.local, q, limit);
+  if (fitted.budgetExhausted) result.budgetExhausted = true;
+  if (json) process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+  else process.stdout.write(renderMemoryRecall(q, result));
+  return EXIT.OK;
+}
+
+/** Read an integer-valued flag (`--limit 5`), or undefined when absent / not a number. */
+function intFlag(args: string[], name: string): number | undefined {
+  const idx = args.indexOf(name);
+  if (idx < 0) return undefined;
+  const parsed = Number.parseInt(args[idx + 1] ?? '', 10);
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+/** Read a string-valued flag (`--sources team,local`), or undefined when absent. */
+function stringFlag(args: string[], name: string): string | undefined {
+  const idx = args.indexOf(name);
+  return idx >= 0 ? (args[idx + 1] ?? undefined) : undefined;
+}
+
+/** Collect every occurrence of a repeatable flag's value (`--target a --target b` → [a, b]). */
+function repeatedFlag(args: string[], name: string): string[] {
+  const out: string[] = [];
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === name) {
+      const value = args[i + 1];
+      if (value && !value.startsWith('-')) out.push(value);
+    }
+  }
+  return out;
+}
+
+/**
+ * Build the recall projection from the three stores — the CLI-side twin of the MCP's private
+ * `recallProjectionOf`: gather → disposable in-memory FTS5 index (never mixed with the soul's code
+ * BM25) → pure 6-criterion rank + conflict projection, with fresh revalidation against the live
+ * soul (the evaluator + SoulStoreSoulPort are always wired by {@link createMemoryDeps}). The FTS
+ * handle is closed in a finally — a `:memory:` DB holds no filesystem lock.
+ */
+function memoryRecallProjection(
+  deps: NonNullable<ReturnType<typeof createMemoryDeps>>,
+  opts: { query: string; targetIds?: string[]; sources?: MemorySource[] },
+): RecallProjection {
+  const gathered = gatherRecall(
+    { team: deps.team, local: deps.local, global: deps.global },
+    opts.sources ? { sources: opts.sources } : {},
+  );
+  const fts = new MemoryFtsIndex(':memory:');
+  try {
+    fts.rebuild(gathered.records.map((r) => r.record));
+    return recallProjection(gathered, {
+      query: opts.query,
+      ...(opts.targetIds ? { targetIds: opts.targetIds } : {}),
+      lexicalScorer: new FtsLexicalScorer(fts),
+      evaluator: deps.evaluator,
+      evalCtx: deps.evalCtx,
+    });
+  } finally {
+    fts.close();
+  }
+}
+
+/** A lightweight evidence pointer (kind + verdict + soul anchor) — the default recall view. */
+function evidenceSummaryOf(ev: MemoryEvidence): Record<string, unknown> {
+  const out: Record<string, unknown> = { kind: ev.kind, verdict: ev.verdict };
+  if (ev.soulId) out.soulId = ev.soulId;
+  return out;
+}
+
+/**
+ * The public recall view of one scored record: verdicts + score + appliesTo + evidence (summary by
+ * default, full with `--with-evidence`). Same shape as the MCP `memory_recall` projection so both
+ * surfaces can be consumed identically.
+ */
+function memoryRecallView(m: ScoredRecord, withEvidence?: boolean): Record<string, unknown> {
+  const r = m.record;
+  return {
+    id: r.id,
+    subject: r.subject,
+    claim: r.claim,
+    scope: r.scope,
+    source: m.source,
+    trust: m.verdicts.trust,
+    evidence: m.verdicts.evidence,
+    applicability: m.verdicts.applicability,
+    lifecycle: m.verdicts.lifecycle,
+    appliesTo: r.appliesTo,
+    createdAt: r.createdAt,
+    score: m.score,
+    evidenceItems: withEvidence === true ? r.evidence : r.evidence.map((e) => evidenceSummaryOf(e)),
+  };
+}
+
+/** A conflict-group view: the shared key + subject + scope + the member record ids. */
+function memoryConflictView(g: ConflictGroup): Record<string, unknown> {
+  return {
+    key: g.key,
+    subject: g.subject,
+    scope: g.scope,
+    recordIds: g.records.map((r) => r.id),
+  };
+}
+
+/**
+ * Untrusted, in-flight observations from the LOCAL candidate pool (`--include-pending`) — the
+ * shared working set for a swarm of agents on one repository. The trust model deliberately hides
+ * these from normal recall (a claim becomes trusted by passing a gate, never by an agent writing it
+ * down), so they are returned in a SEPARATE group, never merged into `memories`, every entry
+ * stamped `trust: 'untrusted'` + `status: 'pending'` — a lead, not an established fact.
+ */
+function pendingMemoryCandidates(
+  local: MemoryStore,
+  query: string,
+  limit: number,
+): Array<Record<string, unknown>> {
+  const terms = query
+    .toLowerCase()
+    .split(/[^a-z0-9_]+/)
+    .filter((t) => t.length > 2);
+  const out: Array<{ score: number; view: Record<string, unknown> }> = [];
+  for (const entry of local.readCollection('candidates').entries) {
+    const rec = entry as unknown as Record<string, unknown>;
+    const claim = String(rec.claim ?? '');
+    const subject = String(rec.subject ?? '');
+    const haystack = `${subject} ${claim}`.toLowerCase();
+    const score = terms.length === 0 ? 1 : terms.filter((t) => haystack.includes(t)).length;
+    if (score === 0) continue;
+    out.push({
+      score,
+      view: {
+        id: rec.id,
+        kind: rec.kind,
+        subject,
+        claim,
+        // MemoryCandidate ships the actor at `authorship.actor` (memory-1 schema); the id is
+        // content-addressed over the same field, so this is the only place attribution lives.
+        actor: (rec.authorship as { actor?: string } | undefined)?.actor,
+        // Stated on every entry, not just in the group name, because a single view can be copied
+        // out of its group and lose that context.
+        trust: 'untrusted',
+        status: 'pending',
+      },
+    });
+  }
+  return out
+    .sort((a, b) => b.score - a.score || String(a.view.id).localeCompare(String(b.view.id)))
+    .slice(0, limit)
+    .map((x) => x.view);
+}
+
+/** Render the recall result as human-readable lines (the `--json` flag switches to the raw shape). */
+function renderMemoryRecall(query: string, result: Record<string, unknown>): string {
+  const prov = result.provenance as RecallProvenance;
+  const memories = result.memories as Array<Record<string, unknown>>;
+  const conflicts = result.conflicts as Array<Record<string, unknown>>;
+  const pending = (result.pending as Array<Record<string, unknown>> | undefined) ?? [];
+  const lines: string[] = [
+    `memory recall "${query}" — ${memories.length} memories (considered ${prov.counts.considered}, eligible ${prov.counts.eligible}, conflicts ${prov.counts.conflicts}, team=${prov.counts.team} local=${prov.counts.local} global=${prov.counts.global}, fresh=${prov.fresh})`,
+  ];
+  if (memories.length === 0) lines.push('  no eligible memories matched');
+  memories.forEach((m, i) => {
+    const sc = m.score as RecallScore;
+    lines.push(
+      `  ${i + 1}. ${String(m.id)} [${String(m.source)}] trust=${String(m.trust)} evidence=${String(m.evidence)} applicability=${String(m.applicability)} lifecycle=${String(m.lifecycle)}`,
+    );
+    lines.push(`     ${String(m.claim)}`);
+    lines.push(
+      `     subject=${String(m.subject)} score lex=${sc.lexical} source=${sc.sourceTier} evidence=${sc.evidenceQuality} feedback=${sc.feedbackAdjust}`,
+    );
+  });
+  if (conflicts.length > 0) {
+    lines.push(`conflicts (${conflicts.length}):`);
+    for (const g of conflicts) {
+      lines.push(
+        `  - subject ${String(g.subject)} / scope ${JSON.stringify(g.scope)}: ${(g.recordIds as string[]).join(', ')}`,
+      );
+    }
+  }
+  if (pending.length > 0) {
+    lines.push(`pending — untrusted candidate leads, never established facts (${pending.length}):`);
+    for (const p of pending) {
+      lines.push(`  - ${String(p.id)} [${String(p.actor ?? 'unknown')}] ${String(p.claim)}`);
+    }
+  }
+  if (result.truncated === true) {
+    lines.push(
+      `truncated: ${prov.counts.eligible - memories.length} more eligible (raise --limit)`,
+    );
+  }
+  return `${lines.join('\n')}\n`;
 }
 
 /** `crib memory init` — write a default trusted-base policy.json if absent + report the layout. */

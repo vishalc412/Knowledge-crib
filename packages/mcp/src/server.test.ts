@@ -95,6 +95,10 @@ describe('memory dispatcher', () => {
         calls.push('audit');
         return {};
       },
+      memoryCapture: (a: { subject: string; observation: string; actor: string }) => {
+        calls.push(`capture:${a.subject}:${a.observation}:${a.actor}`);
+        return {};
+      },
       memoryFeedback: (a: { subject: string }) => {
         calls.push(`feedback:${a.subject}`);
         return {};
@@ -113,9 +117,21 @@ describe('memory dispatcher', () => {
     await tool.handler({ op: 'get', id: 'mem:abc' });
     await tool.handler({ op: 'status' });
     await tool.handler({ op: 'audit' });
+    await tool.handler({
+      op: 'capture',
+      subject: 'topic:x',
+      observation: 'loose note',
+      actor: 'tester',
+    });
     await tool.handler({ op: 'feedback', subject: 'mem:abc', signal: 'useful', actor: 'tester' });
 
-    expect(calls).toEqual(['get:mem:abc', 'status', 'audit', 'feedback:mem:abc']);
+    expect(calls).toEqual([
+      'get:mem:abc',
+      'status',
+      'audit',
+      'capture:topic:x:loose note:tester',
+      'feedback:mem:abc',
+    ]);
   });
 
   it('rejects an op whose required arguments are missing instead of silently mis-calling', async () => {
@@ -128,6 +144,12 @@ describe('memory dispatcher', () => {
     };
     expect(noSubject.error?.code).toBe('BAD_REQUEST');
     expect(noSubject.error?.message).toContain('subject');
+
+    const noObservation = (await callMemory({ op: 'capture', subject: 'topic:x' })) as {
+      error?: { code: string; message: string };
+    };
+    expect(noObservation.error?.code).toBe('BAD_REQUEST');
+    expect(noObservation.error?.message).toContain('observation');
   });
 });
 

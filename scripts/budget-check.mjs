@@ -10,6 +10,8 @@
  *  - default (non --with-llm) query hit size                          <= MAX_DEFAULT_HIT_BYTES
  *  - warm query p50 latency                                           < MAX_QUERY_P50_MS
  *  - cold index time on a 50-file fixture                             < MAX_INDEX_MS
+ *  - incremental `crib update` time (one-file edit)                   < MAX_UPDATE_RATIO
+ *    of a full index on the same fixture (the P2.1 dossier-hoist gate)
  *
  * MAX_RUNTIME_DEPS is 9, and every one of the nine is a deliberate, disclosed tradeoff (see
  * NOTICE) rather than headroom to spend carelessly. It was 6 when `web-tree-sitter` (the PHP
@@ -45,7 +47,33 @@ const MAX_PARSERS_PACKAGE_BYTES = 3 * 1024 * 1024; // 3 MB — today's actual is
 const MAX_DEFAULT_HIT_BYTES = 1536; // 1.5 KB/hit default tier
 const MAX_QUERY_P50_MS = 150;
 const MAX_INDEX_MS = 20_000;
+// P2.1 dossier-latency gate, two assertions on one fixture:
+//  (i)  rebuilding every callable's dossier with the hoisted adjacency opts
+//      (packages/pipeline/src/dossiers.ts hoistedDossierOpts — one edge scan + one symbol scan
+//      shared by all rebuilds) must be at least MIN_DOSSIER_SPEEDUP x faster than rebuilding
+//      them unhoisted. Unhoisted, every buildDossier re-scans every edge from scratch (D×E
+//      visits per run; ~2400 callables × ~11k edges on this fixture), so the floor of 5x sits
+//      far below the measured ~70x and catches any regression that drops the hoist or
+//      re-introduces per-dossier scanning. Both loops run in the same process back-to-back,
+//      so machine speed moves numerator and denominator together.
+//  (ii) a one-file edit + commit + updateRepo must cost less than a full indexRepo on the same
+//      fixture (ratio < MAX_UPDATE_RATIO). The aspirational end-to-end target is 25%, but that
+//      is currently unattainable for a reason OUTSIDE this gate: decision-table row order
+//      depends on soul edge iteration order, which differs between the index-time in-memory
+//      soul and the update-time disk-reloaded soul, so ~45% of UNTOUCHED dossiers churn on
+//      every update (written=1028/2400 here) until core/src/rules emits a stable row order.
+//      The ceiling of 1.0 pins the honest promise that holds today: an incremental update
+//      must never cost as much as re-indexing from scratch.
+const MIN_DOSSIER_SPEEDUP = 5;
+const MAX_UPDATE_RATIO = 1.0;
+// Large enough that index time is parse-dominated (the update's closure re-parse is 1 file vs
+// all of them), small enough that the gate stays a ~seconds-scale line item in release:verify.
+const UPDATE_FIXTURE_FILES = 300;
 const FIXTURE_FILE_COUNT = 50;
+// Pin every fixture commit to a fixed date (mirrors soul-refresh-check) so the git anchor the
+// update diffs against is deterministic.
+const PINNED_DATE = '2026-01-01T00:00:00.000Z';
+const ON_CI = process.env.GITHUB_ACTIONS === 'true';
 // The product's core promise is a dollar promise, not just a token promise. This gate turns "crib is
 // cheaper" into a build-breaking CI fact: over a modeled multi-turn task, the crib-default retrieval
 // must cost at most 1/MIN_COST_SAVING of what reading the whole hit files (the no-crib path) costs.
@@ -237,6 +265,118 @@ await check(`cold index time (${FIXTURE_FILE_COUNT} files)`, () => {
   }
 });
 
+// 6b. Dossier update latency — the P2.1 gate, in-process on a git-pinned fixture so the ratio
+// measures pipeline work, not Node subprocess startup. Assertion (i) is the load-bearing one:
+// the hoisted adjacency opts must make a full dossier rebuild at least MIN_DOSSIER_SPEEDUP x
+// faster than the unhoisted path (this is the exact regression the hoist fixed). Assertion (ii)
+// pins the end-to-end promise: after a one-file body edit + commit (the shape the M4.3
+// soul-refresh loop runs on every merge), updateRepo must cost less than indexRepo on the same
+// fixture. Timing ratios are CPU/IO-contended on small CI runners, so on CI the observed
+// ratios are logged but not floored (same policy as the parallel:check speedup floor) — the
+// deterministic parts (fixture yields callables, update completes) still gate everywhere.
+await check(
+  `dossier rebuild speedup >= ${MIN_DOSSIER_SPEEDUP}x + update < ${MAX_UPDATE_RATIO}x full index`,
+  async () => {
+    const { repoRoot } = buildUpdateFixture();
+    try {
+      // dynamic import() needs a file:// URL on win32 (see check 4+5 comment).
+      const coreModule = pathToFileURL(resolve('packages/core/dist/index.js')).href;
+      const pipelineModule = pathToFileURL(resolve('packages/pipeline/dist/index.js')).href;
+      const dossiersModule = pathToFileURL(resolve('packages/pipeline/dist/dossiers.js')).href;
+      const { SoulStore, newManifest, buildDossier, CALLABLE_SYMBOL_TYPES } = await import(
+        coreModule
+      );
+      const { indexRepo, updateRepo } = await import(pipelineModule);
+      const { hoistedDossierOpts } = await import(dossiersModule);
+
+      const soulFor = () => {
+        const soul = new SoulStore(join(repoRoot, '.crib'), {
+          manifest: newManifest({ now: PINNED_DATE }),
+        });
+        soul.load();
+        return soul;
+      };
+
+      // Full index (defaults — the same phase set a user gets), timed for assertion (ii).
+      let t = performance.now();
+      await indexRepo(soulFor(), repoRoot, { now: PINNED_DATE });
+      const indexMs = performance.now() - t;
+
+      // Assertion (i): hoisted vs unhoisted full dossier rebuild over every callable.
+      const soul = soulFor();
+      const callables = [...soul.iterate('symbol')].filter((n) =>
+        CALLABLE_SYMBOL_TYPES.has(n.type),
+      );
+      if (callables.length < 100)
+        throw new Error(`only ${callables.length} callables — fixture too small to measure`);
+      const opts = hoistedDossierOpts(soul);
+      // Warm both paths first (JIT) so the measured loops are steady-state.
+      for (const n of callables.slice(0, 20)) {
+        buildDossier(soul, repoRoot, n.id, PINNED_DATE);
+        buildDossier(soul, repoRoot, n.id, PINNED_DATE, opts);
+      }
+      t = performance.now();
+      for (const n of callables) buildDossier(soul, repoRoot, n.id, PINNED_DATE, opts);
+      const hoistedMs = performance.now() - t;
+      t = performance.now();
+      for (const n of callables) buildDossier(soul, repoRoot, n.id, PINNED_DATE);
+      const unhoistedMs = performance.now() - t;
+      if (hoistedMs <= 0 || unhoistedMs <= 0)
+        throw new Error('timing collapsed to 0ms — speedup measurement invalid');
+      const speedup = unhoistedMs / hoistedMs;
+      if (ON_CI) {
+        process.stdout.write(
+          `       dossier rebuild speedup ${speedup.toFixed(1)}x observed on CI; floor skipped (see MIN_DOSSIER_SPEEDUP comment)\n`,
+        );
+      } else if (speedup < MIN_DOSSIER_SPEEDUP) {
+        throw new Error(
+          `hoisted dossier rebuild only ${speedup.toFixed(1)}x faster (hoisted ${hoistedMs.toFixed(0)}ms vs ` +
+            `unhoisted ${unhoistedMs.toFixed(0)}ms over ${callables.length} callables) < ${MIN_DOSSIER_SPEEDUP}x floor — adjacency hoist regressed?`,
+        );
+      } else {
+        process.stdout.write(
+          `       dossier rebuild: hoisted ${hoistedMs.toFixed(0)}ms vs unhoisted ${unhoistedMs.toFixed(0)}ms over ${callables.length} callables → ${speedup.toFixed(1)}x\n`,
+        );
+      }
+
+      // Assertion (ii): body-only edit keeps symbol ids stable (the honest "merge touched one
+      // file" update), then the incremental update must stay under a full re-index.
+      writeFileSync(join(repoRoot, 'src', 'svc17.ts'), fixtureSource(17, ' edited'));
+      git(repoRoot, ['add', 'src/svc17.ts']);
+      git(repoRoot, [
+        '-c',
+        'user.email=gate@crib.dev',
+        '-c',
+        'user.name=Crib Gate',
+        'commit',
+        '-q',
+        '-m',
+        'edit',
+      ]);
+      t = performance.now();
+      await updateRepo(soulFor(), repoRoot, { now: '2026-01-02T00:00:00.000Z' });
+      const updateMs = performance.now() - t;
+      if (indexMs <= 0) throw new Error('index measurement collapsed to 0ms — ratio invalid');
+      const ratio = updateMs / indexMs;
+      if (ON_CI) {
+        process.stdout.write(
+          `       update latency ratio ${ratio.toFixed(3)} observed on CI; ceiling skipped (see MAX_UPDATE_RATIO comment)\n`,
+        );
+      } else if (ratio >= MAX_UPDATE_RATIO) {
+        throw new Error(
+          `update took ${updateMs.toFixed(0)}ms vs index ${indexMs.toFixed(0)}ms → ratio ${ratio.toFixed(3)} >= ${MAX_UPDATE_RATIO} (incremental update must be cheaper than a full re-index)`,
+        );
+      } else {
+        process.stdout.write(
+          `       update ${updateMs.toFixed(0)}ms vs index ${indexMs.toFixed(0)}ms → ratio ${ratio.toFixed(3)} (aspirational 0.25 — see MAX_UPDATE_RATIO comment)\n`,
+        );
+      }
+    } finally {
+      rmSync(repoRoot, { recursive: true, force: true });
+    }
+  },
+);
+
 // 7. Cost-saving floor — the dollar promise, enforced. Index the fixture, run a real multi-hit
 // query, and compare the modeled per-task cost of the crib-default response against reading every
 // whole hit file (the no-crib path), using the shared pricing model. Fail if crib isn't materially
@@ -380,4 +520,57 @@ function buildFixture() {
     );
   }
   return { repoRoot, cliPath: resolve('packages/cli/dist/cli.js') };
+}
+
+/** Deterministic fixture source for the update-latency gate: one class (7 callables) + one fn per file. */
+function fixtureSource(i, marker = '') {
+  const methods = Array.from(
+    { length: 6 },
+    (_, k) =>
+      `  /** Step ${k} of svc ${i}. */\n  step${k}(input: string): string {\n    return this.helper(input) + ':${k}';\n  }\n`,
+  ).join('\n');
+  return (
+    `export class Svc${i} {\n${methods}\n  helper(input: string): string {\n    return \`svc${i}:\${input}${marker}\`;\n  }\n}\n\n` +
+    `export function runSvc${i}(svc: Svc${i}, input: string): string {\n  return svc.step0(input);\n}\n`
+  );
+}
+
+/** The update-latency fixture: a git repo (pinned dates) so `crib update` has a VCS anchor. */
+function buildUpdateFixture() {
+  const repoRoot = mkdtempSync(join(tmpdir(), 'knowledge-crib-update-latency-'));
+  writeFileSync(
+    join(repoRoot, 'package.json'),
+    `${JSON.stringify({ name: 'crib-update-latency-fixture', private: true, type: 'module' }, null, 2)}\n`,
+  );
+  for (let i = 0; i < UPDATE_FIXTURE_FILES; i++) {
+    const filePath = join(repoRoot, 'src', `svc${i}.ts`);
+    mkdirSync(dirname(filePath), { recursive: true });
+    writeFileSync(filePath, fixtureSource(i));
+  }
+  git(repoRoot, ['init', '-q']);
+  git(repoRoot, ['add', 'package.json', 'src']);
+  git(repoRoot, [
+    '-c',
+    'user.email=gate@crib.dev',
+    '-c',
+    'user.name=Crib Gate',
+    'commit',
+    '-q',
+    '-m',
+    'init',
+  ]);
+  return { repoRoot, cliPath: resolve('packages/cli/dist/cli.js') };
+}
+
+/** git in a fixture repo, with every commit pinned to PINNED_DATE for determinism. */
+function git(root, args) {
+  return execFileSync('git', ['-C', root, ...args], {
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'pipe'],
+    env: {
+      ...process.env,
+      GIT_AUTHOR_DATE: PINNED_DATE,
+      GIT_COMMITTER_DATE: PINNED_DATE,
+    },
+  }).trim();
 }

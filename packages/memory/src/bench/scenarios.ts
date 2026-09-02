@@ -38,7 +38,7 @@ import {
   buildBenchRecord,
   quoteEvidence,
 } from './corpus.js';
-import { p50p95 } from './metrics.js';
+import { mrr, p50p95, precisionAtK, recallAtK } from './metrics.js';
 
 // ─── shared types ────────────────────────────────────────────────────────────
 
@@ -211,15 +211,184 @@ const TOPICS: ReadonlyArray<{
     exact: (m) => `${m} merge driver unions shards content id`,
     paraphrase: 'parallel writers combine through identity of what was stated',
   },
+  {
+    claim: (m) => `${m} watch mode reindexes only the dirty files instead of the whole tree`,
+    exact: (m) => `${m} watch mode reindexes dirty files tree`,
+    paraphrase:
+      'each modification triggers a refresh for just what was edited rather than every workspace entry',
+  },
+  {
+    claim: (m) =>
+      `${m} snapshot tests fail the build when rendered output drifts from the committed fixture`,
+    exact: (m) => `${m} snapshot tests fail rendered output drifts fixture`,
+    paraphrase:
+      'golden images compare against what shipped earlier and stop promotion if pixels differ',
+  },
+  {
+    claim: (m) => `${m} connection pool drains gracefully before the worker exits`,
+    exact: (m) => `${m} connection pool drains gracefully worker exits`,
+    paraphrase: 'open database handles are released cleanly during process shutdown',
+  },
+  {
+    claim: (m) => `${m} rate limiter sheds load by returning 429 before the database saturates`,
+    exact: (m) => `${m} rate limiter sheds load 429 database saturates`,
+    paraphrase: 'too many requests get rejected early so storage never becomes overwhelmed',
+  },
+  {
+    claim: (m) =>
+      `${m} migrations run inside a single transaction so a failed step rolls back everything`,
+    exact: (m) => `${m} migrations single transaction failed step rolls back`,
+    paraphrase: 'schema upgrades happen atomically and revert completely whenever one part errors',
+  },
+  {
+    claim: (m) => `${m} cache invalidation hooks fire on every upstream write, not on a timer`,
+    exact: (m) => `${m} cache invalidation hooks upstream write timer`,
+    paraphrase: 'stale entries leave immediately after their source records change',
+  },
+  {
+    claim: (m) =>
+      `${m} isolated commits are rebased onto main before any merge into the release branch`,
+    exact: (m) => `${m} isolated commits rebased main merge release branch`,
+    paraphrase: 'separate history gets replayed ahead of landing work downstream',
+  },
+  {
+    claim: (m) => `${m} deadlock detector aborts the sweep when two locks wait on each other`,
+    exact: (m) => `${m} deadlock detector aborts sweep two locks wait`,
+    paraphrase: 'circular waits among held mutexes terminate the scan instead of hanging forever',
+  },
+  {
+    claim: (m) => `${m} idempotency keys make retried webhook deliveries safe to apply twice`,
+    exact: (m) => `${m} idempotency keys retried webhook deliveries safe twice`,
+    paraphrase: 'duplicate event arrivals produce identical outcomes rather than double charges',
+  },
+  {
+    claim: (m) => `${m} feature flags default off until the operator flips them in config`,
+    exact: (m) => `${m} feature flags default off operator flips config`,
+    paraphrase: 'new capabilities stay dormant unless explicitly enabled by a human',
+  },
+  {
+    claim: (m) => `${m} schema validation rejects malformed shards before they enter the index`,
+    exact: (m) => `${m} schema validation rejects malformed shards index`,
+    paraphrase: 'structurally broken payloads never reach storage because checks happen first',
+  },
+  {
+    claim: (m) => `${m} backpressure propagates upstream when the outbound queue hits its bound`,
+    exact: (m) => `${m} backpressure propagates upstream outbound queue bound`,
+    paraphrase: 'slow consumers signal producers to ease off once buffers fill completely',
+  },
+  {
+    claim: (m) =>
+      `${m} retry budget caps total attempts across the whole request path, not per hop`,
+    exact: (m) => `${m} retry budget caps total attempts request path hop`,
+    paraphrase: 'failure allowances get counted globally for every stage a call travels',
+  },
+  {
+    claim: (m) => `${m} canonical JSON serializes keys in sorted order for stable hashing`,
+    exact: (m) => `${m} canonical JSON serializes keys sorted stable hashing`,
+    paraphrase: 'deterministic string form sorts field names so digests match across runs',
+  },
+  {
+    claim: (m) =>
+      `${m} shard checksums are verified after transport before any consumer reads them`,
+    exact: (m) => `${m} shard checksums verified transport consumer reads`,
+    paraphrase: 'integrity of transferred pieces gets confirmed prior to downstream access',
+  },
+  {
+    claim: (m) => `${m} health checks probe a real dependency, never a static self report`,
+    exact: (m) => `${m} health checks probe real dependency static self report`,
+    paraphrase: 'liveness must exercise actual downstream services rather than just reply ok',
+  },
+  {
+    claim: (m) => `${m} log sampling keeps one in ten spans while errors are always kept`,
+    exact: (m) => `${m} log sampling spans errors always kept`,
+    paraphrase: 'tracing retains every failure trace but discards most routine traffic',
+  },
+  {
+    claim: (m) =>
+      `${m} index rebuilds run offline under a lock so readers see one consistent generation`,
+    exact: (m) => `${m} index rebuilds offline lock readers consistent generation`,
+    paraphrase:
+      'store regeneration happens behind exclusive access giving viewers a stable snapshot',
+  },
+  {
+    claim: (m) => `${m} garbage collector removes records whose locator no longer resolves`,
+    exact: (m) => `${m} garbage collector removes records locator resolves`,
+    paraphrase: 'entries pointing at deleted locations get purged during cleanup passes',
+  },
+  {
+    claim: (m) => `${m} audit trail records who approved each promotion and when`,
+    exact: (m) => `${m} audit trail records approved promotion`,
+    paraphrase: 'governance history captures the reviewer identity behind every activation',
+  },
+  {
+    claim: (m) =>
+      `${m} bulk import streams rows in chunks so memory stays flat regardless of file size`,
+    exact: (m) => `${m} bulk import streams rows chunks memory flat`,
+    paraphrase: 'large dataset ingestion processes pieces incrementally keeping footprint constant',
+  },
+  {
+    claim: (m) => `${m} optimistic concurrency rejects writes whose expected revision went stale`,
+    exact: (m) => `${m} optimistic concurrency rejects writes revision stale`,
+    paraphrase: 'conflicting updates lose the race when their assumed version is behind',
+  },
+  {
+    claim: (m) => `${m} query results are capped server side before pagination metadata is built`,
+    exact: (m) => `${m} query results capped server side pagination metadata`,
+    paraphrase: 'response limits apply within the engine ahead of building page descriptors',
+  },
+  {
+    claim: (m) => `${m} zero downtime deploys swap the socket after health turns green`,
+    exact: (m) => `${m} zero downtime deploys swap socket health green`,
+    paraphrase: 'live traffic moves to the fresh process once readiness probes succeed',
+  },
+  {
+    claim: (m) => `${m} telemetry batches emit every five seconds instead of per event`,
+    exact: (m) => `${m} telemetry batches emit five seconds per event`,
+    paraphrase: 'metric flushes group many observations together on a short interval',
+  },
+  {
+    claim: (m) =>
+      `${m} dependency graph resolves build order topologically before compilation starts`,
+    exact: (m) => `${m} dependency graph build order topologically compilation starts`,
+    paraphrase: 'module relationships determine sequence ahead of translating sources',
+  },
+  {
+    claim: (m) => `${m} token budget enforcement truncates context before the model call goes out`,
+    exact: (m) => `${m} token budget enforcement truncates context model call`,
+    paraphrase: 'oversized prompts get clipped prior to reaching the inference endpoint',
+  },
+  {
+    claim: (m) =>
+      `${m} adversarial prompts are stripped of instructions before reaching tool execution`,
+    exact: (m) => `${m} adversarial prompts stripped instructions tool execution`,
+    paraphrase: 'hostile embedded directives get sanitized away ahead of running any commands',
+  },
 ];
 
-/** Deterministic relevance corpus: `n` instances cycling the topic bank (exact + paraphrase pair
- *  per record). `mod${i}` makes every instance's claim unique → distinct content ids. */
+/** Size of the hand-written topic bank (re-exported so tests can assert the distinct-draw cap). */
+export const TOPIC_BANK_SIZE = TOPICS.length;
+
+/**
+ * The topic for index `i`. Both corpora draw through this single helper so the bank is defined once:
+ * the relevance corpus draws DISTINCT topics (capped at the bank size — see `relevanceCorpus`),
+ * while the latency corpus deliberately CYCLES it (uniqueness comes from the `scale${i}` mod token,
+ * and ranking is not measured there, so cycling is the point: 10k records from 40 topics).
+ */
+const topicAt = (i: number) => TOPICS[i % TOPICS.length]!;
+
+/**
+ * Deterministic relevance corpus: DISTINCT topics from the bank (exact + paraphrase pair per
+ * record). `n` is capped at the bank size — cycling the bank would emit each paraphrase query
+ * multiple times labeling near-identical records (same topic, different mod token), which capped
+ * MRR at ~1/2.2 ≈ 0.46 and made ranking unmeasurable. `mod${i}` makes every claim unique →
+ * distinct content ids, and each query labels exactly one record.
+ */
 export function relevanceCorpus(n: number): { records: MemoryRecord[]; queries: LabeledQuery[] } {
+  const count = Math.min(n, TOPICS.length);
   const records: MemoryRecord[] = [];
   const queries: LabeledQuery[] = [];
-  for (let i = 0; i < n; i++) {
-    const t = TOPICS[i % TOPICS.length]!;
+  for (let i = 0; i < count; i++) {
+    const t = topicAt(i);
     const mod = `mod${i}`;
     const subject = `sym:src/${mod}.ts#${mod}Module@L10`;
     const claim = t.claim(mod);
@@ -237,9 +406,11 @@ export function relevanceCorpus(n: number): { records: MemoryRecord[]; queries: 
   return { records, queries };
 }
 
-/** Deterministic claim text at scale (latency corpus): cycle the topic bank with generated mods. */
+/** Deterministic claim text at scale (latency corpus): cycles the topic bank through the shared
+ *  `topicAt` draw with generated mods — same bank as the relevance corpus, cycling on purpose
+ *  (10k records must reuse topics; only the ranking-free latency phases are measured here). */
 function scaleClaim(i: number): string {
-  return TOPICS[i % TOPICS.length]!.claim(`scale${i}`);
+  return topicAt(i).claim(`scale${i}`);
 }
 
 // ─── (a) recall relevance ────────────────────────────────────────────────────
@@ -295,31 +466,18 @@ export function runRecallRelevance(
   };
 }
 
-/** Average recall@5 / precision@5 / MRR over the per-query lists. */
+/** Average recall@5 / precision@5 / MRR over the per-query lists, on the SAME shared metric
+ *  definitions as every other consumer (bench/metrics.ts) — a local reimplementation would drift.
+ *  Note precision@5 uses the canonical denominator k=5 (metrics.ts), even when a query returns
+ *  fewer than 5 results. */
 function rankMetrics(
   ranked: readonly (readonly string[])[],
   relevant: readonly (readonly string[])[],
 ): RankMetrics {
-  const recallAt = (r: readonly string[], rl: readonly string[]) => {
-    if (rl.length === 0) return 0;
-    let hits = 0;
-    for (const id of rl) if (r.slice(0, 5).includes(id)) hits += 1;
-    return hits / rl.length;
-  };
-  const precisionAt = (r: readonly string[], rl: readonly string[]) => {
-    if (rl.length === 0) return 0;
-    const rel = new Set(rl);
-    return r.slice(0, 5).filter((id) => rel.has(id)).length / Math.max(1, r.slice(0, 5).length);
-  };
-  const recip = (r: readonly string[], rl: readonly string[]) => {
-    if (rl.length === 0) return 0;
-    const idx = r.findIndex((id) => rl.includes(id));
-    return idx >= 0 ? 1 / (idx + 1) : 0;
-  };
   return {
-    recallAt5: meanPerQuery(ranked, relevant, recallAt),
-    precisionAt5: meanPerQuery(ranked, relevant, precisionAt),
-    mrr: meanPerQuery(ranked, relevant, recip),
+    recallAt5: meanPerQuery(ranked, relevant, (r, rl) => recallAtK(r, rl, 5)),
+    precisionAt5: meanPerQuery(ranked, relevant, (r, rl) => precisionAtK(r, rl, 5)),
+    mrr: mrr(ranked, relevant),
   };
 }
 
