@@ -156,20 +156,31 @@ try {
     rmSync(ser, { recursive: true, force: true });
     rmSync(con, { recursive: true, force: true });
 
-    // (2) SPEEDUP: time the parse phase serial vs concurrent. Warmup once, then measure.
-    await runParse(newSoul(root), newReg(), root, files, { parallel: false });
-    const t0 = performance.now();
+    // (2) SPEEDUP: time the parse phase serial vs concurrent. Warmup once, then measure BEST-OF-3
+    // per path: at sub-second durations a single sample flakes on the 1.1x floor with ordinary
+    // dev-box background load (observed 1.05x-1.43x across identical runs). The minimum is the
+    // least noise-contaminated sample per path, and both paths benefit from it equally.
+    const SPEEDUP_SAMPLES = 3;
     const ss = await runParse(newSoul(root), newReg(), root, files, { parallel: false });
-    const t1 = performance.now();
-    const cc = await runParse(newSoul(root), newReg(), root, files, {});
-    const t2 = performance.now();
-    const serialMs = t1 - t0;
-    const concMs = t2 - t1;
+    let serialMs = Number.POSITIVE_INFINITY;
+    let concMs = Number.POSITIVE_INFINITY;
+    let lastConc = ss;
+    for (let i = 0; i < SPEEDUP_SAMPLES; i++) {
+      const s0 = performance.now();
+      await runParse(newSoul(root), newReg(), root, files, { parallel: false });
+      const s1 = performance.now();
+      const c0 = performance.now();
+      const cc = await runParse(newSoul(root), newReg(), root, files, {});
+      const c1 = performance.now();
+      serialMs = Math.min(serialMs, s1 - s0);
+      concMs = Math.min(concMs, c1 - c0);
+      lastConc = cc;
+      if (ss.nodes !== cc.nodes || ss.edges !== cc.edges || ss.filesParsed !== cc.filesParsed)
+        fail(
+          `parse counts diverge: serial n=${ss.nodes}/e=${ss.edges}/p=${ss.filesParsed} vs concurrent n=${cc.nodes}/e=${cc.edges}/p=${cc.filesParsed}`,
+        );
+    }
     const speedup = serialMs / concMs;
-    if (ss.nodes !== cc.nodes || ss.edges !== cc.edges || ss.filesParsed !== cc.filesParsed)
-      fail(
-        `parse counts diverge: serial n=${ss.nodes}/e=${ss.edges}/p=${ss.filesParsed} vs concurrent n=${cc.nodes}/e=${cc.edges}/p=${cc.filesParsed}`,
-      );
     if (ON_CI) {
       // Perf characterization is I/O-ceiling-bound and below the dev-box floor on contended CI runners;
       // determinism + worker + wiring above already pin correctness. Log the observed number for
@@ -183,7 +194,7 @@ try {
       );
     else
       process.stdout.write(
-        `  parallel:check — speedup ${speedup.toFixed(2)}× (serial ${serialMs.toFixed(0)}ms → concurrent ${concMs.toFixed(0)}ms; counts n=${cc.nodes}/e=${cc.edges})\n`,
+        `  parallel:check — speedup ${speedup.toFixed(2)}× best-of-${SPEEDUP_SAMPLES} (serial ${serialMs.toFixed(0)}ms → concurrent ${concMs.toFixed(0)}ms; counts n=${lastConc.nodes}/e=${lastConc.edges})\n`,
       );
 
     // (3) WORKER OPT-IN smoke: KCRIB_PARALLEL=workers runs + soul byte-identical to serial.
