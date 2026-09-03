@@ -19,6 +19,12 @@
  * The index is built once per recall session from the gathered records and is immutable for the
  * scorer's lifetime; {@link FtsLexicalScorer} memoizes one FTS query per distinct query string (a
  * recall projection reuses a single query, so this is one FTS scan per projection).
+ *
+ * G3.1 — the DB handle is opened LAZILY on first use (not in the constructor), and {@link onFirstUse}
+ * is the single subclass hook {@link PersistentMemoryFts} uses to decide open-existing vs
+ * self-heal-rebuild against the store generation. The `:memory:` mode and the public API
+ * (constructor / rebuild / upsert / search / close) are unchanged — ephemeral construction stays
+ * valid for tests and one-off use.
  */
 import { DatabaseSync, type StatementSync } from 'node:sqlite';
 import { type LexicalScorer, exactLexicalScorer } from './recall.js';
@@ -100,52 +106,63 @@ function ftsRow(record: AnyMemoryRecord): [string, string, string, string, strin
  * done to release the SQLite handle (the PRD forbids holding a filesystem lock across evaluation /
  * enrichment commands — this index is a memory-only derived artifact, rebuilt and closed per session).
  */
+/** The handle + prepared statements, opened together lazily on first use. */
+interface FtsHandle {
+  db: DatabaseSync;
+  insert: StatementSync;
+  remove: StatementSync;
+  search: StatementSync;
+}
+
 export class MemoryFtsIndex {
-  private readonly db: DatabaseSync;
-  private readonly insertStmt: StatementSync;
-  private readonly deleteStmt: StatementSync;
-  private readonly searchStmt: StatementSync;
+  private handle: FtsHandle | undefined;
   private closed = false;
 
-  constructor(dbPath: string) {
-    this.db = new DatabaseSync(dbPath);
-    this.db.exec(SCHEMA);
-    this.insertStmt = this.db.prepare(
-      `INSERT INTO ${FTS_TABLE} (id, ${FTS_COLUMN_LIST}) VALUES (?, ?, ?, ?, ?, ?)`,
-    );
-    this.deleteStmt = this.db.prepare(`DELETE FROM ${FTS_TABLE} WHERE id = ?`);
-    // bm25() returns a negative value (lower = better); ORDER BY score ASC puts best first.
-    this.searchStmt = this.db.prepare(
-      `SELECT id, bm25(${FTS_TABLE}) AS score FROM ${FTS_TABLE} WHERE ${FTS_TABLE} MATCH ? ORDER BY score ASC`,
-    );
-  }
+  constructor(protected readonly dbPath: string) {}
 
   /** Clear and bulk-insert all records in one transaction. The canonical "rebuild the read model" op. */
   rebuild(records: Iterable<AnyMemoryRecord>): void {
-    this.assertNotClosed();
-    this.db.exec('BEGIN');
+    const { db, insert } = this.ensureOpen();
+    db.exec('BEGIN');
     try {
-      this.db.exec(`DELETE FROM ${FTS_TABLE}`);
-      for (const r of records) this.insertStmt.run(...ftsRow(r));
-      this.db.exec('COMMIT');
+      db.exec(`DELETE FROM ${FTS_TABLE}`);
+      for (const r of records) insert.run(...ftsRow(r));
+      db.exec('COMMIT');
     } catch (err) {
-      this.db.exec('ROLLBACK');
+      db.exec('ROLLBACK');
       throw err;
     }
   }
 
   /** Incremental delete-by-id + insert for a batch of records (FTS5 `id UNINDEXED` is not unique). */
   upsert(records: Iterable<AnyMemoryRecord>): void {
-    this.assertNotClosed();
-    this.db.exec('BEGIN');
+    const { db, insert, remove } = this.ensureOpen();
+    db.exec('BEGIN');
     try {
       for (const r of records) {
-        this.deleteStmt.run(r.id);
-        this.insertStmt.run(...ftsRow(r));
+        remove.run(r.id);
+        insert.run(...ftsRow(r));
       }
-      this.db.exec('COMMIT');
+      db.exec('COMMIT');
     } catch (err) {
-      this.db.exec('ROLLBACK');
+      db.exec('ROLLBACK');
+      throw err;
+    }
+  }
+
+  /**
+   * G3.1 — delete rows by id, in one transaction. The incremental write path needs a remove that
+   * does NOT re-insert (a removal notice from the store has no replacement record; upserting an
+   * empty row would poison the corpus statistics BM25's IDF is computed over).
+   */
+  remove(ids: Iterable<string>): void {
+    const { db, remove } = this.ensureOpen();
+    db.exec('BEGIN');
+    try {
+      for (const id of ids) remove.run(id);
+      db.exec('COMMIT');
+    } catch (err) {
+      db.exec('ROLLBACK');
       throw err;
     }
   }
@@ -156,10 +173,10 @@ export class MemoryFtsIndex {
    * is built by {@link toFtsMatch}; an unusable query yields an empty map.
    */
   search(query: string): Map<string, number> {
-    this.assertNotClosed();
     const match = toFtsMatch(query);
     if (!match) return new Map();
-    const rows = this.searchStmt.all(match) as Array<{ id: string; score: number }>;
+    const { search } = this.ensureOpen();
+    const rows = search.all(match) as Array<{ id: string; score: number }>;
     const out = new Map<string, number>();
     for (const row of rows) {
       // FTS5 bm25 is ≤0 (lower = better); negate so higher = better, clamp weak/odd positives to 0.
@@ -171,12 +188,92 @@ export class MemoryFtsIndex {
   /** Release the SQLite handle. Idempotent. */
   close(): void {
     if (this.closed) return;
-    this.db.close();
+    if (this.handle) this.handle.db.close();
+    this.handle = undefined;
     this.closed = true;
   }
 
-  private assertNotClosed(): void {
+  /**
+   * Subclass hook, run once after the handle + statements are ready and before the first query /
+   * write. The base impl is a no-op; {@link PersistentMemoryFts} overrides it to validate the
+   * on-disk snapshot against the store generation and self-heal (rebuild) when it is stale,
+   * corrupt, or written by a different index format.
+   */
+  protected onFirstUse(): void {}
+
+  /**
+   * Subclass hook: open the raw handle. The persistent subclass overrides this to recover from a
+   * corrupt snapshot file (delete + reopen) instead of failing the query.
+   */
+  protected openDatabase(): DatabaseSync {
+    return new DatabaseSync(this.dbPath);
+  }
+
+  /** Drop the open handle WITHOUT marking the index closed — the next use reopens lazily. */
+  protected discardHandle(): void {
+    if (this.handle) {
+      this.handle.db.close();
+      this.handle = undefined;
+    }
+  }
+
+  /** Reopen + re-prepare after {@link discardHandle}, WITHOUT re-running {@link onFirstUse}. */
+  protected reopenWithoutFirstUse(): void {
+    this.ensureOpenHandle();
+  }
+
+  /**
+   * Open lazily (first use) and return the ready handle + statements. The subclass hook
+   * {@link onFirstUse} runs exactly once per handle lifetime — after open, before any query/write.
+   */
+  private ensureOpen(): FtsHandle {
     if (this.closed) throw new Error('MemoryFtsIndex is closed');
+    if (!this.handle) {
+      this.ensureOpenHandle();
+      this.onFirstUse();
+    }
+    return this.handle as FtsHandle;
+  }
+
+  private ensureOpenHandle(): void {
+    if (this.handle) return;
+    let db: DatabaseSync | undefined;
+    try {
+      db = this.openDatabase();
+      // Cross-process readers + a writer share the persistent file (G3.1): a busy reader waits
+      // briefly rather than failing a memory write mid-transaction.
+      db.exec('PRAGMA busy_timeout = 5000');
+      db.exec(SCHEMA);
+      this.handle = {
+        db,
+        insert: db.prepare(
+          `INSERT INTO ${FTS_TABLE} (id, ${FTS_COLUMN_LIST}) VALUES (?, ?, ?, ?, ?, ?)`,
+        ),
+        remove: db.prepare(`DELETE FROM ${FTS_TABLE} WHERE id = ?`),
+        // bm25() returns a negative value (lower = better); ORDER BY score ASC puts best first.
+        search: db.prepare(
+          `SELECT id, bm25(${FTS_TABLE}) AS score FROM ${FTS_TABLE} WHERE ${FTS_TABLE} MATCH ? ORDER BY score ASC`,
+        ),
+      };
+    } catch (err) {
+      // A corrupt on-disk snapshot usually surfaces HERE (sqlite defers header validation past
+      // open), so the recovery hook — not the open itself — is the self-heal seam.
+      db?.close();
+      if (this.recoverFromOpenFailure(err)) {
+        this.ensureOpenHandle();
+        return;
+      }
+      throw err;
+    }
+  }
+
+  /**
+   * Subclass hook: attempt ONE recovery from an open/prepare failure (e.g. delete a corrupt
+   * snapshot and retry). Return true when recovery ran and the open should be retried; the base
+   * impl never recovers.
+   */
+  protected recoverFromOpenFailure(_err: unknown): boolean {
+    return false;
   }
 }
 

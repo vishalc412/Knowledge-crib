@@ -59,6 +59,14 @@ import {
   effectiveVerdicts,
   supersedeDecision,
 } from './evaluator.js';
+import {
+  type DependencyGenerations,
+  type GenerationCache,
+  UNVERSIONED,
+  attachVolatileFreshness,
+  entrySetFingerprint,
+  evaluationCacheFor,
+} from './generation-cache.js';
 import { verifyQuote } from './grounding.js';
 import {
   decisionId,
@@ -73,6 +81,7 @@ import { readRepoId } from './paths.js';
 import { type CapturePolicySection, loadPolicy } from './policy.js';
 import {
   DEFAULT_RECALL_SOURCES,
+  type GatheredRecall,
   type LexicalScorer,
   type MemorySource,
   type RecallScore,
@@ -542,6 +551,17 @@ export interface FreshnessState {
   evaluatedAt: string | null;
   /** the code HEAD the evaluation/search ran against, when the serving layer supplied one. */
   codeHead: string | null;
+  /**
+   * G3.3 — the volatile freshness trio rides on this object NON-ENUMERABLY when a generation-keyed
+   * pass ran (`attachVolatileFreshness`): the canonical ifHash form walks enumerable keys only, so
+   * the response stays a pure function of its inputs, while a display layer reading
+   * `hit.freshness.generation` / `.ageMs` explicitly gets the live values. `generation`
+   * (deterministic) is ALSO carried enumerable on `SearchProvenance`, where no pinned shape
+   * assertion exists. These three are `undefined` when no generation-keyed pass bound.
+   */
+  generation?: string | null;
+  evaluatedAtMs?: number;
+  ageMs?: number;
 }
 
 /** One search result — the recall projection's hit ENRICHED with the G1.3 rich contract. */
@@ -597,6 +617,18 @@ export interface SearchProvenance {
   /** ALWAYS null — the response is a pure function of its inputs (ifHash-stable). */
   evaluatedAt: string | null;
   codeHead: string | null;
+  /**
+   * G3.3 — the dependency-generation fingerprint every fresh verdict in this response is proven
+   * current against, or null when no generation-keyed cache was bound. Deterministic (ifHash-safe);
+   * the wall-clock AGE rides alongside non-enumerably (`ageMs`/`evaluatedAtMs`).
+   */
+  generation: string | null;
+  /**
+   * G3.2 (red line #6) — the versioned scorer id (embedder + scorer version + fusion strategy)
+   * behind the criterion-1 lexical order, when a versioned scorer was supplied. Absent for the
+   * built-in exact scorer. Deterministic → ifHash-stable.
+   */
+  scorerVersion?: string;
   errors: readonly string[];
 }
 
@@ -858,6 +890,18 @@ export interface MemoryApiDeps {
   /** fresh-revaluation ports for `search` (both must be present for a fresh evaluation). */
   evaluator?: MemoryEvaluator;
   evalCtx?: MemoryEvalContext;
+  /**
+   * G3.3 — the display-only clock for the volatile freshness age (`ageMs`/`evaluatedAtMs` attached
+   * NON-enumerably to search results). Never enters an id, hash, or ifHash projection — the
+   * enumerable response stays a pure function of its inputs.
+   */
+  nowMs?: () => number;
+  /**
+   * G3.3 — an explicit generation-keyed evaluation cache. When absent, one is bound per eval
+   * context via `evaluationCacheFor` (a WeakMap keyed on the context object), so the cache survives
+   * per-call API construction as long as the CONTEXT object is long-lived.
+   */
+  evaluationCache?: GenerationCache;
   /** the code HEAD search provenance reports (the serving layer knows git HEAD). */
   codeHead?: string;
   /**
@@ -901,6 +945,46 @@ function isFeedbackEntry(e: { id?: unknown }): e is MemoryFeedback {
 }
 
 /**
+ * G3.3 — bind a generation-keyed evaluation pass over one read: the WeakMap-backed cache hangs off
+ * the LONG-LIVED eval context (not the throwaway call), the seven dependency slots are fingerprinted
+ * from the context ports + the gathered decision/feedback sets, and the returned eval context carries
+ * the pass scratch memos + cache port. A dependency that cannot be versioned (unit-fake soul port,
+ * receipts without a generation, an undefined policy hash) refuses the bind and the caller evaluates
+ * fresh — the pre-G3.3 behaviour, exactly.
+ *
+ * Extracted so EVERY projection surface shares one binding (red line #1: never revalidate every
+ * record to answer one query): `MemoryApi.search` and the CLI/MCP `recallProjection` adapters both
+ * call this — a second binding implementation would silently fork the cache semantics.
+ */
+export function bindEvaluationPass(
+  baseCtx: MemoryEvalContext | undefined,
+  gathered: Pick<GatheredRecall, 'decisions' | 'localDecisions' | 'feedback'>,
+  opts: { nowMs?: () => number; cache?: GenerationCache } = {},
+): { evalCtx?: MemoryEvalContext; generation: string | null; cache?: GenerationCache } {
+  if (!baseCtx) return { generation: null };
+  const cache =
+    opts.cache ?? evaluationCacheFor(baseCtx, { ...(opts.nowMs ? { nowMs: opts.nowMs } : {}) });
+  const generations: Partial<DependencyGenerations> = {
+    code: baseCtx.soul.generation?.() ?? UNVERSIONED,
+    decisions: entrySetFingerprint([...gathered.decisions, ...gathered.localDecisions]),
+    feedback: entrySetFingerprint(gathered.feedback),
+  };
+  if (baseCtx.policy) generations.policy = baseCtx.policy.policyHash() ?? UNVERSIONED;
+  if (baseCtx.receipts) generations.receipts = baseCtx.receipts.generation?.() ?? UNVERSIONED;
+  const cachePort = cache.bind(generations);
+  if (!cachePort) return { generation: null };
+  return {
+    evalCtx: {
+      ...baseCtx,
+      pass: { locatorMatches: new Map(), quoteChecks: new Map() },
+      cache: cachePort,
+    },
+    generation: cachePort.generation(),
+    cache,
+  };
+}
+
+/**
  * The portable memory API (G1.3). Construct directly or via {@link createMemoryApi}. All ops are
  * store-backed: writes go through `MemoryStore`'s locked + atomic + validated + secret-scanned
  * gate, reads are lock-free. History is a READ projection — no op rewrites or removes an existing
@@ -910,11 +994,14 @@ export class MemoryApi {
   private readonly deps: MemoryApiDeps;
   private readonly env: NodeJS.ProcessEnv;
   private readonly nowFn: () => string;
+  /** G3.3 — display-only clock for the volatile freshness age. Never feeds an id/hash/ifHash. */
+  private readonly nowMsFn: () => number;
 
   constructor(deps: MemoryApiDeps) {
     this.deps = deps;
     this.env = deps.env ?? process.env;
     this.nowFn = deps.now ?? (() => new Date().toISOString());
+    this.nowMsFn = deps.nowMs ?? Date.now;
   }
 
   private now(): string {
@@ -1262,22 +1349,33 @@ export class MemoryApi {
     const gathered = gatherRecall(this.deps.stores, {
       sources: opts.sources ?? DEFAULT_RECALL_SOURCES,
     });
+    const baseCtx = opts.evalCtx ?? this.deps.evalCtx;
+    // G3.3 — bind the generation-keyed evaluation cache for THIS pass via the SHARED helper (the
+    // same binding the CLI/MCP recall adapters use — one implementation, no forked semantics).
+    const bound = bindEvaluationPass(baseCtx, gathered, {
+      nowMs: this.nowMsFn,
+      ...(this.deps.evaluationCache ? { cache: this.deps.evaluationCache } : {}),
+    });
+    const boundCache = bound.cache;
+    const passCtx = bound.evalCtx;
     const projection = recallProjection(gathered, {
       query,
       ...(opts.targetIds ? { targetIds: opts.targetIds } : {}),
       ...(opts.lexicalScorer ? { lexicalScorer: opts.lexicalScorer } : {}),
       ...(opts.feedbackBound !== undefined ? { feedbackBound: opts.feedbackBound } : {}),
       evaluator: opts.evaluator ?? this.deps.evaluator,
-      ...((opts.evalCtx ?? this.deps.evalCtx)
-        ? { evalCtx: (opts.evalCtx ?? this.deps.evalCtx) as MemoryEvalContext }
+      ...((passCtx ?? opts.evalCtx ?? this.deps.evalCtx)
+        ? { evalCtx: (passCtx ?? opts.evalCtx ?? this.deps.evalCtx) as MemoryEvalContext }
         : {}),
     });
     const aliasIndex = buildAliasIndex(gathered.aliases ?? []);
-    // DETERMINISTIC by construction: no wall clock enters the response — `state` carries the
-    // freshness signal, so two identical searches over identical inputs are byte-equal and ifHash
-    // can collapse the second call (a `this.now()` stamp here would break that permanently).
+    // DETERMINISTIC by construction: no wall clock enters the ENUMERABLE response — `state` carries
+    // the freshness signal, so two identical searches over identical inputs are byte-equal and
+    // ifHash can collapse the second call (a `this.now()` stamp here would break that permanently).
+    // The wall-clock AGE of the cached generation rides alongside NON-enumerably (below).
     const evaluatedAt: string | null = null;
     const codeHead: string | null = opts.codeHead ?? this.deps.codeHead ?? null;
+    const generation: string | null = bound.generation;
     const freshness: FreshnessState = {
       state: projection.provenance.fresh ? 'fresh' : 'unevaluated',
       evaluatedAt,
@@ -1298,6 +1396,20 @@ export class MemoryApi {
         freshness,
       }),
     );
+    // G3.3 — attach the volatile freshness trio NON-enumerably (shared freshness object across
+    // hits — one attach per response). canonicalStringify walks enumerable keys only, so ifHash
+    // never sees these; a display layer reading `hit.freshness.generation` / `.ageMs` explicitly
+    // gets the live values.
+    attachVolatileFreshness(
+      freshness,
+      {
+        generation,
+        ...(boundCache && boundCache.evaluatedAt !== null
+          ? { evaluatedAtMs: boundCache.evaluatedAt }
+          : {}),
+      },
+      this.nowMsFn(),
+    );
     return {
       query,
       hits,
@@ -1309,6 +1421,12 @@ export class MemoryApi {
         fresh: projection.provenance.fresh,
         evaluatedAt,
         codeHead,
+        generation,
+        // G3.2 (red line #6) — the versioned scorer id when the caller supplied a versioned scorer
+        // (the built-in exact scorer leaves the field absent). Traceable to configuration, not clock.
+        ...(projection.provenance.scorerVersion !== undefined
+          ? { scorerVersion: projection.provenance.scorerVersion }
+          : {}),
         errors: gathered.errors,
       },
     };

@@ -30,7 +30,6 @@ import {
   type CaptureOutboxEntry,
   type ConflictGroup,
   type EffectiveVerdicts,
-  FtsLexicalScorer,
   MemoryApi,
   type MemoryDecision,
   type MemoryEvalContext,
@@ -44,14 +43,17 @@ import {
   type MemorySource,
   type MemoryStore,
   type RecallProjection,
+  type RecallStores,
   type RecordBelief,
   type ScoredRecord,
   type SearchHit,
   SoulStoreAnchorPort,
   type SupersedePayload,
   type Verdicts,
+  VersionedLexicalScorer,
   applyContradictedFeedback,
   assertNoMemorySecrets,
+  bindEvaluationPass,
   bridgedDecisions,
   buildAliasIndex,
   captureRetryCount,
@@ -63,6 +65,7 @@ import {
   isFeedbackSignal,
   isMemoryRecordV2,
   isRecallEligible,
+  openMemoryFts,
   pendingCaptures,
   quarantinedRecordIds,
   recallProjection,
@@ -178,6 +181,30 @@ interface SemanticSearchable {
 const VCS_FACT_TTL_MS = 2000;
 
 const DEFAULT_OVERVIEW_ANALYSES = 40;
+
+/**
+ * G3.1/G3.2 — the lexical channel for one memory read call: the FTS index + the versioned scorer
+ * the projection's criterion-1 slot ranks with. The PERSISTENT on-disk snapshot (`openMemoryFts`)
+ * serves the default all-sources path — it is kept current by the store's write hooks and
+ * self-heals on staleness/corruption, so the O(N) per-query rebuild leaves the hot path (the Gate 3
+ * scale target). A `sources` FILTER keeps the ephemeral `:memory:` rebuild: a subset corpus would
+ * compute BM25's IDF over the wrong corpus and rank differently than the full rebuild (the
+ * byte-comparability invariant persistent-fts.ts pins).
+ *
+ * The scorer is the versioned scorer at the LAUNCH DEFAULT `lexical-only` — score-identical to the
+ * incumbent `FtsLexicalScorer` (it delegates 1:1) while naming its configuration on the response
+ * provenance (red line #6). A fusion strategy replaces this default ONLY through the pre-registered
+ * held-out rule (docs/bench/retrieval-pre-registration.md §4) — never by editing a call site.
+ * Callers MUST `fts.close()` in a finally (releases the SQLite handle + the store write listeners).
+ */
+function lexicalChannel(
+  stores: RecallStores,
+  records: ReadonlyArray<MemoryRecord | MemoryRecordV2>,
+  sourcesFiltered: boolean,
+): { fts: MemoryFtsIndex; scorer: VersionedLexicalScorer } {
+  const fts = sourcesFiltered ? new MemoryFtsIndex(':memory:') : openMemoryFts(stores);
+  return { fts, scorer: new VersionedLexicalScorer({ fts, records, strategy: 'lexical-only' }) };
+}
 
 /** G2.3 — how many pending/dead outbox entries the `memory{op:'outbox'}` report lists per section
  *  (the counts stay exact; only the per-entry views cap). */
@@ -2337,19 +2364,23 @@ export class Verbs {
     const api = this.memoryApi();
     if (!mem || !stores || !api) return this.applyIfHash(args, { memory: 'not configured' });
     const query = args.q ?? '';
-    // The disposable in-memory FTS index gives search the same lexical signal memory_recall
-    // ranks with; api.search gathers internally, so this double-gather is the accepted cost of
-    // not widening the package's search signature for the adapter.
+    // G3.1 — the persistent FTS snapshot serves the default all-sources path (kept current by the
+    // store write hooks, self-healing); a sources FILTER keeps the ephemeral rebuild (a subset
+    // corpus would rank differently — the byte-comparability invariant). G3.2 — the versioned
+    // scorer names its configuration on the response provenance (red line #6).
     const gathered = gatherRecall(stores, {
       ...(args.sources ? { sources: args.sources } : {}),
     });
-    const fts = new MemoryFtsIndex(':memory:');
+    const { fts, scorer } = lexicalChannel(
+      stores,
+      gathered.records.map((r) => r.record),
+      args.sources !== undefined,
+    );
     try {
-      fts.rebuild(gathered.records.map((r) => r.record));
       const response = api.search(query, {
         ...(args.targetIds ? { targetIds: args.targetIds } : {}),
         ...(args.sources ? { sources: args.sources } : {}),
-        lexicalScorer: new FtsLexicalScorer(fts),
+        lexicalScorer: scorer,
         ...(mem.evaluator && mem.evalCtx ? { evaluator: mem.evaluator, evalCtx: mem.evalCtx } : {}),
       });
       const limit = capInt(args.limit, 5, 20);
@@ -3032,20 +3063,42 @@ export class Verbs {
     const stores = this.recallStores();
     if (!mem || !stores) return undefined;
     const gathered = gatherRecall(stores, { sources: opts.sources });
-    const fts = new MemoryFtsIndex(':memory:');
+    // G3.1 — persistent snapshot on the all-sources path, ephemeral rebuild under a sources filter
+    // (subset corpora rank differently — see {@link lexicalChannel}). G3.2 — the versioned scorer
+    // carries its configuration id on the projection provenance (red line #6).
+    const { fts, scorer } = lexicalChannel(
+      stores,
+      gathered.records.map((r) => r.record),
+      opts.sources !== undefined,
+    );
     try {
-      fts.rebuild(gathered.records.map((r) => r.record));
-      const scorer = new FtsLexicalScorer(fts);
+      // G3.3 — bind the SAME generation-keyed cache `MemoryApi.search` binds (shared
+      // `bindEvaluationPass`), so recall does not revalidate every record per query either (red
+      // line #1): a memoized verdict is served while the dependency generations are unchanged.
+      const freshReady =
+        opts.fresh === true && mem.evaluator !== undefined && mem.evalCtx !== undefined;
+      const bound: Partial<ReturnType<typeof bindEvaluationPass>> = freshReady
+        ? bindEvaluationPass(mem.evalCtx, gathered)
+        : { generation: null };
       const evalOpts =
-        opts.fresh && mem.evaluator && mem.evalCtx
-          ? { evaluator: mem.evaluator, evalCtx: mem.evalCtx }
+        freshReady && mem.evaluator && mem.evalCtx
+          ? { evaluator: mem.evaluator, evalCtx: bound.evalCtx ?? mem.evalCtx }
           : {};
-      return recallProjection(gathered, {
+      const projection = recallProjection(gathered, {
         query: opts.query ?? '',
         ...(opts.targetIds ? { targetIds: opts.targetIds } : {}),
         lexicalScorer: scorer,
         ...evalOpts,
       });
+      // Red line #1 — the recall provenance names the generation the fresh verdicts were proven
+      // current against (null when no versioned dependency could be fingerprinted).
+      if (bound.generation !== undefined) {
+        return {
+          ...projection,
+          provenance: { ...projection.provenance, generation: bound.generation },
+        };
+      }
+      return projection;
     } finally {
       fts.close();
     }

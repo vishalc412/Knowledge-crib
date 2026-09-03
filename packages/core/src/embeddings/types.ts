@@ -11,6 +11,12 @@
  * vector table. `--extracted-only` is therefore byte-identical with or without embeddings, because
  * vectors live only in `.crib/index` / `.crib/embeddings` (gitignored, rebuildable).
  *
+ * G3.2 tiering: `char-ngram` is the DEGRADED OFFLINE FALLBACK tier (see char-ngram.ts — never
+ * advertised as the semantic implementation). The advertised tier is a pinned on-device model
+ * installed out-of-band via `crib embed install` (manifest + integrity-verified load under
+ * `~/.crib/embed/`, `embed-install.ts`). Remote embedders exist as a shape (`remote.ts`) but stay
+ * DISABLED until the operator accepts their data policy — disabled-by-default is a red line.
+ *
  * Storage note: vectors are float32 BLOB columns in the existing `node:sqlite` derived index with
  * brute-force cosine ANN — NOT the `sqlite-vec` native extension. The plan names sqlite-vec, but
  * shipping a per-platform native binary breaks the M0 gates (packaged <5 MB, runtime deps ≤6,

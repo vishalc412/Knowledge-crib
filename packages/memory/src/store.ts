@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { existsSync, readFileSync, readdirSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 /**
@@ -189,6 +190,49 @@ export interface MemoryShardRead {
   errors: string[];
 }
 
+// ─── G3.1 derived-FTS write hooks ────────────────────────────────────────────
+//
+// The persistent FTS snapshot (persistent-fts.ts) stays in sync with the shards two ways: an
+// IN-PROCESS write listener (the open index upserts/removes rows inside the store's write lock) and
+// a per-store GENERATION sidecar every open validates. Both are keyed to the collections the read
+// model actually indexes — team/global `records` + local `active`. The capture lane's collections
+// (`candidates`, `outbox`, `attempts`, `feedback`, `decisions`, `receipts`) are never FTS rows, so
+// writing them bumps NOTHING: the capture path pays zero bytes for the index.
+
+/** The collections the persistent FTS read model indexes (gatherRecall's record sources). */
+function isRecordCollection(collection: MemoryCollection): boolean {
+  return collection === 'records' || collection === 'active';
+}
+
+/** A store's derived-FTS generation: monotonic per store root + a nonce binding the file's life. */
+export interface MemoryFtsGeneration {
+  /** Monotonic bump per record-collection mutation, persisted under the store's write lock. */
+  gen: number;
+  /** Random id bound to this gen FILE's life — a cleared store gets a fresh nonce, so a cleared
+   *  store can never coincide with a stale recorded generation (a bare counter could: 1 → reset → 1). */
+  nonce: string;
+}
+
+/** What one record-collection mutation changed, for the persistent FTS index's incremental upsert. */
+export interface MemoryFtsWriteNotice {
+  role: MemoryStoreRole;
+  /** The collection mutated. Absent on a `reset` notice (the whole root went away). */
+  collection?: MemoryCollection;
+  /** Entries now present in the collection (records only are consumed by the index). */
+  upserted: MemoryEntry[];
+  /** Ids no longer present in the collection (rows the index must drop). */
+  removed: string[];
+  /**
+   * True when the store root was cleared — the snapshot is meaningless, drop it (the next use
+   * rebuilds; the generation nonce changed, so cross-process readers converge on the same verdict).
+   */
+  reset?: boolean;
+  /** The generation the store JUST persisted for this mutation (avoids a re-read race). */
+  generation: MemoryFtsGeneration;
+}
+
+export type MemoryFtsWriteListener = (notice: MemoryFtsWriteNotice) => void;
+
 export interface StoreOpts {
   /** Env override (tests relocate `~/.crib/memory` via `KCRIB_MEMORY_DIR`). */
   env?: NodeJS.ProcessEnv;
@@ -318,6 +362,93 @@ export class MemoryStore {
   /** `<rootDir>/<collection>/<shard>.jsonl` path. */
   shardPath(collection: MemoryCollection, shard: string): string {
     return join(this.collectionDir(collection), `${shard}.jsonl`);
+  }
+
+  // ─── G3.1 derived-FTS hooks (persistent index sync) ─────────────────────────
+
+  private ftsListener: MemoryFtsWriteListener | undefined;
+
+  /**
+   * Install the single persistent-FTS write listener (the open snapshot's incremental upsert hook).
+   * One listener per store instance by design: a second concurrently-open snapshot takes the hook
+   * over and the first rebuilds on its next open via the generation check — never silently stale.
+   * Pass `undefined` to detach (the snapshot's `close()` does this).
+   */
+  setFtsWriteListener(listener: MemoryFtsWriteListener | undefined): void {
+    this.ftsListener = listener;
+  }
+
+  /** `<rootDir>/fts.gen` — the derived-FTS generation sidecar. Lives in the store ROOT (not the
+   *  committed ledger's sibling dirs) because it is per-store derived state, exactly the class of
+   *  file the local/global `manifest.json` already is; the kcrib-memory merge driver claims
+   *  `*.jsonl` only, so the sidecar never participates in a team merge. */
+  ftsGenerationPath(): string {
+    return join(this.init.rootDir, 'fts.gen');
+  }
+
+  /**
+   * Read the current derived-FTS generation. An absent file = a store that has never written a
+   * record collection (`gen 0`, empty nonce). An UNPARSEABLE file (a torn temp→rename crash) reads
+   * as an unmatchable generation so the persistent index rebuilds rather than trusting a snapshot
+   * of unknown provenance — the next bump rewrites the file fresh and the fast path resumes.
+   */
+  readFtsGeneration(): MemoryFtsGeneration {
+    const path = this.ftsGenerationPath();
+    if (!existsSync(path)) return { gen: 0, nonce: '' };
+    try {
+      const parsed = JSON.parse(readFileSync(path, 'utf8')) as Partial<MemoryFtsGeneration>;
+      if (typeof parsed.gen === 'number' && typeof parsed.nonce === 'string') {
+        return { gen: parsed.gen, nonce: parsed.nonce };
+      }
+    } catch {
+      // torn sidecar — fall through to the unmatchable read
+    }
+    return { gen: -1, nonce: `torn:${path}` };
+  }
+
+  /**
+   * Bump the generation sidecar (atomic temp→rename, under the store's write lock). The FIRST bump
+   * mints the nonce; every later bump keeps it, so the nonce changes exactly when the store root's
+   * life does (clear → delete → fresh file → fresh nonce).
+   */
+  private bumpFtsGeneration(): MemoryFtsGeneration {
+    const path = this.ftsGenerationPath();
+    const current = this.readFtsGeneration();
+    const next: MemoryFtsGeneration =
+      current.gen >= 1
+        ? { gen: current.gen + 1, nonce: current.nonce }
+        : { gen: 1, nonce: randomUUID() };
+    writeJsonAtomic(path, `${JSON.stringify(next)}\n`);
+    return next;
+  }
+
+  /**
+   * The post-commit tail of every record-collection mutation: bump the generation sidecar, then
+   * notify the open persistent FTS index. Listener failures are fail-open (the snapshot lags; the
+   * next open's generation check rebuilds) — a derived read model must never break the write it
+   * shadows. Runs INSIDE the caller's lock hold, so a store's notices are serialized.
+   */
+  private afterRecordWrite(
+    collection: MemoryCollection,
+    upserted: readonly MemoryEntry[],
+    removed: readonly string[],
+    reset = false,
+  ): void {
+    const generation = this.bumpFtsGeneration();
+    const listener = this.ftsListener;
+    if (!listener) return;
+    try {
+      listener({
+        role: this.init.role,
+        collection,
+        upserted: [...upserted],
+        removed: [...removed],
+        ...(reset ? { reset: true } : {}),
+        generation,
+      });
+    } catch {
+      // fail-open — see above
+    }
   }
 
   // ─── the legacy-ID alias map (G1.2 migration) ────────────────────────────────
@@ -586,6 +717,14 @@ export class MemoryStore {
       for (const entry of list) this.assertWritable(entry);
       writeJsonAtomic(this.shardPath(collection, shard), serializeMemoryShard(list));
     }
+    // G3.1: the migration regroups shards and can move a v1 id to its different-shard v2 twin, so
+    // the FTS notice carries BOTH the surviving record set (upserted) and the retired v1 ids — the
+    // snapshot must drop the v1 rows or the corpus (and every BM25 score) silently diverges.
+    if (isRecordCollection(collection)) {
+      const beforeIds = new Set(before.map((e) => e.id));
+      for (const entry of next.values()) beforeIds.delete(entry.id);
+      this.afterRecordWrite(collection, [...next.values()], [...beforeIds]);
+    }
   }
 
   // ─── reads (lock-free; atomic writes make concurrent reads safe) ───────────
@@ -634,7 +773,19 @@ export class MemoryStore {
     this.assertCollection(collection);
     for (const entry of entries) this.assertWritable(entry);
     const text = serializeMemoryShard(entries);
-    this.withLock(() => writeJsonAtomic(this.shardPath(collection, shard), text));
+    this.withLock(() => {
+      // A full-shard replace can RETIRE ids (a replace-by-id with a different content id), so the
+      // FTS notice must carry the removed set too — a dropped row left in the snapshot would shift
+      // BM25's IDF for every query.
+      let removed: string[] = [];
+      if (isRecordCollection(collection)) {
+        const priorIds = new Set(this.readShard(collection, shard).entries.map((e) => e.id));
+        for (const entry of entries) priorIds.delete(entry.id);
+        removed = [...priorIds];
+      }
+      writeJsonAtomic(this.shardPath(collection, shard), text);
+      if (isRecordCollection(collection)) this.afterRecordWrite(collection, entries, removed);
+    });
   }
 
   /**
@@ -663,6 +814,8 @@ export class MemoryStore {
           serializeMemoryShard([...merged.values()]),
         );
       }
+      // G3.1: an upsert never retires an id (merge-by-id only), so the FTS notice is upsert-only.
+      if (isRecordCollection(collection)) this.afterRecordWrite(collection, entries, []);
     });
   }
 
@@ -693,6 +846,7 @@ export class MemoryStore {
       const next = existing.filter((e) => e.id !== id);
       if (next.length === existing.length) return false; // not present — nothing to clean
       writeJsonAtomic(this.shardPath(collection, shard), serializeMemoryShard(next));
+      if (isRecordCollection(collection)) this.afterRecordWrite(collection, [], [id]);
       return true;
     });
   }
@@ -771,6 +925,23 @@ export class MemoryStore {
     this.withLock(() => {
       if (existsSync(this.init.rootDir))
         rmSync(this.init.rootDir, { recursive: true, force: true });
+      // G3.1: a cleared root takes the generation sidecar (and, for the local root, the FTS
+      // snapshot dir) with it. Notify WITHOUT re-bumping: the sidecar reads {0, ''} after the
+      // delete, which can never match a recorded snapshot generation, and a subsequent write mints
+      // a fresh nonce — so cross-process readers converge on "rebuild" from either path.
+      const listener = this.ftsListener;
+      if (!listener) return;
+      try {
+        listener({
+          role: this.init.role,
+          upserted: [],
+          removed: [],
+          reset: true,
+          generation: this.readFtsGeneration(),
+        });
+      } catch {
+        // fail-open — the snapshot's next open reconciles via the (new) generation
+      }
     });
   }
 

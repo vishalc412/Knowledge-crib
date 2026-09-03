@@ -34,7 +34,7 @@ import {
   type Verdicts,
   isEvidenceKind,
 } from './enums.js';
-import { type RehydratePort, verifyQuote } from './grounding.js';
+import { type QuoteCheck, type RehydratePort, verifyQuote } from './grounding.js';
 import { decisionId } from './ids.js';
 import { type StableLocator, bestLocatorMatches, buildLocatorFromEvidence } from './locator.js';
 import {
@@ -52,6 +52,14 @@ export interface MemorySoulPort extends RehydratePort {
   getNode(id: string): Node | undefined;
   /** Find live nodes matching a locator (best-first). The adapter feeds `soul.iterate()`. */
   findByLocator(locator: StableLocator): Node[];
+  /**
+   * G3.3 — a monotonic fingerprint of the node/code dependency generation (in-process node
+   * mutations + the persisted manifest generation counters), when the adapter can supply one. The
+   * serving layer's locator hoist keys its materialized node array + locator-match memo on this
+   * (unchanged generation ⇒ the O(all-nodes) scan is paid once, not per evidence item). Absent —
+   * the unit fakes — the adapter must NOT cache and re-scans per call, the pre-G3.3 behaviour.
+   */
+  generation?(): string;
 }
 
 /** A sanitized gate receipt (the subset the evaluator reads). Mirrors {@link GateReceipt}. */
@@ -68,6 +76,12 @@ export interface EvalReceipt {
 /** The receipt read-port: resolves `execution-assertion` / `receipt-pair` evidence. */
 export interface MemoryReceiptPort {
   getReceipt(id: string): EvalReceipt | undefined;
+  /**
+   * G3.3 — the receipt-store dependency generation, when the port can version itself. Absent ⇒ the
+   * generation cache binds `unversioned` and the pass evaluates FRESH: receipt drift could not be
+   * detected, and a stale verdict is never served in place of a detectable one.
+   */
+  generation?(): string;
 }
 
 /** The trusted-base policy read-port: the live policy + runner-profile hashes (drift detection). */
@@ -76,20 +90,58 @@ export interface MemoryPolicyPort {
   profileHash(): string | undefined;
 }
 
+/**
+ * G3.3 — the generation-keyed evaluation cache port (implemented by `GenerationCache` in
+ * `generation-cache.ts`). A record's {@link RecordEvaluation} is a pure function of (record content
+ * · code/node generation · policy generation · receipt generation · decision/feedback/embedder/index
+ * dependency slots), so while ALL of those are unchanged the last evaluation IS the evaluation —
+ * returned WITHOUT re-reading a single evidence item (red line #1: never revalidate every record to
+ * answer one query). The port is bound per recall call by the serving layer; `generation()` naming
+ * `unversioned` (a dependency that cannot be versioned) means the port is NOT bound at all — a
+ * pass either evaluates fresh or serves a verdict proven current at a full dependency fingerprint.
+ */
+export interface EvaluationCachePort {
+  /** the dependency-generation fingerprint the CURRENT pass is bound to. */
+  generation(): string;
+  get(key: string): RecordEvaluation | undefined;
+  set(key: string, evaluation: RecordEvaluation): void;
+}
+
+/** One recall pass's scratch memos — created per search/recall call, discarded with it. */
+export interface EvaluationPassContext {
+  /** per-pass locator→candidates memo (the port may hoist further per generation). */
+  locatorMatches: Map<string, Node[]>;
+  /** per-pass quote-verification memo, keyed `nodeId|hash|quote|startLine` (rehydrate reads disk). */
+  quoteChecks: Map<string, QuoteCheck>;
+}
+
 /** Everything the evaluator needs to revalidate one record. Receipts + policy are optional. */
 export interface MemoryEvalContext {
   soul: MemorySoulPort;
   receipts?: MemoryReceiptPort;
   policy?: MemoryPolicyPort;
+  /** G3.3 — the per-pass scratch memos (locator matches + quote verifications). */
+  pass?: EvaluationPassContext;
+  /** G3.3 — the generation-keyed evaluation cache port bound for this pass. */
+  cache?: EvaluationCachePort;
 }
 
 /**
  * Adapter wrapping a `SoulStore` + `repoRoot` as a {@link MemorySoulPort}. The rehydrate path uses
  * `rehydrateBody` from `core` (the same function `mcp/grounding.ts` uses, so verdicts match); the
- * locator path scans `soul.iterate()` via `bestLocatorMatches`. NOT used by the unit tests (they
- * fake the port); used by the CLI / MCP serving layer when revalidating against a real soul.
+ * locator path scans `soul.iterate()` via `bestLocatorMatches` — G3.3 hoisted: the O(all-nodes)
+ * `Array.from(iterate())` materialization is paid ONCE per node generation and the per-locator
+ * matches are memoized against it, instead of once per ORPHANED evidence item per record per call
+ * (the fresh-eval cost that dominated the 10k-recall p50 in docs/bench/memory.md). Both caches are
+ * keyed on {@link generation} — every node mutation path in `SoulStore` bumps `nodeGeneration`, so
+ * a changed soul re-materializes; nothing can silently desynchronise.
  */
 export class SoulStoreSoulPort implements MemorySoulPort {
+  /** The materialized node array + the generation it was built at (null = never built). */
+  private locatorScan: { generation: string; nodes: Node[] } | null = null;
+  /** Per-locator match memo — valid only while `locatorScan.generation` is current. */
+  private readonly locatorMatches = new Map<string, Node[]>();
+
   constructor(
     private readonly soul: SoulStore,
     private readonly repoRoot: string,
@@ -107,8 +159,48 @@ export class SoulStoreSoulPort implements MemorySoulPort {
     });
   }
 
+  /**
+   * G3.3 — the code/node dependency-generation fingerprint: the in-process mutation counter (every
+   * putNodes/removeByFile/load path bumps it — the same signal `cluster-hash.ts` keys off) plus the
+   * persisted manifest generation counters, so a semantic bump invalidates too.
+   */
+  generation(): string {
+    const gen = this.soul.getManifest().generation;
+    return `${this.soul.nodeGeneration}:${gen?.extracted ?? 0}:${gen?.semantic ?? 0}`;
+  }
+
   findByLocator(locator: StableLocator): Node[] {
-    return bestLocatorMatches(Array.from(this.soul.iterate()), locator);
+    // Materialize FIRST: the generation check inside invalidates the locator memo when the node
+    // set changed — checking the memo before it would serve a stale match across a mutation
+    // (exactly what the generation key exists to prevent).
+    const nodes = this.materializedNodes();
+    const key = JSON.stringify(locator);
+    const memo = this.locatorMatches.get(key);
+    if (memo) return memo;
+    const matches = bestLocatorMatches(nodes, locator);
+    this.locatorMatches.set(key, matches);
+    return matches;
+  }
+
+  /** Materialize the node array once per generation (the pre-G3.3 code did this per call). */
+  private materializedNodes(): Node[] {
+    const generation = this.generation();
+    const cached = this.locatorScan;
+    if (cached && cached.generation === generation) return cached.nodes;
+    const nodes = Array.from(this.soul.iterate());
+    this.locatorScan = { generation, nodes };
+    this.locatorMatches.clear(); // the old memo answers against the OLD node set — drop it
+    return nodes;
+  }
+
+  /**
+   * Explicit invalidation surface: drop the materialized array + locator memo. Not normally needed
+   * (the generation key self-invalidates), but the serving layer may call it after swapping the
+   * underlying store's contents through a path that does not bump the generation counters.
+   */
+  invalidateLocatorCache(): void {
+    this.locatorScan = null;
+    this.locatorMatches.clear();
   }
 }
 
@@ -212,8 +304,17 @@ export class MemoryEvaluator {
    * Revalidate one record's evidence + applicability against the live soul/receipts/policy. Trust is
    * NOT recomputed here (it is as-authored; promotion is a W4 concern via a new record/decision).
    * Lifecycle is overlaid separately by {@link effectiveVerdicts} from decision events.
+   *
+   * G3.3 — when the context carries a generation-keyed cache port (bound by the serving layer for
+   * this pass), a memoized evaluation for the SAME record content at the SAME dependency generation
+   * is returned verbatim (frozen — treat it as read-only): no evidence item is re-read. Anything
+   * that could flip a verdict is a dependency slot, and a changed slot re-fingerprints the whole
+   * cache (see `generation-cache.ts`).
    */
   evaluate(record: MemoryRecord, ctx: MemoryEvalContext): RecordEvaluation {
+    const cacheKey = ctx.cache ? evaluationCacheKey(record) : undefined;
+    const cached = cacheKey && ctx.cache ? ctx.cache.get(cacheKey) : undefined;
+    if (cached) return cached;
     const items: EvidenceRevalidation[] = record.evidence.map((ev) =>
       this.revalidateItem(ev, record.kind, record.claim, ctx),
     );
@@ -221,10 +322,54 @@ export class MemoryEvaluator {
     const applicability = this.aggregateApplicability(items);
     const reattached = items.some((i) => i.reattachedTo !== undefined);
     const reasons = this.collectReasons(items, evidence);
-    return { evidence, applicability, items, reattached, reasons };
+    const evaluation: RecordEvaluation = { evidence, applicability, items, reattached, reasons };
+    if (cacheKey && ctx.cache) {
+      // Freeze: the SAME object is served to every caller at this generation — one caller mutating
+      // it must not be able to poison the cache for the rest (the verdicts are a read projection).
+      ctx.cache.set(cacheKey, Object.freeze(evaluation));
+    }
+    return evaluation;
   }
 
   // ─── per-item revalidation ───────────────────────────────────────────────
+
+  /**
+   * G3.3 — locator resolution memoized for the pass. The locator scan is the dominant cost when
+   * evidence goes orphaned: {@link MemorySoulPort.findByLocator} walks every soul node, PER orphaned
+   * evidence item, PER record, PER call. Within one pass the same locator always resolves the same
+   * way (the pass binds one dependency generation), so the first answer is the answer.
+   */
+  private findByLocatorMemoized(ctx: MemoryEvalContext, locator: StableLocator): Node[] {
+    const memo = ctx.pass?.locatorMatches;
+    const key = JSON.stringify(locator);
+    const hit = memo?.get(key);
+    if (hit) return hit;
+    const matches = ctx.soul.findByLocator(locator);
+    memo?.set(key, matches);
+    return matches;
+  }
+
+  /**
+   * G3.3 — quote verification memoized for the pass. `verifyQuote` rehydrates the node body from
+   * disk (span read + text scan); identical (node · hash · quote · startLine) tuples within one
+   * pass — e.g. duplicate evidence across records — rehydrate the same bytes repeatedly for a
+   * known result. Keyed by hash, not just id, so a mid-pass node mutation can never serve a stale
+   * memo under the same id.
+   */
+  private verifyQuoteMemoized(
+    ctx: MemoryEvalContext,
+    node: Node,
+    quote?: string,
+    startLine?: number,
+  ): QuoteCheck {
+    const memo = ctx.pass?.quoteChecks;
+    const key = `${node.id}|${node.hash}|${quote ?? ''}|${startLine ?? ''}`;
+    const hit = memo?.get(key);
+    if (hit) return hit;
+    const check = verifyQuote(ctx.soul, node, quote, startLine);
+    memo?.set(key, check);
+    return check;
+  }
 
   private revalidateItem(
     ev: MemoryEvidence,
@@ -267,12 +412,20 @@ export class MemoryEvaluator {
     }
   }
 
-  /** source-quote: exact id+hash → grounded? ; id matches + hash drift → re-ground ; id gone → reattach. */
+  /** source-quote: exact id+hash → trusted (no re-ground); hash drift → re-ground ; id gone → reattach. */
   private revalidateSourceQuote(ev: MemoryEvidence, ctx: MemoryEvalContext): EvidenceRevalidation {
     const node = ev.soulId ? ctx.soul.getNode(ev.soulId) : undefined;
     if (node) {
+      // G3.3 hash short-circuit: the live node's content hash EQUALS the evidence's targetHash.
+      // Hashes are content-addressed (same hash ⇒ same body bytes), and the quote was verified
+      // grounded against exactly that body when the evidence was written — re-grounding would
+      // rehydrate the span from disk to re-derive a known answer, per evidence item, per record,
+      // per call. The DIVERGED (or absent) hash still re-grounds against the live content below.
+      if (ev.targetHash !== undefined && node.hash === ev.targetHash) {
+        return { kind: 'source-quote', evidence: 'valid', applicability: 'current', reason: 'ok' };
+      }
       const hashMatch = ev.targetHash ? node.hash === ev.targetHash : true;
-      const qv = verifyQuote(ctx.soul, node, ev.quote, ev.startLine);
+      const qv = this.verifyQuoteMemoized(ctx, node, ev.quote, ev.startLine);
       if (hashMatch) {
         return qv.verdict === 'grounded'
           ? { kind: 'source-quote', evidence: 'valid', applicability: 'current', reason: 'ok' }
@@ -316,7 +469,7 @@ export class MemoryEvaluator {
         reason: 'anchor-gone',
       };
     }
-    const candidates = ctx.soul.findByLocator(locator);
+    const candidates = this.findByLocatorMemoized(ctx, locator);
     if (candidates.length === 1) {
       const reattached = candidates[0];
       if (!reattached) {
@@ -327,7 +480,7 @@ export class MemoryEvaluator {
           reason: 'anchor-gone',
         };
       }
-      const qv = verifyQuote(ctx.soul, reattached, ev.quote);
+      const qv = this.verifyQuoteMemoized(ctx, reattached, ev.quote);
       if (qv.verdict === 'grounded') {
         return {
           kind: 'source-quote',
@@ -442,7 +595,7 @@ export class MemoryEvaluator {
         reason: 'anchor-gone',
       };
     }
-    const candidates = ctx.soul.findByLocator(locator);
+    const candidates = this.findByLocatorMemoized(ctx, locator);
     if (candidates.length === 1) {
       const cand = candidates[0];
       if (!cand) {
@@ -636,6 +789,18 @@ export class MemoryEvaluator {
     }
     return reasons;
   }
+}
+
+/**
+ * G3.3 — content-only cache key for one record evaluation. Derives from the record's own bytes
+ * (id · kind · claim · evidence): never a timestamp, never wall clock — the WALL-CLOCK LAW forbids
+ * anything feeding an id/hash/key from reading the clock, and a time-stamped key would also never
+ * hit. Two records with the same content share an evaluation at the same generation; any change to
+ * the record's content is a different key, and any change to a dependency slot re-fingerprints the
+ * whole cache (generation-cache.ts).
+ */
+function evaluationCacheKey(record: MemoryRecord): string {
+  return `${record.id}|${record.kind}|${record.claim}|${JSON.stringify(record.evidence)}`;
 }
 
 // ─── read projection: effective verdicts + recall eligibility ────────────────

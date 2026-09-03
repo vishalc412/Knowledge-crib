@@ -33,7 +33,11 @@ import {
 } from '@knowledge-crib/pipeline';
 
 export interface WatchOpts {
-  /** Debounce window for coalescing rapid save bursts; default 500ms (PRD line 369). */
+  /**
+   * Debounce window for coalescing rapid save bursts; default 300ms. G3.4 red line #2 pins watch
+   * mode at a 300ms debounce (serialized updates, atomic generation publication, 5s queryable-update
+   * p95 target) — the pre-G3.4 default was 500ms; the default moved, existing explicit values win.
+   */
   debounceMs?: number;
   /** VCS fallback scan interval — the convergence backstop; default 2000ms (PRD line 370). */
   fallbackMs?: number;
@@ -94,7 +98,7 @@ export class WatchMode {
   /** Schedule a debounced refresh (coalesces rapid save bursts into one re-parse). */
   private scheduleRefresh(): void {
     if (this.debounceTimer || this.stopped) return;
-    const ms = this.opts.debounceMs ?? 500;
+    const ms = this.opts.debounceMs ?? 300;
     this.debounceTimer = setTimeout(() => {
       this.debounceTimer = undefined;
       void this.refresh('watcher');

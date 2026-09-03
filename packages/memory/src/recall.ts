@@ -72,6 +72,13 @@ export interface TaggedRecord {
  */
 export interface LexicalScorer {
   score(record: MemoryRecord, query: string, targetIds: readonly string[]): number;
+  /**
+   * G3.2 (red line #6) — the ranking-version id naming the configuration that produced the order
+   * (embedder id + scorer version + fusion strategy). OPTIONAL: the built-in exact scorer has no
+   * configuration to name. When present, the projection carries it on provenance (`scorerVersion`)
+   * so every search/recall answer is traceable to the ranking that produced it.
+   */
+  readonly versionId?: string;
 }
 
 /** Exact-match bonus large enough to dominate any realistic FTS5 BM25 score (BM25 is O(1–10)). */
@@ -176,6 +183,19 @@ export interface RecallProvenance {
   };
   /** true iff a {@link MemoryEvaluator} revalidation was run (fresh verdicts vs stamped). */
   fresh: boolean;
+  /**
+   * G3.2 (red line #6) — the versioned scorer id (embedder + scorer version + fusion strategy) the
+   * criterion-1 lexical order was produced under, when the supplied scorer names one. Absent for
+   * the built-in exact scorer. Deterministic (a config fingerprint, never a clock) → ifHash-stable.
+   */
+  scorerVersion?: string;
+  /**
+   * G3.3 — the dependency-generation fingerprint the fresh verdicts in this projection were proven
+   * current against, attached by callers that bind a generation-keyed evaluation pass (the shared
+   * `bindEvaluationPass`); null when no versioned dependency could be fingerprinted. Absent when no
+   * binding was attempted (stamped-verdict reads). Deterministic → ifHash-stable.
+   */
+  generation?: string | null;
 }
 
 /** The recall projection: ranked eligible memories + conflict groups + provenance. */
@@ -502,6 +522,9 @@ export function recallProjection(
       conflicts: conflicts.length,
     },
     fresh,
+    // Red line #6 — carry the scorer's configuration id when the caller supplied a versioned one
+    // (the built-in exact scorer names nothing and stays field-absent, byte-identical responses).
+    ...(lexical?.versionId !== undefined ? { scorerVersion: lexical.versionId } : {}),
   };
 
   return { memories, conflicts, provenance };

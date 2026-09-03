@@ -24,18 +24,28 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
+import { createInterface as createReadline } from 'node:readline';
 import {
   CALLABLE_SYMBOL_TYPES,
+  type EmbedManifest,
   LockBusyError,
   MANIFEST_FILE,
+  REMOTE_EMBED_POLICY_TEXT,
+  REMOTE_EMBED_POLICY_VERSION,
+  type RemoteEmbedPolicy,
   SoulStore,
   WorkingOverlay,
+  embedHomeDir,
+  embedManifestPath,
+  embedTierReport,
   graphPaths,
   hasLegacyGraph,
+  installEmbedModel,
   materializeComposite,
   migrateLegacyGraph,
   newManifest,
   pathFromId,
+  remotePolicyPath,
   validateClusterIntegrity,
   withCribLockAsync,
 } from '@knowledge-crib/core';
@@ -66,7 +76,6 @@ import {
   type CaptureOutboxEntry,
   type ConflictGroup,
   type DistillVerifyContext,
-  FtsLexicalScorer,
   type GateReceipt,
   MemoryApi,
   type MemoryCandidate,
@@ -93,7 +102,9 @@ import {
   type StructuredSummary,
   type SupersedePayload,
   type TrustedTeamPresence,
+  UNVERSIONED,
   type VerifiedDistillDecision,
+  VersionedLexicalScorer,
   activateLocal,
   appendAttemptEvent,
   applyContradictedFeedback,
@@ -101,6 +112,7 @@ import {
   assertValidMemoryEntry,
   attemptEventId,
   attemptGroupId,
+  bindEvaluationPass,
   bridgedDecisions,
   buildAliasIndex,
   buildAttemptEvent,
@@ -111,8 +123,10 @@ import {
   decisionId,
   distillBatchId,
   effectiveVerdicts,
+  entrySetFingerprint,
   evaluateCandidate,
   failDistillItem,
+  fingerprintGenerations,
   formatBenchReport,
   gatherRecall,
   gcUnpromotedAttempts,
@@ -124,6 +138,7 @@ import {
   localRecordsToTombstone,
   localStoreRoot,
   memoryCandidateId,
+  openMemoryFts,
   parseMemoryShard,
   pendingCaptures,
   policyHash,
@@ -188,7 +203,24 @@ import {
   resolveProvider,
   runProviderBatch,
 } from './enrich-provider.js';
-import { hooksInstalled, installHooks, mergeDriverFiles } from './hooks.js';
+import {
+  FRESHNESS_MODES,
+  type FreshnessMode,
+  type FreshnessTask,
+  WorkerAlreadyRunningError,
+  freshnessStatus,
+  parseFreshnessMode,
+  postCommitFreshness,
+  runFreshnessWorker,
+  setFreshnessMode,
+} from './freshness.js';
+import {
+  convertBlockingPostCommit,
+  detectLegacyBlockingPostCommit,
+  hooksInstalled,
+  installHooks,
+  mergeDriverFiles,
+} from './hooks.js';
 import { type McpIde, type McpScope, installMcp, listMcp, removeMcp } from './mcp-install.js';
 import { registerProject } from './registry.js';
 import {
@@ -526,6 +558,10 @@ async function main(argvRaw: string[]): Promise<number> {
       return cmdEnrich(rest, ctx);
     case 'memory':
       return cmdMemory(rest, ctx);
+    case 'embed':
+      return cmdEmbed(rest, ctx);
+    case 'freshness':
+      return cmdFreshness(rest, ctx);
     case 'audit-llm':
       return cmdAuditLlm(rest, ctx);
     case 'mcp':
@@ -960,7 +996,16 @@ async function cmdStatus(args: string[], ctx?: CmdCtx): Promise<number> {
     vcs: new CliVcsAdapter(),
   });
   const dirty = args.includes('--dirty');
-  process.stdout.write(`${JSON.stringify(verbs.status({ dirty }), null, 2)}\n`);
+  const statusJson = verbs.status({ dirty }) as Record<string, unknown>;
+  // G3.4 — additive freshness block (mode, worker lease, in-flight, queue depth, behind-HEAD).
+  // Best-effort: a status call on a half-initialized project must never crash; the status verb's
+  // own shape is untouched so existing consumers see only a new key.
+  try {
+    statusJson.freshness = freshnessStatus(resolved.repoRoot);
+  } catch (err) {
+    statusJson.freshness = { error: (err as Error).message };
+  }
+  process.stdout.write(`${JSON.stringify(statusJson, null, 2)}\n`);
   index.close();
   return EXIT.OK;
 }
@@ -1752,6 +1797,34 @@ async function cmdReindex(args: string[], ctx?: CmdCtx): Promise<number> {
  * NOT take `--semantic` (deterministic-first onboarding; opt into INFERRED links with a later
  * `crib index --semantic`).
  */
+/**
+ * G3.4 — the init-time freshness-mode choice. NON-BLOCKING by construction: a TTY prompt answers
+ * on Enter (default) or after a short timeout; a non-interactive run (CI, scripted `claude -p`
+ * onboarding) takes the default WITHOUT waiting on stdin at all. Default: `manual` — the mode
+ * that changes nothing about existing behavior until the operator opts into a worker.
+ */
+async function chooseFreshnessMode(repoRoot: string): Promise<FreshnessMode> {
+  const DEFAULT: FreshnessMode = 'manual';
+  if (!process.stdin.isTTY) {
+    return DEFAULT;
+  }
+  const rl = createReadline({ input: process.stdin, output: process.stdout });
+  const answer = await new Promise<string>((res) => {
+    const timer = setTimeout(() => {
+      res('');
+      rl.close();
+    }, 10_000);
+    rl.question(`  freshness mode (${FRESHNESS_MODES.join('/')}) [${DEFAULT}]: `, (a: string) => {
+      clearTimeout(timer);
+      res(a.trim());
+      rl.close();
+    });
+  });
+  const mode = parseFreshnessMode(answer === '' ? undefined : answer);
+  void repoRoot;
+  return mode ?? DEFAULT;
+}
+
 async function cmdInit(args: string[], ctx?: CmdCtx): Promise<number> {
   const repoRoot = resolve(ctx?.cwdOverride ?? positionalsOf(args)[0] ?? '.');
   const ideIdx = args.indexOf('--ide');
@@ -1779,12 +1852,24 @@ async function cmdInit(args: string[], ctx?: CmdCtx): Promise<number> {
   }
 
   process.stdout.write(
-    '  step 2/4: wiring git hooks (post-commit `crib update` + .crib merge driver)…\n',
+    '  step 2/4: wiring git hooks (non-blocking post-commit freshness hook + .crib merge driver)…\n',
   );
-  const hooksCode = cmdInstallHooks([repoRoot], ctx);
+  const hooksCode = cmdInstallHooks([repoRoot], ctx, { convertAfter: true });
   if (hooksCode !== EXIT.OK) {
     process.stderr.write(`  install-hooks failed (exit ${hooksCode}) — aborting init\n`);
     return hooksCode;
+  }
+
+  // G3.4 — offer the freshness-mode choice. NON-BLOCKING: a TTY prompt answers on Enter (default)
+  // or times out; non-interactive runs take the default silently. The installed hook was converted
+  // to the non-blocking freshness path during step 2, and the mode itself never makes a commit
+  // wait (zero-commit-tax red line).
+  try {
+    const mode = await chooseFreshnessMode(repoRoot);
+    setFreshnessMode(repoRoot, mode);
+    process.stdout.write(`  freshness mode: ${mode}\n`);
+  } catch (err) {
+    process.stderr.write(`  warning: freshness mode not persisted — ${(err as Error).message}\n`);
   }
 
   process.stdout.write(`  step 3/4: wiring the MCP server into IDE config (--ide ${ide})…\n`);
@@ -1884,7 +1969,7 @@ function formatBytes(bytes: number): string {
  * check (stale build artifacts) is WARN-class: always ✓, never reported as a failure — it surfaces
  * a backlog the next build would reclaim anyway.
  */
-function cmdDoctor(args: string[], ctx?: CmdCtx): number {
+async function cmdDoctor(args: string[], ctx?: CmdCtx): Promise<number> {
   const repoRoot = resolve(ctx?.cwdOverride ?? positionalsOf(args)[0] ?? '.');
   const checks: Array<{ name: string; ok: boolean; detail: string; fix?: string }> = [];
 
@@ -2087,6 +2172,70 @@ function cmdDoctor(args: string[], ctx?: CmdCtx): number {
         : `${stale.count} stale .crib-build-* build${stale.count === 1 ? '' : 's'} (${formatBytes(stale.bytes)} incl. -wal/-shm) — auto-reclaimed on next \`crib index\``,
   });
 
+  // 9. Embedder tier (G3.2): the fallback tier is a VALID state (✓ with the degraded-fallback
+  //    wording + install hint), never fabricated as semantic. A broken install or integrity
+  //    failure is ✗ with the problems echoed. Async — the honest check LOADS the model.
+  try {
+    const tier = await embedTierReport({ env: process.env });
+    checks.push({
+      name: 'embedder tier',
+      ok: tier.problems.length === 0,
+      detail: `${tier.tier} (${tier.embedderId}); remote ${tier.remoteEnabled ? 'acknowledged' : 'disabled'}${tier.externalOverride ? '; KCRIB_EMBEDDER override active' : ''} — ${tier.reason}${tier.problems.length > 0 ? `; problems: ${tier.problems.join('; ')}` : ''}`,
+      fix:
+        tier.tier === 'fallback'
+          ? 'run `crib embed install <model-dir>` for the on-device tier'
+          : undefined,
+    });
+  } catch (err) {
+    checks.push({
+      name: 'embedder tier',
+      ok: false,
+      detail: `report failed: ${(err as Error).message}`,
+      fix: 'run `crib embed status`',
+    });
+  }
+
+  // 10. Freshness (G3.4): not running a worker is a VALID state in every mode (manual is the
+  //     default and `watch` is served by `crib serve --watch`); dead-lettered tasks or a published
+  //     generation that is behind HEAD are the actionable ✗ states. Zero commit blocking holds in
+  //     every mode — this check never asks the user to make commits wait on anything.
+  try {
+    const fresh = freshnessStatus(repoRoot);
+    const deadOk = fresh.dead === 0;
+    checks.push({
+      name: 'freshness',
+      ok: deadOk,
+      detail: `mode ${fresh.mode}${fresh.modeExplicit ? '' : ' (default)'}; worker ${fresh.workerRunning ? `running (pid ${fresh.workerPid ?? '?'})` : 'not running'}; pending ${fresh.pending}; in-flight ${fresh.inFlight ? fresh.inFlight.id : 'none'}; behind HEAD ${fresh.behindHead ? 'YES' : 'no'}`,
+      fix: !deadOk
+        ? 'inspect `crib freshness status` and re-run `crib update` (dead-lettered tasks are retried by the worker)'
+        : fresh.behindHead
+          ? 'run `crib freshness worker` (or `crib update`)'
+          : undefined,
+    });
+  } catch (err) {
+    checks.push({
+      name: 'freshness',
+      ok: true,
+      detail: `status unavailable: ${(err as Error).message}`,
+    });
+  }
+
+  // 11. Legacy blocking post-commit hook (G3.4 detection surface): the W-era install ran
+  //     `crib update` in the foreground of EVERY commit — a violation of the zero-commit-tax
+  //     red line that predates the freshness modes. Surfaced as ✗ with the conversion command;
+  //     the write itself stays in `crib freshness convert-hook`.
+  const legacy = detectLegacyBlockingPostCommit(repoRoot);
+  if (legacy.exists) {
+    checks.push({
+      name: 'post-commit hook non-blocking',
+      ok: !legacy.convertible,
+      detail: legacy.convertible
+        ? `blocking \`crib update\` found (${legacy.blockingCommands.length} line(s)) — commits wait on a full reindex`
+        : 'no blocking commands (freshness hook or absent managed block)',
+      fix: legacy.convertible ? 'run `crib freshness convert-hook`' : undefined,
+    });
+  }
+
   let failures = 0;
   for (const c of checks) {
     const mark = c.ok ? '✓' : '✗';
@@ -2117,13 +2266,295 @@ function cmdMergeDriver(args: string[]): number {
   return conflicts ? EXIT.ERROR : EXIT.OK;
 }
 
-function cmdInstallHooks(args: string[], ctx?: CmdCtx): number {
+function cmdInstallHooks(
+  args: string[],
+  ctx?: CmdCtx,
+  opts: { convertAfter?: boolean } = {},
+): number {
   const repoRoot = resolve(ctx?.cwdOverride ?? pathArg(args) ?? '.');
   const res = installHooks(repoRoot);
   process.stdout.write(
     `installed kcrib hooks at ${res.gitDir}\n  post-commit → ${res.postCommitPath}\n  .gitattributes → ${res.gitattributesPath} (.crib/**/*.jsonl merge=kcrib, .crib/memory/team/**/*.jsonl merge=kcrib-memory)\n  merge.kcrib.driver = ${res.driverConfig}\n  merge.kcrib-memory.driver = ${res.driverConfig}\n`,
   );
+  if (opts.convertAfter) {
+    // `crib init` path: a FRESH onboarding must not ship the red-line-violating blocking hook —
+    // convert immediately so `crib doctor` on a just-init'd repo is fully clean (onboarding:check
+    // pins this). Standalone `crib install-hooks` stays conservative (below): pre-existing
+    // automations that relied on the blocking refresh get to see WHY and convert on their terms.
+    const conv = convertBlockingPostCommit(repoRoot);
+    process.stdout.write(
+      conv.converted
+        ? '  converted post-commit to the non-blocking freshness hook (git commits are never\n  blocked, in every freshness mode)\n'
+        : `  post-commit hook left as-is (${conv.reason ?? 'unknown'})\n`,
+    );
+    return EXIT.OK;
+  }
+  // G3.4 — the installed managed block is the legacy blocking `crib update` (kept for back-compat;
+  // hooks.test.ts pins the block text). Detection + explain here, conversion via the dedicated
+  // subcommand so the operator sees WHY before the hook is rewritten.
+  const legacy = detectLegacyBlockingPostCommit(repoRoot);
+  if (legacy.convertible) {
+    process.stdout.write(
+      '\nnote: the installed post-commit hook runs `crib update` in the foreground, which blocks\n  every git commit (violates the freshness red line: zero commit blocking in EVERY mode).\n  Convert it to the mode-appropriate non-blocking path with:\n    crib freshness convert-hook\n',
+    );
+  }
   return EXIT.OK;
+}
+
+/**
+ * `crib embed <install <model-dir>|status>` — the on-device embedder tier (G3.2). The install is
+ * the OPERATOR step: point it at a locally acquired model dir; the module pins + hash-verifies it
+ * and fails closed (no manifest on failure, so the degraded fallback stays active rather than a
+ * broken install silently degrading recall). Remote embedders are NEVER enabled here without the
+ * explicit `--accept-remote-policy` acknowledgment (red line #3).
+ */
+async function cmdEmbed(args: string[], ctx?: CmdCtx): Promise<number> {
+  const [sub, ...rest] = args;
+  if (sub === 'install') {
+    const positionals: string[] = [];
+    let modelId: string | undefined;
+    let modelVersion: string | undefined;
+    let entry: string | undefined;
+    let acceptRemote = false;
+    for (let i = 0; i < rest.length; i++) {
+      const a = rest[i]!;
+      if (a === '--model-id') modelId = rest[++i];
+      else if (a === '--model-version') modelVersion = rest[++i];
+      else if (a === '--entry') entry = rest[++i];
+      else if (a === '--accept-remote-policy') acceptRemote = true;
+      else if (!a.startsWith('-')) positionals.push(a);
+    }
+    const modelDir = positionals[0];
+    if (!modelDir || !modelId || !modelVersion) {
+      process.stderr.write(
+        'usage: crib embed install <model-dir> --model-id <id> --model-version <ver> [--entry <file>] [--accept-remote-policy]\n',
+      );
+      return EXIT.BAD_ARGS;
+    }
+    // The remote tier is opt-in ONLY: without the flag we print the policy text and install the
+    // on-device model with the remote gate untouched (acknowledged policy stays absent → off).
+    if (!acceptRemote) {
+      process.stdout.write(`\n${REMOTE_EMBED_POLICY_TEXT}\n`);
+      process.stdout.write(
+        '\nremote embedders remain DISABLED. To acknowledge the policy above and opt in, re-run with --accept-remote-policy.\n\n',
+      );
+    }
+    let manifest: EmbedManifest;
+    try {
+      manifest = await installEmbedModel({
+        modelDir: resolve(modelDir),
+        modelId,
+        modelVersion,
+        ...(entry ? { entry } : {}),
+        // Display-only stamp (the manifest contract never reads the clock) — wall-clock is allowed
+        // here because installedAt feeds no id/hash/ifHash projection.
+        installedAt: new Date().toISOString(),
+      });
+    } catch (err) {
+      process.stderr.write(`embed install failed: ${(err as Error).message}\n`);
+      return EXIT.ERROR;
+    }
+    process.stdout.write(
+      `installed embed model ${manifest.modelId}@${manifest.modelVersion} (embedder ${manifest.embedderId}, dim ${manifest.dim})\n  manifest: ${embedManifestPath()}\n  files pinned: ${manifest.files.length}\n`,
+    );
+    if (acceptRemote) {
+      const home = embedHomeDir();
+      mkdirSync(home, { recursive: true });
+      const policy: RemoteEmbedPolicy = {
+        acknowledged: true,
+        policyVersion: REMOTE_EMBED_POLICY_VERSION,
+        ...(process.env.KCRIB_REMOTE_PROVIDER
+          ? { provider: process.env.KCRIB_REMOTE_PROVIDER }
+          : {}),
+      };
+      writeFileSync(remotePolicyPath(home), `${JSON.stringify(policy, null, 2)}\n`);
+      process.stdout.write(`  remote tier: policy acknowledged → ${remotePolicyPath(home)}\n`);
+    }
+    return EXIT.OK;
+  }
+  // default / `status` — the same structured report doctor renders (one truth source, two views).
+  const report = await embedTierReport({ env: process.env });
+  process.stdout.write(
+    `embed tier: ${report.tier} (${report.embedderId})\n  remote: ${report.remoteEnabled ? 'acknowledged' : 'disabled'}\n  external override: ${report.externalOverride ? 'yes (KCRIB_EMBEDDER)' : 'no'}\n  manifest: ${report.manifestPresent ? report.manifestPath : 'absent'}\n  ${report.reason}\n`,
+  );
+  for (const p of report.problems) process.stdout.write(`  problem: ${p}\n`);
+  return EXIT.OK;
+}
+
+/** The worker's revalidation port: refresh the project at the task's head and fingerprint the
+ *  dependencies the memory evaluator's generation cache keys on (red lines #1 + #5). The SAME
+ *  slots {@link bindEvaluationPass} sets at query time, so a published generation is directly
+ *  comparable to the generation a later recall binds against. */
+async function freshnessRevalidate(task: FreshnessTask): Promise<{ generation: string }> {
+  // The same locked, incremental update path a user runs — background freshness can never
+  // diverge from foreground truth. A failure here throws; the worker preserves the prior
+  // published generation (never publishes a broken index) and dead-letters after maxAttempts.
+  const code = await cmdUpdate([task.projectRoot], { cwdOverride: task.projectRoot });
+  if (code !== EXIT.OK) {
+    throw new Error(`crib update exited ${code} (head ${task.head.slice(0, 12)})`);
+  }
+  const resolved = resolveRoot([task.projectRoot]);
+  const rt = openSoul(resolved);
+  const soulGen = new SoulStoreSoulPort(rt.soul, resolved.repoRoot).generation?.() ?? UNVERSIONED;
+  const policy = loadPolicy(resolved.cribDir);
+  // decisions/feedback live in the memory stores (opt-in); without a repoId there is nothing to
+  // fingerprint — the slots stay UNVERSIONED exactly as bindEvaluationPass computes them.
+  let decisions = UNVERSIONED;
+  let feedback = UNVERSIONED;
+  const repoId = readRepoId(resolved.cribDir);
+  if (repoId) {
+    const env = process.env;
+    const stores = {
+      team: MemoryStore.team(resolved.cribDir, { repoRoot: resolved.repoRoot, env }),
+      local: MemoryStore.local(repoId, { repoRoot: resolved.repoRoot, env }),
+      global: MemoryStore.global({ env }),
+    };
+    const gathered = gatherRecall(stores);
+    decisions = entrySetFingerprint([...gathered.decisions, ...gathered.localDecisions]);
+    feedback = entrySetFingerprint(gathered.feedback);
+  }
+  return {
+    generation: fingerprintGenerations({
+      code: soulGen,
+      policy: policy !== undefined ? policyHash(policy) : UNVERSIONED,
+      receipts: UNVERSIONED,
+      decisions,
+      feedback,
+      embedder: UNVERSIONED,
+      index: UNVERSIONED,
+    }),
+  };
+}
+
+/**
+ * `crib freshness [<mode>|worker|hook|convert-hook]` — the freshness-mode surface (G3.4):
+ *   (no args / status)  mode + worker lease + in-flight + queue depth + behind-HEAD
+ *   <mode>              persist manual|watch|auto in the project registry
+ *   worker              foreground durable background worker (red line #5: persistent queue,
+ *                       lease/heartbeat, coalescing, crash recovery, last-known-good)
+ *   hook                the post-commit hook body: enqueue in `auto`, no-op otherwise — ALWAYS
+ *                       exit 0 (fail-open; a hook must never block a commit in ANY mode)
+ *   convert-hook        rewrite the legacy blocking `crib update` post-commit hook to this
+ *                       non-blocking path (the write half of the detection in hooks.ts)
+ */
+async function cmdFreshness(args: string[], ctx?: CmdCtx): Promise<number> {
+  // The first positional here is the SUBCOMMAND (status|worker|hook|convert-hook|<mode>), not a
+  // path — so root resolution must skip known subcommand tokens and use any remaining positional.
+  // (pathArg(args) would resolve `crib freshness convert-hook` to ./convert-hook and then fail
+  // to find a git repo there — caught by the Gate 3 E2E product test.)
+  const FRESHNESS_SUBS = new Set<string>([
+    ...FRESHNESS_MODES,
+    'status',
+    'worker',
+    'hook',
+    'convert-hook',
+  ]);
+  const positionals = positionalsOf(args);
+  const isSub = (tok: string) => FRESHNESS_SUBS.has(tok) || tok === '-h' || tok === '--help';
+  const sub = args.find(isSub);
+  const rootPos = positionals.find((tok) => !isSub(tok));
+  const repoRoot = resolve(ctx?.cwdOverride ?? rootPos ?? '.');
+  if (sub === undefined || sub === 'status') {
+    const status = freshnessStatus(repoRoot);
+    process.stdout.write(
+      `freshness mode: ${status.mode}${status.modeExplicit ? '' : ' (default — set with `crib freshness <mode>`; modes: '}${FRESHNESS_MODES.join('|')}${status.modeExplicit ? '' : ')'}\n  worker: ${status.workerRunning ? `running (pid ${status.workerPid ?? '?'})` : 'not running'}\n  pending: ${status.pending}${status.dead > 0 ? `, dead-lettered: ${status.dead}` : ''}\n  in-flight: ${status.inFlight ? status.inFlight.id : 'none'}\n  last-known-good: ${status.lastKnownGood ? `${status.lastKnownGood.generation.slice(0, 16)}… @ ${status.lastKnownGood.head.slice(0, 12)}` : 'never published'}\n  behind HEAD: ${status.behindHead ? 'yes — run `crib freshness worker` (or `crib update`)' : 'no'}\n`,
+    );
+    return EXIT.OK;
+  }
+  if (FRESHNESS_MODES.includes(sub as FreshnessMode)) {
+    try {
+      setFreshnessMode(repoRoot, sub as FreshnessMode);
+    } catch (err) {
+      process.stderr.write(`error: ${(err as Error).message}\n`);
+      return EXIT.ERROR;
+    }
+    process.stdout.write(
+      `freshness mode set to ${sub}\n${sub === 'auto' ? '  start the durable worker with `crib freshness worker` (or a service manager) — the mode only changes what the worker does, it never blocks a commit.\n' : ''}${sub === 'watch' ? '  watch mode is served by `crib serve --watch` (300ms debounce, serialized, atomic publication).\n' : ''}`,
+    );
+    return EXIT.OK;
+  }
+  switch (sub) {
+    case 'worker': {
+      try {
+        const worker = await runFreshnessWorker({
+          revalidate: freshnessRevalidate,
+          onEvent: (ev) => {
+            if (ev.kind === 'task-done') {
+              process.stdout.write(
+                `freshness: revalidated ${ev.task.projectRoot} @ ${ev.task.head.slice(0, 12)} → generation ${ev.generation.slice(0, 16)}…\n`,
+              );
+            } else if (ev.kind === 'task-dead') {
+              process.stdout.write(
+                `freshness: task dead-lettered after retries: ${ev.task.id} — ${ev.error}\n`,
+              );
+            } else if (ev.kind === 'refused') {
+              process.stderr.write(`freshness worker refused: ${ev.reason}\n`);
+            } else if (ev.kind === 'started') {
+              process.stdout.write(
+                `freshness worker started (pid ${ev.pid}, recovered ${ev.recovered} in-flight task(s))\n`,
+              );
+            }
+          },
+        });
+        process.stdout.write(
+          'freshness worker running — Ctrl+C to stop (in-flight task is awaited, never torn mid-flight)\n',
+        );
+        const done = new Promise<void>((res) => {
+          process.on('SIGINT', () => {
+            void worker.stop().then(res);
+          });
+          process.on('SIGTERM', () => {
+            void worker.stop().then(res);
+          });
+        });
+        await done;
+        return EXIT.OK;
+      } catch (err) {
+        if (err instanceof WorkerAlreadyRunningError) {
+          process.stderr.write(`${err.message} — use that worker (or kill it first)\n`);
+          return EXIT.LOCKED;
+        }
+        process.stderr.write(`freshness worker failed: ${(err as Error).message}\n`);
+        return EXIT.ERROR;
+      }
+    }
+    case 'hook': {
+      // The post-commit hook body. Fail-open ALWAYS: any throw still exits 0 (red line #2 —
+      // zero commit blocking in every mode; the hook script's failure must never block a commit).
+      let out = '';
+      try {
+        const head = currentHead(repoRoot) || '';
+        const r = await postCommitFreshness(repoRoot, head);
+        out = `freshness: mode ${r.mode}, ${r.enqueued ? `enqueued ${r.id ?? ''}` : 'no-op (nothing to refresh)'}`;
+      } catch (err) {
+        out = `freshness hook failed open: ${(err as Error).message}`;
+      }
+      process.stdout.write(`${out}\n`);
+      return EXIT.OK;
+    }
+    case 'convert-hook': {
+      const res = convertBlockingPostCommit(repoRoot);
+      if (!res.converted) {
+        process.stderr.write(
+          `nothing to convert at ${res.postCommitPath}${res.reason ? ` — ${res.reason}` : ''}\n`,
+        );
+        return EXIT.OK;
+      }
+      process.stdout.write(
+        `converted ${res.postCommitPath} to the non-blocking freshness hook\n  the managed block now runs \`crib freshness hook\` (enqueue in auto, no-op otherwise) —\n  git commits are never blocked, in every freshness mode (zero-commit-tax red line).\n`,
+      );
+      return EXIT.OK;
+    }
+    case '-h':
+    case '--help':
+      process.stdout.write(
+        `usage: crib freshness [<mode>|status|worker|hook|convert-hook]\n  modes: ${FRESHNESS_MODES.join(' | ')}\n`,
+      );
+      return EXIT.OK;
+    default:
+      process.stderr.write(`unknown freshness subcommand: ${String(sub)}\n`);
+      return EXIT.BAD_ARGS;
+  }
 }
 
 /**
@@ -3848,29 +4279,44 @@ function repeatedFlag(args: string[], name: string): string[] {
 
 /**
  * Build the recall projection from the three stores — the CLI-side twin of the MCP's private
- * `recallProjectionOf`: gather → disposable in-memory FTS5 index (never mixed with the soul's code
- * BM25) → pure 6-criterion rank + conflict projection, with fresh revalidation against the live
- * soul (the evaluator + SoulStoreSoulPort are always wired by {@link createMemoryDeps}). The FTS
- * handle is closed in a finally — a `:memory:` DB holds no filesystem lock.
+ * `recallProjectionOf`: gather → FTS5 lexical index (never mixed with the soul's code BM25) → pure
+ * 6-criterion rank + conflict projection, with fresh revalidation against the live soul (the
+ * evaluator + SoulStoreSoulPort are always wired by {@link createMemoryDeps}). G3.1 — the
+ * persistent FTS snapshot serves the all-sources path (kept current by the store write hooks,
+ * self-healing); a `--sources` filter keeps the ephemeral `:memory:` rebuild (a subset corpus
+ * would rank differently — the byte-comparability invariant persistent-fts.ts pins). G3.2 — the
+ * versioned scorer names its configuration on the provenance (red line #6). G3.3 — the shared
+ * generation-keyed cache means recall never revalidates every record per query (red line #1).
+ * The FTS handle is closed in a finally — a `:memory:` DB holds no filesystem lock, and the
+ * snapshot releases its SQLite handle + write listeners.
  */
 function memoryRecallProjection(
   deps: NonNullable<ReturnType<typeof createMemoryDeps>>,
   opts: { query: string; targetIds?: string[]; sources?: MemorySource[] },
 ): RecallProjection {
-  const gathered = gatherRecall(
-    { team: deps.team, local: deps.local, global: deps.global },
-    opts.sources ? { sources: opts.sources } : {},
-  );
-  const fts = new MemoryFtsIndex(':memory:');
+  const stores = { team: deps.team, local: deps.local, global: deps.global };
+  const gathered = gatherRecall(stores, opts.sources ? { sources: opts.sources } : {});
+  const fts = opts.sources ? new MemoryFtsIndex(':memory:') : openMemoryFts(stores);
   try {
-    fts.rebuild(gathered.records.map((r) => r.record));
-    return recallProjection(gathered, {
+    const scorer = new VersionedLexicalScorer({
+      fts,
+      records: gathered.records.map((r) => r.record),
+      strategy: 'lexical-only',
+    });
+    const bound = bindEvaluationPass(deps.evalCtx, gathered);
+    const projection = recallProjection(gathered, {
       query: opts.query,
       ...(opts.targetIds ? { targetIds: opts.targetIds } : {}),
-      lexicalScorer: new FtsLexicalScorer(fts),
+      lexicalScorer: scorer,
       evaluator: deps.evaluator,
-      evalCtx: deps.evalCtx,
+      evalCtx: bound.evalCtx ?? deps.evalCtx,
     });
+    // Red line #1 — the provenance names the generation the fresh verdicts were proven current
+    // against (null when no versioned dependency could be fingerprinted).
+    return {
+      ...projection,
+      provenance: { ...projection.provenance, generation: bound.generation },
+    };
   } finally {
     fts.close();
   }
@@ -4101,21 +4547,31 @@ function cmdMemorySearch(args: string[], ctx?: CmdCtx): number {
     return EXIT.NOT_INDEXED;
   }
   const api = createMemoryApi(rt.soul, resolved.repoRoot, resolved.cribDir, deps);
-  // The disposable in-memory FTS index gives search the same lexical signal `recall` ranks with;
-  // api.search gathers internally, so this double-gather is the accepted cost of not widening the
-  // package's search signature for the adapter (same trade the MCP verb makes).
+  // G3.1 — the persistent FTS snapshot gives search the same lexical signal `recall` ranks with
+  // without the O(N) per-query rebuild (kept current by the store write hooks, self-healing); a
+  // `--sources` filter keeps the ephemeral rebuild (a subset corpus would rank differently — the
+  // byte-comparability invariant). G3.2 — the versioned scorer names its configuration on the
+  // provenance (red line #6). api.search gathers internally, so this double-gather is the accepted
+  // cost of not widening the package's search signature for the adapter (same trade the MCP verb
+  // makes).
   const gathered = gatherRecall(
     { team: deps.team, local: deps.local, global: deps.global },
     sources ? { sources } : {},
   );
-  const fts = new MemoryFtsIndex(':memory:');
+  const fts = sources
+    ? new MemoryFtsIndex(':memory:')
+    : openMemoryFts({ team: deps.team, local: deps.local, global: deps.global });
   let response: SearchResponse;
   try {
-    fts.rebuild(gathered.records.map((r) => r.record));
+    const scorer = new VersionedLexicalScorer({
+      fts,
+      records: gathered.records.map((r) => r.record),
+      strategy: 'lexical-only',
+    });
     response = api.search(q, {
       ...(targets.length > 0 ? { targetIds: targets } : {}),
       ...(sources ? { sources } : {}),
-      lexicalScorer: new FtsLexicalScorer(fts),
+      lexicalScorer: scorer,
     });
   } finally {
     fts.close();
@@ -5494,7 +5950,9 @@ function printHelp(): void {
       '                                          write the vendor-neutral agent-memory protocol into each client instruction file (W8)',
       '  crib skill <install|list> [name] [--dest <dir>] [--client <claude>]   install bundled skills (default ~/.claude/skills)',
       '  crib init [path] [--ide <name|all>]      5-minute onboarding: index + install-hooks + mcp install + adapters + next-steps hero',
-      '  crib doctor [path]                       setup health check: node/corepack/index-freshness/hooks/IDE-wiring/memory-loop/stale-builds (✓/✗ + fix hints)',
+      '  crib doctor [path]                       setup health check: node/corepack/index-freshness/hooks/IDE-wiring/memory-loop/stale-builds/embed-tier/freshness/post-commit-hook (✓/✗ + fix hints)',
+      '  crib embed <install <model-dir>|status>   on-device embedder tier: install --model-id <id> --model-version <ver> [--entry <file>] | status (tier report; --accept-remote-policy opts into the remote tier)',
+      '  crib freshness [<mode>|worker|hook|convert-hook]   index freshness: modes manual|watch|auto | durable background worker | post-commit hook body (always exit 0) | convert the legacy blocking post-commit hook',
       '',
       'Global: --cwd <path>   override the project root for any command',
       '',

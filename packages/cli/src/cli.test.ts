@@ -1140,8 +1140,12 @@ describe('crib doctor (W8) — agent-memory loop check', () => {
     const r = runCliResult(['doctor']);
     expect(r.stdout).toContain('agent-memory loop');
     expect(r.stdout).toMatch(/✓ agent-memory loop — not initialized/);
-    // overall doctor ran all 8 checks (memory is opt-in → its ✓ does not cause failure by itself).
-    expect(r.stdout).toMatch(/crib doctor: \d+\/8 checks passed/);
+    // overall doctor ran every applicable check (memory is opt-in → its ✓ does not cause failure
+    // by itself). Count is deliberately NOT pinned: it varies with the environment — G3.2/G3.4
+    // added the embedder-tier + freshness checks, and the freshness hook check adds an 11th
+    // check only on repos where the post-commit hook is actually installed. Pinning the total
+    // would break on every future check addition.
+    expect(r.stdout).toMatch(/crib doctor: \d+\/\d+ checks passed/);
   });
 
   it('flags the memory loop as failing when policy.json exists but no adapter is installed', () => {
@@ -1208,8 +1212,9 @@ describe('crib doctor — stale build artifacts (WARN-class, report-only)', () =
   it('reports "none" when the index dir holds no build artifacts', () => {
     const r = runCliResult(['doctor']);
     expect(r.stdout).toMatch(/✓ stale build artifacts — none/);
-    // the 8th check is included in the total
-    expect(r.stdout).toMatch(/crib doctor: \d+\/8 checks passed/);
+    // total NOT pinned — the check count varies with environment (see the doctor W8 describe
+    // block above); the invariant under test here is that the stale-artifacts check is included.
+    expect(r.stdout).toMatch(/crib doctor: \d+\/\d+ checks passed/);
   });
 });
 

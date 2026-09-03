@@ -132,6 +132,82 @@ export function hooksInstalled(root: string): HookStatus {
   };
 }
 
+// ─── G3.4: legacy BLOCKING post-commit hook detection (report only — never writes) ───────────
+
+/**
+ * Report for a pre-existing post-commit hook that runs `crib update` (or `kcrib update`)
+ * SYNCHRONOUSLY inside the commit: the pre-G3.4 managed block (`installHooks` above) is exactly
+ * that. Red line: zero blocking time added to git commit in EVERY freshness mode — so this hook
+ * must be CONVERTED to the mode-appropriate non-blocking path (`postCommitFreshness` in
+ * `freshness.ts`, which enqueues in `auto` and no-ops in `manual`/`watch`). Detection + report
+ * data only; the interactive offer is surfaced by the integration layer (`crib install-hooks` /
+ * `crib doctor`), which owns the conversion write.
+ */
+export interface LegacyBlockingHookReport {
+  postCommitPath: string;
+  /** The hook file exists at all. */
+  exists: boolean;
+  /** The kcrib managed block (the legacy blocking `crib update` install) is present. */
+  managedBlock: boolean;
+  /** Hook lines that invoke `crib update` / `kcrib update` in the foreground (i.e. blocking). */
+  blockingCommands: string[];
+  /** true when at least one blocking command exists and the conversion applies. */
+  convertible: boolean;
+  /** Machine-readable suggested action for the integration layer to surface. */
+  recommendation: 'convert-to-freshness-mode' | 'none';
+}
+
+/** Matches a foreground `crib update` / `kcrib update` invocation (optionally quoted, via npx/pnpm exec). */
+const BLOCKING_UPDATE_RE =
+  /(?:^|[\s;&])(?:(?:npx|pnpm(?:\s+exec)?)\s+)?["']?k?crib["']?\s+update\b/;
+
+/**
+ * Read-only scan of `.git/hooks/post-commit` for the legacy blocking pattern. Never writes; a
+ * non-git directory (or any read error) reports a not-applicable finding rather than throwing so
+ * doctor can run anywhere.
+ */
+export function detectLegacyBlockingPostCommit(root: string): LegacyBlockingHookReport {
+  let postCommitPath = '';
+  try {
+    postCommitPath = join(gitDir(root), 'hooks', 'post-commit');
+  } catch {
+    return {
+      postCommitPath: '',
+      exists: false,
+      managedBlock: false,
+      blockingCommands: [],
+      convertible: false,
+      recommendation: 'none',
+    };
+  }
+  if (!existsSync(postCommitPath)) {
+    return {
+      postCommitPath,
+      exists: false,
+      managedBlock: false,
+      blockingCommands: [],
+      convertible: false,
+      recommendation: 'none',
+    };
+  }
+  const content = readFileSync(postCommitPath, 'utf8');
+  const blockingCommands = content
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(
+      (line) => BLOCKING_UPDATE_RE.test(line) && !line.endsWith('&'), // a trailing `&` backgrounds it —
+      // non-blocking to the commit itself, so it does not violate the zero-commit-tax red line
+    );
+  return {
+    postCommitPath,
+    exists: true,
+    managedBlock: content.includes(MANAGED_BEGIN),
+    blockingCommands,
+    convertible: blockingCommands.length > 0,
+    recommendation: blockingCommands.length > 0 ? 'convert-to-freshness-mode' : 'none',
+  };
+}
+
 /** Install/refresh the post-commit managed block, the `.gitattributes` merge entry, and the driver config. */
 export function installHooks(root: string, opts: HookInstallOptions = {}): HookInstallResult {
   const bin = opts.driverBin ?? 'crib';
@@ -263,4 +339,72 @@ function readFileChunk(path: string): ChunkMap {
 
 function readMemoryChunk(path: string, source: string) {
   return parseMemoryChunk(existsSync(path) ? readFileSync(path, 'utf8') : '', source);
+}
+
+// ─── G3.4: the conversion write (the integration layer's explicit operator action) ──────────
+
+export interface ConvertHookResult {
+  converted: boolean;
+  postCommitPath: string;
+  /** Why no conversion happened (never thrown — the caller prints it verbatim). */
+  reason?: string;
+}
+
+/**
+ * Convert the legacy BLOCKING post-commit managed block to the G3.4 non-blocking path: the
+ * foreground `crib update` line inside the managed block becomes `"crib" freshness hook`
+ * (`postCommitFreshness` — enqueues in `auto` mode, no-ops in `manual`/`watch`), and the actual
+ * refresh moves into the durable freshness worker's revalidate port (red line #5). OPT-IN by
+ * design: the pre-G3.4 blocking refresh is the incumbent behaviour, so the operator asks for this
+ * explicitly (`crib freshness convert-hook`); the explainer the CLI prints alongside says what
+ * changes per mode (auto → background worker performs the refresh; manual → reads are as-of-last
+ * explicit `crib update`; watch → the running server keeps the overlay fresh).
+ *
+ * Guarded: converts ONLY when {@link detectLegacyBlockingPostCommit} reports a convertible managed
+ * block, and only replaces lines INSIDE the managed region — user-authored hook content outside
+ * the block is never touched. Idempotent: a converted block no longer matches the blocking
+ * pattern, so a second run reports `converted: false` with a reason.
+ */
+export function convertBlockingPostCommit(
+  root: string,
+  opts: HookInstallOptions = {},
+): ConvertHookResult {
+  const report = detectLegacyBlockingPostCommit(root);
+  if (!report.exists) {
+    return {
+      converted: false,
+      postCommitPath: report.postCommitPath,
+      reason: 'no post-commit hook',
+    };
+  }
+  if (!report.managedBlock) {
+    return {
+      converted: false,
+      postCommitPath: report.postCommitPath,
+      reason: 'no kcrib managed block — refusing to rewrite a hand-authored hook',
+    };
+  }
+  if (!report.convertible) {
+    return {
+      converted: false,
+      postCommitPath: report.postCommitPath,
+      reason: 'already converted (no blocking `crib update` line in the managed block)',
+    };
+  }
+  const bin = opts.driverBin ?? 'crib';
+  const content = readFileSync(report.postCommitPath, 'utf8');
+  const beginIdx = content.indexOf(MANAGED_BEGIN);
+  const endIdx = content.indexOf(MANAGED_END);
+  if (beginIdx < 0 || endIdx < 0 || endIdx < beginIdx) {
+    return {
+      converted: false,
+      postCommitPath: report.postCommitPath,
+      reason: 'malformed managed block — refusing to rewrite',
+    };
+  }
+  const head = content.slice(0, beginIdx);
+  const tail = content.slice(endIdx + MANAGED_END.length);
+  const block = [MANAGED_BEGIN, `"${bin}" freshness hook`, MANAGED_END].join('\n');
+  writeFileSync(report.postCommitPath, `${head}${block}${tail}`, { mode: 0o755 });
+  return { converted: true, postCommitPath: report.postCommitPath };
 }
