@@ -16,6 +16,10 @@
  *   (3) every "N tools / M operations" figure stated in docs/knowledge-crib-mcp-api.md equals the
  *       manifest-derived TOOL_COUNT / OPERATION_COUNT — and at least one figure is stated, so
  *       deleting the count from the doc is a failure, not a loophole.
+ *   (4) the client capture-lane matrix (G2.1, packages/cli/src/adapters.ts) is internally
+ *       consistent (a row per client, closed enums), and every tool/op name it cites — plus the
+ *       names the neutral protocol text cites — exists in the manifest: a renamed op must break
+ *       the build here, not silently break every installed client's recall instruction.
  *
  * A wrong count is therefore a release-verify failure, not a doc-sweep: adding an op to the
  * manifest changes the derived count, and this gate stays red until the doc is updated to match.
@@ -28,9 +32,8 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO = resolve(__dirname, '..');
 
 // release:verify builds every package before any gate runs, so the built mcp dist resolves.
-const { buildServer, manifestInvariants, OPERATION_COUNT, TOOL_COUNT, TOOL_NAMES } = await import(
-  pathToFileURL(join(REPO, 'packages', 'mcp', 'dist', 'index.js')).href
-);
+const { buildServer, manifestInvariants, OPERATION_COUNT, TOOL_COUNT, TOOL_NAMES, opsOf } =
+  await import(pathToFileURL(join(REPO, 'packages', 'mcp', 'dist', 'index.js')).href);
 
 let failed = 0;
 const fail = (msg) => {
@@ -77,6 +80,49 @@ for (const match of stated) {
 }
 if (failed === 0 && stated.length > 0) {
   ok(`doc states the manifest-derived count in all ${stated.length} place(s)`);
+}
+
+// (4) the client capture-lane matrix (G2.1). Read through the built cli dist the same way (2)
+//     reads the mcp dist — the shipped bytes are what must agree, not the sources. The protocol
+//     text is the contract every installed client follows, so a tool/op it cites must exist in the
+//     manifest, and the matrix's lane rows must survive the same closed-enum checks tests assert.
+const {
+  CAPTURE_TOOL_REF,
+  PROTOCOL_CITED_TOOLS,
+  captureLaneManifestViolations,
+  captureLaneSummary,
+  lifecycleInvariants,
+  neutralProtocolBody,
+} = await import(pathToFileURL(join(REPO, 'packages', 'cli', 'dist', 'adapters.js')).href);
+
+const laneProblems = lifecycleInvariants();
+if (laneProblems.length > 0) {
+  for (const problem of laneProblems) fail(problem);
+} else {
+  ok(`capture-lane matrix covers every client row (${captureLaneSummary('claude')})`);
+}
+
+const manifestProblems = captureLaneManifestViolations({
+  tools: TOOL_NAMES,
+  opsOf: (tool) => opsOf(tool).map((o) => o.op),
+});
+if (manifestProblems.length > 0) {
+  for (const problem of manifestProblems) fail(problem);
+} else {
+  ok(
+    `capture-lane + protocol tool refs resolve (memory.${CAPTURE_TOOL_REF.op}, ${PROTOCOL_CITED_TOOLS.join(', ')})`,
+  );
+}
+
+// The protocol body must actually NAME every tool it claims to rely on — if the text is edited to
+// drop a name, the matrix no longer describes what clients are told to do, and the gate goes red.
+const body = neutralProtocolBody();
+for (const tool of PROTOCOL_CITED_TOOLS) {
+  if (!body.includes(tool)) {
+    fail(
+      `neutralProtocolBody no longer names '${tool}' — the protocol text and the capture-lane matrix must agree`,
+    );
+  }
 }
 
 if (failed > 0) process.exit(1);

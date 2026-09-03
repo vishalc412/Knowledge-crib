@@ -9,9 +9,13 @@
  * only its block — memory lives in `.crib/memory/` + `~/.crib/memory/`, never in these files (PRD exit
  * gate: "removing an adapter does not remove memory").
  *
- * This module is the per-client registry: which instruction file each client reads, and where each
- * client installs skills. MCP config wiring lives in `mcp-install.ts` (reusing its writers); adding a
- * client = add a `ClientAdapter` entry here + an `McpIde` target there, not a third hardcoded switch.
+ * This module is the per-client registry: which instruction file each client reads, where each
+ * client installs skills, and (G2.1) which capture lanes each client can carry — portable capture
+ * (the memory MCP tool, every client), real lifecycle hooks (only where a verified hook surface +
+ * an in-repo writer exist: Claude Code today), and SDK middleware. The lane row is a REQUIRED
+ * `lifecycle` field on every adapter, so the compiler forces a row per client. MCP config wiring
+ * lives in `mcp-install.ts` (reusing its writers); adding a client = add a `ClientAdapter` entry
+ * here + an `McpIde` target there, not a third hardcoded switch.
  */
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
@@ -32,6 +36,52 @@ export interface InstructionTarget {
   format: 'md' | 'mdc';
 }
 
+/** Evidence class for a capture-lane cell — the repo's never-self-assert rule applied to client
+ *  capabilities: a claim is never stronger than its evidence. `in-repo-writer` = this repo wires the
+ *  lane end to end (an mcp-install/adapters writer exists); `verified-upstream-doc` = the mechanism
+ *  is documented by the client's upstream docs but this repo does not exercise it end to end;
+ *  `unverified` = believed but unproven — never rendered as a guarantee. */
+export type CaptureEvidence = 'in-repo-writer' | 'verified-upstream-doc' | 'unverified';
+
+/** Lifecycle events a lane-2 hook can observe. A closed enum: the matrix may only describe events
+ *  this set names, so a new observable event is a deliberate extension, not free-form prose. */
+export type LifecycleEvent = 'session-start' | 'turn-end' | 'tool-use';
+export const LIFECYCLE_EVENTS: readonly LifecycleEvent[] = [
+  'session-start',
+  'turn-end',
+  'tool-use',
+];
+
+/** Lane 2 — real lifecycle hooks: the client fires a configured command on the declared events and
+ *  the command invokes the crib CLI capture path. `settingsPath` is the config file the hook writer
+ *  (bottom of this file) manages; present only when a writer exists for this client. */
+export interface LifecycleHooksCell {
+  readonly events: readonly LifecycleEvent[];
+  readonly evidence: CaptureEvidence;
+  settingsPath?(repoRoot: string): string;
+}
+
+/** The per-client capture-lane capability row (G2.1). REQUIRED on every {@link ClientAdapter} so the
+ *  compiler forces a row for every client — a new client cannot silently default to "none", and the
+ *  matrix is keyed by ClientId (copilot and vscode share `.vscode/mcp.json` but are separate rows). */
+export interface CaptureLanes {
+  /** Lane 1 — portable capture through the memory MCP tool. Every registry client runs the MCP
+   *  server (mcp-install.ts wires all of them), so the cell is always present; it is data so the
+   *  lane is described explicitly, not left implicit. */
+  readonly portableCapture: {
+    readonly tool: string;
+    readonly op: string;
+    readonly evidence: CaptureEvidence;
+  };
+  /** Lane 2 — lifecycle hooks, or `null` when the client exposes no hook surface this repo can wire
+   *  or upstream-verify. Such a client is on instruction-based recall only — reported as data, never
+   *  as a doctor failure (the doctor check-7 precedent: an unfilled optional state is ✓ + hint). */
+  readonly lifecycleHooks: LifecycleHooksCell | null;
+  /** Lane 3 — SDK middleware (an application embeds the client's agent SDK and injects guaranteed
+   *  capture + recall around each turn), or `null` when no SDK surface is verified for this client. */
+  readonly sdkMiddleware: { readonly evidence: CaptureEvidence } | null;
+}
+
 export interface ClientAdapter {
   id: ClientId;
   /** Human-readable label for `crib adapters list`. */
@@ -41,6 +91,8 @@ export interface ClientAdapter {
   instructionTargets(scope: AdapterScope, repoRoot: string): InstructionTarget[] | null;
   /** Skill install destination root, or `null` when this client has no skill mechanism. */
   skillDest(home: string): string | null;
+  /** The capture-lane capability matrix row (see {@link CaptureLanes}). */
+  lifecycle: CaptureLanes;
 }
 
 /** HTML-comment markers delimiting the managed block. Chosen so the block is invisible to a markdown
@@ -72,7 +124,7 @@ export function neutralProtocolBody(): string {
     'This repository uses knowledge-crib as a shared, vendor-neutral memory substrate. Every agent session — Claude, Cursor, Copilot/VS Code, Codex, Windsurf, Gemini, or any MCP-capable tool — follows this protocol. It does not change your tool; it tells you how to use memory safely.',
     '',
     '### 1. Recall before you act',
-    '- Before relying on a reusable claim, call the `brief` MCP tool (or `crib memory recall "<query>"`) to surface team + local memory for this repository. Memory is the source of truth across sessions — do not assume last session’s state still holds.',
+    '- Before relying on a reusable claim, call the `brief` MCP tool (or the `memory_recall` MCP tool, or `crib memory recall "<query>"`) to surface team + local memory for this repository. Memory is the source of truth across sessions — do not assume last session’s state still holds.',
     '- `brief` returns typed groups: team before local, valid before degraded, current before needs-review. Never mix memory results with BM25 code-search results into one opaque list.',
     '',
     '### 2. Record only reusable learnings',
@@ -95,6 +147,16 @@ export function neutralProtocolBlock(): string {
 
 // ─── client registry ──────────────────────────────────────────────────────────
 
+/** The lane row shared by every client with no lifecycle-hook surface (everyone but Claude, today).
+ *  One shared const so the honest "instruction-based recall only" wording lives in exactly one place;
+ *  the rows are still per-ClientId entries below (copilot and vscode are separate clients that happen
+ *  to have identical lane capability). */
+const INSTRUCTION_RECALL_ONLY: CaptureLanes = {
+  portableCapture: { tool: 'memory', op: 'capture', evidence: 'in-repo-writer' },
+  lifecycleHooks: null,
+  sdkMiddleware: null,
+};
+
 /** All supported clients, in the order `crib adapters install --client all` writes them. */
 export const CLIENT_ADAPTERS: ClientAdapter[] = [
   {
@@ -103,6 +165,24 @@ export const CLIENT_ADAPTERS: ClientAdapter[] = [
     instructionTargets: (scope, repoRoot) =>
       scope === 'project' ? [{ path: join(repoRoot, 'CLAUDE.md'), format: 'md' }] : null,
     skillDest: (home) => join(home, '.claude', 'skills'),
+    lifecycle: {
+      portableCapture: { tool: 'memory', op: 'capture', evidence: 'in-repo-writer' },
+      lifecycleHooks: {
+        events: ['session-start', 'turn-end', 'tool-use'],
+        // settings.json hooks exist upstream (SessionStart / Stop / PostToolUse run a configured
+        // command) — but the fired-event guarantee is upstream documentation, not in-repo
+        // execution: this repo only writes the entry (capture-hook writer below), and the durable
+        // capture CLI it invokes is the G2.2 capture lane. Evidence stays at the upstream-doc tier
+        // until that path exists in-repo — a stronger label would self-assert a guarantee nobody
+        // has run.
+        evidence: 'verified-upstream-doc',
+        settingsPath: (repoRoot) => join(repoRoot, '.claude', 'settings.json'),
+      },
+      // The Claude Agent SDK can wrap each turn in an embedded application, but no in-repo code or
+      // verified upstream doc pins that contract for memory capture + recall injection — reported
+      // honestly as unverified rather than promised.
+      sdkMiddleware: { evidence: 'unverified' },
+    },
   },
   {
     id: 'cursor',
@@ -117,6 +197,7 @@ export const CLIENT_ADAPTERS: ClientAdapter[] = [
     // null: `crib skill install --client cursor` reports a non-fatal note + installs nothing rather than
     // writing a directory Cursor will never load.
     skillDest: () => null,
+    lifecycle: INSTRUCTION_RECALL_ONLY,
   },
   {
     id: 'copilot',
@@ -126,6 +207,7 @@ export const CLIENT_ADAPTERS: ClientAdapter[] = [
         ? [{ path: join(repoRoot, '.github', 'copilot-instructions.md'), format: 'md' }]
         : null,
     skillDest: () => null,
+    lifecycle: INSTRUCTION_RECALL_ONLY,
   },
   {
     id: 'vscode',
@@ -135,6 +217,7 @@ export const CLIENT_ADAPTERS: ClientAdapter[] = [
     // `crib mcp install --ide vscode`.
     instructionTargets: () => null,
     skillDest: () => null,
+    lifecycle: INSTRUCTION_RECALL_ONLY,
   },
   {
     id: 'codex',
@@ -143,6 +226,7 @@ export const CLIENT_ADAPTERS: ClientAdapter[] = [
     instructionTargets: (scope, repoRoot) =>
       scope === 'project' ? [{ path: join(repoRoot, 'AGENTS.md'), format: 'md' }] : null,
     skillDest: () => null,
+    lifecycle: INSTRUCTION_RECALL_ONLY,
   },
   {
     id: 'windsurf',
@@ -150,6 +234,7 @@ export const CLIENT_ADAPTERS: ClientAdapter[] = [
     instructionTargets: (scope, repoRoot) =>
       scope === 'project' ? [{ path: join(repoRoot, '.windsurfrules'), format: 'md' }] : null,
     skillDest: () => null,
+    lifecycle: INSTRUCTION_RECALL_ONLY,
   },
   {
     id: 'gemini',
@@ -157,6 +242,7 @@ export const CLIENT_ADAPTERS: ClientAdapter[] = [
     instructionTargets: (scope, repoRoot) =>
       scope === 'project' ? [{ path: join(repoRoot, 'GEMINI.md'), format: 'md' }] : null,
     skillDest: () => null,
+    lifecycle: INSTRUCTION_RECALL_ONLY,
   },
 ];
 
@@ -175,6 +261,132 @@ export function clientAdapter(id: ClientId): ClientAdapter {
  *  which yields a relative path (`.claude/skills`) when HOME is unset (sandboxed CI / `env -i`). */
 export function skillDestFor(client: ClientId, home?: string): string | null {
   return clientAdapter(client).skillDest(home ?? homedir());
+}
+
+// ─── capture-lane matrix: constants, invariants, manifest gate (G2.1) ─────────
+
+/** The MCP tool + op the capture lanes rely on. The manifest gate (below, run by
+ *  scripts/capabilities-check.mjs) pins both names, so a rename breaks the build instead of silently
+ *  breaking every installed client's capture path. */
+export const CAPTURE_TOOL_REF = { tool: 'memory', op: 'capture' } as const;
+
+/** The MCP tools the neutral protocol body cites directly — the standalone compatibility adapters
+ *  (capabilities.ts keeps them standalone precisely because this protocol text names them). */
+export const PROTOCOL_CITED_TOOLS: readonly string[] = ['brief', 'memory_recall', 'memory_observe'];
+
+/** The stable CLI subcommand a lane-2 hook entry invokes. The durable capture path behind it
+ *  (transient acceptance → policy-gated distillation) is the G2.2 capture lane; the wire format is
+ *  fixed here so hook entries survive that lane landing. This marker string is also how the hook
+ *  writer identifies crib-owned entries inside a user-owned settings.json — the JSON analogue of the
+ *  managed-block begin marker (JSON carries no comments). */
+export const CAPTURE_HOOK_COMMAND_MARKER = 'crib memory capture-hook';
+
+/** The hook command for one lifecycle event, as embedded in the client's settings file. */
+export function captureHookCommand(event: LifecycleEvent): string {
+  return `${CAPTURE_HOOK_COMMAND_MARKER} --event ${event}`;
+}
+
+/** One-line lane summary for `crib adapters list` / `crib doctor`, regenerated from the matrix —
+ *  never hand-written prose (the same regenerate-from-one-list law the tool/op counts follow). */
+export function captureLaneSummary(client: ClientId): string {
+  const { label, lifecycle } = clientAdapter(client);
+  const pc = `portable capture via ${lifecycle.portableCapture.tool}({op:'${lifecycle.portableCapture.op}'}) [${lifecycle.portableCapture.evidence}]`;
+  const hooks = lifecycle.lifecycleHooks;
+  if (hooks) {
+    return `${label}: ${pc}; lifecycle hooks (${hooks.events.join(', ')}) [${hooks.evidence}]`;
+  }
+  const sdk = lifecycle.sdkMiddleware
+    ? `; sdk-middleware [${lifecycle.sdkMiddleware.evidence}]`
+    : '';
+  return `${label}: ${pc}; instruction-based recall only (no lifecycle-hook surface)${sdk}`;
+}
+
+/** Minimal view of the MCP capability manifest the lane gate validates against (injected, so this
+ *  module stays dependency-free and the gate can run against the built dist). */
+export interface ToolManifestView {
+  readonly tools: readonly string[];
+  opsOf(tool: string): readonly string[];
+}
+
+/** Cross-entry consistency checks for the capture-lane matrix (mirrors capabilities.ts
+ *  manifestInvariants). tsc already forces a `lifecycle` row on every adapter; this re-asserts it
+ *  through the built dist the way a release actually ships, and checks the enum closed-ness tsc
+ *  cannot see at the data level. Empty return = healthy. */
+export function lifecycleInvariants(
+  rows: readonly { id: ClientId; lifecycle?: CaptureLanes }[] = CLIENT_ADAPTERS,
+): readonly string[] {
+  const evidenceOk = (e: unknown): boolean =>
+    e === 'in-repo-writer' || e === 'verified-upstream-doc' || e === 'unverified';
+  const problems: string[] = [];
+  const seen = new Set<string>();
+  for (const row of rows) {
+    if (seen.has(row.id)) problems.push(`duplicate capture-lane row for '${row.id}'`);
+    seen.add(row.id);
+    const lc = row.lifecycle;
+    if (!lc) {
+      problems.push(`client '${row.id}' has no capture-lane row`);
+      continue;
+    }
+    if (!lc.portableCapture?.tool || !lc.portableCapture.op) {
+      problems.push(`client '${row.id}' portableCapture must name a tool + op`);
+    } else if (!evidenceOk(lc.portableCapture.evidence)) {
+      problems.push(
+        `client '${row.id}' portableCapture evidence '${String(lc.portableCapture.evidence)}' is not a known evidence class`,
+      );
+    }
+    if (lc.lifecycleHooks) {
+      const hooks = lc.lifecycleHooks;
+      if (hooks.events.length === 0)
+        problems.push(`client '${row.id}' declares lifecycle hooks but no events`);
+      for (const event of hooks.events) {
+        if (!(LIFECYCLE_EVENTS as readonly string[]).includes(event))
+          problems.push(
+            `client '${row.id}' hook event '${String(event)}' is not one of ${LIFECYCLE_EVENTS.join(', ')}`,
+          );
+      }
+      if (!evidenceOk(hooks.evidence))
+        problems.push(
+          `client '${row.id}' lifecycleHooks evidence '${String(hooks.evidence)}' is not a known evidence class`,
+        );
+    }
+    if (lc.sdkMiddleware && !evidenceOk(lc.sdkMiddleware.evidence))
+      problems.push(
+        `client '${row.id}' sdkMiddleware evidence '${String(lc.sdkMiddleware.evidence)}' is not a known evidence class`,
+      );
+  }
+  return problems;
+}
+
+/** The gate half of G2.1: every tool/op name the matrix and the neutral protocol text cite must
+ *  exist in the MCP capability manifest. A renamed op therefore breaks the build (the
+ *  capabilities:check release gate runs this against the built dists) instead of silently breaking
+ *  every installed client's recall instruction. */
+export function captureLaneManifestViolations(manifest: ToolManifestView): readonly string[] {
+  const problems: string[] = [];
+  const checkRef = (tool: string, op: string | undefined, citedBy: string): void => {
+    if (!manifest.tools.includes(tool)) {
+      problems.push(
+        `${citedBy} cites tool '${tool}', which the capability manifest does not define`,
+      );
+      return;
+    }
+    if (op !== undefined && !manifest.opsOf(tool).includes(op))
+      problems.push(
+        `${citedBy} cites op '${op}' on tool '${tool}', which the manifest does not define`,
+      );
+  };
+  for (const row of CLIENT_ADAPTERS) {
+    const pc = row.lifecycle?.portableCapture;
+    if (pc) checkRef(pc.tool, pc.op, `client '${row.id}' portableCapture`);
+  }
+  checkRef(CAPTURE_TOOL_REF.tool, CAPTURE_TOOL_REF.op, 'CAPTURE_TOOL_REF');
+  for (const tool of PROTOCOL_CITED_TOOLS) {
+    if (!manifest.tools.includes(tool))
+      problems.push(
+        `neutralProtocolBody cites tool '${tool}', which the capability manifest does not define`,
+      );
+  }
+  return problems;
 }
 
 // ─── managed-block splice (markdown) ──────────────────────────────────────────
@@ -358,6 +570,287 @@ export function removeInstructions(
       }
       out.push({ client: id, scope, path: target.path, written });
     }
+  }
+  return out;
+}
+
+// ─── lane-2 capture-hook writer (G2.1, Claude Code settings.json) ─────────────
+
+/**
+ * Writes the lane-2 hook entry into `.claude/settings.json` (project scope) so Claude Code invokes
+ * the crib CLI capture path on session/turn events. Modeled on mcp-install.ts's per-format JSON
+ * writers: idempotent, non-clobbering (parse → set crib-owned entries → reserialize, preserving all
+ * sibling content), with the adapters.ts managed-block refusal rules carried over. Since JSON cannot
+ * carry comment markers, crib-owned entries are identified by the stable
+ * {@link CAPTURE_HOOK_COMMAND_MARKER} prefix in their `command` — the begin-marker analogue — and
+ * this writer REFUSES to touch a file whose structure it cannot interpret safely (unparseable JSON,
+ * a non-object `hooks` key, a non-array event bucket, or a marker-carrying entry it cannot parse)
+ * rather than guessing a boundary and discarding user config.
+ *
+ * Only Claude gets a writer: its settings.json hooks are the one lifecycle surface the matrix marks
+ * `verified-upstream-doc`. Every other client reports "instruction-based recall only" — as data,
+ * never as a failure (the doctor check-7 not-initialized-is-✓+hint precedent).
+ */
+
+/** Claude Code hook event key each lifecycle event maps to (upstream settings.json hook names:
+ *  SessionStart fires once per session, Stop when the main agent finishes a turn, PostToolUse after
+ *  each tool call; `matcher` is omitted, which upstream treats as match-all). */
+const CLAUDE_HOOK_EVENT_KEYS: Record<LifecycleEvent, string> = {
+  'session-start': 'SessionStart',
+  'turn-end': 'Stop',
+  'tool-use': 'PostToolUse',
+};
+
+/** True when a hook command entry is crib-managed: the marker prefix in `command` is the managed
+ *  block's begin marker analogue. */
+function isCribHookEntry(entry: unknown): entry is Record<string, unknown> {
+  return (
+    typeof entry === 'object' &&
+    entry !== null &&
+    !Array.isArray(entry) &&
+    typeof (entry as Record<string, unknown>).command === 'string' &&
+    ((entry as Record<string, unknown>).command as string).startsWith(CAPTURE_HOOK_COMMAND_MARKER)
+  );
+}
+
+/** The lifecycle event a crib-owned hook entry was written for, or `null` when unparseable. */
+function eventOfCribHook(entry: Record<string, unknown>): LifecycleEvent | null {
+  const m = /--event (\S+)/.exec(entry.command as string);
+  const event = m?.[1];
+  return event && (LIFECYCLE_EVENTS as readonly string[]).includes(event)
+    ? (event as LifecycleEvent)
+    : null;
+}
+
+export interface HookInstallResult {
+  client: ClientId;
+  scope: AdapterScope;
+  /** Absolute settings file path (or `''` when the client has no hook target). */
+  path: string;
+  written: boolean;
+  /** The lifecycle events wired (install) / removed (remove) by this operation. */
+  events: LifecycleEvent[];
+  /** Non-fatal note (unsupported client/scope, or a refusal reason). */
+  note?: string;
+}
+
+export interface HookListEntry {
+  client: ClientId;
+  scope: AdapterScope;
+  path: string;
+  /** The lifecycle events currently wired in the settings file. */
+  events: LifecycleEvent[];
+  note?: string;
+}
+
+function hookClients(opts: { client?: ClientId | 'all' }): ClientId[] {
+  return opts.client && opts.client !== 'all' ? [opts.client] : ALL_CLIENTS;
+}
+
+function hookEventPairs(
+  events: readonly LifecycleEvent[],
+): { event: LifecycleEvent; key: string }[] {
+  return events.map((event) => ({ event, key: CLAUDE_HOOK_EVENT_KEYS[event] }));
+}
+
+function parseJsonOrEmpty(path: string): Record<string, unknown> {
+  if (!existsSync(path)) return {};
+  try {
+    return JSON.parse(readFileSync(path, 'utf8')) as Record<string, unknown>;
+  } catch {
+    return {};
+  }
+}
+
+/** The orphan-marker refusal in JSON form: a reason string when the settings file cannot be safely
+ *  rewritten (see the section comment), or `null` when the file is absent or safely interpretable. */
+function hooksRefusal(path: string, events: readonly LifecycleEvent[]): string | null {
+  if (!existsSync(path)) return null;
+  let obj: unknown;
+  try {
+    obj = JSON.parse(readFileSync(path, 'utf8'));
+  } catch {
+    return `refusing to write ${path}: not valid JSON — fix or remove the file first (a blind rewrite would discard it)`;
+  }
+  if (typeof obj !== 'object' || obj === null || Array.isArray(obj))
+    return `refusing to write ${path}: top level is not a JSON object`;
+  const hooksRoot = (obj as Record<string, unknown>).hooks;
+  if (hooksRoot === undefined) return null;
+  if (typeof hooksRoot !== 'object' || hooksRoot === null || Array.isArray(hooksRoot))
+    return `refusing to write ${path}: 'hooks' is not a JSON object`;
+  for (const { key } of hookEventPairs(events)) {
+    const bucket = (hooksRoot as Record<string, unknown>)[key];
+    if (bucket === undefined) continue;
+    if (!Array.isArray(bucket)) return `refusing to write ${path}: 'hooks.${key}' is not an array`;
+    for (const entry of bucket) {
+      if (isCribHookEntry(entry) && eventOfCribHook(entry) === null)
+        return `refusing to write ${path}: a '${CAPTURE_HOOK_COMMAND_MARKER}' entry is present but unparseable — fix or remove it first`;
+    }
+  }
+  return null;
+}
+
+/** Install/refresh the capture-hook entry for one client (or all). Clients without a hook surface
+ *  (and unsupported scopes) get a data note and no write — the cursor-skillDest honesty precedent. */
+export function installCaptureHooks(
+  repoRoot: string,
+  opts: { client?: ClientId | 'all'; scope?: AdapterScope } = {},
+): HookInstallResult[] {
+  const scope: AdapterScope = opts.scope ?? 'project';
+  const out: HookInstallResult[] = [];
+  for (const id of hookClients(opts)) {
+    const adapter = clientAdapter(id);
+    const hooks = adapter.lifecycle.lifecycleHooks;
+    const settingsPath = hooks?.settingsPath;
+    if (scope === 'global' || !hooks || !settingsPath) {
+      out.push({
+        client: id,
+        scope,
+        path: '',
+        written: false,
+        events: [],
+        note: hooks
+          ? `${adapter.label} capture hooks ship project-scope only; recall stays instruction-based.`
+          : `${adapter.label} supports instruction-based recall only (no lifecycle-hook surface).`,
+      });
+      continue;
+    }
+    const path = settingsPath(repoRoot);
+    const refusal = hooksRefusal(path, hooks.events);
+    if (refusal) {
+      out.push({ client: id, scope, path, written: false, events: [], note: refusal });
+      continue;
+    }
+    const obj = parseJsonOrEmpty(path);
+    const hooksRoot = { ...((obj.hooks as Record<string, unknown>) ?? {}) };
+    const wired: LifecycleEvent[] = [];
+    let changed = false;
+    for (const { event, key } of hookEventPairs(hooks.events)) {
+      const bucket = (hooksRoot[key] as unknown[] | undefined) ?? [];
+      // Drop prior crib-owned entries, then append ours last — user entries keep their position and
+      // the crib entry is byte-identical on re-runs (idempotent).
+      const kept = bucket.filter((e) => !isCribHookEntry(e));
+      kept.push({ type: 'command', command: captureHookCommand(event) });
+      if (JSON.stringify(kept) !== JSON.stringify(bucket)) changed = true;
+      hooksRoot[key] = kept;
+      wired.push(event);
+    }
+    if (changed) {
+      mkdirSync(dirname(path), { recursive: true });
+      writeFileSync(path, `${JSON.stringify({ ...obj, hooks: hooksRoot }, null, 2)}\n`, 'utf8');
+    }
+    out.push({ client: id, scope, path, written: changed, events: wired });
+  }
+  return out;
+}
+
+/** Report the currently wired capture hooks per client, without writing. */
+export function listCaptureHooks(
+  repoRoot: string,
+  opts: { client?: ClientId | 'all'; scope?: AdapterScope } = {},
+): HookListEntry[] {
+  const scope: AdapterScope = opts.scope ?? 'project';
+  const out: HookListEntry[] = [];
+  for (const id of hookClients(opts)) {
+    const adapter = clientAdapter(id);
+    const hooks = adapter.lifecycle.lifecycleHooks;
+    const settingsPath = hooks?.settingsPath;
+    if (scope === 'global' || !hooks || !settingsPath) {
+      out.push({
+        client: id,
+        scope,
+        path: '',
+        events: [],
+        note: `${adapter.label} supports instruction-based recall only (no lifecycle-hook surface).`,
+      });
+      continue;
+    }
+    const path = settingsPath(repoRoot);
+    const events: LifecycleEvent[] = [];
+    if (existsSync(path)) {
+      try {
+        const obj = JSON.parse(readFileSync(path, 'utf8')) as Record<string, unknown>;
+        const hooksRoot = obj.hooks;
+        if (typeof hooksRoot === 'object' && hooksRoot !== null && !Array.isArray(hooksRoot)) {
+          for (const { key } of hookEventPairs(hooks.events)) {
+            const bucket = (hooksRoot as Record<string, unknown>)[key];
+            if (!Array.isArray(bucket)) continue;
+            for (const entry of bucket) {
+              if (!isCribHookEntry(entry)) continue;
+              const event = eventOfCribHook(entry);
+              if (event && !events.includes(event)) events.push(event);
+            }
+          }
+        }
+      } catch {
+        /* unparseable settings — report not-installed rather than crashing a status command */
+      }
+    }
+    out.push({ client: id, scope, path, events });
+  }
+  return out;
+}
+
+/** Remove the crib-owned capture-hook entries for one client (or all), leaving every sibling entry
+ *  and key intact. An event bucket left empty — and an empty `hooks` key — are dropped. */
+export function removeCaptureHooks(
+  repoRoot: string,
+  opts: { client?: ClientId | 'all'; scope?: AdapterScope } = {},
+): HookInstallResult[] {
+  const scope: AdapterScope = opts.scope ?? 'project';
+  const out: HookInstallResult[] = [];
+  for (const id of hookClients(opts)) {
+    const adapter = clientAdapter(id);
+    const hooks = adapter.lifecycle.lifecycleHooks;
+    const settingsPath = hooks?.settingsPath;
+    if (scope === 'global' || !hooks || !settingsPath) {
+      out.push({
+        client: id,
+        scope,
+        path: '',
+        written: false,
+        events: [],
+        note: hooks
+          ? `${adapter.label} capture hooks ship project-scope only.`
+          : `${adapter.label} supports instruction-based recall only (no lifecycle-hook surface).`,
+      });
+      continue;
+    }
+    const path = settingsPath(repoRoot);
+    const refusal = hooksRefusal(path, hooks.events);
+    if (refusal) {
+      out.push({ client: id, scope, path, written: false, events: [], note: refusal });
+      continue;
+    }
+    if (!existsSync(path)) {
+      out.push({ client: id, scope, path, written: false, events: [] });
+      continue;
+    }
+    const obj = parseJsonOrEmpty(path);
+    const hooksRoot = { ...((obj.hooks as Record<string, unknown>) ?? {}) };
+    const removed: LifecycleEvent[] = [];
+    let changed = false;
+    for (const { event, key } of hookEventPairs(hooks.events)) {
+      const bucket = hooksRoot[key];
+      if (!Array.isArray(bucket)) continue;
+      const kept = bucket.filter((e) => !isCribHookEntry(e));
+      if (kept.length !== bucket.length) {
+        removed.push(event);
+        changed = true;
+      }
+      if (kept.length === 0) delete hooksRoot[key];
+      else hooksRoot[key] = kept;
+    }
+    if (changed) {
+      // The event buckets were emptied under `hooks` — keep the key only when something remains.
+      const next: Record<string, unknown> = { ...obj };
+      // An undefined property is omitted by JSON.stringify, so this drops the key exactly like a
+      // delete would — without the delete operator the lint rules reject in hot config writers.
+      if (Object.keys(hooksRoot).length === 0) next.hooks = undefined;
+      else next.hooks = hooksRoot;
+      writeFileSync(path, `${JSON.stringify(next, null, 2)}\n`, 'utf8');
+    }
+    out.push({ client: id, scope, path, written: changed, events: removed });
   }
   return out;
 }

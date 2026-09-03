@@ -6,6 +6,7 @@
 import aliasSchema from './schema/alias.schema.json' with { type: 'json' };
 import attemptSchema from './schema/attempt.schema.json' with { type: 'json' };
 import candidateSchema from './schema/candidate.schema.json' with { type: 'json' };
+import captureSchema from './schema/capture.schema.json' with { type: 'json' };
 import decisionSchema from './schema/decision.schema.json' with { type: 'json' };
 import feedbackSchema from './schema/feedback.schema.json' with { type: 'json' };
 import manifestSchema from './schema/manifest.schema.json' with { type: 'json' };
@@ -16,6 +17,7 @@ import recordSchema from './schema/record.schema.json' with { type: 'json' };
 export const RECORD_SCHEMA = recordSchema as Record<string, unknown>;
 export const RECORD_V2_SCHEMA = recordV2Schema as Record<string, unknown>;
 export const CANDIDATE_SCHEMA = candidateSchema as Record<string, unknown>;
+export const CAPTURE_SCHEMA = captureSchema as Record<string, unknown>;
 export const ATTEMPT_SCHEMA = attemptSchema as Record<string, unknown>;
 export const RECEIPT_SCHEMA = receiptSchema as Record<string, unknown>;
 export const DECISION_SCHEMA = decisionSchema as Record<string, unknown>;
@@ -28,6 +30,7 @@ export const VENDORED_MEMORY_SCHEMAS: Record<string, Record<string, unknown>> = 
   'record.schema.json': RECORD_SCHEMA,
   'record-v2.schema.json': RECORD_V2_SCHEMA,
   'candidate.schema.json': CANDIDATE_SCHEMA,
+  'capture.schema.json': CAPTURE_SCHEMA,
   'attempt.schema.json': ATTEMPT_SCHEMA,
   'receipt.schema.json': RECEIPT_SCHEMA,
   'decision.schema.json': DECISION_SCHEMA,

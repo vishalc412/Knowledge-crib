@@ -6,12 +6,12 @@
 
 ---
 
-## Tool consolidation (current surface: 14 tools / 37 operations)
+## Tool consolidation (current surface: 14 tools / 38 operations)
 
 Fourteen tools that differed only in which verb they called were folded behind an `op` parameter.
 Every tool costs name + description + JSON schema in the tool list of **every** session whether or
 not it is used, so a family of five rarely-used tools was a permanent tax on every conversation.
-The consolidated surface is 14 tools / 37 operations — down from 31 tools / ~6,249 tokens, a 42%
+The consolidated surface is 14 tools / 38 operations — down from 31 tools / ~6,249 tokens, a 42%
 token cut with no capability removed.
 
 These counts are not prose: they are derived from the single capability manifest
@@ -503,13 +503,21 @@ Stage a fully-formed LOCAL candidate — content-addressed, so re-observing the 
 the same `cand:` id. Promotion is a separate CLI/CI step. A repo-scoped observation needs a stable
 repoId (`crib index`) and is refused without one, rather than written with an id that would be
 unstable across machines. Response vocabulary convention: the status is reported as `'pending'`,
-never with other trust-tier words — some installed client hooks reject those tokens.
+never with other trust-tier words — some installed client hooks reject those tokens. G2.2: the
+staging runs the same unified funnel as `memory({op:'capture'})` — a capture-policy gate first
+(typed `violations` on a refusal, nothing written), then the durable `cap:` outbox entry, then the
+staging entry — so a crash before the staging write replays at-least-once.
 
 ```jsonc
 // req: { "kind":"pitfall","subject":"topic:plsql-parser","claim":"…",
 //        "appliesTo?":[…],"evidence?":[…],"actor":"claude","authorKind?":"agent",
-//        "tool?":"memory_observe","scopeBoundary?":"repo","attemptId?":"att:…","ifHash?":"…" }
-// res: { "id":"cand:…","status":"pending","origin":"observe","scope":{ "boundary":"repo","repoId":"…" } }
+//        "tool?":"memory_observe","scopeBoundary?":"repo","attemptId?":"att:…",
+//        "idempotencyKey?":"…","ifHash?":"…" }
+// res (refused): { "ok":false,"error":"capture refused by policy — fix the input or adjust the
+//                        capture policy","violations":[{"axis":"secret","reason":"…"}] }
+// res (accepted): { "ok":true,"id":"cand:…","status":"pending","origin":"observe",
+//                   "scope":{ "boundary":"repo","repoId":"…" },
+//                   "outboxId":"cap:…","idempotent":false }
 ```
 
 ### `memory({op:'get'})`
@@ -651,6 +659,31 @@ transferred.
 //        "request":{} }
 ```
 
+### `memory({op:'outbox'})`
+The capture-outbox drain surface (G2.3). Read-only reporting of the LOCAL queue that
+`memory{op:'capture'}` / `memory_observe` stage (`cap:` entries, written BEFORE their staging
+candidate so a crash is recoverable at-least-once): pending / done / dead counts, the pending
+captures (each with its retry count — the distiller's failure count so far), and drained entries
+with their distill decision, rationale, and `verified` flag. The drain itself is the CLI's
+`crib memory distill --provider <name>`: it hands each pending capture to an external provider from
+`~/.crib/providers.json` (the enrich-provider mechanism — spawn `shell:false`, strict JSON, per-item
+timeout), and the provider's ADD / SUPERSEDE / CONFLICT / NOOP decision is applied ONLY after crib
+verifies it deterministically (an uncited SUPERSEDE/CONFLICT/NOOP, a CONFLICT across proposition
+keys, or a CONFLICT whose claims are not deterministic negations is a per-item failure: a retry
+append, dead-lettered at the third attempt). Complementary same-subject claims classify as ADD,
+never CONFLICT — the pinned red line. The outbox is local-only (no-poison), so this reads the local
+store and degrades to `not configured` without one.
+```jsonc
+// req: { "ifHash?":"…" }
+// res: { "counts": { "pending":2,"done":5,"dead":1 },
+//        "pending": [ { "id":"cap:…","kind":"pitfall","subject":"topic:deploy",
+//                       "claim":"…","origin":"observe","proposedAt":"…","retries":1,
+//                       "sessionId":"…","sessionOffset":3,"eventOffset":7 } ],
+//        "done":   [ { "id":"cap:…","kind":"fact","proposedAt":"…","candidateId":"cand:…",
+//                      "decision":"ADD","rationale":"…","verified":true } ],
+//        "dead":   [ { "id":"cap:…","reason":"unsupported SUPERSEDE: no local record 'mem:…'" } ] }
+```
+
 ### `memory({op:'status'})`
 Ledger tallies by trust / evidence / applicability / lifecycle / source, plus `eligible`
 (recall-eligible), `quarantined`, and `pending` (local candidates not yet promoted).
@@ -702,13 +735,21 @@ self-checked with the same grounding gate the enrich path uses before its `valid
 stamp is earned, not assumed. Anchoring never fails the capture; the result reports
 `anchorStatus` (`anchored` / `ambiguous` / `unresolvable` / `unanchored`) so the caller knows
 exactly how checkable the candidate is. Content-addressed like `memory_observe`, so a repeat
-capture of the same observation upserts to the same id.
+capture of the same observation upserts to the same id. G2.2: a capture-policy gate runs BEFORE
+anything is written (secrets / PII / home-path / transcript hygiene always on; `maxClaimChars` /
+`forbiddenKinds` / `allowedScopeBoundaries` tighten via `policy.json`'s `capture` section), and the
+durable `cap:` outbox entry lands BEFORE the staging entry (`outboxId` + `idempotent` ack) — the
+same funnel observe uses.
 ```jsonc
 // req: { "subject":"topic:plsql-parser", "observation":"parseFile hung on a stray WHEN …",
 //        "kind?":"fact", "files?":[…], "symbols?":["recover"], "actor":"claude",
-//        "tool?":"memory", "scopeBoundary?":"repo", "ifHash?":"…" }
-// res: { "id":"cand:…","status":"pending","origin":"observe","scope":{…},
-//        "anchorStatus":"anchored","evidenceAttached":true,"anchors":["sym:…"] }
+//        "tool?":"memory", "scopeBoundary?":"repo", "idempotencyKey?":"…",
+//        "sessionId?":"…","sessionOffset?":0,"eventOffset?":0, "ifHash?":"…" }
+// res (refused): { "ok":false,"error":"capture refused by policy — fix the input or adjust the
+//                        capture policy","violations":[{"axis":"path","reason":"…"}] }
+// res (accepted): { "ok":true,"id":"cand:…","status":"pending","origin":"observe","scope":{…},
+//                   "anchorStatus":"anchored","evidenceAttached":true,"anchors":["sym:…"],
+//                   "outboxId":"cap:…","idempotent":false }
 ```
 
 ### `memory({op:'feedback'})`
@@ -732,7 +773,9 @@ The portable-API op set (`search` / `supersede` / `delete` / `history` / `sync`)
 capability manifest as of Gate 1.3 — each is a one-line manifest entry (see the consolidation
 note at the top) routed to the portable `MemoryApi` in `packages/memory/src/api.ts`, and the
 `memory({op:'get'})` / `memory({op:'capture'})` verbs delegate to the same API (get resolves
-aliases and answers version-aware; capture keeps its exact W3 response contract). `memory_recall`
+aliases and answers version-aware; capture keeps its exact W3 response contract plus the additive
+G2.2 ack fields — `ok`, `outboxId`, `idempotent`, and the typed `violations` array on a policy
+refusal). `memory_recall`
 and `memory_observe` remain as compatibility adapters — they are the two verbs the installed
 client protocol names directly — and retire one release cycle after their replacements are rolled
 out to the installed instructions.

@@ -63,7 +63,9 @@ import {
   type AttemptPhase,
   BENCH_SCALE_DEFAULT,
   BENCH_SCALE_FAST,
+  type CaptureOutboxEntry,
   type ConflictGroup,
+  type DistillVerifyContext,
   FtsLexicalScorer,
   type GateReceipt,
   MemoryApi,
@@ -91,21 +93,26 @@ import {
   type StructuredSummary,
   type SupersedePayload,
   type TrustedTeamPresence,
+  type VerifiedDistillDecision,
   activateLocal,
   appendAttemptEvent,
   applyContradictedFeedback,
+  applyVerifiedDecision,
   assertValidMemoryEntry,
   attemptEventId,
   attemptGroupId,
   bridgedDecisions,
   buildAliasIndex,
   buildAttemptEvent,
+  buildDistillWorkItem,
   compactAttempt,
   conservativeVerdicts,
   contradictedForReview,
   decisionId,
+  distillBatchId,
   effectiveVerdicts,
   evaluateCandidate,
+  failDistillItem,
   formatBenchReport,
   gatherRecall,
   gcUnpromotedAttempts,
@@ -115,8 +122,10 @@ import {
   loadPolicy,
   loadPolicyJson,
   localRecordsToTombstone,
+  localStoreRoot,
   memoryCandidateId,
   parseMemoryShard,
+  pendingCaptures,
   policyHash,
   proposeExisting,
   quarantinedRecordIds,
@@ -126,10 +135,13 @@ import {
   runGate,
   runMemoryBench,
   runMemoryCheck,
+  sameSubjectRecords,
   tombstoneLocalForTeamPromotion,
   trustedRefOf,
+  verifyDistillDecision,
   verifySnapshot,
 } from '@knowledge-crib/memory';
+import { writeJsonAtomic } from '@knowledge-crib/memory';
 import {
   changedFilesSince,
   currentHead,
@@ -159,11 +171,23 @@ import { buildVizGraph, buildVizOverview, vizAssetsDir } from '@knowledge-crib/u
 import {
   ALL_CLIENTS,
   type ClientId,
+  LIFECYCLE_EVENTS,
+  type LifecycleEvent,
+  captureLaneSummary,
+  clientAdapter,
+  installCaptureHooks,
   installInstructions,
+  listCaptureHooks,
   listInstructions,
+  removeCaptureHooks,
   removeInstructions,
 } from './adapters.js';
-import { type ProviderDef, resolveProvider, runProviderBatch } from './enrich-provider.js';
+import {
+  type ProviderDef,
+  ProviderItemError,
+  resolveProvider,
+  runProviderBatch,
+} from './enrich-provider.js';
 import { hooksInstalled, installHooks, mergeDriverFiles } from './hooks.js';
 import { type McpIde, type McpScope, installMcp, listMcp, removeMcp } from './mcp-install.js';
 import { registerProject } from './registry.js';
@@ -2012,10 +2036,34 @@ function cmdDoctor(args: string[], ctx?: CmdCtx): number {
       /* best-effort */
     }
     const memOk = teamOk && adapterCount > 0;
+    // G2.1 — the capture-lane report rides check 7's detail line as pure DATA: which client is on
+    // which lane, and whether the lane-2 hook entry is installed. An instruction-based client is
+    // never a red mark — 'instruction-based recall only' is the honest capability, not a failure
+    // (the same non-fatal pattern as this check's not-initialized state above).
+    const hookLaneClients = ALL_CLIENTS.filter((id) => clientAdapter(id).lifecycle.lifecycleHooks);
+    const recallLaneClients = ALL_CLIENTS.filter(
+      (id) => !clientAdapter(id).lifecycle.lifecycleHooks,
+    );
+    let hookEvents: string[] = [];
+    try {
+      hookEvents = listCaptureHooks(repoRoot, { client: 'all', scope: 'project' }).flatMap(
+        (e) => e.events,
+      );
+    } catch {
+      /* best-effort — never let a diagnostic crash */
+    }
+    const laneDetail = [
+      `${hookLaneClients.join('/')}: portable + lifecycle hooks (entry ${
+        hookEvents.length > 0
+          ? `installed: ${hookEvents.join(', ')}`
+          : 'not installed — run `crib adapters hooks install`'
+      })`,
+      `${recallLaneClients.join('/')}: portable, instruction-based recall only (no hook surface)`,
+    ].join('; ');
     checks.push({
       name: 'agent-memory loop',
       ok: memOk,
-      detail: `policy ✓, team store ${teamOk ? '✓' : '✗'}, ${adapterCount} instruction adapter${adapterCount === 1 ? '' : 's'}`,
+      detail: `policy ✓, team store ${teamOk ? '✓' : '✗'}, ${adapterCount} instruction adapter${adapterCount === 1 ? '' : 's'}; capture lanes: ${laneDetail}`,
       fix: memOk
         ? undefined
         : `${!teamOk ? 'run `crib memory init` (team store missing); ' : ''}${adapterCount === 0 ? 'run `crib adapters install` (no instruction file present)' : ''}`.trim(),
@@ -3028,9 +3076,14 @@ function cmdSkill(args: string[]): number {
  * .windsurfrules, GEMINI.md) — preserving sibling content byte-for-byte. Removing an adapter removes
  * only its block; memory lives in `.crib/memory/` + `~/.crib/memory/`, never in these files (PRD exit
  * gate line 408: "removing an adapter does not remove memory"). Mirrors `crib mcp`'s shape.
+ *
+ * `list` also prints each client's capture-lane row (G2.1) — regenerated from the lifecycle matrix,
+ * never hand-written. `crib adapters hooks <install|list|remove>` manages the lane-2 capture hooks
+ * (Claude Code settings.json; see adapters.ts).
  */
 function cmdAdapters(args: string[], ctx?: CmdCtx): number {
   const [sub, ...rest] = args;
+  if (sub === 'hooks') return cmdAdaptersHooks(rest, ctx);
   let client: ClientId | 'all' = 'all';
   let scope: 'project' | 'global' = 'project';
   let pathArg: string | undefined;
@@ -3084,6 +3137,11 @@ function cmdAdapters(args: string[], ctx?: CmdCtx): number {
       return EXIT.OK;
     }
     case 'list': {
+      // The capture-lane matrix as data (G2.1) — printed for the requested clients even when they
+      // have no instruction file (vscode), since the lanes are a property of the client, not of
+      // any file.
+      for (const id of client === 'all' ? ALL_CLIENTS : [client])
+        process.stdout.write(`${captureLaneSummary(id)}\n`);
       const entries = listInstructions(repoRoot, { client, scope });
       if (entries.length === 0) {
         process.stdout.write(`no ${scope}-scope instruction files for ${client}\n`);
@@ -3113,6 +3171,88 @@ function cmdAdapters(args: string[], ctx?: CmdCtx): number {
       return EXIT.BAD_ARGS;
     default:
       process.stderr.write(`unknown adapters subcommand: ${sub}\n`);
+      return EXIT.BAD_ARGS;
+  }
+}
+
+/**
+ * `crib adapters hooks <install|list|remove> [--client <id|all>]` (G2.1, lane 2). Manages the
+ * client capture-hook entries (Claude Code `.claude/settings.json` today) that invoke the crib CLI
+ * capture path on session/turn events. Project scope only. Clients whose matrix row has no hook
+ * surface report "instruction-based recall only" — as data, never as a failure.
+ */
+function cmdAdaptersHooks(args: string[], ctx?: CmdCtx): number {
+  const [sub, ...rest] = args;
+  let client: ClientId | 'all' = 'all';
+  let pathArg: string | undefined;
+  for (let i = 0; i < rest.length; i++) {
+    const arg = rest[i]!;
+    if (arg === '--client') {
+      const value = rest[++i];
+      if (looksLikeFlag(value) || !value) {
+        process.stderr.write(
+          'usage: crib adapters hooks <install|list|remove> [--client <id|all>]\n',
+        );
+        return EXIT.BAD_ARGS;
+      }
+      client = value as ClientId | 'all';
+      continue;
+    }
+    if (arg.startsWith('-')) {
+      process.stderr.write(`unknown adapters hooks option: ${arg}\n`);
+      return EXIT.BAD_ARGS;
+    }
+    if (!pathArg) pathArg = arg;
+  }
+  if (client !== 'all' && !ALL_CLIENTS.includes(client)) {
+    process.stderr.write(
+      `unknown --client: ${client}\nvalid: ${['all', ...ALL_CLIENTS].join(', ')}\n`,
+    );
+    return EXIT.BAD_ARGS;
+  }
+  const repoRoot = resolve(ctx?.cwdOverride ?? pathArg ?? '.');
+
+  switch (sub) {
+    case 'install': {
+      const results = installCaptureHooks(repoRoot, { client, scope: 'project' });
+      for (const r of results) {
+        if (r.note) process.stdout.write(`${r.client}: ${r.note}\n`);
+        else
+          process.stdout.write(
+            `${r.client}: hooks ${r.written ? 'installed' : 'up to date'} (${r.events.join(', ')}) → ${r.path}\n`,
+          );
+      }
+      return EXIT.OK;
+    }
+    case 'list': {
+      for (const e of listCaptureHooks(repoRoot, { client, scope: 'project' })) {
+        if (e.note) process.stdout.write(`${e.client}: ${e.note}\n`);
+        else
+          process.stdout.write(
+            `${e.client}: hooks ${e.events.length > 0 ? `installed (${e.events.join(', ')})` : 'not installed'} → ${e.path}\n`,
+          );
+      }
+      return EXIT.OK;
+    }
+    case 'remove': {
+      const results = removeCaptureHooks(repoRoot, { client, scope: 'project' });
+      for (const r of results) {
+        if (r.note) process.stdout.write(`${r.client}: ${r.note}\n`);
+        else if (r.written)
+          process.stdout.write(`${r.client}: hooks removed (${r.events.join(', ')}) → ${r.path}\n`);
+        else process.stdout.write(`${r.client}: hooks not present → ${r.path}\n`);
+      }
+      return EXIT.OK;
+    }
+    case undefined:
+    case '-h':
+    case '--help':
+      process.stderr.write(
+        'usage: crib adapters hooks <install|list|remove> [--client <id|all>]\n',
+      );
+      return EXIT.BAD_ARGS;
+    default:
+      process.stderr.write(`unknown adapters hooks subcommand: ${sub}\n`);
       return EXIT.BAD_ARGS;
   }
 }
@@ -3255,16 +3395,338 @@ async function cmdMemory(args: string[], ctx?: CmdCtx): Promise<number> {
       return cmdMemoryMigrate(rest, ctx);
     case 'bench':
       return cmdMemoryBench(rest, ctx);
+    // G2.3 — the capture-outbox drain loop (provider proposes, crib disposes).
+    case 'distill':
+      return cmdMemoryDistill(rest, ctx);
+    // G2.1 lane 2 — the durable capture command the lifecycle hooks invoke (adapters.ts
+    // `captureHookCommand`). Fail-open by contract: see cmdMemoryCaptureHook.
+    case 'capture-hook':
+      return cmdMemoryCaptureHook(rest, ctx);
     case undefined:
     case '-h':
     case '--help':
       process.stderr.write(
-        'crib memory init | recall "<query>" [--limit N] [--sources team,local,global] [--target <id>] [--with-evidence] [--include-pending] [--max-tokens N] [--json] | search "<query>" [--limit N] [--sources team,local,global] [--target <id>] [--max-tokens N] [--json] | get <id> [--with-evidence] [--json] | supersede <id> --actor <id> (--successor <id> | --claim <text>) [--reason <text>] [--json] | delete <id> --actor <id> [--reason <text>] [--json] | history <key> [--as-of <iso-ts>] [--with-evidence] [--json] | evaluate <candidate> --profile <name> | activate <candidate> | propose <memory-id> | attest <candidate> | check | audit [--repair-local] | feedback <mem-id> --signal <useful|unhelpful|contradicted> [--actor <id>] [--context <text>] [--counter-evidence <json-file>] | gc [--max-age-days N] [--dry-run] | migrate | bench [--fast] [--json] [--out <path>]\n',
+        'crib memory init | recall "<query>" [--limit N] [--sources team,local,global] [--target <id>] [--with-evidence] [--include-pending] [--max-tokens N] [--json] | search "<query>" [--limit N] [--sources team,local,global] [--target <id>] [--max-tokens N] [--json] | get <id> [--with-evidence] [--json] | supersede <id> --actor <id> (--successor <id> | --claim <text>) [--reason <text>] [--json] | delete <id> --actor <id> [--reason <text>] [--json] | history <key> [--as-of <iso-ts>] [--with-evidence] [--json] | evaluate <candidate> --profile <name> | activate <candidate> | propose <memory-id> | attest <candidate> | check | audit [--repair-local] | feedback <mem-id> --signal <useful|unhelpful|contradicted> [--actor <id>] [--context <text>] [--counter-evidence <json-file>] | gc [--max-age-days N] [--dry-run] | migrate | bench [--fast] [--json] [--out <path>] | distill --provider <name> [--providers-file F] [--max-batches N] [--concurrency N] [--timeout-ms N] | capture-hook --event <session-start|turn-end|tool-use> (hooks invoke this; always exits 0 — best-effort capture, never blocks a session)\n',
       );
       return EXIT.OK;
     default:
       process.stderr.write(`unknown memory subcommand: ${sub}\n`);
       return EXIT.BAD_ARGS;
+  }
+}
+
+// ─── G2.3 — `crib memory distill` (the capture-outbox drain loop) ────────────────
+
+/** How many pending captures one distill batch offers to the provider (bounded like enrich's 25). */
+const DISTILL_BATCH_SIZE = 25;
+
+/** The persisted zero-progress marker for the distill queue: `{ lastBatchId }` at
+ *  `<localStoreRoot>/distill-state.json`. A separate file (NOT the enrich manifest's `#t:` keys), so
+ *  the distill marker can never collide with the enrich queue's lastIssued keys; the `distill:`
+ *  batchId prefix makes even a future shared file collision structurally impossible. */
+interface DistillState {
+  lastBatchId?: string;
+  lastBatchAt?: string;
+}
+
+function distillStatePath(repoId: string, env: NodeJS.ProcessEnv): string {
+  return join(localStoreRoot(repoId, env), 'distill-state.json');
+}
+
+function readDistillState(path: string): DistillState {
+  try {
+    const parsed: unknown = JSON.parse(readFileSync(path, 'utf8'));
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+      return parsed as DistillState;
+    }
+  } catch {
+    // absent / unreadable / corrupt → an empty state (the loop simply has no prior batch to match)
+  }
+  return {};
+}
+
+/**
+ * `crib memory distill --provider <name>` — the G2.3 drain loop for the durable capture outbox.
+ * Each pending `cap:` entry becomes a provider work item (the capture + the existing same-subject
+ * records with their propositionKeys); the provider returns a structured decision; crib VERIFIES
+ * the decision deterministically (`verifyDistillDecision`) and only then applies it
+ * (`applyVerifiedDecision` — durable result first, outbox done last). The provider proposes; crib
+ * disposes.
+ *
+ * Loop model (mirrors runProviderEnrichLoop): the lock is held only around the apply critical
+ * section — the queue read itself is lock-free by design (pendingCaptures) — and RELEASED for the
+ * provider exec. Stop conditions: empty queue (done), zero progress (the same batchId — blake3 over
+ * the sorted pending ids — re-seen with nothing landing, persisted in distill-state.json so it
+ * holds across runs), or --max-batches. A per-item failure is NOT a loop stop: it appends a retry
+ * attempt to the entry (B's outbox lifecycle) and dead-letters at the limit, so the queue stays
+ * resumable and a poison capture cannot wedge the drain.
+ */
+async function cmdMemoryDistill(args: string[], ctx?: CmdCtx): Promise<number> {
+  const providerIdx = args.indexOf('--provider');
+  if (providerIdx < 0) {
+    process.stderr.write(
+      'usage: crib memory distill --provider <name> [--providers-file <path>] [--max-batches N] [--concurrency N] [--timeout-ms N]\n',
+    );
+    return EXIT.BAD_ARGS;
+  }
+  const providerName = args[providerIdx + 1];
+  if (!providerName || providerName.startsWith('-')) {
+    process.stderr.write('error: --provider requires a provider name\n');
+    return EXIT.BAD_ARGS;
+  }
+  const providersFile = stringFlag(args, '--providers-file');
+  const maxBatches = intFlag(args, '--max-batches') ?? 5;
+  const concurrency = intFlag(args, '--concurrency') ?? 1;
+  const timeoutMs = intFlag(args, '--timeout-ms');
+
+  let def: ProviderDef;
+  try {
+    def = resolveProvider(providerName, providersFile).def;
+  } catch (e) {
+    process.stderr.write(`error: ${(e as Error).message}\n`);
+    return EXIT.BAD_ARGS;
+  }
+
+  const resolved = resolveProjectRoot({ explicitRoot: ctx?.cwdOverride });
+  const rt = openSoul(resolved);
+  const repoId = readRepoId(resolved.cribDir);
+  if (!repoId) {
+    process.stderr.write('could not resolve repoId for memory — run `crib index` first\n');
+    return EXIT.NOT_INDEXED;
+  }
+  const env = process.env;
+  // The distiller touches ONLY the local store (the no-poison rule + the no-cross-store-nesting
+  // lock guard): no team or global store is constructed here at all.
+  const local = MemoryStore.local(repoId, { repoRoot: resolved.repoRoot, env });
+  const policy = loadPolicy(resolved.cribDir)?.capture;
+  const statePath = distillStatePath(repoId, env);
+  const now = (): string => new Date().toISOString();
+
+  let batches = 0;
+  let totalApplied = 0;
+  let totalFailed = 0;
+  let totalDeadLettered = 0;
+  while (batches < maxBatches) {
+    // 1. Queue read (lock-free by design): the pending view, dead wins over outbox.
+    const pending = pendingCaptures(local);
+    if (pending.length === 0) {
+      process.stdout.write('distill: capture outbox empty — done.\n');
+      break;
+    }
+    // Zero-progress: the batchId is the deterministic identity of this exact queue state; a
+    // persisted marker makes the stop survive across runs (no retry churn — the stop happens
+    // BEFORE any provider exec or attempt append).
+    const batchId = distillBatchId(pending.map((e) => e.id));
+    const state = readDistillState(statePath);
+    if (state.lastBatchId === batchId) {
+      process.stderr.write(
+        `zero-progress: distill batch ${batchId} was already offered with nothing landing — stopping (inspect the provider or the outbox; the marker persists by design).\n`,
+      );
+      return EXIT.ERROR;
+    }
+
+    // 2. Provider exec — NO lock held. The verify callback runs per item as the response lands,
+    //    throwing ProviderItemError on any unverifiable decision (a per-item failure, never applied).
+    const batch = pending.slice(0, DISTILL_BATCH_SIZE);
+    const items = batch.map((entry) =>
+      buildDistillWorkItem(entry, sameSubjectRecords(local, entry.subject)),
+    );
+    const ctxByTarget = new Map<string, DistillVerifyContext>(
+      batch.map((entry) => [entry.id, { local, entry, ...(policy ? { policy } : {}) }]),
+    );
+    const outcomes = await runProviderBatch<VerifiedDistillDecision>(
+      def,
+      items as unknown as EnrichWorkItem[],
+      {
+        ...(timeoutMs !== undefined ? { timeoutMs } : {}),
+        concurrencyOverride: concurrency,
+        validate: (parsed: unknown, expectedTargetId: string): VerifiedDistillDecision => {
+          const vctx = ctxByTarget.get(expectedTargetId);
+          if (!vctx) throw new ProviderItemError(expectedTargetId, 'no distill context for target');
+          const result = verifyDistillDecision(parsed, expectedTargetId, vctx);
+          if (!result.ok) throw new ProviderItemError(expectedTargetId, result.reason);
+          return result.verified;
+        },
+      },
+    );
+
+    // 3. Critical section: apply verified decisions + record failures under one crib lock hold.
+    //    All writes are same-store (local) re-entrant takes of the store's own lock.
+    let applied = 0;
+    let failed = 0;
+    let deadLettered = 0;
+    try {
+      // All-sync body — the async wrapper is only the crib-lock handle (the same pattern the
+      // enrich loop's `locked()` helper uses; the store's own writes re-take their own lock
+      // re-entrantly, never across an await).
+      await withCribLockAsync({ cribDir: resolved.cribDir }, () => {
+        for (const o of outcomes) {
+          const entry = ctxByTarget.get(o.targetId)?.entry as CaptureOutboxEntry | undefined;
+          if (!entry) continue;
+          if (!o.ok) {
+            failed++;
+            const res = failDistillItem(local, entry, o.reason, now);
+            if (res.deadLettered) {
+              deadLettered++;
+              process.stderr.write(
+                `distill: ${o.targetId} dead-lettered after ${res.attempt} attempt(s): ${o.reason}\n`,
+              );
+            }
+            continue;
+          }
+          const result = applyVerifiedDecision(
+            ctxByTarget.get(o.targetId) as DistillVerifyContext,
+            o.item,
+            { env, now },
+          );
+          if (result.ok) {
+            applied++;
+            const label =
+              result.decision === 'NOOP' && !result.reclassifiedToNoop
+                ? 'noop'
+                : result.decision.toLowerCase();
+            process.stdout.write(
+              `distill: ${o.targetId} → ${label}${result.candidateId ? ` (${result.candidateId})` : ''}${result.successorId ? ` (successor ${result.successorId})` : ''}\n`,
+            );
+          } else {
+            failed++;
+            const res = failDistillItem(local, entry, result.error, now);
+            if (res.deadLettered) deadLettered++;
+            process.stderr.write(`distill: ${o.targetId} apply failed: ${result.error}\n`);
+          }
+        }
+      });
+    } catch (e) {
+      if (e instanceof LockBusyError) {
+        process.stderr.write(`${e.message}\n`);
+        return EXIT.LOCKED;
+      }
+      throw e;
+    }
+    totalApplied += applied;
+    totalFailed += failed;
+    totalDeadLettered += deadLettered;
+    batches++;
+    // Persist the zero-progress marker ONLY when nothing landed this cycle: a marker the next cycle
+    // (in this run or a later one) matches against the same queue state stops the loop BEFORE the
+    // provider is re-executed and before any retry is recorded. A cycle where something landed (or
+    // an entry terminally dead-lettered) shrank or changed the queue, so the marker is cleared —
+    // that is the within-run partial-failure resumability the enrich loop models.
+    const marker: DistillState =
+      applied > 0 || deadLettered > 0
+        ? { lastBatchAt: now() }
+        : { lastBatchId: batchId, lastBatchAt: now() };
+    writeJsonAtomic(statePath, `${JSON.stringify(marker, null, 2)}\n`);
+    process.stdout.write(
+      `distill batch ${batches}: applied=${applied} failed=${failed} dead-lettered=${deadLettered} remaining=${pending.length - batch.length}\n`,
+    );
+    if (pending.length <= batch.length) {
+      process.stdout.write('distill: outbox drained this cycle.\n');
+      break;
+    }
+  }
+  process.stdout.write(
+    `distill: ${batches} batch(es), ${totalApplied} applied, ${totalFailed} failure(s), ${totalDeadLettered} dead-lettered.\n`,
+  );
+  return EXIT.OK;
+}
+
+// ─── G2.1 lane 2 — `crib memory capture-hook` (the durable capture lane hooks invoke) ──
+
+/** stdin is hard-capped before parse: a hook payload is bounded provenance, never a transcript. */
+const CAPTURE_HOOK_STDIN_MAX_CHARS = 65536;
+/** session ids are hashed into the `cap:` id seed — bounded and character-restricted, never trusted verbatim. */
+const CAPTURE_HOOK_SESSION_ID_MAX_CHARS = 128;
+const CAPTURE_HOOK_TOOL_NAME_MAX_CHARS = 64;
+
+/** A lifecycle hook fires inside a live coding session: this command MUST never block one.
+ *  Claude Code treats a nonzero hook exit (2 in particular) as a blocking error, so every runtime
+ *  failure — bad payload, unindexed repo, policy refusal, store error — degrades to stderr + EXIT.OK.
+ *  Only a wiring bug (no --event) reaches the operator the same way: stderr, still exit 0. */
+function cmdMemoryCaptureHook(args: string[], ctx?: CmdCtx): number {
+  const failOpen = (message: string): number => {
+    process.stderr.write(`capture-hook: ${message}\n`);
+    return EXIT.OK;
+  };
+  const event = stringFlag(args, '--event') as LifecycleEvent | undefined;
+  if (!event) return failOpen(`missing --event (expected one of: ${LIFECYCLE_EVENTS.join(', ')})`);
+  if (!LIFECYCLE_EVENTS.includes(event)) return failOpen(`unknown lifecycle event: ${event}`);
+
+  // Read + bound the hook payload. Only TWO fields ever cross into storage — session_id and
+  // (for tool-use) tool_name; everything else (transcript paths, tool input/output, cwd) is
+  // discarded here, before any capture, per the raw-transcripts-off law.
+  let payload: Record<string, unknown> = {};
+  try {
+    const raw = readFileSync(0, 'utf8');
+    if (raw.trim().length > 0) {
+      const parsed: unknown = JSON.parse(raw.slice(0, CAPTURE_HOOK_STDIN_MAX_CHARS));
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        payload = parsed as Record<string, unknown>;
+      }
+    }
+  } catch {
+    return failOpen(
+      'unparseable stdin payload — capturing the lifecycle event without session provenance',
+    );
+  }
+
+  const rawSessionId = typeof payload.session_id === 'string' ? payload.session_id.trim() : '';
+  const sessionId =
+    rawSessionId.length > 0
+      ? rawSessionId.replace(/\s+/g, '').slice(0, CAPTURE_HOOK_SESSION_ID_MAX_CHARS)
+      : undefined;
+  const rawToolName =
+    event === 'tool-use' && typeof payload.tool_name === 'string' ? payload.tool_name.trim() : '';
+  const toolName =
+    rawToolName.length > 0
+      ? rawToolName.replace(/[^A-Za-z0-9_.:-]/g, '').slice(0, CAPTURE_HOOK_TOOL_NAME_MAX_CHARS)
+      : undefined;
+  if (event === 'tool-use' && rawToolName.length > 0 && !toolName) {
+    return failOpen(
+      'tool_name reduced to nothing under the bounded charset — capturing without it',
+    );
+  }
+
+  const observation =
+    event === 'session-start'
+      ? 'coding session started (lifecycle hook)'
+      : event === 'turn-end'
+        ? 'session turn ended (lifecycle hook)'
+        : toolName
+          ? `tool-use observed (lifecycle hook): ${toolName}`
+          : 'tool-use observed (lifecycle hook)';
+  // Wall-clock-free dedupe key: identical (event, session, tool) fires collapse to one durable
+  // outbox entry — at-least-once delivery with dedupe, not per-fire volume. Turn-level granularity
+  // would need stream offsets the hook payload does not carry, so the collapse is honest.
+  const idempotencyKey = `hook:${event}:${sessionId ?? 'nosession'}${toolName ? `:${toolName}` : ''}`;
+
+  try {
+    const resolved = resolveProjectRoot({ explicitRoot: ctx?.cwdOverride });
+    const rt = openSoul(resolved);
+    const repoId = readRepoId(resolved.cribDir);
+    if (!repoId)
+      return failOpen(
+        'repoId unresolvable — run `crib index` first (capture skipped, not blocking)',
+      );
+    const deps = createMemoryDeps(rt.soul, resolved.repoRoot, resolved.cribDir);
+    if (!deps) return failOpen('memory stores unresolvable — capture skipped, not blocking');
+    const api = createMemoryApi(rt.soul, resolved.repoRoot, resolved.cribDir, deps);
+    const result = api.capture({
+      subject: 'topic:session-lifecycle',
+      observation,
+      kind: 'fact',
+      actor: 'claude-code-hook',
+      tool: 'capture-hook',
+      ...(sessionId !== undefined ? { sessionId } : {}),
+      idempotencyKey,
+    });
+    if (!result.ok) return failOpen(`capture refused: ${result.error}`);
+    process.stdout.write(
+      `${JSON.stringify({ ok: true, event, captureId: result.id, status: result.status })}\n`,
+    );
+    return EXIT.OK;
+  } catch (e) {
+    return failOpen(`capture failed: ${(e as Error).message}`);
   }
 }
 
@@ -5028,6 +5490,7 @@ function printHelp(): void {
       '  crib mcp <install|list|remove> [--ide <claude|cursor|vscode|codex|windsurf|gemini|all>] [--global] [--bin <path>] [path]',
       '                                          auto-wire the MCP server into each IDE config (REQ-2)',
       '  crib adapters <install|list|remove> [--client <id|all>] [--scope project|global]',
+      '  crib adapters hooks <install|list|remove> [--client <id|all>]   lane-2 capture hooks (Claude Code settings.json, project scope)',
       '                                          write the vendor-neutral agent-memory protocol into each client instruction file (W8)',
       '  crib skill <install|list> [name] [--dest <dir>] [--client <claude>]   install bundled skills (default ~/.claude/skills)',
       '  crib init [path] [--ide <name|all>]      5-minute onboarding: index + install-hooks + mcp install + adapters + next-steps hero',

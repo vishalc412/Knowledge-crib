@@ -456,6 +456,80 @@ engine-free format, so the whole team shares one authored semantic graph.
 
 ---
 
+## 11. Capture lanes — how each client's memory gets written
+
+The instruction adapters (section 4–7) install the recall side of the protocol: what every agent is
+told to do. The capture side — how observations actually reach the store — differs per client, and
+the registry in `packages/cli/src/adapters.ts` carries that difference as a REQUIRED `lifecycle`
+field on every `ClientAdapter` (the compiler forces a row for every client, so a new client cannot
+silently default to "none"). `crib adapters list` prints the row per client:
+
+| Client | Portable capture (lane 1) | Lifecycle hooks (lane 2) | SDK middleware (lane 3) |
+|---|---|---|---|
+| Claude Code | `memory` tool, `capture` op | `session-start`, `turn-end`, `tool-use` → `.claude/settings.json` | unverified |
+| Cursor | `memory` tool, `capture` op | — (instruction-based recall only) | — |
+| GitHub Copilot | `memory` tool, `capture` op | — | — |
+| VS Code | `memory` tool, `capture` op | — | — |
+| Codex | `memory` tool, `capture` op | — | — |
+| Windsurf | `memory` tool, `capture` op | — | — |
+| Gemini | `memory` tool, `capture` op | — | — |
+
+Lane 1 (portable capture) is available to every registry client — they all run the crib MCP server
+(sections 4–7), so `memory_observe` / the `memory` tool's `capture` op works everywhere.
+
+### 11.1 Evidence classes — the cells never claim more than they can prove
+
+Each cell carries an evidence class, per the repo's never-self-assert rule:
+
+- **`in-repo-writer`** — this repo wires the lane end to end (a writer in `adapters.ts` /
+  `mcp-install.ts` exists and is exercised).
+- **`verified-upstream-doc`** — the mechanism is documented by the client's upstream docs but this
+  repo does not exercise it end to end. Claude Code's lifecycle hooks sit here: the hook contract
+  (which settings keys fire on which events) is upstream-documented, while the durable capture CLI
+  the hook invokes is the G2.2 capture lane.
+- **`unverified`** — believed but unproven; never rendered as a guarantee.
+
+### 11.2 `crib adapters hooks` — the Claude Code hook writer (lane 2)
+
+```sh
+crib adapters hooks install [--client claude|all]   # project scope, .claude/settings.json
+crib adapters hooks list   [--client claude|all]
+crib adapters hooks remove [--client claude|all]
+```
+
+The writer follows the same managed-content discipline as the instruction adapters:
+
+- **Non-clobber** — existing keys (permissions, environment, user-authored hook entries) survive
+  byte-for-byte; the writer only appends one managed entry per event bucket.
+- **Orphan refusal** — any entry whose command carries the crib marker
+  (`crib memory capture-hook`) but cannot be parsed is treated like an unterminated managed block:
+  the writer refuses the whole file rather than guessing the boundary. Same for an unparseable
+  file, a non-object `hooks` key, or a non-array event bucket.
+- **Idempotent** — a second install rewrites nothing (`written: false`); remove strips only
+  crib-owned entries, drops emptied buckets, and drops the `hooks` key when nothing remains.
+
+The command the writer installs is fail-open by contract: `crib memory capture-hook --event
+<event>` reads the hook payload from stdin but persists bounded provenance only (the session id
+and, for tool-use, the tool name — never transcript paths or tool input), stages through the same
+policy-gated capture funnel as every other lane, and ALWAYS exits 0 — a hook fires inside a live
+coding session, so any runtime failure (unparseable payload, unindexed repo, policy refusal) is a
+stderr note, never the blocking exit 2. Identical (event, session, tool) firings dedupe to one
+durable outbox entry.
+
+A non-Claude client, or `--scope global`, is reported as a data note ("instruction-based recall
+only — no hook surface" / "project-scope only") and writes nothing: `crib doctor` never turns an
+absent hook surface into a red check, it reports it as lane data.
+
+### 11.3 The gate
+
+`scripts/capabilities-check.mjs` (part of `release:verify`) re-asserts, through the built dists:
+every client has a lane row with closed enums, and every tool/op name the matrix and the neutral
+protocol text cite (`memory.capture`, `brief`, `memory_recall`, `memory_observe`) exists in the
+capability manifest. Renaming an op in `packages/mcp/src/capabilities.ts` breaks the build here,
+not silently in every installed client's instructions.
+
+---
+
 ## Sources
 
 - Cursor MCP config: <https://cursor.com/docs/mcp.md>

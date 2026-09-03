@@ -40,6 +40,7 @@ import {
   buildAliasIndex,
   conservativeVerdicts,
 } from './aliases.js';
+import { type CapturePolicyViolation, checkCapturePolicy } from './capture-policy.js';
 import {
   type EvidenceKind,
   type EvidenceVerdict,
@@ -67,7 +68,9 @@ import {
   memoryShard,
 } from './ids.js';
 import { DEFAULT_RETENTION_POLICY_ID, migrationProvenance } from './migrations.js';
+import { buildCaptureOutboxEntry, stageCaptureOutboxEntry } from './outbox.js';
 import { readRepoId } from './paths.js';
+import { type CapturePolicySection, loadPolicy } from './policy.js';
 import {
   DEFAULT_RECALL_SOURCES,
   type LexicalScorer,
@@ -347,6 +350,16 @@ export interface CaptureInput {
    * repoId FAILS — a content id keyed on an unstable repo id would not dedupe across machines.
    */
   repoId?: string;
+  // ── G2.2 durable-outbox capture-input fields (part of the `cap:` id seed, never the `cand:` seed) ──
+  /**
+   * Caller-supplied dedupe key. A re-capture with the same key (and same offsets/kind/subject/
+   * observation/actor) re-derives the same `cap:` id, so the durable outbox upsert is a no-op.
+   */
+  idempotencyKey?: string;
+  /** capture-input stream position — carried on the outbox entry, part of the `cap:` id seed. */
+  sessionId?: string;
+  sessionOffset?: number;
+  eventOffset?: number;
 }
 
 /** How checkable the captured candidate came out (mirrors the MCP verb's `anchorStatus`). */
@@ -370,15 +383,68 @@ export interface CaptureSuccess {
   unresolvable: readonly string[];
   /** true iff this content id was already pending (the idempotence signal). */
   duplicate: boolean;
+  /** `cap:<blake3>` — the durable outbox entry written BEFORE the staging entry (G2.2). */
+  outboxId: string;
+  /** true iff the durable outbox upsert was a re-derive of an existing entry (idempotent replay). */
+  idempotent: boolean;
 }
 
-/** A failed {@link MemoryApi.capture} (validation / configuration — nothing was written). */
+/** A failed {@link MemoryApi.capture} / {@link MemoryApi.observe} (nothing was written). */
 export interface CaptureFailure {
   ok: false;
   error: string;
+  /**
+   * The capture-policy violations, when the failure was a policy refusal (G2.2). Static reasons
+   * only — never the refused content. Absent for non-policy failures (validation/configuration).
+   */
+  violations?: readonly CapturePolicyViolation[];
 }
 
 export type CaptureResult = CaptureSuccess | CaptureFailure;
+
+// ─── observe (G2.2 — the disciplined twin, staged through the same funnel) ────
+
+/**
+ * The disciplined observation input ({@link MemoryApi.observe}): the agent has ALREADY decided what
+ * is worth recording and supplies explicit evidence — no auto-anchoring, no kind defaulting.
+ * Everything else mirrors {@link CaptureInput} minus the loose refs.
+ */
+export interface ObserveInput {
+  kind: string;
+  subject: string;
+  claim: string;
+  appliesTo?: string[];
+  /** proposed evidence items (loose — the store schema-validates + secret-scans on write). */
+  evidence?: MemoryEvidence[];
+  actor: string;
+  authorKind?: 'agent' | 'human';
+  tool?: string;
+  scopeBoundary?: 'repo' | 'global';
+  attemptId?: string;
+  repoId?: string;
+  idempotencyKey?: string;
+  sessionId?: string;
+  sessionOffset?: number;
+  eventOffset?: number;
+}
+
+/** A successful {@link MemoryApi.observe} — the W4 response contract plus the outbox fields. */
+export interface ObserveSuccess {
+  ok: true;
+  /** `cand:<blake3>` — content-addressed; a repeat observation upserts the same id. */
+  id: string;
+  status: 'pending';
+  origin: 'observe' | 'attempt';
+  scope: MemoryScope;
+  /** true iff this content id was already staged (the idempotence signal). */
+  duplicate: boolean;
+  /** `cap:<blake3>` — the durable outbox entry written BEFORE the staging entry (G2.2). */
+  outboxId: string;
+  /** true iff the durable outbox upsert was a re-derive of an existing entry. */
+  idempotent: boolean;
+}
+
+export type ObserveResult = ObserveSuccess | CaptureFailure;
 
 /** One loose-name anchoring outcome (internal to {@link capture}, shared by both resolvers). */
 interface AnchorHit {
@@ -794,6 +860,12 @@ export interface MemoryApiDeps {
   evalCtx?: MemoryEvalContext;
   /** the code HEAD search provenance reports (the serving layer knows git HEAD). */
   codeHead?: string;
+  /**
+   * G2.2 — the capture-tightening policy section, injected directly (DI/tests). When absent it is
+   * loaded from `<cribDir>/memory/policy.json`'s `capture` section; a CORRUPT policy file fails the
+   * capture closed (a typed refusal, never a silent pass).
+   */
+  capturePolicy?: CapturePolicySection;
 }
 
 /** Which record collection a store role holds its records in (local calls its bucket `active`). */
@@ -857,11 +929,14 @@ export class MemoryApi {
    * promotion stays a separate CLI/CI gate. Auto-anchored: the loose `symbols`/`files` refs
    * resolve to soul ids, and the first spanned symbol backs a self-checked `source-quote` evidence
    * item. Anchoring NEVER fails the capture; the result reports `anchorStatus`. Idempotent by
-   * content id: a repeat capture of the same observation upserts the same `cand:` id.
+   * content id: a repeat capture of the same observation upserts the same `cand:` id. G2.2: the
+   * capture ALSO lands a durable `cap:` outbox entry (written first, via the shared
+   * {@link stageCandidate} funnel) so a crash before the staging write is recoverable at-least-once.
    */
   capture(input: CaptureInput): CaptureResult {
-    const local = this.deps.stores.local;
-    if (!local) return { ok: false, error: 'no local memory store is configured for capture' };
+    if (!this.deps.stores.local) {
+      return { ok: false, error: 'no local memory store is configured for capture' };
+    }
     const kind = input.kind ?? 'fact';
     if (!isMemoryRecordKind(kind)) {
       return {
@@ -946,28 +1021,232 @@ export class MemoryApi {
         ...(input.tool ? { tool: input.tool } : {}),
       },
     };
-    const candidate: MemoryCandidate = {
-      id: memoryCandidateId(candidateInput),
-      schemaVersion: '1',
+    const staged = this.stageCandidate({
       ...candidateInput,
       origin: 'observe',
-      proposedAt: this.now(),
-      meta: { anchorStatus },
-    };
-    const duplicate = this.holdsDirect(local, candidate.id, 'candidates');
-    local.upsertEntry('candidates', candidate); // write gate: validate + secret-scan
+      ...(input.idempotencyKey !== undefined ? { idempotencyKey: input.idempotencyKey } : {}),
+      ...(input.sessionId !== undefined ? { sessionId: input.sessionId } : {}),
+      ...(input.sessionOffset !== undefined ? { sessionOffset: input.sessionOffset } : {}),
+      ...(input.eventOffset !== undefined ? { eventOffset: input.eventOffset } : {}),
+      anchorStatus,
+    });
+    if (!staged.ok) return staged;
     return {
       ok: true,
-      id: candidate.id,
+      id: staged.id,
       status: 'pending',
       origin: 'observe',
-      scope: candidate.scope,
+      scope: candidateInput.scope,
       anchorStatus,
       evidenceAttached: evidence.length > 0,
       anchors: anchors.resolved,
       ambiguous: anchors.ambiguous,
       unresolvable: anchors.unresolvable,
-      duplicate,
+      duplicate: staged.duplicate,
+      outboxId: staged.outboxId,
+      idempotent: staged.idempotent,
+    };
+  }
+
+  // ── G2.2 — the unified staging funnel ───────────────────────────────────────
+
+  /**
+   * The ONE funnel every capture lane runs through (G2.2): capture (auto-anchored) and observe
+   * (disciplined) both end here, so the policy gate + durable outbox write + staging write cannot
+   * drift apart between lanes. Ordering is the whole point:
+   *
+   * 1. POLICY BEFORE ID — `checkCapturePolicy` runs before `memoryCandidateId`, because the
+   *    `cand:`/`cap:` ids are derived from the same claim content the policy reads: a redaction or
+   *    normalization applied after id computation would break idempotent dedupe (a re-capture of
+   *    the sanitized text would derive a DIFFERENT id than the refused one) and the cand↔cap
+   *    pairing. The check is pure and lock-free; a refusal writes NOTHING (never a silent drop —
+   *    the caller gets typed violations). The store's own `assertWritable` (schema + secret scan)
+   *    remains the unchanged last-line hard gate inside the upserts.
+   * 2. OUTBOX BEFORE STAGING — the durable `cap:` entry lands first, so a crash before the staging
+   *    entry is written leaves a replayable queue row; the re-capture re-derives the same id and
+   *    upserts no-op-ly.
+   * 3. ONE LOCK HOLD — both writes happen under a single same-store `withLock` hold (all sync, so
+   *    the process-global no-cross-store-nesting guard is never crossed with an async gap).
+   */
+  private stageCandidate(args: {
+    kind: MemoryCandidate['kind'];
+    subject: string;
+    claim: string;
+    scope: MemoryScope;
+    appliesTo: string[];
+    evidence: MemoryEvidence[];
+    authorship: MemoryCandidate['authorship'];
+    origin: 'observe' | 'attempt';
+    attemptId?: string;
+    idempotencyKey?: string;
+    sessionId?: string;
+    sessionOffset?: number;
+    eventOffset?: number;
+    anchorStatus?: CaptureAnchorStatus;
+  }):
+    | { ok: true; id: string; duplicate: boolean; outboxId: string; idempotent: boolean }
+    | { ok: false; error: string; violations?: readonly CapturePolicyViolation[] } {
+    const local = this.deps.stores.local;
+    if (!local) return { ok: false, error: 'no local memory store is configured for capture' };
+
+    // 1. Policy — BEFORE any id is computed. An injected section wins; else the committed
+    //    policy.json's `capture` section; absence is the documented defaulted-open posture. A
+    //    corrupt policy file fails CLOSED here (typed refusal, nothing written).
+    let policy: CapturePolicySection | undefined;
+    if (this.deps.capturePolicy) {
+      policy = this.deps.capturePolicy;
+    } else if (this.deps.cribDir) {
+      try {
+        policy = loadPolicy(this.deps.cribDir)?.capture;
+      } catch (e) {
+        return {
+          ok: false,
+          error: `capture policy failed to load — refusing to capture (fail closed): ${(e as Error).message}`,
+        };
+      }
+    }
+    const verdict = checkCapturePolicy(
+      { kind: args.kind, subject: args.subject, claim: args.claim, boundary: args.scope.boundary },
+      policy,
+    );
+    if (!verdict.ok) {
+      return {
+        ok: false,
+        error: 'capture refused by policy — fix the input or adjust the capture policy',
+        violations: verdict.violations,
+      };
+    }
+
+    // 2. Ids (pure) — the staging id and the outbox id derive from disjoint seeds and neither is
+    //    polluted by the policy pass (which read but never rewrote the input).
+    const candidate: MemoryCandidate = {
+      id: memoryCandidateId({
+        kind: args.kind,
+        subject: args.subject,
+        claim: args.claim,
+        scope: args.scope,
+        appliesTo: args.appliesTo,
+        evidence: args.evidence,
+        authorship: args.authorship,
+      }),
+      schemaVersion: '1',
+      kind: args.kind,
+      subject: args.subject,
+      claim: args.claim,
+      scope: args.scope,
+      appliesTo: args.appliesTo,
+      evidence: args.evidence,
+      authorship: args.authorship,
+      origin: args.origin,
+      ...(args.attemptId !== undefined ? { attemptId: args.attemptId } : {}),
+      proposedAt: this.now(),
+      ...(args.anchorStatus !== undefined ? { meta: { anchorStatus: args.anchorStatus } } : {}),
+    };
+    const outboxEntry = buildCaptureOutboxEntry(
+      {
+        kind: args.kind,
+        subject: args.subject,
+        claim: args.claim,
+        scope: args.scope,
+        appliesTo: args.appliesTo,
+        evidence: args.evidence,
+        authorship: args.authorship,
+        origin: args.origin,
+        ...(args.attemptId !== undefined ? { attemptId: args.attemptId } : {}),
+        ...(args.idempotencyKey !== undefined ? { idempotencyKey: args.idempotencyKey } : {}),
+        ...(args.sessionId !== undefined ? { sessionId: args.sessionId } : {}),
+        ...(args.sessionOffset !== undefined ? { sessionOffset: args.sessionOffset } : {}),
+        ...(args.eventOffset !== undefined ? { eventOffset: args.eventOffset } : {}),
+      },
+      candidate.proposedAt,
+    );
+
+    // 3. Durable outbox first, staging entry second — both under one same-store lock hold
+    //    (re-entrant: the upserts re-take it), never across an await.
+    const staged = local.withLock(() => {
+      const outbox = stageCaptureOutboxEntry(local, outboxEntry);
+      const duplicate = this.holdsDirect(local, candidate.id, 'candidates');
+      local.upsertEntry('candidates', candidate); // write gate: validate + secret-scan
+      return { ...outbox, duplicate };
+    });
+    return {
+      ok: true,
+      id: candidate.id,
+      duplicate: staged.duplicate,
+      outboxId: outboxEntry.id,
+      idempotent: staged.idempotent,
+    };
+  }
+
+  /**
+   * G2.2 — the disciplined observation ({@link ObserveInput} → staging tier), now routed through
+   * the same {@link stageCandidate} funnel as capture: same policy gate, same durable outbox write,
+   * same content-addressed dedupe. Unlike capture it defaults NOTHING (no kind fallback) and
+   * anchors NOTHING — the caller supplies explicit evidence and authorship; `origin` becomes
+   * `attempt` when an attemptId is supplied. Validation messages mirror the MCP verb's W4 contract.
+   */
+  observe(input: ObserveInput): ObserveResult {
+    const local = this.deps.stores.local;
+    if (!local) return { ok: false, error: 'no local memory store is configured for capture' };
+    const kind = input.kind;
+    if (!isMemoryRecordKind(kind)) {
+      return {
+        ok: false,
+        error: `invalid kind '${kind}' — expected one of fact, procedure, decision, pitfall, convention`,
+      };
+    }
+    if (typeof input.subject !== 'string' || input.subject.length === 0) {
+      return { ok: false, error: 'subject is required' };
+    }
+    if (typeof input.claim !== 'string' || input.claim.length === 0) {
+      return { ok: false, error: 'claim is required' };
+    }
+    if (typeof input.actor !== 'string' || input.actor.length === 0) {
+      return { ok: false, error: 'actor is required' };
+    }
+    const boundary = input.scopeBoundary ?? 'repo';
+    const scope: MemoryScope = { boundary };
+    if (boundary === 'repo') {
+      const repoId = this.resolveRepoId(input.repoId);
+      if (!repoId) {
+        return {
+          ok: false,
+          error:
+            'could not resolve a stable repoId for this repo — run `crib index` to register it before observing repo-scoped memory',
+        };
+      }
+      scope.repoId = repoId;
+    }
+    const origin: 'observe' | 'attempt' = input.attemptId ? 'attempt' : 'observe';
+    const staged = this.stageCandidate({
+      kind,
+      subject: input.subject,
+      claim: input.claim,
+      scope,
+      appliesTo: input.appliesTo ?? [],
+      evidence: input.evidence ?? [],
+      authorship: {
+        actor: input.actor,
+        kind: input.authorKind ?? 'agent',
+        ...(input.tool ? { tool: input.tool } : {}),
+      },
+      origin,
+      ...(input.attemptId !== undefined ? { attemptId: input.attemptId } : {}),
+      ...(input.idempotencyKey !== undefined ? { idempotencyKey: input.idempotencyKey } : {}),
+      ...(input.sessionId !== undefined ? { sessionId: input.sessionId } : {}),
+      ...(input.sessionOffset !== undefined ? { sessionOffset: input.sessionOffset } : {}),
+      ...(input.eventOffset !== undefined ? { eventOffset: input.eventOffset } : {}),
+    });
+    if (!staged.ok) return staged;
+    return {
+      ok: true,
+      id: staged.id,
+      status: 'pending',
+      origin,
+      scope,
+      duplicate: staged.duplicate,
+      outboxId: staged.outboxId,
+      idempotent: staged.idempotent,
     };
   }
 

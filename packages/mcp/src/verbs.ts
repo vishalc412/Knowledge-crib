@@ -27,11 +27,11 @@ import {
 } from '@knowledge-crib/core';
 import type { DossiersByScope as DossiersByScopeShape } from '@knowledge-crib/core';
 import {
+  type CaptureOutboxEntry,
   type ConflictGroup,
   type EffectiveVerdicts,
   FtsLexicalScorer,
   MemoryApi,
-  type MemoryCandidate,
   type MemoryDecision,
   type MemoryEvalContext,
   type MemoryEvaluator,
@@ -54,6 +54,7 @@ import {
   assertNoMemorySecrets,
   bridgedDecisions,
   buildAliasIndex,
+  captureRetryCount,
   conflictGroups,
   conservativeVerdicts,
   contradictedForReview,
@@ -62,9 +63,8 @@ import {
   isFeedbackSignal,
   isMemoryRecordV2,
   isRecallEligible,
-  memoryCandidateId,
+  pendingCaptures,
   quarantinedRecordIds,
-  readRepoId,
   recallProjection,
 } from '@knowledge-crib/memory';
 /**
@@ -179,6 +179,12 @@ const VCS_FACT_TTL_MS = 2000;
 
 const DEFAULT_OVERVIEW_ANALYSES = 40;
 
+/** G2.3 — how many pending/dead outbox entries the `memory{op:'outbox'}` report lists per section
+ *  (the counts stay exact; only the per-entry views cap). */
+const OUTBOX_ENTRY_CAP = 50;
+/** How many drained entries carry their decision trail (newest first). */
+const OUTBOX_DONE_CAP = 20;
+
 /** Floor for the `overview` analysis list, so a caller always receives some entries even when the
  *  envelope (module map + system bible) already fills the requested budget. */
 const MIN_OVERVIEW_LIST_TOKENS = 1500;
@@ -231,9 +237,6 @@ const EXTERNAL_CALLEE_PATTERNS: readonly RegExp[] = [
   /^(react|react-dom|lodash|axios|express|fastify|zod|vitest|jest|mocha|chai|commander)\b/i,
   /^(org\.springframework|org\.slf4j|com\.fasterxml|com\.google|io\.micrometer)\./i,
 ];
-
-/** The admissible claim kinds for a `memory_observe` candidate (mirrors the candidate schema enum). */
-const MEMORY_CANDIDATE_KINDS = new Set(['fact', 'procedure', 'decision', 'pitfall', 'convention']);
 
 // P0.2 note: the capture-anchoring helpers (loose-name resolution + the lifted-quote budget) lived
 // here until Gate 1.3; `memory{op:'capture'}` now delegates to the portable MemoryApi.capture,
@@ -337,6 +340,8 @@ const PUBLIC_VERBS = new Set<string>([
   'memoryDelete',
   'memoryHistory',
   'memorySync',
+  // G2.3 — the capture-outbox drain surface (read-only queue + decision report).
+  'memoryOutbox',
 ]);
 
 export class Verbs {
@@ -2478,6 +2483,75 @@ export class Verbs {
   }
 
   /**
+   * G2.3 — `memory{op:'outbox'}`: the capture-outbox drain surface. Read-only reporting of the
+   * LOCAL queue the distiller drains (the durable `cap:` entries capture/observe stage): how many
+   * entries are pending / done / dead, what the pending work is, and — for drained entries — the
+   * distill decision, its rationale, and whether crib VERIFIED it (the outbox entry's meta carries
+   * the audit trail; the provider proposed, crib disposed). Retries ride the content-addressed
+   * attempt events, so a pending entry's `retries` is exactly the distiller's failure count so far.
+   * The outbox/dead collections are local-only (the no-poison rule), so this reads the local store
+   * only and degrades to empty counts when it is absent.
+   */
+  memoryOutbox(args: { ifHash?: string }): Record<string, unknown> {
+    const local = this.memory?.local;
+    if (!local) return this.applyIfHash(args, { memory: 'not configured' });
+    const pending = pendingCaptures(local);
+    const dead = local.readCollection('dead').entries as CaptureOutboxEntry[];
+    const done = (local.readCollection('outbox').entries as CaptureOutboxEntry[]).filter(
+      (e) => e.status === 'done',
+    );
+    const pendingView = pending.slice(0, OUTBOX_ENTRY_CAP).map((e) => ({
+      id: e.id,
+      kind: e.kind,
+      subject: e.subject,
+      claim: e.claim,
+      origin: e.origin,
+      proposedAt: e.proposedAt,
+      retries: captureRetryCount(local, e.id),
+      ...(e.sessionId !== undefined ? { sessionId: e.sessionId } : {}),
+      ...(e.sessionOffset !== undefined ? { sessionOffset: e.sessionOffset } : {}),
+      ...(e.eventOffset !== undefined ? { eventOffset: e.eventOffset } : {}),
+    }));
+    const deadView = dead
+      .sort((a, b) => a.id.localeCompare(b.id))
+      .slice(0, OUTBOX_ENTRY_CAP)
+      .map((e) => ({
+        id: e.id,
+        kind: e.kind,
+        subject: e.subject,
+        claim: e.claim,
+        ...(typeof e.meta?.deadLetterReason === 'string'
+          ? { reason: e.meta.deadLetterReason }
+          : {}),
+      }));
+    // Done entries newest-first (proposedAt is the capture's origin time), capped — the decision
+    // trail is for orientation, not a full export.
+    const doneView = done
+      .sort((a, b) => String(b.proposedAt).localeCompare(String(a.proposedAt)))
+      .slice(0, OUTBOX_DONE_CAP)
+      .map((e) => ({
+        id: e.id,
+        kind: e.kind,
+        subject: e.subject,
+        proposedAt: e.proposedAt,
+        ...(typeof e.meta?.candidateId === 'string' ? { candidateId: e.meta.candidateId } : {}),
+        ...(typeof e.meta?.distillDecision === 'string'
+          ? { decision: e.meta.distillDecision }
+          : {}),
+        ...(typeof e.meta?.distillRationale === 'string'
+          ? { rationale: e.meta.distillRationale }
+          : {}),
+        ...(e.meta?.distillVerified === true ? { verified: true } : {}),
+      }));
+    return this.applyIfHash(args, {
+      counts: { pending: pending.length, done: done.length, dead: dead.length },
+      pending: pendingView,
+      ...(deadView.length > 0 ? { dead: deadView } : {}),
+      ...(doneView.length > 0 ? { done: doneView } : {}),
+    });
+  }
+
+  /**
    * W3 — memory ledger status (PRD `memory_status`): counts by trust / evidence / applicability /
    * lifecycle / source, plus `eligible` (recall-eligible), `quarantined`, and `pending` (local
    * candidate entries not yet promoted to active records). `fresh: true` in provenance means the
@@ -2610,10 +2684,15 @@ export class Verbs {
    * upserts to the same `cand:` id (idempotent dedupe). Promotion to a trusted record is a separate
    * CLI/CI step (`crib memory evaluate`/`activate`/`propose`).
    *
+   * G2.2 — the staging now flows through the portable {@link MemoryApi.observe}, i.e. the SAME
+   * funnel capture uses: one capture-policy gate (secrets / PII / paths / transcripts always on),
+   * then the durable `cap:` outbox write, then the staging entry — behavior-parity with the W4
+   * contract (same validations, same messages, same response fields) plus the additive
+   * `outboxId`/`idempotent` ack fields.
+   *
    * Degrades to `{ memory: 'not configured' }` when no local store is wired (mirrors the vcs / read
-   * verbs). The candidate's `scope.repoId` is resolved from the soul manifest / registry via
-   * {@link readRepoId}; a repo-scoped claim in a repo with no resolvable id is refused (the content
-   * id would be unstable across machines) rather than silently written with a blank repoId.
+   * verbs). A repo-scoped claim in a repo with no resolvable id is refused (the content id would be
+   * unstable across machines) rather than silently written with a blank repoId.
    */
   memoryObserve(args: {
     kind: string;
@@ -2627,68 +2706,40 @@ export class Verbs {
     tool?: string;
     scopeBoundary?: 'repo' | 'global';
     attemptId?: string;
+    /** G2.2 — caller-supplied dedupe key; part of the `cap:` outbox seed (never the `cand:` seed). */
+    idempotencyKey?: string;
     ifHash?: string;
   }): Record<string, unknown> {
-    const local = this.memory?.local;
-    if (!local) return this.applyIfHash(args, { memory: 'not configured' });
-    const kind = args.kind;
-    if (!MEMORY_CANDIDATE_KINDS.has(kind)) {
-      return this.applyIfHash(args, {
-        ok: false,
-        error: `invalid kind '${kind}' — expected one of ${[...MEMORY_CANDIDATE_KINDS].join(', ')}`,
-      });
-    }
-    if (typeof args.subject !== 'string' || args.subject.length === 0) {
-      return this.applyIfHash(args, { ok: false, error: 'subject is required' });
-    }
-    if (typeof args.claim !== 'string' || args.claim.length === 0) {
-      return this.applyIfHash(args, { ok: false, error: 'claim is required' });
-    }
-    if (typeof args.actor !== 'string' || args.actor.length === 0) {
-      return this.applyIfHash(args, { ok: false, error: 'actor is required' });
-    }
-    const boundary = args.scopeBoundary ?? 'repo';
-    const scope: { boundary: 'repo' | 'global'; repoId?: string } = { boundary };
-    if (boundary === 'repo') {
-      const repoId = readRepoId(this.deps.soul.cribDir);
-      if (!repoId) {
-        return this.applyIfHash(args, {
-          ok: false,
-          error:
-            'could not resolve a stable repoId for this repo — run `crib index` to register it before observing repo-scoped memory',
-        });
-      }
-      scope.repoId = repoId;
-    }
-    const origin: 'observe' | 'attempt' = args.attemptId ? 'attempt' : 'observe';
-    const input = {
-      kind: kind as MemoryCandidate['kind'],
+    const api = this.memoryApi();
+    if (!api) return this.applyIfHash(args, { memory: 'not configured' });
+    const result = api.observe({
+      kind: args.kind,
       subject: args.subject,
       claim: args.claim,
-      scope,
-      appliesTo: args.appliesTo ?? [],
-      evidence: (args.evidence ?? []) as MemoryEvidence[],
-      authorship: {
-        actor: args.actor,
-        kind: args.authorKind ?? 'agent',
-        ...(args.tool ? { tool: args.tool } : {}),
-      } as MemoryCandidate['authorship'],
-    };
-    const candidate: MemoryCandidate = {
-      id: memoryCandidateId(input),
-      schemaVersion: '1',
-      ...input,
-      origin,
-      ...(args.attemptId ? { attemptId: args.attemptId } : {}),
-      proposedAt: new Date().toISOString(),
-    };
-    // assertWritable (schema validate + secret scan) runs inside upsertEntry; a bad candidate throws.
-    local.upsertEntry('candidates', candidate);
+      ...(args.appliesTo !== undefined ? { appliesTo: args.appliesTo } : {}),
+      ...(args.evidence !== undefined ? { evidence: args.evidence as MemoryEvidence[] } : {}),
+      actor: args.actor,
+      ...(args.authorKind !== undefined ? { authorKind: args.authorKind } : {}),
+      ...(args.tool !== undefined ? { tool: args.tool } : {}),
+      ...(args.scopeBoundary !== undefined ? { scopeBoundary: args.scopeBoundary } : {}),
+      ...(args.attemptId !== undefined ? { attemptId: args.attemptId } : {}),
+      ...(args.idempotencyKey !== undefined ? { idempotencyKey: args.idempotencyKey } : {}),
+    });
+    if (!result.ok) {
+      return this.applyIfHash(args, {
+        ok: false,
+        error: result.error,
+        ...(result.violations !== undefined ? { violations: result.violations } : {}),
+      });
+    }
     return this.applyIfHash(args, {
-      id: candidate.id,
-      status: 'pending',
-      origin,
-      scope: candidate.scope,
+      ok: true,
+      id: result.id,
+      status: result.status,
+      origin: result.origin,
+      scope: result.scope,
+      outboxId: result.outboxId,
+      idempotent: result.idempotent,
     });
   }
 
@@ -2713,7 +2764,10 @@ export class Verbs {
    * knows exactly how checkable the candidate is. The record is still candidate-trust: candidates live
    * in the LOCAL `candidates` collection and never enter normal recall (only `includePending` shares
    * them); promotion stays a separate CLI/CI step. Content-addressed like `memory_observe`, so a
-   * repeat capture of the same observation upserts to the same `cand:` id.
+   * repeat capture of the same observation upserts to the same `cand:` id. G2.2: the capture runs
+   * the same unified staging funnel as observe — a capture-policy gate BEFORE anything is written
+   * (typed `violations`, nothing dropped silently) and a durable `cap:` outbox entry written first
+   * (acked as `outboxId` + `idempotent`) so a crash before the staging write replays.
    */
   memoryCapture(args: {
     /** the claim's topic key — a soul id, `art:` id, or `topic:<slug>` (mirrors observe). */
@@ -2729,6 +2783,11 @@ export class Verbs {
     actor: string;
     tool?: string;
     scopeBoundary?: 'repo' | 'global';
+    // G2.2 — durable-outbox capture-input fields (forwarded to the `cap:` id seed).
+    idempotencyKey?: string;
+    sessionId?: string;
+    sessionOffset?: number;
+    eventOffset?: number;
     ifHash?: string;
   }): Record<string, unknown> {
     const local = this.memory?.local;
@@ -2745,18 +2804,33 @@ export class Verbs {
       ...(args.symbols !== undefined ? { symbols: args.symbols } : {}),
       ...(args.tool !== undefined ? { tool: args.tool } : {}),
       ...(args.scopeBoundary !== undefined ? { scopeBoundary: args.scopeBoundary } : {}),
+      ...(args.idempotencyKey !== undefined ? { idempotencyKey: args.idempotencyKey } : {}),
+      ...(args.sessionId !== undefined ? { sessionId: args.sessionId } : {}),
+      ...(args.sessionOffset !== undefined ? { sessionOffset: args.sessionOffset } : {}),
+      ...(args.eventOffset !== undefined ? { eventOffset: args.eventOffset } : {}),
       actor: args.actor,
     });
-    if (!result.ok) return this.applyIfHash(args, { ok: false, error: result.error });
+    if (!result.ok) {
+      return this.applyIfHash(args, {
+        ok: false,
+        error: result.error,
+        ...(result.violations !== undefined ? { violations: result.violations } : {}),
+      });
+    }
     // Keep the MCP verb's exact W3 response contract: the portable CaptureSuccess adds `ok` and
     // `duplicate` and always-present arrays; the MCP surface keeps its conditional-array shape.
+    // G2.2 adds the durable-outbox ack fields (`outboxId` + `idempotent`), and `ok: true` makes
+    // the success shape symmetric with the policy-refusal shape (which carries `ok: false`).
     return this.applyIfHash(args, {
+      ok: true,
       id: result.id,
       status: 'pending',
       origin: 'observe',
       scope: result.scope,
       anchorStatus: result.anchorStatus,
       evidenceAttached: result.evidenceAttached,
+      outboxId: result.outboxId,
+      idempotent: result.idempotent,
       ...(result.anchors.length > 0 ? { anchors: result.anchors } : {}),
       ...(result.ambiguous.length > 0 ? { ambiguous: result.ambiguous } : {}),
       ...(result.unresolvable.length > 0 ? { unresolvable: result.unresolvable } : {}),

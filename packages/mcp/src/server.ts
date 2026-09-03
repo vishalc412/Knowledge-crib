@@ -313,6 +313,11 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
         tool: z.string().optional(),
         scopeBoundary: z.enum(['repo', 'global']).optional(),
         attemptId: z.string().optional(),
+        // ── G2.2 durable-outbox capture args (part of the `cap:` id seed) ──
+        idempotencyKey: z.string().optional(),
+        sessionId: z.string().optional(),
+        sessionOffset: z.number().int().optional(),
+        eventOffset: z.number().int().optional(),
         ifHash: z.string().optional(),
       },
     },
@@ -328,7 +333,7 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
     'memory',
     {
       description:
-        'Memory ledger operations, selected by `op`. get: one record by id (needs id; withEvidence for full evidence; follows legacy-ID aliases, and memory-2 records answer with their v2 fields - visibility, propositionKey, validTime/transactionTime, lineage - instead of v1 fields). search: ranked search over the ledger (q, sources, targetIds, limit, maxTokens) - the same projection memory_recall uses, including effective/alias-restored verdicts and conflict groups. supersede: replace a record with a successor (needs id + actor, and either successor=an existing record id or claim=a new claim text) - writes the v2 successor plus a supersede decision. delete: tombstone a record (needs id + actor) - appends a retract decision, never destroys the line. history: bi-temporal timeline for one key (needs key; asOf for a point-in-time read). sync: honest not-available placeholder (the sync engine ships in Gate 4). status: ledger counts by trust/evidence/lifecycle plus recall-eligible, quarantined, and pending. audit: read-only health report - drifted verdicts, conflict groups, a secret re-scan, trust distribution, locally quarantined records. capture: episodic capture to the candidate tier (needs subject, observation, actor) - loose refs in files/symbols are auto-anchored to a source-quote evidence item when they resolve; the candidate is pending trust and never enters normal recall. feedback: record LOCAL feedback on a record (needs subject, signal, actor); a `contradicted` signal quarantines only when backed by admissible counterEvidence, and never retracts team memory. To READ memory for a task use `memory_recall`; to WRITE a fully-formed grounded claim use `memory_observe`.',
+        'Memory ledger operations, selected by `op`. get: one record by id (needs id; withEvidence for full evidence; follows legacy-ID aliases, and memory-2 records answer with their v2 fields - visibility, propositionKey, validTime/transactionTime, lineage - instead of v1 fields). search: ranked search over the ledger (q, sources, targetIds, limit, maxTokens) - the same projection memory_recall uses, including effective/alias-restored verdicts and conflict groups. supersede: replace a record with a successor (needs id + actor, and either successor=an existing record id or claim=a new claim text) - writes the v2 successor plus a supersede decision. delete: tombstone a record (needs id + actor) - appends a retract decision, never destroys the line. history: bi-temporal timeline for one key (needs key; asOf for a point-in-time read). sync: honest not-available placeholder (the sync engine ships in Gate 4). outbox: read-only capture-outbox drain report (no args) - pending/done/dead counts, pending captures with their retry counts, and drained entries with their distill decision, rationale, and verified flag. status: ledger counts by trust/evidence/lifecycle plus recall-eligible, quarantined, and pending. audit: read-only health report - drifted verdicts, conflict groups, a secret re-scan, trust distribution, locally quarantined records. capture: episodic capture to the candidate tier (needs subject, observation, actor) - loose refs in files/symbols are auto-anchored to a source-quote evidence item when they resolve; the candidate is pending trust and never enters normal recall. feedback: record LOCAL feedback on a record (needs subject, signal, actor); a `contradicted` signal quarantines only when backed by admissible counterEvidence, and never retracts team memory. To READ memory for a task use `memory_recall`; to WRITE a fully-formed grounded claim use `memory_observe`.',
       inputSchema: {
         op: opSchema('memory'),
         id: z.string().optional(),
@@ -342,6 +347,11 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
         actor: z.string().optional(),
         tool: z.string().optional(),
         scopeBoundary: z.enum(['repo', 'global']).optional(),
+        // ── G2.2 durable-outbox capture args (part of the `cap:` id seed) ──
+        idempotencyKey: z.string().optional(),
+        sessionId: z.string().optional(),
+        sessionOffset: z.number().int().optional(),
+        eventOffset: z.number().int().optional(),
         context: z.string().optional(),
         counterEvidence: z.array(z.record(z.string(), z.unknown())).optional(),
         // ── search / history / supersede args (Gate 1.3 portable op set) ──
@@ -444,6 +454,10 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
           return TOOL_RESULT(
             verbs.memorySync({ ...(a.ifHash !== undefined ? { ifHash: a.ifHash } : {}) }),
           );
+        case 'outbox':
+          return TOOL_RESULT(
+            verbs.memoryOutbox({ ...(a.ifHash !== undefined ? { ifHash: a.ifHash } : {}) }),
+          );
         case 'audit':
           return TOOL_RESULT(
             verbs.memoryAudit({ ...(a.ifHash !== undefined ? { ifHash: a.ifHash } : {}) }),
@@ -466,6 +480,10 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
               ...(a.symbols !== undefined ? { symbols: a.symbols } : {}),
               ...(a.tool !== undefined ? { tool: a.tool } : {}),
               ...(a.scopeBoundary !== undefined ? { scopeBoundary: a.scopeBoundary } : {}),
+              ...(a.idempotencyKey !== undefined ? { idempotencyKey: a.idempotencyKey } : {}),
+              ...(a.sessionId !== undefined ? { sessionId: a.sessionId } : {}),
+              ...(a.sessionOffset !== undefined ? { sessionOffset: a.sessionOffset } : {}),
+              ...(a.eventOffset !== undefined ? { eventOffset: a.eventOffset } : {}),
               ...(a.ifHash !== undefined ? { ifHash: a.ifHash } : {}),
             }),
           );

@@ -168,6 +168,42 @@ export interface MemoryCandidate {
 }
 
 /**
+ * The durable capture-outbox entry (G2.2). Written BEFORE the {@link MemoryCandidate} it stages, so
+ * a crash mid-capture leaves a durable replay record: the distiller drains `pending` entries
+ * at-least-once, and a re-capture re-derives the SAME `cap:` id (semantic seed in
+ * {@link captureEntryId}) so a re-capture is an idempotent upsert. Carries the FULL capture payload
+ * (scope/appliesTo/evidence/authorship) so distillation can rebuild the staging entry without
+ * re-anchoring — but never a raw transcript: prose lives only as the structured claim text
+ * (the {@link StructuredSummary}-only law).
+ */
+export interface CaptureOutboxEntry {
+  /** `cap:<blake3>` — content-addressed from the capture's semantic identity (id seed FROZEN). */
+  id: string;
+  schemaVersion: '1';
+  kind: MemoryRecordKind;
+  subject: string;
+  /** what was observed — structured prose only, never a raw transcript. */
+  claim: string;
+  scope: MemoryScope;
+  appliesTo: string[];
+  evidence: MemoryEvidence[];
+  authorship: Authorship;
+  /** where the eventual staging entry came from (mirrors MemoryCandidate.origin). */
+  origin: 'observe' | 'attempt';
+  attemptId?: string;
+  /** caller-supplied dedupe key (a re-capture with the same key re-derives the same `cap:` id). */
+  idempotencyKey?: string;
+  /** capture-input stream position — carried on the entry, part of the id seed. */
+  sessionId?: string;
+  sessionOffset?: number;
+  eventOffset?: number;
+  /** queue lifecycle: `pending` (drain me) → `done` (distilled) | `dead` (dead-lettered). */
+  status: 'pending' | 'done' | 'dead';
+  proposedAt: string;
+  meta?: Record<string, unknown>;
+}
+
+/**
  * A structured attempt-lifecycle event (PRD W5; the type lands in the schema). NEVER raw prompts,
  * transcripts, or chain-of-thought — only structured summaries, file/target refs, error
  * fingerprints, and receipt ids.
@@ -412,6 +448,7 @@ export type MemoryEntry =
   | MemoryRecord
   | MemoryRecordV2
   | MemoryCandidate
+  | CaptureOutboxEntry
   | AttemptEvent
   | GateReceipt
   | MemoryDecision

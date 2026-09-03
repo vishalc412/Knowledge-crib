@@ -4,6 +4,7 @@ import {
   ALIAS_SCHEMA,
   ATTEMPT_SCHEMA,
   CANDIDATE_SCHEMA,
+  CAPTURE_SCHEMA,
   DECISION_SCHEMA,
   FEEDBACK_SCHEMA,
   MEMORY_MANIFEST_SCHEMA,
@@ -16,10 +17,11 @@ import {
  * Compiled once, reused per record. Closed enums for kind/verdict/evidence-kind/signal/phase/
  * runner mean an unknown value fails validation — the W2 exit gate "unknown schemas fail closed"
  * starts here. The id-prefix `pattern` anchors in each schema additionally enforce the
- * content-addressed id grammar (`mem:`/`cand:`/`att:`/`rcpt:`/`dec:`/`fb:` + hex).
+ * content-addressed id grammar (`mem:`/`cand:`/`cap:`/`att:`/`rcpt:`/`dec:`/`fb:` + hex).
  */
 import type {
   AttemptEvent,
+  CaptureOutboxEntry,
   GateReceipt,
   MemoryAlias,
   MemoryCandidate,
@@ -35,6 +37,7 @@ const ajv = new Ajv({ allErrors: true, strict: false });
 const validateRecordFn: ValidateFunction = ajv.compile(RECORD_SCHEMA);
 const validateRecordV2Fn: ValidateFunction = ajv.compile(RECORD_V2_SCHEMA);
 const validateCandidateFn: ValidateFunction = ajv.compile(CANDIDATE_SCHEMA);
+const validateCaptureFn: ValidateFunction = ajv.compile(CAPTURE_SCHEMA);
 const validateAttemptFn: ValidateFunction = ajv.compile(ATTEMPT_SCHEMA);
 const validateReceiptFn: ValidateFunction = ajv.compile(RECEIPT_SCHEMA);
 const validateDecisionFn: ValidateFunction = ajv.compile(DECISION_SCHEMA);
@@ -99,6 +102,11 @@ export function assertValidMemoryCandidate(candidate: MemoryCandidate): void {
   if (!ok) throw new MemorySchemaError('candidate', validateCandidateFn.errors, candidate.id);
 }
 
+export function assertValidCaptureOutboxEntry(entry: CaptureOutboxEntry): void {
+  const ok: boolean = validateCaptureFn(entry);
+  if (!ok) throw new MemorySchemaError('capture-outbox', validateCaptureFn.errors, entry.id);
+}
+
 export function assertValidAttemptEvent(event: AttemptEvent): void {
   const ok: boolean = validateAttemptFn(event);
   if (!ok) throw new MemorySchemaError('attempt', validateAttemptFn.errors, event.id);
@@ -136,6 +144,7 @@ export function assertValidMemoryAlias(alias: MemoryAlias): void {
  *  validator is picked by the entry's declared `schemaVersion` instead (see RECORD_VALIDATORS). */
 const ENTRY_VALIDATORS: Record<string, { validate: ValidateFunction; label: string }> = {
   cand: { validate: validateCandidateFn, label: 'candidate' },
+  cap: { validate: validateCaptureFn, label: 'capture-outbox' },
   att: { validate: validateAttemptFn, label: 'attempt' },
   rcpt: { validate: validateReceiptFn, label: 'receipt' },
   dec: { validate: validateDecisionFn, label: 'decision' },

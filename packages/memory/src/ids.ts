@@ -205,6 +205,39 @@ export function memoryCandidateId(candidate: {
   return `cand:${blake3Hex(claimBody(candidate))}`;
 }
 
+/**
+ * `cap:<blake3>` — the durable capture-outbox entry's content id (G2.2). The seed is the capture's
+ * semantic identity — idempotency key, session/event offsets, kind, subject, normalized
+ * observation, actor — and NOTHING else: `proposedAt`, status, retries, and meta are mutable
+ * queue-lifecycle state and are excluded, so a re-capture re-derives the SAME `cap:` id and the
+ * upsert is a no-op (idempotent dedupe), and a `pending` entry can transition to `done`/`dead`
+ * in place without its id moving. THE SEED IS FROZEN once landed: changing it re-ids every
+ * existing outbox entry and breaks crash-recovery dedupe across deploys.
+ */
+export function captureEntryId(entry: {
+  idempotencyKey?: string;
+  sessionId?: string;
+  sessionOffset?: number;
+  eventOffset?: number;
+  kind: string;
+  subject: string;
+  claim: string;
+  actor: string;
+}): string {
+  return `cap:${blake3Hex(
+    canonical({
+      idempotencyKey: entry.idempotencyKey,
+      sessionId: entry.sessionId,
+      sessionOffset: entry.sessionOffset,
+      eventOffset: entry.eventOffset,
+      kind: entry.kind,
+      subject: entry.subject,
+      claim: normalizeClaim(entry.claim),
+      actor: entry.actor,
+    }),
+  )}`;
+}
+
 /** `att:<blake3>` — an attempt event's content id (excludes `ts`/`meta`). */
 export function attemptEventId(event: {
   attemptId: string;

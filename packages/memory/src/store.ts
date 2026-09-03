@@ -66,7 +66,9 @@ export type MemoryCollection =
   | 'attempts'
   | 'candidates'
   | 'active'
-  | 'feedback';
+  | 'feedback'
+  | 'outbox'
+  | 'dead';
 
 const TEAM_COLLECTIONS: readonly MemoryCollection[] = ['records', 'decisions', 'receipts'];
 const LOCAL_COLLECTIONS: readonly MemoryCollection[] = [
@@ -76,11 +78,20 @@ const LOCAL_COLLECTIONS: readonly MemoryCollection[] = [
   'feedback',
   'receipts',
   'decisions',
+  'outbox',
+  'dead',
 ];
 const GLOBAL_COLLECTIONS: readonly MemoryCollection[] = ['records', 'decisions', 'feedback'];
 
-/** `active` local records count under `records` (the local equivalent of team/global's records bucket). */
-function collectionCountKey(c: MemoryCollection): keyof MemoryCounts {
+/**
+ * `active` local records count under `records` (the local equivalent of team/global's records
+ * bucket). The G2.2 machine-local queue collections (`outbox`, `dead`) deliberately have NO count
+ * key: the manifest's `counts` object is closed (`additionalProperties: false`, six fixed keys) and
+ * those collections are durable queue state, not claim counts — inflating e.g. `candidates` with
+ * outbox rows would lie to every manifest consumer. Queue visibility comes from
+ * `pendingCaptures()`/`readCollection('outbox')`, never the manifest.
+ */
+function collectionCountKey(c: MemoryCollection): keyof MemoryCounts | undefined {
   switch (c) {
     case 'records':
     case 'active':
@@ -95,6 +106,9 @@ function collectionCountKey(c: MemoryCollection): keyof MemoryCounts {
       return 'decisions';
     case 'feedback':
       return 'feedback';
+    case 'outbox':
+    case 'dead':
+      return undefined;
   }
 }
 
@@ -733,8 +747,10 @@ export class MemoryStore {
       feedback: 0,
     };
     for (const collection of this.init.collections) {
+      const key = collectionCountKey(collection);
+      if (key === undefined) continue; // machine-local queue collections: not claim counts
       const { entries } = this.readCollection(collection);
-      counts[collectionCountKey(collection)] += entries.length;
+      counts[key] += entries.length;
     }
     return counts;
   }

@@ -73,6 +73,8 @@ export const CAPABILITIES: readonly Capability[] = [
       { op: 'delete', verb: 'memoryDelete' },
       { op: 'history', verb: 'memoryHistory' },
       { op: 'sync', verb: 'memorySync' },
+      // G2.3 — the capture-outbox drain surface: queue counts + per-entry distill decisions.
+      { op: 'outbox', verb: 'memoryOutbox' },
     ],
   },
   {
