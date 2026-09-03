@@ -23,15 +23,18 @@
  *     those bytes survive.
  *   - **`delete` is a tombstone.** Memory is append-only: delete appends a `retract` decision (the
  *     record line stays), so search excludes the record while history/audit still see it.
- *   - **`sync` is honest.** It reports not-available and names Gate 4; no engine is stubbed.
+ *   - **`sync` is honest.** The Gate-4 engine runs over an INJECTED {@link SyncObjectStore} port;
+ *     an unconfigured repo reports not-configured and names the seeding command — nothing is
+ *     pretended, and nothing is invented to fill a missing port.
  *
  * Store-backed, not IO-abstracted: the ops read/write through {@link MemoryStore}'s locked +
  * atomic + validated + secret-scanned write gate. The pure helpers ({@link believedLifecycle},
- * {@link validTimeHoldsAt}, {@link validityOf}, {@link visibilityOf}, {@link syncNotAvailable}) are
- * exported separately for unit testing and for SDK ports that need the same semantics without a
- * store. NO wall-clock read inside any id/hash/pure function — the clock enters only through the
- * caller-supplied `now` port.
+ * {@link validTimeHoldsAt}, {@link validityOf}, {@link visibilityOf}, {@link syncNotConfigured},
+ * {@link isCleanGitTree}, {@link gitLogSHits}) are exported separately for unit testing and for SDK
+ * ports that need the same semantics without a store. NO wall-clock read inside any id/hash/pure
+ * function — the clock enters only through the caller-supplied `now` port.
  */
+import { spawnSync } from 'node:child_process';
 import { type RehydratedBody, type SoulStore, rehydrateBody } from '@knowledge-crib/core';
 import type { Node } from '@knowledge-crib/soul-schema';
 import {
@@ -75,7 +78,11 @@ import {
   memoryRecordV2Id,
   memoryShard,
 } from './ids.js';
-import { DEFAULT_RETENTION_POLICY_ID, migrationProvenance } from './migrations.js';
+import {
+  DEFAULT_MIGRATION_PRINCIPAL_ID,
+  DEFAULT_RETENTION_POLICY_ID,
+  migrationProvenance,
+} from './migrations.js';
 import { buildCaptureOutboxEntry, stageCaptureOutboxEntry } from './outbox.js';
 import { readRepoId } from './paths.js';
 import { type CapturePolicySection, loadPolicy } from './policy.js';
@@ -90,7 +97,27 @@ import {
   recallProjection,
 } from './recall.js';
 import type { MemoryCollection, MemoryStore } from './store.js';
+import { TeamPrivateVisibilityError } from './store.js';
+import type { SyncObjectStore } from './sync/adapter.js';
+import { type SeedBaselineResult, seedSyncBaseline } from './sync/bootstrap.js';
+import { keyFingerprint, resolveSyncKey, routeKeyFor } from './sync/crypto.js';
+import {
+  type SyncConfigFile,
+  type SyncPullResult,
+  type SyncPushResult,
+  type SyncStatusResult,
+  pullSync,
+  pushSync,
+  readSyncConfig,
+  syncConfigPath,
+  syncEngineStatus,
+  writeSyncConfig,
+} from './sync/engine.js';
+import { type SyncEventPayload, type SyncStoreScope, deriveEventId } from './sync/event.js';
+import { type ConflictRecord, loadSyncState, saveSyncState } from './sync/queue.js';
+import { type SyncStageContext, stageSyncableWrite } from './sync/stage.js';
 import type {
+  CaptureOutboxEntry,
   MemoryAlias,
   MemoryCandidate,
   MemoryDecision,
@@ -256,37 +283,205 @@ export function believedLifecycle(
   return { lifecycle, quarantined };
 }
 
-// ─── the sync non-capability (declared, honestly unavailable) ─────────────────
+// ─── sync (Gate 4 — the port-injected engine surface, ADR-003 D12) ───────────
 
-/** The honest response shape for {@link MemoryApi.sync}: a declared capability with no engine. */
+/** The honest response when sync is not configured for the requested stores: nothing was read,
+ *  written, or transferred. */
 export interface SyncResult {
   ok: false;
   available: false;
   capability: 'sync';
-  status: 'not-implemented';
-  /** the plan gate that owns the sync engine — named so the caller knows where to look. */
-  gate: 'Gate 4';
+  status: 'not-configured';
   message: string;
-  /** the request echoed back, untouched: nothing was read, written, or transferred. */
+  /** the request echoed back, untouched. */
   request: Record<string, unknown>;
 }
 
-/**
- * The declared-but-not-implemented sync capability. `sync` is in the portable contract so every
- * adapter can REGISTER the name, but no sync engine exists in this release — returning an
- * engineered success or a silent no-op would be the dishonest version of this function. PURE.
- */
-export function syncNotAvailable(request: Record<string, unknown> = {}): SyncResult {
+/** The honest not-configured shape (ADR-003 D12: reworded from the Gate-4 placeholder — the engine
+ *  EXISTS now; what is missing is this repo's configuration). PURE. */
+export function syncNotConfigured(request: Record<string, unknown> = {}): SyncResult {
   return {
     ok: false,
     available: false,
     capability: 'sync',
-    status: 'not-implemented',
-    gate: 'Gate 4',
+    status: 'not-configured',
     message:
-      'cross-device / cross-store memory sync ships in Gate 4; no sync engine exists in this release — nothing was read, written, or transferred',
+      'sync is not configured for this repo; run `crib memory init-sync` to seed a store before pushing or pulling',
     request,
   };
+}
+
+/**
+ * D11's clean-tree gate for the team opt-in: `git status --porcelain` with NO output. Not git —
+ * spawnSync is read-only. An unreadable repo (no git, no .git) is NOT clean — fail closed.
+ */
+export function isCleanGitTree(repoRoot: string): boolean {
+  const res = spawnSync('git', ['status', '--porcelain'], { cwd: repoRoot, encoding: 'utf8' });
+  if (res.error !== undefined || res.status !== 0) return false;
+  return (res.stdout ?? '').trim().length === 0;
+}
+
+/**
+ * D11's `--history-scan`: the read-only `git log -S<id>` sweep over the memory directory — which
+ * commits ever carried the id. NEVER rewrites history; the report is advisory.
+ */
+export function gitLogSHits(id: string, repoRoot: string): string[] {
+  const res = spawnSync('git', ['log', `-S${id}`, '--format=%h %s', '--', '.crib/memory'], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+  });
+  if (res.error !== undefined || res.status !== 0) return [];
+  return (res.stdout ?? '')
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
+}
+
+/** The {@link MemoryApi.sync} request (D12): the backend port is INJECTED — memory stays pure over
+ *  it, mirroring MemorySoulPort. `backend` is required for push/pull, optional for status. */
+export interface SyncApiRequest {
+  op: 'push' | 'pull' | 'status';
+  backend?: SyncObjectStore;
+  /** which stores to run (default: every configured participant — local and global; team is never
+   *  a participant, D2). */
+  stores?: SyncStoreScope[];
+  dryRun?: boolean;
+  /** push only: cap the events pushed this run. */
+  maxEvents?: number;
+  /** push only: D5 — stage every live entry even if the init baseline acked it. */
+  backfill?: boolean;
+  /** pull only: D8 — quarantine an offending event instead of halting. */
+  skip?: boolean;
+  /** the key BYTES, pre-resolved + fingerprint-verified by the caller (D7). When absent the API
+   *  re-resolves fail-closed from the sync config — but a caller that already verified the key
+   *  passes it here so the run uses EXACTLY the verified bytes (no re-resolution divergence). */
+  key?: Uint8Array;
+  /** the stable cross-clone sync id override (the sync config's `syncRepoId`) for the local
+   *  scope; when absent the engine falls back to each store's manifest `repo.id`. */
+  syncRepoId?: string;
+}
+
+/** One store's outcome inside a {@link SyncRunResult}. */
+export interface SyncStoreRun {
+  store: SyncStoreScope;
+  ok: boolean;
+  push?: SyncPushResult;
+  pull?: SyncPullResult;
+  error?: string;
+}
+
+/** A push/pull run across the participant stores. */
+export interface SyncRunResult {
+  ok: boolean;
+  op: 'push' | 'pull';
+  dryRun: boolean;
+  stores: SyncStoreRun[];
+  message?: string;
+}
+
+/** A status report: honest empty shapes — an un-initialized store reports not-initialized. */
+export interface SyncStatusReport {
+  ok: true;
+  op: 'status';
+  stores: SyncStatusResult[];
+}
+
+export type SyncResponse = SyncRunResult | SyncStatusReport | SyncResult;
+
+/** {@link MemoryApi.syncInit} — the config is the FILE's shape minus key material: the config
+ *  stores only a REFERENCE to the key source + the fingerprint (D7 — never key bytes). */
+export interface SyncInitInput {
+  scope: SyncStoreScope;
+  deviceId: string;
+  /** the key BYTES (used to derive the fingerprint and to verify resolution — never persisted). */
+  key: Uint8Array;
+  /** where the key lives (recorded as a reference; the file never carries the bytes). */
+  keySource?: 'env' | 'keyfile';
+  /** D5 — seed the baseline as a FULL backfill instead of "all current entries acked". */
+  backfill?: boolean;
+  /** the env-var NAME the key resolves from (a reference, never the value — D7). */
+  keyEnv?: string;
+  /** the keyfile PATH the key resolves from (a reference, never the bytes — D7). */
+  keyFile?: string;
+  /** the user-owned backend target (D6) recorded so a later push/pull resolves the port. */
+  backend?: SyncConfigFile['backend'];
+  /** the stable cross-clone sync id for the LOCAL scope (init-sync `--sync-id`), recorded in the
+   *  config as a reference and threaded into every later push/pull/purge derivation. */
+  syncRepoId?: string;
+}
+
+export interface SyncInitResult {
+  ok: boolean;
+  scope: SyncStoreScope;
+  /** the sync-state seeding result (undefined when the store is not configured). */
+  baseline?: SeedBaselineResult;
+  configPath?: string;
+  keyFingerprint?: string;
+  keyEpoch?: number;
+  error?: string;
+}
+
+/** The resolution a human appends to a same-id-different-bytes conflict (D8: append-only). */
+export interface ConflictResolution {
+  /** append a supersede decision naming this successor. */
+  successor?: string;
+  /** append a retract decision. */
+  retract?: boolean;
+}
+
+/** The D11 purge request. No wildcards; `confirmIds` must repeat the exact purge list. */
+export interface PurgeOpts {
+  actor: string;
+  confirmIds: string[];
+  /** which stores to purge (default local + global). `team` only when EXPLICITLY listed. */
+  stores?: MemorySource[];
+  dryRun?: boolean;
+  /** read-only `git log -S<id> -- .crib/memory/` report — the honest irreversible-deletion limit. */
+  historyScan?: boolean;
+  /** when supplied, the remote blobs for the purged ids are deleted (terminal state first) and the
+   *  purge-ack recorded in sync-state LAST (D11). */
+  backend?: SyncObjectStore;
+  /** the sync key, required with `backend` to derive the routed blob keys. */
+  syncKey?: Uint8Array;
+  /** per-scope routes: each purged scope resolves its OWN backend + key (a global-scope sync
+   *  config has a different backend/key than a local-scope one — one shared route misroutes the
+   *  remote deletes). `backend`/`syncKey` remain the fallback applying to both scopes. */
+  routes?: Partial<Record<SyncStoreScope, { backend: SyncObjectStore; syncKey: Uint8Array }>>;
+  /** the stable cross-clone sync id override for the local scope's purge-tombstone derivation. */
+  syncRepoId?: string;
+}
+
+export interface PurgeStoreReport {
+  store: MemorySource;
+  /** the retract decision id (the synced, replayable part — D9). */
+  decisionId?: string;
+  /** whether the physical line was removed (team is append-only — never removed). */
+  removed: boolean;
+  /** same-seed twins physically swept with the record (cand:, feedback, capture outbox/dead). */
+  twins: string[];
+  /** a DESIGNED-SUCCESS team outcome (append-only held, tombstone synced) — a non-error note so
+   *  the CLI exits 0 on a team purge that did exactly what D11 says a team purge does. */
+  teamOutcome?: 'retract-only';
+  error?: string;
+}
+
+export interface PurgeTargetReport {
+  /** the requested memory id. */
+  id: string;
+  found: boolean;
+  stores: PurgeStoreReport[];
+  /** the alias-resolved twin purged alongside (alias lines RETAINED — deliberate audit history). */
+  resolvedTwin?: string;
+  /** historyScan hits: commits whose diff still contains the id. */
+  commits?: string[];
+  error?: string;
+}
+
+export interface PurgeResult {
+  ok: boolean;
+  dryRun: boolean;
+  purged: PurgeTargetReport[];
+  message?: string;
 }
 
 // ─── shared result shapes ────────────────────────────────────────────────────
@@ -1541,7 +1736,14 @@ export class MemoryApi {
             ...successor.record,
             lineage: { ...successor.record.lineage, supersedes: [...supersedes].sort() },
           };
-          successor.store.upsertEntry(recordCollectionOf(successor.store), updated);
+          try {
+            successor.store.upsertEntry(recordCollectionOf(successor.store), updated);
+          } catch (err) {
+            // D10 — the store's write gate refuses a private record at the team store; surface the
+            // refusal instead of crashing (no partial supersede: the decision never lands either).
+            if (err instanceof TeamPrivateVisibilityError) return { ok: false, error: err.message };
+            throw err;
+          }
         }
       }
     } else {
@@ -1588,7 +1790,14 @@ export class MemoryApi {
         successor.id,
         recordCollectionOf(decisionStore),
       );
-      decisionStore.upsertEntry(recordCollectionOf(decisionStore), successor);
+      try {
+        decisionStore.upsertEntry(recordCollectionOf(decisionStore), successor);
+      } catch (err) {
+        // D10 — the store's write gate refuses a private successor at the team store; surface the
+        // refusal instead of crashing (no partial supersede: the decision never lands either).
+        if (err instanceof TeamPrivateVisibilityError) return { ok: false, error: err.message };
+        throw err;
+      }
     }
 
     const decision = supersedeDecision(
@@ -1598,7 +1807,13 @@ export class MemoryApi {
       opts.reason ?? 'superseded via the portable memory API',
       this.now(),
     );
-    decisionStore.upsertEntry('decisions', decision);
+    // The write and its sync stage are ONE lock hold (D4): a crash after the write but before the
+    // stage heals on the next push's sweep — but staging here makes the tombstone visible to peers
+    // on THIS push, not only on the next one.
+    decisionStore.withLock(() => {
+      decisionStore.upsertEntry('decisions', decision);
+      this.stageWrite(decisionStore, 'decision.append', decision, opts.actor);
+    });
     return {
       ok: true,
       supersededId,
@@ -1634,7 +1849,11 @@ export class MemoryApi {
       reason,
       ts: this.now(),
     };
-    store.upsertEntry('decisions', decision);
+    // Same one-lock-hold law as supersede: the tombstone stages for sync the moment it lands.
+    store.withLock(() => {
+      store.upsertEntry('decisions', decision);
+      this.stageWrite(store, 'decision.append', decision, opts.actor);
+    });
     return {
       ok: true,
       id: resolvedId,
@@ -1777,15 +1996,529 @@ export class MemoryApi {
     };
   }
 
-  // ── sync (declared, honestly unavailable) ──────────────────────────────────
+  // ── sync (Gate 4 — the port-injected engine surface, ADR-003 D12) ─────────
 
   /**
-   * The declared sync capability. Returns an honest not-available response naming Gate 4 — the
-   * contract registers the operation everywhere, but no sync engine exists in this release and
-   * nothing is pretended. Do NOT implement the engine here (Gate 4 owns it).
+   * Run the sync engine across the participant stores (local + global — team is never a
+   * participant, D2). The backend port is INJECTED per call; the key resolves fail-closed from the
+   * env/keyfile (D7). Unconfigured stores return the honest not-configured shape — nothing is
+   * pretended. `status` needs no backend and reports the sidecar + remote state read-only.
    */
-  sync(request: Record<string, unknown> = {}): SyncResult {
-    return syncNotAvailable(request);
+  async sync(request: SyncApiRequest): Promise<SyncResponse> {
+    const participants = this.syncParticipants(request.stores);
+    const asRequest = request as unknown as Record<string, unknown>;
+    if (participants.length === 0) return syncNotConfigured(asRequest);
+    if (request.op === 'status') {
+      const key = this.syncKeyOrUndefined();
+      const stores: SyncStatusResult[] = [];
+      for (const p of participants) {
+        stores.push(
+          await syncEngineStatus(p.store, {
+            backend: request.backend,
+            ...(request.backend !== undefined && key ? { key } : {}),
+          }),
+        );
+      }
+      return { ok: true, op: 'status', stores };
+    }
+    if (request.backend === undefined) {
+      return {
+        ok: false,
+        available: false,
+        capability: 'sync',
+        status: 'not-configured',
+        message: `op '${request.op}' requires a backend object-store port (SyncObjectStore)`,
+        request: asRequest,
+      };
+    }
+    // A caller-supplied key (pre-resolved + fingerprint-verified — the CLI does exactly this) wins:
+    // the run uses EXACTLY the verified bytes instead of re-resolving and hoping the two agree.
+    const key = request.key ?? this.syncKeyOrUndefined();
+    if (!key) {
+      return {
+        ok: false,
+        op: request.op,
+        dryRun: request.dryRun === true,
+        stores: [],
+        message:
+          'no sync key resolved (set KCRIB_SYNC_KEY or a 0600 keyfile) — sync fails closed (D7)',
+      };
+    }
+    const principalId = this.env.KCRIB_PRINCIPAL_ID ?? DEFAULT_MIGRATION_PRINCIPAL_ID;
+    // A bound closure, not the bare method reference — the engine calls `now()` unbound, and an
+    // unbound `this.now()` reaches for `this.nowFn` on `undefined`.
+    const now = () => this.now();
+    const stores: SyncStoreRun[] = [];
+    for (const p of participants) {
+      try {
+        if (request.op === 'push') {
+          const push = await pushSync(p.store, request.backend, {
+            key,
+            principalId,
+            now,
+            dryRun: request.dryRun,
+            maxEvents: request.maxEvents,
+            backfill: request.backfill,
+            ...(p.scope === 'local' && request.syncRepoId !== undefined
+              ? { syncRepoId: request.syncRepoId }
+              : {}),
+          });
+          stores.push({ store: p.scope, ok: push.ok, push });
+        } else {
+          const pull = await pullSync(p.store, request.backend, {
+            key,
+            principalId,
+            now,
+            dryRun: request.dryRun,
+            skip: request.skip,
+            ...(p.scope === 'local' && request.syncRepoId !== undefined
+              ? { syncRepoId: request.syncRepoId }
+              : {}),
+          });
+          stores.push({ store: p.scope, ok: pull.ok, pull });
+        }
+      } catch (err) {
+        stores.push({ store: p.scope, ok: false, error: (err as Error).message });
+      }
+    }
+    return {
+      ok: stores.every((s) => s.ok),
+      op: request.op,
+      dryRun: request.dryRun === true,
+      stores,
+    };
+  }
+
+  /** The status half of {@link sync} as its own op (honest empty shapes when unconfigured). */
+  async syncStatus(
+    opts: { backend?: SyncObjectStore; stores?: SyncStoreScope[] } = {},
+  ): Promise<SyncStatusReport> {
+    const participants = this.syncParticipants(opts.stores);
+    const key = this.syncKeyOrUndefined();
+    const stores: SyncStatusResult[] = [];
+    for (const p of participants) {
+      stores.push(
+        await syncEngineStatus(p.store, {
+          backend: opts.backend,
+          ...(opts.backend !== undefined && key ? { key } : {}),
+        }),
+      );
+    }
+    return { ok: true, op: 'status', stores };
+  }
+
+  /**
+   * `init-sync` (D5/D7): seed the sync-state baseline for one store AND write its config file —
+   * the config carries a keySource REFERENCE + fingerprint + epoch, NEVER key bytes. Idempotent:
+   * a re-init returns the existing baseline unchanged (repair paths are the sweep, never a re-seed).
+   */
+  async syncInit(input: SyncInitInput): Promise<SyncInitResult> {
+    const p = this.syncParticipants([input.scope])[0];
+    if (!p) {
+      return { ok: false, scope: input.scope, error: `no ${input.scope} store is configured` };
+    }
+    const baseline = seedSyncBaseline(p.store, {
+      deviceId: input.deviceId,
+      backfill: input.backfill,
+      // The override must be threaded into the SEED too: the baseline acks the derived ids, so a
+      // later push (deriving under the same override) must re-derive the SAME ids (D5).
+      ...(input.syncRepoId !== undefined ? { repoId: input.syncRepoId } : {}),
+    });
+    const store = p.store;
+    const id = p.scope === 'local' ? (store.readManifest()?.repo?.id ?? 'unknown-repo') : 'global';
+    const config: SyncConfigFile = {
+      schemaVersion: '1',
+      scope: p.scope,
+      id,
+      keySource: input.keySource ?? 'env',
+      keyFingerprint: keyFingerprint(input.key),
+      keyEpoch: loadSyncState(store.rootDir)?.keyEpoch ?? 1,
+      ...(input.keyEnv !== undefined ? { keyEnv: input.keyEnv } : {}),
+      ...(input.keyFile !== undefined ? { keyFile: input.keyFile } : {}),
+      ...(input.backend !== undefined ? { backend: input.backend } : {}),
+      ...(input.syncRepoId !== undefined ? { syncRepoId: input.syncRepoId } : {}),
+    };
+    writeSyncConfig(config, this.env);
+    return {
+      ok: true,
+      scope: p.scope,
+      baseline,
+      configPath: syncConfigPath(p.scope, id, this.env),
+      keyFingerprint: config.keyFingerprint,
+      keyEpoch: config.keyEpoch,
+    };
+  }
+
+  /** The conflicts ledgers across the participant stores (D8: digests only — never payload bytes). */
+  listSyncConflicts(): { ok: boolean; conflicts: (ConflictRecord & { store: SyncStoreScope })[] } {
+    const out: (ConflictRecord & { store: SyncStoreScope })[] = [];
+    for (const p of this.syncParticipants()) {
+      const state = loadSyncState(p.store.rootDir);
+      if (!state) continue;
+      for (const row of state.conflicts) out.push({ ...row, store: p.scope });
+    }
+    return { ok: true, conflicts: out };
+  }
+
+  /**
+   * Append-only conflict resolution (D8): a human decides, the ledger records. Exactly one of
+   * `successor` / `retract` must be given — the resolving decision is content-addressed and itself
+   * syncs, so the resolution converges across devices like any other belief change.
+   */
+  resolveConflict(
+    recordId: string,
+    resolution: ConflictResolution,
+    actor: string,
+    reason?: string,
+  ): {
+    ok: boolean;
+    id?: string;
+    decisionId?: string;
+    decisionSource?: MemorySource;
+    error?: string;
+  } {
+    const given =
+      (resolution.successor !== undefined ? 1 : 0) + (resolution.retract === true ? 1 : 0);
+    if (actor.length === 0) return { ok: false, error: 'actor is required' };
+    if (recordId.length === 0) return { ok: false, error: 'recordId is required' };
+    if (resolution.successor !== undefined && resolution.retract === true) {
+      return { ok: false, error: 'give exactly one of successor / retract' };
+    }
+    if (given === 0) {
+      return { ok: false, error: 'resolution requires a successor or retract' };
+    }
+    if (resolution.successor !== undefined) {
+      const r = this.supersede(recordId, resolution.successor, {
+        actor,
+        reason: reason ?? `conflict resolved: superseded by ${resolution.successor}`,
+      });
+      if (!r.ok) return { ok: false, error: r.error };
+      return {
+        ok: true,
+        id: r.supersededId,
+        decisionId: r.decisionId,
+        decisionSource: r.decisionSource,
+      };
+    }
+    const r = this.delete(recordId, {
+      actor,
+      reason: reason ?? 'conflict resolved: retracted',
+    });
+    if (!r.ok) return { ok: false, error: r.error };
+    return { ok: true, id: r.id, decisionId: r.decisionId, decisionSource: r.decisionSource };
+  }
+
+  /**
+   * The D11 physical purge: logical tombstone FIRST (the synced, replayable part), then the
+   * physical shard rewrite via `removeEntry` (NEVER a raw file write — FTS notices fire and BM25's
+   * IDF stays correct), then the same-seed twin sweep (`cand:`, feedback, capture outbox/dead),
+   * then the alias-resolved twin — with alias lines RETAINED as deliberate audit history. Team is
+   * append-only even when explicitly opted-in: only the retract decision lands, and only on a
+   * CLEAN working tree. With a backend: remote blobs are deleted (terminal state first) and the
+   * purge-ack recorded LAST. `--dry-run` computes everything and writes nothing.
+   */
+  async purgeRecords(memIds: string[], opts: PurgeOpts): Promise<PurgeResult> {
+    const dryRun = opts.dryRun === true;
+    if (!Array.isArray(memIds) || memIds.length === 0) {
+      return { ok: false, dryRun, purged: [], message: 'no memory ids given' };
+    }
+    if (typeof opts.actor !== 'string' || opts.actor.length === 0) {
+      return { ok: false, dryRun, purged: [], message: 'actor is required' };
+    }
+    // D11 — the exact-confirm law: no wildcards, the exact list repeated.
+    const want = [...memIds].sort();
+    const confirm = [...(opts.confirmIds ?? [])].sort();
+    if (want.length !== confirm.length || want.some((id, i) => id !== confirm[i])) {
+      return {
+        ok: false,
+        dryRun,
+        purged: [],
+        message: 'confirmIds must repeat the exact purge list — refusing (no wildcards)',
+      };
+    }
+    for (const id of memIds) {
+      if (!id.startsWith('mem:')) {
+        return {
+          ok: false,
+          dryRun,
+          purged: [],
+          message: `purge takes record ids (mem:…) — '${id}' is not one`,
+        };
+      }
+    }
+    const wanted = opts.stores ?? ['local', 'global'];
+    const repoRoot = this.repoRootForGit();
+    const reports: PurgeTargetReport[] = [];
+    // One store at a time — the no-cross-store-nesting guard is honored by sequencing, not by
+    // holding two locks.
+    for (const { source, store } of this.orderedStores()) {
+      if (!wanted.includes(source)) continue;
+      if (source === 'team') {
+        // D11 — the clean-tree gate runs BEFORE any store interaction: a dirty tree refuses the
+        // team purge outright (no tombstone, no twin sweep, no decision appended), because a purge
+        // that mutated the memory home would itself dirty the tree it is gated on.
+        const clean = isCleanGitTree(repoRoot);
+        if (!clean) {
+          for (const id of memIds) {
+            reports.push({
+              id,
+              found: false,
+              stores: [
+                {
+                  store: 'team',
+                  removed: false,
+                  twins: [],
+                  error:
+                    'team purge requires a clean git working tree (D11) — commit or stash first',
+                },
+              ],
+              error: 'team purge requires a clean git working tree (D11)',
+            });
+          }
+          continue;
+        }
+        for (const id of memIds) {
+          reports.push(await this.purgeFromStore(store, source, id, opts, repoRoot));
+        }
+        continue;
+      }
+      for (const id of memIds) {
+        reports.push(await this.purgeFromStore(store, source, id, opts, repoRoot));
+      }
+    }
+    return { ok: reports.every((r) => r.stores.every((s) => !s.error)), dryRun, purged: reports };
+  }
+
+  /** Purge ONE id from ONE store: tombstone → physical removal → twin sweep → remote delete. */
+  private async purgeFromStore(
+    store: MemoryStore,
+    source: MemorySource,
+    id: string,
+    opts: PurgeOpts,
+    repoRoot: string,
+  ): Promise<PurgeTargetReport> {
+    const dryRun = opts.dryRun === true;
+    const scope: SyncStoreScope | undefined =
+      source === 'local' ? 'local' : source === 'global' ? 'global' : undefined;
+    const report: PurgeTargetReport = { id, found: false, stores: [] };
+    const storeReport: PurgeStoreReport = { store: source, removed: false, twins: [] };
+    report.stores.push(storeReport);
+    // D11 step 4 — follow the alias resolution both ways: a legacy id purges its v2 twin, a v2 id
+    // purges the legacy twin bound to it. Alias lines are RETAINED (audit history).
+    const aliases = store.readAliases();
+    const legacyIds = aliases.filter((a) => a.resolvedId === id).map((a) => a.legacyId);
+    const resolvedTwin = store.resolveId(id);
+    const recordIds = [
+      ...new Set([id, ...legacyIds, ...(resolvedTwin !== id ? [resolvedTwin] : [])]),
+    ];
+    if (resolvedTwin !== id) report.resolvedTwin = resolvedTwin;
+    const collection = recordCollectionOf(store);
+    const purgedEntries: { recordId: string; entry: MemoryEntry }[] = [];
+    for (const recordId of recordIds) {
+      const shardRead = store.readShard(collection, memoryShard(recordId));
+      const entry = shardRead.entries.find((e) => e.id === recordId);
+      if (!entry) continue;
+      report.found = true;
+      purgedEntries.push({ recordId, entry });
+      // (1) the logical tombstone FIRST — the synced, replayable part (D9/D11).
+      const decision: MemoryDecision = {
+        id: decisionId({
+          kind: 'retract',
+          subject: recordId,
+          actor: opts.actor,
+          reason: 'physically purged via crib memory purge (D11)',
+        }),
+        schemaVersion: '1',
+        kind: 'retract',
+        subject: recordId,
+        actor: opts.actor,
+        reason: 'physically purged via crib memory purge (D11)',
+        ts: this.now(),
+      };
+      storeReport.decisionId = decision.id;
+      if (!dryRun) {
+        // The tombstone write + its sync stage: ONE lock hold (D4), same law as supersede/delete.
+        store.withLock(() => {
+          store.upsertEntry('decisions', decision);
+          this.stageWrite(store, 'decision.append', decision, opts.actor);
+        });
+      }
+      // (2) the physical rewrite — store-mediated only (FTS removed-id notices fire). Team is
+      // append-only by DESIGN (D11): the retract decision landed above and nothing else happens —
+      // a non-error outcome, not a failure, so the CLI exits 0.
+      if (source === 'team') {
+        storeReport.teamOutcome = 'retract-only';
+      } else if (!dryRun) {
+        store.removeEntry(collection, recordId);
+        storeReport.removed = true;
+      } else {
+        storeReport.removed = false; // computed, not written
+      }
+    }
+    // (3) the same-seed twin sweep — staging twin, feedback rows, capture outbox/dead rows. It runs
+    // over EVERY purged id, not only the ones still physically present: a legacy id whose line was
+    // already migrated to its v2 twin still owns its `cand:` staging twin and its capture rows, and
+    // missing them would leave orphaned staging state behind a purged claim. One read-only scan
+    // collects the targets; the removal runs only on a real run, so a dry-run reports exactly what
+    // WOULD be removed.
+    {
+      const twins: string[] = [];
+      const queueTargets: { queue: 'outbox' | 'dead'; id: string }[] = [];
+      // A `mem:` id's staging twin is the `cand:` id with the same claim-body hash suffix.
+      const candTwins = [
+        ...new Set(
+          recordIds
+            .filter((rid) => rid.startsWith('mem:'))
+            .map((rid) => `cand:${rid.slice('mem:'.length)}`),
+        ),
+      ];
+      if (store.collections.includes('candidates')) {
+        for (const candTwin of candTwins) {
+          if (this.holdsDirect(store, candTwin, 'candidates')) twins.push(candTwin);
+        }
+      }
+      if (store.collections.includes('feedback')) {
+        for (const fb of store.readCollection('feedback').entries) {
+          if (isFeedbackEntry(fb) && recordIds.includes(fb.subject)) twins.push(fb.id);
+        }
+      }
+      for (const q of ['outbox', 'dead'] as const) {
+        if (!store.collections.includes(q)) continue;
+        // The queue collections hold capture entries only (same cast idiom as outbox.ts).
+        for (const cap of store.readCollection(q).entries as CaptureOutboxEntry[]) {
+          // The capture lane correlates on the staging twin (meta.candidateId) — every purged
+          // record id maps to the same-seed `cand:` twin.
+          const capCand = cap.meta?.candidateId;
+          if (
+            capCand !== undefined &&
+            (candTwins.includes(String(capCand)) || recordIds.includes(String(capCand)))
+          ) {
+            queueTargets.push({ queue: q, id: cap.id });
+          }
+        }
+      }
+      // The physical twin removal never runs on the team store (removeEntry throws there — team is
+      // append-only, D11); team still REPORTS the twins it would sweep.
+      if (!dryRun && source !== 'team') {
+        for (const candTwin of candTwins) {
+          if (twins.includes(candTwin)) store.removeEntry('candidates', candTwin);
+        }
+        for (const tw of twins) {
+          if (tw.startsWith('fb:')) store.removeEntry('feedback', tw);
+        }
+        for (const t of queueTargets) store.removeEntry(t.queue, t.id);
+      }
+      // The queue targets are swept too — they are part of what the purge removes, so the report
+      // carries them alongside the staging twin and the feedback rows (a dry-run must show them).
+      storeReport.twins.push(...twins, ...queueTargets.map((t) => t.id));
+    }
+    // (4) the remote side — terminal state first, bookkeeping last (D11). Team is never a sync
+    // participant (D2), so `scope` is undefined there and the remote leg never runs. Each scope
+    // routes through ITS OWN backend + key (the per-scope `routes` map; the shared
+    // `backend`/`syncKey` are the fallback applying to both) — a global-scope sync config has a
+    // different backend/key than a local-scope one, and routing a global delete through the local
+    // route deletes the WRONG key.
+    const route = scope !== undefined ? opts.routes?.[scope] : undefined;
+    const remoteBackend = route?.backend ?? opts.backend;
+    const remoteKey = route?.syncKey ?? opts.syncKey;
+    if (scope !== undefined && remoteBackend !== undefined && purgedEntries.length > 0) {
+      if (remoteKey === undefined) {
+        storeReport.error = 'backend given without a sync key — remote blobs cannot be routed';
+      } else if (!dryRun) {
+        const repoId =
+          scope === 'local' ? (opts.syncRepoId ?? store.readManifest()?.repo?.id) : undefined;
+        const state = loadSyncState(store.rootDir);
+        const acks: string[] = [];
+        for (const { recordId, entry } of purgedEntries) {
+          // The record collections hold only record envelopes (validated on write), so the payload
+          // narrowing holds by construction — the matched entry IS the previously-pushed payload.
+          const evtId = deriveEventId(
+            'record.upsert',
+            scope,
+            repoId,
+            entry as unknown as SyncEventPayload,
+          );
+          await remoteBackend.deleteObject(routeKeyFor(evtId, remoteKey));
+          acks.push(evtId);
+        }
+        if (state) {
+          // LAST (D11), under the store's lock: merged over the LATEST on-disk state so a
+          // concurrent writer's acks survive this purge-ack save.
+          store.withLock(() => {
+            const latest = loadSyncState(store.rootDir) ?? state;
+            const next = { ...latest, purgeAcks: [...latest.purgeAcks, ...acks] };
+            saveSyncState(store.rootDir, next);
+          });
+        }
+      }
+    }
+    // (5) the honest limit — read-only git history scan (D11), over EVERY record id the purge
+    // touches (the legacy/v2 twin commits are just as irreversible as the requested id's).
+    if (opts.historyScan === true) {
+      report.commits = [...new Set(recordIds.flatMap((rid) => gitLogSHits(rid, repoRoot)))];
+    }
+    return report;
+  }
+
+  // ── sync internals ────────────────────────────────────────────────────────
+
+  /** The configured sync participants in stable order (team is NEVER a participant, D2). */
+  private syncParticipants(
+    stores?: SyncStoreScope[],
+  ): { scope: SyncStoreScope; store: MemoryStore }[] {
+    const out: { scope: SyncStoreScope; store: MemoryStore }[] = [];
+    for (const scope of ['local', 'global'] as const) {
+      if (stores !== undefined && !stores.includes(scope)) continue;
+      const store = scope === 'local' ? this.deps.stores.local : this.deps.stores.global;
+      if (store) out.push({ scope, store });
+    }
+    return out;
+  }
+
+  /** Fail-closed key resolution; `undefined` on failure (the caller reports, never falls open). */
+  private syncKeyOrUndefined(): Uint8Array | undefined {
+    try {
+      return resolveSyncKey({ env: this.env }).key;
+    } catch {
+      return undefined;
+    }
+  }
+
+  /** The git working root the purge history-scan + clean-tree check run against. */
+  private repoRootForGit(): string {
+    const local = this.deps.stores.local;
+    return local?.readManifest()?.repo?.root ?? process.cwd();
+  }
+
+  /** The stable cross-clone sync id (the local sync config's `syncRepoId`), read from the config
+   *  this machine wrote at init-sync. `undefined` = derive from the manifest as before. */
+  private syncRepoIdOverride(): string | undefined {
+    const manifestId = this.deps.stores.local?.readManifest()?.repo?.id;
+    if (manifestId === undefined) return undefined;
+    return readSyncConfig('local', manifestId, this.env)?.syncRepoId;
+  }
+
+  /** The stageSyncableWrite context this API supplies at its own write sites. `now` feeds only
+   *  envelope metadata. */
+  private stageCtx(principalId: string): SyncStageContext {
+    const syncRepoId = this.syncRepoIdOverride();
+    return {
+      principalId,
+      env: this.env,
+      now: () => this.now(),
+      ...(syncRepoId !== undefined ? { syncRepoId } : {}),
+    };
+  }
+
+  /** Stage the sync event for a decision/feedback entry THIS call just wrote — the caller's lock
+   *  hold covers both the write and the stage (D4: one unit, one store). */
+  private stageWrite(
+    store: MemoryStore,
+    kind: 'decision.append' | 'feedback.append',
+    payload: MemoryEntry,
+    principalId: string,
+  ): void {
+    stageSyncableWrite(store, kind, payload, this.stageCtx(principalId));
   }
 
   // ── audit ──────────────────────────────────────────────────────────────────

@@ -11,8 +11,8 @@ file is fresh. Reference this file instead of restating a count in narrative doc
 | packages | 8 (knowledge-crib, @knowledge-crib/core, @knowledge-crib/mcp, @knowledge-crib/memory, @knowledge-crib/parsers, @knowledge-crib/pipeline, @knowledge-crib/soul-schema, @knowledge-crib/ui) |
 | parser languages | 11 (agent, csharp, go, java, md, mule, php, plsql, python, rust, ts) |
 | eval fixture languages | 9 (csharp, go, java, php, plsql, python, rust, ts, ts-min) |
-| test files | 149 |
-| test call-sites (static) | 2213 |
+| test files | 159 |
+| test call-sites (static) | 2335 |
 
 > Test call-sites are a static count of `it(`/`test(` occurrences (excluding comments),
 > not the runtime total — `it.each` is one call-site. The runtime total is in CI / `pnpm test`.

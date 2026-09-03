@@ -61,6 +61,7 @@ Two existing tools each prove half and serve as **design inspiration only (no co
 | — | [knowledge-crib-production-readiness.md](knowledge-crib-production-readiness.md) | Release gate, packaging fixes, and remaining production gaps |
 | — | [knowledge-crib-beta-installers.md](knowledge-crib-beta-installers.md) | macOS and Windows beta installer bundle build/install guide |
 | — | [mulesoft.md](mulesoft.md) | MuleSoft (Mule 3/4) extraction — folders/ZIPs/JARs, dialect detection, MUnit, property key-only redaction |
+| — | [memory-sync.md](memory-sync.md) | **Memory sync operator guide** — cross-device sync setup, keys, push/pull, conflicts, rotation, physical purge (Gate 4 / ADR-003) |
 
 ## Launch assets (M4.6)
 

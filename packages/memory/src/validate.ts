@@ -11,6 +11,7 @@ import {
   RECEIPT_SCHEMA,
   RECORD_SCHEMA,
   RECORD_V2_SCHEMA,
+  SYNC_EVENT_SCHEMA,
 } from './schemas.js';
 /**
  * Record validation against the vendored memory-1 JSON Schemas (mirrors `core/validate.ts`).
@@ -44,6 +45,7 @@ const validateDecisionFn: ValidateFunction = ajv.compile(DECISION_SCHEMA);
 const validateFeedbackFn: ValidateFunction = ajv.compile(FEEDBACK_SCHEMA);
 const validateManifestFn: ValidateFunction = ajv.compile(MEMORY_MANIFEST_SCHEMA);
 const validateAliasFn: ValidateFunction = ajv.compile(ALIAS_SCHEMA);
+const validateSyncEventFn: ValidateFunction = ajv.compile(SYNC_EVENT_SCHEMA);
 
 /** Thrown when a memory record fails schema validation before a write. */
 export class MemorySchemaError extends Error {
@@ -138,6 +140,24 @@ export function assertValidMemoryAlias(alias: MemoryAlias): void {
   if (!ok) throw new MemorySchemaError('alias', validateAliasFn.errors, alias.id);
 }
 
+/** ADR-003 (Gate 4) D1 — validate a sync envelope against `sync-event.schema.json`. The
+ *  `schemaVersion` check mirrors the `mem:` posture: it lives OUTSIDE the compiled schema so an
+ *  unknown envelope version fails closed with the same `{unknownSchemaVersion}` shape as records,
+ *  and so the dispatch stays consistent with how records refuse coercion. */
+export function assertValidSyncEvent(evt: { id: string }): void {
+  const rec = evt as unknown as Record<string, unknown>;
+  const version = rec.schemaVersion;
+  if (version !== '1') {
+    throw new MemorySchemaError(
+      'sync-event',
+      [{ unknownSchemaVersion: typeof version === 'string' ? version : null }],
+      evt.id,
+    );
+  }
+  const ok: boolean = validateSyncEventFn(evt);
+  if (!ok) throw new MemorySchemaError('sync-event', validateSyncEventFn.errors, evt.id);
+}
+
 /** The id-prefix → validator dispatch table. `assertValidMemoryEntry` picks the validator by the
  *  entry's id prefix so a store can validate a mixed-kind shard line with one call. `mem:` is
  *  deliberately ABSENT: memory-1 and memory-2 records share the `mem:` prefix, so the record
@@ -150,6 +170,7 @@ const ENTRY_VALIDATORS: Record<string, { validate: ValidateFunction; label: stri
   dec: { validate: validateDecisionFn, label: 'decision' },
   fb: { validate: validateFeedbackFn, label: 'feedback' },
   alias: { validate: validateAliasFn, label: 'alias' },
+  evt: { validate: validateSyncEventFn, label: 'sync-event' },
 };
 
 /** schemaVersion → record validator. The `mem:` prefix is shared by memory-1 and memory-2 records,

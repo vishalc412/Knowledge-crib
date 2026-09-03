@@ -68,7 +68,10 @@ import {
   openMemoryFts,
   pendingCaptures,
   quarantinedRecordIds,
+  readRepoId,
+  readSyncConfig,
   recallProjection,
+  stageSyncableWrite,
 } from '@knowledge-crib/memory';
 /**
  * The MCP verbs as pure functions over the soul + index. These are the product surface; the stdio
@@ -2295,6 +2298,9 @@ export class Verbs {
         : record.evidence.map((e) => this.evidenceSummary(e));
     // Memory-1 records keep the W3 response contract BYTE-IDENTICAL (the v1 fields are real on
     // v1 — emitting them for a v2 record is the undefined-field bug the wave-2 review flagged).
+    // The verdicts are the EFFECTIVE four axes — a pulled tombstone must flip `lifecycle` here too
+    // (the stamped verdicts on a content-addressed entry never mutate, so the classic
+    // no-decision read is unchanged).
     if (!isMemoryRecordV2(record)) {
       return this.applyIfHash(args, {
         id: record.id,
@@ -2303,7 +2309,12 @@ export class Verbs {
         scope: record.scope,
         appliesTo: record.appliesTo,
         authorship: record.authorship,
-        verdicts: record.verdicts,
+        verdicts: {
+          trust: got.verdicts?.trust ?? record.verdicts.trust,
+          evidence: got.verdicts?.evidence ?? record.verdicts.evidence,
+          applicability: got.verdicts?.applicability ?? record.verdicts.applicability,
+          lifecycle: got.verdicts?.lifecycle ?? record.verdicts.lifecycle,
+        },
         source,
         createdAt: record.createdAt,
         evidence,
@@ -2503,14 +2514,31 @@ export class Verbs {
   }
 
   /**
-   * Gate 1.3 — `memory{op:'sync'}`: the declared-but-honest non-capability. `sync` is in the
-   * portable contract so every adapter can REGISTER the name, but no sync engine exists in this
-   * release — the response says so, names the owning gate, and echoes the request untouched.
+   * Gate 4 — `memory{op:'sync'}`: the D12 MCP surface. MCP never pushes or pulls — no backend port
+   * is injectable over stdio, and an agent session must not cause network side effects — so an
+   * explicit push/pull request is REJECTED with the honest reason, and the only reachable shapes
+   * are the not-configured response and the read-only status report. The sync engine runs over an
+   * injected port in the CLI (`crib memory sync`), never here.
    */
-  memorySync(args: { ifHash?: string }): Record<string, unknown> {
+  async memorySync(args: {
+    ifHash?: string;
+    request?: 'status' | 'push' | 'pull';
+  }): Promise<Record<string, unknown>> {
+    if (args.request === 'push' || args.request === 'pull') {
+      return this.applyIfHash(args, {
+        ok: false,
+        op: 'sync',
+        request: args.request,
+        status: 'rejected',
+        message:
+          `sync ${args.request} is not available over MCP — sync runs only via the CLI ` +
+          `('crib memory sync ${args.request}') so an agent session cannot cause network side effects (ADR-003 D12)`,
+      });
+    }
     const api = this.memoryApi();
     if (!api) return this.applyIfHash(args, { memory: 'not configured' });
-    return this.applyIfHash(args, { ...api.sync() });
+    // `sync` is async — spread the RESOLVED report, never the promise (a spread promise is {}).
+    return this.applyIfHash(args, { ...(await api.sync({ op: 'status' })) });
   }
 
   /**
@@ -2922,6 +2950,13 @@ export class Verbs {
     const found = this.findMemoryRecord(args.subject);
     const claimKind = found?.record.kind;
     const counterEvidence = (args.counterEvidence ?? []) as unknown as MemoryEvidence[];
+    // The stable cross-clone id the sync config records, when one is initialized (undefined
+    // otherwise — the stage helper falls back to the manifest repo.id, which is correct pre-init).
+    const syncRepoIdRef = readSyncConfig(
+      'local',
+      readRepoId(this.deps.soul.cribDir) ?? '',
+      process.env,
+    )?.syncRepoId;
     const result = applyContradictedFeedback(local, {
       record: { id: args.subject, kind: claimKind ?? 'fact' },
       feedback: {
@@ -2935,6 +2970,24 @@ export class Verbs {
       },
       counterEvidence: claimKind ? counterEvidence : [],
       now: () => new Date().toISOString(),
+      // ADR-003 D3/D4: the feedback row and (on suppression) the quarantine decision stage for
+      // cross-device sync INSIDE the same lock hold that writes them — a contradicted-feedback
+      // quarantine must survive to the next device, or it resurrects there.
+      syncStage: {
+        stageWrite: (collection, entry) => {
+          stageSyncableWrite(
+            local,
+            collection === 'decisions' ? 'decision.append' : 'feedback.append',
+            entry,
+            {
+              principalId: args.actor,
+              env: process.env,
+              now: () => new Date().toISOString(),
+              ...(syncRepoIdRef !== undefined ? { syncRepoId: syncRepoIdRef } : {}),
+            },
+          );
+        },
+      },
     });
     if (result.suppression.suppress) {
       return this.applyIfHash(args, {

@@ -333,7 +333,7 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
     'memory',
     {
       description:
-        'Memory ledger operations, selected by `op`. get: one record by id (needs id; withEvidence for full evidence; follows legacy-ID aliases, and memory-2 records answer with their v2 fields - visibility, propositionKey, validTime/transactionTime, lineage - instead of v1 fields). search: ranked search over the ledger (q, sources, targetIds, limit, maxTokens) - the same projection memory_recall uses, including effective/alias-restored verdicts and conflict groups. supersede: replace a record with a successor (needs id + actor, and either successor=an existing record id or claim=a new claim text) - writes the v2 successor plus a supersede decision. delete: tombstone a record (needs id + actor) - appends a retract decision, never destroys the line. history: bi-temporal timeline for one key (needs key; asOf for a point-in-time read). sync: honest not-available placeholder (the sync engine ships in Gate 4). outbox: read-only capture-outbox drain report (no args) - pending/done/dead counts, pending captures with their retry counts, and drained entries with their distill decision, rationale, and verified flag. status: ledger counts by trust/evidence/lifecycle plus recall-eligible, quarantined, and pending. audit: read-only health report - drifted verdicts, conflict groups, a secret re-scan, trust distribution, locally quarantined records. capture: episodic capture to the candidate tier (needs subject, observation, actor) - loose refs in files/symbols are auto-anchored to a source-quote evidence item when they resolve; the candidate is pending trust and never enters normal recall. feedback: record LOCAL feedback on a record (needs subject, signal, actor); a `contradicted` signal quarantines only when backed by admissible counterEvidence, and never retracts team memory. To READ memory for a task use `memory_recall`; to WRITE a fully-formed grounded claim use `memory_observe`.',
+        'Memory ledger operations, selected by `op`. get: one record by id (needs id; withEvidence for full evidence; follows legacy-ID aliases, and memory-2 records answer with their v2 fields - visibility, propositionKey, validTime/transactionTime, lineage - instead of v1 fields). search: ranked search over the ledger (q, sources, targetIds, limit, maxTokens) - the same projection memory_recall uses, including effective/alias-restored verdicts and conflict groups. supersede: replace a record with a successor (needs id + actor, and either successor=an existing record id or claim=a new claim text) - writes the v2 successor plus a supersede decision. delete: tombstone a record (needs id + actor) - appends a retract decision, never destroys the line. history: bi-temporal timeline for one key (needs key; asOf for a point-in-time read). sync: read-only cross-device sync report (status counts; a `request` of push/pull is rejected - sync writes run only via the CLI `crib memory sync`, never behind an agent session). outbox: read-only capture-outbox drain report (no args) - pending/done/dead counts, pending captures with their retry counts, and drained entries with their distill decision, rationale, and verified flag. status: ledger counts by trust/evidence/lifecycle plus recall-eligible, quarantined, and pending. audit: read-only health report - drifted verdicts, conflict groups, a secret re-scan, trust distribution, locally quarantined records. capture: episodic capture to the candidate tier (needs subject, observation, actor) - loose refs in files/symbols are auto-anchored to a source-quote evidence item when they resolve; the candidate is pending trust and never enters normal recall. feedback: record LOCAL feedback on a record (needs subject, signal, actor); a `contradicted` signal quarantines only when backed by admissible counterEvidence, and never retracts team memory. To READ memory for a task use `memory_recall`; to WRITE a fully-formed grounded claim use `memory_observe`.',
       inputSchema: {
         op: opSchema('memory'),
         id: z.string().optional(),
@@ -367,6 +367,8 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
         reason: z.string().optional(),
         visibility: z.enum(['private', 'workspace']).optional(),
         propositionKey: z.string().optional(),
+        // ── Gate 4 sync: read-only status is the default; push/pull reach the rejection path ──
+        request: z.enum(['status', 'push', 'pull']).optional(),
         ifHash: z.string().optional(),
       },
     },
@@ -452,7 +454,10 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
         }
         case 'sync':
           return TOOL_RESULT(
-            verbs.memorySync({ ...(a.ifHash !== undefined ? { ifHash: a.ifHash } : {}) }),
+            await verbs.memorySync({
+              ...(a.ifHash !== undefined ? { ifHash: a.ifHash } : {}),
+              ...(a.request !== undefined ? { request: a.request } : {}),
+            }),
           );
         case 'outbox':
           return TOOL_RESULT(

@@ -13,6 +13,7 @@ import manifestSchema from './schema/manifest.schema.json' with { type: 'json' }
 import receiptSchema from './schema/receipt.schema.json' with { type: 'json' };
 import recordV2Schema from './schema/record-v2.schema.json' with { type: 'json' };
 import recordSchema from './schema/record.schema.json' with { type: 'json' };
+import syncEventSchema from './schema/sync-event.schema.json' with { type: 'json' };
 
 export const RECORD_SCHEMA = recordSchema as Record<string, unknown>;
 export const RECORD_V2_SCHEMA = recordV2Schema as Record<string, unknown>;
@@ -24,6 +25,7 @@ export const DECISION_SCHEMA = decisionSchema as Record<string, unknown>;
 export const FEEDBACK_SCHEMA = feedbackSchema as Record<string, unknown>;
 export const MEMORY_MANIFEST_SCHEMA = manifestSchema as Record<string, unknown>;
 export const ALIAS_SCHEMA = aliasSchema as Record<string, unknown>;
+export const SYNC_EVENT_SCHEMA = syncEventSchema as Record<string, unknown>;
 
 /** file-name → schema object, for writing a self-describing `.crib/memory/schema/` directory. */
 export const VENDORED_MEMORY_SCHEMAS: Record<string, Record<string, unknown>> = {
@@ -37,4 +39,5 @@ export const VENDORED_MEMORY_SCHEMAS: Record<string, Record<string, unknown>> = 
   'feedback.schema.json': FEEDBACK_SCHEMA,
   'manifest.schema.json': MEMORY_MANIFEST_SCHEMA,
   'alias.schema.json': ALIAS_SCHEMA,
+  'sync-event.schema.json': SYNC_EVENT_SCHEMA,
 };

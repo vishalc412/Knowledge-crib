@@ -183,7 +183,7 @@ function localStoreWith(records: MemoryRecord[]): MemoryStore {
 // ─── degrade-to-not-configured (the new op set mirrors the W3 verbs) ─────────
 
 describe('the Gate 1.3 memory ops without a configured ledger', () => {
-  it('search / supersede / delete / history / sync report "not configured"', () => {
+  it('search / supersede / delete / history / sync report "not configured"', async () => {
     const v = new Verbs({ soul, index, repoRoot: repo });
     expect((v.memorySearch({}) as Record<string, unknown>).memory).toBe('not configured');
     expect(
@@ -196,7 +196,7 @@ describe('the Gate 1.3 memory ops without a configured ledger', () => {
     expect((v.memoryHistory({ key: 'mem:x' }) as Record<string, unknown>).memory).toBe(
       'not configured',
     );
-    expect((v.memorySync({}) as Record<string, unknown>).memory).toBe('not configured');
+    expect(((await v.memorySync({})) as Record<string, unknown>).memory).toBe('not configured');
   });
 });
 
@@ -452,9 +452,23 @@ describe('memorySupersede', () => {
   it('writes a v2 successor claim plus a supersede decision, and get reports the link', () => {
     const r = v1Record({ claim: 'the old truth' });
     const team = teamStoreWith([r]);
-    const res = verbsWith(team).memorySupersede({
+    const v = verbsWith(team);
+    // D10 — the defaulted successor projects 'private' and the team write gate refuses it before
+    // anything lands; the caller must name a git-admissible visibility for a team supersede.
+    const refused = v.memorySupersede({
       id: r.id,
       claim: 'the corrected truth',
+      actor: 'claude',
+      reason: 'claim was wrong',
+    }) as Record<string, unknown>;
+    expect(refused.ok).toBe(false);
+    expect(String(refused.error)).toContain('private');
+    // nothing was written by the refusal (no partial supersede)
+    expect(team.readCollection('decisions').entries).toHaveLength(0);
+    const res = v.memorySupersede({
+      id: r.id,
+      claim: 'the corrected truth',
+      visibility: 'workspace',
       actor: 'claude',
       reason: 'claim was wrong',
     }) as Record<string, unknown>;
@@ -598,14 +612,28 @@ describe('memoryHistory', () => {
 });
 
 describe('memorySync', () => {
-  it('reports the honest not-available non-capability (Gate 4 owns the engine)', () => {
-    const res = verbsWith(teamStoreWith([v1Record()])).memorySync({}) as Record<string, unknown>;
+  it('reports the honest not-configured shape (MCP never pushes or pulls, D12)', async () => {
+    const res = (await verbsWith(teamStoreWith([v1Record()])).memorySync({})) as Record<
+      string,
+      unknown
+    >;
     expect(res.ok).toBe(false);
     expect(res.available).toBe(false);
     expect(res.capability).toBe('sync');
-    expect(res.status).toBe('not-implemented');
-    expect(res.gate).toBe('Gate 4');
-    expect(String(res.message)).toContain('Gate 4');
+    expect(res.status).toBe('not-configured');
+    expect(String(res.message)).toContain('init-sync');
+  });
+
+  it('rejects an explicit push with the CLI-only reason (no network side effects behind an agent session)', async () => {
+    const verbs = verbsWith(teamStoreWith([v1Record()]));
+    for (const request of ['push', 'pull'] as const) {
+      const res = (await verbs.memorySync({ request })) as Record<string, unknown>;
+      expect(res.ok).toBe(false);
+      expect(res.request).toBe(request);
+      expect(res.status).toBe('rejected');
+      expect(String(res.message)).toContain('crib memory sync');
+      expect(String(res.message)).toContain('D12');
+    }
   });
 });
 

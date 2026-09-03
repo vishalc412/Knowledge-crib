@@ -1,4 +1,4 @@
-import { existsSync, mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { Node } from '@knowledge-crib/soul-schema';
@@ -19,6 +19,7 @@ import type { Node } from '@knowledge-crib/soul-schema';
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
+  FileSyncObjectStore,
   type MemoryAnchorPort,
   MemoryApi,
   type MemoryCandidate,
@@ -37,7 +38,7 @@ import {
   feedbackId,
   memoryRecordId,
   memoryRecordV2Id,
-  syncNotAvailable,
+  syncNotConfigured,
   validTimeHoldsAt,
   validTimeWindowOf,
   validityOf,
@@ -206,7 +207,15 @@ let env: NodeJS.ProcessEnv;
 
 beforeEach(() => {
   home = mkdtempSync(join(tmpdir(), 'mem-api-home-'));
-  env = { ...process.env, KCRIB_MEMORY_DIR: home, KCRIB_REGISTRY_DIR: home };
+  // Sync tests control key resolution explicitly — a developer-shell KCRIB_SYNC_KEY would silently
+  // turn the fail-closed case green for the wrong reason, so it is explicitly unset (undefined,
+  // not deleted — the resolution treats a missing or undefined value the same way).
+  env = {
+    ...process.env,
+    KCRIB_MEMORY_DIR: home,
+    KCRIB_REGISTRY_DIR: home,
+    KCRIB_SYNC_KEY: undefined,
+  };
   __resetMemoryLockGuardForTest();
 });
 
@@ -341,15 +350,14 @@ describe('pure helpers', () => {
     });
   });
 
-  it('syncNotAvailable names Gate 4 and echoes the request untouched', () => {
-    const res = syncNotAvailable({ direction: 'push' });
+  it('syncNotConfigured reports not-configured and echoes the request untouched', () => {
+    const res = syncNotConfigured({ direction: 'push' });
     expect(res.ok).toBe(false);
     expect(res.available).toBe(false);
     expect(res.capability).toBe('sync');
-    expect(res.status).toBe('not-implemented');
-    expect(res.gate).toBe('Gate 4');
+    expect(res.status).toBe('not-configured');
     expect(res.request).toEqual({ direction: 'push' });
-    expect(res.message).toContain('Gate 4');
+    expect(res.message).toContain('init-sync');
   });
 });
 
@@ -1147,18 +1155,45 @@ describe('history', () => {
 // ─── sync ─────────────────────────────────────────────────────────────────────
 
 describe('sync', () => {
-  it('is a declared capability that honestly reports not-available, naming Gate 4', () => {
+  it('reports the honest not-configured shape when no backend port is injected', async () => {
     const { api } = setup();
-    const res = api.sync({ stores: ['local', 'team'] });
+    const res = await api.sync({ op: 'push', stores: ['local'] });
     expect(res.ok).toBe(false);
+    if (!('available' in res)) throw new Error('union routing broke');
     expect(res.available).toBe(false);
     expect(res.capability).toBe('sync');
-    expect(res.status).toBe('not-implemented');
-    expect(res.gate).toBe('Gate 4');
-    expect(res.request).toEqual({ stores: ['local', 'team'] });
-    // nothing was written: no store directory beyond what the harness created
-    const { local } = setup();
-    expect(existsSync(join(local.rootDir, 'records'))).toBe(false);
+    expect(res.status).toBe('not-configured');
+    // the local store IS configured here — what is missing is the injected backend port
+    expect(res.message).toContain('backend');
+    expect(res.request).toEqual({ op: 'push', stores: ['local'] });
+  });
+
+  it('reports the fail-closed shape when push has a backend but no key resolves', async () => {
+    const { api } = setup();
+    const remote = mkdtempSync(join(tmpdir(), 'mem-sync-remote-'));
+    try {
+      const res = await api.sync({ op: 'push', backend: new FileSyncObjectStore(remote) });
+      expect(res.ok).toBe(false);
+      if (!('op' in res) || res.op === 'status') throw new Error('union routing broke');
+      expect(res.message).toContain('no sync key resolved');
+      expect(res.stores).toHaveLength(0);
+    } finally {
+      rmSync(remote, { recursive: true, force: true });
+    }
+  });
+
+  it('routes op status to the per-store engine status (honest empty shapes)', async () => {
+    const { api } = setup();
+    const res = await api.sync({ op: 'status' });
+    expect(res.ok).toBe(true);
+    if (!('op' in res) || res.op !== 'status') throw new Error('union routing broke');
+    expect(res.stores.length).toBeGreaterThan(0);
+    for (const s of res.stores) {
+      expect(s.status).toBe('not-initialized');
+      expect(s.staged).toBe(0);
+      expect(s.conflicts).toHaveLength(0);
+      expect(s.quarantine).toHaveLength(0);
+    }
   });
 });
 

@@ -14,6 +14,7 @@ import {
   type MemoryRecord,
   type MemoryRecordV2,
   MemoryStore,
+  TeamPrivateVisibilityError,
   __resetMemoryLockGuardForTest,
   assertValidMemoryEntry,
   assertValidMemoryRecord,
@@ -613,13 +614,18 @@ describe('loader + store acceptance of mixed v1/v2 records', () => {
     expect(s.readCollection('active').entries).toEqual(before.entries);
   });
 
-  it('the team records collection accepts v2 records too (the merge driver unions by id)', () => {
+  it('the team records collection accepts non-private v2 records too (the merge driver unions by id)', () => {
     const team = MemoryStore.team(join(home, 'crib'), { env, now: () => NOW });
-    const v2 = v2Record();
+    const v2 = v2Record({ visibility: 'workspace' });
     team.upsertEntry('records', v2);
     const read = team.readCollection('records');
     expect(read.errors).toHaveLength(0);
     expect(read.entries[0]?.id).toBe(v2.id);
+    // D10 (ADR-003): the SAME collection refuses a private-projecting v2 record — private never
+    // enters git, at the write gate, for every writer.
+    expect(() =>
+      team.upsertEntry('records', v2Record({ visibility: 'private', claim: 'a private claim' })),
+    ).toThrow(TeamPrivateVisibilityError);
   });
 
   it('a structurally-invalid v2 line is a per-line error, never a silent skip', () => {

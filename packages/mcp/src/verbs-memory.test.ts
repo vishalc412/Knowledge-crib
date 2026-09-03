@@ -19,6 +19,7 @@ import {
   MemoryStore,
   type Verdicts,
   __resetMemoryLockGuardForTest,
+  decisionId,
   memoryRecordId,
 } from '@knowledge-crib/memory';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -261,6 +262,39 @@ describe('memoryGet', () => {
     const v = verbsWithMemory(teamStore([record({ subject: 'topic:x', claim: 'c' })]));
     const res = v.memoryGet({ id: 'mem:does-not-exist' }) as Record<string, unknown>;
     expect(res.found).toBe(false);
+  });
+
+  it('folds a local retract decision into the v1 verdicts (pulled-tombstone visibility)', () => {
+    // Regression: the v1 branch surfaced the record's STAMPED verdicts, so a tombstone decision
+    // synced from another device never flipped `lifecycle` on memory_get.
+    const r = record({ subject: 'topic:x', claim: 'the-claim' });
+    const local = localStore();
+    local.upsertEntries('active', [r]);
+    local.upsertEntries('decisions', [
+      {
+        id: decisionId({ kind: 'retract', subject: r.id, actor: 'device-a' }),
+        schemaVersion: '1' as const,
+        kind: 'retract' as const,
+        subject: r.id,
+        actor: 'device-a',
+        ts: NOW,
+      },
+    ]);
+    const res = verbsWithLocal(local).memoryGet({ id: r.id }) as Record<string, unknown>;
+    expect(res.verdicts).toEqual({
+      trust: 'local',
+      evidence: 'valid',
+      applicability: 'current',
+      lifecycle: 'retracted',
+    });
+  });
+
+  it('keeps the classic no-decision read identical to the stamped verdicts', () => {
+    const r = record({ subject: 'topic:x', claim: 'the-claim' });
+    const local = localStore();
+    local.upsertEntries('active', [r]);
+    const res = verbsWithLocal(local).memoryGet({ id: r.id }) as Record<string, unknown>;
+    expect(res.verdicts).toEqual(r.verdicts);
   });
 });
 

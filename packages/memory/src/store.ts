@@ -49,13 +49,14 @@ import {
 import { globalStoreRoot, localStoreRoot, teamStoreRoot } from './paths.js';
 import { assertNoMemorySecrets } from './secrets.js';
 import { serializeMemoryShard } from './serialization.js';
-import type {
-  MemoryAlias,
-  MemoryCounts,
-  MemoryEntry,
-  MemoryManifest,
-  MemoryRecord,
-  MemoryStoreRole,
+import {
+  type MemoryAlias,
+  type MemoryCounts,
+  type MemoryEntry,
+  type MemoryManifest,
+  type MemoryRecord,
+  type MemoryStoreRole,
+  isMemoryRecordV2,
 } from './types.js';
 import { assertValidMemoryEntry } from './validate.js';
 
@@ -138,6 +139,20 @@ export class MemoryLockNestingError extends Error {
       `refusing to nest memory locks: ${requestedPath} requested while ${heldPath} is held (PRD: never acquire repo+global locks simultaneously)`,
     );
     this.name = 'MemoryLockNestingError';
+  }
+}
+
+/**
+ * Thrown when a private-visibility memory-2 entry is written at the TEAM store (ADR-003 D10): the
+ * team store IS the git shard, and private never enters git — for any writer (api supersede, a
+ * promotion, a direct upsert) and at any gate. Local/global stores are unaffected.
+ */
+export class TeamPrivateVisibilityError extends Error {
+  constructor(payloadId: string) {
+    super(
+      `memory-2 entry ${payloadId} projects visibility 'private' — refused at the team store (private never enters git)`,
+    );
+    this.name = 'TeamPrivateVisibilityError';
   }
 }
 
@@ -981,10 +996,14 @@ export class MemoryStore {
     }
   }
 
-  /** Validate against the memory-1 schema + secret-scan — the write gate (invariant #4). */
+  /** Validate against the memory-1 schema + secret-scan — the write gate (invariant #4) — plus the
+   *  D10 privacy guard at the team store (private never enters git). */
   private assertWritable(entry: MemoryEntry): void {
     assertValidMemoryEntry(entry as unknown as { id: string } & Record<string, unknown>);
     assertNoMemorySecrets(entry);
+    if (this.init.role === 'team' && isMemoryRecordV2(entry) && entry.visibility === 'private') {
+      throw new TeamPrivateVisibilityError(entry.id);
+    }
   }
 
   private freshManifest(counts?: MemoryCounts): MemoryManifest {

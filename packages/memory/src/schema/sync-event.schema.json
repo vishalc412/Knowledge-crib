@@ -1,0 +1,56 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://knowledge-crib.dev/schema/memory-1/sync-event.schema.json",
+  "title": "SyncEvent",
+  "description": "The ADR-003 (Gate 4) cross-device sync event envelope (D1): one immutable, content-addressed event wrapping a canonical memory entry. deviceId/principalId/ts are envelope metadata only — they never enter the evt: id seed, so two devices deriving an event for the same claim produce the SAME id (the dedupe backbone). No seq, no prev-chaining (D1 ruling).",
+  "type": "object",
+  "required": [
+    "id",
+    "schemaVersion",
+    "kind",
+    "store",
+    "deviceId",
+    "principalId",
+    "payloadId",
+    "payload",
+    "ts"
+  ],
+  "properties": {
+    "id": { "type": "string", "pattern": "^evt:[0-9a-f]+$" },
+    "schemaVersion": { "type": "string", "const": "1" },
+    "kind": {
+      "type": "string",
+      "enum": ["record.upsert", "decision.append", "feedback.append", "purge.mark"]
+    },
+    "store": { "type": "string", "enum": ["local", "global"] },
+    "repoId": { "type": "string", "minLength": 1 },
+    "deviceId": { "type": "string", "minLength": 1 },
+    "principalId": { "type": "string", "minLength": 1 },
+    "payloadId": { "type": "string", "minLength": 1 },
+    "payload": {
+      "type": "object",
+      "required": ["id"],
+      "properties": { "id": { "type": "string", "pattern": "^[a-z]+:[0-9a-f]+$" } },
+      "additionalProperties": true
+    },
+    "ts": { "type": "string" },
+    "meta": {
+      "type": "object",
+      "properties": {
+        "origin": { "type": "string", "enum": ["write", "bootstrap", "pull"] }
+      },
+      "additionalProperties": false
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "store": { "const": "local" } }, "required": ["store"] },
+      "then": { "required": ["repoId"] }
+    },
+    {
+      "if": { "properties": { "store": { "const": "global" } }, "required": ["store"] },
+      "then": { "properties": { "repoId": { "not": {} } } }
+    }
+  ],
+  "additionalProperties": false
+}

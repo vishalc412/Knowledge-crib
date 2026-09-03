@@ -23,6 +23,7 @@ import {
   statSync,
   writeFileSync,
 } from 'node:fs';
+import { hostname } from 'node:os';
 import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { createInterface as createReadline } from 'node:readline';
 import {
@@ -75,8 +76,12 @@ import {
   BENCH_SCALE_FAST,
   type CaptureOutboxEntry,
   type ConflictGroup,
+  // ── Gate 4 — cross-device sync surfaces (ADR-003 D12) ──
+  DEFAULT_MIGRATION_PRINCIPAL_ID,
   type DistillVerifyContext,
+  FileSyncObjectStore,
   type GateReceipt,
+  HttpSyncObjectStore,
   MemoryApi,
   type MemoryCandidate,
   type MemoryDecision,
@@ -90,6 +95,7 @@ import {
   type MemoryRecordV2,
   type MemorySource,
   MemoryStore,
+  REMOTE_MANIFEST_KEY,
   type RecallProjection,
   type RecallProvenance,
   type RecallScore,
@@ -101,6 +107,11 @@ import {
   SoulStoreSoulPort,
   type StructuredSummary,
   type SupersedePayload,
+  type SyncConfigFile,
+  SyncCryptoError,
+  type SyncStatusResult,
+  type SyncStoreRun,
+  type SyncStoreScope,
   type TrustedTeamPresence,
   UNVERSIONED,
   type VerifiedDistillDecision,
@@ -120,7 +131,9 @@ import {
   compactAttempt,
   conservativeVerdicts,
   contradictedForReview,
+  decisionConflicts,
   decisionId,
+  decryptEvent,
   distillBatchId,
   effectiveVerdicts,
   entrySetFingerprint,
@@ -130,31 +143,44 @@ import {
   formatBenchReport,
   gatherRecall,
   gcUnpromotedAttempts,
+  genSyncKey,
   isFeedbackSignal,
   isMemoryRecordV2,
   isTeamTrustedRecord,
+  keyFingerprint,
   loadPolicy,
   loadPolicyJson,
+  loadSyncState,
   localRecordsToTombstone,
   localStoreRoot,
   memoryCandidateId,
+  memoryHome,
   openMemoryFts,
   parseMemoryShard,
+  parseRemoteManifest,
   pendingCaptures,
   policyHash,
   proposeExisting,
   quarantinedRecordIds,
   readRepoId,
+  readSyncConfig,
   recallProjection,
   resolveProfile,
+  resolveSyncKey,
+  rotateSyncKey,
   runGate,
   runMemoryBench,
   runMemoryCheck,
   sameSubjectRecords,
+  stageSyncableWrite,
+  syncConfigPath,
+  syncEngineStatus,
+  teamStoreRoot,
   tombstoneLocalForTeamPromotion,
   trustedRefOf,
   verifyDistillDecision,
   verifySnapshot,
+  writeSyncConfig,
 } from '@knowledge-crib/memory';
 import { writeJsonAtomic } from '@knowledge-crib/memory';
 import {
@@ -288,6 +314,18 @@ const VALUE_FLAGS = new Set([
   '--reason',
   '--tool',
   '--as-of',
+  // Gate 4 sync/purge subcommands (`crib memory init-sync|sync|purge`): their positionals are
+  // mem: ids and their flag values are env names / urls — never paths, so every value-taking
+  // flag they add must be stripped alongside its value (the fixed subcommand-token pattern).
+  '--confirm',
+  '--url',
+  '--key-env',
+  '--keyfile',
+  '--secret-env',
+  '--max-events',
+  '--scope',
+  '--backend',
+  '--stores',
 ]);
 
 /** Collect positional argv tokens, skipping boolean flags AND value-taking flags + their values. */
@@ -3837,9 +3875,20 @@ async function cmdMemory(args: string[], ctx?: CmdCtx): Promise<number> {
     case '-h':
     case '--help':
       process.stderr.write(
-        'crib memory init | recall "<query>" [--limit N] [--sources team,local,global] [--target <id>] [--with-evidence] [--include-pending] [--max-tokens N] [--json] | search "<query>" [--limit N] [--sources team,local,global] [--target <id>] [--max-tokens N] [--json] | get <id> [--with-evidence] [--json] | supersede <id> --actor <id> (--successor <id> | --claim <text>) [--reason <text>] [--json] | delete <id> --actor <id> [--reason <text>] [--json] | history <key> [--as-of <iso-ts>] [--with-evidence] [--json] | evaluate <candidate> --profile <name> | activate <candidate> | propose <memory-id> | attest <candidate> | check | audit [--repair-local] | feedback <mem-id> --signal <useful|unhelpful|contradicted> [--actor <id>] [--context <text>] [--counter-evidence <json-file>] | gc [--max-age-days N] [--dry-run] | migrate | bench [--fast] [--json] [--out <path>] | distill --provider <name> [--providers-file F] [--max-batches N] [--concurrency N] [--timeout-ms N] | capture-hook --event <session-start|turn-end|tool-use> (hooks invoke this; always exits 0 — best-effort capture, never blocks a session)\n',
+        'crib memory init | recall "<query>" [--limit N] [--sources team,local,global] [--target <id>] [--with-evidence] [--include-pending] [--max-tokens N] [--json] | search "<query>" [--limit N] [--sources team,local,global] [--target <id>] [--max-tokens N] [--json] | get <id> [--with-evidence] [--json] | supersede <id> --actor <id> (--successor <id> | --claim <text>) [--reason <text>] [--json] | delete <id> --actor <id> [--reason <text>] [--json] | history <key> [--as-of <iso-ts>] [--with-evidence] [--json] | evaluate <candidate> --profile <name> | activate <candidate> | propose <memory-id> | attest <candidate> | check | audit [--repair-local] | feedback <mem-id> --signal <useful|unhelpful|contradicted> [--actor <id>] [--context <text>] [--counter-evidence <json-file>] | gc [--max-age-days N] [--dry-run] | migrate | bench [--fast] [--json] [--out <path>] | distill --provider <name> [--providers-file F] [--max-batches N] [--concurrency N] [--timeout-ms N] | capture-hook --event <session-start|turn-end|tool-use> (hooks invoke this; always exits 0 — best-effort capture, never blocks a session) | init-sync --scope repo|global --backend file|http --url <target> [--key-env <NAME>|--keyfile <path>|--gen-key] [--secret-env <NAME>] [--sync-id <id>] [--backfill] [--json] | sync [push|pull|status] [--dry-run] [--backfill] [--max-events N] [--skip] [--json] | sync rotate-key (--gen-key | --key-env <NAME> | --keyfile <path>) [--dry-run] | sync purge-sync --stale-epoch [--dry-run] | purge <mem-id>... --confirm <mem-id>... [--stores local,global] [--history-scan] [--dry-run] [--actor <id>] [--json] | conflicts [--json] | resolve <record-id> (--successor <id> | --retract) --actor <id> [--reason <text>] [--json] (see docs/memory-sync.md)\n',
       );
       return EXIT.OK;
+    // Gate 4 — cross-device sync (ADR-003 D12): init-sync / sync / purge / conflicts / resolve.
+    case 'init-sync':
+      return cmdMemoryInitSync(rest, ctx);
+    case 'sync':
+      return cmdMemorySync(rest, ctx);
+    case 'purge':
+      return cmdMemoryPurge(rest, ctx);
+    case 'conflicts':
+      return cmdMemoryConflicts(rest, ctx);
+    case 'resolve':
+      return cmdMemoryResolve(rest, ctx);
     default:
       process.stderr.write(`unknown memory subcommand: ${sub}\n`);
       return EXIT.BAD_ARGS;
@@ -4159,6 +4208,867 @@ function cmdMemoryCaptureHook(args: string[], ctx?: CmdCtx): number {
   } catch (e) {
     return failOpen(`capture failed: ${(e as Error).message}`);
   }
+}
+
+// ─── Gate 4 — cross-device sync surfaces (ADR-003 D12, docs/memory-sync.md) ──────
+
+/**
+ * The shared preamble of the Gate-4 memory sync surfaces: the portable {@link MemoryApi} + the
+ * three stores + the repoId the sync configs are keyed on. `undefined` when the repo is not
+ * indexed (the caller prints the `crib index` hint — the same posture as the other memory
+ * subcommands). The positionals of these subcommands are ids and flag values, never paths, so
+ * root resolution goes through `--cwd`/the process cwd only (the fixed subcommand-token pattern).
+ */
+function openSyncApi(ctx?: CmdCtx):
+  | {
+      api: MemoryApi;
+      deps: NonNullable<ReturnType<typeof createMemoryDeps>>;
+      repoId: string;
+      repoRoot: string;
+      env: NodeJS.ProcessEnv;
+    }
+  | undefined {
+  const resolved = resolveProjectRoot({ explicitRoot: ctx?.cwdOverride });
+  const rt = openSoul(resolved);
+  const repoId = readRepoId(resolved.cribDir);
+  if (!repoId) return undefined;
+  const deps = createMemoryDeps(rt.soul, resolved.repoRoot, resolved.cribDir);
+  if (!deps) return undefined;
+  return {
+    api: createMemoryApi(rt.soul, resolved.repoRoot, resolved.cribDir, deps),
+    deps,
+    repoId,
+    repoRoot: resolved.repoRoot,
+    env: process.env,
+  };
+}
+
+/**
+ * The device identity seeded into the store's sync-state (envelope METADATA — it never enters an
+ * id or hash seed, D1). Stable per machine so two devices on one repo produce distinct envelopes;
+ * `KCRIB_DEVICE_ID` overrides (a fleet of agents on one host shares the id deliberately).
+ */
+function syncDeviceId(env: NodeJS.ProcessEnv): string {
+  const raw = env.KCRIB_DEVICE_ID ?? `device:${hostname()}`;
+  return raw.replace(/\s+/g, '').slice(0, 128) || 'device:unknown';
+}
+
+/** The sync config one store scope was init-synced with (repoId-keyed for local), or undefined. */
+function syncConfigFor(
+  scope: SyncStoreScope,
+  repoId: string,
+  env: NodeJS.ProcessEnv,
+): SyncConfigFile | undefined {
+  return readSyncConfig(scope, scope === 'local' ? repoId : 'global', env);
+}
+
+/**
+ * Build the backend port the config names — the user-owned storage target recorded at init-sync
+ * (D6). An http target's Authorization header value is read from `authEnv` at CALL time by the
+ * adapter itself; nothing credential-shaped ever lives in the config.
+ */
+function backendFromConfig(config: SyncConfigFile): {
+  url: string;
+  port: FileSyncObjectStore | HttpSyncObjectStore;
+} {
+  const b = config.backend;
+  if (b === undefined) {
+    throw new Error(
+      `the ${config.scope} sync config records no backend target — re-run \`crib memory init-sync\` with --url`,
+    );
+  }
+  return {
+    url: b.url,
+    port:
+      b.kind === 'file'
+        ? new FileSyncObjectStore(b.url)
+        : new HttpSyncObjectStore(b.url, b.authEnv !== undefined ? { authEnvName: b.authEnv } : {}),
+  };
+}
+
+/**
+ * Keyfile resolution must not be shadowed by an ambient `KCRIB_SYNC_KEY`: `resolveSyncKey` checks
+ * the env FIRST, so an explicit `--keyfile` / `--gen-key` target is resolved with the env var
+ * blanked out — the explicit source the operator named wins (D7).
+ */
+function envForExplicitKeyFile(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
+  return { ...env, KCRIB_SYNC_KEY: undefined };
+}
+
+/**
+ * Resolve the sync key from what the config references, then VERIFY the fingerprint (D7): a key
+ * that resolves but does not match init-sync's fingerprint would push blobs no device can decrypt,
+ * so the mismatch fails closed instead of shipping. The error names the SOURCE, never the bytes.
+ */
+function syncKeyFromConfig(config: SyncConfigFile, env: NodeJS.ProcessEnv): Uint8Array {
+  const { key } = resolveSyncKey({
+    ...(config.keySource === 'env' && config.keyEnv !== undefined ? { keyEnv: config.keyEnv } : {}),
+    ...(config.keySource === 'keyfile' && config.keyFile !== undefined
+      ? { keyFile: config.keyFile }
+      : {}),
+    env: config.keySource === 'keyfile' ? envForExplicitKeyFile(env) : env,
+  });
+  if (keyFingerprint(key) !== config.keyFingerprint) {
+    throw new Error(
+      `the resolved sync key does not match the ${config.scope} config fingerprint — check ${
+        config.keySource === 'env' ? `env ${config.keyEnv ?? 'KCRIB_SYNC_KEY'}` : 'the keyfile'
+      }`,
+    );
+  }
+  return key;
+}
+
+/**
+ * The stable cross-clone sync id for local-scope events: the manifest's repo.id is a per-checkout
+ * randomUUID, so two clones of the same repository could never reconcile. The default derives a
+ * blake3 digest of `git remote.origin.url` — hashed, NEVER the raw URL, which can carry embedded
+ * credentials — and falls back to the manifest repo.id when the repo has no origin. An explicit
+ * `--sync-id` wins verbatim (that is how two clones agree on the same id).
+ */
+function deriveSyncId(repoRoot: string, fallback: string): string {
+  let remote: string | undefined;
+  try {
+    remote = execFileSync('git', ['config', '--get', 'remote.origin.url'], {
+      cwd: repoRoot,
+      stdio: ['ignore', 'pipe', 'ignore'],
+      timeout: 5000,
+    })
+      .toString()
+      .trim();
+  } catch {
+    remote = undefined;
+  }
+  if (remote === undefined || remote.length === 0) return fallback;
+  return `sync-${blake3Hex(remote).slice(0, 32)}`;
+}
+
+/**
+ * `crib memory init-sync --scope repo|global --backend file|http --url <target>` (D5/D7): resolve
+ * the key FAIL-CLOSED (env / keyfile / a freshly minted 0600 keyfile), probe the backend, seed the
+ * sync-state baseline, and write the config file — which carries a key REFERENCE + fingerprint +
+ * epoch and the backend location, never key bytes and never a bearer token. Baseline semantics are
+ * printed, never implied: init-sync syncs NOTHING — current entries are marked acked (D5) so only
+ * post-init changes flow, and `--backfill` opts the next push into staging the full history.
+ */
+async function cmdMemoryInitSync(args: string[], ctx?: CmdCtx): Promise<number> {
+  const json = args.includes('--json');
+  const backfill = args.includes('--backfill');
+  const scopeFlag = stringFlag(args, '--scope') ?? 'repo';
+  if (scopeFlag !== 'repo' && scopeFlag !== 'global') {
+    process.stderr.write(`error: --scope must be repo or global (got '${scopeFlag}')\n`);
+    return EXIT.BAD_ARGS;
+  }
+  const scope: SyncStoreScope = scopeFlag === 'global' ? 'global' : 'local';
+  const syncIdFlag = stringFlag(args, '--sync-id');
+  if (syncIdFlag !== undefined && scope === 'global') {
+    process.stderr.write(
+      'error: --sync-id applies to --scope repo only — global-scope events carry no repo id (D1)\n',
+    );
+    return EXIT.BAD_ARGS;
+  }
+  if (syncIdFlag !== undefined && syncIdFlag.trim().length === 0) {
+    process.stderr.write('error: --sync-id must be a non-empty id\n');
+    return EXIT.BAD_ARGS;
+  }
+  const backendKind = stringFlag(args, '--backend');
+  const url = stringFlag(args, '--url');
+  if (!backendKind || (backendKind !== 'file' && backendKind !== 'http') || !url) {
+    process.stderr.write(
+      'usage: crib memory init-sync --scope repo|global --backend file|http --url <target> [--key-env <NAME>|--keyfile <path>|--gen-key] [--secret-env <NAME>] [--sync-id <id>] [--backfill] [--json]\n',
+    );
+    return EXIT.BAD_ARGS;
+  }
+  const keyEnv = stringFlag(args, '--key-env');
+  const keyFileFlag = stringFlag(args, '--keyfile');
+  const genKey = args.includes('--gen-key');
+  const secretEnv = stringFlag(args, '--secret-env');
+  if ([keyEnv !== undefined, keyFileFlag !== undefined, genKey].filter(Boolean).length > 1) {
+    process.stderr.write('error: choose ONE of --key-env / --keyfile / --gen-key\n');
+    return EXIT.BAD_ARGS;
+  }
+  if (backendKind === 'file' && secretEnv !== undefined) {
+    process.stderr.write('error: --secret-env applies to the http backend only\n');
+    return EXIT.BAD_ARGS;
+  }
+  const env = process.env;
+
+  // The key resolves BEFORE anything is written: the config persists a fingerprint of the bytes,
+  // so an unresolvable or malformed key must fail here, not leave a config that cannot sync.
+  let key: Uint8Array;
+  let keySource: 'env' | 'keyfile';
+  let keyFile: string | undefined;
+  try {
+    if (genKey) {
+      // --gen-key mints 32 random bytes into a 0600 keyfile (randomness never feeds an id/hash).
+      const target = keyFileFlag ?? join(memoryHome(env), 'sync-key');
+      writeFileSync(target, genSyncKey(), { mode: 0o600 });
+      key = resolveSyncKey({ keyFile: target, env: envForExplicitKeyFile(env) }).key;
+      keySource = 'keyfile';
+      keyFile = target;
+    } else if (keyFileFlag !== undefined) {
+      key = resolveSyncKey({ keyFile: keyFileFlag, env: envForExplicitKeyFile(env) }).key;
+      keySource = 'keyfile';
+      keyFile = keyFileFlag;
+    } else if (keyEnv !== undefined) {
+      key = resolveSyncKey({ keyEnv, env }).key;
+      keySource = 'env';
+    } else {
+      const resolved = resolveSyncKey({ env });
+      key = resolved.key;
+      keySource = resolved.source;
+    }
+  } catch (e) {
+    process.stderr.write(`error: ${(e as Error).message}\n`);
+    return EXIT.ERROR;
+  }
+
+  const opened = openSyncApi(ctx);
+  if (!opened) {
+    process.stderr.write('could not resolve repoId for memory — run `crib index` first\n');
+    return EXIT.NOT_INDEXED;
+  }
+  const { api, deps, repoId, repoRoot } = opened;
+  // The stable cross-clone id: explicit --sync-id wins; otherwise derive from the git origin URL
+  // (hashed), falling back to the per-checkout manifest repo.id. Global scope carries none (D1).
+  const syncRepoId = scope === 'local' ? (syncIdFlag ?? deriveSyncId(repoRoot, repoId)) : undefined;
+  // The config is keyed on the manifest's repo.id — materialize it first, or a never-written
+  // store would key the config as `local-unknown-repo.json` and the next sync could not find it.
+  if (scope === 'local') deps.local.ensureManifest();
+  const backend = {
+    kind: backendKind as 'file' | 'http',
+    url,
+    ...(backendKind === 'http' && secretEnv !== undefined ? { authEnv: secretEnv } : {}),
+  };
+  const port =
+    backend.kind === 'file'
+      ? new FileSyncObjectStore(url)
+      : new HttpSyncObjectStore(
+          url,
+          backend.authEnv !== undefined ? { authEnvName: backend.authEnv } : {},
+        );
+  // Fail fast on a typo'd target: an unreachable backend is a refusal, not a config to heal later.
+  const probe = await port.probe();
+  if (!probe.ok) {
+    process.stderr.write(`error: backend probe failed — ${probe.message}\n`);
+    return EXIT.ERROR;
+  }
+  const result = await api.syncInit({
+    scope,
+    deviceId: syncDeviceId(env),
+    key,
+    keySource,
+    backfill,
+    ...(keyEnv !== undefined ? { keyEnv } : {}),
+    ...(keyFile !== undefined ? { keyFile } : {}),
+    ...(syncRepoId !== undefined ? { syncRepoId } : {}),
+    backend,
+  });
+  if (!result.ok || !result.baseline || !result.configPath) {
+    process.stderr.write(`error: ${result.error ?? 'init-sync failed'}\n`);
+    return EXIT.ERROR;
+  }
+  const fingerprint = result.keyFingerprint ?? '';
+  if (json) {
+    process.stdout.write(
+      `${JSON.stringify(
+        {
+          ok: true,
+          scope,
+          ...(syncRepoId !== undefined ? { syncRepoId } : {}),
+          configPath: result.configPath,
+          keySource,
+          keyFingerprint: fingerprint,
+          keyEpoch: result.keyEpoch,
+          backend,
+          baseline: {
+            created: result.baseline.created,
+            acked: result.baseline.state.ackedEvents.length,
+            backfill: backfill === true,
+          },
+          synced: false,
+          message: 'init-sync synced nothing — the baseline marks current entries acked (D5)',
+        },
+        null,
+        2,
+      )}\n`,
+    );
+    return EXIT.OK;
+  }
+  const acked = result.baseline.state.ackedEvents.length;
+  process.stdout.write(
+    `${[
+      `sync configured: scope=${scope} id=${scope === 'local' ? repoId : 'global'}${
+        syncRepoId !== undefined ? ` (sync-id ${syncRepoId})` : ''
+      }`,
+      `  backend: ${backendKind} ${url} (${probe.message})`,
+      `  config: ${result.configPath} (keySource ${keySource}, fingerprint ${fingerprint.slice(0, 12)}, epoch ${result.keyEpoch}) — references only, never key bytes`,
+      backfill
+        ? '  baseline: backfill — nothing acked; the next push stages every live entry'
+        : `  baseline: ${acked} current entries marked acked${result.baseline.created ? ' (state created)' : ' (state already existed — unchanged)'}`,
+      '  NOT synced: init-sync only seeds the baseline (D5) — nothing has been pushed.',
+      backfill
+        ? '  next step: `crib memory sync push` stages and uploads the full history.'
+        : '  next step: `crib memory sync push` (add --backfill to also upload the full history).',
+    ].join('\n')}\n`,
+  );
+  return EXIT.OK;
+}
+
+/** One scope's human-readable sync-status line (the `--json` shape is the raw SyncStatusResult). */
+function renderSyncStatusLine(s: SyncStatusResult): string {
+  if (!s.available || s.status === 'not-initialized') {
+    return `  ${s.store}: not initialized — run \`crib memory init-sync\` first (D5)`;
+  }
+  const lines = [
+    `  ${s.store}: epoch ${s.keyEpoch}, staged ${s.staged}, pending ${s.pending}, acked ${s.acked}, batches pulled ${s.batchesPulled}, conflicts ${s.conflicts.length}, quarantined ${s.quarantine.length}, purge acks ${s.purgeAcks}`,
+  ];
+  if (s.remote) {
+    lines.push(
+      `    remote: ${s.remote.backend} — ${s.remote.reachable ? 'reachable' : 'unreachable'}${s.remote.message ? ` (${s.remote.message})` : ''}, ${s.remote.batches} batch(es), ${s.remote.events} event blob(s)${s.remote.keyFingerprintMatch !== undefined ? `, fingerprint match: ${s.remote.keyFingerprintMatch ? 'yes' : 'NO'}` : ''}`,
+    );
+  }
+  return lines.join('\n');
+}
+
+/**
+ * `crib memory sync [push|pull|status]` (D12). Default action = status (read-only). push/pull run
+ * the engine per CONFIGURED scope — each scope resolves its own backend + key from its config
+ * (the CLI is the only surface with network reach; the MCP server never sees a backend port).
+ * An unconfigured scope is reported honestly, never silently skipped.
+ */
+async function cmdMemorySync(args: string[], ctx?: CmdCtx): Promise<number> {
+  const positionals = positionalsOf(args);
+  const action =
+    positionals[0] !== undefined && !positionals[0].startsWith('-') ? positionals[0] : 'status';
+  const dryRun = args.includes('--dry-run');
+  const json = args.includes('--json');
+  const backfill = args.includes('--backfill');
+  const skip = args.includes('--skip');
+  const maxEvents = intFlag(args, '--max-events');
+  const opened = openSyncApi(ctx);
+  if (!opened) {
+    process.stderr.write('could not resolve repoId for memory — run `crib index` first\n');
+    return EXIT.NOT_INDEXED;
+  }
+  const { api, deps, repoId, env } = opened;
+  const now = (): string => new Date().toISOString();
+
+  if (action === 'status') {
+    const stores: SyncStatusResult[] = [];
+    const configs: Record<string, unknown>[] = [];
+    for (const scope of ['local', 'global'] as const) {
+      const store = scope === 'local' ? deps.local : deps.global;
+      const config = syncConfigFor(scope, repoId, env);
+      let key: Uint8Array | undefined;
+      let backendPort: FileSyncObjectStore | HttpSyncObjectStore | undefined;
+      let backendUrl: string | undefined;
+      if (config?.backend !== undefined) {
+        try {
+          key = syncKeyFromConfig(config, env);
+          backendUrl = config.backend.url;
+          backendPort = backendFromConfig(config).port;
+        } catch (e) {
+          // A key-resolution failure degrades the report's remote half — the sidecar counts are
+          // still served, and the error is stated, never swallowed.
+          process.stderr.write(`warning: ${scope}: ${(e as Error).message}\n`);
+        }
+      }
+      stores.push(
+        await syncEngineStatus(store, {
+          ...(backendPort !== undefined ? { backend: backendPort } : {}),
+          ...(backendPort !== undefined && key !== undefined ? { key } : {}),
+        }),
+      );
+      configs.push({
+        scope,
+        configured: config !== undefined,
+        ...(config !== undefined
+          ? {
+              configPath: syncConfigPath(scope, scope === 'local' ? repoId : 'global', env),
+              keyEpoch: config.keyEpoch,
+              keySource: config.keySource,
+              ...(backendUrl !== undefined && config.backend !== undefined
+                ? { backend: `${config.backend.kind} ${backendUrl}` }
+                : {}),
+            }
+          : {}),
+      });
+    }
+    if (json) {
+      process.stdout.write(
+        `${JSON.stringify({ ok: true, op: 'status', stores, configs }, null, 2)}\n`,
+      );
+    } else {
+      process.stdout.write(
+        `sync status (device ${syncDeviceId(env)}):\n${stores.map(renderSyncStatusLine).join('\n')}\n`,
+      );
+    }
+    return EXIT.OK;
+  }
+
+  if (action === 'push' || action === 'pull') {
+    const stores: SyncStoreRun[] = [];
+    for (const scope of ['local', 'global'] as const) {
+      const config = syncConfigFor(scope, repoId, env);
+      if (config?.backend === undefined) {
+        stores.push({
+          store: scope,
+          ok: false,
+          error: `no ${scope} sync config — run \`crib memory init-sync --scope ${scope === 'local' ? 'repo' : 'global'}\` first`,
+        });
+        continue;
+      }
+      let key: Uint8Array;
+      try {
+        key = syncKeyFromConfig(config, env);
+      } catch (e) {
+        stores.push({ store: scope, ok: false, error: (e as Error).message });
+        continue;
+      }
+      const run = await api.sync({
+        op: action,
+        stores: [scope],
+        backend: backendFromConfig(config).port,
+        // The fingerprint-verified bytes ride the request — the API uses EXACTLY these instead of
+        // re-resolving fail-closed (which could diverge from what was just verified, F6/F8/F12/F18).
+        key,
+        // The stable cross-clone sync id the config recorded at init-sync (a per-checkout
+        // manifest repo.id would make two real clones unable to reconcile).
+        ...(scope === 'local' && config.syncRepoId !== undefined
+          ? { syncRepoId: config.syncRepoId }
+          : {}),
+        dryRun,
+        ...(action === 'push' && backfill ? { backfill: true } : {}),
+        ...(action === 'push' && maxEvents !== undefined ? { maxEvents } : {}),
+        ...(action === 'pull' && skip ? { skip: true } : {}),
+      });
+      stores.push(
+        ...(run.ok === false && !('stores' in run)
+          ? []
+          : (run as { stores: SyncStoreRun[] }).stores),
+      );
+    }
+    // Exit semantics: a scope WITHOUT sync config is a stated skip, not a failure — the run exits
+    // 0 when every CONFIGURED scope succeeded and at least one ran; an unconfigured-everything run
+    // fails (the honest "run init-sync first" posture), and a configured-scope failure fails too.
+    const ran = stores.filter((s) => s.error === undefined);
+    const ok = ran.length > 0 && ran.every((s) => s.ok);
+    if (json) {
+      process.stdout.write(`${JSON.stringify({ ok, op: action, dryRun, stores }, null, 2)}\n`);
+    } else {
+      const lines = stores.map((s) => {
+        if (s.error !== undefined) return `  ${s.store}: not run — ${s.error}`;
+        if (s.push !== undefined) {
+          const p = s.push;
+          return [
+            `  ${s.store}: ${p.status}${p.dryRun ? ' (dry-run — nothing written)' : ''}`,
+            `    staged now ${p.stagedNow}, pushed ${p.pushed}, acked ${p.acked}, deferred ${p.deferred}, batches ${p.batches.length}, refusals ${p.refusals.length}${p.aborted ? `, ABORTED (secret-scan hit on ${p.aborted.payloadId})` : ''}`,
+            ...p.refusals.map((r) => `    refused: ${r.payloadId} — ${r.reason}`),
+            ...(p.message !== undefined ? [`    ${p.message}`] : []),
+          ].join('\n');
+        }
+        const p = s.pull;
+        if (p === undefined) return `  ${s.store}: no report`;
+        return [
+          `  ${s.store}: ${p.status}${p.dryRun ? ' (dry-run — nothing written)' : ''}`,
+          `    batches seen ${p.batchesSeen}, applied ${p.batchesApplied}, applied events ${p.applied.length}, surfaced ${p.surfaced.length}, conflicts added ${p.conflictsAdded.length}, quarantined ${p.quarantined.length}, missing ${p.missing.length}`,
+          ...p.surfaced.map((x) => `    surfaced: ${x.eventId} — ${x.reason}`),
+          ...(p.halted !== undefined
+            ? [
+                `    HALTED: ${p.halted.reason} (cursor unmoved — fix and re-run, or re-run with --skip to quarantine)`,
+              ]
+            : []),
+          ...(p.message !== undefined ? [`    ${p.message}`] : []),
+        ].join('\n');
+      });
+      process.stdout.write(`sync ${action}${dryRun ? ' (dry-run)' : ''}:\n${lines.join('\n')}\n`);
+    }
+    return ok ? EXIT.OK : EXIT.ERROR;
+  }
+
+  if (action === 'rotate-key') {
+    // D7: verify-everything-under-the-old-key → re-encrypt + re-push under the NEW key → bump the
+    // epoch LAST. The new key must be given explicitly — defaulting it to the old resolution would
+    // make rotation a silent no-op.
+    const keyEnv = stringFlag(args, '--key-env');
+    const keyFileFlag = stringFlag(args, '--keyfile');
+    const genKey = args.includes('--gen-key');
+    if ([keyEnv !== undefined, keyFileFlag !== undefined, genKey].filter(Boolean).length !== 1) {
+      process.stderr.write(
+        'usage: crib memory sync rotate-key (--gen-key | --key-env <NAME> | --keyfile <path>) [--dry-run]\n',
+      );
+      return EXIT.BAD_ARGS;
+    }
+    let newKey: Uint8Array;
+    let newKeyFile: string | undefined;
+    try {
+      if (genKey) {
+        const target = keyFileFlag ?? join(memoryHome(env), 'sync-key');
+        writeFileSync(target, genSyncKey(), { mode: 0o600 });
+        newKey = resolveSyncKey({ keyFile: target, env: envForExplicitKeyFile(env) }).key;
+        newKeyFile = target;
+      } else if (keyFileFlag !== undefined) {
+        newKey = resolveSyncKey({ keyFile: keyFileFlag, env: envForExplicitKeyFile(env) }).key;
+        newKeyFile = keyFileFlag;
+      } else {
+        newKey = resolveSyncKey({ keyEnv, env }).key;
+      }
+    } catch (e) {
+      process.stderr.write(`error: ${(e as Error).message}\n`);
+      return EXIT.ERROR;
+    }
+    const principalId = env.KCRIB_PRINCIPAL_ID ?? DEFAULT_MIGRATION_PRINCIPAL_ID;
+    const lines: string[] = [];
+    let ok = true;
+    for (const scope of ['local', 'global'] as const) {
+      const store = scope === 'local' ? deps.local : deps.global;
+      const config = syncConfigFor(scope, repoId, env);
+      if (config?.backend === undefined) {
+        lines.push(`  ${scope}: no sync config — nothing to rotate`);
+        continue;
+      }
+      let oldKey: Uint8Array;
+      try {
+        oldKey = syncKeyFromConfig(config, env);
+      } catch (e) {
+        lines.push(`  ${scope}: FAILED — ${(e as Error).message}`);
+        ok = false;
+        continue;
+      }
+      const res = await rotateSyncKey(store, backendFromConfig(config).port, {
+        key: oldKey,
+        newKey,
+        principalId,
+        now,
+        dryRun,
+        // The drain sweep must re-derive the SAME event ids the acks name — the stable sync id the
+        // config recorded at init-sync, not the per-checkout manifest repo.id.
+        ...(scope === 'local' && config.syncRepoId !== undefined
+          ? { syncRepoId: config.syncRepoId }
+          : {}),
+      });
+      ok = ok && res.ok;
+      lines.push(
+        `  ${scope}: ${res.status} — re-encrypted ${res.reEncrypted} event(s), epoch ${res.keyEpoch ?? '?'}`,
+      );
+      if (res.message !== undefined) lines.push(`    ${res.message}`);
+      if (res.warning !== undefined) lines.push(`    warning: ${res.warning}`);
+      if (res.pending !== undefined && res.pending > 0) {
+        lines.push(`    staged-but-unacked events: ${res.pending} — push before rotating`);
+      }
+      if (res.ok && !dryRun) {
+        // The config must name the NEW key REFERENCE (source + env/file), fingerprint and epoch, or
+        // the next push would re-resolve the OLD key and fail the fingerprint check. The stable
+        // syncRepoId reference survives the spread untouched.
+        const state = loadSyncState(store.rootDir);
+        const newSource: 'env' | 'keyfile' =
+          genKey || keyFileFlag !== undefined ? 'keyfile' : 'env';
+        writeSyncConfig(
+          {
+            ...config,
+            keySource: newSource,
+            // Writing the unused reference as undefined drops it from the JSON — switching
+            // env→keyfile must not leave a stale keyEnv behind (and vice versa).
+            ...(newSource === 'env'
+              ? { keyEnv, keyFile: undefined }
+              : { keyFile: newKeyFile, keyEnv: undefined }),
+            keyFingerprint: keyFingerprint(newKey),
+            keyEpoch: state?.keyEpoch ?? config.keyEpoch + 1,
+          },
+          env,
+        );
+      }
+    }
+    if (ok && !dryRun && newKeyFile !== undefined) {
+      lines.push(`  new keyfile: ${newKeyFile} (mode 0600)`);
+    }
+    process.stdout.write(`rotate-key${dryRun ? ' (dry-run)' : ''}:\n${lines.join('\n')}\n`);
+    if (ok && !dryRun) {
+      process.stdout.write(
+        '  D7 operator steps: verify a SECOND device pulls clean under the new key BEFORE `crib memory sync purge-sync --stale-epoch` deletes the old-epoch objects.\n',
+      );
+    }
+    return ok ? EXIT.OK : EXIT.ERROR;
+  }
+
+  if (action === 'purge-sync') {
+    // The stale-epoch purge is the CLI's job (the engine never deletes remote objects outside the
+    // purge path): delete remote blobs that no longer decrypt under the CURRENT key. The manifest
+    // must already name the local epoch — otherwise a peer that has not rotated yet would lose
+    // its not-yet-re-encrypted objects.
+    if (!args.includes('--stale-epoch')) {
+      process.stderr.write(
+        "purge-sync deletes the PREVIOUS key epoch's remote objects — pass --stale-epoch to confirm (run it only after every device rotated AND pulled clean, D7)\n",
+      );
+      return EXIT.BAD_ARGS;
+    }
+    const lines: string[] = [];
+    let ok = true;
+    for (const scope of ['local', 'global'] as const) {
+      const store = scope === 'local' ? deps.local : deps.global;
+      const config = syncConfigFor(scope, repoId, env);
+      if (config?.backend === undefined) {
+        lines.push(`  ${scope}: no sync config — nothing to purge`);
+        continue;
+      }
+      let key: Uint8Array;
+      try {
+        key = syncKeyFromConfig(config, env);
+      } catch (e) {
+        lines.push(`  ${scope}: FAILED — ${(e as Error).message}`);
+        ok = false;
+        continue;
+      }
+      const port = backendFromConfig(config).port;
+      const state = loadSyncState(store.rootDir);
+      const manifestBytes = await port.getObject(REMOTE_MANIFEST_KEY);
+      const manifest = manifestBytes !== undefined ? parseRemoteManifest(manifestBytes) : undefined;
+      if (state === undefined || manifest === undefined) {
+        lines.push(
+          `  ${scope}: ${state === undefined ? 'no sync-state — run init-sync first (D5)' : 'no readable remote manifest — nothing is provably stale'}`,
+        );
+        ok = false;
+        continue;
+      }
+      if (manifest.keyEpoch !== state.keyEpoch) {
+        lines.push(
+          `  ${scope}: refused — remote is at keyEpoch ${manifest.keyEpoch}, this device at ${state.keyEpoch}; rotate + pull on EVERY device before purging stale objects`,
+        );
+        ok = false;
+        continue;
+      }
+      // A current-epoch blob decrypts under the current key; an old-epoch (or corrupt) one fails
+      // GCM auth. Deleted objects are counted; a dry-run computes without deleting.
+      const listed = await port.listObjects('ev/');
+      let deleted = 0;
+      let kept = 0;
+      for (const k of listed.keys) {
+        const bytes = await port.getObject(k);
+        if (bytes === undefined) {
+          deleted++;
+          continue;
+        }
+        try {
+          decryptEvent(bytes, key);
+          kept++;
+        } catch (e) {
+          if (!(e instanceof SyncCryptoError)) throw e;
+          if (!dryRun) await port.deleteObject(k);
+          deleted++;
+        }
+      }
+      lines.push(
+        `  ${scope}: ${deleted} remote object(s) ${dryRun ? 'WOULD be' : ''}deleted, ${kept} kept under epoch ${state.keyEpoch}`,
+      );
+    }
+    process.stdout.write(
+      `purge-sync (stale epoch)${dryRun ? ' — dry-run' : ''}:\n${lines.join('\n')}\n`,
+    );
+    return ok ? EXIT.OK : EXIT.ERROR;
+  }
+
+  process.stderr.write(`unknown sync action: ${action} (push|pull|status|rotate-key|purge-sync)\n`);
+  return EXIT.BAD_ARGS;
+}
+
+/**
+ * `crib memory purge <mem-id>... --confirm <mem-id>...` (D11): logical tombstone FIRST, then the
+ * store-mediated shard rewrite, twin sweep, alias-resolved twin (alias lines RETAINED), and —
+ * when the local scope is configured — the remote blob deletes. The routed blobs are only touched
+ * when the config + key resolve; otherwise the report says the remote was NOT touched. The
+ * history-scan report is the honest limit: git history cannot provide irreversible deletion.
+ */
+async function cmdMemoryPurge(args: string[], ctx?: CmdCtx): Promise<number> {
+  const json = args.includes('--json');
+  const dryRun = args.includes('--dry-run');
+  const historyScan = args.includes('--history-scan');
+  // Positionals here are mem: ids; --confirm repeats the exact list (no wildcards, D11).
+  const ids = positionalsOf(args).filter((t) => t.startsWith('mem:'));
+  const confirmIds = repeatedFlag(args, '--confirm');
+  const storesFlag = stringFlag(args, '--stores');
+  if (ids.length === 0 || confirmIds.length === 0) {
+    process.stderr.write(
+      'usage: crib memory purge <mem-id>... --confirm <mem-id>... [--stores local,global] [--history-scan] [--dry-run] [--actor <id>] [--json]\n  the exact id list must be repeated in --confirm (no wildcards)\n',
+    );
+    return EXIT.BAD_ARGS;
+  }
+  const opened = openSyncApi(ctx);
+  if (!opened) {
+    process.stderr.write('could not resolve repoId for memory — run `crib index` first\n');
+    return EXIT.NOT_INDEXED;
+  }
+  const { api, repoId, env } = opened;
+  const actor =
+    stringFlag(args, '--actor') ?? env.KCRIB_PRINCIPAL_ID ?? DEFAULT_MIGRATION_PRINCIPAL_ID;
+  // Per-scope routes (ADR-003 D6/D11): the local and global stores can be synced to DIFFERENT
+  // backends with DIFFERENT keys, so each scope's remote delete leg must resolve from ITS OWN
+  // config. A scope with no config (or an unresolvable key) simply has no route — the purge still
+  // completes locally and the report states the remote was untouched.
+  const routes: Partial<
+    Record<
+      SyncStoreScope,
+      { backend: FileSyncObjectStore | HttpSyncObjectStore; syncKey: Uint8Array }
+    >
+  > = {};
+  for (const scope of ['local', 'global'] as const) {
+    try {
+      const config = syncConfigFor(scope, repoId, env);
+      if (config?.backend === undefined) continue;
+      routes[scope] = {
+        backend: backendFromConfig(config).port,
+        // fingerprint gate — a mismatched key refuses the run
+        syncKey: syncKeyFromConfig(config, env),
+      };
+    } catch (e) {
+      process.stderr.write(
+        `warning: ${scope} remote delete leg skipped — ${(e as Error).message}\n`,
+      );
+    }
+  }
+  const stores = storesFlag
+    ? (storesFlag.split(',').map((s) => s.trim()) as MemorySource[])
+    : undefined;
+  const result = await api.purgeRecords(ids, {
+    actor,
+    confirmIds,
+    dryRun,
+    historyScan,
+    ...(stores !== undefined ? { stores } : {}),
+    ...(Object.keys(routes).length > 0 ? { routes } : {}),
+  });
+  if (!result.ok) {
+    process.stderr.write(
+      `error: ${
+        result.message ??
+        (result.purged
+          .flatMap((r) => r.stores.map((s) => s.error ?? ''))
+          .filter(Boolean)
+          .join('; ') ||
+          'purge refused')
+      }\n`,
+    );
+    return EXIT.ERROR;
+  }
+  if (json) {
+    process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+    return EXIT.OK;
+  }
+  const lines: string[] = [];
+  for (const r of result.purged) {
+    lines.push(
+      `purge ${r.id}:${r.found ? '' : ' not found in any targeted store'}${r.resolvedTwin ? ` (alias twin ${r.resolvedTwin} purged with it; alias lines retained)` : ''}`,
+    );
+    for (const s of r.stores) {
+      if (s.error !== undefined) {
+        lines.push(`  ${s.store}: ${s.error}`);
+        continue;
+      }
+      lines.push(
+        `  ${s.store}: ${s.decisionId ? `tombstone decision ${s.decisionId}` : 'no tombstone'}; shard ${result.dryRun ? 'WOULD be' : ''}rewritten: ${s.removed ? 'yes' : 'no'}${s.twins.length > 0 ? `; twins swept: ${s.twins.join(', ')}` : ''}${s.teamOutcome === 'retract-only' ? '; team: retracted only (git history is the team backend — never physically rewritten)' : ''}`,
+      );
+    }
+    if (r.commits !== undefined) {
+      lines.push(
+        `  history-scan: ${r.commits.length} commit(s) still contain the id in .crib/memory — git history cannot provide irreversible deletion; rewriting history is a git operation crib does not perform`,
+      );
+      for (const c of r.commits) lines.push(`    ${c}`);
+    }
+  }
+  process.stdout.write(
+    `purge${result.dryRun ? ' (dry-run — nothing written)' : ''}:\n${lines.join('\n')}\n`,
+  );
+  return EXIT.OK;
+}
+
+/**
+ * `crib memory conflicts` — the read-only fold of the decision-level conflict groups (D8: a
+ * subject retracted on one device and superseded on another — or given two different successors)
+ * plus the sync conflict ledger (same id, different bytes — digests only, never payloads).
+ * Read-only: resolution happens through `crib memory resolve`, which APPENDS.
+ */
+function cmdMemoryConflicts(args: string[], ctx?: CmdCtx): number {
+  const json = args.includes('--json');
+  const opened = openSyncApi(ctx);
+  if (!opened) {
+    process.stderr.write('could not resolve repoId for memory — run `crib index` first\n');
+    return EXIT.NOT_INDEXED;
+  }
+  const { api, deps } = opened;
+  // The decision pool spans every store (audit posture: reporting gathers, the read projection
+  // folds per source) — a local supersede against a global retract must still surface here.
+  const decisions: MemoryDecision[] = [
+    ...(deps.team.readCollection('decisions').entries as MemoryDecision[]),
+    ...(deps.local.readCollection('decisions').entries as MemoryDecision[]),
+    ...(deps.global.readCollection('decisions').entries as MemoryDecision[]),
+  ];
+  const groups = decisionConflicts(decisions);
+  const ledger = api.listSyncConflicts();
+  if (json) {
+    process.stdout.write(
+      `${JSON.stringify({ ok: true, decisionConflicts: groups, syncConflicts: ledger.conflicts }, null, 2)}\n`,
+    );
+    return EXIT.OK;
+  }
+  if (groups.length === 0 && ledger.conflicts.length === 0) {
+    process.stdout.write(
+      'conflicts: none — no divergent retirement decisions, no byte conflicts.\n',
+    );
+    return EXIT.OK;
+  }
+  const lines: string[] = [];
+  for (const g of groups) {
+    lines.push(`decision conflict on ${g.subject} (${g.kind}): ${g.decisionIds.join(', ')}`);
+  }
+  for (const c of ledger.conflicts) {
+    lines.push(
+      `byte conflict on ${c.payloadId} (${c.store}, device ${c.sourceDevice}): local ${c.localDigest.slice(0, 12)} vs remote ${c.remoteDigest.slice(0, 12)} — resolve with \`crib memory resolve ${c.payloadId} (--successor <id> | --retract) --actor <id>\``,
+    );
+  }
+  process.stdout.write(`conflicts:\n${lines.join('\n')}\n`);
+  return EXIT.OK;
+}
+
+/**
+ * `crib memory resolve <record-id> (--successor <id> | --retract) --actor <id>` (D8): the
+ * append-only human resolution. Exactly one of successor / retract; the appended decision is
+ * content-addressed and itself syncs, so the resolution converges across devices.
+ */
+function cmdMemoryResolve(args: string[], ctx?: CmdCtx): number {
+  const json = args.includes('--json');
+  const id = positionalsOf(args)[0];
+  const successor = stringFlag(args, '--successor');
+  const retract = args.includes('--retract');
+  const actor = stringFlag(args, '--actor');
+  const reason = stringFlag(args, '--reason');
+  if (!id || !actor || (!successor && !retract) || (successor !== undefined && retract)) {
+    process.stderr.write(
+      'usage: crib memory resolve <record-id> (--successor <id> | --retract) --actor <id> [--reason <text>] [--json]\n',
+    );
+    return EXIT.BAD_ARGS;
+  }
+  const opened = openSyncApi(ctx);
+  if (!opened) {
+    process.stderr.write('could not resolve repoId for memory — run `crib index` first\n');
+    return EXIT.NOT_INDEXED;
+  }
+  const res = opened.api.resolveConflict(
+    id,
+    successor !== undefined ? { successor } : { retract: true },
+    actor,
+    reason,
+  );
+  if (!res.ok) {
+    process.stderr.write(`error: ${res.error}\n`);
+    return EXIT.ERROR;
+  }
+  if (json) {
+    process.stdout.write(`${JSON.stringify(res, null, 2)}\n`);
+    return EXIT.OK;
+  }
+  process.stdout.write(
+    `resolved ${res.id}: decision ${res.decisionId} appended to the ${res.decisionSource} store (append-only — the conflict ledger rows are never rewritten; the resolving decision syncs like any other)\n`,
+  );
+  return EXIT.OK;
 }
 
 // ─── P0.1 — `crib memory recall` (the protocol's documented CLI fallback) ─────────
@@ -4655,7 +5565,9 @@ function cmdMemoryGet(args: string[], ctx?: CmdCtx): number {
   let result: Record<string, unknown>;
   if (!isMemoryRecordV2(record)) {
     // Memory-1: the W3 response contract, byte-identical in shape to the MCP verb (the supersededBy
-    // link rides on decisions and is surfaced only when one exists).
+    // link rides on decisions and is surfaced only when one exists). The verdicts are the EFFECTIVE
+    // four axes — a pulled tombstone must flip `lifecycle` here too (the stamped verdicts on a
+    // content-addressed entry never mutate, so the classic no-decision read is unchanged).
     result = {
       id: record.id,
       subject: record.subject,
@@ -4663,7 +5575,12 @@ function cmdMemoryGet(args: string[], ctx?: CmdCtx): number {
       scope: record.scope,
       appliesTo: record.appliesTo,
       authorship: record.authorship,
-      verdicts: record.verdicts,
+      verdicts: {
+        trust: got.verdicts?.trust ?? record.verdicts.trust,
+        evidence: got.verdicts?.evidence ?? record.verdicts.evidence,
+        applicability: got.verdicts?.applicability ?? record.verdicts.applicability,
+        lifecycle: got.verdicts?.lifecycle ?? record.verdicts.lifecycle,
+      },
       source: got.source,
       createdAt: record.createdAt,
       evidence,
@@ -4776,7 +5693,10 @@ function cmdMemorySupersede(args: string[], ctx?: CmdCtx): number {
           claim: claim ?? '',
           ...(subject !== undefined ? { subject } : {}),
           ...(kind !== undefined ? { kind: kind as MemoryRecordKind } : {}),
-          ...(visibility !== undefined ? { visibility } : {}),
+          // A claim-supersede publishes a successor carrying the live claim forward — default it to
+          // workspace visibility so a team-store supersede does not get refused by the D10 gate
+          // (private never enters git); an operator can still pass --visibility private explicitly.
+          ...(visibility !== undefined ? { visibility } : { visibility: 'workspace' as const }),
           ...(propositionKey !== undefined ? { propositionKey } : {}),
         };
   const result = api.supersede(id, by, {
@@ -4960,8 +5880,13 @@ function cmdMemoryInit(args: string[], ctx?: CmdCtx): number {
   } else {
     process.stdout.write(`policy already present → ${policyFile}\n`);
   }
+  // The doctor memory-loop check requires policy.json + team store + adapters; until the first
+  // team write the team root never existed, so `crib memory init` alone left a state whose own
+  // fix hint pointed back at `crib memory init`. Create the store root at init time instead.
+  const teamRoot = teamStoreRoot(resolved.cribDir);
+  mkdirSync(teamRoot, { recursive: true });
   process.stdout.write(
-    `repoId: ${repoId}\nteam store:  ${join(resolved.cribDir, 'memory', 'team')}\nlocal store: ~/.crib/memory/repos/${repoId}\n`,
+    `repoId: ${repoId}\nteam store:  ${teamRoot}\nlocal store: ~/.crib/memory/repos/${repoId}\n`,
   );
   return EXIT.OK;
 }
@@ -5631,6 +6556,13 @@ function cmdMemoryFeedback(args: string[], ctx?: CmdCtx): number {
       return EXIT.BAD_ARGS;
     }
   }
+  // The stable cross-clone id the sync config records, when one is initialized (undefined otherwise —
+  // the stage helper falls back to the manifest repo.id, which is correct pre-init too).
+  const syncRepoIdRef = readSyncConfig(
+    'local',
+    readRepoId(resolved.cribDir) ?? '',
+    process.env,
+  )?.syncRepoId;
   const result = applyContradictedFeedback(deps.local, {
     record: { id: subject, kind: claimKind ?? 'fact' },
     feedback: {
@@ -5644,6 +6576,24 @@ function cmdMemoryFeedback(args: string[], ctx?: CmdCtx): number {
     },
     counterEvidence: claimKind ? counterEvidence : [],
     now: () => new Date().toISOString(),
+    // ADR-003 D3/D4: the feedback row and (on suppression) the quarantine decision stage for
+    // cross-device sync INSIDE the same lock hold that writes them — a contradicted-feedback
+    // quarantine must survive to the next device, or it resurrects there.
+    syncStage: {
+      stageWrite: (collection, entry) => {
+        stageSyncableWrite(
+          deps.local,
+          collection === 'decisions' ? 'decision.append' : 'feedback.append',
+          entry,
+          {
+            principalId: actor,
+            env: process.env,
+            now: () => new Date().toISOString(),
+            ...(syncRepoIdRef !== undefined ? { syncRepoId: syncRepoIdRef } : {}),
+          },
+        );
+      },
+    },
   });
   const summary: Record<string, unknown> = {
     feedbackId: result.feedbackId,
@@ -5676,6 +6626,47 @@ function findRecordKind(
 }
 
 /** `crib memory audit [--repair-local]` — report validation drift, conflicts, and trust distribution. */
+/**
+ * D10 (ADR-003) — private memory never enters Git. The team store IS a git repo, so a `private`
+ * record that has landed in a team shard file is a D10 violation sitting in history. The audit
+ * walks the team store's shard files (JSONL, one entry per line) READ-ONLY and reports any
+ * memory-2 record stamped `visibility: 'private'` by file + line + id. Unparseable lines are
+ * counted, never reported as violations. The audit never edits team memory — retraction is an
+ * operator action (`crib memory resolve <id> --retract --actor <id>`).
+ */
+function scanTeamPrivateLines(rootDir: string): {
+  shardsScanned: number;
+  lines: Array<{ file: string; line: number; id: string }>;
+} {
+  const hits: Array<{ file: string; line: number; id: string }> = [];
+  let shardsScanned = 0;
+  const walk = (dir: string): void => {
+    for (const name of readdirSync(dir, { withFileTypes: true })) {
+      const p = join(dir, name.name);
+      if (name.isDirectory()) walk(p);
+      else if (name.isFile() && name.name.endsWith('.jsonl')) {
+        shardsScanned += 1;
+        const rows = readFileSync(p, 'utf8').split('\n');
+        for (let i = 0; i < rows.length; i++) {
+          const trimmed = rows[i]?.trim() ?? '';
+          if (trimmed.length === 0) continue;
+          let parsed: unknown;
+          try {
+            parsed = JSON.parse(trimmed) as unknown;
+          } catch {
+            continue; // a torn line is a shard-integrity finding, not a privacy violation
+          }
+          if (isMemoryRecordV2(parsed) && parsed.visibility === 'private') {
+            hits.push({ file: relative(rootDir, p), line: i + 1, id: parsed.id });
+          }
+        }
+      }
+    }
+  };
+  if (existsSync(rootDir)) walk(rootDir);
+  return { shardsScanned, lines: hits };
+}
+
 function cmdMemoryAudit(args: string[], ctx?: CmdCtx): number {
   const repair = args.includes('--repair-local');
   const resolved = resolveRoot(args, ctx);
@@ -5790,6 +6781,9 @@ function cmdMemoryAudit(args: string[], ctx?: CmdCtx): number {
     ts: fb.ts,
     ...(fb.context ? { context: fb.context } : {}),
   }));
+  // D10 (ADR-003) — private memory never enters Git: scan the team store's shard files READ-ONLY.
+  // Empty + honest: `no private records in team shards` is a clean result, not a missing check.
+  const teamPrivate = scanTeamPrivateLines(deps.team.rootDir);
   process.stdout.write(
     `${JSON.stringify(
       {
@@ -5799,6 +6793,14 @@ function cmdMemoryAudit(args: string[], ctx?: CmdCtx): number {
         trust,
         perStore,
         feedback: { quarantined, contradictedForReview: contradictedForReviewList },
+        teamPrivate: {
+          shardsScanned: teamPrivate.shardsScanned,
+          instances: teamPrivate.lines,
+          message:
+            teamPrivate.lines.length === 0
+              ? 'no private records in team shards (D10: private memory never enters Git)'
+              : `${teamPrivate.lines.length} private record(s) inside the team store — a D10 violation; retract them (\`crib memory resolve <id> --retract --actor <id>\`)`,
+        },
         ...(repair
           ? { repaired, tombstoned, tombstoneDecisions, ...(trustedRef ? { trustedRef } : {}) }
           : {}),

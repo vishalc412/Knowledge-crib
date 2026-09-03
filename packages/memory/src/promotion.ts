@@ -274,6 +274,21 @@ export function proposeTeam(
       evaluation.record.id,
     );
   }
+  // D10 (prophylactic): private never enters git. The promoted record is TYPED as the memory-1
+  // envelope today, so the check reads the runtime shape instead of the static type — if the
+  // pipeline ever starts carrying memory-2 records (or a cast hides one), the proposal gate fails
+  // loudly too, not only the store's write gate.
+  const promoted = evaluation.record as unknown as {
+    id: string;
+    schemaVersion?: string;
+    visibility?: string;
+  };
+  if (promoted.schemaVersion === '2' && promoted.visibility === 'private') {
+    throw new ProposalRefusedError(
+      "record projects visibility 'private' — private never enters git (D10)",
+      promoted.id,
+    );
+  }
   const teamRecord: MemoryRecord = {
     ...evaluation.record,
     verdicts: { ...evaluation.record.verdicts, trust: 'team' },
