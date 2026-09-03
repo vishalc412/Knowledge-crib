@@ -22,7 +22,11 @@
  */
 import { DatabaseSync, type StatementSync } from 'node:sqlite';
 import { type LexicalScorer, exactLexicalScorer } from './recall.js';
-import type { MemoryEvidence, MemoryRecord } from './types.js';
+import { type MemoryRecord, type MemoryRecordV2, isMemoryRecordV2 } from './types.js';
+import type { MemoryEvidence } from './types.js';
+
+/** A record of either schema version — the FTS index builds over mixed-version gathered records. */
+type AnyMemoryRecord = MemoryRecord | MemoryRecordV2;
 
 // ─── schema ──────────────────────────────────────────────────────────────────
 
@@ -53,9 +57,12 @@ function evidenceSummary(ev: MemoryEvidence): string {
   return parts.join(' ');
 }
 
-/** Compose the `targets` column: appliesTo ids + evidence soul ids (artifact/path refs included). */
-function targetsText(record: MemoryRecord): string {
-  const refs = new Set<string>(record.appliesTo);
+/** Compose the `targets` column: appliesTo ids + evidence soul ids (artifact/path refs included).
+ *  memory-2 records carry no `appliesTo` (their reattachment targets live in evidence) — the guard
+ *  keeps a mixed-version index build from crashing on the absent field. */
+function targetsText(record: AnyMemoryRecord): string {
+  const appliesTo = isMemoryRecordV2(record) ? [] : record.appliesTo;
+  const refs = new Set<string>(appliesTo);
   for (const ev of record.evidence) {
     const soulId = (ev as Record<string, unknown>).soulId;
     if (typeof soulId === 'string' && soulId.length > 0) refs.add(soulId);
@@ -63,14 +70,17 @@ function targetsText(record: MemoryRecord): string {
   return [...refs].join(' ');
 }
 
-/** Compose the `scope` column from the record's scope (boundary + repoId). */
-function scopeText(record: MemoryRecord): string {
+/** Compose the `scope` column from the record's placement: v1 scope (boundary + repoId); memory-2
+ *  `visibility` (the closest placement signal — visibility and storage placement are independent,
+ *  so the column stays lexical text, never a semantic conflation). */
+function scopeText(record: AnyMemoryRecord): string {
+  if (isMemoryRecordV2(record)) return record.visibility;
   const s = record.scope;
   return s.boundary === 'global' ? 'global' : `repo ${s.repoId ?? ''}`;
 }
 
 /** The FTS row values for one record, in column order: [id, subject, claim, targets, evidence, scope]. */
-function ftsRow(record: MemoryRecord): [string, string, string, string, string, string] {
+function ftsRow(record: AnyMemoryRecord): [string, string, string, string, string, string] {
   return [
     record.id,
     record.subject,
@@ -111,7 +121,7 @@ export class MemoryFtsIndex {
   }
 
   /** Clear and bulk-insert all records in one transaction. The canonical "rebuild the read model" op. */
-  rebuild(records: Iterable<MemoryRecord>): void {
+  rebuild(records: Iterable<AnyMemoryRecord>): void {
     this.assertNotClosed();
     this.db.exec('BEGIN');
     try {
@@ -125,7 +135,7 @@ export class MemoryFtsIndex {
   }
 
   /** Incremental delete-by-id + insert for a batch of records (FTS5 `id UNINDEXED` is not unique). */
-  upsert(records: Iterable<MemoryRecord>): void {
+  upsert(records: Iterable<AnyMemoryRecord>): void {
     this.assertNotClosed();
     this.db.exec('BEGIN');
     try {

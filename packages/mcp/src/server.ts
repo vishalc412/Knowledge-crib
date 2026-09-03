@@ -10,6 +10,7 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { CallToolRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import { z } from 'zod';
+import { TOOL_NAMES, opSchema } from './capabilities.js';
 import {
   MAX_DEPTH,
   MAX_DOC_LIMIT,
@@ -37,8 +38,10 @@ const BAD_REQUEST = (message: string) => ({ error: { code: 'BAD_REQUEST', messag
  * `op` dispatchers folded them, so their calls must keep resolving until the next release, after
  * which this table and {@link installAliasRouter} are removed. New clients never see these names —
  * they are not registered tools, so they cost nothing in tools/list (see the router comment).
+ *
+ * Exported so tests derive the retired-name list from here instead of re-maintaining it by hand.
  */
-const RETIRED_ALIASES: Record<string, { tool: string; op: string }> = {
+export const RETIRED_ALIASES: Record<string, { tool: string; op: string }> = {
   memory_get: { tool: 'memory', op: 'get' },
   memory_status: { tool: 'memory', op: 'status' },
   memory_audit: { tool: 'memory', op: 'audit' },
@@ -110,6 +113,26 @@ function installAliasRouter(server: McpServer): void {
       extra,
     );
   });
+}
+
+/**
+ * Gate 1.4 wiring: fail AT BUILD TIME when the registered surface disagrees with the capability
+ * manifest (packages/mcp/src/capabilities.ts). The manifest is the single source for the tool list
+ * and each dispatcher's ops; the op zod enums are GENERATED from it ({@link opSchema}), so the only
+ * remaining way to drift is registering a tool the manifest does not declare (or forgetting to
+ * register one it does) — which this check turns into a thrown error that every server test and the
+ * docs count gate surface as a build failure, not a doc-sweep.
+ */
+function assertSurfaceMatchesManifest(server: McpServer): void {
+  const registered = Object.keys(
+    (server as unknown as { _registeredTools: Record<string, unknown> })._registeredTools,
+  ).sort();
+  const expected = [...TOOL_NAMES].sort();
+  if (registered.length !== expected.length || registered.some((name, i) => name !== expected[i])) {
+    throw new Error(
+      `registered surface does not match the capability manifest: registered [${registered.join(', ')}] vs manifest [${expected.join(', ')}]`,
+    );
+  }
 }
 
 /** Build (but do not connect) the MCP server with all verbs registered. */
@@ -305,9 +328,9 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
     'memory',
     {
       description:
-        'Memory ledger operations, selected by `op`. get: one record by id (needs id; withEvidence for full evidence). status: ledger counts by trust/evidence/lifecycle plus recall-eligible, quarantined, and pending. audit: read-only health report - drifted verdicts, conflict groups, a secret re-scan, trust distribution, locally quarantined records. capture: episodic capture to the candidate tier (needs subject, observation, actor) - loose refs in files/symbols are auto-anchored to a source-quote evidence item when they resolve; the candidate is pending trust and never enters normal recall. feedback: record LOCAL feedback on a record (needs subject, signal, actor); a `contradicted` signal quarantines only when backed by admissible counterEvidence, and never retracts team memory. To READ memory for a task use `memory_recall`; to WRITE a fully-formed grounded claim use `memory_observe`.',
+        'Memory ledger operations, selected by `op`. get: one record by id (needs id; withEvidence for full evidence; follows legacy-ID aliases, and memory-2 records answer with their v2 fields - visibility, propositionKey, validTime/transactionTime, lineage - instead of v1 fields). search: ranked search over the ledger (q, sources, targetIds, limit, maxTokens) - the same projection memory_recall uses, including effective/alias-restored verdicts and conflict groups. supersede: replace a record with a successor (needs id + actor, and either successor=an existing record id or claim=a new claim text) - writes the v2 successor plus a supersede decision. delete: tombstone a record (needs id + actor) - appends a retract decision, never destroys the line. history: bi-temporal timeline for one key (needs key; asOf for a point-in-time read). sync: honest not-available placeholder (the sync engine ships in Gate 4). status: ledger counts by trust/evidence/lifecycle plus recall-eligible, quarantined, and pending. audit: read-only health report - drifted verdicts, conflict groups, a secret re-scan, trust distribution, locally quarantined records. capture: episodic capture to the candidate tier (needs subject, observation, actor) - loose refs in files/symbols are auto-anchored to a source-quote evidence item when they resolve; the candidate is pending trust and never enters normal recall. feedback: record LOCAL feedback on a record (needs subject, signal, actor); a `contradicted` signal quarantines only when backed by admissible counterEvidence, and never retracts team memory. To READ memory for a task use `memory_recall`; to WRITE a fully-formed grounded claim use `memory_observe`.',
       inputSchema: {
-        op: z.enum(['get', 'status', 'audit', 'capture', 'feedback']),
+        op: opSchema('memory'),
         id: z.string().optional(),
         withEvidence: z.boolean().optional(),
         subject: z.string().optional(),
@@ -321,6 +344,19 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
         scopeBoundary: z.enum(['repo', 'global']).optional(),
         context: z.string().optional(),
         counterEvidence: z.array(z.record(z.string(), z.unknown())).optional(),
+        // ── search / history / supersede args (Gate 1.3 portable op set) ──
+        q: z.string().optional(),
+        targetIds: z.array(z.string()).optional(),
+        sources: z.array(z.enum(['team', 'local', 'global'])).optional(),
+        limit: z.number().int().positive().optional(),
+        maxTokens: z.number().int().positive().optional(),
+        asOf: z.string().optional(),
+        key: z.string().optional(),
+        successor: z.string().optional(),
+        claim: z.string().optional(),
+        reason: z.string().optional(),
+        visibility: z.enum(['private', 'workspace']).optional(),
+        propositionKey: z.string().optional(),
         ifHash: z.string().optional(),
       },
     },
@@ -339,6 +375,74 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
         case 'status':
           return TOOL_RESULT(
             verbs.memoryStatus({ ...(a.ifHash !== undefined ? { ifHash: a.ifHash } : {}) }),
+          );
+        case 'search':
+          return TOOL_RESULT(
+            verbs.memorySearch({
+              ...(a.q !== undefined ? { q: a.q } : {}),
+              ...(a.targetIds !== undefined ? { targetIds: a.targetIds } : {}),
+              ...(a.sources !== undefined ? { sources: a.sources } : {}),
+              ...(a.limit !== undefined ? { limit: a.limit } : {}),
+              ...(a.maxTokens !== undefined ? { maxTokens: a.maxTokens } : {}),
+              ...(a.withEvidence !== undefined ? { withEvidence: a.withEvidence } : {}),
+              ...(a.ifHash !== undefined ? { ifHash: a.ifHash } : {}),
+            }),
+          );
+        case 'supersede': {
+          if (!a.id || !a.actor || (!a.successor && !a.claim))
+            return TOOL_RESULT({
+              error: {
+                code: 'BAD_REQUEST',
+                message: 'op=supersede requires id, actor, and either successor or claim',
+              },
+            });
+          return TOOL_RESULT(
+            verbs.memorySupersede({
+              id: a.id,
+              actor: a.actor,
+              ...(a.successor !== undefined ? { successor: a.successor } : {}),
+              ...(a.claim !== undefined ? { claim: a.claim } : {}),
+              ...(a.subject !== undefined ? { subject: a.subject } : {}),
+              ...(a.kind !== undefined ? { kind: a.kind } : {}),
+              ...(a.visibility !== undefined ? { visibility: a.visibility } : {}),
+              ...(a.propositionKey !== undefined ? { propositionKey: a.propositionKey } : {}),
+              ...(a.reason !== undefined ? { reason: a.reason } : {}),
+              ...(a.tool !== undefined ? { tool: a.tool } : {}),
+              ...(a.ifHash !== undefined ? { ifHash: a.ifHash } : {}),
+            }),
+          );
+        }
+        case 'delete': {
+          if (!a.id || !a.actor)
+            return TOOL_RESULT({
+              error: { code: 'BAD_REQUEST', message: 'op=delete requires id and actor' },
+            });
+          return TOOL_RESULT(
+            verbs.memoryDelete({
+              id: a.id,
+              actor: a.actor,
+              ...(a.reason !== undefined ? { reason: a.reason } : {}),
+              ...(a.ifHash !== undefined ? { ifHash: a.ifHash } : {}),
+            }),
+          );
+        }
+        case 'history': {
+          if (!a.key)
+            return TOOL_RESULT({
+              error: { code: 'BAD_REQUEST', message: 'op=history requires key' },
+            });
+          return TOOL_RESULT(
+            verbs.memoryHistory({
+              key: a.key,
+              ...(a.asOf !== undefined ? { asOf: a.asOf } : {}),
+              ...(a.withEvidence !== undefined ? { withEvidence: a.withEvidence } : {}),
+              ...(a.ifHash !== undefined ? { ifHash: a.ifHash } : {}),
+            }),
+          );
+        }
+        case 'sync':
+          return TOOL_RESULT(
+            verbs.memorySync({ ...(a.ifHash !== undefined ? { ifHash: a.ifHash } : {}) }),
           );
         case 'audit':
           return TOOL_RESULT(
@@ -385,6 +489,11 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
             }),
           );
         }
+        // `op` is manifest-derived (so its static type is string, not a literal union): the zod
+        // enum already rejects unknown values at the protocol layer, this default only guards the
+        // impossible in-process case, matching the other dispatchers.
+        default:
+          return TOOL_RESULT(BAD_REQUEST(`unknown op ${a.op}`));
       }
     },
   );
@@ -407,7 +516,7 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
       description:
         "Drive the agent-authored semantic layer, selected by `op`. The server NEVER calls a model — you author the content. status: coverage + progress; `scopes:true` ranks path-prefix scopes to choose from, `scope:{pathPrefix}` restricts counts, and `gate` reports the symbol-importance cut that makes `done` honest. next: the next batch of targets to author, with seed facts, lower-layer analyses, output schema and instructions; `batchId` is deterministic, so the same batchId twice means nothing was authored in between. Long caller/callee lists are sampled — `callersTotal`/`calleesTotal` give the true count. save: validate + persist authored items (needs batchId + items); rejected items stay pending and are re-offered. delta: classify persisted artifacts as orphaned/stale/drifted and return `reissueTargets`; non-destructive unless prune/pruneStale. audit: re-verify every artifact's evidence against current code and report grounded/ungrounded/unsupported.",
       inputSchema: {
-        op: z.enum(['status', 'next', 'save', 'delta', 'audit']),
+        op: opSchema('enrich'),
         layer: z.enum(['symbol', 'file', 'cluster', 'system']).optional(),
         scope: z.record(z.string(), z.unknown()).optional(),
         scopes: z.boolean().optional(),
@@ -449,7 +558,7 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
       description:
         'Blast radius and reachability, selected by `op`. blast (default): what breaks if `id` changes — `dir` up = dependents, down = dependencies; carries the docs that describe the changed symbol. federated: the same walk across MULTIPLE repos (`roots`), following an outbound HTTP call to the route that serves it; each node carries `soul` and `crossRepo`. path: the shortest dependency path between `from` and `to`. owners: which files/modules own `id`. Run blast BEFORE editing any symbol.',
       inputSchema: {
-        op: z.enum(['blast', 'federated', 'path', 'owners']).optional(),
+        op: opSchema('impact'),
         id: z.string().optional(),
         from: z.string().optional(),
         to: z.string().optional(),
@@ -490,7 +599,7 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
       description:
         'Deep reusable context, selected by `op`. one (default): everything about ONE symbol in a call — deep node fields, paged source body, callers, callees, linked docs, decision table, control flow. `source.nextLine` is the paging cursor; pass it back as sourceStartLine. package: everything about one PACKAGE — constant values, every member with implementation status, tables read/written, docs, expected body file. scope: bulk dossiers for EVERY symbol in a package/file/cluster in ONE call (use instead of looping over ~50 members); honesty flags symbolCount, truncated, skipped. rules: walk a procedure guard-annotated CFG and materialize its decision table / rule records (the retired `extract_rules` tool, folded here).',
       inputSchema: {
-        op: z.enum(['one', 'package', 'scope', 'rules']).optional(),
+        op: opSchema('dossier'),
         // `id` and `procedure` are per-op requirements — one/package/scope need `id`, rules needs
         // `procedure` — so both are optional here and enforced in the handler, where a missing one
         // yields a BAD_REQUEST instead of a plausible-but-wrong payload from a mis-called verb.
@@ -545,7 +654,7 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
       description:
         'One hop out from `id`, selected by `op`. edges (default): adjacent soul nodes, filterable by `rel` and `dir`. llm: neighbours in the agent-authored semantic graph instead of the extracted one. describes: the doc sections that document `id`, with confidence and provenance.',
       inputSchema: {
-        op: z.enum(['edges', 'llm', 'describes']).optional(),
+        op: opSchema('neighbors'),
         id: z.string(),
         rel: z.string().optional(),
         dir: z.enum(['in', 'out', 'both']).optional(),
@@ -576,7 +685,7 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
       description:
         'Server and graph state, selected by `op`. health (default): is the project indexed. stats: live per-verb call counts, latency and ifHash cache hit rate for this process (in-memory only). gaps: what the graph is MISSING — procedures declared with no body, package specs whose body file is absent, and call sites pointing at symbols the crib has never seen. Check gaps before trusting the graph for line-level work.',
       inputSchema: {
-        op: z.enum(['health', 'stats', 'gaps']).optional(),
+        op: opSchema('status'),
         extractedOnly: z.boolean().optional(),
         includeBuiltins: z.boolean().optional(),
       },
@@ -597,6 +706,7 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
   );
 
   installAliasRouter(server);
+  assertSurfaceMatchesManifest(server);
 
   return server;
 }

@@ -30,6 +30,7 @@ import {
   type ConflictGroup,
   type EffectiveVerdicts,
   FtsLexicalScorer,
+  MemoryApi,
   type MemoryCandidate,
   type MemoryDecision,
   type MemoryEvalContext,
@@ -38,17 +39,28 @@ import {
   type MemoryFeedback,
   MemoryFtsIndex,
   type MemoryRecord,
+  type MemoryRecordKind,
+  type MemoryRecordV2,
   type MemorySource,
   type MemoryStore,
   type RecallProjection,
+  type RecordBelief,
   type ScoredRecord,
+  type SearchHit,
+  SoulStoreAnchorPort,
+  type SupersedePayload,
+  type Verdicts,
   applyContradictedFeedback,
   assertNoMemorySecrets,
+  bridgedDecisions,
+  buildAliasIndex,
   conflictGroups,
+  conservativeVerdicts,
   contradictedForReview,
   effectiveVerdicts,
   gatherRecall,
   isFeedbackSignal,
+  isMemoryRecordV2,
   isRecallEligible,
   memoryCandidateId,
   quarantinedRecordIds,
@@ -70,7 +82,6 @@ import {
   llmPointer,
   llmProjection,
 } from './enrichment.js';
-import { verifyEvidence } from './grounding.js';
 import {
   DEFAULT_BODY_MAX_CHARS,
   DEFAULT_BODY_MAX_LINES,
@@ -224,82 +235,9 @@ const EXTERNAL_CALLEE_PATTERNS: readonly RegExp[] = [
 /** The admissible claim kinds for a `memory_observe` candidate (mirrors the candidate schema enum). */
 const MEMORY_CANDIDATE_KINDS = new Set(['fact', 'procedure', 'decision', 'pitfall', 'convention']);
 
-/**
- * P0.2 — the longest source-quote `memory{op:'capture'}` lifts from an anchor span. Long enough that
- * the quoted span recognizably IS the node's body, short enough to stay a fair checkable quote.
- */
-const CAPTURE_QUOTE_MAX_CHARS = 240;
-
-/**
- * P0.2 — resolve one loose symbol name to a node id. Mirrors {@link Verbs.resolveNodeId}'s
- * id → qualified-name → simple-name order, but reports AMBIGUITY instead of silently taking the
- * first simple-name match: a capture anchored to the wrong overload would ground a claim against
- * unrelated code, which is worse than an unanchored one.
- */
-function resolveSymbolAnchorId(soul: SoulStore, name: string): { id?: string; ambiguous: boolean } {
-  if (soul.getNode(name)) return { id: name, ambiguous: false };
-  const needle = name.toLowerCase();
-  const qualified: string[] = [];
-  const simple: string[] = [];
-  for (const n of soul.iterate()) {
-    if (n.qualifiedName?.toLowerCase() === needle) qualified.push(n.id);
-    else if (n.name?.toLowerCase() === needle) simple.push(n.id);
-  }
-  if (qualified.length === 1) return { id: qualified[0], ambiguous: false };
-  if (qualified.length > 1) return { ambiguous: true };
-  if (simple.length === 1) return { id: simple[0], ambiguous: false };
-  return { ambiguous: simple.length > 1 };
-}
-
-/** P0.2 — resolve one loose file path to its file node id. A path matches at most one file node, so
- *  more than one hit is an index anomaly — reported as ambiguous, never guessed. */
-function resolveFileAnchorId(soul: SoulStore, path: string): { id?: string; ambiguous: boolean } {
-  const matches: string[] = [];
-  for (const n of soul.iterate()) {
-    if (n.kind === 'file' && n.file === path) matches.push(n.id);
-  }
-  if (matches.length === 1) return { id: matches[0], ambiguous: false };
-  return { ambiguous: matches.length > 1 };
-}
-
-/** P0.2 — the capture-anchoring outcome over every loose name the caller supplied. */
-interface CaptureAnchors {
-  /** soul ids the observation anchored to (symbols first, then files). */
-  resolved: string[];
-  /** names that matched more than one node — reported, never guessed. */
-  ambiguous: string[];
-  /** names with no node at all, in caller order — the candidate is still written, just unanchored. */
-  unresolvable: string[];
-  /** resolved symbol nodes that carry an on-disk span, in resolution order — the quote source. */
-  spanNodes: Node[];
-}
-
-/** P0.2 — resolve the loose `symbols` / `files` refs of a capture into soul anchors. Pure over the
- *  soul; a name that resolves to nothing or to several nodes degrades the ANCHOR, never the write. */
-function resolveCaptureAnchors(
-  soul: SoulStore,
-  symbols: string[],
-  files: string[],
-): CaptureAnchors {
-  const out: CaptureAnchors = { resolved: [], ambiguous: [], unresolvable: [], spanNodes: [] };
-  for (const name of symbols) {
-    const hit = resolveSymbolAnchorId(soul, name);
-    if (hit.id) {
-      out.resolved.push(hit.id);
-      const node = soul.getNode(hit.id);
-      // Only symbol nodes with a real on-disk span can back a source-quote evidence item.
-      if (node?.file && node.span) out.spanNodes.push(node);
-    } else if (hit.ambiguous) out.ambiguous.push(name);
-    else out.unresolvable.push(name);
-  }
-  for (const path of files) {
-    const hit = resolveFileAnchorId(soul, path);
-    if (hit.id) out.resolved.push(hit.id);
-    else if (hit.ambiguous) out.ambiguous.push(path);
-    else out.unresolvable.push(path);
-  }
-  return out;
-}
+// P0.2 note: the capture-anchoring helpers (loose-name resolution + the lifted-quote budget) lived
+// here until Gate 1.3; `memory{op:'capture'}` now delegates to the portable MemoryApi.capture,
+// which owns that logic next to its own pure helpers (packages/memory/src/api.ts).
 
 function initGapCategories(): GapCategoryCounts {
   return { project: 0, tests: 0, fixtures: 0, builtin: 0, external: 0 };
@@ -393,6 +331,12 @@ const PUBLIC_VERBS = new Set<string>([
   'memoryStatus',
   'memoryAudit',
   'memoryFeedback',
+  // Gate 1.3 — the portable MemoryApi op set wired through the memory dispatcher.
+  'memorySearch',
+  'memorySupersede',
+  'memoryDelete',
+  'memoryHistory',
+  'memorySync',
 ]);
 
 export class Verbs {
@@ -2305,25 +2249,232 @@ export class Verbs {
     unknown
   > {
     if (!this.memory) return this.applyIfHash(args, { memory: 'not configured' });
-    const found = this.findMemoryRecord(args.id);
-    if (!found) return this.applyIfHash(args, { found: false, id: args.id });
-    const { record, source } = found;
-    const result: Record<string, unknown> = {
+    const api = this.memoryApi();
+    if (!api) return this.applyIfHash(args, { memory: 'not configured' });
+    const got = api.get(args.id);
+    if (!got.found || !got.record || !got.source) {
+      return this.applyIfHash(args, { found: false, id: args.id });
+    }
+    const record = got.record;
+    const source = got.source;
+    const evidence =
+      args.withEvidence === true
+        ? record.evidence
+        : record.evidence.map((e) => this.evidenceSummary(e));
+    // Memory-1 records keep the W3 response contract BYTE-IDENTICAL (the v1 fields are real on
+    // v1 — emitting them for a v2 record is the undefined-field bug the wave-2 review flagged).
+    if (!isMemoryRecordV2(record)) {
+      return this.applyIfHash(args, {
+        id: record.id,
+        subject: record.subject,
+        claim: record.claim,
+        scope: record.scope,
+        appliesTo: record.appliesTo,
+        authorship: record.authorship,
+        verdicts: record.verdicts,
+        source,
+        createdAt: record.createdAt,
+        evidence,
+        // Supersession links ride on decisions (v1 has no lineage field); surfaced ONLY when one
+        // exists so the classic no-successor response stays byte-identical to the W3 contract.
+        ...(got.supersededBy && got.supersededBy.length > 0
+          ? { supersededBy: got.supersededBy }
+          : {}),
+      });
+    }
+    // Memory-2: the v2-aware contract — effective (alias-restored) verdicts, visibility,
+    // propositionKey, the bi-temporal validity interval, lineage and placement — never the v1
+    // fields the envelope no longer carries.
+    return this.applyIfHash(args, {
       id: record.id,
+      requestedId: got.requestedId,
+      ...(got.resolvedViaAlias ? { resolvedViaAlias: got.resolvedViaAlias.legacyId } : {}),
+      schemaVersion: '2',
+      kind: record.kind,
       subject: record.subject,
       claim: record.claim,
-      scope: record.scope,
-      appliesTo: record.appliesTo,
-      authorship: record.authorship,
-      verdicts: record.verdicts,
+      visibility: got.visibility,
+      propositionKey: record.propositionKey,
+      sensitivity: record.sensitivity,
+      retentionPolicyId: record.retentionPolicyId,
+      provenance: record.provenance,
+      validity: got.validity,
+      lineage: got.lineage,
+      verdicts: got.verdicts,
       source,
-      createdAt: record.createdAt,
-      evidence:
-        args.withEvidence === true
-          ? record.evidence
-          : record.evidence.map((e) => this.evidenceSummary(e)),
-    };
-    return this.applyIfHash(args, result);
+      placement: got.placement,
+      legacyIds: got.legacyIds,
+      supersededBy: got.supersededBy,
+      evidence,
+    });
+  }
+
+  /**
+   * Gate 1.3 — `memory{op:'search'}`: the portable API's rich search over the SAME recall
+   * projection `memory_recall` uses (6-criterion priority-ordered ranking, alias bridging,
+   * conflict grouping, hard eligibility). The hits carry the full G1.3 contract: effective
+   * (alias-restored) verdicts, evidence summaries, freshness, validity, lineage, score +
+   * ranking version, the conflict groups the hit participates in, and successors that retired it.
+   * Ranking must never fork between the two read verbs, so the projection is delegated to
+   * {@link MemoryApi.search} with the SAME in-memory FTS lexical scorer `memory_recall` builds.
+   */
+  memorySearch(args: {
+    q?: string;
+    targetIds?: string[];
+    sources?: MemorySource[];
+    limit?: number;
+    maxTokens?: number;
+    withEvidence?: boolean;
+    ifHash?: string;
+  }): Record<string, unknown> {
+    const mem = this.memory;
+    const stores = this.recallStores();
+    const api = this.memoryApi();
+    if (!mem || !stores || !api) return this.applyIfHash(args, { memory: 'not configured' });
+    const query = args.q ?? '';
+    // The disposable in-memory FTS index gives search the same lexical signal memory_recall
+    // ranks with; api.search gathers internally, so this double-gather is the accepted cost of
+    // not widening the package's search signature for the adapter.
+    const gathered = gatherRecall(stores, {
+      ...(args.sources ? { sources: args.sources } : {}),
+    });
+    const fts = new MemoryFtsIndex(':memory:');
+    try {
+      fts.rebuild(gathered.records.map((r) => r.record));
+      const response = api.search(query, {
+        ...(args.targetIds ? { targetIds: args.targetIds } : {}),
+        ...(args.sources ? { sources: args.sources } : {}),
+        lexicalScorer: new FtsLexicalScorer(fts),
+        ...(mem.evaluator && mem.evalCtx ? { evaluator: mem.evaluator, evalCtx: mem.evalCtx } : {}),
+      });
+      const limit = capInt(args.limit, 5, 20);
+      const hits = response.hits
+        .slice(0, limit)
+        .map((h) => this.searchHitView(h, args.withEvidence));
+      const maxTokens = args.maxTokens === undefined ? 2000 : capMaxTokens(args.maxTokens);
+      const fitted = fitTokenBudget(hits, maxTokens, (prefix) =>
+        JSON.stringify({ hits: prefix, truncated: true, budgetExhausted: true }),
+      );
+      const result: Record<string, unknown> = {
+        query,
+        hits: fitted.items,
+        conflicts: response.conflicts,
+        provenance: response.provenance,
+        truncated: fitted.budgetExhausted || response.hits.length > limit,
+      };
+      if (fitted.budgetExhausted) result.budgetExhausted = true;
+      return this.applyIfHash(args, result);
+    } finally {
+      fts.close();
+    }
+  }
+
+  /**
+   * Gate 1.3 — `memory{op:'supersede'}`: retire a record in favour of a successor. `successor`
+   * names an EXISTING record that replaces it; `claim` (with optional subject/kind/visibility/
+   * propositionKey) writes a NEW memory-2 successor. The superseded line is never rewritten —
+   * the lifecycle change is an appended `supersede` decision, and history/audit keep the full
+   * trail. Idempotent: both the decision and a payload successor are content-addressed.
+   */
+  memorySupersede(args: {
+    id: string;
+    successor?: string;
+    claim?: string;
+    subject?: string;
+    kind?: string;
+    visibility?: 'private' | 'workspace';
+    propositionKey?: string;
+    actor: string;
+    reason?: string;
+    tool?: string;
+    ifHash?: string;
+  }): Record<string, unknown> {
+    const api = this.memoryApi();
+    if (!api) return this.applyIfHash(args, { memory: 'not configured' });
+    const by: string | SupersedePayload =
+      args.successor !== undefined
+        ? args.successor
+        : {
+            claim: args.claim ?? '',
+            ...(args.subject !== undefined ? { subject: args.subject } : {}),
+            ...(args.kind !== undefined ? { kind: args.kind as MemoryRecordKind } : {}),
+            ...(args.visibility !== undefined ? { visibility: args.visibility } : {}),
+            ...(args.propositionKey !== undefined ? { propositionKey: args.propositionKey } : {}),
+          };
+    const result = api.supersede(args.id, by, {
+      actor: args.actor,
+      ...(args.reason !== undefined ? { reason: args.reason } : {}),
+      ...(args.tool !== undefined ? { tool: args.tool } : {}),
+    });
+    if (!result.ok) return this.applyIfHash(args, { ok: false, error: result.error });
+    return this.applyIfHash(args, { ...result });
+  }
+
+  /**
+   * Gate 1.3 — `memory{op:'delete'}`: a tombstone, never a removal. Appends a `retract` decision
+   * (memory is append-only — the record line stays; search excludes it, history/audit still see
+   * it). Resolves legacy ids through the alias map, so a pre-migration id retires its twin.
+   */
+  memoryDelete(args: {
+    id: string;
+    actor: string;
+    reason?: string;
+    ifHash?: string;
+  }): Record<string, unknown> {
+    const api = this.memoryApi();
+    if (!api) return this.applyIfHash(args, { memory: 'not configured' });
+    const result = api.delete(args.id, {
+      actor: args.actor,
+      ...(args.reason !== undefined ? { reason: args.reason } : {}),
+    });
+    if (!result.ok) return this.applyIfHash(args, { ok: false, error: result.error });
+    return this.applyIfHash(args, { ...result });
+  }
+
+  /**
+   * Gate 1.3 — `memory{op:'history'}`: the bi-temporal belief timeline for one key (a record id,
+   * a legacy id, a subject, or a proposition key). Without `asOf` the full timeline; with `asOf`
+   * a point-in-time read projection — only records recorded ≤ asOf and decision events with
+   * ts ≤ asOf, i.e. what was BELIEVED then, never a rewrite of the store.
+   */
+  memoryHistory(args: {
+    key: string;
+    asOf?: string;
+    withEvidence?: boolean;
+    ifHash?: string;
+  }): Record<string, unknown> {
+    const api = this.memoryApi();
+    if (!api) return this.applyIfHash(args, { memory: 'not configured' });
+    let result: ReturnType<MemoryApi['history']>;
+    try {
+      result = api.history(args.key, {
+        ...(args.asOf !== undefined ? { asOf: args.asOf } : {}),
+      });
+    } catch (err) {
+      // An unparseable asOf is a REJECTED argument — reported honestly, never a silently
+      // mis-filtered timeline (the API normalizes asOf once and throws on garbage).
+      return this.applyIfHash(args, {
+        ok: false,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
+    return this.applyIfHash(args, {
+      key: result.key,
+      ...(result.asOf !== undefined ? { asOf: result.asOf } : {}),
+      records: result.records.map((b) => this.recordBeliefView(b, args.withEvidence)),
+      events: result.events,
+    });
+  }
+
+  /**
+   * Gate 1.3 — `memory{op:'sync'}`: the declared-but-honest non-capability. `sync` is in the
+   * portable contract so every adapter can REGISTER the name, but no sync engine exists in this
+   * release — the response says so, names the owning gate, and echoes the request untouched.
+   */
+  memorySync(args: { ifHash?: string }): Record<string, unknown> {
+    const api = this.memoryApi();
+    if (!api) return this.applyIfHash(args, { memory: 'not configured' });
+    return this.applyIfHash(args, { ...api.sync() });
   }
 
   /**
@@ -2387,8 +2538,11 @@ export class Verbs {
     const all = this.gatherAllVerdicts(true);
     let drifted = 0;
     const drift: Array<Record<string, unknown>> = [];
-    for (const { record, verdicts: fresh } of all.entries) {
-      const stamped = record.verdicts;
+    for (const { record, verdicts: fresh, stamped } of all.entries) {
+      // G1.3: a memory-2 record carries no verdicts of its own — its stamped axes ARE the alias
+      // snapshot (gatherAllVerdicts derives them); a fresh v2 observation has none at all, so
+      // there is nothing stamped to drift against (reading record.verdicts crashed here before).
+      if (stamped === undefined) continue;
       if (stamped.evidence !== fresh.evidence || stamped.applicability !== fresh.applicability) {
         drifted += 1;
         if (drift.length < 50) {
@@ -2579,109 +2733,33 @@ export class Verbs {
   }): Record<string, unknown> {
     const local = this.memory?.local;
     if (!local) return this.applyIfHash(args, { memory: 'not configured' });
-    const kind = args.kind ?? 'fact';
-    if (!MEMORY_CANDIDATE_KINDS.has(kind)) {
-      return this.applyIfHash(args, {
-        ok: false,
-        error: `invalid kind '${kind}' — expected one of ${[...MEMORY_CANDIDATE_KINDS].join(', ')}`,
-      });
-    }
-    if (typeof args.subject !== 'string' || args.subject.length === 0) {
-      return this.applyIfHash(args, { ok: false, error: 'subject is required' });
-    }
-    if (typeof args.observation !== 'string' || args.observation.length === 0) {
-      return this.applyIfHash(args, { ok: false, error: 'observation is required' });
-    }
-    if (typeof args.actor !== 'string' || args.actor.length === 0) {
-      return this.applyIfHash(args, { ok: false, error: 'actor is required' });
-    }
-    // Scope resolution mirrors memoryObserve exactly — a repo-scoped claim needs a stable repoId or
-    // its content id is unstable across machines (see memoryObserve for the full rationale).
-    const boundary = args.scopeBoundary ?? 'repo';
-    const scope: { boundary: 'repo' | 'global'; repoId?: string } = { boundary };
-    if (boundary === 'repo') {
-      const repoId = readRepoId(this.deps.soul.cribDir);
-      if (!repoId) {
-        return this.applyIfHash(args, {
-          ok: false,
-          error:
-            'could not resolve a stable repoId for this repo — run `crib index` to register it before capturing repo-scoped memory',
-        });
-      }
-      scope.repoId = repoId;
-    }
-    // Auto-anchor: resolve the loose refs, then ground the first spanned symbol with a lifted quote.
-    const anchors = resolveCaptureAnchors(this.deps.soul, args.symbols ?? [], args.files ?? []);
-    const anchorStatus: 'anchored' | 'ambiguous' | 'unresolvable' | 'unanchored' =
-      anchors.resolved.length > 0
-        ? 'anchored'
-        : anchors.ambiguous.length > 0
-          ? 'ambiguous'
-          : anchors.resolved.length + anchors.ambiguous.length + anchors.unresolvable.length > 0
-            ? 'unresolvable'
-            : 'unanchored';
-    const evidence: MemoryEvidence[] = [];
-    if (anchors.spanNodes.length > 0) {
-      const node = anchors.spanNodes[0]!;
-      const body = rehydrateBody(this.deps.repoRoot, node);
-      const quote = body.text.trim().slice(0, CAPTURE_QUOTE_MAX_CHARS);
-      // The quote is lifted from the span by construction, but the 'valid' stamp is only earned if
-      // the SAME quote-overlap gate the enrich path uses confirms it (a redaction policy or an
-      // unreadable file can make the rehydrated text unusable — then no evidence, not bad evidence).
-      if (
-        quote.length > 0 &&
-        verifyEvidence(this.deps.soul, this.deps.repoRoot, { soulId: node.id, quote }).verdict ===
-          'grounded'
-      ) {
-        evidence.push({
-          kind: 'source-quote',
-          verdict: 'valid',
-          checkedAt: new Date().toISOString(),
-          soulId: node.id,
-          quote,
-          targetHash: node.hash,
-          startLine: node.span!.start,
-        });
-      }
-    }
-    // appliesTo carries the canonical ids where the claim reattaches, plus the raw refs that did not
-    // resolve (still the best available pointer for a human promoting the candidate later).
-    const appliesTo = [...new Set([...anchors.resolved, ...anchors.unresolvable])];
-    const input = {
-      kind: kind as MemoryCandidate['kind'],
+    const api = this.memoryApi();
+    if (!api) return this.applyIfHash(args, { memory: 'not configured' });
+    // Gate 1.3 — delegate to the portable capture() (same validations, same messages, same
+    // auto-anchor + self-checked quote evidence); the verb keeps only its response mapping.
+    const result = api.capture({
       subject: args.subject,
-      claim: args.observation,
-      scope,
-      appliesTo,
-      evidence,
-      authorship: {
-        actor: args.actor,
-        kind: 'agent',
-        ...(args.tool ? { tool: args.tool } : {}),
-      } as MemoryCandidate['authorship'],
-    };
-    const candidate: MemoryCandidate = {
-      id: memoryCandidateId(input),
-      schemaVersion: '1',
-      ...input,
-      // Capture is an observation the agent did not curate — origin 'observe' (the schema's enum),
-      // distinguished from a hand-formed observe by meta.anchorStatus below.
-      origin: 'observe',
-      proposedAt: new Date().toISOString(),
-      meta: { anchorStatus },
-    };
-    // assertWritable (schema validate + secret scan) runs inside upsertEntry; a bad candidate throws.
-    local.upsertEntry('candidates', candidate);
+      observation: args.observation,
+      ...(args.kind !== undefined ? { kind: args.kind } : {}),
+      ...(args.files !== undefined ? { files: args.files } : {}),
+      ...(args.symbols !== undefined ? { symbols: args.symbols } : {}),
+      ...(args.tool !== undefined ? { tool: args.tool } : {}),
+      ...(args.scopeBoundary !== undefined ? { scopeBoundary: args.scopeBoundary } : {}),
+      actor: args.actor,
+    });
+    if (!result.ok) return this.applyIfHash(args, { ok: false, error: result.error });
+    // Keep the MCP verb's exact W3 response contract: the portable CaptureSuccess adds `ok` and
+    // `duplicate` and always-present arrays; the MCP surface keeps its conditional-array shape.
     return this.applyIfHash(args, {
-      id: candidate.id,
+      id: result.id,
       status: 'pending',
       origin: 'observe',
-      scope: candidate.scope,
-      anchorStatus,
-      evidenceAttached: evidence.length > 0,
-      ...(anchors.resolved.length > 0 ? { anchors: anchors.resolved } : {}),
-      ...(anchors.ambiguous.length > 0 ? { ambiguous: anchors.ambiguous } : {}),
-      ...(anchors.unresolvable.length > 0 ? { unresolvable: anchors.unresolvable } : {}),
+      scope: result.scope,
+      anchorStatus: result.anchorStatus,
+      evidenceAttached: result.evidenceAttached,
+      ...(result.anchors.length > 0 ? { anchors: result.anchors } : {}),
+      ...(result.ambiguous.length > 0 ? { ambiguous: result.ambiguous } : {}),
+      ...(result.unresolvable.length > 0 ? { unresolvable: result.unresolvable } : {}),
     });
   }
 
@@ -2841,6 +2919,28 @@ export class Verbs {
   }
 
   /**
+   * Gate 1.3 — the portable {@link MemoryApi} over this repo's live ledger. Constructed per call
+   * (it holds no state beyond the deps): the three stores from {@link MemoryDeps}, the soul as an
+   * anchor port (capture's auto-anchoring), the repo's `.crib` dir (repoId resolution), the fresh
+   * evaluator + context, and the current code HEAD (search provenance). `undefined` when memory
+   * isn't configured — the memory verbs then degrade to the standard "not configured" body.
+   */
+  private memoryApi(): MemoryApi | undefined {
+    const mem = this.memory;
+    const stores = this.recallStores();
+    if (!mem || !stores) return undefined;
+    const head = this.vcsFacts().head;
+    return new MemoryApi({
+      stores,
+      soul: new SoulStoreAnchorPort(this.deps.soul, this.deps.repoRoot),
+      cribDir: this.deps.soul.cribDir,
+      ...(mem.evaluator !== undefined ? { evaluator: mem.evaluator } : {}),
+      ...(mem.evalCtx !== undefined ? { evalCtx: mem.evalCtx } : {}),
+      ...(head ? { codeHead: head } : {}),
+    });
+  }
+
+  /**
    * Gather + rank a recall projection. Builds a disposable IN-MEMORY FTS5 index from the gathered
    * records (the criterion-1 lexical signal — PRD line 333: never mixed with the soul's code BM25)
    * and runs the pure 6-criterion rank + conflict projection. When `fresh` is set AND an evaluator +
@@ -2882,12 +2982,20 @@ export class Verbs {
    * recall-eligible subset. Used by `memory_status` (per-verdict tallies include ineligible
    * records) and `memory_audit` (drift = stamped vs fresh, over every record). `fresh: true` runs
    * the evaluator against the live soul; `fresh: false` uses stamped verdicts.
+   *
+   * G1.2/G1.3 — migrated (memory-2) records resolve their verdicts through the alias map EXACTLY
+   * like `recallProjection`: every alias bound to the twin contributes its verdict snapshot
+   * (conservative worst-axis merge) and every legacy-keyed decision bridges onto the record.
+   * Without this, status/audit silently demote every migrated record to trust 'candidate' (the
+   * v2 envelope has no verdicts of its own) and disagree with recall over the same ledger.
    */
   private gatherAllVerdicts(fresh: boolean): {
     entries: Array<{
-      record: MemoryRecord;
+      record: MemoryRecord | MemoryRecordV2;
       source: MemorySource;
       verdicts: EffectiveVerdicts;
+      /** the as-stamped verdicts a drift check compares against (v2: the alias snapshot). */
+      stamped?: Verdicts;
     }>;
     errors: string[];
     fresh: boolean;
@@ -2895,12 +3003,14 @@ export class Verbs {
     const mem = this.memory;
     const stores = this.recallStores();
     const entries: Array<{
-      record: MemoryRecord;
+      record: MemoryRecord | MemoryRecordV2;
       source: MemorySource;
       verdicts: EffectiveVerdicts;
+      stamped?: Verdicts;
     }> = [];
     if (!mem || !stores) return { entries, errors: [], fresh: false };
     const gathered = gatherRecall(stores);
+    const aliasIndex = buildAliasIndex(gathered.aliases ?? []);
     const evalFn =
       fresh && mem.evaluator && mem.evalCtx
         ? (r: MemoryRecord) => mem.evaluator?.evaluate(r, mem.evalCtx as MemoryEvalContext)
@@ -2914,10 +3024,20 @@ export class Verbs {
         source === 'local'
           ? [...gathered.decisions, ...gathered.localDecisions]
           : gathered.decisions;
+      // Alias-aware verdicts — the SAME pattern recallProjection applies (recall.ts), so status
+      // and audit agree with recall over a migrated ledger instead of re-deriving worse axes.
+      const asVersioned = record as MemoryRecord | MemoryRecordV2;
+      const boundAliases = isMemoryRecordV2(asVersioned) ? aliasIndex.aliasesFor(record.id) : [];
+      const recordDecs =
+        boundAliases.length > 0 ? bridgedDecisions(boundAliases, record.id, decs) : decs;
+      const migrated = conservativeVerdicts(boundAliases);
+      const stamped = isMemoryRecordV2(asVersioned) ? migrated : record.verdicts;
+      const verdicts = effectiveVerdicts(asVersioned, recordDecs, evaluation, migrated);
       entries.push({
-        record,
+        record: asVersioned,
         source,
-        verdicts: effectiveVerdicts(record, decs, evaluation),
+        verdicts,
+        ...(stamped !== undefined ? { stamped } : {}),
       });
     }
     return { entries, errors: gathered.errors, fresh: evalFn !== undefined };
@@ -2952,25 +3072,98 @@ export class Verbs {
     return out;
   }
 
-  /** The public recall view of one scored record: verdicts + score + appliesTo + evidence (summary
-   *  by default, full when `withEvidence`). Deterministic over the same projection (ifHash-stable). */
+  /** The public recall view of one scored record: verdicts + score + evidence (summary by
+   *  default, full when `withEvidence`). Deterministic over the same projection (ifHash-stable).
+   *  Version-aware: a memory-1 record keeps the W3 field set; a migrated memory-2 twin (which
+   *  ranks when its alias snapshot restores eligibility) answers with its v2 fields instead of
+   *  the undefined v1 ones. */
   private memoryView(m: ScoredRecord, withEvidence?: boolean): Record<string, unknown> {
-    const r = m.record;
-    return {
+    const r = m.record as MemoryRecord | MemoryRecordV2;
+    const base: Record<string, unknown> = {
       id: r.id,
       subject: r.subject,
       claim: r.claim,
-      scope: r.scope,
       source: m.source,
       trust: m.verdicts.trust,
       evidence: m.verdicts.evidence,
       applicability: m.verdicts.applicability,
       lifecycle: m.verdicts.lifecycle,
-      appliesTo: r.appliesTo,
-      createdAt: r.createdAt,
       score: m.score,
       evidenceItems:
         withEvidence === true ? r.evidence : r.evidence.map((e) => this.evidenceSummary(e)),
+    };
+    if (isMemoryRecordV2(r)) {
+      return {
+        ...base,
+        schemaVersion: '2',
+        visibility: r.visibility,
+        propositionKey: r.propositionKey,
+        validTime: r.validTime,
+        transactionTime: r.transactionTime,
+        lineage: r.lineage,
+      };
+    }
+    return {
+      ...base,
+      scope: r.scope,
+      appliesTo: r.appliesTo,
+      createdAt: r.createdAt,
+    };
+  }
+
+  /** The G1.3 search-hit view: the recall view's fields plus the rich search contract (freshness,
+   *  validity, placement, per-hit conflicts, supersession) — mirrors `memorySearch`'s op doc. */
+  private searchHitView(h: SearchHit, withEvidence?: boolean): Record<string, unknown> {
+    const view = this.memoryView(
+      {
+        // ScoredRecord.record is typed MemoryRecord but a migrated twin is v2 at runtime — the
+        // same widening recallProjection itself relies on; memoryView narrows via isMemoryRecordV2.
+        record: h.record as MemoryRecord,
+        // The EFFECTIVE store the projection resolved the hit from — the store whose verdict
+        // overlay governs (same per-source field memory_recall reports). NOT placement[0]:
+        // placement is local-first and storage-only; a record in local+team is two hits.
+        source: h.source,
+        verdicts: h.verdicts,
+        score: h.score,
+      },
+      withEvidence,
+    );
+    return {
+      ...view,
+      schemaVersion: h.schemaVersion,
+      verdicts: h.verdicts,
+      visibility: h.visibility,
+      ...(h.propositionKey !== undefined ? { propositionKey: h.propositionKey } : {}),
+      ...(h.scope !== undefined ? { scope: h.scope } : {}),
+      placement: h.placement,
+      lineage: h.lineage,
+      freshness: h.freshness,
+      validity: h.validity,
+      rankingVersion: h.rankingVersion,
+      conflicts: h.conflicts,
+      supersededBy: h.supersededBy,
+    };
+  }
+
+  /** The G1.3 history view of one believed record (deterministic over the history projection). */
+  private recordBeliefView(b: RecordBelief, withEvidence?: boolean): Record<string, unknown> {
+    return {
+      id: b.id,
+      schemaVersion: b.schemaVersion,
+      subject: b.subject,
+      claim: b.claim,
+      recordedAt: b.recordedAt,
+      validTime: b.validTime,
+      lifecycle: b.lifecycle,
+      quarantined: b.quarantined,
+      ...(b.validTimeHolds !== undefined ? { validTimeHolds: b.validTimeHolds } : {}),
+      ...(b.validTimeWindow !== undefined ? { validTimeWindow: b.validTimeWindow } : {}),
+      placement: b.placement,
+      legacy: b.legacy,
+      evidence:
+        withEvidence === true
+          ? b.record.evidence
+          : b.record.evidence.map((e) => this.evidenceSummary(e)),
     };
   }
 

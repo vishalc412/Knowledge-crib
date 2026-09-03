@@ -19,6 +19,10 @@
  *       AND the saved bytes are non-trivial (> 100), so the gate cannot pass on a near-empty body.
  *   (3) Determinism — two independent full calls produce identical hashes (stateless, no time/random).
  *   (4) No false unchanged — a stale `ifHash` returns the full body, not `{ unchanged: true }`.
+ *   (5) Memory ops — a FRESH `memorySearch` (evaluator wired) and `memoryRecall` run the same
+ *       collapse / determinism / no-false-unchanged assertions over a real team store: a wall
+ *       clock anywhere in the memory response (the `evaluatedAt` regression) would break all
+ *       three permanently. The size-drop assertion is skipped for these (small bodies).
  *
  * release:verify builds every package before any gate runs, so the dynamic imports of the built
  * core + mcp dist resolve.
@@ -237,6 +241,133 @@ try {
           `  ifhash:check — ${c.name}: stale ifHash returns full body (no false unchanged)\n`,
         );
       }
+    }
+
+    // ─── memory ops — the adversarial-verify regression pin ─────────────────────
+    // "All memory verbs honour ifHash" (docs) only holds if the response carries NO wall clock.
+    // A FRESH search (evaluator + evalCtx wired) is the exact path that used to stamp
+    // `evaluatedAt: now()` into provenance + every hit's freshness — making the hash differ on
+    // every call so the cache could NEVER collapse. These cases pin that: the search must be
+    // fresh AND hash-stable across independent calls.
+    const memory = await import(
+      pathToFileURL(resolve(REPO, 'packages', 'memory', 'dist', 'index.js')).href
+    );
+    const memHome = mkdtempSync(join(tmpdir(), 'crib-ifhash-mem-'));
+    const memReg = mkdtempSync(join(tmpdir(), 'crib-ifhash-reg-'));
+    try {
+      const memEnv = { ...process.env, KCRIB_MEMORY_DIR: memHome, KCRIB_REGISTRY_DIR: memReg };
+      const cribDir = join(base.repo, '.crib');
+      writeFileSync(join(cribDir, 'crib.json'), JSON.stringify({ repo: { id: 'r-ifhash' } }));
+      const team = memory.MemoryStore.team(cribDir, { env: memEnv, now: () => NOW });
+      const subject = base.assessId;
+      const quote = 'const base = amount * 0.4 + score * 0.6;';
+      const input = {
+        kind: 'fact',
+        subject,
+        claim: 'assess computes the base risk from amount and score',
+        scope: { boundary: 'repo', repoId: 'r-ifhash' },
+        appliesTo: [subject],
+        evidence: [
+          {
+            kind: 'source-quote',
+            verdict: 'valid',
+            checkedAt: NOW,
+            soulId: subject,
+            quote,
+            targetHash: `blake3:${'a'.repeat(64)}`,
+          },
+        ],
+        authorship: { actor: 'claude-code', kind: 'agent', tool: 'claude-code' },
+      };
+      team.upsertEntry('records', {
+        id: memory.memoryRecordId(input),
+        schemaVersion: '1',
+        ...input,
+        verdicts: {
+          trust: 'team',
+          evidence: 'valid',
+          applicability: 'current',
+          lifecycle: 'active',
+        },
+        createdAt: NOW,
+      });
+      const evaluator = new memory.MemoryEvaluator();
+      const evalCtx = { soul: new memory.SoulStoreSoulPort(base.soul, base.repo) };
+      const memVerbs = new Verbs({
+        soul: base.soul,
+        index: base.index,
+        repoRoot: base.repo,
+        memory: { team, evaluator, evalCtx },
+      });
+
+      const memCases = [
+        {
+          name: 'memory search (FRESH — the wall-clock regression path)',
+          bodyless: ['hits'],
+          fresh: (res) => res.provenance?.fresh === true,
+          full: () => memVerbs.memorySearch({ q: 'assess' }),
+          cached: (hash) => memVerbs.memorySearch({ q: 'assess', ifHash: hash }),
+        },
+        {
+          name: 'memory recall',
+          bodyless: ['memories'],
+          fresh: () => true,
+          full: () => memVerbs.memoryRecall({ q: 'assess' }),
+          cached: (hash) => memVerbs.memoryRecall({ q: 'assess', ifHash: hash }),
+        },
+      ];
+
+      for (const c of memCases) {
+        const first = c.full();
+        if (c.fresh(first) !== true) {
+          fail(`${c.name}: expected the fresh path (the regression path), got otherwise`);
+        }
+        const hash = first.hash;
+        if (typeof hash !== 'string' || !/^blake3:[0-9a-f]{64}$/.test(hash)) {
+          fail(`${c.name}: first call did not return a blake3 hash (got ${hash})`);
+          continue;
+        }
+        const cached = c.cached(hash);
+        // (1) Collapse — unchanged:true, no body.
+        if (cached.unchanged !== true || cached.hash !== hash) {
+          fail(`${c.name}: cached call did not collapse to { unchanged:true, hash }`);
+        } else {
+          process.stdout.write(
+            `  ifhash:check — ${c.name}: repeat call collapsed to { unchanged:true, hash }\n`,
+          );
+        }
+        for (const field of c.bodyless) {
+          if (cached[field] !== undefined) {
+            fail(`${c.name}: cached stub still carries the body field '${field}'`);
+          }
+        }
+        // NOTE: the size-drop assertion is intentionally NOT applied to the memory cases — the
+        // record bodies here are small, so the byte ratio is not the signal; the COLLAPSE and
+        // the DETERMINISM of a FRESH response are (a wall clock would break both permanently).
+        // (3) Determinism — two independent full calls → identical hash, fresh or not.
+        const again = c.full();
+        if (again.hash !== hash) {
+          fail(`${c.name}: nondeterministic hash across two full calls (wall clock leaked?)`);
+        } else {
+          process.stdout.write(
+            `  ifhash:check — ${c.name}: two independent calls hash identical (deterministic)\n`,
+          );
+        }
+        // (4) No false unchanged — a stale ifHash returns the full body.
+        const stale = c.cached('blake3:deadbeef');
+        if (stale.unchanged === true) {
+          fail(`${c.name}: stale ifHash wrongly collapsed to unchanged:true`);
+        } else if (stale.hash !== hash) {
+          fail(`${c.name}: stale-ifHash response hash diverged from a clean rebuild`);
+        } else {
+          process.stdout.write(
+            `  ifhash:check — ${c.name}: stale ifHash returns full body (no false unchanged)\n`,
+          );
+        }
+      }
+    } finally {
+      rmSync(memHome, { recursive: true, force: true });
+      rmSync(memReg, { recursive: true, force: true });
     }
   } finally {
     rmSync(base.repo, { recursive: true, force: true });

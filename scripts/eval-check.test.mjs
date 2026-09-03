@@ -94,6 +94,11 @@ assert.match(
   /docs-site:check/,
   'release gate must run the M4.4 docs site + stats drift gate (docs-site-check.mjs)',
 );
+assert.match(
+  releaseVerifier,
+  /capabilities:check/,
+  'release gate must run the G1.4 capability-manifest surface + docs count gate (capabilities-check.mjs)',
+);
 const pkg = readFileSync('package.json', 'utf8');
 assert.match(
   pkg,
@@ -199,6 +204,11 @@ assert.match(
   pkg,
   /"docs-site:check":\s*"node scripts\/docs-site-check\.mjs"/,
   'package.json must define docs-site:check (M4.4 docs site + stats drift gate)',
+);
+assert.match(
+  pkg,
+  /"capabilities:check":\s*"node scripts\/capabilities-check\.mjs"/,
+  'package.json must define capabilities:check (G1.4 capability-manifest surface + docs count gate)',
 );
 const rerankCheck = readFileSync('scripts/rerank-check.mjs', 'utf8');
 assert.match(rerankCheck, /MIN_MRR_LIFT/, 'rerank-check.mjs must enforce an MRR-improvement floor');

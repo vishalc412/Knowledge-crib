@@ -25,6 +25,8 @@ export * from './secrets.js';
 export * from './paths.js';
 export * from './atomic.js';
 export * from './store.js';
+export * from './aliases.js';
+export * from './api.js';
 export * from './grounding.js';
 export * from './locator.js';
 export * from './evaluator.js';

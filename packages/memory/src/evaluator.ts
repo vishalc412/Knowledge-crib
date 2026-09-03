@@ -37,7 +37,13 @@ import {
 import { type RehydratePort, verifyQuote } from './grounding.js';
 import { decisionId } from './ids.js';
 import { type StableLocator, bestLocatorMatches, buildLocatorFromEvidence } from './locator.js';
-import type { MemoryDecision, MemoryEvidence, MemoryRecord } from './types.js';
+import {
+  type MemoryDecision,
+  type MemoryEvidence,
+  type MemoryRecord,
+  type MemoryRecordV2,
+  isMemoryRecordV2,
+} from './types.js';
 
 // ─── ports (the evaluator's PURE read contract) ─────────────────────────────
 
@@ -643,18 +649,67 @@ export interface EffectiveVerdicts extends Verdicts {
 }
 
 /**
+ * The record-level Evidence verdict stamped on a v2 record's evidence items, aggregated with the
+ * memory-1 rule (types.ts): valid ⟺ all valid; invalid if any invalid; degraded otherwise. memory-2
+ * records carry no aggregate `verdicts` field — the per-item verdicts are the stamped truth, so the
+ * read projection derives the aggregate from them. PURE.
+ */
+function stampedEvidenceVerdict(evidence: readonly MemoryEvidence[]): EvidenceVerdict {
+  if (evidence.length === 0) return 'invalid'; // no admissible evidence at all
+  const hasValid = evidence.some((ev) => ev.verdict === 'valid');
+  const hasInvalid = evidence.some((ev) => ev.verdict === 'invalid');
+  const hasDegraded = evidence.some((ev) => ev.verdict === 'degraded');
+  if (hasValid && !hasInvalid) return hasDegraded ? 'degraded' : 'valid';
+  if (hasValid && hasInvalid) return 'degraded';
+  if (hasDegraded) return 'degraded';
+  return 'invalid';
+}
+
+/**
  * Compute the effective (read-projection) verdicts: Trust as-authored; Evidence + Applicability from
  * a fresh {@link RecordEvaluation} (when supplied, else the record's stamped verdicts); Lifecycle
  * overlaid from decision events (supersede → superseded, retract → retracted); quarantined iff a
- * `quarantine` decision exists. PURE over the record + decisions + evaluation.
+ * `quarantine` decision exists. PURE over the record + decisions + evaluation (+ migration snapshot).
+ *
+ * A memory-2 record has no v1 verdict axes in its envelope (G1.1: trust is provenance-owned,
+ * lifecycle is lineage/validTime-driven). The G1.2 migration carries the v1 axes in the legacy-ID
+ * ALIAS snapshot (`migratedVerdicts` — the CONSERVATIVE merge of EVERY alias bound to this record,
+ * `conservativeVerdicts` in aliases.ts: two v1 records of one claim can collapse onto one twin,
+ * and the merged snapshot takes the worst axis per sibling, never a last-wins pick): with it, the
+ * migrated twin projects verdicts at least as conservative as every collapsed sibling's stamp, so
+ * migration never silently demotes a memory out of recall. Without it (a fresh v2 observation, no migration
+ * history), the record projects as RANK-INELIGIBLE (`candidate` trust keeps it out of the ranked
+ * `memories` list) but CONFLICT-VISIBLE: quarantined still applies (decisions key on the record id),
+ * Evidence is derived honestly from the stamped per-item verdicts, and lifecycle still overlays
+ * decision events. This keeps every v1 path crash-free on a mixed-version store — the axes are
+ * never read off `undefined`.
  */
 export function effectiveVerdicts(
-  record: MemoryRecord,
+  record: MemoryRecord | MemoryRecordV2,
   decisions: readonly MemoryDecision[],
   evaluation?: RecordEvaluation,
+  migratedVerdicts?: Verdicts,
 ): EffectiveVerdicts {
   const mine = decisions.filter((d) => d.subject === record.id);
   const quarantined = mine.some((d) => d.kind === 'quarantine');
+  if (isMemoryRecordV2(record)) {
+    // The alias snapshot is the base; a quarantine/retract/supersede decision recorded against the
+    // v2 id (or bridged from the legacy id by the caller) still wins over the snapshot.
+    let v2Lifecycle: EffectiveVerdicts['lifecycle'] = migratedVerdicts?.lifecycle ?? 'active';
+    if (mine.some((d) => d.kind === 'retract')) v2Lifecycle = 'retracted';
+    else if (mine.some((d) => d.kind === 'supersede')) v2Lifecycle = 'superseded';
+    return {
+      trust: migratedVerdicts?.trust ?? 'candidate',
+      evidence:
+        evaluation?.evidence ??
+        migratedVerdicts?.evidence ??
+        stampedEvidenceVerdict(record.evidence),
+      applicability: evaluation?.applicability ?? migratedVerdicts?.applicability ?? 'current',
+      lifecycle: v2Lifecycle,
+      quarantined,
+      reasons: evaluation?.reasons ?? [],
+    };
+  }
   let lifecycle = record.verdicts.lifecycle;
   // supersede/retract are terminal lifecycle transitions; a later retract wins over supersede.
   if (mine.some((d) => d.kind === 'retract')) lifecycle = 'retracted';
@@ -686,35 +741,68 @@ export function isRecallEligible(v: EffectiveVerdicts): boolean {
 }
 
 /**
+ * The memory-2 CONFLICT-VISIBILITY predicate: {@link isRecallEligible} MINUS the trust axis. A
+ * fresh memory-2 record has no v1 trust stamp, so the read projection holds it at `candidate`
+ * (rank-ineligible) while keeping it conflict-visible (G1.1 — `lineage.contradicts` pairs must
+ * surface). Every other eligibility exclusion applies unchanged: a quarantined, superseded or
+ * retracted record (or one with invalid evidence / non-current applicability) never surfaces as an
+ * ACTIVE conflict — its resolution is already recorded.
+ */
+export function isV2ConflictVisible(v: EffectiveVerdicts): boolean {
+  return (
+    (v.evidence === 'valid' || v.evidence === 'degraded') &&
+    v.applicability === 'current' &&
+    v.lifecycle === 'active' &&
+    !v.quarantined
+  );
+}
+
+/**
+ * A record's deterministic sort-time key: `createdAt` for memory-1, `transactionTime.recordedAt`
+ * for memory-2 (which deliberately carries no `createdAt`). Both are stable authored strings, so
+ * the ranking comparators stay deterministic; the empty fallback keeps a malformed record from
+ * crashing a whole recall instead of degrading to the bottom.
+ */
+export function recordSortTime(record: MemoryRecord | MemoryRecordV2): string {
+  if (isMemoryRecordV2(record)) return record.transactionTime.recordedAt ?? '';
+  return record.createdAt ?? '';
+}
+
+/**
  * Rank recall-eligible records: `valid` evidence before `degraded` (PRD: "degraded records rank
  * below valid records"), then by `createdAt` descending (newest first) as a stable tiebreaker.
  * Returns a new sorted array; does not mutate. Non-eligible records are filtered out.
  */
 export function rankRecall(
-  records: readonly { record: MemoryRecord; verdicts: EffectiveVerdicts }[],
-): { record: MemoryRecord; verdicts: EffectiveVerdicts }[] {
+  records: readonly { record: MemoryRecord | MemoryRecordV2; verdicts: EffectiveVerdicts }[],
+): { record: MemoryRecord | MemoryRecordV2; verdicts: EffectiveVerdicts }[] {
   return records
     .filter((r) => isRecallEligible(r.verdicts))
     .sort((a, b) => {
       const ea = a.verdicts.evidence === 'valid' ? 0 : 1;
       const eb = b.verdicts.evidence === 'valid' ? 0 : 1;
       if (ea !== eb) return ea - eb;
-      return b.record.createdAt.localeCompare(a.record.createdAt);
+      return recordSortTime(b.record).localeCompare(recordSortTime(a.record));
     });
 }
 
-// ─── conflict groups (PRD line 164) ──────────────────────────────────────────
+// ─── conflict groups (PRD line 164 + G1.1 propositionKey) ─────────────────────
 
-/** A conflict group: ≥2 active records sharing `subject + scope`, returned together (no silent pick). */
+/** A conflict group: ≥2 records whose claims cannot all hold, returned together (no silent pick). */
 export interface ConflictGroup {
-  /** the shared `subject|boundary|repoId` key. */
+  /** the shared conflict key: `subject|boundary|repoId` for v1, the propositionKey for v2. */
   key: string;
   subject: string;
-  scope: { boundary: string; repoId?: string };
-  records: MemoryRecord[];
+  /** v1 only: the shared placement. A memory-2 group carries `propositionKey` instead — it has no
+   *  v1 scope, and conflating the two key spaces would merge unrelated groups. */
+  scope?: { boundary: string; repoId?: string };
+  /** memory-2 only: the shared proposition key (what the claims are about — the real conflict key). */
+  propositionKey?: string;
+  records: (MemoryRecord | MemoryRecordV2)[];
 }
 
-/** Build the conflict-key for a record (`subject|boundary|repoId`). */
+/** Build the conflict-key for a memory-1 record (`subject|boundary|repoId`). memory-2 records never
+ *  use this key — they conflict on `propositionKey` + explicit `lineage.contradicts` (G1.1). */
 export function conflictKey(record: {
   subject: string;
   scope: { boundary: string; repoId?: string };
@@ -723,25 +811,49 @@ export function conflictKey(record: {
 }
 
 /**
- * Group recall-eligible records by `subject + scope` (PRD line 164: "Conflicting active records with
- * the same `subject + scope` are returned together; ranking may not silently choose one"). A group
- * with ≥2 records is a conflict group. Records are content-addressed, so two records sharing a
- * subject+scope necessarily have DIFFERENT claims (same claim ⇒ same `mem:` id ⇒ deduped to one).
- * PURE over the supplied (already effective) records.
+ * Group records into conflict groups (PRD line 164: "Conflicting active records … are returned
+ * together; ranking may not silently choose one"). Dispatch is per record version:
+ *
+ *   - memory-1 (unchanged semantics): ≥2 recall-eligible records sharing `subject + scope` are a
+ *     conflict. Content-addressed ids mean two such records necessarily have DIFFERENT claims
+ *     (same claim ⇒ same `mem:` id ⇒ deduped to one). This over-conflicts complementary facts —
+ *     the deficiency G1.1 fixes for v2 and G1.2 retires when v1 retires.
+ *   - memory-2 (G1.1): conflict = same `propositionKey` AND mutually exclusive claims. Mutual
+ *     exclusivity is EXPRESSED, never inferred from text: a record joins the group iff it is in a
+ *     `lineage.contradicts` pair with another record of the same propositionKey (either direction
+ *     declares the contradiction). Complementary facts about one subject therefore share the
+ *     propositionKey but do NOT conflict.
+ *
+ * v1 and v2 key spaces never merge (subject|boundary|repoId vs `prop:…`), so a migrated-claim pair
+ * cannot double-report. PURE over the supplied (already effective) records.
  */
 export function conflictGroups(
-  entries: readonly { record: MemoryRecord; verdicts: EffectiveVerdicts }[],
+  entries: readonly { record: MemoryRecord | MemoryRecordV2; verdicts: EffectiveVerdicts }[],
 ): ConflictGroup[] {
-  const buckets = new Map<string, MemoryRecord[]>();
+  const v1Buckets = new Map<string, MemoryRecord[]>();
+  const v2Buckets = new Map<string, MemoryRecordV2[]>();
   for (const { record, verdicts } of entries) {
+    if (isMemoryRecordV2(record)) {
+      // only records that could still be acted on can conflict: the SAME exclusion axes as the
+      // v1 eligibility filter ({@link isRecallEligible}) minus the trust axis — a fresh memory-2
+      // record deliberately projects as candidate-trust (rank-ineligible) yet stays
+      // conflict-visible (G1.1). A quarantined / superseded / retracted record, invalid evidence,
+      // or a non-current applicability must NOT surface as an active conflict: the resolution is
+      // already recorded, and re-reporting it invites a second, contradictory supersede.
+      if (!isV2ConflictVisible(verdicts)) continue;
+      const bucket = v2Buckets.get(record.propositionKey);
+      if (bucket) bucket.push(record);
+      else v2Buckets.set(record.propositionKey, [record]);
+      continue;
+    }
     if (!isRecallEligible(verdicts)) continue; // only active recall-eligible records can conflict
     const key = conflictKey(record);
-    const bucket = buckets.get(key);
+    const bucket = v1Buckets.get(key);
     if (bucket) bucket.push(record);
-    else buckets.set(key, [record]);
+    else v1Buckets.set(key, [record]);
   }
   const groups: ConflictGroup[] = [];
-  for (const [key, recs] of buckets) {
+  for (const [key, recs] of v1Buckets) {
     if (recs.length < 2) continue;
     const first = recs[0];
     if (!first) continue;
@@ -753,6 +865,32 @@ export function conflictGroups(
         ...(first.scope.repoId ? { repoId: first.scope.repoId } : {}),
       },
       records: recs,
+    });
+  }
+  for (const [propositionKey, recs] of v2Buckets) {
+    // Only the mutually-exclusive members join: a `lineage.contradicts` edge WITHIN the bucket pulls
+    // in BOTH endpoints (the declarer and the declared-against record — either direction declares
+    // the contradiction). Complementary facts stay out: no edge, no conflict.
+    const ids = new Set(recs.map((r) => r.id));
+    const declarers = new Set<string>();
+    const declaredAgainst = new Set<string>();
+    for (const r of recs) {
+      for (const target of r.lineage.contradicts ?? []) {
+        if (ids.has(target)) {
+          declarers.add(r.id);
+          declaredAgainst.add(target);
+        }
+      }
+    }
+    const conflicting = recs.filter((r) => declarers.has(r.id) || declaredAgainst.has(r.id));
+    if (conflicting.length < 2) continue;
+    const first = conflicting[0];
+    if (!first) continue;
+    groups.push({
+      key: propositionKey,
+      subject: first.subject,
+      propositionKey,
+      records: conflicting,
     });
   }
   return groups;

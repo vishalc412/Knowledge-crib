@@ -99,6 +99,52 @@ describe('content-addressed ids', () => {
     expect(memoryRecordId(recordInput())).toBe(memoryRecordId(recordInput()));
   });
 
+  it('v1 ids are byte-stable across the G1.1 v2-envelope change (pinned pre-change id)', () => {
+    // The id below was computed from the PRE-change memory dist and hardcoded: the v1 seed must
+    // stay byte-identical because the measured cross-writer duplicate-collapse invariant
+    // (docs/bench/memory.md) and the cand:↔mem: shared-id contract both ride on it.
+    const pinned = memoryRecordId({
+      kind: 'fact',
+      subject: 'topic:pin-test',
+      claim: 'AuthService.login   issues a JWT', // multi-space: the seed normalizes
+      scope: { boundary: 'repo', repoId: 'repo-123' },
+      appliesTo: ['sym:a', 'sym:b'],
+      evidence: [
+        {
+          kind: 'source-quote',
+          verdict: 'valid',
+          checkedAt: NOW,
+          soulId: 'sym:a',
+          quote: 'issues a JWT',
+          targetHash: 'blake3:abc',
+        },
+      ],
+      authorship: { actor: 'claude-code', kind: 'agent' },
+    });
+    expect(pinned).toBe('mem:6c7840a29f770fa1add155863f6259a7f4954e599e7e8f3cd560c5dbb36c2ebd');
+    // mutable evidence fields never change the id (same pinned id with flipped verdict/checkedAt)
+    const flipped = memoryRecordId({
+      kind: 'fact',
+      subject: 'topic:pin-test',
+      claim: 'AuthService.login issues a JWT',
+      scope: { boundary: 'repo', repoId: 'repo-123' },
+      appliesTo: ['sym:b', 'sym:a'], // order-independent
+      evidence: [
+        {
+          kind: 'source-quote',
+          verdict: 'degraded',
+          checkedAt: '2026-02-02T00:00:00.000Z',
+          reason: 'flipped',
+          soulId: 'sym:a',
+          quote: 'issues a JWT',
+          targetHash: 'blake3:abc',
+        },
+      ],
+      authorship: { actor: 'claude-code', kind: 'agent' },
+    });
+    expect(flipped).toBe('mem:6c7840a29f770fa1add155863f6259a7f4954e599e7e8f3cd560c5dbb36c2ebd');
+  });
+
   it('a different claim produces a different id', () => {
     const a = memoryRecordId(recordInput({ claim: 'AuthService.login issues a JWT' }));
     const b = memoryRecordId(recordInput({ claim: 'AuthService.login issues a session cookie' }));
@@ -217,14 +263,16 @@ describe('validators', () => {
 });
 
 describe('migrations + version gate (fail closed)', () => {
-  it('memory-1 is supported', () => {
+  it('memory-1 and memory-2 are supported (G1.1: both live)', () => {
     expect(isSupportedMemorySchemaVersion('1')).toBe(true);
-    expect(isSupportedMemorySchemaVersion('2')).toBe(false);
+    expect(isSupportedMemorySchemaVersion('2')).toBe(true);
+    expect(isSupportedMemorySchemaVersion('3')).toBe(false);
   });
 
   it('assertSupportedMemorySchemaVersion throws on unknown versions', () => {
     expect(() => assertSupportedMemorySchemaVersion('1')).not.toThrow();
-    expect(() => assertSupportedMemorySchemaVersion('2')).toThrow(MemorySchemaVersionError);
+    expect(() => assertSupportedMemorySchemaVersion('2')).not.toThrow();
+    expect(() => assertSupportedMemorySchemaVersion('3')).toThrow(MemorySchemaVersionError);
     expect(() => assertSupportedMemorySchemaVersion(undefined)).toThrow(MemorySchemaVersionError);
   });
 
@@ -286,12 +334,20 @@ describe('strict loader (parseMemoryShard)', () => {
 
   it('fails closed on an unknown schemaVersion line', () => {
     const parsed = parseMemoryShard(
-      '{"id":"mem:abc","schemaVersion":"2","kind":"fact"}\n',
+      '{"id":"mem:abc","schemaVersion":"3","kind":"fact"}\n',
       'x.jsonl',
     );
     expect(parsed.entries).toHaveLength(0);
     expect(parsed.errors).toHaveLength(1);
     expect(parsed.errors[0]).toContain('unsupported memory schemaVersion');
+  });
+
+  it('rejects a mem: entry with a known prefix but an unknown record schemaVersion', () => {
+    // record validation dispatches on the DECLARED schemaVersion — never coerced to the latest
+    expect(() => assertValidMemoryEntry({ id: 'mem:abc', schemaVersion: '9' })).toThrow(
+      /unknownSchemaVersion/,
+    );
+    expect(() => assertValidMemoryEntry({ id: 'mem:abc' })).toThrow(/unknownSchemaVersion/);
   });
 
   it('rejects a structurally-invalid memory-1 line', () => {

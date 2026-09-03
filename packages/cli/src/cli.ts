@@ -66,6 +66,7 @@ import {
   type ConflictGroup,
   FtsLexicalScorer,
   type GateReceipt,
+  MemoryApi,
   type MemoryCandidate,
   type MemoryDecision,
   MemoryEvaluator,
@@ -75,14 +76,20 @@ import {
   type MemoryPolicy,
   type MemoryRecord,
   type MemoryRecordKind,
+  type MemoryRecordV2,
   type MemorySource,
   MemoryStore,
   type RecallProjection,
   type RecallProvenance,
   type RecallScore,
+  type RecordBelief,
   type ScoredRecord,
+  type SearchHit,
+  type SearchResponse,
+  SoulStoreAnchorPort,
   SoulStoreSoulPort,
   type StructuredSummary,
+  type SupersedePayload,
   type TrustedTeamPresence,
   activateLocal,
   appendAttemptEvent,
@@ -90,15 +97,20 @@ import {
   assertValidMemoryEntry,
   attemptEventId,
   attemptGroupId,
+  bridgedDecisions,
+  buildAliasIndex,
   buildAttemptEvent,
   compactAttempt,
+  conservativeVerdicts,
   contradictedForReview,
   decisionId,
+  effectiveVerdicts,
   evaluateCandidate,
   formatBenchReport,
   gatherRecall,
   gcUnpromotedAttempts,
   isFeedbackSignal,
+  isMemoryRecordV2,
   isTeamTrustedRecord,
   loadPolicy,
   loadPolicyJson,
@@ -208,6 +220,18 @@ const VALUE_FLAGS = new Set([
   '--sources',
   '--target',
   '--max-tokens',
+  // Gate 1.3 memory subcommands (`crib memory get|supersede|delete|history`): their positionals are
+  // an id / a key, so every value-taking flag they add must be stripped alongside its value.
+  '--actor',
+  '--successor',
+  '--claim',
+  '--subject',
+  '--kind',
+  '--visibility',
+  '--proposition-key',
+  '--reason',
+  '--tool',
+  '--as-of',
 ]);
 
 /** Collect positional argv tokens, skipping boolean flags AND value-taking flags + their values. */
@@ -3117,6 +3141,35 @@ function createMemoryDeps(soul: SoulStore, repoRoot: string, cribDir: string) {
   };
 }
 
+/**
+ * Gate 1.3 — build the portable {@link MemoryApi} over the CLI's three stores. The SAME adapter
+ * the MCP verbs use (verbs.ts `memoryApi()`): soul anchored through `SoulStoreAnchorPort`, fresh
+ * revalidation via the evaluator the memory deps always wire, and the repo's current git HEAD as
+ * the search provenance codeHead. One contract, two surfaces — the CLI subcommands never
+ * re-implement an op the package already owns.
+ */
+function createMemoryApi(
+  soul: SoulStore,
+  repoRoot: string,
+  cribDir: string,
+  deps: NonNullable<ReturnType<typeof createMemoryDeps>>,
+): MemoryApi {
+  let head: string | undefined;
+  try {
+    head = currentHead(repoRoot) || undefined;
+  } catch {
+    head = undefined; // not a git repo — search provenance reports no codeHead, never a crash
+  }
+  return new MemoryApi({
+    stores: { team: deps.team, local: deps.local, global: deps.global },
+    soul: new SoulStoreAnchorPort(soul, repoRoot),
+    cribDir,
+    evaluator: deps.evaluator,
+    evalCtx: deps.evalCtx,
+    ...(head !== undefined ? { codeHead: head } : {}),
+  });
+}
+
 /** blake3 digest of the working-tree state the gate observed (uncommitted file list — PRD line 277). */
 function worktreeDigest(root: string): string {
   return `blake3:${blake3Hex(uncommittedChanges(root).join('\n'))}`;
@@ -3151,6 +3204,13 @@ function findReceipt(local: MemoryStore, id: string): GateReceipt | undefined {
  *   - init                 bootstrap `.crib/memory/policy.json` + report the resolved store layout
  *   - recall "<query>"     the CLI fallback for the `brief` MCP tool's memory half (P0.1 — the
  *                          neutral protocol text names this command, so it must exist)
+ *   - search "<query>"     Gate 1.3 — the portable MemoryApi's rich search (the `memory{op:'search'}`
+ *                          MCP op); `--json` mirrors the MCP response shape
+ *   - get <id>             Gate 1.3 — version-aware single-record read (alias-following; the
+ *                          `memory{op:'get'}` MCP op)
+ *   - supersede <id>       Gate 1.3 — retire a record in favour of a successor (append-only)
+ *   - delete <id>          Gate 1.3 — a tombstone (retract decision), never a removal
+ *   - history <key>        Gate 1.3 — the bi-temporal belief timeline (optionally `--as-of`)
  *   - evaluate <id> -p X   run the gate → evaluate → activate (the happy path); crash-safe
  *   - activate <id>        crash-recovery: re-evaluate + activate against an existing receipt
  *   - propose <mem-id>     write a team record + accept decision (idempotent; CI derives trust)
@@ -3165,6 +3225,16 @@ async function cmdMemory(args: string[], ctx?: CmdCtx): Promise<number> {
       return cmdMemoryInit(rest, ctx);
     case 'recall':
       return cmdMemoryRecall(rest, ctx);
+    case 'search':
+      return cmdMemorySearch(rest, ctx);
+    case 'get':
+      return cmdMemoryGet(rest, ctx);
+    case 'supersede':
+      return cmdMemorySupersede(rest, ctx);
+    case 'delete':
+      return cmdMemoryDelete(rest, ctx);
+    case 'history':
+      return cmdMemoryHistory(rest, ctx);
     case 'evaluate':
       return cmdMemoryEvaluate(rest, ctx);
     case 'activate':
@@ -3189,7 +3259,7 @@ async function cmdMemory(args: string[], ctx?: CmdCtx): Promise<number> {
     case '-h':
     case '--help':
       process.stderr.write(
-        'crib memory init | recall "<query>" [--limit N] [--sources team,local,global] [--target <id>] [--with-evidence] [--include-pending] [--max-tokens N] [--json] | evaluate <candidate> --profile <name> | activate <candidate> | propose <memory-id> | attest <candidate> | check | audit [--repair-local] | feedback <mem-id> --signal <useful|unhelpful|contradicted> [--actor <id>] [--context <text>] [--counter-evidence <json-file>] | gc [--max-age-days N] [--dry-run] | migrate | bench [--fast] [--json] [--out <path>]\n',
+        'crib memory init | recall "<query>" [--limit N] [--sources team,local,global] [--target <id>] [--with-evidence] [--include-pending] [--max-tokens N] [--json] | search "<query>" [--limit N] [--sources team,local,global] [--target <id>] [--max-tokens N] [--json] | get <id> [--with-evidence] [--json] | supersede <id> --actor <id> (--successor <id> | --claim <text>) [--reason <text>] [--json] | delete <id> --actor <id> [--reason <text>] [--json] | history <key> [--as-of <iso-ts>] [--with-evidence] [--json] | evaluate <candidate> --profile <name> | activate <candidate> | propose <memory-id> | attest <candidate> | check | audit [--repair-local] | feedback <mem-id> --signal <useful|unhelpful|contradicted> [--actor <id>] [--context <text>] [--counter-evidence <json-file>] | gc [--max-age-days N] [--dry-run] | migrate | bench [--fast] [--json] [--out <path>]\n',
       );
       return EXIT.OK;
     default:
@@ -3352,26 +3422,44 @@ function evidenceSummaryOf(ev: MemoryEvidence): Record<string, unknown> {
 }
 
 /**
- * The public recall view of one scored record: verdicts + score + appliesTo + evidence (summary by
- * default, full with `--with-evidence`). Same shape as the MCP `memory_recall` projection so both
- * surfaces can be consumed identically.
+ * The public recall view of one scored record: verdicts + score + evidence (summary by default,
+ * full with `--with-evidence`). Same shape as the MCP `memory_recall` projection so both surfaces
+ * can be consumed identically. Version-aware (Gate 1.3): a memory-1 record keeps the W3 field set;
+ * a migrated memory-2 twin — which ranks when its alias snapshot restores eligibility — answers
+ * with its v2 fields (visibility / propositionKey / validTime / transactionTime / lineage) instead
+ * of the v1 fields the envelope no longer carries (scope / appliesTo / createdAt are undefined
+ * there and were emitted as such before this fix).
  */
 function memoryRecallView(m: ScoredRecord, withEvidence?: boolean): Record<string, unknown> {
-  const r = m.record;
-  return {
+  const r = m.record as MemoryRecord | MemoryRecordV2;
+  const base: Record<string, unknown> = {
     id: r.id,
     subject: r.subject,
     claim: r.claim,
-    scope: r.scope,
     source: m.source,
     trust: m.verdicts.trust,
     evidence: m.verdicts.evidence,
     applicability: m.verdicts.applicability,
     lifecycle: m.verdicts.lifecycle,
-    appliesTo: r.appliesTo,
-    createdAt: r.createdAt,
     score: m.score,
     evidenceItems: withEvidence === true ? r.evidence : r.evidence.map((e) => evidenceSummaryOf(e)),
+  };
+  if (isMemoryRecordV2(r)) {
+    return {
+      ...base,
+      schemaVersion: '2',
+      visibility: r.visibility,
+      propositionKey: r.propositionKey,
+      validTime: r.validTime,
+      transactionTime: r.transactionTime,
+      lineage: r.lineage,
+    };
+  }
+  return {
+    ...base,
+    scope: r.scope,
+    appliesTo: r.appliesTo,
+    createdAt: r.createdAt,
   };
 }
 
@@ -3469,6 +3557,451 @@ function renderMemoryRecall(query: string, result: Record<string, unknown>): str
   if (result.truncated === true) {
     lines.push(
       `truncated: ${prov.counts.eligible - memories.length} more eligible (raise --limit)`,
+    );
+  }
+  return `${lines.join('\n')}\n`;
+}
+
+// ─── Gate 1.3 — `crib memory search|get|supersede|delete|history` (the portable API surface) ──
+
+/**
+ * Parse the shared `--sources team,local,global` flag (recall + search). Returns an error string
+ * for an unknown name so both commands print the same message; undefined sources = all three.
+ */
+function memorySourcesFlag(args: string[]): { sources?: MemorySource[]; error?: string } {
+  const raw = stringFlag(args, '--sources');
+  if (raw === undefined) return {};
+  const wanted = raw
+    .split(',')
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+  const bad = wanted.filter((s) => s !== 'team' && s !== 'local' && s !== 'global');
+  if (bad.length > 0) {
+    return { error: `unknown source(s) ${bad.join(', ')} — --sources accepts team, local, global` };
+  }
+  return wanted.length > 0 ? { sources: wanted as MemorySource[] } : {};
+}
+
+/** The G1.3 search-hit view — the SAME projection the MCP `memory{op:'search'}` verb returns. */
+function memorySearchHitView(h: SearchHit, withEvidence?: boolean): Record<string, unknown> {
+  const view = memoryRecallView(
+    {
+      // ScoredRecord.record is typed MemoryRecord but a migrated twin is v2 at runtime — the same
+      // widening recallProjection itself relies on; memoryRecallView narrows via isMemoryRecordV2.
+      record: h.record as MemoryRecord,
+      source: h.placement[0] ?? 'team',
+      verdicts: h.verdicts,
+      score: h.score,
+    },
+    withEvidence,
+  );
+  return {
+    ...view,
+    schemaVersion: h.schemaVersion,
+    verdicts: h.verdicts,
+    visibility: h.visibility,
+    ...(h.propositionKey !== undefined ? { propositionKey: h.propositionKey } : {}),
+    ...(h.scope !== undefined ? { scope: h.scope } : {}),
+    placement: h.placement,
+    lineage: h.lineage,
+    freshness: h.freshness,
+    validity: h.validity,
+    rankingVersion: h.rankingVersion,
+    conflicts: h.conflicts,
+    supersededBy: h.supersededBy,
+  };
+}
+
+/**
+ * `crib memory search "<query>"` — the portable API's rich search. `--json` mirrors the MCP
+ * `memory{op:'search'}` response byte-for-byte in shape (query + hits + conflicts + provenance +
+ * truncated); the default render is human-readable. The projection is DELEGATED to
+ * {@link MemoryApi.search} with the same disposable in-memory FTS lexical scorer `recall` builds,
+ * so the two read commands can never rank differently.
+ */
+function cmdMemorySearch(args: string[], ctx?: CmdCtx): number {
+  const q = positionalsOf(args).join(' ');
+  const json = args.includes('--json');
+  const withEvidence = args.includes('--with-evidence');
+  const limitRaw = intFlag(args, '--limit');
+  const maxTokensRaw = intFlag(args, '--max-tokens');
+  const targets = repeatedFlag(args, '--target');
+  const { sources, error } = memorySourcesFlag(args);
+  if (error !== undefined) {
+    process.stderr.write(`error: ${error}\n`);
+    return EXIT.BAD_ARGS;
+  }
+  const resolved = resolveProjectRoot({ explicitRoot: ctx?.cwdOverride });
+  const rt = openSoul(resolved);
+  const deps = createMemoryDeps(rt.soul, resolved.repoRoot, resolved.cribDir);
+  if (!deps) {
+    process.stderr.write('could not resolve repoId for memory — run `crib index` first\n');
+    return EXIT.NOT_INDEXED;
+  }
+  const api = createMemoryApi(rt.soul, resolved.repoRoot, resolved.cribDir, deps);
+  // The disposable in-memory FTS index gives search the same lexical signal `recall` ranks with;
+  // api.search gathers internally, so this double-gather is the accepted cost of not widening the
+  // package's search signature for the adapter (same trade the MCP verb makes).
+  const gathered = gatherRecall(
+    { team: deps.team, local: deps.local, global: deps.global },
+    sources ? { sources } : {},
+  );
+  const fts = new MemoryFtsIndex(':memory:');
+  let response: SearchResponse;
+  try {
+    fts.rebuild(gathered.records.map((r) => r.record));
+    response = api.search(q, {
+      ...(targets.length > 0 ? { targetIds: targets } : {}),
+      ...(sources ? { sources } : {}),
+      lexicalScorer: new FtsLexicalScorer(fts),
+    });
+  } finally {
+    fts.close();
+  }
+  const limit = capInt(limitRaw, 5, 20);
+  const hits = response.hits.slice(0, limit).map((h) => memorySearchHitView(h, withEvidence));
+  const maxTokens = maxTokensRaw === undefined ? 2000 : capMaxTokens(maxTokensRaw);
+  const fitted = fitTokenBudget(hits, maxTokens, (prefix) =>
+    JSON.stringify({ hits: prefix, truncated: true, budgetExhausted: true }),
+  );
+  const result: Record<string, unknown> = {
+    query: q,
+    hits: fitted.items,
+    conflicts: response.conflicts,
+    provenance: response.provenance,
+    truncated: fitted.budgetExhausted || response.hits.length > limit,
+  };
+  if (fitted.budgetExhausted) result.budgetExhausted = true;
+  if (json) process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+  else process.stdout.write(renderMemorySearch(q, result));
+  return EXIT.OK;
+}
+
+/** Render the search result as human-readable lines (the `--json` flag switches to the raw shape). */
+function renderMemorySearch(query: string, result: Record<string, unknown>): string {
+  const prov = result.provenance as SearchResponse['provenance'];
+  const hits = result.hits as Array<Record<string, unknown>>;
+  const conflicts = result.conflicts as unknown[];
+  const lines: string[] = [
+    `memory search "${query}" — ${hits.length} hits (considered ${prov.counts.considered}, eligible ${prov.counts.eligible}, conflicts ${prov.counts.conflicts}, team=${prov.counts.team} local=${prov.counts.local} global=${prov.counts.global})`,
+  ];
+  if (hits.length === 0) lines.push('  no eligible memories matched');
+  hits.forEach((h, i) => {
+    const sc = h.score as RecallScore;
+    const v = h.verdicts as { trust: string; evidence: string; applicability: string };
+    const placement = (h.placement as string[]).join(',');
+    lines.push(
+      `  ${i + 1}. ${String(h.id)} [${placement}] schemaVersion=${String(h.schemaVersion)} trust=${v.trust} evidence=${v.evidence} applicability=${v.applicability}`,
+    );
+    lines.push(`     ${String(h.claim)}`);
+    lines.push(
+      `     subject=${String(h.subject)} score lex=${sc.lexical} source=${sc.sourceTier} evidence=${sc.evidenceQuality} feedback=${sc.feedbackAdjust} valid-from=${(h.validity as { from: string }).from}`,
+    );
+  });
+  if (conflicts.length > 0) lines.push(`conflicts (${conflicts.length})`);
+  if (result.truncated === true) lines.push('truncated: more eligible hits (raise --limit)');
+  return `${lines.join('\n')}\n`;
+}
+
+/**
+ * `crib memory get <id>` — the portable API's single-record read. Version-aware: a memory-1 record
+ * answers with the W3 field set; a memory-2 record with its v2 fields, and a legacy id resolves
+ * through the alias map to the migrated twin. `--json` mirrors the MCP `memory{op:'get'}` response
+ * shape exactly.
+ */
+function cmdMemoryGet(args: string[], ctx?: CmdCtx): number {
+  const id = positionalsOf(args)[0];
+  if (!id) {
+    process.stderr.write('usage: crib memory get <id> [--with-evidence] [--json]\n');
+    return EXIT.BAD_ARGS;
+  }
+  const json = args.includes('--json');
+  const withEvidence = args.includes('--with-evidence');
+  const resolved = resolveProjectRoot({ explicitRoot: ctx?.cwdOverride });
+  const rt = openSoul(resolved);
+  const deps = createMemoryDeps(rt.soul, resolved.repoRoot, resolved.cribDir);
+  if (!deps) {
+    process.stderr.write('could not resolve repoId for memory — run `crib index` first\n');
+    return EXIT.NOT_INDEXED;
+  }
+  const api = createMemoryApi(rt.soul, resolved.repoRoot, resolved.cribDir, deps);
+  const got = api.get(id);
+  if (!got.found || !got.record || !got.source) {
+    if (json) process.stdout.write(`${JSON.stringify({ found: false, id }, null, 2)}\n`);
+    else process.stdout.write(`memory get ${id} — not found in any store\n`);
+    return EXIT.ERROR;
+  }
+  const record = got.record;
+  const evidence =
+    withEvidence === true ? record.evidence : record.evidence.map((e) => evidenceSummaryOf(e));
+  let result: Record<string, unknown>;
+  if (!isMemoryRecordV2(record)) {
+    // Memory-1: the W3 response contract, byte-identical in shape to the MCP verb (the supersededBy
+    // link rides on decisions and is surfaced only when one exists).
+    result = {
+      id: record.id,
+      subject: record.subject,
+      claim: record.claim,
+      scope: record.scope,
+      appliesTo: record.appliesTo,
+      authorship: record.authorship,
+      verdicts: record.verdicts,
+      source: got.source,
+      createdAt: record.createdAt,
+      evidence,
+      ...(got.supersededBy && got.supersededBy.length > 0
+        ? { supersededBy: got.supersededBy }
+        : {}),
+    };
+  } else {
+    // Memory-2: effective (alias-restored) verdicts, visibility, the bi-temporal validity interval,
+    // lineage and placement — never the v1 fields the envelope no longer carries.
+    result = {
+      id: record.id,
+      requestedId: got.requestedId,
+      ...(got.resolvedViaAlias ? { resolvedViaAlias: got.resolvedViaAlias.legacyId } : {}),
+      schemaVersion: '2',
+      kind: record.kind,
+      subject: record.subject,
+      claim: record.claim,
+      visibility: got.visibility,
+      propositionKey: record.propositionKey,
+      sensitivity: record.sensitivity,
+      retentionPolicyId: record.retentionPolicyId,
+      provenance: record.provenance,
+      validity: got.validity,
+      lineage: got.lineage,
+      verdicts: got.verdicts,
+      source: got.source,
+      placement: got.placement,
+      legacyIds: got.legacyIds,
+      supersededBy: got.supersededBy,
+      evidence,
+    };
+  }
+  if (json) process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+  else process.stdout.write(renderMemoryGet(id, result));
+  return EXIT.OK;
+}
+
+/** Render one fetched record as human-readable lines. */
+function renderMemoryGet(requested: string, result: Record<string, unknown>): string {
+  const lines: string[] = [`memory get ${requested}`];
+  if (result.resolvedViaAlias !== undefined) {
+    lines.push(`  resolved via alias: legacy id ${String(result.resolvedViaAlias)}`);
+  }
+  lines.push(`  id=${String(result.id)} source=${String(result.source)}`);
+  lines.push(`  ${String(result.claim)}`);
+  lines.push(`  subject=${String(result.subject)}`);
+  const v = result.verdicts as Record<string, unknown> | undefined;
+  if (v) {
+    lines.push(
+      `  trust=${String(v.trust)} evidence=${String(v.evidence)} applicability=${String(v.applicability)} lifecycle=${String(v.lifecycle)}`,
+    );
+  }
+  if (result.schemaVersion === '2') {
+    lines.push(
+      `  schemaVersion=2 visibility=${String(result.visibility)} propositionKey=${String(result.propositionKey)}`,
+    );
+    lines.push(`  placement=${(result.placement as string[]).join(',')}`);
+  } else {
+    lines.push(`  createdAt=${String(result.createdAt)}`);
+  }
+  const supersededBy = result.supersededBy as unknown[] | undefined;
+  if (supersededBy !== undefined && supersededBy.length > 0) {
+    lines.push(`  superseded by ${supersededBy.length} successor(s)`);
+  }
+  return `${lines.join('\n')}\n`;
+}
+
+/**
+ * `crib memory supersede <id> --actor <id> (--successor <id> | --claim <text>)` — retire a record
+ * in favour of a successor. `--successor` names an EXISTING record; `--claim` (with optional
+ * --subject/--kind/--visibility/--proposition-key) writes a NEW memory-2 successor. The superseded
+ * line is never rewritten — the lifecycle change is an appended decision. Delegates to
+ * {@link MemoryApi.supersede}; `--json` mirrors the MCP response shape.
+ */
+function cmdMemorySupersede(args: string[], ctx?: CmdCtx): number {
+  const id = positionalsOf(args)[0];
+  const actor = stringFlag(args, '--actor');
+  const successor = stringFlag(args, '--successor');
+  const claim = stringFlag(args, '--claim');
+  const subject = stringFlag(args, '--subject');
+  const kind = stringFlag(args, '--kind');
+  const visibility = stringFlag(args, '--visibility');
+  const propositionKey = stringFlag(args, '--proposition-key');
+  const reason = stringFlag(args, '--reason');
+  const tool = stringFlag(args, '--tool');
+  const json = args.includes('--json');
+  if (!id || !actor || (successor === undefined && claim === undefined)) {
+    process.stderr.write(
+      'usage: crib memory supersede <id> --actor <id> (--successor <id> | --claim <text> [--subject <id>] [--kind <kind>] [--visibility private|workspace] [--proposition-key <key>]) [--reason <text>] [--tool <name>] [--json]\n',
+    );
+    return EXIT.BAD_ARGS;
+  }
+  if (visibility !== undefined && visibility !== 'private' && visibility !== 'workspace') {
+    process.stderr.write('error: --visibility must be private or workspace\n');
+    return EXIT.BAD_ARGS;
+  }
+  const resolved = resolveProjectRoot({ explicitRoot: ctx?.cwdOverride });
+  const rt = openSoul(resolved);
+  const deps = createMemoryDeps(rt.soul, resolved.repoRoot, resolved.cribDir);
+  if (!deps) {
+    process.stderr.write('could not resolve repoId for memory — run `crib index` first\n');
+    return EXIT.NOT_INDEXED;
+  }
+  const api = createMemoryApi(rt.soul, resolved.repoRoot, resolved.cribDir, deps);
+  const by: string | SupersedePayload =
+    successor !== undefined
+      ? successor
+      : {
+          claim: claim ?? '',
+          ...(subject !== undefined ? { subject } : {}),
+          ...(kind !== undefined ? { kind: kind as MemoryRecordKind } : {}),
+          ...(visibility !== undefined ? { visibility } : {}),
+          ...(propositionKey !== undefined ? { propositionKey } : {}),
+        };
+  const result = api.supersede(id, by, {
+    actor,
+    ...(reason !== undefined ? { reason } : {}),
+    ...(tool !== undefined ? { tool } : {}),
+  });
+  if (!result.ok) {
+    process.stderr.write(`error: ${result.error}\n`);
+    return EXIT.ERROR;
+  }
+  if (json) process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+  else {
+    process.stdout.write(
+      `superseded ${result.supersededId} -> successor ${result.successorId} (decision ${result.decisionId}, store ${result.decisionSource}${result.successorCreated ? '' : ', successor already existed'})\n`,
+    );
+  }
+  return EXIT.OK;
+}
+
+/**
+ * `crib memory delete <id> --actor <id>` — a tombstone, never a removal (memory is append-only).
+ * Resolves legacy ids through the alias map. Delegates to {@link MemoryApi.delete}.
+ */
+function cmdMemoryDelete(args: string[], ctx?: CmdCtx): number {
+  const id = positionalsOf(args)[0];
+  const actor = stringFlag(args, '--actor');
+  const reason = stringFlag(args, '--reason');
+  const json = args.includes('--json');
+  if (!id || !actor) {
+    process.stderr.write(
+      'usage: crib memory delete <id> --actor <id> [--reason <text>] [--json]\n',
+    );
+    return EXIT.BAD_ARGS;
+  }
+  const resolved = resolveProjectRoot({ explicitRoot: ctx?.cwdOverride });
+  const rt = openSoul(resolved);
+  const deps = createMemoryDeps(rt.soul, resolved.repoRoot, resolved.cribDir);
+  if (!deps) {
+    process.stderr.write('could not resolve repoId for memory — run `crib index` first\n');
+    return EXIT.NOT_INDEXED;
+  }
+  const api = createMemoryApi(rt.soul, resolved.repoRoot, resolved.cribDir, deps);
+  const result = api.delete(id, {
+    actor,
+    ...(reason !== undefined ? { reason } : {}),
+  });
+  if (!result.ok) {
+    process.stderr.write(`error: ${result.error}\n`);
+    return EXIT.ERROR;
+  }
+  if (json) process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+  else {
+    process.stdout.write(
+      `tombstoned ${result.id} (decision ${result.decisionId}, store ${result.decisionSource}) — the record line stays; recall excludes it, history/audit still see it\n`,
+    );
+  }
+  return EXIT.OK;
+}
+
+/** The G1.3 history view of one believed record — the MCP `memory{op:'history'}` per-record shape. */
+function memoryRecordBeliefView(b: RecordBelief, withEvidence?: boolean): Record<string, unknown> {
+  return {
+    id: b.id,
+    schemaVersion: b.schemaVersion,
+    subject: b.subject,
+    claim: b.claim,
+    recordedAt: b.recordedAt,
+    validTime: b.validTime,
+    lifecycle: b.lifecycle,
+    quarantined: b.quarantined,
+    ...(b.validTimeHolds !== undefined ? { validTimeHolds: b.validTimeHolds } : {}),
+    ...(b.validTimeWindow !== undefined ? { validTimeWindow: b.validTimeWindow } : {}),
+    placement: b.placement,
+    legacy: b.legacy,
+    evidence:
+      withEvidence === true
+        ? b.record.evidence
+        : b.record.evidence.map((e) => evidenceSummaryOf(e)),
+  };
+}
+
+/**
+ * `crib memory history <key>` — the bi-temporal belief timeline for one key (a record id, a legacy
+ * id, a subject, or a proposition key). `--as-of <iso>` projects a point-in-time read: only records
+ * recorded ≤ asOf and decision events with ts ≤ asOf — what was BELIEVED then, never a rewrite.
+ * Delegates to {@link MemoryApi.history}; `--json` mirrors the MCP response shape.
+ */
+function cmdMemoryHistory(args: string[], ctx?: CmdCtx): number {
+  const key = positionalsOf(args)[0];
+  if (!key) {
+    process.stderr.write(
+      'usage: crib memory history <key> [--as-of <iso-ts>] [--with-evidence] [--json]\n',
+    );
+    return EXIT.BAD_ARGS;
+  }
+  const json = args.includes('--json');
+  const withEvidence = args.includes('--with-evidence');
+  const asOf = stringFlag(args, '--as-of');
+  const resolved = resolveProjectRoot({ explicitRoot: ctx?.cwdOverride });
+  const rt = openSoul(resolved);
+  const deps = createMemoryDeps(rt.soul, resolved.repoRoot, resolved.cribDir);
+  if (!deps) {
+    process.stderr.write('could not resolve repoId for memory — run `crib index` first\n');
+    return EXIT.NOT_INDEXED;
+  }
+  const api = createMemoryApi(rt.soul, resolved.repoRoot, resolved.cribDir, deps);
+  let result: ReturnType<MemoryApi['history']>;
+  try {
+    result = api.history(key, asOf !== undefined ? { asOf } : {});
+  } catch (err) {
+    // An unparseable --as-of is a REJECTED argument — reported honestly, never a silently
+    // mis-filtered timeline (the API normalizes asOf once and throws on garbage).
+    process.stderr.write(`${err instanceof Error ? err.message : String(err)}\n`);
+    return EXIT.BAD_ARGS;
+  }
+  const payload = {
+    key: result.key,
+    ...(result.asOf !== undefined ? { asOf: result.asOf } : {}),
+    records: result.records.map((b) => memoryRecordBeliefView(b, withEvidence)),
+    events: result.events,
+  };
+  if (json) process.stdout.write(`${JSON.stringify(payload, null, 2)}\n`);
+  else process.stdout.write(renderMemoryHistory(payload));
+  return EXIT.OK;
+}
+
+/** Render the belief timeline as human-readable lines. */
+function renderMemoryHistory(result: Record<string, unknown>): string {
+  const records = result.records as Array<Record<string, unknown>>;
+  const events = result.events as Array<Record<string, unknown>>;
+  const lines: string[] = [
+    `memory history ${String(result.key)}${result.asOf !== undefined ? ` (as of ${String(result.asOf)})` : ''} — ${records.length} record(s), ${events.length} event(s)`,
+  ];
+  for (const r of records) {
+    lines.push(
+      `  - ${String(r.id)} schemaVersion=${String(r.schemaVersion)} lifecycle=${String(r.lifecycle)} quarantined=${String(r.quarantined)}${r.validTimeHolds !== undefined ? ` validTimeHolds=${String(r.validTimeHolds)}` : ''}`,
+    );
+    lines.push(`      ${String(r.claim)}`);
+  }
+  for (const e of events) {
+    lines.push(
+      `  * ${String(e.at)} ${String(e.type)} record=${String(e.recordId)} source=${String(e.source)}${'actor' in e ? ` actor=${String(e.actor)}` : ''}`,
     );
   }
   return `${lines.join('\n')}\n`;
@@ -4263,13 +4796,33 @@ function cmdMemoryAudit(args: string[], ctx?: CmdCtx): number {
     perStore.push({ store: name, entries: sEntries, invalid: sInvalid, errors });
   }
   // conflicts over team records (same subject, different claims)
-  const teamRecords = deps.team.readCollection('records').entries as MemoryRecord[];
+  const teamRecords = deps.team.readCollection('records').entries as Array<
+    MemoryRecord | MemoryRecordV2
+  >;
   const subjects = new Map<string, number>();
   for (const r of teamRecords) subjects.set(r.subject, (subjects.get(r.subject) ?? 0) + 1);
   const conflicts = [...subjects.entries()].filter(([, n]) => n > 1).map(([s]) => s);
-  // trust distribution
+  // Trust distribution via EFFECTIVE verdicts (Gate 1.3): a memory-2 record carries no `verdicts`
+  // of its own — the raw `r.verdicts.trust` read crashed the audit on any migrated ledger. Its
+  // axes are restored from the alias map exactly like recallProjection does (the conservative
+  // snapshot + decisions bridged from every bound legacy id, team/global decisions authoritative
+  // per the no-poison rule), so the audit tally agrees with recall instead of demoting a
+  // migrated record to trust 'candidate'. Memory-1 records keep their stamped verdicts.
+  const gathered = gatherRecall({ team: deps.team, local: deps.local, global: deps.global });
+  const aliasIndex = buildAliasIndex(gathered.aliases ?? []);
   const trust: Record<string, number> = {};
-  for (const r of teamRecords) trust[r.verdicts.trust] = (trust[r.verdicts.trust] ?? 0) + 1;
+  for (const r of teamRecords) {
+    let axis: string;
+    if (isMemoryRecordV2(r)) {
+      const bound = aliasIndex.aliasesFor(r.id);
+      const decs =
+        bound.length > 0 ? bridgedDecisions(bound, r.id, gathered.decisions) : gathered.decisions;
+      axis = effectiveVerdicts(r, decs, undefined, conservativeVerdicts(bound)).trust;
+    } else {
+      axis = r.verdicts.trust;
+    }
+    trust[axis] = (trust[axis] ?? 0) + 1;
+  }
   let repaired = false;
   const tombstoned: string[] = [];
   const tombstoneDecisions: string[] = [];

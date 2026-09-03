@@ -39,10 +39,23 @@ import { writeJsonAtomic } from './atomic.js';
 import { memoryShard } from './ids.js';
 import { loadMemoryManifestJson, parseMemoryShard } from './loader.js';
 import { newMemoryManifest } from './manifest.js';
+import {
+  type MigrationProvenanceOverrides,
+  type RecordMigration,
+  migrateRecordV1ToV2,
+  migrationProvenance,
+} from './migrations.js';
 import { globalStoreRoot, localStoreRoot, teamStoreRoot } from './paths.js';
 import { assertNoMemorySecrets } from './secrets.js';
 import { serializeMemoryShard } from './serialization.js';
-import type { MemoryCounts, MemoryEntry, MemoryManifest, MemoryStoreRole } from './types.js';
+import type {
+  MemoryAlias,
+  MemoryCounts,
+  MemoryEntry,
+  MemoryManifest,
+  MemoryRecord,
+  MemoryStoreRole,
+} from './types.js';
 import { assertValidMemoryEntry } from './validate.js';
 
 /** The on-disk collection directories a store may hold. */
@@ -87,6 +100,14 @@ function collectionCountKey(c: MemoryCollection): keyof MemoryCounts {
 
 const SHARD_FILE_RE = /^[0-9a-f]{2}\.jsonl$/;
 const LOCK_NAME = '.lock';
+
+/** A `mem:` entry still on the memory-1 envelope (the migration's input; schemaVersion is the
+ *  discriminator because both versions share the `mem:` prefix). */
+function isV1RecordEntry(e: MemoryEntry): e is MemoryRecord {
+  return (
+    typeof e.id === 'string' && e.id.startsWith('mem:') && (e as MemoryRecord).schemaVersion === '1'
+  );
+}
 
 /**
  * Thrown when a second, *different* memory store's lock would be acquired while one is already held
@@ -175,6 +196,22 @@ interface StoreInit {
   repoRoot?: string;
   env: NodeJS.ProcessEnv;
   now: () => string;
+}
+
+/** Options for {@link MemoryStore.migrateToV2} (G1.2): provenance overrides for the derived
+ *  memory-2 envelope, and nothing else — the rewrite is otherwise fully deterministic. */
+export interface StoreMigrationOpts {
+  provenance?: MigrationProvenanceOverrides;
+}
+
+/** What {@link MemoryStore.migrateToV2} did: the v2 ids written, the alias ids persisted, how many
+ *  v1 records were skipped (their v2 twin already existed — first writer wins), and how many v1
+ *  lines were RETAINED untouched (team's append-only ledger: alias only, no rewrite). */
+export interface StoreMigrationResult {
+  migrated: string[];
+  aliases: string[];
+  skipped: number;
+  retained: number;
 }
 
 /**
@@ -267,6 +304,274 @@ export class MemoryStore {
   /** `<rootDir>/<collection>/<shard>.jsonl` path. */
   shardPath(collection: MemoryCollection, shard: string): string {
     return join(this.collectionDir(collection), `${shard}.jsonl`);
+  }
+
+  // ─── the legacy-ID alias map (G1.2 migration) ────────────────────────────────
+
+  /**
+   * `<rootDir>/aliases` — the persisted legacy-ID alias map, sharded by `memoryShard(legacyId)` like
+   * every other collection. Lives OUTSIDE the validated collections because an alias is migration
+   * metadata, not a memory claim; its lines still validate through the `alias:` id-prefix dispatch
+   * and serialize canonically (byte-stable). Under `.crib/memory/team/aliases/` the W0 strict merge
+   * driver unions alias lines by id, so concurrent team migrations converge.
+   */
+  aliasesDir(): string {
+    return join(this.init.rootDir, 'aliases');
+  }
+
+  /** `<rootDir>/aliases/<shard>.jsonl` path for the shard a legacy id aliases in. */
+  aliasShardPath(legacyId: string): string {
+    return join(this.aliasesDir(), `${memoryShard(legacyId)}.jsonl`);
+  }
+
+  /**
+   * Read every persisted alias. Fail closed: an unreadable or misplaced line throws (an alias map
+   * that silently dropped a binding would mis-rank every migrated record keyed on it).
+   */
+  readAliases(): MemoryAlias[] {
+    return this.parseAliasShards(this.aliasShardFiles());
+  }
+
+  /** Read the alias binding `legacyId`, or `undefined` when it has none. */
+  readAlias(legacyId: string): MemoryAlias | undefined {
+    const path = this.aliasShardPath(legacyId);
+    if (!existsSync(path)) return undefined;
+    const parsed = this.parseAliasShards([path]);
+    let found: MemoryAlias | undefined;
+    for (const alias of parsed) {
+      if (alias.legacyId !== legacyId) continue;
+      if (found !== undefined && found.resolvedId !== alias.resolvedId) {
+        throw new Error(
+          `conflicting legacy-ID aliases for ${legacyId}: ${found.resolvedId} vs ${alias.resolvedId}`,
+        );
+      }
+      found = alias;
+    }
+    return found;
+  }
+
+  /** Resolve `id` through the alias map: the v2 id when a legacy alias binds it, else `id`. */
+  resolveId(id: string): string {
+    return this.readAlias(id)?.resolvedId ?? id;
+  }
+
+  /**
+   * The transparent alias-following lookup (G1.2): find the entry whose id is `id`; when no entry
+   * carries that id, follow its alias and return the migrated record that now owns the claim. A
+   * direct hit ALWAYS wins over the alias (the team store retains its v1 lines — they are real,
+   * valid records, not stale addresses). Lock-free read (atomic writes make it safe).
+   */
+  findEntry(collection: MemoryCollection, id: string): MemoryEntry | undefined {
+    const direct = this.entryInShard(collection, id);
+    if (direct) return direct;
+    const resolved = this.readAlias(id)?.resolvedId;
+    if (resolved === undefined || resolved === id) return undefined;
+    return this.entryInShard(collection, resolved);
+  }
+
+  /**
+   * Upsert aliases into the map (locked + atomic + validated + secret-scanned — the same write gate
+   * as the collections). Alias ids are content-addressed over `{ legacyId, resolvedId }`, so a
+   * re-migration upserts byte-identical lines (idempotent).
+   */
+  upsertAliases(aliases: readonly MemoryAlias[]): void {
+    for (const alias of aliases) {
+      assertValidMemoryEntry(alias as unknown as { id: string } & Record<string, unknown>);
+      assertNoMemorySecrets(alias);
+    }
+    this.withLock(() => {
+      const byShard = new Map<string, MemoryAlias[]>();
+      for (const alias of aliases) {
+        const shard = memoryShard(alias.legacyId);
+        const bucket = byShard.get(shard);
+        if (bucket) bucket.push(alias);
+        else byShard.set(shard, [alias]);
+      }
+      for (const [shard, incoming] of byShard) {
+        const merged = new Map<string, MemoryAlias>();
+        for (const e of this.parseAliasShards([this.aliasShardForShard(shard)]))
+          merged.set(e.id, e);
+        for (const e of incoming) merged.set(e.id, e); // replace by id
+        writeJsonAtomic(this.aliasShardForShard(shard), serializeMemoryShard([...merged.values()]));
+      }
+    });
+  }
+
+  // ─── the v1→v2 rewrite pass (G1.2) ────────────────────────────────────────────
+
+  /**
+   * Run the explicit memory-1 → memory-2 rewrite over this store's record collections
+   * (`local.active` / `global.records` / `team.records`): read v1, write v2, persist the
+   * legacy-ID alias for every migrated record. Idempotent — a re-run finds no v1 records (or
+   * already-present v2 twins) and writes nothing.
+   *
+   * Per role:
+   *   - **local / global** — the v1 line is REPLACED by its re-seeded v2 twin. The claim travels
+   *     in the twin; the placement, reattachment targets, `meta`, and stamped verdicts the closed
+   *     v2 envelope has no counterpart for travel in the ALIAS binding (migrations.ts), so the
+   *     as-believed v1 state stays recoverable after the replacement, and `findEntry` resolves
+   *     the old address through the alias.
+   *   - **team** — the committed ledger is append-only, and its v1 lines stay LIVE in recall;
+   *     writing a v2 twin beside the original would double-list the same claim once the alias
+   *     restores the twin's verdicts. Team migration therefore records the id binding ONLY.
+   *
+   * Never destructive: v1 lines remain loadable everywhere they are retained, and the pass refuses
+   * to touch a collection with unreadable lines. Runs under one lock hold (re-entrant with the
+   * per-shard writes).
+   */
+  migrateToV2(opts: StoreMigrationOpts = {}): StoreMigrationResult {
+    const result: StoreMigrationResult = { migrated: [], aliases: [], skipped: 0, retained: 0 };
+    this.withLock(() => {
+      const aliases: MemoryAlias[] = [];
+      for (const collection of this.recordCollections()) {
+        this.migrateCollectionToV2(collection, opts.provenance, aliases, result);
+      }
+      if (aliases.length > 0) {
+        this.upsertAliases(aliases); // same-store re-entrant lock
+        result.aliases.push(...aliases.map((a) => a.id));
+      }
+      if (result.migrated.length > 0 && this.hasManifest) {
+        this.persistManifest(); // counts may have moved between shards; 1:1 replacement keeps them equal
+      }
+    });
+    return result;
+  }
+
+  // ─── internals ──────────────────────────────────────────────────────────────
+
+  /** The record collections this store role holds (the collections the migration walks). */
+  private recordCollections(): readonly MemoryCollection[] {
+    return this.init.role === 'local' ? ['active'] : ['records'];
+  }
+
+  /** Find an entry by id inside its single shard (a direct hit; no alias chase). */
+  private entryInShard(collection: MemoryCollection, id: string): MemoryEntry | undefined {
+    return this.readShard(collection, memoryShard(id)).entries.find((e) => e.id === id);
+  }
+
+  /** The existing alias-shard file names (`NN.jsonl`), sorted; empty when the map is absent. */
+  private aliasShardFiles(): string[] {
+    const dir = this.aliasesDir();
+    if (!existsSync(dir)) return [];
+    return readdirSync(dir)
+      .sort()
+      .filter((f) => SHARD_FILE_RE.test(f))
+      .map((f) => join(dir, f));
+  }
+
+  /** `<rootDir>/aliases/<shard>.jsonl` path for an explicit shard id. */
+  private aliasShardForShard(shard: string): string {
+    return join(this.aliasesDir(), `${shard}.jsonl`);
+  }
+
+  /** Parse alias lines from shard files. Throws on any unreadable or non-alias line (fail closed). */
+  private parseAliasShards(paths: readonly string[]): MemoryAlias[] {
+    const out: MemoryAlias[] = [];
+    for (const path of paths) {
+      if (!existsSync(path)) continue;
+      const parsed = parseMemoryShard(readFileSync(path, 'utf8'), path);
+      if (parsed.errors.length > 0) {
+        throw new Error(`corrupt alias map: ${parsed.errors[0]}`);
+      }
+      for (const entry of parsed.entries) {
+        if (typeof entry.id !== 'string' || !entry.id.startsWith('alias:')) {
+          throw new Error(`corrupt alias map: non-alias entry ${String(entry.id)} in ${path}`);
+        }
+        out.push(entry as unknown as MemoryAlias);
+      }
+    }
+    return out;
+  }
+
+  /**
+   * Migrate one record collection in place. Mutates `result` (the running tally) and appends the
+   * collection's aliases to `aliases` for the caller to persist. Local/global REPLACE each v1 line
+   * with its v2 twin; team records the binding only (see {@link migrateToV2}).
+   */
+  private migrateCollectionToV2(
+    collection: MemoryCollection,
+    provenance: MigrationProvenanceOverrides | undefined,
+    aliases: MemoryAlias[],
+    result: StoreMigrationResult,
+  ): void {
+    const read = this.readCollection(collection);
+    if (read.errors.length > 0) {
+      throw new Error(
+        `refusing to migrate ${this.init.role}/${collection}: unreadable lines (${read.errors[0]})`,
+      );
+    }
+    const entries = read.entries;
+    const ids = new Set(entries.map((e) => e.id));
+    const next = new Map<string, MemoryEntry>();
+    for (const entry of entries) next.set(entry.id, entry);
+    let changed = false;
+    for (const entry of entries) {
+      if (!isV1RecordEntry(entry)) continue;
+      const migration = this.migrateEntryToV2(entry, provenance);
+      aliases.push(migration.alias);
+      if (this.init.role === 'team') {
+        result.retained += 1; // append-only ledger: never rewrite or remove a committed line
+        continue;
+      }
+      if (ids.has(migration.record.id) && migration.record.id !== entry.id) {
+        // The v2 twin already exists (a prior pass or an independent write): first writer wins, the
+        // v1 line is still retired (the twin owns the claim) but the twin is never overwritten.
+        result.skipped += 1;
+        next.delete(entry.id);
+        changed = true;
+        continue;
+      }
+      ids.add(migration.record.id);
+      result.migrated.push(migration.record.id);
+      next.delete(entry.id);
+      next.set(migration.record.id, migration.record);
+      changed = true;
+    }
+    if (changed) this.rewriteCollectionShards(collection, next, entries);
+  }
+
+  /** Migrate one v1 record entry (validate the twin before anything is written). */
+  private migrateEntryToV2(
+    entry: MemoryEntry,
+    provenance: MigrationProvenanceOverrides | undefined,
+  ): RecordMigration {
+    const v1 = entry as unknown as MemoryRecord;
+    const resolved = migrationProvenance(v1.authorship, provenance ?? {}, this.init.env);
+    const migration = migrateRecordV1ToV2(v1, resolved);
+    // The write gate (invariant #4): a twin that fails validation or carries a secret aborts the
+    // whole pass before ANY shard is rewritten — never a partial migration.
+    assertValidMemoryEntry(migration.record as unknown as { id: string } & Record<string, unknown>);
+    assertNoMemorySecrets(migration.record);
+    return migration;
+  }
+
+  /**
+   * Rewrite a collection's shards from `next` (the full post-migration entry set). The v2 twin's
+   * shard is `memoryShard(v2 id)`, which can differ from the v1 line's shard, so the rewrite
+   * regroups every entry by its shard and rewrites each file atomically; a shard the migration
+   * emptied is rewritten empty (mirroring `removeEntry`).
+   */
+  private rewriteCollectionShards(
+    collection: MemoryCollection,
+    next: ReadonlyMap<string, MemoryEntry>,
+    before: readonly MemoryEntry[],
+  ): void {
+    const byShard = new Map<string, MemoryEntry[]>();
+    for (const entry of next.values()) {
+      const shard = memoryShard(entry.id);
+      const bucket = byShard.get(shard);
+      if (bucket) bucket.push(entry);
+      else byShard.set(shard, [entry]);
+    }
+    // Shards that existed before but hold nothing after must still be rewritten (emptied).
+    for (const entry of before) {
+      const shard = memoryShard(entry.id);
+      if (!byShard.has(shard)) byShard.set(shard, []);
+    }
+    for (const [shard, list] of byShard) {
+      for (const entry of list) this.assertWritable(entry);
+      writeJsonAtomic(this.shardPath(collection, shard), serializeMemoryShard(list));
+    }
   }
 
   // ─── reads (lock-free; atomic writes make concurrent reads safe) ───────────

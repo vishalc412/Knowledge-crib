@@ -1,3 +1,4 @@
+import { bridgedDecisions, buildAliasIndex, conservativeVerdicts } from './aliases.js';
 import {
   type ConflictGroup,
   type EffectiveVerdicts,
@@ -6,6 +7,7 @@ import {
   conflictGroups,
   effectiveVerdicts,
   isRecallEligible,
+  recordSortTime,
 } from './evaluator.js';
 /**
  * W3 Slice 1 — the recall core: a pure join + rank + conflict projection over the three memory
@@ -39,7 +41,15 @@ import {
  * "pure over ports" discipline).
  */
 import type { MemoryStore } from './store.js';
-import type { MemoryDecision, MemoryEntry, MemoryFeedback, MemoryRecord } from './types.js';
+import type {
+  MemoryAlias,
+  MemoryDecision,
+  MemoryEntry,
+  MemoryFeedback,
+  MemoryRecord,
+  MemoryRecordV2,
+} from './types.js';
+import { isMemoryRecordV2 } from './types.js';
 
 // ─── sources ─────────────────────────────────────────────────────────────────
 
@@ -72,17 +82,21 @@ export const EXACT_MATCH_BONUS = 1_000_000;
  * A record scores {@link EXACT_MATCH_BONUS} iff its `subject` equals the query or a requested target,
  * or any of its `appliesTo` targets is requested. The count of matched `appliesTo` targets is added
  * as a fine-grained tiebreak among exact matches (0..N). Non-matching records score 0.
+ *
+ * Accepts both record versions (memory-2 has no `appliesTo`; a v2 record can still exact-match on
+ * `subject`, and the guard keeps the scorer crash-free on a mixed-version gather).
  */
 export function exactLexicalScorer(
-  record: MemoryRecord,
+  record: MemoryRecord | MemoryRecordV2,
   query: string,
   targetIds: readonly string[],
 ): number {
   const targets = new Set(targetIds);
   const subjectExact =
     (query.length > 0 && record.subject === query) || targets.has(record.subject);
+  const appliesTo = isMemoryRecordV2(record) ? [] : record.appliesTo;
   let matchedTargets = 0;
-  for (const a of record.appliesTo) {
+  for (const a of appliesTo) {
     if (targets.has(a)) matchedTargets += 1;
   }
   const targetExact = matchedTargets > 0;
@@ -196,6 +210,15 @@ export interface GatheredRecall {
    */
   localDecisions: MemoryDecision[];
   feedback: MemoryFeedback[];
+  /**
+   * The legacy-ID alias map (G1.2), gathered from every requested store's `<rootDir>/aliases`
+   * shards. OPTIONAL so a store with no migration history (every pre-G1.2 store, and the literal
+   * builders in recall.test.ts) projects identically. Lets a decision/feedback keyed on a v1 id keep
+   * attaching to the migrated v2 record that now owns the claim, and restores the v1 verdicts the
+   * migration carried in the alias snapshot (without them a migrated record would project as
+   * `candidate`-trust and silently vanish from recall).
+   */
+  aliases?: readonly MemoryAlias[];
   errors: string[];
 }
 
@@ -249,8 +272,19 @@ export function gatherRecall(
   const localDecisions: MemoryDecision[] = [];
   const feedback: MemoryFeedback[] = [];
   const errors: string[] = [];
+  const aliases: MemoryAlias[] = [];
 
   const want = (s: MemorySource): boolean => sources.includes(s);
+  // Alias reads are fail-closed in the store (a corrupt map means a moved seed); recall records the
+  // failure and degrades to the un-aliased projection rather than crashing the whole verb — the v1
+  // records still rank, the migrated twins simply stay un-bridged.
+  const gatherAliases = (source: MemorySource, store: MemoryStore): void => {
+    try {
+      aliases.push(...store.readAliases());
+    } catch (err) {
+      errors.push(`${source}.aliases: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  };
 
   if (want('team') && stores.team) {
     const r = stores.team.readCollection('records');
@@ -265,6 +299,7 @@ export function gatherRecall(
       else errors.push(`team.decisions: non-decision entry ${String(e?.id)}`);
     }
     errors.push(...d.errors);
+    gatherAliases('team', stores.team);
   }
 
   if (want('local') && stores.local) {
@@ -287,6 +322,7 @@ export function gatherRecall(
       else errors.push(`local.feedback: non-feedback entry ${String(e?.id)}`);
     }
     errors.push(...f.errors);
+    gatherAliases('local', stores.local);
   }
 
   if (want('global') && stores.global) {
@@ -308,9 +344,10 @@ export function gatherRecall(
       else errors.push(`global.feedback: non-feedback entry ${String(e?.id)}`);
     }
     errors.push(...f.errors);
+    gatherAliases('global', stores.global);
   }
 
-  return { records, decisions, localDecisions, feedback, errors };
+  return { records, decisions, localDecisions, feedback, aliases, errors };
 }
 
 // ─── the pure projection ─────────────────────────────────────────────────────
@@ -349,15 +386,35 @@ export function recallProjection(
   const bound = opts.feedbackBound ?? DEFAULT_FEEDBACK_BOUND;
   const fresh = opts.evaluator !== undefined && opts.evalCtx !== undefined;
 
-  // Pre-aggregate net feedback per record id (criterion 6), bounded at read time.
+  // The legacy-ID alias index (G1.2). Throws AliasConflictError if a committed alias map binds one
+  // legacy id to two different resolved ids (a moved seed) — recall refuses rather than silently
+  // picking a twin. Over an absent/empty map every alias read is `undefined` and the projection is
+  // byte-identical to the pre-G1.2 behaviour.
+  const aliasIndex = buildAliasIndex(gathered.aliases ?? []);
+
+  // Pre-aggregate net feedback per record id (criterion 6), bounded at read time. A feedback event
+  // keyed on a LEGACY id is ADDITIVELY double-keyed under the resolved id (the original key stays,
+  // so a retained v1 line — team — keeps its own adjustment); the on-disk line is never rewritten.
   const netFeedback = new Map<string, number>();
+  const addFeedback = (subject: string, signal: MemoryFeedback['signal']): void => {
+    netFeedback.set(subject, (netFeedback.get(subject) ?? 0) + feedbackWeight(signal));
+  };
   for (const fb of gathered.feedback) {
-    const prev = netFeedback.get(fb.subject) ?? 0;
-    netFeedback.set(fb.subject, prev + feedbackWeight(fb.signal));
+    addFeedback(fb.subject, fb.signal);
+    const resolved = aliasIndex.resolve(fb.subject);
+    if (resolved !== undefined && resolved !== fb.subject) addFeedback(resolved, fb.signal);
   }
 
   const consideredBySource = { team: 0, local: 0, global: 0 };
   const eligibleEntries: {
+    record: MemoryRecord;
+    verdicts: EffectiveVerdicts;
+    source: MemorySource;
+  }[] = [];
+  // Every considered record with its effective verdicts — the input to conflict detection. v1
+  // eligibility filtering happens INSIDE conflictGroups (unchanged semantics); memory-2 records are
+  // rank-ineligible in the v1 projection but still conflict-visible (G1.1), so they must reach it.
+  const consideredEntries: {
     record: MemoryRecord;
     verdicts: EffectiveVerdicts;
     source: MemorySource;
@@ -375,7 +432,28 @@ export function recallProjection(
     // local negative event retract team memory (PRD line 242).
     const decs =
       source === 'local' ? [...gathered.decisions, ...gathered.localDecisions] : gathered.decisions;
-    const verdicts = effectiveVerdicts(record, decs, evaluation);
+    // G1.2 legacy-ID bridge: a migrated v2 record adopts the CONSERVATIVE verdict snapshot of every
+    // alias bound to it (the worst axis across collapsed v1 siblings — the v2 seed excludes
+    // authorship/scope, so two v1 records of one claim can share a twin; a last-wins pick could
+    // wash out a demoted sibling or resurface a quarantined one) and inherits decision events keyed
+    // on ANY bound legacy id as in-memory copies re-subjected to the v2 id — the same multi-alias
+    // rule the feedback bridge above already uses. Both bridges are ADDITIVE: the original lines
+    // stay, and with no bound aliases (a fresh v2 observation, or a store with no migration
+    // history) the calls are exact no-ops.
+    // Widen before the version guard: TaggedRecord.record is typed memory-1 (the v1 read model's
+    // record), so narrowing it with isMemoryRecordV2 would intersect to `never` — the guard is
+    // honest over the union the store can actually hand back.
+    const asVersioned: MemoryRecord | MemoryRecordV2 = record;
+    const boundAliases = isMemoryRecordV2(asVersioned) ? aliasIndex.aliasesFor(record.id) : [];
+    const recordDecs =
+      boundAliases.length > 0 ? bridgedDecisions(boundAliases, record.id, decs) : decs;
+    const verdicts = effectiveVerdicts(
+      record,
+      recordDecs,
+      evaluation,
+      conservativeVerdicts(boundAliases),
+    );
+    consideredEntries.push({ record, verdicts, source });
     if (!isRecallEligible(verdicts)) continue;
     eligibleEntries.push({ record, verdicts, source });
   }
@@ -400,10 +478,13 @@ export function recallProjection(
       return b.score.evidenceQuality - a.score.evidenceQuality;
     if (b.score.feedbackAdjust !== a.score.feedbackAdjust)
       return b.score.feedbackAdjust - a.score.feedbackAdjust;
-    return b.record.createdAt.localeCompare(a.record.createdAt);
+    return recordSortTime(b.record).localeCompare(recordSortTime(a.record));
   });
 
-  const conflicts = conflictGroups(eligibleEntries);
+  // Conflict detection over every considered record: v1 groups keep their eligibility filter inside
+  // conflictGroups; memory-2 records participate via propositionKey + explicit contradicts lineage
+  // (G1.1) even though they are not yet ranked in the v1 read projection.
+  const conflicts = conflictGroups(consideredEntries);
 
   const sourcesPresent: MemorySource[] = [];
   if (consideredBySource.team > 0) sourcesPresent.push('team');

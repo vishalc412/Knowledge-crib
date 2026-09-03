@@ -12,6 +12,21 @@ export {
   type RehydratedBody,
 } from './snippet.js';
 export { buildServer, serveHttp, serveStdio } from './server.js';
+export {
+  CAPABILITIES,
+  OPERATION_COUNT,
+  TOOL_COUNT,
+  TOOL_NAMES,
+  capabilityOf,
+  manifestInvariants,
+  opSchema,
+  opValues,
+  opsOf,
+  type Capability,
+  type CapabilityOp,
+  type DispatcherCapability,
+  type StandaloneCapability,
+} from './capabilities.js';
 export { Stats, trackCall, type StatsSnapshot, type VerbStat } from './stats.js';
 export { EnrichmentStore, llmProjection, ENRICH_SCOPE_THRESHOLD, qualityOf } from './enrichment.js';
 export {
