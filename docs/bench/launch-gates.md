@@ -1,5 +1,27 @@
 # Launch gate pre-registration — memory quality (launch-verification)
 
+<!-- CURRENT STATE — maintained. Everything below the first `---` is an append-only history:
+     each section was true when written and several are now superseded. Read this block for the
+     answer; read the history for how it was reached. -->
+
+> ## Current state — 5 Sep 2026
+>
+> | | with an installed embed tier | out of the box (no tier) |
+> | --- | --- | --- |
+> | **Memory-quality gate** | **8/8 PASS** | **6/8 FAIL** |
+> | G2 word-disjoint paraphrase R@5 (≥80%) | 81.0% | 2.6% |
+> | G3 MRR (≥0.75) | 88.1% | 52.0% |
+> | scorer | `memory-rank-v2:<embedder>:cosine:semantic-only` | `memory-rank-v2:none:bm25:lexical-only` |
+>
+> **Both numbers are real and both matter.** The 8/8 requires an operator-installed on-device model
+> (`examples/embedders/minilm-e5`); crib ships no model. A launch claim that quotes 8/8 without that
+> condition is false. G1, G4–G8 pass in both configurations.
+>
+> Known limit, not visible in G7: the principal boundary cannot exclude memory-1 records, which
+> carry no principal stamp. `crib doctor` reports this per-ledger; `strictPrincipal` closes it for
+> callers that can see more than one principal's stores.
+
+
 **Status: FROZEN BEFORE MEASUREMENT.** The thresholds, corpus composition, and construction
 invariants below were fixed before any number from THIS corpus existed (see the disclosure in
 §6 — the corpus author knows the Gate-3 fusion outcome, which is a partial blinding that is

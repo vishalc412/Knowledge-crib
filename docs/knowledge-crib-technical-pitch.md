@@ -44,7 +44,7 @@ Each graph edge carries relation, derivation method, provenance (`EXTRACTED` or 
 
 ## Agent and LLM design
 
-Knowledge-crib exposes 23 MCP tools: discovery, query, context, source, impact, dossiers, rules, gaps, ownership, federation, change detection, observability, and enrichment workflows.
+Knowledge-crib exposes 16 MCP tools (46 operations — see docs/STATS.md): discovery, query, context, source, impact, dossiers, rules, gaps, ownership, federation, change detection, observability, and enrichment workflows.
 
 Responses have hard limits and response-wide token budgets. `ifHash` lets agents skip unchanged bodies. Result: agents retrieve evidence in small slices instead of repeatedly loading whole files.
 

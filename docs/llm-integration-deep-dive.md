@@ -8,7 +8,7 @@
 
 Knowledge-crib implements a **dual-store** architecture: the **SoulStore** (in-memory `Map` objects + chunked JSONL shards persisted under `.crib/`) is the source of truth; the **IndexStore** (a derived SQLite database with FTS5 BM25 full-text search + materialized adjacency) is rebuilt from the soul on every `buildFromSoul` call. The IndexStore serves all deterministic queries (BM25 text search, blast-radius impact analysis, neighbor walking, shortest-path). It is 100% derived — delete it and `buildFromSoul(soul, repoRoot)` rebuilds it byte-for-byte.
 
-LLM integration is **opt-in, off the hot path, and never called server-side**. The MCP stdio server (`crib serve`) exposes 24 tools: 21 deterministic verbs (query, context, dossier, impact, neighbors, shortestPath, gaps, extractRules, enrichStatus, enrichNext, enrichSave, etc.) and 3 system tools. None of these verbs invoke an LLM. The `enrich_*` tools expose a **work queue** (`enrich({op:'next'})`) and a **persistence surface** (`enrich({op:'save'})`) so the host IDE's selected agent model can author a semantic graph grounded in the deterministic soul.
+LLM integration is **opt-in, off the hot path, and never called server-side**. The MCP stdio server (`crib serve`) exposes 16 tools / 46 operations (docs/STATS.md): deterministic verbs (query, context, dossier, impact, neighbors, shortestPath, gaps, extractRules, enrichStatus, enrichNext, enrichSave, etc.) and 3 system tools. None of these verbs invoke an LLM. The `enrich_*` tools expose a **work queue** (`enrich({op:'next'})`) and a **persistence surface** (`enrich({op:'save'})`) so the host IDE's selected agent model can author a semantic graph grounded in the deterministic soul.
 
 The enrichment operates over **four layers**: symbol (per-symbol deep analysis), file (file-level synthesis from symbol analyses), cluster (inter-module dependencies), and system (whole-repo architecture bible). Each work item carries a **seed** (dossier + decision table + coverage + source body), a **lower-layer** artifact (the layer below in the hierarchy), an **output schema** (JSON Schema for the expected LLM response), and **instructions** (layer-specific prompt text). The saved output is validated, graph endpoints are resolved (soul ID or previous LLM node), and a `LlmArtifact` is persisted under `.crib/llm/analysis/{layer}/{shard}/` with hash-based staleness detection.
 
@@ -24,7 +24,7 @@ The enrichment operates over **four layers**: symbol (per-symbol deep analysis),
 | `parsers` | `@knowledge-crib` | Language extractors (7 langs: TS, PL/SQL, Python, Java, C#, Go, Rust + Markdown) | `soul-schema` | `Extractor` interface (`supports()`, `extract()`), `ExtractorRegistry` |
 | `core` | `@knowledge-crib` | SoulStore (in-memory graph + JSONL on disk), conflict rule, manifest management, dossier builder, IndexStore interface + SQLite/Kuzu backends | `soul-schema` | `SoulStore`, `IndexStore`, `SqliteIndexStore`, `KuzuIndexStore`, `openIndex()`, `buildDossier()`, `decisionTable()` |
 | `pipeline` | `@knowledge-crib` | Index orchestrator: structure → parse → resolve → link → cluster → dossiers; VCS adapter (git); merge driver | `core`, `parsers` | `indexRepo()`, `updateRepo()`, `discoverFiles()`, `DEFAULT_IGNORES`, `currentHead()`, `changedFilesSince()` |
-| `mcp` | `@knowledge-crib` | MCP stdio server (24 tools), enrichment store (work queue + validation surface) | `soul-schema`, `core`, `parsers` | `buildServer()`, `serveStdio()`, `EnrichmentStore`, `llmProjection()` |
+| `mcp` | `@knowledge-crib` | MCP stdio server (16 tools), enrichment store (work queue + validation surface) | `soul-schema`, `core`, `parsers` | `buildServer()`, `serveStdio()`, `EnrichmentStore`, `llmProjection()` |
 | `cli` | `knowledge-crib` | CLI entry point (`crib <command> [args]`); MCP install/IDE wiring; root resolution; skill install | All above | `main()` (argv → subcommand dispatch) |
 | `ui` | `@knowledge-crib` | Offline web UI for soul graph visualization (C4 canvas) | `core` | `buildVizGraph()`, `vizAssetsDir()` |
 
@@ -59,7 +59,7 @@ argv → cmdServe()
   → openIndexForRead(rt)             // openIndex(sqlite, {path}) from manifest.stores.index.path
   → new Verbs({soul, index, repoRoot, vcs: CliVcsAdapter()})
   → serveStdio(verbs)                // MCP stdio transport (blocks until stdin EOF/close)
-     → buildServer(verbs, version)   // registerTool(24 tools) with Zod input schemas
+     → buildServer(verbs, version)   // registerTool(...) with Zod input schemas
      → server.connect(transport)     // StdioServerTransport
      → stdin.on('end', resolve)      // keep alive: process.exit when client disconnects
 ```
@@ -100,7 +100,7 @@ argv → cmdMcp()
                         ┌────────────┴────────────┐
                         │                           │
                   IDE Agent ←─ MCP stdio ─→  MCP server
-                        │           │               (24 tools,
+                        │           │               (16 tools,
                         │           │                zero LLM calls)
                         ▼           ▼
               tool call (any verb)   tool call (enrich({op:'next'})/enrich({op:'save'}))
@@ -649,7 +649,7 @@ await runCluster(soul, { ...clusterOpts });
 | `parsers` | 7 language extractors (TS via compiler API, PL/SQL hand-rolled, Python/Java/C#/Go/Rust hand-rolled) + registry | `soul-schema` | Add new `Extractor` class, register in pipeline; add extension mapping in `structure.ts` LANG_BY_EXT | **STABLE** — interface contract (`supports()`, `extract()`) is immutable; new extractors are additive |
 | `core` | SoulStore (in-memory Map + JSONL on disk), conflict rule, manifest, dossier builder, IndexStore interface + backends | `soul-schema` | Implement new IndexBackend via `IndexStore` interface; add fields to `Node`/`Edge` types in soul-schema; extend dossier builder | **HIGH** — SoulStore is the source of truth; every consumer depends on its invariants (lean, deterministic, committable) |
 | `pipeline` | Index orchestrator: phase wiring, VCS adapter (git), merge driver, dossiers, clustering, multimodal | `core`, `parsers` | Add new phase; extend `IndexOpts`; add new CFG pass to `cfgPasses[]`; modify DEFAULT_IGNORES | **MODERATE** — phases are ordered and the commit boundary is fixed at end of pipeline |
-| `mcp` | MCP stdio server (24 tools), enrichment store, token budgeting, snippet rehydration | `soul-schema`, `core` | Register new verb; extend EnrichmentStore layers; add new LLM tool variants | **HIGH** — 24 tools are the product surface; MCP SDK version lock (v1.29) |
+| `mcp` | MCP stdio server (16 tools), enrichment store, token budgeting, snippet rehydration | `soul-schema`, `core` | Register new verb; extend EnrichmentStore layers; add new LLM tool variants | **HIGH** — 16 tools are the product surface; MCP SDK version lock (v1.29) |
 | `cli` | CLI entry point, root resolution, MCP install/IDE wiring, skill install | All packages | Add new subcommand to `main()` switch; add new `crib mcp` IDE target | **STABLE** — CLI surface is fixed; subcommands are additive only |
 | `ui` | Offline web UI (C4 canvas graph viewer) | `core` | New visualization modes; static asset updates | **LOW** — standalone, no dependencies on the hot path |
 
@@ -800,7 +800,7 @@ ranking.
 | `packages/pipeline/src/vcs.ts` | currentHead(root) + changedFilesSince(root, since) | VCS adapter: git HEAD + diff for incremental updates. Used by detect_changes verb and updateRepo(). |
 | `packages/mcp/src/enrichment.ts` | EnrichmentStore: 4-layer work queue (symbol→file→cluster→system), seed assembly, save validation, staleness detection | THE LLM SURFACE. enrich({op:'next'}) / enrich({op:'save'}) / enrich({op:'status'}) / overview / neighbors({op:'llm'}). Never calls an LLM; serves deterministic artifacts TO the LLM. |
 | `packages/mcp/src/verbs.ts` | Verbs class: 21 deterministic tools over SoulStore + IndexStore (query, context, dossier, impact, gaps, etc.) | The MCP product surface. All handlers are thin wrappers over core functions. attachLlm() folds a tiered LLM projection onto responses: lightweight pointer by default, full analysis+graph+evidence on withLlm=true, none on withLlm=false. query() returns {hits, llmHits, truncated} with honest over-fetch-based truncation. |
-| `packages/mcp/src/server.ts` | buildServer(verbs) — registers all 24 tools with Zod schemas; serveStdio(verbs) — connects to stdio transport | MCP server construction. Never calls an LLM; the stdio transport is bidirectional (tools in, results back). |
+| `packages/mcp/src/server.ts` | buildServer(verbs) — registers all 16 tools with Zod schemas; serveStdio(verbs) — connects to stdio transport | MCP server construction. Never calls an LLM; the stdio transport is bidirectional (tools in, results back). |
 | `packages/mcp/src/index.ts` | Barrel exports: verbs, enrichment types, server functions | Single import for all MCP consumers (CLI and tests). |
 | `packages/cli/src/cli.ts` | main(argv): CLI command dispatch to 20+ subcommands | The CLI entry point. `crib serve` → Verbs + serveStdio; `crib enrich` → EnrichmentStore. |
 | `packages/cli/src/runtime.ts` | resolveProjectRoot() (priority chain), openSoul(), buildIndex(), openIndexOnly() | Root resolution: explicit arg → KCRIB_ROOT → CLAUDE_PROJECT_DIR → upward walk for .crib/ → cwd. Soul + index lifecycle. |

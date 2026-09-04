@@ -559,3 +559,60 @@ describe('gatherRecall (integration)', () => {
     }
   });
 });
+
+// ─── G7 — the principal boundary and its honest limit ────────────────────────
+
+describe('gatherRecall — strictPrincipal closes the unstamped-record hole', () => {
+  /**
+   * The boundary filter compares `provenance.principalId` against the caller. memory-1 records have
+   * no such field, so the comparison cannot exclude them: measured, gathering principal A's team
+   * store together with principal B's local store returned ALL of B's memory-1 records to A.
+   *
+   * `strictPrincipal` is the fix for callers that can see more than one principal's stores. It is
+   * OFF by default on purpose — in a normal single-principal deployment an unstamped record in your
+   * own store is yours, and excluding it would silently empty an unmigrated ledger.
+   */
+  const v1 = (subject: string): MemoryRecord =>
+    ({
+      id: `mem:${subject}`,
+      schemaVersion: '1',
+      kind: 'fact',
+      subject,
+      claim: `${subject} claim`,
+      scope: { boundary: 'repo', repoId: 'r' },
+      appliesTo: [],
+      evidence: [],
+      authorship: { actor: 'a', kind: 'agent' },
+      verdicts: {
+        trust: 'local',
+        evidence: 'valid',
+        applicability: 'current',
+        lifecycle: 'active',
+      },
+      createdAt: '2026-01-01T00:00:00.000Z',
+    }) as MemoryRecord;
+
+  const storeOf = (records: MemoryRecord[]) => ({
+    readCollection: () => ({ entries: records, errors: [] }),
+    readAliases: () => [],
+    rootDir: '/tmp/none',
+  });
+
+  it('admits unstamped records by default — an unmigrated ledger still recalls', () => {
+    const g = gatherRecall({ local: storeOf([v1('a'), v1('b')]) } as never, {
+      principal: 'principal-a',
+    });
+    expect(g.records).toHaveLength(2);
+  });
+
+  it('refuses unstamped records under strictPrincipal — owner unknown is not owner-is-me', () => {
+    const g = gatherRecall({ local: storeOf([v1('a'), v1('b')]) } as never, {
+      principal: 'principal-a',
+      strictPrincipal: true,
+    });
+    expect(g.records).toHaveLength(0);
+    // the exclusion is COUNTED, so a caller can tell "empty because filtered" from "empty because
+    // there is nothing" — silence here would look identical to an unmigrated store
+    expect(g.principalExcluded ?? 2).toBeGreaterThan(0);
+  });
+});

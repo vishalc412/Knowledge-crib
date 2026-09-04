@@ -56,7 +56,9 @@ export interface EmbedTierReport {
 
 const FALLBACK_NOTE =
   'char-ngram is a DEGRADED OFFLINE FALLBACK (hashing-trick char n-grams), never a semantic embedder';
-const INSTALL_HINT = 'run "crib embed install" to install the pinned on-device model';
+const INSTALL_HINT =
+  'install the on-device tier: see examples/embedders/minilm-e5/README.md (3 commands), then ' +
+  '`crib embed install examples/embedders/minilm-e5 --model-id <id> --model-version 1 --entry embedder.mjs`';
 
 /**
  * Build the tier report for the CURRENT environment. `opts.home` relocates the embed home (tests);

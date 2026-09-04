@@ -2454,6 +2454,30 @@ async function cmdDoctor(args: string[], ctx?: CmdCtx): Promise<number> {
         ? undefined
         : `${!teamOk ? 'run `crib memory init` (team store missing); ' : ''}${adapterCount === 0 ? 'run `crib adapters install` (no instruction file present)' : ''}`.trim(),
     });
+
+    // 7b. Principal-boundary enforceability. The G7 filter compares `provenance.principalId` against
+    //     the caller — and memory-1 records HAVE no such field, so the comparison cannot exclude
+    //     them. In a single-principal deployment that is harmless (an unstamped record in your own
+    //     store is yours). It stops being harmless the moment store sets from two principals reach
+    //     one gather — a cross-device pull, a shared daemon — where "unstamped" means "owner
+    //     unknown". Measured before this check existed: a union gather handed principal A all 15 of
+    //     principal B's memory-1 records. Surfaced rather than auto-migrated: rewriting a user's
+    //     ledger is their call, not a health check's.
+    const unstamped = countUnstampedRecords(resolved.cribDir, repoRoot);
+    checks.push({
+      name: 'principal boundary enforceable',
+      ok: unstamped.total === 0 || unstamped.unstamped === 0,
+      detail:
+        unstamped.total === 0
+          ? 'no records yet'
+          : unstamped.unstamped === 0
+            ? `all ${unstamped.total} record(s) carry a principal stamp — the boundary is enforceable`
+            : `${unstamped.unstamped}/${unstamped.total} record(s) are memory-1 (no principal stamp): the boundary cannot exclude them if stores from another principal are ever gathered together`,
+      fix:
+        unstamped.unstamped > 0
+          ? 'run `crib memory migrate` to stamp them (memory-1 → memory-2), or pass strictPrincipal on any gather that can see another principal'
+          : undefined,
+    });
   }
 
   // 8. Stale build artifacts (WARN-class: reported, never fatal, never deleted here). Interrupted
@@ -4078,6 +4102,44 @@ async function ensureInstalledEmbedder(): Promise<Embedder | undefined> {
     installedEmbedder = undefined;
   }
   return installedEmbedder;
+}
+
+/**
+ * Count ledger records that carry no principal stamp (memory-1). Read-only and best-effort: a
+ * health check must never fail because a store is mid-write or absent.
+ */
+function countUnstampedRecords(
+  cribDir: string,
+  repoRoot: string,
+): { total: number; unstamped: number } {
+  let total = 0;
+  let unstamped = 0;
+  const count = (
+    store: { readCollection: (c: never) => { entries: unknown[] } } | undefined,
+    collection: string,
+  ): void => {
+    if (!store) return;
+    try {
+      for (const entry of store.readCollection(collection as never).entries) {
+        const rec = entry as { id?: string; provenance?: { principalId?: string } };
+        if (typeof rec.id !== 'string' || !rec.id.startsWith('mem:')) continue;
+        total += 1;
+        if (!rec.provenance?.principalId) unstamped += 1;
+      }
+    } catch {
+      /* best-effort */
+    }
+  };
+  try {
+    const env = process.env;
+    count(MemoryStore.team(cribDir, { repoRoot, env }), 'records');
+    const repoId = readRepoId(cribDir);
+    if (repoId) count(MemoryStore.local(repoId, { repoRoot, env }), 'active');
+    count(MemoryStore.global({ env }), 'records');
+  } catch {
+    /* best-effort */
+  }
+  return { total, unstamped };
 }
 
 function createMemoryDeps(soul: SoulStore, repoRoot: string, cribDir: string) {
