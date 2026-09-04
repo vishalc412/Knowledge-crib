@@ -75,6 +75,15 @@ describe('CLIENT_ADAPTERS — registry completeness', () => {
 });
 
 describe('neutralProtocolBody — vendor-neutral contract', () => {
+  it('makes durable intake bootstrap and checkpointing the default session protocol', () => {
+    const body = neutralProtocolBody();
+    expect(body).toContain('Run handoff before relying on prior project context');
+    expect(body).toContain('Create or match a durable intake');
+    expect(body).toContain('Checkpoint unfinished intake work');
+    expect(body).toContain('repository drift');
+    expect(body).toContain('Never share or sync an intake implicitly');
+  });
+
   it('names the brief tool and the no-self-evaluate + non-destructive rules', () => {
     const body = neutralProtocolBody();
     expect(body).toContain('`brief`');
@@ -438,6 +447,7 @@ describe('capture-hook writer (G2.1) — Claude settings.json', () => {
       });
     }
     expect((hooks.SessionStart as unknown[])[0]).toBeDefined();
+    expect(JSON.stringify(hooks.SessionStart)).toContain('crib session bootstrap --json');
   });
 
   it('is idempotent — a second install reports written:false and changes no bytes', () => {

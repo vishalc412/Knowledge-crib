@@ -2923,7 +2923,7 @@ function cmdMcp(args: string[], ctx?: CmdCtx): number {
           process.stdout.write(`${tag}: ${r.note}\n`);
         } else if (r.written) {
           process.stdout.write(
-            `${tag}: wrote ${r.configPath}\n  command: ${r.command} ${r.args.join(' ')}\n`,
+            `${tag}: wrote ${r.configPath}\n  command: ${r.command} ${r.args.join(' ')}\n  restart: ${r.restartInstruction}\n`,
           );
         } else {
           process.stdout.write(`${tag}: already up to date at ${r.configPath}\n`);
@@ -2941,6 +2941,7 @@ function cmdMcp(args: string[], ctx?: CmdCtx): number {
         process.stdout.write(
           `${e.ide}/${e.scope}: ${e.present ? 'present' : 'absent'} → ${e.configPath}\n`,
         );
+        if (e.restartRequired) process.stdout.write(`  reload: ${e.restartInstruction}\n`);
       }
       return EXIT.OK;
     }
