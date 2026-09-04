@@ -4148,11 +4148,12 @@ function currentRepositoryAnchor(repoRoot: string): {
     head = undefined;
   }
   try {
-    branch = execFileSync('git', ['rev-parse', '--abbrev-ref', 'HEAD'], {
-      cwd: repoRoot,
-      encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'ignore'],
-    }).trim() || undefined;
+    branch =
+      execFileSync('git', ['rev-parse', '--abbrev-ref', 'HEAD'], {
+        cwd: repoRoot,
+        encoding: 'utf8',
+        stdio: ['ignore', 'pipe', 'ignore'],
+      }).trim() || undefined;
   } catch {
     branch = undefined;
   }
@@ -4171,10 +4172,12 @@ function currentRepositoryAnchor(repoRoot: string): {
   };
 }
 
-function intakeApi(ctx?: CmdCtx): {
-  api: MemoryApi;
-  repository: ReturnType<typeof currentRepositoryAnchor>;
-} | undefined {
+function intakeApi(ctx?: CmdCtx):
+  | {
+      api: MemoryApi;
+      repository: ReturnType<typeof currentRepositoryAnchor>;
+    }
+  | undefined {
   const resolved = resolveProjectRoot({ explicitRoot: ctx?.cwdOverride });
   const rt = openSoul(resolved);
   const deps = createMemoryDeps(rt.soul, resolved.repoRoot, resolved.cribDir);
@@ -4203,7 +4206,9 @@ function cmdIntake(args: string[], ctx?: CmdCtx): number {
   const principalId = process.env.KCRIB_PRINCIPAL_ID?.trim() || DEFAULT_MIGRATION_PRINCIPAL_ID;
   const actor = stringFlag(rest, '--actor')?.trim() || `human:${principalId}`;
   const output = (value: unknown): number => {
-    process.stdout.write(json ? `${JSON.stringify(value, null, 2)}\n` : `${JSON.stringify(value)}\n`);
+    process.stdout.write(
+      json ? `${JSON.stringify(value, null, 2)}\n` : `${JSON.stringify(value)}\n`,
+    );
     return EXIT.OK;
   };
 
@@ -4272,7 +4277,14 @@ function cmdIntake(args: string[], ctx?: CmdCtx): number {
       const phase = stringFlag(rest, '--phase');
       const summary = stringFlag(rest, '--summary')?.trim();
       const nextSafeAction = stringFlag(rest, '--next')?.trim();
-      const phases = new Set(['intake', 'planning', 'executing', 'blocked', 'verifying', 'complete']);
+      const phases = new Set([
+        'intake',
+        'planning',
+        'executing',
+        'blocked',
+        'verifying',
+        'complete',
+      ]);
       if (!phase || !phases.has(phase) || !summary) {
         throw new CliUsageError('--phase and --summary are required; phase is invalid or empty');
       }
@@ -4283,7 +4295,8 @@ function cmdIntake(args: string[], ctx?: CmdCtx): number {
       return output(
         api.checkpointIntake({
           intakeId: id,
-          kind: phase === 'planning' ? 'plan-selected' : phase === 'blocked' ? 'blocked' : 'progress',
+          kind:
+            phase === 'planning' ? 'plan-selected' : phase === 'blocked' ? 'blocked' : 'progress',
           phase: phase as 'intake' | 'planning' | 'executing' | 'blocked' | 'verifying',
           nextSafeAction,
           summary,
@@ -4296,26 +4309,22 @@ function cmdIntake(args: string[], ctx?: CmdCtx): number {
     }
     if (sub === 'share') {
       const audience = stringFlag(rest, '--audience');
-      if (audience !== 'devices') {
-        throw new CliUsageError('this slice supports --audience devices; team admission follows');
+      if (audience !== 'devices' && audience !== 'team') {
+        throw new CliUsageError('--audience must be devices or team');
       }
-      const resume = api.listIntakes(repository).choices.find((choice) => choice.intakeId === id);
-      if (!resume) throw new CliUsageError(`unknown intake: ${id}`);
-      const nextSafeAction = stringFlag(rest, '--next')?.trim() || resume.nextSafeAction;
-      if (!nextSafeAction) throw new CliUsageError('--next is required to share resumable work');
-      return output(
-        api.checkpointIntake({
-          intakeId: id,
-          kind: 'shared',
-          phase: resume.phase,
-          nextSafeAction,
-          summary: stringFlag(rest, '--summary')?.trim() || 'Shared with encrypted devices',
-          audience: 'devices',
-          repository,
-          actor,
-          recordedAt: new Date().toISOString(),
-        }),
-      );
+      const result = api.shareIntake(id, {
+        audience,
+        actor,
+        repository,
+        ...(stringFlag(rest, '--next')?.trim()
+          ? { nextSafeAction: stringFlag(rest, '--next')!.trim() }
+          : {}),
+        ...(stringFlag(rest, '--summary')?.trim()
+          ? { summary: stringFlag(rest, '--summary')!.trim() }
+          : {}),
+      });
+      if (!result.ok) throw new CliUsageError(result.error);
+      return output(result);
     }
     throw new CliUsageError(`unknown intake subcommand: ${sub}`);
   } catch (error) {
@@ -4440,7 +4449,9 @@ function cmdMemoryHandoff(args: string[], ctx?: CmdCtx): number {
   } else if (out.intakes.choices.length > 0) {
     lines.push('  multiple resumable intakes — choose one explicitly:');
     for (const choice of out.intakes.choices) {
-      lines.push(`    ${choice.intakeId}  [${choice.status}/${choice.phase}] ${choice.interpretation.outcome}`);
+      lines.push(
+        `    ${choice.intakeId}  [${choice.status}/${choice.phase}] ${choice.interpretation.outcome}`,
+      );
     }
   }
   section('IN FLIGHT — unfinished work', out.counts.openWork, out.openWork.length);

@@ -18,6 +18,8 @@ import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import type { MemoryStore } from '../store.js';
 import type {
+  IntakeCheckpoint,
+  IntakeRequirement,
   MemoryDecision,
   MemoryEntry,
   MemoryFeedback,
@@ -137,6 +139,29 @@ export function walkSyncableEntries(store: MemoryStore, opts: WalkSyncableOpts =
         store: scope,
         ...(repoId !== undefined ? { repoId } : {}),
       });
+    }
+  }
+  // Intake continuation is repository-local state. Requirements are immutable upserts and
+  // checkpoints are immutable append events; both use the same encrypted local-store channel as
+  // private records. Team visibility is deliberately NOT inferred here — explicit Git promotion
+  // writes the team store through MemoryApi.shareIntake instead.
+  if (store.role === 'local' && store.collections.includes('intakes')) {
+    for (const entry of store.readCollection('intakes').entries as (
+      | IntakeRequirement
+      | IntakeCheckpoint
+    )[]) {
+      const kind: SyncEventKind | undefined = entry.id.startsWith('intake:')
+        ? 'intake.upsert'
+        : entry.id.startsWith('icp:')
+          ? 'intake-checkpoint.append'
+          : undefined;
+      if (kind === undefined) {
+        read.errors.push(`local.intakes: unexpected entry ${String(entry?.id)} in intakes`);
+        continue;
+      }
+      const eventId = deriveEventId(kind, scope, repoId, entry);
+      if (membership.has(eventId)) continue;
+      entries.push({ entry, eventId, kind, store: scope, ...(repoId ? { repoId } : {}) });
     }
   }
   return { entries, errors: read.errors };

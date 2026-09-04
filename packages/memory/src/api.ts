@@ -80,13 +80,6 @@ import {
   type HandoffResponse,
   buildHandoff,
 } from './handoff.js';
-import {
-  createIntakeCheckpoint,
-  createIntakeRequirement,
-  type IntakeCheckpointInput,
-  type IntakeRequirementInput,
-} from './intake.js';
-import { type IntakeProjection, projectIntakes } from './intake-projection.js';
 import type { AgentProfileDirectory } from './identity-directory.js';
 import {
   decisionId,
@@ -95,6 +88,13 @@ import {
   memoryRecordV2Id,
   memoryShard,
 } from './ids.js';
+import { type IntakeProjection, projectIntakes } from './intake-projection.js';
+import {
+  type IntakeCheckpointInput,
+  type IntakeRequirementInput,
+  createIntakeCheckpoint,
+  createIntakeRequirement,
+} from './intake.js';
 import { type IntelligenceEventJournal, resolveServerIdentity } from './intelligence-events.js';
 import type { ProjectionCheckpointStore } from './intelligence-projections.js';
 import {
@@ -128,6 +128,7 @@ import {
   gatherRecall,
   recallProjection,
 } from './recall.js';
+import { assertNoMemorySecrets } from './secrets.js';
 import type { MemoryCollection, MemoryStore } from './store.js';
 import { TeamPrivateVisibilityError } from './store.js';
 import type { SyncObjectStore } from './sync/adapter.js';
@@ -150,6 +151,8 @@ import { type ConflictRecord, loadSyncState, saveSyncState } from './sync/queue.
 import { type SyncStageContext, stageSyncableWrite } from './sync/stage.js';
 import type {
   CaptureOutboxEntry,
+  IntakeCheckpoint,
+  IntakeRequirement,
   MemoryAlias,
   MemoryCandidate,
   MemoryDecision,
@@ -162,8 +165,6 @@ import type {
   MemoryScope,
   MemorySensitivity,
   MemoryVisibility,
-  IntakeCheckpoint,
-  IntakeRequirement,
 } from './types.js';
 import { isMemoryRecordV2, isMemoryRecordVersioned } from './types.js';
 
@@ -1194,6 +1195,37 @@ export interface MemoryApiDeps {
   identityDirectory?: AgentProfileDirectory;
 }
 
+export type IntakeShareResult =
+  | {
+      ok: true;
+      audience: 'devices' | 'team';
+      localWritten: true;
+      teamWritten: boolean;
+      checkpoint: IntakeCheckpoint;
+    }
+  | {
+      ok: false;
+      audience: 'devices' | 'team';
+      localWritten: boolean;
+      teamWritten: false;
+      error: string;
+      checkpoint?: IntakeCheckpoint;
+    };
+
+/** A team mirror failed after the local checkpoint was already durable. */
+export class IntakeTeamMirrorError extends Error {
+  readonly localWritten = true;
+  readonly teamWritten = false;
+
+  constructor(
+    message: string,
+    public readonly checkpoint: IntakeCheckpoint,
+  ) {
+    super(message);
+    this.name = 'IntakeTeamMirrorError';
+  }
+}
+
 /** Which record collection a store role holds its records in (local calls its bucket `active`). */
 function recordCollectionOf(store: MemoryStore): MemoryCollection {
   return store.role === 'local' ? 'active' : 'records';
@@ -1711,10 +1743,150 @@ export class MemoryApi {
   checkpointIntake(input: IntakeCheckpointInput): IntakeCheckpoint {
     const local = this.deps.stores.local;
     if (!local) throw new Error('checkpointing an intake requires a local repository memory store');
-    if (!this.getIntake(input.intakeId)) throw new Error(`unknown intake: ${input.intakeId}`);
+    const history = this.getIntake(input.intakeId);
+    if (!history) throw new Error(`unknown intake: ${input.intakeId}`);
     const checkpoint = createIntakeCheckpoint(input);
     local.upsertEntry('intakes', checkpoint);
+    if (history.checkpoints.some((entry) => entry.audience === 'team')) {
+      const team = this.deps.stores.team;
+      if (!team) {
+        throw new IntakeTeamMirrorError(
+          'checkpoint is durable locally, but no team memory store is configured',
+          checkpoint,
+        );
+      }
+      try {
+        team.upsertEntry('intakes', checkpoint);
+      } catch (error) {
+        throw new IntakeTeamMirrorError(
+          `checkpoint is durable locally, but the team mirror failed: ${(error as Error).message}`,
+          checkpoint,
+        );
+      }
+    }
     return checkpoint;
+  }
+
+  /**
+   * Explicitly widen one intake's audience. Device sharing appends a local marker that the normal
+   * encrypted derive-and-diff sweep will pick up. Team sharing is a separate, deliberate promotion:
+   * preflight the complete history, persist the marker locally, then copy the exact immutable set
+   * into Git-backed team memory. The two stores are written under separate locks.
+   */
+  shareIntake(
+    intakeId: string,
+    opts: {
+      audience: 'devices' | 'team';
+      actor: string;
+      repository: IntakeCheckpoint['repository'];
+      nextSafeAction?: string;
+      summary?: string;
+    },
+  ): IntakeShareResult {
+    const local = this.deps.stores.local;
+    if (!local) {
+      return {
+        ok: false,
+        audience: opts.audience,
+        localWritten: false,
+        teamWritten: false,
+        error: 'sharing an intake requires a local repository memory store',
+      };
+    }
+    const history = this.getIntake(intakeId);
+    if (!history) {
+      return {
+        ok: false,
+        audience: opts.audience,
+        localWritten: false,
+        teamWritten: false,
+        error: `unknown intake: ${intakeId}`,
+      };
+    }
+    if (opts.audience === 'team' && !this.deps.stores.team) {
+      return {
+        ok: false,
+        audience: 'team',
+        localWritten: false,
+        teamWritten: false,
+        error: 'team sharing requires a Git-backed team memory store',
+      };
+    }
+
+    const projection = projectIntakes([history.requirement], history.checkpoints, opts.repository)
+      .choices[0];
+    if (!projection) {
+      return {
+        ok: false,
+        audience: opts.audience,
+        localWritten: false,
+        teamWritten: false,
+        error: `could not project intake: ${intakeId}`,
+      };
+    }
+    const latest = history.checkpoints.at(-1);
+    const terminalKind =
+      latest?.kind === 'completed' || latest?.kind === 'cancelled' ? latest.kind : undefined;
+    const nextSafeAction = opts.nextSafeAction?.trim() || projection.nextSafeAction;
+    if (!terminalKind && !nextSafeAction) {
+      return {
+        ok: false,
+        audience: opts.audience,
+        localWritten: false,
+        teamWritten: false,
+        error: 'a resumable intake must have a next safe action before it can be shared',
+      };
+    }
+    const checkpoint = createIntakeCheckpoint({
+      intakeId,
+      kind: terminalKind ?? 'shared',
+      phase: projection.phase,
+      ...(nextSafeAction ? { nextSafeAction } : {}),
+      summary: opts.summary?.trim() || `Shared intake continuation with ${opts.audience}`,
+      ...(projection.completedStepIds.length > 0
+        ? { completedStepIds: projection.completedStepIds }
+        : {}),
+      audience: opts.audience,
+      repository: opts.repository,
+      ...(latest?.artifactPaths ? { artifactPaths: latest.artifactPaths } : {}),
+      ...(latest?.receiptIds ? { receiptIds: latest.receiptIds } : {}),
+      actor: opts.actor,
+      recordedAt: this.now(),
+    });
+    const completeHistory: MemoryEntry[] = [
+      history.requirement,
+      ...history.checkpoints,
+      checkpoint,
+    ];
+    try {
+      for (const entry of completeHistory) assertNoMemorySecrets(entry);
+    } catch (error) {
+      return {
+        ok: false,
+        audience: opts.audience,
+        localWritten: false,
+        teamWritten: false,
+        error: (error as Error).message,
+      };
+    }
+
+    local.upsertEntry('intakes', checkpoint);
+    if (opts.audience === 'devices') {
+      return { ok: true, audience: 'devices', localWritten: true, teamWritten: false, checkpoint };
+    }
+    try {
+      this.deps.stores.team!.upsertEntries('intakes', completeHistory);
+      return { ok: true, audience: 'team', localWritten: true, teamWritten: true, checkpoint };
+    } catch (error) {
+      return {
+        ok: false,
+        audience: 'team',
+        localWritten: true,
+        teamWritten: false,
+        error: (error as Error).message,
+        checkpoint,
+      };
+    }
   }
 
   listIntakes(repository: IntakeCheckpoint['repository'] = { dirty: false }): IntakeProjection {
@@ -1801,11 +1973,11 @@ export class MemoryApi {
       }
     }
     return {
-      requirements: [...entries.values()].filter(
-        (entry): entry is IntakeRequirement => entry.id.startsWith('intake:'),
+      requirements: [...entries.values()].filter((entry): entry is IntakeRequirement =>
+        entry.id.startsWith('intake:'),
       ),
-      checkpoints: [...entries.values()].filter(
-        (entry): entry is IntakeCheckpoint => entry.id.startsWith('icp:'),
+      checkpoints: [...entries.values()].filter((entry): entry is IntakeCheckpoint =>
+        entry.id.startsWith('icp:'),
       ),
     };
   }

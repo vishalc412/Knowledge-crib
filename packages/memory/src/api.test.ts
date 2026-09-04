@@ -35,6 +35,7 @@ import {
   RANKING_VERSION,
   __resetMemoryLockGuardForTest,
   believedLifecycle,
+  createIntakeRequirement,
   decisionId,
   derivePropositionKey,
   feedbackId,
@@ -45,7 +46,6 @@ import {
   validTimeWindowOf,
   validityOf,
   visibilityOf,
-  createIntakeRequirement,
 } from './index.js';
 
 const T0 = '2026-01-01T00:00:00.000Z';
@@ -257,6 +257,52 @@ function setup(
 }
 
 describe('intake continuation API', () => {
+  it('copies the complete intake history to team only through explicit sharing', () => {
+    const { api, team, local } = setupMulti();
+    const requirement = api.createIntake({
+      namespace: { principalId: 'principal:local', projectId: REPO },
+      original: 'Share the resumable plan',
+      interpretation: {
+        outcome: 'Let a teammate resume',
+        scope: ['packages/memory'],
+        constraints: [],
+        acceptanceCriteria: ['Team sees next action'],
+      },
+      sensitivity: 'internal',
+      retentionPolicyId: 'default',
+      provenance: {
+        principalId: 'principal:local',
+        deviceId: 'device-1',
+        actorId: 'human:vishal',
+        clientId: 'test',
+      },
+      createdAt: T0,
+    });
+    api.checkpointIntake({
+      intakeId: requirement.id,
+      kind: 'progress',
+      phase: 'executing',
+      nextSafeAction: 'Run tests',
+      summary: 'Started',
+      repository: { dirty: false },
+      actor: 'codex',
+      recordedAt: T1,
+    });
+    const result = api.shareIntake(requirement.id, {
+      audience: 'team',
+      actor: 'human:vishal',
+      repository: { dirty: false },
+    });
+    expect(result).toMatchObject({
+      ok: true,
+      audience: 'team',
+      localWritten: true,
+      teamWritten: true,
+    });
+    expect(local.readCollection('intakes').entries).toHaveLength(3);
+    expect(team.readCollection('intakes').entries).toHaveLength(3);
+  });
+
   it('creates, checkpoints, lists, gets, and includes an intake in handoff', () => {
     const { api } = setup();
     const requirement = api.createIntake({

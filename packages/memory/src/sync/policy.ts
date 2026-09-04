@@ -97,6 +97,20 @@ export function admissionForSync(
 ): SyncAdmission {
   // D8 step 2 — a payload whose declared id does not re-derive from its bytes is refused outright.
   if (!verifyPayloadId(entry).ok) return { admitted: false, reason: 'id-derivation' };
+  if (entry.id.startsWith('intake:')) {
+    const intake = entry as unknown as { sensitivity?: string; retentionPolicyId?: string };
+    if (
+      typeof intake.retentionPolicyId !== 'string' ||
+      !KNOWN_RETENTION_POLICY_IDS.includes(intake.retentionPolicyId)
+    ) {
+      return { admitted: false, reason: 'ambiguous-policy' };
+    }
+    const allowed = targetClass === 'git-shard' ? GIT_SHARD_SENSITIVITY : REMOTE_SENSITIVITY;
+    if (typeof intake.sensitivity !== 'string' || !allowed.includes(intake.sensitivity)) {
+      return { admitted: false, reason: 'sensitivity' };
+    }
+    return { admitted: true };
+  }
   if (!entry.id.startsWith('mem:')) return { admitted: true };
   const visibility = visibilityOfEntry(entry);
   const sensitivity = sensitivityOfEntry(entry);

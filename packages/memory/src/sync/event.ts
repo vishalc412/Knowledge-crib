@@ -16,6 +16,8 @@ import { blake3Hex } from '@knowledge-crib/soul-schema';
 import {
   decisionId,
   feedbackId,
+  intakeCheckpointId,
+  intakeRequirementId,
   memoryRecordId,
   memoryRecordV2Id,
   memoryRecordV3Id,
@@ -24,6 +26,8 @@ import { MemorySchemaVersionError } from '../migrations.js';
 import { canonicalMemoryJson } from '../serialization.js';
 import { isMemoryRecordV2, isMemoryRecordV3 } from '../types.js';
 import type {
+  IntakeCheckpoint,
+  IntakeRequirement,
   MemoryDecision,
   MemoryEntry,
   MemoryFeedback,
@@ -34,12 +38,20 @@ import type {
 import { MemorySchemaError, assertValidSyncEvent } from '../validate.js';
 
 /** The event kinds (D1). Tombstones ride `decision.append` as retract/supersede decisions (D9). */
-export type SyncEventKind = 'record.upsert' | 'decision.append' | 'feedback.append' | 'purge.mark';
+export type SyncEventKind =
+  | 'record.upsert'
+  | 'decision.append'
+  | 'feedback.append'
+  | 'intake.upsert'
+  | 'intake-checkpoint.append'
+  | 'purge.mark';
 
 export const SYNC_EVENT_KINDS: readonly SyncEventKind[] = [
   'record.upsert',
   'decision.append',
   'feedback.append',
+  'intake.upsert',
+  'intake-checkpoint.append',
   'purge.mark',
 ];
 
@@ -61,7 +73,9 @@ export type SyncEventPayload =
   | MemoryRecordV2
   | MemoryRecordV3
   | MemoryDecision
-  | MemoryFeedback;
+  | MemoryFeedback
+  | IntakeRequirement
+  | IntakeCheckpoint;
 
 /** The sync event envelope (D1, `sync-event.schema.json`). */
 export interface SyncEvent {
@@ -229,6 +243,34 @@ export function verifyPayloadId(entry: {
     }
     if (prefix === 'fb') {
       const expected = feedbackId(entry as unknown as Parameters<typeof feedbackId>[0]);
+      return { ok: expected === actualId, expectedId: expected, actualId };
+    }
+    if (prefix === 'intake') {
+      const expected = intakeRequirementId({
+        namespace: rec.namespace as IntakeRequirement['namespace'],
+        original: rec.original as string,
+        interpretation: rec.interpretation as IntakeRequirement['interpretation'],
+        sensitivity: rec.sensitivity as IntakeRequirement['sensitivity'],
+        retentionPolicyId: rec.retentionPolicyId as string,
+        provenance: rec.provenance as IntakeRequirement['provenance'],
+      });
+      return { ok: expected === actualId, expectedId: expected, actualId };
+    }
+    if (prefix === 'icp') {
+      const checkpoint = rec as unknown as IntakeCheckpoint;
+      const expected = intakeCheckpointId({
+        intakeId: checkpoint.intakeId,
+        kind: checkpoint.kind,
+        phase: checkpoint.phase,
+        ...(checkpoint.nextSafeAction ? { nextSafeAction: checkpoint.nextSafeAction } : {}),
+        summary: checkpoint.summary,
+        ...(checkpoint.completedStepIds ? { completedStepIds: checkpoint.completedStepIds } : {}),
+        ...(checkpoint.audience ? { audience: checkpoint.audience } : {}),
+        repository: checkpoint.repository,
+        ...(checkpoint.artifactPaths ? { artifactPaths: checkpoint.artifactPaths } : {}),
+        ...(checkpoint.receiptIds ? { receiptIds: checkpoint.receiptIds } : {}),
+        actor: checkpoint.actor,
+      });
       return { ok: expected === actualId, expectedId: expected, actualId };
     }
   } catch {

@@ -17,6 +17,7 @@ import {
   canonicalMemoryJson,
   memoryShard,
 } from '../index.js';
+import { createIntakeCheckpoint, createIntakeRequirement } from '../intake.js';
 import { FileSyncObjectStore } from './adapter.js';
 import { seedSyncBaseline } from './bootstrap.js';
 import { encryptEvent, keyFingerprint, routeKeyFor } from './crypto.js';
@@ -116,6 +117,47 @@ function digestOf(entry: unknown): string {
 // ─── push (D4/D5) ─────────────────────────────────────────────────────────────
 
 describe('pushSync (two devices, shared remote)', () => {
+  it('converges intake checkpoints across two local stores through encrypted sync', async () => {
+    const requirement = createIntakeRequirement({
+      namespace: { principalId: PRINCIPAL, projectId: REPO },
+      original: 'Continue on device B',
+      interpretation: {
+        outcome: 'Resume the same task',
+        scope: [],
+        constraints: [],
+        acceptanceCriteria: ['Same next action'],
+      },
+      sensitivity: 'internal',
+      retentionPolicyId: 'ret:default',
+      provenance: {
+        principalId: PRINCIPAL,
+        deviceId: DEVICE,
+        actorId: 'actor-a',
+        clientId: 'test',
+      },
+      createdAt: NOW,
+    });
+    const checkpoint = createIntakeCheckpoint({
+      intakeId: requirement.id,
+      kind: 'progress',
+      phase: 'executing',
+      nextSafeAction: 'Run memory tests',
+      summary: 'Implementation started',
+      repository: { head: 'abc', dirty: false },
+      actor: 'actor-a',
+      recordedAt: LATER,
+    });
+    storeA.upsertEntries('intakes', [requirement, checkpoint]);
+    expect((await pushSync(storeA, backend, runOpts())).pushed).toBe(2);
+    expect((await pullSync(storeB, backend, runOpts())).ok).toBe(true);
+    expect(storeB.readCollection('intakes').entries).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: requirement.id }),
+        expect.objectContaining({ id: checkpoint.id, intakeId: requirement.id }),
+      ]),
+    );
+  });
+
   it('pushes the sweep as encrypted blobs + a batch manifest and acks last', async () => {
     const rec = v1Record();
     storeA.upsertEntry('active', rec);

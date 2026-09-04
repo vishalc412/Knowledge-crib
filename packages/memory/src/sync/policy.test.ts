@@ -4,6 +4,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { derivePropositionKey, memoryRecordId, memoryRecordV2Id } from '../ids.js';
+import { createIntakeRequirement } from '../intake.js';
 import { type SyncAdmissionReason, admissionForSync } from './policy.js';
 import { decision, feedback, v1Record, v2Record } from './sync-test-fixtures.js';
 
@@ -14,6 +15,27 @@ function reasonOf(entry: Parameters<typeof admissionForSync>[0]): SyncAdmissionR
 }
 
 describe('admissionForSync (D10)', () => {
+  it('applies sensitivity and retention admission to intake requirements', () => {
+    const requirement = createIntakeRequirement({
+      namespace: { principalId: 'p1' },
+      original: 'Restricted task',
+      interpretation: {
+        outcome: 'Keep it private',
+        scope: [],
+        constraints: [],
+        acceptanceCriteria: [],
+      },
+      sensitivity: 'restricted',
+      retentionPolicyId: 'ret:default',
+      provenance: { principalId: 'p1', deviceId: 'd1', actorId: 'a1', clientId: 'test' },
+      createdAt: '2026-01-01T00:00:00.000Z',
+    });
+    expect(admissionForSync(requirement, 'encrypted-remote')).toEqual({
+      admitted: false,
+      reason: 'sensitivity',
+    });
+  });
+
   it('admits honest memory-1 workspace records to both classes (internal + ret:default)', () => {
     const rec = v1Record();
     expect(admissionForSync(rec, 'git-shard')).toEqual({ admitted: true });

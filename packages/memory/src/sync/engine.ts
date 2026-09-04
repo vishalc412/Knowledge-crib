@@ -32,7 +32,7 @@ import { memoryHome } from '../paths.js';
 import { assertNoMemorySecrets } from '../secrets.js';
 import { canonicalMemoryJson } from '../serialization.js';
 import type { MemoryCollection, MemoryStore } from '../store.js';
-import type { MemoryEntry } from '../types.js';
+import type { MemoryDecision, MemoryEntry } from '../types.js';
 import { assertValidMemoryEntry } from '../validate.js';
 import type { SyncObjectStore } from './adapter.js';
 import { walkSyncableEntries } from './bootstrap.js';
@@ -165,7 +165,13 @@ export interface SyncPushResult {
 export interface SyncApplied {
   eventId: string;
   payloadId: string;
-  action: 'upserted' | 'noop' | 'decision-applied' | 'purge-mark';
+  action:
+    | 'upserted'
+    | 'noop'
+    | 'decision-applied'
+    | 'intake-upserted'
+    | 'checkpoint-appended'
+    | 'purge-mark';
 }
 
 /** One surfaced (not applied) event: an unconfigured store role, a different repo, or an
@@ -881,7 +887,7 @@ function applyPulledEvent(
       result.applied.push({
         eventId: evt.id,
         payloadId: evt.payload.id,
-        action: evt.kind === 'record.upsert' ? 'noop' : 'decision-applied',
+        action: 'noop',
       });
       return;
     }
@@ -902,7 +908,7 @@ function applyPulledEvent(
     result.applied.push({
       eventId: evt.id,
       payloadId: evt.payload.id,
-      action: evt.kind === 'record.upsert' ? 'upserted' : 'decision-applied',
+      action: applyActionFor(evt.kind),
     });
     return;
   }
@@ -910,7 +916,7 @@ function applyPulledEvent(
   result.applied.push({
     eventId: evt.id,
     payloadId: evt.payload.id,
-    action: evt.kind === 'record.upsert' ? 'upserted' : 'decision-applied',
+    action: applyActionFor(evt.kind),
   });
   // D9 — a pulled retirement decision (the tombstone shape) is APPLIED by the write above; when its
   // subject is not a record this store holds, surface the ahead-of-record case.
@@ -951,12 +957,19 @@ function pushQuarantineDeduped(
   added.push(row);
 }
 
-function isRetirement(payload: SyncEventPayload): boolean {
+function isRetirement(payload: SyncEventPayload): payload is MemoryDecision {
   const kind = (payload as { kind?: unknown }).kind;
   return (
     (kind === 'retract' || kind === 'supersede') &&
     typeof (payload as { subject?: unknown }).subject === 'string'
   );
+}
+
+function applyActionFor(kind: SyncEvent['kind']): SyncApplied['action'] {
+  if (kind === 'record.upsert') return 'upserted';
+  if (kind === 'intake.upsert') return 'intake-upserted';
+  if (kind === 'intake-checkpoint.append') return 'checkpoint-appended';
+  return kind === 'purge.mark' ? 'purge-mark' : 'decision-applied';
 }
 
 /** The collection a payload id lands in for this store (undefined = never synced into this role). */
@@ -965,6 +978,9 @@ function collectionForPayload(payloadId: string, store: MemoryStore): MemoryColl
   if (prefix === 'mem') return store.role === 'local' ? 'active' : 'records';
   if (prefix === 'dec') return 'decisions';
   if (prefix === 'fb') return 'feedback';
+  if ((prefix === 'intake' || prefix === 'icp') && store.collections.includes('intakes')) {
+    return 'intakes';
+  }
   return undefined;
 }
 

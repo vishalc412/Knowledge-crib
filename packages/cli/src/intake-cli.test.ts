@@ -93,16 +93,8 @@ describe('crib intake and session bootstrap', () => {
     expect(run(['intake', 'create', '--from', '', '--outcome', 'Ship', '--json']).status).toBe(2);
     const id = (JSON.parse(create('Validate arguments').stdout) as { id: string }).id;
     expect(
-      run([
-        'intake',
-        'checkpoint',
-        id,
-        '--phase',
-        'executing',
-        '--summary',
-        'Started',
-        '--json',
-      ]).status,
+      run(['intake', 'checkpoint', id, '--phase', 'executing', '--summary', 'Started', '--json'])
+        .status,
     ).toBe(2);
   });
 
@@ -137,5 +129,26 @@ describe('crib intake and session bootstrap', () => {
     };
     expect(listed.primary).toBeUndefined();
     expect(listed.choices).toHaveLength(2);
+  });
+
+  it('shares intake history to the Git-visible team store only when explicitly requested', () => {
+    const id = (JSON.parse(create('Share with team').stdout) as { id: string }).id;
+    expect(
+      run([
+        'intake',
+        'checkpoint',
+        id,
+        '--phase',
+        'executing',
+        '--next',
+        'Run tests',
+        '--summary',
+        'Started',
+        '--json',
+      ]).status,
+    ).toBe(0);
+    const shared = run(['intake', 'share', id, '--audience', 'team', '--json']);
+    expect(shared.status).toBe(0);
+    expect(JSON.parse(shared.stdout)).toMatchObject({ teamWritten: true });
   });
 });

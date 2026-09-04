@@ -6,6 +6,7 @@
 import { rmSync } from 'node:fs';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { MemoryStore, __resetMemoryLockGuardForTest } from '../index.js';
+import { createIntakeCheckpoint, createIntakeRequirement } from '../intake.js';
 import { walkSyncableEntries } from './bootstrap.js';
 import { defaultSyncState, saveSyncState, stageOutboundEvent } from './queue.js';
 import {
@@ -35,6 +36,45 @@ afterEach(() => {
 });
 
 describe('walkSyncableEntries (D5)', () => {
+  it('walks local intake requirements and checkpoints with their distinct event kinds', () => {
+    const requirement = createIntakeRequirement({
+      namespace: { principalId: 'principal-vishal', projectId: REPO },
+      original: 'Continue on another device',
+      interpretation: {
+        outcome: 'Resume safely',
+        scope: [],
+        constraints: [],
+        acceptanceCriteria: [],
+      },
+      sensitivity: 'internal',
+      retentionPolicyId: 'ret:default',
+      provenance: {
+        principalId: 'principal-vishal',
+        deviceId: 'device-a',
+        actorId: 'actor-a',
+        clientId: 'test',
+      },
+      createdAt: '2026-01-01T00:00:00.000Z',
+    });
+    const checkpoint = createIntakeCheckpoint({
+      intakeId: requirement.id,
+      kind: 'progress',
+      phase: 'executing',
+      nextSafeAction: 'Run tests',
+      summary: 'Started',
+      repository: { dirty: false },
+      actor: 'actor-a',
+      recordedAt: '2026-01-02T00:00:00.000Z',
+    });
+    localStore.upsertEntries('intakes', [requirement, checkpoint]);
+    localStore.ensureManifest();
+    expect(
+      walkSyncableEntries(localStore)
+        .entries.map((entry) => entry.kind)
+        .sort(),
+    ).toEqual(['intake-checkpoint.append', 'intake.upsert']);
+  });
+
   it('walks the local store over `active` with the repoId attached', () => {
     localStore.upsertEntry('active', v1Record());
     localStore.ensureManifest(); // the manifest's repo.id is the seed's repoId
