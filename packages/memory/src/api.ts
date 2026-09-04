@@ -80,6 +80,13 @@ import {
   type HandoffResponse,
   buildHandoff,
 } from './handoff.js';
+import {
+  createIntakeCheckpoint,
+  createIntakeRequirement,
+  type IntakeCheckpointInput,
+  type IntakeRequirementInput,
+} from './intake.js';
+import { type IntakeProjection, projectIntakes } from './intake-projection.js';
 import type { AgentProfileDirectory } from './identity-directory.js';
 import {
   decisionId,
@@ -155,6 +162,8 @@ import type {
   MemoryScope,
   MemorySensitivity,
   MemoryVisibility,
+  IntakeCheckpoint,
+  IntakeRequirement,
 } from './types.js';
 import { isMemoryRecordV2, isMemoryRecordVersioned } from './types.js';
 
@@ -1691,7 +1700,52 @@ export class MemoryApi {
    * orphaned claim is excluded from ranking because it must not be acted on — but a returning agent
    * still has to be told it went bad, or the context simply disappears between sessions.
    */
-  handoff(opts: { limits?: HandoffInput['limits'] } = {}): HandoffResponse {
+  createIntake(input: IntakeRequirementInput): IntakeRequirement {
+    const local = this.deps.stores.local;
+    if (!local) throw new Error('creating an intake requires a local repository memory store');
+    const requirement = createIntakeRequirement(input);
+    local.upsertEntry('intakes', requirement);
+    return requirement;
+  }
+
+  checkpointIntake(input: IntakeCheckpointInput): IntakeCheckpoint {
+    const local = this.deps.stores.local;
+    if (!local) throw new Error('checkpointing an intake requires a local repository memory store');
+    if (!this.getIntake(input.intakeId)) throw new Error(`unknown intake: ${input.intakeId}`);
+    const checkpoint = createIntakeCheckpoint(input);
+    local.upsertEntry('intakes', checkpoint);
+    return checkpoint;
+  }
+
+  listIntakes(repository: IntakeCheckpoint['repository'] = { dirty: false }): IntakeProjection {
+    const { requirements, checkpoints } = this.intakeEntries();
+    return projectIntakes(requirements, checkpoints, repository);
+  }
+
+  getIntake(
+    intakeId: string,
+  ): { requirement: IntakeRequirement; checkpoints: IntakeCheckpoint[] } | undefined {
+    const { requirements, checkpoints } = this.intakeEntries();
+    const requirement = requirements.find((entry) => entry.id === intakeId);
+    if (!requirement) return undefined;
+    return {
+      requirement,
+      checkpoints: checkpoints
+        .filter((entry) => entry.intakeId === intakeId)
+        .sort((a, b) =>
+          a.recordedAt === b.recordedAt
+            ? a.id.localeCompare(b.id)
+            : a.recordedAt.localeCompare(b.recordedAt),
+        ),
+    };
+  }
+
+  handoff(
+    opts: {
+      limits?: HandoffInput['limits'];
+      repository?: IntakeCheckpoint['repository'];
+    } = {},
+  ): HandoffResponse {
     const pinned = [this.deps.stores.team, this.deps.stores.local, this.deps.stores.global].filter(
       (s): s is MemoryStore => s !== undefined,
     );
@@ -1718,15 +1772,42 @@ export class MemoryApi {
         ? (local.readCollection('attempts').entries as unknown as HandoffAttemptEvent[])
         : [];
       const pending = local ? pendingCaptures(local) : [];
+      const { requirements, checkpoints } = this.intakeEntries();
       return buildHandoff({
         attempts,
         pending,
         records,
+        intakeRequirements: requirements,
+        intakeCheckpoints: checkpoints,
+        ...(opts.repository ? { repository: opts.repository } : {}),
         ...(opts.limits ? { limits: opts.limits } : {}),
       });
     } finally {
       for (const store of pinned) store.unpinGeneration();
     }
+  }
+
+  private intakeEntries(): {
+    requirements: IntakeRequirement[];
+    checkpoints: IntakeCheckpoint[];
+  } {
+    const entries = new Map<string, IntakeRequirement | IntakeCheckpoint>();
+    for (const store of [this.deps.stores.team, this.deps.stores.local]) {
+      if (!store || !store.collections.includes('intakes')) continue;
+      for (const entry of store.readCollection('intakes').entries) {
+        if (entry.id.startsWith('intake:') || entry.id.startsWith('icp:')) {
+          entries.set(entry.id, entry as IntakeRequirement | IntakeCheckpoint);
+        }
+      }
+    }
+    return {
+      requirements: [...entries.values()].filter(
+        (entry): entry is IntakeRequirement => entry.id.startsWith('intake:'),
+      ),
+      checkpoints: [...entries.values()].filter(
+        (entry): entry is IntakeCheckpoint => entry.id.startsWith('icp:'),
+      ),
+    };
   }
 
   search(query: string, opts: SearchOpts = {}): SearchResponse {

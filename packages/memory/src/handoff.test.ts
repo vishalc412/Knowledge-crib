@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Verdicts } from './enums.js';
 import { type HandoffAttemptEvent, type HandoffInput, buildHandoff } from './handoff.js';
+import { createIntakeCheckpoint, createIntakeRequirement } from './intake.js';
 import type { MemoryRecord } from './types.js';
 
 /**
@@ -185,6 +186,43 @@ describe('buildHandoff — determinism (the ifHash contract)', () => {
       needsAttention: [],
       recent: [],
       counts: { openWork: 0, pendingCaptures: 0, needsAttention: 0, active: 0 },
+      intakes: { choices: [], count: 0 },
     });
+  });
+
+  it('includes the deterministic intake resume projection without changing existing fields', () => {
+    const requirement = createIntakeRequirement({
+      namespace: { principalId: 'p1', projectId: 'r1' },
+      original: 'Continue the migration',
+      interpretation: {
+        outcome: 'Finish the migration',
+        scope: ['packages/memory'],
+        constraints: [],
+        acceptanceCriteria: ['Tests pass'],
+      },
+      sensitivity: 'internal',
+      retentionPolicyId: 'default',
+      provenance: { principalId: 'p1', deviceId: 'd1', actorId: 'a1', clientId: 'codex' },
+      createdAt: NOW,
+    });
+    const checkpoint = createIntakeCheckpoint({
+      intakeId: requirement.id,
+      kind: 'progress',
+      phase: 'executing',
+      nextSafeAction: 'Run tests',
+      summary: 'Implementation is in progress',
+      repository: { head: 'abc', branch: 'feature/work', dirty: false },
+      actor: 'codex',
+      recordedAt: '2026-01-02T00:00:00.000Z',
+    });
+    const out = buildHandoff(
+      input({
+        intakeRequirements: [requirement],
+        intakeCheckpoints: [checkpoint],
+        repository: { head: 'abc', branch: 'feature/work', dirty: false },
+      }),
+    );
+    expect(out.intakes.primary?.nextSafeAction).toBe('Run tests');
+    expect(out.intakes.count).toBe(1);
   });
 });

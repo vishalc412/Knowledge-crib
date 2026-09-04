@@ -45,6 +45,7 @@ import {
   validTimeWindowOf,
   validityOf,
   visibilityOf,
+  createIntakeRequirement,
 } from './index.js';
 
 const T0 = '2026-01-01T00:00:00.000Z';
@@ -254,6 +255,83 @@ function setup(
     },
   };
 }
+
+describe('intake continuation API', () => {
+  it('creates, checkpoints, lists, gets, and includes an intake in handoff', () => {
+    const { api } = setup();
+    const requirement = api.createIntake({
+      namespace: { principalId: 'principal:local', projectId: REPO },
+      original: 'Continue the parser migration',
+      interpretation: {
+        outcome: 'Finish the parser migration',
+        scope: ['packages/parsers'],
+        constraints: [],
+        acceptanceCriteria: ['Tests pass'],
+      },
+      sensitivity: 'internal',
+      retentionPolicyId: 'default',
+      provenance: {
+        principalId: 'principal:local',
+        deviceId: 'device-1',
+        actorId: 'actor-1',
+        clientId: 'codex',
+      },
+      createdAt: T0,
+    });
+    api.checkpointIntake({
+      intakeId: requirement.id,
+      kind: 'progress',
+      phase: 'executing',
+      nextSafeAction: 'Run parser tests',
+      summary: 'Implementation is ready to verify',
+      repository: { head: 'abc', branch: 'feature/parser', dirty: false },
+      actor: 'codex',
+      recordedAt: T1,
+    });
+
+    expect(api.listIntakes({ head: 'abc', branch: 'feature/parser', dirty: false }).count).toBe(1);
+    expect(api.getIntake(requirement.id)?.requirement).toEqual(requirement);
+    expect(
+      api.handoff({ repository: { head: 'abc', branch: 'feature/parser', dirty: false } }).intakes
+        .primary?.nextSafeAction,
+    ).toBe('Run parser tests');
+  });
+
+  it('refuses to checkpoint an unknown intake', () => {
+    const { api } = setup();
+    const valid = createIntakeRequirement({
+      namespace: { principalId: 'principal:local', projectId: REPO },
+      original: 'Known intake',
+      interpretation: {
+        outcome: 'Known outcome',
+        scope: [],
+        constraints: [],
+        acceptanceCriteria: [],
+      },
+      sensitivity: 'internal',
+      retentionPolicyId: 'default',
+      provenance: {
+        principalId: 'principal:local',
+        deviceId: 'device-1',
+        actorId: 'actor-1',
+        clientId: 'codex',
+      },
+      createdAt: T0,
+    });
+    expect(() =>
+      api.checkpointIntake({
+        intakeId: valid.id,
+        kind: 'progress',
+        phase: 'executing',
+        nextSafeAction: 'Continue',
+        summary: 'Not persisted',
+        repository: { dirty: false },
+        actor: 'codex',
+        recordedAt: T1,
+      }),
+    ).toThrow(/unknown intake/);
+  });
+});
 
 describe('observe event plane', () => {
   it('records a sanitized idempotent observation event after staging the candidate', () => {
