@@ -14,10 +14,16 @@ export default defineConfig({
   //
   // Only this package needs it today — the next slowest package is `pipeline` at ~1.0s, which keeps
   // ~5x headroom under the default. Revisit if that number climbs.
-  testTimeout: 30_000,
-  // `beforeEach` in the memory/e2e suites runs a full indexRepo + index build, so the hook budget
-  // has to move with the test budget or the hook times out first and the failure reads as unrelated.
-  hookTimeout: 30_000,
+  //
+  // NOTE: these MUST live under `test:` — Vitest reads its options from that key, and a top-level
+  // `testTimeout` is silently swallowed by Vite as an unknown root option. Putting them at the root
+  // first time round changed nothing and CI failed again with the same "timed out in 5000ms".
+  test: {
+    testTimeout: 30_000,
+    // `beforeEach` in the memory/e2e suites runs a full indexRepo + index build, so the hook budget
+    // has to move with the test budget or the hook times out first and reads as an unrelated failure.
+    hookTimeout: 30_000,
+  },
   plugins: [
     {
       name: 'handle-node-sqlite',
