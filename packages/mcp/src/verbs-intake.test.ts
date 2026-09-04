@@ -50,7 +50,9 @@ function memoryCaller() {
     server as unknown as {
       _registeredTools: Record<
         string,
-        { handler: (args: Record<string, unknown>) => Promise<{ content: Array<{ text: string }> }> }
+        {
+          handler: (args: Record<string, unknown>) => Promise<{ content: Array<{ text: string }> }>;
+        }
       >;
     }
   )._registeredTools.memory;

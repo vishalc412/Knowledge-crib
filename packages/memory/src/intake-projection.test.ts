@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
+  type IntakeCheckpoint,
+  type IntakeRequirement,
   createIntakeCheckpoint,
   createIntakeRequirement,
   projectIntakes,
-  type IntakeCheckpoint,
-  type IntakeRequirement,
 } from './index.js';
 
 const REPOSITORY = { head: 'head-1', branch: 'feature/work', dirty: false };

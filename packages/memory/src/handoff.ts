@@ -23,14 +23,9 @@
  * feeds an `ifHash` projection, so two handoffs over identical state must be byte-identical.
  */
 import type { AttemptPhase, Verdicts } from './enums.js';
-import type {
-  IntakeCheckpoint,
-  IntakeRequirement,
-  MemoryRecord,
-  MemoryRecordV2,
-} from './types.js';
-import { isMemoryRecordV2 } from './types.js';
 import { type IntakeProjection, projectIntakes } from './intake-projection.js';
+import type { IntakeCheckpoint, IntakeRequirement, MemoryRecord, MemoryRecordV2 } from './types.js';
+import { isMemoryRecordV2 } from './types.js';
 
 /** An attempt that started and never reached a terminal phase — the literal leftover item. */
 export interface HandoffOpenWork {

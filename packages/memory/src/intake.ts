@@ -1,9 +1,6 @@
 import { intakeCheckpointId, intakeRequirementId, normalizeClaim } from './ids.js';
 import type { IntakeCheckpoint, IntakeRequirement } from './types.js';
-import {
-  assertValidIntakeCheckpoint,
-  assertValidIntakeRequirement,
-} from './validate.js';
+import { assertValidIntakeCheckpoint, assertValidIntakeRequirement } from './validate.js';
 
 export type IntakeRequirementInput = Omit<IntakeRequirement, 'id' | 'schemaVersion'>;
 export type IntakeCheckpointInput = Omit<IntakeCheckpoint, 'id' | 'schemaVersion'>;
@@ -45,9 +42,7 @@ const TERMINAL_CHECKPOINTS = new Set<IntakeCheckpoint['kind']>(['completed', 'ca
 
 export function createIntakeCheckpoint(input: IntakeCheckpointInput): IntakeCheckpoint {
   const summary = normalizeClaim(input.summary);
-  const nextSafeAction = input.nextSafeAction
-    ? normalizeClaim(input.nextSafeAction)
-    : undefined;
+  const nextSafeAction = input.nextSafeAction ? normalizeClaim(input.nextSafeAction) : undefined;
   if (!summary) throw new Error('intake checkpoint summary must not be empty');
   if (!TERMINAL_CHECKPOINTS.has(input.kind) && !nextSafeAction) {
     throw new Error(`nextSafeAction is required for non-terminal checkpoint '${input.kind}'`);
@@ -59,9 +54,7 @@ export function createIntakeCheckpoint(input: IntakeCheckpointInput): IntakeChec
     phase: input.phase,
     ...(nextSafeAction ? { nextSafeAction } : {}),
     summary,
-    ...(input.completedStepIds
-      ? { completedStepIds: normalizedList(input.completedStepIds) }
-      : {}),
+    ...(input.completedStepIds ? { completedStepIds: normalizedList(input.completedStepIds) } : {}),
     ...(input.audience ? { audience: input.audience } : {}),
     repository: input.repository,
     ...(input.artifactPaths ? { artifactPaths: normalizedList(input.artifactPaths) } : {}),

@@ -3,7 +3,17 @@
   "$id": "https://knowledge-crib.dev/schema/memory-1/intake.schema.json",
   "title": "IntakeRequirement",
   "type": "object",
-  "required": ["id", "schemaVersion", "namespace", "original", "interpretation", "sensitivity", "retentionPolicyId", "provenance", "createdAt"],
+  "required": [
+    "id",
+    "schemaVersion",
+    "namespace",
+    "original",
+    "interpretation",
+    "sensitivity",
+    "retentionPolicyId",
+    "provenance",
+    "createdAt"
+  ],
   "properties": {
     "id": { "type": "string", "pattern": "^intake:[0-9a-f]+$" },
     "schemaVersion": { "type": "string", "const": "1" },
@@ -30,7 +40,10 @@
       },
       "additionalProperties": false
     },
-    "sensitivity": { "type": "string", "enum": ["public", "internal", "confidential", "restricted"] },
+    "sensitivity": {
+      "type": "string",
+      "enum": ["public", "internal", "confidential", "restricted"]
+    },
     "retentionPolicyId": { "type": "string", "minLength": 1 },
     "provenance": {
       "type": "object",

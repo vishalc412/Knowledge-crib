@@ -14,6 +14,8 @@ import { blake3Hex } from '@knowledge-crib/soul-schema';
 import type {
   AttemptEvent,
   GateReceipt,
+  IntakeCheckpoint,
+  IntakeRequirement,
   MemoryCandidate,
   MemoryDecision,
   MemoryEvidence,
@@ -22,8 +24,6 @@ import type {
   MemoryRecordV2,
   MemoryRecordV3,
   MemoryScope,
-  IntakeCheckpoint,
-  IntakeRequirement,
 } from './types.js';
 
 // ─── canonical serialization (key-sorted, matches merge.ts / memory-merge.ts) ─

@@ -9,9 +9,9 @@ import candidateSchema from './schema/candidate.schema.json' with { type: 'json'
 import captureSchema from './schema/capture.schema.json' with { type: 'json' };
 import decisionSchema from './schema/decision.schema.json' with { type: 'json' };
 import feedbackSchema from './schema/feedback.schema.json' with { type: 'json' };
-import manifestSchema from './schema/manifest.schema.json' with { type: 'json' };
-import intakeSchema from './schema/intake.schema.json' with { type: 'json' };
 import intakeCheckpointSchema from './schema/intake-checkpoint.schema.json' with { type: 'json' };
+import intakeSchema from './schema/intake.schema.json' with { type: 'json' };
+import manifestSchema from './schema/manifest.schema.json' with { type: 'json' };
 import receiptSchema from './schema/receipt.schema.json' with { type: 'json' };
 import recordV2Schema from './schema/record-v2.schema.json' with { type: 'json' };
 import recordV3Schema from './schema/record-v3.schema.json' with { type: 'json' };

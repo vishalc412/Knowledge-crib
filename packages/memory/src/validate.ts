@@ -7,14 +7,14 @@ import {
   CAPTURE_SCHEMA,
   DECISION_SCHEMA,
   FEEDBACK_SCHEMA,
+  INTAKE_CHECKPOINT_SCHEMA,
+  INTAKE_SCHEMA,
   MEMORY_MANIFEST_SCHEMA,
   RECEIPT_SCHEMA,
   RECORD_SCHEMA,
   RECORD_V2_SCHEMA,
   RECORD_V3_SCHEMA,
   SYNC_EVENT_SCHEMA,
-  INTAKE_SCHEMA,
-  INTAKE_CHECKPOINT_SCHEMA,
 } from './schemas.js';
 /**
  * Record validation against the vendored memory-1 JSON Schemas (mirrors `core/validate.ts`).
@@ -27,6 +27,8 @@ import type {
   AttemptEvent,
   CaptureOutboxEntry,
   GateReceipt,
+  IntakeCheckpoint,
+  IntakeRequirement,
   MemoryAlias,
   MemoryCandidate,
   MemoryDecision,
@@ -35,8 +37,6 @@ import type {
   MemoryRecord,
   MemoryRecordV2,
   MemoryRecordV3,
-  IntakeCheckpoint,
-  IntakeRequirement,
 } from './types.js';
 
 const ajv = new Ajv({ allErrors: true, strict: false });

@@ -560,9 +560,7 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
               summary: a.summary,
               nextSafeAction: a.nextSafeAction,
               actor: a.actor,
-              ...(a.completedStepIds !== undefined
-                ? { completedStepIds: a.completedStepIds }
-                : {}),
+              ...(a.completedStepIds !== undefined ? { completedStepIds: a.completedStepIds } : {}),
               ...(a.ifHash !== undefined ? { ifHash: a.ifHash } : {}),
             }),
           );

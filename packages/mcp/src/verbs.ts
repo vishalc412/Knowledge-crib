@@ -3012,7 +3012,10 @@ export class Verbs {
       .choices.find((choice) => choice.intakeId === args.id);
     if (!resume) return this.applyIfHash(args, { ok: false, error: `unknown intake: ${args.id}` });
     if (!resume.nextSafeAction) {
-      return this.applyIfHash(args, { ok: false, error: 'intake has no safe next action to share' });
+      return this.applyIfHash(args, {
+        ok: false,
+        error: 'intake has no safe next action to share',
+      });
     }
     const checkpoint = api.checkpointIntake({
       intakeId: args.id,
@@ -3038,7 +3041,9 @@ export class Verbs {
     return {
       ...(head ? { head } : {}),
       dirty: dirtyFiles.length > 0,
-      ...(dirtyFiles.length > 0 ? { changedPathsDigest: dirtyFiles.slice().sort().join('\n') } : {}),
+      ...(dirtyFiles.length > 0
+        ? { changedPathsDigest: dirtyFiles.slice().sort().join('\n') }
+        : {}),
     };
   }
 

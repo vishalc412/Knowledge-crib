@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+  type IntakeRequirementInput,
   createIntakeCheckpoint,
   createIntakeRequirement,
-  type IntakeRequirementInput,
 } from './index.js';
 
 const NOW = '2026-01-01T00:00:00.000Z';
@@ -41,9 +41,7 @@ function fixture(overrides: Partial<IntakeRequirementInput> = {}): IntakeRequire
 describe('intake requirement', () => {
   it('creates a stable id while excluding timestamps', () => {
     const a = createIntakeRequirement(fixture({ createdAt: NOW }));
-    const b = createIntakeRequirement(
-      fixture({ createdAt: '2026-02-01T00:00:00.000Z' }),
-    );
+    const b = createIntakeRequirement(fixture({ createdAt: '2026-02-01T00:00:00.000Z' }));
 
     expect(a.id).toBe(b.id);
     expect(a.original).toBe('Continue the parser migration safely.');
