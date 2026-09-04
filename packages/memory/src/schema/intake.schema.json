@@ -1,0 +1,52 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://knowledge-crib.dev/schema/memory-1/intake.schema.json",
+  "title": "IntakeRequirement",
+  "type": "object",
+  "required": ["id", "schemaVersion", "namespace", "original", "interpretation", "sensitivity", "retentionPolicyId", "provenance", "createdAt"],
+  "properties": {
+    "id": { "type": "string", "pattern": "^intake:[0-9a-f]+$" },
+    "schemaVersion": { "type": "string", "const": "1" },
+    "namespace": {
+      "type": "object",
+      "required": ["principalId"],
+      "properties": {
+        "principalId": { "type": "string", "minLength": 1 },
+        "workspaceId": { "type": "string", "minLength": 1 },
+        "projectId": { "type": "string", "minLength": 1 },
+        "agentProfileId": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "original": { "type": "string", "minLength": 1 },
+    "interpretation": {
+      "type": "object",
+      "required": ["outcome", "scope", "constraints", "acceptanceCriteria"],
+      "properties": {
+        "outcome": { "type": "string", "minLength": 1 },
+        "scope": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "constraints": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "acceptanceCriteria": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+      },
+      "additionalProperties": false
+    },
+    "sensitivity": { "type": "string", "enum": ["public", "internal", "confidential", "restricted"] },
+    "retentionPolicyId": { "type": "string", "minLength": 1 },
+    "provenance": {
+      "type": "object",
+      "required": ["principalId", "deviceId", "actorId", "clientId"],
+      "properties": {
+        "principalId": { "type": "string", "minLength": 1 },
+        "deviceId": { "type": "string", "minLength": 1 },
+        "actorId": { "type": "string", "minLength": 1 },
+        "agentId": { "type": "string" },
+        "clientId": { "type": "string", "minLength": 1 },
+        "sessionId": { "type": "string" },
+        "tool": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "createdAt": { "type": "string", "minLength": 1 }
+  },
+  "additionalProperties": false
+}

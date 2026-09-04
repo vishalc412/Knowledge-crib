@@ -23,6 +23,7 @@ import {
   memoryHome,
   memoryRecordId,
   memoryShard,
+  createIntakeRequirement,
   policyPath,
   readRepoId,
   teamStoreRoot,
@@ -202,7 +203,7 @@ describe('MemoryStore factories + shape', () => {
     expect(s.role).toBe('team');
     expect(s.rootDir).toBe(join(crib, 'memory', 'team'));
     expect(s.lockFilePath).toBe(join(crib, '.lock'));
-    expect(s.collections).toEqual(['records', 'decisions', 'receipts']);
+    expect(s.collections).toEqual(['records', 'decisions', 'receipts', 'intakes']);
     expect(s.hasManifest).toBe(false);
     expect(s.manifestPath()).toBeUndefined();
   });
@@ -221,6 +222,7 @@ describe('MemoryStore factories + shape', () => {
       'decisions',
       'outbox',
       'dead',
+      'intakes',
     ]);
     expect(s.hasManifest).toBe(true);
     expect(s.manifestPath()).toBe(join(home, 'repos', REPO, 'manifest.json'));
@@ -289,6 +291,38 @@ describe('upsert dedupe + replace-by-id', () => {
     const s = MemoryStore.global({ env, now: () => NOW });
     s.upsertEntries('records', [record('claim a'), record('claim b')]);
     expect(s.readCollection('records').entries).toHaveLength(2);
+  });
+
+  it('stores intake entries only in stores that own the intake collection', () => {
+    const intake = createIntakeRequirement({
+      namespace: { principalId: 'principal-1', projectId: REPO },
+      original: 'Resume the parser migration',
+      interpretation: {
+        outcome: 'Finish the parser migration',
+        scope: ['packages/parsers'],
+        constraints: [],
+        acceptanceCriteria: ['Parser tests pass'],
+      },
+      sensitivity: 'internal',
+      retentionPolicyId: 'default',
+      provenance: {
+        principalId: 'principal-1',
+        deviceId: 'device-1',
+        actorId: 'actor-1',
+        clientId: 'codex',
+      },
+      createdAt: NOW,
+    });
+    const local = MemoryStore.local(REPO, { env, now: () => NOW, repoRoot: '/r' });
+    local.upsertEntry('intakes', intake);
+    expect(local.readCollection('intakes').entries).toEqual([intake]);
+
+    const team = MemoryStore.team(join(home, 'crib'), { env, now: () => NOW });
+    team.upsertEntry('intakes', intake);
+    expect(team.readCollection('intakes').entries).toEqual([intake]);
+
+    const global = MemoryStore.global({ env, now: () => NOW });
+    expect(() => global.upsertEntry('intakes', intake)).toThrow(/not held by the global store/);
   });
 
   it('replace-by-id: a second entry with the same id replaces the first', () => {
