@@ -82,6 +82,7 @@ import {
   type ConflictGroup,
   // ── Gate 4 — cross-device sync surfaces (ADR-003 D12) ──
   DEFAULT_MIGRATION_PRINCIPAL_ID,
+  DEFAULT_RETENTION_POLICY_ID,
   type DistillVerifyContext,
   FileSyncObjectStore,
   type GateReceipt,
@@ -351,6 +352,14 @@ const VALUE_FLAGS = new Set([
   '--scope',
   '--backend',
   '--stores',
+  '--outcome',
+  '--constraint',
+  '--accept',
+  '--phase',
+  '--next',
+  '--summary',
+  '--completed-step',
+  '--audience',
 ]);
 
 /** Collect positional argv tokens, skipping boolean flags AND value-taking flags + their values. */
@@ -625,6 +634,10 @@ async function main(argvRaw: string[]): Promise<number> {
       return cmdEnrich(rest, ctx);
     case 'memory':
       return cmdMemory(rest, ctx);
+    case 'intake':
+      return cmdIntake(rest, ctx);
+    case 'session':
+      return cmdSession(rest, ctx);
     case 'embed':
       return cmdEmbed(rest, ctx);
     case 'freshness':
@@ -4120,6 +4133,208 @@ function createMemoryApi(
   });
 }
 
+function currentRepositoryAnchor(repoRoot: string): {
+  head?: string;
+  branch?: string;
+  dirty: boolean;
+  changedPathsDigest?: string;
+} {
+  let head: string | undefined;
+  let branch: string | undefined;
+  let changed: string[] = [];
+  try {
+    head = currentHead(repoRoot) || undefined;
+  } catch {
+    head = undefined;
+  }
+  try {
+    branch = execFileSync('git', ['rev-parse', '--abbrev-ref', 'HEAD'], {
+      cwd: repoRoot,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    }).trim() || undefined;
+  } catch {
+    branch = undefined;
+  }
+  try {
+    changed = uncommittedChanges(repoRoot).sort();
+  } catch {
+    changed = [];
+  }
+  return {
+    ...(head ? { head } : {}),
+    ...(branch ? { branch } : {}),
+    dirty: changed.length > 0,
+    ...(changed.length > 0
+      ? { changedPathsDigest: `blake3:${blake3Hex(changed.join('\n'))}` }
+      : {}),
+  };
+}
+
+function intakeApi(ctx?: CmdCtx): {
+  api: MemoryApi;
+  repository: ReturnType<typeof currentRepositoryAnchor>;
+} | undefined {
+  const resolved = resolveProjectRoot({ explicitRoot: ctx?.cwdOverride });
+  const rt = openSoul(resolved);
+  const deps = createMemoryDeps(rt.soul, resolved.repoRoot, resolved.cribDir);
+  if (!deps) return undefined;
+  return {
+    api: createMemoryApi(rt.soul, resolved.repoRoot, resolved.cribDir, deps),
+    repository: currentRepositoryAnchor(resolved.repoRoot),
+  };
+}
+
+function cmdIntake(args: string[], ctx?: CmdCtx): number {
+  const [sub, ...rest] = args;
+  if (sub === undefined || sub === '--help' || sub === '-h') {
+    process.stdout.write(
+      'usage: crib intake create|checkpoint|list|show|complete|share [options]\n',
+    );
+    return EXIT.OK;
+  }
+  const runtime = intakeApi(ctx);
+  if (!runtime) {
+    process.stderr.write('could not resolve repoId for intake — run `crib index` first\n');
+    return EXIT.NOT_INDEXED;
+  }
+  const { api, repository } = runtime;
+  const json = rest.includes('--json');
+  const principalId = process.env.KCRIB_PRINCIPAL_ID?.trim() || DEFAULT_MIGRATION_PRINCIPAL_ID;
+  const actor = stringFlag(rest, '--actor')?.trim() || `human:${principalId}`;
+  const output = (value: unknown): number => {
+    process.stdout.write(json ? `${JSON.stringify(value, null, 2)}\n` : `${JSON.stringify(value)}\n`);
+    return EXIT.OK;
+  };
+
+  try {
+    if (sub === 'create') {
+      const original = stringFlag(rest, '--from')?.trim();
+      const outcome = stringFlag(rest, '--outcome')?.trim();
+      if (!original || !outcome) throw new CliUsageError('--from and --outcome must be non-empty');
+      const resolved = resolveProjectRoot({ explicitRoot: ctx?.cwdOverride });
+      const projectId = readRepoId(resolved.cribDir);
+      return output(
+        api.createIntake({
+          namespace: {
+            principalId,
+            ...(projectId ? { projectId } : {}),
+            ...(process.env.KCRIB_AGENT_PROFILE_ID
+              ? { agentProfileId: process.env.KCRIB_AGENT_PROFILE_ID }
+              : {}),
+          },
+          original,
+          interpretation: {
+            outcome,
+            scope: repeatedFlag(rest, '--scope'),
+            constraints: repeatedFlag(rest, '--constraint'),
+            acceptanceCriteria: repeatedFlag(rest, '--accept'),
+          },
+          sensitivity: 'internal',
+          retentionPolicyId: DEFAULT_RETENTION_POLICY_ID,
+          provenance: {
+            principalId,
+            deviceId: hostname(),
+            actorId: actor,
+            clientId: 'crib-cli',
+            ...(process.env.KCRIB_SESSION_ID ? { sessionId: process.env.KCRIB_SESSION_ID } : {}),
+            tool: 'intake-create',
+          },
+          createdAt: new Date().toISOString(),
+        }),
+      );
+    }
+
+    const id = positionalsOf(rest)[0];
+    if (sub === 'list') return output(api.listIntakes(repository));
+    if (!id) throw new CliUsageError(`crib intake ${sub} requires an intake id`);
+    if (sub === 'show') {
+      const found = api.getIntake(id);
+      if (!found) throw new CliUsageError(`unknown intake: ${id}`);
+      const resume = api.listIntakes(repository).choices.find((choice) => choice.intakeId === id);
+      return output({ ...found, resume });
+    }
+    if (sub === 'complete') {
+      return output(
+        api.checkpointIntake({
+          intakeId: id,
+          kind: 'completed',
+          phase: 'complete',
+          summary: stringFlag(rest, '--summary')?.trim() || 'Completed',
+          completedStepIds: repeatedFlag(rest, '--completed-step'),
+          repository,
+          actor,
+          recordedAt: new Date().toISOString(),
+        }),
+      );
+    }
+    if (sub === 'checkpoint') {
+      const phase = stringFlag(rest, '--phase');
+      const summary = stringFlag(rest, '--summary')?.trim();
+      const nextSafeAction = stringFlag(rest, '--next')?.trim();
+      const phases = new Set(['intake', 'planning', 'executing', 'blocked', 'verifying', 'complete']);
+      if (!phase || !phases.has(phase) || !summary) {
+        throw new CliUsageError('--phase and --summary are required; phase is invalid or empty');
+      }
+      if (phase === 'complete') {
+        throw new CliUsageError('use `crib intake complete <id>` for a terminal checkpoint');
+      }
+      if (!nextSafeAction) throw new CliUsageError('--next is required for an active checkpoint');
+      return output(
+        api.checkpointIntake({
+          intakeId: id,
+          kind: phase === 'planning' ? 'plan-selected' : phase === 'blocked' ? 'blocked' : 'progress',
+          phase: phase as 'intake' | 'planning' | 'executing' | 'blocked' | 'verifying',
+          nextSafeAction,
+          summary,
+          completedStepIds: repeatedFlag(rest, '--completed-step'),
+          repository,
+          actor,
+          recordedAt: new Date().toISOString(),
+        }),
+      );
+    }
+    if (sub === 'share') {
+      const audience = stringFlag(rest, '--audience');
+      if (audience !== 'devices') {
+        throw new CliUsageError('this slice supports --audience devices; team admission follows');
+      }
+      const resume = api.listIntakes(repository).choices.find((choice) => choice.intakeId === id);
+      if (!resume) throw new CliUsageError(`unknown intake: ${id}`);
+      const nextSafeAction = stringFlag(rest, '--next')?.trim() || resume.nextSafeAction;
+      if (!nextSafeAction) throw new CliUsageError('--next is required to share resumable work');
+      return output(
+        api.checkpointIntake({
+          intakeId: id,
+          kind: 'shared',
+          phase: resume.phase,
+          nextSafeAction,
+          summary: stringFlag(rest, '--summary')?.trim() || 'Shared with encrypted devices',
+          audience: 'devices',
+          repository,
+          actor,
+          recordedAt: new Date().toISOString(),
+        }),
+      );
+    }
+    throw new CliUsageError(`unknown intake subcommand: ${sub}`);
+  } catch (error) {
+    process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
+    return EXIT.BAD_ARGS;
+  }
+}
+
+function cmdSession(args: string[], ctx?: CmdCtx): number {
+  const [sub, ...rest] = args;
+  if (sub === 'bootstrap') return cmdMemoryHandoff(rest, ctx);
+  if (sub === undefined || sub === '--help' || sub === '-h') {
+    process.stdout.write('usage: crib session bootstrap [--limit N] [--json]\n');
+    return EXIT.OK;
+  }
+  process.stderr.write(`unknown session subcommand: ${sub}\n`);
+  return EXIT.BAD_ARGS;
+}
+
 /** blake3 digest of the working-tree state the gate observed (uncommitted file list — PRD line 277). */
 function worktreeDigest(root: string): string {
   return `blake3:${blake3Hex(uncommittedChanges(root).join('\n'))}`;
@@ -4193,6 +4408,7 @@ function cmdMemoryHandoff(args: string[], ctx?: CmdCtx): number {
   const api = createMemoryApi(rt.soul, resolved.repoRoot, resolved.cribDir, deps);
   const out = api.handoff({
     limits: { openWork: limit, pending: limit, attention: limit, recent: limit },
+    repository: currentRepositoryAnchor(resolved.repoRoot),
   });
   if (json) {
     process.stdout.write(`${JSON.stringify(out, null, 2)}\n`);
@@ -4206,12 +4422,26 @@ function cmdMemoryHandoff(args: string[], ctx?: CmdCtx): number {
     out.counts.openWork === 0 &&
     out.counts.pendingCaptures === 0 &&
     out.counts.needsAttention === 0 &&
-    out.recent.length === 0
+    out.recent.length === 0 &&
+    out.intakes.count === 0
   ) {
     process.stdout.write(
       'handoff: nothing in flight, nothing stale, no memory yet for this repo.\n',
     );
     return EXIT.OK;
+  }
+  section('RESUME — durable intake', out.intakes.count, out.intakes.choices.length);
+  if (out.intakes.primary) {
+    const primary = out.intakes.primary;
+    lines.push(`  ${primary.intakeId}  [${primary.status}/${primary.phase}]`);
+    lines.push(`    outcome: ${primary.interpretation.outcome}`);
+    if (primary.nextSafeAction) lines.push(`    next: ${primary.nextSafeAction}`);
+    if (primary.repositoryDrift) lines.push('    repository changed since the last checkpoint');
+  } else if (out.intakes.choices.length > 0) {
+    lines.push('  multiple resumable intakes — choose one explicitly:');
+    for (const choice of out.intakes.choices) {
+      lines.push(`    ${choice.intakeId}  [${choice.status}/${choice.phase}] ${choice.interpretation.outcome}`);
+    }
   }
   section('IN FLIGHT — unfinished work', out.counts.openWork, out.openWork.length);
   for (const w of out.openWork) {
@@ -7551,6 +7781,8 @@ function printHelp(): void {
       '  crib viz [path] [--port N]               serve the offline web UI (Claude Design DC graph) + open browser',
       '  crib enrich [path] [--budget-tokens N]    semantic work queue; --next (token-packed batch) | run --provider <name> [--max-tokens N --max-batches N --concurrency N] | --auto [--provider <name>] | --save <file> | --overview | --scopes | --prune-stale [--apply]',
       '  crib memory <init|evaluate|activate|propose|attest>   trusted agent-memory promotion: init policy | evaluate <cand> --profile <name> | activate <cand> | propose <mem-id> | attest <cand> (TTY)',
+      '  crib intake <create|checkpoint|list|show|complete|share>   durable intent and continuation checkpoints',
+      '  crib session bootstrap [--json]       restore the deterministic resume brief for this project',
       '  crib audit-llm [path]                    re-verify every LLM artifact against the soul (grounding moat); exits non-zero on ungrounded/drift',
       '  crib mcp <install|list|remove> [--ide <claude|cursor|vscode|codex|windsurf|gemini|all>] [--global] [--bin <path>] [path]',
       '                                          auto-wire the MCP server into each IDE config (REQ-2)',
