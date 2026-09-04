@@ -185,10 +185,13 @@ assert.match(
   /"security:check":\s*"node scripts\/security-doc-check\.mjs"/,
   'package.json must define security:check (M3.7 threat-model + access-model doc gate)',
 );
+// The pnpm invocation is corepack-PINNED here on purpose: scripts/release-metadata.test.mjs
+// rejects any root script that calls a bare `pnpm`, so asserting the bare form made these two
+// gates contradict each other — satisfying one broke the other. Both now agree on the pinned form.
 assert.match(
   pkg,
-  /"security:battery":\s*"pnpm --filter @knowledge-crib\/memory test/,
-  'package.json must define the executable S1–S9 security battery',
+  /"security:battery":\s*"corepack pnpm@[\d.]+ --filter @knowledge-crib\/memory test/,
+  'package.json must define the executable S1–S9 security battery (corepack-pinned)',
 );
 assert.match(
   pkg,
