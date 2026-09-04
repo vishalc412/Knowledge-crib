@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "profiles": {
+    "self-test": {
+      "name": "self-test",
+      "executable": "node",
+      "args": [
+        "--version"
+      ],
+      "timeoutMs": 5000,
+      "permittedEnv": [
+        "PATH"
+      ],
+      "successExitCodes": [
+        0
+      ],
+      "assertions": [
+        {
+          "name": "exit-ok",
+          "kind": "exit-code",
+          "codes": [
+            0
+          ]
+        }
+      ]
+    }
+  }
+}
