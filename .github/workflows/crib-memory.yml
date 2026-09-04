@@ -36,7 +36,8 @@ jobs:
   memory-check:
     name: crib memory check (merge-base policy)
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    # the added index step re-parses the whole monorepo; 10 min left no headroom on a cold runner
+    timeout-minutes: 20
     steps:
       - name: Checkout (full history for merge-base + trusted ref)
         uses: actions/checkout@v4
@@ -59,6 +60,14 @@ jobs:
 
       - name: Build
         run: pnpm build
+
+      # `.crib/` is generated and no longer committed (4193 files that consumed GitHub's entire
+      # 3000-file diff budget and hid every source change in review). `memory check` resolves the
+      # repoId from `.crib/crib.json`, which now only exists after an index — so CI has to build it,
+      # exactly as it builds `dist/`. Without this the gate fails with
+      # "could not resolve repoId for memory — run `crib index` first" (exit 3).
+      - name: Index (generates .crib — build output, not committed)
+        run: node packages/cli/dist/cli.js index .
 
       # The trusted ref defaults to `refs/remotes/origin/HEAD` (the policy's trustedRef). Override via
       # repo secret/env when the default branch is not `main`. The gate reads policy from the merge
