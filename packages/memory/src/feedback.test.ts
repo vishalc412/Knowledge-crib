@@ -27,7 +27,10 @@ import {
   isAdmissibleCounterEvidence,
   memoryRecordId,
   quarantinedRecordIds,
+  readStagedEvents,
   recallProjection,
+  seedSyncBaseline,
+  stageSyncableWrite,
 } from './index.js';
 
 const NOW = '2026-01-01T00:00:00.000Z';
@@ -313,6 +316,41 @@ describe('applyContradictedFeedback', () => {
         (d) => d.kind === 'quarantine',
       ),
     ).toHaveLength(1);
+  });
+
+  it('the syncStage port stages the feedback row AND the suppression decision inside the lock hold', () => {
+    const r = record({});
+    local.upsertEntry('active', r);
+    local.ensureManifest(); // the baseline sweep derives ids from the manifest's repo.id
+    seedSyncBaseline(local, { deviceId: 'device-a' });
+    // the CLI/MCP injection: close over stageSyncableWrite with the actor + fixed clock
+    const stageWrite = (
+      collection: 'decisions' | 'feedback',
+      entry: MemoryFeedback | MemoryDecision,
+    ): void => {
+      stageSyncableWrite(
+        local,
+        collection === 'decisions' ? 'decision.append' : 'feedback.append',
+        entry,
+        { principalId: 'principal-vishal', env, now: () => NOW },
+      );
+    };
+    const res = applyContradictedFeedback(local, {
+      record: { id: r.id, kind: r.kind },
+      feedback: contradictedFeedback(r.id),
+      counterEvidence: [ev({ kind: 'source-quote', verdict: 'valid' })],
+      now: () => NOW,
+      syncStage: { stageWrite },
+    });
+    expect(res.suppression.suppress).toBe(true);
+    // BOTH the feedback row and the quarantine decision ride the outbox (D4: one lock hold)
+    const staged = readStagedEvents(local.rootDir).events;
+    expect(staged.map((e) => e.kind).sort()).toEqual(['decision.append', 'feedback.append']);
+    expect(staged.map((e) => e.payloadId).sort()).toEqual(
+      [res.feedbackId, res.suppression.suppress ? res.suppression.decision.id : ''].sort(),
+    );
+    // global-scope stages never carry a repoId, but this LOCAL store's must (D1)
+    expect(staged.every((e) => e.repoId === REPO)).toBe(true);
   });
 
   it('never touches the team store (local-only — one negative event cannot retract team memory)', () => {

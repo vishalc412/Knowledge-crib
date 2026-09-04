@@ -1,6 +1,14 @@
 /**
  * Pure-JS char n-gram hashing-trick embedder — the offline default (M2.1).
  *
+ * ⚠ DEGRADED OFFLINE FALLBACK — NOT the semantic implementation. This embedder is a hashing-trick
+ * bag of character n-grams: it generalizes across case/affix/light inflection ONLY. It is not a
+ * trained model, it carries no word-order or compositional semantics, and its paraphrase recall is
+ * the thing G3.2's held-out eval (docs/bench/retrieval-pre-registration.md) measures rather than
+ * assumes. It ships as the zero-dependency default so recall never hard-fails offline; the
+ * ADVERTISED tier is the pinned on-device model installed out-of-band via `crib embed install`
+ * (see `embed-install.ts`). Never describe this class as the semantic embedder in user-facing text.
+ *
  * Why char n-grams (not word embeddings): the M1.1 conceptual eval queries are paraphrases —
  * "how is a loan application assessed" → `assess_application`, "where is the auth token validated"
  * → `validate`. BM25 misses these because the surface forms don't share stems ("assessed" ≠ "assess"

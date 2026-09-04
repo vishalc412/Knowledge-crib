@@ -12,9 +12,30 @@ import type { SoulStore } from '@knowledge-crib/core';
 import { runMediaLink } from '../linker/index.js';
 import type { MediaLinkStats } from '../linker/index.js';
 import { discoverFiles } from '../structure.js';
+import { adapterStatuses } from './adapters.js';
+import type { AdapterStatus } from './adapters.js';
 import { ingestStaging, isMediaPath } from './ingest.js';
 import type { MultimodalStats } from './ingest.js';
 import type { WorkerOpts } from './worker.js';
+
+// G5.3 — public surface for the production adapters (doctor/status report availability; the CLI
+// passes backend opts through). The legacy fake/python surface stays on worker.ts.
+export {
+  adapterForPath,
+  adapterStatuses,
+  inferModality,
+  runAdapter,
+  TRANSCRIBE_EXTRACTOR,
+  OCR_EXTRACTOR,
+  PDF_TEXT_EXTRACTOR,
+} from './adapters.js';
+export type {
+  AdapterId,
+  AdapterOpts,
+  AdapterPayload,
+  AdapterSegment,
+  AdapterStatus,
+} from './adapters.js';
 
 export interface MultimodalPhaseOpts extends WorkerOpts {
   /** run the media→symbol linker after ingest (default true). */
@@ -26,6 +47,8 @@ export interface MultimodalPhaseOpts extends WorkerOpts {
 export interface MultimodalReport {
   ingest: MultimodalStats;
   link: MediaLinkStats;
+  /** G5.3: which production adapters were usable on this machine during the run (honest why-not). */
+  availability: AdapterStatus[];
 }
 
 /**
@@ -52,5 +75,5 @@ export async function runMultimodal(
   // flip the capability only when we actually produced segments — a fully-degraded run (no worker,
   // no models) leaves the manifest honest: no media nodes, capability stays false.
   if (ingest.segments > 0) soul.setCapabilities({ multimodal: true });
-  return { ingest, link: linkStats };
+  return { ingest, link: linkStats, availability: adapterStatuses() };
 }

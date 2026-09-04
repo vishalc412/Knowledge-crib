@@ -3,7 +3,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { SoulStore, SqliteIndexStore, newManifest } from '@knowledge-crib/core';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { buildServer } from './server.js';
+import { TOOL_NAMES } from './capabilities.js';
+import { RETIRED_ALIASES, buildServer } from './server.js';
 import { Verbs } from './verbs.js';
 
 let dir: string;
@@ -95,6 +96,10 @@ describe('memory dispatcher', () => {
         calls.push('audit');
         return {};
       },
+      memoryCapture: (a: { subject: string; observation: string; actor: string }) => {
+        calls.push(`capture:${a.subject}:${a.observation}:${a.actor}`);
+        return {};
+      },
       memoryFeedback: (a: { subject: string }) => {
         calls.push(`feedback:${a.subject}`);
         return {};
@@ -113,9 +118,21 @@ describe('memory dispatcher', () => {
     await tool.handler({ op: 'get', id: 'mem:abc' });
     await tool.handler({ op: 'status' });
     await tool.handler({ op: 'audit' });
+    await tool.handler({
+      op: 'capture',
+      subject: 'topic:x',
+      observation: 'loose note',
+      actor: 'tester',
+    });
     await tool.handler({ op: 'feedback', subject: 'mem:abc', signal: 'useful', actor: 'tester' });
 
-    expect(calls).toEqual(['get:mem:abc', 'status', 'audit', 'feedback:mem:abc']);
+    expect(calls).toEqual([
+      'get:mem:abc',
+      'status',
+      'audit',
+      'capture:topic:x:loose note:tester',
+      'feedback:mem:abc',
+    ]);
   });
 
   it('rejects an op whose required arguments are missing instead of silently mis-calling', async () => {
@@ -128,6 +145,12 @@ describe('memory dispatcher', () => {
     };
     expect(noSubject.error?.code).toBe('BAD_REQUEST');
     expect(noSubject.error?.message).toContain('subject');
+
+    const noObservation = (await callMemory({ op: 'capture', subject: 'topic:x' })) as {
+      error?: { code: string; message: string };
+    };
+    expect(noObservation.error?.code).toBe('BAD_REQUEST');
+    expect(noObservation.error?.message).toContain('observation');
   });
 });
 
@@ -174,49 +197,17 @@ describe('op dispatchers', () => {
     return { calls, args, spy };
   }
 
-  it('pins the visible surface to exactly the 14 names every client session pays for', () => {
+  it('pins the visible surface to exactly the names every client session pays for', () => {
     const { spy } = recorder([]);
     const names = Object.keys(toolsOf(spy)).sort();
-    expect(names).toEqual([
-      'brief',
-      'context',
-      'detect_changes',
-      'dossier',
-      'enrich',
-      'impact',
-      'memory',
-      'memory_observe',
-      'memory_recall',
-      'neighbors',
-      'overview',
-      'query',
-      'source',
-      'status',
-    ]);
+    // Expected surface is the capability manifest (Gate 1.4) — no hand-maintained duplicate list
+    // here. buildServer itself also validates registration against the manifest, so a drifted
+    // surface throws before this assertion can even run.
+    expect(names).toEqual([...TOOL_NAMES].sort());
     // The retired standalone names are NOT registered tools either — that is what keeps them out
     // of tools/list. They resolve through the call-level alias shim (pinned in the
-    // 'retired alias shim' describe below). extract_rules joined this list when it folded behind
-    // dossier{op:'rules'}.
-    for (const retired of [
-      'memory_get',
-      'memory_status',
-      'memory_audit',
-      'memory_feedback',
-      'enrich_status',
-      'enrich_next',
-      'enrich_save',
-      'semantic_delta',
-      'audit_llm',
-      'shortest_path',
-      'ownership',
-      'reconstruct',
-      'dossier_by_scope',
-      'llm_neighbors',
-      'describes',
-      'stats',
-      'gaps',
-      'extract_rules',
-    ]) {
+    // 'retired alias shim' describe below); the list is the server's own RETIRED_ALIASES table.
+    for (const retired of Object.keys(RETIRED_ALIASES)) {
       expect(names).not.toContain(retired);
     }
   });
@@ -400,6 +391,10 @@ describe('retired alias shim', () => {
   ];
 
   it('resolves every retired name to its dispatcher verb+op with the legacy arguments intact', async () => {
+    // The route fixture must cover the WHOLE alias table — a name added to RETIRED_ALIASES without
+    // a wire-level route pin here would ship untested, and a stale ROUTES entry would test a name
+    // the server no longer aliases.
+    expect(ROUTES.map(([alias]) => alias).sort()).toEqual(Object.keys(RETIRED_ALIASES).sort());
     const { calls, args, spy } = recorder(ROUTES.map(([, verb]) => verb));
     for (const [alias, , wireArgs] of ROUTES) {
       await callWire(spy, alias, wireArgs);

@@ -21,6 +21,7 @@ import {
   type MemoryCandidate,
   MemoryEvaluator,
   type MemoryEvidence,
+  type MemoryRecord,
   type MemorySoulPort,
   MemoryStore,
   type PromotionSnapshot,
@@ -407,7 +408,8 @@ describe('activateLocal recordMeta', () => {
       // meta is mutable / excluded from the content id → the persisted record keeps the mem: id
       expect(res.record.id.startsWith('mem:')).toBe(true);
       const active = local.readCollection('active').entries.find((e) => e.id === res.recordId);
-      expect(active?.meta?.receiptId).toBe(receipt.id);
+      // narrow to the memory-1 record shape this test writes (a v2 record has no `meta`)
+      expect((active as MemoryRecord | undefined)?.meta?.receiptId).toBe(receipt.id);
     } finally {
       cleanup();
     }

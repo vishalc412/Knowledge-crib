@@ -40,6 +40,9 @@ THIRD-PARTY DEPENDENCIES (runtime, used under their respective licenses):
   and mule-artifact / pom descriptors. Pure-JS, no native build.
 - yauzl (MIT, https://github.com/thejoshwolfe/yauzl) — ZIP reader; extracts MuleSoft project
   archives (.zip / deployable .jar attached source) for indexing. Pure-JS, no native build.
+- unpdf (MIT, https://github.com/unjs/unpdf) — PDF text-layer extraction (bundles Mozilla pdf.js);
+  powers the TS-native PDF adapter of the opt-in multimodal phase. Pure-JS, no native build, no
+  runtime dependencies; the default index path never imports it (lazy, opt-in only).
 
 VENDORED WEB RUNTIME (distributed under its included license text):
 - React and React DOM (MIT), including the embedded Modernizr feature-detection code (MIT).

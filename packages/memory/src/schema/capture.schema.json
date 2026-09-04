@@ -1,0 +1,62 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://knowledge-crib.dev/schema/memory-1/capture.schema.json",
+  "title": "CaptureOutboxEntry",
+  "description": "Durable capture-outbox entry (G2.2): written before the candidate it stages so a crash mid-capture leaves a replay record. Prose is structured claim text only — never a raw transcript.",
+  "type": "object",
+  "required": [
+    "id",
+    "schemaVersion",
+    "kind",
+    "subject",
+    "claim",
+    "scope",
+    "appliesTo",
+    "evidence",
+    "authorship",
+    "origin",
+    "status",
+    "proposedAt"
+  ],
+  "properties": {
+    "id": { "type": "string", "pattern": "^cap:[0-9a-f]+$" },
+    "schemaVersion": { "type": "string", "const": "1" },
+    "kind": {
+      "type": "string",
+      "enum": ["fact", "procedure", "decision", "pitfall", "convention"]
+    },
+    "subject": { "type": "string", "minLength": 1 },
+    "claim": { "type": "string", "minLength": 1 },
+    "scope": {
+      "type": "object",
+      "required": ["boundary"],
+      "properties": {
+        "boundary": { "type": "string", "enum": ["repo", "global"] },
+        "repoId": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "appliesTo": { "type": "array", "items": { "type": "string" } },
+    "evidence": { "type": "array" },
+    "authorship": {
+      "type": "object",
+      "required": ["actor", "kind"],
+      "properties": {
+        "actor": { "type": "string", "minLength": 1 },
+        "kind": { "type": "string", "enum": ["agent", "human"] },
+        "tool": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "origin": { "type": "string", "enum": ["observe", "attempt"] },
+    "attemptId": { "type": "string" },
+    "idempotencyKey": { "type": "string", "minLength": 1 },
+    "sessionId": { "type": "string", "minLength": 1 },
+    "sessionOffset": { "type": "integer" },
+    "eventOffset": { "type": "integer" },
+    "status": { "type": "string", "enum": ["pending", "done", "dead"] },
+    "proposedAt": { "type": "string" },
+    "meta": { "type": "object" }
+  },
+  "additionalProperties": true
+}

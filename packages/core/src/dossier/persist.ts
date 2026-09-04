@@ -18,7 +18,7 @@ import {
   rmSync,
   writeFileSync,
 } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { dirname, join, relative } from 'node:path';
 import { blake3Hex } from '@knowledge-crib/soul-schema';
 import type { Dossier } from './builder.js';
 import { DOSSIER_SHAPE_VERSION } from './framework.js';
@@ -95,26 +95,30 @@ export function deleteDossier(cribDir: string, nodeId: string): void {
   }
 }
 
-/** Remove persisted dossiers whose node no longer exists in the live soul. */
+/**
+ * Remove persisted dossiers whose node no longer exists in the live soul.
+ *
+ * The live set is projected onto the dossier file layout via {@link dossierPath} (the same
+ * blake3-shard + safeName scheme {@link writeDossier} used), and any on-disk file that is not one
+ * of the expected paths is an orphan. Deriving the id from the path instead of JSON.parsing every
+ * artifact keeps pruning O(dossiers listed) rather than O(all dossier bytes) — parsing every file
+ * on every update was a second full-store cost the adjacency hoist does not touch. Corrupt or
+ * misplaced files match no expected path and are discarded, exactly like the old parse-failure
+ * branch.
+ */
 export function pruneDossiers(cribDir: string, liveNodeIds: ReadonlySet<string>): number {
   const root = dossiersDir(cribDir);
   if (!existsSync(root)) return 0;
+  const livePaths = new Set<string>();
+  for (const id of liveNodeIds) livePaths.add(relative(root, dossierPath(cribDir, id)));
   let pruned = 0;
   for (const shard of readdirSync(root, { withFileTypes: true })) {
     if (!shard.isDirectory()) continue;
     const shardPath = join(root, shard.name);
     for (const entry of readdirSync(shardPath, { withFileTypes: true })) {
       if (!entry.isFile() || !entry.name.endsWith('.json')) continue;
-      const path = join(shardPath, entry.name);
-      let id: string | undefined;
-      try {
-        const parsed = JSON.parse(readFileSync(path, 'utf8')) as { id?: unknown };
-        if (typeof parsed.id === 'string') id = parsed.id;
-      } catch {
-        // Invalid cache entries are unusable and safe to discard.
-      }
-      if (id !== undefined && liveNodeIds.has(id)) continue;
-      rmSync(path, { force: true });
+      if (livePaths.has(join(shard.name, entry.name))) continue;
+      rmSync(join(shardPath, entry.name), { force: true });
       pruned++;
     }
   }

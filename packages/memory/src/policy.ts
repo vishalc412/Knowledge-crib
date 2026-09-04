@@ -87,6 +87,22 @@ export interface GateProfile {
 export const POLICY_FORMAT_VERSION = 1;
 
 /**
+ * The optional `capture` section of the policy (G2.2) — tightening knobs ONLY. The always-on
+ * capture-hygiene axes (secrets / PII / paths / transcripts) live in `capture-policy.ts` and CANNOT
+ * be disabled from here; a policy can only make capture stricter. Additive optional top-level
+ * section: `assertValidPolicy` tolerates absent/unknown top-level fields, so no
+ * `POLICY_FORMAT_VERSION` bump.
+ */
+export interface CapturePolicySection {
+  /** ceiling on a capture's claim (observation) length. Default: 2000 (see capture-policy.ts). */
+  maxClaimChars?: number;
+  /** record kinds refused at capture time (e.g. forbid `decision` captures from loose lanes). */
+  forbiddenKinds?: string[];
+  /** scope boundaries capture may use (e.g. `['repo']` to forbid global captures). Default: both. */
+  allowedScopeBoundaries?: string[];
+}
+
+/**
  * The trusted-base policy. `trustedRef` is the Git ref whose tree is the source of team trust (PRD
  * line 279: "exact record and decision blobs being present in a configured trusted Git ref"; default
  * `refs/remotes/origin/HEAD`). Without it, committed memories remain `pending` rather than trusted.
@@ -95,6 +111,8 @@ export interface MemoryPolicy {
   version: 1;
   trustedRef?: string;
   profiles: Record<string, GateProfile>;
+  /** G2.2 — optional capture-tightening section (see {@link CapturePolicySection}). */
+  capture?: CapturePolicySection;
 }
 
 /** The default trusted ref when the policy omits one (PRD line 279). */
@@ -215,6 +233,37 @@ export function assertValidPolicy(policy: unknown): asserts policy is MemoryPoli
     (typeof p.trustedRef !== 'string' || p.trustedRef.length === 0)
   ) {
     throw new PolicyError('policy.trustedRef must be a non-empty string when present');
+  }
+  // G2.2 — the optional `capture` section validates ONLY when present (additive; absence is the
+  // defaulted-open posture documented in capture-policy.ts).
+  if (p.capture !== undefined) {
+    if (p.capture === null || typeof p.capture !== 'object' || Array.isArray(p.capture)) {
+      throw new PolicyError('policy.capture must be an object when present');
+    }
+    const c = p.capture as Record<string, unknown>;
+    if (
+      c.maxClaimChars !== undefined &&
+      (typeof c.maxClaimChars !== 'number' ||
+        !Number.isFinite(c.maxClaimChars) ||
+        c.maxClaimChars <= 0)
+    ) {
+      throw new PolicyError('policy.capture.maxClaimChars must be a positive finite number');
+    }
+    if (
+      c.forbiddenKinds !== undefined &&
+      (!Array.isArray(c.forbiddenKinds) || c.forbiddenKinds.some((k) => typeof k !== 'string'))
+    ) {
+      throw new PolicyError('policy.capture.forbiddenKinds must be an array of strings');
+    }
+    if (
+      c.allowedScopeBoundaries !== undefined &&
+      (!Array.isArray(c.allowedScopeBoundaries) ||
+        c.allowedScopeBoundaries.some((b) => b !== 'repo' && b !== 'global'))
+    ) {
+      throw new PolicyError(
+        "policy.capture.allowedScopeBoundaries must be an array of 'repo'/'global'",
+      );
+    }
   }
 }
 

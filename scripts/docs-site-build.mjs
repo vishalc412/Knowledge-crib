@@ -86,6 +86,16 @@ const htmlDocs = [
 
 const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
+// Descriptions are lifted VERBATIM from the docs/README.md table, so they are markdown, not text:
+// escaping alone rendered `**Memory sync operator guide**` with its asterisks showing on the public
+// page. Escape FIRST (so this can never inject markup), then convert the two inline forms the
+// curated nav actually uses. Anything else stays literal — this is a nav renderer, not a markdown
+// engine, and silently swallowing unknown syntax would hide drift in the source table.
+const inline = (s) =>
+  esc(s)
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/`([^`]+)`/g, '<code>$1</code>');
+
 // --- assemble the page ----------------------------------------------------------------------
 const statsRows = Object.entries(stats)
   .map(([k, v]) => `          <tr><th>${esc(k)}</th><td>${esc(v)}</td></tr>`)
@@ -96,7 +106,7 @@ const navRows = indexRows
     (r) =>
       `        <li><span class="num">${esc(r.num)}</span> <a href="../${esc(r.href)}">${esc(
         r.title,
-      )}</a> — <span class="desc">${esc(r.desc)}</span></li>`,
+      )}</a> — <span class="desc">${inline(r.desc)}</span></li>`,
   )
   .join('\n');
 
@@ -105,7 +115,7 @@ const htmlRows = htmlDocs
     (r) =>
       `        <li><span class="num">★</span> <a href="../${esc(r.href)}">${esc(
         r.title,
-      )}</a> — <span class="desc">${esc(r.desc)}</span></li>`,
+      )}</a> — <span class="desc">${inline(r.desc)}</span></li>`,
   )
   .join('\n');
 

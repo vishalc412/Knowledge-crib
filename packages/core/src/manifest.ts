@@ -45,6 +45,6 @@ export function newManifest(opts: NewManifestOpts = {}): Manifest {
       clusters: 0,
       lastUpdated: opts.now ?? new Date().toISOString(),
     },
-    capabilities: { embeddings: false, multimodal: false },
+    capabilities: { embeddings: false, multimodal: false, pdg: false },
   };
 }

@@ -1,0 +1,124 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://knowledge-crib.dev/schema/memory-2/record-v2.schema.json",
+  "title": "MemoryRecordV2",
+  "description": "One immutable, content-addressed agent-memory claim in the memory-2 envelope (G1.1): proposition-keyed conflict, bi-temporal validity, provenance, visibility, and lineage. Tenancy fields deliberately absent (local-first).",
+  "type": "object",
+  "required": [
+    "id",
+    "schemaVersion",
+    "visibility",
+    "kind",
+    "subject",
+    "propositionKey",
+    "claim",
+    "validTime",
+    "transactionTime",
+    "evidence",
+    "provenance",
+    "lineage",
+    "sensitivity",
+    "retentionPolicyId"
+  ],
+  "properties": {
+    "id": { "type": "string", "pattern": "^mem:[0-9a-f]+$" },
+    "schemaVersion": { "type": "string", "const": "2" },
+    "visibility": { "type": "string", "enum": ["private", "workspace"] },
+    "kind": {
+      "type": "string",
+      "enum": ["fact", "procedure", "decision", "pitfall", "convention"]
+    },
+    "subject": { "type": "string", "minLength": 1 },
+    "propositionKey": { "type": "string", "minLength": 1 },
+    "claim": { "type": "string", "minLength": 1 },
+    "validTime": {
+      "type": "object",
+      "required": ["from"],
+      "properties": {
+        "from": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:\\d{2})$"
+        },
+        "to": {
+          "type": "string",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:\\d{2})$"
+        }
+      },
+      "additionalProperties": false
+    },
+    "transactionTime": {
+      "type": "object",
+      "required": ["observedAt", "recordedAt"],
+      "properties": {
+        "observedAt": { "type": "string", "minLength": 1 },
+        "recordedAt": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["kind", "verdict", "checkedAt"],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "source-quote",
+              "execution-assertion",
+              "committed-policy",
+              "human-attestation",
+              "receipt-pair"
+            ]
+          },
+          "verdict": { "type": "string", "enum": ["valid", "degraded", "invalid"] },
+          "checkedAt": { "type": "string" },
+          "soulId": { "type": "string" },
+          "quote": { "type": "string" },
+          "targetHash": { "type": "string", "pattern": "^blake3:[0-9a-f]+$" },
+          "startLine": { "type": "integer", "minimum": 1 },
+          "receiptId": { "type": "string" },
+          "assertion": { "type": "string" },
+          "artifactId": { "type": "string" },
+          "anchor": { "type": "string" },
+          "actor": { "type": "string" },
+          "tty": { "type": "boolean", "const": true },
+          "attestedAt": { "type": "string" },
+          "failingReceiptId": { "type": "string" },
+          "passingReceiptId": { "type": "string" },
+          "reason": { "type": "string" }
+        },
+        "additionalProperties": true
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "required": ["principalId", "deviceId", "actorId", "clientId"],
+      "properties": {
+        "principalId": { "type": "string", "minLength": 1 },
+        "deviceId": { "type": "string", "minLength": 1 },
+        "actorId": { "type": "string", "minLength": 1 },
+        "agentId": { "type": "string" },
+        "clientId": { "type": "string", "minLength": 1 },
+        "sessionId": { "type": "string" },
+        "tool": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "lineage": {
+      "type": "object",
+      "properties": {
+        "derivedFrom": { "type": "array", "items": { "type": "string" } },
+        "supersedes": { "type": "array", "items": { "type": "string" } },
+        "contradicts": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": false
+    },
+    "sensitivity": {
+      "type": "string",
+      "enum": ["public", "internal", "confidential", "restricted"]
+    },
+    "retentionPolicyId": { "type": "string", "minLength": 1 }
+  },
+  "additionalProperties": false
+}

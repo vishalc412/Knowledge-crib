@@ -23,79 +23,177 @@ import {
   statSync,
   writeFileSync,
 } from 'node:fs';
+import { hostname } from 'node:os';
 import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
+import { createInterface as createReadline } from 'node:readline';
 import {
   CALLABLE_SYMBOL_TYPES,
+  type EmbedManifest,
   LockBusyError,
   MANIFEST_FILE,
+  REMOTE_EMBED_POLICY_TEXT,
+  REMOTE_EMBED_POLICY_VERSION,
+  type RemoteEmbedPolicy,
   SoulStore,
   WorkingOverlay,
+  embedHomeDir,
+  embedManifestPath,
+  embedTierReport,
   graphPaths,
   hasLegacyGraph,
+  installEmbedModel,
   materializeComposite,
   migrateLegacyGraph,
   newManifest,
   pathFromId,
+  remotePolicyPath,
   validateClusterIntegrity,
   withCribLockAsync,
 } from '@knowledge-crib/core';
 import type { IndexStore } from '@knowledge-crib/core';
-import { EnrichmentStore, Verbs, estimateTokens, serveHttp, serveStdio } from '@knowledge-crib/mcp';
+import type { Embedder } from '@knowledge-crib/core';
+import { loadInstalledEmbedder } from '@knowledge-crib/core';
+import {
+  EnrichmentStore,
+  Verbs,
+  capInt,
+  capMaxTokens,
+  estimateTokens,
+  fitTokenBudget,
+  serveHttp,
+  serveStdio,
+} from '@knowledge-crib/mcp';
 import type {
   EnrichLayer,
   EnrichNextBatch,
   EnrichSaveItem,
   EnrichScope,
   EnrichWorkItem,
+  TaintRuleEntry,
   VcsAdapter,
 } from '@knowledge-crib/mcp';
 import {
+  AgentProfileDirectory,
   type AttemptOutcome,
   type AttemptPhase,
+  BENCH_SCALE_DEFAULT,
+  BENCH_SCALE_FAST,
+  type CaptureOutboxEntry,
+  type ConflictGroup,
+  // ── Gate 4 — cross-device sync surfaces (ADR-003 D12) ──
+  DEFAULT_MIGRATION_PRINCIPAL_ID,
+  type DistillVerifyContext,
+  FileSyncObjectStore,
   type GateReceipt,
+  HttpSyncObjectStore,
+  IntelligenceEventJournal,
+  MemoryApi,
   type MemoryCandidate,
   type MemoryDecision,
   MemoryEvaluator,
   type MemoryEvidence,
   type MemoryFeedback,
+  MemoryFtsIndex,
   type MemoryPolicy,
   type MemoryRecord,
   type MemoryRecordKind,
+  type MemoryRecordV2,
+  type MemorySource,
   MemoryStore,
+  ProjectionCheckpointStore,
+  REMOTE_MANIFEST_KEY,
+  type RecallProjection,
+  type RecallProvenance,
+  type RecallScore,
+  type RecordBelief,
+  SEMANTIC_TEXT_VERSION,
+  SUPPORTED_MEMORY_SCHEMA_VERSIONS,
+  type ScoredRecord,
+  type SearchHit,
+  type SearchResponse,
+  SoulStoreAnchorPort,
   SoulStoreSoulPort,
   type StructuredSummary,
+  type SupersedePayload,
+  type SyncConfigFile,
+  SyncCryptoError,
+  type SyncStatusResult,
+  type SyncStoreRun,
+  type SyncStoreScope,
   type TrustedTeamPresence,
+  UNVERSIONED,
+  type VerifiedDistillDecision,
+  VersionedLexicalScorer,
   activateLocal,
   appendAttemptEvent,
   applyContradictedFeedback,
+  applyVerifiedDecision,
   assertValidMemoryEntry,
   attemptEventId,
   attemptGroupId,
+  bindEvaluationPass,
+  bridgedDecisions,
+  buildAliasIndex,
   buildAttemptEvent,
+  buildDistillWorkItem,
   compactAttempt,
+  conservativeVerdicts,
   contradictedForReview,
+  decisionConflicts,
   decisionId,
+  decryptEvent,
+  distillBatchId,
+  effectiveVerdicts,
+  entrySetFingerprint,
   evaluateCandidate,
+  failDistillItem,
+  fingerprintGenerations,
+  formatBenchReport,
+  gatherRecall,
   gcUnpromotedAttempts,
+  genSyncKey,
   isFeedbackSignal,
+  isMemoryRecordV2,
   isTeamTrustedRecord,
+  keyFingerprint,
   loadPolicy,
   loadPolicyJson,
+  loadSyncState,
   localRecordsToTombstone,
+  localStoreRoot,
   memoryCandidateId,
+  memoryHome,
+  openMemoryFts,
+  openMemoryVectors,
   parseMemoryShard,
+  parseRemoteManifest,
+  pendingCaptures,
   policyHash,
   proposeExisting,
   quarantinedRecordIds,
   readRepoId,
+  readSyncConfig,
+  recallProjection,
   resolveProfile,
+  resolveSyncKey,
+  rotateSyncKey,
   runGate,
+  runMemoryBench,
   runMemoryCheck,
+  sameSubjectRecords,
+  stageSyncableWrite,
+  syncConfigPath,
+  syncEngineStatus,
+  teamStoreRoot,
   tombstoneLocalForTeamPromotion,
   trustedRefOf,
+  verifyDistillDecision,
   verifySnapshot,
+  writeSyncConfig,
 } from '@knowledge-crib/memory';
+import { writeJsonAtomic } from '@knowledge-crib/memory';
 import {
+  adapterStatuses,
   changedFilesSince,
   currentHead,
   detectWorkspace,
@@ -103,6 +201,7 @@ import {
   isGitRepo,
   lsTreeFiles,
   mergeBase,
+  pipelinePdg,
   prepareSourceInput,
   refExists,
   renderExport,
@@ -116,6 +215,7 @@ import { DEFAULT_IGNORES } from '@knowledge-crib/pipeline';
 import type {
   IndexReport,
   MuleReport,
+  MultimodalPhaseOpts,
   PreparedSourceInput,
   WorkspaceLayout,
 } from '@knowledge-crib/pipeline';
@@ -124,12 +224,41 @@ import { buildVizGraph, buildVizOverview, vizAssetsDir } from '@knowledge-crib/u
 import {
   ALL_CLIENTS,
   type ClientId,
+  LIFECYCLE_EVENTS,
+  type LifecycleEvent,
+  captureLaneSummary,
+  clientAdapter,
+  installCaptureHooks,
   installInstructions,
+  listCaptureHooks,
   listInstructions,
+  removeCaptureHooks,
   removeInstructions,
 } from './adapters.js';
-import { type ProviderDef, resolveProvider, runProviderBatch } from './enrich-provider.js';
-import { hooksInstalled, installHooks, mergeDriverFiles } from './hooks.js';
+import {
+  type ProviderDef,
+  ProviderItemError,
+  resolveProvider,
+  runProviderBatch,
+} from './enrich-provider.js';
+import {
+  FRESHNESS_MODES,
+  type FreshnessMode,
+  type FreshnessTask,
+  WorkerAlreadyRunningError,
+  freshnessStatus,
+  parseFreshnessMode,
+  postCommitFreshness,
+  runFreshnessWorker,
+  setFreshnessMode,
+} from './freshness.js';
+import {
+  convertBlockingPostCommit,
+  detectLegacyBlockingPostCommit,
+  hooksInstalled,
+  installHooks,
+  mergeDriverFiles,
+} from './hooks.js';
 import { type McpIde, type McpScope, installMcp, listMcp, removeMcp } from './mcp-install.js';
 import { registerProject } from './registry.js';
 import {
@@ -142,7 +271,15 @@ import {
   resolveProjectRoot,
 } from './runtime.js';
 import { installSkill, listBundledSkills } from './skill-install.js';
-import { VizHttpError, isAllowedHost, readVizNodeSource, resolveVizAsset } from './viz-server.js';
+import {
+  VizHttpError,
+  isAllowedHost,
+  parseMemoryLedgerQuery,
+  readMemoryLedger,
+  readMemoryLedgerDetail,
+  readVizNodeSource,
+  resolveVizAsset,
+} from './viz-server.js';
 import { WatchMode } from './watch.js';
 
 const EXIT = { OK: 0, ERROR: 1, BAD_ARGS: 2, NOT_INDEXED: 3, LOCKED: 4 } as const;
@@ -166,6 +303,11 @@ const VALUE_FLAGS = new Set([
   '--format',
   '--cwd',
   '--since',
+  // G5.1 rename (`crib rename --from X --to Y --plan-id <id>`): value-taking, and the delegated
+  // `crib update --dirty` must never see them as positionals.
+  '--from',
+  '--to',
+  '--plan-id',
   '--exclude',
   '--depth',
   '--doc-limit',
@@ -182,6 +324,33 @@ const VALUE_FLAGS = new Set([
   '--repo',
   '--dir',
   '--crib-dir',
+  '--sources',
+  '--target',
+  '--max-tokens',
+  // Gate 1.3 memory subcommands (`crib memory get|supersede|delete|history`): their positionals are
+  // an id / a key, so every value-taking flag they add must be stripped alongside its value.
+  '--actor',
+  '--successor',
+  '--claim',
+  '--subject',
+  '--kind',
+  '--visibility',
+  '--proposition-key',
+  '--reason',
+  '--tool',
+  '--as-of',
+  // Gate 4 sync/purge subcommands (`crib memory init-sync|sync|purge`): their positionals are
+  // mem: ids and their flag values are env names / urls — never paths, so every value-taking
+  // flag they add must be stripped alongside its value (the fixed subcommand-token pattern).
+  '--confirm',
+  '--url',
+  '--key-env',
+  '--keyfile',
+  '--secret-env',
+  '--max-events',
+  '--scope',
+  '--backend',
+  '--stores',
 ]);
 
 /** Collect positional argv tokens, skipping boolean flags AND value-taking flags + their values. */
@@ -421,6 +590,10 @@ async function main(argvRaw: string[]): Promise<number> {
       return cmdReconstruct(rest, ctx);
     case 'impact':
       return cmdImpact(rest, ctx);
+    case 'explain':
+      return cmdExplain(rest, ctx);
+    case 'rename':
+      return cmdRename(rest, ctx);
     case 'federated-impact':
     case 'federated':
       return cmdFederatedImpact(rest, ctx);
@@ -452,6 +625,10 @@ async function main(argvRaw: string[]): Promise<number> {
       return cmdEnrich(rest, ctx);
     case 'memory':
       return cmdMemory(rest, ctx);
+    case 'embed':
+      return cmdEmbed(rest, ctx);
+    case 'freshness':
+      return cmdFreshness(rest, ctx);
     case 'audit-llm':
       return cmdAuditLlm(rest, ctx);
     case 'mcp':
@@ -788,6 +965,44 @@ function renderMuleLine(s: MuleIndexSummary): string {
   return `mule: ${parts.join(', ')}`;
 }
 
+/**
+ * G5.3 — parse the opt-in multimodal flags: `--multimodal` enables the phase (default OFF), with
+ * optional `--multimodal-backend auto|fake|pdf|audio|image` (default `auto` — the TS-native
+ * production adapters) and `--multimodal-model-path <dir>` (required by whisper transcription so
+ * no model is ever fetched over the network). Returns undefined when the flag is absent, a valid
+ * opts object when enabled, or null on an unknown backend value (caller exits BAD_ARGS).
+ */
+function parseMultimodalOpts(args: string[]): MultimodalPhaseOpts | undefined | null {
+  if (!args.includes('--multimodal')) return undefined;
+  const BACKENDS = new Set(['auto', 'fake', 'pdf', 'audio', 'image']);
+  const opts: MultimodalPhaseOpts = {};
+  const backendIdx = args.indexOf('--multimodal-backend');
+  if (backendIdx >= 0) {
+    const backend = args[backendIdx + 1];
+    if (!backend || !BACKENDS.has(backend)) return null;
+    opts.backend = backend as MultimodalPhaseOpts['backend'];
+  }
+  const modelIdx = args.indexOf('--multimodal-model-path');
+  if (modelIdx >= 0) {
+    const modelPath = args[modelIdx + 1];
+    if (!modelPath) return null;
+    opts.modelPath = modelPath;
+  }
+  return opts;
+}
+
+/** One-line media summary appended to the index/reindex human output (only when the phase ran). */
+function multimodalSummary(report: IndexReport): string {
+  const mm = report.multimodal;
+  if (mm.ingest.files === 0) return '';
+  const usable = mm.availability.filter((a) => a.available).length;
+  const plural = (n: number, word: string): string => `${n} ${word}${n === 1 ? '' : 's'}`;
+  return (
+    ` · media: ${plural(mm.ingest.segments, 'segment')} from ${plural(mm.ingest.files, 'file')} ` +
+    `(${mm.ingest.dropped} dropped, ${plural(usable, 'adapter')} available)`
+  );
+}
+
 async function cmdIndex(args: string[], ctx?: CmdCtx): Promise<number> {
   // An explicit source path remains the source authority. `resolveRoot` also
   // preserves a registered external cribDir when this is an update fallback.
@@ -801,6 +1016,17 @@ async function cmdIndex(args: string[], ctx?: CmdCtx): Promise<number> {
   const projectKey = resolved.projectKey;
   const semantic = args.includes('--semantic');
   const json = args.includes('--json');
+  // G5.3 — `--multimodal` opts INTO the media phase (default OFF: the default index path never
+  // touches media or spawns a subprocess). With real (non-fake) adapters the default backend is
+  // `auto`: in-process TS-native PDF text-layer extraction (no binary needed), tesseract OCR and
+  // whisper transcription when their binaries are on PATH — each degrading honest, never faking.
+  const multimodal = parseMultimodalOpts(args);
+  if (multimodal === null) {
+    process.stderr.write(
+      'unknown --multimodal-backend value (expected auto|fake|pdf|audio|image) or missing flag value\n',
+    );
+    return EXIT.BAD_ARGS;
+  }
   const ignores = parseExcludes(args);
   const scope = resolvePackageScope(repoRoot, args);
   if (scope.status !== EXIT.OK) return scope.status;
@@ -816,6 +1042,7 @@ async function cmdIndex(args: string[], ctx?: CmdCtx): Promise<number> {
       semantic,
       ignores,
       packageRoots: scope.packageRoots,
+      ...(multimodal ? { multimodal } : {}),
     });
     const index = buildIndex({ repoRoot, cribDir, soul });
     registerIndexed(projectKey, cribDir, soul, source);
@@ -832,7 +1059,7 @@ async function cmdIndex(args: string[], ctx?: CmdCtx): Promise<number> {
       const muleSeg = muleSummary ? ` · ${renderMuleLine(muleSummary)}` : '';
       process.stdout.write(
         `indexed ${report.files} files → ${stats.nodes} nodes, ${stats.edges} edges ` +
-          `(${report.link.describes} describes, ${report.link.references} references)${scopeSuffix}${muleSeg} in ${Date.now() - started}ms\n`,
+          `(${report.link.describes} describes, ${report.link.references} references)${scopeSuffix}${muleSeg}${multimodalSummary(report)} in ${Date.now() - started}ms\n`,
       );
       printTokenSavingsHero(new Verbs({ soul, index, repoRoot }), soul, repoRoot);
       printLlmPending(soul, repoRoot);
@@ -886,7 +1113,24 @@ async function cmdStatus(args: string[], ctx?: CmdCtx): Promise<number> {
     vcs: new CliVcsAdapter(),
   });
   const dirty = args.includes('--dirty');
-  process.stdout.write(`${JSON.stringify(verbs.status({ dirty }), null, 2)}\n`);
+  const statusJson = verbs.status({ dirty }) as Record<string, unknown>;
+  // G3.4 — additive freshness block (mode, worker lease, in-flight, queue depth, behind-HEAD).
+  // Best-effort: a status call on a half-initialized project must never crash; the status verb's
+  // own shape is untouched so existing consumers see only a new key.
+  try {
+    statusJson.freshness = freshnessStatus(resolved.repoRoot);
+  } catch (err) {
+    statusJson.freshness = { error: (err as Error).message };
+  }
+  // G5.3 — additive multimodal block: capabilities.multimodal (already in `capabilities`, from the
+  // manifest) reports whether the LAST index ingested media; this block reports which adapters a
+  // re-run WOULD use, with the honest why-not per adapter. Best-effort like the freshness block.
+  try {
+    statusJson.multimodal = { adapters: adapterStatuses() };
+  } catch (err) {
+    statusJson.multimodal = { error: (err as Error).message };
+  }
+  process.stdout.write(`${JSON.stringify(statusJson, null, 2)}\n`);
   index.close();
   return EXIT.OK;
 }
@@ -1026,7 +1270,10 @@ async function openServeIndex(
  * "not indexed" message and returns `null` when the root has no `.crib`, so each command stays a
  * thin wrapper over one verb.
  */
-function openVerbs(args: string[], ctx?: CmdCtx): { verbs: Verbs; index: IndexStore } | null {
+function openVerbs(
+  args: string[],
+  ctx?: CmdCtx,
+): { verbs: Verbs; index: IndexStore; soul: ReturnType<typeof openSoul>['soul'] } | null {
   const resolved = resolveRoot(args, ctx);
   if (!isIndexedRoot(resolved)) {
     process.stderr.write('not indexed — run `crib index` first\n');
@@ -1040,8 +1287,11 @@ function openVerbs(args: string[], ctx?: CmdCtx): { verbs: Verbs; index: IndexSt
     index,
     repoRoot: resolved.repoRoot,
     vcs: new CliVcsAdapter(),
+    // G5.2 — the on-demand PDG/taint analyzer lives in the pipeline; every openVerbs-based
+    // command (explain included) gets it injected so the CLI is the reference wiring.
+    pdg: pipelinePdg,
   });
-  return { verbs, index };
+  return { verbs, index, soul: rt.soul };
 }
 
 /** `crib gaps` — analysis readiness, missing bodies (spec-only callables), unresolved call sites. */
@@ -1318,6 +1568,152 @@ async function cmdImpact(args: string[], ctx?: CmdCtx): Promise<number> {
 }
 
 /**
+ * `crib explain <node-id> [--rules <file>]` (G5.2) — on-demand PDG + taint flows for ONE callable.
+ * Nothing runs at index time; the first successful run flips `capabilities.pdg` (best-effort, a
+ * read-only checkout must not fail the analysis). The response carries `limits` and, when no flow
+ * is found, an `absence` message — empty `flows` is NOT proof of safety (intra-procedural only).
+ */
+async function cmdExplain(args: string[], ctx?: CmdCtx): Promise<number> {
+  const id = positionalsOf(args)[0];
+  const rulesIdx = args.indexOf('--rules');
+  const rulesFile = rulesIdx >= 0 ? args[rulesIdx + 1] : undefined;
+  if (!id || (rulesIdx >= 0 && !rulesFile)) {
+    process.stderr.write('usage: crib explain <node-id> [--rules <rules.json>]\n');
+    return EXIT.BAD_ARGS;
+  }
+  let extraRules: TaintRuleEntry[] | undefined;
+  if (rulesFile) {
+    try {
+      const parsed: unknown = JSON.parse(readFileSync(rulesFile, 'utf8'));
+      if (!Array.isArray(parsed)) throw new Error('expected a JSON array of rule entries');
+      extraRules = parsed as TaintRuleEntry[];
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      process.stderr.write(`cannot read rules file ${rulesFile}: ${msg}\n`);
+      return EXIT.BAD_ARGS;
+    }
+  }
+  const opened = openVerbs(args, ctx);
+  if (!opened) return EXIT.NOT_INDEXED;
+  const { verbs, index, soul } = opened;
+  const result = verbs.explain({ id, ...(extraRules !== undefined ? { extraRules } : {}) });
+  try {
+    if (soul.getManifest().capabilities.pdg !== true) {
+      // In-memory flip only: `setCapabilities` persists on the NEXT real `crib index`/`update`
+      // commit. Calling `commit()` here would rewrite the manifest NOW and trip the derived-index
+      // freshness mtime guard, marking every later read command stale for a cosmetic stamp.
+      soul.setCapabilities({ pdg: true });
+    }
+  } catch {
+    // best-effort only — the analysis result is already produced
+  }
+  process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+  index.close();
+  return EXIT.OK;
+}
+
+/**
+ * `crib rename --from <symbol> --to <name> [--apply --plan-id <id>] [--json] [--depth N]` (G5.1).
+ * Default DRY-RUN: prints the reviewed plan (per-file edit counts, exact vs inferred confidence,
+ * the unresolved bucket, notes) plus the deterministic plan id; nothing is written. `--apply`
+ * re-derives the plan from the CURRENT graph + files and refuses unless the plan id matches AND
+ * every file still hashes to its plan-time value (stale → "re-run the dry run"). Application is
+ * all-or-nothing; on success the SAME post-apply reindex path `crib update` uses runs with
+ * `--dirty` so the derived index reflects the rename, and the update summary is surfaced.
+ */
+async function cmdRename(args: string[], ctx?: CmdCtx): Promise<number> {
+  const flagValue = (flag: string): string | undefined => {
+    const i = args.indexOf(flag);
+    return i >= 0 ? (args[i + 1] as string | undefined) : undefined;
+  };
+  const from = flagValue('--from');
+  const to = flagValue('--to');
+  const planId = flagValue('--plan-id');
+  const apply = args.includes('--apply');
+  const json = args.includes('--json');
+  const depthIdx = args.indexOf('--depth');
+  const depth = depthIdx >= 0 ? Number.parseInt(args[depthIdx + 1] ?? '', 10) : undefined;
+  if (!from || !to || (apply && !planId)) {
+    process.stderr.write(
+      'usage: crib rename --from <symbol> --to <name> [--apply --plan-id <id>] [--json] [--depth N]\n' +
+        '  default is a dry run — it prints the plan and its id; pass both --apply and --plan-id to write\n',
+    );
+    return EXIT.BAD_ARGS;
+  }
+  const opened = openVerbs(args, ctx);
+  if (!opened) return EXIT.NOT_INDEXED;
+  const { verbs, index } = opened;
+  const result = verbs.rename({
+    from,
+    to,
+    ...(apply ? { apply: true, planId } : {}),
+    ...(Number.isFinite(depth) && depth! > 0 ? { depth } : {}),
+  });
+  if ('error' in result) {
+    const err = result.error as { code?: string; message?: string };
+    process.stderr.write(`rename failed (${err.code ?? 'ERROR'}): ${err.message ?? ''}\n`);
+    index.close();
+    return EXIT.ERROR;
+  }
+  if (json) {
+    process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+  } else if (!apply) {
+    const counts = result.counts as {
+      exact: number;
+      inferred: number;
+      files: number;
+      edits: number;
+    };
+    const files = result.files as Array<{ path: string; edits: number }>;
+    const affected = result.affected as unknown[];
+    const unresolved = result.unresolved as unknown[];
+    const notes = result.notes as string[];
+    process.stdout.write(
+      `${[
+        'rename plan (dry run — nothing written)',
+        `  from: ${String(result.from)} → to: ${String(result.to)}`,
+        `  target: ${String((result.target as { id: string }).id)}`,
+        `  plan id: ${String(result.planId)}`,
+        `  sites: ${counts.exact} exact, ${counts.inferred} inferred (${counts.edits} edit(s) across ${counts.files} file(s))`,
+        `  affected: ${affected.length} resolved, ${unresolved.length} unresolved`,
+      ].join('\n')}\n`,
+    );
+    for (const f of files) process.stdout.write(`    ${f.path} — ${f.edits} edit(s)\n`);
+    if (notes.length > 0) {
+      process.stdout.write('  notes:\n');
+      for (const n of notes) process.stdout.write(`    - ${n}\n`);
+    }
+    if (unresolved.length > 0) {
+      process.stdout.write(
+        `  unresolved bucket (${unresolved.length}) — confirm these with a text search before treating the rename as safe\n`,
+      );
+    }
+    process.stdout.write(
+      `  apply with: crib rename --from <symbol> --to <name> --apply --plan-id ${String(result.planId)}\n`,
+    );
+  } else {
+    process.stdout.write(
+      `renamed in ${String(result.filesChanged)} file(s), ${String(result.edits)} edit(s) (plan ${String(result.planId)})\n`,
+    );
+  }
+  index.close();
+  if (!apply) return EXIT.OK;
+  // Post-apply reindex — the same incremental path `crib update` runs, forced dirty because the
+  // rename just changed files under the VCS delta's feet. Rename-only flags are stripped first so
+  // the delegated command parses clean; its exit code is the rename command's exit code, because
+  // an applied-but-unreindexed tree would otherwise look done when it is not.
+  const reindexArgs = args.filter((a, i) => {
+    if (a === '--apply' || a === '--json') return false;
+    if (a === '--from' || a === '--to' || a === '--plan-id') return false;
+    const prev = args[i - 1];
+    return prev !== '--from' && prev !== '--to' && prev !== '--plan-id';
+  });
+  reindexArgs.push('--dirty');
+  process.stdout.write('reindexing (dirty update)…\n');
+  return cmdUpdate(reindexArgs, ctx);
+}
+
+/**
  * `crib federated-impact <id> --dir up|down [--repo <root>]... [--depth N] [--limit N]
  * [--extracted-only]` — M3.2 cross-repo blast radius. The primary repo (cwd / resolved root) is
  * always federated; each extra `--repo <root>` adds a repo to traverse into. The route-layer bridge
@@ -1497,12 +1893,19 @@ async function cmdServe(args: string[], ctx?: CmdCtx): Promise<number> {
       `watch mode active — ${overlay.dirty.length} dirty file(s) overlaid; committed .crib/graph untouched\n`,
     );
   }
+  // The embed tier is resolved ONCE here, before the server starts: every MCP recall below is
+  // synchronous, and a server must not decide its ranker per request.
+  await ensureInstalledEmbedder();
   const verbs = new Verbs({
     soul: rt.soul,
     index,
     repoRoot: resolved.repoRoot,
     vcs: new CliVcsAdapter(),
-    ...(memory ? { memory } : {}),
+    // G5.2 — MCP clients reach `explain` through serve, so the analyzer is wired here too.
+    pdg: pipelinePdg,
+    ...(memory
+      ? { memory: { ...memory, ...(installedEmbedder ? { embedder: installedEmbedder } : {}) } }
+      : {}),
     ...(overlay ? { workingOverlay: overlay.store } : {}),
   });
   // stdout is the MCP transport; logs go to stderr only.
@@ -1643,6 +2046,9 @@ async function cmdReindex(args: string[], ctx?: CmdCtx): Promise<number> {
   const cribDir = prepared.cribDir;
   const projectKey = resolved.projectKey;
   const semantic = args.includes('--semantic');
+  // G5.3 — same opt-in multimodal flags as `crib index` (reindex is a full rebuild too).
+  const multimodal = parseMultimodalOpts(args);
+  if (multimodal === null) return EXIT.BAD_ARGS;
   const ignores = parseExcludes(args);
   const scope = resolvePackageScope(repoRoot, args);
   if (scope.status !== EXIT.OK) return scope.status;
@@ -1654,6 +2060,7 @@ async function cmdReindex(args: string[], ctx?: CmdCtx): Promise<number> {
       semantic,
       ignores,
       packageRoots: scope.packageRoots,
+      ...(multimodal ? { multimodal } : {}),
     });
     const index = buildIndex({ repoRoot, cribDir, soul });
     index.close();
@@ -1662,7 +2069,7 @@ async function cmdReindex(args: string[], ctx?: CmdCtx): Promise<number> {
     const scopeSuffix = scope.packageRoots ? ` [scoped: ${scope.indexedPackages.join(', ')}]` : '';
     process.stdout.write(
       `reindexed ${report.files} files → ${stats.nodes} nodes, ${stats.edges} edges ` +
-        `(${report.link.describes} describes, ${report.link.references} references)${scopeSuffix} in ${Date.now() - started}ms\n`,
+        `(${report.link.describes} describes, ${report.link.references} references)${scopeSuffix}${multimodalSummary(report)} in ${Date.now() - started}ms\n`,
     );
     printLlmPending(soul, repoRoot);
     return EXIT.OK;
@@ -1678,6 +2085,34 @@ async function cmdReindex(args: string[], ctx?: CmdCtx): Promise<number> {
  * NOT take `--semantic` (deterministic-first onboarding; opt into INFERRED links with a later
  * `crib index --semantic`).
  */
+/**
+ * G3.4 — the init-time freshness-mode choice. NON-BLOCKING by construction: a TTY prompt answers
+ * on Enter (default) or after a short timeout; a non-interactive run (CI, scripted `claude -p`
+ * onboarding) takes the default WITHOUT waiting on stdin at all. Default: `manual` — the mode
+ * that changes nothing about existing behavior until the operator opts into a worker.
+ */
+async function chooseFreshnessMode(repoRoot: string): Promise<FreshnessMode> {
+  const DEFAULT: FreshnessMode = 'manual';
+  if (!process.stdin.isTTY) {
+    return DEFAULT;
+  }
+  const rl = createReadline({ input: process.stdin, output: process.stdout });
+  const answer = await new Promise<string>((res) => {
+    const timer = setTimeout(() => {
+      res('');
+      rl.close();
+    }, 10_000);
+    rl.question(`  freshness mode (${FRESHNESS_MODES.join('/')}) [${DEFAULT}]: `, (a: string) => {
+      clearTimeout(timer);
+      res(a.trim());
+      rl.close();
+    });
+  });
+  const mode = parseFreshnessMode(answer === '' ? undefined : answer);
+  void repoRoot;
+  return mode ?? DEFAULT;
+}
+
 async function cmdInit(args: string[], ctx?: CmdCtx): Promise<number> {
   const repoRoot = resolve(ctx?.cwdOverride ?? positionalsOf(args)[0] ?? '.');
   const ideIdx = args.indexOf('--ide');
@@ -1705,12 +2140,24 @@ async function cmdInit(args: string[], ctx?: CmdCtx): Promise<number> {
   }
 
   process.stdout.write(
-    '  step 2/4: wiring git hooks (post-commit `crib update` + .crib merge driver)…\n',
+    '  step 2/4: wiring git hooks (non-blocking post-commit freshness hook + .crib merge driver)…\n',
   );
-  const hooksCode = cmdInstallHooks([repoRoot], ctx);
+  const hooksCode = cmdInstallHooks([repoRoot], ctx, { convertAfter: true });
   if (hooksCode !== EXIT.OK) {
     process.stderr.write(`  install-hooks failed (exit ${hooksCode}) — aborting init\n`);
     return hooksCode;
+  }
+
+  // G3.4 — offer the freshness-mode choice. NON-BLOCKING: a TTY prompt answers on Enter (default)
+  // or times out; non-interactive runs take the default silently. The installed hook was converted
+  // to the non-blocking freshness path during step 2, and the mode itself never makes a commit
+  // wait (zero-commit-tax red line).
+  try {
+    const mode = await chooseFreshnessMode(repoRoot);
+    setFreshnessMode(repoRoot, mode);
+    process.stdout.write(`  freshness mode: ${mode}\n`);
+  } catch (err) {
+    process.stderr.write(`  warning: freshness mode not persisted — ${(err as Error).message}\n`);
   }
 
   process.stdout.write(`  step 3/4: wiring the MCP server into IDE config (--ide ${ide})…\n`);
@@ -1810,7 +2257,7 @@ function formatBytes(bytes: number): string {
  * check (stale build artifacts) is WARN-class: always ✓, never reported as a failure — it surfaces
  * a backlog the next build would reclaim anyway.
  */
-function cmdDoctor(args: string[], ctx?: CmdCtx): number {
+async function cmdDoctor(args: string[], ctx?: CmdCtx): Promise<number> {
   const repoRoot = resolve(ctx?.cwdOverride ?? positionalsOf(args)[0] ?? '.');
   const checks: Array<{ name: string; ok: boolean; detail: string; fix?: string }> = [];
 
@@ -1962,10 +2409,34 @@ function cmdDoctor(args: string[], ctx?: CmdCtx): number {
       /* best-effort */
     }
     const memOk = teamOk && adapterCount > 0;
+    // G2.1 — the capture-lane report rides check 7's detail line as pure DATA: which client is on
+    // which lane, and whether the lane-2 hook entry is installed. An instruction-based client is
+    // never a red mark — 'instruction-based recall only' is the honest capability, not a failure
+    // (the same non-fatal pattern as this check's not-initialized state above).
+    const hookLaneClients = ALL_CLIENTS.filter((id) => clientAdapter(id).lifecycle.lifecycleHooks);
+    const recallLaneClients = ALL_CLIENTS.filter(
+      (id) => !clientAdapter(id).lifecycle.lifecycleHooks,
+    );
+    let hookEvents: string[] = [];
+    try {
+      hookEvents = listCaptureHooks(repoRoot, { client: 'all', scope: 'project' }).flatMap(
+        (e) => e.events,
+      );
+    } catch {
+      /* best-effort — never let a diagnostic crash */
+    }
+    const laneDetail = [
+      `${hookLaneClients.join('/')}: portable + lifecycle hooks (entry ${
+        hookEvents.length > 0
+          ? `installed: ${hookEvents.join(', ')}`
+          : 'not installed — run `crib adapters hooks install`'
+      })`,
+      `${recallLaneClients.join('/')}: portable, instruction-based recall only (no hook surface)`,
+    ].join('; ');
     checks.push({
       name: 'agent-memory loop',
       ok: memOk,
-      detail: `policy ✓, team store ${teamOk ? '✓' : '✗'}, ${adapterCount} instruction adapter${adapterCount === 1 ? '' : 's'}`,
+      detail: `policy ✓, team store ${teamOk ? '✓' : '✗'}, ${adapterCount} instruction adapter${adapterCount === 1 ? '' : 's'}; capture lanes: ${laneDetail}`,
       fix: memOk
         ? undefined
         : `${!teamOk ? 'run `crib memory init` (team store missing); ' : ''}${adapterCount === 0 ? 'run `crib adapters install` (no instruction file present)' : ''}`.trim(),
@@ -1988,6 +2459,92 @@ function cmdDoctor(args: string[], ctx?: CmdCtx): number {
         ? 'none'
         : `${stale.count} stale .crib-build-* build${stale.count === 1 ? '' : 's'} (${formatBytes(stale.bytes)} incl. -wal/-shm) — auto-reclaimed on next \`crib index\``,
   });
+
+  // 9. Embedder tier (G3.2): the fallback tier is a VALID state (✓ with the degraded-fallback
+  //    wording + install hint), never fabricated as semantic. A broken install or integrity
+  //    failure is ✗ with the problems echoed. Async — the honest check LOADS the model.
+  try {
+    const tier = await embedTierReport({ env: process.env });
+    checks.push({
+      name: 'embedder tier',
+      ok: tier.problems.length === 0,
+      detail: `${tier.tier} (${tier.embedderId}); remote ${tier.remoteEnabled ? 'acknowledged' : 'disabled'}${tier.externalOverride ? '; KCRIB_EMBEDDER override active' : ''} — ${tier.reason}${tier.problems.length > 0 ? `; problems: ${tier.problems.join('; ')}` : ''}`,
+      fix:
+        tier.tier === 'fallback'
+          ? 'run `crib embed install <model-dir>` for the on-device tier'
+          : undefined,
+    });
+  } catch (err) {
+    checks.push({
+      name: 'embedder tier',
+      ok: false,
+      detail: `report failed: ${(err as Error).message}`,
+      fix: 'run `crib embed status`',
+    });
+  }
+
+  // 10. Freshness (G3.4): not running a worker is a VALID state in every mode (manual is the
+  //     default and `watch` is served by `crib serve --watch`); dead-lettered tasks or a published
+  //     generation that is behind HEAD are the actionable ✗ states. Zero commit blocking holds in
+  //     every mode — this check never asks the user to make commits wait on anything.
+  try {
+    const fresh = freshnessStatus(repoRoot);
+    const deadOk = fresh.dead === 0;
+    checks.push({
+      name: 'freshness',
+      ok: deadOk,
+      detail: `mode ${fresh.mode}${fresh.modeExplicit ? '' : ' (default)'}; worker ${fresh.workerRunning ? `running (pid ${fresh.workerPid ?? '?'})` : 'not running'}; pending ${fresh.pending}; in-flight ${fresh.inFlight ? fresh.inFlight.id : 'none'}; behind HEAD ${fresh.behindHead ? 'YES' : 'no'}`,
+      fix: !deadOk
+        ? 'inspect `crib freshness status` and re-run `crib update` (dead-lettered tasks are retried by the worker)'
+        : fresh.behindHead
+          ? 'run `crib freshness worker` (or `crib update`)'
+          : undefined,
+    });
+  } catch (err) {
+    checks.push({
+      name: 'freshness',
+      ok: true,
+      detail: `status unavailable: ${(err as Error).message}`,
+    });
+  }
+
+  // 11. Legacy blocking post-commit hook (G3.4 detection surface): the W-era install ran
+  //     `crib update` in the foreground of EVERY commit — a violation of the zero-commit-tax
+  //     red line that predates the freshness modes. Surfaced as ✗ with the conversion command;
+  //     the write itself stays in `crib freshness convert-hook`.
+  const legacy = detectLegacyBlockingPostCommit(repoRoot);
+  if (legacy.exists) {
+    checks.push({
+      name: 'post-commit hook non-blocking',
+      ok: !legacy.convertible,
+      detail: legacy.convertible
+        ? `blocking \`crib update\` found (${legacy.blockingCommands.length} line(s)) — commits wait on a full reindex`
+        : 'no blocking commands (freshness hook or absent managed block)',
+      fix: legacy.convertible ? 'run `crib freshness convert-hook`' : undefined,
+    });
+  }
+
+  // 12. Multimodal adapters (G5.3): which extraction adapters are usable on THIS machine. WARN-class
+  //     (ok: true always, like stale-builds): the multimodal phase is opt-in (`crib index
+  //     --multimodal`), so a missing tesseract/whisper binary is a capability report, never a setup
+  //     failure. Count-agnostic — every adapter is listed with its honest why-not, and the enabling
+  //     command is named right in the detail line. PDF extraction is bundled (pure-JS pdf.js via
+  //     unpdf) and therefore always usable.
+  try {
+    const adapters = adapterStatuses();
+    const detail = adapters.map((a) => `${a.id} ${a.available ? '✓' : `✗ ${a.reason}`}`).join('; ');
+    checks.push({
+      name: 'multimodal adapters',
+      ok: true,
+      detail: `opt-in phase — ${detail}; enable with \`crib index --multimodal\` (audio also needs --multimodal-model-path)`,
+    });
+  } catch (err) {
+    checks.push({
+      name: 'multimodal adapters',
+      ok: true,
+      detail: `status unavailable: ${(err as Error).message}`,
+    });
+  }
 
   let failures = 0;
   for (const c of checks) {
@@ -2019,13 +2576,295 @@ function cmdMergeDriver(args: string[]): number {
   return conflicts ? EXIT.ERROR : EXIT.OK;
 }
 
-function cmdInstallHooks(args: string[], ctx?: CmdCtx): number {
+function cmdInstallHooks(
+  args: string[],
+  ctx?: CmdCtx,
+  opts: { convertAfter?: boolean } = {},
+): number {
   const repoRoot = resolve(ctx?.cwdOverride ?? pathArg(args) ?? '.');
   const res = installHooks(repoRoot);
   process.stdout.write(
     `installed kcrib hooks at ${res.gitDir}\n  post-commit → ${res.postCommitPath}\n  .gitattributes → ${res.gitattributesPath} (.crib/**/*.jsonl merge=kcrib, .crib/memory/team/**/*.jsonl merge=kcrib-memory)\n  merge.kcrib.driver = ${res.driverConfig}\n  merge.kcrib-memory.driver = ${res.driverConfig}\n`,
   );
+  if (opts.convertAfter) {
+    // `crib init` path: a FRESH onboarding must not ship the red-line-violating blocking hook —
+    // convert immediately so `crib doctor` on a just-init'd repo is fully clean (onboarding:check
+    // pins this). Standalone `crib install-hooks` stays conservative (below): pre-existing
+    // automations that relied on the blocking refresh get to see WHY and convert on their terms.
+    const conv = convertBlockingPostCommit(repoRoot);
+    process.stdout.write(
+      conv.converted
+        ? '  converted post-commit to the non-blocking freshness hook (git commits are never\n  blocked, in every freshness mode)\n'
+        : `  post-commit hook left as-is (${conv.reason ?? 'unknown'})\n`,
+    );
+    return EXIT.OK;
+  }
+  // G3.4 — the installed managed block is the legacy blocking `crib update` (kept for back-compat;
+  // hooks.test.ts pins the block text). Detection + explain here, conversion via the dedicated
+  // subcommand so the operator sees WHY before the hook is rewritten.
+  const legacy = detectLegacyBlockingPostCommit(repoRoot);
+  if (legacy.convertible) {
+    process.stdout.write(
+      '\nnote: the installed post-commit hook runs `crib update` in the foreground, which blocks\n  every git commit (violates the freshness red line: zero commit blocking in EVERY mode).\n  Convert it to the mode-appropriate non-blocking path with:\n    crib freshness convert-hook\n',
+    );
+  }
   return EXIT.OK;
+}
+
+/**
+ * `crib embed <install <model-dir>|status>` — the on-device embedder tier (G3.2). The install is
+ * the OPERATOR step: point it at a locally acquired model dir; the module pins + hash-verifies it
+ * and fails closed (no manifest on failure, so the degraded fallback stays active rather than a
+ * broken install silently degrading recall). Remote embedders are NEVER enabled here without the
+ * explicit `--accept-remote-policy` acknowledgment (red line #3).
+ */
+async function cmdEmbed(args: string[], ctx?: CmdCtx): Promise<number> {
+  const [sub, ...rest] = args;
+  if (sub === 'install') {
+    const positionals: string[] = [];
+    let modelId: string | undefined;
+    let modelVersion: string | undefined;
+    let entry: string | undefined;
+    let acceptRemote = false;
+    for (let i = 0; i < rest.length; i++) {
+      const a = rest[i]!;
+      if (a === '--model-id') modelId = rest[++i];
+      else if (a === '--model-version') modelVersion = rest[++i];
+      else if (a === '--entry') entry = rest[++i];
+      else if (a === '--accept-remote-policy') acceptRemote = true;
+      else if (!a.startsWith('-')) positionals.push(a);
+    }
+    const modelDir = positionals[0];
+    if (!modelDir || !modelId || !modelVersion) {
+      process.stderr.write(
+        'usage: crib embed install <model-dir> --model-id <id> --model-version <ver> [--entry <file>] [--accept-remote-policy]\n',
+      );
+      return EXIT.BAD_ARGS;
+    }
+    // The remote tier is opt-in ONLY: without the flag we print the policy text and install the
+    // on-device model with the remote gate untouched (acknowledged policy stays absent → off).
+    if (!acceptRemote) {
+      process.stdout.write(`\n${REMOTE_EMBED_POLICY_TEXT}\n`);
+      process.stdout.write(
+        '\nremote embedders remain DISABLED. To acknowledge the policy above and opt in, re-run with --accept-remote-policy.\n\n',
+      );
+    }
+    let manifest: EmbedManifest;
+    try {
+      manifest = await installEmbedModel({
+        modelDir: resolve(modelDir),
+        modelId,
+        modelVersion,
+        ...(entry ? { entry } : {}),
+        // Display-only stamp (the manifest contract never reads the clock) — wall-clock is allowed
+        // here because installedAt feeds no id/hash/ifHash projection.
+        installedAt: new Date().toISOString(),
+      });
+    } catch (err) {
+      process.stderr.write(`embed install failed: ${(err as Error).message}\n`);
+      return EXIT.ERROR;
+    }
+    process.stdout.write(
+      `installed embed model ${manifest.modelId}@${manifest.modelVersion} (embedder ${manifest.embedderId}, dim ${manifest.dim})\n  manifest: ${embedManifestPath()}\n  files pinned: ${manifest.files.length}\n`,
+    );
+    if (acceptRemote) {
+      const home = embedHomeDir();
+      mkdirSync(home, { recursive: true });
+      const policy: RemoteEmbedPolicy = {
+        acknowledged: true,
+        policyVersion: REMOTE_EMBED_POLICY_VERSION,
+        ...(process.env.KCRIB_REMOTE_PROVIDER
+          ? { provider: process.env.KCRIB_REMOTE_PROVIDER }
+          : {}),
+      };
+      writeFileSync(remotePolicyPath(home), `${JSON.stringify(policy, null, 2)}\n`);
+      process.stdout.write(`  remote tier: policy acknowledged → ${remotePolicyPath(home)}\n`);
+    }
+    return EXIT.OK;
+  }
+  // default / `status` — the same structured report doctor renders (one truth source, two views).
+  const report = await embedTierReport({ env: process.env });
+  process.stdout.write(
+    `embed tier: ${report.tier} (${report.embedderId})\n  remote: ${report.remoteEnabled ? 'acknowledged' : 'disabled'}\n  external override: ${report.externalOverride ? 'yes (KCRIB_EMBEDDER)' : 'no'}\n  manifest: ${report.manifestPresent ? report.manifestPath : 'absent'}\n  ${report.reason}\n`,
+  );
+  for (const p of report.problems) process.stdout.write(`  problem: ${p}\n`);
+  return EXIT.OK;
+}
+
+/** The worker's revalidation port: refresh the project at the task's head and fingerprint the
+ *  dependencies the memory evaluator's generation cache keys on (red lines #1 + #5). The SAME
+ *  slots {@link bindEvaluationPass} sets at query time, so a published generation is directly
+ *  comparable to the generation a later recall binds against. */
+async function freshnessRevalidate(task: FreshnessTask): Promise<{ generation: string }> {
+  // The same locked, incremental update path a user runs — background freshness can never
+  // diverge from foreground truth. A failure here throws; the worker preserves the prior
+  // published generation (never publishes a broken index) and dead-letters after maxAttempts.
+  const code = await cmdUpdate([task.projectRoot], { cwdOverride: task.projectRoot });
+  if (code !== EXIT.OK) {
+    throw new Error(`crib update exited ${code} (head ${task.head.slice(0, 12)})`);
+  }
+  const resolved = resolveRoot([task.projectRoot]);
+  const rt = openSoul(resolved);
+  const soulGen = new SoulStoreSoulPort(rt.soul, resolved.repoRoot).generation?.() ?? UNVERSIONED;
+  const policy = loadPolicy(resolved.cribDir);
+  // decisions/feedback live in the memory stores (opt-in); without a repoId there is nothing to
+  // fingerprint — the slots stay UNVERSIONED exactly as bindEvaluationPass computes them.
+  let decisions = UNVERSIONED;
+  let feedback = UNVERSIONED;
+  const repoId = readRepoId(resolved.cribDir);
+  if (repoId) {
+    const env = process.env;
+    const stores = {
+      team: MemoryStore.team(resolved.cribDir, { repoRoot: resolved.repoRoot, env }),
+      local: MemoryStore.local(repoId, { repoRoot: resolved.repoRoot, env }),
+      global: MemoryStore.global({ env }),
+    };
+    const gathered = gatherRecall(stores);
+    decisions = entrySetFingerprint([...gathered.decisions, ...gathered.localDecisions]);
+    feedback = entrySetFingerprint(gathered.feedback);
+  }
+  return {
+    generation: fingerprintGenerations({
+      code: soulGen,
+      policy: policy !== undefined ? policyHash(policy) : UNVERSIONED,
+      receipts: UNVERSIONED,
+      decisions,
+      feedback,
+      embedder: UNVERSIONED,
+      index: UNVERSIONED,
+    }),
+  };
+}
+
+/**
+ * `crib freshness [<mode>|worker|hook|convert-hook]` — the freshness-mode surface (G3.4):
+ *   (no args / status)  mode + worker lease + in-flight + queue depth + behind-HEAD
+ *   <mode>              persist manual|watch|auto in the project registry
+ *   worker              foreground durable background worker (red line #5: persistent queue,
+ *                       lease/heartbeat, coalescing, crash recovery, last-known-good)
+ *   hook                the post-commit hook body: enqueue in `auto`, no-op otherwise — ALWAYS
+ *                       exit 0 (fail-open; a hook must never block a commit in ANY mode)
+ *   convert-hook        rewrite the legacy blocking `crib update` post-commit hook to this
+ *                       non-blocking path (the write half of the detection in hooks.ts)
+ */
+async function cmdFreshness(args: string[], ctx?: CmdCtx): Promise<number> {
+  // The first positional here is the SUBCOMMAND (status|worker|hook|convert-hook|<mode>), not a
+  // path — so root resolution must skip known subcommand tokens and use any remaining positional.
+  // (pathArg(args) would resolve `crib freshness convert-hook` to ./convert-hook and then fail
+  // to find a git repo there — caught by the Gate 3 E2E product test.)
+  const FRESHNESS_SUBS = new Set<string>([
+    ...FRESHNESS_MODES,
+    'status',
+    'worker',
+    'hook',
+    'convert-hook',
+  ]);
+  const positionals = positionalsOf(args);
+  const isSub = (tok: string) => FRESHNESS_SUBS.has(tok) || tok === '-h' || tok === '--help';
+  const sub = args.find(isSub);
+  const rootPos = positionals.find((tok) => !isSub(tok));
+  const repoRoot = resolve(ctx?.cwdOverride ?? rootPos ?? '.');
+  if (sub === undefined || sub === 'status') {
+    const status = freshnessStatus(repoRoot);
+    process.stdout.write(
+      `freshness mode: ${status.mode}${status.modeExplicit ? '' : ' (default — set with `crib freshness <mode>`; modes: '}${FRESHNESS_MODES.join('|')}${status.modeExplicit ? '' : ')'}\n  worker: ${status.workerRunning ? `running (pid ${status.workerPid ?? '?'})` : 'not running'}\n  pending: ${status.pending}${status.dead > 0 ? `, dead-lettered: ${status.dead}` : ''}\n  in-flight: ${status.inFlight ? status.inFlight.id : 'none'}\n  last-known-good: ${status.lastKnownGood ? `${status.lastKnownGood.generation.slice(0, 16)}… @ ${status.lastKnownGood.head.slice(0, 12)}` : 'never published'}\n  behind HEAD: ${status.behindHead ? 'yes — run `crib freshness worker` (or `crib update`)' : 'no'}\n`,
+    );
+    return EXIT.OK;
+  }
+  if (FRESHNESS_MODES.includes(sub as FreshnessMode)) {
+    try {
+      setFreshnessMode(repoRoot, sub as FreshnessMode);
+    } catch (err) {
+      process.stderr.write(`error: ${(err as Error).message}\n`);
+      return EXIT.ERROR;
+    }
+    process.stdout.write(
+      `freshness mode set to ${sub}\n${sub === 'auto' ? '  start the durable worker with `crib freshness worker` (or a service manager) — the mode only changes what the worker does, it never blocks a commit.\n' : ''}${sub === 'watch' ? '  watch mode is served by `crib serve --watch` (300ms debounce, serialized, atomic publication).\n' : ''}`,
+    );
+    return EXIT.OK;
+  }
+  switch (sub) {
+    case 'worker': {
+      try {
+        const worker = await runFreshnessWorker({
+          revalidate: freshnessRevalidate,
+          onEvent: (ev) => {
+            if (ev.kind === 'task-done') {
+              process.stdout.write(
+                `freshness: revalidated ${ev.task.projectRoot} @ ${ev.task.head.slice(0, 12)} → generation ${ev.generation.slice(0, 16)}…\n`,
+              );
+            } else if (ev.kind === 'task-dead') {
+              process.stdout.write(
+                `freshness: task dead-lettered after retries: ${ev.task.id} — ${ev.error}\n`,
+              );
+            } else if (ev.kind === 'refused') {
+              process.stderr.write(`freshness worker refused: ${ev.reason}\n`);
+            } else if (ev.kind === 'started') {
+              process.stdout.write(
+                `freshness worker started (pid ${ev.pid}, recovered ${ev.recovered} in-flight task(s))\n`,
+              );
+            }
+          },
+        });
+        process.stdout.write(
+          'freshness worker running — Ctrl+C to stop (in-flight task is awaited, never torn mid-flight)\n',
+        );
+        const done = new Promise<void>((res) => {
+          process.on('SIGINT', () => {
+            void worker.stop().then(res);
+          });
+          process.on('SIGTERM', () => {
+            void worker.stop().then(res);
+          });
+        });
+        await done;
+        return EXIT.OK;
+      } catch (err) {
+        if (err instanceof WorkerAlreadyRunningError) {
+          process.stderr.write(`${err.message} — use that worker (or kill it first)\n`);
+          return EXIT.LOCKED;
+        }
+        process.stderr.write(`freshness worker failed: ${(err as Error).message}\n`);
+        return EXIT.ERROR;
+      }
+    }
+    case 'hook': {
+      // The post-commit hook body. Fail-open ALWAYS: any throw still exits 0 (red line #2 —
+      // zero commit blocking in every mode; the hook script's failure must never block a commit).
+      let out = '';
+      try {
+        const head = currentHead(repoRoot) || '';
+        const r = await postCommitFreshness(repoRoot, head);
+        out = `freshness: mode ${r.mode}, ${r.enqueued ? `enqueued ${r.id ?? ''}` : 'no-op (nothing to refresh)'}`;
+      } catch (err) {
+        out = `freshness hook failed open: ${(err as Error).message}`;
+      }
+      process.stdout.write(`${out}\n`);
+      return EXIT.OK;
+    }
+    case 'convert-hook': {
+      const res = convertBlockingPostCommit(repoRoot);
+      if (!res.converted) {
+        process.stderr.write(
+          `nothing to convert at ${res.postCommitPath}${res.reason ? ` — ${res.reason}` : ''}\n`,
+        );
+        return EXIT.OK;
+      }
+      process.stdout.write(
+        `converted ${res.postCommitPath} to the non-blocking freshness hook\n  the managed block now runs \`crib freshness hook\` (enqueue in auto, no-op otherwise) —\n  git commits are never blocked, in every freshness mode (zero-commit-tax red line).\n`,
+      );
+      return EXIT.OK;
+    }
+    case '-h':
+    case '--help':
+      process.stdout.write(
+        `usage: crib freshness [<mode>|status|worker|hook|convert-hook]\n  modes: ${FRESHNESS_MODES.join(' | ')}\n`,
+      );
+      return EXIT.OK;
+    default:
+      process.stderr.write(`unknown freshness subcommand: ${String(sub)}\n`);
+      return EXIT.BAD_ARGS;
+  }
 }
 
 /**
@@ -2219,6 +3058,12 @@ async function cmdViz(args: string[], ctx?: CmdCtx): Promise<number> {
   const graph = buildVizGraph(rt.soul);
   const overview = buildVizOverview(rt.soul);
   const assets = vizAssetsDir();
+  // G5.4 — the memory ledger rides on the SAME MemoryApi the MCP verbs and CLI subcommands use;
+  // repos without a memory store serve the honest `configured: false` shape, not an error.
+  const memoryDeps = createMemoryDeps(rt.soul, rt.repoRoot, resolved.cribDir);
+  const memoryApi = memoryDeps
+    ? createMemoryApi(rt.soul, rt.repoRoot, resolved.cribDir, memoryDeps)
+    : undefined;
   const { createServer } = await import('node:http');
   const { readFile } = await import('node:fs/promises');
   const { extname } = await import('node:path');
@@ -2256,6 +3101,34 @@ async function cmdViz(args: string[], ctx?: CmdCtx): Promise<number> {
           'cache-control': 'no-store',
         });
         res.end(JSON.stringify(source));
+        return;
+      }
+      // G5.4 — the memory ledger: the list projection (paginated, grouped) and the lazy
+      // per-record detail. Both are read-only over the shared MemoryApi; `no-store` because the
+      // ledger changes with the stores, unlike the immutable static assets.
+      if (requestUrl.pathname === '/memory.json') {
+        const ledger = readMemoryLedger(memoryApi, parseMemoryLedgerQuery(requestUrl.searchParams));
+        res.writeHead(200, {
+          'content-type': 'application/json; charset=utf-8',
+          'cache-control': 'no-store',
+        });
+        res.end(JSON.stringify(ledger));
+        return;
+      }
+      if (requestUrl.pathname === '/memory/record.json') {
+        const id = requestUrl.searchParams.get('id');
+        if (!id || !memoryApi) {
+          throw new VizHttpError(
+            memoryApi ? 400 : 404,
+            memoryApi ? 'missing id' : 'memory not configured',
+          );
+        }
+        const detail = readMemoryLedgerDetail(memoryApi, id);
+        res.writeHead(200, {
+          'content-type': 'application/json; charset=utf-8',
+          'cache-control': 'no-store',
+        });
+        res.end(JSON.stringify(detail));
         return;
       }
       const path = await resolveVizAsset(assets, requestUrl.pathname);
@@ -2978,9 +3851,14 @@ function cmdSkill(args: string[]): number {
  * .windsurfrules, GEMINI.md) — preserving sibling content byte-for-byte. Removing an adapter removes
  * only its block; memory lives in `.crib/memory/` + `~/.crib/memory/`, never in these files (PRD exit
  * gate line 408: "removing an adapter does not remove memory"). Mirrors `crib mcp`'s shape.
+ *
+ * `list` also prints each client's capture-lane row (G2.1) — regenerated from the lifecycle matrix,
+ * never hand-written. `crib adapters hooks <install|list|remove>` manages the lane-2 capture hooks
+ * (Claude Code settings.json; see adapters.ts).
  */
 function cmdAdapters(args: string[], ctx?: CmdCtx): number {
   const [sub, ...rest] = args;
+  if (sub === 'hooks') return cmdAdaptersHooks(rest, ctx);
   let client: ClientId | 'all' = 'all';
   let scope: 'project' | 'global' = 'project';
   let pathArg: string | undefined;
@@ -3034,6 +3912,11 @@ function cmdAdapters(args: string[], ctx?: CmdCtx): number {
       return EXIT.OK;
     }
     case 'list': {
+      // The capture-lane matrix as data (G2.1) — printed for the requested clients even when they
+      // have no instruction file (vscode), since the lanes are a property of the client, not of
+      // any file.
+      for (const id of client === 'all' ? ALL_CLIENTS : [client])
+        process.stdout.write(`${captureLaneSummary(id)}\n`);
       const entries = listInstructions(repoRoot, { client, scope });
       if (entries.length === 0) {
         process.stdout.write(`no ${scope}-scope instruction files for ${client}\n`);
@@ -3067,6 +3950,88 @@ function cmdAdapters(args: string[], ctx?: CmdCtx): number {
   }
 }
 
+/**
+ * `crib adapters hooks <install|list|remove> [--client <id|all>]` (G2.1, lane 2). Manages the
+ * client capture-hook entries (Claude Code `.claude/settings.json` today) that invoke the crib CLI
+ * capture path on session/turn events. Project scope only. Clients whose matrix row has no hook
+ * surface report "instruction-based recall only" — as data, never as a failure.
+ */
+function cmdAdaptersHooks(args: string[], ctx?: CmdCtx): number {
+  const [sub, ...rest] = args;
+  let client: ClientId | 'all' = 'all';
+  let pathArg: string | undefined;
+  for (let i = 0; i < rest.length; i++) {
+    const arg = rest[i]!;
+    if (arg === '--client') {
+      const value = rest[++i];
+      if (looksLikeFlag(value) || !value) {
+        process.stderr.write(
+          'usage: crib adapters hooks <install|list|remove> [--client <id|all>]\n',
+        );
+        return EXIT.BAD_ARGS;
+      }
+      client = value as ClientId | 'all';
+      continue;
+    }
+    if (arg.startsWith('-')) {
+      process.stderr.write(`unknown adapters hooks option: ${arg}\n`);
+      return EXIT.BAD_ARGS;
+    }
+    if (!pathArg) pathArg = arg;
+  }
+  if (client !== 'all' && !ALL_CLIENTS.includes(client)) {
+    process.stderr.write(
+      `unknown --client: ${client}\nvalid: ${['all', ...ALL_CLIENTS].join(', ')}\n`,
+    );
+    return EXIT.BAD_ARGS;
+  }
+  const repoRoot = resolve(ctx?.cwdOverride ?? pathArg ?? '.');
+
+  switch (sub) {
+    case 'install': {
+      const results = installCaptureHooks(repoRoot, { client, scope: 'project' });
+      for (const r of results) {
+        if (r.note) process.stdout.write(`${r.client}: ${r.note}\n`);
+        else
+          process.stdout.write(
+            `${r.client}: hooks ${r.written ? 'installed' : 'up to date'} (${r.events.join(', ')}) → ${r.path}\n`,
+          );
+      }
+      return EXIT.OK;
+    }
+    case 'list': {
+      for (const e of listCaptureHooks(repoRoot, { client, scope: 'project' })) {
+        if (e.note) process.stdout.write(`${e.client}: ${e.note}\n`);
+        else
+          process.stdout.write(
+            `${e.client}: hooks ${e.events.length > 0 ? `installed (${e.events.join(', ')})` : 'not installed'} → ${e.path}\n`,
+          );
+      }
+      return EXIT.OK;
+    }
+    case 'remove': {
+      const results = removeCaptureHooks(repoRoot, { client, scope: 'project' });
+      for (const r of results) {
+        if (r.note) process.stdout.write(`${r.client}: ${r.note}\n`);
+        else if (r.written)
+          process.stdout.write(`${r.client}: hooks removed (${r.events.join(', ')}) → ${r.path}\n`);
+        else process.stdout.write(`${r.client}: hooks not present → ${r.path}\n`);
+      }
+      return EXIT.OK;
+    }
+    case undefined:
+    case '-h':
+    case '--help':
+      process.stderr.write(
+        'usage: crib adapters hooks <install|list|remove> [--client <id|all>]\n',
+      );
+      return EXIT.BAD_ARGS;
+    default:
+      process.stderr.write(`unknown adapters hooks subcommand: ${sub}\n`);
+      return EXIT.BAD_ARGS;
+  }
+}
+
 // ─── W4 — trusted agent-memory CLI (PRD lines 252–280) ────────────────────────
 
 /**
@@ -3076,6 +4041,31 @@ function cmdAdapters(args: string[], ctx?: CmdCtx): number {
  * degrade to `{ memory: 'not configured' }` rather than writing content-ids with a blank repoId).
  * The stores are constructed lazily; dirs are created on first write, not here.
  */
+/**
+ * The installed on-device embedder, resolved ONCE per process.
+ *
+ * `loadInstalledEmbedder` is async (it verifies the manifest's file hashes before importing the
+ * entry module) but every recall path below it is synchronous, so the resolution happens at the
+ * async command boundary and the result is cached here. `undefined` means no tier is installed —
+ * recall then keeps the `lexical-only` incumbent, which is the correct behaviour and not a
+ * degradation to hide: R1 measured that fusion LOSES on the char-ngram fallback.
+ */
+let installedEmbedder: Embedder | undefined;
+let embedderResolved = false;
+
+/** Resolve the tier once. Never throws: an unreadable or failed-integrity manifest leaves the
+ *  incumbent ranker in place rather than failing a memory command outright. */
+async function ensureInstalledEmbedder(): Promise<Embedder | undefined> {
+  if (embedderResolved) return installedEmbedder;
+  embedderResolved = true;
+  try {
+    installedEmbedder = await loadInstalledEmbedder();
+  } catch {
+    installedEmbedder = undefined;
+  }
+  return installedEmbedder;
+}
+
 function createMemoryDeps(soul: SoulStore, repoRoot: string, cribDir: string) {
   const repoId = readRepoId(cribDir);
   if (!repoId) return undefined;
@@ -3088,7 +4078,46 @@ function createMemoryDeps(soul: SoulStore, repoRoot: string, cribDir: string) {
     global: MemoryStore.global({ env }),
     evaluator,
     evalCtx,
+    eventJournal: new IntelligenceEventJournal({ rootDir: join(cribDir, 'intelligence') }),
+    projectionCheckpoints: new ProjectionCheckpointStore({
+      rootDir: join(cribDir, 'intelligence'),
+    }),
+    identityDirectory: new AgentProfileDirectory({ rootDir: join(cribDir, 'intelligence') }),
+    // present ⇒ recall ranks with `semantic-only` (R2's selected strategy); absent ⇒ lexical-only
+    ...(installedEmbedder ? { embedder: installedEmbedder } : {}),
   };
+}
+
+/**
+ * Gate 1.3 — build the portable {@link MemoryApi} over the CLI's three stores. The SAME adapter
+ * the MCP verbs use (verbs.ts `memoryApi()`): soul anchored through `SoulStoreAnchorPort`, fresh
+ * revalidation via the evaluator the memory deps always wire, and the repo's current git HEAD as
+ * the search provenance codeHead. One contract, two surfaces — the CLI subcommands never
+ * re-implement an op the package already owns.
+ */
+function createMemoryApi(
+  soul: SoulStore,
+  repoRoot: string,
+  cribDir: string,
+  deps: NonNullable<ReturnType<typeof createMemoryDeps>>,
+): MemoryApi {
+  let head: string | undefined;
+  try {
+    head = currentHead(repoRoot) || undefined;
+  } catch {
+    head = undefined; // not a git repo — search provenance reports no codeHead, never a crash
+  }
+  return new MemoryApi({
+    stores: { team: deps.team, local: deps.local, global: deps.global },
+    soul: new SoulStoreAnchorPort(soul, repoRoot),
+    cribDir,
+    evaluator: deps.evaluator,
+    evalCtx: deps.evalCtx,
+    eventJournal: deps.eventJournal,
+    projectionCheckpoints: deps.projectionCheckpoints,
+    identityDirectory: deps.identityDirectory,
+    ...(head !== undefined ? { codeHead: head } : {}),
+  });
 }
 
 /** blake3 digest of the working-tree state the gate observed (uncommitted file list — PRD line 277). */
@@ -3123,17 +4152,230 @@ function findReceipt(local: MemoryStore, id: string): GateReceipt | undefined {
 /**
  * `crib memory` — the evaluation / promotion surface (PRD lines 252–258). Subcommands:
  *   - init                 bootstrap `.crib/memory/policy.json` + report the resolved store layout
+ *   - recall "<query>"     the CLI fallback for the `brief` MCP tool's memory half (P0.1 — the
+ *                          neutral protocol text names this command, so it must exist)
+ *   - search "<query>"     Gate 1.3 — the portable MemoryApi's rich search (the `memory{op:'search'}`
+ *                          MCP op); `--json` mirrors the MCP response shape
+ *   - get <id>             Gate 1.3 — version-aware single-record read (alias-following; the
+ *                          `memory{op:'get'}` MCP op)
+ *   - supersede <id>       Gate 1.3 — retire a record in favour of a successor (append-only)
+ *   - delete <id>          Gate 1.3 — a tombstone (retract decision), never a removal
+ *   - history <key>        Gate 1.3 — the bi-temporal belief timeline (optionally `--as-of`)
  *   - evaluate <id> -p X   run the gate → evaluate → activate (the happy path); crash-safe
  *   - activate <id>        crash-recovery: re-evaluate + activate against an existing receipt
  *   - propose <mem-id>     write a team record + accept decision (idempotent; CI derives trust)
  *   - attest <id>          TTY-only human attestation: stamp a human-attestation evidence item
  * The MCP server NEVER calls these — only the CLI / CI runner produce evaluation receipts (PRD 68).
+ * `recall` is the one read-only exception: it mirrors the MCP `memory_recall` verb's projection.
  */
+/**
+ * `crib memory handoff` — the "where was I?" briefing for a resumed session.
+ *
+ * The command a returning agent (or human) runs FIRST after a context switch: unfinished attempts,
+ * captures never distilled into claims, claims that went stale while away, and the conventions that
+ * still hold. Read-only, like `recall`. Mirrors the MCP `memory{op:'handoff'}` projection so a
+ * terminal and an IDE agent see the same picture.
+ */
+function cmdMemoryHandoff(args: string[], ctx?: CmdCtx): number {
+  if (args.includes('--help')) {
+    process.stdout.write('usage: crib memory handoff [--limit N] [--json]\n');
+    return EXIT.OK;
+  }
+  const json = args.includes('--json');
+  const limit = capInt(intFlag(args, '--limit'), 10, 25);
+  const resolved = resolveProjectRoot({ explicitRoot: ctx?.cwdOverride });
+  const rt = openSoul(resolved);
+  const deps = createMemoryDeps(rt.soul, resolved.repoRoot, resolved.cribDir);
+  if (!deps) {
+    process.stderr.write('could not resolve repoId for memory — run `crib index` first\n');
+    return EXIT.NOT_INDEXED;
+  }
+  const api = createMemoryApi(rt.soul, resolved.repoRoot, resolved.cribDir, deps);
+  const out = api.handoff({
+    limits: { openWork: limit, pending: limit, attention: limit, recent: limit },
+  });
+  if (json) {
+    process.stdout.write(`${JSON.stringify(out, null, 2)}\n`);
+    return EXIT.OK;
+  }
+  const lines: string[] = [];
+  const section = (title: string, count: number, shown: number): void => {
+    lines.push(`\n${title} (${count}${count > shown ? `, showing ${shown}` : ''})`);
+  };
+  if (
+    out.counts.openWork === 0 &&
+    out.counts.pendingCaptures === 0 &&
+    out.counts.needsAttention === 0 &&
+    out.recent.length === 0
+  ) {
+    process.stdout.write(
+      'handoff: nothing in flight, nothing stale, no memory yet for this repo.\n',
+    );
+    return EXIT.OK;
+  }
+  section('IN FLIGHT — unfinished work', out.counts.openWork, out.openWork.length);
+  for (const w of out.openWork) {
+    lines.push(`  ${w.attemptId}  [${w.lastPhase}]  ${w.lastActivity}`);
+    if (w.subject) lines.push(`    on: ${w.subject}`);
+    if (w.action) lines.push(`    doing: ${w.action}`);
+    else if (w.observation) lines.push(`    saw: ${w.observation}`);
+  }
+  section(
+    'NOT YET WRITTEN DOWN — pending captures',
+    out.counts.pendingCaptures,
+    out.pendingCaptures.length,
+  );
+  for (const p of out.pendingCaptures) lines.push(`  ${p.id}  ${p.subject}  ${p.observation}`);
+  section('WENT STALE WHILE YOU WERE AWAY', out.counts.needsAttention, out.needsAttention.length);
+  for (const a of out.needsAttention) {
+    lines.push(`  ${a.subject}  [evidence ${a.evidence} / applicability ${a.applicability}]`);
+    lines.push(`    ${a.claim}`);
+  }
+  section('STILL HOLDS — recent claims', out.counts.active, out.recent.length);
+  for (const r of out.recent) lines.push(`  [${r.kind}] ${r.subject}: ${r.claim}`);
+  process.stdout.write(`${lines.join('\n').trimStart()}\n`);
+  return EXIT.OK;
+}
+
+/**
+ * `crib memory events` — inspect the shared event plane without confusing it with durable claims.
+ * The live view honours the default 30-day retention policy; `--include-expired` exposes retained
+ * audit history for support/export workflows. This command is read-only: replay and repair remain
+ * explicit future projector operations, never side effects of an inspection command.
+ */
+function cmdMemoryEvents(args: string[], ctx?: CmdCtx): number {
+  if (args.includes('--help')) {
+    process.stdout.write('usage: crib memory events [--include-expired] [--limit N] [--json]\n');
+    return EXIT.OK;
+  }
+  const json = args.includes('--json');
+  const includeExpired = args.includes('--include-expired');
+  const limit = capInt(intFlag(args, '--limit'), 100, 1_000);
+  const resolved = resolveProjectRoot({ explicitRoot: ctx?.cwdOverride });
+  const journal = new IntelligenceEventJournal({ rootDir: join(resolved.cribDir, 'intelligence') });
+  const all = journal.read({ includeExpired });
+  // Most recent first is the useful operator view; event IDs and recorded timestamps make it
+  // deterministic to correlate a selected row with a later export or projector checkpoint.
+  const events = all.slice(-limit).reverse();
+  const result = {
+    schemaVersion: '1',
+    total: all.length,
+    returned: events.length,
+    includeExpired,
+    truncated: all.length > events.length,
+    events,
+  };
+  if (json) {
+    process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+    return EXIT.OK;
+  }
+  const lines = [
+    `memory events — ${events.length} shown of ${all.length} ${includeExpired ? 'audit' : 'live'} event(s)`,
+  ];
+  for (const event of events) {
+    lines.push(
+      `  ${event.recordedAt}  ${event.kind}  ${event.id}  ${event.identity.principalId}  [${event.source.clientId}]`,
+    );
+  }
+  if (all.length > events.length)
+    lines.push(`  truncated — rerun with --limit ${Math.min(all.length, 1_000)}`);
+  process.stdout.write(`${lines.join('\n')}\n`);
+  return EXIT.OK;
+}
+
+/**
+ * `crib memory profiles` — manage the host-owned aliases that map volatile vendor agent IDs to a
+ * durable agent profile. These are provenance associations only; principal ownership continues to
+ * be resolved by the host environment and never comes from a request argument.
+ */
+function cmdMemoryProfiles(args: string[], ctx?: CmdCtx): number {
+  const [sub, ...rest] = args;
+  if (sub === undefined || sub === '--help' || sub === '-h') {
+    process.stdout.write(
+      'usage: crib memory profiles list [--json] | register --key <profile-key> --alias <client-id>/<agent-id> [--alias <client-id>/<agent-id> ...] [--json]\n',
+    );
+    return EXIT.OK;
+  }
+  const json = rest.includes('--json');
+  const resolved = resolveProjectRoot({ explicitRoot: ctx?.cwdOverride });
+  const directory = new AgentProfileDirectory({ rootDir: join(resolved.cribDir, 'intelligence') });
+  const principalId = process.env.KCRIB_PRINCIPAL_ID?.trim() || DEFAULT_MIGRATION_PRINCIPAL_ID;
+  if (sub === 'list') {
+    const profiles = directory.list(principalId);
+    if (json) process.stdout.write(`${JSON.stringify(profiles, null, 2)}\n`);
+    else if (profiles.length === 0) process.stdout.write(`no agent profiles for ${principalId}\n`);
+    else {
+      for (const profile of profiles) {
+        process.stdout.write(
+          `${profile.id}\n${profile.aliases.map((alias) => `  ${alias.clientId}/${alias.agentId}`).join('\n')}\n`,
+        );
+      }
+    }
+    return EXIT.OK;
+  }
+  if (sub !== 'register') {
+    process.stderr.write(`unknown memory profiles subcommand: ${sub}\n`);
+    return EXIT.BAD_ARGS;
+  }
+  const profileKey = stringFlag(rest, '--key');
+  const rawAliases = repeatedFlag(rest, '--alias');
+  if (!profileKey || rawAliases.length === 0) {
+    process.stderr.write(
+      'usage: crib memory profiles register --key <profile-key> --alias <client-id>/<agent-id> [--alias ...] [--json]\n',
+    );
+    return EXIT.BAD_ARGS;
+  }
+  const aliases = rawAliases.map((raw) => {
+    const divider = raw.indexOf('/');
+    return divider > 0 && divider < raw.length - 1
+      ? { clientId: raw.slice(0, divider), agentId: raw.slice(divider + 1) }
+      : undefined;
+  });
+  if (aliases.some((alias) => alias === undefined)) {
+    process.stderr.write('each --alias must be exactly <client-id>/<agent-id>\n');
+    return EXIT.BAD_ARGS;
+  }
+  try {
+    const profile = directory.register({
+      principalId,
+      profileKey,
+      aliases: aliases as Array<{ clientId: string; agentId: string }>,
+    });
+    if (json) process.stdout.write(`${JSON.stringify(profile, null, 2)}\n`);
+    else process.stdout.write(`registered ${profile.id} (${profile.aliases.length} alias(es))\n`);
+    return EXIT.OK;
+  } catch (error) {
+    process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
+    return EXIT.BAD_ARGS;
+  }
+}
+
 async function cmdMemory(args: string[], ctx?: CmdCtx): Promise<number> {
+  // Resolve the embed tier before dispatch: the subcommands below are synchronous, and recall must
+  // know which ranker it is entitled to use before it builds a scorer.
+  await ensureInstalledEmbedder();
   const [sub, ...rest] = args;
   switch (sub) {
     case 'init':
       return cmdMemoryInit(rest, ctx);
+    case 'recall':
+      return cmdMemoryRecall(rest, ctx);
+    case 'handoff':
+      return cmdMemoryHandoff(rest, ctx);
+    case 'events':
+      return cmdMemoryEvents(rest, ctx);
+    case 'profiles':
+      return cmdMemoryProfiles(rest, ctx);
+    case 'search':
+      return cmdMemorySearch(rest, ctx);
+    case 'get':
+      return cmdMemoryGet(rest, ctx);
+    case 'supersede':
+      return cmdMemorySupersede(rest, ctx);
+    case 'delete':
+      return cmdMemoryDelete(rest, ctx);
+    case 'history':
+      return cmdMemoryHistory(rest, ctx);
     case 'evaluate':
       return cmdMemoryEvaluate(rest, ctx);
     case 'activate':
@@ -3152,17 +4394,2028 @@ async function cmdMemory(args: string[], ctx?: CmdCtx): Promise<number> {
       return cmdMemoryGc(rest, ctx);
     case 'migrate':
       return cmdMemoryMigrate(rest, ctx);
+    case 'bench':
+      return cmdMemoryBench(rest, ctx);
+    // G2.3 — the capture-outbox drain loop (provider proposes, crib disposes).
+    case 'distill':
+      return cmdMemoryDistill(rest, ctx);
+    // G2.1 lane 2 — the durable capture command the lifecycle hooks invoke (adapters.ts
+    // `captureHookCommand`). Fail-open by contract: see cmdMemoryCaptureHook.
+    case 'capture-hook':
+      return cmdMemoryCaptureHook(rest, ctx);
     case undefined:
     case '-h':
     case '--help':
       process.stderr.write(
-        'crib memory init | evaluate <candidate> --profile <name> | activate <candidate> | propose <memory-id> | attest <candidate> | check | audit [--repair-local] | feedback <mem-id> --signal <useful|unhelpful|contradicted> [--actor <id>] [--context <text>] [--counter-evidence <json-file>] | gc [--max-age-days N] [--dry-run] | migrate\n',
+        'crib memory init | handoff [--limit N] [--json] (where was I? — in-flight work, undistilled captures, what went stale) | events [--include-expired] [--limit N] [--json] | profiles list [--json] | profiles register --key <profile-key> --alias <client-id>/<agent-id> [--alias ...] [--json] | recall "<query>" [--limit N] [--sources team,local,global] [--target <id>] [--with-evidence] [--include-pending] [--max-tokens N] [--json] | search "<query>" [--limit N] [--sources team,local,global] [--target <id>] [--max-tokens N] [--json] | get <id> [--with-evidence] [--json] | supersede <id> --actor <id> (--successor <id> | --claim <text>) [--reason <text>] [--json] | delete <id> --actor <id> [--reason <text>] [--json] | history <key> [--as-of <iso-ts>] [--with-evidence] [--json] | evaluate <candidate> --profile <name> | activate <candidate> | propose <memory-id> | attest <candidate> | check | audit [--repair-local] | feedback <mem-id> --signal <useful|unhelpful|contradicted> [--actor <id>] [--context <text>] [--counter-evidence <json-file>] | gc [--max-age-days N] [--dry-run] | migrate | bench [--fast] [--json] [--out <path>] | distill --provider <name> [--providers-file F] [--max-batches N] [--concurrency N] [--timeout-ms N] | capture-hook --event <session-start|turn-end|tool-use> (hooks invoke this; always exits 0 — best-effort capture, never blocks a session) | init-sync --scope repo|global --backend file|http --url <target> [--key-env <NAME>|--keyfile <path>|--gen-key] [--secret-env <NAME>] [--sync-id <id>] [--backfill] [--json] | sync [push|pull|status] [--dry-run] [--backfill] [--max-events N] [--skip] [--json] | sync rotate-key (--gen-key | --key-env <NAME> | --keyfile <path>) [--dry-run] | sync purge-sync --stale-epoch [--dry-run] | purge <mem-id>... --confirm <mem-id>... [--stores local,global] [--history-scan] [--dry-run] [--actor <id>] [--json] | conflicts [--json] | resolve <record-id> (--successor <id> | --retract) --actor <id> [--reason <text>] [--json] (see docs/memory-sync.md)\n',
       );
       return EXIT.OK;
+    // Gate 4 — cross-device sync (ADR-003 D12): init-sync / sync / purge / conflicts / resolve.
+    case 'init-sync':
+      return cmdMemoryInitSync(rest, ctx);
+    case 'sync':
+      return cmdMemorySync(rest, ctx);
+    case 'purge':
+      return cmdMemoryPurge(rest, ctx);
+    case 'conflicts':
+      return cmdMemoryConflicts(rest, ctx);
+    case 'resolve':
+      return cmdMemoryResolve(rest, ctx);
     default:
       process.stderr.write(`unknown memory subcommand: ${sub}\n`);
       return EXIT.BAD_ARGS;
   }
+}
+
+// ─── G2.3 — `crib memory distill` (the capture-outbox drain loop) ────────────────
+
+/** How many pending captures one distill batch offers to the provider (bounded like enrich's 25). */
+const DISTILL_BATCH_SIZE = 25;
+
+/** The persisted zero-progress marker for the distill queue: `{ lastBatchId }` at
+ *  `<localStoreRoot>/distill-state.json`. A separate file (NOT the enrich manifest's `#t:` keys), so
+ *  the distill marker can never collide with the enrich queue's lastIssued keys; the `distill:`
+ *  batchId prefix makes even a future shared file collision structurally impossible. */
+interface DistillState {
+  lastBatchId?: string;
+  lastBatchAt?: string;
+}
+
+function distillStatePath(repoId: string, env: NodeJS.ProcessEnv): string {
+  return join(localStoreRoot(repoId, env), 'distill-state.json');
+}
+
+function readDistillState(path: string): DistillState {
+  try {
+    const parsed: unknown = JSON.parse(readFileSync(path, 'utf8'));
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+      return parsed as DistillState;
+    }
+  } catch {
+    // absent / unreadable / corrupt → an empty state (the loop simply has no prior batch to match)
+  }
+  return {};
+}
+
+/**
+ * `crib memory distill --provider <name>` — the G2.3 drain loop for the durable capture outbox.
+ * Each pending `cap:` entry becomes a provider work item (the capture + the existing same-subject
+ * records with their propositionKeys); the provider returns a structured decision; crib VERIFIES
+ * the decision deterministically (`verifyDistillDecision`) and only then applies it
+ * (`applyVerifiedDecision` — durable result first, outbox done last). The provider proposes; crib
+ * disposes.
+ *
+ * Loop model (mirrors runProviderEnrichLoop): the lock is held only around the apply critical
+ * section — the queue read itself is lock-free by design (pendingCaptures) — and RELEASED for the
+ * provider exec. Stop conditions: empty queue (done), zero progress (the same batchId — blake3 over
+ * the sorted pending ids — re-seen with nothing landing, persisted in distill-state.json so it
+ * holds across runs), or --max-batches. A per-item failure is NOT a loop stop: it appends a retry
+ * attempt to the entry (B's outbox lifecycle) and dead-letters at the limit, so the queue stays
+ * resumable and a poison capture cannot wedge the drain.
+ */
+async function cmdMemoryDistill(args: string[], ctx?: CmdCtx): Promise<number> {
+  const providerIdx = args.indexOf('--provider');
+  if (providerIdx < 0) {
+    process.stderr.write(
+      'usage: crib memory distill --provider <name> [--providers-file <path>] [--max-batches N] [--concurrency N] [--timeout-ms N]\n',
+    );
+    return EXIT.BAD_ARGS;
+  }
+  const providerName = args[providerIdx + 1];
+  if (!providerName || providerName.startsWith('-')) {
+    process.stderr.write('error: --provider requires a provider name\n');
+    return EXIT.BAD_ARGS;
+  }
+  const providersFile = stringFlag(args, '--providers-file');
+  const maxBatches = intFlag(args, '--max-batches') ?? 5;
+  const concurrency = intFlag(args, '--concurrency') ?? 1;
+  const timeoutMs = intFlag(args, '--timeout-ms');
+
+  let def: ProviderDef;
+  try {
+    def = resolveProvider(providerName, providersFile).def;
+  } catch (e) {
+    process.stderr.write(`error: ${(e as Error).message}\n`);
+    return EXIT.BAD_ARGS;
+  }
+
+  const resolved = resolveProjectRoot({ explicitRoot: ctx?.cwdOverride });
+  const rt = openSoul(resolved);
+  const repoId = readRepoId(resolved.cribDir);
+  if (!repoId) {
+    process.stderr.write('could not resolve repoId for memory — run `crib index` first\n');
+    return EXIT.NOT_INDEXED;
+  }
+  const env = process.env;
+  // The distiller touches ONLY the local store (the no-poison rule + the no-cross-store-nesting
+  // lock guard): no team or global store is constructed here at all.
+  const local = MemoryStore.local(repoId, { repoRoot: resolved.repoRoot, env });
+  const policy = loadPolicy(resolved.cribDir)?.capture;
+  const statePath = distillStatePath(repoId, env);
+  const now = (): string => new Date().toISOString();
+
+  let batches = 0;
+  let totalApplied = 0;
+  let totalFailed = 0;
+  let totalDeadLettered = 0;
+  while (batches < maxBatches) {
+    // 1. Queue read (lock-free by design): the pending view, dead wins over outbox.
+    const pending = pendingCaptures(local);
+    if (pending.length === 0) {
+      process.stdout.write('distill: capture outbox empty — done.\n');
+      break;
+    }
+    // Zero-progress: the batchId is the deterministic identity of this exact queue state; a
+    // persisted marker makes the stop survive across runs (no retry churn — the stop happens
+    // BEFORE any provider exec or attempt append).
+    const batchId = distillBatchId(pending.map((e) => e.id));
+    const state = readDistillState(statePath);
+    if (state.lastBatchId === batchId) {
+      process.stderr.write(
+        `zero-progress: distill batch ${batchId} was already offered with nothing landing — stopping (inspect the provider or the outbox; the marker persists by design).\n`,
+      );
+      return EXIT.ERROR;
+    }
+
+    // 2. Provider exec — NO lock held. The verify callback runs per item as the response lands,
+    //    throwing ProviderItemError on any unverifiable decision (a per-item failure, never applied).
+    const batch = pending.slice(0, DISTILL_BATCH_SIZE);
+    const items = batch.map((entry) =>
+      buildDistillWorkItem(entry, sameSubjectRecords(local, entry.subject)),
+    );
+    const ctxByTarget = new Map<string, DistillVerifyContext>(
+      batch.map((entry) => [entry.id, { local, entry, ...(policy ? { policy } : {}) }]),
+    );
+    const outcomes = await runProviderBatch<VerifiedDistillDecision>(
+      def,
+      items as unknown as EnrichWorkItem[],
+      {
+        ...(timeoutMs !== undefined ? { timeoutMs } : {}),
+        concurrencyOverride: concurrency,
+        validate: (parsed: unknown, expectedTargetId: string): VerifiedDistillDecision => {
+          const vctx = ctxByTarget.get(expectedTargetId);
+          if (!vctx) throw new ProviderItemError(expectedTargetId, 'no distill context for target');
+          const result = verifyDistillDecision(parsed, expectedTargetId, vctx);
+          if (!result.ok) throw new ProviderItemError(expectedTargetId, result.reason);
+          return result.verified;
+        },
+      },
+    );
+
+    // 3. Critical section: apply verified decisions + record failures under one crib lock hold.
+    //    All writes are same-store (local) re-entrant takes of the store's own lock.
+    let applied = 0;
+    let failed = 0;
+    let deadLettered = 0;
+    try {
+      // All-sync body — the async wrapper is only the crib-lock handle (the same pattern the
+      // enrich loop's `locked()` helper uses; the store's own writes re-take their own lock
+      // re-entrantly, never across an await).
+      await withCribLockAsync({ cribDir: resolved.cribDir }, () => {
+        for (const o of outcomes) {
+          const entry = ctxByTarget.get(o.targetId)?.entry as CaptureOutboxEntry | undefined;
+          if (!entry) continue;
+          if (!o.ok) {
+            failed++;
+            const res = failDistillItem(local, entry, o.reason, now);
+            if (res.deadLettered) {
+              deadLettered++;
+              process.stderr.write(
+                `distill: ${o.targetId} dead-lettered after ${res.attempt} attempt(s): ${o.reason}\n`,
+              );
+            }
+            continue;
+          }
+          const result = applyVerifiedDecision(
+            ctxByTarget.get(o.targetId) as DistillVerifyContext,
+            o.item,
+            { env, now },
+          );
+          if (result.ok) {
+            applied++;
+            const label =
+              result.decision === 'NOOP' && !result.reclassifiedToNoop
+                ? 'noop'
+                : result.decision.toLowerCase();
+            process.stdout.write(
+              `distill: ${o.targetId} → ${label}${result.candidateId ? ` (${result.candidateId})` : ''}${result.successorId ? ` (successor ${result.successorId})` : ''}\n`,
+            );
+          } else {
+            failed++;
+            const res = failDistillItem(local, entry, result.error, now);
+            if (res.deadLettered) deadLettered++;
+            process.stderr.write(`distill: ${o.targetId} apply failed: ${result.error}\n`);
+          }
+        }
+      });
+    } catch (e) {
+      if (e instanceof LockBusyError) {
+        process.stderr.write(`${e.message}\n`);
+        return EXIT.LOCKED;
+      }
+      throw e;
+    }
+    totalApplied += applied;
+    totalFailed += failed;
+    totalDeadLettered += deadLettered;
+    batches++;
+    // Persist the zero-progress marker ONLY when nothing landed this cycle: a marker the next cycle
+    // (in this run or a later one) matches against the same queue state stops the loop BEFORE the
+    // provider is re-executed and before any retry is recorded. A cycle where something landed (or
+    // an entry terminally dead-lettered) shrank or changed the queue, so the marker is cleared —
+    // that is the within-run partial-failure resumability the enrich loop models.
+    const marker: DistillState =
+      applied > 0 || deadLettered > 0
+        ? { lastBatchAt: now() }
+        : { lastBatchId: batchId, lastBatchAt: now() };
+    writeJsonAtomic(statePath, `${JSON.stringify(marker, null, 2)}\n`);
+    process.stdout.write(
+      `distill batch ${batches}: applied=${applied} failed=${failed} dead-lettered=${deadLettered} remaining=${pending.length - batch.length}\n`,
+    );
+    if (pending.length <= batch.length) {
+      process.stdout.write('distill: outbox drained this cycle.\n');
+      break;
+    }
+  }
+  process.stdout.write(
+    `distill: ${batches} batch(es), ${totalApplied} applied, ${totalFailed} failure(s), ${totalDeadLettered} dead-lettered.\n`,
+  );
+  return EXIT.OK;
+}
+
+// ─── G2.1 lane 2 — `crib memory capture-hook` (the durable capture lane hooks invoke) ──
+
+/** stdin is hard-capped before parse: a hook payload is bounded provenance, never a transcript. */
+const CAPTURE_HOOK_STDIN_MAX_CHARS = 65536;
+/** session ids are hashed into the `cap:` id seed — bounded and character-restricted, never trusted verbatim. */
+const CAPTURE_HOOK_SESSION_ID_MAX_CHARS = 128;
+const CAPTURE_HOOK_TOOL_NAME_MAX_CHARS = 64;
+
+/** A lifecycle hook fires inside a live coding session: this command MUST never block one.
+ *  Claude Code treats a nonzero hook exit (2 in particular) as a blocking error, so every runtime
+ *  failure — bad payload, unindexed repo, policy refusal, store error — degrades to stderr + EXIT.OK.
+ *  Only a wiring bug (no --event) reaches the operator the same way: stderr, still exit 0. */
+function cmdMemoryCaptureHook(args: string[], ctx?: CmdCtx): number {
+  const failOpen = (message: string): number => {
+    process.stderr.write(`capture-hook: ${message}\n`);
+    return EXIT.OK;
+  };
+  const event = stringFlag(args, '--event') as LifecycleEvent | undefined;
+  if (!event) return failOpen(`missing --event (expected one of: ${LIFECYCLE_EVENTS.join(', ')})`);
+  if (!LIFECYCLE_EVENTS.includes(event)) return failOpen(`unknown lifecycle event: ${event}`);
+
+  // Read + bound the hook payload. Only TWO fields ever cross into storage — session_id and
+  // (for tool-use) tool_name; everything else (transcript paths, tool input/output, cwd) is
+  // discarded here, before any capture, per the raw-transcripts-off law.
+  let payload: Record<string, unknown> = {};
+  try {
+    const raw = readFileSync(0, 'utf8');
+    if (raw.trim().length > 0) {
+      const parsed: unknown = JSON.parse(raw.slice(0, CAPTURE_HOOK_STDIN_MAX_CHARS));
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        payload = parsed as Record<string, unknown>;
+      }
+    }
+  } catch {
+    return failOpen(
+      'unparseable stdin payload — capturing the lifecycle event without session provenance',
+    );
+  }
+
+  const rawSessionId = typeof payload.session_id === 'string' ? payload.session_id.trim() : '';
+  const sessionId =
+    rawSessionId.length > 0
+      ? rawSessionId.replace(/\s+/g, '').slice(0, CAPTURE_HOOK_SESSION_ID_MAX_CHARS)
+      : undefined;
+  const rawToolName =
+    event === 'tool-use' && typeof payload.tool_name === 'string' ? payload.tool_name.trim() : '';
+  const toolName =
+    rawToolName.length > 0
+      ? rawToolName.replace(/[^A-Za-z0-9_.:-]/g, '').slice(0, CAPTURE_HOOK_TOOL_NAME_MAX_CHARS)
+      : undefined;
+  if (event === 'tool-use' && rawToolName.length > 0 && !toolName) {
+    return failOpen(
+      'tool_name reduced to nothing under the bounded charset — capturing without it',
+    );
+  }
+
+  const observation =
+    event === 'session-start'
+      ? 'coding session started (lifecycle hook)'
+      : event === 'turn-end'
+        ? 'session turn ended (lifecycle hook)'
+        : toolName
+          ? `tool-use observed (lifecycle hook): ${toolName}`
+          : 'tool-use observed (lifecycle hook)';
+  // Wall-clock-free dedupe key: identical (event, session, tool) fires collapse to one durable
+  // outbox entry — at-least-once delivery with dedupe, not per-fire volume. Turn-level granularity
+  // would need stream offsets the hook payload does not carry, so the collapse is honest.
+  const idempotencyKey = `hook:${event}:${sessionId ?? 'nosession'}${toolName ? `:${toolName}` : ''}`;
+
+  try {
+    const resolved = resolveProjectRoot({ explicitRoot: ctx?.cwdOverride });
+    const rt = openSoul(resolved);
+    const repoId = readRepoId(resolved.cribDir);
+    if (!repoId)
+      return failOpen(
+        'repoId unresolvable — run `crib index` first (capture skipped, not blocking)',
+      );
+    const deps = createMemoryDeps(rt.soul, resolved.repoRoot, resolved.cribDir);
+    if (!deps) return failOpen('memory stores unresolvable — capture skipped, not blocking');
+    const api = createMemoryApi(rt.soul, resolved.repoRoot, resolved.cribDir, deps);
+    const result = api.capture({
+      subject: 'topic:session-lifecycle',
+      observation,
+      kind: 'fact',
+      actor: 'claude-code-hook',
+      tool: 'capture-hook',
+      ...(sessionId !== undefined ? { sessionId } : {}),
+      idempotencyKey,
+    });
+    if (!result.ok) return failOpen(`capture refused: ${result.error}`);
+    process.stdout.write(
+      `${JSON.stringify({ ok: true, event, captureId: result.id, status: result.status })}\n`,
+    );
+    return EXIT.OK;
+  } catch (e) {
+    return failOpen(`capture failed: ${(e as Error).message}`);
+  }
+}
+
+// ─── Gate 4 — cross-device sync surfaces (ADR-003 D12, docs/memory-sync.md) ──────
+
+/**
+ * The shared preamble of the Gate-4 memory sync surfaces: the portable {@link MemoryApi} + the
+ * three stores + the repoId the sync configs are keyed on. `undefined` when the repo is not
+ * indexed (the caller prints the `crib index` hint — the same posture as the other memory
+ * subcommands). The positionals of these subcommands are ids and flag values, never paths, so
+ * root resolution goes through `--cwd`/the process cwd only (the fixed subcommand-token pattern).
+ */
+function openSyncApi(ctx?: CmdCtx):
+  | {
+      api: MemoryApi;
+      deps: NonNullable<ReturnType<typeof createMemoryDeps>>;
+      repoId: string;
+      repoRoot: string;
+      env: NodeJS.ProcessEnv;
+    }
+  | undefined {
+  const resolved = resolveProjectRoot({ explicitRoot: ctx?.cwdOverride });
+  const rt = openSoul(resolved);
+  const repoId = readRepoId(resolved.cribDir);
+  if (!repoId) return undefined;
+  const deps = createMemoryDeps(rt.soul, resolved.repoRoot, resolved.cribDir);
+  if (!deps) return undefined;
+  return {
+    api: createMemoryApi(rt.soul, resolved.repoRoot, resolved.cribDir, deps),
+    deps,
+    repoId,
+    repoRoot: resolved.repoRoot,
+    env: process.env,
+  };
+}
+
+/**
+ * The device identity seeded into the store's sync-state (envelope METADATA — it never enters an
+ * id or hash seed, D1). Stable per machine so two devices on one repo produce distinct envelopes;
+ * `KCRIB_DEVICE_ID` overrides (a fleet of agents on one host shares the id deliberately).
+ */
+function syncDeviceId(env: NodeJS.ProcessEnv): string {
+  const raw = env.KCRIB_DEVICE_ID ?? `device:${hostname()}`;
+  return raw.replace(/\s+/g, '').slice(0, 128) || 'device:unknown';
+}
+
+/** The sync config one store scope was init-synced with (repoId-keyed for local), or undefined. */
+function syncConfigFor(
+  scope: SyncStoreScope,
+  repoId: string,
+  env: NodeJS.ProcessEnv,
+): SyncConfigFile | undefined {
+  return readSyncConfig(scope, scope === 'local' ? repoId : 'global', env);
+}
+
+/**
+ * Build the backend port the config names — the user-owned storage target recorded at init-sync
+ * (D6). An http target's Authorization header value is read from `authEnv` at CALL time by the
+ * adapter itself; nothing credential-shaped ever lives in the config.
+ */
+function backendFromConfig(config: SyncConfigFile): {
+  url: string;
+  port: FileSyncObjectStore | HttpSyncObjectStore;
+} {
+  const b = config.backend;
+  if (b === undefined) {
+    throw new Error(
+      `the ${config.scope} sync config records no backend target — re-run \`crib memory init-sync\` with --url`,
+    );
+  }
+  return {
+    url: b.url,
+    port:
+      b.kind === 'file'
+        ? new FileSyncObjectStore(b.url)
+        : new HttpSyncObjectStore(b.url, b.authEnv !== undefined ? { authEnvName: b.authEnv } : {}),
+  };
+}
+
+/**
+ * Keyfile resolution must not be shadowed by an ambient `KCRIB_SYNC_KEY`: `resolveSyncKey` checks
+ * the env FIRST, so an explicit `--keyfile` / `--gen-key` target is resolved with the env var
+ * blanked out — the explicit source the operator named wins (D7).
+ */
+function envForExplicitKeyFile(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
+  return { ...env, KCRIB_SYNC_KEY: undefined };
+}
+
+/**
+ * Resolve the sync key from what the config references, then VERIFY the fingerprint (D7): a key
+ * that resolves but does not match init-sync's fingerprint would push blobs no device can decrypt,
+ * so the mismatch fails closed instead of shipping. The error names the SOURCE, never the bytes.
+ */
+function syncKeyFromConfig(config: SyncConfigFile, env: NodeJS.ProcessEnv): Uint8Array {
+  const { key } = resolveSyncKey({
+    ...(config.keySource === 'env' && config.keyEnv !== undefined ? { keyEnv: config.keyEnv } : {}),
+    ...(config.keySource === 'keyfile' && config.keyFile !== undefined
+      ? { keyFile: config.keyFile }
+      : {}),
+    env: config.keySource === 'keyfile' ? envForExplicitKeyFile(env) : env,
+  });
+  if (keyFingerprint(key) !== config.keyFingerprint) {
+    throw new Error(
+      `the resolved sync key does not match the ${config.scope} config fingerprint — check ${
+        config.keySource === 'env' ? `env ${config.keyEnv ?? 'KCRIB_SYNC_KEY'}` : 'the keyfile'
+      }`,
+    );
+  }
+  return key;
+}
+
+/**
+ * The stable cross-clone sync id for local-scope events: the manifest's repo.id is a per-checkout
+ * randomUUID, so two clones of the same repository could never reconcile. The default derives a
+ * blake3 digest of `git remote.origin.url` — hashed, NEVER the raw URL, which can carry embedded
+ * credentials — and falls back to the manifest repo.id when the repo has no origin. An explicit
+ * `--sync-id` wins verbatim (that is how two clones agree on the same id).
+ */
+function deriveSyncId(repoRoot: string, fallback: string): string {
+  let remote: string | undefined;
+  try {
+    remote = execFileSync('git', ['config', '--get', 'remote.origin.url'], {
+      cwd: repoRoot,
+      stdio: ['ignore', 'pipe', 'ignore'],
+      timeout: 5000,
+    })
+      .toString()
+      .trim();
+  } catch {
+    remote = undefined;
+  }
+  if (remote === undefined || remote.length === 0) return fallback;
+  return `sync-${blake3Hex(remote).slice(0, 32)}`;
+}
+
+/**
+ * `crib memory init-sync --scope repo|global --backend file|http --url <target>` (D5/D7): resolve
+ * the key FAIL-CLOSED (env / keyfile / a freshly minted 0600 keyfile), probe the backend, seed the
+ * sync-state baseline, and write the config file — which carries a key REFERENCE + fingerprint +
+ * epoch and the backend location, never key bytes and never a bearer token. Baseline semantics are
+ * printed, never implied: init-sync syncs NOTHING — current entries are marked acked (D5) so only
+ * post-init changes flow, and `--backfill` opts the next push into staging the full history.
+ */
+async function cmdMemoryInitSync(args: string[], ctx?: CmdCtx): Promise<number> {
+  const json = args.includes('--json');
+  const backfill = args.includes('--backfill');
+  const scopeFlag = stringFlag(args, '--scope') ?? 'repo';
+  if (scopeFlag !== 'repo' && scopeFlag !== 'global') {
+    process.stderr.write(`error: --scope must be repo or global (got '${scopeFlag}')\n`);
+    return EXIT.BAD_ARGS;
+  }
+  const scope: SyncStoreScope = scopeFlag === 'global' ? 'global' : 'local';
+  const syncIdFlag = stringFlag(args, '--sync-id');
+  if (syncIdFlag !== undefined && scope === 'global') {
+    process.stderr.write(
+      'error: --sync-id applies to --scope repo only — global-scope events carry no repo id (D1)\n',
+    );
+    return EXIT.BAD_ARGS;
+  }
+  if (syncIdFlag !== undefined && syncIdFlag.trim().length === 0) {
+    process.stderr.write('error: --sync-id must be a non-empty id\n');
+    return EXIT.BAD_ARGS;
+  }
+  const backendKind = stringFlag(args, '--backend');
+  const url = stringFlag(args, '--url');
+  if (!backendKind || (backendKind !== 'file' && backendKind !== 'http') || !url) {
+    process.stderr.write(
+      'usage: crib memory init-sync --scope repo|global --backend file|http --url <target> [--key-env <NAME>|--keyfile <path>|--gen-key] [--secret-env <NAME>] [--sync-id <id>] [--backfill] [--json]\n',
+    );
+    return EXIT.BAD_ARGS;
+  }
+  const keyEnv = stringFlag(args, '--key-env');
+  const keyFileFlag = stringFlag(args, '--keyfile');
+  const genKey = args.includes('--gen-key');
+  const secretEnv = stringFlag(args, '--secret-env');
+  if ([keyEnv !== undefined, keyFileFlag !== undefined, genKey].filter(Boolean).length > 1) {
+    process.stderr.write('error: choose ONE of --key-env / --keyfile / --gen-key\n');
+    return EXIT.BAD_ARGS;
+  }
+  if (backendKind === 'file' && secretEnv !== undefined) {
+    process.stderr.write('error: --secret-env applies to the http backend only\n');
+    return EXIT.BAD_ARGS;
+  }
+  const env = process.env;
+
+  // The key resolves BEFORE anything is written: the config persists a fingerprint of the bytes,
+  // so an unresolvable or malformed key must fail here, not leave a config that cannot sync.
+  let key: Uint8Array;
+  let keySource: 'env' | 'keyfile';
+  let keyFile: string | undefined;
+  try {
+    if (genKey) {
+      // --gen-key mints 32 random bytes into a 0600 keyfile (randomness never feeds an id/hash).
+      const target = keyFileFlag ?? join(memoryHome(env), 'sync-key');
+      writeFileSync(target, genSyncKey(), { mode: 0o600 });
+      key = resolveSyncKey({ keyFile: target, env: envForExplicitKeyFile(env) }).key;
+      keySource = 'keyfile';
+      keyFile = target;
+    } else if (keyFileFlag !== undefined) {
+      key = resolveSyncKey({ keyFile: keyFileFlag, env: envForExplicitKeyFile(env) }).key;
+      keySource = 'keyfile';
+      keyFile = keyFileFlag;
+    } else if (keyEnv !== undefined) {
+      key = resolveSyncKey({ keyEnv, env }).key;
+      keySource = 'env';
+    } else {
+      const resolved = resolveSyncKey({ env });
+      key = resolved.key;
+      keySource = resolved.source;
+    }
+  } catch (e) {
+    process.stderr.write(`error: ${(e as Error).message}\n`);
+    return EXIT.ERROR;
+  }
+
+  const opened = openSyncApi(ctx);
+  if (!opened) {
+    process.stderr.write('could not resolve repoId for memory — run `crib index` first\n');
+    return EXIT.NOT_INDEXED;
+  }
+  const { api, deps, repoId, repoRoot } = opened;
+  // The stable cross-clone id: explicit --sync-id wins; otherwise derive from the git origin URL
+  // (hashed), falling back to the per-checkout manifest repo.id. Global scope carries none (D1).
+  const syncRepoId = scope === 'local' ? (syncIdFlag ?? deriveSyncId(repoRoot, repoId)) : undefined;
+  // The config is keyed on the manifest's repo.id — materialize it first, or a never-written
+  // store would key the config as `local-unknown-repo.json` and the next sync could not find it.
+  if (scope === 'local') deps.local.ensureManifest();
+  const backend = {
+    kind: backendKind as 'file' | 'http',
+    url,
+    ...(backendKind === 'http' && secretEnv !== undefined ? { authEnv: secretEnv } : {}),
+  };
+  const port =
+    backend.kind === 'file'
+      ? new FileSyncObjectStore(url)
+      : new HttpSyncObjectStore(
+          url,
+          backend.authEnv !== undefined ? { authEnvName: backend.authEnv } : {},
+        );
+  // Fail fast on a typo'd target: an unreachable backend is a refusal, not a config to heal later.
+  const probe = await port.probe();
+  if (!probe.ok) {
+    process.stderr.write(`error: backend probe failed — ${probe.message}\n`);
+    return EXIT.ERROR;
+  }
+  const result = await api.syncInit({
+    scope,
+    deviceId: syncDeviceId(env),
+    key,
+    keySource,
+    backfill,
+    ...(keyEnv !== undefined ? { keyEnv } : {}),
+    ...(keyFile !== undefined ? { keyFile } : {}),
+    ...(syncRepoId !== undefined ? { syncRepoId } : {}),
+    backend,
+  });
+  if (!result.ok || !result.baseline || !result.configPath) {
+    process.stderr.write(`error: ${result.error ?? 'init-sync failed'}\n`);
+    return EXIT.ERROR;
+  }
+  const fingerprint = result.keyFingerprint ?? '';
+  if (json) {
+    process.stdout.write(
+      `${JSON.stringify(
+        {
+          ok: true,
+          scope,
+          ...(syncRepoId !== undefined ? { syncRepoId } : {}),
+          configPath: result.configPath,
+          keySource,
+          keyFingerprint: fingerprint,
+          keyEpoch: result.keyEpoch,
+          backend,
+          baseline: {
+            created: result.baseline.created,
+            acked: result.baseline.state.ackedEvents.length,
+            backfill: backfill === true,
+          },
+          synced: false,
+          message: 'init-sync synced nothing — the baseline marks current entries acked (D5)',
+        },
+        null,
+        2,
+      )}\n`,
+    );
+    return EXIT.OK;
+  }
+  const acked = result.baseline.state.ackedEvents.length;
+  process.stdout.write(
+    `${[
+      `sync configured: scope=${scope} id=${scope === 'local' ? repoId : 'global'}${
+        syncRepoId !== undefined ? ` (sync-id ${syncRepoId})` : ''
+      }`,
+      `  backend: ${backendKind} ${url} (${probe.message})`,
+      `  config: ${result.configPath} (keySource ${keySource}, fingerprint ${fingerprint.slice(0, 12)}, epoch ${result.keyEpoch}) — references only, never key bytes`,
+      backfill
+        ? '  baseline: backfill — nothing acked; the next push stages every live entry'
+        : `  baseline: ${acked} current entries marked acked${result.baseline.created ? ' (state created)' : ' (state already existed — unchanged)'}`,
+      '  NOT synced: init-sync only seeds the baseline (D5) — nothing has been pushed.',
+      backfill
+        ? '  next step: `crib memory sync push` stages and uploads the full history.'
+        : '  next step: `crib memory sync push` (add --backfill to also upload the full history).',
+    ].join('\n')}\n`,
+  );
+  return EXIT.OK;
+}
+
+/** One scope's human-readable sync-status line (the `--json` shape is the raw SyncStatusResult). */
+function renderSyncStatusLine(s: SyncStatusResult): string {
+  if (!s.available || s.status === 'not-initialized') {
+    return `  ${s.store}: not initialized — run \`crib memory init-sync\` first (D5)`;
+  }
+  const lines = [
+    `  ${s.store}: epoch ${s.keyEpoch}, staged ${s.staged}, pending ${s.pending}, acked ${s.acked}, batches pulled ${s.batchesPulled}, conflicts ${s.conflicts.length}, quarantined ${s.quarantine.length}, purge acks ${s.purgeAcks}`,
+  ];
+  if (s.remote) {
+    lines.push(
+      `    remote: ${s.remote.backend} — ${s.remote.reachable ? 'reachable' : 'unreachable'}${s.remote.message ? ` (${s.remote.message})` : ''}, ${s.remote.batches} batch(es), ${s.remote.events} event blob(s)${s.remote.keyFingerprintMatch !== undefined ? `, fingerprint match: ${s.remote.keyFingerprintMatch ? 'yes' : 'NO'}` : ''}`,
+    );
+  }
+  return lines.join('\n');
+}
+
+/**
+ * `crib memory sync [push|pull|status]` (D12). Default action = status (read-only). push/pull run
+ * the engine per CONFIGURED scope — each scope resolves its own backend + key from its config
+ * (the CLI is the only surface with network reach; the MCP server never sees a backend port).
+ * An unconfigured scope is reported honestly, never silently skipped.
+ */
+async function cmdMemorySync(args: string[], ctx?: CmdCtx): Promise<number> {
+  const positionals = positionalsOf(args);
+  const action =
+    positionals[0] !== undefined && !positionals[0].startsWith('-') ? positionals[0] : 'status';
+  const dryRun = args.includes('--dry-run');
+  const json = args.includes('--json');
+  const backfill = args.includes('--backfill');
+  const skip = args.includes('--skip');
+  const maxEvents = intFlag(args, '--max-events');
+  const opened = openSyncApi(ctx);
+  if (!opened) {
+    process.stderr.write('could not resolve repoId for memory — run `crib index` first\n');
+    return EXIT.NOT_INDEXED;
+  }
+  const { api, deps, repoId, env } = opened;
+  const now = (): string => new Date().toISOString();
+
+  if (action === 'status') {
+    const stores: SyncStatusResult[] = [];
+    const configs: Record<string, unknown>[] = [];
+    for (const scope of ['local', 'global'] as const) {
+      const store = scope === 'local' ? deps.local : deps.global;
+      const config = syncConfigFor(scope, repoId, env);
+      let key: Uint8Array | undefined;
+      let backendPort: FileSyncObjectStore | HttpSyncObjectStore | undefined;
+      let backendUrl: string | undefined;
+      if (config?.backend !== undefined) {
+        try {
+          key = syncKeyFromConfig(config, env);
+          backendUrl = config.backend.url;
+          backendPort = backendFromConfig(config).port;
+        } catch (e) {
+          // A key-resolution failure degrades the report's remote half — the sidecar counts are
+          // still served, and the error is stated, never swallowed.
+          process.stderr.write(`warning: ${scope}: ${(e as Error).message}\n`);
+        }
+      }
+      stores.push(
+        await syncEngineStatus(store, {
+          ...(backendPort !== undefined ? { backend: backendPort } : {}),
+          ...(backendPort !== undefined && key !== undefined ? { key } : {}),
+        }),
+      );
+      configs.push({
+        scope,
+        configured: config !== undefined,
+        ...(config !== undefined
+          ? {
+              configPath: syncConfigPath(scope, scope === 'local' ? repoId : 'global', env),
+              keyEpoch: config.keyEpoch,
+              keySource: config.keySource,
+              ...(backendUrl !== undefined && config.backend !== undefined
+                ? { backend: `${config.backend.kind} ${backendUrl}` }
+                : {}),
+            }
+          : {}),
+      });
+    }
+    if (json) {
+      process.stdout.write(
+        `${JSON.stringify({ ok: true, op: 'status', stores, configs }, null, 2)}\n`,
+      );
+    } else {
+      process.stdout.write(
+        `sync status (device ${syncDeviceId(env)}):\n${stores.map(renderSyncStatusLine).join('\n')}\n`,
+      );
+    }
+    return EXIT.OK;
+  }
+
+  if (action === 'push' || action === 'pull') {
+    const stores: SyncStoreRun[] = [];
+    for (const scope of ['local', 'global'] as const) {
+      const config = syncConfigFor(scope, repoId, env);
+      if (config?.backend === undefined) {
+        stores.push({
+          store: scope,
+          ok: false,
+          error: `no ${scope} sync config — run \`crib memory init-sync --scope ${scope === 'local' ? 'repo' : 'global'}\` first`,
+        });
+        continue;
+      }
+      let key: Uint8Array;
+      try {
+        key = syncKeyFromConfig(config, env);
+      } catch (e) {
+        stores.push({ store: scope, ok: false, error: (e as Error).message });
+        continue;
+      }
+      const run = await api.sync({
+        op: action,
+        stores: [scope],
+        backend: backendFromConfig(config).port,
+        // The fingerprint-verified bytes ride the request — the API uses EXACTLY these instead of
+        // re-resolving fail-closed (which could diverge from what was just verified, F6/F8/F12/F18).
+        key,
+        // The stable cross-clone sync id the config recorded at init-sync (a per-checkout
+        // manifest repo.id would make two real clones unable to reconcile).
+        ...(scope === 'local' && config.syncRepoId !== undefined
+          ? { syncRepoId: config.syncRepoId }
+          : {}),
+        dryRun,
+        ...(action === 'push' && backfill ? { backfill: true } : {}),
+        ...(action === 'push' && maxEvents !== undefined ? { maxEvents } : {}),
+        ...(action === 'pull' && skip ? { skip: true } : {}),
+      });
+      stores.push(
+        ...(run.ok === false && !('stores' in run)
+          ? []
+          : (run as { stores: SyncStoreRun[] }).stores),
+      );
+    }
+    // Exit semantics: a scope WITHOUT sync config is a stated skip, not a failure — the run exits
+    // 0 when every CONFIGURED scope succeeded and at least one ran; an unconfigured-everything run
+    // fails (the honest "run init-sync first" posture), and a configured-scope failure fails too.
+    const ran = stores.filter((s) => s.error === undefined);
+    const ok = ran.length > 0 && ran.every((s) => s.ok);
+    if (json) {
+      process.stdout.write(`${JSON.stringify({ ok, op: action, dryRun, stores }, null, 2)}\n`);
+    } else {
+      const lines = stores.map((s) => {
+        if (s.error !== undefined) return `  ${s.store}: not run — ${s.error}`;
+        if (s.push !== undefined) {
+          const p = s.push;
+          return [
+            `  ${s.store}: ${p.status}${p.dryRun ? ' (dry-run — nothing written)' : ''}`,
+            `    staged now ${p.stagedNow}, pushed ${p.pushed}, acked ${p.acked}, deferred ${p.deferred}, batches ${p.batches.length}, refusals ${p.refusals.length}${p.aborted ? `, ABORTED (secret-scan hit on ${p.aborted.payloadId})` : ''}`,
+            ...p.refusals.map((r) => `    refused: ${r.payloadId} — ${r.reason}`),
+            ...(p.message !== undefined ? [`    ${p.message}`] : []),
+          ].join('\n');
+        }
+        const p = s.pull;
+        if (p === undefined) return `  ${s.store}: no report`;
+        return [
+          `  ${s.store}: ${p.status}${p.dryRun ? ' (dry-run — nothing written)' : ''}`,
+          `    batches seen ${p.batchesSeen}, applied ${p.batchesApplied}, applied events ${p.applied.length}, surfaced ${p.surfaced.length}, conflicts added ${p.conflictsAdded.length}, quarantined ${p.quarantined.length}, missing ${p.missing.length}`,
+          ...p.surfaced.map((x) => `    surfaced: ${x.eventId} — ${x.reason}`),
+          ...(p.halted !== undefined
+            ? [
+                `    HALTED: ${p.halted.reason} (cursor unmoved — fix and re-run, or re-run with --skip to quarantine)`,
+              ]
+            : []),
+          ...(p.message !== undefined ? [`    ${p.message}`] : []),
+        ].join('\n');
+      });
+      process.stdout.write(`sync ${action}${dryRun ? ' (dry-run)' : ''}:\n${lines.join('\n')}\n`);
+    }
+    return ok ? EXIT.OK : EXIT.ERROR;
+  }
+
+  if (action === 'rotate-key') {
+    // D7: verify-everything-under-the-old-key → re-encrypt + re-push under the NEW key → bump the
+    // epoch LAST. The new key must be given explicitly — defaulting it to the old resolution would
+    // make rotation a silent no-op.
+    const keyEnv = stringFlag(args, '--key-env');
+    const keyFileFlag = stringFlag(args, '--keyfile');
+    const genKey = args.includes('--gen-key');
+    if ([keyEnv !== undefined, keyFileFlag !== undefined, genKey].filter(Boolean).length !== 1) {
+      process.stderr.write(
+        'usage: crib memory sync rotate-key (--gen-key | --key-env <NAME> | --keyfile <path>) [--dry-run]\n',
+      );
+      return EXIT.BAD_ARGS;
+    }
+    let newKey: Uint8Array;
+    let newKeyFile: string | undefined;
+    try {
+      if (genKey) {
+        const target = keyFileFlag ?? join(memoryHome(env), 'sync-key');
+        writeFileSync(target, genSyncKey(), { mode: 0o600 });
+        newKey = resolveSyncKey({ keyFile: target, env: envForExplicitKeyFile(env) }).key;
+        newKeyFile = target;
+      } else if (keyFileFlag !== undefined) {
+        newKey = resolveSyncKey({ keyFile: keyFileFlag, env: envForExplicitKeyFile(env) }).key;
+        newKeyFile = keyFileFlag;
+      } else {
+        newKey = resolveSyncKey({ keyEnv, env }).key;
+      }
+    } catch (e) {
+      process.stderr.write(`error: ${(e as Error).message}\n`);
+      return EXIT.ERROR;
+    }
+    const principalId = env.KCRIB_PRINCIPAL_ID ?? DEFAULT_MIGRATION_PRINCIPAL_ID;
+    const lines: string[] = [];
+    let ok = true;
+    for (const scope of ['local', 'global'] as const) {
+      const store = scope === 'local' ? deps.local : deps.global;
+      const config = syncConfigFor(scope, repoId, env);
+      if (config?.backend === undefined) {
+        lines.push(`  ${scope}: no sync config — nothing to rotate`);
+        continue;
+      }
+      let oldKey: Uint8Array;
+      try {
+        oldKey = syncKeyFromConfig(config, env);
+      } catch (e) {
+        lines.push(`  ${scope}: FAILED — ${(e as Error).message}`);
+        ok = false;
+        continue;
+      }
+      const res = await rotateSyncKey(store, backendFromConfig(config).port, {
+        key: oldKey,
+        newKey,
+        principalId,
+        now,
+        dryRun,
+        // The drain sweep must re-derive the SAME event ids the acks name — the stable sync id the
+        // config recorded at init-sync, not the per-checkout manifest repo.id.
+        ...(scope === 'local' && config.syncRepoId !== undefined
+          ? { syncRepoId: config.syncRepoId }
+          : {}),
+      });
+      ok = ok && res.ok;
+      lines.push(
+        `  ${scope}: ${res.status} — re-encrypted ${res.reEncrypted} event(s), epoch ${res.keyEpoch ?? '?'}`,
+      );
+      if (res.message !== undefined) lines.push(`    ${res.message}`);
+      if (res.warning !== undefined) lines.push(`    warning: ${res.warning}`);
+      if (res.pending !== undefined && res.pending > 0) {
+        lines.push(`    staged-but-unacked events: ${res.pending} — push before rotating`);
+      }
+      if (res.ok && !dryRun) {
+        // The config must name the NEW key REFERENCE (source + env/file), fingerprint and epoch, or
+        // the next push would re-resolve the OLD key and fail the fingerprint check. The stable
+        // syncRepoId reference survives the spread untouched.
+        const state = loadSyncState(store.rootDir);
+        const newSource: 'env' | 'keyfile' =
+          genKey || keyFileFlag !== undefined ? 'keyfile' : 'env';
+        writeSyncConfig(
+          {
+            ...config,
+            keySource: newSource,
+            // Writing the unused reference as undefined drops it from the JSON — switching
+            // env→keyfile must not leave a stale keyEnv behind (and vice versa).
+            ...(newSource === 'env'
+              ? { keyEnv, keyFile: undefined }
+              : { keyFile: newKeyFile, keyEnv: undefined }),
+            keyFingerprint: keyFingerprint(newKey),
+            keyEpoch: state?.keyEpoch ?? config.keyEpoch + 1,
+          },
+          env,
+        );
+      }
+    }
+    if (ok && !dryRun && newKeyFile !== undefined) {
+      lines.push(`  new keyfile: ${newKeyFile} (mode 0600)`);
+    }
+    process.stdout.write(`rotate-key${dryRun ? ' (dry-run)' : ''}:\n${lines.join('\n')}\n`);
+    if (ok && !dryRun) {
+      process.stdout.write(
+        '  D7 operator steps: verify a SECOND device pulls clean under the new key BEFORE `crib memory sync purge-sync --stale-epoch` deletes the old-epoch objects.\n',
+      );
+    }
+    return ok ? EXIT.OK : EXIT.ERROR;
+  }
+
+  if (action === 'purge-sync') {
+    // The stale-epoch purge is the CLI's job (the engine never deletes remote objects outside the
+    // purge path): delete remote blobs that no longer decrypt under the CURRENT key. The manifest
+    // must already name the local epoch — otherwise a peer that has not rotated yet would lose
+    // its not-yet-re-encrypted objects.
+    if (!args.includes('--stale-epoch')) {
+      process.stderr.write(
+        "purge-sync deletes the PREVIOUS key epoch's remote objects — pass --stale-epoch to confirm (run it only after every device rotated AND pulled clean, D7)\n",
+      );
+      return EXIT.BAD_ARGS;
+    }
+    const lines: string[] = [];
+    let ok = true;
+    for (const scope of ['local', 'global'] as const) {
+      const store = scope === 'local' ? deps.local : deps.global;
+      const config = syncConfigFor(scope, repoId, env);
+      if (config?.backend === undefined) {
+        lines.push(`  ${scope}: no sync config — nothing to purge`);
+        continue;
+      }
+      let key: Uint8Array;
+      try {
+        key = syncKeyFromConfig(config, env);
+      } catch (e) {
+        lines.push(`  ${scope}: FAILED — ${(e as Error).message}`);
+        ok = false;
+        continue;
+      }
+      const port = backendFromConfig(config).port;
+      const state = loadSyncState(store.rootDir);
+      const manifestBytes = await port.getObject(REMOTE_MANIFEST_KEY);
+      const manifest = manifestBytes !== undefined ? parseRemoteManifest(manifestBytes) : undefined;
+      if (state === undefined || manifest === undefined) {
+        lines.push(
+          `  ${scope}: ${state === undefined ? 'no sync-state — run init-sync first (D5)' : 'no readable remote manifest — nothing is provably stale'}`,
+        );
+        ok = false;
+        continue;
+      }
+      if (manifest.keyEpoch !== state.keyEpoch) {
+        lines.push(
+          `  ${scope}: refused — remote is at keyEpoch ${manifest.keyEpoch}, this device at ${state.keyEpoch}; rotate + pull on EVERY device before purging stale objects`,
+        );
+        ok = false;
+        continue;
+      }
+      // A current-epoch blob decrypts under the current key; an old-epoch (or corrupt) one fails
+      // GCM auth. Deleted objects are counted; a dry-run computes without deleting.
+      const listed = await port.listObjects('ev/');
+      let deleted = 0;
+      let kept = 0;
+      for (const k of listed.keys) {
+        const bytes = await port.getObject(k);
+        if (bytes === undefined) {
+          deleted++;
+          continue;
+        }
+        try {
+          decryptEvent(bytes, key);
+          kept++;
+        } catch (e) {
+          if (!(e instanceof SyncCryptoError)) throw e;
+          if (!dryRun) await port.deleteObject(k);
+          deleted++;
+        }
+      }
+      lines.push(
+        `  ${scope}: ${deleted} remote object(s) ${dryRun ? 'WOULD be' : ''}deleted, ${kept} kept under epoch ${state.keyEpoch}`,
+      );
+    }
+    process.stdout.write(
+      `purge-sync (stale epoch)${dryRun ? ' — dry-run' : ''}:\n${lines.join('\n')}\n`,
+    );
+    return ok ? EXIT.OK : EXIT.ERROR;
+  }
+
+  process.stderr.write(`unknown sync action: ${action} (push|pull|status|rotate-key|purge-sync)\n`);
+  return EXIT.BAD_ARGS;
+}
+
+/**
+ * `crib memory purge <mem-id>... --confirm <mem-id>...` (D11): logical tombstone FIRST, then the
+ * store-mediated shard rewrite, twin sweep, alias-resolved twin (alias lines RETAINED), and —
+ * when the local scope is configured — the remote blob deletes. The routed blobs are only touched
+ * when the config + key resolve; otherwise the report says the remote was NOT touched. The
+ * history-scan report is the honest limit: git history cannot provide irreversible deletion.
+ */
+async function cmdMemoryPurge(args: string[], ctx?: CmdCtx): Promise<number> {
+  const json = args.includes('--json');
+  const dryRun = args.includes('--dry-run');
+  const historyScan = args.includes('--history-scan');
+  // Positionals here are mem: ids; --confirm repeats the exact list (no wildcards, D11).
+  const ids = positionalsOf(args).filter((t) => t.startsWith('mem:'));
+  const confirmIds = repeatedFlag(args, '--confirm');
+  const storesFlag = stringFlag(args, '--stores');
+  if (ids.length === 0 || confirmIds.length === 0) {
+    process.stderr.write(
+      'usage: crib memory purge <mem-id>... --confirm <mem-id>... [--stores local,global] [--history-scan] [--dry-run] [--actor <id>] [--json]\n  the exact id list must be repeated in --confirm (no wildcards)\n',
+    );
+    return EXIT.BAD_ARGS;
+  }
+  const opened = openSyncApi(ctx);
+  if (!opened) {
+    process.stderr.write('could not resolve repoId for memory — run `crib index` first\n');
+    return EXIT.NOT_INDEXED;
+  }
+  const { api, repoId, env } = opened;
+  const actor =
+    stringFlag(args, '--actor') ?? env.KCRIB_PRINCIPAL_ID ?? DEFAULT_MIGRATION_PRINCIPAL_ID;
+  // Per-scope routes (ADR-003 D6/D11): the local and global stores can be synced to DIFFERENT
+  // backends with DIFFERENT keys, so each scope's remote delete leg must resolve from ITS OWN
+  // config. A scope with no config (or an unresolvable key) simply has no route — the purge still
+  // completes locally and the report states the remote was untouched.
+  const routes: Partial<
+    Record<
+      SyncStoreScope,
+      { backend: FileSyncObjectStore | HttpSyncObjectStore; syncKey: Uint8Array }
+    >
+  > = {};
+  for (const scope of ['local', 'global'] as const) {
+    try {
+      const config = syncConfigFor(scope, repoId, env);
+      if (config?.backend === undefined) continue;
+      routes[scope] = {
+        backend: backendFromConfig(config).port,
+        // fingerprint gate — a mismatched key refuses the run
+        syncKey: syncKeyFromConfig(config, env),
+      };
+    } catch (e) {
+      process.stderr.write(
+        `warning: ${scope} remote delete leg skipped — ${(e as Error).message}\n`,
+      );
+    }
+  }
+  const stores = storesFlag
+    ? (storesFlag.split(',').map((s) => s.trim()) as MemorySource[])
+    : undefined;
+  const result = await api.purgeRecords(ids, {
+    actor,
+    confirmIds,
+    dryRun,
+    historyScan,
+    ...(stores !== undefined ? { stores } : {}),
+    ...(Object.keys(routes).length > 0 ? { routes } : {}),
+  });
+  if (!result.ok) {
+    process.stderr.write(
+      `error: ${
+        result.message ??
+        (result.purged
+          .flatMap((r) => r.stores.map((s) => s.error ?? ''))
+          .filter(Boolean)
+          .join('; ') ||
+          'purge refused')
+      }\n`,
+    );
+    return EXIT.ERROR;
+  }
+  if (json) {
+    process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+    return EXIT.OK;
+  }
+  const lines: string[] = [];
+  for (const r of result.purged) {
+    lines.push(
+      `purge ${r.id}:${r.found ? '' : ' not found in any targeted store'}${r.resolvedTwin ? ` (alias twin ${r.resolvedTwin} purged with it; alias lines retained)` : ''}`,
+    );
+    for (const s of r.stores) {
+      if (s.error !== undefined) {
+        lines.push(`  ${s.store}: ${s.error}`);
+        continue;
+      }
+      lines.push(
+        `  ${s.store}: ${s.decisionId ? `tombstone decision ${s.decisionId}` : 'no tombstone'}; shard ${result.dryRun ? 'WOULD be' : ''}rewritten: ${s.removed ? 'yes' : 'no'}${s.twins.length > 0 ? `; twins swept: ${s.twins.join(', ')}` : ''}${s.teamOutcome === 'retract-only' ? '; team: retracted only (git history is the team backend — never physically rewritten)' : ''}`,
+      );
+    }
+    if (r.commits !== undefined) {
+      lines.push(
+        `  history-scan: ${r.commits.length} commit(s) still contain the id in .crib/memory — git history cannot provide irreversible deletion; rewriting history is a git operation crib does not perform`,
+      );
+      for (const c of r.commits) lines.push(`    ${c}`);
+    }
+  }
+  process.stdout.write(
+    `purge${result.dryRun ? ' (dry-run — nothing written)' : ''}:\n${lines.join('\n')}\n`,
+  );
+  return EXIT.OK;
+}
+
+/**
+ * `crib memory conflicts` — the read-only fold of the decision-level conflict groups (D8: a
+ * subject retracted on one device and superseded on another — or given two different successors)
+ * plus the sync conflict ledger (same id, different bytes — digests only, never payloads).
+ * Read-only: resolution happens through `crib memory resolve`, which APPENDS.
+ */
+function cmdMemoryConflicts(args: string[], ctx?: CmdCtx): number {
+  const json = args.includes('--json');
+  const opened = openSyncApi(ctx);
+  if (!opened) {
+    process.stderr.write('could not resolve repoId for memory — run `crib index` first\n');
+    return EXIT.NOT_INDEXED;
+  }
+  const { api, deps } = opened;
+  // The decision pool spans every store (audit posture: reporting gathers, the read projection
+  // folds per source) — a local supersede against a global retract must still surface here.
+  const decisions: MemoryDecision[] = [
+    ...(deps.team.readCollection('decisions').entries as MemoryDecision[]),
+    ...(deps.local.readCollection('decisions').entries as MemoryDecision[]),
+    ...(deps.global.readCollection('decisions').entries as MemoryDecision[]),
+  ];
+  const groups = decisionConflicts(decisions);
+  const ledger = api.listSyncConflicts();
+  if (json) {
+    process.stdout.write(
+      `${JSON.stringify({ ok: true, decisionConflicts: groups, syncConflicts: ledger.conflicts }, null, 2)}\n`,
+    );
+    return EXIT.OK;
+  }
+  if (groups.length === 0 && ledger.conflicts.length === 0) {
+    process.stdout.write(
+      'conflicts: none — no divergent retirement decisions, no byte conflicts.\n',
+    );
+    return EXIT.OK;
+  }
+  const lines: string[] = [];
+  for (const g of groups) {
+    lines.push(`decision conflict on ${g.subject} (${g.kind}): ${g.decisionIds.join(', ')}`);
+  }
+  for (const c of ledger.conflicts) {
+    lines.push(
+      `byte conflict on ${c.payloadId} (${c.store}, device ${c.sourceDevice}): local ${c.localDigest.slice(0, 12)} vs remote ${c.remoteDigest.slice(0, 12)} — resolve with \`crib memory resolve ${c.payloadId} (--successor <id> | --retract) --actor <id>\``,
+    );
+  }
+  process.stdout.write(`conflicts:\n${lines.join('\n')}\n`);
+  return EXIT.OK;
+}
+
+/**
+ * `crib memory resolve <record-id> (--successor <id> | --retract) --actor <id>` (D8): the
+ * append-only human resolution. Exactly one of successor / retract; the appended decision is
+ * content-addressed and itself syncs, so the resolution converges across devices.
+ */
+function cmdMemoryResolve(args: string[], ctx?: CmdCtx): number {
+  const json = args.includes('--json');
+  const id = positionalsOf(args)[0];
+  const successor = stringFlag(args, '--successor');
+  const retract = args.includes('--retract');
+  const actor = stringFlag(args, '--actor');
+  const reason = stringFlag(args, '--reason');
+  if (!id || !actor || (!successor && !retract) || (successor !== undefined && retract)) {
+    process.stderr.write(
+      'usage: crib memory resolve <record-id> (--successor <id> | --retract) --actor <id> [--reason <text>] [--json]\n',
+    );
+    return EXIT.BAD_ARGS;
+  }
+  const opened = openSyncApi(ctx);
+  if (!opened) {
+    process.stderr.write('could not resolve repoId for memory — run `crib index` first\n');
+    return EXIT.NOT_INDEXED;
+  }
+  const res = opened.api.resolveConflict(
+    id,
+    successor !== undefined ? { successor } : { retract: true },
+    actor,
+    reason,
+  );
+  if (!res.ok) {
+    process.stderr.write(`error: ${res.error}\n`);
+    return EXIT.ERROR;
+  }
+  if (json) {
+    process.stdout.write(`${JSON.stringify(res, null, 2)}\n`);
+    return EXIT.OK;
+  }
+  process.stdout.write(
+    `resolved ${res.id}: decision ${res.decisionId} appended to the ${res.decisionSource} store (append-only — the conflict ledger rows are never rewritten; the resolving decision syncs like any other)\n`,
+  );
+  return EXIT.OK;
+}
+
+// ─── P0.1 — `crib memory recall` (the protocol's documented CLI fallback) ─────────
+
+/**
+ * `crib memory recall "<query>"` — the CLI fallback the neutral agent-memory protocol names in
+ * every IDE instruction file (adapters.ts `neutralProtocolBody` tells agents to call
+ * `crib memory recall "<query>"`; before P0.1 that subcommand did not exist, so the documented
+ * fallback was dead). Produces the SAME result the MCP `memory_recall` verb returns: the same
+ * trust-tier eligibility (candidate-trust / quarantined / superseded records never surface in
+ * normal recall), the same 6-criterion rank, the same team + local + global default sources, the
+ * same projection shape (memories + conflicts + provenance + truncated), and the same arg semantics
+ * (limit defaults to 5, capped at 20; max-tokens defaults to 1200; include-pending is opt-in and
+ * returns untrusted candidates in a SEPARATE group).
+ *
+ * The MCP's `recallProjectionOf` is a private method of its verbs class, so the projection is
+ * composed here from @knowledge-crib/memory public exports — the identical gather → disposable
+ * in-memory FTS index → pure projection pipeline (verbs.ts never mixes memory BM25 with the soul's
+ * code BM25, and neither does this).
+ */
+function cmdMemoryRecall(args: string[], ctx?: CmdCtx): number {
+  // Query positionals are the search text, NOT a root (same discipline as `crib query`); root comes
+  // from --cwd / env / cwd walk-up only.
+  const q = positionalsOf(args).join(' ');
+  if (!q) {
+    process.stderr.write(
+      'usage: crib memory recall "<query>" [--limit N] [--sources team,local,global] [--target <id>] [--with-evidence] [--include-pending] [--max-tokens N] [--json]\n',
+    );
+    return EXIT.BAD_ARGS;
+  }
+  const json = args.includes('--json');
+  const withEvidence = args.includes('--with-evidence');
+  const includePending = args.includes('--include-pending');
+  const limitRaw = intFlag(args, '--limit');
+  const maxTokensRaw = intFlag(args, '--max-tokens');
+  const sourcesRaw = stringFlag(args, '--sources');
+  const targets = repeatedFlag(args, '--target');
+  let sources: MemorySource[] | undefined;
+  if (sourcesRaw !== undefined) {
+    const wanted = sourcesRaw
+      .split(',')
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
+    const bad = wanted.filter((s) => s !== 'team' && s !== 'local' && s !== 'global');
+    if (bad.length > 0) {
+      process.stderr.write(
+        `error: unknown source(s) ${bad.join(', ')} — --sources accepts team, local, global\n`,
+      );
+      return EXIT.BAD_ARGS;
+    }
+    if (wanted.length > 0) sources = wanted as MemorySource[];
+  }
+  const resolved = resolveProjectRoot({ explicitRoot: ctx?.cwdOverride });
+  const rt = openSoul(resolved);
+  const deps = createMemoryDeps(rt.soul, resolved.repoRoot, resolved.cribDir);
+  if (!deps) {
+    process.stderr.write('could not resolve repoId for memory — run `crib index` first\n');
+    return EXIT.NOT_INDEXED;
+  }
+  const projection = memoryRecallProjection(deps, {
+    query: q,
+    ...(targets.length > 0 ? { targetIds: targets } : {}),
+    ...(sources ? { sources } : {}),
+  });
+  // limit is the hard count cap (default 5, max 20 — same caps as memory_recall); the token budget
+  // trims within the limited set.
+  const limit = capInt(limitRaw, 5, 20);
+  const limited = projection.memories.slice(0, limit).map((m) => memoryRecallView(m, withEvidence));
+  const conflicts = projection.conflicts.map(memoryConflictView);
+  const maxTokens = maxTokensRaw === undefined ? 1200 : capMaxTokens(maxTokensRaw);
+  const fitted = fitTokenBudget(limited, maxTokens, (prefix) =>
+    JSON.stringify({
+      memories: prefix,
+      conflicts,
+      provenance: projection.provenance,
+      budgetExhausted: true,
+    }),
+  );
+  const result: Record<string, unknown> = {
+    memories: fitted.items,
+    conflicts,
+    provenance: projection.provenance,
+    truncated: fitted.budgetExhausted || projection.memories.length > limit,
+  };
+  // Opt-in, kept in its own group: `memories` stays trusted-only whatever this flag returns.
+  if (includePending) result.pending = pendingMemoryCandidates(deps.local, q, limit);
+  if (fitted.budgetExhausted) result.budgetExhausted = true;
+  if (json) process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+  else process.stdout.write(renderMemoryRecall(q, result));
+  return EXIT.OK;
+}
+
+/** Read an integer-valued flag (`--limit 5`), or undefined when absent / not a number. */
+function intFlag(args: string[], name: string): number | undefined {
+  const idx = args.indexOf(name);
+  if (idx < 0) return undefined;
+  const parsed = Number.parseInt(args[idx + 1] ?? '', 10);
+  return Number.isFinite(parsed) ? parsed : undefined;
+}
+
+/** Read a string-valued flag (`--sources team,local`), or undefined when absent. */
+function stringFlag(args: string[], name: string): string | undefined {
+  const idx = args.indexOf(name);
+  return idx >= 0 ? (args[idx + 1] ?? undefined) : undefined;
+}
+
+/** Collect every occurrence of a repeatable flag's value (`--target a --target b` → [a, b]). */
+function repeatedFlag(args: string[], name: string): string[] {
+  const out: string[] = [];
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === name) {
+      const value = args[i + 1];
+      if (value && !value.startsWith('-')) out.push(value);
+    }
+  }
+  return out;
+}
+
+/**
+ * Build the recall projection from the three stores — the CLI-side twin of the MCP's private
+ * `recallProjectionOf`: gather → FTS5 lexical index (never mixed with the soul's code BM25) → pure
+ * 6-criterion rank + conflict projection, with fresh revalidation against the live soul (the
+ * evaluator + SoulStoreSoulPort are always wired by {@link createMemoryDeps}). G3.1 — the
+ * persistent FTS snapshot serves the all-sources path (kept current by the store write hooks,
+ * self-healing); a `--sources` filter keeps the ephemeral `:memory:` rebuild (a subset corpus
+ * would rank differently — the byte-comparability invariant persistent-fts.ts pins). G3.2 — the
+ * versioned scorer names its configuration on the provenance (red line #6). G3.3 — the shared
+ * generation-keyed cache means recall never revalidates every record per query (red line #1).
+ * The FTS handle is closed in a finally — a `:memory:` DB holds no filesystem lock, and the
+ * snapshot releases its SQLite handle + write listeners.
+ */
+function memoryRecallProjection(
+  deps: NonNullable<ReturnType<typeof createMemoryDeps>>,
+  opts: { query: string; targetIds?: string[]; sources?: MemorySource[] },
+): RecallProjection {
+  const stores = { team: deps.team, local: deps.local, global: deps.global };
+  const gathered = gatherRecall(stores, opts.sources ? { sources: opts.sources } : {});
+  const fts = opts.sources ? new MemoryFtsIndex(':memory:') : openMemoryFts(stores);
+  // Same persistent vector cache the MCP path opens — a CLI recall must not re-embed the ledger
+  // either (4.9 s for 307 records with a real model). Content-addressed, so no invalidation.
+  // Declared OUTSIDE the try so `finally` can close it.
+  const vectors = installedEmbedder
+    ? openMemoryVectors(
+        { team: deps.team, local: deps.local, global: deps.global },
+        {
+          embedderId: installedEmbedder.id,
+          dim: installedEmbedder.dim(),
+          textVersion: SEMANTIC_TEXT_VERSION,
+        },
+      )
+    : undefined;
+  try {
+    const scorer = new VersionedLexicalScorer({
+      fts,
+      records: gathered.records.map((r) => r.record),
+      // R2-selected ranker when a tier is installed; the incumbent otherwise (see
+      // docs/bench/retrieval-pre-registration-r2.md). The CLI and the MCP verbs must agree, or the
+      // same query answered from a terminal and from an IDE would rank differently.
+      strategy: installedEmbedder ? 'semantic-only' : 'lexical-only',
+      ...(installedEmbedder ? { embedder: installedEmbedder } : {}),
+      ...(vectors ? { vectors } : {}),
+    });
+    const bound = bindEvaluationPass(deps.evalCtx, gathered);
+    const projection = recallProjection(gathered, {
+      query: opts.query,
+      ...(opts.targetIds ? { targetIds: opts.targetIds } : {}),
+      lexicalScorer: scorer,
+      evaluator: deps.evaluator,
+      evalCtx: bound.evalCtx ?? deps.evalCtx,
+    });
+    // Red line #1 — the provenance names the generation the fresh verdicts were proven current
+    // against (null when no versioned dependency could be fingerprinted).
+    return {
+      ...projection,
+      provenance: { ...projection.provenance, generation: bound.generation },
+    };
+  } finally {
+    fts.close();
+    vectors?.close();
+  }
+}
+
+/** A lightweight evidence pointer (kind + verdict + soul anchor) — the default recall view. */
+function evidenceSummaryOf(ev: MemoryEvidence): Record<string, unknown> {
+  const out: Record<string, unknown> = { kind: ev.kind, verdict: ev.verdict };
+  if (ev.soulId) out.soulId = ev.soulId;
+  return out;
+}
+
+/**
+ * The public recall view of one scored record: verdicts + score + evidence (summary by default,
+ * full with `--with-evidence`). Same shape as the MCP `memory_recall` projection so both surfaces
+ * can be consumed identically. Version-aware (Gate 1.3): a memory-1 record keeps the W3 field set;
+ * a migrated memory-2 twin — which ranks when its alias snapshot restores eligibility — answers
+ * with its v2 fields (visibility / propositionKey / validTime / transactionTime / lineage) instead
+ * of the v1 fields the envelope no longer carries (scope / appliesTo / createdAt are undefined
+ * there and were emitted as such before this fix).
+ */
+function memoryRecallView(m: ScoredRecord, withEvidence?: boolean): Record<string, unknown> {
+  const r = m.record as MemoryRecord | MemoryRecordV2;
+  const base: Record<string, unknown> = {
+    id: r.id,
+    subject: r.subject,
+    claim: r.claim,
+    source: m.source,
+    trust: m.verdicts.trust,
+    evidence: m.verdicts.evidence,
+    applicability: m.verdicts.applicability,
+    lifecycle: m.verdicts.lifecycle,
+    score: m.score,
+    evidenceItems: withEvidence === true ? r.evidence : r.evidence.map((e) => evidenceSummaryOf(e)),
+  };
+  if (isMemoryRecordV2(r)) {
+    return {
+      ...base,
+      schemaVersion: '2',
+      visibility: r.visibility,
+      propositionKey: r.propositionKey,
+      validTime: r.validTime,
+      transactionTime: r.transactionTime,
+      lineage: r.lineage,
+    };
+  }
+  return {
+    ...base,
+    scope: r.scope,
+    appliesTo: r.appliesTo,
+    createdAt: r.createdAt,
+  };
+}
+
+/** A conflict-group view: the shared key + subject + scope + the member record ids. */
+function memoryConflictView(g: ConflictGroup): Record<string, unknown> {
+  return {
+    key: g.key,
+    subject: g.subject,
+    scope: g.scope,
+    recordIds: g.records.map((r) => r.id),
+  };
+}
+
+/**
+ * Untrusted, in-flight observations from the LOCAL candidate pool (`--include-pending`) — the
+ * shared working set for a swarm of agents on one repository. The trust model deliberately hides
+ * these from normal recall (a claim becomes trusted by passing a gate, never by an agent writing it
+ * down), so they are returned in a SEPARATE group, never merged into `memories`, every entry
+ * stamped `trust: 'untrusted'` + `status: 'pending'` — a lead, not an established fact.
+ */
+function pendingMemoryCandidates(
+  local: MemoryStore,
+  query: string,
+  limit: number,
+): Array<Record<string, unknown>> {
+  const terms = query
+    .toLowerCase()
+    .split(/[^a-z0-9_]+/)
+    .filter((t) => t.length > 2);
+  const out: Array<{ score: number; view: Record<string, unknown> }> = [];
+  for (const entry of local.readCollection('candidates').entries) {
+    const rec = entry as unknown as Record<string, unknown>;
+    const claim = String(rec.claim ?? '');
+    const subject = String(rec.subject ?? '');
+    const haystack = `${subject} ${claim}`.toLowerCase();
+    const score = terms.length === 0 ? 1 : terms.filter((t) => haystack.includes(t)).length;
+    if (score === 0) continue;
+    out.push({
+      score,
+      view: {
+        id: rec.id,
+        kind: rec.kind,
+        subject,
+        claim,
+        // MemoryCandidate ships the actor at `authorship.actor` (memory-1 schema); the id is
+        // content-addressed over the same field, so this is the only place attribution lives.
+        actor: (rec.authorship as { actor?: string } | undefined)?.actor,
+        // Stated on every entry, not just in the group name, because a single view can be copied
+        // out of its group and lose that context.
+        trust: 'untrusted',
+        status: 'pending',
+      },
+    });
+  }
+  return out
+    .sort((a, b) => b.score - a.score || String(a.view.id).localeCompare(String(b.view.id)))
+    .slice(0, limit)
+    .map((x) => x.view);
+}
+
+/** Render the recall result as human-readable lines (the `--json` flag switches to the raw shape). */
+function renderMemoryRecall(query: string, result: Record<string, unknown>): string {
+  const prov = result.provenance as RecallProvenance;
+  const memories = result.memories as Array<Record<string, unknown>>;
+  const conflicts = result.conflicts as Array<Record<string, unknown>>;
+  const pending = (result.pending as Array<Record<string, unknown>> | undefined) ?? [];
+  const lines: string[] = [
+    `memory recall "${query}" — ${memories.length} memories (considered ${prov.counts.considered}, eligible ${prov.counts.eligible}, conflicts ${prov.counts.conflicts}, team=${prov.counts.team} local=${prov.counts.local} global=${prov.counts.global}, fresh=${prov.fresh})`,
+  ];
+  if (memories.length === 0) lines.push('  no eligible memories matched');
+  memories.forEach((m, i) => {
+    const sc = m.score as RecallScore;
+    lines.push(
+      `  ${i + 1}. ${String(m.id)} [${String(m.source)}] trust=${String(m.trust)} evidence=${String(m.evidence)} applicability=${String(m.applicability)} lifecycle=${String(m.lifecycle)}`,
+    );
+    lines.push(`     ${String(m.claim)}`);
+    lines.push(
+      `     subject=${String(m.subject)} score lex=${sc.lexical} source=${sc.sourceTier} evidence=${sc.evidenceQuality} feedback=${sc.feedbackAdjust}`,
+    );
+  });
+  if (conflicts.length > 0) {
+    lines.push(`conflicts (${conflicts.length}):`);
+    for (const g of conflicts) {
+      lines.push(
+        `  - subject ${String(g.subject)} / scope ${JSON.stringify(g.scope)}: ${(g.recordIds as string[]).join(', ')}`,
+      );
+    }
+  }
+  if (pending.length > 0) {
+    lines.push(`pending — untrusted candidate leads, never established facts (${pending.length}):`);
+    for (const p of pending) {
+      lines.push(`  - ${String(p.id)} [${String(p.actor ?? 'unknown')}] ${String(p.claim)}`);
+    }
+  }
+  if (result.truncated === true) {
+    lines.push(
+      `truncated: ${prov.counts.eligible - memories.length} more eligible (raise --limit)`,
+    );
+  }
+  return `${lines.join('\n')}\n`;
+}
+
+// ─── Gate 1.3 — `crib memory search|get|supersede|delete|history` (the portable API surface) ──
+
+/**
+ * Parse the shared `--sources team,local,global` flag (recall + search). Returns an error string
+ * for an unknown name so both commands print the same message; undefined sources = all three.
+ */
+function memorySourcesFlag(args: string[]): { sources?: MemorySource[]; error?: string } {
+  const raw = stringFlag(args, '--sources');
+  if (raw === undefined) return {};
+  const wanted = raw
+    .split(',')
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+  const bad = wanted.filter((s) => s !== 'team' && s !== 'local' && s !== 'global');
+  if (bad.length > 0) {
+    return { error: `unknown source(s) ${bad.join(', ')} — --sources accepts team, local, global` };
+  }
+  return wanted.length > 0 ? { sources: wanted as MemorySource[] } : {};
+}
+
+/** The G1.3 search-hit view — the SAME projection the MCP `memory{op:'search'}` verb returns. */
+function memorySearchHitView(h: SearchHit, withEvidence?: boolean): Record<string, unknown> {
+  const view = memoryRecallView(
+    {
+      // ScoredRecord.record is typed MemoryRecord but a migrated twin is v2 at runtime — the same
+      // widening recallProjection itself relies on; memoryRecallView narrows via isMemoryRecordV2.
+      record: h.record as MemoryRecord,
+      source: h.placement[0] ?? 'team',
+      verdicts: h.verdicts,
+      score: h.score,
+    },
+    withEvidence,
+  );
+  return {
+    ...view,
+    schemaVersion: h.schemaVersion,
+    verdicts: h.verdicts,
+    visibility: h.visibility,
+    ...(h.propositionKey !== undefined ? { propositionKey: h.propositionKey } : {}),
+    ...(h.scope !== undefined ? { scope: h.scope } : {}),
+    placement: h.placement,
+    lineage: h.lineage,
+    freshness: h.freshness,
+    validity: h.validity,
+    rankingVersion: h.rankingVersion,
+    conflicts: h.conflicts,
+    supersededBy: h.supersededBy,
+  };
+}
+
+/**
+ * `crib memory search "<query>"` — the portable API's rich search. `--json` mirrors the MCP
+ * `memory{op:'search'}` response byte-for-byte in shape (query + hits + conflicts + provenance +
+ * truncated); the default render is human-readable. The projection is DELEGATED to
+ * {@link MemoryApi.search} with the same disposable in-memory FTS lexical scorer `recall` builds,
+ * so the two read commands can never rank differently.
+ */
+function cmdMemorySearch(args: string[], ctx?: CmdCtx): number {
+  const q = positionalsOf(args).join(' ');
+  const json = args.includes('--json');
+  const withEvidence = args.includes('--with-evidence');
+  const limitRaw = intFlag(args, '--limit');
+  const maxTokensRaw = intFlag(args, '--max-tokens');
+  const targets = repeatedFlag(args, '--target');
+  const { sources, error } = memorySourcesFlag(args);
+  if (error !== undefined) {
+    process.stderr.write(`error: ${error}\n`);
+    return EXIT.BAD_ARGS;
+  }
+  const resolved = resolveProjectRoot({ explicitRoot: ctx?.cwdOverride });
+  const rt = openSoul(resolved);
+  const deps = createMemoryDeps(rt.soul, resolved.repoRoot, resolved.cribDir);
+  if (!deps) {
+    process.stderr.write('could not resolve repoId for memory — run `crib index` first\n');
+    return EXIT.NOT_INDEXED;
+  }
+  const api = createMemoryApi(rt.soul, resolved.repoRoot, resolved.cribDir, deps);
+  // G3.1 — the persistent FTS snapshot gives search the same lexical signal `recall` ranks with
+  // without the O(N) per-query rebuild (kept current by the store write hooks, self-healing); a
+  // `--sources` filter keeps the ephemeral rebuild (a subset corpus would rank differently — the
+  // byte-comparability invariant). G3.2 — the versioned scorer names its configuration on the
+  // provenance (red line #6). api.search gathers internally, so this double-gather is the accepted
+  // cost of not widening the package's search signature for the adapter (same trade the MCP verb
+  // makes).
+  const gathered = gatherRecall(
+    { team: deps.team, local: deps.local, global: deps.global },
+    sources ? { sources } : {},
+  );
+  const fts = sources
+    ? new MemoryFtsIndex(':memory:')
+    : openMemoryFts({ team: deps.team, local: deps.local, global: deps.global });
+  let response: SearchResponse;
+  // Same persistent vector cache the MCP path opens — a CLI recall must not re-embed the ledger
+  // either (4.9 s for 307 records with a real model). Content-addressed, so no invalidation.
+  // Declared OUTSIDE the try so `finally` can close it.
+  const vectors = installedEmbedder
+    ? openMemoryVectors(
+        { team: deps.team, local: deps.local, global: deps.global },
+        {
+          embedderId: installedEmbedder.id,
+          dim: installedEmbedder.dim(),
+          textVersion: SEMANTIC_TEXT_VERSION,
+        },
+      )
+    : undefined;
+  try {
+    const scorer = new VersionedLexicalScorer({
+      fts,
+      records: gathered.records.map((r) => r.record),
+      // R2-selected ranker when a tier is installed; the incumbent otherwise (see
+      // docs/bench/retrieval-pre-registration-r2.md). The CLI and the MCP verbs must agree, or the
+      // same query answered from a terminal and from an IDE would rank differently.
+      strategy: installedEmbedder ? 'semantic-only' : 'lexical-only',
+      ...(installedEmbedder ? { embedder: installedEmbedder } : {}),
+      ...(vectors ? { vectors } : {}),
+    });
+    response = api.search(q, {
+      ...(targets.length > 0 ? { targetIds: targets } : {}),
+      ...(sources ? { sources } : {}),
+      lexicalScorer: scorer,
+      // page size decided up front so enrichment does only the returned work (see SearchOpts.limit);
+      // +1 keeps the `truncated` signal, which is derived from having MORE than the page.
+      limit: capInt(limitRaw, 5, 20) + 1,
+    });
+  } finally {
+    fts.close();
+    vectors?.close();
+  }
+  const limit = capInt(limitRaw, 5, 20);
+  const hits = response.hits.slice(0, limit).map((h) => memorySearchHitView(h, withEvidence));
+  const maxTokens = maxTokensRaw === undefined ? 2000 : capMaxTokens(maxTokensRaw);
+  const fitted = fitTokenBudget(hits, maxTokens, (prefix) =>
+    JSON.stringify({ hits: prefix, truncated: true, budgetExhausted: true }),
+  );
+  const result: Record<string, unknown> = {
+    query: q,
+    hits: fitted.items,
+    conflicts: response.conflicts,
+    provenance: response.provenance,
+    truncated: fitted.budgetExhausted || response.hits.length > limit,
+  };
+  if (fitted.budgetExhausted) result.budgetExhausted = true;
+  if (json) process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+  else process.stdout.write(renderMemorySearch(q, result));
+  return EXIT.OK;
+}
+
+/** Render the search result as human-readable lines (the `--json` flag switches to the raw shape). */
+function renderMemorySearch(query: string, result: Record<string, unknown>): string {
+  const prov = result.provenance as SearchResponse['provenance'];
+  const hits = result.hits as Array<Record<string, unknown>>;
+  const conflicts = result.conflicts as unknown[];
+  const lines: string[] = [
+    `memory search "${query}" — ${hits.length} hits (considered ${prov.counts.considered}, eligible ${prov.counts.eligible}, conflicts ${prov.counts.conflicts}, team=${prov.counts.team} local=${prov.counts.local} global=${prov.counts.global})`,
+  ];
+  if (hits.length === 0) lines.push('  no eligible memories matched');
+  hits.forEach((h, i) => {
+    const sc = h.score as RecallScore;
+    const v = h.verdicts as { trust: string; evidence: string; applicability: string };
+    const placement = (h.placement as string[]).join(',');
+    lines.push(
+      `  ${i + 1}. ${String(h.id)} [${placement}] schemaVersion=${String(h.schemaVersion)} trust=${v.trust} evidence=${v.evidence} applicability=${v.applicability}`,
+    );
+    lines.push(`     ${String(h.claim)}`);
+    lines.push(
+      `     subject=${String(h.subject)} score lex=${sc.lexical} source=${sc.sourceTier} evidence=${sc.evidenceQuality} feedback=${sc.feedbackAdjust} valid-from=${(h.validity as { from: string }).from}`,
+    );
+  });
+  if (conflicts.length > 0) lines.push(`conflicts (${conflicts.length})`);
+  if (result.truncated === true) lines.push('truncated: more eligible hits (raise --limit)');
+  return `${lines.join('\n')}\n`;
+}
+
+/**
+ * `crib memory get <id>` — the portable API's single-record read. Version-aware: a memory-1 record
+ * answers with the W3 field set; a memory-2 record with its v2 fields, and a legacy id resolves
+ * through the alias map to the migrated twin. `--json` mirrors the MCP `memory{op:'get'}` response
+ * shape exactly.
+ */
+function cmdMemoryGet(args: string[], ctx?: CmdCtx): number {
+  const id = positionalsOf(args)[0];
+  if (!id) {
+    process.stderr.write('usage: crib memory get <id> [--with-evidence] [--json]\n');
+    return EXIT.BAD_ARGS;
+  }
+  const json = args.includes('--json');
+  const withEvidence = args.includes('--with-evidence');
+  const resolved = resolveProjectRoot({ explicitRoot: ctx?.cwdOverride });
+  const rt = openSoul(resolved);
+  const deps = createMemoryDeps(rt.soul, resolved.repoRoot, resolved.cribDir);
+  if (!deps) {
+    process.stderr.write('could not resolve repoId for memory — run `crib index` first\n');
+    return EXIT.NOT_INDEXED;
+  }
+  const api = createMemoryApi(rt.soul, resolved.repoRoot, resolved.cribDir, deps);
+  const got = api.get(id);
+  if (!got.found || !got.record || !got.source) {
+    if (json) process.stdout.write(`${JSON.stringify({ found: false, id }, null, 2)}\n`);
+    else process.stdout.write(`memory get ${id} — not found in any store\n`);
+    return EXIT.ERROR;
+  }
+  const record = got.record;
+  const evidence =
+    withEvidence === true ? record.evidence : record.evidence.map((e) => evidenceSummaryOf(e));
+  let result: Record<string, unknown>;
+  if (!isMemoryRecordV2(record)) {
+    // Memory-1: the W3 response contract, byte-identical in shape to the MCP verb (the supersededBy
+    // link rides on decisions and is surfaced only when one exists). The verdicts are the EFFECTIVE
+    // four axes — a pulled tombstone must flip `lifecycle` here too (the stamped verdicts on a
+    // content-addressed entry never mutate, so the classic no-decision read is unchanged).
+    result = {
+      id: record.id,
+      subject: record.subject,
+      claim: record.claim,
+      scope: record.scope,
+      appliesTo: record.appliesTo,
+      authorship: record.authorship,
+      verdicts: {
+        trust: got.verdicts?.trust ?? record.verdicts.trust,
+        evidence: got.verdicts?.evidence ?? record.verdicts.evidence,
+        applicability: got.verdicts?.applicability ?? record.verdicts.applicability,
+        lifecycle: got.verdicts?.lifecycle ?? record.verdicts.lifecycle,
+      },
+      source: got.source,
+      createdAt: record.createdAt,
+      evidence,
+      ...(got.supersededBy && got.supersededBy.length > 0
+        ? { supersededBy: got.supersededBy }
+        : {}),
+    };
+  } else {
+    // Memory-2: effective (alias-restored) verdicts, visibility, the bi-temporal validity interval,
+    // lineage and placement — never the v1 fields the envelope no longer carries.
+    result = {
+      id: record.id,
+      requestedId: got.requestedId,
+      ...(got.resolvedViaAlias ? { resolvedViaAlias: got.resolvedViaAlias.legacyId } : {}),
+      schemaVersion: '2',
+      kind: record.kind,
+      subject: record.subject,
+      claim: record.claim,
+      visibility: got.visibility,
+      propositionKey: record.propositionKey,
+      sensitivity: record.sensitivity,
+      retentionPolicyId: record.retentionPolicyId,
+      provenance: record.provenance,
+      validity: got.validity,
+      lineage: got.lineage,
+      verdicts: got.verdicts,
+      source: got.source,
+      placement: got.placement,
+      legacyIds: got.legacyIds,
+      supersededBy: got.supersededBy,
+      evidence,
+    };
+  }
+  if (json) process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+  else process.stdout.write(renderMemoryGet(id, result));
+  return EXIT.OK;
+}
+
+/** Render one fetched record as human-readable lines. */
+function renderMemoryGet(requested: string, result: Record<string, unknown>): string {
+  const lines: string[] = [`memory get ${requested}`];
+  if (result.resolvedViaAlias !== undefined) {
+    lines.push(`  resolved via alias: legacy id ${String(result.resolvedViaAlias)}`);
+  }
+  lines.push(`  id=${String(result.id)} source=${String(result.source)}`);
+  lines.push(`  ${String(result.claim)}`);
+  lines.push(`  subject=${String(result.subject)}`);
+  const v = result.verdicts as Record<string, unknown> | undefined;
+  if (v) {
+    lines.push(
+      `  trust=${String(v.trust)} evidence=${String(v.evidence)} applicability=${String(v.applicability)} lifecycle=${String(v.lifecycle)}`,
+    );
+  }
+  if (result.schemaVersion === '2') {
+    lines.push(
+      `  schemaVersion=2 visibility=${String(result.visibility)} propositionKey=${String(result.propositionKey)}`,
+    );
+    lines.push(`  placement=${(result.placement as string[]).join(',')}`);
+  } else {
+    lines.push(`  createdAt=${String(result.createdAt)}`);
+  }
+  const supersededBy = result.supersededBy as unknown[] | undefined;
+  if (supersededBy !== undefined && supersededBy.length > 0) {
+    lines.push(`  superseded by ${supersededBy.length} successor(s)`);
+  }
+  return `${lines.join('\n')}\n`;
+}
+
+/**
+ * `crib memory supersede <id> --actor <id> (--successor <id> | --claim <text>)` — retire a record
+ * in favour of a successor. `--successor` names an EXISTING record; `--claim` (with optional
+ * --subject/--kind/--visibility/--proposition-key) writes a NEW memory-2 successor. The superseded
+ * line is never rewritten — the lifecycle change is an appended decision. Delegates to
+ * {@link MemoryApi.supersede}; `--json` mirrors the MCP response shape.
+ */
+function cmdMemorySupersede(args: string[], ctx?: CmdCtx): number {
+  const id = positionalsOf(args)[0];
+  const actor = stringFlag(args, '--actor');
+  const successor = stringFlag(args, '--successor');
+  const claim = stringFlag(args, '--claim');
+  const subject = stringFlag(args, '--subject');
+  const kind = stringFlag(args, '--kind');
+  const visibility = stringFlag(args, '--visibility');
+  const propositionKey = stringFlag(args, '--proposition-key');
+  const reason = stringFlag(args, '--reason');
+  const tool = stringFlag(args, '--tool');
+  const json = args.includes('--json');
+  if (!id || !actor || (successor === undefined && claim === undefined)) {
+    process.stderr.write(
+      'usage: crib memory supersede <id> --actor <id> (--successor <id> | --claim <text> [--subject <id>] [--kind <kind>] [--visibility private|workspace] [--proposition-key <key>]) [--reason <text>] [--tool <name>] [--json]\n',
+    );
+    return EXIT.BAD_ARGS;
+  }
+  if (visibility !== undefined && visibility !== 'private' && visibility !== 'workspace') {
+    process.stderr.write('error: --visibility must be private or workspace\n');
+    return EXIT.BAD_ARGS;
+  }
+  const resolved = resolveProjectRoot({ explicitRoot: ctx?.cwdOverride });
+  const rt = openSoul(resolved);
+  const deps = createMemoryDeps(rt.soul, resolved.repoRoot, resolved.cribDir);
+  if (!deps) {
+    process.stderr.write('could not resolve repoId for memory — run `crib index` first\n');
+    return EXIT.NOT_INDEXED;
+  }
+  const api = createMemoryApi(rt.soul, resolved.repoRoot, resolved.cribDir, deps);
+  const by: string | SupersedePayload =
+    successor !== undefined
+      ? successor
+      : {
+          claim: claim ?? '',
+          ...(subject !== undefined ? { subject } : {}),
+          ...(kind !== undefined ? { kind: kind as MemoryRecordKind } : {}),
+          // A claim-supersede publishes a successor carrying the live claim forward — default it to
+          // workspace visibility so a team-store supersede does not get refused by the D10 gate
+          // (private never enters git); an operator can still pass --visibility private explicitly.
+          ...(visibility !== undefined ? { visibility } : { visibility: 'workspace' as const }),
+          ...(propositionKey !== undefined ? { propositionKey } : {}),
+        };
+  const result = api.supersede(id, by, {
+    actor,
+    ...(reason !== undefined ? { reason } : {}),
+    ...(tool !== undefined ? { tool } : {}),
+  });
+  if (!result.ok) {
+    process.stderr.write(`error: ${result.error}\n`);
+    return EXIT.ERROR;
+  }
+  if (json) process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+  else {
+    process.stdout.write(
+      `superseded ${result.supersededId} -> successor ${result.successorId} (decision ${result.decisionId}, store ${result.decisionSource}${result.successorCreated ? '' : ', successor already existed'})\n`,
+    );
+  }
+  return EXIT.OK;
+}
+
+/**
+ * `crib memory delete <id> --actor <id>` — a tombstone, never a removal (memory is append-only).
+ * Resolves legacy ids through the alias map. Delegates to {@link MemoryApi.delete}.
+ */
+function cmdMemoryDelete(args: string[], ctx?: CmdCtx): number {
+  const id = positionalsOf(args)[0];
+  const actor = stringFlag(args, '--actor');
+  const reason = stringFlag(args, '--reason');
+  const json = args.includes('--json');
+  if (!id || !actor) {
+    process.stderr.write(
+      'usage: crib memory delete <id> --actor <id> [--reason <text>] [--json]\n',
+    );
+    return EXIT.BAD_ARGS;
+  }
+  const resolved = resolveProjectRoot({ explicitRoot: ctx?.cwdOverride });
+  const rt = openSoul(resolved);
+  const deps = createMemoryDeps(rt.soul, resolved.repoRoot, resolved.cribDir);
+  if (!deps) {
+    process.stderr.write('could not resolve repoId for memory — run `crib index` first\n');
+    return EXIT.NOT_INDEXED;
+  }
+  const api = createMemoryApi(rt.soul, resolved.repoRoot, resolved.cribDir, deps);
+  const result = api.delete(id, {
+    actor,
+    ...(reason !== undefined ? { reason } : {}),
+  });
+  if (!result.ok) {
+    process.stderr.write(`error: ${result.error}\n`);
+    return EXIT.ERROR;
+  }
+  if (json) process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+  else {
+    process.stdout.write(
+      `tombstoned ${result.id} (decision ${result.decisionId}, store ${result.decisionSource}) — the record line stays; recall excludes it, history/audit still see it\n`,
+    );
+  }
+  return EXIT.OK;
+}
+
+/** The G1.3 history view of one believed record — the MCP `memory{op:'history'}` per-record shape. */
+function memoryRecordBeliefView(b: RecordBelief, withEvidence?: boolean): Record<string, unknown> {
+  return {
+    id: b.id,
+    schemaVersion: b.schemaVersion,
+    subject: b.subject,
+    claim: b.claim,
+    recordedAt: b.recordedAt,
+    validTime: b.validTime,
+    lifecycle: b.lifecycle,
+    quarantined: b.quarantined,
+    ...(b.validTimeHolds !== undefined ? { validTimeHolds: b.validTimeHolds } : {}),
+    ...(b.validTimeWindow !== undefined ? { validTimeWindow: b.validTimeWindow } : {}),
+    placement: b.placement,
+    legacy: b.legacy,
+    evidence:
+      withEvidence === true
+        ? b.record.evidence
+        : b.record.evidence.map((e) => evidenceSummaryOf(e)),
+  };
+}
+
+/**
+ * `crib memory history <key>` — the bi-temporal belief timeline for one key (a record id, a legacy
+ * id, a subject, or a proposition key). `--as-of <iso>` projects a point-in-time read: only records
+ * recorded ≤ asOf and decision events with ts ≤ asOf — what was BELIEVED then, never a rewrite.
+ * Delegates to {@link MemoryApi.history}; `--json` mirrors the MCP response shape.
+ */
+function cmdMemoryHistory(args: string[], ctx?: CmdCtx): number {
+  const key = positionalsOf(args)[0];
+  if (!key) {
+    process.stderr.write(
+      'usage: crib memory history <key> [--as-of <iso-ts>] [--with-evidence] [--json]\n',
+    );
+    return EXIT.BAD_ARGS;
+  }
+  const json = args.includes('--json');
+  const withEvidence = args.includes('--with-evidence');
+  const asOf = stringFlag(args, '--as-of');
+  const resolved = resolveProjectRoot({ explicitRoot: ctx?.cwdOverride });
+  const rt = openSoul(resolved);
+  const deps = createMemoryDeps(rt.soul, resolved.repoRoot, resolved.cribDir);
+  if (!deps) {
+    process.stderr.write('could not resolve repoId for memory — run `crib index` first\n');
+    return EXIT.NOT_INDEXED;
+  }
+  const api = createMemoryApi(rt.soul, resolved.repoRoot, resolved.cribDir, deps);
+  let result: ReturnType<MemoryApi['history']>;
+  try {
+    result = api.history(key, asOf !== undefined ? { asOf } : {});
+  } catch (err) {
+    // An unparseable --as-of is a REJECTED argument — reported honestly, never a silently
+    // mis-filtered timeline (the API normalizes asOf once and throws on garbage).
+    process.stderr.write(`${err instanceof Error ? err.message : String(err)}\n`);
+    return EXIT.BAD_ARGS;
+  }
+  const payload = {
+    key: result.key,
+    ...(result.asOf !== undefined ? { asOf: result.asOf } : {}),
+    records: result.records.map((b) => memoryRecordBeliefView(b, withEvidence)),
+    events: result.events,
+  };
+  if (json) process.stdout.write(`${JSON.stringify(payload, null, 2)}\n`);
+  else process.stdout.write(renderMemoryHistory(payload));
+  return EXIT.OK;
+}
+
+/** Render the belief timeline as human-readable lines. */
+function renderMemoryHistory(result: Record<string, unknown>): string {
+  const records = result.records as Array<Record<string, unknown>>;
+  const events = result.events as Array<Record<string, unknown>>;
+  const lines: string[] = [
+    `memory history ${String(result.key)}${result.asOf !== undefined ? ` (as of ${String(result.asOf)})` : ''} — ${records.length} record(s), ${events.length} event(s)`,
+  ];
+  for (const r of records) {
+    lines.push(
+      `  - ${String(r.id)} schemaVersion=${String(r.schemaVersion)} lifecycle=${String(r.lifecycle)} quarantined=${String(r.quarantined)}${r.validTimeHolds !== undefined ? ` validTimeHolds=${String(r.validTimeHolds)}` : ''}`,
+    );
+    lines.push(`      ${String(r.claim)}`);
+  }
+  for (const e of events) {
+    lines.push(
+      `  * ${String(e.at)} ${String(e.type)} record=${String(e.recordId)} source=${String(e.source)}${'actor' in e ? ` actor=${String(e.actor)}` : ''}`,
+    );
+  }
+  return `${lines.join('\n')}\n`;
 }
 
 /** `crib memory init` — write a default trusted-base policy.json if absent + report the layout. */
@@ -3200,9 +6453,39 @@ function cmdMemoryInit(args: string[], ctx?: CmdCtx): number {
   } else {
     process.stdout.write(`policy already present → ${policyFile}\n`);
   }
+  // The doctor memory-loop check requires policy.json + team store + adapters; until the first
+  // team write the team root never existed, so `crib memory init` alone left a state whose own
+  // fix hint pointed back at `crib memory init`. Create the store root at init time instead.
+  const teamRoot = teamStoreRoot(resolved.cribDir);
+  mkdirSync(teamRoot, { recursive: true });
   process.stdout.write(
-    `repoId: ${repoId}\nteam store:  ${join(resolved.cribDir, 'memory', 'team')}\nlocal store: ~/.crib/memory/repos/${repoId}\n`,
+    `repoId: ${repoId}\nteam store:  ${teamRoot}\nlocal store: ~/.crib/memory/repos/${repoId}\n`,
   );
+  return EXIT.OK;
+}
+
+/**
+ * `crib memory bench [--fast] [--json] [--out <path>]` — the P0 memory benchmark (the ruler every
+ * phase measures against): recall relevance (exact vs word-disjoint paraphrase), refactor survival,
+ * cross-writer dedupe + conflict surfacing, trust-gradient discipline, and the per-phase latency
+ * curve over real stores. `--fast` shrinks the corpus for a quick smoke; the default publishes the
+ * 10k-record scale. Each scenario runs against a throwaway store directory — never the repo's.
+ */
+function cmdMemoryBench(args: string[], ctx?: CmdCtx): number {
+  const json = args.includes('--json');
+  const fast = args.includes('--fast');
+  const outIdx = args.indexOf('--out');
+  const outPath = outIdx >= 0 && args[outIdx + 1] ? args[outIdx + 1] : undefined;
+  const report = runMemoryBench(fast ? BENCH_SCALE_FAST : BENCH_SCALE_DEFAULT, {
+    now: () => new Date().toISOString(),
+  });
+  if (outPath) writeFileSync(outPath, `${JSON.stringify(report, null, 2)}\n`);
+  if (json) process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
+  else {
+    process.stdout.write(
+      `${formatBenchReport(report)}\n${outPath ? `report saved → ${outPath}\n` : ''}`,
+    );
+  }
   return EXIT.OK;
 }
 
@@ -3846,6 +7129,13 @@ function cmdMemoryFeedback(args: string[], ctx?: CmdCtx): number {
       return EXIT.BAD_ARGS;
     }
   }
+  // The stable cross-clone id the sync config records, when one is initialized (undefined otherwise —
+  // the stage helper falls back to the manifest repo.id, which is correct pre-init too).
+  const syncRepoIdRef = readSyncConfig(
+    'local',
+    readRepoId(resolved.cribDir) ?? '',
+    process.env,
+  )?.syncRepoId;
   const result = applyContradictedFeedback(deps.local, {
     record: { id: subject, kind: claimKind ?? 'fact' },
     feedback: {
@@ -3859,6 +7149,28 @@ function cmdMemoryFeedback(args: string[], ctx?: CmdCtx): number {
     },
     counterEvidence: claimKind ? counterEvidence : [],
     now: () => new Date().toISOString(),
+    // ADR-003 D3/D4: the feedback row and (on suppression) the quarantine decision stage for
+    // cross-device sync INSIDE the same lock hold that writes them — a contradicted-feedback
+    // quarantine must survive to the next device, or it resurrects there.
+    syncStage: {
+      stageWrite: (collection, entry) => {
+        stageSyncableWrite(
+          deps.local,
+          collection === 'decisions' ? 'decision.append' : 'feedback.append',
+          entry,
+          {
+            // G1.1: `principalId` is OWNERSHIP — the sync stream this device's events belong to —
+            // resolved from the same chain every other write site uses. `actor` is provenance (who
+            // authored the feedback) and is already recorded on the feedback row itself; stamping it
+            // here would put an agent/author string where the owner principal belongs.
+            principalId: process.env.KCRIB_PRINCIPAL_ID ?? DEFAULT_MIGRATION_PRINCIPAL_ID,
+            env: process.env,
+            now: () => new Date().toISOString(),
+            ...(syncRepoIdRef !== undefined ? { syncRepoId: syncRepoIdRef } : {}),
+          },
+        );
+      },
+    },
   });
   const summary: Record<string, unknown> = {
     feedbackId: result.feedbackId,
@@ -3891,6 +7203,47 @@ function findRecordKind(
 }
 
 /** `crib memory audit [--repair-local]` — report validation drift, conflicts, and trust distribution. */
+/**
+ * D10 (ADR-003) — private memory never enters Git. The team store IS a git repo, so a `private`
+ * record that has landed in a team shard file is a D10 violation sitting in history. The audit
+ * walks the team store's shard files (JSONL, one entry per line) READ-ONLY and reports any
+ * memory-2 record stamped `visibility: 'private'` by file + line + id. Unparseable lines are
+ * counted, never reported as violations. The audit never edits team memory — retraction is an
+ * operator action (`crib memory resolve <id> --retract --actor <id>`).
+ */
+function scanTeamPrivateLines(rootDir: string): {
+  shardsScanned: number;
+  lines: Array<{ file: string; line: number; id: string }>;
+} {
+  const hits: Array<{ file: string; line: number; id: string }> = [];
+  let shardsScanned = 0;
+  const walk = (dir: string): void => {
+    for (const name of readdirSync(dir, { withFileTypes: true })) {
+      const p = join(dir, name.name);
+      if (name.isDirectory()) walk(p);
+      else if (name.isFile() && name.name.endsWith('.jsonl')) {
+        shardsScanned += 1;
+        const rows = readFileSync(p, 'utf8').split('\n');
+        for (let i = 0; i < rows.length; i++) {
+          const trimmed = rows[i]?.trim() ?? '';
+          if (trimmed.length === 0) continue;
+          let parsed: unknown;
+          try {
+            parsed = JSON.parse(trimmed) as unknown;
+          } catch {
+            continue; // a torn line is a shard-integrity finding, not a privacy violation
+          }
+          if (isMemoryRecordV2(parsed) && parsed.visibility === 'private') {
+            hits.push({ file: relative(rootDir, p), line: i + 1, id: parsed.id });
+          }
+        }
+      }
+    }
+  };
+  if (existsSync(rootDir)) walk(rootDir);
+  return { shardsScanned, lines: hits };
+}
+
 function cmdMemoryAudit(args: string[], ctx?: CmdCtx): number {
   const repair = args.includes('--repair-local');
   const resolved = resolveRoot(args, ctx);
@@ -3929,13 +7282,33 @@ function cmdMemoryAudit(args: string[], ctx?: CmdCtx): number {
     perStore.push({ store: name, entries: sEntries, invalid: sInvalid, errors });
   }
   // conflicts over team records (same subject, different claims)
-  const teamRecords = deps.team.readCollection('records').entries as MemoryRecord[];
+  const teamRecords = deps.team.readCollection('records').entries as Array<
+    MemoryRecord | MemoryRecordV2
+  >;
   const subjects = new Map<string, number>();
   for (const r of teamRecords) subjects.set(r.subject, (subjects.get(r.subject) ?? 0) + 1);
   const conflicts = [...subjects.entries()].filter(([, n]) => n > 1).map(([s]) => s);
-  // trust distribution
+  // Trust distribution via EFFECTIVE verdicts (Gate 1.3): a memory-2 record carries no `verdicts`
+  // of its own — the raw `r.verdicts.trust` read crashed the audit on any migrated ledger. Its
+  // axes are restored from the alias map exactly like recallProjection does (the conservative
+  // snapshot + decisions bridged from every bound legacy id, team/global decisions authoritative
+  // per the no-poison rule), so the audit tally agrees with recall instead of demoting a
+  // migrated record to trust 'candidate'. Memory-1 records keep their stamped verdicts.
+  const gathered = gatherRecall({ team: deps.team, local: deps.local, global: deps.global });
+  const aliasIndex = buildAliasIndex(gathered.aliases ?? []);
   const trust: Record<string, number> = {};
-  for (const r of teamRecords) trust[r.verdicts.trust] = (trust[r.verdicts.trust] ?? 0) + 1;
+  for (const r of teamRecords) {
+    let axis: string;
+    if (isMemoryRecordV2(r)) {
+      const bound = aliasIndex.aliasesFor(r.id);
+      const decs =
+        bound.length > 0 ? bridgedDecisions(bound, r.id, gathered.decisions) : gathered.decisions;
+      axis = effectiveVerdicts(r, decs, undefined, conservativeVerdicts(bound)).trust;
+    } else {
+      axis = r.verdicts.trust;
+    }
+    trust[axis] = (trust[axis] ?? 0) + 1;
+  }
   let repaired = false;
   const tombstoned: string[] = [];
   const tombstoneDecisions: string[] = [];
@@ -3985,6 +7358,9 @@ function cmdMemoryAudit(args: string[], ctx?: CmdCtx): number {
     ts: fb.ts,
     ...(fb.context ? { context: fb.context } : {}),
   }));
+  // D10 (ADR-003) — private memory never enters Git: scan the team store's shard files READ-ONLY.
+  // Empty + honest: `no private records in team shards` is a clean result, not a missing check.
+  const teamPrivate = scanTeamPrivateLines(deps.team.rootDir);
   process.stdout.write(
     `${JSON.stringify(
       {
@@ -3994,6 +7370,14 @@ function cmdMemoryAudit(args: string[], ctx?: CmdCtx): number {
         trust,
         perStore,
         feedback: { quarantined, contradictedForReview: contradictedForReviewList },
+        teamPrivate: {
+          shardsScanned: teamPrivate.shardsScanned,
+          instances: teamPrivate.lines,
+          message:
+            teamPrivate.lines.length === 0
+              ? 'no private records in team shards (D10: private memory never enters Git)'
+              : `${teamPrivate.lines.length} private record(s) inside the team store — a D10 violation; retract them (\`crib memory resolve <id> --retract --actor <id>\`)`,
+        },
         ...(repair
           ? { repaired, tombstoned, tombstoneDecisions, ...(trustedRef ? { trustedRef } : {}) }
           : {}),
@@ -4080,15 +7464,30 @@ function cmdMemoryMigrate(args: string[], ctx?: CmdCtx): number {
     { name: 'local', store: deps.local },
     { name: 'global', store: deps.global },
   ];
-  const perStore: Array<{ store: string; entries: number; invalid: number }> = [];
+  const perStore: Array<{
+    store: string;
+    entries: number;
+    invalid: number;
+    byVersion: Record<string, number>;
+  }> = [];
   let totalInvalid = 0;
+  // Observed schema versions, tallied from the entries themselves. This used to print a hardcoded
+  // `schemaVersion: '1'`, which reported a store full of memory-2/3 records as if it were still v1 —
+  // the one output an operator runs this command to trust. The report now states what IS on disk.
+  const byVersionTotal: Record<string, number> = {};
   for (const { name, store } of stores) {
     let entries = 0;
     let invalid = 0;
+    const byVersion: Record<string, number> = {};
     for (const c of store.collections) {
       const res = store.readCollection(c);
       entries += res.entries.length;
       for (const e of res.entries) {
+        const version = (e as { schemaVersion?: unknown }).schemaVersion;
+        // an entry whose version is absent or non-string is counted under 'unknown', never coerced
+        const key = typeof version === 'string' ? version : 'unknown';
+        byVersion[key] = (byVersion[key] ?? 0) + 1;
+        byVersionTotal[key] = (byVersionTotal[key] ?? 0) + 1;
         try {
           assertValidMemoryEntry(e as unknown as { id: string } & Record<string, unknown>); // migrate-up-then-validate
         } catch {
@@ -4096,13 +7495,26 @@ function cmdMemoryMigrate(args: string[], ctx?: CmdCtx): number {
         }
       }
     }
-    // recompute the manifest counts from the (migrated) shards
-    store.persistManifest();
+    // Recompute the manifest counts from the (migrated) shards — but ONLY where a manifest exists.
+    // The team store deliberately has none (its counts derive from the shards; `policy.json` is the
+    // committed file), and `persistManifest` throws on it. Calling it unconditionally made this
+    // command crash on EVERY repo before it printed anything, which is also why the hardcoded
+    // version string below went unnoticed for so long: the report was never reached.
+    if (store.hasManifest) store.persistManifest();
     totalInvalid += invalid;
-    perStore.push({ store: name, entries, invalid });
+    perStore.push({ store: name, entries, invalid, byVersion });
   }
   process.stdout.write(
-    `${JSON.stringify({ perStore, totalInvalid, schemaVersion: '1' }, null, 2)}\n`,
+    `${JSON.stringify(
+      {
+        perStore,
+        totalInvalid,
+        byVersion: byVersionTotal,
+        supportedSchemaVersions: SUPPORTED_MEMORY_SCHEMA_VERSIONS,
+      },
+      null,
+      2,
+    )}\n`,
   );
   return totalInvalid === 0 ? EXIT.OK : EXIT.ERROR;
 }
@@ -4113,7 +7525,7 @@ function printHelp(): void {
       'crib — Knowledge-crib CLI',
       '',
       'Usage:',
-      '  crib index [path] [--crib-dir <absolute-path>] [--semantic] [--exclude a,b,...] [--package <name|all>...]     full index → .crib soul + derived index (+ INFERRED embedding-cosine semantic links); --package scopes to one monorepo package (list detected with no --package)',
+      '  crib index [path] [--crib-dir <absolute-path>] [--semantic] [--exclude a,b,...] [--package <name|all>...] [--multimodal [--multimodal-backend auto|fake] [--multimodal-model-path <dir>]]     full index → .crib soul + derived index (+ INFERRED embedding-cosine semantic links); --package scopes to one monorepo package (list detected with no --package); --multimodal opts into media extraction (TS-native PDF text layer by default; tesseract OCR / whisper transcription when on PATH)',
       '  crib status [path] [--dirty]             health + stats; --dirty previews files that would be re-indexed',
       '  crib query <text>                        BM25 search over code + docs (incl. bodies); --with-source --with-rules fold body + decision table into each hit',
       '  crib gaps [path] [--extracted-only] [--include-builtins]   analysis readiness + missing bodies + unresolved call sites',
@@ -4124,6 +7536,8 @@ function printHelp(): void {
       '  crib dossier <id> [--format markdown]    persisted deep artifact (body + callers/callees + rules + CFG constructs)',
       '  crib reconstruct <pkg> [--format markdown]   package reconstruction: CONSTANT values + members + referenced tables + docs + expectedBodyFile',
       '  crib impact <id> --dir up|down [--depth N] [--include-llm]   blast radius',
+      '  crib explain <node-id> [--rules <rules.json>]   on-demand PDG + taint flows for ONE callable (TS/JS, intra-procedural; empty flows is NOT proof of safety)',
+      '  crib rename --from <symbol> --to <name> [--apply --plan-id <id>] [--json] [--depth N]   safe rename: dry-run plan + deterministic plan id by default; --apply refuses stale plans and applies all-or-nothing, then runs the dirty update',
       '  crib path <from> <to> [--max-hops N] [--include-llm]   shortest path',
       '  crib neighbors <id> [--rel reads] [--dir in|out|both] [--include-llm]   adjacency',
       '  crib serve [path] [--crib-dir <absolute-path>] [--watch]              run the MCP server on stdio (resolves root: arg/--cwd/KCRIB_ROOT/CLAUDE_PROJECT_DIR/walk/cwd); --watch overlays dirty/untracked files in memory so edits are queryable without dirtying .crib/graph',
@@ -4141,10 +7555,13 @@ function printHelp(): void {
       '  crib mcp <install|list|remove> [--ide <claude|cursor|vscode|codex|windsurf|gemini|all>] [--global] [--bin <path>] [path]',
       '                                          auto-wire the MCP server into each IDE config (REQ-2)',
       '  crib adapters <install|list|remove> [--client <id|all>] [--scope project|global]',
+      '  crib adapters hooks <install|list|remove> [--client <id|all>]   lane-2 capture hooks (Claude Code settings.json, project scope)',
       '                                          write the vendor-neutral agent-memory protocol into each client instruction file (W8)',
       '  crib skill <install|list> [name] [--dest <dir>] [--client <claude>]   install bundled skills (default ~/.claude/skills)',
       '  crib init [path] [--ide <name|all>]      5-minute onboarding: index + install-hooks + mcp install + adapters + next-steps hero',
-      '  crib doctor [path]                       setup health check: node/corepack/index-freshness/hooks/IDE-wiring/memory-loop/stale-builds (✓/✗ + fix hints)',
+      '  crib doctor [path]                       setup health check: node/corepack/index-freshness/hooks/IDE-wiring/memory-loop/stale-builds/embed-tier/freshness/post-commit-hook/multimodal-adapters (✓/✗ + fix hints)',
+      '  crib embed <install <model-dir>|status>   on-device embedder tier: install --model-id <id> --model-version <ver> [--entry <file>] | status (tier report; --accept-remote-policy opts into the remote tier)',
+      '  crib freshness [<mode>|worker|hook|convert-hook]   index freshness: modes manual|watch|auto | durable background worker | post-commit hook body (always exit 0) | convert the legacy blocking post-commit hook',
       '',
       'Global: --cwd <path>   override the project root for any command',
       '',

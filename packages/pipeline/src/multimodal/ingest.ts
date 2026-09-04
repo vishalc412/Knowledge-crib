@@ -5,7 +5,13 @@
  * committing (the caller commits, so a batch can be staged then atomically committed). Each segment
  * becomes:
  *   node  media-seg  id=`media:<path>#<tStartMs>`  hash=blake3(text)  file=<path>
- *                  meta={text, tStart, tEnd, modality, lang}
+ *                  meta={text, tStart, tEnd, modality, lang?, page?, confidence, extractor,
+ *                        extractedBy, unavailable?}
+ *
+ * G5.3 — every derived node carries full provenance: `extractor` (identity + version of the
+ * extraction code), `extractedBy` (the engine that ran: unpdf/pdf.js, tesseract, whisper, or the
+ * legacy crib-worker), a measured `confidence`, and for pdf/ocr the source `page`. Nodes are only
+ * emitted for real extracted text — an unavailable adapter yields NO node, never fabricated output.
  *   edge  member-of  media-seg → `file:<path>`  static / EXTRACTED / confidence 1
  *
  * The `file:<path>` node already exists (Phase 1 `runStructure` emits one for every non-ignored
@@ -16,6 +22,7 @@ import { join } from 'node:path';
 import type { SoulStore } from '@knowledge-crib/core';
 import { contentHash, edgeId, idFor } from '@knowledge-crib/soul-schema';
 import type { Edge, Node } from '@knowledge-crib/soul-schema';
+import { runAdapter } from './adapters.js';
 import { runWorker } from './worker.js';
 import type { WorkerOpts } from './worker.js';
 
@@ -70,7 +77,14 @@ export async function ingestStaging(
   // media extraction is off the hot path and determinism favours a stable order.
   for (const mediaPath of mediaPaths) {
     const abs = join(root, mediaPath);
-    const payload = opts.workerFn ? await opts.workerFn(abs) : await runWorker(abs, opts);
+    // G5.3 routing: injected workerFn (tests) > legacy python backends (fake/pdf/audio/image) >
+    // the default `auto` TS-native adapters (adapters.ts). `auto` is in-process for PDF (no
+    // subprocess at all) and only shells out for OCR/transcription when the binary is present.
+    const payload = opts.workerFn
+      ? await opts.workerFn(abs)
+      : opts.backend && opts.backend !== 'auto'
+        ? await runWorker(abs, opts)
+        : await runAdapter(abs, opts);
     if (payload.segments.length === 0) {
       stats.dropped++;
       continue;
@@ -90,6 +104,14 @@ export async function ingestStaging(
           tEnd: seg.tEndMs,
           modality: payload.modality,
           ...(seg.lang ? { lang: seg.lang } : {}),
+          // G5.3 provenance on EVERY derived node: extractor identity/version, a confidence, and
+          // (pdf/ocr) the source page. 0.5 is the documented fallback when a producer (legacy
+          // python payload) did not measure fidelity — unknown, not claimed good.
+          confidence: seg.confidence ?? 0.5,
+          extractor: payload.extractor ?? 'crib-worker',
+          extractedBy: payload.extractedBy ?? 'crib-worker',
+          ...(seg.page !== undefined ? { page: seg.page } : {}),
+          ...(payload.unavailable ? { unavailable: payload.unavailable } : {}),
         },
       });
       edges.push({
@@ -100,7 +122,7 @@ export async function ingestStaging(
         method: 'static',
         provenance: 'EXTRACTED',
         confidence: 1,
-        evidence: { by: 'crib-worker', modality: payload.modality },
+        evidence: { by: payload.extractedBy ?? 'crib-worker', modality: payload.modality },
       });
     }
     stats.segments += payload.segments.length;

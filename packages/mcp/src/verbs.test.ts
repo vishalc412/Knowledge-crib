@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { SoulStore, SqliteIndexStore, newManifest } from '@knowledge-crib/core';
@@ -7,6 +7,7 @@ import type { Edge, Node, Rel } from '@knowledge-crib/soul-schema';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { estimateTokens } from './token-budget.js';
 import { Verbs } from './verbs.js';
+import type { PdgPort } from './verbs.js';
 
 // Minimal result shapes for the verb calls below so the tests can drop `as any`.
 interface ImpactResult {
@@ -3992,5 +3993,227 @@ describe('overview cache invalidates when meaning changes, not just when code do
 
     const after = verbs.overview({}) as unknown as Ov;
     expect(after.analysisCount?.total ?? 0).toBeGreaterThan(beforeTotal);
+  });
+});
+
+// ─── explain (G5.2): the injected PDG/taint port ──────────────────────────────────────────────
+// The verb layer is what this package owns: the port is a stub here (the pipeline supplies the
+// real analyzer), so these tests pin the routing, the error degradation and the load-bearing
+// honesty messaging — an empty `flows` list must never read as a clean bill of health.
+
+function stubPort(result: ReturnType<PdgPort['explain']>, calls?: unknown[]): PdgPort {
+  return {
+    explain(req) {
+      if (calls) calls.push(req);
+      return result;
+    },
+  };
+}
+
+interface ExplainShape {
+  symbol: string;
+  file?: string;
+  graph: { nodes: number; controlEdges: number; dataEdges: number };
+  flows: Array<{
+    sinkRule: string;
+    sourceRule: string;
+    path: Array<{ line: number; graphNode?: string }>;
+  }>;
+  sinksChecked: number;
+  limits: string[];
+  absence?: string;
+  error?: { code: string; message: string };
+}
+
+describe('explain (G5.2) — injected pdg port', () => {
+  it('degrades with NOT_CONFIGURED when no analyzer is wired (default CLI-less construction)', () => {
+    const res = verbs.explain({ id: login.id }) as unknown as ExplainShape;
+    expect(res.error?.code).toBe('NOT_CONFIGURED');
+  });
+
+  it('returns NOT_FOUND for an unknown node id', () => {
+    const res = verbs.explain({ id: 'no-such-node' }) as unknown as ExplainShape;
+    expect(res.error?.code).toBe('NOT_FOUND');
+  });
+
+  it('refuses non-TypeScript/JavaScript nodes with UNSUPPORTED_LANGUAGE', () => {
+    const res = verbs.explain({ id: docSection.id }) as unknown as ExplainShape;
+    expect(res.error?.code).toBe('UNSUPPORTED_LANGUAGE');
+  });
+
+  it('routes the rehydrated file through the port and links path steps to graph nodes', () => {
+    // a statement node on the analyzed line, so the path→graph linking has something to hit
+    const stmt: Node = {
+      id: idFor({ kind: 'statement', file: 'src/auth.ts', line: 10 }),
+      kind: 'statement',
+      file: 'src/auth.ts',
+      span: { start: 10, end: 10 },
+      lang: 'typescript',
+      hash: contentHash('eval-stmt'),
+    };
+    soul.putNodes([stmt]);
+    const calls: unknown[] = [];
+    const port = stubPort(
+      {
+        symbol: 'login',
+        fileName: 'src/auth.ts',
+        nodes: 4,
+        controlEdges: 2,
+        dataEdges: 1,
+        flows: [
+          {
+            sinkRule: 'sink.code-eval',
+            sourceRule: 'source.http-input',
+            variable: 'q',
+            contexts: ['code'],
+            path: [{ node: 3, line: 10, text: 'eval(q);', via: 'data' }],
+          },
+        ],
+        sinksChecked: 1,
+      },
+      calls,
+    );
+    const v = new Verbs({ soul, index, repoRoot: repo, pdg: port });
+    const res = v.explain({ id: login.id }) as unknown as ExplainShape;
+    const req = calls[0] as { symbol: string; source: string; fileName: string; line?: number };
+    expect(req.symbol).toBe('login');
+    expect(req.fileName).toBe('src/auth.ts');
+    expect(req.source).toContain('login(user, pass)');
+    expect(req.line).toBe(10);
+    expect(res.graph.nodes).toBe(4);
+    expect(res.flows[0]?.path[0]?.graphNode).toBe(stmt.id); // line 10 → the statement node there
+    expect(res.absence).toBeUndefined(); // flows exist, no absence message
+    expect(res.limits.join(' ')).toContain('intra-procedural');
+  });
+
+  it('passes caller-supplied extra rules through to the port untouched', () => {
+    const calls: unknown[] = [];
+    const port = stubPort(
+      {
+        symbol: 'login',
+        fileName: 'src/auth.ts',
+        nodes: 2,
+        controlEdges: 0,
+        dataEdges: 1,
+        flows: [],
+        sinksChecked: 0,
+      },
+      calls,
+    );
+    const v = new Verbs({ soul, index, repoRoot: repo, pdg: port });
+    const extra = [
+      { id: 'sink.custom', kind: 'sink' as const, match: ['dothing('], context: 'code' as const },
+    ];
+    v.explain({ id: login.id, extraRules: extra });
+    expect((calls[0] as { extraRules?: unknown }).extraRules).toEqual(extra);
+  });
+
+  it('says absence is NOT proof of safety when sinks were checked but no flow was found', () => {
+    const port = stubPort({
+      symbol: 'login',
+      fileName: 'src/auth.ts',
+      nodes: 3,
+      controlEdges: 1,
+      dataEdges: 1,
+      flows: [],
+      sinksChecked: 2,
+    });
+    const v = new Verbs({ soul, index, repoRoot: repo, pdg: port });
+    const res = v.explain({ id: login.id }) as unknown as ExplainShape;
+    expect(res.flows).toHaveLength(0);
+    expect(res.absence).toContain('NOT proof of safety');
+  });
+
+  it('says nothing was checked when no sink matched — which is also NOT proof of safety', () => {
+    const port = stubPort({
+      symbol: 'login',
+      fileName: 'src/auth.ts',
+      nodes: 2,
+      controlEdges: 0,
+      dataEdges: 0,
+      flows: [],
+      sinksChecked: 0,
+    });
+    const v = new Verbs({ soul, index, repoRoot: repo, pdg: port });
+    const res = v.explain({ id: login.id }) as unknown as ExplainShape;
+    expect(res.absence).toContain('NOT proof of safety');
+  });
+
+  it('reports NO_BODY when the analyzer finds no function body for the symbol', () => {
+    const port = stubPort(null);
+    const v = new Verbs({ soul, index, repoRoot: repo, pdg: port });
+    const res = v.explain({ id: login.id }) as unknown as ExplainShape;
+    expect(res.error?.code).toBe('NO_BODY');
+  });
+});
+
+interface RenameShape {
+  applied: boolean;
+  planId: string;
+  counts: { exact: number; inferred: number; files: number; edits: number };
+  files?: Array<{ path: string; edits: number }>;
+  next?: string;
+  filesChanged?: number;
+  edits?: number;
+  error?: { code: string; message: string };
+}
+
+describe('rename (G5.1) — plan/apply over the verb surface', () => {
+  it('dry run returns the plan + deterministic plan id and writes nothing', () => {
+    const a = verbs.rename({ from: login.id, to: 'authenticate' }) as unknown as RenameShape;
+    const b = verbs.rename({ from: login.id, to: 'authenticate' }) as unknown as RenameShape;
+    expect(a.applied).toBe(false);
+    expect(a.planId.startsWith('rename:')).toBe(true);
+    expect(a.planId).toBe(b.planId); // no clock input — reproducible byte-for-byte
+    // def file (login body, line 10) exact; docs/auth.md text hit inferred
+    expect(a.counts.exact).toBeGreaterThanOrEqual(1);
+    expect(a.counts.inferred).toBeGreaterThanOrEqual(1);
+    expect(readFileSync(join(repo, 'src', 'auth.ts'), 'utf8')).toContain('login(user, pass)');
+  });
+
+  it('refuses apply without the plan id (BAD_REQUEST)', () => {
+    const res = verbs.rename({
+      from: login.id,
+      to: 'authenticate',
+      apply: true,
+    }) as unknown as RenameShape;
+    expect(res.error?.code).toBe('BAD_REQUEST');
+    expect(res.error?.message).toContain('planId');
+  });
+
+  it('apply rewrites every planned file atomically and says the index is now stale', () => {
+    const dry = verbs.rename({ from: login.id, to: 'authenticate' }) as unknown as RenameShape;
+    const res = verbs.rename({
+      from: login.id,
+      to: 'authenticate',
+      apply: true,
+      planId: dry.planId,
+    }) as unknown as RenameShape;
+    expect(res.applied).toBe(true);
+    expect(res.filesChanged).toBe(2);
+    expect(res.next).toContain('now stale');
+    const auth = readFileSync(join(repo, 'src', 'auth.ts'), 'utf8');
+    const docs = readFileSync(join(repo, 'docs', 'auth.md'), 'utf8');
+    expect(auth).toContain('authenticate(user, pass)');
+    expect(auth).not.toContain('login(user, pass)');
+    expect(docs).toContain('AuthService.authenticate');
+  });
+
+  it('apply refuses when a planned file changed since the dry run — the re-derived id no longer matches', () => {
+    // The verb RE-DERIVES the plan from the current graph + files before applying, so a changed
+    // planned file changes the plan body, which changes the id: PLAN_MISMATCH (the STRONGER gate)
+    // fires before the per-file hash arm ever gets a chance. The hash arm (STALE_PLAN) guards the
+    // narrower TOCTOU window where the plan object itself predates the file change (core tests).
+    const dry = verbs.rename({ from: login.id, to: 'authenticate' }) as unknown as RenameShape;
+    writeFileSync(join(repo, 'docs', 'auth.md'), '# Sessions\n\nsomeone edited this doc\n', 'utf8');
+    const res = verbs.rename({
+      from: login.id,
+      to: 'authenticate',
+      apply: true,
+      planId: dry.planId,
+    }) as unknown as RenameShape & { error: { code: string; message: string } };
+    expect(res.error.code).toBe('PLAN_MISMATCH');
+    expect(res.error.message).toContain('re-run the dry run');
+    expect(readFileSync(join(repo, 'src', 'auth.ts'), 'utf8')).toContain('login(user, pass)');
   });
 });

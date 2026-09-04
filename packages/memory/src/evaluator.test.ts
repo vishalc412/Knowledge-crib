@@ -545,6 +545,42 @@ describe('source-quote revalidation + reattachment', () => {
     expect(res.applicability).toBe('orphaned');
   });
 
+  // G3.3 hash short-circuit: matching targetHash is a content-address attestation — the quote was
+  // verified grounded against exactly this body at capture, so the pass trusts it WITHOUT
+  // re-grounding (no rehydrate). The DIVERGED-hash variant below keeps the re-ground path covered.
+  it('node present + hash matches → valid / current WITHOUT re-grounding (G3.3 short-circuit)', () => {
+    const rehydrateCalls: string[] = [];
+    const base = fakeSoul({
+      nodes: [node({ id: 'sym:src/a.ts#A.b@L1', kind: 'symbol' })],
+      // Deliberately UNRELATED text: pre-G3.3 this made the quote ungrounded; the short-circuit
+      // must never even read it.
+      texts: new Map([['sym:src/a.ts#A.b@L1', 'totally different text']]),
+    });
+    const soul: MemorySoulPort = {
+      ...base,
+      rehydrate: (n, o) => {
+        rehydrateCalls.push(n.id);
+        return base.rehydrate(n, o);
+      },
+    };
+    const e = new MemoryEvaluator();
+    const r = record({
+      evidence: [
+        evidence({
+          kind: 'source-quote',
+          soulId: 'sym:src/a.ts#A.b@L1',
+          quote: 'does the thing',
+          targetHash: 'blake3:live',
+        }),
+      ],
+    });
+    const res = e.evaluate(r, { soul });
+    expect(res.evidence).toBe('valid');
+    expect(res.applicability).toBe('current');
+    expect(res.items[0]?.reason).toBe('ok');
+    expect(rehydrateCalls).toEqual([]);
+  });
+
   it('node present but the quote is not found → invalid / needs-review', () => {
     const soul = fakeSoul({
       nodes: [node({ id: 'sym:src/a.ts#A.b@L1', kind: 'symbol' })],
@@ -557,7 +593,7 @@ describe('source-quote revalidation + reattachment', () => {
           kind: 'source-quote',
           soulId: 'sym:src/a.ts#A.b@L1',
           quote: 'does the thing',
-          targetHash: 'blake3:live',
+          targetHash: 'blake3:old',
         }),
       ],
     });
@@ -677,7 +713,9 @@ describe('applicability aggregation', () => {
           kind: 'source-quote',
           soulId: 'sym:src/a.ts#A.b@L1',
           quote: 'does the thing',
-          targetHash: 'blake3:live',
+          // DIVERGED hash — the short-circuit only trusts an exact content match; a drifted hash
+          // still re-grounds, and the missing quote is drift, not a verified anchor.
+          targetHash: 'blake3:old',
         }),
       ],
     });

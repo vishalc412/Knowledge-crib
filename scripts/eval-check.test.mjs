@@ -81,6 +81,11 @@ assert.match(
 );
 assert.match(
   releaseVerifier,
+  /security:battery/,
+  'release gate must run the executable S1–S9 security battery',
+);
+assert.match(
+  releaseVerifier,
   /soul-refresh:check/,
   'release gate must run the M4.3 crib-soul-refresh idempotence gate (soul-refresh-check.mjs)',
 );
@@ -93,6 +98,11 @@ assert.match(
   releaseVerifier,
   /docs-site:check/,
   'release gate must run the M4.4 docs site + stats drift gate (docs-site-check.mjs)',
+);
+assert.match(
+  releaseVerifier,
+  /capabilities:check/,
+  'release gate must run the G1.4 capability-manifest surface + docs count gate (capabilities-check.mjs)',
 );
 const pkg = readFileSync('package.json', 'utf8');
 assert.match(
@@ -175,6 +185,14 @@ assert.match(
   /"security:check":\s*"node scripts\/security-doc-check\.mjs"/,
   'package.json must define security:check (M3.7 threat-model + access-model doc gate)',
 );
+// The pnpm invocation is corepack-PINNED here on purpose: scripts/release-metadata.test.mjs
+// rejects any root script that calls a bare `pnpm`, so asserting the bare form made these two
+// gates contradict each other — satisfying one broke the other. Both now agree on the pinned form.
+assert.match(
+  pkg,
+  /"security:battery":\s*"corepack pnpm@[\d.]+ --filter @knowledge-crib\/memory test/,
+  'package.json must define the executable S1–S9 security battery (corepack-pinned)',
+);
 assert.match(
   pkg,
   /"soul-refresh:check":\s*"node scripts\/soul-refresh-check\.mjs"/,
@@ -199,6 +217,11 @@ assert.match(
   pkg,
   /"docs-site:check":\s*"node scripts\/docs-site-check\.mjs"/,
   'package.json must define docs-site:check (M4.4 docs site + stats drift gate)',
+);
+assert.match(
+  pkg,
+  /"capabilities:check":\s*"node scripts\/capabilities-check\.mjs"/,
+  'package.json must define capabilities:check (G1.4 capability-manifest surface + docs count gate)',
 );
 const rerankCheck = readFileSync('scripts/rerank-check.mjs', 'utf8');
 assert.match(rerankCheck, /MIN_MRR_LIFT/, 'rerank-check.mjs must enforce an MRR-improvement floor');

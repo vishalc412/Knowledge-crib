@@ -1,0 +1,40 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://knowledge-crib.dev/schema/memory-1/alias.schema.json",
+  "title": "MemoryAlias",
+  "description": "One legacy-ID alias: the durable v1→v2 id binding the G1.2 migration persists so existing decisions, feedback, supersede successors, and candidate→record promotions keep resolving after a memory-1 record is re-addressed under its re-seeded memory-2 content id. The optional scope/appliesTo/meta fields carry the v1 record's placement, reattachment targets, and open meta across the migration — the closed v2 envelope has no counterpart for them, so the binding is the only place the as-believed v1 state survives a local/global line replacement. They are additive optional fields (schemaVersion stays '1'; pre-enrichment aliases that omit them remain valid).",
+  "type": "object",
+  "required": ["id", "schemaVersion", "legacyId", "resolvedId", "verdicts"],
+  "properties": {
+    "id": { "type": "string", "pattern": "^alias:[0-9a-f]+$" },
+    "schemaVersion": { "type": "string", "const": "1" },
+    "legacyId": { "type": "string", "pattern": "^mem:[0-9a-f]+$" },
+    "resolvedId": { "type": "string", "pattern": "^mem:[0-9a-f]+$" },
+    "verdicts": {
+      "type": "object",
+      "required": ["trust", "evidence", "applicability", "lifecycle"],
+      "properties": {
+        "trust": { "type": "string", "enum": ["candidate", "local", "team"] },
+        "evidence": { "type": "string", "enum": ["valid", "degraded", "invalid"] },
+        "applicability": {
+          "type": "string",
+          "enum": ["current", "needs-review", "orphaned"]
+        },
+        "lifecycle": { "type": "string", "enum": ["active", "superseded", "retracted"] }
+      },
+      "additionalProperties": false
+    },
+    "scope": {
+      "type": "object",
+      "required": ["boundary"],
+      "properties": {
+        "boundary": { "type": "string", "enum": ["repo", "global"] },
+        "repoId": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "appliesTo": { "type": "array", "items": { "type": "string" } },
+    "meta": { "type": "object" }
+  },
+  "additionalProperties": false
+}

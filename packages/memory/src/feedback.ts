@@ -80,6 +80,17 @@ export interface ContradictedSuppressionInput {
   actor?: string;
   /** the canonical "now" used for the decision `ts` (the decision id excludes `ts` → idempotent). */
   now: () => string;
+  /**
+   * The sync-staging port (ADR-003 D3/D4): when supplied, each store write this wrapper performs
+   * is staged for cross-device sync INSIDE the same lock hold — a `feedback.append` event for the
+   * feedback row, and (on suppression) a `decision.append` event for the quarantine decision.
+   * Callers inject it by closing over {@link stageSyncableWrite} with their principal/env — the
+   * memory package stays pure over the port, mirroring the backend ports. Without the port the
+   * writes stay local-only (the push sweep still heals them on the next push).
+   */
+  syncStage?: {
+    stageWrite(collection: 'decisions' | 'feedback', entry: MemoryFeedback | MemoryDecision): void;
+  };
 }
 
 /**
@@ -186,12 +197,18 @@ export function applyContradictedFeedback(
     ts: input.now(),
     ...(input.feedback.meta ? { meta: input.feedback.meta } : {}),
   };
-  local.upsertEntry('feedback', feedback);
+  // The verdict is computed FIRST (pure) so the lock hold covers only the writes + their sync
+  // stages — the store write and its sidecar stage are ONE lock hold (ADR-003 D4).
   const suppression = contradictedSuppression(input);
-  if (suppression.suppress) {
-    // LOCAL-ONLY quarantine decision (no-poison: recall folds local decisions into local records only).
-    local.upsertEntry('decisions', suppression.decision);
-  }
+  local.withLock(() => {
+    local.upsertEntry('feedback', feedback);
+    input.syncStage?.stageWrite('feedback', feedback);
+    if (suppression.suppress) {
+      // LOCAL-ONLY quarantine decision (no-poison: recall folds local decisions into local records only).
+      local.upsertEntry('decisions', suppression.decision);
+      input.syncStage?.stageWrite('decisions', suppression.decision);
+    }
+  });
   return { feedbackId: fbId, suppression };
 }
 

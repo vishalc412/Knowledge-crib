@@ -40,10 +40,12 @@ pnpm(['stats:check']);
 pnpm(['parallel:check']);
 pnpm(['fuzz:check']);
 pnpm(['scale:check']);
+pnpm(['security:battery']);
 pnpm(['security:check']);
 pnpm(['soul-refresh:check']);
 pnpm(['onboarding:check']);
 pnpm(['docs-site:check']);
+pnpm(['capabilities:check']);
 pnpm(['publish:dry-run']);
 // crib-cache-stability.test.mjs (run inside installer:test) only rebuilds the gitignored derived
 // index when the file is ABSENT — it can't detect a STALE one (e.g. left over from a manual

@@ -15,9 +15,12 @@
  * this package. The loader here is the read/validate path the store uses; the merge driver is the
  * merge path git uses. Both agree on "JSON object with a string content-addressed id".
  */
-import { migrateMemoryRecord } from './migrations.js';
-import { assertSupportedMemorySchemaVersion } from './migrations.js';
-import type { MemoryManifest } from './types.js';
+import {
+  MemorySchemaVersionError,
+  assertSupportedMemorySchemaVersion,
+  migrateMemoryRecord,
+} from './migrations.js';
+import { LIVE_MEMORY_SCHEMA_VERSIONS, type MemoryManifest } from './types.js';
 import { assertValidMemoryEntry, assertValidMemoryManifest } from './validate.js';
 
 /** One parsed shard line: the validated entry, or an error for a rejected line. */
@@ -34,8 +37,10 @@ export interface ParsedMemoryShard {
 /**
  * Parse + validate a memory JSONL shard. Blank lines are ignored. Every non-blank line MUST be a
  * JSON object with a string `id` whose prefix is a known memory kind, AND it must pass that kind's
- * schema. A line carrying an older SUPPORTED `schemaVersion` is migrated up to `memory-1` before
- * validation. Any other line → an error (never a silent skip).
+ * schema (records dispatch on the declared `schemaVersion`: memory-1 and memory-2 are both LIVE and
+ * validated in place — see LIVE_MEMORY_SCHEMA_VERSIONS). A line carrying a SUPPORTED but retired
+ * `schemaVersion` is migrated up before validation; any other line → an error (never a silent
+ * skip, a silent skip could erase a committed claim).
  */
 export function parseMemoryShard(text: string, source: string): ParsedMemoryShard {
   const entries: Record<string, unknown>[] = [];
@@ -63,9 +68,13 @@ export function parseMemoryShard(text: string, source: string): ParsedMemoryShar
       errors.push(`${loc}: missing or non-string 'id'`);
       continue;
     }
-    // Migrate older supported versions up to memory-1; unknown versions fail closed.
+    // Live versions (memory-1 + memory-2 today) validate in place; a SUPPORTED but retired version
+    // migrates up before validation; unknown versions fail closed below.
     const declared = obj.schemaVersion;
-    if (declared !== undefined && declared !== '1') {
+    const live = (LIVE_MEMORY_SCHEMA_VERSIONS as readonly string[]).includes(
+      typeof declared === 'string' ? declared : '',
+    );
+    if (declared !== undefined && !live) {
       try {
         assertSupportedMemorySchemaVersion(declared);
         obj.id; // touch — id is stable across migration
@@ -100,13 +109,21 @@ export function parseMemoryShard(text: string, source: string): ParsedMemoryShar
 
 /** Parse + version-gate + validate a manifest. Throws `MemorySchemaVersionError` on an unknown
  *  version, `MemorySchemaError` on a structural failure. A missing manifest is the caller's concern
- *  (the store creates a fresh one). */
+ *  (the store creates a fresh one).
+ *
+ *  Manifests remain memory-1 in the G1.1 phase: there is no v2 manifest concept yet, so the manifest
+ *  version gate stays pinned to `1` even though RECORD version '2' is now supported — record and
+ *  manifest versions gate independently, and a '2' manifest fails closed, never coerced. */
 export function loadMemoryManifestJson(json: unknown): MemoryManifest {
   if (json === null || typeof json !== 'object' || Array.isArray(json)) {
     throw new Error('memory manifest is not a JSON object');
   }
   const obj = json as Record<string, unknown>;
-  assertSupportedMemorySchemaVersion(obj.schemaVersion);
+  if (obj.schemaVersion !== '1') {
+    throw new MemorySchemaVersionError(
+      typeof obj.schemaVersion === 'string' ? obj.schemaVersion : JSON.stringify(obj.schemaVersion),
+    );
+  }
   const manifest = obj as unknown as MemoryManifest;
   assertValidMemoryManifest(manifest);
   return manifest;

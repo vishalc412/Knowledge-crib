@@ -10,4 +10,5 @@ declare module '*.mjs' {
   export default value;
   export const syntheticMuleProject: (root: string) => void;
   export const SECRET_CANARY: string;
+  export const buildMinimalPdf: (pages: string[][]) => Buffer;
 }

@@ -8,6 +8,7 @@ export * from './pipeline.js';
 export * from './resolve/index.js';
 export * from './linker/index.js';
 export * from './multimodal/index.js';
+export * from './pdg/index.js';
 export * from './update.js';
 export * from './working-overlay-refresh.js';
 export * from './vcs.js';

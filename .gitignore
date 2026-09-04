@@ -49,11 +49,21 @@ claude/
 media/
 outputs/
 
-# The whole local knowledge-graph working directory. Every `crib index` rewrites thousands of files
-# here, which buried real code changes under ~4,700 generated files in review and made `git status`
+# The local knowledge-graph working directory. Every `crib index` rewrites thousands of files here,
+# which buried real code changes under ~4,700 generated files in review and made `git status`
 # unusable. It is all reproducible from source with `crib index .`, so it is build output, not
 # source — the same reasoning that already excluded `.crib/index/`.
-.crib/
+#
+# `.crib/*` (not `.crib/`) with a negation, because git will NOT descend into an excluded DIRECTORY:
+# `.crib/` + `!.crib/memory/` silently keeps memory excluded. Excluding the directory's CONTENTS
+# instead leaves `.crib/memory/` re-includable.
+#
+# `.crib/memory/` is the one part that is NOT build output: it is the committed, team-shared memory
+# ledger — the product's central promise, and the path `.gitattributes` declares the `kcrib-memory`
+# merge driver for. Ignoring it wholesale would have made team memory impossible to share, which is
+# the opposite of what this repo exists to do.
+.crib/*
+!.crib/memory/
 
 # Codex tool state — machine-local, same reasoning.
 .codex/

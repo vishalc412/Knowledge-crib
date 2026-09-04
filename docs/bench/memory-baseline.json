@@ -1,0 +1,122 @@
+{
+  "version": 1,
+  "scale": {
+    "topics": 60,
+    "survivalPerCase": 3,
+    "writers": 5,
+    "throughputWrites": 200,
+    "records": 10000,
+    "candidates": 1000,
+    "decisions": 1000,
+    "feedback": 500,
+    "trials": 5
+  },
+  "generatedAt": "2026-09-02T16:50:43.899Z",
+  "scenarios": {
+    "recallRelevance": {
+      "family": "recall-relevance",
+      "queries": 80,
+      "exact": {
+        "recallAt5": 1,
+        "precisionAt5": 0.2000000000000001,
+        "mrr": 1
+      },
+      "paraphrase": {
+        "recallAt5": 0.1,
+        "precisionAt5": 0.02,
+        "mrr": 0.04904761904761904
+      }
+    },
+    "refactorSurvival": {
+      "cases": [
+        {
+          "name": "kept",
+          "records": 3,
+          "expected": {
+            "evidence": "valid",
+            "applicability": "current",
+            "eligible": true
+          },
+          "actualMatched": 3
+        },
+        {
+          "name": "drift",
+          "records": 3,
+          "expected": {
+            "evidence": "degraded",
+            "applicability": "current",
+            "eligible": true
+          },
+          "actualMatched": 3
+        },
+        {
+          "name": "moved",
+          "records": 3,
+          "expected": {
+            "evidence": "degraded",
+            "applicability": "current",
+            "eligible": true
+          },
+          "actualMatched": 3
+        },
+        {
+          "name": "quote-gone",
+          "records": 3,
+          "expected": {
+            "evidence": "invalid",
+            "applicability": "needs-review",
+            "eligible": false
+          },
+          "actualMatched": 3
+        }
+      ],
+      "stalenessPrecision": 1
+    },
+    "crossWriter": {
+      "writers": 7,
+      "observations": 5,
+      "distinctRows": 1,
+      "dedupeRate": 1,
+      "conflictsExpected": 1,
+      "conflictsSurfaced": 1,
+      "writesPerSecond": 4019.5753318661914
+    },
+    "trustGradient": {
+      "checks": 6,
+      "violations": []
+    },
+    "latency": {
+      "records": 10000,
+      "candidates": 1000,
+      "decisions": 1000,
+      "feedback": 500,
+      "soulNodes": 9500,
+      "trials": 5,
+      "gatherMs": {
+        "p50": 44.908542000000125,
+        "p95": 46.614167000000066,
+        "min": 42.139250000000175
+      },
+      "ftsRebuildMs": {
+        "p50": 35.078040999999985,
+        "p95": 47.831125000000156,
+        "min": 32.43949999999995
+      },
+      "rankColdMs": {
+        "p50": 55.88687499999992,
+        "p95": 63.71820899999989,
+        "min": 53.30066600000009
+      },
+      "freshEvalMs": {
+        "p50": 429.4928339999997,
+        "p95": 461.830291,
+        "min": 423.7792499999996
+      },
+      "totalMs": {
+        "p50": 570.2964159999999,
+        "p95": 609.1245829999999,
+        "min": 555.1133749999999
+      }
+    }
+  }
+}

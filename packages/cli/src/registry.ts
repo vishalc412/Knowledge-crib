@@ -48,6 +48,14 @@ export interface RegisteredProject {
   sourceArchive?: string;
   /** SHA-256 of the archive bytes at index time, for `crib update` change detection on archives. */
   sourceFingerprint?: string;
+  /**
+   * G3.4 freshness mode for this project (`manual` | `watch` | `auto`). ADDITIVE and OPTIONAL: an
+   * unset field means `manual` (the zero-cost default — `watch` is never a persisted default, and
+   * `auto` is opt-in because it starts a durable background worker). Parsed/validated by
+   * `resolveFreshnessMode` in `freshness.ts`; stored here as the raw literal so an old registry
+   * JSON without the field still resolves unchanged.
+   */
+  freshnessMode?: 'manual' | 'watch' | 'auto';
 }
 
 export interface Registry {
@@ -118,6 +126,8 @@ export interface RegisterOpts {
   sourceArchive?: string;
   /** SHA-256 of archive bytes for archive inputs. */
   sourceFingerprint?: string;
+  /** G3.4 freshness mode (see {@link RegisteredProject.freshnessMode}). */
+  freshnessMode?: 'manual' | 'watch' | 'auto';
   env?: NodeJS.ProcessEnv;
 }
 
@@ -127,6 +137,8 @@ export interface RegisterOpts {
  * archive fields. Only DEFINED optional fields are copied, so a directory re-registration does not
  * erase an earlier archive's `sourceArchive` unless the caller explicitly passes one — and an old
  * registry JSON written before these fields existed still resolves (the fields stay `undefined`).
+ * The G3.4 `freshnessMode` is PRESERVED across re-registration unless explicitly passed: re-indexing
+ * a project must never silently reset the operator's chosen freshness mode back to `manual`.
  * Idempotent: re-registering the same project is a no-op apart from refreshing the volatile fields.
  */
 export function registerProject(absRoot: string, opts: RegisterOpts): RegisteredProject {
@@ -142,6 +154,11 @@ export function registerProject(absRoot: string, opts: RegisterOpts): Registered
     ...(opts.sourceArchive !== undefined
       ? { sourceArchive: opts.sourceArchive, sourceFingerprint: opts.sourceFingerprint }
       : {}),
+    ...(opts.freshnessMode !== undefined
+      ? { freshnessMode: opts.freshnessMode }
+      : existing?.freshnessMode !== undefined
+        ? { freshnessMode: existing.freshnessMode }
+        : {}),
   };
   reg.projects[absRoot] = entry;
   writeRegistry(reg, env);

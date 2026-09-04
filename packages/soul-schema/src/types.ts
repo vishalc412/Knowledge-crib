@@ -188,6 +188,12 @@ export interface ManifestStats {
 export interface ManifestCapabilities {
   embeddings: boolean;
   multimodal: boolean;
+  /**
+   * On-demand PDG/taint analysis (Gate 5.2). Optional so manifests written before Gate 5 stay
+   * valid: readers see undefined → falsy, and the first `crib explain` run flips it via
+   * SoulStore.setCapabilities. Never set during default indexing.
+   */
+  pdg?: boolean;
 }
 
 export interface Manifest {

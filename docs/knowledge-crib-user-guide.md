@@ -124,6 +124,8 @@ crib status .                           # 2. health + stats
 | `crib ask "<question>" [--format markdown]` | Natural-language answer from the crib (deterministic — no model call) |
 | `crib context <id>` / `crib dossier <id>` / `crib impact <id> --dir up\|down` / `crib path <from> <to>` / `crib neighbors <id>` | CLI mirrors of the MCP verbs (§4) for terminal use |
 | `crib gaps [path]` / `crib rules <proc>` / `crib dossier({op:'package'}) <pkg>` | Analysis readiness / decision table for a callable / package reconstruction |
+| `crib explain <node-id> [--rules <file>]` | On-demand PDG + taint flows for one callable (TS/JS, intra-procedural, never run at index time; an empty flows list is NOT proof of safety — see [pdg-taint](pdg-taint.md)) |
+| `crib rename --from <symbol> --to <name> [--apply --plan-id <id>] [--json]` | Safe symbol rename: dry-run plan first (deterministic plan id, exact/inferred confidence, unresolved bucket), then an atomic all-or-nothing apply that refuses stale plans and chains the dirty-update reindex (§4 `rename`) |
 | `crib migrate-graph [path] [--dry-run]` | Move legacy `nodes/edges/llm` layout into the canonical `.crib/graph` |
 | `crib materialize [path]` | Rebuild the derived composite `graph.json` + SQLite from the soul |
 | `crib audit-llm [path]` | Re-verify every LLM artifact against the soul (grounding moat); exits non-zero on drift |
@@ -319,6 +321,37 @@ ask it before any refactor.
 → { "since", "head", "changedPaths": […], "changedSymbols": […], "removedEdges": […] }
 ```
 Read-only. For "what's the impact of this diff?" — review a PR by running it against the base ref.
+
+### `rename(from, to)` — safe symbol rename (plan/apply)
+```jsonc
+// call 1 — the dry run (always the default: nothing is written)
+{ "from": "sym:src/auth.ts#verifyToken@L1", "to": "checkToken" }
+→ { "applied": false, "planId": "rename:9f2c…",
+   "counts": { "exact": 3, "inferred": 1, "files": 3, "edits": 4 },
+   "files": [ { "path": "src/auth.ts", "edits": 1, "sites": […] } ],
+   "affected": […], "unresolved": [], "notes": […] }
+
+// call 2 — apply the reviewed plan (any file change since the dry run invalidates it)
+{ "from": "sym:src/auth.ts#verifyToken@L1", "to": "checkToken",
+  "apply": true, "planId": "rename:9f2c…" }
+→ { "applied": true, "planId": "rename:9f2c…", "filesChanged": 2, "edits": 3, "next": "…" }
+```
+The guard set, in order: **(1) dry-run by default** — the first call only plans. **(2) A
+deterministic `planId`** — a content hash of the planned edits and the affected set, never
+wall-clock, so the same graph state always yields the same id. **(3) Stale-plan rejection** — apply
+re-derives the plan and refuses (`PLAN_MISMATCH`) if the graph moved, then re-checks each planned
+file's content hash (`STALE_PLAN`) right before writing. **(4) Atomic application** — all planned
+files are transformed in memory first; a write failure mid-way rolls every already-written file
+back (`rolledBack`), so the net effect of a failed apply is *nothing changed*. **(5) Confidence
+classification** — sites grounded by extracted reference edges (calls/imports/renders/…) are
+`exact`; word-boundary text hits elsewhere (docs, comments, strings) are `inferred` and flagged.
+**(6) An `unresolved` bucket** — affected symbols reached only through inferred edges, each with an
+explicit note; an empty resolved-caller set is flagged as *not* evidence the symbol is unused.
+
+CLI mirror: `crib rename --from <symbol> --to <name> [--apply --plan-id <id>] [--json]` — the apply
+path chains the dirty-update reindex automatically. `--from` accepts a simple name (`verifyToken`)
+or a node id; the rename token is always the simple name, matched on word boundaries (a longer
+identifier containing it is never touched).
 
 ### `extract_rules` — decision table from a procedure's CFG
 ```jsonc
@@ -543,6 +576,22 @@ crib viz /absolute/path/to/project --port 43127
 Using a fixed port keeps the bookmark stable. Keep that terminal open while using the UI; `Ctrl-C`
 stops only the UI server, not the persisted graph.
 
+### The memory ledger panel
+
+The **Memory** button in the viz top bar opens the memory ledger: everything the agents recorded
+for this repo, next to the code graph. Records are grouped so the ones that need attention come
+first — **Stale** (an anchored file or symbol is no longer in the graph), **Moved** (reattached to
+exactly one live node elsewhere), **Current**, **Unanchored** (a note with no code anchor, like a
+session capture), and **Retracted** (tombstones stay visible, never hidden). Each row shows the
+effective verdicts — lifecycle decisions folded in from every store, the display admission axis
+(`staged`/`local`/`team`), evidence status, the valid-time window, lineage (supersedes/derived
+from/contradicts), and any conflict group the record belongs to.
+
+Click a row for the full record: the uncapped claim, the evidence items, and the decision trail.
+The data comes straight from the same read API the MCP verbs use (`/memory.json` for the paginated
+ledger, `/memory/record.json?id=…` for a record), so the UI can never disagree with backend truth.
+When a repo has no memory stores wired, the panel says so instead of showing an empty list.
+
 ---
 
 ## 8. Troubleshooting
@@ -595,9 +644,19 @@ You should see two JSON-RPC responses (initialize + status).
    embeddings: instead of a vector index, the host LLM authors a grounded semantic graph and the
    server merges it at query time via `withLlm` — same "find the code that means X" outcome, no model
    in the server, no ANN dependency. `capabilities().llmGraph` flips `true` once that loop runs.
-4. **Multimodal (PDF/image/audio) is opt-in** — the `crib_worker` Python subprocess is never spawned
-   on the default `crib index`/`serve` path; it only runs when `indexRepo` is called with an
-   explicit `multimodal` option. No `crib` CLI flag exposes it yet (enablement is library-API only).
+4. **Multimodal (PDF/image/audio) is opt-in** — the default `crib index`/`serve` path never touches
+   media and never spawns a media subprocess; the phase only runs under `crib index --multimodal`
+   (or the library `multimodal` option). One documented command away, with production adapters (G5.3):
+   PDF text layers extract **TS-natively** (bundled pure-JS pdf.js via `unpdf` — no Python, no binary);
+   image OCR uses the `tesseract` CLI and audio/video transcription the `whisper` CLI **when present on
+   PATH**, each reporting honest `unavailable` reasons when absent — content is never fabricated. Audio
+   also needs a local model (`--multimodal-model-path`); a named model would be fetched over the
+   network, which crib never does. The legacy Python `crib_worker` stays available for tests via
+   `--multimodal-backend fake`. Every derived `media-seg` node carries full provenance meta:
+   `modality`, source span (`tStart`/`tEnd`, or `page` for PDF/OCR), `confidence`,
+   `extractor`/`extractedBy` (engine + version). `crib doctor` reports which adapters are usable on
+   the machine (WARN-class, count-agnostic), and `crib status` surfaces `capabilities.multimodal`
+   truthfully plus a live `multimodal.adapters` availability block.
 5. **Framework semantics (schema 1.3) surface in `context`/`dossier`/`status({op:'gaps'})`/`viz`** — the Spring
    track is built (stereotypes, routes, DI `injects`, `@Bean` `produces`, JPA `references`/columns,
    `@ExceptionHandler` handlers, `@PreAuthorize`/`@Transactional`/`@Scheduled`/`@Query` method
@@ -712,7 +771,7 @@ artifact. It is the **only** capability flag the grove plan touches:
 | `llmGraph` | LLM-authored semantic graph present | Flips on after the first `enrich({op:'save'})`; the one flag the grove moves. |
 | `embeddings` | Embedding index | Stays `false` — embeddings need a model (violates the no-model invariant) and `node:sqlite` has no ANN. The LLM graph replaces that need via `withLlm`. |
 | `vector` | Vector / ANN search | Stays `false` — same reason; BM25 + the TF-IDF linker are the deterministic recall path. |
-| `multimodal` | PDF / image / audio extraction | Opt-in via `crib index --multimodal` (spawns `crib_worker`); not part of the grove. |
+| `multimodal` | PDF / image / audio extraction | Opt-in via `crib index --multimodal` — TS-native PDF text layer by default, tesseract/whisper when on PATH; not part of the grove. |
 
 ### Driving the loop
 

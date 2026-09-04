@@ -41,10 +41,21 @@ crib index . --semantic            # also run the INFERRED TF-IDF semantic linke
 crib index . --exclude vendor,third_party,generated
 crib index . --package FTCCloud     # monorepo: scope discovery to one package (sibling packages pruned)
 crib index . --package all          # monorepo: full walk (explicit)
+crib index . --multimodal           # opt in: extract PDF text layers (TS-native), OCR images, transcribe audio
 ```
 | Flag | Status | Meaning |
 |------|--------|---------|
 | `--semantic` | ✅ | run the INFERRED TF-IDF semantic linker (adds capped `references` edges) |
+| `--multimodal` | ✅ | **opt-in media phase** (default OFF — the default index never touches media or spawns a
+|       |        | subprocess). Extracts `media-seg` nodes from media files and links them to symbols. PDF
+|       |        | text layers extract TS-natively (bundled pure-JS pdf.js, no binary, no Python). Image OCR runs
+|       |        | `tesseract` and audio/video transcription `whisper` **only when the binary is on PATH** — an
+|       |        | absent binary degrades to an honest `unavailable` report, never fabricated output. |
+| `--multimodal-backend <auto\|fake\|pdf\|audio\|image>` | ✅ | backend override (default `auto` = production
+|       |        | adapters). `fake` reads `.wav.txt` sidecars via the legacy Python `crib_worker` (tests);
+|       |        | `pdf`/`audio`/`image` force the legacy Python backends (requires python3). |
+| `--multimodal-model-path <dir>` | ✅ | local whisper model for transcription. Required by `--multimodal` for
+|       |        | audio/video — a *named* model would be fetched over the network, which crib never does. |
 | `--exclude <a,b,…>` | ✅ | add dirs to the discovery ignore set (repeatable) |
 | `--package <name\|all>` | ✅ | **monorepo only.** Scope discovery to one workspace package by name or
 |       |        | repo-relative path (e.g. `packages/FTCCloud`), or `all` for the full walk. Repeatable /
@@ -92,9 +103,79 @@ crib serve /abs/path               # explicit root (wins)
 | `--transport stdio` | planned | only stdio in v1 (flag accepted, no-op) |
 | `--extracted-only` | planned | serve EXTRACTED edges only (not yet wired) |
 
+## `crib memory …`
+
+The memory CLI is the human control plane for the same persistent ledger exposed to agents over
+MCP. `memory_recall` remains the primary agent read path; these commands make state, provenance,
+and recovery visible without copying records between tools.
+
+```sh
+crib memory handoff --json                         # resume: work in flight, pending captures, stale claims
+crib memory recall "deployment convention" --json  # trusted team + local + applicable-global recall
+crib memory events --include-expired --json         # operational event/audit view (not claim content)
+crib memory profiles register --key architect \
+  --alias codex/thread-123 --alias cursor/agent-456
+crib memory profiles list --json
+```
+
+`events` reads the append-only operational journal. Its default view honours the 30-day structured
+event retention policy; `--include-expired` is an explicit audit/export view. It contains safe
+metadata and evidence references, never full claims, transcripts, chain-of-thought, raw command
+output, or secrets.
+
+`profiles` maps a vendor/client agent identifier to a durable profile owned by the principal in
+`KCRIB_PRINCIPAL_ID` (or the local default). The association is host-controlled provenance, not an
+authorization mechanism: a client cannot supply a profile ID to bypass principal, workspace, or
+project isolation. Multiple clients can resolve to one profile, so a handoff or capture can survive
+a switch between Codex, Cursor, Claude, Copilot, Gemini, Windsurf, or another MCP client.
+
 ## `crib reindex [path]`
 Full re-index (alias for `crib index`). Re-registers the project. Accepts the same `--semantic`,
 `--exclude`, and `--package` flags as `crib index` (see above for monorepo workspace detection).
+
+## `crib rename --from <symbol> --to <name> [--apply --plan-id <id>] [--json] [--depth N]`
+Safe symbol rename with a plan/apply lifecycle (G5.1). **The default is a dry run**: it resolves the
+symbol against the graph, walks its affected set (same semantics as `crib impact --dir up`, default
+depth 2), scans text files for word-boundary occurrences, prints the plan — and writes nothing.
+
+```text
+$ crib rename --from verifyToken --to checkToken
+rename plan (dry run — nothing written)
+  from: verifyToken → to: checkToken
+  target: sym:src/auth.ts#verifyToken@L1
+  plan id: rename:9f2c…
+  sites: 3 exact, 1 inferred (4 edit(s) across 3 file(s))
+  affected: 1 resolved, 0 unresolved
+    src/auth.ts — 1 edit(s)            # definition file, edge-grounded → exact
+    src/caller.ts — 2 edit(s)          # import + call grounded by an EXTRACTED edge → exact
+    docs.md — 1 edit(s)                # word-boundary text hit → inferred, flagged
+  apply with: crib rename --from verifyToken --to checkToken --apply --plan-id rename:9f2c…
+```
+
+The guards:
+
+- **Deterministic plan id** — `rename:<hash>` over the planned edits + affected set (content, never
+  wall-clock). The same graph state always yields the same id.
+- **Stale-plan rejection** — `--apply` re-derives the plan first and fails closed with
+  `PLAN_MISMATCH` if the graph moved; each planned file's content hash is then re-checked
+  (`STALE_PLAN`) right before writing.
+- **Atomic application** — all files are transformed in memory first; a write failure mid-way rolls
+  every already-written file back, so a failed apply leaves nothing changed.
+- **Confidence classification** — sites grounded by extracted reference edges are `exact`; text hits
+  elsewhere (docs, comments, strings) are `inferred` and flagged. Symbols reached only through
+  inferred edges land in the **unresolved** bucket — treat a non-empty bucket as a signal to look
+  before applying, not as an automatic blocker. An empty resolved-caller set is *not* evidence the
+  symbol is unused.
+
+`--from` accepts a simple name or a node id; the replacement token is always the simple name, so
+longer identifiers that merely contain it are never touched. `--json` prints the raw plan (same
+shape as the MCP `rename` verb).
+
+On a successful apply the command prints the change summary (`renamed in N file(s), M edit(s) (plan <id>)`) and
+then **chains the post-apply reindex** — the same dirty-update path `crib update --dirty` uses —
+because the on-disk files just moved and the derived index is now stale. Outside a git repo the
+dirty update falls back to a full index. Errors: `PLAN_MISMATCH` / `STALE_PLAN` → exit 1 with a
+"re-run the dry run" message; missing `--plan-id` with `--apply` → exit 2; unknown symbol → exit 1.
 
 ## `crib mcp <install|list|remove> [--ide <name|all>] [--global] [--bin <path>] [path]`  (REQ-2)
 Auto-wire the MCP server into each IDE's config file — no hand-editing JSON/TOML. Idempotent,

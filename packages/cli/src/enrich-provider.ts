@@ -47,9 +47,11 @@ export interface ProvidersFile {
   providers: Record<string, ProviderDef>;
 }
 
-/** Per-item provider outcome — either a parsed save item or a recorded failure. */
-export type ProviderItemOutcome =
-  | { ok: true; targetId: string; item: EnrichSaveItem }
+/** Per-item provider outcome — either a parsed save item or a recorded failure. Generic over the
+ *  validated response so an alternative contract (the G2.3 distill decision) can ride the SAME
+ *  spawn/timeout/concurrency plumbing without forking it. */
+export type ProviderItemOutcome<T = EnrichSaveItem> =
+  | { ok: true; targetId: string; item: T }
   | { ok: false; targetId: string; reason: string };
 
 export const DEFAULT_PROVIDER_TIMEOUT_MS = 120_000;
@@ -192,18 +194,34 @@ export class ProviderItemError extends Error {
   }
 }
 
+/** Options for {@link runProviderOnce}. `validate` swaps the response contract: the default keeps
+ *  the strict {@link EnrichSaveItem} shape; the G2.3 distill loop passes a verifier for its
+ *  decision envelope instead. Spawn/timeout/JSON rules are untouched either way. */
+export interface RunProviderOnceOpts<T = EnrichSaveItem> {
+  timeoutMs?: number;
+  /** Validate + shape the parsed stdout for this work item. Throws on any contract violation. */
+  validate?: (parsed: unknown, expectedTargetId: string) => T;
+}
+
 /**
  * Run ONE work item through the provider: spawn with `shell:false`, write the work-item JSON to
- * stdin, collect stdout, and strict-JSON-parse it. Resolves to a validated {@link EnrichSaveItem};
- * rejects with a {@link ProviderItemError} on any failure (non-zero exit, timeout, bad JSON, shape
- * mismatch). Never throws a non-ProviderItemError — callers treat any throw as a per-item failure.
+ * stdin, collect stdout, and strict-JSON-parse it. Resolves to a validated response (by default a
+ * {@link EnrichSaveItem}; a custom `validate` may return any shape it vouches for); rejects with a
+ * {@link ProviderItemError} on any failure (non-zero exit, timeout, bad JSON, shape mismatch).
+ * Never throws a non-ProviderItemError — callers treat any throw as a per-item failure.
  */
-export function runProviderOnce(
+export function runProviderOnce<T = EnrichSaveItem>(
   def: ProviderDef,
   workItem: EnrichWorkItem,
-  opts: { timeoutMs?: number } = {},
-): Promise<EnrichSaveItem> {
+  opts: RunProviderOnceOpts<T> = {},
+): Promise<T> {
   const timeoutMs = opts.timeoutMs ?? def.timeoutMs ?? DEFAULT_PROVIDER_TIMEOUT_MS;
+  // The default validator keeps the historical EnrichSaveItem contract; the generic anchor makes a
+  // custom validator type-safe without touching the spawn path below.
+  const validate = (opts.validate ?? validateSaveItemShape) as (
+    parsed: unknown,
+    expectedTargetId: string,
+  ) => T;
   const cmd = def.command;
   if (cmd.length === 0 || cmd.some((s) => typeof s !== 'string')) {
     return Promise.reject(new ProviderItemError(workItem.targetId, 'provider command is empty'));
@@ -212,7 +230,7 @@ export function runProviderOnce(
   const args = [...cmd.slice(1), ...(def.args ?? [])];
   const env = def.env ? { ...process.env, ...def.env } : process.env;
   const stdin = JSON.stringify(workItem);
-  return new Promise<EnrichSaveItem>((resolve, reject) => {
+  return new Promise<T>((resolve, reject) => {
     const child = spawn(program, args, {
       env,
       stdio: ['pipe', 'pipe', 'pipe'],
@@ -279,7 +297,7 @@ export function runProviderOnce(
         return;
       }
       try {
-        resolve(validateSaveItemShape(parsed, workItem.targetId));
+        resolve(validate(parsed, workItem.targetId));
       } catch (e) {
         reject(e instanceof Error ? e : new ProviderItemError(workItem.targetId, String(e)));
       }
@@ -300,14 +318,19 @@ export function runProviderOnce(
  * outcome is recorded independently — a failure never aborts the batch (PRD exit gate line 392).
  * Returns the outcomes in the SAME order as `items` so callers can correlate them.
  */
-export async function runProviderBatch(
+export async function runProviderBatch<T = EnrichSaveItem>(
   def: ProviderDef,
   items: EnrichWorkItem[],
-  opts: { timeoutMs?: number; concurrencyOverride?: number } = {},
-): Promise<ProviderItemOutcome[]> {
+  opts: {
+    timeoutMs?: number;
+    concurrencyOverride?: number;
+    /** Passed through to every {@link runProviderOnce} call (the response contract). */
+    validate?: (parsed: unknown, expectedTargetId: string) => T;
+  } = {},
+): Promise<ProviderItemOutcome<T>[]> {
   const concurrency = opts.concurrencyOverride ?? providerConcurrency(def);
   const timeoutMs = opts.timeoutMs;
-  const results: ProviderItemOutcome[] = new Array(items.length);
+  const results: ProviderItemOutcome<T>[] = new Array(items.length);
   let cursor = 0;
   async function worker(): Promise<void> {
     while (true) {
@@ -315,7 +338,16 @@ export async function runProviderBatch(
       if (i >= items.length) return;
       const item = items[i] as EnrichWorkItem;
       try {
-        const saveItem = await runProviderOnce(def, item, timeoutMs ? { timeoutMs } : {});
+        const saveItem = await runProviderOnce<T>(
+          def,
+          item,
+          opts.validate !== undefined || timeoutMs !== undefined
+            ? {
+                ...(timeoutMs !== undefined ? { timeoutMs } : {}),
+                ...(opts.validate !== undefined ? { validate: opts.validate } : {}),
+              }
+            : {},
+        );
         results[i] = { ok: true, targetId: item.targetId, item: saveItem };
       } catch (e) {
         const reason =

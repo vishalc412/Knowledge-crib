@@ -6,13 +6,18 @@
 
 ---
 
-## Tool consolidation (current surface: 15 tools)
+## Tool consolidation (current surface: 16 tools / 41 operations)
 
 Fourteen tools that differed only in which verb they called were folded behind an `op` parameter.
 Every tool costs name + description + JSON schema in the tool list of **every** session whether or
 not it is used, so a family of five rarely-used tools was a permanent tax on every conversation.
-The consolidated surface is 15 tools / ~3,654 tokens, down from 31 / ~6,249 — a 42% cut with no
-capability removed.
+The consolidated surface is 16 tools / 41 operations — down from 31 tools / ~6,249 tokens, a 42%
+token cut with no capability removed.
+
+These counts are not prose: they are derived from the single capability manifest
+(`packages/mcp/src/capabilities.ts`), which also generates each dispatcher's `op` enum, and the
+`capabilities:check` release gate fails when this doc states a count the manifest contradicts
+(adding an op is a one-line manifest change — the doc must follow or the build goes red).
 
 | Was | Now |
 |---|---|
@@ -28,6 +33,7 @@ capability removed.
 | `dossier` | `dossier({op:'one'})` *(default)* |
 | `reconstruct` | `dossier({op:'package'})` |
 | `dossier_by_scope` | `dossier({op:'scope'})` |
+| `extract_rules` | `dossier({op:'rules'})` |
 | `neighbors` | `neighbors({op:'edges'})` *(default)* |
 | `llm_neighbors` | `neighbors({op:'llm'})` |
 | `describes` | `neighbors({op:'describes'})` |
@@ -36,10 +42,31 @@ capability removed.
 | `gaps` | `status({op:'gaps'})` |
 | `memory_get` / `memory_status` / `memory_audit` / `memory_feedback` | `memory({op:'get'\|'status'\|'audit'\|'feedback'})` |
 
+`memory` also gained `memory({op:'capture'})` — loose one-shot observations (subject + observation,
+optional files/symbols auto-anchored to the first resolvable spanned symbol) written straight to the
+candidate-trust tier, never directly to a trusted store. At Gate 1.3 it gained five more ops —
+`search` / `supersede` / `delete` / `history` / `sync`, the portable memory op set — which have no
+prior standalone tool: they are NEW operations (routed to the portable `MemoryApi` in
+`packages/memory/src/api.ts`), not consolidations of existing names.
+
+When the host has initialized the intelligence event plane, `memory({op:'status'})` also returns a
+`freshness` map keyed by projector. `memory-capture` reports its last successfully published
+generation, source-event watermark, lag, pending/dead-letter counts, and failure state. The field is
+absent for an uninitialized or older host; it is operational provenance, not an assertion that a
+claim is trusted or current.
+
 Still standalone, deliberately: `brief`, `context`, `query`, `source`, `detect_changes`,
-`extract_rules`, `overview`, `memory_recall`, `memory_observe` — reached for constantly, or named
-directly by the installed client protocol and project instructions, where an extra `op` would be
-friction or breakage.
+`overview` — reached for constantly, where an extra `op` would be friction or breakage.
+`explain` is also standalone (on-demand PDG + taint for one callable — see its section below);
+it is a NEW operation, not a consolidation. `rename` (G5.1, safe symbol rename) is standalone for
+the same reason — see its section below; it is a NEW operation, not a consolidation.
+`memory_recall` and `memory_observe` are the two memory names the installed client protocols and
+project instruction files cite directly, so they stay standalone as **compatibility adapters for
+one release cycle**: folding them under `memory` now would break every deployed instruction block
+at once. Their contracts are documented in the memory ledger section below, and they retire one
+cycle after the portable memory op set lands under `memory({op})`.
+(`extract_rules` had no keep-standalone rationale and is now
+`dossier({op:'rules'})`; its name lives on in `RETIRED_ALIASES`.)
 
 An under-specified `op` returns `{ error: { code: 'BAD_REQUEST' } }` rather than forwarding a
 partial call to a verb.
@@ -162,6 +189,86 @@ unknown id; an empty `source.text` (`truncated:false`) when the node has no file
               "truncated":true, "totalLines":480 } }
 ```
 
+## `explain(node)` *(on-demand PDG + taint — opt-in)*
+Static analysis for ONE callable: builds a per-function program dependence graph (control
+dependence from post-dominators + data dependence from reaching definitions) and reports
+source→sink taint flows over a small conservative rule table. TypeScript/JavaScript only, and it
+is **opt-in by design**: nothing runs during `crib index`; the analyzer runs per call, reads the
+file fresh, and the first run stamps `capabilities.pdg` in the manifest. The rule table is plain
+data and caller-extensible (`extraRules` — the CLI exposes it as `crib explain <id> --rules
+<file>`; the table and its extension contract are documented in [pdg-taint](pdg-taint.md)).
+
+Response carries `graph` (node/control/data edge counts), `flows` (each with `sinkRule`,
+`sourceRule`, `variable`, `contexts`, and a `path` whose steps link back to graph nodes on the
+same line), `sinksChecked`, a `limits` array, and — when `flows` is empty — an `absence` message.
+
+```jsonc
+// req: { "id":"sym:src/http.ts#Controller.handleLogin@L5", "extraRules?":[ … ] }
+// res:
+{ "symbol":"handleLogin", "node":"sym:…", "file":"src/http.ts",
+  "graph":{ "nodes":12, "controlEdges":4, "dataEdges":9 },
+  "flows":[{ "sinkRule":"sink.code-eval", "sourceRule":"source.http-input", "variable":"q",
+             "contexts":["code"], "path":[{ "node":3, "line":12, "text":"eval(q);", "via":"data",
+                                           "graphNode":"stmt:…" }] }],
+  "sinksChecked":1, "limits":[ "…", "…" ] }
+```
+
+**Honesty clause (load-bearing):** an empty `flows` list is **NOT proof of safety**. The analysis
+is intra-procedural — values passed to other functions, returned to callers, or stored in shared
+state are not followed — and it is a conservative over-approximation, so a missing edge may be a
+modeling limit. When no sink matched the rule table at all, the response says *nothing was
+checked* rather than implying a clean result. Errors: `UNSUPPORTED_LANGUAGE` (non-TS/JS node),
+`NOT_CONFIGURED` (analyzer not wired into this server instance), `NO_BODY` (no function body found
+for the symbol).
+
+## `rename(from, to)` *(safe symbol rename — plan/apply, G5.1)*
+The one graph operation that can destroy work gets the heaviest guard set. Default is a
+**dry-run**: it derives the reviewed plan and returns it with a deterministic `planId` (blake3 over
+the canonical plan body — file content hashes, edit counts, affected symbols — no wall-clock
+input, so the same graph + same files always reproduce the same id). Applying REQUIRES that id.
+
+```jsonc
+// 1) dry run — req: { "from":"sym:src/auth.ts#verifyToken@L12", "to":"checkToken" }
+// res:
+{ "applied": false, "planId": "rename:9f2c…",
+  "target": { "id":"sym:…", "name":"verifyToken", "file":"src/auth.ts", "line":12 },
+  "counts": { "exact": 9, "inferred": 3, "files": 4, "edits": 12 },
+  "files":  [ { "path":"src/auth.ts", "contentHash":"blake3:…", "edits":2, "sites":[ … ] } ],
+  "affected":  [ { "id":"sym:…", "distance":1, "rel":"calls", "resolution":"resolved" } ],
+  "unresolved":[ { "id":"sym:…", "resolution":"unresolved", "riskNote":"…" } ],
+  "next": "review the plan, then call again with apply: true and this planId; …" }
+
+// 2) apply — req: { "from":"…", "to":"checkToken", "apply":true, "planId":"rename:9f2c…" }
+// res:
+{ "applied": true, "planId": "rename:9f2c…", "filesChanged": 4, "edits": 12,
+  "next": "the derived index is now stale — run `crib update --dirty` (or a full `crib reindex`) …" }
+```
+
+Guard set (each load-bearing):
+- **Default dry-run.** Nothing is written unless `apply: true` AND `planId` are supplied.
+- **Deterministic plan id.** Content hash of the plan body (per-file blake3 content hashes taken
+  at plan time + edit counts + affected set). No clock input — reproducible byte-for-byte, and any
+  file change re-derives a different id.
+- **Stale-plan rejection.** Apply re-derives the plan from the CURRENT graph + files: a mismatched
+  id returns `PLAN_MISMATCH`; a file whose current hash differs from its plan-time hash returns
+  `STALE_PLAN` ("re-run the dry run"). The plan is never persisted — it is re-derived on apply.
+- **All-or-nothing.** Every file is read, hash-checked, and rewritten in memory FIRST; nothing is
+  written until the whole set validates. A write failure mid-commit restores every already-written
+  file (the response names them under `rolledBack`), so the net effect of a failure is "nothing
+  changed".
+- **Confidence classification.** `exact` sites are the definition span plus references grounded by
+  an EXTRACTED edge; `inferred` sites are word-boundary text hits (comments, docs, dynamic
+  dispatch) — always flagged in `counts` and `notes`, never silently merged with exact ones.
+- **Unresolved bucket.** Dependents reached only by inferred edges land in `unresolved` with a
+  risk note; an empty caller set is called out in `notes` as NOT evidence the symbol is unused.
+
+Site classification: the rewritten token is the symbol's SIMPLE name (a qualified `from` anchors
+the node; identifiers in code are unqualified — the plan says so in `notes` when the two differ).
+The rename does NOT reindex (the MCP server cannot run the pipeline): the apply response says the
+index is now stale and to run `crib update --dirty` (or restart `crib serve`, which self-heals).
+Errors: `NOT_FOUND` (no symbol matches), `INVALID` (same from/to, or a node with no source file),
+`BAD_REQUEST` (`apply` without `planId`), `PLAN_MISMATCH`, `STALE_PLAN`, `IO` (with `rolledBack`).
+
 ## `dossier(symbol)` *(deep-context, persisted — Workstream D/E)*
 The **one-shot** deep reusable context for a symbol — the highest-leverage verb for a local LLM.
 Folds into one artifact: the deep node fields, the paged rehydrated source body, callers/callees,
@@ -255,10 +362,25 @@ Raw adjacency for a node (graph walking primitive).
 ```
 
 ## `detect_changes`
-What changed since a ref (for review/impact-of-a-diff).
+What changed since a ref (for review/impact-of-a-diff), and the pre-commit graph check.
+
+Two path sets are reported and BOTH feed `changedSymbols`/`removedEdges`: `changedPaths` is the
+commit range `since..HEAD`, `uncommittedPaths` is the working tree. The working tree is included
+because this verb is called BEFORE committing — a commit range alone cannot see the very change the
+caller is about to make.
+
+`note` is present only when the report is degraded or narrowed in scope, and an empty result
+carrying one is never a clean bill of health: `vcs adapter not configured`, `not a git work tree`,
+`no incremental anchor — run \`crib index\` to establish one`, and `no commits since the anchor …`
+(the range was empty by construction because the anchor IS the current commit).
 ```jsonc
-// req: { "since":"<git sha>" }
-// res: { "changedSymbols":[ {"id":"…","change":"modified"} ], "newEdges":[…], "removedEdges":[…] }
+// req: { "since?":"<git sha>" }                          // default: the soul's incremental anchor
+// res: { "since":"<sha>", "head":"<sha>",
+//        "changedPaths":["src/auth.ts"],                 // committed since the anchor
+//        "uncommittedPaths":["src/token.ts"],            // still in the working tree
+//        "changedSymbols":["sym:src/auth.ts#login@L4","file:src/auth.ts"],
+//        "removedEdges":[ {"id":"…","src":"…","dst":"…","rel":"calls"} ],
+//        "note?":"no commits since the anchor — this report covers UNCOMMITTED working-tree changes only" }
 ```
 
 ## `extract_rules(proc?)` *(deep-extraction)*
@@ -424,6 +546,395 @@ capabilities, and concepts touching it. Returns the resolved id + the touching e
 // req: { id:"sym:src/auth.ts#AuthService.login@L10" }
 // res: { "id":"sym:…", "edges":[ {from,to,rel,confidence?,rationale?} ] }
 ```
+
+---
+
+## Memory ledger (`memory_recall`, `memory_observe`, `memory({op})`)
+
+Agent memory over three stores and one trust model. A claim becomes trusted by passing a declared
+gate (`crib memory evaluate` / `activate` / `propose` — receipts produced by the CLI/CI runner
+only; the MCP server never evaluates or executes a gate), never by an agent writing it down.
+
+| Store | Root | Notes |
+|---|---|---|
+| team | `<repo>/.crib/memory/team` | committed to Git; team trust derives from exact record+decision blobs present on a trusted ref (`crib memory check` CI gate) |
+| local | `~/.crib/memory/repos/<repoId>` | one repo, one machine — candidates, attempts, receipts, decisions, feedback |
+| global | `~/.crib/memory/global` | **device-global, not user-global** — see below |
+
+**Honesty note on "global":** until cross-device sync ships, the global store is rooted at the
+observing machine's home directory — it is DEVICE-global. A `scopeBoundary:'global'` claim is
+global in *meaning* (applies beyond one repo), but its bytes stay on the machine that wrote them;
+nothing follows the user to another device. The memory-2 envelope below makes the same point
+structurally: tenancy fields are deliberately absent (local-first).
+
+All memory verbs honour `ifHash` (a repeat echoing the prior `hash` collapses to
+`{ unchanged:true, hash }`), and degrade to `{ memory:'not configured' }` when no ledger is wired.
+
+### `memory_recall` *(compatibility adapter — one release cycle)*
+Ranked, trusted-only recall across team + local + global. Never returns invalid, superseded,
+retracted or quarantined records; conflicting claims come back together so the disagreement is
+visible. Ranked by the pure 6-criterion comparator: lexical (a disposable in-memory FTS5 index
+built per call — never mixed with the code BM25) → source tier team > local > global → evidence
+quality → bounded feedback (±3). The `score` field exposes those components
+(`lexical`/`sourceTier`/`evidenceQuality`/`feedbackAdjust`) — priority-ordered comparison
+criteria, never a weighted sum — and every hit is version-aware: a migrated memory-2 twin answers
+with its v2 fields (`schemaVersion`, `visibility`, `propositionKey`, `validTime`,
+`transactionTime`, `lineage`) instead of the undefined v1 ones.
+
+```jsonc
+// req: { "q?":"parser hangs on CASE", "targetIds?":["sym:…"],
+//        "sources?":["team","local","global"], "limit?":5 /* max 20 */,
+//        "maxTokens?":1200, "withEvidence?":false, "includePending?":false, "ifHash?":"…" }
+// res:
+{ "memories":[ { "id":"mem:…","subject":"topic:plsql-parser","claim":"…","scope":{…},
+                 "source":"team","trust":"team","evidence":"valid","applicability":"current",
+                 "lifecycle":"active","appliesTo":[…],"createdAt":"…",
+                 "score":{ "lexical":1000002,"sourceTier":3,"evidenceQuality":2,"feedbackAdjust":0 },
+                 "evidenceItems":[ { "kind":"source-quote","verdict":"valid","soulId":"sym:…" } ] } ],
+  "conflicts":[ { "key":"<subject>|<boundary>|<repoId>","subject":"…","scope":{…},
+                 "recordIds":["mem:…","mem:…"] } ],
+  "provenance": { "sources":[…], "counts": { "team":3,"local":12,"global":1,
+                  "considered":16,"eligible":9,"conflicts":1 }, "fresh":true },
+  "truncated":false }
+// includePending:true → adds a SEPARATE "pending":[ { "id":"cand:…","kind":"fact","subject":"…",
+//   "claim":"…","actor":"…","trust":"untrusted","status":"pending" } ] group — the shared working
+//   set of in-flight observations from other agents on this repo. Never merged into "memories".
+// token budget exhausted → "budgetExhausted":true
+```
+
+### `memory_observe` *(compatibility adapter — one release cycle)*
+Stage a fully-formed LOCAL candidate — content-addressed, so re-observing the same claim upserts
+the same `cand:` id. Promotion is a separate CLI/CI step. A repo-scoped observation needs a stable
+repoId (`crib index`) and is refused without one, rather than written with an id that would be
+unstable across machines. Response vocabulary convention: the status is reported as `'pending'`,
+never with other trust-tier words — some installed client hooks reject those tokens. G2.2: the
+staging runs the same unified funnel as `memory({op:'capture'})` — a capture-policy gate first
+(typed `violations` on a refusal, nothing written), then the durable `cap:` outbox entry, then the
+staging entry — so a crash before the staging write replays at-least-once.
+
+```jsonc
+// req: { "kind":"pitfall","subject":"topic:plsql-parser","claim":"…",
+//        "appliesTo?":[…],"evidence?":[…],"actor":"claude","authorKind?":"agent",
+//        "tool?":"memory_observe","scopeBoundary?":"repo","attemptId?":"att:…",
+//        "idempotencyKey?":"…","ifHash?":"…" }
+// res (refused): { "ok":false,"error":"capture refused by policy — fix the input or adjust the
+//                        capture policy","violations":[{"axis":"secret","reason":"…"}] }
+// res (accepted): { "ok":true,"id":"cand:…","status":"pending","origin":"observe",
+//                   "scope":{ "boundary":"repo","repoId":"…" },
+//                   "outboxId":"cap:…","idempotent":false }
+```
+
+### `memory({op:'get'})`
+One record by id — resolved through the portable memory API: a DIRECT hit wins in each store
+(local `active`, then team `records`, then global `records`), and a legacy v1 id whose record was
+migrated to memory-2 follows the alias map to its twin (reports `resolvedViaAlias`). The response
+is version-aware: a memory-1 record answers with the v1 fields (`scope`, `appliesTo`, `authorship`,
+`createdAt`, stamped `verdicts`), plus `supersededBy` ONLY when a supersession exists (a
+`supersede` decision naming it, or another record's `lineage.supersedes` declaring it) so the
+classic no-successor response stays byte-identical to the original W3 contract; a memory-2 record
+answers with its v2 fields instead —
+`schemaVersion:"2"`, `visibility`, `propositionKey`, `validity` (bi-temporal `validTime` +
+`transactionTime`), `lineage`, `provenance`, effective (alias-restored) `verdicts`, `placement`,
+`legacyIds` and `supersededBy` — never the undefined v1 fields the v2 envelope no longer carries.
+Evidence is summarised (kind + verdict + soul anchor) unless `withEvidence:true`.
+```jsonc
+// req: { "id":"mem:…", "withEvidence?":false, "ifHash?":"…" }
+// res (memory-1): { "id":"mem:…","subject":"…","claim":"…","scope":{…},"appliesTo":[…],
+//                   "authorship":{…},
+//                   "verdicts":{ "trust":"team","evidence":"valid","applicability":"current",
+//                                "lifecycle":"active" },
+//                   "source":"team","createdAt":"…","evidence":[…] }
+// res (memory-2, incl. via a legacy id): { "id":"mem:…","requestedId":"mem:legacy…",
+//                   "resolvedViaAlias":"mem:legacy…","schemaVersion":"2","kind":"fact",
+//                   "subject":"…","claim":"…","visibility":"workspace","propositionKey":"…",
+//                   "sensitivity":"internal","retentionPolicyId":"ret:default","provenance":{…},
+//                   "validity":{ "validTime":{…},"transactionTime":{…} },"lineage":{…},
+//                   "verdicts":{…},"source":"team","placement":["team"],"legacyIds":[…],
+//                   "supersededBy":[],"evidence":[…] }
+// unknown id → { "found":false, "id":"mem:…" }
+```
+
+### `memory({op:'search'})`
+Ranked search over the whole ledger — the SAME recall projection `memory_recall` uses (the
+6-criterion priority-ordered ranking, alias bridging, conflict grouping and the hard eligibility
+filter), delegated to the portable memory API with the same lexical signal, so the two read verbs
+can never disagree about rank. Each hit enriches the recall view with the G1.3 contract: effective
+(alias-restored) verdicts, evidence summaries, `freshness`, `validity`, `lineage`, `placement`,
+`score` + `rankingVersion`, the conflict groups the hit participates in, and `supersededBy`.
+`limit` defaults to 5 (max 20); `maxTokens` (default 2000) trims within the limited set
+(`truncated:true` when either cut applied). `q` is optional — an absent query degrades to
+`targetIds`-only matching, exactly like `memory_recall`.
+```jsonc
+// req: { "q?":"loan threshold", "targetIds?":["sym:…"], "sources?":["team","local"],
+//        "limit?":5, "maxTokens?":2000, "withEvidence?":false, "ifHash?":"…" }
+// res: { "query":"loan threshold",
+//        "hits":[ { "id":"mem:…","schemaVersion":"2","subject":"…","claim":"…","source":"team",
+//                   "trust":"team","evidence":"valid","applicability":"current","lifecycle":"active",
+//                   "verdicts":{…},
+//                   "score":{…},"visibility":"workspace","propositionKey":"…","placement":["team"],
+//                   "lineage":{…},"freshness":{ "state":"fresh","evaluatedAt":null,"codeHead":null },
+//                   "validity":{…},"rankingVersion":"recall-v1:priority-order",
+//                   "conflicts":[…],"supersededBy":[],"evidenceItems":[…] } ],
+//        "conflicts":[…], "provenance":{ "rankingVersion":"recall-v1:priority-order","sources":[…],
+//                                       "counts":{…},"fresh":true,"evaluatedAt":null,"codeHead":null,
+//                                       "errors":[] },
+//        "truncated":false }
+```
+`hit.source` is the EFFECTIVE store the projection resolved the hit from (the store whose verdict
+overlay governs) — the same per-source field `memory_recall` reports. It is NOT `placement[0]`:
+`placement` is storage-only and local-first, and a record placed in both local and team yields TWO
+hits (one per source). `freshness.state` carries the freshness signal; `evaluatedAt` is always
+`null` — no wall clock enters the response, so two identical searches are byte-equal and `ifHash`
+collapses the repeat (determinism invariant). `supersededBy` is scoped to the hit's source the
+same way the verdict overlay is (the no-poison rule): a LOCAL `supersede` decision retires the
+local-sourced copy only, so a team-sourced hit never lists a successor the team store never
+accepted — the successor list can never contradict the hit's own lifecycle.
+
+### `memory({op:'supersede'})`
+Retire a record in favour of a successor — the record line is never rewritten (memory is
+append-only): the lifecycle change is a `supersede` decision appended to the store that holds the
+record, and history/audit keep the full trail. `successor` names an EXISTING record; `claim`
+(+ optional `subject`/`kind`/`visibility`/`propositionKey`) writes a NEW memory-2 successor
+carrying `lineage.supersedes`. Idempotent: the decision — and a payload successor — are
+content-addressed, so a repeat call is a byte-stable no-op. Legacy ids resolve through the alias
+map, so a pre-migration id retires its migrated twin.
+```jsonc
+// req: { "id":"mem:…", "successor?":"mem:…", "claim?":"the corrected claim", "subject?":"topic:…",
+//        "kind?":"fact", "visibility?":"private", "propositionKey?":"…", "actor":"claude",
+//        "reason?":"claim was wrong after the fix", "tool?":"…", "ifHash?":"…" }
+// res: { "ok":true,"supersededId":"mem:…","successorId":"mem:…","decisionId":"dec:…",
+//        "successorCreated":true,"decisionSource":"team" }
+// res (error): { "ok":false,"error":"record 'mem:…' not found in any store" }
+```
+
+### `memory({op:'delete'})`
+A tombstone, never a removal — appends a `retract` decision (the record line stays; search
+excludes the record while `history`/`audit` still see it). Legacy ids resolve through the alias map.
+```jsonc
+// req: { "id":"mem:…", "actor":"claude", "reason?":"…", "ifHash?":"…" }
+// res: { "ok":true,"id":"mem:…","decisionId":"dec:…","mode":"tombstone","decisionSource":"team" }
+```
+
+### `memory({op:'history'})`
+The bi-temporal belief timeline for one key (a record id, a legacy id, a subject, or a proposition
+key). Without `asOf` the full timeline; with `asOf` a point-in-time read projection — only records
+recorded ≤ `asOf` and decision events with `ts` ≤ `asOf` overlay: what was BELIEVED then, never a
+rewrite of the store. With `asOf`, each record also reports `validTimeHolds` — whether its
+validTime window covers the instant (half-open `[from, to)`: `at === to` is outside; the claim
+stopped holding) — so the two time axes stay separate: `transactionTime` decides whether the store
+KNEW the record at `asOf`, `validTime` whether the claim was TRUE then. With `asOf`, each record
+also reports `validTimeWindow` — the window's SHAPE (`valid` / `inverted` / `unparseable`) — so a
+`validTimeHolds:false` hit is distinguishable as mere non-coverage (`valid`) versus a broken
+window, instead of failing silently. A memory-1 record carries
+no bi-temporal fields, so its `validity` derives both axes from `createdAt` — the same mapping the
+migration stamps, never a fabrication. A migrated local/global twin answers with its `legacy`
+block: the local/global migration REPLACES the v1 line with the twin, and the alias binding is the
+only place the as-believed v1 state (placement scope, `appliesTo`, open `meta`, stamped verdicts)
+survives — history reads it back. `asOf` is parsed once as an ISO instant — date-only and
+`±HH:MM` offset forms resolve to their canonical instant, and an UNPARSEABLE `asOf` is rejected
+(`{ ok:false, error }` over MCP, exit 2 + stderr on the CLI), never a silently mis-filtered
+timeline. The derived `lifecycle`/`quarantined` belief fields honour the same no-poison rule as
+`memory_get` (a LOCAL decision never rewrites a team-sourced record's belief) and fold from the
+record's STAMPED lifecycle (v1 `verdicts.lifecycle`, the v2 conservative alias snapshot — the
+same base the effective verdicts use), so a hand-edited shard projects ONE lifecycle across
+get/audit/history; the raw `events` list keeps every recorded decision, tagged with its store.
+```jsonc
+// req: { "key":"mem:…", "asOf?":"2026-08-12T00:00:00.000Z", "withEvidence?":false, "ifHash?":"…" }
+// res: { "key":"mem:…", "asOf":"2026-08-12T00:00:00.000Z",
+//        "records":[ { "id":"mem:…","schemaVersion":"2","subject":"…","claim":"…",
+//                      "recordedAt":"…","validTime":{…},"lifecycle":"superseded","quarantined":false,
+//                      "validTimeHolds":true,"validTimeWindow":"valid","placement":["team"],
+//                      "legacy":[…],"evidence":[…] } ],
+//        "events":[ { "at":"…","type":"recorded","recordId":"mem:…","source":"team","validTime":{…} },
+//                   { "at":"…","type":"supersede","recordId":"mem:…","source":"team","actor":"claude",
+//                     "successor":"mem:…" } ] }
+```
+
+### `memory({op:'sync'})`
+The declared-but-honest non-capability: `sync` is in the portable contract so every adapter can
+REGISTER the name, but no sync engine exists in this release — the response says so, names the
+owning plan gate, and echoes the request it was handed back untouched (the MCP verb forwards no
+request payload, so `request` reads `{}` from this surface). Nothing was read, written, or
+transferred.
+```jsonc
+// req: { "ifHash?":"…" }
+// res: { "ok":false,"available":false,"capability":"sync","status":"not-implemented",
+//        "gate":"Gate 4","message":"cross-device / cross-store memory sync ships in Gate 4; …",
+//        "request":{} }
+```
+
+### `memory({op:'outbox'})`
+The capture-outbox drain surface (G2.3). Read-only reporting of the LOCAL queue that
+`memory{op:'capture'}` / `memory_observe` stage (`cap:` entries, written BEFORE their staging
+candidate so a crash is recoverable at-least-once): pending / done / dead counts, the pending
+captures (each with its retry count — the distiller's failure count so far), and drained entries
+with their distill decision, rationale, and `verified` flag. The drain itself is the CLI's
+`crib memory distill --provider <name>`: it hands each pending capture to an external provider from
+`~/.crib/providers.json` (the enrich-provider mechanism — spawn `shell:false`, strict JSON, per-item
+timeout), and the provider's ADD / SUPERSEDE / CONFLICT / NOOP decision is applied ONLY after crib
+verifies it deterministically (an uncited SUPERSEDE/CONFLICT/NOOP, a CONFLICT across proposition
+keys, or a CONFLICT whose claims are not deterministic negations is a per-item failure: a retry
+append, dead-lettered at the third attempt). Complementary same-subject claims classify as ADD,
+never CONFLICT — the pinned red line. The outbox is local-only (no-poison), so this reads the local
+store and degrades to `not configured` without one.
+```jsonc
+// req: { "ifHash?":"…" }
+// res: { "counts": { "pending":2,"done":5,"dead":1 },
+//        "pending": [ { "id":"cap:…","kind":"pitfall","subject":"topic:deploy",
+//                       "claim":"…","origin":"observe","proposedAt":"…","retries":1,
+//                       "sessionId":"…","sessionOffset":3,"eventOffset":7 } ],
+//        "done":   [ { "id":"cap:…","kind":"fact","proposedAt":"…","candidateId":"cand:…",
+//                      "decision":"ADD","rationale":"…","verified":true } ],
+//        "dead":   [ { "id":"cap:…","reason":"unsupported SUPERSEDE: no local record 'mem:…'" } ] }
+```
+
+### `memory({op:'status'})`
+Ledger tallies by trust / evidence / applicability / lifecycle / source, plus `eligible`
+(recall-eligible), `quarantined`, and `pending` (local candidates not yet promoted).
+`provenance.fresh:true` means the counts reflect a live revalidation against the soul.
+```jsonc
+// req: { "ifHash?":"…" }
+// res: { "counts": { "total":16,"eligible":9,"quarantined":1,"pending":4,
+//                    "trust":{…},"evidence":{…},"applicability":{…},"lifecycle":{…},"source":{…} },
+//        "provenance": { "fresh":true, "errors":[] } }
+```
+
+### `memory({op:'audit'})`
+Read-only health report — never mutates a record, decision, or store. `validation.drift` lists
+records whose fresh evidence/applicability verdict differs from the stamped one (content drifted
+since the record was saved); `privacy` re-runs the write-time secret scan on every record (the
+store guarantees 0 on write — audit confirms nothing slipped in via a raw shard edit);
+`contradictedForReview` lists records contradicted WITHOUT admissible counter-evidence (bounded
+penalty applied, awaiting review) while `quarantined` counts already-suppressed ones. The
+no-poison rule throughout: a quarantine decision is written to the LOCAL `decisions` collection
+only — one local negative event can never retract team memory. Verdict axes are version-aware: a
+memory-2 record carries no `verdicts` of its own — its stamped axes ARE the alias snapshot (worst
+axis across every collapsed sibling), so a migrated record tallies with the trust it had before
+migration and status/audit agree with recall instead of silently demoting it to `candidate`.
+(Scope note: this MCP verb audits the whole three-store ledger; the CLI `crib memory audit`
+tallies its trust distribution over TEAM records only — a pre-existing CLI scope, not a
+disagreement about the data.)
+```jsonc
+// req: { "ifHash?":"…" }
+// res:
+{ "validation": { "records":16, "drifted":1,
+                  "drift":[ { "id":"mem:…",
+                              "stamped":{ "evidence":"valid","applicability":"current" },
+                              "fresh":{ "evidence":"degraded","applicability":"current" } } ] },
+  "conflicts":[ { …same conflict view as memory_recall… } ],
+  "privacy": { "secretsScannedOnWrite":true, "secretsFlagged":0 },
+  "trust": { "team":3, "local":12, "global":1 },
+  "feedback": { "quarantined":1,
+                 "contradictedForReview":[ { "subject":"mem:…","actor":"…","ts":"…" } ] },
+  "provenance": { "fresh":true, "errors":[] } }
+```
+
+### `memory({op:'capture'})`
+Episodic capture to the candidate tier — the loose one-shot counterpart to `memory_observe`'s
+disciplined path (subject + observation, optional files/symbols, written straight to the
+pending tier, never directly to a trusted store). What makes a capture checkable is the
+auto-anchor: loose `symbols`/`files` refs are resolved to soul ids, and the first resolvable
+spanned symbol backs a `source-quote` evidence item lifted verbatim from the rehydrated span and
+self-checked with the same grounding gate the enrich path uses before its `valid` stamp — the
+stamp is earned, not assumed. Anchoring never fails the capture; the result reports
+`anchorStatus` (`anchored` / `ambiguous` / `unresolvable` / `unanchored`) so the caller knows
+exactly how checkable the candidate is. Content-addressed like `memory_observe`, so a repeat
+capture of the same observation upserts to the same id. G2.2: a capture-policy gate runs BEFORE
+anything is written (secrets / PII / home-path / transcript hygiene always on; `maxClaimChars` /
+`forbiddenKinds` / `allowedScopeBoundaries` tighten via `policy.json`'s `capture` section), and the
+durable `cap:` outbox entry lands BEFORE the staging entry (`outboxId` + `idempotent` ack) — the
+same funnel observe uses.
+```jsonc
+// req: { "subject":"topic:plsql-parser", "observation":"parseFile hung on a stray WHEN …",
+//        "kind?":"fact", "files?":[…], "symbols?":["recover"], "actor":"claude",
+//        "tool?":"memory", "scopeBoundary?":"repo", "idempotencyKey?":"…",
+//        "sessionId?":"…","sessionOffset?":0,"eventOffset?":0, "ifHash?":"…" }
+// res (refused): { "ok":false,"error":"capture refused by policy — fix the input or adjust the
+//                        capture policy","violations":[{"axis":"path","reason":"…"}] }
+// res (accepted): { "ok":true,"id":"cand:…","status":"pending","origin":"observe","scope":{…},
+//                   "anchorStatus":"anchored","evidenceAttached":true,"anchors":["sym:…"],
+//                   "outboxId":"cap:…","idempotent":false }
+```
+
+### `memory({op:'feedback'})`
+Record a LOCAL feedback signal on a record (`useful` / `unhelpful` / `contradicted`),
+content-addressed so a repeat signal upserts the same `fb:` id. A `contradicted` signal quarantines
+(LOCAL only) only when backed by admissible counter-evidence — an item whose kind is admissible
+for the record's claim kind AND whose verdict is `valid`; otherwise the record keeps a bounded
+ranking penalty and is surfaced for review in `memory({op:'audit'})`.
+```jsonc
+// req: { "subject":"mem:…", "signal":"contradicted", "actor":"claude", "context?":"…",
+//        "counterEvidence?":[ { "kind":"execution-assertion","verdict":"valid",…} ], "ifHash?":"…" }
+// res (suppressed): { "ok":true,"feedbackId":"fb:…","suppressed":true,
+//                     "quarantineDecisionId":"dec:…","subject":"mem:…",
+//                     "note":"contradicted by admissible counter-evidence — record quarantined
+//                            locally (team memory untouched)" }
+// res (not suppressed): { "ok":true,"feedbackId":"fb:…","suppressed":false,
+//                         "surfacedForReview":true,"subject":"mem:…","note":"…" }
+```
+
+The portable-API op set (`search` / `supersede` / `delete` / `history` / `sync`) IS in the
+capability manifest as of Gate 1.3 — each is a one-line manifest entry (see the consolidation
+note at the top) routed to the portable `MemoryApi` in `packages/memory/src/api.ts`, and the
+`memory({op:'get'})` / `memory({op:'capture'})` verbs delegate to the same API (get resolves
+aliases and answers version-aware; capture keeps its exact W3 response contract plus the additive
+G2.2 ack fields — `ok`, `outboxId`, `idempotent`, and the typed `violations` array on a policy
+refusal). `memory_recall`
+and `memory_observe` remain as compatibility adapters — they are the two verbs the installed
+client protocol names directly — and retire one release cycle after their replacements are rolled
+out to the installed instructions.
+
+### The memory-2 record envelope (schema version 2)
+
+Memory-1 is the live OBSERVATION format today (`memory_observe` and `memory({op:'capture'})`
+stage memory-1 candidates); the memory-2 envelope is implemented at the storage layer (vendored
+`record-v2` schema, shared-prefix validation, store write/read, loader, migrator, and the
+legacy-ID alias map) and the loaders accept both versions side by side. Memory-2 records are
+WRITTEN by `MemoryStore.migrateToV2` (the explicit store rewrite pass) and by
+`memory({op:'supersede'})` when it authors a new successor claim; every read verb is version-aware
+(get/search/status/audit/history all resolve aliases and project v2 fields instead of undefined v1
+ones). The envelope fixes the memory-1 deficiencies Gate 1 named — visibility-vs-placement,
+conflict keying, bi-temporal time — plus the structural additions the review hardening landed:
+
+- **Visibility ≠ storage placement.** `visibility: 'private' | 'workspace'` is the record's
+  semantic scope; where the bytes live (local machine, committed team store, future encrypted
+  sync storage) is independent — a private memory may exist locally AND in sync storage without
+  changing meaning. Memory-1 conflated the two in `scope`.
+- **Conflict keyed by what the claim is ABOUT.** `propositionKey` (derived from the normalized
+  subject, or pinned explicitly) is the real conflict key, and a conflict requires an explicit
+  `lineage.contradicts` edge within the same propositionKey — mutually exclusive claims. Two
+  complementary facts sharing a subject coexist and are NOT a conflict. Memory-1's conflict key
+  was subject + scope, which over-flagged complementary facts.
+- **Bi-temporal time.** `validTime` (when the claim held in the world: `from`, exclusive `to?`
+  absent = still true) vs `transactionTime` (when the store learned it: `observedAt`,
+  `recordedAt`) makes "what did we believe, and when" — e.g. what was true on 12 August —
+  answerable without deleting history: `memory({op:'history'})` with `asOf` is the read path that
+  answers it. Supersede is lineage (`lineage.supersedes`), not
+  destruction.
+- **Provenance, never access boundaries.** `provenance.principalId` is OWNERSHIP;
+  `agentId` / `clientId` / `sessionId` / `tool` are provenance only — no access decision may
+  derive from them (a session id must never become a security boundary). Tenancy fields are
+  deliberately absent (local-first) because until cross-device sync ships, the global store is
+  device-global, not user-global.
+- **Content ids + the mandatory alias map.** A v2 record's `mem:` id seeds
+  kind/subject/propositionKey/claim/evidence only — time, provenance, visibility and lineage are
+  excluded so the same claim observed by two writers collapses to one id (cross-writer dedupe).
+  Because the v2 seed differs from the v1 seed by design, the migration persists a legacy-ID
+  alias map (`alias:` entries binding `legacyId → resolvedId`, carrying the v1 stamped verdicts
+  plus the v1 placement scope, `appliesTo` and open `meta` the closed v2 envelope has no
+  counterpart for) so pre-migration decisions, feedback, supersede links and candidate→record
+  promotions keep resolving — the map is load-bearing, not cosmetic. For a local/global migration,
+  which REPLACES the v1 line with the twin, the binding is also the only place the as-believed v1
+  state survives; `memory({op:'history'})` reads it back. Read paths bridge aliases automatically:
+  a migrated v2 record joins recall through its alias verdict snapshot, and because two v1 records
+  of one claim (observed by two actors, or at two scope boundaries) legitimately migrate to the
+  SAME twin, the snapshot merges every collapsed sibling CONSERVATIVELY — worst axis per verdict
+  dimension, never a last-wins pick — and decisions keyed on ANY bound legacy id bridge onto the
+  record, so a quarantine recorded against either sibling still attaches. A v2 record with no
+  alias reads as candidate-trust (rank-ineligible) while remaining conflict-visible.
+- **Handling fields.** `sensitivity` (`public|internal|confidential|restricted`) and
+  `retentionPolicyId` classify the record for downstream handling (sync gating, redaction,
+  retention) without touching meaning.
 
 ---
 

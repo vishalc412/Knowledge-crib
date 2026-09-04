@@ -53,11 +53,13 @@
     "scale:check": "node scripts/scale-bench.mjs --slice 20000 --out /tmp/crib-scale-gate.md",
     "scale:nightly": "node scripts/scale-bench.mjs --slices 10000,100000,500000,1000000",
     "security:check": "node scripts/security-doc-check.mjs",
+    "security:battery": "corepack pnpm@9.15.0 --filter @knowledge-crib/memory test -- record-v2.test.ts promotion.test.ts store.test.ts sync/adapter.test.ts sync/engine.test.ts sync/queue.test.ts evaluator.test.ts && corepack pnpm@9.15.0 --filter @knowledge-crib/mcp test -- verbs-memory.test.ts verbs-memory-v2.test.ts && corepack pnpm@9.15.0 --dir packages/cli test -- memory-capture-hook.test.ts",
     "soul-refresh:check": "node scripts/soul-refresh-check.mjs",
     "onboarding:check": "node scripts/onboarding-check.mjs",
     "docs:stats": "node scripts/docs-stats.mjs",
     "docs:build": "node scripts/docs-site-build.mjs",
     "docs-site:check": "node scripts/docs-site-check.mjs",
+    "capabilities:check": "node scripts/capabilities-check.mjs",
     "self-hosted:check": "corepack pnpm@9.15.0 build && node scripts/crib-self-hosted-e2e.mjs"
   },
   "devDependencies": {

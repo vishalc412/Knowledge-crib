@@ -19,6 +19,8 @@ import type {
   MemoryEvidence,
   MemoryFeedback,
   MemoryRecord,
+  MemoryRecordV2,
+  MemoryRecordV3,
   MemoryScope,
 } from './types.js';
 
@@ -103,6 +105,103 @@ function claimBody(input: {
   });
 }
 
+// ─── memory-2: proposition key + record id (G1.1) ─────────────────────────────
+
+/**
+ * The v2 proposition key: WHAT the claim is about — the real conflict key (G1.1). Derived purely
+ * from the whitespace-normalized `subject`; the claim TEXT is deliberately excluded, because two
+ * records about the same proposition must share the key for conflict detection to ask whether their
+ * claims are mutually exclusive — folding the claim in would hand every distinct claim its own
+ * proposition and no pair could ever conflict. A non-empty explicit `propositionKey` override wins
+ * (trimmed, verbatim) so callers with a richer notion of "about" (e.g. `topic:<slug>`) can pin it.
+ *
+ * Pure: no Date.now(), no randomness — the same subject (or the same override) always derives the
+ * same key, across writers and across processes.
+ */
+export function derivePropositionKey(input: {
+  subject: string;
+  propositionKey?: string;
+}): string {
+  if (typeof input.propositionKey === 'string' && input.propositionKey.trim().length > 0) {
+    return input.propositionKey.trim();
+  }
+  return `prop:${blake3Hex(canonical({ subject: normalizeClaim(input.subject) }))}`;
+}
+
+/**
+ * The semantic content a memory-2 record content-addresses over — the v2 analogue of
+ * {@link claimBody}. Seeds EXACTLY: `kind`, normalized `subject`, `propositionKey`, normalized
+ * `claim`, and the order-independent `evidence` fingerprint. Everything else in the v2 envelope is
+ * deliberately EXCLUDED, each for a stated reason:
+ *   - `validTime` / `transactionTime` — time is not identity: the same claim observed twice (at
+ *     different times, by different watchers) must collapse to one id;
+ *   - `provenance` — cross-writer dedupe: a different agent/device/client re-observing the same
+ *     claim dedupes (mirrors v1's exclusion of `authorship.tool`);
+ *   - `visibility` / `sensitivity` / `retentionPolicyId` — placement + governance, not meaning
+ *     (G1.1: visibility and storage placement are independent);
+ *   - `lineage` — mutable relationship state, stamped per observation.
+ *
+ * The v1 seed (claimBody) is UNCHANGED: v1 ids stay byte-identical, preserving the measured
+ * cross-writer duplicate-collapse invariant (docs/bench/memory.md) and the `cand:`↔`mem:` shared-id
+ * contract until the G1.2 migration takes over.
+ */
+function claimBodyV2(input: {
+  kind: string;
+  subject: string;
+  propositionKey: string;
+  claim: string;
+  evidence: MemoryEvidence[];
+}): string {
+  return canonical({
+    kind: input.kind,
+    subject: normalizeClaim(input.subject),
+    propositionKey: input.propositionKey,
+    claim: normalizeClaim(input.claim),
+    evidence: evidenceHash(input.evidence),
+  });
+}
+
+/**
+ * `mem:<blake3>` — a memory-2 record's content id. Shares the `mem:` prefix with v1 (validation
+ * dispatches on `schemaVersion`, not the prefix) but seeds the v2 body above, so a v2 record and the
+ * v1 record of the same raw content have DIFFERENT ids by design — reconciling them is the G1.2
+ * legacy-ID alias map's job, never this function's.
+ */
+export function memoryRecordV2Id(record: {
+  kind: MemoryRecordV2['kind'];
+  subject: string;
+  propositionKey: string;
+  claim: string;
+  evidence: MemoryEvidence[];
+}): string {
+  return `mem:${blake3Hex(claimBodyV2(record))}`;
+}
+
+/**
+ * `mem:<blake3>` for memory-3. Unlike v2, namespace is part of identity: a claim owned by two
+ * principals or profiles must never collapse into one syncable record. Mutable provenance and time
+ * remain outside the seed so repeat observations within the same namespace still deduplicate.
+ */
+export function memoryRecordV3Id(record: {
+  kind: MemoryRecordV3['kind'];
+  subject: string;
+  propositionKey: string;
+  claim: string;
+  evidence: MemoryEvidence[];
+  namespace: MemoryRecordV3['namespace'];
+}): string {
+  return `mem:${blake3Hex(
+    canonical({
+      kind: record.kind,
+      subject: normalizeClaim(record.subject),
+      propositionKey: record.propositionKey,
+      claim: normalizeClaim(record.claim),
+      evidence: evidenceHash(record.evidence),
+      namespace: record.namespace,
+    }),
+  )}`;
+}
+
 // ─── public id builders ──────────────────────────────────────────────────────
 
 /** `mem:<blake3>` — a record's content id. */
@@ -130,6 +229,39 @@ export function memoryCandidateId(candidate: {
   authorship: MemoryCandidate['authorship'];
 }): string {
   return `cand:${blake3Hex(claimBody(candidate))}`;
+}
+
+/**
+ * `cap:<blake3>` — the durable capture-outbox entry's content id (G2.2). The seed is the capture's
+ * semantic identity — idempotency key, session/event offsets, kind, subject, normalized
+ * observation, actor — and NOTHING else: `proposedAt`, status, retries, and meta are mutable
+ * queue-lifecycle state and are excluded, so a re-capture re-derives the SAME `cap:` id and the
+ * upsert is a no-op (idempotent dedupe), and a `pending` entry can transition to `done`/`dead`
+ * in place without its id moving. THE SEED IS FROZEN once landed: changing it re-ids every
+ * existing outbox entry and breaks crash-recovery dedupe across deploys.
+ */
+export function captureEntryId(entry: {
+  idempotencyKey?: string;
+  sessionId?: string;
+  sessionOffset?: number;
+  eventOffset?: number;
+  kind: string;
+  subject: string;
+  claim: string;
+  actor: string;
+}): string {
+  return `cap:${blake3Hex(
+    canonical({
+      idempotencyKey: entry.idempotencyKey,
+      sessionId: entry.sessionId,
+      sessionOffset: entry.sessionOffset,
+      eventOffset: entry.eventOffset,
+      kind: entry.kind,
+      subject: entry.subject,
+      claim: normalizeClaim(entry.claim),
+      actor: entry.actor,
+    }),
+  )}`;
 }
 
 /** `att:<blake3>` — an attempt event's content id (excludes `ts`/`meta`). */
@@ -234,6 +366,17 @@ export function feedbackId(feedback: {
       context: feedback.context,
     }),
   )}`;
+}
+
+/**
+ * `alias:<blake3>` — a legacy-ID alias's content id (G1.2). Seeds EXACTLY `{ legacyId, resolvedId }`:
+ * the binding IS the alias's meaning, so re-migrating the same memory-1 record re-derives the same
+ * memory-2 id and the alias upsert is a byte-stable no-op (idempotent migration). The carried
+ * `verdicts` snapshot is deliberately EXCLUDED — it is migration-time input to the read projection,
+ * never identity.
+ */
+export function memoryAliasId(alias: { legacyId: string; resolvedId: string }): string {
+  return `alias:${blake3Hex(canonical({ legacyId: alias.legacyId, resolvedId: alias.resolvedId }))}`;
 }
 
 /** The id-prefix token for a memory entry (the run before `:`), or `undefined` for a non-string. */
