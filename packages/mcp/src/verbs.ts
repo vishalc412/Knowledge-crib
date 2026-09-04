@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import type { Embedder } from '@knowledge-crib/core';
 import { pathFromId } from '@knowledge-crib/core';
 import { LockBusyError, withCribLock } from '@knowledge-crib/core';
 import {
@@ -8,6 +11,7 @@ import {
 } from '@knowledge-crib/core';
 import { ifHash, loadAliases, rewriteQuery } from '@knowledge-crib/core';
 import { GraphStore } from '@knowledge-crib/core';
+import { applyRenamePlan, buildRenamePlan } from '@knowledge-crib/core';
 import type { CompositeEdge, Dir, Dossier, Hit, IndexStore, SoulStore } from '@knowledge-crib/core';
 import {
   CALLABLE_SYMBOL_TYPES,
@@ -27,9 +31,14 @@ import {
 } from '@knowledge-crib/core';
 import type { DossiersByScope as DossiersByScopeShape } from '@knowledge-crib/core';
 import {
+  type AgentProfileDirectory,
   type CaptureOutboxEntry,
   type ConflictGroup,
+  DEFAULT_MIGRATION_PRINCIPAL_ID,
+  EXACT_MATCH_BONUS,
   type EffectiveVerdicts,
+  type FusionStrategy,
+  type IntelligenceEventJournal,
   MemoryApi,
   type MemoryDecision,
   type MemoryEvalContext,
@@ -42,9 +51,12 @@ import {
   type MemoryRecordV2,
   type MemorySource,
   type MemoryStore,
+  type MemoryVectorStore,
+  type ProjectionCheckpointStore,
   type RecallProjection,
   type RecallStores,
   type RecordBelief,
+  SEMANTIC_TEXT_VERSION,
   type ScoredRecord,
   type SearchHit,
   SoulStoreAnchorPort,
@@ -66,6 +78,7 @@ import {
   isMemoryRecordV2,
   isRecallEligible,
   openMemoryFts,
+  openMemoryVectors,
   pendingCaptures,
   quarantinedRecordIds,
   readRepoId,
@@ -149,6 +162,62 @@ export interface MemoryDeps {
   global?: MemoryStore;
   evaluator?: MemoryEvaluator;
   evalCtx?: MemoryEvalContext;
+  /**
+   * The installed on-device embedder, resolved ONCE at startup (`loadInstalledEmbedder` is async;
+   * the recall path is not). Present ⇒ recall ranks with `semantic-only`, the strategy R2 selected
+   * (docs/bench/retrieval-pre-registration-r2.md). Absent ⇒ `lexical-only`, unchanged: a deployment
+   * with no model tier must never silently rank as though it had one.
+   */
+  embedder?: Embedder;
+  /** Shared operational event journal, supplied by the host process when configured. */
+  eventJournal?: IntelligenceEventJournal;
+  /** Derived freshness checkpoints for the event-driven capture projection. */
+  projectionCheckpoints?: ProjectionCheckpointStore;
+  /** Host-owned vendor agent aliases resolve to a durable profile for event provenance. */
+  identityDirectory?: AgentProfileDirectory;
+}
+
+/**
+ * G5.2 — the injected on-demand PDG/taint analyzer. Structurally the pipeline's `pipelinePdg`
+ * port: the CLI supplies the real implementation, tests inject stubs, and this package never
+ * depends on the pipeline. Optional — `explain` degrades with NOT_CONFIGURED when absent.
+ */
+/** Mirrors the pipeline's TaintContext union (duplicated here so mcp never imports pipeline). */
+export type TaintContextName = 'url' | 'shell' | 'code' | 'html' | 'sql' | 'fs' | 'path';
+
+/** One user-supplied rule-table entry (pipeline `TaintRule` shape; structural — no pipeline dep). */
+export interface TaintRuleEntry {
+  readonly id: string;
+  readonly kind: 'source' | 'sink' | 'sanitizer';
+  readonly match: readonly string[];
+  readonly context?: TaintContextName;
+  readonly emits?: readonly TaintContextName[];
+  readonly clears?: readonly TaintContextName[];
+}
+
+export interface PdgPort {
+  explain(req: {
+    source: string;
+    fileName: string;
+    symbol: string;
+    line?: number;
+    /** User-supplied rule entries appended to the default table (pipeline `TaintRule` shape). */
+    extraRules?: readonly TaintRuleEntry[];
+  }): {
+    symbol: string;
+    fileName: string;
+    nodes: number;
+    controlEdges: number;
+    dataEdges: number;
+    flows: readonly {
+      sinkRule: string;
+      sourceRule: string;
+      variable: string;
+      contexts: readonly string[];
+      path: readonly { node: number; line: number; text: string; via: string }[];
+    }[];
+    sinksChecked: number;
+  } | null;
 }
 
 export interface VerbDeps {
@@ -165,6 +234,8 @@ export interface VerbDeps {
   /** Fraction of symbols (by architectural importance) the enrich queue offers. Defaults to
    *  `DEFAULT_SYMBOL_PERCENTILE`; set 1 to queue every symbol. */
   symbolPercentile?: number;
+  /** G5.2 — on-demand PDG/taint analyzer (optional; `explain` degrades when absent). */
+  pdg?: PdgPort;
 }
 
 /** The optional semantic-search surface an IndexStore backend may provide. Backends without it
@@ -204,9 +275,37 @@ function lexicalChannel(
   stores: RecallStores,
   records: ReadonlyArray<MemoryRecord | MemoryRecordV2>,
   sourcesFiltered: boolean,
-): { fts: MemoryFtsIndex; scorer: VersionedLexicalScorer } {
+  embedder?: Embedder,
+): { fts: MemoryFtsIndex; vectors?: MemoryVectorStore; scorer: VersionedLexicalScorer } {
   const fts = sourcesFiltered ? new MemoryFtsIndex(':memory:') : openMemoryFts(stores);
-  return { fts, scorer: new VersionedLexicalScorer({ fts, records, strategy: 'lexical-only' }) };
+  // R2 (docs/bench/retrieval-pre-registration-r2.md) selected `semantic-only` under a rule frozen
+  // before its held-out corpus existed: 66.7% paraphrase recall vs 12.1% for the incumbent and 19.7%
+  // for an even BM25/cosine mix, with exact recall unregressed at 100%. Without an installed tier
+  // the incumbent stands — fusion loses on the char-ngram fallback (R1), so ranking semantically
+  // with no real model would be strictly worse AND would misreport its own scorer version.
+  const strategy: FusionStrategy = embedder ? 'semantic-only' : 'lexical-only';
+  // A persistent vector cache is not an optimisation here, it is what makes the semantic default
+  // affordable: a fresh scorer is built per verb call, and embedding a 307-record ledger with a real
+  // model measured 4.9 s. Vectors are content-addressed and therefore immutable, so the cache needs
+  // no invalidation — see vector-store.ts.
+  const vectors = embedder
+    ? openMemoryVectors(stores, {
+        embedderId: embedder.id,
+        dim: embedder.dim(),
+        textVersion: SEMANTIC_TEXT_VERSION,
+      })
+    : undefined;
+  return {
+    fts,
+    vectors,
+    scorer: new VersionedLexicalScorer({
+      fts,
+      records,
+      strategy,
+      ...(embedder ? { embedder } : {}),
+      ...(vectors ? { vectors } : {}),
+    }),
+  };
 }
 
 /** G2.3 — how many pending/dead outbox entries the `memory{op:'outbox'}` report lists per section
@@ -372,6 +471,7 @@ const PUBLIC_VERBS = new Set<string>([
   'memorySync',
   // G2.3 — the capture-outbox drain surface (read-only queue + decision report).
   'memoryOutbox',
+  'memoryHandoff',
 ]);
 
 export class Verbs {
@@ -621,6 +721,191 @@ export class Verbs {
     const node = this.deps.soul.getNode(id);
     if (!node) return notFound(args.id);
     return this.applyIfHash(args, { node: this.publicNode(node), source: this.bodyOf(node, args) });
+  }
+
+  /**
+   * `explain` (G5.2) — on-demand PDG + taint analysis for ONE callable. Opt-in by design: nothing
+   * runs at index time; the analyzer is injected (`deps.pdg`), reads the file fresh, and only
+   * covers TypeScript/JavaScript. Every response carries `limits` so the consumer cannot miss
+   * what the analysis does NOT claim — most importantly, an empty `flows` list is NOT proof of
+   * safety (intra-procedural only, conservative over-approximation).
+   */
+  explain(args: { id: string; extraRules?: readonly TaintRuleEntry[] }): Record<string, unknown> {
+    const id = this.resolveNodeId(args.id);
+    if (!id) return notFound(args.id);
+    const node = this.deps.soul.getNode(id);
+    if (!node) return notFound(args.id);
+    const lang = node.lang ?? '';
+    if (lang !== 'typescript' && lang !== 'javascript') {
+      return {
+        error: {
+          code: 'UNSUPPORTED_LANGUAGE',
+          message: `pdg/taint analysis covers TypeScript and JavaScript only; node '${id}' is ${lang || 'of unknown language'}`,
+        },
+      };
+    }
+    const pdg = this.deps.pdg;
+    if (!pdg) {
+      return {
+        error: {
+          code: 'NOT_CONFIGURED',
+          message:
+            'no pdg analyzer wired into this server instance — the CLI supplies one; tests inject their own',
+        },
+      };
+    }
+    if (!node.file) {
+      return { error: { code: 'NO_BODY', message: `node '${id}' has no source file to analyze` } };
+    }
+    let source: string;
+    try {
+      source = readFileSync(join(this.deps.repoRoot, node.file), 'utf8');
+    } catch {
+      return {
+        error: {
+          code: 'FILE_UNAVAILABLE',
+          message: `cannot read ${node.file} from ${this.deps.repoRoot}`,
+        },
+      };
+    }
+    const result = pdg.explain({
+      source,
+      fileName: node.file,
+      symbol: node.name ?? id,
+      ...(node.span?.start !== undefined ? { line: node.span.start } : {}),
+      ...(args.extraRules !== undefined ? { extraRules: args.extraRules } : {}),
+    });
+    if (!result) {
+      return {
+        error: {
+          code: 'NO_BODY',
+          message: `no TypeScript/JavaScript function body found for '${node.name ?? id}' in ${node.file}`,
+        },
+      };
+    }
+    const graphNodes = this.graphNodesAtLine(node.file);
+    const flows = result.flows.map((f) => ({
+      ...f,
+      path: f.path.map((s) => ({
+        ...s,
+        ...(graphNodes.get(s.line) !== undefined ? { graphNode: graphNodes.get(s.line) } : {}),
+      })),
+    }));
+    const limits = [
+      'intra-procedural only — values passed to other functions or stored in shared state are not followed',
+      'conservative over-approximation — a reported flow is possible, not confirmed; matching is textual/AST-name-based',
+      'TypeScript/JavaScript only, on demand — nothing here ran during indexing',
+    ];
+    const absence =
+      flows.length === 0
+        ? result.sinksChecked > 0
+          ? {
+              // the load-bearing honesty message: empty must never be read as safe
+              absence: `no taint flow found across ${result.sinksChecked} sink occurrence(s) — this is NOT proof of safety: cross-function flows are out of scope and a missing edge may be a modeling limit`,
+            }
+          : {
+              absence:
+                'no sink matched the rule table in this body — nothing was checked, which is NOT proof of safety',
+            }
+        : {};
+    return {
+      symbol: node.name ?? id,
+      node: id,
+      file: node.file,
+      graph: {
+        nodes: result.nodes,
+        controlEdges: result.controlEdges,
+        dataEdges: result.dataEdges,
+      },
+      flows,
+      sinksChecked: result.sinksChecked,
+      limits,
+      ...absence,
+    };
+  }
+
+  /**
+   * `rename` (G5.1) — the safe symbol rename. Default DRY-RUN: derives the reviewed plan (per-file
+   * content hashes, exact vs inferred site classification, affected symbols with an unresolved
+   * bucket) and returns it with a deterministic plan id. `apply` is refused unless the caller
+   * echoes that plan id AND every file still hashes to its plan-time value — a changed file changes
+   * the plan, which changes the id, which fails the check. Application is all-or-nothing (a
+   * mid-write failure restores every already-written file). The MCP surface does NOT reindex: the
+   * response says so explicitly, because applying without reindexing leaves every read verb stale.
+   */
+  rename(args: {
+    from: string;
+    to: string;
+    apply?: boolean;
+    planId?: string;
+    depth?: number;
+  }): Record<string, unknown> {
+    if (args.apply && !args.planId) {
+      return {
+        error: {
+          code: 'BAD_REQUEST',
+          message:
+            'apply requires the planId from the dry run — call rename { from, to } first, review the plan, then apply with planId',
+        },
+      };
+    }
+    const outcome = buildRenamePlan({
+      soul: this.deps.soul,
+      repoRoot: this.deps.repoRoot,
+      from: args.from,
+      to: args.to,
+      ...(args.depth !== undefined ? { depth: args.depth } : {}),
+    });
+    if (!outcome.ok) {
+      return {
+        error: {
+          code: outcome.code,
+          message: outcome.message,
+        },
+      };
+    }
+    const { plan } = outcome;
+    if (!args.apply) {
+      return {
+        applied: false,
+        planId: plan.planId,
+        from: plan.from,
+        to: plan.to,
+        target: plan.target,
+        counts: plan.counts,
+        notes: plan.notes,
+        files: plan.files,
+        affected: plan.affected,
+        unresolved: plan.unresolved,
+        next: 'review the plan, then call again with apply: true and this planId; any file change since the dry run invalidates it',
+      };
+    }
+    const result = applyRenamePlan(plan, this.deps.repoRoot, args.planId ?? '');
+    if (!result.ok) {
+      return {
+        error: { code: result.code, message: result.message },
+        ...(result.rolledBack !== undefined ? { rolledBack: result.rolledBack } : {}),
+      };
+    }
+    return {
+      applied: true,
+      planId: result.planId,
+      filesChanged: result.filesChanged,
+      edits: result.edits,
+      next: 'the derived index is now stale — run `crib update --dirty` (or a full `crib reindex`) before trusting query/context results; `crib serve` self-heals on its next scan',
+    };
+  }
+
+  /** Map 1-based lines of one file to the committed graph nodes that start there, so taint paths
+   *  link back to the graph (statement/assignment/raise/condition nodes carry file+span). */
+  private graphNodesAtLine(file: string): Map<number, string> {
+    const byLine = new Map<number, string>();
+    for (const n of this.deps.soul.iterate()) {
+      if (n.file !== file || n.span === undefined) continue;
+      if (!GRAPH_NODE_KINDS.has(n.kind)) continue;
+      if (!byLine.has(n.span.start)) byLine.set(n.span.start, n.id);
+    }
+    return byLine;
   }
 
   /**
@@ -1681,7 +1966,18 @@ export class Verbs {
         note: 'not a git work tree',
       };
     }
-    const changed = new Set(changedPaths);
+    // `changedFilesSince` is `since..HEAD` — a COMMIT range, so it structurally cannot see an edit
+    // that has not been committed yet. This verb is the pre-commit gate ("analyse graph changes
+    // before committing"), i.e. it is called at exactly the moment the interesting changes are still
+    // in the working tree. Reporting the commit range alone answered "nothing changed" right when
+    // something was about to be committed, so the working tree is folded into the analysed set.
+    let uncommittedPaths: string[];
+    try {
+      uncommittedPaths = vcs.uncommittedChanges(this.deps.repoRoot);
+    } catch {
+      uncommittedPaths = [];
+    }
+    const changed = new Set([...changedPaths, ...uncommittedPaths]);
     const changedSymbols: string[] = [];
     const removedEdges: Array<{ id: string; src: string; dst: string; rel: string }> = [];
     for (const node of this.deps.soul.iterate()) {
@@ -1695,7 +1991,24 @@ export class Verbs {
         removedEdges.push({ id: edge.id, src: edge.src, dst: edge.dst, rel: edge.rel });
       }
     }
-    return { since, head, changedPaths, changedSymbols, removedEdges };
+    // Scope qualifier, so an empty or partial report is never read as a clean bill of health. The
+    // `since === head` case is the one that used to lie: the commit range is empty BY CONSTRUCTION
+    // (the anchor is the current commit), so without this the caller sees `[]` and infers "clean".
+    const note =
+      since === head && uncommittedPaths.length > 0
+        ? 'no commits since the anchor — this report covers UNCOMMITTED working-tree changes only'
+        : since === head
+          ? 'no commits since the anchor and a clean working tree — the commit range is empty by construction, not surveyed'
+          : undefined;
+    return {
+      since,
+      head,
+      changedPaths,
+      uncommittedPaths,
+      changedSymbols,
+      removedEdges,
+      ...(note ? { note } : {}),
+    };
   }
 
   /**
@@ -2382,19 +2695,25 @@ export class Verbs {
     const gathered = gatherRecall(stores, {
       ...(args.sources ? { sources: args.sources } : {}),
     });
-    const { fts, scorer } = lexicalChannel(
+    const { fts, vectors, scorer } = lexicalChannel(
       stores,
       gathered.records.map((r) => r.record),
       args.sources !== undefined,
+      mem.embedder,
     );
     try {
+      // The page size is decided BEFORE the search so enrichment does only the work this response
+      // returns — enriching a whole ledger to hand back <=20 rows was the dominant cost in `search`.
+      const limit = capInt(args.limit, 5, 20);
       const response = api.search(query, {
         ...(args.targetIds ? { targetIds: args.targetIds } : {}),
         ...(args.sources ? { sources: args.sources } : {}),
         lexicalScorer: scorer,
+        // limit + 1: enrich ONE past the page so `truncated` can still tell "there is more" without
+        // enriching the whole ledger. The extra row is sliced off below and never returned.
+        limit: limit + 1,
         ...(mem.evaluator && mem.evalCtx ? { evaluator: mem.evaluator, evalCtx: mem.evalCtx } : {}),
       });
-      const limit = capInt(args.limit, 5, 20);
       const hits = response.hits
         .slice(0, limit)
         .map((h) => this.searchHitView(h, args.withEvidence));
@@ -2413,6 +2732,7 @@ export class Verbs {
       return this.applyIfHash(args, result);
     } finally {
       fts.close();
+      vectors?.close();
     }
   }
 
@@ -2551,6 +2871,24 @@ export class Verbs {
    * The outbox/dead collections are local-only (the no-poison rule), so this reads the local store
    * only and degrades to empty counts when it is absent.
    */
+  /**
+   * Session handoff — "where was I?" for an agent starting a fresh context window.
+   *
+   * The first call of a resumed session. It takes no query, because a returning agent cannot yet
+   * phrase one: it needs the unfinished attempts, the captures never distilled, the claims that went
+   * stale while it was away, and the conventions that still hold. Vendor-neutral by construction —
+   * any MCP client gets the same picture from the same shared ledger.
+   */
+  memoryHandoff(args: { limit?: number; ifHash?: string }): Record<string, unknown> {
+    const api = this.memoryApi();
+    if (!api) return this.applyIfHash(args, { memory: 'not configured' });
+    const limit = capInt(args.limit, 10, 25);
+    const handoff = api.handoff({
+      limits: { openWork: limit, pending: limit, attention: limit, recent: limit },
+    });
+    return this.applyIfHash(args, { ...handoff });
+  }
+
   memoryOutbox(args: { ifHash?: string }): Record<string, unknown> {
     const local = this.memory?.local;
     if (!local) return this.applyIfHash(args, { memory: 'not configured' });
@@ -2654,6 +2992,15 @@ export class Verbs {
         source,
       },
       provenance: { fresh: all.fresh, errors: all.errors },
+      ...(this.memory.projectionCheckpoints !== undefined
+        ? {
+            freshness: Object.fromEntries(
+              this.memory.projectionCheckpoints
+                .read()
+                .map((checkpoint) => [checkpoint.projector, checkpoint]),
+            ),
+          }
+        : {}),
     };
     return this.applyIfHash(args, result);
   }
@@ -2980,7 +3327,10 @@ export class Verbs {
             collection === 'decisions' ? 'decision.append' : 'feedback.append',
             entry,
             {
-              principalId: args.actor,
+              // G1.1: `principalId` is OWNERSHIP — the sync stream this device's events belong to.
+              // `args.actor` is provenance (already on the feedback row) and must never stand in for
+              // the owner principal, or the envelope attributes the event to an agent, not a person.
+              principalId: process.env.KCRIB_PRINCIPAL_ID ?? DEFAULT_MIGRATION_PRINCIPAL_ID,
               env: process.env,
               now: () => new Date().toISOString(),
               ...(syncRepoIdRef !== undefined ? { syncRepoId: syncRepoIdRef } : {}),
@@ -3094,6 +3444,11 @@ export class Verbs {
       cribDir: this.deps.soul.cribDir,
       ...(mem.evaluator !== undefined ? { evaluator: mem.evaluator } : {}),
       ...(mem.evalCtx !== undefined ? { evalCtx: mem.evalCtx } : {}),
+      ...(mem.eventJournal !== undefined ? { eventJournal: mem.eventJournal } : {}),
+      ...(mem.projectionCheckpoints !== undefined
+        ? { projectionCheckpoints: mem.projectionCheckpoints }
+        : {}),
+      ...(mem.identityDirectory !== undefined ? { identityDirectory: mem.identityDirectory } : {}),
       ...(head ? { codeHead: head } : {}),
     });
   }
@@ -3119,10 +3474,11 @@ export class Verbs {
     // G3.1 — persistent snapshot on the all-sources path, ephemeral rebuild under a sources filter
     // (subset corpora rank differently — see {@link lexicalChannel}). G3.2 — the versioned scorer
     // carries its configuration id on the projection provenance (red line #6).
-    const { fts, scorer } = lexicalChannel(
+    const { fts, vectors, scorer } = lexicalChannel(
       stores,
       gathered.records.map((r) => r.record),
       opts.sources !== undefined,
+      mem.embedder,
     );
     try {
       // G3.3 — bind the SAME generation-keyed cache `MemoryApi.search` binds (shared
@@ -3154,6 +3510,7 @@ export class Verbs {
       return projection;
     } finally {
       fts.close();
+      vectors?.close();
     }
   }
 
@@ -3269,6 +3626,18 @@ export class Verbs {
       applicability: m.verdicts.applicability,
       lifecycle: m.verdicts.lifecycle,
       score: m.score,
+      // A ranking score without its context makes the ledger look arbitrary. `scope`, ownership,
+      // evidence/validity state, timestamps, source, and the numeric score are first-class result
+      // fields above; the compact per-result explanation supplies the missing decision: why this
+      // result outranked another. Keeping it this small protects the 1,200-token recall contract.
+      explanation: {
+        reason:
+          m.score.lexical >= EXACT_MATCH_BONUS
+            ? 'exact'
+            : m.score.lexical > 0
+              ? 'text'
+              : 'priority',
+      },
       evidenceItems:
         withEvidence === true ? r.evidence : r.evidence.map((e) => this.evidenceSummary(e)),
     };
@@ -3728,6 +4097,16 @@ function lowCoverageHint(coverage: Record<string, unknown>): Record<string, unkn
 function notFound(id: string): Record<string, unknown> {
   return { error: { code: 'NOT_FOUND', message: `no node with id ${id}` } };
 }
+
+/** Graph node kinds whose span points at a source line a taint path can reference. */
+const GRAPH_NODE_KINDS: ReadonlySet<NodeKind> = new Set<NodeKind>([
+  'statement',
+  'assignment',
+  'raise',
+  'condition',
+  'case-branch',
+  'exception-handler',
+]);
 
 /** M3.2 — resolve an id-or-name against an arbitrary soul (exact id, then qualified, then simple). */
 function resolveIdInSoul(soul: SoulStore, idOrName: string): string | undefined {

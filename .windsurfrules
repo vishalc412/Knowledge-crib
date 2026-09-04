@@ -4,7 +4,7 @@
 This repository uses knowledge-crib as a shared, vendor-neutral memory substrate. Every agent session — Claude, Cursor, Copilot/VS Code, Codex, Windsurf, Gemini, or any MCP-capable tool — follows this protocol. It does not change your tool; it tells you how to use memory safely.
 
 ### 1. Recall before you act
-- Before relying on a reusable claim, call the `brief` MCP tool (or `crib memory recall "<query>"`) to surface team + local memory for this repository. Memory is the source of truth across sessions — do not assume last session’s state still holds.
+- Before relying on a reusable claim, call the `brief` MCP tool (or the `memory_recall` MCP tool, or `crib memory recall "<query>"`) to surface team + local memory for this repository. Memory is the source of truth across sessions — do not assume last session’s state still holds.
 - `brief` returns typed groups: team before local, valid before degraded, current before needs-review. Never mix memory results with BM25 code-search results into one opaque list.
 
 ### 2. Record only reusable learnings
@@ -17,4 +17,24 @@ This repository uses knowledge-crib as a shared, vendor-neutral memory substrate
 
 ### 4. Non-destructive
 - Memory lives in `.crib/memory/` (team) and `~/.crib/memory/` (local/global) — NOT in this file. Removing this adapter (or this client) removes only this managed block; it does not delete memory. On disagreement do not delete team memory; supersede or quarantine it with admissible counter-evidence instead.
+
+## Knowledge-crib code intelligence protocol
+
+The same MCP server that serves memory also serves this repository’s code graph. Use the graph, not a text search, to answer structural questions — and read its honesty signals rather than assuming a clean result.
+
+### 5. Analyse blast radius before you edit
+- Before changing a function, class, or method, call `impact({ id: "<symbol>", dir: "up" })` (`op` defaults to `blast`; `dir: "up"` = dependents, `dir: "down"` = dependencies). Report the affected symbols before editing.
+- `risk` on each affected node is DISTANCE-derived, not a judgement: `high` at distance 1, `medium` at 2, `low` beyond. It ranks proximity — it never certifies that an edit is safe.
+- An empty `affected` list is NOT evidence the symbol is unused. It can equally mean the edges are not resolvable by the index (dynamic dispatch, plain-object property access, cross-language calls, reflection). Confirm with a text search before treating a symbol as dead.
+- `truncated: true` means the walk was cut at a limit — the result is a page, not the blast radius. Raise `limit`/`depth` or page with `cursor` before drawing a conclusion.
+
+### 6. Analyse graph changes before you commit
+- Run `detect_changes({})` (optionally `{ since: "<ref>" }`) and review `changedSymbols`, `removedEdges`, `changedPaths` (committed since the anchor) and `uncommittedPaths` (still in the working tree). Both path sets feed `changedSymbols`, so the check works BEFORE you commit.
+- A `note` QUALIFIES the report — it is degraded or narrowed in scope, never a clean bill of health. `vcs adapter not configured`, `not a git work tree` and `no incremental anchor` all return empty arrays; `no commits since the anchor …` means the commit range was empty by construction. Never read an empty result carrying a `note` as "nothing changed".
+
+### 7. Prefer graph verbs over grep
+- Explore unfamiliar code with `query({ q: "<concept>" })`; get callers, callees, and docs for one symbol with `context({ id: "<symbol>" })`; find owning files/modules with `impact({ op: "owners", id })`; find how two symbols connect with `impact({ op: "path", from, to })`.
+- Rename through `rename({ from, to })` — it plans across the call graph and is dry-run by default; apply only with the returned `planId`. Never rename with find-and-replace.
+- `explain({ id })` reports taint/dataflow findings for one callable. `status({ op: "gaps" })` reports what the graph does NOT cover — read it before claiming coverage.
+- If the index is stale, refresh it with `crib index` (or `crib update`). A stale graph answers confidently and wrongly.
 <!-- crib:end -->

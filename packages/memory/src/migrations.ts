@@ -1,5 +1,5 @@
 import type { Verdicts } from './enums.js';
-import { derivePropositionKey, memoryAliasId, memoryRecordV2Id } from './ids.js';
+import { derivePropositionKey, memoryAliasId, memoryRecordV2Id, memoryRecordV3Id } from './ids.js';
 /**
  * memory-1 → memory-2 migration + the unknown-version fail-closed gate (PRD §2: "Use separate
  * memory-1 JSON schemas and explicit migrators. Unknown versions fail closed." + W2 exit gate +
@@ -27,8 +27,10 @@ import { derivePropositionKey, memoryAliasId, memoryRecordV2Id } from './ids.js'
 import {
   MEMORY_SCHEMA_VERSION,
   type MemoryAlias,
+  type MemoryNamespace,
   type MemoryRecord,
   type MemoryRecordV2,
+  type MemoryRecordV3,
   SUPPORTED_MEMORY_SCHEMA_VERSIONS,
 } from './types.js';
 
@@ -202,6 +204,34 @@ export function migrateRecordV1ToV2(
     ...(record.meta !== undefined ? { meta: record.meta } : {}),
   };
   return { record: v2, alias };
+}
+
+/** One deterministic v2 → v3 rewrite. The caller supplies the preserved v1 verdict snapshot;
+ * v2 itself intentionally has no stamped axes, so deriving a new one here would be unsafe. */
+export function migrateRecordV2ToV3(
+  record: MemoryRecordV2,
+  namespace: MemoryNamespace,
+  verdicts: Verdicts,
+): { record: MemoryRecordV3; alias: MemoryAlias } {
+  if (namespace.principalId !== record.provenance.principalId) {
+    throw new Error('v2→v3 namespace principal must match record provenance');
+  }
+  const v3: MemoryRecordV3 = {
+    ...record,
+    id: memoryRecordV3Id({ ...record, namespace }),
+    schemaVersion: '3',
+    namespace,
+  };
+  return {
+    record: v3,
+    alias: {
+      id: memoryAliasId({ legacyId: record.id, resolvedId: v3.id }),
+      schemaVersion: '1',
+      legacyId: record.id,
+      resolvedId: v3.id,
+      verdicts,
+    },
+  };
 }
 
 // ─── the migrator chain ──────────────────────────────────────────────────────

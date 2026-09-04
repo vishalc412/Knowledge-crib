@@ -62,23 +62,34 @@ export class AliasConflictError extends Error {
  */
 export function buildAliasIndex(aliases: readonly MemoryAlias[]): AliasIndex {
   const byLegacy = new Map<string, string>();
-  const byResolved = new Map<string, MemoryAlias>();
-  const byResolvedAll = new Map<string, MemoryAlias[]>();
   for (const alias of aliases) {
     const bound = byLegacy.get(alias.legacyId);
     if (bound !== undefined && bound !== alias.resolvedId) {
       throw new AliasConflictError(alias.legacyId, bound, alias.resolvedId);
     }
     byLegacy.set(alias.legacyId, alias.resolvedId);
-    byResolved.set(alias.resolvedId, alias);
-    const bucket = byResolvedAll.get(alias.resolvedId);
-    if (bucket) bucket.push(alias);
-    else byResolvedAll.set(alias.resolvedId, [alias]);
   }
+  const resolve = (legacyId: string): string | undefined => {
+    let current = legacyId;
+    let resolved = byLegacy.get(current);
+    if (resolved === undefined) return undefined;
+    const seen = new Set<string>([current]);
+    while (byLegacy.has(resolved)) {
+      if (seen.has(resolved)) {
+        throw new AliasConflictError(legacyId, current, resolved);
+      }
+      seen.add(resolved);
+      current = resolved;
+      resolved = byLegacy.get(current)!;
+    }
+    return resolved;
+  };
+  const aliasesFor = (resolvedId: string): readonly MemoryAlias[] =>
+    aliases.filter((alias) => resolve(alias.legacyId) === resolvedId);
   return {
-    resolve: (legacyId) => byLegacy.get(legacyId),
-    aliasFor: (resolvedId) => byResolved.get(resolvedId),
-    aliasesFor: (resolvedId) => byResolvedAll.get(resolvedId) ?? [],
+    resolve,
+    aliasFor: (resolvedId) => aliasesFor(resolvedId).at(-1),
+    aliasesFor,
     all: () => aliases,
   };
 }

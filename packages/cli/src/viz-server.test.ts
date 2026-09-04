@@ -149,3 +149,162 @@ describe('isAllowedHost (DNS-rebinding guard)', () => {
     expect(isAllowedHost('[::1')).toBe(false); // malformed bracket
   });
 });
+
+// ─── memory ledger endpoints (G5.4) ──────────────────────────────────────────
+//
+// The endpoints own NO projections: readMemoryLedger must return exactly what MemoryApi.ledger
+// returns (the memory package tests pin that projection), and readMemoryLedgerDetail must be a
+// pure get+audit composition. These tests pin the SERVER's contract: query validation (400s, the
+// hard cap), the honest not-configured shape, and the lazy detail fetch.
+
+import {
+  type MemoryAnchorPort,
+  MemoryApi,
+  type MemoryEvidence,
+  type MemoryRecord,
+  MemoryStore,
+  __resetMemoryLockGuardForTest,
+  memoryRecordId,
+} from '@knowledge-crib/memory';
+import { parseMemoryLedgerQuery, readMemoryLedger, readMemoryLedgerDetail } from './viz-server.js';
+
+const MEM_T0 = '2026-01-01T00:00:00.000Z';
+const MEM_REPO = 'r-viz-ledger';
+const MEM_LIVE = 'sym:src/demo.ts#demo.run@L2';
+
+function memRecord(over: { subject?: string; claim?: string } = {}): MemoryRecord {
+  const subject = over.subject ?? MEM_LIVE;
+  const evidence: MemoryEvidence[] = [
+    {
+      kind: 'source-quote',
+      verdict: 'valid',
+      checkedAt: MEM_T0,
+      soulId: subject,
+      quote: 'runs',
+      targetHash: 'blake3:abcd',
+    },
+  ];
+  const input = {
+    kind: 'fact' as const,
+    subject,
+    claim: over.claim ?? 'demo.run handles the request',
+    scope: { boundary: 'repo' as const, repoId: MEM_REPO },
+    appliesTo: [subject],
+    evidence,
+    authorship: { actor: 'claude-code', kind: 'agent' as const, tool: 'claude-code' },
+  };
+  return {
+    id: memoryRecordId(input),
+    schemaVersion: '1' as const,
+    ...input,
+    verdicts: {
+      trust: 'local' as const,
+      evidence: 'valid' as const,
+      applicability: 'current' as const,
+      lifecycle: 'active' as const,
+    },
+    createdAt: MEM_T0,
+  };
+}
+
+function memApi(home: string): MemoryApi {
+  const env = {
+    ...process.env,
+    KCRIB_MEMORY_DIR: home,
+    KCRIB_REGISTRY_DIR: home,
+    KCRIB_SYNC_KEY: undefined,
+  };
+  const local = MemoryStore.local(MEM_REPO, { env, now: () => MEM_T0 });
+  local.upsertEntries('active', [memRecord()]);
+  const live = {
+    id: MEM_LIVE,
+    kind: 'symbol',
+    name: 'run',
+    qualifiedName: 'demo.run',
+    file: 'src/demo.ts',
+    span: { start: 2, end: 3 },
+    lang: 'typescript',
+    hash: 'blake3:live',
+  };
+  return new MemoryApi({
+    stores: { local },
+    env,
+    now: () => MEM_T0,
+    soul: {
+      getNode: (id: string) => (live.id === id ? live : undefined),
+      allNodes: () => [live],
+      rehydrate: () => ({ text: '', truncated: false, totalLines: 1, startLine: 1 }),
+    } as unknown as MemoryAnchorPort,
+  });
+}
+
+describe('parseMemoryLedgerQuery', () => {
+  it('defaults the page and caps the limit', () => {
+    expect(parseMemoryLedgerQuery(new URLSearchParams(''))).toEqual({ offset: 0, limit: 100 });
+    expect(parseMemoryLedgerQuery(new URLSearchParams('limit=5000')).limit).toBe(200);
+  });
+
+  it('accepts a known group and rejects bad values with 400', () => {
+    expect(parseMemoryLedgerQuery(new URLSearchParams('group=stale&offset=4&limit=2'))).toEqual({
+      offset: 4,
+      limit: 2,
+      group: 'stale',
+    });
+    expect(() => parseMemoryLedgerQuery(new URLSearchParams('group=nope'))).toThrow(VizHttpError);
+    expect(() => parseMemoryLedgerQuery(new URLSearchParams('offset=-1'))).toThrow(VizHttpError);
+    expect(() => parseMemoryLedgerQuery(new URLSearchParams('limit=1.5'))).toThrow(VizHttpError);
+  });
+});
+
+describe('memory ledger endpoints', () => {
+  let home = '';
+
+  beforeEach(() => {
+    home = mkdtempSync(join(tmpdir(), 'crib-viz-memory-'));
+    __resetMemoryLockGuardForTest();
+  });
+
+  afterEach(() => {
+    __resetMemoryLockGuardForTest();
+    rmSync(home, { recursive: true, force: true });
+  });
+
+  it('returns the honest not-wired shape when no memory api is bound', () => {
+    expect(readMemoryLedger(undefined, parseMemoryLedgerQuery(new URLSearchParams('')))).toEqual({
+      configured: false,
+    });
+  });
+
+  it('serves the api projection verbatim — the server adds validation, never fields', () => {
+    // The record anchors a live node, so it lands in `current`; the group filter narrows rows
+    // while `counts` still covers the whole ledger.
+    const result = readMemoryLedger(
+      memApi(home),
+      parseMemoryLedgerQuery(new URLSearchParams('group=current')),
+    );
+    expect(result.configured).toBe(true);
+    if (!result.configured) return; // narrowing for the union
+    expect(result.counts.current).toBe(1);
+    expect(result.rows).toHaveLength(1);
+    expect(result.rows[0]?.subject).toBe(MEM_LIVE);
+    expect(result.rows[0]?.group).toBe('current');
+  });
+
+  it('composes detail from get + audit and 404s unknown ids', () => {
+    const api = memApi(home);
+    const record = memRecord();
+    const detail = readMemoryLedgerDetail(api, record.id);
+    expect(detail.found).toBe(true);
+    expect(detail.id).toBe(record.id);
+    expect(detail.verdicts?.lifecycle).toBe('active');
+    expect(detail.audit.found).toBe(true);
+    expect(detail.audit.requested).toBe(record.id);
+
+    expect(() => readMemoryLedgerDetail(api, 'mem:nope')).toThrow(VizHttpError);
+    try {
+      readMemoryLedgerDetail(api, 'mem:nope');
+    } catch (err) {
+      expect((err as VizHttpError).status).toBe(404);
+    }
+  });
+});

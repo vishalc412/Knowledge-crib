@@ -21,29 +21,22 @@ const skipIndex = process.argv.includes('--skip-index');
 const TIMEOUT_MS = 30_000;
 
 const REQUIRED_TOOLS = [
-  'status',
   'context',
   'source',
-  'dossier',
-  'reconstruct',
-  'dossier_by_scope',
-  'impact',
-  'federatedImpact',
   'query',
-  'enrich_status',
-  'enrich_next',
-  'enrich_save',
-  'audit_llm',
   'overview',
-  'llm_neighbors',
-  'describes',
-  'neighbors',
-  'ownership',
-  'shortest_path',
   'detect_changes',
-  'extract_rules',
-  'gaps',
-  'stats',
+  'brief',
+  'memory_recall',
+  'memory_observe',
+  'explain',
+  'rename',
+  'memory',
+  'enrich',
+  'impact',
+  'dossier',
+  'neighbors',
+  'status',
 ];
 
 function fail(message) {
@@ -210,33 +203,52 @@ async function main() {
 
     await call('context', { id, withSource: true, withRules: true, withFramework: true });
     await call('source', { id, maxChars: 8_000, maxLines: 160 });
-    await call('dossier', { id, includeTables: true, sourceMaxChars: 8_000, sourceMaxLines: 160 });
-    await call('reconstruct', { id, includeTables: true }); // valid negative path for a non-package symbol
-    await call('dossier_by_scope', { scope: 'file', id: file, maxSymbols: 3, sourceMaxLines: 80 });
+    await call('dossier', {
+      op: 'one',
+      id,
+      includeTables: true,
+      sourceMaxChars: 8_000,
+      sourceMaxLines: 160,
+    });
+    await call('dossier', { op: 'package', id, includeTables: true }); // valid negative path for a non-package symbol
+    await call('dossier', {
+      op: 'scope',
+      scope: 'file',
+      id: file,
+      maxSymbols: 3,
+      sourceMaxLines: 80,
+    });
     await call('impact', { id, dir: 'up', depth: 2, limit: 20 });
-    await call('federatedImpact', { id, dir: 'up', depth: 2, limit: 20 });
-    await call('enrich_status', { scopes: true });
-    await call('enrich_next', { limit: 1 });
+    await call('impact', { op: 'federated', id, dir: 'up', depth: 2, limit: 20 });
+    await call('enrich', { op: 'status', scopes: true });
+    await call('enrich', { op: 'next', limit: 1 });
 
     // Safe no-op branch. No model artifact is authored during product acceptance.
-    const saveProbe = await client.request('tools/call', {
-      name: 'enrich_save',
-      arguments: { batchId: 'self-hosted-invalid-probe', items: [] },
-    });
-    called.push('enrich_save');
-    assertToolResult('enrich_save', saveProbe);
+    await call('enrich', { op: 'save', batchId: 'self-hosted-invalid-probe', items: [] });
 
-    await call('audit_llm');
+    await call('enrich', { op: 'audit' });
     await call('overview');
-    await call('llm_neighbors', { id });
-    await call('describes', { id });
+    await call('neighbors', { op: 'llm', id });
+    await call('neighbors', { op: 'describes', id });
     await call('neighbors', { id, dir: 'both', limit: 20 });
-    await call('ownership', { id });
-    await call('shortest_path', { from: id, to: id, maxHops: 1 });
+    await call('impact', { op: 'owners', id });
+    await call('impact', { op: 'path', from: id, to: id, maxHops: 1 });
     await call('detect_changes', { since: 'HEAD' });
-    await call('extract_rules', { procedure: id, includeTables: true });
-    await call('gaps', { includeBuiltins: false });
-    const stats = await call('stats');
+    await call('dossier', { op: 'rules', procedure: id, includeTables: true });
+    await call('status', { op: 'gaps', includeBuiltins: false });
+    const stats = await call('status', { op: 'stats' });
+    await call('brief', { q: 'buildServer' });
+    await call('memory_recall', { q: 'buildServer' });
+    // Deliberately invalid semantic input: exercises the validation path without writing a memory.
+    await call('memory_observe', {
+      kind: 'fact',
+      subject: '',
+      claim: 'self-hosted probe',
+      actor: 'self-hosted',
+    });
+    await call('memory', { op: 'status' });
+    await call('explain', { id });
+    await call('rename', { from: id, to: 'self_hosted_probe', depth: 1 }); // dry-run only
     const uncalled = REQUIRED_TOOLS.filter((tool) => !called.includes(tool));
     if (uncalled.length) fail(`tools not called: ${uncalled.join(', ')}`);
 

@@ -83,6 +83,41 @@ describe('neutralProtocolBody — vendor-neutral contract', () => {
     expect(body).toContain('.crib/memory/');
     expect(body).toMatch(/removing this adapter/i);
   });
+
+  it('carries crib-native code-intelligence rules, so no third-party block is needed', () => {
+    const body = neutralProtocolBody();
+    // crib's OWN verbs — the repo must never depend on another tool's instruction block for the
+    // "analyse impact before you edit / graph changes before you commit" discipline.
+    expect(body).toContain('`impact(');
+    expect(body).toContain('`detect_changes(');
+    expect(body).toContain('`rename(');
+    expect(body).toMatch(/never rename with find-and-replace/i);
+  });
+
+  it("states crib's own honesty signals rather than another tool's verdicts", () => {
+    const body = neutralProtocolBody();
+    // crib grades `risk` by DISTANCE; it has no UNKNOWN verdict and no riskNote. Describing it with
+    // another tool's contract would tell agents to look for fields crib never returns.
+    expect(body).toMatch(/distance-derived/i);
+    expect(body).not.toContain('UNKNOWN');
+    expect(body).not.toContain('riskNote');
+    // the three signals crib DOES return and an agent must not read as an all-clear
+    expect(body).toMatch(/empty `affected` list is NOT evidence/i);
+    expect(body).toContain('`truncated: true`');
+    expect(body).toMatch(/a `note` QUALIFIES the report/i);
+    expect(body).toContain('`uncommittedPaths`');
+  });
+});
+
+describe('neutralProtocolBody — no third-party coupling', () => {
+  it("never names another vendor's tooling", () => {
+    const body = neutralProtocolBody().toLowerCase();
+    // The protocol is spliced into every client's instruction file in every repo crib indexes, so a
+    // third-party tool name here would make that tool a de-facto dependency of using crib at all.
+    for (const vendor of ['gitnexus', 'graphify', '.gitnexus/']) {
+      expect(body).not.toContain(vendor);
+    }
+  });
 });
 
 describe('spliceAdapterBlock — managed-block discipline', () => {

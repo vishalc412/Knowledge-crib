@@ -42,8 +42,8 @@
           <tr><th>packages</th><td>8 (knowledge-crib, @knowledge-crib/core, @knowledge-crib/mcp, @knowledge-crib/memory, @knowledge-crib/parsers, @knowledge-crib/pipeline, @knowledge-crib/soul-schema, @knowledge-crib/ui)</td></tr>
           <tr><th>parser languages</th><td>11 (agent, csharp, go, java, md, mule, php, plsql, python, rust, ts)</td></tr>
           <tr><th>eval fixture languages</th><td>9 (csharp, go, java, php, plsql, python, rust, ts, ts-min)</td></tr>
-          <tr><th>test files</th><td>149</td></tr>
-          <tr><th>test call-sites (static)</th><td>2213</td></tr>
+          <tr><th>test files</th><td>175</td></tr>
+          <tr><th>test call-sites (static)</th><td>2526</td></tr>
     </table>
     <p class="stats-note">Test call-sites are a static count of <code>it(</code>/<code>test(</code>
       occurrences (excluding comments), not the runtime total — <code>it.each</code> is one call-site.
@@ -56,11 +56,11 @@
   <ul class="docs">
         <li><span class="num">—</span> <a href="../README.md">README.md</a> — <span class="desc">This overview + index</span></li>
         <li><span class="num">0</span> <a href="../knowledge-crib-prd.md">knowledge-crib-prd.md</a> — <span class="desc">Product vision, users, scope, metrics</span></li>
-        <li><span class="num">1</span> <a href="../knowledge-crib-architecture.md">knowledge-crib-architecture.md</a> — <span class="desc">System design + **diagrams**</span></li>
+        <li><span class="num">1</span> <a href="../knowledge-crib-architecture.md">knowledge-crib-architecture.md</a> — <span class="desc">System design + <strong>diagrams</strong></span></li>
         <li><span class="num">2</span> <a href="../knowledge-crib-data-model.md">knowledge-crib-data-model.md</a> — <span class="desc">Ontology: node kinds, edge rels, ID grammar</span></li>
         <li><span class="num">2b</span> <a href="../knowledge-crib-deep-extraction.md">knowledge-crib-deep-extraction.md</a> — <span class="desc">Deep code/SQL extraction + CFG/conditions (migration wedge)</span></li>
         <li><span class="num">3</span> <a href="../knowledge-crib-soul-format.md">knowledge-crib-soul-format.md</a> — <span class="desc">The on-disk soul (the spine)</span></li>
-        <li><span class="num">4</span> <a href="../knowledge-crib-storage.md">knowledge-crib-storage.md</a> — <span class="desc">`SoulStore` + `IndexStore` design</span></li>
+        <li><span class="num">4</span> <a href="../knowledge-crib-storage.md">knowledge-crib-storage.md</a> — <span class="desc"><code>SoulStore</code> + <code>IndexStore</code> design</span></li>
         <li><span class="num">5</span> <a href="../knowledge-crib-pipeline.md">knowledge-crib-pipeline.md</a> — <span class="desc">Extract→resolve→link→cluster→index + algorithms</span></li>
         <li><span class="num">6</span> <a href="../knowledge-crib-extractor-plugins.md">knowledge-crib-extractor-plugins.md</a> — <span class="desc">Plugin contract; add a language/format</span></li>
         <li><span class="num">7</span> <a href="../knowledge-crib-mcp-api.md">knowledge-crib-mcp-api.md</a> — <span class="desc">MCP verb request/response specs</span></li>
@@ -70,20 +70,23 @@
         <li><span class="num">11</span> <a href="../knowledge-crib-interview-guide.md">knowledge-crib-interview-guide.md</a> — <span class="desc">User research plan</span></li>
         <li><span class="num">—</span> <a href="../knowledge-crib-decisions.md">knowledge-crib-decisions.md</a> — <span class="desc">Locked decisions (Q1–Q38) — the why</span></li>
         <li><span class="num">—</span> <a href="../knowledge-crib-questionnaire.md">knowledge-crib-questionnaire.md</a> — <span class="desc">The full decision questionnaire</span></li>
-        <li><span class="num">—</span> <a href="../knowledge-crib-changelog-req1-req2.md">knowledge-crib-changelog-req1-req2.md</a> — <span class="desc">Changelog: single-entry root resolution + `crib mcp` auto-wiring (REQ-1, REQ-2)</span></li>
+        <li><span class="num">—</span> <a href="../knowledge-crib-changelog-req1-req2.md">knowledge-crib-changelog-req1-req2.md</a> — <span class="desc">Changelog: single-entry root resolution + <code>crib mcp</code> auto-wiring (REQ-1, REQ-2)</span></li>
         <li><span class="num">—</span> <a href="../knowledge-crib-user-guide.md">knowledge-crib-user-guide.md</a> — <span class="desc">User guide (install, workflow, the 23 MCP verbs, worked example)</span></li>
-        <li><span class="num">—</span> <a href="../knowledge-crib-user-guide.html">knowledge-crib-user-guide.html</a> — <span class="desc">**Team user guide (HTML)** — self-contained onboarding page to circulate (install → init → daily workflow → verbs)</span></li>
+        <li><span class="num">—</span> <a href="../knowledge-crib-user-guide.html">knowledge-crib-user-guide.html</a> — <span class="desc"><strong>Team user guide (HTML)</strong> — self-contained onboarding page to circulate (install → init → daily workflow → verbs)</span></li>
         <li><span class="num">—</span> <a href="../knowledge-crib-executive-brief.md">knowledge-crib-executive-brief.md</a> — <span class="desc">Executive brief — the pitch for decision-makers</span></li>
         <li><span class="num">—</span> <a href="../knowledge-crib-technical-pitch.md">knowledge-crib-technical-pitch.md</a> — <span class="desc">Technical pitch — the mechanism for engineers</span></li>
         <li><span class="num">—</span> <a href="../knowledge-crib-track3-spec.md">knowledge-crib-track3-spec.md</a> — <span class="desc">Track-3 spec</span></li>
         <li><span class="num">—</span> <a href="../llm-integration-deep-dive.md">llm-integration-deep-dive.md</a> — <span class="desc">LLM integration deep dive — data flow to/from the model, enrichment gates</span></li>
         <li><span class="num">—</span> <a href="../knowledge-crib-client-setup.md">knowledge-crib-client-setup.md</a> — <span class="desc">IDE MCP wiring (Claude Code, Cursor, VS Code/Copilot, Codex)</span></li>
-        <li><span class="num">—</span> <a href="../knowledge-crib-prompts.md">knowledge-crib-prompts.md</a> — <span class="desc">**Prompting guide** — how to drive crib from a local LLM (Claude Code / Codex) to save tokens + compute</span></li>
-        <li><span class="num">—</span> <a href="../knowledge-crib-refined-vs-existing-assessment.md">knowledge-crib-refined-vs-existing-assessment.md</a> — <span class="desc">**Refined vs existing comparison + six-role judgment** on detailed-level analysis (plan review)</span></li>
+        <li><span class="num">—</span> <a href="../knowledge-crib-prompts.md">knowledge-crib-prompts.md</a> — <span class="desc"><strong>Prompting guide</strong> — how to drive crib from a local LLM (Claude Code / Codex) to save tokens + compute</span></li>
+        <li><span class="num">—</span> <a href="../knowledge-crib-refined-vs-existing-assessment.md">knowledge-crib-refined-vs-existing-assessment.md</a> — <span class="desc"><strong>Refined vs existing comparison + six-role judgment</strong> on detailed-level analysis (plan review)</span></li>
         <li><span class="num">—</span> <a href="../knowledge-crib-m6-m13-build-plan.md">knowledge-crib-m6-m13-build-plan.md</a> — <span class="desc">Milestones M6→M13 (post-foundation build plan)</span></li>
         <li><span class="num">—</span> <a href="../knowledge-crib-production-readiness.md">knowledge-crib-production-readiness.md</a> — <span class="desc">Release gate, packaging fixes, and remaining production gaps</span></li>
         <li><span class="num">—</span> <a href="../knowledge-crib-beta-installers.md">knowledge-crib-beta-installers.md</a> — <span class="desc">macOS and Windows beta installer bundle build/install guide</span></li>
         <li><span class="num">—</span> <a href="../mulesoft.md">mulesoft.md</a> — <span class="desc">MuleSoft (Mule 3/4) extraction — folders/ZIPs/JARs, dialect detection, MUnit, property key-only redaction</span></li>
+        <li><span class="num">—</span> <a href="../memory-sync.md">memory-sync.md</a> — <span class="desc"><strong>Memory sync operator guide</strong> — cross-device sync setup, keys, push/pull, conflicts, rotation, physical purge (Gate 4 / ADR-003)</span></li>
+        <li><span class="num">—</span> <a href="../launch-readiness.md">launch-readiness.md</a> — <span class="desc"><strong>Launch readiness report</strong> — what shipped per gate, measured launch-gate verdicts (including the honest FAILs), the S1–S9 security battery, and the limitations carried</span></li>
+        <li><span class="num">—</span> <a href="../pdg-taint.md">pdg-taint.md</a> — <span class="desc">PDG / taint analysis (G5.2) — control dependence, reaching definitions, and the source→sink rule table behind <code>explain</code></span></li>
   </ul>
 
   <h2>Standalone HTML docs</h2>

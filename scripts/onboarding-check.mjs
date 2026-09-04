@@ -135,7 +135,10 @@ try {
       // passed — the gate would have to be hand-edited for each new check, which is how it ends up
       // asserting a number nobody has re-derived.
       fail(`crib doctor did not report every check passing:\n${doc.out}`);
-    } else if (/✗/.test(doc.out)) {
+      // Optional adapter capability details may contain an inline `✗` (for example, a missing
+      // whisper binary) while the doctor CHECK itself is deliberately WARN-class and begins with ✓.
+      // A clean setup is unhealthy only when a top-level check line begins with ✗.
+    } else if (doc.out.split('\n').some((line) => /^✗\s/.test(line))) {
       fail(`crib doctor reported a ✗ on a clean repo (cry wolf):\n${doc.out}`);
     } else {
       process.stdout.write('  onboarding:check — crib doctor reports every check passing ✓\n');

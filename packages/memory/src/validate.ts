@@ -11,6 +11,7 @@ import {
   RECEIPT_SCHEMA,
   RECORD_SCHEMA,
   RECORD_V2_SCHEMA,
+  RECORD_V3_SCHEMA,
   SYNC_EVENT_SCHEMA,
 } from './schemas.js';
 /**
@@ -31,12 +32,14 @@ import type {
   MemoryManifest,
   MemoryRecord,
   MemoryRecordV2,
+  MemoryRecordV3,
 } from './types.js';
 
 const ajv = new Ajv({ allErrors: true, strict: false });
 
 const validateRecordFn: ValidateFunction = ajv.compile(RECORD_SCHEMA);
 const validateRecordV2Fn: ValidateFunction = ajv.compile(RECORD_V2_SCHEMA);
+const validateRecordV3Fn: ValidateFunction = ajv.compile(RECORD_V3_SCHEMA);
 const validateCandidateFn: ValidateFunction = ajv.compile(CANDIDATE_SCHEMA);
 const validateCaptureFn: ValidateFunction = ajv.compile(CAPTURE_SCHEMA);
 const validateAttemptFn: ValidateFunction = ajv.compile(ATTEMPT_SCHEMA);
@@ -71,6 +74,16 @@ export function assertValidMemoryRecordV2(record: MemoryRecordV2): void {
   assertValidV2ValidTime(record);
 }
 
+/** Thrown-path twin for the namespace-bearing memory-3 envelope. */
+export function assertValidMemoryRecordV3(record: MemoryRecordV3): void {
+  const ok: boolean = validateRecordV3Fn(record);
+  if (!ok) throw new MemorySchemaError('record-v3', validateRecordV3Fn.errors, record.id);
+  assertValidV2ValidTime(record);
+  if (record.namespace.principalId !== record.provenance.principalId) {
+    throw new MemorySchemaError('record-v3', [{ namespacePrincipalMismatch: true }], record.id);
+  }
+}
+
 /**
  * The validTime half-open-window check the draft-07 schema cannot express on its own (finding: the
  * schema accepted `to <= from` and any non-empty string as a date): `from` and `to` (when present)
@@ -79,7 +92,7 @@ export function assertValidMemoryRecordV2(record: MemoryRecordV2): void {
  * parsing (Date.parse, never the clock). Enforced on every memory-2 write AND read (the loader
  * validates through {@link assertValidMemoryEntry}).
  */
-function assertValidV2ValidTime(record: MemoryRecordV2): void {
+function assertValidV2ValidTime(record: Pick<MemoryRecordV2, 'id' | 'validTime'>): void {
   const { from, to } = record.validTime;
   const fromMs = Date.parse(from);
   if (Number.isNaN(fromMs)) {
@@ -179,6 +192,7 @@ const ENTRY_VALIDATORS: Record<string, { validate: ValidateFunction; label: stri
 const RECORD_VALIDATORS: Record<string, { validate: ValidateFunction; label: string }> = {
   '1': { validate: validateRecordFn, label: 'record' },
   '2': { validate: validateRecordV2Fn, label: 'record-v2' },
+  '3': { validate: validateRecordV3Fn, label: 'record-v3' },
 };
 
 /** Validate any memory entry by its id prefix (records: by id prefix + declared schemaVersion).
@@ -203,6 +217,7 @@ export function assertValidMemoryEntry(entry: { id: string } & Record<string, un
     const ok: boolean = v.validate(entry);
     if (!ok) throw new MemorySchemaError(v.label, v.validate.errors, entry.id);
     if (version === '2') assertValidV2ValidTime(entry as unknown as MemoryRecordV2);
+    if (version === '3') assertValidMemoryRecordV3(entry as unknown as MemoryRecordV3);
     return;
   }
   const v = ENTRY_VALIDATORS[prefix];

@@ -237,7 +237,8 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
   server.registerTool(
     'detect_changes',
     {
-      description: 'Dry-run delta report since a git ref (completed at M6).',
+      description:
+        'Dry-run delta report since a git ref. Reports `changedPaths` (committed since the anchor) AND `uncommittedPaths` (working tree), both folded into `changedSymbols`/`removedEdges`, so it is usable as a PRE-commit check. A `note` means the report is degraded or narrowed in scope — an empty result carrying one is not a clean bill of health. Run BEFORE committing.',
       inputSchema: { since: z.string().optional() },
     },
     async (a) => TOOL_RESULT(verbs.detectChanges(a)),
@@ -322,6 +323,40 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
       },
     },
     async (a) => TOOL_RESULT(verbs.memoryObserve(a)),
+  );
+
+  // G5.2 — on-demand PDG/taint analysis for one callable (TypeScript/JavaScript). Opt-in: nothing
+  // runs at index time; the analyzer is injected into Verbs (PdgPort) and the response carries an
+  // explicit `limits` block — an empty `flows` list is NOT proof of safety.
+  server.registerTool(
+    'explain',
+    {
+      description:
+        'On-demand PDG + taint analysis for ONE TypeScript/JavaScript callable: control-dependence and data-dependence edge counts plus taint flows (source rule, sink rule, variable, source→sink path with lines and graph node ids). Conservative and intra-procedural: a reported flow is possible, not confirmed, and an empty flows list is NOT proof of safety (cross-function flows are out of scope).',
+      inputSchema: {
+        id: z.string(),
+      },
+    },
+    async (a) => TOOL_RESULT(verbs.explain(a)),
+  );
+
+  // G5.1 — safe symbol rename. Default DRY-RUN: derives the reviewed plan and a deterministic plan
+  // id. `apply` is refused without the plan id, and again (stale) if any file changed since the
+  // plan was reviewed. Application is atomic; the response explicitly says the index is now stale.
+  server.registerTool(
+    'rename',
+    {
+      description:
+        'Safe symbol rename with a plan/apply split. Default is a DRY-RUN that returns the reviewed plan: per-file edits, exact (edge-grounded) vs inferred (text-hit) confidence counts, affected symbols with an unresolved bucket, notes, and a deterministic plan id. To apply, call again with apply: true and the SAME planId — it is refused if any file changed since the plan (stale) or the id does not match. Application is all-or-nothing and does NOT reindex: run `crib update --dirty` afterwards.',
+      inputSchema: {
+        from: z.string(),
+        to: z.string(),
+        apply: z.boolean().optional(),
+        planId: z.string().optional(),
+        depth: z.number().int().min(1).max(6).optional(),
+      },
+    },
+    async (a) => TOOL_RESULT(verbs.rename(a)),
   );
 
   // One dispatcher instead of four near-identical tools (memory_get / memory_status / memory_audit /
@@ -462,6 +497,13 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
         case 'outbox':
           return TOOL_RESULT(
             verbs.memoryOutbox({ ...(a.ifHash !== undefined ? { ifHash: a.ifHash } : {}) }),
+          );
+        case 'handoff':
+          return TOOL_RESULT(
+            verbs.memoryHandoff({
+              ...(a.limit !== undefined ? { limit: a.limit } : {}),
+              ...(a.ifHash !== undefined ? { ifHash: a.ifHash } : {}),
+            }),
           );
         case 'audit':
           return TOOL_RESULT(

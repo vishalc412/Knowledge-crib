@@ -295,3 +295,156 @@ describe('port conformance', () => {
     }
   });
 });
+
+// ─── semantic-only (added for the G3.2-R2 pre-registration) ──────────────────
+
+describe('semantic-only — the cosine channel alone', () => {
+  it('carries its own version id and does not claim a lexical mix', () => {
+    expect(scorerVersionId({ strategy: 'semantic-only', embedderId: 'e5-768' })).toBe(
+      'memory-rank-v2:e5-768:cosine:semantic-only',
+    );
+  });
+
+  it('requires an embedder, exactly like the other fusion strategies', () => {
+    expect(() => scorerVersionId({ strategy: 'semantic-only' })).toThrow(/requires an embedder/);
+  });
+
+  it('preserves the exact-match short-circuit (the pre-registration regression guard)', () => {
+    // The exact band runs BEFORE any channel, so dropping BM25 must not weaken exact retrieval —
+    // this is what keeps the launch gate's G1 at 100% when the ranker goes fully semantic.
+    const r = record({ subject: 'sym:src/z.ts#zFn', claim: 'tokens rotate on every deploy' });
+    const { fts, close } = buildIndex([r]);
+    try {
+      const scorer = new VersionedLexicalScorer({
+        fts,
+        records: [r],
+        embedder: new CharNgramEmbedder(),
+        strategy: 'semantic-only',
+      });
+      expect(scorer.versionId).toBe(
+        `${MEMORY_RANK_SCORER_VERSION}:${new CharNgramEmbedder().id}:cosine:semantic-only`,
+      );
+      expect(scorer.score(r, r.subject, [r.subject])).toBeGreaterThanOrEqual(EXACT_MATCH_BONUS);
+    } finally {
+      close();
+    }
+  });
+
+  it('fails closed without an embedder, exactly like the other fusion strategies', () => {
+    const r = record({ subject: 'sym:src/z.ts#zFn', claim: 'tokens rotate on every deploy' });
+    const { fts, close } = buildIndex([r]);
+    try {
+      expect(
+        () => new VersionedLexicalScorer({ fts, records: [r], strategy: 'semantic-only' }),
+      ).toThrow(/requires an embedder/);
+    } finally {
+      close();
+    }
+  });
+});
+
+// ─── second stage (rerank) + embed-text seam ─────────────────────────────────
+
+describe('rerank stage', () => {
+  const r1 = record({ subject: 'sym:src/a.ts#a', claim: 'alpha one' });
+  const r2 = record({ subject: 'sym:src/b.ts#b', claim: 'beta two' });
+  const recs = [r1, r2];
+
+  /** Reverses the first stage: whatever came first, this scores last. */
+  const inverting = {
+    id: 'test-rr',
+    rerankBatch: (_q: string, texts: readonly string[]) => texts.map((_t, i) => -i),
+  };
+
+  it('names the reranker and depth in the version id', () => {
+    const { fts, close } = buildIndex(recs);
+    try {
+      const s = new VersionedLexicalScorer({
+        fts,
+        records: recs,
+        embedder: new CharNgramEmbedder(),
+        strategy: 'semantic-only',
+        reranker: inverting,
+        rerankDepth: 10,
+      });
+      expect(s.versionId).toContain(':cosine:semantic-only+rerank-test-rr-d10');
+    } finally {
+      close();
+    }
+  });
+
+  it('lets the reranker decide the order of the window it saw', () => {
+    const { fts, close } = buildIndex(recs);
+    try {
+      const s = new VersionedLexicalScorer({
+        fts,
+        records: recs,
+        embedder: new CharNgramEmbedder(),
+        strategy: 'semantic-only',
+        reranker: inverting,
+        rerankDepth: 10,
+      });
+      // the inverting reranker scores the FIRST stage-1 candidate lowest, so the two must swap
+      const a = s.score(r1, 'alpha one beta', []);
+      const b = s.score(r2, 'alpha one beta', []);
+      expect(a).not.toBe(b);
+    } finally {
+      close();
+    }
+  });
+
+  it('fails closed: a reranker returning the wrong shape changes nothing', () => {
+    const { fts, close } = buildIndex(recs);
+    try {
+      const broken = { id: 'broken', rerankBatch: () => [] };
+      const base = new VersionedLexicalScorer({
+        fts,
+        records: recs,
+        embedder: new CharNgramEmbedder(),
+        strategy: 'semantic-only',
+      });
+      const withBroken = new VersionedLexicalScorer({
+        fts,
+        records: recs,
+        embedder: new CharNgramEmbedder(),
+        strategy: 'semantic-only',
+        reranker: broken,
+      });
+      expect(withBroken.score(r1, 'alpha', [])).toBe(base.score(r1, 'alpha', []));
+    } finally {
+      close();
+    }
+  });
+
+  it('defaults the cosine channel to the CLAIM alone, and embedTextOf can override it', () => {
+    const { fts, close } = buildIndex(recs);
+    try {
+      const dflt = new VersionedLexicalScorer({
+        fts,
+        records: recs,
+        embedder: new CharNgramEmbedder(),
+        strategy: 'semantic-only',
+      });
+      const explicitClaim = new VersionedLexicalScorer({
+        fts,
+        records: recs,
+        embedder: new CharNgramEmbedder(),
+        strategy: 'semantic-only',
+        embedTextOf: (r) => r.claim,
+      });
+      const withSubject = new VersionedLexicalScorer({
+        fts,
+        records: recs,
+        embedder: new CharNgramEmbedder(),
+        strategy: 'semantic-only',
+        embedTextOf: recordEmbedText,
+      });
+      // the default IS claim-only …
+      expect(dflt.score(r1, 'alpha', [])).toBe(explicitClaim.score(r1, 'alpha', []));
+      // … and the old FTS-mirroring composition embeds different text, so it scores differently
+      expect(withSubject.score(r1, 'alpha', [])).not.toBe(dflt.score(r1, 'alpha', []));
+    } finally {
+      close();
+    }
+  });
+});

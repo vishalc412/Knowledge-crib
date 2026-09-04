@@ -36,6 +36,9 @@ import {
 
 const NOW = '2026-01-01T00:00:00.000Z';
 const REPO = 'r-v2';
+/** The principal every v2 fixture is stamped with. Recall must be called as this principal to see
+ *  them (G7 boundary) — referenced by both `v2Input` and the recall tests so they cannot drift. */
+const FIXTURE_PRINCIPAL = 'principal-1';
 
 // ─── fixtures ────────────────────────────────────────────────────────────────
 
@@ -83,7 +86,7 @@ function v2Input(over: V2Input = {}): Parameters<typeof memoryRecordV2Id>[0] & {
     validTime: { from: '2026-01-01T00:00:00.000Z' },
     transactionTime: { observedAt: NOW, recordedAt: NOW },
     provenance: {
-      principalId: 'principal-1',
+      principalId: FIXTURE_PRINCIPAL,
       deviceId: 'device-1',
       actorId: 'actor-1',
       clientId: 'claude-code',
@@ -648,8 +651,15 @@ describe('recallProjection + FTS over a mixed v1/v2 store', () => {
     const b = v2Record({ claim: 'A.b issues a session cookie', lineage: { contradicts: [a.id] } });
     s.upsertEntries('active', [v1, a, b]);
 
-    const gathered = gatherRecall({ local: s });
+    // G7 boundary: v2 records carry `provenance.principalId`, and gatherRecall admits a record only
+    // when it is unstamped (v1 — treated as the caller's own) or stamped with EXACTLY the caller's
+    // principal. The fixtures stamp `principal-1`, so recall must be called as that principal or the
+    // two v2 rows are correctly excluded as foreign.
+    const gathered = gatherRecall({ local: s }, { principal: FIXTURE_PRINCIPAL });
     expect(gathered.records).toHaveLength(3);
+
+    // the same gather as a DIFFERENT principal sees only the unstamped v1 row (no cross-principal leak)
+    expect(gatherRecall({ local: s }, { principal: 'principal-2' }).records).toHaveLength(1);
 
     const projection = recallProjection(gathered, { query: 'sym:src/a.ts#A.b' });
     expect(projection.memories.map((m) => m.record.id)).toEqual([v1.id]);
@@ -663,7 +673,7 @@ describe('recallProjection + FTS over a mixed v1/v2 store', () => {
     const v1 = v1Record();
     const v2 = v2Record({ claim: 'A.b issues a JWT' });
     s.upsertEntries('active', [v1, v2]);
-    const gathered = gatherRecall({ local: s });
+    const gathered = gatherRecall({ local: s }, { principal: FIXTURE_PRINCIPAL });
 
     const fts = new MemoryFtsIndex(':memory:');
     try {

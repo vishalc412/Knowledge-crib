@@ -13,7 +13,7 @@
  *  - incremental `crib update` time (one-file edit)                   < MAX_UPDATE_RATIO
  *    of a full index on the same fixture (the P2.1 dossier-hoist gate)
  *
- * MAX_RUNTIME_DEPS is 9, and every one of the nine is a deliberate, disclosed tradeoff (see
+ * MAX_RUNTIME_DEPS is 10, and every one of the ten is a deliberate, disclosed tradeoff (see
  * NOTICE) rather than headroom to spend carelessly. It was 6 when `web-tree-sitter` (the PHP
  * extractor's WASM engine, P3) was the sixth. MuleSoft support then added three more — `saxes`
  * (streaming SAX XML for Mule 3/4 configs), `yaml` (RAML and descriptor parsing) and `yauzl` (ZIP
@@ -21,6 +21,13 @@
  * every branch since. All three are pure-JS with no native build, which is the property this budget
  * exists to protect; raising the cap records a decision already shipped rather than permitting a
  * new one. The next addition should still have to argue for itself here.
+ *
+ * `unpdf` (G5.3 multimodal PDF) is the tenth, and it argued for itself on exactly that property:
+ * MIT, pure-JS (it bundles Mozilla pdf.js), no native build, no postinstall and no network. It is
+ * also reached ONLY through a lazy `await import('unpdf')` inside the opt-in `--multimodal` phase,
+ * so the default index path never loads it. It was NOT moved to `optionalDependencies` to slip
+ * under the cap — optional deps still install by default, so that would have gamed this gate
+ * without saving a caller a single byte. The eleventh addition still has to argue for itself.
  *
  * MAX_PARSERS_PACKAGE_BYTES exists for the same reason: a future grammar addition that quietly
  * balloons this package should fail the build, not slip in.
@@ -40,7 +47,7 @@ import { dirname, join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { sessionCost } from './lib/pricing.mjs';
 
-const MAX_RUNTIME_DEPS = 9;
+const MAX_RUNTIME_DEPS = 10;
 const MAX_PACKAGE_BYTES = 5 * 1024 * 1024; // 5 MB, mcp+cli combined
 const MAX_PARSERS_PACKAGE_BYTES = 3 * 1024 * 1024; // 3 MB — today's actual is ~0.6 MB; headroom for a
 // couple more small vendored grammars before this becomes a real conversation, not silent bloat.
@@ -127,7 +134,14 @@ await check('runtime deps', () => {
 // legitimately mention `fetch(`/`axios(` in their doc block comments + match against the bare
 // identifier strings `'fetch'`/`'axios'` — they never ISSUE a network call. The block-comment lines
 // are not stripped by the `//` split below, so the parser would false-positive without this carve-out.
-const NETWORK_ALLOWLIST = new Set(['packages/parsers/src/ts/http-client.ts']);
+// The same carve-out applies to the PDG taint TABLE: `sink.url-fetch` declares the literal strings
+// `'fetch('` / `'http.request('` as patterns the analyzer MATCHES AGAINST in other people's code.
+// The file's only import is `import type` — it cannot issue a request. Both entries are pattern
+// TABLES, not call sites; every other file in the core path stays gated.
+const NETWORK_ALLOWLIST = new Set([
+  'packages/parsers/src/ts/http-client.ts',
+  'packages/pipeline/src/pdg/taint.ts',
+]);
 await check('core path is network-free', () => {
   const offenders = [];
   for (const dir of CORE_PATH_DIRS) {

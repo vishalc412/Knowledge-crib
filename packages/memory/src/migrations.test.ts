@@ -21,6 +21,7 @@ import {
   type MemoryFeedback,
   type MemoryRecord,
   type MemoryRecordV2,
+  type MemoryRecordV3,
   MemoryStore,
   __resetMemoryLockGuardForTest,
   assertValidMemoryEntry,
@@ -34,13 +35,16 @@ import {
   feedbackId,
   gatherRecall,
   isMemoryRecordV2,
+  isMemoryRecordV3,
   isRecallEligible,
   memoryAliasId,
   memoryCandidateId,
   memoryRecordId,
   memoryRecordV2Id,
+  memoryRecordV3Id,
   migrateMemoryRecord,
   migrateRecordV1ToV2,
+  migrateRecordV2ToV3,
   migrationProvenance,
   parseMemoryShard,
   recallProjection,
@@ -306,6 +310,29 @@ describe('migrateRecordV1ToV2', () => {
   });
 });
 
+describe('migrateRecordV2ToV3', () => {
+  it('preserves v2 claim/evidence history while re-addressing it in the resolved namespace', () => {
+    const v1 = v1Record();
+    const v2 = migrateRecordV1ToV2(v1, migrationProvenance(v1.authorship, {}, {})).record;
+    const namespace = {
+      principalId: v2.provenance.principalId,
+      workspaceId: 'workspace:crib',
+      projectId: 'project:knowledge-crib',
+      agentProfileId: 'agent-profile:codex',
+    };
+    const { record, alias } = migrateRecordV2ToV3(v2, namespace, v1.verdicts);
+
+    expect(record.schemaVersion).toBe('3');
+    expect(record.namespace).toEqual(namespace);
+    expect(record.id).toBe(memoryRecordV3Id({ ...v2, namespace }));
+    expect(record.id).not.toBe(v2.id);
+    expect(record.claim).toBe(v2.claim);
+    expect(record.evidence).toEqual(v2.evidence);
+    expect(alias.legacyId).toBe(v2.id);
+    expect(alias.resolvedId).toBe(record.id);
+  });
+});
+
 // ─── the alias id + schema ─────────────────────────────────────────────────────
 
 describe('memoryAliasId + alias validation', () => {
@@ -404,6 +431,16 @@ describe('buildAliasIndex + bridgedDecisions', () => {
     const idx = buildAliasIndex([a, b]);
     expect(idx.aliasesFor('mem:x')).toEqual([a, b]);
     expect(idx.aliasesFor('mem:other')).toEqual([]);
+  });
+
+  it('resolves a v1 → v2 → v3 chain and retains the original legacy binding', () => {
+    const v1ToV2 = alias('mem:v1', 'mem:v2');
+    const v2ToV3 = alias('mem:v2', 'mem:v3');
+    const idx = buildAliasIndex([v1ToV2, v2ToV3]);
+
+    expect(idx.resolve('mem:v1')).toBe('mem:v3');
+    expect(idx.resolve('mem:v2')).toBe('mem:v3');
+    expect(idx.aliasesFor('mem:v3')).toEqual([v1ToV2, v2ToV3]);
   });
 
   it('FAILS CLOSED on one legacy id bound to two different resolved ids', () => {
@@ -569,6 +606,28 @@ describe('MemoryStore.migrateToV2 (local, mixed store)', () => {
     expect(canonicalMemoryJson(active.entries[0] as MemoryEntry)).toBe(
       canonicalMemoryJson(independent.record),
     );
+  });
+});
+
+describe('MemoryStore.migrateToV3 (local)', () => {
+  it('re-addresses a v2 record into its namespace and keeps the v2 address resolvable', () => {
+    const s = MemoryStore.local(REPO, { env, now: () => NOW });
+    const v1 = v1Record();
+    s.upsertEntries('active', [v1]);
+    s.migrateToV2();
+    const v2 = s.readCollection('active').entries[0] as MemoryRecordV2;
+    const namespace = { principalId: v2.provenance.principalId, workspaceId: 'workspace:crib' };
+
+    const result = s.migrateToV3({ namespace });
+    expect(result.migrated).toHaveLength(1);
+    expect(result.aliases).toHaveLength(1);
+    const active = s.readCollection('active').entries;
+    expect(active).toHaveLength(1);
+    const v3 = active.find((entry) => isMemoryRecordV3(entry)) as MemoryRecordV3 | undefined;
+    expect(isMemoryRecordV3(v3)).toBe(true);
+    expect(v3?.namespace).toEqual(namespace);
+    expect(s.resolveId(v2.id)).toBe(v3?.id);
+    expect(s.findEntry('active', v2.id)?.id).toBe(v3?.id);
   });
 });
 

@@ -57,6 +57,12 @@ export const CAPABILITIES: readonly Capability[] = [
   { tool: 'brief', verb: 'brief' },
   { tool: 'memory_recall', verb: 'memoryRecall' },
   { tool: 'memory_observe', verb: 'memoryObserve' },
+  // G5.2 — on-demand PDG/taint analysis for one callable (TypeScript/JavaScript). Opt-in by
+  // design: nothing runs at index time, and the analyzer is injected (see verbs.ts PdgPort).
+  { tool: 'explain', verb: 'explain' },
+  // G5.1 — safe symbol rename. Default dry-run; apply is gated on the deterministic plan id and
+  // per-file content hashes, and application is all-or-nothing (see verbs.ts rename).
+  { tool: 'rename', verb: 'rename' },
   // ─── `op` dispatchers ──────────────────────────────────────────────────────────────────────
   {
     tool: 'memory',
@@ -75,6 +81,9 @@ export const CAPABILITIES: readonly Capability[] = [
       { op: 'sync', verb: 'memorySync' },
       // G2.3 — the capture-outbox drain surface: queue counts + per-entry distill decisions.
       { op: 'outbox', verb: 'memoryOutbox' },
+      // Session handoff — the "where was I?" projection a returning agent (new context window,
+      // different IDE, different vendor) calls FIRST, before it can phrase a question.
+      { op: 'handoff', verb: 'memoryHandoff' },
     ],
   },
   {

@@ -59,7 +59,10 @@ import {
   type EffectiveVerdicts,
   type MemoryEvalContext,
   type MemoryEvaluator,
+  conflictGroups,
   effectiveVerdicts,
+  isRecallEligible,
+  recordSortTime,
   supersedeDecision,
 } from './evaluator.js';
 import {
@@ -72,20 +75,42 @@ import {
 } from './generation-cache.js';
 import { verifyQuote } from './grounding.js';
 import {
+  type HandoffAttemptEvent,
+  type HandoffInput,
+  type HandoffResponse,
+  buildHandoff,
+} from './handoff.js';
+import type { AgentProfileDirectory } from './identity-directory.js';
+import {
   decisionId,
   derivePropositionKey,
   memoryCandidateId,
   memoryRecordV2Id,
   memoryShard,
 } from './ids.js';
+import { type IntelligenceEventJournal, resolveServerIdentity } from './intelligence-events.js';
+import type { ProjectionCheckpointStore } from './intelligence-projections.js';
+import {
+  DEFAULT_LEDGER_PAGE,
+  LEDGER_GROUPS,
+  type LedgerGroup,
+  type LedgerOpts,
+  type LedgerResult,
+  type LedgerRow,
+  MAX_LEDGER_PAGE,
+  capClaim,
+  correlateAnchors,
+  ledgerGroupOf,
+  standingOf,
+} from './ledger.js';
 import {
   DEFAULT_MIGRATION_PRINCIPAL_ID,
   DEFAULT_RETENTION_POLICY_ID,
   migrationProvenance,
 } from './migrations.js';
-import { buildCaptureOutboxEntry, stageCaptureOutboxEntry } from './outbox.js';
+import { buildCaptureOutboxEntry, pendingCaptures, stageCaptureOutboxEntry } from './outbox.js';
 import { readRepoId } from './paths.js';
-import { type CapturePolicySection, loadPolicy } from './policy.js';
+import { type CapturePolicySection, loadPolicy, trustedRefOf } from './policy.js';
 import {
   DEFAULT_RECALL_SOURCES,
   type GatheredRecall,
@@ -126,11 +151,12 @@ import type {
   MemoryFeedback,
   MemoryRecord,
   MemoryRecordV2,
+  MemoryRecordV3,
   MemoryScope,
   MemorySensitivity,
   MemoryVisibility,
 } from './types.js';
-import { isMemoryRecordV2 } from './types.js';
+import { isMemoryRecordV2, isMemoryRecordVersioned } from './types.js';
 
 // ─── the anchor port (capture's loose-name resolution) ────────────────────────
 
@@ -214,8 +240,42 @@ export function validityOf(record: MemoryRecord | MemoryRecordV2): ValidityInter
  * shared within its scope by construction). PURE; the derivation is a documented mapping, never a
  * per-call guess.
  */
-export function visibilityOf(record: MemoryRecord | MemoryRecordV2): MemoryVisibility {
-  return isMemoryRecordV2(record) ? record.visibility : 'workspace';
+export function visibilityOf(
+  record: MemoryRecord | MemoryRecordV2 | MemoryRecordV3,
+): MemoryVisibility {
+  return isMemoryRecordVersioned(record) ? record.visibility : 'workspace';
+}
+
+/** One supersedes-index per gathered-records array, for the life of that array. */
+const supersedesIndexes = new WeakMap<object, Map<string, string[]>>();
+
+/**
+ * PERF — reverse index of memory-2 `lineage.supersedes`: superseded-id → successor ids.
+ *
+ * `supersededBy` previously answered "which record supersedes this one?" by scanning the WHOLE
+ * gathered pool per hit, making `search` O(hits × records) — at 10k records that scan was ~27% of
+ * the entire call. The index is built once per gathered array and memoized on that array's identity
+ * (the same WeakMap-on-a-long-lived-object pattern {@link evaluationCacheFor} uses), so no signature
+ * threading is needed and other `supersededBy` callers keep working unchanged.
+ *
+ * Only memory-2 records carry lineage, so memory-1 rows are skipped exactly as the scan did. PURE.
+ */
+function supersedesIndexFor(
+  records: readonly (MemoryRecord | MemoryRecordV2)[],
+): Map<string, string[]> {
+  const cached = supersedesIndexes.get(records);
+  if (cached) return cached;
+  const index = new Map<string, string[]>();
+  for (const record of records) {
+    if (!isMemoryRecordV2(record)) continue;
+    for (const supersededId of record.lineage.supersedes ?? []) {
+      const successors = index.get(supersededId);
+      if (successors) successors.push(record.id);
+      else index.set(supersededId, [record.id]);
+    }
+  }
+  supersedesIndexes.set(records, index);
+  return index;
 }
 
 /**
@@ -734,6 +794,15 @@ export interface SearchOpts {
   evalCtx?: MemoryEvalContext;
   /** the code HEAD this search ran against; defaults to the constructor-supplied head. */
   codeHead?: string;
+  /**
+   * Max ENRICHED hits to return (ranked order). Absent = enrich every eligible record.
+   *
+   * Enrichment is per-hit work (supersession lookup, alias resolution, verdict overlay), so
+   * enriching a whole 10k ledger to hand back five rows is the dominant avoidable cost in
+   * `search`. `conflicts` and `provenance.counts` come from the PROJECTION, not from `hits`, so
+   * limiting narrows only the enriched page — never the conflict set or the counts.
+   */
+  limit?: number;
 }
 
 /** The freshness block every search hit carries. */
@@ -1105,6 +1174,15 @@ export interface MemoryApiDeps {
    * capture closed (a typed refusal, never a silent pass).
    */
   capturePolicy?: CapturePolicySection;
+  /**
+   * Optional shared event journal. When supplied, an observation is acknowledged only after its
+   * candidate/outbox staging AND its replayable `memory.observed` event are durable.
+   */
+  eventJournal?: IntelligenceEventJournal;
+  /** Derived freshness checkpoints for event-driven materializations. */
+  projectionCheckpoints?: ProjectionCheckpointStore;
+  /** Optional host-owned vendor-alias resolver for event profile attribution. */
+  identityDirectory?: AgentProfileDirectory;
 }
 
 /** Which record collection a store role holds its records in (local calls its bucket `active`). */
@@ -1137,6 +1215,16 @@ function isDecisionEntry(e: { id?: unknown }): e is MemoryDecision {
 }
 function isFeedbackEntry(e: { id?: unknown }): e is MemoryFeedback {
   return typeof e.id === 'string' && e.id.startsWith('fb:');
+}
+
+/** Stable, de-duplicated event references — evidence bodies never enter the operational journal. */
+function observationEvidenceRefs(evidence: readonly MemoryEvidence[]): string[] {
+  const refs = new Set<string>();
+  for (const item of evidence) {
+    if (typeof item.soulId === 'string') refs.add(item.soulId);
+    if (typeof item.artifactId === 'string') refs.add(item.artifactId);
+  }
+  return [...refs].sort();
 }
 
 /**
@@ -1520,6 +1608,57 @@ export class MemoryApi {
       ...(input.eventOffset !== undefined ? { eventOffset: input.eventOffset } : {}),
     });
     if (!staged.ok) return staged;
+    // The candidate remains the memory source of truth; this records the operational fact that an
+    // agent observed it. A retry reuses the journal idempotency key and therefore cannot create a
+    // second lifecycle event after a transport failure.
+    try {
+      const source = {
+        clientId: input.tool ?? 'memory-api',
+        ...(input.sessionId !== undefined ? { sessionId: input.sessionId } : {}),
+        ...(input.eventOffset !== undefined ? { eventOffset: input.eventOffset } : {}),
+      };
+      const identity =
+        this.deps.identityDirectory?.resolve(resolveServerIdentity(this.env), {
+          clientId: source.clientId,
+          agentId: input.actor,
+        }) ?? resolveServerIdentity(this.env);
+      const journaled = this.deps.eventJournal?.append({
+        kind: 'memory.observed',
+        idempotencyKey: input.idempotencyKey ?? `candidate:${staged.id}`,
+        source,
+        identity,
+        payload: {
+          candidateId: staged.id,
+          kind,
+          subject: input.subject,
+          scopeBoundary: boundary,
+          origin,
+        },
+        evidenceRefs: observationEvidenceRefs(input.evidence ?? []),
+        occurredAt: this.now(),
+      });
+      const checkpoints = this.deps.projectionCheckpoints;
+      if (
+        journaled !== undefined &&
+        checkpoints !== undefined &&
+        checkpoints.read('memory-capture')?.sourceWatermark !== journaled.event.id
+      ) {
+        checkpoints.recordSuccess({
+          projector: 'memory-capture',
+          sourceWatermark: journaled.event.id,
+          pendingCount: 0,
+          deadLetterCount: 0,
+          replayVersion: '1',
+          completedAt: this.now(),
+        });
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      return {
+        ok: false,
+        error: `observation staged but intelligence event was not recorded: ${message}`,
+      };
+    }
     return {
       ok: true,
       id: staged.id,
@@ -1540,9 +1679,82 @@ export class MemoryApi {
    * with the G1.3 contract (visibility, effective verdicts + evidence, freshness, validity,
    * lineage, score + ranking version, conflicts, superseded alternatives, placement).
    */
+  /**
+   * The session-handoff projection — "where was I?" for a returning agent.
+   *
+   * This is the call a NEW context window makes first. It needs no question, because a returning
+   * agent cannot yet phrase one: it asks what was in flight, what was captured but never written
+   * down, what stopped being true while it was away, and what conventions still hold. Every input
+   * already exists (attempt lifecycle, durable outbox, verdict overlay) — this composes them.
+   *
+   * `needsAttention` intentionally surfaces records that {@link search} SUPPRESSES. A degraded or
+   * orphaned claim is excluded from ranking because it must not be acted on — but a returning agent
+   * still has to be told it went bad, or the context simply disappears between sessions.
+   */
+  handoff(opts: { limits?: HandoffInput['limits'] } = {}): HandoffResponse {
+    const pinned = [this.deps.stores.team, this.deps.stores.local, this.deps.stores.global].filter(
+      (s): s is MemoryStore => s !== undefined,
+    );
+    for (const store of pinned) store.pinGeneration();
+    try {
+      const gathered = gatherRecall(this.deps.stores, {
+        principal: this.env.KCRIB_PRINCIPAL_ID ?? DEFAULT_MIGRATION_PRINCIPAL_ID,
+      });
+      const aliasIndex = buildAliasIndex(gathered.aliases ?? []);
+      const allDecisions = [...gathered.decisions, ...gathered.localDecisions];
+      const records = gathered.records.map(({ record, source }) => {
+        const legacy = aliasIndex.aliasesFor(record.id);
+        // NO-POISON, the same pool split `get`/`search` apply: a LOCAL tombstone never retires the
+        // same-id team record.
+        const pool = source === 'local' ? allDecisions : gathered.decisions;
+        const bridged = bridgedDecisions(legacy, record.id, pool);
+        return {
+          record,
+          verdicts: effectiveVerdicts(record, bridged, undefined, conservativeVerdicts(legacy)),
+        };
+      });
+      const local = this.deps.stores.local;
+      const attempts = local
+        ? (local.readCollection('attempts').entries as unknown as HandoffAttemptEvent[])
+        : [];
+      const pending = local ? pendingCaptures(local) : [];
+      return buildHandoff({
+        attempts,
+        pending,
+        records,
+        ...(opts.limits ? { limits: opts.limits } : {}),
+      });
+    } finally {
+      for (const store of pinned) store.unpinGeneration();
+    }
+  }
+
   search(query: string, opts: SearchOpts = {}): SearchResponse {
+    // PERF — pin every store's mutation generation for this pass. `enrichHit` → `locate` runs
+    // per hit and each lookup validates the shard memo, so an unpinned pass re-stat'ed the
+    // sidecar hundreds of times. Pinning also makes the pass a single consistent snapshot
+    // rather than one that can straddle a concurrent write.
+    const pinned = [this.deps.stores.team, this.deps.stores.local, this.deps.stores.global].filter(
+      (s): s is MemoryStore => s !== undefined,
+    );
+    for (const store of pinned) store.pinGeneration();
+    try {
+      return this.searchPinned(query, opts);
+    } finally {
+      for (const store of pinned) store.unpinGeneration();
+    }
+  }
+
+  /** {@link search}'s body, run inside a pinned-generation pass. */
+  private searchPinned(query: string, opts: SearchOpts = {}): SearchResponse {
     const gathered = gatherRecall(this.deps.stores, {
       sources: opts.sources ?? DEFAULT_RECALL_SOURCES,
+      // G7 principal boundary: scope the gather against THIS api's resolved principal (the same
+      // ownership default the migration/sync staging paths stamp), so a caller that unions store
+      // sets across principals still gets a principal-scoped pool. The gather would resolve the
+      // same value from process.env; passing it explicitly keeps the boundary on the API's OWN
+      // env (tests inject one) rather than the process's.
+      principal: this.env.KCRIB_PRINCIPAL_ID ?? DEFAULT_MIGRATION_PRINCIPAL_ID,
     });
     const baseCtx = opts.evalCtx ?? this.deps.evalCtx;
     // G3.3 — bind the generation-keyed evaluation cache for THIS pass via the SHARED helper (the
@@ -1577,7 +1789,17 @@ export class MemoryApi {
       codeHead,
     };
     const allDecisions = [...gathered.decisions, ...gathered.localDecisions];
-    const hits: SearchHit[] = projection.memories.map((scored) =>
+    // PERF: hoisted out of the per-hit map below. `enrichHit` → `supersededBy` scans this pool
+    // linearly for every hit, so rebuilding the array inside the map made `search` O(hits × records)
+    // — at 10k records it dominated the whole call. The ledger path (`ledgerRows`) already hoists
+    // the identical projection; this keeps the two paths consistent. Same array, computed once.
+    const gatheredRecords = gathered.records.map((t) => t.record);
+    // Enrich only the page the caller will read (see SearchOpts.limit).
+    const ranked =
+      opts.limit !== undefined && opts.limit >= 0
+        ? projection.memories.slice(0, Math.trunc(opts.limit))
+        : projection.memories;
+    const hits: SearchHit[] = ranked.map((scored) =>
       this.enrichHit(scored.record, scored.source, scored.score, scored.verdicts, {
         aliasIndex,
         // NO-POISON, the same pool split get() applies: LOCAL decisions name successors of
@@ -1586,7 +1808,7 @@ export class MemoryApi {
         // listing a local successor would be self-inconsistent within one response (lifecycle
         // 'active' while supersededBy names a retiree the team store never accepted).
         allDecisions: scored.source === 'local' ? allDecisions : gathered.decisions,
-        gatheredRecords: gathered.records.map((t) => t.record),
+        gatheredRecords,
         conflicts: projection.conflicts,
         freshness,
       }),
@@ -2562,6 +2784,171 @@ export class MemoryApi {
     return { requested: idOrSubject, found: true, records: views };
   }
 
+  // ── ledger (G5.4 — the viz UI's read-only inspector projection) ─────────────
+
+  /**
+   * The full memory ledger, paginated and grouped — ONE projection over every gathered record
+   * that REUSES the existing read truth end-to-end: verdicts fold through the SAME
+   * {@link effectiveVerdicts} + alias-bridge + no-poison rule `get()` applies; conflicts come from
+   * the evaluator's own {@link conflictGroups}; staleness comes from the stable-locator
+   * correlation ({@link correlateAnchors}); supersession from the shared {@link supersededBy}.
+   * Nothing here re-implements a projection.
+   *
+   * Deterministic: rows sort by group rank, then recorded/created time desc, then id — no wall
+   * clock anywhere in the response (the ledger view is a pure function of store + soul state).
+   * Retracted/superseded/quarantined records are VISIBLE (group `retracted`), never hidden — the
+   * tombstone is part of the ledger, not an omission. Paginated because a ledger can be large.
+   */
+  ledger(opts: LedgerOpts = {}): LedgerResult {
+    const sourced = this.gatherAllRecords();
+    const aliasIndex = this.buildAliasIndex();
+    const decisions = this.allDecisions();
+    const gatheredRecords = sourced.map((s) => s.record);
+    // Anchors correlate against the live soul the API was wired with (the viz always binds one);
+    // with no soul bound every anchor reports `uncheckable` honestly instead of a fake verdict.
+    const nodes = this.deps.soul ? this.deps.soul.allNodes() : [];
+    const byId = new Map(nodes.map((n) => [n.id, n]));
+    // Verdicts fold FIRST: conflictGroups consumes `{record, verdicts}` entries, so every row's
+    // effective verdicts must exist before conflicts are grouped (the get()/audit() fold, shared).
+    const folded = sourced.map(({ record, source }) => ({
+      record,
+      source,
+      ...this.foldedVerdicts(record, source, aliasIndex, decisions),
+    }));
+    const conflicts = conflictGroups(folded).map((c) => conflictSummaryOf(c));
+    // Sort-time per id, built once — a comparator calling back into the records would be O(n²).
+    const sortTimeById = new Map(gatheredRecords.map((r) => [r.id, recordSortTime(r)]));
+    const rows = folded
+      .map((f) =>
+        this.ledgerRow(f.record, f.source, f, aliasIndex, gatheredRecords, byId, nodes, conflicts),
+      )
+      .sort(
+        (a, b) =>
+          LEDGER_GROUPS.indexOf(a.group) - LEDGER_GROUPS.indexOf(b.group) ||
+          (sortTimeById.get(b.id) ?? '').localeCompare(sortTimeById.get(a.id) ?? '') ||
+          a.id.localeCompare(b.id),
+      );
+    const counts: Record<LedgerGroup, number> & { conflicts: number } = {
+      stale: 0,
+      moved: 0,
+      current: 0,
+      unanchored: 0,
+      retracted: 0,
+      conflicts: conflicts.length,
+    };
+    for (const row of rows) counts[row.group] += 1;
+    const filtered = opts.group ? rows.filter((r) => r.group === opts.group) : rows;
+    const offset = Math.max(0, Math.trunc(opts.offset ?? 0));
+    const limit = Math.min(
+      MAX_LEDGER_PAGE,
+      Math.max(1, Math.trunc(opts.limit ?? DEFAULT_LEDGER_PAGE)),
+    );
+    const capturePolicy = this.capturePolicyView();
+    return {
+      configured: true,
+      total: filtered.length,
+      offset,
+      limit,
+      counts,
+      conflicts,
+      ...(capturePolicy ? { capturePolicy } : {}),
+      // The gather paths are fail-loud (a corrupt shard throws, exactly as get()/audit() do) —
+      // there is no silent per-store degradation to report, so this stays empty, never fake.
+      errors: [],
+      rows: filtered.slice(offset, offset + limit),
+    };
+  }
+
+  /**
+   * The effective-verdict fold `get()`/`audit()` apply, extracted so the ledger REUSES the same
+   * decision truth instead of re-implementing it. Returns the folded verdicts plus the no-poison
+   * decision pool the row's supersession projection reuses.
+   */
+  private foldedVerdicts(
+    record: MemoryRecord | MemoryRecordV2,
+    source: MemorySource,
+    aliasIndex: AliasIndex,
+    decisions: readonly SourcedDecision[],
+  ): { verdicts: EffectiveVerdicts; pool: readonly MemoryDecision[] } {
+    const legacy = aliasIndex.aliasesFor(record.id);
+    const legacyIds = new Set(legacy.map((a) => a.legacyId));
+    const mine = decisions.filter(
+      (d) => d.decision.subject === record.id || legacyIds.has(d.decision.subject),
+    );
+    // No-poison, the same pool split get()/audit() apply: local decisions fold into LOCAL records
+    // only — a local quarantine must never retire the same-content team record.
+    const pool = (source === 'local' ? mine : mine.filter((d) => d.source !== 'local')).map(
+      (d) => d.decision,
+    );
+    const bridged = bridgedDecisions(legacy, record.id, pool);
+    const verdicts = effectiveVerdicts(record, bridged, undefined, conservativeVerdicts(legacy));
+    return { verdicts, pool };
+  }
+
+  /** Build one ledger row (the per-record projection — see {@link MemoryApi.ledger}). */
+  private ledgerRow(
+    record: MemoryRecord | MemoryRecordV2,
+    source: MemorySource,
+    folded: { verdicts: EffectiveVerdicts; pool: readonly MemoryDecision[] },
+    aliasIndex: AliasIndex,
+    gatheredRecords: readonly (MemoryRecord | MemoryRecordV2)[],
+    byId: ReadonlyMap<string, Node>,
+    nodes: readonly Node[],
+    conflicts: readonly ConflictSummary[],
+  ): LedgerRow {
+    const { verdicts, pool } = folded;
+    const { anchors, status } = correlateAnchors(record, byId, nodes);
+    const isV1 = !isMemoryRecordV2(record);
+    return {
+      id: record.id,
+      schemaVersion: isV1 ? '1' : '2',
+      kind: record.kind,
+      subject: record.subject,
+      claim: capClaim(record.claim),
+      visibility: visibilityOf(record),
+      source,
+      placement: this.placementsOf(record.id),
+      standing: standingOf(verdicts.trust),
+      evidenceVerdict: verdicts.evidence,
+      applicability: verdicts.applicability,
+      lifecycle: verdicts.lifecycle,
+      quarantined: verdicts.quarantined,
+      eligible: isRecallEligible(verdicts),
+      evidence: evidenceSummaries(record),
+      validity: validityOf(record).validTime,
+      ...(isV1
+        ? { createdAt: record.createdAt, scope: record.scope }
+        : {
+            observedAt: record.transactionTime.observedAt,
+            recordedAt: record.transactionTime.recordedAt,
+            retentionPolicyId: record.retentionPolicyId,
+          }),
+      lineage: lineageOf(record),
+      supersededBy: this.supersededBy(record, aliasIndex, pool, gatheredRecords).map(
+        ({ id, via, found }) => ({ id, via, found }),
+      ),
+      conflicts: conflicts.filter((c) => c.recordIds.includes(record.id)),
+      anchors,
+      anchorStatus: status,
+      group: ledgerGroupOf(verdicts, status),
+    };
+  }
+
+  /** The capture policy in force, as the ledger reports it (corrupt policy → surfaced, not thrown). */
+  private capturePolicyView(): LedgerResult['capturePolicy'] {
+    if (!this.deps.cribDir) return undefined;
+    try {
+      const policy = loadPolicy(this.deps.cribDir);
+      if (!policy) return undefined;
+      return { trustedRef: trustedRefOf(policy), profiles: Object.keys(policy.profiles).sort() };
+    } catch (err) {
+      return {
+        trustedRef: 'unreadable policy',
+        profiles: [`error: ${err instanceof Error ? err.message : String(err)}`],
+      };
+    }
+  }
+
   // ─── internals ──────────────────────────────────────────────────────────────
 
   private resolveRepoId(explicit?: string): string | undefined {
@@ -2778,10 +3165,12 @@ export class MemoryApi {
       if (d.kind !== 'supersede' || !d.successor || d.subject !== record.id) continue;
       out.set(d.successor, { id: d.successor, via: 'decision', found: false });
     }
-    for (const other of gatheredRecords) {
-      if (other.id === record.id || !isMemoryRecordV2(other)) continue;
-      if (!(other.lineage.supersedes ?? []).includes(record.id)) continue;
-      if (!out.has(other.id)) out.set(other.id, { id: other.id, via: 'lineage', found: false });
+    // O(1) lookup against the hoisted lineage index instead of a full pool scan per hit.
+    for (const successorId of supersedesIndexFor(gatheredRecords).get(record.id) ?? []) {
+      if (successorId === record.id) continue;
+      if (!out.has(successorId)) {
+        out.set(successorId, { id: successorId, via: 'lineage', found: false });
+      }
     }
     for (const alt of out.values()) {
       const located = this.locate(alt.id);

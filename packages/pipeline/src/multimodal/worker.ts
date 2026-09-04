@@ -20,6 +20,10 @@ export interface WorkerSegment {
   tEndMs: number;
   text: string;
   lang?: string | null;
+  /** pdf: 0-based page index — the source span (TS adapters only; see adapters.ts). */
+  page?: number;
+  /** 0..1 extractor self-assessed fidelity; absent → ingest stamps a documented 0.5 fallback. */
+  confidence?: number;
 }
 
 /** The worker → TS JSON envelope (see python/crib_worker/emit.py `build_payload`). */
@@ -29,12 +33,23 @@ export interface WorkerPayload {
   modality: string;
   segments: WorkerSegment[];
   dropped: number;
+  /** G5.3 provenance (TS adapters always set it; legacy python payloads omit it). */
+  extractor?: string;
+  /** G5.3 provenance: the concrete engine that ran (unpdf/pdf.js, tesseract, whisper, crib-worker). */
+  extractedBy?: string;
+  /** G5.3 honest-degradation note: why nothing (or only some) was extracted. */
+  unavailable?: string;
 }
 
 /** Options for spawning the worker. */
 export interface WorkerOpts {
-  /** `fake` (default, stdlib, offline) | `pdf` | `audio` | `image`. */
-  backend?: 'fake' | 'pdf' | 'audio' | 'image';
+  /**
+   * `auto` (default, G5.3) → the TS-native production adapters (adapters.ts: bundled pdf.js text
+   * layer, tesseract OCR, whisper transcription — each failing honest when absent).
+   * `fake` → the legacy python sidecar reader (tests/fixtures). `pdf`/`audio`/`image` → the legacy
+   * python crib_worker backends (unchanged behaviour; python3 required).
+   */
+  backend?: 'auto' | 'fake' | 'pdf' | 'audio' | 'image';
   /** Path to a local model dir for audio/image backends; never fetched over the network. */
   modelPath?: string;
   /** Override the worker entry (default: the monorepo's `python/crib_worker` via `-m`). */

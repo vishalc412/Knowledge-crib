@@ -81,6 +81,11 @@ assert.match(
 );
 assert.match(
   releaseVerifier,
+  /security:battery/,
+  'release gate must run the executable S1–S9 security battery',
+);
+assert.match(
+  releaseVerifier,
   /soul-refresh:check/,
   'release gate must run the M4.3 crib-soul-refresh idempotence gate (soul-refresh-check.mjs)',
 );
@@ -179,6 +184,11 @@ assert.match(
   pkg,
   /"security:check":\s*"node scripts\/security-doc-check\.mjs"/,
   'package.json must define security:check (M3.7 threat-model + access-model doc gate)',
+);
+assert.match(
+  pkg,
+  /"security:battery":\s*"pnpm --filter @knowledge-crib\/memory test/,
+  'package.json must define the executable S1–S9 security battery',
 );
 assert.match(
   pkg,

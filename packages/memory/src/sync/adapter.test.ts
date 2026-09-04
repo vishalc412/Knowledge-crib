@@ -127,6 +127,21 @@ describe('FileSyncObjectStore', () => {
     await store.deleteObject('gone'); // 404-equivalent: still a success
     expect(await store.getObject('gone')).toBeUndefined();
   });
+
+  it('rejects traversal keys for reads, writes, and deletes', async () => {
+    const store = new FileSyncObjectStore(tmpDir());
+    const escapedKey = '../outside-the-sync-root';
+
+    await expect(store.getObject(escapedKey)).rejects.toThrow(
+      'object key escapes the backend root',
+    );
+    await expect(store.putObject(escapedKey, new Uint8Array([1]))).rejects.toThrow(
+      'object key escapes the backend root',
+    );
+    await expect(store.deleteObject(escapedKey)).rejects.toThrow(
+      'object key escapes the backend root',
+    );
+  });
 });
 
 describe('HttpSyncObjectStore', () => {

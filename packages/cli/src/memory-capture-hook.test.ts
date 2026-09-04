@@ -129,6 +129,36 @@ describe('crib memory capture-hook — the fail-open contract', () => {
     expect(outboxEntries()).toHaveLength(0);
   });
 
+  // S6 (docs/bench/security-battery.md) — "byte caps enforced (64KB hook stdin), fail-open contract
+  // holds, only whitelisted fields cross into storage". This is the vector with no coverage before
+  // the launch audit; it pins the cap's ACTUAL behaviour rather than its intent.
+  it('S6: an oversized stdin payload is dropped fail-open, and nothing oversized reaches storage', () => {
+    // A payload whose *valid* JSON exceeds CAPTURE_HOOK_STDIN_MAX_CHARS (65536). The command slices
+    // to the cap BEFORE JSON.parse, so the slice truncates mid-string and parse throws → the payload
+    // degrades to {} → no session provenance, nothing staged. Exit stays 0: a hook never blocks.
+    const huge = JSON.stringify({ session_id: SESSION_ID, filler: 'x'.repeat(200_000) });
+    expect(huge.length).toBeGreaterThan(65_536);
+    const r = runHook('turn-end', huge);
+    expect(r.status).toBe(0);
+    // the truncated-and-unparseable payload stages nothing — an oversized transcript never lands
+    expect(candidates()).toHaveLength(0);
+    expect(outboxEntries()).toHaveLength(0);
+  });
+
+  it('S6: a payload just under the cap still works (the cap bounds, it does not break the lane)', () => {
+    // Guards against "fix" the cap by rejecting everything: a large-but-legal payload must still
+    // capture, and only the whitelisted session_id may survive from it.
+    const big = JSON.stringify({ session_id: SESSION_ID, filler: 'x'.repeat(30_000) });
+    expect(big.length).toBeLessThan(65_536);
+    const r = runHook('turn-end', big);
+    expect(r.status).toBe(0);
+    expect(parseAck(r.stdout).ok).toBe(true);
+    const staged = candidates();
+    expect(staged).toHaveLength(1);
+    // raw-transcripts-off law: the 30KB filler never reaches storage, only bounded provenance
+    expect(JSON.stringify(staged[0])).not.toContain('xxxxxxxxxx');
+  });
+
   it('an unindexed repo exits 0 with a stderr note (a hook must not block an unindexed session)', () => {
     // Not just crib.json — readRepoId falls back to the soul manifest, so the honest unindexed
     // fixture is a repo with no .crib at all (readRepoId: soul manifest → registry).

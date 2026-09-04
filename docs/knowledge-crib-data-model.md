@@ -12,7 +12,7 @@
 | `file` | a source/doc file | `id, path, lang, hash` |
 | `symbol` | code symbol (class/fn/method/interface/enum/var) | `id, type, name, qualifiedName, file, span, lang, signature, hash` |
 | `doc-section` | a heading-delimited doc chunk | `id, file, heading, level, anchor, span, hash` |
-| `media-seg` *(v2)* | a transcript/image segment | `id, file, span(tStart,tEnd), hash` |
+| `media-seg` *(v2)* | a transcript/image segment | `id, file, span(tStart,tEnd; page for pdf/ocr), hash` + meta: `text, modality, lang?, confidence, extractor, extractedBy, unavailable?` (G5.3 provenance — every derived node names its engine, version, and measured confidence) |
 | `explanation` | a docstring/comment captured as a concept | `id, file, span, text-ref, hash` |
 | `cluster` | a community (functional area) | `id, label, members[]` |
 | `table` *(deep-extraction)* | a DB table | `id, name, schema` |

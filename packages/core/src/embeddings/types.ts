@@ -31,6 +31,19 @@ export type Vec = Float32Array;
  * A deterministic, dependency-free text embedder. The default impl is pure JS; an external provider
  * implements this to plug a neural embedder in via `KCRIB_EMBEDDER`.
  */
+/**
+ * An embedding model.
+ *
+ * CONTRACT: `embedBatch(texts)[i]` MUST equal `embed(texts[i])`. Batching is a PERFORMANCE variant,
+ * never a semantic one. An adapter that transforms text differently in the two methods (for example
+ * applying an E5 `query:` prefix in one and `passage:` in the other) makes the ranking depend on
+ * which method a caller happens to reach for — a real defect that cost 8 points of paraphrase recall
+ * here before it was found. If a model genuinely needs asymmetric encoding, express it as two
+ * embedders with distinct `id`s, not as two methods of one.
+ *
+ * `id` must change whenever the embedding behaviour changes: it keys the persistent vector cache,
+ * so a silent behaviour change under a stable id would serve vectors from the old space.
+ */
 export interface Embedder {
   /** stable id recorded in derived vector metadata, e.g. `char-ngram-512`. */
   id: string;

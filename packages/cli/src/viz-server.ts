@@ -1,6 +1,16 @@
 import { readFile, realpath } from 'node:fs/promises';
 import { isAbsolute, relative, resolve } from 'node:path';
 import type { SoulStore } from '@knowledge-crib/core';
+import {
+  type AuditResult,
+  DEFAULT_LEDGER_PAGE,
+  type GetResult,
+  LEDGER_GROUPS,
+  type LedgerGroup,
+  type LedgerResult,
+  MAX_LEDGER_PAGE,
+  type MemoryApi,
+} from '@knowledge-crib/memory';
 
 const MAX_SOURCE_LINES = 200;
 const MAX_SOURCE_CHARS = 64 * 1024;
@@ -115,4 +125,72 @@ export async function resolveVizAsset(assetsRoot: string, pathname: string): Pro
   }
   if (!isInside(rootReal, assetReal)) throw new VizHttpError(403, 'asset path escapes viz root');
   return assetReal;
+}
+
+// ─── memory ledger endpoints (G5.4) ──────────────────────────────────────────
+//
+// The ledger view is a READ-ONLY projection the viz server exposes so the UI can inspect the
+// memory ledger next to the code graph. It owns NO projections of its own: every field comes from
+// the same {@link MemoryApi} ops the MCP verbs and CLI subcommands use (`ledger`, `get`, `audit`),
+// so the UI can never drift from backend truth. The server's only jobs are query validation,
+// pagination capping, and the honest `configured: false` shape when a repo has no memory stores.
+
+/** The validated ledger query — the ONLY params `/memory.json` accepts. */
+export interface VizLedgerQuery {
+  offset: number;
+  limit: number;
+  group?: LedgerGroup;
+}
+
+/**
+ * Parse and cap the ledger query. Bad values fail with 400 (never silently clamped — a typo'd
+ * `group=stael` should be visible, not mistaken for an empty ledger); `limit` is hard-capped at
+ * {@link MAX_LEDGER_PAGE} so a browser request cannot inflate the payload.
+ */
+export function parseMemoryLedgerQuery(params: URLSearchParams): VizLedgerQuery {
+  const parseCount = (name: string, raw: string | null): number => {
+    if (raw === null) return name === 'offset' ? 0 : DEFAULT_LEDGER_PAGE;
+    const n = Number(raw);
+    if (!Number.isInteger(n) || n < 0) throw new VizHttpError(400, `invalid ${name}: ${raw}`);
+    return n;
+  };
+  let group: LedgerGroup | undefined;
+  const rawGroup = params.get('group');
+  if (rawGroup !== null) {
+    if (!(LEDGER_GROUPS as readonly string[]).includes(rawGroup)) {
+      throw new VizHttpError(400, `unknown group: ${rawGroup}`);
+    }
+    group = rawGroup as LedgerGroup;
+  }
+  return {
+    offset: parseCount('offset', params.get('offset')),
+    limit: Math.min(MAX_LEDGER_PAGE, parseCount('limit', params.get('limit'))),
+    ...(group !== undefined ? { group } : {}),
+  };
+}
+
+/** The `/memory.json` body: the paginated ledger, or the not-wired shape a fresh repo gets. */
+export type VizLedgerResponse = LedgerResult | { configured: false };
+
+/** Serve the ledger through the API's own projection (no memory wired → honest empty shape). */
+export function readMemoryLedger(
+  api: MemoryApi | undefined,
+  query: VizLedgerQuery,
+): VizLedgerResponse {
+  if (!api) return { configured: false };
+  return api.ledger(query);
+}
+
+/** The `/memory/record.json` body: the full `get` projection plus the record's audit trail. */
+export type VizLedgerDetailResponse = GetResult & { audit: AuditResult };
+
+/**
+ * Lazy per-record detail: the full claim, validity window, lineage, evidence and decision
+ * transitions — composed from the API's own `get` + `audit` ops. Unknown id → 404, mirroring
+ * `/source`'s unknown-node behavior.
+ */
+export function readMemoryLedgerDetail(api: MemoryApi, id: string): VizLedgerDetailResponse {
+  const got = api.get(id);
+  if (!got.found) throw new VizHttpError(404, `unknown memory record: ${id}`);
+  return { ...got, audit: api.audit(got.id ?? id) };
 }

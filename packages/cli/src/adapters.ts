@@ -104,7 +104,7 @@ export const ADAPTER_END = '<!-- crib:end -->';
  *  makes Cursor inject the rule into every session, matching the AGENTS.md-always-loaded contract. */
 export const CURSOR_FRONTMATTER = [
   '---',
-  'description: Knowledge-crib agent memory protocol — recall via brief, record reusable learnings, provide evidence, never self-evaluate.',
+  'description: Knowledge-crib agent protocol — recall via brief, record reusable learnings with evidence, never self-evaluate; analyse impact before editing and graph changes before committing.',
   'globs: "**/*"',
   'alwaysApply: true',
   '---',
@@ -113,9 +113,18 @@ export const CURSOR_FRONTMATTER = [
 
 /**
  * The neutral protocol body — the SAME content for every client's instruction file and the root
- * `AGENTS.md`. Vendor-neutral: names the `brief` MCP tool (not a client-specific command), states the
+ * `AGENTS.md`. Vendor-neutral: names crib's own MCP tools (not a client-specific command), states the
  * record-only-reusable-learnings rule, the admissible-evidence/no-self-evaluation rule, and the
  * non-destructive rule (memory is not in this file). Exported so tests assert it without re-deriving.
+ *
+ * It covers BOTH halves of the server: the memory protocol (§1-4) and the code-intelligence protocol
+ * (§5-7). The code-intelligence half exists so a repository indexed by crib does not have to borrow a
+ * third-party tool's instruction block to get "analyse impact before you edit" discipline — crib
+ * serves `impact`, `detect_changes`, `query`, `context`, `rename` and `explain` itself, so the rules
+ * name crib's own verbs and, more importantly, crib's own HONESTY signals. Those signals differ from
+ * other tools' and must not be paraphrased from them: crib's `risk` is distance-derived (never a
+ * safety verdict and never `UNKNOWN`), an empty `affected` list is unresolved-not-unused, `truncated`
+ * means the walk was paged, and a `note` on `detect_changes` means the report degraded.
  */
 export function neutralProtocolBody(): string {
   return [
@@ -137,6 +146,26 @@ export function neutralProtocolBody(): string {
     '',
     '### 4. Non-destructive',
     '- Memory lives in `.crib/memory/` (team) and `~/.crib/memory/` (local/global) — NOT in this file. Removing this adapter (or this client) removes only this managed block; it does not delete memory. On disagreement do not delete team memory; supersede or quarantine it with admissible counter-evidence instead.',
+    '',
+    '## Knowledge-crib code intelligence protocol',
+    '',
+    'The same MCP server that serves memory also serves this repository’s code graph. Use the graph, not a text search, to answer structural questions — and read its honesty signals rather than assuming a clean result.',
+    '',
+    '### 5. Analyse blast radius before you edit',
+    '- Before changing a function, class, or method, call `impact({ id: "<symbol>", dir: "up" })` (`op` defaults to `blast`; `dir: "up"` = dependents, `dir: "down"` = dependencies). Report the affected symbols before editing.',
+    '- `risk` on each affected node is DISTANCE-derived, not a judgement: `high` at distance 1, `medium` at 2, `low` beyond. It ranks proximity — it never certifies that an edit is safe.',
+    '- An empty `affected` list is NOT evidence the symbol is unused. It can equally mean the edges are not resolvable by the index (dynamic dispatch, plain-object property access, cross-language calls, reflection). Confirm with a text search before treating a symbol as dead.',
+    '- `truncated: true` means the walk was cut at a limit — the result is a page, not the blast radius. Raise `limit`/`depth` or page with `cursor` before drawing a conclusion.',
+    '',
+    '### 6. Analyse graph changes before you commit',
+    '- Run `detect_changes({})` (optionally `{ since: "<ref>" }`) and review `changedSymbols`, `removedEdges`, `changedPaths` (committed since the anchor) and `uncommittedPaths` (still in the working tree). Both path sets feed `changedSymbols`, so the check works BEFORE you commit.',
+    '- A `note` QUALIFIES the report — it is degraded or narrowed in scope, never a clean bill of health. `vcs adapter not configured`, `not a git work tree` and `no incremental anchor` all return empty arrays; `no commits since the anchor …` means the commit range was empty by construction. Never read an empty result carrying a `note` as "nothing changed".',
+    '',
+    '### 7. Prefer graph verbs over grep',
+    '- Explore unfamiliar code with `query({ q: "<concept>" })`; get callers, callees, and docs for one symbol with `context({ id: "<symbol>" })`; find owning files/modules with `impact({ op: "owners", id })`; find how two symbols connect with `impact({ op: "path", from, to })`.',
+    '- Rename through `rename({ from, to })` — it plans across the call graph and is dry-run by default; apply only with the returned `planId`. Never rename with find-and-replace.',
+    '- `explain({ id })` reports taint/dataflow findings for one callable. `status({ op: "gaps" })` reports what the graph does NOT cover — read it before claiming coverage.',
+    '- If the index is stale, refresh it with `crib index` (or `crib update`). A stale graph answers confidently and wrongly.',
   ].join('\n');
 }
 

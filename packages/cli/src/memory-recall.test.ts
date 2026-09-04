@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { SoulStore, newManifest } from '@knowledge-crib/core';
 import {
+  IntelligenceEventJournal,
   type MemoryCandidate,
   type MemoryRecord,
   MemoryStore,
@@ -147,7 +148,11 @@ afterEach(() => {
 
 function env(): NodeJS.ProcessEnv {
   // isolate the local/global stores per test (the team store lives under the repo's .crib).
-  return { ...process.env, KCRIB_MEMORY_DIR: home };
+  // KCRIB_EMBED_HOME is pinned to the same temp home so the subprocess CANNOT pick up whatever
+  // embed tier the developer happens to have installed. The shipped ranker follows the tier
+  // (semantic-only when a model is installed, lexical-only otherwise), so without this pin these
+  // e2e assertions would depend on machine state rather than on the code under test.
+  return { ...process.env, KCRIB_MEMORY_DIR: home, KCRIB_EMBED_HOME: join(home, 'embed') };
 }
 
 function teamStore(): MemoryStore {
@@ -158,9 +163,9 @@ function localStore(): MemoryStore {
   return MemoryStore.local(REPO_ID, { repoRoot: repo, env: env() });
 }
 
-function runRecall(args: string[]): { status: number; stdout: string; stderr: string } {
+function runMemory(args: string[]): { status: number; stdout: string; stderr: string } {
   try {
-    const out = execFileSync(process.execPath, [CLI, 'memory', 'recall', ...args], {
+    const out = execFileSync(process.execPath, [CLI, 'memory', ...args], {
       cwd: repo,
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'pipe'],
@@ -178,7 +183,74 @@ function runRecall(args: string[]): { status: number; stdout: string; stderr: st
   }
 }
 
+function runRecall(args: string[]): { status: number; stdout: string; stderr: string } {
+  return runMemory(['recall', ...args]);
+}
+
 describe('crib memory recall — the protocol-named CLI fallback exists', () => {
+  it('registers and lists durable cross-client agent profile aliases', () => {
+    const registered = runMemory([
+      'profiles',
+      'register',
+      '--key',
+      'architect',
+      '--alias',
+      'codex/thread-123',
+      '--alias',
+      'cursor/agent-456',
+      '--json',
+    ]);
+    expect(registered.status).toBe(0);
+    expect(JSON.parse(registered.stdout)).toMatchObject({
+      id: 'agent-profile:principal:local:architect',
+      aliases: [
+        { clientId: 'codex', agentId: 'thread-123' },
+        { clientId: 'cursor', agentId: 'agent-456' },
+      ],
+    });
+
+    const listed = runMemory(['profiles', 'list', '--json']);
+    expect(listed.status).toBe(0);
+    expect(JSON.parse(listed.stdout)).toEqual([
+      expect.objectContaining({ id: 'agent-profile:principal:local:architect' }),
+    ]);
+  });
+
+  it('inspects the sanitized operational event journal through the memory dispatcher', () => {
+    const events = new IntelligenceEventJournal({ rootDir: join(cribDir, 'intelligence') });
+    events.append({
+      kind: 'memory.observed',
+      idempotencyKey: 'codex:session-1:offset-2',
+      source: { clientId: 'codex', sessionId: 'session-1', eventOffset: 2 },
+      identity: {
+        principalId: 'principal:alice',
+        workspaceId: 'workspace:product',
+        agentProfileId: 'agent-profile:architect',
+      },
+      payload: { subject: NODE_ID, claimBody: 'must never be persisted here' },
+      occurredAt: NOW,
+    });
+
+    const r = runMemory(['events', '--json', '--include-expired']);
+    expect(r.status).toBe(0);
+    const parsed = JSON.parse(r.stdout) as Record<string, unknown>;
+    expect(parsed).toMatchObject({
+      total: 1,
+      events: [
+        {
+          kind: 'memory.observed',
+          identity: {
+            principalId: 'principal:alice',
+            workspaceId: 'workspace:product',
+            agentProfileId: 'agent-profile:architect',
+          },
+          retention: { expiresAfterDays: 30, pinned: false },
+        },
+      ],
+    });
+    expect(r.stdout).not.toContain('must never be persisted here');
+  });
+
   it('returns the seeded grounded team record, not "unknown memory subcommand"', () => {
     const good = groundedRecord('loan_pkg auto-rejects loans above C_THRESHOLD (30)');
     const hidden = inadmissibleRecord();

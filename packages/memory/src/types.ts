@@ -23,18 +23,22 @@ import type {
 } from './enums.js';
 
 /**
- * memory-1 + memory-2 schema + format version constants (see migrations.ts for the gate).
+ * memory-1 + memory-2 + memory-3 schema + format version constants (see migrations.ts for the gate).
  *
  * `LIVE_MEMORY_SCHEMA_VERSIONS` are validated in place by the loader — no migration. memory-2 (the
  * G1.1 v2 envelope) is live ALONGSIDE memory-1 until the G1.2 migration retires v1: a mixed store
- * reads both. `SUPPORTED_MEMORY_SCHEMA_VERSIONS` is the fail-closed gate; every version in it must
+ * reads both. memory-3 (the namespaced envelope) is live the same way, because `migrateToV3` is an
+ * explicit STORE pass like `migrateToV2` — not a loader-chain step — so a v3 line must validate in
+ * place the moment the pass writes it. Omitting `'3'` here is what made v3 records write-only: the
+ * store wrote them, then every read refused them as an unsupported version and recall saw an empty
+ * collection. `SUPPORTED_MEMORY_SCHEMA_VERSIONS` is the fail-closed gate; every version in it must
  * be either live here or reachable by the migrator chain in migrations.ts.
  */
 export const MEMORY_FORMAT_VERSION = '1';
 export const MEMORY_SCHEMA_VERSION = '1';
 export const TOOL_NAME = 'knowledge-crib';
-export const LIVE_MEMORY_SCHEMA_VERSIONS = ['1', '2'] as const;
-export const SUPPORTED_MEMORY_SCHEMA_VERSIONS = ['1', '2'] as const;
+export const LIVE_MEMORY_SCHEMA_VERSIONS = ['1', '2', '3'] as const;
+export const SUPPORTED_MEMORY_SCHEMA_VERSIONS = ['1', '2', '3'] as const;
 
 // ─── shared sub-shapes ───────────────────────────────────────────────────────
 
@@ -361,12 +365,45 @@ export interface MemoryRecordV2 {
   retentionPolicyId: string;
 }
 
+/**
+ * Server-resolved ownership and locality for memory-3. Vendor agent IDs remain provenance only;
+ * `agentProfileId` is a durable preference/working-context partition owned by the principal.
+ */
+export interface MemoryNamespace {
+  principalId: string;
+  workspaceId?: string;
+  projectId?: string;
+  agentProfileId?: string;
+}
+
+/**
+ * The memory-3 envelope. It preserves every v2 field and makes the authorization-relevant
+ * namespace explicit and content-addressed. v2 stays live and read-compatible during migration.
+ */
+export interface MemoryRecordV3 extends Omit<MemoryRecordV2, 'schemaVersion'> {
+  schemaVersion: '3';
+  namespace: MemoryNamespace;
+}
+
 /** Narrow `entry` to a memory-2 record. memory-1 records carry `schemaVersion: '1'`, so the two
  *  record shapes never overlap in the union. */
 export function isMemoryRecordV2(entry: unknown): entry is MemoryRecordV2 {
   if (typeof entry !== 'object' || entry === null) return false;
   const obj = entry as Record<string, unknown>;
   return obj.schemaVersion === '2' && typeof obj.propositionKey === 'string';
+}
+
+/** Narrow an entry to the namespace-bearing memory-3 envelope. */
+export function isMemoryRecordV3(entry: unknown): entry is MemoryRecordV3 {
+  if (typeof entry !== 'object' || entry === null) return false;
+  const obj = entry as Record<string, unknown>;
+  return obj.schemaVersion === '3' && typeof obj.propositionKey === 'string';
+}
+
+/** A v2/v3 envelope carrying explicit governance fields (unlike legacy memory-1). */
+export type MemoryRecordVersioned = MemoryRecordV2 | MemoryRecordV3;
+export function isMemoryRecordVersioned(entry: unknown): entry is MemoryRecordVersioned {
+  return isMemoryRecordV2(entry) || isMemoryRecordV3(entry);
 }
 
 // ─── the legacy-ID alias (the G1.2 migration's id binding) ────────────────────
@@ -447,6 +484,7 @@ export interface MemoryManifest {
 export type MemoryEntry =
   | MemoryRecord
   | MemoryRecordV2
+  | MemoryRecordV3
   | MemoryCandidate
   | CaptureOutboxEntry
   | AttemptEvent

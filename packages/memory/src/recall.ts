@@ -1,11 +1,13 @@
 import { bridgedDecisions, buildAliasIndex, conservativeVerdicts } from './aliases.js';
 import {
   type ConflictGroup,
+  type DecisionsBySubject,
   type EffectiveVerdicts,
   type MemoryEvalContext,
   type MemoryEvaluator,
   conflictGroups,
   effectiveVerdicts,
+  indexDecisionsBySubject,
   isRecallEligible,
   recordSortTime,
 } from './evaluator.js';
@@ -40,6 +42,7 @@ import {
  * keeps the ranking logic unit-testable without constructing real stores (mirroring the evaluator's
  * "pure over ports" discipline).
  */
+import { DEFAULT_MIGRATION_PRINCIPAL_ID } from './migrations.js';
 import type { MemoryStore } from './store.js';
 import type {
   MemoryAlias,
@@ -240,6 +243,41 @@ export interface GatheredRecall {
    */
   aliases?: readonly MemoryAlias[];
   errors: string[];
+  /**
+   * G7 — the principal boundary (launch gate "unauthorised cross-principal results = 0"). The
+   * resolved caller principal every accepted record was scoped against, and the count of records
+   * that carried a DIFFERENT principal stamp and were excluded at this merge point (fail-closed).
+   * Both OPTIONAL so the pure literal builders in tests project identically.
+   */
+  principal?: string;
+  principalExcluded?: number;
+}
+
+// ─── the principal boundary (G7) ─────────────────────────────────────────────
+
+/**
+ * The principal identity a record carries, or `undefined` when it carries none. Only memory-2
+ * records carry one (`provenance.principalId`); a memory-1 record has NO principal column. The
+ * parameter takes the version UNION (not the v1 read model alone) so the guard narrows a real
+ * union instead of intersecting `MemoryRecord` with `MemoryRecordV2` down to `never` — the same
+ * reason {@link recallProjection} widens its gathered record before guarding.
+ */
+function recordPrincipalId(record: MemoryRecord | MemoryRecordV2): string | undefined {
+  return isMemoryRecordV2(record) ? record.provenance.principalId : undefined;
+}
+
+/**
+ * Resolve the caller's principal for a gather. An explicit option wins (tests / a serving layer
+ * that resolves identity itself); otherwise the same ownership default the migration and sync
+ * staging paths stamp — `KCRIB_PRINCIPAL_ID` env, then `'principal:local'` — so every record this
+ * device wrote under the default matches its own reader and the single-principal path is
+ * byte-unchanged. A blank identity is not an identity: it falls back to the default rather than
+ * disabling the boundary.
+ */
+function resolveCallerPrincipal(opts: GatherRecallOptions): string {
+  const env = opts.env ?? process.env;
+  const resolved = opts.principal ?? env.KCRIB_PRINCIPAL_ID ?? DEFAULT_MIGRATION_PRINCIPAL_ID;
+  return resolved.trim().length === 0 ? DEFAULT_MIGRATION_PRINCIPAL_ID : resolved;
 }
 
 // ─── id-prefix narrowing ─────────────────────────────────────────────────────
@@ -265,6 +303,21 @@ function isFeedbackEntry(e: MemoryEntry): e is MemoryFeedback {
 /** Default sources gathered when no `sources` filter is supplied: all three stores. */
 export const DEFAULT_RECALL_SOURCES: readonly MemorySource[] = ['team', 'local', 'global'];
 
+/** Options for {@link gatherRecall}. */
+export interface GatherRecallOptions {
+  /** which stores to gather; defaults to {@link DEFAULT_RECALL_SOURCES}. */
+  sources?: readonly MemorySource[];
+  /**
+   * G7 — the caller's principal. When absent it resolves to `KCRIB_PRINCIPAL_ID` env, then
+   * `'principal:local'` (see {@link resolveCallerPrincipal}) — the boundary is therefore ON by
+   * default for every caller, including one that unions store sets across principals: any record
+   * carrying a principal stamp that is NOT the caller's never enters the gathered pool.
+   */
+  principal?: string;
+  /** env override (tests); defaults to `process.env`. Only read for the principal default. */
+  env?: NodeJS.ProcessEnv;
+}
+
 /**
  * Gather records + decisions + feedback from the requested stores. Reads are sync + lock-free
  * (`MemoryStore.readCollection`). Records come from `team.records` + `local.active` + `global.records`;
@@ -281,18 +334,39 @@ export const DEFAULT_RECALL_SOURCES: readonly MemorySource[] = ['team', 'local',
  * gathered SEPARATELY and {@link recallProjection} folds them into a record's effective verdicts ONLY
  * when that record's source is `local` — team/global records see team/global decisions alone. This
  * lets a local quarantine suppress its own local record (PRD W5 line 361) without poisoning team trust.
+ *
+ * **The principal boundary (G7 — launch gate "unauthorised cross-principal results = 0").** This is
+ * THE merge point for store sets, so the boundary lives here: every gathered record is scoped
+ * against the caller's principal (see {@link GatherRecallOptions.principal}). A record that CARRIES
+ * a principal stamp which is not the caller's is excluded — fail-closed (only an exact ownership
+ * match or no stamp passes). A record that carries NO stamp (memory-1) passes: the v1 schema
+ * pre-dates principals and has no column to compare — treating it as the caller's own is the
+ * documented honest limitation, closed for a store by `migrateToV2` (the migration stamps the
+ * migrating principal). The boundary scopes the RECORD pool only — decisions and feedback are
+ * id-keyed retire/adjust events; they can never add foreign content to a projection, so they stay
+ * un-scoped (a foreign tombstone on a shared content id suppresses, it never reveals).
  */
-export function gatherRecall(
-  stores: RecallStores,
-  opts: { sources?: readonly MemorySource[] } = {},
-): GatheredRecall {
+export function gatherRecall(stores: RecallStores, opts: GatherRecallOptions = {}): GatheredRecall {
   const sources = opts.sources ?? DEFAULT_RECALL_SOURCES;
+  const principal = resolveCallerPrincipal(opts);
   const records: TaggedRecord[] = [];
   const decisions: MemoryDecision[] = [];
   const localDecisions: MemoryDecision[] = [];
   const feedback: MemoryFeedback[] = [];
   const errors: string[] = [];
   const aliases: MemoryAlias[] = [];
+  let principalExcluded = 0;
+  // The boundary accept: keep iff the record carries no principal stamp (v1 — treated as the
+  // caller's own) or carries EXACTLY the caller's principal. Anything else is foreign and excluded.
+  const acceptRecord = (record: MemoryRecord, source: MemorySource): boolean => {
+    const ownedBy = recordPrincipalId(record);
+    if (ownedBy !== undefined && ownedBy !== principal) {
+      principalExcluded += 1;
+      return false;
+    }
+    records.push({ record, source });
+    return true;
+  };
 
   const want = (s: MemorySource): boolean => sources.includes(s);
   // Alias reads are fail-closed in the store (a corrupt map means a moved seed); recall records the
@@ -309,7 +383,7 @@ export function gatherRecall(
   if (want('team') && stores.team) {
     const r = stores.team.readCollection('records');
     for (const e of r.entries) {
-      if (isRecordEntry(e)) records.push({ record: e, source: 'team' });
+      if (isRecordEntry(e)) acceptRecord(e, 'team');
       else errors.push(`team.records: non-record entry ${String(e?.id)}`);
     }
     errors.push(...r.errors);
@@ -325,7 +399,7 @@ export function gatherRecall(
   if (want('local') && stores.local) {
     const r = stores.local.readCollection('active');
     for (const e of r.entries) {
-      if (isRecordEntry(e)) records.push({ record: e, source: 'local' });
+      if (isRecordEntry(e)) acceptRecord(e, 'local');
       else errors.push(`local.active: non-record entry ${String(e?.id)}`);
     }
     errors.push(...r.errors);
@@ -348,7 +422,7 @@ export function gatherRecall(
   if (want('global') && stores.global) {
     const r = stores.global.readCollection('records');
     for (const e of r.entries) {
-      if (isRecordEntry(e)) records.push({ record: e, source: 'global' });
+      if (isRecordEntry(e)) acceptRecord(e, 'global');
       else errors.push(`global.records: non-record entry ${String(e?.id)}`);
     }
     errors.push(...r.errors);
@@ -367,7 +441,16 @@ export function gatherRecall(
     gatherAliases('global', stores.global);
   }
 
-  return { records, decisions, localDecisions, feedback, aliases, errors };
+  return {
+    records,
+    decisions,
+    localDecisions,
+    feedback,
+    aliases,
+    errors,
+    principal,
+    principalExcluded,
+  };
 }
 
 // ─── the pure projection ─────────────────────────────────────────────────────
@@ -425,6 +508,29 @@ export function recallProjection(
     if (resolved !== undefined && resolved !== fb.subject) addFeedback(resolved, fb.signal);
   }
 
+  // The two stable decision pools recall evaluates against (see the no-poison split below), grouped
+  // by subject on first use. Lazy so a projection over a store with no decisions pays nothing.
+  let sharedIndex: DecisionsBySubject | undefined;
+  let localIndex: DecisionsBySubject | undefined;
+  const decisionIndexFor = (source: MemorySource): DecisionsBySubject => {
+    if (source === 'local') {
+      localIndex ??= indexDecisionsBySubject([...gathered.decisions, ...gathered.localDecisions]);
+      return localIndex;
+    }
+    sharedIndex ??= indexDecisionsBySubject(gathered.decisions);
+    return sharedIndex;
+  };
+
+  // PERF — the local no-poison pool is the SAME array for every local record, but it used to be
+  // rebuilt with a two-array spread INSIDE the loop: at 100k records over 10k decisions that is
+  // ~360 million element copies and was 92% of the whole projection. Built once, lazily, so a
+  // projection with no local records never pays for it.
+  let localPoolCache: MemoryDecision[] | undefined;
+  const localPool = (): MemoryDecision[] => {
+    localPoolCache ??= [...gathered.decisions, ...gathered.localDecisions];
+    return localPoolCache;
+  };
+
   const consideredBySource = { team: 0, local: 0, global: 0 };
   const eligibleEntries: {
     record: MemoryRecord;
@@ -450,8 +556,7 @@ export function recallProjection(
     // are authoritative across stores (a team supersede/quarantine of an id correctly retires the
     // same-id local copy too). Folding local decisions into a team/global record would let a single
     // local negative event retract team memory (PRD line 242).
-    const decs =
-      source === 'local' ? [...gathered.decisions, ...gathered.localDecisions] : gathered.decisions;
+    const decs = source === 'local' ? localPool() : gathered.decisions;
     // G1.2 legacy-ID bridge: a migrated v2 record adopts the CONSERVATIVE verdict snapshot of every
     // alias bound to it (the worst axis across collapsed v1 siblings — the v2 seed excludes
     // authorship/scope, so two v1 records of one claim can share a twin; a last-wins pick could
@@ -465,13 +570,18 @@ export function recallProjection(
     // honest over the union the store can actually hand back.
     const asVersioned: MemoryRecord | MemoryRecordV2 = record;
     const boundAliases = isMemoryRecordV2(asVersioned) ? aliasIndex.aliasesFor(record.id) : [];
-    const recordDecs =
-      boundAliases.length > 0 ? bridgedDecisions(boundAliases, record.id, decs) : decs;
+    const bridged = boundAliases.length > 0;
+    const recordDecs = bridged ? bridgedDecisions(boundAliases, record.id, decs) : decs;
+    // PERF — the unbridged path evaluates every record against ONE of two stable pools, so the
+    // subject grouping is built once per pool instead of scanning it per record (O(records ×
+    // decisions) → O(records)). A BRIDGED record gets a freshly synthesised pool, so it keeps the
+    // scan: indexing a per-record array would cost more than the scan it replaces.
     const verdicts = effectiveVerdicts(
       record,
       recordDecs,
       evaluation,
       conservativeVerdicts(boundAliases),
+      bridged ? undefined : decisionIndexFor(source),
     );
     consideredEntries.push({ record, verdicts, source });
     if (!isRecallEligible(verdicts)) continue;

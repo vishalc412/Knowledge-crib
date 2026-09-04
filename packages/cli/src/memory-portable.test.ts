@@ -139,7 +139,11 @@ afterEach(() => {
 
 function env(): NodeJS.ProcessEnv {
   // isolate the local/global stores per test (the team store lives under the repo's .crib).
-  return { ...process.env, KCRIB_MEMORY_DIR: home };
+  // KCRIB_EMBED_HOME is pinned to the same temp home so the subprocess CANNOT pick up whatever
+  // embed tier the developer happens to have installed. The shipped ranker follows the tier
+  // (semantic-only when a model is installed, lexical-only otherwise), so without this pin these
+  // e2e assertions would depend on machine state rather than on the code under test.
+  return { ...process.env, KCRIB_MEMORY_DIR: home, KCRIB_EMBED_HOME: join(home, 'embed') };
 }
 
 function teamStore(): MemoryStore {

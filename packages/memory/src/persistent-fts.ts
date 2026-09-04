@@ -49,6 +49,7 @@ import { MemoryFtsIndex } from './fts-index.js';
 import { type RecallStores, gatherRecall } from './recall.js';
 import type { MemoryFtsGeneration, MemoryFtsWriteNotice } from './store.js';
 import type { MemoryEntry, MemoryRecord, MemoryRecordV2, MemoryStoreRole } from './types.js';
+import { MemoryVectorStore } from './vector-store.js';
 
 /**
  * The index-format version. Bump on any change to the FTS schema, the row composition, or the meta
@@ -342,4 +343,24 @@ export class PersistentMemoryFts extends MemoryFtsIndex {
 /** A gathered/notice entry that is an actual memory record (either schema version, shared `mem:` id prefix). */
 function isRecordEntry(e: MemoryEntry): e is MemoryRecord | MemoryRecordV2 {
   return typeof e.id === 'string' && e.id.startsWith('mem:');
+}
+
+/**
+ * Open the persistent vector store beside the FTS snapshot, under the local store's index home.
+ *
+ * Same home resolution as {@link openMemoryFts} on purpose: both are derived read models of the same
+ * ledger, both are gitignored, and both can be deleted at any time. Returns an EPHEMERAL store when
+ * there is no repo-scoped home, so a store-less caller still works — it just re-embeds.
+ */
+export function openMemoryVectors(
+  stores: RecallStores,
+  opts: { embedderId: string; dim: number; textVersion: string; dir?: string },
+): MemoryVectorStore {
+  const indexDir = opts.dir ?? (stores.local ? join(stores.local.rootDir, 'vectors') : undefined);
+  return new MemoryVectorStore({
+    dbPath: indexDir ? join(indexDir, 'memory-vectors.sqlite') : ':memory:',
+    embedderId: opts.embedderId,
+    textVersion: opts.textVersion,
+    dim: opts.dim,
+  });
 }

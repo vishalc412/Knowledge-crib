@@ -9,7 +9,7 @@
  */
 import { visibilityOf } from '../api.js';
 import { DEFAULT_RETENTION_POLICY_ID } from '../migrations.js';
-import { isMemoryRecordV2 } from '../types.js';
+import { isMemoryRecordVersioned } from '../types.js';
 import type { MemoryVisibility } from '../types.js';
 import { verifyPayloadId } from './event.js';
 
@@ -60,7 +60,7 @@ function visibilityOfEntry(entry: { id: string }): MemoryVisibility {
  */
 function sensitivityOfEntry(entry: { id: string }): string {
   const rec = entry as unknown as Record<string, unknown>;
-  if (isMemoryRecordV2(rec)) return rec.sensitivity as string;
+  if (isMemoryRecordVersioned(rec)) return rec.sensitivity as string;
   return 'internal';
 }
 
@@ -70,7 +70,7 @@ function sensitivityOfEntry(entry: { id: string }): string {
  */
 function retentionPolicyIdOfEntry(entry: { id: string }): string {
   const rec = entry as unknown as Record<string, unknown>;
-  if (isMemoryRecordV2(rec) && typeof rec.retentionPolicyId === 'string') {
+  if (isMemoryRecordVersioned(rec) && typeof rec.retentionPolicyId === 'string') {
     return rec.retentionPolicyId as string;
   }
   return DEFAULT_RETENTION_POLICY_ID;

@@ -13,16 +13,23 @@
  * The frozen-seed law applies: `{ kind, store, repoId?, body }` is frozen once landed.
  */
 import { blake3Hex } from '@knowledge-crib/soul-schema';
-import { decisionId, feedbackId, memoryRecordId, memoryRecordV2Id } from '../ids.js';
+import {
+  decisionId,
+  feedbackId,
+  memoryRecordId,
+  memoryRecordV2Id,
+  memoryRecordV3Id,
+} from '../ids.js';
 import { MemorySchemaVersionError } from '../migrations.js';
 import { canonicalMemoryJson } from '../serialization.js';
-import { isMemoryRecordV2 } from '../types.js';
+import { isMemoryRecordV2, isMemoryRecordV3 } from '../types.js';
 import type {
   MemoryDecision,
   MemoryEntry,
   MemoryFeedback,
   MemoryRecord,
   MemoryRecordV2,
+  MemoryRecordV3,
 } from '../types.js';
 import { MemorySchemaError, assertValidSyncEvent } from '../validate.js';
 
@@ -49,7 +56,12 @@ export interface SyncEventMeta {
 }
 
 /** What a sync event carries: the entry kinds that ever sync (D1: nothing else is ever shipped). */
-export type SyncEventPayload = MemoryRecord | MemoryRecordV2 | MemoryDecision | MemoryFeedback;
+export type SyncEventPayload =
+  | MemoryRecord
+  | MemoryRecordV2
+  | MemoryRecordV3
+  | MemoryDecision
+  | MemoryFeedback;
 
 /** The sync event envelope (D1, `sync-event.schema.json`). */
 export interface SyncEvent {
@@ -191,15 +203,24 @@ export function verifyPayloadId(entry: {
   const prefix = colon > 0 ? actualId.slice(0, colon) : '';
   try {
     if (prefix === 'mem') {
-      const expected = isMemoryRecordV2(rec)
-        ? memoryRecordV2Id({
-            kind: rec.kind as MemoryRecordV2['kind'],
+      const expected = isMemoryRecordV3(rec)
+        ? memoryRecordV3Id({
+            kind: rec.kind as MemoryRecordV3['kind'],
             subject: rec.subject as string,
             propositionKey: rec.propositionKey as string,
             claim: rec.claim as string,
-            evidence: rec.evidence as MemoryRecordV2['evidence'],
+            evidence: rec.evidence as MemoryRecordV3['evidence'],
+            namespace: rec.namespace as MemoryRecordV3['namespace'],
           })
-        : memoryRecordId(rec as unknown as MemoryRecord);
+        : isMemoryRecordV2(rec)
+          ? memoryRecordV2Id({
+              kind: rec.kind as MemoryRecordV2['kind'],
+              subject: rec.subject as string,
+              propositionKey: rec.propositionKey as string,
+              claim: rec.claim as string,
+              evidence: rec.evidence as MemoryRecordV2['evidence'],
+            })
+          : memoryRecordId(rec as unknown as MemoryRecord);
       return { ok: expected === actualId, expectedId: expected, actualId };
     }
     if (prefix === 'dec') {

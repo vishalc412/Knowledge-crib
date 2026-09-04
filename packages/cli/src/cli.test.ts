@@ -16,6 +16,7 @@ import { crc32 } from 'node:zlib';
 import { SoulStore, newManifest, openIndex } from '@knowledge-crib/core';
 import { indexRepo } from '@knowledge-crib/pipeline';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { buildMinimalPdf } from '../../../scripts/fixtures/minimal-pdf.mjs';
 import { syntheticMuleProject } from '../../../scripts/fixtures/synthetic-mule-project.mjs';
 
 /**
@@ -1314,5 +1315,110 @@ describe('crib index — MuleSoft summary (Task 7)', () => {
     } finally {
       rmSync(plain, { recursive: true, force: true });
     }
+  });
+});
+
+// ─── G5.3 — production multimodal adapters: doctor check + opt-in `crib index --multimodal` ──────
+// Drives the BUILT dist/cli.js (spawnSync per repo convention for new tests) so the real adapter
+// path is exercised: PDF extraction is bundled pure-JS (unpdf/pdf.js) and must work end-to-end with
+// no python and no external binary; OCR/transcription only report availability (binary-dependent).
+describe('G5.3 multimodal — opt-in phase with production adapters', () => {
+  const stripWarnings = (s: string): string =>
+    s
+      .split('\n')
+      .filter((l) => !/ExperimentalWarning|trace-warnings/.test(l))
+      .join('\n');
+
+  it('doctor reports the multimodal adapters check as WARN-class ✓ with the enabling command', () => {
+    const r = spawnSync(process.execPath, [CLI, 'doctor'], {
+      cwd: repo,
+      encoding: 'utf8',
+      maxBuffer: 32 * 1024 * 1024,
+    });
+    expect(r.stdout).toContain('multimodal adapters');
+    // ✓ always (opt-in capability report, never a setup failure), names pdf as bundled, and names
+    // the one documented command that turns the phase on.
+    expect(r.stdout).toMatch(/✓ multimodal adapters — opt-in phase — pdf ✓/);
+    expect(r.stdout).toMatch(/enable with `crib index --multimodal`/);
+  });
+
+  it('crib index --multimodal ingests a real PDF end-to-end and flips capabilities.multimodal', () => {
+    const docs = mkdtempSync(join(tmpdir(), 'crib-cli-mm-'));
+    try {
+      writeFileSync(join(docs, 'note.md'), '# Auth\n\nThe AuthService.login flow is documented.\n');
+      writeFileSync(
+        join(docs, 'design.pdf'),
+        buildMinimalPdf([['AuthService.login validates credentials'], ['util.parseConfig second']]),
+      );
+      const r = spawnSync(process.execPath, [CLI, 'index', '.', '--multimodal', '--json'], {
+        cwd: docs,
+        encoding: 'utf8',
+        maxBuffer: 32 * 1024 * 1024,
+      });
+      expect(r.status ?? 1).toBe(0);
+      const report = JSON.parse(stripWarnings(r.stdout ?? '')) as {
+        multimodal: {
+          ingest: { files: number; segments: number; dropped: number };
+          availability: Array<{ id: string; available: boolean }>;
+        };
+      };
+      expect(report.multimodal.ingest.files).toBe(1);
+      expect(report.multimodal.ingest.segments).toBe(2); // one per PDF page
+      expect(report.multimodal.ingest.dropped).toBe(0);
+      // honest availability: pdf always usable; binary adapters report this machine's truth
+      const pdf = report.multimodal.availability.find((a) => a.id === 'pdf');
+      expect(pdf?.available).toBe(true);
+
+      // capability truthfully on in the manifest → surfaced by `crib status`
+      const st = spawnSync(process.execPath, [CLI, 'status', '.'], {
+        cwd: docs,
+        encoding: 'utf8',
+        maxBuffer: 32 * 1024 * 1024,
+      });
+      const status = JSON.parse(stripWarnings(st.stdout ?? '')) as {
+        capabilities: { multimodal: boolean };
+        multimodal?: { adapters?: Array<{ id: string; reason: string }> };
+      };
+      expect(status.capabilities.multimodal).toBe(true);
+      expect(status.multimodal?.adapters?.length).toBeGreaterThanOrEqual(1);
+      expect(status.multimodal?.adapters?.every((a) => a.reason.length > 0)).toBe(true);
+    } finally {
+      rmSync(docs, { recursive: true, force: true });
+    }
+  });
+
+  it('default index (no --multimodal) leaves the phase OFF (files 0, capability untouched)', () => {
+    const docs = mkdtempSync(join(tmpdir(), 'crib-cli-mm-off-'));
+    try {
+      writeFileSync(join(docs, 'note.md'), '# Plain\n\nNo media phase by default.\n');
+      writeFileSync(join(docs, 'design.pdf'), buildMinimalPdf([['should not be extracted']]));
+      const r = spawnSync(process.execPath, [CLI, 'index', '.', '--json'], {
+        cwd: docs,
+        encoding: 'utf8',
+        maxBuffer: 32 * 1024 * 1024,
+      });
+      expect(r.status ?? 1).toBe(0);
+      const report = JSON.parse(stripWarnings(r.stdout ?? '')) as {
+        multimodal: { ingest: { files: number; segments: number }; availability: unknown[] };
+      };
+      expect(report.multimodal.ingest.files).toBe(0);
+      expect(report.multimodal.ingest.segments).toBe(0);
+      expect(report.multimodal.availability).toEqual([]); // honest zero-report shape
+    } finally {
+      rmSync(docs, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects an unknown --multimodal-backend value with BAD_ARGS', () => {
+    const r = spawnSync(
+      process.execPath,
+      [CLI, 'index', '.', '--multimodal', '--multimodal-backend', 'nope'],
+      {
+        cwd: repo,
+        encoding: 'utf8',
+        maxBuffer: 32 * 1024 * 1024,
+      },
+    );
+    expect(r.status ?? 1).not.toBe(0);
   });
 });

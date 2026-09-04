@@ -185,4 +185,54 @@ describe('detect_changes (M6 read-only dry run)', () => {
     expect(res.changedPaths).toEqual(['src/token.ts']);
     expect((res.changedSymbols as string[]).sort()).toEqual([issue.id, 'file:src/token.ts'].sort());
   });
+
+  // The verb is the PRE-commit gate, so it is called while the changes are still in the working
+  // tree. `since..HEAD` is a commit range and cannot see them; before this the answer was a silent
+  // `[]` at exactly the moment something was about to be committed.
+  it('reports uncommitted working-tree changes, and says the commit range is empty', () => {
+    const vcs: VcsAdapter = {
+      currentHead: () => 'h1', // anchor === head: the commit range is empty by construction
+      changedFilesSince: () => [],
+      uncommittedChanges: () => ['src/auth.ts'],
+    };
+    const v = new Verbs({ soul, index, repoRoot: repo, vcs });
+    const res = v.detectChanges({}) as Record<string, unknown>;
+
+    expect(res.changedPaths).toEqual([]); // nothing committed since the anchor
+    expect(res.uncommittedPaths).toEqual(['src/auth.ts']);
+    // the working tree is folded into the analysed set, so the edit is actually surfaced
+    expect((res.changedSymbols as string[]).sort()).toEqual([login.id, 'file:src/auth.ts'].sort());
+    expect((res.removedEdges as unknown[]).length).toBeGreaterThan(0);
+    expect(res.note).toMatch(/UNCOMMITTED working-tree changes only/);
+  });
+
+  it('flags an anchor-equals-head report as unsurveyed rather than clean', () => {
+    const vcs: VcsAdapter = {
+      currentHead: () => 'h1',
+      changedFilesSince: () => [],
+      uncommittedChanges: () => [],
+    };
+    const v = new Verbs({ soul, index, repoRoot: repo, vcs });
+    const res = v.detectChanges({}) as Record<string, unknown>;
+
+    expect(res.changedSymbols).toEqual([]);
+    // an empty result must carry WHY it is empty — never bare silence a caller reads as "clean"
+    expect(res.note).toMatch(/empty by construction, not surveyed/);
+  });
+
+  it('survives a vcs adapter whose uncommittedChanges throws (degrades, never throws)', () => {
+    const vcs: VcsAdapter = {
+      currentHead: () => 'h2',
+      changedFilesSince: () => ['src/auth.ts'],
+      uncommittedChanges: () => {
+        throw new Error('not a git work tree');
+      },
+    };
+    const v = new Verbs({ soul, index, repoRoot: repo, vcs });
+    const res = v.detectChanges({}) as Record<string, unknown>;
+
+    expect(res.uncommittedPaths).toEqual([]);
+    expect(res.changedPaths).toEqual(['src/auth.ts']); // the committed range still reports
+    expect((res.changedSymbols as string[]).sort()).toEqual([login.id, 'file:src/auth.ts'].sort());
+  });
 });

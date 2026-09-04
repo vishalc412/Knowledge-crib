@@ -20,6 +20,7 @@ import type {
   MemoryFeedback,
   MemoryRecord,
   MemoryRecordV2,
+  MemoryRecordV3,
   MemoryScope,
 } from './types.js';
 
@@ -174,6 +175,31 @@ export function memoryRecordV2Id(record: {
   evidence: MemoryEvidence[];
 }): string {
   return `mem:${blake3Hex(claimBodyV2(record))}`;
+}
+
+/**
+ * `mem:<blake3>` for memory-3. Unlike v2, namespace is part of identity: a claim owned by two
+ * principals or profiles must never collapse into one syncable record. Mutable provenance and time
+ * remain outside the seed so repeat observations within the same namespace still deduplicate.
+ */
+export function memoryRecordV3Id(record: {
+  kind: MemoryRecordV3['kind'];
+  subject: string;
+  propositionKey: string;
+  claim: string;
+  evidence: MemoryEvidence[];
+  namespace: MemoryRecordV3['namespace'];
+}): string {
+  return `mem:${blake3Hex(
+    canonical({
+      kind: record.kind,
+      subject: normalizeClaim(record.subject),
+      propositionKey: record.propositionKey,
+      claim: normalizeClaim(record.claim),
+      evidence: evidenceHash(record.evidence),
+      namespace: record.namespace,
+    }),
+  )}`;
 }
 
 // ─── public id builders ──────────────────────────────────────────────────────

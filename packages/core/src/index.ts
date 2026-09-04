@@ -11,6 +11,7 @@ export * from './conflict-rule.js';
 export * from './manifest.js';
 export * from './shard.js';
 export * from './delta.js';
+export * from './rename.js';
 export * from './merge.js';
 export * from './memory-kinds.js';
 export * from './memory-merge.js';

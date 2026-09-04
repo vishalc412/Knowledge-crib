@@ -51,6 +51,8 @@ import {
   withCribLockAsync,
 } from '@knowledge-crib/core';
 import type { IndexStore } from '@knowledge-crib/core';
+import type { Embedder } from '@knowledge-crib/core';
+import { loadInstalledEmbedder } from '@knowledge-crib/core';
 import {
   EnrichmentStore,
   Verbs,
@@ -67,9 +69,11 @@ import type {
   EnrichSaveItem,
   EnrichScope,
   EnrichWorkItem,
+  TaintRuleEntry,
   VcsAdapter,
 } from '@knowledge-crib/mcp';
 import {
+  AgentProfileDirectory,
   type AttemptOutcome,
   type AttemptPhase,
   BENCH_SCALE_DEFAULT,
@@ -82,6 +86,7 @@ import {
   FileSyncObjectStore,
   type GateReceipt,
   HttpSyncObjectStore,
+  IntelligenceEventJournal,
   MemoryApi,
   type MemoryCandidate,
   type MemoryDecision,
@@ -95,11 +100,14 @@ import {
   type MemoryRecordV2,
   type MemorySource,
   MemoryStore,
+  ProjectionCheckpointStore,
   REMOTE_MANIFEST_KEY,
   type RecallProjection,
   type RecallProvenance,
   type RecallScore,
   type RecordBelief,
+  SEMANTIC_TEXT_VERSION,
+  SUPPORTED_MEMORY_SCHEMA_VERSIONS,
   type ScoredRecord,
   type SearchHit,
   type SearchResponse,
@@ -156,6 +164,7 @@ import {
   memoryCandidateId,
   memoryHome,
   openMemoryFts,
+  openMemoryVectors,
   parseMemoryShard,
   parseRemoteManifest,
   pendingCaptures,
@@ -184,6 +193,7 @@ import {
 } from '@knowledge-crib/memory';
 import { writeJsonAtomic } from '@knowledge-crib/memory';
 import {
+  adapterStatuses,
   changedFilesSince,
   currentHead,
   detectWorkspace,
@@ -191,6 +201,7 @@ import {
   isGitRepo,
   lsTreeFiles,
   mergeBase,
+  pipelinePdg,
   prepareSourceInput,
   refExists,
   renderExport,
@@ -204,6 +215,7 @@ import { DEFAULT_IGNORES } from '@knowledge-crib/pipeline';
 import type {
   IndexReport,
   MuleReport,
+  MultimodalPhaseOpts,
   PreparedSourceInput,
   WorkspaceLayout,
 } from '@knowledge-crib/pipeline';
@@ -259,7 +271,15 @@ import {
   resolveProjectRoot,
 } from './runtime.js';
 import { installSkill, listBundledSkills } from './skill-install.js';
-import { VizHttpError, isAllowedHost, readVizNodeSource, resolveVizAsset } from './viz-server.js';
+import {
+  VizHttpError,
+  isAllowedHost,
+  parseMemoryLedgerQuery,
+  readMemoryLedger,
+  readMemoryLedgerDetail,
+  readVizNodeSource,
+  resolveVizAsset,
+} from './viz-server.js';
 import { WatchMode } from './watch.js';
 
 const EXIT = { OK: 0, ERROR: 1, BAD_ARGS: 2, NOT_INDEXED: 3, LOCKED: 4 } as const;
@@ -283,6 +303,11 @@ const VALUE_FLAGS = new Set([
   '--format',
   '--cwd',
   '--since',
+  // G5.1 rename (`crib rename --from X --to Y --plan-id <id>`): value-taking, and the delegated
+  // `crib update --dirty` must never see them as positionals.
+  '--from',
+  '--to',
+  '--plan-id',
   '--exclude',
   '--depth',
   '--doc-limit',
@@ -565,6 +590,10 @@ async function main(argvRaw: string[]): Promise<number> {
       return cmdReconstruct(rest, ctx);
     case 'impact':
       return cmdImpact(rest, ctx);
+    case 'explain':
+      return cmdExplain(rest, ctx);
+    case 'rename':
+      return cmdRename(rest, ctx);
     case 'federated-impact':
     case 'federated':
       return cmdFederatedImpact(rest, ctx);
@@ -936,6 +965,44 @@ function renderMuleLine(s: MuleIndexSummary): string {
   return `mule: ${parts.join(', ')}`;
 }
 
+/**
+ * G5.3 — parse the opt-in multimodal flags: `--multimodal` enables the phase (default OFF), with
+ * optional `--multimodal-backend auto|fake|pdf|audio|image` (default `auto` — the TS-native
+ * production adapters) and `--multimodal-model-path <dir>` (required by whisper transcription so
+ * no model is ever fetched over the network). Returns undefined when the flag is absent, a valid
+ * opts object when enabled, or null on an unknown backend value (caller exits BAD_ARGS).
+ */
+function parseMultimodalOpts(args: string[]): MultimodalPhaseOpts | undefined | null {
+  if (!args.includes('--multimodal')) return undefined;
+  const BACKENDS = new Set(['auto', 'fake', 'pdf', 'audio', 'image']);
+  const opts: MultimodalPhaseOpts = {};
+  const backendIdx = args.indexOf('--multimodal-backend');
+  if (backendIdx >= 0) {
+    const backend = args[backendIdx + 1];
+    if (!backend || !BACKENDS.has(backend)) return null;
+    opts.backend = backend as MultimodalPhaseOpts['backend'];
+  }
+  const modelIdx = args.indexOf('--multimodal-model-path');
+  if (modelIdx >= 0) {
+    const modelPath = args[modelIdx + 1];
+    if (!modelPath) return null;
+    opts.modelPath = modelPath;
+  }
+  return opts;
+}
+
+/** One-line media summary appended to the index/reindex human output (only when the phase ran). */
+function multimodalSummary(report: IndexReport): string {
+  const mm = report.multimodal;
+  if (mm.ingest.files === 0) return '';
+  const usable = mm.availability.filter((a) => a.available).length;
+  const plural = (n: number, word: string): string => `${n} ${word}${n === 1 ? '' : 's'}`;
+  return (
+    ` · media: ${plural(mm.ingest.segments, 'segment')} from ${plural(mm.ingest.files, 'file')} ` +
+    `(${mm.ingest.dropped} dropped, ${plural(usable, 'adapter')} available)`
+  );
+}
+
 async function cmdIndex(args: string[], ctx?: CmdCtx): Promise<number> {
   // An explicit source path remains the source authority. `resolveRoot` also
   // preserves a registered external cribDir when this is an update fallback.
@@ -949,6 +1016,17 @@ async function cmdIndex(args: string[], ctx?: CmdCtx): Promise<number> {
   const projectKey = resolved.projectKey;
   const semantic = args.includes('--semantic');
   const json = args.includes('--json');
+  // G5.3 — `--multimodal` opts INTO the media phase (default OFF: the default index path never
+  // touches media or spawns a subprocess). With real (non-fake) adapters the default backend is
+  // `auto`: in-process TS-native PDF text-layer extraction (no binary needed), tesseract OCR and
+  // whisper transcription when their binaries are on PATH — each degrading honest, never faking.
+  const multimodal = parseMultimodalOpts(args);
+  if (multimodal === null) {
+    process.stderr.write(
+      'unknown --multimodal-backend value (expected auto|fake|pdf|audio|image) or missing flag value\n',
+    );
+    return EXIT.BAD_ARGS;
+  }
   const ignores = parseExcludes(args);
   const scope = resolvePackageScope(repoRoot, args);
   if (scope.status !== EXIT.OK) return scope.status;
@@ -964,6 +1042,7 @@ async function cmdIndex(args: string[], ctx?: CmdCtx): Promise<number> {
       semantic,
       ignores,
       packageRoots: scope.packageRoots,
+      ...(multimodal ? { multimodal } : {}),
     });
     const index = buildIndex({ repoRoot, cribDir, soul });
     registerIndexed(projectKey, cribDir, soul, source);
@@ -980,7 +1059,7 @@ async function cmdIndex(args: string[], ctx?: CmdCtx): Promise<number> {
       const muleSeg = muleSummary ? ` · ${renderMuleLine(muleSummary)}` : '';
       process.stdout.write(
         `indexed ${report.files} files → ${stats.nodes} nodes, ${stats.edges} edges ` +
-          `(${report.link.describes} describes, ${report.link.references} references)${scopeSuffix}${muleSeg} in ${Date.now() - started}ms\n`,
+          `(${report.link.describes} describes, ${report.link.references} references)${scopeSuffix}${muleSeg}${multimodalSummary(report)} in ${Date.now() - started}ms\n`,
       );
       printTokenSavingsHero(new Verbs({ soul, index, repoRoot }), soul, repoRoot);
       printLlmPending(soul, repoRoot);
@@ -1042,6 +1121,14 @@ async function cmdStatus(args: string[], ctx?: CmdCtx): Promise<number> {
     statusJson.freshness = freshnessStatus(resolved.repoRoot);
   } catch (err) {
     statusJson.freshness = { error: (err as Error).message };
+  }
+  // G5.3 — additive multimodal block: capabilities.multimodal (already in `capabilities`, from the
+  // manifest) reports whether the LAST index ingested media; this block reports which adapters a
+  // re-run WOULD use, with the honest why-not per adapter. Best-effort like the freshness block.
+  try {
+    statusJson.multimodal = { adapters: adapterStatuses() };
+  } catch (err) {
+    statusJson.multimodal = { error: (err as Error).message };
   }
   process.stdout.write(`${JSON.stringify(statusJson, null, 2)}\n`);
   index.close();
@@ -1183,7 +1270,10 @@ async function openServeIndex(
  * "not indexed" message and returns `null` when the root has no `.crib`, so each command stays a
  * thin wrapper over one verb.
  */
-function openVerbs(args: string[], ctx?: CmdCtx): { verbs: Verbs; index: IndexStore } | null {
+function openVerbs(
+  args: string[],
+  ctx?: CmdCtx,
+): { verbs: Verbs; index: IndexStore; soul: ReturnType<typeof openSoul>['soul'] } | null {
   const resolved = resolveRoot(args, ctx);
   if (!isIndexedRoot(resolved)) {
     process.stderr.write('not indexed — run `crib index` first\n');
@@ -1197,8 +1287,11 @@ function openVerbs(args: string[], ctx?: CmdCtx): { verbs: Verbs; index: IndexSt
     index,
     repoRoot: resolved.repoRoot,
     vcs: new CliVcsAdapter(),
+    // G5.2 — the on-demand PDG/taint analyzer lives in the pipeline; every openVerbs-based
+    // command (explain included) gets it injected so the CLI is the reference wiring.
+    pdg: pipelinePdg,
   });
-  return { verbs, index };
+  return { verbs, index, soul: rt.soul };
 }
 
 /** `crib gaps` — analysis readiness, missing bodies (spec-only callables), unresolved call sites. */
@@ -1475,6 +1568,152 @@ async function cmdImpact(args: string[], ctx?: CmdCtx): Promise<number> {
 }
 
 /**
+ * `crib explain <node-id> [--rules <file>]` (G5.2) — on-demand PDG + taint flows for ONE callable.
+ * Nothing runs at index time; the first successful run flips `capabilities.pdg` (best-effort, a
+ * read-only checkout must not fail the analysis). The response carries `limits` and, when no flow
+ * is found, an `absence` message — empty `flows` is NOT proof of safety (intra-procedural only).
+ */
+async function cmdExplain(args: string[], ctx?: CmdCtx): Promise<number> {
+  const id = positionalsOf(args)[0];
+  const rulesIdx = args.indexOf('--rules');
+  const rulesFile = rulesIdx >= 0 ? args[rulesIdx + 1] : undefined;
+  if (!id || (rulesIdx >= 0 && !rulesFile)) {
+    process.stderr.write('usage: crib explain <node-id> [--rules <rules.json>]\n');
+    return EXIT.BAD_ARGS;
+  }
+  let extraRules: TaintRuleEntry[] | undefined;
+  if (rulesFile) {
+    try {
+      const parsed: unknown = JSON.parse(readFileSync(rulesFile, 'utf8'));
+      if (!Array.isArray(parsed)) throw new Error('expected a JSON array of rule entries');
+      extraRules = parsed as TaintRuleEntry[];
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      process.stderr.write(`cannot read rules file ${rulesFile}: ${msg}\n`);
+      return EXIT.BAD_ARGS;
+    }
+  }
+  const opened = openVerbs(args, ctx);
+  if (!opened) return EXIT.NOT_INDEXED;
+  const { verbs, index, soul } = opened;
+  const result = verbs.explain({ id, ...(extraRules !== undefined ? { extraRules } : {}) });
+  try {
+    if (soul.getManifest().capabilities.pdg !== true) {
+      // In-memory flip only: `setCapabilities` persists on the NEXT real `crib index`/`update`
+      // commit. Calling `commit()` here would rewrite the manifest NOW and trip the derived-index
+      // freshness mtime guard, marking every later read command stale for a cosmetic stamp.
+      soul.setCapabilities({ pdg: true });
+    }
+  } catch {
+    // best-effort only — the analysis result is already produced
+  }
+  process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+  index.close();
+  return EXIT.OK;
+}
+
+/**
+ * `crib rename --from <symbol> --to <name> [--apply --plan-id <id>] [--json] [--depth N]` (G5.1).
+ * Default DRY-RUN: prints the reviewed plan (per-file edit counts, exact vs inferred confidence,
+ * the unresolved bucket, notes) plus the deterministic plan id; nothing is written. `--apply`
+ * re-derives the plan from the CURRENT graph + files and refuses unless the plan id matches AND
+ * every file still hashes to its plan-time value (stale → "re-run the dry run"). Application is
+ * all-or-nothing; on success the SAME post-apply reindex path `crib update` uses runs with
+ * `--dirty` so the derived index reflects the rename, and the update summary is surfaced.
+ */
+async function cmdRename(args: string[], ctx?: CmdCtx): Promise<number> {
+  const flagValue = (flag: string): string | undefined => {
+    const i = args.indexOf(flag);
+    return i >= 0 ? (args[i + 1] as string | undefined) : undefined;
+  };
+  const from = flagValue('--from');
+  const to = flagValue('--to');
+  const planId = flagValue('--plan-id');
+  const apply = args.includes('--apply');
+  const json = args.includes('--json');
+  const depthIdx = args.indexOf('--depth');
+  const depth = depthIdx >= 0 ? Number.parseInt(args[depthIdx + 1] ?? '', 10) : undefined;
+  if (!from || !to || (apply && !planId)) {
+    process.stderr.write(
+      'usage: crib rename --from <symbol> --to <name> [--apply --plan-id <id>] [--json] [--depth N]\n' +
+        '  default is a dry run — it prints the plan and its id; pass both --apply and --plan-id to write\n',
+    );
+    return EXIT.BAD_ARGS;
+  }
+  const opened = openVerbs(args, ctx);
+  if (!opened) return EXIT.NOT_INDEXED;
+  const { verbs, index } = opened;
+  const result = verbs.rename({
+    from,
+    to,
+    ...(apply ? { apply: true, planId } : {}),
+    ...(Number.isFinite(depth) && depth! > 0 ? { depth } : {}),
+  });
+  if ('error' in result) {
+    const err = result.error as { code?: string; message?: string };
+    process.stderr.write(`rename failed (${err.code ?? 'ERROR'}): ${err.message ?? ''}\n`);
+    index.close();
+    return EXIT.ERROR;
+  }
+  if (json) {
+    process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+  } else if (!apply) {
+    const counts = result.counts as {
+      exact: number;
+      inferred: number;
+      files: number;
+      edits: number;
+    };
+    const files = result.files as Array<{ path: string; edits: number }>;
+    const affected = result.affected as unknown[];
+    const unresolved = result.unresolved as unknown[];
+    const notes = result.notes as string[];
+    process.stdout.write(
+      `${[
+        'rename plan (dry run — nothing written)',
+        `  from: ${String(result.from)} → to: ${String(result.to)}`,
+        `  target: ${String((result.target as { id: string }).id)}`,
+        `  plan id: ${String(result.planId)}`,
+        `  sites: ${counts.exact} exact, ${counts.inferred} inferred (${counts.edits} edit(s) across ${counts.files} file(s))`,
+        `  affected: ${affected.length} resolved, ${unresolved.length} unresolved`,
+      ].join('\n')}\n`,
+    );
+    for (const f of files) process.stdout.write(`    ${f.path} — ${f.edits} edit(s)\n`);
+    if (notes.length > 0) {
+      process.stdout.write('  notes:\n');
+      for (const n of notes) process.stdout.write(`    - ${n}\n`);
+    }
+    if (unresolved.length > 0) {
+      process.stdout.write(
+        `  unresolved bucket (${unresolved.length}) — confirm these with a text search before treating the rename as safe\n`,
+      );
+    }
+    process.stdout.write(
+      `  apply with: crib rename --from <symbol> --to <name> --apply --plan-id ${String(result.planId)}\n`,
+    );
+  } else {
+    process.stdout.write(
+      `renamed in ${String(result.filesChanged)} file(s), ${String(result.edits)} edit(s) (plan ${String(result.planId)})\n`,
+    );
+  }
+  index.close();
+  if (!apply) return EXIT.OK;
+  // Post-apply reindex — the same incremental path `crib update` runs, forced dirty because the
+  // rename just changed files under the VCS delta's feet. Rename-only flags are stripped first so
+  // the delegated command parses clean; its exit code is the rename command's exit code, because
+  // an applied-but-unreindexed tree would otherwise look done when it is not.
+  const reindexArgs = args.filter((a, i) => {
+    if (a === '--apply' || a === '--json') return false;
+    if (a === '--from' || a === '--to' || a === '--plan-id') return false;
+    const prev = args[i - 1];
+    return prev !== '--from' && prev !== '--to' && prev !== '--plan-id';
+  });
+  reindexArgs.push('--dirty');
+  process.stdout.write('reindexing (dirty update)…\n');
+  return cmdUpdate(reindexArgs, ctx);
+}
+
+/**
  * `crib federated-impact <id> --dir up|down [--repo <root>]... [--depth N] [--limit N]
  * [--extracted-only]` — M3.2 cross-repo blast radius. The primary repo (cwd / resolved root) is
  * always federated; each extra `--repo <root>` adds a repo to traverse into. The route-layer bridge
@@ -1654,12 +1893,19 @@ async function cmdServe(args: string[], ctx?: CmdCtx): Promise<number> {
       `watch mode active — ${overlay.dirty.length} dirty file(s) overlaid; committed .crib/graph untouched\n`,
     );
   }
+  // The embed tier is resolved ONCE here, before the server starts: every MCP recall below is
+  // synchronous, and a server must not decide its ranker per request.
+  await ensureInstalledEmbedder();
   const verbs = new Verbs({
     soul: rt.soul,
     index,
     repoRoot: resolved.repoRoot,
     vcs: new CliVcsAdapter(),
-    ...(memory ? { memory } : {}),
+    // G5.2 — MCP clients reach `explain` through serve, so the analyzer is wired here too.
+    pdg: pipelinePdg,
+    ...(memory
+      ? { memory: { ...memory, ...(installedEmbedder ? { embedder: installedEmbedder } : {}) } }
+      : {}),
     ...(overlay ? { workingOverlay: overlay.store } : {}),
   });
   // stdout is the MCP transport; logs go to stderr only.
@@ -1800,6 +2046,9 @@ async function cmdReindex(args: string[], ctx?: CmdCtx): Promise<number> {
   const cribDir = prepared.cribDir;
   const projectKey = resolved.projectKey;
   const semantic = args.includes('--semantic');
+  // G5.3 — same opt-in multimodal flags as `crib index` (reindex is a full rebuild too).
+  const multimodal = parseMultimodalOpts(args);
+  if (multimodal === null) return EXIT.BAD_ARGS;
   const ignores = parseExcludes(args);
   const scope = resolvePackageScope(repoRoot, args);
   if (scope.status !== EXIT.OK) return scope.status;
@@ -1811,6 +2060,7 @@ async function cmdReindex(args: string[], ctx?: CmdCtx): Promise<number> {
       semantic,
       ignores,
       packageRoots: scope.packageRoots,
+      ...(multimodal ? { multimodal } : {}),
     });
     const index = buildIndex({ repoRoot, cribDir, soul });
     index.close();
@@ -1819,7 +2069,7 @@ async function cmdReindex(args: string[], ctx?: CmdCtx): Promise<number> {
     const scopeSuffix = scope.packageRoots ? ` [scoped: ${scope.indexedPackages.join(', ')}]` : '';
     process.stdout.write(
       `reindexed ${report.files} files → ${stats.nodes} nodes, ${stats.edges} edges ` +
-        `(${report.link.describes} describes, ${report.link.references} references)${scopeSuffix} in ${Date.now() - started}ms\n`,
+        `(${report.link.describes} describes, ${report.link.references} references)${scopeSuffix}${multimodalSummary(report)} in ${Date.now() - started}ms\n`,
     );
     printLlmPending(soul, repoRoot);
     return EXIT.OK;
@@ -2271,6 +2521,28 @@ async function cmdDoctor(args: string[], ctx?: CmdCtx): Promise<number> {
         ? `blocking \`crib update\` found (${legacy.blockingCommands.length} line(s)) — commits wait on a full reindex`
         : 'no blocking commands (freshness hook or absent managed block)',
       fix: legacy.convertible ? 'run `crib freshness convert-hook`' : undefined,
+    });
+  }
+
+  // 12. Multimodal adapters (G5.3): which extraction adapters are usable on THIS machine. WARN-class
+  //     (ok: true always, like stale-builds): the multimodal phase is opt-in (`crib index
+  //     --multimodal`), so a missing tesseract/whisper binary is a capability report, never a setup
+  //     failure. Count-agnostic — every adapter is listed with its honest why-not, and the enabling
+  //     command is named right in the detail line. PDF extraction is bundled (pure-JS pdf.js via
+  //     unpdf) and therefore always usable.
+  try {
+    const adapters = adapterStatuses();
+    const detail = adapters.map((a) => `${a.id} ${a.available ? '✓' : `✗ ${a.reason}`}`).join('; ');
+    checks.push({
+      name: 'multimodal adapters',
+      ok: true,
+      detail: `opt-in phase — ${detail}; enable with \`crib index --multimodal\` (audio also needs --multimodal-model-path)`,
+    });
+  } catch (err) {
+    checks.push({
+      name: 'multimodal adapters',
+      ok: true,
+      detail: `status unavailable: ${(err as Error).message}`,
     });
   }
 
@@ -2786,6 +3058,12 @@ async function cmdViz(args: string[], ctx?: CmdCtx): Promise<number> {
   const graph = buildVizGraph(rt.soul);
   const overview = buildVizOverview(rt.soul);
   const assets = vizAssetsDir();
+  // G5.4 — the memory ledger rides on the SAME MemoryApi the MCP verbs and CLI subcommands use;
+  // repos without a memory store serve the honest `configured: false` shape, not an error.
+  const memoryDeps = createMemoryDeps(rt.soul, rt.repoRoot, resolved.cribDir);
+  const memoryApi = memoryDeps
+    ? createMemoryApi(rt.soul, rt.repoRoot, resolved.cribDir, memoryDeps)
+    : undefined;
   const { createServer } = await import('node:http');
   const { readFile } = await import('node:fs/promises');
   const { extname } = await import('node:path');
@@ -2823,6 +3101,34 @@ async function cmdViz(args: string[], ctx?: CmdCtx): Promise<number> {
           'cache-control': 'no-store',
         });
         res.end(JSON.stringify(source));
+        return;
+      }
+      // G5.4 — the memory ledger: the list projection (paginated, grouped) and the lazy
+      // per-record detail. Both are read-only over the shared MemoryApi; `no-store` because the
+      // ledger changes with the stores, unlike the immutable static assets.
+      if (requestUrl.pathname === '/memory.json') {
+        const ledger = readMemoryLedger(memoryApi, parseMemoryLedgerQuery(requestUrl.searchParams));
+        res.writeHead(200, {
+          'content-type': 'application/json; charset=utf-8',
+          'cache-control': 'no-store',
+        });
+        res.end(JSON.stringify(ledger));
+        return;
+      }
+      if (requestUrl.pathname === '/memory/record.json') {
+        const id = requestUrl.searchParams.get('id');
+        if (!id || !memoryApi) {
+          throw new VizHttpError(
+            memoryApi ? 400 : 404,
+            memoryApi ? 'missing id' : 'memory not configured',
+          );
+        }
+        const detail = readMemoryLedgerDetail(memoryApi, id);
+        res.writeHead(200, {
+          'content-type': 'application/json; charset=utf-8',
+          'cache-control': 'no-store',
+        });
+        res.end(JSON.stringify(detail));
         return;
       }
       const path = await resolveVizAsset(assets, requestUrl.pathname);
@@ -3735,6 +4041,31 @@ function cmdAdaptersHooks(args: string[], ctx?: CmdCtx): number {
  * degrade to `{ memory: 'not configured' }` rather than writing content-ids with a blank repoId).
  * The stores are constructed lazily; dirs are created on first write, not here.
  */
+/**
+ * The installed on-device embedder, resolved ONCE per process.
+ *
+ * `loadInstalledEmbedder` is async (it verifies the manifest's file hashes before importing the
+ * entry module) but every recall path below it is synchronous, so the resolution happens at the
+ * async command boundary and the result is cached here. `undefined` means no tier is installed —
+ * recall then keeps the `lexical-only` incumbent, which is the correct behaviour and not a
+ * degradation to hide: R1 measured that fusion LOSES on the char-ngram fallback.
+ */
+let installedEmbedder: Embedder | undefined;
+let embedderResolved = false;
+
+/** Resolve the tier once. Never throws: an unreadable or failed-integrity manifest leaves the
+ *  incumbent ranker in place rather than failing a memory command outright. */
+async function ensureInstalledEmbedder(): Promise<Embedder | undefined> {
+  if (embedderResolved) return installedEmbedder;
+  embedderResolved = true;
+  try {
+    installedEmbedder = await loadInstalledEmbedder();
+  } catch {
+    installedEmbedder = undefined;
+  }
+  return installedEmbedder;
+}
+
 function createMemoryDeps(soul: SoulStore, repoRoot: string, cribDir: string) {
   const repoId = readRepoId(cribDir);
   if (!repoId) return undefined;
@@ -3747,6 +4078,13 @@ function createMemoryDeps(soul: SoulStore, repoRoot: string, cribDir: string) {
     global: MemoryStore.global({ env }),
     evaluator,
     evalCtx,
+    eventJournal: new IntelligenceEventJournal({ rootDir: join(cribDir, 'intelligence') }),
+    projectionCheckpoints: new ProjectionCheckpointStore({
+      rootDir: join(cribDir, 'intelligence'),
+    }),
+    identityDirectory: new AgentProfileDirectory({ rootDir: join(cribDir, 'intelligence') }),
+    // present ⇒ recall ranks with `semantic-only` (R2's selected strategy); absent ⇒ lexical-only
+    ...(installedEmbedder ? { embedder: installedEmbedder } : {}),
   };
 }
 
@@ -3775,6 +4113,9 @@ function createMemoryApi(
     cribDir,
     evaluator: deps.evaluator,
     evalCtx: deps.evalCtx,
+    eventJournal: deps.eventJournal,
+    projectionCheckpoints: deps.projectionCheckpoints,
+    identityDirectory: deps.identityDirectory,
     ...(head !== undefined ? { codeHead: head } : {}),
   });
 }
@@ -3827,13 +4168,204 @@ function findReceipt(local: MemoryStore, id: string): GateReceipt | undefined {
  * The MCP server NEVER calls these — only the CLI / CI runner produce evaluation receipts (PRD 68).
  * `recall` is the one read-only exception: it mirrors the MCP `memory_recall` verb's projection.
  */
+/**
+ * `crib memory handoff` — the "where was I?" briefing for a resumed session.
+ *
+ * The command a returning agent (or human) runs FIRST after a context switch: unfinished attempts,
+ * captures never distilled into claims, claims that went stale while away, and the conventions that
+ * still hold. Read-only, like `recall`. Mirrors the MCP `memory{op:'handoff'}` projection so a
+ * terminal and an IDE agent see the same picture.
+ */
+function cmdMemoryHandoff(args: string[], ctx?: CmdCtx): number {
+  if (args.includes('--help')) {
+    process.stdout.write('usage: crib memory handoff [--limit N] [--json]\n');
+    return EXIT.OK;
+  }
+  const json = args.includes('--json');
+  const limit = capInt(intFlag(args, '--limit'), 10, 25);
+  const resolved = resolveProjectRoot({ explicitRoot: ctx?.cwdOverride });
+  const rt = openSoul(resolved);
+  const deps = createMemoryDeps(rt.soul, resolved.repoRoot, resolved.cribDir);
+  if (!deps) {
+    process.stderr.write('could not resolve repoId for memory — run `crib index` first\n');
+    return EXIT.NOT_INDEXED;
+  }
+  const api = createMemoryApi(rt.soul, resolved.repoRoot, resolved.cribDir, deps);
+  const out = api.handoff({
+    limits: { openWork: limit, pending: limit, attention: limit, recent: limit },
+  });
+  if (json) {
+    process.stdout.write(`${JSON.stringify(out, null, 2)}\n`);
+    return EXIT.OK;
+  }
+  const lines: string[] = [];
+  const section = (title: string, count: number, shown: number): void => {
+    lines.push(`\n${title} (${count}${count > shown ? `, showing ${shown}` : ''})`);
+  };
+  if (
+    out.counts.openWork === 0 &&
+    out.counts.pendingCaptures === 0 &&
+    out.counts.needsAttention === 0 &&
+    out.recent.length === 0
+  ) {
+    process.stdout.write(
+      'handoff: nothing in flight, nothing stale, no memory yet for this repo.\n',
+    );
+    return EXIT.OK;
+  }
+  section('IN FLIGHT — unfinished work', out.counts.openWork, out.openWork.length);
+  for (const w of out.openWork) {
+    lines.push(`  ${w.attemptId}  [${w.lastPhase}]  ${w.lastActivity}`);
+    if (w.subject) lines.push(`    on: ${w.subject}`);
+    if (w.action) lines.push(`    doing: ${w.action}`);
+    else if (w.observation) lines.push(`    saw: ${w.observation}`);
+  }
+  section(
+    'NOT YET WRITTEN DOWN — pending captures',
+    out.counts.pendingCaptures,
+    out.pendingCaptures.length,
+  );
+  for (const p of out.pendingCaptures) lines.push(`  ${p.id}  ${p.subject}  ${p.observation}`);
+  section('WENT STALE WHILE YOU WERE AWAY', out.counts.needsAttention, out.needsAttention.length);
+  for (const a of out.needsAttention) {
+    lines.push(`  ${a.subject}  [evidence ${a.evidence} / applicability ${a.applicability}]`);
+    lines.push(`    ${a.claim}`);
+  }
+  section('STILL HOLDS — recent claims', out.counts.active, out.recent.length);
+  for (const r of out.recent) lines.push(`  [${r.kind}] ${r.subject}: ${r.claim}`);
+  process.stdout.write(`${lines.join('\n').trimStart()}\n`);
+  return EXIT.OK;
+}
+
+/**
+ * `crib memory events` — inspect the shared event plane without confusing it with durable claims.
+ * The live view honours the default 30-day retention policy; `--include-expired` exposes retained
+ * audit history for support/export workflows. This command is read-only: replay and repair remain
+ * explicit future projector operations, never side effects of an inspection command.
+ */
+function cmdMemoryEvents(args: string[], ctx?: CmdCtx): number {
+  if (args.includes('--help')) {
+    process.stdout.write('usage: crib memory events [--include-expired] [--limit N] [--json]\n');
+    return EXIT.OK;
+  }
+  const json = args.includes('--json');
+  const includeExpired = args.includes('--include-expired');
+  const limit = capInt(intFlag(args, '--limit'), 100, 1_000);
+  const resolved = resolveProjectRoot({ explicitRoot: ctx?.cwdOverride });
+  const journal = new IntelligenceEventJournal({ rootDir: join(resolved.cribDir, 'intelligence') });
+  const all = journal.read({ includeExpired });
+  // Most recent first is the useful operator view; event IDs and recorded timestamps make it
+  // deterministic to correlate a selected row with a later export or projector checkpoint.
+  const events = all.slice(-limit).reverse();
+  const result = {
+    schemaVersion: '1',
+    total: all.length,
+    returned: events.length,
+    includeExpired,
+    truncated: all.length > events.length,
+    events,
+  };
+  if (json) {
+    process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+    return EXIT.OK;
+  }
+  const lines = [
+    `memory events — ${events.length} shown of ${all.length} ${includeExpired ? 'audit' : 'live'} event(s)`,
+  ];
+  for (const event of events) {
+    lines.push(
+      `  ${event.recordedAt}  ${event.kind}  ${event.id}  ${event.identity.principalId}  [${event.source.clientId}]`,
+    );
+  }
+  if (all.length > events.length)
+    lines.push(`  truncated — rerun with --limit ${Math.min(all.length, 1_000)}`);
+  process.stdout.write(`${lines.join('\n')}\n`);
+  return EXIT.OK;
+}
+
+/**
+ * `crib memory profiles` — manage the host-owned aliases that map volatile vendor agent IDs to a
+ * durable agent profile. These are provenance associations only; principal ownership continues to
+ * be resolved by the host environment and never comes from a request argument.
+ */
+function cmdMemoryProfiles(args: string[], ctx?: CmdCtx): number {
+  const [sub, ...rest] = args;
+  if (sub === undefined || sub === '--help' || sub === '-h') {
+    process.stdout.write(
+      'usage: crib memory profiles list [--json] | register --key <profile-key> --alias <client-id>/<agent-id> [--alias <client-id>/<agent-id> ...] [--json]\n',
+    );
+    return EXIT.OK;
+  }
+  const json = rest.includes('--json');
+  const resolved = resolveProjectRoot({ explicitRoot: ctx?.cwdOverride });
+  const directory = new AgentProfileDirectory({ rootDir: join(resolved.cribDir, 'intelligence') });
+  const principalId = process.env.KCRIB_PRINCIPAL_ID?.trim() || DEFAULT_MIGRATION_PRINCIPAL_ID;
+  if (sub === 'list') {
+    const profiles = directory.list(principalId);
+    if (json) process.stdout.write(`${JSON.stringify(profiles, null, 2)}\n`);
+    else if (profiles.length === 0) process.stdout.write(`no agent profiles for ${principalId}\n`);
+    else {
+      for (const profile of profiles) {
+        process.stdout.write(
+          `${profile.id}\n${profile.aliases.map((alias) => `  ${alias.clientId}/${alias.agentId}`).join('\n')}\n`,
+        );
+      }
+    }
+    return EXIT.OK;
+  }
+  if (sub !== 'register') {
+    process.stderr.write(`unknown memory profiles subcommand: ${sub}\n`);
+    return EXIT.BAD_ARGS;
+  }
+  const profileKey = stringFlag(rest, '--key');
+  const rawAliases = repeatedFlag(rest, '--alias');
+  if (!profileKey || rawAliases.length === 0) {
+    process.stderr.write(
+      'usage: crib memory profiles register --key <profile-key> --alias <client-id>/<agent-id> [--alias ...] [--json]\n',
+    );
+    return EXIT.BAD_ARGS;
+  }
+  const aliases = rawAliases.map((raw) => {
+    const divider = raw.indexOf('/');
+    return divider > 0 && divider < raw.length - 1
+      ? { clientId: raw.slice(0, divider), agentId: raw.slice(divider + 1) }
+      : undefined;
+  });
+  if (aliases.some((alias) => alias === undefined)) {
+    process.stderr.write('each --alias must be exactly <client-id>/<agent-id>\n');
+    return EXIT.BAD_ARGS;
+  }
+  try {
+    const profile = directory.register({
+      principalId,
+      profileKey,
+      aliases: aliases as Array<{ clientId: string; agentId: string }>,
+    });
+    if (json) process.stdout.write(`${JSON.stringify(profile, null, 2)}\n`);
+    else process.stdout.write(`registered ${profile.id} (${profile.aliases.length} alias(es))\n`);
+    return EXIT.OK;
+  } catch (error) {
+    process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`);
+    return EXIT.BAD_ARGS;
+  }
+}
+
 async function cmdMemory(args: string[], ctx?: CmdCtx): Promise<number> {
+  // Resolve the embed tier before dispatch: the subcommands below are synchronous, and recall must
+  // know which ranker it is entitled to use before it builds a scorer.
+  await ensureInstalledEmbedder();
   const [sub, ...rest] = args;
   switch (sub) {
     case 'init':
       return cmdMemoryInit(rest, ctx);
     case 'recall':
       return cmdMemoryRecall(rest, ctx);
+    case 'handoff':
+      return cmdMemoryHandoff(rest, ctx);
+    case 'events':
+      return cmdMemoryEvents(rest, ctx);
+    case 'profiles':
+      return cmdMemoryProfiles(rest, ctx);
     case 'search':
       return cmdMemorySearch(rest, ctx);
     case 'get':
@@ -3875,7 +4407,7 @@ async function cmdMemory(args: string[], ctx?: CmdCtx): Promise<number> {
     case '-h':
     case '--help':
       process.stderr.write(
-        'crib memory init | recall "<query>" [--limit N] [--sources team,local,global] [--target <id>] [--with-evidence] [--include-pending] [--max-tokens N] [--json] | search "<query>" [--limit N] [--sources team,local,global] [--target <id>] [--max-tokens N] [--json] | get <id> [--with-evidence] [--json] | supersede <id> --actor <id> (--successor <id> | --claim <text>) [--reason <text>] [--json] | delete <id> --actor <id> [--reason <text>] [--json] | history <key> [--as-of <iso-ts>] [--with-evidence] [--json] | evaluate <candidate> --profile <name> | activate <candidate> | propose <memory-id> | attest <candidate> | check | audit [--repair-local] | feedback <mem-id> --signal <useful|unhelpful|contradicted> [--actor <id>] [--context <text>] [--counter-evidence <json-file>] | gc [--max-age-days N] [--dry-run] | migrate | bench [--fast] [--json] [--out <path>] | distill --provider <name> [--providers-file F] [--max-batches N] [--concurrency N] [--timeout-ms N] | capture-hook --event <session-start|turn-end|tool-use> (hooks invoke this; always exits 0 — best-effort capture, never blocks a session) | init-sync --scope repo|global --backend file|http --url <target> [--key-env <NAME>|--keyfile <path>|--gen-key] [--secret-env <NAME>] [--sync-id <id>] [--backfill] [--json] | sync [push|pull|status] [--dry-run] [--backfill] [--max-events N] [--skip] [--json] | sync rotate-key (--gen-key | --key-env <NAME> | --keyfile <path>) [--dry-run] | sync purge-sync --stale-epoch [--dry-run] | purge <mem-id>... --confirm <mem-id>... [--stores local,global] [--history-scan] [--dry-run] [--actor <id>] [--json] | conflicts [--json] | resolve <record-id> (--successor <id> | --retract) --actor <id> [--reason <text>] [--json] (see docs/memory-sync.md)\n',
+        'crib memory init | handoff [--limit N] [--json] (where was I? — in-flight work, undistilled captures, what went stale) | events [--include-expired] [--limit N] [--json] | profiles list [--json] | profiles register --key <profile-key> --alias <client-id>/<agent-id> [--alias ...] [--json] | recall "<query>" [--limit N] [--sources team,local,global] [--target <id>] [--with-evidence] [--include-pending] [--max-tokens N] [--json] | search "<query>" [--limit N] [--sources team,local,global] [--target <id>] [--max-tokens N] [--json] | get <id> [--with-evidence] [--json] | supersede <id> --actor <id> (--successor <id> | --claim <text>) [--reason <text>] [--json] | delete <id> --actor <id> [--reason <text>] [--json] | history <key> [--as-of <iso-ts>] [--with-evidence] [--json] | evaluate <candidate> --profile <name> | activate <candidate> | propose <memory-id> | attest <candidate> | check | audit [--repair-local] | feedback <mem-id> --signal <useful|unhelpful|contradicted> [--actor <id>] [--context <text>] [--counter-evidence <json-file>] | gc [--max-age-days N] [--dry-run] | migrate | bench [--fast] [--json] [--out <path>] | distill --provider <name> [--providers-file F] [--max-batches N] [--concurrency N] [--timeout-ms N] | capture-hook --event <session-start|turn-end|tool-use> (hooks invoke this; always exits 0 — best-effort capture, never blocks a session) | init-sync --scope repo|global --backend file|http --url <target> [--key-env <NAME>|--keyfile <path>|--gen-key] [--secret-env <NAME>] [--sync-id <id>] [--backfill] [--json] | sync [push|pull|status] [--dry-run] [--backfill] [--max-events N] [--skip] [--json] | sync rotate-key (--gen-key | --key-env <NAME> | --keyfile <path>) [--dry-run] | sync purge-sync --stale-epoch [--dry-run] | purge <mem-id>... --confirm <mem-id>... [--stores local,global] [--history-scan] [--dry-run] [--actor <id>] [--json] | conflicts [--json] | resolve <record-id> (--successor <id> | --retract) --actor <id> [--reason <text>] [--json] (see docs/memory-sync.md)\n',
       );
       return EXIT.OK;
     // Gate 4 — cross-device sync (ADR-003 D12): init-sync / sync / purge / conflicts / resolve.
@@ -5207,11 +5739,29 @@ function memoryRecallProjection(
   const stores = { team: deps.team, local: deps.local, global: deps.global };
   const gathered = gatherRecall(stores, opts.sources ? { sources: opts.sources } : {});
   const fts = opts.sources ? new MemoryFtsIndex(':memory:') : openMemoryFts(stores);
+  // Same persistent vector cache the MCP path opens — a CLI recall must not re-embed the ledger
+  // either (4.9 s for 307 records with a real model). Content-addressed, so no invalidation.
+  // Declared OUTSIDE the try so `finally` can close it.
+  const vectors = installedEmbedder
+    ? openMemoryVectors(
+        { team: deps.team, local: deps.local, global: deps.global },
+        {
+          embedderId: installedEmbedder.id,
+          dim: installedEmbedder.dim(),
+          textVersion: SEMANTIC_TEXT_VERSION,
+        },
+      )
+    : undefined;
   try {
     const scorer = new VersionedLexicalScorer({
       fts,
       records: gathered.records.map((r) => r.record),
-      strategy: 'lexical-only',
+      // R2-selected ranker when a tier is installed; the incumbent otherwise (see
+      // docs/bench/retrieval-pre-registration-r2.md). The CLI and the MCP verbs must agree, or the
+      // same query answered from a terminal and from an IDE would rank differently.
+      strategy: installedEmbedder ? 'semantic-only' : 'lexical-only',
+      ...(installedEmbedder ? { embedder: installedEmbedder } : {}),
+      ...(vectors ? { vectors } : {}),
     });
     const bound = bindEvaluationPass(deps.evalCtx, gathered);
     const projection = recallProjection(gathered, {
@@ -5229,6 +5779,7 @@ function memoryRecallProjection(
     };
   } finally {
     fts.close();
+    vectors?.close();
   }
 }
 
@@ -5472,19 +6023,41 @@ function cmdMemorySearch(args: string[], ctx?: CmdCtx): number {
     ? new MemoryFtsIndex(':memory:')
     : openMemoryFts({ team: deps.team, local: deps.local, global: deps.global });
   let response: SearchResponse;
+  // Same persistent vector cache the MCP path opens — a CLI recall must not re-embed the ledger
+  // either (4.9 s for 307 records with a real model). Content-addressed, so no invalidation.
+  // Declared OUTSIDE the try so `finally` can close it.
+  const vectors = installedEmbedder
+    ? openMemoryVectors(
+        { team: deps.team, local: deps.local, global: deps.global },
+        {
+          embedderId: installedEmbedder.id,
+          dim: installedEmbedder.dim(),
+          textVersion: SEMANTIC_TEXT_VERSION,
+        },
+      )
+    : undefined;
   try {
     const scorer = new VersionedLexicalScorer({
       fts,
       records: gathered.records.map((r) => r.record),
-      strategy: 'lexical-only',
+      // R2-selected ranker when a tier is installed; the incumbent otherwise (see
+      // docs/bench/retrieval-pre-registration-r2.md). The CLI and the MCP verbs must agree, or the
+      // same query answered from a terminal and from an IDE would rank differently.
+      strategy: installedEmbedder ? 'semantic-only' : 'lexical-only',
+      ...(installedEmbedder ? { embedder: installedEmbedder } : {}),
+      ...(vectors ? { vectors } : {}),
     });
     response = api.search(q, {
       ...(targets.length > 0 ? { targetIds: targets } : {}),
       ...(sources ? { sources } : {}),
       lexicalScorer: scorer,
+      // page size decided up front so enrichment does only the returned work (see SearchOpts.limit);
+      // +1 keeps the `truncated` signal, which is derived from having MORE than the page.
+      limit: capInt(limitRaw, 5, 20) + 1,
     });
   } finally {
     fts.close();
+    vectors?.close();
   }
   const limit = capInt(limitRaw, 5, 20);
   const hits = response.hits.slice(0, limit).map((h) => memorySearchHitView(h, withEvidence));
@@ -6586,7 +7159,11 @@ function cmdMemoryFeedback(args: string[], ctx?: CmdCtx): number {
           collection === 'decisions' ? 'decision.append' : 'feedback.append',
           entry,
           {
-            principalId: actor,
+            // G1.1: `principalId` is OWNERSHIP — the sync stream this device's events belong to —
+            // resolved from the same chain every other write site uses. `actor` is provenance (who
+            // authored the feedback) and is already recorded on the feedback row itself; stamping it
+            // here would put an agent/author string where the owner principal belongs.
+            principalId: process.env.KCRIB_PRINCIPAL_ID ?? DEFAULT_MIGRATION_PRINCIPAL_ID,
             env: process.env,
             now: () => new Date().toISOString(),
             ...(syncRepoIdRef !== undefined ? { syncRepoId: syncRepoIdRef } : {}),
@@ -6887,15 +7464,30 @@ function cmdMemoryMigrate(args: string[], ctx?: CmdCtx): number {
     { name: 'local', store: deps.local },
     { name: 'global', store: deps.global },
   ];
-  const perStore: Array<{ store: string; entries: number; invalid: number }> = [];
+  const perStore: Array<{
+    store: string;
+    entries: number;
+    invalid: number;
+    byVersion: Record<string, number>;
+  }> = [];
   let totalInvalid = 0;
+  // Observed schema versions, tallied from the entries themselves. This used to print a hardcoded
+  // `schemaVersion: '1'`, which reported a store full of memory-2/3 records as if it were still v1 —
+  // the one output an operator runs this command to trust. The report now states what IS on disk.
+  const byVersionTotal: Record<string, number> = {};
   for (const { name, store } of stores) {
     let entries = 0;
     let invalid = 0;
+    const byVersion: Record<string, number> = {};
     for (const c of store.collections) {
       const res = store.readCollection(c);
       entries += res.entries.length;
       for (const e of res.entries) {
+        const version = (e as { schemaVersion?: unknown }).schemaVersion;
+        // an entry whose version is absent or non-string is counted under 'unknown', never coerced
+        const key = typeof version === 'string' ? version : 'unknown';
+        byVersion[key] = (byVersion[key] ?? 0) + 1;
+        byVersionTotal[key] = (byVersionTotal[key] ?? 0) + 1;
         try {
           assertValidMemoryEntry(e as unknown as { id: string } & Record<string, unknown>); // migrate-up-then-validate
         } catch {
@@ -6903,13 +7495,26 @@ function cmdMemoryMigrate(args: string[], ctx?: CmdCtx): number {
         }
       }
     }
-    // recompute the manifest counts from the (migrated) shards
-    store.persistManifest();
+    // Recompute the manifest counts from the (migrated) shards — but ONLY where a manifest exists.
+    // The team store deliberately has none (its counts derive from the shards; `policy.json` is the
+    // committed file), and `persistManifest` throws on it. Calling it unconditionally made this
+    // command crash on EVERY repo before it printed anything, which is also why the hardcoded
+    // version string below went unnoticed for so long: the report was never reached.
+    if (store.hasManifest) store.persistManifest();
     totalInvalid += invalid;
-    perStore.push({ store: name, entries, invalid });
+    perStore.push({ store: name, entries, invalid, byVersion });
   }
   process.stdout.write(
-    `${JSON.stringify({ perStore, totalInvalid, schemaVersion: '1' }, null, 2)}\n`,
+    `${JSON.stringify(
+      {
+        perStore,
+        totalInvalid,
+        byVersion: byVersionTotal,
+        supportedSchemaVersions: SUPPORTED_MEMORY_SCHEMA_VERSIONS,
+      },
+      null,
+      2,
+    )}\n`,
   );
   return totalInvalid === 0 ? EXIT.OK : EXIT.ERROR;
 }
@@ -6920,7 +7525,7 @@ function printHelp(): void {
       'crib — Knowledge-crib CLI',
       '',
       'Usage:',
-      '  crib index [path] [--crib-dir <absolute-path>] [--semantic] [--exclude a,b,...] [--package <name|all>...]     full index → .crib soul + derived index (+ INFERRED embedding-cosine semantic links); --package scopes to one monorepo package (list detected with no --package)',
+      '  crib index [path] [--crib-dir <absolute-path>] [--semantic] [--exclude a,b,...] [--package <name|all>...] [--multimodal [--multimodal-backend auto|fake] [--multimodal-model-path <dir>]]     full index → .crib soul + derived index (+ INFERRED embedding-cosine semantic links); --package scopes to one monorepo package (list detected with no --package); --multimodal opts into media extraction (TS-native PDF text layer by default; tesseract OCR / whisper transcription when on PATH)',
       '  crib status [path] [--dirty]             health + stats; --dirty previews files that would be re-indexed',
       '  crib query <text>                        BM25 search over code + docs (incl. bodies); --with-source --with-rules fold body + decision table into each hit',
       '  crib gaps [path] [--extracted-only] [--include-builtins]   analysis readiness + missing bodies + unresolved call sites',
@@ -6931,6 +7536,8 @@ function printHelp(): void {
       '  crib dossier <id> [--format markdown]    persisted deep artifact (body + callers/callees + rules + CFG constructs)',
       '  crib reconstruct <pkg> [--format markdown]   package reconstruction: CONSTANT values + members + referenced tables + docs + expectedBodyFile',
       '  crib impact <id> --dir up|down [--depth N] [--include-llm]   blast radius',
+      '  crib explain <node-id> [--rules <rules.json>]   on-demand PDG + taint flows for ONE callable (TS/JS, intra-procedural; empty flows is NOT proof of safety)',
+      '  crib rename --from <symbol> --to <name> [--apply --plan-id <id>] [--json] [--depth N]   safe rename: dry-run plan + deterministic plan id by default; --apply refuses stale plans and applies all-or-nothing, then runs the dirty update',
       '  crib path <from> <to> [--max-hops N] [--include-llm]   shortest path',
       '  crib neighbors <id> [--rel reads] [--dir in|out|both] [--include-llm]   adjacency',
       '  crib serve [path] [--crib-dir <absolute-path>] [--watch]              run the MCP server on stdio (resolves root: arg/--cwd/KCRIB_ROOT/CLAUDE_PROJECT_DIR/walk/cwd); --watch overlays dirty/untracked files in memory so edits are queryable without dirtying .crib/graph',
@@ -6952,7 +7559,7 @@ function printHelp(): void {
       '                                          write the vendor-neutral agent-memory protocol into each client instruction file (W8)',
       '  crib skill <install|list> [name] [--dest <dir>] [--client <claude>]   install bundled skills (default ~/.claude/skills)',
       '  crib init [path] [--ide <name|all>]      5-minute onboarding: index + install-hooks + mcp install + adapters + next-steps hero',
-      '  crib doctor [path]                       setup health check: node/corepack/index-freshness/hooks/IDE-wiring/memory-loop/stale-builds/embed-tier/freshness/post-commit-hook (✓/✗ + fix hints)',
+      '  crib doctor [path]                       setup health check: node/corepack/index-freshness/hooks/IDE-wiring/memory-loop/stale-builds/embed-tier/freshness/post-commit-hook/multimodal-adapters (✓/✗ + fix hints)',
       '  crib embed <install <model-dir>|status>   on-device embedder tier: install --model-id <id> --model-version <ver> [--entry <file>] | status (tier report; --accept-remote-policy opts into the remote tier)',
       '  crib freshness [<mode>|worker|hook|convert-hook]   index freshness: modes manual|watch|auto | durable background worker | post-commit hook body (always exit 0) | convert the legacy blocking post-commit hook',
       '',

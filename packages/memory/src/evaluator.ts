@@ -849,13 +849,43 @@ function stampedEvidenceVerdict(evidence: readonly MemoryEvidence[]): EvidenceVe
  * decision events. This keeps every v1 path crash-free on a mixed-version store — the axes are
  * never read off `undefined`.
  */
+/** Decisions grouped by the record id they name — see {@link indexDecisionsBySubject}. */
+export type DecisionsBySubject = ReadonlyMap<string, readonly MemoryDecision[]>;
+
+const NO_DECISIONS: readonly MemoryDecision[] = [];
+
+/**
+ * Group a decision pool by `subject`, so a per-record verdict is a Map lookup instead of a scan.
+ *
+ * `effectiveVerdicts` filters the WHOLE pool per record. Ranking a corpus makes that O(records ×
+ * decisions): at 100k records over 10k decisions it is ~1.09 BILLION comparisons and was 98% of
+ * `MemoryApi.search` at that scale. Callers that evaluate many records against ONE stable pool
+ * build this once and pass it; callers with a per-record pool (the G1.2 alias bridge, which
+ * synthesises decisions keyed on the v2 id) keep the scan, which is correct and cheap for them.
+ * PURE.
+ */
+export function indexDecisionsBySubject(decisions: readonly MemoryDecision[]): DecisionsBySubject {
+  const index = new Map<string, MemoryDecision[]>();
+  for (const decision of decisions) {
+    const list = index.get(decision.subject);
+    if (list) list.push(decision);
+    else index.set(decision.subject, [decision]);
+  }
+  return index;
+}
+
 export function effectiveVerdicts(
   record: MemoryRecord | MemoryRecordV2,
   decisions: readonly MemoryDecision[],
   evaluation?: RecordEvaluation,
   migratedVerdicts?: Verdicts,
+  /** pre-grouped `decisions` (see {@link indexDecisionsBySubject}). MUST be an index OF the same
+   *  pool — passing an index of a different pool would silently change the verdict. */
+  bySubject?: DecisionsBySubject,
 ): EffectiveVerdicts {
-  const mine = decisions.filter((d) => d.subject === record.id);
+  const mine = bySubject
+    ? (bySubject.get(record.id) ?? NO_DECISIONS)
+    : decisions.filter((d) => d.subject === record.id);
   const quarantined = mine.some((d) => d.kind === 'quarantine');
   if (isMemoryRecordV2(record)) {
     // The alias snapshot is the base; a quarantine/retract/supersede decision recorded against the

@@ -20,6 +20,7 @@ import type { Node } from '@knowledge-crib/soul-schema';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   FileSyncObjectStore,
+  IntelligenceEventJournal,
   type MemoryAnchorPort,
   MemoryApi,
   type MemoryCandidate,
@@ -30,6 +31,7 @@ import {
   type MemoryRecord,
   type MemoryRecordV2,
   MemoryStore,
+  ProjectionCheckpointStore,
   RANKING_VERSION,
   __resetMemoryLockGuardForTest,
   believedLifecycle,
@@ -225,15 +227,25 @@ afterEach(() => {
 });
 
 /** A local store + API over it with a mutable deterministic clock. */
-function setup(opts: { soul?: MemoryAnchorPort; repoId?: string } = {}) {
+function setup(
+  opts: {
+    soul?: MemoryAnchorPort;
+    repoId?: string;
+    eventJournal?: IntelligenceEventJournal;
+    projectionCheckpoints?: ProjectionCheckpointStore;
+  } = {},
+) {
   const local = MemoryStore.local(REPO, { env, now: () => T0 });
   let clock = T0;
-  const api = new MemoryApi({
+  const deps = {
     stores: { local },
     env,
     now: () => clock,
     ...(opts.soul ? { soul: opts.soul } : {}),
-  });
+    ...(opts.eventJournal ? { eventJournal: opts.eventJournal } : {}),
+    ...(opts.projectionCheckpoints ? { projectionCheckpoints: opts.projectionCheckpoints } : {}),
+  };
+  const api = new MemoryApi(deps);
   return {
     local,
     api,
@@ -242,6 +254,69 @@ function setup(opts: { soul?: MemoryAnchorPort; repoId?: string } = {}) {
     },
   };
 }
+
+describe('observe event plane', () => {
+  it('records a sanitized idempotent observation event after staging the candidate', () => {
+    const eventJournal = new IntelligenceEventJournal({
+      rootDir: join(home, 'events'),
+      now: () => T0,
+    });
+    const { api } = setup({ eventJournal });
+
+    const observed = api.observe({
+      kind: 'fact',
+      subject: 'topic:event-plane',
+      claim: 'Observations are projected from a shared journal.',
+      actor: 'codex',
+      scopeBoundary: 'global',
+      idempotencyKey: 'codex:observe:1',
+    });
+
+    if (!observed.ok) throw new Error(observed.error);
+    expect(eventJournal.read()).toEqual([
+      expect.objectContaining({
+        kind: 'memory.observed',
+        idempotencyKey: 'codex:observe:1',
+        identity: expect.objectContaining({ principalId: 'principal:local' }),
+        payload: expect.objectContaining({
+          subject: 'topic:event-plane',
+          candidateId: observed.id,
+        }),
+      }),
+    ]);
+  });
+
+  it('publishes a memory-capture checkpoint at the observed event watermark', () => {
+    const eventJournal = new IntelligenceEventJournal({
+      rootDir: join(home, 'events'),
+      now: () => T0,
+    });
+    const projectionCheckpoints = new ProjectionCheckpointStore({
+      rootDir: join(home, 'checkpoints'),
+      now: () => T0,
+    });
+    const { api } = setup({ eventJournal, projectionCheckpoints });
+
+    const observed = api.observe({
+      kind: 'fact',
+      subject: 'topic:checkpoint',
+      claim: 'The capture projector publishes an event watermark.',
+      actor: 'codex',
+      scopeBoundary: 'global',
+      idempotencyKey: 'codex:observe:checkpoint:1',
+    });
+
+    if (!observed.ok) throw new Error(observed.error);
+    expect(projectionCheckpoints.read('memory-capture')).toMatchObject({
+      generation: 1,
+      sourceWatermark: eventJournal.read()[0]?.id,
+      pendingCount: 0,
+      deadLetterCount: 0,
+      replayVersion: '1',
+      status: 'current',
+    });
+  });
+});
 
 /** A TEAM + LOCAL pair with the API over both (cross-store / no-poison fixtures). */
 function setupMulti() {

@@ -12,11 +12,13 @@ import feedbackSchema from './schema/feedback.schema.json' with { type: 'json' }
 import manifestSchema from './schema/manifest.schema.json' with { type: 'json' };
 import receiptSchema from './schema/receipt.schema.json' with { type: 'json' };
 import recordV2Schema from './schema/record-v2.schema.json' with { type: 'json' };
+import recordV3Schema from './schema/record-v3.schema.json' with { type: 'json' };
 import recordSchema from './schema/record.schema.json' with { type: 'json' };
 import syncEventSchema from './schema/sync-event.schema.json' with { type: 'json' };
 
 export const RECORD_SCHEMA = recordSchema as Record<string, unknown>;
 export const RECORD_V2_SCHEMA = recordV2Schema as Record<string, unknown>;
+export const RECORD_V3_SCHEMA = recordV3Schema as Record<string, unknown>;
 export const CANDIDATE_SCHEMA = candidateSchema as Record<string, unknown>;
 export const CAPTURE_SCHEMA = captureSchema as Record<string, unknown>;
 export const ATTEMPT_SCHEMA = attemptSchema as Record<string, unknown>;
@@ -31,6 +33,7 @@ export const SYNC_EVENT_SCHEMA = syncEventSchema as Record<string, unknown>;
 export const VENDORED_MEMORY_SCHEMAS: Record<string, Record<string, unknown>> = {
   'record.schema.json': RECORD_SCHEMA,
   'record-v2.schema.json': RECORD_V2_SCHEMA,
+  'record-v3.schema.json': RECORD_V3_SCHEMA,
   'candidate.schema.json': CANDIDATE_SCHEMA,
   'capture.schema.json': CAPTURE_SCHEMA,
   'attempt.schema.json': ATTEMPT_SCHEMA,

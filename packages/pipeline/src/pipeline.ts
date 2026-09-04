@@ -154,7 +154,11 @@ export async function indexRepo(
   const mediaPaths = files.filter((f) => isMediaPath(f.path)).map((f) => f.path);
   const multimodal = opts.multimodal
     ? await runMultimodal(soul, root, opts.multimodal, mediaPaths)
-    : { ingest: { files: 0, segments: 0, dropped: 0 }, link: { describes: 0, references: 0 } };
+    : {
+        ingest: { files: 0, segments: 0, dropped: 0 },
+        link: { describes: 0, references: 0 },
+        availability: [],
+      };
   const link = runLink(soul, root, opts.linkThreshold); // Phase 4
   // Phase 4a (W1): the AI-artifact graph — discovers tracked skills/agents/commands/rules/instructions
   // + MCP-server configs that the normal walk misses (they live under gitignored tool dirs), emits

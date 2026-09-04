@@ -40,6 +40,7 @@ pnpm(['stats:check']);
 pnpm(['parallel:check']);
 pnpm(['fuzz:check']);
 pnpm(['scale:check']);
+pnpm(['security:battery']);
 pnpm(['security:check']);
 pnpm(['soul-refresh:check']);
 pnpm(['onboarding:check']);

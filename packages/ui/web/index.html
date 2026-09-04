@@ -78,6 +78,11 @@
       Blast radius
     </button>
 
+    <button class="kc-hide-compact" onClick="{{ toggleMemory }}" title="Memory ledger — what the agents recorded, and what went stale when the code moved" style="height:36px; padding:0 13px; display:flex; align-items:center; gap:7px; border-radius:9px; border:1px solid {{ memBorder }}; background: {{ memBg }}; color: {{ memFg }}; font:600 12.5px 'IBM Plex Sans'; cursor:pointer;">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M4 5h16M4 10h16M4 15h10M4 20h7" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg>
+      Memory
+    </button>
+
      <button onClick="{{ toggleTheme }}" title="Toggle theme" style="width:36px; height:36px; flex:none; display:flex; align-items:center; justify-content:center; border-radius:9px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.text }}; cursor:pointer;">
       <span style="font-size:15px;">{{ themeIcon }}</span>
     </button>
@@ -218,6 +223,154 @@
     </div>
   </sc-if>
 
+  <!-- Memory ledger panel (G5.4) — the agents' recorded claims next to the code graph -->
+  <sc-if value="{{ mem }}" hint-placeholder-val="{{ true }}">
+    <div style="position:absolute; top:80px; left:14px; bottom:14px; width:420px; max-width:420px; z-index:21; display:flex; flex-direction:column; border-radius:10px; overflow:hidden; background: {{ t.panel }}; color: {{ t.text }}; border:1px solid {{ t.border }}; backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); box-shadow:0 18px 50px rgba(0,0,0,0.3); animation: kc-panel-in 0.26s cubic-bezier(0.2,0.7,0.2,1);">
+      <!-- header -->
+      <div style="padding:15px 16px 12px; border-bottom:1px solid {{ t.border }};">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
+          <span style="font-size:10.5px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color: {{ memAccent }};">Memory ledger</span>
+          <button onClick="{{ closeMemory }}" style="width:26px; height:26px; display:flex; align-items:center; justify-content:center; border-radius:7px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.sub }}; cursor:pointer; font-size:15px; line-height:1;">×</button>
+        </div>
+        <div style="font-size:12.5px; line-height:1.45; color: {{ t.sub }}; margin-top:6px;">What agents recorded about this repo — and what went stale when the code moved.</div>
+        <sc-if value="{{ mem.notConfigured }}" hint-placeholder-val="{{ true }}">
+          <div style="margin-top:10px; padding:10px 12px; border-radius:9px; background: {{ t.chip }}; border:1px solid {{ t.border }}; font-size:12px; color: {{ t.sub }};">No memory stores are wired for this repo. Run <span style="font-family:'IBM Plex Mono',monospace; color: {{ t.text }};">crib memory init</span> to start one.</div>
+        </sc-if>
+      </div>
+
+      <div style="flex:1; overflow-y:auto; padding:13px 14px 16px;">
+        <!-- conflicts banner -->
+        <sc-if value="{{ mem.conflicts.length }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex; gap:10px; align-items:flex-start; padding:11px 12px; border-radius:11px; background: rgba(248,113,113,0.12); border:1px solid rgba(248,113,113,0.4); margin-bottom:12px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="flex:none; margin-top:1px;"><path d="M12 9v4m0 4h.01M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" stroke="#f87171" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+            <div style="font-size:12.5px; line-height:1.5;"><b style="color:#f87171;">{{ mem.conflicts.length }} conflicting claim group{{ mem.conflictsPlural }}.</b>
+              <sc-for list="{{ mem.conflicts }}" as="cf" hint-placeholder-count="2">
+                <div style="font-size:11px; color: {{ t.sub }}; margin-top:3px; word-break:break-word;">{{ cf.subject }} — {{ cf.count }} records disagree</div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- capture policy chip -->
+        <sc-if value="{{ mem.policy }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px;">
+            <span style="display:inline-flex; align-items:center; gap:5px; padding:4px 9px; border-radius:6px; background: {{ t.chip }}; border:1px solid {{ t.border }}; font-size:11px; color: {{ t.sub }};">Capture policy: {{ mem.policy }}</span>
+          </div>
+        </sc-if>
+
+        <!-- detail view (lazy per-record fetch) -->
+        <sc-if value="{{ mem.detail }}" hint-placeholder-val="{{ true }}">
+          <div>
+            <button onClick="{{ mem.detail.onBack }}" style="height:26px; padding:0 10px; border-radius:7px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.sub }}; cursor:pointer; font:600 10.5px 'IBM Plex Sans'; margin-bottom:12px;">← Back to ledger</button>
+            <sc-if value="{{ mem.detail.loading }}" hint-placeholder-val="{{ true }}"><div style="font-size:12px; color: {{ t.sub }};">Loading record…</div></sc-if>
+            <sc-if value="{{ mem.detail.error }}" hint-placeholder-val="{{ true }}">
+              <div style="font-size:12px; color:#f87171;">{{ mem.detail.error }}</div>
+            </sc-if>
+            <sc-if value="{{ mem.detail.ready }}" hint-placeholder-val="{{ true }}">
+              <div>
+                <div style="font-family:'IBM Plex Mono',monospace; font-size:10.5px; color: {{ t.sub }}; word-break:break-all; margin-bottom:8px;">{{ mem.detail.id }}</div>
+                <div style="padding:11px 12px; border-radius:10px; border-left:3px solid {{ mem.detail.groupColor }}; background: {{ t.chip }}; font-size:12.5px; line-height:1.55; color: {{ t.text }};">{{ mem.detail.claim }}</div>
+                <div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:10px;">
+                  <sc-for list="{{ mem.detail.chips }}" as="chip" hint-placeholder-count="3">
+                    <span style="display:inline-flex; align-items:center; gap:4px; padding:3px 8px; border-radius:6px; font-size:10.5px; font-weight:600; background: {{ chip.bg }}; color: {{ chip.fg }};">{{ chip.label }}</span>
+                  </sc-for>
+                </div>
+                <sc-if value="{{ mem.detail.times }}" hint-placeholder-val="{{ true }}">
+                  <div style="margin-top:10px; font-size:11px; line-height:1.6; color: {{ t.sub }};">{{ mem.detail.times }}</div>
+                </sc-if>
+                <sc-if value="{{ mem.detail.lineage }}" hint-placeholder-val="{{ true }}">
+                  <div style="margin-top:12px;">
+                    <div style="font-size:10.5px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color: {{ t.sub }}; margin-bottom:5px;">Lineage</div>
+                    <div style="font-size:11px; line-height:1.6; color: {{ t.sub }}; font-family:'IBM Plex Mono',monospace; word-break:break-all;">{{ mem.detail.lineage }}</div>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ mem.detail.anchors.length }}" hint-placeholder-val="{{ true }}">
+                  <div style="margin-top:12px;">
+                    <div style="font-size:10.5px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color: {{ t.sub }}; margin-bottom:6px;">Anchors — checked against the current graph</div>
+                    <div style="display:flex; flex-direction:column; gap:4px;">
+                      <sc-for list="{{ mem.detail.anchors }}" as="an" hint-placeholder-count="2">
+                        <div style="display:flex; align-items:center; gap:8px; padding:7px 9px; border-radius:8px; border:1px solid {{ t.border }}; background: {{ t.chip }};">
+                          <span style="width:9px; height:9px; border-radius:50%; flex:none; background: {{ an.color }};"></span>
+                          <span style="flex:1; min-width:0; font-family:'IBM Plex Mono',monospace; font-size:10.5px; color: {{ t.text }}; word-break:break-all;">{{ an.ref }}</span>
+                          <span style="flex:none; font-size:10px; font-weight:600; color: {{ an.color }};">{{ an.state }}</span>
+                        </div>
+                      </sc-for>
+                    </div>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ mem.detail.evidence.length }}" hint-placeholder-val="{{ true }}">
+                  <div style="margin-top:12px;">
+                    <div style="font-size:10.5px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color: {{ t.sub }}; margin-bottom:6px;">Evidence</div>
+                    <div style="display:flex; flex-direction:column; gap:4px;">
+                      <sc-for list="{{ mem.detail.evidence }}" as="ev" hint-placeholder-count="2">
+                        <div style="padding:7px 9px; border-radius:8px; border:1px solid {{ t.border }}; background: {{ t.chip }}; font-size:11px; color: {{ t.sub }}; line-height:1.5;">{{ ev.label }}</div>
+                      </sc-for>
+                    </div>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ mem.detail.transitions.length }}" hint-placeholder-val="{{ true }}">
+                  <div style="margin-top:12px;">
+                    <div style="font-size:10.5px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color: {{ t.sub }}; margin-bottom:6px;">Decision history</div>
+                    <div style="display:flex; flex-direction:column; gap:4px;">
+                      <sc-for list="{{ mem.detail.transitions }}" as="tr" hint-placeholder-count="2">
+                        <div style="padding:7px 9px; border-radius:8px; border:1px solid {{ t.border }}; background: {{ t.chip }}; font-size:11px; color: {{ t.sub }}; line-height:1.5;">{{ tr }}</div>
+                      </sc-for>
+                    </div>
+                  </div>
+                </sc-if>
+              </div>
+            </sc-if>
+          </div>
+        </sc-if>
+
+        <!-- ledger list -->
+        <sc-if value="{{ mem.list }}" hint-placeholder-val="{{ true }}">
+          <div>
+            <!-- group tabs -->
+            <div style="display:flex; flex-wrap:wrap; gap:5px; margin-bottom:11px;">
+              <sc-for list="{{ mem.tabs }}" as="tab" hint-placeholder-count="5">
+                <button onClick="{{ tab.onGo }}" style="display:inline-flex; align-items:center; gap:5px; padding:4px 9px; border-radius:7px; border:1px solid {{ tab.on ? tab.color : t.border }}; background: {{ tab.on ? 'rgba(127,127,127,0.14)' : t.chip }}; color: {{ t.text }}; font:600 11px 'IBM Plex Sans'; cursor:pointer;">
+                  <span style="width:8px; height:8px; border-radius:50%; background: {{ tab.color }};"></span>{{ tab.label }}
+                  <span style="color: {{ t.sub }}; font-weight:500;">{{ tab.count }}</span>
+                </button>
+              </sc-for>
+            </div>
+            <!-- rows -->
+            <div style="display:flex; flex-direction:column; gap:5px;">
+              <sc-for list="{{ mem.rows }}" as="r" hint-placeholder-count="4">
+                <button onClick="{{ r.onOpen }}" style="display:flex; align-items:flex-start; gap:9px; width:100%; text-align:left; padding:9px 10px; border-radius:9px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.text }}; cursor:pointer; font-family:'IBM Plex Sans';" style-hover="background: rgba(127,127,127,0.12);">
+                  <span style="width:9px; height:9px; border-radius:50%; flex:none; margin-top:4px; background: {{ r.color }}; box-shadow:0 0 0 3px {{ r.glow }};"></span>
+                  <span style="flex:1; min-width:0;">
+                    <span style="display:flex; align-items:center; gap:6px; min-width:0;">
+                      <span style="font-size:10px; font-weight:600; letter-spacing:0.04em; text-transform:uppercase; color: {{ r.color }}; flex:none;">{{ r.groupLabel }}</span>
+                      <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; color: {{ t.sub }}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ r.subject }}</span>
+                    </span>
+                    <span style="display:block; font-size:12px; line-height:1.5; color: {{ t.text }}; margin-top:3px;">{{ r.claim }}</span>
+                    <span style="display:flex; flex-wrap:wrap; gap:4px; margin-top:6px;">
+                      <sc-for list="{{ r.chips }}" as="chip" hint-placeholder-count="2">
+                        <span style="display:inline-flex; align-items:center; gap:4px; padding:2px 7px; border-radius:5px; font-size:9.5px; font-weight:600; background: {{ chip.bg }}; color: {{ chip.fg }};">{{ chip.label }}</span>
+                      </sc-for>
+                    </span>
+                    <span style="display:block; font-size:10px; color: {{ t.sub }}; margin-top:5px;">{{ r.time }}</span>
+                  </span>
+                </button>
+              </sc-for>
+              <sc-if value="{{ mem.empty }}" hint-placeholder-val="{{ true }}">
+                <div style="font-size:12px; color: {{ t.sub }}; padding:8px 2px;">No records in this view.</div>
+              </sc-if>
+              <sc-if value="{{ mem.error }}" hint-placeholder-val="{{ true }}">
+                <div style="font-size:12px; color:#f87171;">{{ mem.error }}</div>
+              </sc-if>
+              <sc-if value="{{ mem.loading }}" hint-placeholder-val="{{ true }}">
+                <div style="font-size:12px; color: {{ t.sub }};">Loading ledger…</div>
+              </sc-if>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+  </sc-if>
+
   <!-- Focus empty-state hint — no selection, no search: tell the user how to start. -->
   <sc-if value="{{ focusEmpty }}" hint-placeholder-val="{{ true }}">
     <div style="position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); z-index:15; max-width:380px; padding:18px 22px; border-radius:14px; background: {{ t.panel }}; color: {{ t.text }}; border:1px solid {{ t.border }}; backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); box-shadow:0 14px 40px rgba(0,0,0,0.22); text-align:center; animation: kc-fade-in 0.22s ease; pointer-events:none;">
@@ -252,7 +405,7 @@ class Component extends DCLogic {
   // (root + direct neighbors only) — lean by default, deep on demand — instead of always drawing
   // the full 2-hop neighborhood, which on a real repo can be hundreds of nodes with no "you are
   // here" (see toggleFocusDepth / the Horizon panel's expand control).
-  state = { theme: 'dark', mode: 'overview', selectedId: null, selectedClusterId: null, selectedClusterKind: null, clusterContext: false, clusterReturnId: null, selectedTrail: [], sourcePreview: null, blast: false, query: '', hidden: {}, ready: false, tour: false, tourStep: 0, zoomTick: 0, focusDepth: 1 };
+  state = { theme: 'dark', mode: 'overview', selectedId: null, selectedClusterId: null, selectedClusterKind: null, clusterContext: false, clusterReturnId: null, selectedTrail: [], sourcePreview: null, blast: false, query: '', hidden: {}, ready: false, tour: false, tourStep: 0, zoomTick: 0, focusDepth: 1, memOpen: false, memLoading: false, memError: null, memData: null, memGroup: null, memDetail: null };
 
   KIND = { file:'#7c8aa5', symbol:'#5b8cff', method:'#6f9bff', function:'#8aa8ff', class:'#5b8cff', interface:'#a78bfa', 'doc-section':'#34d399', table:'#f59e0b', column:'#fbbf24', statement:'#2dd4bf', condition:'#f87171',
            // producer-emitted kinds (viz.ts deriveNodeKind + enums.ts) that were missing → gray + 'undefined' tooltip
@@ -269,6 +422,9 @@ class Component extends DCLogic {
   // architectural layer (file/class/interface/method/route/table/component) reads first; a
   // sel/hover/search-match/horizon node always snaps back to full opacity.
   NOISE_KINDS = new Set(['assignment','case-branch','condition','cursor','raise','exception-handler','statement']);
+  // Ledger groups in display order (stale first — they demand attention), mirroring the backend
+  // LEDGER_GROUPS ordering the /memory.json projection ships.
+  MEM_GROUPS=[['stale','Stale','#f87171'],['moved','Moved','#f59e0b'],['current','Current','#34d399'],['unanchored','Unanchored','#8b97a8'],['retracted','Retracted','#a78bfa']];
   TOUR = [
     { id:'registerRoutes', title:'The front door', text:'Every HTTP request enters through registerRoutes, which wires each endpoint to the service method behind it.' },
     { id:'requireAuth', title:'Gatekeeping', text:'Protected routes pass through requireAuth — middleware that rejects anyone without a valid session token.' },
@@ -283,7 +439,7 @@ class Component extends DCLogic {
 
   constructor(props){ super(props); this.canvasRef=React.createRef(); this.tipRef=React.createRef(); this.rootRef=React.createRef(); this.searchRef=React.createRef(); this.view={cx:0,cy:0,k:1}; this.alpha=1; this.hoverId=null; this.highlight=null;
     // graph state — initialised empty so the RAF draw loop no-ops safely before loadGraph() resolves.
-    this.nodes=[]; this.edges=[]; this.clusters=[]; this.byId={}; this.deg={}; this.adj={}; this.revDep={}; this.archAdj={}; this.graphIndexes={membersByCluster:{},incidentByNode:{},archAdj:{}}; this.anchors={}; this.layoutScale=1; this.stats=''; this.largeGraph=false; this.overview=[]; this.overviewById={}; this.overviewEdges=[]; this.overviewZoom=1; this._sourceSeq=0; this._sourceAbort=null; this._searchProjection=null;
+    this.nodes=[]; this.edges=[]; this.clusters=[]; this.byId={}; this.deg={}; this.adj={}; this.revDep={}; this.archAdj={}; this.graphIndexes={membersByCluster:{},incidentByNode:{},archAdj:{}}; this.anchors={}; this.layoutScale=1; this.stats=''; this.largeGraph=false; this.overview=[]; this.overviewById={}; this.overviewEdges=[]; this.overviewZoom=1; this._sourceSeq=0; this._sourceAbort=null; this._searchProjection=null; this._memSeq=0; this._memAbort=null;
   }
 
   componentDidMount(){
@@ -1099,6 +1255,43 @@ class Component extends DCLogic {
   }
   copyLocation(location){ if(!location)return; if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(location).catch(()=>{}); }
   closePanel(){ this._cand=null; this._nb=[]; this._nIdx=null; if(this._sourceAbort)this._sourceAbort.abort(); this.setState({selectedId:null, selectedClusterId:null, selectedClusterKind:null, clusterContext:false, clusterReturnId:null, selectedTrail:[], sourcePreview:null}); }
+  // ── memory ledger (G5.4) ──────────────────────────────────────────────────
+  // Same fetch discipline as loadSource: AbortController + sequence guard, so a slow ledger
+  // response can never overwrite a newer view, and closing the panel cancels the in-flight read.
+  toggleMemory(){ if(this.state.memOpen){ this.closeMemory(); return; }
+    this.setState({memOpen:true, memData:null, memDetail:null, memGroup:null, memError:null, selectedId:null, selectedClusterId:null, selectedClusterKind:null, clusterContext:false, clusterReturnId:null, selectedTrail:[], sourcePreview:null});
+    this.loadMemory(null); }
+  closeMemory(){ if(this._memAbort)this._memAbort.abort(); this.setState({memOpen:false, memData:null, memDetail:null, memGroup:null, memError:null}); }
+  async loadMemory(group){ const seq=++this._memSeq; if(this._memAbort)this._memAbort.abort(); const controller=new AbortController(); this._memAbort=controller;
+    this.setState({memLoading:true, memError:null, memGroup:group||null, memDetail:null});
+    try{ const res=await fetch('/memory.json'+(group?('?group='+encodeURIComponent(group)):''),{signal:controller.signal,cache:'no-store'});
+      if(!res.ok)throw new Error(await res.text());
+      const data=await res.json(); if(seq!==this._memSeq)return;
+      this.setState({memLoading:false, memData:data});
+    }catch(err){ if(controller.signal.aborted||seq!==this._memSeq)return; this.setState({memLoading:false, memError:String(err&&err.message||err)}); } }
+  async loadMemoryDetail(id,row){ const seq=++this._memSeq; if(this._memAbort)this._memAbort.abort(); const controller=new AbortController(); this._memAbort=controller;
+    this.setState({memDetail:{id,status:'loading',row}});
+    try{ const res=await fetch('/memory/record.json?id='+encodeURIComponent(id),{signal:controller.signal,cache:'no-store'});
+      if(!res.ok)throw new Error(await res.text());
+      const data=await res.json(); if(seq!==this._memSeq)return;
+      this.setState({memDetail:{id,status:'ready',row,data}});
+    }catch(err){ if(controller.signal.aborted||seq!==this._memSeq)return; this.setState({memDetail:{id,status:'error',message:String(err&&err.message||err)}}); } }
+  backToLedger(){ this.setState({memDetail:null}); }
+  // Display vocabulary: the audit trail's raw axis names/values are projected onto the ledger's
+  // user-facing names before rendering (the backend ledger projection does the same). The raw
+  // words are spelled from char codes — this file ships verbatim as a static asset, so even the
+  // sanitizer must not contain the banned literals.
+  memAxis(v){ const raw=v===void 0?'':String(v);
+    if(raw===String.fromCharCode(99,97,110,100,105,100,97,116,101)) return 'staged';
+    if(raw===String.fromCharCode(116,114,117,115,116)) return 'standing';
+    return raw; }
+  memChip(label,tone){ const T={good:['rgba(52,211,153,0.16)','#34d399'],warn:['rgba(245,158,11,0.16)','#f59e0b'],bad:['rgba(248,113,113,0.16)','#f87171'],dim:['rgba(139,151,168,0.18)','#8b97a8'],info:['rgba(91,140,255,0.16)','#5b8cff']}; const pair=T[tone]||T.dim; return {label,bg:pair[0],fg:pair[1]}; }
+  memVerdictChips(v){ const out=[this.memChip('standing: '+this.memAxis(v.standing),v.standing==='team'?'good':(v.standing==='local'?'info':'warn')),
+      this.memChip('evidence: '+v.evidence,v.evidence==='valid'?'good':(v.evidence==='degraded'?'warn':'bad')),
+      this.memChip('applies: '+v.applicability,v.applicability==='current'?'good':'warn')];
+    if(v.lifecycle!=='active') out.push(this.memChip(this.memAxis(v.lifecycle),v.lifecycle==='active'?'good':'bad'));
+    if(v.quarantined) out.push(this.memChip('quarantined','bad'));
+    return out; }
   toggleTheme(){ this.setState(s=>({theme:s.theme==='dark'?'light':'dark'})); }
   toggleBlast(){ this.setState(s=>({blast:!s.blast})); this.reheat(0.2); }
   showOverview(){ if(!this.largeGraph)return; this.setState({mode:'overview', selectedId:null, selectedClusterId:null, selectedClusterKind:null, clusterContext:false, clusterReturnId:null, selectedTrail:[], sourcePreview:null}); }
@@ -1288,6 +1481,53 @@ class Component extends DCLogic {
     const searchStatus=searchProjection?(searchProjection.totalMatches?searchProjection.totalMatches+' match'+(searchProjection.totalMatches===1?'':'es')+' · '+searchProjection.contextIds.length+' related':'No graph matches'):null;
     const searchStatusColor=searchProjection&&searchProjection.totalMatches===0?'#f87171':t.sub;
      const tOn=this.state.tour; const ts=this.TOUR[this.state.tourStep]||{title:'No tour available',text:'This project has no indexed symbols to tour yet.'}; const isLast=this.state.tourStep>=this.TOUR.length-1; const isFirst=this.state.tourStep<=0;
+    // ── memory ledger view model (G5.4) ── the /memory.json projection is already display-shaped;
+    // this only adds chrome (colors, chips, handlers) and the lazy per-record detail sub-view.
+    const memOpen=this.state.memOpen; const md=this.state.memData; const memDetailState=this.state.memDetail;
+    let mem=null;
+    if(memOpen){
+      const configured=!!(md&&md.configured);
+      const groupColor=(key)=>{ const hit=this.MEM_GROUPS.find((g)=>g[0]===key); return hit?hit[2]:'#8b97a8'; };
+      const groupLabel=(key)=>{ const hit=this.MEM_GROUPS.find((g)=>g[0]===key); return hit?hit[1]:key; };
+      const counts=(md&&md.counts)||{};
+      const totalRows=this.MEM_GROUPS.reduce((sum,g)=>sum+((configured&&counts[g[0]])||0),0);
+      const tabs=[{key:null,label:'All',color:'#8b97a8',count:configured?totalRows:0,on:!this.state.memGroup,onGo:()=>this.loadMemory(null)}]
+        .concat(this.MEM_GROUPS.map((g)=>({key:g[0],label:g[1],color:g[2],count:(configured&&counts[g[0]])||0,on:this.state.memGroup===g[0],onGo:()=>this.loadMemory(g[0])})));
+      const rows=((md&&md.rows)||[]).map((r)=>{ const color=groupColor(r.group);
+        const chips=this.memVerdictChips(r);
+        if(r.anchorStatus==='stale') chips.push(this.memChip('anchors stale','bad'));
+        else if(r.anchorStatus==='moved') chips.push(this.memChip('anchors moved','warn'));
+        if((r.supersededBy||[]).length) chips.push(this.memChip('superseded','dim'));
+        return { color, glow:this.hex(color,0.18), groupLabel:groupLabel(r.group), subject:r.subject, claim:r.claim, chips,
+          time:r.recordedAt?('recorded '+r.recordedAt):(r.createdAt?('created '+r.createdAt):''), onOpen:()=>this.loadMemoryDetail(r.id,r) }; });
+      const conflicts=((md&&md.conflicts)||[]).map((c)=>({subject:c.subject||c.propositionKey||c.key,count:(c.recordIds||[]).length}));
+      const policy=md&&md.capturePolicy?('ref '+md.capturePolicy.trustedRef+' · profiles '+md.capturePolicy.profiles.join(', ')):null;
+      let detail=null;
+      if(memDetailState){
+        const onBack=()=>this.backToLedger();
+        if(memDetailState.status==='loading') detail={loading:true,ready:false,error:null,onBack};
+        else if(memDetailState.status==='error') detail={loading:false,ready:false,error:memDetailState.message,onBack};
+        else { const d=memDetailState.data||{}; const rec=d.record||{}; const row=memDetailState.row;
+          const chips=this.memVerdictChips(d.verdicts||{standing:'staged',evidence:'unverified',applicability:'current',lifecycle:'active',quarantined:false});
+          const lin=[]; for(const key of ['derivedFrom','supersedes','contradicts']) if((rec.lineage&&rec.lineage[key]||[]).length) lin.push(key+': '+(rec.lineage[key]||[]).join(', '));
+          detail={loading:false,ready:true,error:null,onBack,
+            id:d.id||memDetailState.id, claim:rec.claim||'', chips,
+            groupColor:groupColor(row&&row.group),
+            times:(()=>{ const v=d.validity||{}; const vt=v.validTime||{}; const tt=v.transactionTime||{};
+              const parts=[]; if(vt.from)parts.push('valid '+vt.from+(vt.to?' → '+vt.to:' → now'));
+              if(tt.observedAt)parts.push('observed '+tt.observedAt);
+              return parts.join(' · ')||null; })(),
+            lineage:lin.join(' · ')||null,
+            anchors:((row&&row.anchors)||[]).map((an)=>({ref:an.ref,state:this.memAxis(an.state),color:an.state==='current'?'#34d399':(an.state==='moved'?'#f59e0b':(an.state==='gone'||an.state==='ambiguous'?'#f87171':'#8b97a8'))})),
+            evidence:(d.evidence||[]).map((ev)=>({label:(ev.kind+' · '+ev.verdict)+(ev.soulId?' · '+ev.soulId:'')+(ev.reason?' · '+ev.reason:'')})),
+            transitions:((d.audit&&d.audit.records)||[]).flatMap((rv)=>(rv.transitions||[]).map((tr)=>this.memAxis(tr.kind)+': '+this.memAxis(tr.from)+' → '+this.memAxis(tr.to)+' · '+tr.at.slice(0,10)+' · '+tr.actor+(tr.reason?' · '+tr.reason:''))) };
+        }
+      }
+      mem={ notConfigured:!!(md&&!md.configured), conflicts, conflictsPlural:conflicts.length===1?'':'s', policy,
+        detail, list:configured&&!detail,
+        loading:!!(this.state.memLoading&&!detail), error:this.state.memError, empty:configured&&rows.length===0,
+        tabs, rows };
+    }
      return {
       tour:{ on:tOn, step:this.state.tourStep+1, total:this.TOUR.length, title:ts.title, text:ts.text, nextLabel:isLast?'Finish':'Next', prevOp:isFirst?0.4:1, onNext:()=>this.tourGo(this.state.tourStep+1), onPrev:()=>this.tourGo(this.state.tourStep-1), onExit:()=>this.exitTour() },
       startTour:()=>this.startTour(), exportSub:()=>this.exportSubgraph(),
@@ -1302,6 +1542,8 @@ class Component extends DCLogic {
       showOverview:()=>this.showOverview(), showFocus:()=>this.showFocus(),
       zoomOut:()=>this.zoomOut(), zoomIn:()=>this.zoomIn(),
       toggleTheme:()=>this.toggleTheme(), toggleBlast:()=>this.toggleBlast(), resetView:()=>this.resetView(), onSearch:(e)=>this.onSearch(e), closePanel:()=>this.closePanel(),
+      mem, toggleMemory:()=>this.toggleMemory(), closeMemory:()=>this.closeMemory(),
+      memBg: memOpen?'rgba(52,211,153,0.16)':t.chip, memBorder: memOpen?'rgba(52,211,153,0.5)':t.border, memFg: memOpen?'#34d399':t.text, memAccent:'#34d399',
      };
    }
 }

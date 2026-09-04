@@ -6,12 +6,12 @@
 
 ---
 
-## Tool consolidation (current surface: 14 tools / 38 operations)
+## Tool consolidation (current surface: 16 tools / 41 operations)
 
 Fourteen tools that differed only in which verb they called were folded behind an `op` parameter.
 Every tool costs name + description + JSON schema in the tool list of **every** session whether or
 not it is used, so a family of five rarely-used tools was a permanent tax on every conversation.
-The consolidated surface is 14 tools / 38 operations — down from 31 tools / ~6,249 tokens, a 42%
+The consolidated surface is 16 tools / 41 operations — down from 31 tools / ~6,249 tokens, a 42%
 token cut with no capability removed.
 
 These counts are not prose: they are derived from the single capability manifest
@@ -49,8 +49,17 @@ candidate-trust tier, never directly to a trusted store. At Gate 1.3 it gained f
 prior standalone tool: they are NEW operations (routed to the portable `MemoryApi` in
 `packages/memory/src/api.ts`), not consolidations of existing names.
 
+When the host has initialized the intelligence event plane, `memory({op:'status'})` also returns a
+`freshness` map keyed by projector. `memory-capture` reports its last successfully published
+generation, source-event watermark, lag, pending/dead-letter counts, and failure state. The field is
+absent for an uninitialized or older host; it is operational provenance, not an assertion that a
+claim is trusted or current.
+
 Still standalone, deliberately: `brief`, `context`, `query`, `source`, `detect_changes`,
 `overview` — reached for constantly, where an extra `op` would be friction or breakage.
+`explain` is also standalone (on-demand PDG + taint for one callable — see its section below);
+it is a NEW operation, not a consolidation. `rename` (G5.1, safe symbol rename) is standalone for
+the same reason — see its section below; it is a NEW operation, not a consolidation.
 `memory_recall` and `memory_observe` are the two memory names the installed client protocols and
 project instruction files cite directly, so they stay standalone as **compatibility adapters for
 one release cycle**: folding them under `memory` now would break every deployed instruction block
@@ -180,6 +189,86 @@ unknown id; an empty `source.text` (`truncated:false`) when the node has no file
               "truncated":true, "totalLines":480 } }
 ```
 
+## `explain(node)` *(on-demand PDG + taint — opt-in)*
+Static analysis for ONE callable: builds a per-function program dependence graph (control
+dependence from post-dominators + data dependence from reaching definitions) and reports
+source→sink taint flows over a small conservative rule table. TypeScript/JavaScript only, and it
+is **opt-in by design**: nothing runs during `crib index`; the analyzer runs per call, reads the
+file fresh, and the first run stamps `capabilities.pdg` in the manifest. The rule table is plain
+data and caller-extensible (`extraRules` — the CLI exposes it as `crib explain <id> --rules
+<file>`; the table and its extension contract are documented in [pdg-taint](pdg-taint.md)).
+
+Response carries `graph` (node/control/data edge counts), `flows` (each with `sinkRule`,
+`sourceRule`, `variable`, `contexts`, and a `path` whose steps link back to graph nodes on the
+same line), `sinksChecked`, a `limits` array, and — when `flows` is empty — an `absence` message.
+
+```jsonc
+// req: { "id":"sym:src/http.ts#Controller.handleLogin@L5", "extraRules?":[ … ] }
+// res:
+{ "symbol":"handleLogin", "node":"sym:…", "file":"src/http.ts",
+  "graph":{ "nodes":12, "controlEdges":4, "dataEdges":9 },
+  "flows":[{ "sinkRule":"sink.code-eval", "sourceRule":"source.http-input", "variable":"q",
+             "contexts":["code"], "path":[{ "node":3, "line":12, "text":"eval(q);", "via":"data",
+                                           "graphNode":"stmt:…" }] }],
+  "sinksChecked":1, "limits":[ "…", "…" ] }
+```
+
+**Honesty clause (load-bearing):** an empty `flows` list is **NOT proof of safety**. The analysis
+is intra-procedural — values passed to other functions, returned to callers, or stored in shared
+state are not followed — and it is a conservative over-approximation, so a missing edge may be a
+modeling limit. When no sink matched the rule table at all, the response says *nothing was
+checked* rather than implying a clean result. Errors: `UNSUPPORTED_LANGUAGE` (non-TS/JS node),
+`NOT_CONFIGURED` (analyzer not wired into this server instance), `NO_BODY` (no function body found
+for the symbol).
+
+## `rename(from, to)` *(safe symbol rename — plan/apply, G5.1)*
+The one graph operation that can destroy work gets the heaviest guard set. Default is a
+**dry-run**: it derives the reviewed plan and returns it with a deterministic `planId` (blake3 over
+the canonical plan body — file content hashes, edit counts, affected symbols — no wall-clock
+input, so the same graph + same files always reproduce the same id). Applying REQUIRES that id.
+
+```jsonc
+// 1) dry run — req: { "from":"sym:src/auth.ts#verifyToken@L12", "to":"checkToken" }
+// res:
+{ "applied": false, "planId": "rename:9f2c…",
+  "target": { "id":"sym:…", "name":"verifyToken", "file":"src/auth.ts", "line":12 },
+  "counts": { "exact": 9, "inferred": 3, "files": 4, "edits": 12 },
+  "files":  [ { "path":"src/auth.ts", "contentHash":"blake3:…", "edits":2, "sites":[ … ] } ],
+  "affected":  [ { "id":"sym:…", "distance":1, "rel":"calls", "resolution":"resolved" } ],
+  "unresolved":[ { "id":"sym:…", "resolution":"unresolved", "riskNote":"…" } ],
+  "next": "review the plan, then call again with apply: true and this planId; …" }
+
+// 2) apply — req: { "from":"…", "to":"checkToken", "apply":true, "planId":"rename:9f2c…" }
+// res:
+{ "applied": true, "planId": "rename:9f2c…", "filesChanged": 4, "edits": 12,
+  "next": "the derived index is now stale — run `crib update --dirty` (or a full `crib reindex`) …" }
+```
+
+Guard set (each load-bearing):
+- **Default dry-run.** Nothing is written unless `apply: true` AND `planId` are supplied.
+- **Deterministic plan id.** Content hash of the plan body (per-file blake3 content hashes taken
+  at plan time + edit counts + affected set). No clock input — reproducible byte-for-byte, and any
+  file change re-derives a different id.
+- **Stale-plan rejection.** Apply re-derives the plan from the CURRENT graph + files: a mismatched
+  id returns `PLAN_MISMATCH`; a file whose current hash differs from its plan-time hash returns
+  `STALE_PLAN` ("re-run the dry run"). The plan is never persisted — it is re-derived on apply.
+- **All-or-nothing.** Every file is read, hash-checked, and rewritten in memory FIRST; nothing is
+  written until the whole set validates. A write failure mid-commit restores every already-written
+  file (the response names them under `rolledBack`), so the net effect of a failure is "nothing
+  changed".
+- **Confidence classification.** `exact` sites are the definition span plus references grounded by
+  an EXTRACTED edge; `inferred` sites are word-boundary text hits (comments, docs, dynamic
+  dispatch) — always flagged in `counts` and `notes`, never silently merged with exact ones.
+- **Unresolved bucket.** Dependents reached only by inferred edges land in `unresolved` with a
+  risk note; an empty caller set is called out in `notes` as NOT evidence the symbol is unused.
+
+Site classification: the rewritten token is the symbol's SIMPLE name (a qualified `from` anchors
+the node; identifiers in code are unqualified — the plan says so in `notes` when the two differ).
+The rename does NOT reindex (the MCP server cannot run the pipeline): the apply response says the
+index is now stale and to run `crib update --dirty` (or restart `crib serve`, which self-heals).
+Errors: `NOT_FOUND` (no symbol matches), `INVALID` (same from/to, or a node with no source file),
+`BAD_REQUEST` (`apply` without `planId`), `PLAN_MISMATCH`, `STALE_PLAN`, `IO` (with `rolledBack`).
+
 ## `dossier(symbol)` *(deep-context, persisted — Workstream D/E)*
 The **one-shot** deep reusable context for a symbol — the highest-leverage verb for a local LLM.
 Folds into one artifact: the deep node fields, the paged rehydrated source body, callers/callees,
@@ -273,10 +362,25 @@ Raw adjacency for a node (graph walking primitive).
 ```
 
 ## `detect_changes`
-What changed since a ref (for review/impact-of-a-diff).
+What changed since a ref (for review/impact-of-a-diff), and the pre-commit graph check.
+
+Two path sets are reported and BOTH feed `changedSymbols`/`removedEdges`: `changedPaths` is the
+commit range `since..HEAD`, `uncommittedPaths` is the working tree. The working tree is included
+because this verb is called BEFORE committing — a commit range alone cannot see the very change the
+caller is about to make.
+
+`note` is present only when the report is degraded or narrowed in scope, and an empty result
+carrying one is never a clean bill of health: `vcs adapter not configured`, `not a git work tree`,
+`no incremental anchor — run \`crib index\` to establish one`, and `no commits since the anchor …`
+(the range was empty by construction because the anchor IS the current commit).
 ```jsonc
-// req: { "since":"<git sha>" }
-// res: { "changedSymbols":[ {"id":"…","change":"modified"} ], "newEdges":[…], "removedEdges":[…] }
+// req: { "since?":"<git sha>" }                          // default: the soul's incremental anchor
+// res: { "since":"<sha>", "head":"<sha>",
+//        "changedPaths":["src/auth.ts"],                 // committed since the anchor
+//        "uncommittedPaths":["src/token.ts"],            // still in the working tree
+//        "changedSymbols":["sym:src/auth.ts#login@L4","file:src/auth.ts"],
+//        "removedEdges":[ {"id":"…","src":"…","dst":"…","rel":"calls"} ],
+//        "note?":"no commits since the anchor — this report covers UNCOMMITTED working-tree changes only" }
 ```
 
 ## `extract_rules(proc?)` *(deep-extraction)*

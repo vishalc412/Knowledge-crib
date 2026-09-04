@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { existsSync, readFileSync, readdirSync, rmSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, rmSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 /**
  * The three memory stores (PRD §2 storage layout + W2 Slice 2): team, local, global.
@@ -44,6 +44,7 @@ import {
   type MigrationProvenanceOverrides,
   type RecordMigration,
   migrateRecordV1ToV2,
+  migrateRecordV2ToV3,
   migrationProvenance,
 } from './migrations.js';
 import { globalStoreRoot, localStoreRoot, teamStoreRoot } from './paths.js';
@@ -54,9 +55,12 @@ import {
   type MemoryCounts,
   type MemoryEntry,
   type MemoryManifest,
+  type MemoryNamespace,
   type MemoryRecord,
+  type MemoryRecordV2,
   type MemoryStoreRole,
   isMemoryRecordV2,
+  isMemoryRecordVersioned,
 } from './types.js';
 import { assertValidMemoryEntry } from './validate.js';
 
@@ -116,6 +120,55 @@ function collectionCountKey(c: MemoryCollection): keyof MemoryCounts | undefined
 
 const SHARD_FILE_RE = /^[0-9a-f]{2}\.jsonl$/;
 const LOCK_NAME = '.lock';
+
+/**
+ * Parsed-collection memo, keyed on `<storeRoot> <collection>` and validated against the store's
+ * whole-store mutation generation (see `MemoryStore.readStoreGeneration`).
+ *
+ * MODULE-level, not instance-level, on purpose: the MCP serving layer constructs a fresh
+ * `MemoryApi` — and therefore fresh `MemoryStore` objects — for EVERY verb call, so an
+ * instance-scoped cache would never hit. The store root path is the stable identity, the same
+ * reasoning `evaluationCacheFor` applies to the eval context.
+ *
+ * Correctness rests on the generation, not on time: a write in ANY process bumps `store.gen` under
+ * the store's lock, so the next read here sees a different `{gen, nonce}` and re-reads. A store
+ * whose sidecar is absent (gen 0) or torn (gen -1) is never cached at all.
+ */
+interface CollectionReadCacheEntry {
+  gen: number;
+  nonce: string;
+  entries: MemoryEntry[];
+  errors: string[];
+}
+const collectionReadCache = new Map<string, CollectionReadCacheEntry>();
+/** Bound the memo so a long-lived server touching many repos cannot grow it without limit. Cleared
+ *  wholesale rather than LRU-evicted: a rebuild costs one read, and the simplicity is worth more
+ *  than the hit rate at this size. */
+const COLLECTION_READ_CACHE_MAX = 64;
+
+/** Per-SHARD memo, same key discipline. Separate from the collection memo because the two answer
+ *  different questions: `readCollection` avoids re-walking the directory, `readShard` avoids the
+ *  parse — and single-id lookups (`findEntry`) only ever touch one shard. Sized for a full ledger
+ *  (a collection shards across at most 256 files) across a handful of stores. */
+const shardReadCache = new Map<string, CollectionReadCacheEntry>();
+const SHARD_READ_CACHE_MAX = 4096;
+
+/** Parsed `store.gen` memo, validated by the sidecar's nanosecond mtime + size. Keyed by the
+ *  sidecar PATH (one per store root). See `MemoryStore.readStoreGeneration` for why the
+ *  validation is stat-based and why nanosecond precision is required. */
+const storeGenerationCache = new Map<
+  string,
+  { mtimeNs: bigint; size: bigint; value: MemoryFtsGeneration }
+>();
+const STORE_GENERATION_CACHE_MAX = 256;
+
+/** Drop every memoized read. Exposed for tests and for any caller that mutates a store's files
+ *  out-of-band (nothing in the product does — writes bump the generation instead). */
+export function clearMemoryCollectionCache(): void {
+  collectionReadCache.clear();
+  shardReadCache.clear();
+  storeGenerationCache.clear();
+}
 
 /** A `mem:` entry still on the memory-1 envelope (the migration's input; schemaVersion is the
  *  discriminator because both versions share the `mem:` prefix). */
@@ -277,6 +330,11 @@ export interface StoreMigrationOpts {
   provenance?: MigrationProvenanceOverrides;
 }
 
+/** Namespace selected by the server/control plane for a v2 → v3 store migration. */
+export interface StoreMigrationV3Opts {
+  namespace: MemoryNamespace;
+}
+
 /** What {@link MemoryStore.migrateToV2} did: the v2 ids written, the alias ids persisted, how many
  *  v1 records were skipped (their v2 twin already existed — first writer wins), and how many v1
  *  lines were RETAINED untouched (team's append-only ledger: alias only, no rewrite). */
@@ -426,6 +484,103 @@ export class MemoryStore {
    * mints the nonce; every later bump keeps it, so the nonce changes exactly when the store root's
    * life does (clear → delete → fresh file → fresh nonce).
    */
+  /** `<rootDir>/store.gen` — the WHOLE-STORE mutation generation sidecar. Sibling of `fts.gen` and
+   *  written the same way (atomic temp→rename under the write lock, nonce bound to the file's life).
+   *
+   *  Distinct from `fts.gen` on purpose: `fts.gen` bumps only for RECORD collections, because that
+   *  is the corpus the persistent FTS snapshot shadows. The gather read model reads `records`,
+   *  `active`, `decisions` AND `feedback`, so a cache keyed on `fts.gen` would happily serve a
+   *  stale decision — and decisions carry supersede/retract, so a stale read could resurrect a
+   *  retracted memory. This sidecar therefore bumps on EVERY collection mutation. */
+  storeGenerationPath(): string {
+    return join(this.init.rootDir, 'store.gen');
+  }
+
+  /** Generation pinned for the current read pass, if any. See {@link pinGeneration}. */
+  private pinnedGeneration?: MemoryFtsGeneration;
+
+  /**
+   * Pin this store's mutation generation for one read pass, so repeated cache validations inside a
+   * single logical operation cost one `statSync` instead of one per lookup.
+   *
+   * Also a correctness improvement, not just a speed one: a read pass that re-reads the generation
+   * per lookup can straddle a concurrent write and mix pre- and post-write shards into one answer.
+   * A pinned pass sees one snapshot. Any write from THIS store clears the pin (see
+   * {@link bumpStoreGeneration}), and a pass never outlives its caller's `finally`.
+   */
+  pinGeneration(): void {
+    this.pinnedGeneration = this.statStoreGeneration();
+  }
+
+  /** Release a {@link pinGeneration} pass. Idempotent. */
+  unpinGeneration(): void {
+    this.pinnedGeneration = undefined;
+  }
+
+  /**
+   * Read the whole-store mutation generation. Same three-state contract as
+   * {@link readFtsGeneration}: absent ⇒ `{gen: 0}` (no write has happened under a version that
+   * maintains this sidecar — readers must NOT cache), unparseable ⇒ an unmatchable `{gen: -1}`
+   * (a torn temp→rename; re-read rather than trust a snapshot of unknown provenance).
+   */
+  readStoreGeneration(): MemoryFtsGeneration {
+    // A pinned pass reads the generation ONCE (see pinGeneration): within one logical read
+    // pass the ledger must look like a single snapshot anyway, and `findEntry`/`locate` run
+    // per hit, so re-stat'ing per lookup was still ~25% of `MemoryApi.search`.
+    return this.pinnedGeneration ?? this.statStoreGeneration();
+  }
+
+  /** The stat-validated read behind {@link readStoreGeneration}. */
+  private statStoreGeneration(): MemoryFtsGeneration {
+    const path = this.storeGenerationPath();
+    // PERF — this is the hot path's hot path: every cached shard read validates against it, and
+    // `findEntry`/`locate` run per hit, so a naive read+parse here cost 71% of `MemoryApi.search`
+    // once the parse itself was memoized. Validate with a single `statSync` instead and memoize the
+    // parsed value against the file's identity.
+    //
+    // NANOSECOND mtime, deliberately: `writeJsonAtomic` bumps this file on every mutation, and two
+    // mutations can land inside the same MILLISECOND (the sidecar's size does not change when a
+    // single-digit `gen` increments, so size alone would not separate them either). `mtimeNs` cannot
+    // collide across two sequential temp→rename pairs, so a stale generation can never be served —
+    // which matters because the generation is what keeps a retracted decision from being re-read.
+    let stat: { mtimeNs: bigint; size: bigint };
+    try {
+      const s = statSync(path, { bigint: true });
+      stat = { mtimeNs: s.mtimeNs, size: s.size };
+    } catch {
+      return { gen: 0, nonce: '' }; // absent — never written under a version maintaining the sidecar
+    }
+    const hit = storeGenerationCache.get(path);
+    if (hit && hit.mtimeNs === stat.mtimeNs && hit.size === stat.size) return hit.value;
+
+    let value: MemoryFtsGeneration = { gen: -1, nonce: `torn:${path}` };
+    try {
+      const parsed = JSON.parse(readFileSync(path, 'utf8')) as Partial<MemoryFtsGeneration>;
+      if (typeof parsed.gen === 'number' && typeof parsed.nonce === 'string') {
+        value = { gen: parsed.gen, nonce: parsed.nonce };
+      }
+    } catch {
+      // torn sidecar — keep the unmatchable read so nothing caches against it
+    }
+    if (storeGenerationCache.size >= STORE_GENERATION_CACHE_MAX) storeGenerationCache.clear();
+    storeGenerationCache.set(path, { ...stat, value });
+    return value;
+  }
+
+  /** Bump the whole-store generation. Mirrors {@link bumpFtsGeneration}'s nonce discipline: the
+   *  first bump mints the nonce, later bumps keep it, so the nonce changes exactly when the store
+   *  root's life does (clear → delete → fresh file → fresh nonce). */
+  private bumpStoreGeneration(): void {
+    this.pinnedGeneration = undefined; // a write invalidates any pinned read pass on this store
+    const path = this.storeGenerationPath();
+    const current = this.readStoreGeneration();
+    const next: MemoryFtsGeneration =
+      current.gen >= 1
+        ? { gen: current.gen + 1, nonce: current.nonce }
+        : { gen: 1, nonce: randomUUID() };
+    writeJsonAtomic(path, `${JSON.stringify(next)}\n`);
+  }
+
   private bumpFtsGeneration(): MemoryFtsGeneration {
     const path = this.ftsGenerationPath();
     const current = this.readFtsGeneration();
@@ -597,6 +752,66 @@ export class MemoryStore {
     return result;
   }
 
+  /**
+   * Re-address v2 records into memory-3 without rewriting legacy evidence, decisions, or aliases.
+   * Local/global stores replace their v2 line; team remains append-only and records only the alias.
+   */
+  migrateToV3(opts: StoreMigrationV3Opts): StoreMigrationResult {
+    const result: StoreMigrationResult = { migrated: [], aliases: [], skipped: 0, retained: 0 };
+    this.withLock(() => {
+      const priorAliases = this.readAliases();
+      const aliases: MemoryAlias[] = [];
+      const fallbackVerdicts: MemoryAlias['verdicts'] = {
+        trust: 'candidate',
+        evidence: 'degraded',
+        applicability: 'needs-review',
+        lifecycle: 'active',
+      };
+      for (const collection of this.recordCollections()) {
+        const read = this.readCollection(collection);
+        if (read.errors.length > 0) throw new Error(`refusing v2→v3 migration: ${read.errors[0]}`);
+        const entries = read.entries;
+        const next = new Map(entries.map((entry) => [entry.id, entry]));
+        const ids = new Set(entries.map((entry) => entry.id));
+        let changed = false;
+        for (const entry of entries) {
+          if (!isMemoryRecordV2(entry)) continue;
+          if (entry.provenance.principalId !== opts.namespace.principalId) {
+            result.skipped += 1;
+            continue;
+          }
+          const snapshot =
+            priorAliases.find((alias) => alias.resolvedId === entry.id)?.verdicts ??
+            fallbackVerdicts;
+          const migration = migrateRecordV2ToV3(entry as MemoryRecordV2, opts.namespace, snapshot);
+          aliases.push(migration.alias);
+          if (this.init.role === 'team') {
+            result.retained += 1;
+            continue;
+          }
+          if (ids.has(migration.record.id)) {
+            result.skipped += 1;
+            next.delete(entry.id);
+            changed = true;
+            continue;
+          }
+          ids.add(migration.record.id);
+          next.delete(entry.id);
+          next.set(migration.record.id, migration.record);
+          result.migrated.push(migration.record.id);
+          changed = true;
+        }
+        if (changed) this.rewriteCollectionShards(collection, next, entries);
+      }
+      if (aliases.length > 0) {
+        this.upsertAliases(aliases);
+        result.aliases.push(...aliases.map((a) => a.id));
+      }
+      if (result.migrated.length > 0 && this.hasManifest) this.persistManifest();
+    });
+    return result;
+  }
+
   // ─── internals ──────────────────────────────────────────────────────────────
 
   /** The record collections this store role holds (the collections the migration walks). */
@@ -732,6 +947,7 @@ export class MemoryStore {
       for (const entry of list) this.assertWritable(entry);
       writeJsonAtomic(this.shardPath(collection, shard), serializeMemoryShard(list));
     }
+    this.bumpStoreGeneration();
     // G3.1: the migration regroups shards and can move a v1 id to its different-shard v2 twin, so
     // the FTS notice carries BOTH the surviving record set (upserted) and the retired v1 ids — the
     // snapshot must drop the v1 rows or the corpus (and every BM25 score) silently diverges.
@@ -746,16 +962,80 @@ export class MemoryStore {
 
   /** Read one shard. A missing shard is an empty read (not an error). */
   readShard(collection: MemoryCollection, shard: string): MemoryShardRead {
+    return this.readShardAt(collection, shard, this.readStoreGeneration());
+  }
+
+  /**
+   * {@link readShard} against an ALREADY-READ generation.
+   *
+   * The generation lives in a sidecar file, so reading it costs a `readFileSync`. `readCollection`
+   * walks up to 256 shards, and re-reading the sidecar per shard turned the memo into a syscall
+   * storm — profiling after the first cut showed `readFileSync` at 74% of the call with the parse
+   * gone. Callers that touch more than one shard therefore read the generation ONCE and pass it in;
+   * the value is a consistent snapshot for that read either way, since a concurrent write bumps it
+   * and the NEXT operation re-reads.
+   */
+  private readShardAt(
+    collection: MemoryCollection,
+    shard: string,
+    generation: MemoryFtsGeneration,
+  ): MemoryShardRead {
+    // PERF (launch perf gate) — memoized at the SHARD level, which is the primitive both readers
+    // share: `readCollection` walks every shard, and `findEntry`/`locate` parse ONE whole shard to
+    // resolve a single id (called per hit, per superseded alternative). Caching only the collection
+    // read left the per-hit lookups parsing shards on every call — profiling still showed
+    // `parseMemoryShard` at ~53% of `MemoryApi.search`. See {@link readStoreGeneration} for why the
+    // generation is a sound key and why gen 0 / gen -1 are never cached.
+    const cacheable = generation.gen >= 1;
+    const key = `${this.init.rootDir} ${collection} ${shard}`;
+    if (cacheable) {
+      const hit = shardReadCache.get(key);
+      if (hit && hit.gen === generation.gen && hit.nonce === generation.nonce) {
+        return { entries: [...hit.entries], errors: [...hit.errors] };
+      }
+    }
     const path = this.shardPath(collection, shard);
     if (!existsSync(path)) return { entries: [], errors: [] };
     const text = readFileSync(path, 'utf8');
     const rel = `${this.init.role}/${collection}/${shard}.jsonl`;
     const parsed = parseMemoryShard(text, rel);
-    return { entries: parsed.entries as unknown as MemoryEntry[], errors: parsed.errors };
+    const entries = parsed.entries as unknown as MemoryEntry[];
+    if (cacheable) {
+      if (shardReadCache.size >= SHARD_READ_CACHE_MAX) shardReadCache.clear();
+      shardReadCache.set(key, {
+        gen: generation.gen,
+        nonce: generation.nonce,
+        entries,
+        errors: parsed.errors,
+      });
+      return { entries: [...entries], errors: [...parsed.errors] };
+    }
+    return { entries, errors: parsed.errors };
   }
 
   /** Read every shard of a collection, concatenating entries + collecting per-shard errors. */
   readCollection(collection: MemoryCollection): MemoryShardRead {
+    // PERF (launch perf gate) — a full collection read is read + JSON.parse + Ajv validate + the
+    // `mem:`/`blake3:` id regexes over EVERY shard. Profiling `MemoryApi.search` at 10k records put
+    // ~65% of the whole call in `parseMemoryShard` + `readFileSync`, because recall re-read and
+    // re-validated the entire ledger on every query. The parse is a pure function of the bytes, so
+    // it is memoized against the store's whole-store mutation generation.
+    const generation = this.readStoreGeneration();
+    // gen 0  = no write has happened under a version that maintains `store.gen`, so an EXISTING
+    //          store written by an older build would otherwise pin its first read forever.
+    // gen -1 = torn sidecar of unknown provenance.
+    // Neither is a safe cache key: read through, and start caching once a write mints the sidecar.
+    const cacheable = generation.gen >= 1;
+    const key = `${this.init.rootDir} ${collection}`;
+    if (cacheable) {
+      const hit = collectionReadCache.get(key);
+      if (hit && hit.gen === generation.gen && hit.nonce === generation.nonce) {
+        // Fresh array wrappers: entries are immutable content-addressed values, but callers own
+        // (and some sort/splice) the arrays they receive.
+        return { entries: [...hit.entries], errors: [...hit.errors] };
+      }
+    }
+
     const dir = this.collectionDir(collection);
     if (!existsSync(dir)) return { entries: [], errors: [] };
     const entries: MemoryEntry[] = [];
@@ -763,9 +1043,20 @@ export class MemoryStore {
     for (const file of readdirSync(dir).sort()) {
       if (!SHARD_FILE_RE.test(file)) continue;
       const shard = file.slice(0, 2);
-      const res = this.readShard(collection, shard);
+      // the generation read above is reused for every shard — see readShardAt
+      const res = this.readShardAt(collection, shard, generation);
       entries.push(...res.entries);
       errors.push(...res.errors);
+    }
+    if (cacheable) {
+      if (collectionReadCache.size >= COLLECTION_READ_CACHE_MAX) collectionReadCache.clear();
+      collectionReadCache.set(key, {
+        gen: generation.gen,
+        nonce: generation.nonce,
+        entries,
+        errors,
+      });
+      return { entries: [...entries], errors: [...errors] };
     }
     return { entries, errors };
   }
@@ -799,6 +1090,7 @@ export class MemoryStore {
         removed = [...priorIds];
       }
       writeJsonAtomic(this.shardPath(collection, shard), text);
+      this.bumpStoreGeneration();
       if (isRecordCollection(collection)) this.afterRecordWrite(collection, entries, removed);
     });
   }
@@ -829,6 +1121,7 @@ export class MemoryStore {
           serializeMemoryShard([...merged.values()]),
         );
       }
+      this.bumpStoreGeneration();
       // G3.1: an upsert never retires an id (merge-by-id only), so the FTS notice is upsert-only.
       if (isRecordCollection(collection)) this.afterRecordWrite(collection, entries, []);
     });
@@ -861,6 +1154,7 @@ export class MemoryStore {
       const next = existing.filter((e) => e.id !== id);
       if (next.length === existing.length) return false; // not present — nothing to clean
       writeJsonAtomic(this.shardPath(collection, shard), serializeMemoryShard(next));
+      this.bumpStoreGeneration();
       if (isRecordCollection(collection)) this.afterRecordWrite(collection, [], [id]);
       return true;
     });
@@ -1001,7 +1295,11 @@ export class MemoryStore {
   private assertWritable(entry: MemoryEntry): void {
     assertValidMemoryEntry(entry as unknown as { id: string } & Record<string, unknown>);
     assertNoMemorySecrets(entry);
-    if (this.init.role === 'team' && isMemoryRecordV2(entry) && entry.visibility === 'private') {
+    if (
+      this.init.role === 'team' &&
+      isMemoryRecordVersioned(entry) &&
+      entry.visibility === 'private'
+    ) {
       throw new TeamPrivateVisibilityError(entry.id);
     }
   }

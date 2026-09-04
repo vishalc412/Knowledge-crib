@@ -147,3 +147,77 @@ construction-invariant gate found 32/40 `HELDOUT_PARAPHRASES` entries violating 
 word-disjointness invariants; all 32 were rewritten to the frozen invariants **before** this
 deciding measurement ran (note in `packages/memory/src/bench/heldout.ts`), so no held-out number
 informed the rewrite.
+---
+
+## FOLLOW-UP RUN — an installed on-device tier (2026-09-04)
+
+The 2026-09-03 result above measured the **fallback** tier (`char-ngram`) and correctly reported a
+negative: fusion lost, `lexical-only` shipped. §5 explicitly left the installed tier **unmeasured**
+and made no quality claim for it. This section measures it.
+
+**Tier installed:** a real sentence-transformer, pinned and integrity-verified through
+`crib embed install`, running **fully offline** (weights from the local HuggingFace cache;
+`HF_HUB_OFFLINE`/`TRANSFORMERS_OFFLINE` set; no network at query time). Three models were tried.
+
+### The pre-registered rule, re-applied unchanged (40-topic corpus)
+
+| embedder | strategy | held-out R@5 | exact R@5 | verdict under §4 |
+| --- | --- | --- | --- | --- |
+| — | `lexical-only` (baseline) | 7.5% | 100% | baseline |
+| `all-MiniLM-L6-v2` (English) | `weighted-a0.5` | **45.0%** | 100% | **fusion WINS** (+0.375 ≥ +0.15) |
+| `all-MiniLM-L6-v2` (English) | `rrf-k60` | 40.0% | 100% | wins |
+| `multilingual-MiniLM-L12` | `rrf-k60` | 35.0% | 100% | wins |
+
+**The 2026-09-03 negative result was a property of the FALLBACK EMBEDDER, not of the fusion
+architecture.** With a real model the same frozen rule flips to `fusionWon: true`. The fusion code,
+kept behind its version ids rather than deleted, is what made this a config change.
+
+### Launch-gate effect (500-query corpus, `docs/bench/launch-gates.md`)
+
+| scorer | G2 paraphrase | G3 MRR | multilingual | gates |
+| --- | --- | --- | --- | --- |
+| `none:bm25:lexical-only` (audited baseline) | 2.6% | 52.0% | 1.1% | 6/8 |
+| `minilm-l6:bm25+cosine:weighted-a0.5` | 8.5% | 53.1% | 3.4% | 6/8 |
+| `mpnet:bm25+cosine:rrf-k60` | 19.6% | 60.5% | 39.8% | 6/8 |
+| **`multilingual-e5-base:cosine-only:a0`** | **45.8%** | **77.3%** | **98.9%** | **7/8** |
+
+### The finding that matters: BM25 was DESTROYING the semantic signal
+
+`fuseWeighted` computes `alpha*bm25 + (1-alpha)*cosine`, so `alpha=0` is pure semantic. Sweeping it
+against `multilingual-e5-base`:
+
+| alpha | G2 | G3 | multilingual |
+| --- | --- | --- | --- |
+| **0.0 (pure semantic)** | **45.8%** | **77.3%** | **98.9%** |
+| 0.1 | 13.1% | 60.5% | 58.0% |
+| 0.25 | 4.6% | 58.5% | 45.5% |
+| 0.5 (the pre-registered default) | 3.9% | 58.3% | 43.2% |
+
+**A 10% BM25 weight costs 33 points of paraphrase recall.** On a corpus constructed so no query
+token is even an FTS prefix of its claim, BM25 is not a weak signal — it is *noise*, and fusing it
+with a good semantic channel actively displaces the right record. The pre-registration's own earlier
+observation ("weak stopword matches actually displace the labeled record") turns out to be the whole
+story.
+
+E5 is also an **asymmetric retrieval** model: the adapter embeds records as `passage: …` and queries
+as `query: …`. The `Embedder` contract separates the two calls (`embedBatch` for the candidate set,
+`embed` for the query), so the asymmetry maps onto it exactly. Symmetric cosine on a sample
+paraphrase pair: 0.088 (MiniLM) vs **0.809** (E5 asymmetric).
+
+### ⚠️ Discipline: this is EXPLORATORY, not a gate pass
+
+**`alpha=0` was NOT in the pre-registered candidate set** (`lexical-only`, `rrf-k60`,
+`weighted-a0.5`), and the sweep above was run **against the launch-gate corpus itself**. That is
+selection on the test set, and it is exactly what the pre-registration discipline exists to prevent.
+
+So, stated plainly:
+
+- The **7/8 result must not be published as a launch-gate pass.** It is a promising exploratory
+  configuration measured on the corpus it was tuned against.
+- Before it can be claimed, it needs a **new pre-registration**: `alpha` (or a `semantic-only`
+  strategy) added to the candidate set, thresholds re-frozen, and a **fresh held-out split** the
+  sweep has never seen.
+- G2 still FAILS its ≥80% threshold even at the tuned optimum (45.8%), so the memory-quality gate
+  does not pass under any configuration measured so far.
+- G1 exact recall held at **100% in every configuration** — the exact-match band short-circuits
+  before fusion, so semantic ranking never cannibalised exact matching.

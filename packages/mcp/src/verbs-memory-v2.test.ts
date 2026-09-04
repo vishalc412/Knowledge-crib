@@ -657,3 +657,60 @@ describe('memoryRecall over a migrated ledger', () => {
     expect(m.createdAt).toBeUndefined();
   });
 });
+
+// ─── the shipped ranker follows the embed tier (R2 rollout) ──────────────────
+
+describe('recall ranker follows the installed embed tier', () => {
+  /**
+   * The production default was changed by `docs/bench/retrieval-pre-registration-r2.md`: with an
+   * installed tier recall ranks `semantic-only` (66.7% held-out paraphrase recall vs 12.1% for the
+   * incumbent); with no tier it must stay `lexical-only`, because R1 measured that fusion LOSES on
+   * the char-ngram fallback. The scorer version id is the observable contract — a deployment must be
+   * able to read which ranker produced a result, so these two branches are pinned rather than
+   * assumed.
+   */
+  const fakeEmbedder = {
+    id: 'test-embedder-8',
+    dim: () => 8,
+    embed: (t: string) => {
+      const v = new Float32Array(8);
+      for (let i = 0; i < t.length; i++) {
+        const slot = i % 8;
+        v[slot] = (v[slot] ?? 0) + 1;
+      }
+      let sum = 0;
+      for (const x of v) sum += x * x;
+      const n = Math.sqrt(sum) || 1;
+      return v.map((x) => x / n) as Float32Array;
+    },
+    embedBatch(texts: string[]) {
+      return texts.map((t) => this.embed(t));
+    },
+  };
+
+  it('reports lexical-only when NO embed tier is wired', () => {
+    const recs = [v1Record({ claim: 'the deploy retries three times', subject: 'topic:a' })];
+    const res = verbsWith(teamStoreWith(recs)).memorySearch({ q: 'retries' }) as Record<
+      string,
+      unknown
+    >;
+    const prov = res.provenance as Record<string, unknown>;
+    expect(prov.scorerVersion).toBe('memory-rank-v2:none:bm25:lexical-only');
+  });
+
+  it('reports semantic-only when an embed tier IS wired', () => {
+    const recs = [v1Record({ claim: 'the deploy retries three times', subject: 'topic:a' })];
+    const team = teamStoreWith(recs);
+    // construct directly: `verbsWith` takes a store, and spreading a class instance into a plain
+    // object would drop its prototype methods
+    const verbs = new Verbs({
+      soul,
+      index,
+      repoRoot: repo,
+      memory: { team, embedder: fakeEmbedder },
+    });
+    const res = verbs.memorySearch({ q: 'retries' }) as Record<string, unknown>;
+    const prov = res.provenance as Record<string, unknown>;
+    expect(prov.scorerVersion).toBe('memory-rank-v2:test-embedder-8:cosine:semantic-only');
+  });
+});

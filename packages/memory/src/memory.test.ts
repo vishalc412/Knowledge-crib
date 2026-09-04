@@ -263,16 +263,21 @@ describe('validators', () => {
 });
 
 describe('migrations + version gate (fail closed)', () => {
-  it('memory-1 and memory-2 are supported (G1.1: both live)', () => {
+  it('memory-1, memory-2 and memory-3 are supported (all three live)', () => {
     expect(isSupportedMemorySchemaVersion('1')).toBe(true);
     expect(isSupportedMemorySchemaVersion('2')).toBe(true);
-    expect(isSupportedMemorySchemaVersion('3')).toBe(false);
+    // memory-3 (the namespaced envelope) went live with `migrateToV3`. It is an explicit STORE
+    // pass, not a loader-chain step, so a v3 line must validate in place the moment it is written.
+    expect(isSupportedMemorySchemaVersion('3')).toBe(true);
+    // the gate is still closed above the newest live version — '4' is the unknown-version probe.
+    expect(isSupportedMemorySchemaVersion('4')).toBe(false);
   });
 
   it('assertSupportedMemorySchemaVersion throws on unknown versions', () => {
     expect(() => assertSupportedMemorySchemaVersion('1')).not.toThrow();
     expect(() => assertSupportedMemorySchemaVersion('2')).not.toThrow();
-    expect(() => assertSupportedMemorySchemaVersion('3')).toThrow(MemorySchemaVersionError);
+    expect(() => assertSupportedMemorySchemaVersion('3')).not.toThrow();
+    expect(() => assertSupportedMemorySchemaVersion('4')).toThrow(MemorySchemaVersionError);
     expect(() => assertSupportedMemorySchemaVersion(undefined)).toThrow(MemorySchemaVersionError);
   });
 
@@ -334,7 +339,7 @@ describe('strict loader (parseMemoryShard)', () => {
 
   it('fails closed on an unknown schemaVersion line', () => {
     const parsed = parseMemoryShard(
-      '{"id":"mem:abc","schemaVersion":"3","kind":"fact"}\n',
+      '{"id":"mem:abc","schemaVersion":"4","kind":"fact"}\n',
       'x.jsonl',
     );
     expect(parsed.entries).toHaveLength(0);
