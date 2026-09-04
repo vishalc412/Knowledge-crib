@@ -131,8 +131,24 @@ crib status .                           # 2. health + stats
 | `crib audit-llm [path]` | Re-verify every LLM artifact against the soul (grounding moat); exits non-zero on drift |
 | `crib skill <install\|list> [name] [--dest <dir>]` | Install the bundled `/crib-enrich` skill (the loop driver) into `~/.claude/skills/`, or list bundled skills. Idempotent — skips byte-identical re-installs |
 | `crib mcp <install\|list\|remove> [--ide <name\|all>] [--global]` | Auto-wire the MCP server into each IDE config (no hand-editing); `--ide claude --global` = one user-scope entry for every project |
+| `crib intake create\|checkpoint\|list\|show\|complete\|share` | Persist sanitized intent and immutable resume checkpoints; sharing is explicit (`devices` encrypted sync or `team` Git memory) |
+| `crib session bootstrap [--json]` | Restore the deterministic intake/handoff brief before a new session acts |
 
 Exit codes: `0` ok · `1` error · `2` bad args · `3` not indexed.
+
+### Continue work across sessions and machines
+
+At the start of a session, run `crib session bootstrap --json`. If exactly one intake is resumable,
+its `nextSafeAction` is the default continuation; with multiple active intakes, crib returns choices
+and does not guess. Save progress with `crib intake checkpoint <id> --phase <phase> --summary <text>
+--next <action>`. Bootstrap flags repository drift, so re-check the saved action when the checkout
+changed.
+
+For another device, configure the same encrypted backend/key and stable `--sync-id`, explicitly
+share with `--audience devices`, then push/pull as described in [the sync guide](memory-sync.md).
+For collaborators, `crib intake share <id> --audience team` copies the secret-scanned full history
+to Git-backed team memory; commit and push those `.crib/memory/team` files. No session startup,
+adapter install, or MCP call implicitly widens the audience.
 
 ### What gets indexed
 

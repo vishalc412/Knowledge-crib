@@ -19,7 +19,7 @@ Two stores participate:
 
 | store | scope | syncs collection |
 | --- | --- | --- |
-| local | per-repo (`--scope repo`) | `active` |
+| local | per-repo (`--scope repo`) | `active`, `intakes` |
 | global | per-machine (`--scope global`) | `records` |
 
 The **team store is not a sync participant** (D2). Git *is* its backend: team memory
@@ -28,6 +28,11 @@ lives in `.crib/memory/team/**/*.jsonl` and is reviewed in PRs through the
 create two divergent team truths, so team memory stays exactly where review can see it.
 To share a team record across devices, commit and push it — that is the feature, not a
 limitation.
+
+Intake continuation follows the same boundary. `crib intake share <id> --audience devices`
+marks the immutable history for the configured encrypted local channel. `--audience team` is a
+separate explicit promotion that secret-scans and copies the complete history into
+`.crib/memory/team/intakes`; commit that Git-visible change to share it with collaborators.
 
 The sync unit is the **event envelope** (D1): `evt:<blake3>` over the canonical entry
 JSON. The id is derived from content alone — no sequence numbers, no device ids in the
@@ -103,6 +108,37 @@ the first time you configure a second device.
 
 Use `--backfill` to override the baseline and stage the full history on the next push
 (use this when the remote is new or was lost and you want the whole store uploaded).
+
+## Durable intake continuation across devices
+
+Create and checkpoint resumable work locally:
+
+```bash
+crib intake create --from "Finish the parser migration" --outcome "Parser migration is complete" \
+  --scope packages/parsers --accept "Parser tests pass" --json
+crib intake checkpoint intake:<id> --phase executing --summary "Core changes landed" \
+  --next "Run the MCP integration tests" --json
+crib session bootstrap --json
+```
+
+Configure each device with the same stable sync id, user-owned backend, and key reference, then
+push on the source and pull on the destination:
+
+```bash
+crib memory init-sync --scope repo --backend file --url /path/to/user-owned-sync \
+  --keyfile /path/to/sync-key --sync-id my-project
+crib intake share intake:<id> --audience devices --json
+crib memory sync push --json
+
+# On the second device, after init-sync with the same --sync-id/key/backend:
+crib memory sync pull --json
+crib session bootstrap --json
+```
+
+The bootstrap reports repository drift when saved HEAD, branch, dirty state, or changed-path digest
+no longer matches. Revalidate the next action before continuing. Multiple active intakes are
+returned as choices with no guessed primary. Restricted intake is refused by encrypted sync;
+secret-pattern hits abort before upload. Use `crib memory conflicts --json` for content collisions.
 
 ## `crib memory sync push|pull|status`
 
