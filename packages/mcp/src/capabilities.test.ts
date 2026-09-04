@@ -61,6 +61,17 @@ const MINIMAL_ARGS: Record<string, Record<string, unknown>> = {
   'memory:delete': { id: 'mem:1', actor: 'a' },
   'memory:history': { key: 'mem:1' },
   'memory:sync': {},
+  'memory:intake_create': { original: 'o', outcome: 'x', actor: 'a' },
+  'memory:intake_checkpoint': {
+    id: 'intake:1',
+    phase: 'planning',
+    summary: 's',
+    nextSafeAction: 'n',
+    actor: 'a',
+  },
+  'memory:intake_list': {},
+  'memory:intake_get': { id: 'intake:1' },
+  'memory:intake_share': { id: 'intake:1', audience: 'devices', actor: 'a' },
   // enrich
   'enrich:status': {},
   'enrich:next': {},
