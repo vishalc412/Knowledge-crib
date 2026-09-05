@@ -736,6 +736,19 @@ class CliVcsAdapter implements VcsAdapter {
   uncommittedChanges(root: string): string[] {
     return uncommittedChanges(root);
   }
+  currentBranch(root: string): string | undefined {
+    try {
+      return (
+        execFileSync('git', ['rev-parse', '--abbrev-ref', 'HEAD'], {
+          cwd: root,
+          encoding: 'utf8',
+          stdio: ['ignore', 'pipe', 'ignore'],
+        }).trim() || undefined
+      );
+    } catch {
+      return undefined; // detached HEAD, no commits, or not a git repo — the anchor keeps its head
+    }
+  }
 }
 
 /**
@@ -4650,11 +4663,18 @@ function createMemoryApi(
   });
 }
 
+/**
+ * Bounded list of the paths a returning session most needs to see. A digest proves the working set
+ * is the same one; it cannot tell a human WHERE they were, which is the whole point of a resume.
+ */
+const RESUME_PATHS_MAX = 20;
+
 function currentRepositoryAnchor(repoRoot: string): {
   head?: string;
   branch?: string;
   dirty: boolean;
   changedPathsDigest?: string;
+  changedPaths?: string[];
 } {
   let head: string | undefined;
   let branch: string | undefined;
@@ -4684,7 +4704,10 @@ function currentRepositoryAnchor(repoRoot: string): {
     ...(branch ? { branch } : {}),
     dirty: changed.length > 0,
     ...(changed.length > 0
-      ? { changedPathsDigest: `blake3:${blake3Hex(changed.join('\n'))}` }
+      ? {
+          changedPathsDigest: `blake3:${blake3Hex(changed.join('\n'))}`,
+          changedPaths: changed.slice(0, RESUME_PATHS_MAX),
+        }
       : {}),
   };
 }
@@ -5796,7 +5819,22 @@ function cmdMemoryCaptureHook(args: string[], ctx?: CmdCtx): number {
         ...(eventOffset !== undefined ? { eventOffset } : {}),
       },
       identity,
-      payload: { event, action: 'checkpoint-requested', hasOutcome: outcome !== undefined },
+      // THE RESUME RECORD. Previously this payload said only that a turn had ended, so a session
+      // that timed out left nothing to come back to: `checkpoint-requested` is a request to the
+      // AGENT to write a checkpoint, and an agent whose session just died cannot honour it. The
+      // design depended on the very thing that had failed.
+      //
+      // The anchor is what the hook can observe by itself — branch, HEAD, and which files were
+      // being worked on — so it survives a timeout, a crash, or a closed laptop without the agent
+      // cooperating at all. Paths only: file NAMES are already within the capture policy (intake
+      // checkpoints carry `artifactPaths`), while contents, prompts, transcripts and tool IO
+      // remain excluded.
+      payload: {
+        event,
+        action: 'checkpoint-requested',
+        hasOutcome: outcome !== undefined,
+        repository: currentRepositoryAnchor(resolved.repoRoot),
+      },
       occurredAt,
     });
     if (!outcome) {

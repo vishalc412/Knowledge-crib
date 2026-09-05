@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Embedder } from '@knowledge-crib/core';
@@ -85,6 +86,7 @@ import {
   readRepoId,
   readSyncConfig,
   recallProjection,
+  resolveServerIdentity,
   stageSyncableWrite,
 } from '@knowledge-crib/memory';
 /**
@@ -147,6 +149,12 @@ export interface VcsAdapter {
   changedFilesSince(root: string, since: string): string[];
   /** Repo-relative paths of staged + unstaged working-tree changes relative to HEAD. */
   uncommittedChanges(root: string): string[];
+  /**
+   * Current branch name, when the adapter can supply one. OPTIONAL so existing implementors and
+   * test stubs keep compiling — a session anchor without a branch is still a usable resume (HEAD
+   * identifies the commit precisely), it just reads less like something a human recognises.
+   */
+  currentBranch?(root: string): string | undefined;
 }
 
 /**
@@ -259,6 +267,11 @@ interface SemanticSearchable {
 /** Default number of `overview` analysis pointers returned before paging. Small on purpose: the
  *  list grows with every artifact authored, and orientation needs the module map, not 500 entries. */
 /** How long working-tree facts from git stay cached. See {@link Verbs.vcsFacts}. */
+/** Bounded path list on a session anchor — a resume needs a pointer, not an inventory. */
+const SESSION_ANCHOR_PATHS_MAX = 20;
+/** One anchor event per 5 minutes per distinct working set. */
+const SESSION_ANCHOR_BUCKET_MS = 5 * 60 * 1000;
+
 const VCS_FACT_TTL_MS = 2000;
 
 const DEFAULT_OVERVIEW_ANALYSES = 40;
@@ -3583,6 +3596,64 @@ export class Verbs {
    * claims are awaiting admission rather than because nothing was ever recorded. Returns `{}` when
    * there is nothing staged, so the response shape is untouched in the common case.
    */
+  /**
+   * Record where this session is working, so a session that DIES leaves something to come back to.
+   *
+   * Reported from real use: an IDE session times out and the context is gone. The lifecycle-hook
+   * path solves this only for clients that expose a hook surface — of the seven adapters, exactly
+   * one does. Every other client (Copilot, Cursor, Codex, Windsurf, Gemini) is instruction-only, so
+   * a hook-based resume helps precisely the users who did not report the problem.
+   *
+   * Every client reaches crib through THIS server, though. Observing the anchor here is therefore
+   * the client-agnostic version of the same idea, and it needs no cooperation from the agent — which
+   * matters because an agent whose session was killed cannot cooperate.
+   *
+   * Coordinates only: HEAD and the paths being worked on. Contents, prompts, transcripts and tool
+   * IO stay excluded, exactly as the capture policy requires.
+   *
+   * NEVER throws and never changes a response. A resume breadcrumb that could fail a tool call
+   * would trade a real capability for a speculative one.
+   */
+  noteSessionActivity(): void {
+    try {
+      const journal = this.deps.memory?.eventJournal;
+      const vcs = this.deps.vcs;
+      if (!journal || !vcs) return;
+      const root = this.deps.repoRoot;
+      const head = vcs.currentHead(root);
+      const branch = vcs.currentBranch?.(root);
+      const changed = vcs.uncommittedChanges(root).slice(0, SESSION_ANCHOR_PATHS_MAX);
+      // The idempotency key coalesces: one event per (anchor, time bucket). Keying on the anchor
+      // alone would freeze `lastActivity` at the first observation; keying on time alone would
+      // append on every call. Bucketing gives a moving timestamp at a bounded write rate.
+      const bucket = Math.floor(Date.now() / SESSION_ANCHOR_BUCKET_MS);
+      const digest = createHash('sha256')
+        .update(`${head}\u0000${changed.join('\u0000')}`)
+        .digest('hex')
+        .slice(0, 16);
+      journal.append({
+        kind: 'agent.lifecycle',
+        idempotencyKey: `mcp:activity:${digest}:${bucket}`,
+        source: { clientId: 'knowledge-crib-mcp' },
+        identity: resolveServerIdentity(process.env),
+        payload: {
+          event: 'mcp-activity',
+          action: 'observed',
+          hasOutcome: false,
+          repository: {
+            ...(head ? { head } : {}),
+            ...(branch ? { branch } : {}),
+            dirty: changed.length > 0,
+            ...(changed.length > 0 ? { changedPaths: changed } : {}),
+          },
+        },
+        occurredAt: new Date().toISOString(),
+      });
+    } catch {
+      // A breadcrumb is never worth a failed tool call.
+    }
+  }
+
   private pendingNoticeFor(query: string, limit: number): Record<string, unknown> {
     const staged = this.pendingCandidates(query, limit).length;
     if (staged === 0) return {};
