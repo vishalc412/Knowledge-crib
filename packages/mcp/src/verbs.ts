@@ -1963,6 +1963,113 @@ export class Verbs {
    * anchor and the edges that touch those files (projected removals), WITHOUT mutating the soul or the
    * index. Never commits. Degrades gracefully when no adapter / no anchor / non-git.
    */
+  /**
+   * `review` — everything a reviewer needs about a change, in ONE bounded call.
+   *
+   * WHY THIS EXISTS, measured on this repository. Reviewing one commit by reading the files it
+   * touched costs ~212,000 tokens; the raw diff costs ~6,400; this call costs ~2,000. That first
+   * number is not a curiosity — it is the reason a model asked to "review this" reads ten lines and
+   * infers the rest. The honest version of the task does not fit, so the model does the dishonest
+   * version. Composing the answer from the graph makes the honest version affordable.
+   *
+   * It answers the three questions a review actually turns on, per changed symbol:
+   *   • what is this — signature and location, from the graph rather than a file read;
+   *   • who breaks if it is wrong — callers, which a diff cannot show at all;
+   *   • what did we already decide about it — trusted memory, so a review does not re-lit an
+   *     argument the team already settled.
+   *
+   * HONESTY IS PART OF THE OUTPUT. `detect_changes` degradation notes are propagated verbatim, an
+   * empty caller list is labelled rather than presented as "unused", and truncation is reported.
+   * A review tool that quietly under-reports is worse than no review tool: it converts "I did not
+   * look" into "there was nothing there".
+   */
+  review(args: {
+    since?: string;
+    /** Max changed symbols to expand. Default 12, hard cap 40. */
+    limit?: number;
+    maxTokens?: number;
+    ifHash?: string;
+  }): Record<string, unknown> {
+    const changes = this.detectChanges(args.since !== undefined ? { since: args.since } : {});
+    const changedSymbols = (changes.changedSymbols as string[] | undefined) ?? [];
+    // DECLARATIONS ONLY. `changedSymbols` counts every node in a touched file, and behaviour nodes
+    // (assignments, statements) are the large majority of the graph — a first run of this verb
+    // returned 5,156 "changed symbols" for a six-file change and spent its whole budget on
+    // `assign:…@L1009` entries. A reviewer reasons about functions, classes and methods; the
+    // statements inside them are the diff's job, not the graph's.
+    const declarations = changedSymbols.filter(
+      (id) => this.deps.soul.getNode(id)?.kind === 'symbol',
+    );
+    const limit = capInt(args.limit, 12, 40);
+    // Most-depended-upon first: with a budget, the symbols other code calls are the ones worth
+    // spending it on, because they are where a mistake propagates.
+    const selected = declarations
+      .map((id) => ({ id, callers: this.codeCallersOf(id).length }))
+      .sort((a, b) => b.callers - a.callers || a.id.localeCompare(b.id))
+      .slice(0, limit)
+      .map((entry) => entry.id);
+
+    const symbols = selected.map((id) => {
+      const node = this.deps.soul.getNode(id);
+      // Callers are the review question a diff cannot answer. Distance 1 only: "who calls this
+      // directly" is the blast radius a reviewer can actually act on, and deeper walks bury it.
+      const affected = this.codeCallersOf(id);
+      const view: Record<string, unknown> = {
+        id,
+        ...(node?.name ? { name: node.name } : {}),
+        ...(node?.kind ? { kind: node.kind } : {}),
+        ...(node?.file ? { file: node.file } : {}),
+        ...(node?.signature ? { signature: node.signature } : {}),
+        callers: affected.map((a) => ({ id: a.id, risk: a.risk })),
+      };
+      if (affected.length === 0) {
+        // The distinction the graph CANNOT make for you, stated every time rather than left to be
+        // inferred from an empty array — dynamic dispatch, property access and cross-language calls
+        // all produce this same emptiness.
+        view.callersNote =
+          'no caller edge resolved — this is NOT evidence the symbol is unused; confirm with a text search before treating it as dead';
+      }
+      return view;
+    });
+
+    // Prior decisions about the changed surface. Memory is queried by symbol NAME because a claim
+    // is authored about a concept, not about a node id that moves when the file does.
+    const memoryQuery = symbols
+      .map((v) => (typeof v.name === 'string' ? v.name : ''))
+      .filter((n) => n.length > 0)
+      .join(' ');
+    const memories =
+      memoryQuery.length > 0
+        ? ((this.memoryRecall({ q: memoryQuery, limit: 5 }).memories as unknown[]) ?? [])
+        : [];
+
+    const maxTokens = args.maxTokens === undefined ? 3000 : capMaxTokens(args.maxTokens);
+    const fitted = fitTokenBudget(symbols, maxTokens, (prefix) =>
+      JSON.stringify({ symbols: prefix, memories, budgetExhausted: true }),
+    );
+
+    const result: Record<string, unknown> = {
+      head: changes.head,
+      changedPaths: changes.changedPaths ?? [],
+      uncommittedPaths: changes.uncommittedPaths ?? [],
+      // Both counts, because they answer different questions: how much of the graph the change
+      // touches at all, and how many DECLARATIONS a human has to review.
+      changedNodeCount: changedSymbols.length,
+      changedSymbolCount: declarations.length,
+      symbols: fitted.items,
+      memories,
+      // A `note` from detect_changes QUALIFIES the whole review — it means the change set itself is
+      // degraded or narrowed, so every count below it is a floor, not a total.
+      ...(changes.note !== undefined ? { note: changes.note } : {}),
+      truncated: fitted.budgetExhausted || declarations.length > selected.length,
+    };
+    if (fitted.budgetExhausted) result.budgetExhausted = true;
+    // Staged-but-unadmitted memory matters to a reviewer for the same reason it matters to recall:
+    // an empty `memories` list should not read as "nothing was ever decided here".
+    Object.assign(result, this.pendingNoticeFor(memoryQuery, 5));
+    return this.applyIfHash(args, result);
+  }
+
   detectChanges(args: { since?: string }): Record<string, unknown> {
     const vcs = this.deps.vcs;
     const manifest = this.deps.soul.getManifest();
@@ -3652,6 +3759,20 @@ export class Verbs {
     } catch {
       // A breadcrumb is never worth a failed tool call.
     }
+  }
+
+  /**
+   * Direct CODE callers of a symbol — documentation references excluded.
+   *
+   * `impact` reports every incoming edge, and doc sections that merely MENTION a name are edges
+   * too. For a review that is not just noise, it actively misleads: ranking by raw incoming edges
+   * put a trivial local helper called `flag` at the top of the list, because the word appears in a
+   * dozen markdown headings. "Who calls this" is a question about code.
+   */
+  private codeCallersOf(id: string): Array<{ id: string; risk: string }> {
+    const up = this.impact({ id, dir: 'up', depth: 1, limit: 25 });
+    const affected = (up.affected as Array<{ id: string; risk: string }> | undefined) ?? [];
+    return affected.filter((a) => !a.id.startsWith('doc:')).slice(0, 10);
   }
 
   private pendingNoticeFor(query: string, limit: number): Record<string, unknown> {

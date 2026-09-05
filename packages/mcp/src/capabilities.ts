@@ -54,6 +54,10 @@ export const CAPABILITIES: readonly Capability[] = [
   { tool: 'query', verb: 'query' },
   { tool: 'overview', verb: 'overview' },
   { tool: 'detect_changes', verb: 'detectChanges' },
+  // `review` composes detect_changes + impact + memory into the one call a code review needs.
+  // Standalone rather than an op: it is reached for constantly during review, and reading a diff
+  // instead costs ~100x the tokens (docs/bench/review-cost.md).
+  { tool: 'review', verb: 'review' },
   { tool: 'brief', verb: 'brief' },
   { tool: 'memory_recall', verb: 'memoryRecall' },
   { tool: 'memory_observe', verb: 'memoryObserve' },

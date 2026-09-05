@@ -251,6 +251,21 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
     async (a) => TOOL_RESULT(verbs.detectChanges(a)),
   );
 
+  server.registerTool(
+    'review',
+    {
+      description:
+        'Everything a review needs about a change, in ONE call: what changed, each changed symbol with its signature, WHO CALLS IT (a diff cannot show this), and prior trusted decisions about it. Use this INSTEAD of reading the touched files — on a real commit that is ~2k tokens here versus ~212k reading files, which is why a file-reading review degrades into skimming. An empty `callers` list is labelled, never silently presented as "unused"; a `note` means the change set itself is degraded and every count is a floor.',
+      inputSchema: {
+        since: z.string().optional(),
+        limit: z.number().int().optional(),
+        maxTokens: z.number().int().optional(),
+        ifHash: z.string().optional(),
+      },
+    },
+    async (a) => TOOL_RESULT(verbs.review(a)),
+  );
+
   // `extract_rules` had no keep-standalone rationale (unlike brief/context/query/source above):
   // it walks a procedure to a decision table, and dossier already carries decision-table semantics
   // (withRules). It is folded behind dossier{op:'rules'} and its name lives on in RETIRED_ALIASES.

@@ -624,6 +624,8 @@ async function main(argvRaw: string[]): Promise<number> {
       return cmdReconstruct(rest, ctx);
     case 'impact':
       return cmdImpact(rest, ctx);
+    case 'review':
+      return cmdReview(rest, ctx);
     case 'explain':
       return cmdExplain(rest, ctx);
     case 'rename':
@@ -1579,6 +1581,37 @@ async function cmdReconstruct(args: string[], ctx?: CmdCtx): Promise<number> {
     )}\n`,
   );
   index.close();
+  return EXIT.OK;
+}
+
+/**
+ * `crib review [--since <ref>] [--limit N] [--max-tokens N]` — the review packet.
+ *
+ * The CLI twin of the `review` MCP verb, so the same answer is available in a terminal, a hook or
+ * CI without an MCP client. See the verb for why this exists rather than reading the diff.
+ */
+function cmdReview(args: string[], ctx?: CmdCtx): number {
+  const opened = openVerbs(args, ctx);
+  if (!opened) return EXIT.NOT_INDEXED;
+  const { verbs, index } = opened;
+  const since = stringFlag(args, '--since');
+  const limit = intFlag(args, '--limit');
+  const maxTokens = intFlag(args, '--max-tokens');
+  try {
+    process.stdout.write(
+      `${JSON.stringify(
+        verbs.review({
+          ...(since !== undefined ? { since } : {}),
+          ...(limit !== undefined ? { limit } : {}),
+          ...(maxTokens !== undefined ? { maxTokens } : {}),
+        }),
+        null,
+        2,
+      )}\n`,
+    );
+  } finally {
+    index.close();
+  }
   return EXIT.OK;
 }
 
