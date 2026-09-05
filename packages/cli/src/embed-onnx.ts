@@ -245,12 +245,23 @@ function ensureWorker() {
     },
     transferList: [channel.port2],
   });
-  // The worker must not hold the process open: crib exits when its work is done, not when the
-  // embedder feels like it.
+  // Idle by default so the embedder never keeps a finished process alive — but see callWorker:
+  // the handle is re-\`ref\`d for the duration of each call. Leaving it permanently unref'd let
+  // Node judge the loop empty while the main thread sat in \`Atomics.wait\`, and the process exited
+  // MID-EMBED, returning nothing and throwing nothing. It only survived inside \`crib serve\`
+  // because stdio happened to hold the loop open — a bare script got silence.
   worker.unref();
   // READINESS COMES OVER THE ATOMICS CHANNEL. \`Atomics.wait\` parks this thread, so a
   // \`worker.on('message')\` handler here would never run — waiting on one deadlocks until timeout.
-  if (!awaitSignal(300000)) throw new Error('embedder worker did not start in 300s');
+  // The startup wait blocks the same way a call does, so the handle must be held here too.
+  worker.ref();
+  let started;
+  try {
+    started = awaitSignal(300000);
+  } finally {
+    worker.unref();
+  }
+  if (!started) throw new Error('embedder worker did not start in 300s');
   const hello = receiveMessageOnPort(port);
   if (!hello) throw new Error('embedder worker started without reporting readiness');
   if (!hello.message.ok) throw new Error(hello.message.error);
@@ -258,6 +269,16 @@ function ensureWorker() {
 
 function callWorker(texts) {
   ensureWorker();
+  // Hold the process open for exactly as long as this call takes.
+  worker.ref();
+  try {
+    return callWorkerLocked(texts);
+  } finally {
+    worker.unref();
+  }
+}
+
+function callWorkerLocked(texts) {
   Atomics.store(flag, 0, 0);
   port.postMessage({ texts });
   // Block the main thread until the worker signals. \`receiveMessageOnPort\` drains the reply
