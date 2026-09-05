@@ -377,6 +377,9 @@ export interface GatherRecallOptions {
 export function gatherRecall(stores: RecallStores, opts: GatherRecallOptions = {}): GatheredRecall {
   const sources = opts.sources ?? DEFAULT_RECALL_SOURCES;
   const principal = resolveCallerPrincipal(opts);
+  // Defaults to false — see the option's own doc for why that is the safe default in the normal
+  // single-principal deployment, and why a multi-principal gather must set it.
+  const strictPrincipal = opts.strictPrincipal ?? false;
   const records: TaggedRecord[] = [];
   const decisions: MemoryDecision[] = [];
   const localDecisions: MemoryDecision[] = [];
