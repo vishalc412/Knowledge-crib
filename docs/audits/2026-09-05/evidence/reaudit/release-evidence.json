@@ -1,0 +1,142 @@
+{
+  "format": "knowledge-crib-release-evidence",
+  "formatVersion": 1,
+  "generatedAt": "2026-09-05T15:56:01.051Z",
+  "product": {
+    "name": "knowledge-crib",
+    "packages": {
+      "@knowledge-crib/core": "0.1.0",
+      "@knowledge-crib/mcp": "0.1.0",
+      "@knowledge-crib/memory": "0.1.0",
+      "@knowledge-crib/parsers": "0.1.0",
+      "@knowledge-crib/pipeline": "0.1.0",
+      "@knowledge-crib/soul-schema": "0.1.0",
+      "@knowledge-crib/ui": "0.1.0",
+      "knowledge-crib": "0.1.0"
+    },
+    "schemas": {
+      "soul": "1.6",
+      "memory": [
+        "2",
+        "3"
+      ],
+      "evidenceManifest": "1"
+    },
+    "clients": {}
+  },
+  "reproducibility": {
+    "git": {
+      "commit": "3fa52e53b2e4d9e29200e1c621db3a4ecb173bf0",
+      "branch": "debug/auditMaster",
+      "dirty": true,
+      "dirtyPaths": [
+        "docs/audits/2026-09-05/evidence/reaudit/"
+      ],
+      "dirtyDigest": "sha256:0a87d7536c814876fba9d1facfb8447d93cea0fe44889f664d7c19c45b4aca1d"
+    },
+    "platform": {
+      "os": "darwin",
+      "arch": "arm64",
+      "node": "v22.23.1",
+      "cpu": "Apple M4 Max",
+      "ramBytes": 51539607552
+    },
+    "workload": {
+      "name": "memory-launch-corpus",
+      "queries": 500,
+      "records": 307,
+      "scale": 1
+    }
+  },
+  "retrieval": {
+    "mode": "lexical-fallback",
+    "scorer": "memory-rank-v2:none:bm25:lexical-only",
+    "model": {
+      "state": "invalid",
+      "reason": "size drift README.md: 5167 != 4382; hash drift README.md: content changed since install"
+    }
+  },
+  "gates": [
+    {
+      "id": "G1",
+      "label": "exact recall@5 = 100%",
+      "measured": 1,
+      "threshold": 1,
+      "comparison": "gte",
+      "pass": true,
+      "detail": "153 exact-family queries — recall@5 100.0% must equal 100%"
+    },
+    {
+      "id": "G2",
+      "label": "word-disjoint paraphrase recall@5 >= 80%",
+      "measured": 0.026143790849673203,
+      "threshold": 0.8,
+      "comparison": "gte",
+      "pass": false,
+      "detail": "153 word-disjoint paraphrase queries — recall@5 2.6% (tie floor 1.5%) vs >= 80%"
+    },
+    {
+      "id": "G3",
+      "label": "MRR over every labeled query >= 0.75",
+      "measured": 0.5201333333333333,
+      "threshold": 0.75,
+      "comparison": "gte",
+      "pass": false,
+      "detail": "500 labeled queries — MRR 0.520 vs >= 0.75"
+    },
+    {
+      "id": "G4",
+      "label": "temporal + contradiction classification >= 90%",
+      "measured": 1,
+      "threshold": 0.9,
+      "comparison": "gte",
+      "pass": true,
+      "detail": "56/56 temporal+contradiction classifications correct vs >= 90%"
+    },
+    {
+      "id": "G5",
+      "label": "stale memory surfaced as current < 1%",
+      "measured": 0,
+      "threshold": 0.01,
+      "comparison": "lte",
+      "pass": true,
+      "detail": "0/36 temporal queries surfaced the superseded record vs < 1%"
+    },
+    {
+      "id": "G6",
+      "label": "untrusted content in normal recall = 0",
+      "measured": 0,
+      "threshold": 0,
+      "comparison": "lte",
+      "pass": true,
+      "detail": "0 mis-shelved/candidate/hostile records in any top-5 across 500 queries — must be 0"
+    },
+    {
+      "id": "G7",
+      "label": "unauthorised cross-principal results = 0",
+      "measured": 0,
+      "threshold": 0,
+      "comparison": "lte",
+      "pass": true,
+      "detail": "0 scoped principal queries returning a foreign principal's record across 30 — must be 0 (structural store separation)"
+    },
+    {
+      "id": "G8",
+      "label": "adversarial claim round-trip = 100%",
+      "measured": 1,
+      "threshold": 1,
+      "comparison": "gte",
+      "pass": true,
+      "detail": "20/20 hostile claims byte-identical through real-store round-trip — must be 100%"
+    }
+  ],
+  "acceptance": {
+    "pass": false,
+    "requiredFailures": [
+      "semantic-model",
+      "G2",
+      "G3"
+    ],
+    "preregistration": "docs/bench/launch-gates.md"
+  }
+}

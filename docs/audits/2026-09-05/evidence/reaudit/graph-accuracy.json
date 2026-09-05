@@ -1,0 +1,37 @@
+{
+  "format": "knowledge-crib-graph-accuracy",
+  "formatVersion": 1,
+  "generatedAt": "2026-09-05T15:57:01.600Z",
+  "fixture": "ts-resolution-accuracy",
+  "labelsSha256": "sha256:19daeaa1a0d6ceb0e9be9f62ca911fe645a57b059493fcfd3c037c56080fc4c4",
+  "language": "typescript",
+  "resolutionMethod": "static",
+  "categories": [
+    "cross-file-import",
+    "callback",
+    "shadowing",
+    "typed-parameter-receiver",
+    "new-expression-receiver",
+    "same-name-method-disambiguation",
+    "dynamic-dispatch",
+    "overload",
+    "framework-constructor-injection"
+  ],
+  "counts": {
+    "labelledPositive": 5,
+    "labelledUnresolved": 2,
+    "truePositive": 5,
+    "falsePositive": 0,
+    "falseNegative": 0
+  },
+  "precision": 1,
+  "recall": 1,
+  "unresolvedWithoutConfidentEdge": true,
+  "actualEdges": [
+    "Controller.execute -> Alpha.ping",
+    "run -> Alpha.ping",
+    "run -> Beta.ping",
+    "run -> Overloaded.convert",
+    "run -> helper"
+  ]
+}
