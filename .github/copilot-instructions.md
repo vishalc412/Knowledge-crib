@@ -1,4 +1,4 @@
-> **Memory tool policy:** knowledge-crib is the only memory / code-graph tool for this repository. Graphify, GitNexus, and claude-mem are disabled or removed here — do not install, invoke, or suggest them for this project; use the crib protocol below instead.
+> **Memory tool policy:** knowledge-crib is the only memory / code-context tool for this repository. Graphify, GitNexus, gstack/gbrain, claude-mem, Context7, Remember, Greptile, Sourcegraph, and Hermes RAG are disabled here — do not install, invoke, or suggest them for this project; use the crib protocol below instead.
 > **Default for context:** before reading files or grepping to understand code, run `crib query`/`context`/`brief` first — it is local, deterministic, and far cheaper in tokens and turns than exploring by hand. Fall back to file reads only for what the graph can't answer.
 
 <!-- crib:start -->

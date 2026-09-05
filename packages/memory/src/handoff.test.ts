@@ -226,3 +226,26 @@ describe('buildHandoff — determinism (the ifHash contract)', () => {
     expect(out.intakes.count).toBe(1);
   });
 });
+
+describe('buildHandoff — pending captures read the field the outbox actually carries', () => {
+  it('renders `claim`, which is what a CaptureOutboxEntry holds', () => {
+    // Regression: the projection read `p.observation`, a field the outbox entry does not have, so
+    // every pending capture rendered as an empty line. Six real captures in this repo's own ledger
+    // exposed it; no unit test did, because the fixtures used the field the code expected.
+    const out = buildHandoff(
+      input({
+        pending: [{ id: 'cap:1', subject: 'topic:x', claim: 'the deploy retries three times' }],
+      }),
+    );
+    expect(out.pendingCaptures[0]?.observation).toBe('the deploy retries three times');
+  });
+
+  it('still accepts `observation` for callers that pass that shape', () => {
+    const out = buildHandoff(
+      input({
+        pending: [{ id: 'cap:2', subject: 'topic:y', observation: 'looked at the retry path' }],
+      }),
+    );
+    expect(out.pendingCaptures[0]?.observation).toBe('looked at the retry path');
+  });
+});
