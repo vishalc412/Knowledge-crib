@@ -238,10 +238,10 @@ config. See [`knowledge-crib-client-setup.md`](knowledge-crib-client-setup.md) �
 **provenance-tagged** (`method`, `provenance` = `EXTRACTED` | `INFERRED`, `confidence`, `evidence`)
 so the agent can filter to deterministic-only (`extractedOnly: true`).
 
-> The 17 verbs below are the **deterministic structural** layer (AST-extracted, no model in the
+> The verbs below are the **deterministic structural** layer (AST-extracted, no model in the
 > loop). A second **LLM-authored semantic** layer adds 6 more verbs — `enrich({op:'status'})`,
 > `enrich({op:'next'})`, `enrich({op:'save'})`, `enrich({op:'audit'})`, `overview`, `neighbors({op:'llm'})` — described in
-> [§10](#10-the-llm-semantic-graph-layer-the-grove-plan). 23 verbs total.
+> [§10](#10-the-llm-semantic-graph-layer-the-grove-plan). See docs/STATS.md for the current tool/operation counts.
 
 ### `status`
 Health + whether indexed. `→ { indexed, schemaVersion, stats{nodes,edges,clusters}, vcsHead, incrementalSince, capabilities }`
@@ -511,7 +511,7 @@ Drove `crib serve FTCCloud` through a canonical MCP SDK client (`Client` +
 
 ```
 initialize  → serverInfo { name: "knowledge-crib", version: "0.1.0" }
-tools/list  → 17 tools: 12 structural (status, context, source, dossier, impact, query, describes,
+tools/list  → (historical transcript — the live count is in docs/STATS.md) 12 structural (status, context, source, dossier, impact, query, describes,
                         neighbors, impact({op:'path'}), detect_changes, extract_rules, gaps) + 5 LLM-graph
                         (enrich({op:'status'}), enrich({op:'next'}), enrich({op:'save'}), overview, neighbors({op:'llm'}))
                         # historical transcript — the server registers 23 tools today (see §4)

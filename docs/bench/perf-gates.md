@@ -1,5 +1,24 @@
 # Launch gate — performance and reliability
 
+<!-- CURRENT STATE — maintained. Sections below are an append-only history; earlier rows that
+     say "BLOCKED" or "not yet passing" for 100k were superseded by the final run. -->
+
+> ## Current state — 5 Sep 2026
+>
+> | gate | threshold | measured | verdict |
+> | --- | --- | --- | --- |
+> | Warm local recall p95 @ 10k | < 100 ms | **8.3 ms** | **PASS** |
+> | Warm local recall p95 @ 100k | < 300 ms | **132.8 ms** | **PASS** |
+> | `git commit` blocking added | 0 ms | 0 ms | **PASS** |
+> | Failed refresh readability | prior generation preserved | covered by Gate 3.3 tests | **PASS** |
+> | One-file watch update → queryable | < 5 s p95 | — | **NOT MEASURED** (no E2E fixture) |
+> | Sync convergence soak | no data loss | — | **NOT RUN** (unit-tested only) |
+>
+> Recall latency went 2074 ms → 8.3 ms at 10k and 3775 ms → 132.8 ms at 100k across seven
+> loop-invariant defects. The two open rows are open: they have never been measured, and no claim
+> should be made about either.
+
+
 Status: DESIGN (frozen before the launch-verification run). Existing measurements from
 `docs/bench/scale-curve.md` and Gate 3's E2E are the baselines; the launch run re-measures against
 the gates below on the current build and appends results here.

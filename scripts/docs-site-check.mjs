@@ -28,7 +28,7 @@
  * no build dependency.
  */
 import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -93,6 +93,55 @@ else
   fail(
     'docs/README.md does not reference STATS.md — the de-hardcode must point readers at the canonical source',
   );
+
+// ── the MCP surface count may live in exactly ONE place ──────────────────────
+// Four documents once claimed 23, 19, 17 and 15 MCP verbs against a real 16 — including the pitch
+// deck. Counts drift because they are retyped; the fix is to make retyping fail the build. STATS.md
+// is generated from the capability manifest that server.ts derives its op enums from, so this gate
+// asserts (a) the generated count is real, and (b) no narrative doc restates one.
+{
+  const stats = readFileSync(join(REPO, 'docs', 'STATS.md'), 'utf8');
+  const toolRow = stats.match(/^\|\s*MCP tools registered\s*\|\s*(\d+)\s*\|/m);
+  const opRow = stats.match(/^\|\s*MCP operations\s*\|\s*(\d+)\s*\|/m);
+  if (!toolRow || Number(toolRow[1]) === 0) {
+    fail(
+      'docs/STATS.md has no MCP tool count — `pnpm docs:stats` could not read the capability manifest',
+    );
+  } else if (!opRow || Number(opRow[1]) === 0) {
+    fail('docs/STATS.md has no MCP operation count');
+  } else {
+    pass(`docs/STATS.md carries the MCP surface (${toolRow[1]} tools / ${opRow[1]} operations)`);
+  }
+
+  // Any doc that spells out a count is a doc that will be wrong later. Transcripts and the
+  // changelog are allowed: one is labelled historical, the other IS history.
+  const ALLOW = new Set(['STATS.md', 'CHANGELOG.md']);
+  const offenders = [];
+  const scan = (dir) => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      if (entry.name.startsWith('.') || entry.name === 'node_modules') continue;
+      const full = join(dir, entry.name);
+      if (entry.isDirectory()) {
+        scan(full);
+        continue;
+      }
+      if (!/\.(md|html)$/.test(entry.name) || ALLOW.has(entry.name)) continue;
+      const text = readFileSync(full, 'utf8');
+      for (const m of text.matchAll(/\b(\d+)\s+MCP\s+(?:verbs|tools)\b/gi)) {
+        if (m[1] !== toolRow[1])
+          offenders.push(`${full.replace(`${REPO}/`, '')}: "${m[0]}" (actual ${toolRow[1]})`);
+      }
+    }
+  };
+  scan(join(REPO, 'docs'));
+  if (offenders.length > 0) {
+    fail(
+      `stale MCP counts restated in prose — reference docs/STATS.md instead:\n    ${offenders.join('\n    ')}`,
+    );
+  } else {
+    pass('no document restates a stale MCP count');
+  }
+}
 
 // --- (c) rebuild the site, assert it carries the current canonical numbers ------------------
 node(['scripts/docs-site-build.mjs']);

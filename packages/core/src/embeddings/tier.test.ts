@@ -64,7 +64,11 @@ describe('embedTierReport — the doctor surface', () => {
     expect(r.embedderId).toBe(r.fallbackId);
     expect(r.reason).toContain('DEGRADED OFFLINE FALLBACK');
     expect(r.reason).not.toMatch(/semantic implementation/i);
-    expect(r.reason).toContain('crib embed install');
+    // The reason must hand the operator a runnable fix, and it must be one that works for an npm
+    // install: the old hint named `examples/embedders/minilm-e5`, a path present only in a git
+    // checkout, so the "actionable" hint was unfollowable for most users.
+    expect(r.reason).toContain('crib embed setup');
+    expect(r.reason).not.toContain('examples/embedders');
   });
 
   it('installed manifest: tier reports the pinned model identity', async () => {

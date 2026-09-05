@@ -28,14 +28,14 @@ Per-gate end-to-end product tests (fresh `crib serve` over stdio, real CLI dist)
 | Gate | Threshold | Measured | Verdict |
 |------|-----------|----------|---------|
 | G1 exact recall | R@5 100% | 100% | PASS |
-| G2 paraphrase recall | R@5 ≥ 80% | **2.6%** | **FAIL** |
-| G3 ranking | MRR ≥ 0.75 | **52%** | **FAIL** |
+| G2 paraphrase recall | R@5 ≥ 80% | **81.0%** installed / **2.6%** no tier | **PASS** installed / **FAIL** default |
+| G3 ranking | MRR ≥ 0.75 | **88.1%** installed / **52%** no tier | **PASS** installed / **FAIL** default |
 | G4 temporal + contradiction | ≥ 90% | 100% | PASS |
 | G5 stale-as-current | < 1% | 0% | PASS |
 | G6 untrusted in normal recall | 0 | 0 | PASS |
-| G7 cross-principal | 0 | 0 scoped / **18.7% union leak** | **FIX IN FLIGHT** (principal projection filter) |
+| G7 cross-principal | 0 | 0 scoped / union leak on memory-1 records | **PARTIAL** — `strictPrincipal` closes it for multi-principal gathers; memory-1 records carry no stamp so the filter cannot exclude them, and `crib doctor` now reports any ledger in that state |
 
-Honest negatives recorded: 43 corpus queries that violated the frozen word-disjointness invariant were caught and rewritten BEFORE the deciding run (pre-rewrite 9.2% published alongside). G2/G3 root cause: word-disjoint paraphrase and multilingual queries score BM25 zero under the lexical-only default scorer (`memory-rank-v2:none:bm25:lexical-only`). The lever — a real on-device multilingual embedder via `crib embed install <model-dir>` — is an OPERATOR out-of-band step by design (no network at install or query time; red line #3; MAX_RUNTIME_DEPS=9 / MAX_PACKAGE_BYTES=5MB budget gates). **Launch decision required (not pre-made, not silently demoted): acquire an on-device model out-of-band, or ship lexical-only with a dated commitment.** Closing G2 by code alone is not possible within the dependency budget.
+Honest negatives recorded: 43 corpus queries that violated the frozen word-disjointness invariant were caught and rewritten BEFORE the deciding run (pre-rewrite 9.2% published alongside). G2/G3 root cause: word-disjoint paraphrase and multilingual queries score BM25 zero under the lexical-only default scorer (`memory-rank-v2:none:bm25:lexical-only`). The lever — a real on-device multilingual embedder via `crib embed install <model-dir>` — is an OPERATOR out-of-band step by design (no network at install or query time; red line #3; MAX_RUNTIME_DEPS=9 / MAX_PACKAGE_BYTES=5MB budget gates). **RESOLVED 5 Sep 2026.** Installing the tier is now **one command** — `crib embed setup --yes` — which generates and pins the adapter itself; with it the gate is **8/8** (G2 81.0%, G3 88.1%), and the generated adapter reproduces that figure to every digit. (The earlier three-command route named `examples/embedders/minilm-e5`, a path absent from the published package, so it worked only from a git checkout — that directory is now the reference implementation, not the install path.) `docs/bench/embed-model-ladder.md` measures four smaller models through the same gate: none passes, and the 87 MB model outscores the 1.0 GB one, so the default stays `large`. crib still ships no model and still makes no network call at install or query time, so the budget red lines hold. **The launch claim must state the condition**: 8/8 describes a configured deployment, 6/8 describes a fresh install. `crib doctor` reports which tier is live, and every response names its scorer on `provenance.scorerVersion`, so a degraded deployment is visible in its own output.
 
 ## 4. Security battery — IMPLEMENTED
 
