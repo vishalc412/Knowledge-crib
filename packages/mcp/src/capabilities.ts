@@ -84,6 +84,11 @@ export const CAPABILITIES: readonly Capability[] = [
       // Session handoff — the "where was I?" projection a returning agent (new context window,
       // different IDE, different vendor) calls FIRST, before it can phrase a question.
       { op: 'handoff', verb: 'memoryHandoff' },
+      { op: 'intake_create', verb: 'memoryIntakeCreate' },
+      { op: 'intake_checkpoint', verb: 'memoryIntakeCheckpoint' },
+      { op: 'intake_list', verb: 'memoryIntakeList' },
+      { op: 'intake_get', verb: 'memoryIntakeGet' },
+      { op: 'intake_share', verb: 'memoryIntakeShare' },
     ],
   },
   {

@@ -199,6 +199,27 @@ absolute `which crib` path so GUI-launched IDEs that don't inherit the shell PAT
 server. See the per-IDE sections below for what each writes, and the [CLI spec](knowledge-crib-cli.md)
 for the full flag reference.
 
+When an install changes a configuration, the result says `restartRequired: true` and prints the
+specific host to restart. Restart that client before testing the new MCP entry; the installer does
+not claim a live process was hot-reloaded.
+
+### Default session continuation
+
+Install the shared instruction protocol for every supported client and Claude's verified
+SessionStart hook:
+
+```bash
+crib adapters install --client all --scope project
+crib adapters hooks install --client claude
+```
+
+Every client is then instructed to run handoff first, create or match a durable intake, checkpoint
+at plan/progress/block/end boundaries, and revalidate repository drift. Claude's SessionStart hook
+also emits `crib session bootstrap --json` directly into the new session. Sharing remains explicit:
+use `crib intake share intake:<id> --audience devices` for configured encrypted sync, or
+`--audience team` for Git-backed project sharing. Neither path is triggered merely by opening a
+session.
+
 ---
 
 ## 4. Claude Code

@@ -405,6 +405,19 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
         // ── Gate 4 sync: read-only status is the default; push/pull reach the rejection path ──
         request: z.enum(['status', 'push', 'pull']).optional(),
         ifHash: z.string().optional(),
+        // ── durable intake continuation ──
+        original: z.string().optional(),
+        outcome: z.string().optional(),
+        scope: z.array(z.string()).optional(),
+        constraints: z.array(z.string()).optional(),
+        acceptanceCriteria: z.array(z.string()).optional(),
+        sensitivity: z.enum(['public', 'internal', 'confidential', 'restricted']).optional(),
+        retentionPolicyId: z.string().optional(),
+        phase: z.enum(['intake', 'planning', 'executing', 'blocked', 'verifying']).optional(),
+        summary: z.string().optional(),
+        nextSafeAction: z.string().optional(),
+        completedStepIds: z.array(z.string()).optional(),
+        audience: z.enum(['devices', 'team']).optional(),
       },
     },
     async (a) => {
@@ -502,6 +515,83 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
           return TOOL_RESULT(
             verbs.memoryHandoff({
               ...(a.limit !== undefined ? { limit: a.limit } : {}),
+              ...(a.ifHash !== undefined ? { ifHash: a.ifHash } : {}),
+            }),
+          );
+        case 'intake_create':
+          if (!a.original || !a.outcome || !a.actor)
+            return TOOL_RESULT({
+              error: {
+                code: 'BAD_REQUEST',
+                message: 'op=intake_create requires original, outcome, and actor',
+              },
+            });
+          return TOOL_RESULT(
+            verbs.memoryIntakeCreate({
+              original: a.original,
+              outcome: a.outcome,
+              actor: a.actor,
+              ...(a.scope !== undefined ? { scope: a.scope } : {}),
+              ...(a.constraints !== undefined ? { constraints: a.constraints } : {}),
+              ...(a.acceptanceCriteria !== undefined
+                ? { acceptanceCriteria: a.acceptanceCriteria }
+                : {}),
+              ...(a.sensitivity !== undefined ? { sensitivity: a.sensitivity } : {}),
+              ...(a.retentionPolicyId !== undefined
+                ? { retentionPolicyId: a.retentionPolicyId }
+                : {}),
+              ...(a.tool !== undefined ? { tool: a.tool } : {}),
+              ...(a.ifHash !== undefined ? { ifHash: a.ifHash } : {}),
+            }),
+          );
+        case 'intake_checkpoint':
+          if (!a.id || !a.phase || !a.summary || !a.nextSafeAction || !a.actor)
+            return TOOL_RESULT({
+              error: {
+                code: 'BAD_REQUEST',
+                message:
+                  'op=intake_checkpoint requires id, phase, summary, nextSafeAction, and actor',
+              },
+            });
+          return TOOL_RESULT(
+            verbs.memoryIntakeCheckpoint({
+              id: a.id,
+              phase: a.phase,
+              summary: a.summary,
+              nextSafeAction: a.nextSafeAction,
+              actor: a.actor,
+              ...(a.completedStepIds !== undefined ? { completedStepIds: a.completedStepIds } : {}),
+              ...(a.ifHash !== undefined ? { ifHash: a.ifHash } : {}),
+            }),
+          );
+        case 'intake_list':
+          return TOOL_RESULT(
+            verbs.memoryIntakeList({ ...(a.ifHash !== undefined ? { ifHash: a.ifHash } : {}) }),
+          );
+        case 'intake_get':
+          if (!a.id)
+            return TOOL_RESULT({
+              error: { code: 'BAD_REQUEST', message: 'op=intake_get requires id' },
+            });
+          return TOOL_RESULT(
+            verbs.memoryIntakeGet({
+              id: a.id,
+              ...(a.ifHash !== undefined ? { ifHash: a.ifHash } : {}),
+            }),
+          );
+        case 'intake_share':
+          if (!a.id || !a.audience || !a.actor)
+            return TOOL_RESULT({
+              error: {
+                code: 'BAD_REQUEST',
+                message: 'op=intake_share requires id, audience, and actor',
+              },
+            });
+          return TOOL_RESULT(
+            verbs.memoryIntakeShare({
+              id: a.id,
+              audience: a.audience,
+              actor: a.actor,
               ...(a.ifHash !== undefined ? { ifHash: a.ifHash } : {}),
             }),
           );

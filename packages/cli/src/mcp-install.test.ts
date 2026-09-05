@@ -53,6 +53,8 @@ describe('installMcp — claude (project-scope .mcp.json)', () => {
     const entry = (cfg.mcpServers as Record<string, { command: string; args: string[] }>)[NAME]!;
     expect(entry.command).toBe(RESOLVED_BIN);
     expect(entry.args).toEqual(['serve', '.']); // portable: project-scope spawns with CWD=root
+    expect(r.restartRequired).toBe(true);
+    expect(r.restartInstruction).toMatch(/restart Claude Code/i);
   });
 
   it('preserves sibling servers and is idempotent', () => {
@@ -66,10 +68,14 @@ describe('installMcp — claude (project-scope .mcp.json)', () => {
     // second run is a no-op
     const second = first(installMcp(repo, { ide: 'claude', scope: 'project', bin: BIN }));
     expect(second.written).toBe(false);
+    expect(second.restartRequired).toBe(false);
     // sibling still intact after re-run
     expect(
       (parse(join(repo, '.mcp.json')).mcpServers as Record<string, unknown>).other,
     ).toBeDefined();
+    const listed = listMcp(repo, { ide: 'claude', scope: 'project' })[0]!;
+    expect(listed.restartRequired).toBe(true);
+    expect(listed.restartInstruction).toMatch(/restart Claude Code/i);
   });
 });
 

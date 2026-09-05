@@ -1,38 +1,48 @@
+> **Memory tool policy:** knowledge-crib is the only memory / code-graph tool for this repository. Graphify, GitNexus, and claude-mem are disabled or removed here — do not install, invoke, or suggest them for this project; use the crib protocol below instead.
+> **Default for context:** before reading files or grepping to understand code, run `crib query`/`context`/`brief` first — it is local, deterministic, and far cheaper in tokens and turns than exploring by hand. Fall back to file reads only for what the graph can't answer.
+
 <!-- crib:start -->
 ## Knowledge-crib agent memory protocol (vendor-neutral)
 
 This repository uses knowledge-crib as a shared, vendor-neutral memory substrate. Every agent session — Claude, Cursor, Copilot/VS Code, Codex, Windsurf, Gemini, or any MCP-capable tool — follows this protocol. It does not change your tool; it tells you how to use memory safely.
 
-### 1. Recall before you act
+### 1. Restore durable work before acting
+- Run handoff before relying on prior project context: call the `memory` MCP tool with `op: "handoff"` (or run `crib session bootstrap --json`). Treat the returned primary intake as the default continuation only when the projection identifies exactly one resumable intake.
+- Create or match a durable intake for meaningful user work before planning or editing. Preserve the sanitized original request, interpreted outcome, scope, constraints, and acceptance criteria; never store full transcripts or chain-of-thought.
+- Checkpoint unfinished intake work at meaningful boundaries: after selecting a plan, after material progress, when blocked, and before ending a session. Record completed step IDs, artifacts/receipts, and one concrete next safe action.
+- Validate repository drift from the saved checkpoint before resuming. If HEAD, branch, or the dirty-path digest changed, re-check the plan and next action against the current tree rather than blindly continuing.
+- Never share or sync an intake implicitly. Device sync requires configured encrypted sync plus an explicit devices audience; team visibility requires an explicit team share into Git-backed memory.
+
+### 2. Recall before you act
 - Before relying on a reusable claim, call the `brief` MCP tool (or the `memory_recall` MCP tool, or `crib memory recall "<query>"`) to surface team + local memory for this repository. Memory is the source of truth across sessions — do not assume last session’s state still holds.
 - `brief` returns typed groups: team before local, valid before degraded, current before needs-review. Never mix memory results with BM25 code-search results into one opaque list.
 
-### 2. Record only reusable learnings
+### 3. Record only reusable learnings
 - Persist a memory (via `memory_observe`, or `crib memory propose/attest`) ONLY when it is reusable beyond the current task: a non-obvious fact, a verified procedure, a decision with rationale, a pitfall and its fix, or a convention.
 - NEVER persist ephemeral state, full transcripts, chain-of-thought, raw command output, or secrets. Default `brief` stays within 2,000 tokens; default recall within 1,200.
 
-### 3. Provide evidence — never self-evaluate
+### 4. Provide evidence — never self-evaluate
 - Every memory must carry admissible evidence grounded in the repository: source-quote, execution-assertion, committed-policy, human-attestation, or receipt-pair. An agent NEVER self-asserts a pass: a passing local gate produces a receipt; team trust requires both CI success AND presence on a configured trusted Git ref.
 - Never claim a memory is verified, trusted, or current on your own authority. State what you observed; the freshness engine derives those verdicts from the evidence.
 
-### 4. Non-destructive
+### 5. Non-destructive
 - Memory lives in `.crib/memory/` (team) and `~/.crib/memory/` (local/global) — NOT in this file. Removing this adapter (or this client) removes only this managed block; it does not delete memory. On disagreement do not delete team memory; supersede or quarantine it with admissible counter-evidence instead.
 
 ## Knowledge-crib code intelligence protocol
 
 The same MCP server that serves memory also serves this repository’s code graph. Use the graph, not a text search, to answer structural questions — and read its honesty signals rather than assuming a clean result.
 
-### 5. Analyse blast radius before you edit
+### 6. Analyse blast radius before you edit
 - Before changing a function, class, or method, call `impact({ id: "<symbol>", dir: "up" })` (`op` defaults to `blast`; `dir: "up"` = dependents, `dir: "down"` = dependencies). Report the affected symbols before editing.
 - `risk` on each affected node is DISTANCE-derived, not a judgement: `high` at distance 1, `medium` at 2, `low` beyond. It ranks proximity — it never certifies that an edit is safe.
 - An empty `affected` list is NOT evidence the symbol is unused. It can equally mean the edges are not resolvable by the index (dynamic dispatch, plain-object property access, cross-language calls, reflection). Confirm with a text search before treating a symbol as dead.
 - `truncated: true` means the walk was cut at a limit — the result is a page, not the blast radius. Raise `limit`/`depth` or page with `cursor` before drawing a conclusion.
 
-### 6. Analyse graph changes before you commit
+### 7. Analyse graph changes before you commit
 - Run `detect_changes({})` (optionally `{ since: "<ref>" }`) and review `changedSymbols`, `removedEdges`, `changedPaths` (committed since the anchor) and `uncommittedPaths` (still in the working tree). Both path sets feed `changedSymbols`, so the check works BEFORE you commit.
 - A `note` QUALIFIES the report — it is degraded or narrowed in scope, never a clean bill of health. `vcs adapter not configured`, `not a git work tree` and `no incremental anchor` all return empty arrays; `no commits since the anchor …` means the commit range was empty by construction. Never read an empty result carrying a `note` as "nothing changed".
 
-### 7. Prefer graph verbs over grep
+### 8. Prefer graph verbs over grep
 - Explore unfamiliar code with `query({ q: "<concept>" })`; get callers, callees, and docs for one symbol with `context({ id: "<symbol>" })`; find owning files/modules with `impact({ op: "owners", id })`; find how two symbols connect with `impact({ op: "path", from, to })`.
 - Rename through `rename({ from, to })` — it plans across the call graph and is dry-run by default; apply only with the returned `planId`. Never rename with find-and-replace.
 - `explain({ id })` reports taint/dataflow findings for one callable. `status({ op: "gaps" })` reports what the graph does NOT cover — read it before claiming coverage.

@@ -20,7 +20,14 @@
     "schemaVersion": { "type": "string", "const": "1" },
     "kind": {
       "type": "string",
-      "enum": ["record.upsert", "decision.append", "feedback.append", "purge.mark"]
+      "enum": [
+        "record.upsert",
+        "decision.append",
+        "feedback.append",
+        "intake.upsert",
+        "intake-checkpoint.append",
+        "purge.mark"
+      ]
     },
     "store": { "type": "string", "enum": ["local", "global"] },
     "repoId": { "type": "string", "minLength": 1 },

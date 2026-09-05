@@ -74,9 +74,15 @@ export type MemoryCollection =
   | 'active'
   | 'feedback'
   | 'outbox'
-  | 'dead';
+  | 'dead'
+  | 'intakes';
 
-const TEAM_COLLECTIONS: readonly MemoryCollection[] = ['records', 'decisions', 'receipts'];
+const TEAM_COLLECTIONS: readonly MemoryCollection[] = [
+  'records',
+  'decisions',
+  'receipts',
+  'intakes',
+];
 const LOCAL_COLLECTIONS: readonly MemoryCollection[] = [
   'attempts',
   'candidates',
@@ -86,6 +92,7 @@ const LOCAL_COLLECTIONS: readonly MemoryCollection[] = [
   'decisions',
   'outbox',
   'dead',
+  'intakes',
 ];
 const GLOBAL_COLLECTIONS: readonly MemoryCollection[] = ['records', 'decisions', 'feedback'];
 
@@ -114,6 +121,7 @@ function collectionCountKey(c: MemoryCollection): keyof MemoryCounts | undefined
       return 'feedback';
     case 'outbox':
     case 'dead':
+    case 'intakes':
       return undefined;
   }
 }

@@ -23,7 +23,8 @@
  * feeds an `ifHash` projection, so two handoffs over identical state must be byte-identical.
  */
 import type { AttemptPhase, Verdicts } from './enums.js';
-import type { MemoryRecord, MemoryRecordV2 } from './types.js';
+import { type IntakeProjection, projectIntakes } from './intake-projection.js';
+import type { IntakeCheckpoint, IntakeRequirement, MemoryRecord, MemoryRecordV2 } from './types.js';
 import { isMemoryRecordV2 } from './types.js';
 
 /** An attempt that started and never reached a terminal phase — the literal leftover item. */
@@ -69,6 +70,7 @@ export interface HandoffResponse {
   pendingCaptures: HandoffPendingCapture[];
   needsAttention: HandoffAttention[];
   recent: HandoffRecent[];
+  intakes: IntakeProjection;
   counts: {
     openWork: number;
     pendingCaptures: number;
@@ -92,6 +94,9 @@ export interface HandoffInput {
   pending: readonly { id: string; subject?: string; observation?: string }[];
   /** every gathered record paired with its EFFECTIVE verdicts (post decision + freshness overlay). */
   records: readonly { record: MemoryRecord | MemoryRecordV2; verdicts: Verdicts }[];
+  intakeRequirements?: readonly IntakeRequirement[];
+  intakeCheckpoints?: readonly IntakeCheckpoint[];
+  repository?: IntakeCheckpoint['repository'];
   limits?: { openWork?: number; pending?: number; attention?: number; recent?: number };
 }
 
@@ -213,12 +218,18 @@ export function buildHandoff(input: HandoffInput): HandoffResponse {
   const recent: HandoffRecent[] = recentAll
     .slice(0, limits.recent)
     .map(({ ts: _ts, ...rest }) => rest);
+  const intakes = projectIntakes(
+    input.intakeRequirements ?? [],
+    input.intakeCheckpoints ?? [],
+    input.repository ?? { dirty: false },
+  );
 
   return {
     openWork,
     pendingCaptures,
     needsAttention,
     recent,
+    intakes,
     counts: {
       openWork: openWorkAll.length,
       pendingCaptures: pendingAll.length,

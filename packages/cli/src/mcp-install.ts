@@ -53,8 +53,31 @@ export interface McpInstallResult {
   /** The `command`/`args` embedded in the entry. */
   command: string;
   args: string[];
+  /** True only when this operation changed a host configuration that must be reloaded. */
+  restartRequired: boolean;
+  /** Host-specific reload instruction; never implies that a hot reload already happened. */
+  restartInstruction: string;
   /** Note for unsupported scope/IDE combos (surfaced to the user, non-fatal). */
   note?: string;
+}
+
+const MCP_HOST_LABELS: Record<McpIde, string> = {
+  claude: 'Claude Code',
+  cursor: 'Cursor',
+  vscode: 'VS Code',
+  codex: 'Codex',
+  windsurf: 'Windsurf',
+  gemini: 'Gemini CLI',
+};
+
+function restartFields(
+  ide: McpIde,
+  restartRequired: boolean,
+): Pick<McpInstallResult, 'restartRequired' | 'restartInstruction'> {
+  return {
+    restartRequired,
+    restartInstruction: `Restart ${MCP_HOST_LABELS[ide]} so it reloads the knowledge-crib MCP configuration.`,
+  };
 }
 
 /** Resolve the absolute binary path: explicit override, else `which crib`, else fall back to `'crib'`. */
@@ -208,6 +231,7 @@ export function installMcp(repoRoot: string, opts: McpInstallOptions): McpInstal
         written: false,
         command: bin,
         args: [],
+        ...restartFields(ide, false),
         note: `${ide} does not support ${scope}-scope MCP config (upstream); skipping.`,
       });
       continue;
@@ -220,7 +244,15 @@ export function installMcp(repoRoot: string, opts: McpInstallOptions): McpInstal
         execFileSync('claude', ['mcp', 'add', SERVER_NAME, '-s', 'user', '--', bin, ...args], {
           stdio: ['ignore', 'ignore', 'ignore'],
         });
-        out.push({ ide, scope, configPath: target.configPath, written: true, command: bin, args });
+        out.push({
+          ide,
+          scope,
+          configPath: target.configPath,
+          written: true,
+          command: bin,
+          args,
+          ...restartFields(ide, true),
+        });
       } catch {
         out.push({
           ide,
@@ -229,6 +261,7 @@ export function installMcp(repoRoot: string, opts: McpInstallOptions): McpInstal
           written: false,
           command: bin,
           args,
+          ...restartFields(ide, false),
           note: 'claude CLI not found on PATH; install Claude Code, or use project-scope `crib mcp install --ide claude`.',
         });
       }
@@ -258,7 +291,15 @@ export function installMcp(repoRoot: string, opts: McpInstallOptions): McpInstal
         mkdirSync(dirname(target.configPath), { recursive: true });
         writeFileSync(target.configPath, updated, 'utf8');
       }
-      out.push({ ide, scope, configPath: target.configPath, written, command: bin, args });
+      out.push({
+        ide,
+        scope,
+        configPath: target.configPath,
+        written,
+        command: bin,
+        args,
+        ...restartFields(ide, written),
+      });
       continue;
     }
 
@@ -269,7 +310,15 @@ export function installMcp(repoRoot: string, opts: McpInstallOptions): McpInstal
     const obj = readJson(target.configPath);
     const { written, obj: next } = mergeJsonManaged(obj, rootKey, SERVER_NAME, entry);
     if (written) writeJson(target.configPath, next);
-    out.push({ ide, scope, configPath: target.configPath, written, command: bin, args });
+    out.push({
+      ide,
+      scope,
+      configPath: target.configPath,
+      written,
+      command: bin,
+      args,
+      ...restartFields(ide, written),
+    });
   }
   return out;
 }
@@ -280,6 +329,8 @@ export interface McpListEntry {
   scope: McpScope;
   configPath: string;
   present: boolean;
+  restartRequired: boolean;
+  restartInstruction: string;
 }
 export function listMcp(
   repoRoot: string,
@@ -294,12 +345,24 @@ export function listMcp(
       const target = targetFor(ide, scope, absRoot);
       if (!target) continue;
       if (target.format === 'claude-cli') {
-        out.push({ ide, scope, configPath: target.configPath, present: false });
+        out.push({
+          ide,
+          scope,
+          configPath: target.configPath,
+          present: false,
+          ...restartFields(ide, false),
+        });
         continue;
       }
       const present =
         existsSync(target.configPath) && readOrEmpty(target.configPath).includes(SERVER_NAME);
-      out.push({ ide, scope, configPath: target.configPath, present });
+      out.push({
+        ide,
+        scope,
+        configPath: target.configPath,
+        present,
+        ...restartFields(ide, present),
+      });
     }
   }
   return out;
@@ -321,6 +384,7 @@ export function removeMcp(repoRoot: string, opts: McpInstallOptions): McpInstall
         written: false,
         command: '',
         args: [],
+        ...restartFields(ide, false),
         note: `unsupported for ${ide}/${scope}`,
       });
       continue;
@@ -337,6 +401,7 @@ export function removeMcp(repoRoot: string, opts: McpInstallOptions): McpInstall
           written: true,
           command: '',
           args: [],
+          ...restartFields(ide, true),
         });
       } catch {
         out.push({
@@ -346,6 +411,7 @@ export function removeMcp(repoRoot: string, opts: McpInstallOptions): McpInstall
           written: false,
           command: '',
           args: [],
+          ...restartFields(ide, false),
           note: 'claude CLI not found',
         });
       }
@@ -359,6 +425,7 @@ export function removeMcp(repoRoot: string, opts: McpInstallOptions): McpInstall
         written: false,
         command: '',
         args: [],
+        ...restartFields(ide, false),
       });
       continue;
     }
@@ -373,6 +440,7 @@ export function removeMcp(repoRoot: string, opts: McpInstallOptions): McpInstall
         written: updated !== existing,
         command: '',
         args: [],
+        ...restartFields(ide, updated !== existing),
       });
       continue;
     }
@@ -383,7 +451,15 @@ export function removeMcp(repoRoot: string, opts: McpInstallOptions): McpInstall
       delete servers[SERVER_NAME];
       if (Object.keys(servers).length === 0) delete obj[rootKey];
       writeJson(target.configPath, obj);
-      out.push({ ide, scope, configPath: target.configPath, written: true, command: '', args: [] });
+      out.push({
+        ide,
+        scope,
+        configPath: target.configPath,
+        written: true,
+        command: '',
+        args: [],
+        ...restartFields(ide, true),
+      });
     } else {
       out.push({
         ide,
@@ -392,6 +468,7 @@ export function removeMcp(repoRoot: string, opts: McpInstallOptions): McpInstall
         written: false,
         command: '',
         args: [],
+        ...restartFields(ide, false),
       });
     }
   }

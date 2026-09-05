@@ -561,11 +561,9 @@ only; the MCP server never evaluates or executes a gate), never by an agent writ
 | local | `~/.crib/memory/repos/<repoId>` | one repo, one machine — candidates, attempts, receipts, decisions, feedback |
 | global | `~/.crib/memory/global` | **device-global, not user-global** — see below |
 
-**Honesty note on "global":** until cross-device sync ships, the global store is rooted at the
-observing machine's home directory — it is DEVICE-global. A `scopeBoundary:'global'` claim is
-global in *meaning* (applies beyond one repo), but its bytes stay on the machine that wrote them;
-nothing follows the user to another device. The memory-2 envelope below makes the same point
-structurally: tenancy fields are deliberately absent (local-first).
+**Honesty note on "global":** the global store is rooted at the observing machine's home directory
+until the operator configures encrypted sync. A `scopeBoundary:'global'` claim is global in
+*meaning*, while cross-device placement still requires `crib memory init-sync` and CLI push/pull.
 
 All memory verbs honour `ifHash` (a repeat echoing the prior `hash` collapses to
 `{ unchanged:true, hash }`), and degrade to `{ memory:'not configured' }` when no ledger is wired.
@@ -623,6 +621,30 @@ staging entry — so a crash before the staging write replays at-least-once.
 //                   "scope":{ "boundary":"repo","repoId":"…" },
 //                   "outboxId":"cap:…","idempotent":false }
 ```
+
+### Intake continuation operations
+
+The consolidated `memory` tool exposes `intake_create`, `intake_checkpoint`, `intake_list`,
+`intake_get`, and `intake_share`. Requirements and checkpoints are immutable, content-addressed,
+secret-scanned local entries; `handoff` projects them into a resume brief with one primary only
+when exactly one intake remains resumable. A non-terminal checkpoint requires `nextSafeAction`.
+
+```jsonc
+// create
+{ "op":"intake_create", "original":"Finish migration", "outcome":"Migration complete",
+  "scope":["packages/memory"], "acceptanceCriteria":["Tests pass"], "actor":"human:user" }
+// checkpoint
+{ "op":"intake_checkpoint", "id":"intake:…", "phase":"executing",
+  "summary":"Sync landed", "nextSafeAction":"Run integration tests", "actor":"agent:codex" }
+// restore
+{ "op":"handoff" }
+// device audience only; team promotion deliberately requires the CLI
+{ "op":"intake_share", "id":"intake:…", "audience":"devices", "actor":"human:user" }
+```
+
+MCP device sharing writes the local audience checkpoint and reports `sync:"staged-local-only"`;
+the next configured CLI push transfers it. Team sharing returns `status:"cli-required"` because
+Git-visible promotion is an explicit operator action: `crib intake share <id> --audience team`.
 
 ### `memory({op:'get'})`
 One record by id — resolved through the portable memory API: a DIRECT hit wins in each store
@@ -751,16 +773,13 @@ get/audit/history; the raw `events` list keeps every recorded decision, tagged w
 ```
 
 ### `memory({op:'sync'})`
-The declared-but-honest non-capability: `sync` is in the portable contract so every adapter can
-REGISTER the name, but no sync engine exists in this release — the response says so, names the
-owning plan gate, and echoes the request it was handed back untouched (the MCP verb forwards no
-request payload, so `request` reads `{}` from this surface). Nothing was read, written, or
-transferred.
+Read-only status for the configured encrypted sync engine. Push and pull are deliberately refused
+over MCP so an agent session cannot cause network writes; operators use
+`crib memory sync push|pull` from the CLI.
 ```jsonc
-// req: { "ifHash?":"…" }
-// res: { "ok":false,"available":false,"capability":"sync","status":"not-implemented",
-//        "gate":"Gate 4","message":"cross-device / cross-store memory sync ships in Gate 4; …",
-//        "request":{} }
+// req: { "request?":"status", "ifHash?":"…" }
+// res: { "available":true, "stores":[…] }
+// request:"push" | "pull" → { "ok":false, "status":"cli-required", "message":"…" }
 ```
 
 ### `memory({op:'outbox'})`

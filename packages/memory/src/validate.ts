@@ -7,6 +7,8 @@ import {
   CAPTURE_SCHEMA,
   DECISION_SCHEMA,
   FEEDBACK_SCHEMA,
+  INTAKE_CHECKPOINT_SCHEMA,
+  INTAKE_SCHEMA,
   MEMORY_MANIFEST_SCHEMA,
   RECEIPT_SCHEMA,
   RECORD_SCHEMA,
@@ -25,6 +27,8 @@ import type {
   AttemptEvent,
   CaptureOutboxEntry,
   GateReceipt,
+  IntakeCheckpoint,
+  IntakeRequirement,
   MemoryAlias,
   MemoryCandidate,
   MemoryDecision,
@@ -49,6 +53,8 @@ const validateFeedbackFn: ValidateFunction = ajv.compile(FEEDBACK_SCHEMA);
 const validateManifestFn: ValidateFunction = ajv.compile(MEMORY_MANIFEST_SCHEMA);
 const validateAliasFn: ValidateFunction = ajv.compile(ALIAS_SCHEMA);
 const validateSyncEventFn: ValidateFunction = ajv.compile(SYNC_EVENT_SCHEMA);
+const validateIntakeFn: ValidateFunction = ajv.compile(INTAKE_SCHEMA);
+const validateIntakeCheckpointFn: ValidateFunction = ajv.compile(INTAKE_CHECKPOINT_SCHEMA);
 
 /** Thrown when a memory record fails schema validation before a write. */
 export class MemorySchemaError extends Error {
@@ -153,6 +159,25 @@ export function assertValidMemoryAlias(alias: MemoryAlias): void {
   if (!ok) throw new MemorySchemaError('alias', validateAliasFn.errors, alias.id);
 }
 
+export function assertValidIntakeRequirement(intake: IntakeRequirement): void {
+  const ok: boolean = validateIntakeFn(intake);
+  if (!ok) throw new MemorySchemaError('intake', validateIntakeFn.errors, intake.id);
+  if (intake.namespace.principalId !== intake.provenance.principalId) {
+    throw new MemorySchemaError('intake', [{ namespacePrincipalMismatch: true }], intake.id);
+  }
+}
+
+export function assertValidIntakeCheckpoint(checkpoint: IntakeCheckpoint): void {
+  const ok: boolean = validateIntakeCheckpointFn(checkpoint);
+  if (!ok) {
+    throw new MemorySchemaError(
+      'intake-checkpoint',
+      validateIntakeCheckpointFn.errors,
+      checkpoint.id,
+    );
+  }
+}
+
 /** ADR-003 (Gate 4) D1 — validate a sync envelope against `sync-event.schema.json`. The
  *  `schemaVersion` check mirrors the `mem:` posture: it lives OUTSIDE the compiled schema so an
  *  unknown envelope version fails closed with the same `{unknownSchemaVersion}` shape as records,
@@ -184,6 +209,8 @@ const ENTRY_VALIDATORS: Record<string, { validate: ValidateFunction; label: stri
   fb: { validate: validateFeedbackFn, label: 'feedback' },
   alias: { validate: validateAliasFn, label: 'alias' },
   evt: { validate: validateSyncEventFn, label: 'sync-event' },
+  intake: { validate: validateIntakeFn, label: 'intake' },
+  icp: { validate: validateIntakeCheckpointFn, label: 'intake-checkpoint' },
 };
 
 /** schemaVersion → record validator. The `mem:` prefix is shared by memory-1 and memory-2 records,

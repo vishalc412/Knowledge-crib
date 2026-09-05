@@ -14,6 +14,8 @@ import { blake3Hex } from '@knowledge-crib/soul-schema';
 import type {
   AttemptEvent,
   GateReceipt,
+  IntakeCheckpoint,
+  IntakeRequirement,
   MemoryCandidate,
   MemoryDecision,
   MemoryEvidence,
@@ -377,6 +379,20 @@ export function feedbackId(feedback: {
  */
 export function memoryAliasId(alias: { legacyId: string; resolvedId: string }): string {
   return `alias:${blake3Hex(canonical({ legacyId: alias.legacyId, resolvedId: alias.resolvedId }))}`;
+}
+
+/** Stable intake identity. Observation time is deliberately not semantic identity. */
+export function intakeRequirementId(
+  intake: Omit<IntakeRequirement, 'id' | 'schemaVersion' | 'createdAt'>,
+): string {
+  return `intake:${blake3Hex(canonical(intake))}`;
+}
+
+/** Stable checkpoint identity. Recording time is deliberately not semantic identity. */
+export function intakeCheckpointId(
+  checkpoint: Omit<IntakeCheckpoint, 'id' | 'schemaVersion' | 'recordedAt'>,
+): string {
+  return `icp:${blake3Hex(canonical(checkpoint))}`;
 }
 
 /** The id-prefix token for a memory entry (the run before `:`), or `undefined` for a non-string. */

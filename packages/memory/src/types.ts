@@ -376,6 +376,68 @@ export interface MemoryNamespace {
   agentProfileId?: string;
 }
 
+// ─── durable intake continuation ────────────────────────────────────────────
+
+export type IntakePhase =
+  | 'intake'
+  | 'planning'
+  | 'executing'
+  | 'blocked'
+  | 'verifying'
+  | 'complete';
+
+export type IntakeStatus = 'draft' | 'active' | 'blocked' | 'completed' | 'cancelled';
+export type IntakeAudience = 'private' | 'devices' | 'team';
+
+/** The sanitized request and its agreed structured interpretation. */
+export interface IntakeRequirement {
+  id: string;
+  schemaVersion: '1';
+  namespace: MemoryNamespace;
+  original: string;
+  interpretation: {
+    outcome: string;
+    scope: string[];
+    constraints: string[];
+    acceptanceCriteria: string[];
+  };
+  sensitivity: MemorySensitivity;
+  retentionPolicyId: string;
+  provenance: MemoryProvenance;
+  createdAt: string;
+}
+
+/** One immutable progress event from which a future session can derive a safe resume point. */
+export interface IntakeCheckpoint {
+  id: string;
+  schemaVersion: '1';
+  intakeId: string;
+  kind:
+    | 'structured'
+    | 'plan-selected'
+    | 'progress'
+    | 'blocked'
+    | 'resumed'
+    | 'shared'
+    | 'completed'
+    | 'cancelled';
+  phase: IntakePhase;
+  nextSafeAction?: string;
+  summary: string;
+  completedStepIds?: string[];
+  audience?: IntakeAudience;
+  repository: {
+    head?: string;
+    branch?: string;
+    dirty: boolean;
+    changedPathsDigest?: string;
+  };
+  artifactPaths?: string[];
+  receiptIds?: string[];
+  actor: string;
+  recordedAt: string;
+}
+
 /**
  * The memory-3 envelope. It preserves every v2 field and makes the authorization-relevant
  * namespace explicit and content-addressed. v2 stays live and read-compatible during migration.
@@ -491,4 +553,6 @@ export type MemoryEntry =
   | GateReceipt
   | MemoryDecision
   | MemoryFeedback
-  | MemoryAlias;
+  | MemoryAlias
+  | IntakeRequirement
+  | IntakeCheckpoint;

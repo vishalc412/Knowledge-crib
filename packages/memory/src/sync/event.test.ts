@@ -3,6 +3,7 @@
  * re-derivation, fail-closed parse, and the repoId pairing the schema encodes.
  */
 import { describe, expect, it } from 'vitest';
+import { createIntakeCheckpoint, createIntakeRequirement } from '../intake.js';
 import { MemorySchemaVersionError } from '../migrations.js';
 import { MemorySchemaError } from '../validate.js';
 import {
@@ -22,6 +23,39 @@ import {
   v1Record,
   v2Record,
 } from './sync-test-fixtures.js';
+
+function intakeEntries() {
+  const requirement = createIntakeRequirement({
+    namespace: { principalId: 'principal-vishal', projectId: REPO },
+    original: 'Continue the sync work',
+    interpretation: {
+      outcome: 'Finish sync',
+      scope: ['packages/memory'],
+      constraints: [],
+      acceptanceCriteria: ['Device B resumes'],
+    },
+    sensitivity: 'internal',
+    retentionPolicyId: 'ret:default',
+    provenance: {
+      principalId: 'principal-vishal',
+      deviceId: 'device-a',
+      actorId: 'actor-a',
+      clientId: 'test',
+    },
+    createdAt: NOW,
+  });
+  const checkpoint = createIntakeCheckpoint({
+    intakeId: requirement.id,
+    kind: 'progress',
+    phase: 'executing',
+    nextSafeAction: 'Run sync tests',
+    summary: 'Sync implementation started',
+    repository: { head: 'abc', dirty: false },
+    actor: 'actor-a',
+    recordedAt: NOW,
+  });
+  return { requirement, checkpoint };
+}
 
 describe('deriveEventId (D1)', () => {
   it('is deterministic over the seed {kind, store, repoId?, body}', () => {
@@ -118,6 +152,12 @@ describe('verifyPayloadId (D8 step 2)', () => {
     expect(verifyPayloadId(v2Record()).ok).toBe(true);
     expect(verifyPayloadId(decision('quarantine', 'mem:x')).ok).toBe(true);
     expect(verifyPayloadId(feedback('useful', 'mem:x')).ok).toBe(true);
+  });
+
+  it('accepts honestly-derived intake and checkpoint payloads', () => {
+    const { requirement, checkpoint } = intakeEntries();
+    expect(verifyPayloadId(requirement).ok).toBe(true);
+    expect(verifyPayloadId(checkpoint).ok).toBe(true);
   });
 
   it('rejects a hand-edited payload (id no longer re-derives)', () => {

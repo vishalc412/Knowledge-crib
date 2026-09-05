@@ -35,6 +35,7 @@ import {
   type CaptureOutboxEntry,
   type ConflictGroup,
   DEFAULT_MIGRATION_PRINCIPAL_ID,
+  DEFAULT_RETENTION_POLICY_ID,
   EXACT_MATCH_BONUS,
   type EffectiveVerdicts,
   type FusionStrategy,
@@ -472,6 +473,11 @@ const PUBLIC_VERBS = new Set<string>([
   // G2.3 — the capture-outbox drain surface (read-only queue + decision report).
   'memoryOutbox',
   'memoryHandoff',
+  'memoryIntakeCreate',
+  'memoryIntakeCheckpoint',
+  'memoryIntakeList',
+  'memoryIntakeGet',
+  'memoryIntakeShare',
 ]);
 
 export class Verbs {
@@ -2885,8 +2891,160 @@ export class Verbs {
     const limit = capInt(args.limit, 10, 25);
     const handoff = api.handoff({
       limits: { openWork: limit, pending: limit, attention: limit, recent: limit },
+      repository: this.intakeRepository(),
     });
     return this.applyIfHash(args, { ...handoff });
+  }
+
+  memoryIntakeCreate(args: {
+    original: string;
+    outcome: string;
+    scope?: string[];
+    constraints?: string[];
+    acceptanceCriteria?: string[];
+    actor: string;
+    tool?: string;
+    sensitivity?: 'public' | 'internal' | 'confidential' | 'restricted';
+    retentionPolicyId?: string;
+    ifHash?: string;
+  }): Record<string, unknown> {
+    const api = this.memoryApi();
+    if (!api) return this.applyIfHash(args, { memory: 'not configured' });
+    const principalId = process.env.KCRIB_PRINCIPAL_ID ?? DEFAULT_MIGRATION_PRINCIPAL_ID;
+    const projectId = readRepoId(this.deps.soul.cribDir);
+    try {
+      const intake = api.createIntake({
+        namespace: { principalId, ...(projectId ? { projectId } : {}) },
+        original: args.original,
+        interpretation: {
+          outcome: args.outcome,
+          scope: args.scope ?? [],
+          constraints: args.constraints ?? [],
+          acceptanceCriteria: args.acceptanceCriteria ?? [],
+        },
+        sensitivity: args.sensitivity ?? 'internal',
+        retentionPolicyId: args.retentionPolicyId ?? DEFAULT_RETENTION_POLICY_ID,
+        provenance: {
+          principalId,
+          deviceId: process.env.KCRIB_DEVICE_ID ?? 'mcp-host',
+          actorId: args.actor,
+          clientId: 'mcp',
+          ...(args.tool ? { agentId: args.actor, tool: args.tool } : {}),
+        },
+        createdAt: new Date().toISOString(),
+      });
+      return this.applyIfHash(args, intake as unknown as Record<string, unknown>);
+    } catch (error) {
+      return this.applyIfHash(args, {
+        ok: false,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+
+  memoryIntakeCheckpoint(args: {
+    id: string;
+    phase: 'intake' | 'planning' | 'executing' | 'blocked' | 'verifying';
+    summary: string;
+    nextSafeAction: string;
+    completedStepIds?: string[];
+    actor: string;
+    ifHash?: string;
+  }): Record<string, unknown> {
+    const api = this.memoryApi();
+    if (!api) return this.applyIfHash(args, { memory: 'not configured' });
+    try {
+      const checkpoint = api.checkpointIntake({
+        intakeId: args.id,
+        kind:
+          args.phase === 'planning'
+            ? 'plan-selected'
+            : args.phase === 'blocked'
+              ? 'blocked'
+              : 'progress',
+        phase: args.phase,
+        nextSafeAction: args.nextSafeAction,
+        summary: args.summary,
+        completedStepIds: args.completedStepIds ?? [],
+        repository: this.intakeRepository(),
+        actor: args.actor,
+        recordedAt: new Date().toISOString(),
+      });
+      return this.applyIfHash(args, checkpoint as unknown as Record<string, unknown>);
+    } catch (error) {
+      return this.applyIfHash(args, {
+        ok: false,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+
+  memoryIntakeList(args: { ifHash?: string }): Record<string, unknown> {
+    const api = this.memoryApi();
+    if (!api) return this.applyIfHash(args, { memory: 'not configured' });
+    return this.applyIfHash(args, { ...api.listIntakes(this.intakeRepository()) });
+  }
+
+  memoryIntakeGet(args: { id: string; ifHash?: string }): Record<string, unknown> {
+    const api = this.memoryApi();
+    if (!api) return this.applyIfHash(args, { memory: 'not configured' });
+    const found = api.getIntake(args.id);
+    return this.applyIfHash(args, found ? { ...found } : { found: false, id: args.id });
+  }
+
+  memoryIntakeShare(args: {
+    id: string;
+    audience: 'devices' | 'team';
+    actor: string;
+    ifHash?: string;
+  }): Record<string, unknown> {
+    const api = this.memoryApi();
+    if (!api) return this.applyIfHash(args, { memory: 'not configured' });
+    if (args.audience === 'team') {
+      return this.applyIfHash(args, {
+        ok: false,
+        status: 'cli-required',
+        message: `team sharing writes Git-visible history; run 'crib intake share ${args.id} --audience team' explicitly`,
+      });
+    }
+    const resume = api
+      .listIntakes(this.intakeRepository())
+      .choices.find((choice) => choice.intakeId === args.id);
+    if (!resume) return this.applyIfHash(args, { ok: false, error: `unknown intake: ${args.id}` });
+    if (!resume.nextSafeAction) {
+      return this.applyIfHash(args, {
+        ok: false,
+        error: 'intake has no safe next action to share',
+      });
+    }
+    const checkpoint = api.checkpointIntake({
+      intakeId: args.id,
+      kind: 'shared',
+      phase: resume.phase,
+      nextSafeAction: resume.nextSafeAction,
+      summary: 'Staged for encrypted device sync',
+      audience: 'devices',
+      repository: this.intakeRepository(),
+      actor: args.actor,
+      recordedAt: new Date().toISOString(),
+    });
+    return this.applyIfHash(args, {
+      ok: true,
+      sync: 'staged-local-only',
+      checkpoint,
+      message: "run 'crib memory sync push' from the CLI to perform network I/O",
+    });
+  }
+
+  private intakeRepository(): { head?: string; dirty: boolean; changedPathsDigest?: string } {
+    const { head, dirtyFiles } = this.vcsFacts();
+    return {
+      ...(head ? { head } : {}),
+      dirty: dirtyFiles.length > 0,
+      ...(dirtyFiles.length > 0
+        ? { changedPathsDigest: dirtyFiles.slice().sort().join('\n') }
+        : {}),
+    };
   }
 
   memoryOutbox(args: { ifHash?: string }): Record<string, unknown> {

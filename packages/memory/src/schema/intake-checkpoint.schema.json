@@ -1,0 +1,59 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://knowledge-crib.dev/schema/memory-1/intake-checkpoint.schema.json",
+  "title": "IntakeCheckpoint",
+  "type": "object",
+  "required": [
+    "id",
+    "schemaVersion",
+    "intakeId",
+    "kind",
+    "phase",
+    "summary",
+    "repository",
+    "actor",
+    "recordedAt"
+  ],
+  "properties": {
+    "id": { "type": "string", "pattern": "^icp:[0-9a-f]+$" },
+    "schemaVersion": { "type": "string", "const": "1" },
+    "intakeId": { "type": "string", "pattern": "^intake:[0-9a-f]+$" },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "structured",
+        "plan-selected",
+        "progress",
+        "blocked",
+        "resumed",
+        "shared",
+        "completed",
+        "cancelled"
+      ]
+    },
+    "phase": {
+      "type": "string",
+      "enum": ["intake", "planning", "executing", "blocked", "verifying", "complete"]
+    },
+    "nextSafeAction": { "type": "string", "minLength": 1 },
+    "summary": { "type": "string", "minLength": 1 },
+    "completedStepIds": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+    "audience": { "type": "string", "enum": ["private", "devices", "team"] },
+    "repository": {
+      "type": "object",
+      "required": ["dirty"],
+      "properties": {
+        "head": { "type": "string", "minLength": 1 },
+        "branch": { "type": "string", "minLength": 1 },
+        "dirty": { "type": "boolean" },
+        "changedPathsDigest": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "artifactPaths": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+    "receiptIds": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+    "actor": { "type": "string", "minLength": 1 },
+    "recordedAt": { "type": "string", "minLength": 1 }
+  },
+  "additionalProperties": false
+}
