@@ -23,9 +23,19 @@
  * feeds an `ifHash` projection, so two handoffs over identical state must be byte-identical.
  */
 import type { AttemptPhase, Verdicts } from './enums.js';
-import { type IntakeProjection, projectIntakes } from './intake-projection.js';
-import type { IntakeCheckpoint, IntakeRequirement, MemoryRecord, MemoryRecordV2 } from './types.js';
-import { isMemoryRecordV2 } from './types.js';
+import {
+  type ContinuationChoice,
+  type IntakeProjection,
+  buildContinuation,
+  projectIntakes,
+} from './intake-projection.js';
+import type {
+  IntakeCheckpoint,
+  IntakeRequirement,
+  MemoryRecord,
+  MemoryRecordVersioned,
+} from './types.js';
+import { isMemoryRecordVersioned } from './types.js';
 
 /** An attempt that started and never reached a terminal phase — the literal leftover item. */
 export interface HandoffOpenWork {
@@ -71,6 +81,12 @@ export interface HandoffResponse {
   needsAttention: HandoffAttention[];
   recent: HandoffRecent[];
   intakes: IntakeProjection;
+  /**
+   * The explicit continue-or-start-fresh decision for this session. Derived from `intakes`, so it
+   * never disagrees with it — but stated as named options a caller can choose between, rather than
+   * a `primary` field whose absence the caller has to interpret.
+   */
+  continuation: ContinuationChoice;
   counts: {
     openWork: number;
     pendingCaptures: number;
@@ -93,7 +109,7 @@ export interface HandoffInput {
   attempts: readonly HandoffAttemptEvent[];
   pending: readonly { id: string; subject?: string; observation?: string }[];
   /** every gathered record paired with its EFFECTIVE verdicts (post decision + freshness overlay). */
-  records: readonly { record: MemoryRecord | MemoryRecordV2; verdicts: Verdicts }[];
+  records: readonly { record: MemoryRecord | MemoryRecordVersioned; verdicts: Verdicts }[];
   intakeRequirements?: readonly IntakeRequirement[];
   intakeCheckpoints?: readonly IntakeCheckpoint[];
   repository?: IntakeCheckpoint['repository'];
@@ -181,7 +197,7 @@ export function buildHandoff(input: HandoffInput): HandoffResponse {
   const recentAll: Array<HandoffRecent & { ts: string }> = [];
   let active = 0;
   for (const { record, verdicts } of input.records) {
-    const createdAt = isMemoryRecordV2(record)
+    const createdAt = isMemoryRecordVersioned(record)
       ? record.transactionTime.recordedAt
       : record.createdAt;
     const degraded = verdicts.evidence !== 'valid' || verdicts.applicability !== 'current';
@@ -230,6 +246,7 @@ export function buildHandoff(input: HandoffInput): HandoffResponse {
     needsAttention,
     recent,
     intakes,
+    continuation: buildContinuation(intakes),
     counts: {
       openWork: openWorkAll.length,
       pendingCaptures: pendingAll.length,

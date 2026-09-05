@@ -28,11 +28,11 @@
  */
 import { DatabaseSync, type StatementSync } from 'node:sqlite';
 import { type LexicalScorer, exactLexicalScorer } from './recall.js';
-import { type MemoryRecord, type MemoryRecordV2, isMemoryRecordV2 } from './types.js';
+import { type MemoryRecord, type MemoryRecordVersioned, isMemoryRecordVersioned } from './types.js';
 import type { MemoryEvidence } from './types.js';
 
 /** A record of either schema version — the FTS index builds over mixed-version gathered records. */
-type AnyMemoryRecord = MemoryRecord | MemoryRecordV2;
+type AnyMemoryRecord = MemoryRecord | MemoryRecordVersioned;
 
 // ─── schema ──────────────────────────────────────────────────────────────────
 
@@ -67,7 +67,7 @@ function evidenceSummary(ev: MemoryEvidence): string {
  *  memory-2 records carry no `appliesTo` (their reattachment targets live in evidence) — the guard
  *  keeps a mixed-version index build from crashing on the absent field. */
 function targetsText(record: AnyMemoryRecord): string {
-  const appliesTo = isMemoryRecordV2(record) ? [] : record.appliesTo;
+  const appliesTo = isMemoryRecordVersioned(record) ? [] : record.appliesTo;
   const refs = new Set<string>(appliesTo);
   for (const ev of record.evidence) {
     const soulId = (ev as Record<string, unknown>).soulId;
@@ -80,7 +80,7 @@ function targetsText(record: AnyMemoryRecord): string {
  *  `visibility` (the closest placement signal — visibility and storage placement are independent,
  *  so the column stays lexical text, never a semantic conflation). */
 function scopeText(record: AnyMemoryRecord): string {
-  if (isMemoryRecordV2(record)) return record.visibility;
+  if (isMemoryRecordVersioned(record)) return record.visibility;
   const s = record.scope;
   return s.boundary === 'global' ? 'global' : `repo ${s.repoId ?? ''}`;
 }

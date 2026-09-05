@@ -31,7 +31,7 @@ import {
   recallProjection,
 } from '../recall.js';
 import { MemoryStore } from '../store.js';
-import type { MemoryRecord, MemoryRecordV2 } from '../types.js';
+import type { MemoryRecord, MemoryRecordVersioned } from '../types.js';
 import { FakeSoulPort } from './corpus.js';
 import {
   LAUNCH_CATEGORIES,
@@ -124,7 +124,7 @@ interface RankedQuery {
 /** One gathered store set with its FTS index and the deterministic rank closure over it. */
 interface ScopedRank {
   gathered: GatheredRecall;
-  records: MemoryRecord[];
+  records: (MemoryRecord | MemoryRecordVersioned)[];
   /** The versioned scorer id every fresh scorer in this set produces (deterministic config). */
   versionId: string;
   /** How many gathered records passed the hard eligibility filter (query-independent). */
@@ -272,7 +272,7 @@ export interface LaunchScorerConfig {
   alpha?: number;
   rrfK?: number;
   /** what the cosine channel embeds per record (see VersionedScorerOptions.embedTextOf) */
-  embedTextOf?: (record: MemoryRecord | MemoryRecordV2) => string;
+  embedTextOf?: (record: MemoryRecord | MemoryRecordVersioned) => string;
 }
 
 export function runLaunchGate(

@@ -168,6 +168,8 @@ import type {
 } from './types.js';
 import { isMemoryRecordV2, isMemoryRecordVersioned } from './types.js';
 
+type ReadableMemoryRecord = MemoryRecord | MemoryRecordV2 | MemoryRecordV3;
+
 // ─── the anchor port (capture's loose-name resolution) ────────────────────────
 
 /**
@@ -234,8 +236,8 @@ export interface ValidityInterval {
  * bi-temporal fields, so both axes derive from `createdAt` (the same mapping the G1.2 migration
  * stamps — the store learned the claim when the record was written; nothing is fabricated). PURE.
  */
-export function validityOf(record: MemoryRecord | MemoryRecordV2): ValidityInterval {
-  if (isMemoryRecordV2(record)) {
+export function validityOf(record: ReadableMemoryRecord): ValidityInterval {
+  if (isMemoryRecordVersioned(record)) {
     return { validTime: record.validTime, transactionTime: record.transactionTime };
   }
   return {
@@ -270,14 +272,12 @@ const supersedesIndexes = new WeakMap<object, Map<string, string[]>>();
  *
  * Only memory-2 records carry lineage, so memory-1 rows are skipped exactly as the scan did. PURE.
  */
-function supersedesIndexFor(
-  records: readonly (MemoryRecord | MemoryRecordV2)[],
-): Map<string, string[]> {
+function supersedesIndexFor(records: readonly ReadableMemoryRecord[]): Map<string, string[]> {
   const cached = supersedesIndexes.get(records);
   if (cached) return cached;
   const index = new Map<string, string[]>();
   for (const record of records) {
-    if (!isMemoryRecordV2(record)) continue;
+    if (!isMemoryRecordVersioned(record)) continue;
     for (const supersededId of record.lineage.supersedes ?? []) {
       const successors = index.get(supersededId);
       if (successors) successors.push(record.id);
@@ -590,7 +590,7 @@ export interface SupersededAlternative {
   claim?: string;
 }
 
-function evidenceSummaries(record: MemoryRecord | MemoryRecordV2): EvidenceSummary[] {
+function evidenceSummaries(record: ReadableMemoryRecord): EvidenceSummary[] {
   return record.evidence.map((ev) => ({
     kind: ev.kind,
     verdict: ev.verdict,
@@ -841,9 +841,9 @@ export interface FreshnessState {
 /** One search result — the recall projection's hit ENRICHED with the G1.3 rich contract. */
 export interface SearchHit {
   /** the record itself (v1 or v2 envelope), so an SDK consumer never re-reads by id. */
-  record: MemoryRecord | MemoryRecordV2;
+  record: ReadableMemoryRecord;
   id: string;
-  schemaVersion: '1' | '2';
+  schemaVersion: '1' | '2' | '3';
   kind: MemoryRecordKind;
   subject: string;
   claim: string;
@@ -925,7 +925,7 @@ export interface GetResult {
   id?: string;
   /** the alias binding that was followed, when the request was a legacy id. */
   resolvedViaAlias?: MemoryAlias;
-  record?: MemoryRecord | MemoryRecordV2;
+  record?: ReadableMemoryRecord;
   /** every legacy id bound to this record across all stores' alias maps. */
   legacyIds: readonly string[];
   /** the alias bindings verbatim — the as-believed v1 state (scope/appliesTo/meta/verdicts). */
@@ -1022,9 +1022,9 @@ export interface HistoryOpts {
 
 /** What was (or is) believed about one record — the history projection's per-record unit. */
 export interface RecordBelief {
-  record: MemoryRecord | MemoryRecordV2;
+  record: ReadableMemoryRecord;
   id: string;
-  schemaVersion: '1' | '2';
+  schemaVersion: '1' | '2' | '3';
   subject: string;
   claim: string;
   /** when the store learned this record (transactionTime.recordedAt / v1 createdAt). */
@@ -1095,9 +1095,9 @@ export interface AuditTransition {
 
 /** The audit trail for one record. */
 export interface AuditRecordView {
-  record: MemoryRecord | MemoryRecordV2;
+  record: ReadableMemoryRecord;
   id: string;
-  schemaVersion: '1' | '2';
+  schemaVersion: '1' | '2' | '3';
   kind: MemoryRecordKind;
   subject: string;
   claim: string;
@@ -1233,7 +1233,7 @@ function recordCollectionOf(store: MemoryStore): MemoryCollection {
 
 /** A gathered record tagged with the store it came from (history/audit gather across all stores). */
 interface SourcedRecord {
-  record: MemoryRecord | MemoryRecordV2;
+  record: ReadableMemoryRecord;
   source: MemorySource;
   store: MemoryStore;
 }
@@ -1248,7 +1248,7 @@ interface SourcedFeedback {
   source: MemorySource;
 }
 
-function isRecordEntry(e: { id?: unknown }): e is MemoryRecord | MemoryRecordV2 {
+function isRecordEntry(e: { id?: unknown }): e is ReadableMemoryRecord {
   return typeof e.id === 'string' && e.id.startsWith('mem:');
 }
 function isDecisionEntry(e: { id?: unknown }): e is MemoryDecision {
@@ -2149,8 +2149,8 @@ export class MemoryApi {
       verdicts,
       evidence: evidenceSummaries(record),
       lineage: lineageOf(record),
-      ...(isMemoryRecordV2(record) ? { propositionKey: record.propositionKey } : {}),
-      ...(!isMemoryRecordV2(record) ? { scope: record.scope } : {}),
+      ...(isMemoryRecordVersioned(record) ? { propositionKey: record.propositionKey } : {}),
+      ...(!isMemoryRecordVersioned(record) ? { scope: record.scope } : {}),
       supersededBy: this.supersededBy(
         record,
         aliasIndex,
@@ -2406,14 +2406,14 @@ export class MemoryApi {
       // The belief folds from the SAME stamped base effectiveVerdicts uses — the v1 record's own
       // `verdicts.lifecycle`, the v2 conservative alias snapshot — so a hand-stamped shard reports
       // ONE lifecycle across get/audit/history (the divergent three-way state is not projected).
-      const stampedBase: LifecycleVerdict = isMemoryRecordV2(record)
+      const stampedBase: LifecycleVerdict = isMemoryRecordVersioned(record)
         ? (conservativeVerdicts(legacy)?.lifecycle ?? 'active')
         : record.verdicts.lifecycle;
       const { lifecycle, quarantined } = believedLifecycle(bridged, stampedBase);
       beliefs.push({
         record,
         id: record.id,
-        schemaVersion: isMemoryRecordV2(record) ? '2' : '1',
+        schemaVersion: record.schemaVersion,
         subject: record.subject,
         claim: record.claim,
         recordedAt,
@@ -3028,7 +3028,7 @@ export class MemoryApi {
         record.id,
         beliefPool.map((d) => d.decision),
       );
-      const stamped: Verdicts | undefined = isMemoryRecordV2(record)
+      const stamped: Verdicts | undefined = isMemoryRecordVersioned(record)
         ? conservativeVerdicts(legacy)
         : record.verdicts;
       const verdicts = effectiveVerdicts(record, bridged, undefined, stamped);
@@ -3118,7 +3118,7 @@ export class MemoryApi {
    * decision pool the row's supersession projection reuses.
    */
   private foldedVerdicts(
-    record: MemoryRecord | MemoryRecordV2,
+    record: ReadableMemoryRecord,
     source: MemorySource,
     aliasIndex: AliasIndex,
     decisions: readonly SourcedDecision[],
@@ -3140,21 +3140,25 @@ export class MemoryApi {
 
   /** Build one ledger row (the per-record projection — see {@link MemoryApi.ledger}). */
   private ledgerRow(
-    record: MemoryRecord | MemoryRecordV2,
+    record: ReadableMemoryRecord,
     source: MemorySource,
     folded: { verdicts: EffectiveVerdicts; pool: readonly MemoryDecision[] },
     aliasIndex: AliasIndex,
-    gatheredRecords: readonly (MemoryRecord | MemoryRecordV2)[],
+    gatheredRecords: readonly ReadableMemoryRecord[],
     byId: ReadonlyMap<string, Node>,
     nodes: readonly Node[],
     conflicts: readonly ConflictSummary[],
   ): LedgerRow {
     const { verdicts, pool } = folded;
-    const { anchors, status } = correlateAnchors(record, byId, nodes);
-    const isV1 = !isMemoryRecordV2(record);
+    const { anchors, status } = correlateAnchors(
+      record as MemoryRecord | MemoryRecordV2,
+      byId,
+      nodes,
+    );
+    const isV1 = !isMemoryRecordVersioned(record);
     return {
       id: record.id,
-      schemaVersion: isV1 ? '1' : '2',
+      schemaVersion: record.schemaVersion,
       kind: record.kind,
       subject: record.subject,
       claim: capClaim(record.claim),
@@ -3226,7 +3230,7 @@ export class MemoryApi {
    */
   private locate(id: string):
     | {
-        record: MemoryRecord | MemoryRecordV2;
+        record: ReadableMemoryRecord;
         source: MemorySource;
         store: MemoryStore;
         viaAlias?: MemoryAlias;
@@ -3235,11 +3239,15 @@ export class MemoryApi {
     for (const { source, store } of this.orderedStores()) {
       const collection = recordCollectionOf(store);
       const direct = this.directEntry(store, collection, id);
-      if (direct && isRecordEntry(direct)) return { record: direct, source, store };
+      if (direct && isRecordEntry(direct) && this.acceptsRecord(direct)) {
+        return { record: direct, source, store };
+      }
       const alias = this.readAliasSafe(store, id);
       if (alias && alias.resolvedId !== id) {
         const twin = this.directEntry(store, collection, alias.resolvedId);
-        if (twin && isRecordEntry(twin)) return { record: twin, source, store, viaAlias: alias };
+        if (twin && isRecordEntry(twin) && this.acceptsRecord(twin)) {
+          return { record: twin, source, store, viaAlias: alias };
+        }
       }
     }
     return undefined;
@@ -3256,7 +3264,8 @@ export class MemoryApi {
 
   /** Whether the store physically holds this exact id in `collection` (no alias chase). */
   private holdsDirect(store: MemoryStore, id: string, collection: MemoryCollection): boolean {
-    return this.directEntry(store, collection, id) !== undefined;
+    const entry = this.directEntry(store, collection, id);
+    return entry !== undefined && (!isRecordEntry(entry) || this.acceptsRecord(entry));
   }
 
   private readAliasSafe(store: MemoryStore, legacyId: string): MemoryAlias | undefined {
@@ -3300,11 +3309,28 @@ export class MemoryApi {
       if (!store) continue;
       const read = store.readCollection(recordCollectionOf(store));
       for (const entry of read.entries) {
-        if (!isRecordEntry(entry)) continue;
+        if (!isRecordEntry(entry) || !this.acceptsRecord(entry)) continue;
         if (!byId.has(entry.id)) byId.set(entry.id, { record: entry, source, store });
       }
     }
     return [...byId.values()];
+  }
+
+  /**
+   * The direct-read counterpart to `gatherRecall`'s G7 boundary. Versioned records are private to
+   * their stamped principal; v1 has no principal column and remains readable for migration
+   * compatibility. Keep this guard at locate/gather rather than individual public verbs so a new
+   * record-returning API cannot accidentally bypass principal isolation.
+   */
+  private acceptsRecord(record: ReadableMemoryRecord): boolean {
+    return (
+      !isMemoryRecordVersioned(record) || record.provenance.principalId === this.callerPrincipal()
+    );
+  }
+
+  private callerPrincipal(): string {
+    const principal = this.env.KCRIB_PRINCIPAL_ID ?? DEFAULT_MIGRATION_PRINCIPAL_ID;
+    return principal.trim().length > 0 ? principal : DEFAULT_MIGRATION_PRINCIPAL_ID;
   }
 
   /** Every decision across the present stores (team, global, AND local — reporting sees all). */
@@ -3347,20 +3373,20 @@ export class MemoryApi {
    * verdicts, source) comes from the projection itself — never recomputed here.
    */
   private enrichHit(
-    record: MemoryRecord | MemoryRecordV2,
+    record: ReadableMemoryRecord,
     source: MemorySource,
     score: RecallScore,
     verdicts: EffectiveVerdicts,
     ctx: {
       aliasIndex: AliasIndex;
       allDecisions: readonly MemoryDecision[];
-      gatheredRecords: readonly MemoryRecord[];
+      gatheredRecords: readonly ReadableMemoryRecord[];
       conflicts: readonly {
         key: string;
         subject: string;
         scope?: { boundary: string; repoId?: string };
         propositionKey?: string;
-        records: (MemoryRecord | MemoryRecordV2)[];
+        records: ReadableMemoryRecord[];
       }[];
       freshness: FreshnessState;
     },
@@ -3371,13 +3397,13 @@ export class MemoryApi {
     return {
       record,
       id: record.id,
-      schemaVersion: isMemoryRecordV2(record) ? '2' : '1',
+      schemaVersion: record.schemaVersion,
       kind: record.kind,
       subject: record.subject,
       claim: record.claim,
       visibility: visibilityOf(record),
-      ...(isMemoryRecordV2(record) ? { propositionKey: record.propositionKey } : {}),
-      ...(!isMemoryRecordV2(record) ? { scope: record.scope } : {}),
+      ...(isMemoryRecordVersioned(record) ? { propositionKey: record.propositionKey } : {}),
+      ...(!isMemoryRecordVersioned(record) ? { scope: record.scope } : {}),
       source,
       placement: this.placementsOf(record.id),
       verdicts,
@@ -3404,10 +3430,10 @@ export class MemoryApi {
    * would otherwise be silent. Dangling links are reported `found: false`, never dropped.
    */
   private supersededBy(
-    record: MemoryRecord | MemoryRecordV2,
+    record: ReadableMemoryRecord,
     aliasIndex: AliasIndex,
     decisions: readonly MemoryDecision[],
-    gatheredRecords: readonly (MemoryRecord | MemoryRecordV2)[],
+    gatheredRecords: readonly ReadableMemoryRecord[],
   ): SupersededAlternative[] {
     const out = new Map<string, SupersededAlternative>();
     const bridged = bridgedDecisions(aliasIndex.aliasesFor(record.id), record.id, decisions);
@@ -3438,7 +3464,7 @@ export class MemoryApi {
 
   /** Build one record's audit view (transitions walked in decision-time order). */
   private auditView(
-    record: MemoryRecord | MemoryRecordV2,
+    record: ReadableMemoryRecord,
     legacy: readonly MemoryAlias[],
     stamped: Verdicts | undefined,
     verdicts: EffectiveVerdicts,
@@ -3527,7 +3553,7 @@ export class MemoryApi {
     return {
       record,
       id: record.id,
-      schemaVersion: isMemoryRecordV2(record) ? '2' : '1',
+      schemaVersion: record.schemaVersion,
       kind: record.kind,
       subject: record.subject,
       claim: record.claim,
@@ -3554,12 +3580,12 @@ export function createMemoryApi(deps: MemoryApiDeps): MemoryApi {
 // ─── pure module helpers ─────────────────────────────────────────────────────
 
 /** v2 lineage verbatim; v1 has no lineage field — `{}` (supersession is decision-driven there). */
-function lineageOf(record: MemoryRecord | MemoryRecordV2): {
+function lineageOf(record: ReadableMemoryRecord): {
   derivedFrom?: string[];
   supersedes?: string[];
   contradicts?: string[];
 } {
-  return isMemoryRecordV2(record) ? record.lineage : {};
+  return isMemoryRecordVersioned(record) ? record.lineage : {};
 }
 
 /** Reduce a projection conflict group to its id-only summary. */
@@ -3568,7 +3594,7 @@ function conflictSummaryOf(c: {
   subject: string;
   scope?: { boundary: string; repoId?: string };
   propositionKey?: string;
-  records: readonly (MemoryRecord | MemoryRecordV2)[];
+  records: readonly ReadableMemoryRecord[];
 }): ConflictSummary {
   return {
     key: c.key,
@@ -3593,7 +3619,7 @@ function matchKey(
   const matched = records.filter(({ record }) => {
     if (record.id === key) return true;
     if (record.subject === key) return true;
-    if (isMemoryRecordV2(record) && record.propositionKey === key) return true;
+    if (isMemoryRecordVersioned(record) && record.propositionKey === key) return true;
     if (resolved !== undefined && record.id === resolved) return true;
     return aliasIndex.aliasesFor(record.id).some((a) => a.legacyId === key);
   });

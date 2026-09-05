@@ -116,6 +116,8 @@ crib memory events --include-expired --json         # operational event/audit vi
 crib memory profiles register --key architect \
   --alias codex/thread-123 --alias cursor/agent-456
 crib memory profiles list --json
+crib memory backup create --out /secure/crib-backup
+crib memory backup verify --from /secure/crib-backup
 ```
 
 `events` reads the append-only operational journal. Its default view honours the 30-day structured
@@ -128,6 +130,34 @@ output, or secrets.
 authorization mechanism: a client cannot supply a profile ID to bypass principal, workspace, or
 project isolation. Multiple clients can resolve to one profile, so a handoff or capture can survive
 a switch between Codex, Cursor, Claude, Copilot, Gemini, Windsurf, or another MCP client.
+
+`backup` creates a checksummed plaintext bundle of the current repository-local and machine-global
+stores. It excludes `.lock`/temporary files and never includes sync-key bytes. Restore verifies all
+listed files before activation and requires `--force` for non-empty targets:
+
+```sh
+crib memory backup restore --from /secure/crib-backup --stores local,global --force
+```
+
+Stop running agents and the freshness worker before restoring a live memory home, then restart
+them. Restore uses same-filesystem staging and rolls back already activated stores when a later
+activation fails. This is process-interruption recovery, not an fsync or power-loss guarantee.
+
+## `crib freshness …`
+
+```sh
+crib freshness manual
+crib freshness watch
+crib freshness auto
+crib freshness service status
+crib freshness service uninstall
+```
+
+`auto` installs and starts one user-scoped supervised worker. macOS uses a LaunchAgent with
+`RunAtLoad` and `KeepAlive`; Linux uses a systemd user service with `Restart=on-failure`; Windows
+uses a Task Scheduler logon trigger with restart-on-failure. `service install|status|uninstall`
+exposes the same lifecycle directly. The worker reads the shared project registry and coalesces the
+durable freshness queue across repositories.
 
 ## `crib reindex [path]`
 Full re-index (alias for `crib index`). Re-registers the project. Accepts the same `--semantic`,

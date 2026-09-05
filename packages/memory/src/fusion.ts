@@ -33,7 +33,7 @@ import type { Embedder } from '@knowledge-crib/core';
 import { cosine } from '@knowledge-crib/core';
 import { FtsLexicalScorer, type MemoryFtsIndex, toFtsMatch } from './fts-index.js';
 import { type LexicalScorer, exactLexicalScorer } from './recall.js';
-import { type MemoryRecord, type MemoryRecordV2, isMemoryRecordV2 } from './types.js';
+import { type MemoryRecord, type MemoryRecordVersioned, isMemoryRecordVersioned } from './types.js';
 
 /** The scorer generation. Bump ONLY for a ranking-semantics change — the id is the audit trail. */
 export const MEMORY_RANK_SCORER_VERSION = 'memory-rank-v2';
@@ -134,8 +134,8 @@ export function scorerVersionId(opts: {
  * verified rather than what it says). Deterministic over the record alone, so the vector table is
  * reproducible (mirrors the fts-index composition discipline).
  */
-export function recordEmbedText(record: MemoryRecord | MemoryRecordV2): string {
-  const appliesTo = isMemoryRecordV2(record) ? [] : record.appliesTo;
+export function recordEmbedText(record: MemoryRecord | MemoryRecordVersioned): string {
+  const appliesTo = isMemoryRecordVersioned(record) ? [] : record.appliesTo;
   return [record.subject, record.claim, ...appliesTo].join(' ');
 }
 
@@ -161,7 +161,7 @@ export function recordEmbedText(record: MemoryRecord | MemoryRecordV2): string {
 /** Bump whenever {@link recordSemanticText} changes what it returns — it keys the vector cache. */
 export const SEMANTIC_TEXT_VERSION = 'claim-v1';
 
-export function recordSemanticText(record: MemoryRecord | MemoryRecordV2): string {
+export function recordSemanticText(record: MemoryRecord | MemoryRecordVersioned): string {
   return record.claim;
 }
 
@@ -171,7 +171,7 @@ export interface VersionedScorerOptions {
   /** The FTS-backed lexical channel (the same index the projection already builds). */
   fts: MemoryFtsIndex;
   /** The candidate set the channels rank over — the same records the index was built from. */
-  records: ReadonlyArray<MemoryRecord | MemoryRecordV2>;
+  records: ReadonlyArray<MemoryRecord | MemoryRecordVersioned>;
   /** REQUIRED for rrf/weighted; rejected (with `lexical-only`) for a no-embedder deployment. */
   embedder?: Embedder;
   strategy?: FusionStrategy;
@@ -183,7 +183,7 @@ export interface VersionedScorerOptions {
    * Override to embed something else — e.g. {@link recordEmbedText}, the FTS-mirroring composition
    * that was the default until it was measured against claim-only on two independent corpora.
    */
-  embedTextOf?: (record: MemoryRecord | MemoryRecordV2) => string;
+  embedTextOf?: (record: MemoryRecord | MemoryRecordVersioned) => string;
   /**
    * Persistent vector cache. Absent ⇒ vectors are embedded per scorer lifetime, which is what the
    * char-ngram fallback can afford and a real model cannot (a 307-record ledger measured 4.9 s).
@@ -206,11 +206,11 @@ export class VersionedLexicalScorer implements LexicalScorer {
   readonly strategy: FusionStrategy;
 
   private readonly fts: MemoryFtsIndex;
-  private readonly records: ReadonlyArray<MemoryRecord | MemoryRecordV2>;
+  private readonly records: ReadonlyArray<MemoryRecord | MemoryRecordVersioned>;
   private readonly embedder?: Embedder;
   private readonly rrfK: number;
   private readonly alpha: number;
-  private readonly embedTextOf: (r: MemoryRecord | MemoryRecordV2) => string;
+  private readonly embedTextOf: (r: MemoryRecord | MemoryRecordVersioned) => string;
   private readonly vectors?: VectorCache;
   private readonly reranker?: Reranker;
   private readonly rerankDepth: number;

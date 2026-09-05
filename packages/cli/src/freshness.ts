@@ -27,9 +27,10 @@
  *     that never feed an id or hash, and always through the injected `now` port.
  */
 import { execFileSync } from 'node:child_process';
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
+import { CribLock, LockBusyError } from '@knowledge-crib/core';
 import {
   type RegisteredProject,
   lookupProject,
@@ -66,6 +67,21 @@ export function parseFreshnessMode(raw: unknown): FreshnessMode | undefined {
   return typeof raw === 'string' && (FRESHNESS_MODES as readonly string[]).includes(raw)
     ? (raw as FreshnessMode)
     : undefined;
+}
+
+/**
+ * Should a serving process watch the working tree?
+ *
+ * Extracted so the policy is testable and stated in ONE place. The audited gap (F06) was that this
+ * decision lived only in the `--watch` argv check inside `cmdServe`, while every generated client
+ * config spawns a bare `crib serve <root>` — so selecting `watch` or `auto` persisted a preference
+ * that configured nothing, and the user got a stale-on-save server with no signal.
+ *
+ * `--watch` remains an explicit override so a one-off run (or an unregistered project, which has no
+ * persisted mode) can still watch. `manual` is the only mode that serves committed source only.
+ */
+export function shouldServeWatch(args: readonly string[], mode: FreshnessMode): boolean {
+  return args.includes('--watch') || mode !== 'manual';
 }
 
 /** The persisted mode for one registered project (defaults to `manual` when unset/unregistered). */
@@ -149,7 +165,7 @@ function statePath(env: NodeJS.ProcessEnv = process.env): string {
 /** Atomic JSON write (temp→rename): a crash mid-write leaves the OLD file plus an orphan `.tmp`. */
 function writeJsonAtomic(path: string, value: unknown): void {
   mkdirSync(dirname(path), { recursive: true });
-  const tmp = `${path}.tmp`;
+  const tmp = `${path}.${process.pid}.${randomUUID()}.tmp`;
   writeFileSync(tmp, `${JSON.stringify(value, null, 2)}\n`, 'utf8');
   renameSync(tmp, path);
 }
@@ -173,6 +189,35 @@ export function readFreshnessQueue(env: NodeJS.ProcessEnv = process.env): Freshn
 
 function writeQueue(q: FreshnessQueue, env: NodeJS.ProcessEnv): void {
   writeJsonAtomic(queuePath(env), q);
+}
+
+const QUEUE_LOCK_RETRIES = 1_000;
+const QUEUE_LOCK_WAIT_MS = 1;
+const queueWaitCell = new Int32Array(new SharedArrayBuffer(Int32Array.BYTES_PER_ELEMENT));
+
+/** Serialize a complete queue read-modify-write across post-commit processes. */
+function mutateFreshnessQueue<T>(env: NodeJS.ProcessEnv, mutate: (queue: FreshnessQueue) => T): T {
+  let lastBusy: LockBusyError | undefined;
+  for (let attempt = 0; attempt < QUEUE_LOCK_RETRIES; attempt += 1) {
+    const lock = new CribLock({ cribDir: freshnessDir(env), lockName: '.queue.lock' });
+    try {
+      lock.acquire();
+    } catch (error) {
+      if (!(error instanceof LockBusyError)) throw error;
+      lastBusy = error;
+      Atomics.wait(queueWaitCell, 0, 0, QUEUE_LOCK_WAIT_MS);
+      continue;
+    }
+    try {
+      const queue = readFreshnessQueue(env);
+      const result = mutate(queue);
+      writeQueue(queue, env);
+      return result;
+    } finally {
+      lock.release();
+    }
+  }
+  throw lastBusy ?? new Error('freshness queue lock could not be acquired');
 }
 
 /**
@@ -204,25 +249,25 @@ export function enqueueFreshness(
   env: NodeJS.ProcessEnv = process.env,
   now: () => Date = () => new Date(),
 ): EnqueueResult {
-  const q = readFreshnessQueue(env);
-  const id = freshnessTaskId(projectRoot, head);
-  const priorIdx = q.pending.findIndex((t) => t.projectRoot === projectRoot);
-  const coalesced = priorIdx !== -1;
-  const task: FreshnessTask = {
-    id,
-    projectRoot,
-    head,
-    attempts: coalesced ? q.pending[priorIdx]!.attempts : 0,
-    ...(coalesced && q.pending[priorIdx]!.notBeforeMs !== undefined
-      ? { notBeforeMs: q.pending[priorIdx]!.notBeforeMs }
-      : {}),
-    enqueuedAt: coalesced ? q.pending[priorIdx]!.enqueuedAt : now().toISOString(),
-  };
-  q.pending = coalesced
-    ? q.pending.map((t, i) => (i === priorIdx ? task : t))
-    : [...q.pending, task];
-  writeQueue(q, env);
-  return { id, coalesced };
+  return mutateFreshnessQueue(env, (q) => {
+    const id = freshnessTaskId(projectRoot, head);
+    const priorIdx = q.pending.findIndex((t) => t.projectRoot === projectRoot);
+    const coalesced = priorIdx !== -1;
+    const task: FreshnessTask = {
+      id,
+      projectRoot,
+      head,
+      attempts: coalesced ? q.pending[priorIdx]!.attempts : 0,
+      ...(coalesced && q.pending[priorIdx]!.notBeforeMs !== undefined
+        ? { notBeforeMs: q.pending[priorIdx]!.notBeforeMs }
+        : {}),
+      enqueuedAt: coalesced ? q.pending[priorIdx]!.enqueuedAt : now().toISOString(),
+    };
+    q.pending = coalesced
+      ? q.pending.map((t, i) => (i === priorIdx ? task : t))
+      : [...q.pending, task];
+    return { id, coalesced };
+  });
 }
 
 /**
@@ -434,13 +479,16 @@ export class FreshnessWorker {
     // Takeover (fresh boot or crashed predecessor): recover the crashed worker's active task back
     // into the pending queue BEFORE claiming anything, so no leased work is ever orphaned.
     let recovered = 0;
-    const q = readFreshnessQueue(this.env);
-    if (existing?.activeTask) {
-      if (!q.pending.some((t) => t.id === existing.activeTask!.id)) {
-        q.pending.push({ ...existing.activeTask, notBeforeMs: undefined });
-        recovered = 1;
-      }
-      writeQueue(q, this.env);
+    const orphan = existing?.activeTask;
+    if (orphan) {
+      // Under the queue lock: a concurrent producer's enqueue must not be clobbered by this
+      // recovery write, and two workers taking over the same crashed predecessor must not
+      // re-enqueue the orphan twice (the dup check has to observe the other's write).
+      recovered = mutateFreshnessQueue(this.env, (q) => {
+        if (q.pending.some((t) => t.id === orphan.id)) return 0;
+        q.pending.push({ ...orphan, notBeforeMs: undefined });
+        return 1;
+      });
     }
 
     this.state = {
@@ -535,19 +583,19 @@ export class FreshnessWorker {
   /** Lease the next eligible pending task (FIFO by enqueue order, skipping backoff windows). */
   private claim(): FreshnessTask | undefined {
     if (!this.state) return undefined;
-    const q = readFreshnessQueue(this.env);
     const nowMs = this.now();
-    const idx = q.pending.findIndex((t) => (t.notBeforeMs ?? 0) <= nowMs);
-    if (idx === -1) return undefined;
-    const task = q.pending[idx]!;
-    // Lease FIRST (durable in state), remove from pending SECOND: a crash in the window leaves the
-    // task in BOTH, which heals idempotently — the next start sees the stale lease, re-enqueues (the
-    // dup check no-ops because the task is still pending), and the task re-runs. The reverse order
-    // could orphan a leased task that exists in NEITHER file, which is the one unrecoverable window.
-    this.state.activeTask = task;
-    writeJsonAtomic(statePath(this.env), this.state);
-    q.pending = q.pending.filter((_, i) => i !== idx);
-    writeQueue(q, this.env);
+    const task = mutateFreshnessQueue(this.env, (q) => {
+      const idx = q.pending.findIndex((candidate) => (candidate.notBeforeMs ?? 0) <= nowMs);
+      if (idx === -1) return undefined;
+      const next = q.pending[idx]!;
+      // Lease FIRST (durable in state), remove from pending SECOND: a crash in the window leaves
+      // the task in BOTH, which heals idempotently on takeover. The reverse order could orphan it.
+      this.state!.activeTask = next;
+      writeJsonAtomic(statePath(this.env), this.state);
+      q.pending = q.pending.filter((_, i) => i !== idx);
+      return next;
+    });
+    if (!task) return undefined;
     this.onEvent({ kind: 'task-start', task });
     return task;
   }
@@ -573,21 +621,21 @@ export class FreshnessWorker {
       const message = (err as Error).message ?? String(err);
       const attempts = task.attempts + 1;
       const failed: FreshnessTask = { ...task, attempts };
-      const q = readFreshnessQueue(this.env);
-      if (attempts >= this.maxAttempts) {
-        // Dead-letter = lifecycle transition, never a delete (the team-ledger rule, applied to the
-        // queue): the failed entry stays auditable in `dead` with its last error.
-        q.dead = [...q.dead, { ...failed, notBeforeMs: undefined }];
-        writeQueue(q, this.env);
-        this.onEvent({ kind: 'task-dead', task: failed, error: message });
-      } else {
+      mutateFreshnessQueue(this.env, (q) => {
+        if (attempts >= this.maxAttempts) {
+          // Dead-letter = lifecycle transition, never a delete (the team-ledger rule, applied to
+          // the queue): the failed entry stays auditable in `dead` with its last error.
+          q.dead = [...q.dead, { ...failed, notBeforeMs: undefined }];
+          return;
+        }
         q.pending = [
           ...q.pending,
           { ...failed, notBeforeMs: this.now() + this.retryBackoff(attempts) },
         ];
-        writeQueue(q, this.env);
-        this.onEvent({ kind: 'task-retry', task: failed, error: message });
-      }
+      });
+      if (attempts >= this.maxAttempts)
+        this.onEvent({ kind: 'task-dead', task: failed, error: message });
+      else this.onEvent({ kind: 'task-retry', task: failed, error: message });
       // The red line lives here: NOTHING was published on this path. The prior generation file and
       // the prior lastKnownGood entry are untouched — the failed refresh cannot break the index.
       this.state.activeTask = undefined;

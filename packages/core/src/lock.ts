@@ -32,6 +32,13 @@ import { dirname, join } from 'node:path';
 /** Default age at which a lock is reclaimable even if its pid probe is inconclusive. */
 export const DEFAULT_LOCK_STALE_MS = 10 * 60 * 1000; // 10 minutes
 
+/**
+ * How many times `acquire()` may re-race the atomic create before declaring sustained contention.
+ * Each pass costs one `openSync` + one `statSync`; the loop only spins while OTHER processes are
+ * winning the create, so a bound this size is a liveness backstop, not a latency budget.
+ */
+const ACQUIRE_RACE_ATTEMPTS = 100;
+
 /** Thrown when the crib is locked by a live process and cannot be acquired. */
 export class LockBusyError extends Error {
   constructor(
@@ -100,19 +107,36 @@ export class CribLock {
   acquire(): void {
     if (this.held) return;
     mkdirSync(dirname(this.path), { recursive: true });
-    if (this.tryCreate(this.path)) {
-      this.held = true;
-      return;
+    // Bounded re-race loop. Each pass either wins the atomic create, proves the lock is live
+    // (throws), or reclaims a genuinely stale one. The loop exists for the VANISHED case: a holder
+    // releasing between our failed create and our stat leaves no file, and the only sound response
+    // is to re-race the atomic create. Unlinking there is what broke mutual exclusion — two
+    // contenders in the same release window would each unlink the other's freshly created lock and
+    // both proceed into the critical section.
+    for (let attempt = 0; attempt < ACQUIRE_RACE_ATTEMPTS; attempt += 1) {
+      if (this.tryCreate(this.path)) {
+        this.held = true;
+        return;
+      }
+      const verdict = this.staleness();
+      if (verdict.kind === 'vanished') continue; // re-race the create; never unlink
+      if (verdict.kind === 'live') {
+        throw new LockBusyError(
+          verdict.holderPid,
+          `crib is busy: another process (pid ${verdict.holderPid}) holds ${this.path}. If that process has exited, the lock will self-heal within 10 minutes, or run \`crib reindex\`.`,
+        );
+      }
+      // Stale: reclaim it, but only while the file still carries the exact holder+mtime we judged.
+      // A false return means another contender reclaimed it first — re-evaluate rather than assume.
+      if (this.steal(verdict.holderPid, verdict.mtimeMs)) {
+        this.held = true;
+        return;
+      }
     }
-    // Someone else holds the file. Steal it iff it is stale; otherwise fail loudly.
-    if (!this.isStale()) {
-      throw new LockBusyError(
-        this.readHolder(),
-        `crib is busy: another process (pid ${this.readHolder()}) holds ${this.path}. If that process has exited, the lock will self-heal within 10 minutes, or run \`crib reindex\`.`,
-      );
-    }
-    this.steal();
-    this.held = true;
+    throw new LockBusyError(
+      this.readHolder(),
+      `crib is busy: ${this.path} is under sustained contention (${ACQUIRE_RACE_ATTEMPTS} attempts).`,
+    );
   }
 
   /**
@@ -154,30 +178,47 @@ export class CribLock {
     }
   }
 
-  private isStale(): boolean {
+  /**
+   * Classify the lock file we failed to create.
+   *
+   * `vanished` is deliberately NOT `stale`: the holder released between our failed create and this
+   * stat, so there is nothing to reclaim and the caller must simply re-race `tryCreate`. The
+   * returned holder pid and mtime pin the exact file a reclaim is allowed to remove.
+   */
+  private staleness():
+    | { kind: 'vanished' }
+    | { kind: 'live'; holderPid: number }
+    | { kind: 'stale'; holderPid: number; mtimeMs: number } {
     let st: Stats;
     try {
       st = statSync(this.path);
     } catch {
-      return true; // vanished between the failed create and now — caller recreates
+      return { kind: 'vanished' };
     }
-    const age = Date.now() - st.mtimeMs;
-    return !pidAlive(this.readHolder()) || age > this.staleMs;
+    const holder = this.readHolder();
+    // A contender can observe the O_EXCL-created lock between `openSync` and the holder pid write.
+    // Treat that short-lived empty/unreadable state as held until the normal stale timeout;
+    // reclaiming it immediately lets two writers enter the critical section.
+    const stale = Date.now() - st.mtimeMs > this.staleMs || (holder !== 0 && !pidAlive(holder));
+    return stale
+      ? { kind: 'stale', holderPid: holder, mtimeMs: st.mtimeMs }
+      : { kind: 'live', holderPid: holder };
   }
 
-  private steal(): void {
+  /**
+   * Reclaim a lock previously classified stale. Returns false — rather than throwing — when the
+   * file changed under us (another contender reclaimed it first, or the holder rewrote it), so the
+   * caller re-evaluates instead of deleting a lock that is now legitimately held.
+   */
+  private steal(expectedPid: number, expectedMtimeMs: number): boolean {
     try {
+      const st = statSync(this.path);
+      if (st.mtimeMs !== expectedMtimeMs || this.readHolder() !== expectedPid) return false;
       unlinkSync(this.path);
     } catch {
-      // ignore — the tryCreate below will fail loudly if it still exists
+      // vanished under us — the atomic create below re-races for it, which is the correct outcome
     }
-    if (!this.tryCreate(this.path)) {
-      // raced: someone else recreated it between our unlink and create
-      throw new LockBusyError(
-        this.readHolder(),
-        `crib is busy: lock ${this.path} is held by another process`,
-      );
-    }
+    return this.tryCreate(this.path);
   }
 }
 

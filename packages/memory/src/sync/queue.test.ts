@@ -22,6 +22,7 @@ import {
   SYNC_STATE_FILE,
   SyncStageError,
   SyncStateError,
+  compactSyncOutbox,
   defaultSyncState,
   loadSyncState,
   markEventAcked,
@@ -153,6 +154,52 @@ describe('ack ledger (D4: durable result first, bookkeeping last)', () => {
     expect(strict.malformed).toBe(1);
     // and the derive-and-diff heal re-stages cleanly (D4 at-least-once)
     expect(stageOutboundEvent(evt, root)).toEqual({ id: evt.id, staged: false, idempotent: true });
+  });
+
+  it('compacts only durably acked events and preserves pending events', () => {
+    const first = eventFor(v1Record());
+    const second = eventFor(v1Record('A.b remains pending'));
+    saveSyncState(root, defaultSyncState('device-a'));
+    stageOutboundEvent(first, root);
+    stageOutboundEvent(second, root);
+    markEventAcked(root, first.id);
+
+    expect(compactSyncOutbox(root, { dryRun: true })).toMatchObject({
+      before: 2,
+      after: 1,
+      removed: 1,
+      dryRun: true,
+    });
+    expect(readStagedEvents(root).events).toHaveLength(2);
+
+    expect(compactSyncOutbox(root)).toMatchObject({ before: 2, after: 1, removed: 1 });
+    expect(readStagedEvents(root).events.map((event) => event.id)).toEqual([second.id]);
+  });
+
+  it('refuses a malformed queue and leaves the original bytes intact', () => {
+    const evt = eventFor(v1Record());
+    saveSyncState(root, defaultSyncState('device-a'));
+    stageOutboundEvent(evt, root);
+    appendFileSync(join(root, SYNC_OUTBOX_FILE), '{"id":"evt:torn', 'utf8');
+    const before = readFileSync(join(root, SYNC_OUTBOX_FILE), 'utf8');
+    expect(() => compactSyncOutbox(root)).toThrow(/malformed/);
+    expect(readFileSync(join(root, SYNC_OUTBOX_FILE), 'utf8')).toBe(before);
+  });
+
+  it('keeps the original outbox when atomic replacement fails', () => {
+    const evt = eventFor(v1Record());
+    saveSyncState(root, defaultSyncState('device-a'));
+    stageOutboundEvent(evt, root);
+    markEventAcked(root, evt.id);
+    const before = readFileSync(join(root, SYNC_OUTBOX_FILE), 'utf8');
+    expect(() =>
+      compactSyncOutbox(root, {
+        write: () => {
+          throw new Error('simulated disk full');
+        },
+      }),
+    ).toThrow(/disk full/);
+    expect(readFileSync(join(root, SYNC_OUTBOX_FILE), 'utf8')).toBe(before);
   });
 });
 

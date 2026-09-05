@@ -530,12 +530,35 @@ The writer follows the same managed-content discipline as the instruction adapte
   crib-owned entries, drops emptied buckets, and drops the `hooks` key when nothing remains.
 
 The command the writer installs is fail-open by contract: `crib memory capture-hook --event
-<event>` reads the hook payload from stdin but persists bounded provenance only (the session id
-and, for tool-use, the tool name — never transcript paths or tool input), stages through the same
-policy-gated capture funnel as every other lane, and ALWAYS exits 0 — a hook fires inside a live
-coding session, so any runtime failure (unparseable payload, unindexed repo, policy refusal) is a
-stderr note, never the blocking exit 2. Identical (event, session, tool) firings dedupe to one
-durable outbox entry.
+<event>` reads the hook payload from stdin but never copies prompts, transcripts, tool inputs, tool
+outputs, or raw command output. A generic lifecycle event appends a bounded
+`checkpoint-requested` operational event and creates no memory candidate. A client can attach one
+explicit, sanitized outcome object when meaningful work ends:
+
+```json
+{
+  "session_id": "client-session-42",
+  "event_offset": 18,
+  "knowledge_crib_outcome": {
+    "subject": "topic:release-readiness",
+    "kind": "decision",
+    "intent": "Prepare the release evidence gate",
+    "decision": "Fail the release when a required retrieval gate is red",
+    "result": "The evidence manifest is written before the process exits",
+    "next_action": "Run release:evidence with the installed semantic model",
+    "artifacts": ["scripts/release-evidence.mjs"],
+    "receipt_id": "receipt:optional-local-gate",
+    "assertion": "release evidence tests"
+  }
+}
+```
+
+`intent`, `decision`, `result`, and `next_action` are individually optional, but at least one must
+be present. Text and artifact counts are bounded. When `receipt_id` is supplied, the local receipt
+must exist, exit successfully, and contain the named passing assertion; otherwise the checkpoint
+is retained but the memory is skipped. `(event, session_id, event_offset)` is the idempotency key,
+so retries and cross-session redelivery do not duplicate a structured outcome. The command always
+exits 0 because a lifecycle hook must never block a live coding session.
 
 A non-Claude client, or `--scope global`, is reported as a data note ("instruction-based recall
 only — no hook surface" / "project-scope only") and writes nothing: `crib doctor` never turns an

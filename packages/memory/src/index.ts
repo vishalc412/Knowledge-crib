@@ -64,6 +64,7 @@ export * from './sync/event.js';
 export * from './sync/crypto.js';
 export * from './sync/adapter.js';
 export * from './sync/queue.js';
+export * from './backup.js';
 export * from './sync/policy.js';
 export * from './sync/sync-conflicts.js';
 export * from './sync/bootstrap.js';

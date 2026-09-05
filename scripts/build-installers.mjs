@@ -11,6 +11,7 @@ import {
 } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { assertCoversWorkspace } from './workspace-packages.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(__dirname, '..');
@@ -20,7 +21,11 @@ const cliPackagePath = join(repoRoot, 'packages', 'cli', 'package.json');
 // workspace but never added here, so every installer bundle shipped without it and `npm install`
 // fell through to registry.npmjs.org for `@knowledge-crib/memory` — which is unpublished, so it
 // 404'd. That is why the installer smoke test has failed on every branch since memory landed.
-const packageDirs = [
+// Order is hand-maintained (dependency order is not derivable from the directory listing), but
+// COVERAGE is asserted against the workspace: `assertCoversWorkspace` throws if a publishable
+// package is missing here or a listed entry no longer exists. That is the guard the comment above
+// describes needing — a new package can no longer be silently omitted from installer bundles.
+const packageDirs = assertCoversWorkspace([
   'packages/soul-schema',
   'packages/core',
   'packages/parsers',
@@ -29,7 +34,7 @@ const packageDirs = [
   'packages/mcp',
   'packages/pipeline',
   'packages/cli',
-];
+]);
 
 export function normalizePackageVersion(pkg) {
   if (!pkg?.name || !pkg?.version) throw new Error('package name and version are required');

@@ -53,10 +53,17 @@ export class SqlResolver implements Resolver {
     let dropped = 0;
 
     // procedure index for cross-file calls: qualified name + simple name (file-aware).
+    //
+    // SCOPED TO SQL FILES. `supports()` gates this resolver on a SQL extension, but `resolve()`
+    // walks the whole soul — so in a mixed repository (one .sql fixture is enough) it was matching
+    // TypeScript `function` symbols by bare name and emitting cross-file `calls` edges the TS
+    // resolver had deliberately refused to guess at. That is how a `now` PARAMETER in one file
+    // acquired a confidence-1 edge to `cmdMemoryDistill.now` in another (audit F11).
     const byQualified = new Map<string, string>();
     const bySimple = new Map<string, { id: string; file: string }[]>();
     for (const s of ctx.soul.iterate('symbol')) {
       if (s.type !== 'procedure' && s.type !== 'function') continue;
+      if (!isSqlFile(s.file)) continue;
       const q = (s.qualifiedName ?? '').toLowerCase();
       const simple = (s.name ?? '').toLowerCase();
       if (q) byQualified.set(q, s.id);
@@ -138,6 +145,7 @@ export class SqlResolver implements Resolver {
     // procedure → procedure calls (cross-file; same-file already in the soul).
     for (const sym of ctx.soul.iterate('symbol')) {
       if (sym.type !== 'procedure' && sym.type !== 'function') continue;
+      if (!isSqlFile(sym.file)) continue;
       const calls = (sym.meta?.calls as CallSite[] | undefined) ?? [];
       for (const site of calls) {
         const dst = resolveCallee(site.callee, sym.file ?? '', byQualified, bySimple);
@@ -172,8 +180,17 @@ function resolveCallee(
   const simple = c.split('.').pop() ?? c;
   const list = bySimple.get(simple);
   if (!list || list.length === 0) return undefined;
-  // prefer a callee declared in the same file (intra-package call); else the first.
+  // Prefer a callee declared in the same file (intra-package call).
   const same = list.find((e) => e.file === callerFile);
-  const pick = same ?? list[0];
-  return pick?.id;
+  if (same) return same.id;
+  // Otherwise resolve ONLY when the simple name is unambiguous. Taking `list[0]` from several
+  // same-named candidates produced a confident edge chosen by index order — deterministic, and
+  // deterministically wrong whenever the guess missed. An ambiguous name is dropped instead, so it
+  // is reported as an unresolved call site rather than a resolved-but-fabricated one.
+  return list.length === 1 ? list[0]?.id : undefined;
+}
+
+/** Is this symbol's file one this resolver owns? Mirrors {@link SqlResolver.supports}. */
+function isSqlFile(file: string | undefined): boolean {
+  return file !== undefined && SQL_EXTS.some((e) => file.endsWith(e));
 }

@@ -487,3 +487,139 @@ describe('TypeScriptExtractor — schema 1.2 deep-extraction fidelity', () => {
     expect(a.nodes.map((n) => n.hash).sort()).toEqual(b.nodes.map((n) => n.hash).sort());
   });
 });
+
+// ─── F11: call resolution must not fabricate confident edges ─────────────────
+//
+// The audit (docs/audits/2026-09-05) found `enqueueFreshness`'s `now` PARAMETER resolving, at
+// confidence 1, to two unrelated symbols named `now` — one a class property in the same file, one a
+// function in a different file. A deterministic graph can still be deterministically wrong, and a
+// confident wrong edge is worse than an openly unresolved one: `gaps` reports the second, while the
+// first silently corrupts blast-radius and rename planning.
+
+describe('call resolution honesty (audit F11)', () => {
+  const callEdges = async (src: string) => {
+    const out = await run(src);
+    return (
+      out.edges
+        .filter((e) => e.rel === 'calls')
+        // ids carry an `@L<line>` suffix; compare on qualified names so the assertions read clearly
+        .map((e) => {
+          const name = (id: string) => (id.split('#')[1] ?? id).replace(/@L\d+$/, '');
+          return `${name(e.src)} -> ${name(e.dst)}`;
+        })
+    );
+  };
+
+  it('does not resolve a call to a parameter as a call to a same-named class member', async () => {
+    const calls = await callEdges(`
+      export class Worker {
+        now() { return 1; }
+      }
+      export function enqueue(now: () => number) {
+        return now();
+      }
+    `);
+    // `now()` inside enqueue targets the PARAMETER; Worker.now is unreachable from a bare call.
+    expect(calls.filter((c) => c.includes('-> Worker.now'))).toEqual([]);
+  });
+
+  it('does not resolve a bare call to a class member even without shadowing', async () => {
+    const calls = await callEdges(`
+      export class Worker {
+        helper() { return 1; }
+      }
+      export function run() {
+        return helper();
+      }
+    `);
+    // A bare `helper()` cannot reach `Worker.helper` — it would need a receiver.
+    expect(calls.filter((c) => c.includes('-> Worker.helper'))).toEqual([]);
+  });
+
+  it('still resolves a genuine top-level call', async () => {
+    const calls = await callEdges(`
+      export function helper() { return 1; }
+      export function run() { return helper(); }
+    `);
+    expect(calls).toContain('run -> helper');
+  });
+
+  it('still resolves a receiver call to a class member', async () => {
+    const calls = await callEdges(`
+      export class Worker {
+        helper() { return 1; }
+        run() { return this.helper(); }
+      }
+    `);
+    expect(calls).toContain('Worker.run -> Worker.helper');
+  });
+
+  it('resolves typed receivers to the matching class instead of the first same-named method', async () => {
+    const calls = await callEdges(`
+      export class Alpha { ping() { return 'a'; } }
+      export class Beta { ping() { return 'b'; } }
+      export function run(alpha: Alpha, beta: Beta) {
+        alpha.ping();
+        beta.ping();
+      }
+    `);
+    expect(calls).toContain('run -> Alpha.ping');
+    expect(calls).toContain('run -> Beta.ping');
+  });
+
+  it('resolves receivers initialized with new and leaves unknown receivers unresolved', async () => {
+    const calls = await callEdges(`
+      export class Alpha { ping() { return 'a'; } }
+      export class Beta { ping() { return 'b'; } }
+      export function run(unknown: any) {
+        const alpha = new Alpha();
+        alpha.ping();
+        unknown.ping();
+      }
+    `);
+    expect(calls).toContain('run -> Alpha.ping');
+    expect(calls.filter((c) => c === 'run -> Beta.ping')).toEqual([]);
+  });
+
+  it('resolves a typed this-property receiver', async () => {
+    const calls = await callEdges(`
+      export class Clock { now() { return 1; } }
+      export class Worker {
+        constructor(private readonly clock: Clock) {}
+        run() { return this.clock.now(); }
+      }
+    `);
+    expect(calls).toContain('Worker.run -> Clock.now');
+  });
+
+  it('does not resolve a call shadowed by a local variable or nested function', async () => {
+    const shadowedByLocal = await callEdges(`
+      export function helper() { return 1; }
+      export function run() {
+        const helper = () => 2;
+        return helper();
+      }
+    `);
+    expect(shadowedByLocal.filter((c) => c.includes('run -> helper'))).toEqual([]);
+
+    const shadowedByDestructuring = await callEdges(`
+      export function helper() { return 1; }
+      export function run({ helper }: { helper: () => number }) {
+        return helper();
+      }
+    `);
+    expect(shadowedByDestructuring.filter((c) => c.includes('run -> helper'))).toEqual([]);
+  });
+
+  it('records the unresolved call site anyway, so the gap stays visible', async () => {
+    const out = await run(`
+      export function enqueue(now: () => number) {
+        return now();
+      }
+    `);
+    const fn = out.nodes.find((n) => n.name === 'enqueue');
+    const sites = (fn?.meta?.calls ?? []) as Array<{ callee: string }>;
+    // Dropping the EDGE must not drop the evidence that a call happened here.
+    expect(sites.map((s) => s.callee)).toContain('now');
+  });
+});

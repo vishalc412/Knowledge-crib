@@ -201,6 +201,39 @@ describe('crib memory init — the memory-loop bootstrap', () => {
   });
 });
 
+describe('crib memory backup — verified recovery workflow (F12)', () => {
+  it('creates, verifies, and restores the local/global stores', () => {
+    const rec = v1Record('loan_pkg threshold survives a verified restore');
+    localStore().upsertEntries('active', [rec]);
+    const bundle = join(repo, 'memory-backup');
+
+    const created = runJson(['memory', 'backup', 'create', '--out', bundle]);
+    expect(created.status).toBe(0);
+    expect(created.parsed.ok).toBe(true);
+    expect(existsSync(join(bundle, 'backup-manifest.json'))).toBe(true);
+
+    const verified = runJson(['memory', 'backup', 'verify', '--from', bundle]);
+    expect(verified.status).toBe(0);
+    expect(verified.parsed.ok).toBe(true);
+
+    localStore().removeEntry('active', rec.id);
+    expect(localStore().findEntry('active', rec.id)).toBeUndefined();
+    const restored = runJson([
+      'memory',
+      'backup',
+      'restore',
+      '--from',
+      bundle,
+      '--stores',
+      'local,global',
+      '--force',
+    ]);
+    expect(restored.status).toBe(0);
+    expect(restored.parsed.restored).toEqual(['local', 'global']);
+    expect(localStore().findEntry('active', rec.id)?.id).toBe(rec.id);
+  });
+});
+
 describe('crib memory init-sync — the D5/D7 configuration surface', () => {
   it('seeds the baseline, writes a references-only config, and syncs NOTHING', () => {
     const rec = v1Record('loan_pkg threshold constant is 30');

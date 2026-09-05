@@ -41,8 +41,8 @@ import {
   type MemoryDecision,
   type MemoryEvidence,
   type MemoryRecord,
-  type MemoryRecordV2,
-  isMemoryRecordV2,
+  type MemoryRecordVersioned,
+  isMemoryRecordVersioned,
 } from './types.js';
 
 // ─── ports (the evaluator's PURE read contract) ─────────────────────────────
@@ -875,7 +875,7 @@ export function indexDecisionsBySubject(decisions: readonly MemoryDecision[]): D
 }
 
 export function effectiveVerdicts(
-  record: MemoryRecord | MemoryRecordV2,
+  record: MemoryRecord | MemoryRecordVersioned,
   decisions: readonly MemoryDecision[],
   evaluation?: RecordEvaluation,
   migratedVerdicts?: Verdicts,
@@ -887,7 +887,7 @@ export function effectiveVerdicts(
     ? (bySubject.get(record.id) ?? NO_DECISIONS)
     : decisions.filter((d) => d.subject === record.id);
   const quarantined = mine.some((d) => d.kind === 'quarantine');
-  if (isMemoryRecordV2(record)) {
+  if (isMemoryRecordVersioned(record)) {
     // The alias snapshot is the base; a quarantine/retract/supersede decision recorded against the
     // v2 id (or bridged from the legacy id by the caller) still wins over the snapshot.
     let v2Lifecycle: EffectiveVerdicts['lifecycle'] = migratedVerdicts?.lifecycle ?? 'active';
@@ -958,8 +958,8 @@ export function isV2ConflictVisible(v: EffectiveVerdicts): boolean {
  * the ranking comparators stay deterministic; the empty fallback keeps a malformed record from
  * crashing a whole recall instead of degrading to the bottom.
  */
-export function recordSortTime(record: MemoryRecord | MemoryRecordV2): string {
-  if (isMemoryRecordV2(record)) return record.transactionTime.recordedAt ?? '';
+export function recordSortTime(record: MemoryRecord | MemoryRecordVersioned): string {
+  if (isMemoryRecordVersioned(record)) return record.transactionTime.recordedAt ?? '';
   return record.createdAt ?? '';
 }
 
@@ -969,8 +969,8 @@ export function recordSortTime(record: MemoryRecord | MemoryRecordV2): string {
  * Returns a new sorted array; does not mutate. Non-eligible records are filtered out.
  */
 export function rankRecall(
-  records: readonly { record: MemoryRecord | MemoryRecordV2; verdicts: EffectiveVerdicts }[],
-): { record: MemoryRecord | MemoryRecordV2; verdicts: EffectiveVerdicts }[] {
+  records: readonly { record: MemoryRecord | MemoryRecordVersioned; verdicts: EffectiveVerdicts }[],
+): { record: MemoryRecord | MemoryRecordVersioned; verdicts: EffectiveVerdicts }[] {
   return records
     .filter((r) => isRecallEligible(r.verdicts))
     .sort((a, b) => {
@@ -993,7 +993,7 @@ export interface ConflictGroup {
   scope?: { boundary: string; repoId?: string };
   /** memory-2 only: the shared proposition key (what the claims are about — the real conflict key). */
   propositionKey?: string;
-  records: (MemoryRecord | MemoryRecordV2)[];
+  records: (MemoryRecord | MemoryRecordVersioned)[];
 }
 
 /** Build the conflict-key for a memory-1 record (`subject|boundary|repoId`). memory-2 records never
@@ -1023,12 +1023,12 @@ export function conflictKey(record: {
  * cannot double-report. PURE over the supplied (already effective) records.
  */
 export function conflictGroups(
-  entries: readonly { record: MemoryRecord | MemoryRecordV2; verdicts: EffectiveVerdicts }[],
+  entries: readonly { record: MemoryRecord | MemoryRecordVersioned; verdicts: EffectiveVerdicts }[],
 ): ConflictGroup[] {
   const v1Buckets = new Map<string, MemoryRecord[]>();
-  const v2Buckets = new Map<string, MemoryRecordV2[]>();
+  const v2Buckets = new Map<string, MemoryRecordVersioned[]>();
   for (const { record, verdicts } of entries) {
-    if (isMemoryRecordV2(record)) {
+    if (isMemoryRecordVersioned(record)) {
       // only records that could still be acted on can conflict: the SAME exclusion axes as the
       // v1 eligibility filter ({@link isRecallEligible}) minus the trust axis — a fresh memory-2
       // record deliberately projects as candidate-trust (rank-ineligible) yet stays

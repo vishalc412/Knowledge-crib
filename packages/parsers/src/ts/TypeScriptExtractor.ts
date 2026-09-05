@@ -79,6 +79,10 @@ export class TypeScriptExtractor implements Extractor {
 
     const symbols: LocalSymbol[] = [];
     const byKey = new Map<string, string>(); // lookup key → symbol id
+    // Bare `foo()` may only reach a TOP-LEVEL symbol. `byKey` also answers to the bare name of a
+    // class member (so `this.foo()` resolves), which is why a separate map is needed rather than a
+    // filter at lookup time — see calleeIdentifier for the shape distinction this enforces.
+    const bareCallable = new Map<string, string>();
 
     const lineOf = (pos: number): number => sf.getLineAndCharacterOfPosition(pos).line + 1;
 
@@ -88,6 +92,10 @@ export class TypeScriptExtractor implements Extractor {
       if (decl) {
         symbols.push(decl.local);
         for (const k of decl.local.keys) if (!byKey.has(k)) byKey.set(k, decl.local.node.id);
+        if ((decl.local.node.meta?.parentQualifier ?? '') === '') {
+          const bare = decl.local.node.name;
+          if (bare && !bareCallable.has(bare)) bareCallable.set(bare, decl.local.node.id);
+        }
         ts.forEachChild(node, (c) => visit(c, decl.childQualifier, decl.local.node.id));
       } else {
         ts.forEachChild(node, (c) => visit(c, qualifier, parentId));
@@ -114,12 +122,12 @@ export class TypeScriptExtractor implements Extractor {
     );
 
     // --- pass 2: intra-file calls (deduped proc→callee, no guard fields yet) ---
-    this.collectCalls(sf, symbols, byKey, lineOf, edges);
+    this.collectCalls(sf, symbols, byKey, bareCallable, lineOf, edges);
 
     // --- pass 3: body-walk — condition/statement nodes + executes/guarded-by edges,
     //     call-site recording (meta.calls) + guard-field annotation on the calls edges.
     //     1.2: also emits raise/exception-handler/assignment/case-branch behavior nodes. ---
-    this.walkBodies(path, ctx, symbols, byKey, lineOf, nodes, edges, lang);
+    this.walkBodies(path, ctx, symbols, byKey, bareCallable, lineOf, nodes, edges, lang);
 
     // --- pass 4 (1.3): framework semantics — NestJS (decorators) + Express (imperative routes) +
     //     React (components/hooks/renders). Derives routes/DI/module-producers/entity-relations/
@@ -256,15 +264,16 @@ export class TypeScriptExtractor implements Extractor {
     sf: ts.SourceFile,
     symbols: LocalSymbol[],
     byKey: Map<string, string>,
+    bareCallable: Map<string, string>,
     lineOf: (pos: number) => number,
     edges: Edge[],
   ): void {
     const seen = new Set<string>();
     const walk = (node: ts.Node): void => {
       if (ts.isCallExpression(node)) {
-        const calleeName = calleeIdentifier(node.expression);
-        if (calleeName) {
-          const dstId = byKey.get(calleeName);
+        const callee = calleeIdentifier(node.expression);
+        if (callee) {
+          const dstId = resolveCallee(callee, node, byKey, bareCallable);
           const caller = enclosingSymbol(node, symbols, lineOf);
           if (dstId && caller && caller !== dstId) {
             const e = {
@@ -316,6 +325,7 @@ export class TypeScriptExtractor implements Extractor {
     ctx: ExtractCtx,
     symbols: LocalSymbol[],
     byKey: Map<string, string>,
+    bareCallable: Map<string, string>,
     lineOf: (pos: number) => number,
     nodes: Node[],
     edges: Edge[],
@@ -347,6 +357,7 @@ export class TypeScriptExtractor implements Extractor {
       this.walkBody(stmts, {
         procId,
         byKey,
+        bareCallable,
         lineOf,
         nodes,
         edges,
@@ -571,11 +582,14 @@ export class TypeScriptExtractor implements Extractor {
 
   /** Record a call site on the proc's meta.calls + annotate the (proc→callee) calls edge. */
   private recordCall(call: ts.CallExpression, env: BodyEnv, gf: GuardFields): void {
-    const calleeName = calleeIdentifier(call.expression);
-    if (!calleeName) return;
+    const callee = calleeIdentifier(call.expression);
+    if (!callee) return;
     const line = env.lineOf(call.getStart());
-    env.sites.push({ callee: calleeName, line });
-    const calleeId = env.byKey.get(calleeName);
+    // The call SITE is recorded regardless of whether it resolves: an unresolved call is real
+    // information (it is what `gaps` reports), and suppressing it would hide the very coverage
+    // limit this fix makes honest.
+    env.sites.push({ callee: callee.name, line });
+    const calleeId = resolveCallee(callee, call, env.byKey, env.bareCallable);
     if (calleeId && calleeId !== env.procId) {
       // last-wins: a callee called in two branches keeps the last site's guard fields.
       env.calls.set(calleeId, gf);
@@ -779,6 +793,8 @@ interface GuardFields {
 interface BodyEnv {
   procId: string;
   byKey: Map<string, string>;
+  /** top-level-only name map: what a BARE `foo()` is allowed to reach (see resolveCallee). */
+  bareCallable: Map<string, string>;
   lineOf: (pos: number) => number;
   nodes: Node[];
   edges: Edge[];
@@ -854,7 +870,7 @@ function actionInfo(stmt: ts.Statement): ActionInfo | undefined {
   if (ts.isExpressionStatement(stmt)) {
     const expr = stmt.expression;
     if (ts.isCallExpression(expr)) {
-      return { type: 'call', expr: text, head: calleeIdentifier(expr) ?? 'call' };
+      return { type: 'call', expr: text, head: calleeIdentifier(expr)?.name ?? 'call' };
     }
     // assignment with a call on the RHS (`x = foo()`, `x.y = foo()`) — surface the call.
     if (isAssignmentWithCall(expr)) {
@@ -862,7 +878,7 @@ function actionInfo(stmt: ts.Statement): ActionInfo | undefined {
       return {
         type: 'assign',
         expr: text,
-        head: callee ? (calleeIdentifier(callee) ?? 'call') : 'assign',
+        head: callee ? (calleeIdentifier(callee)?.name ?? 'call') : 'assign',
       };
     }
   }
@@ -874,7 +890,7 @@ function actionInfo(stmt: ts.Statement): ActionInfo | undefined {
       return {
         type: 'assign',
         expr: text,
-        head: callee ? (calleeIdentifier(callee) ?? 'call') : 'assign',
+        head: callee ? (calleeIdentifier(callee)?.name ?? 'call') : 'assign',
       };
     }
   }
@@ -1127,11 +1143,214 @@ function funcSignature(node: ts.FunctionDeclaration | ts.MethodDeclaration): str
   return `${name}(${params})${ret}`;
 }
 
-/** The simple callee name for `foo()`, `this.foo()`, `obj.foo()` → "foo"; otherwise undefined. */
-function calleeIdentifier(expr: ts.Expression): string | undefined {
-  if (ts.isIdentifier(expr)) return expr.text;
-  if (ts.isPropertyAccessExpression(expr)) return expr.name.text;
+/**
+ * The callee name and receiver shape, which decide what it may legitimately resolve to.
+ *
+ * `foo()` and `this.foo()` are not interchangeable: a bare identifier can never reach a class
+ * member, and a property access can never reach a local binding. Collapsing both to a bare name
+ * (as this did) let a bare `now()` bind to a class property `FreshnessWorker.now` at confidence 1
+ * — audit F11.
+ */
+function calleeIdentifier(
+  expr: ts.Expression,
+): { name: string; viaProperty: boolean; receiver?: ts.Expression } | undefined {
+  if (ts.isIdentifier(expr)) return { name: expr.text, viaProperty: false };
+  if (ts.isPropertyAccessExpression(expr)) {
+    return { name: expr.name.text, viaProperty: true, receiver: expr.expression };
+  }
   return undefined;
+}
+
+/**
+ * Resolve one call to a same-file symbol id, or `undefined` when it cannot be resolved HONESTLY.
+ *
+ * Two rules, both of which the audited resolver lacked:
+ *   - a bare `foo()` may only reach a top-level symbol, never a class member;
+ *   - a bare `foo()` whose name is bound locally (parameter, local var, nested function) resolves
+ *     to nothing, because the target is a value this syntactic pass cannot follow.
+ *
+ * Property calls resolve only when their receiver has a syntactically provable local type. This
+ * covers `this.foo()`, `Class.foo()`, typed parameters, `new Class()` locals, and typed `this`
+ * properties. Dynamic receivers deliberately remain unresolved rather than borrowing the first
+ * same-named method from `byKey`.
+ */
+function resolveCallee(
+  callee: { name: string; viaProperty: boolean; receiver?: ts.Expression },
+  node: ts.Node,
+  byKey: Map<string, string>,
+  bareCallable: Map<string, string>,
+): string | undefined {
+  if (callee.viaProperty) {
+    const receiverType = callee.receiver
+      ? receiverTypeName(node, callee.receiver, byKey)
+      : undefined;
+    return receiverType ? byKey.get(`${receiverType}.${callee.name}`) : undefined;
+  }
+  if (isLocallyBound(node, callee.name)) return undefined;
+  return bareCallable.get(callee.name);
+}
+
+/** Infer the simple same-file type of a property-call receiver from syntax alone. */
+function receiverTypeName(
+  node: ts.Node,
+  receiver: ts.Expression,
+  byKey: Map<string, string>,
+): string | undefined {
+  if (receiver.kind === ts.SyntaxKind.ThisKeyword) return enclosingClassName(node);
+
+  if (ts.isIdentifier(receiver)) {
+    const local = localBindingType(node, receiver.text);
+    if (local) return local;
+    // `Clock.now()` is safe only when `Clock` names a same-file class and is not shadowed locally.
+    if (!isLocallyBound(node, receiver.text) && byKey.has(receiver.text)) return receiver.text;
+    return undefined;
+  }
+
+  // `this.clock.now()` — infer `clock` from a property or constructor parameter declaration.
+  if (
+    ts.isPropertyAccessExpression(receiver) &&
+    receiver.expression.kind === ts.SyntaxKind.ThisKeyword
+  ) {
+    return classPropertyType(node, receiver.name.text);
+  }
+  return undefined;
+}
+
+function enclosingClassName(node: ts.Node): string | undefined {
+  for (let cur = node.parent; cur; cur = cur.parent) {
+    if ((ts.isClassDeclaration(cur) || ts.isClassExpression(cur)) && cur.name) {
+      return cur.name.text;
+    }
+  }
+  return undefined;
+}
+
+/** Find a visible parameter or direct block variable and extract its explicit/initializer type. */
+function localBindingType(node: ts.Node, name: string): string | undefined {
+  const callPos = node.getStart();
+  for (let cur = node.parent; cur; cur = cur.parent) {
+    if (ts.isFunctionLike(cur)) {
+      const param = cur.parameters.find((p) => ts.isIdentifier(p.name) && p.name.text === name);
+      if (param) return declaredTypeName(param.type, param.initializer);
+    }
+    if (ts.isBlock(cur) || ts.isSourceFile(cur)) {
+      for (const statement of cur.statements) {
+        if (statement.getStart() >= callPos || !ts.isVariableStatement(statement)) continue;
+        for (const declaration of statement.declarationList.declarations) {
+          if (ts.isIdentifier(declaration.name) && declaration.name.text === name) {
+            return declaredTypeName(declaration.type, declaration.initializer);
+          }
+        }
+      }
+    }
+  }
+  return undefined;
+}
+
+/** Resolve `this.member` from a class property or a constructor parameter property. */
+function classPropertyType(node: ts.Node, name: string): string | undefined {
+  for (let cur = node.parent; cur; cur = cur.parent) {
+    if (!ts.isClassDeclaration(cur) && !ts.isClassExpression(cur)) continue;
+    for (const member of cur.members) {
+      if (ts.isPropertyDeclaration(member) && member.name?.getText() === name) {
+        return declaredTypeName(member.type, member.initializer);
+      }
+      if (ts.isConstructorDeclaration(member)) {
+        const param = member.parameters.find(
+          (p) => ts.isIdentifier(p.name) && p.name.text === name,
+        );
+        if (param) return declaredTypeName(param.type, param.initializer);
+      }
+    }
+    return undefined;
+  }
+  return undefined;
+}
+
+function declaredTypeName(
+  type: ts.TypeNode | undefined,
+  initializer: ts.Expression | undefined,
+): string | undefined {
+  if (type && ts.isTypeReferenceNode(type) && ts.isIdentifier(type.typeName)) {
+    return type.typeName.text;
+  }
+  if (initializer && ts.isNewExpression(initializer) && ts.isIdentifier(initializer.expression)) {
+    return initializer.expression.text;
+  }
+  if (
+    initializer &&
+    (ts.isAsExpression(initializer) || ts.isTypeAssertionExpression(initializer)) &&
+    ts.isTypeReferenceNode(initializer.type) &&
+    ts.isIdentifier(initializer.type.typeName)
+  ) {
+    return initializer.type.typeName.text;
+  }
+  return undefined;
+}
+
+/**
+ * Is `name` bound by a LOCAL declaration enclosing `node` (parameter, local var/const/let, nested
+ * function, catch binding, or an import alias)?
+ *
+ * A call to a locally bound name targets a VALUE, and knowing which function that value holds needs
+ * type inference this syntactic extractor does not do. The honest answer is therefore "unresolved"
+ * — the call still appears in `meta.calls` and in the `gaps` report — rather than a confident edge
+ * to whatever file-level symbol happens to share the name. That was the audited defect: the `now`
+ * PARAMETER of `enqueueFreshness` produced a confidence-1 edge to two unrelated `now` symbols.
+ *
+ * The walk stops before the SourceFile: top-level declarations are the file's real symbols and are
+ * exactly what a bare call SHOULD resolve to.
+ */
+function isLocallyBound(node: ts.Node, name: string): boolean {
+  for (let cur = node.parent; cur && !ts.isSourceFile(cur); cur = cur.parent) {
+    if (declaresName(cur, name)) return true;
+  }
+  return false;
+}
+
+/** Does this single scope-bearing node declare `name`? */
+function declaresName(scope: ts.Node, name: string): boolean {
+  // function-like: parameters and (for a named function expression) its own name
+  if (ts.isFunctionLike(scope)) {
+    for (const p of scope.parameters) {
+      if (ts.isIdentifier(p.name) && p.name.text === name) return true;
+      // destructured parameters bind names too: ({ now }) => now()
+      if (!ts.isIdentifier(p.name) && bindingDeclares(p.name, name)) return true;
+    }
+  }
+  if (ts.isCatchClause(scope) && scope.variableDeclaration) {
+    const v = scope.variableDeclaration.name;
+    if (ts.isIdentifier(v) ? v.text === name : bindingDeclares(v, name)) return true;
+  }
+  // statement lists: local variable and nested function declarations
+  const statements = ts.isBlock(scope)
+    ? scope.statements
+    : ts.isSourceFile(scope)
+      ? scope.statements
+      : undefined;
+  if (statements) {
+    for (const st of statements) {
+      if (ts.isVariableStatement(st)) {
+        for (const d of st.declarationList.declarations) {
+          if (ts.isIdentifier(d.name) ? d.name.text === name : bindingDeclares(d.name, name)) {
+            return true;
+          }
+        }
+      }
+      if (ts.isFunctionDeclaration(st) && st.name?.text === name) return true;
+    }
+  }
+  return false;
+}
+
+/** Does a destructuring pattern bind `name`? */
+function bindingDeclares(pattern: ts.BindingName, name: string): boolean {
+  if (ts.isIdentifier(pattern)) return pattern.text === name;
+  for (const el of pattern.elements) {
+    if (ts.isOmittedExpression(el)) continue;
+    if (bindingDeclares(el.name, name)) return true;
+  }
+  return false;
 }
 
 /** The id of the symbol whose span encloses `node`'s position; the innermost wins. */

@@ -1,0 +1,122 @@
+{
+  "node": {
+    "id": "sym:packages/cli/src/freshness.ts#enqueueFreshness@L201",
+    "kind": "symbol",
+    "type": "function",
+    "name": "enqueueFreshness",
+    "qualifiedName": "enqueueFreshness",
+    "signature": "enqueueFreshness(projectRoot: string, head: string, env: NodeJS.ProcessEnv = process.env, now: () => Date = () => new Date()): EnqueueResult",
+    "lang": "typescript",
+    "file": "packages/cli/src/freshness.ts",
+    "span": {
+      "start": 201,
+      "end": 226
+    },
+    "callSites": [
+      {
+        "callee": "readFreshnessQueue",
+        "line": 207
+      },
+      {
+        "callee": "freshnessTaskId",
+        "line": 208
+      },
+      {
+        "callee": "findIndex",
+        "line": 209
+      },
+      {
+        "callee": "toISOString",
+        "line": 219
+      },
+      {
+        "callee": "now",
+        "line": 219
+      },
+      {
+        "callee": "map",
+        "line": 222
+      },
+      {
+        "callee": "writeQueue",
+        "line": 224
+      }
+    ]
+  },
+  "callers": [
+    {
+      "id": "sym:packages/cli/src/freshness.ts#postCommitFreshness@L235",
+      "name": "postCommitFreshness",
+      "qualifiedName": "postCommitFreshness",
+      "signature": "postCommitFreshness(projectRoot: string, head: string, env: NodeJS.ProcessEnv = process.env): { mode: FreshnessMode; enqueued: boolean; id?: string; ok: boolean }",
+      "type": "function",
+      "file": "packages/cli/src/freshness.ts",
+      "line": 235,
+      "confidence": 1
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/cli/src/freshness.ts#readFreshnessQueue@L168",
+      "name": "readFreshnessQueue",
+      "qualifiedName": "readFreshnessQueue",
+      "signature": "readFreshnessQueue(env: NodeJS.ProcessEnv = process.env): FreshnessQueue",
+      "type": "function",
+      "file": "packages/cli/src/freshness.ts",
+      "line": 168,
+      "confidence": 1
+    },
+    {
+      "id": "sym:packages/cli/src/freshness.ts#freshnessTaskId@L183",
+      "name": "freshnessTaskId",
+      "qualifiedName": "freshnessTaskId",
+      "signature": "freshnessTaskId(projectRoot: string, head: string): string",
+      "type": "function",
+      "file": "packages/cli/src/freshness.ts",
+      "line": 183,
+      "confidence": 1
+    },
+    {
+      "id": "sym:packages/cli/src/freshness.ts#FreshnessWorker.now@L395",
+      "name": "now",
+      "qualifiedName": "FreshnessWorker.now",
+      "type": "property",
+      "file": "packages/cli/src/freshness.ts",
+      "line": 395,
+      "confidence": 1
+    },
+    {
+      "id": "sym:packages/cli/src/freshness.ts#writeQueue@L174",
+      "name": "writeQueue",
+      "qualifiedName": "writeQueue",
+      "signature": "writeQueue(q: FreshnessQueue, env: NodeJS.ProcessEnv): void",
+      "type": "function",
+      "file": "packages/cli/src/freshness.ts",
+      "line": 174,
+      "confidence": 1
+    },
+    {
+      "id": "sym:packages/cli/src/cli.ts#cmdMemoryDistill.now@L4757",
+      "name": "now",
+      "qualifiedName": "cmdMemoryDistill.now",
+      "signature": "now(…)",
+      "type": "function",
+      "file": "packages/cli/src/cli.ts",
+      "line": 4757,
+      "confidence": 1
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/cli/src/freshness.ts@L194",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    }
+  ],
+  "truncated": false,
+  "grounding": "code",
+  "hash": "blake3:207890a1153f7a6c920e52d83a73de06f113f909149f2f18390fcf15855be7d6"
+}

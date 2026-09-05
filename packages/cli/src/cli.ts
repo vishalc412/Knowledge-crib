@@ -23,9 +23,10 @@ import {
   statSync,
   writeFileSync,
 } from 'node:fs';
-import { hostname } from 'node:os';
+import { homedir, hostname } from 'node:os';
 import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { createInterface as createReadline } from 'node:readline';
+import { fileURLToPath } from 'node:url';
 import {
   CALLABLE_SYMBOL_TYPES,
   type EmbedManifest,
@@ -35,6 +36,7 @@ import {
   REMOTE_EMBED_POLICY_VERSION,
   type RemoteEmbedPolicy,
   SoulStore,
+  SqliteIndexStore,
   WorkingOverlay,
   embedHomeDir,
   embedManifestPath,
@@ -98,7 +100,7 @@ import {
   type MemoryPolicy,
   type MemoryRecord,
   type MemoryRecordKind,
-  type MemoryRecordV2,
+  type MemoryRecordVersioned,
   type MemorySource,
   MemoryStore,
   ProjectionCheckpointStore,
@@ -138,8 +140,10 @@ import {
   buildAttemptEvent,
   buildDistillWorkItem,
   compactAttempt,
+  compactSyncOutbox,
   conservativeVerdicts,
   contradictedForReview,
+  createMemoryBackup,
   decisionConflicts,
   decisionId,
   decryptEvent,
@@ -154,7 +158,7 @@ import {
   gcUnpromotedAttempts,
   genSyncKey,
   isFeedbackSignal,
-  isMemoryRecordV2,
+  isMemoryRecordVersioned,
   isTeamTrustedRecord,
   keyFingerprint,
   loadPolicy,
@@ -176,7 +180,9 @@ import {
   readSyncConfig,
   recallProjection,
   resolveProfile,
+  resolveServerIdentity,
   resolveSyncKey,
+  restoreMemoryBackup,
   rotateSyncKey,
   runGate,
   runMemoryBench,
@@ -189,6 +195,7 @@ import {
   tombstoneLocalForTeamPromotion,
   trustedRefOf,
   verifyDistillDecision,
+  verifyMemoryBackup,
   verifySnapshot,
   writeSyncConfig,
 } from '@knowledge-crib/memory';
@@ -237,21 +244,35 @@ import {
   removeInstructions,
 } from './adapters.js';
 import {
+  DEFAULT_EMBED_ALIAS,
+  EMBED_MODELS,
+  describeEvidence,
+  resolveModelSpec,
+  runEmbedSetup,
+} from './embed-setup.js';
+import {
   type ProviderDef,
   ProviderItemError,
   resolveProvider,
   runProviderBatch,
 } from './enrich-provider.js';
 import {
+  installFreshnessService,
+  queryFreshnessService,
+  uninstallFreshnessService,
+} from './freshness-service.js';
+import {
   FRESHNESS_MODES,
   type FreshnessMode,
   type FreshnessTask,
   WorkerAlreadyRunningError,
   freshnessStatus,
+  getFreshnessMode,
   parseFreshnessMode,
   postCommitFreshness,
   runFreshnessWorker,
   setFreshnessMode,
+  shouldServeWatch,
 } from './freshness.js';
 import {
   convertBlockingPostCommit,
@@ -261,7 +282,7 @@ import {
   mergeDriverFiles,
 } from './hooks.js';
 import { type McpIde, type McpScope, installMcp, listMcp, removeMcp } from './mcp-install.js';
-import { registerProject } from './registry.js';
+import { registerProject, registryDir } from './registry.js';
 import {
   type ResolvedRoot,
   buildIndex,
@@ -276,6 +297,7 @@ import {
   VizHttpError,
   isAllowedHost,
   parseMemoryLedgerQuery,
+  readMemoryHome,
   readMemoryLedger,
   readMemoryLedgerDetail,
   readVizNodeSource,
@@ -1884,10 +1906,22 @@ async function cmdServe(args: string[], ctx?: CmdCtx): Promise<number> {
   // never committed (SoulStore.commit() is a no-op when ephemeral), so the committed soul is safe.
   let watch: WatchMode | undefined;
   let overlay: WorkingOverlay | undefined;
-  if (args.includes('--watch')) {
+  // The durable index intentionally represents only committed source. Watch mode gets a separate
+  // in-memory FTS projection so candidate discovery and graph reads see the same working snapshot.
+  let overlayIndex: SqliteIndexStore | undefined;
+  // The freshness POLICY configures the serving process, not just the CLI flag (audit F06). Every
+  // generated client config spawns a bare `crib serve <root>`, so a user who selected `watch`/`auto`
+  // got a stale-on-save server anyway and had no way to tell. Reading the persisted mode here means
+  // the choice takes effect on the next server start with no config regeneration; `--watch` stays an
+  // explicit override for one-off runs (and for a project that was never registered).
+  const persistedMode = getFreshnessMode(resolved.repoRoot);
+  const watchRequested = shouldServeWatch(args, persistedMode);
+  if (watchRequested) {
     overlay = new WorkingOverlay(rt.soul);
+    overlayIndex = new SqliteIndexStore();
     watch = new WatchMode(rt.soul, overlay, resolved.repoRoot, {
       onRefresh: (result, reason) => {
+        overlayIndex!.buildFromSoul(overlay!.store, resolved.repoRoot);
         if (result.dirty.length === 0) return;
         process.stderr.write(
           `watch [${reason}] refreshed ${result.dirty.length} file(s) [scope ${result.scope.length}] → ` +
@@ -1902,13 +1936,29 @@ async function cmdServe(args: string[], ctx?: CmdCtx): Promise<number> {
       onWarn: (msg) => process.stderr.write(`watch: ${msg}\n`),
     });
     await watch.start();
+    // `start()` may have no dirty files and therefore not fire onRefresh; still seed a complete
+    // in-memory index so every discovery call is paired with the active overlay snapshot.
+    overlayIndex.buildFromSoul(overlay.store, resolved.repoRoot);
     process.stderr.write(
-      `watch mode active — ${overlay.dirty.length} dirty file(s) overlaid; committed .crib/graph untouched\n`,
+      `watch mode active (${args.includes('--watch') ? '--watch' : `freshness mode ${persistedMode}`}) — ` +
+        `${overlay.dirty.length} dirty file(s) overlaid; committed .crib/graph untouched\n`,
+    );
+  } else {
+    // Say which mode is in force even when it is the passive one: "why is my saved edit not
+    // showing up" is unanswerable if the server never states that it is not watching.
+    process.stderr.write(
+      'freshness mode manual — serving the committed graph; saved-but-uncommitted edits are NOT ' +
+        'visible to query. Enable with `crib freshness watch` (takes effect next server start).\n',
     );
   }
   // The embed tier is resolved ONCE here, before the server starts: every MCP recall below is
   // synchronous, and a server must not decide its ranker per request.
   await ensureInstalledEmbedder();
+  if (installedEmbedderProblem) {
+    process.stderr.write(
+      `warning: on-device semantic retrieval is unavailable; serving lexical-only memory recall. Run \`crib embed status\` to repair the installed tier. Reason: ${installedEmbedderProblem}\n`,
+    );
+  }
   const verbs = new Verbs({
     soul: rt.soul,
     index,
@@ -1920,6 +1970,7 @@ async function cmdServe(args: string[], ctx?: CmdCtx): Promise<number> {
       ? { memory: { ...memory, ...(installedEmbedder ? { embedder: installedEmbedder } : {}) } }
       : {}),
     ...(overlay ? { workingOverlay: overlay.store } : {}),
+    ...(overlayIndex ? { workingOverlayIndex: overlayIndex } : {}),
   });
   // stdout is the MCP transport; logs go to stderr only.
   const stats = rt.soul.getManifest().stats;
@@ -1947,6 +1998,8 @@ async function cmdServe(args: string[], ctx?: CmdCtx): Promise<number> {
     } finally {
       await daemon.close();
       watch?.stop();
+      overlayIndex?.close();
+      index.close();
     }
     return EXIT.OK;
   }
@@ -1958,6 +2011,8 @@ async function cmdServe(args: string[], ctx?: CmdCtx): Promise<number> {
     await serveStdio(verbs);
   } finally {
     watch?.stop();
+    overlayIndex?.close();
+    index.close();
   }
   return EXIT.OK;
 }
@@ -2631,8 +2686,100 @@ function cmdInstallHooks(
  * broken install silently degrading recall). Remote embedders are NEVER enabled here without the
  * explicit `--accept-remote-policy` acknowledgment (red line #3).
  */
+/**
+ * `crib embed setup` — the one command that takes a machine from the lexical fallback to the
+ * semantic tier.
+ *
+ * The audited state was that the on-device tier was reachable only through a README ritual whose
+ * final step named a path inside the git checkout, so anyone who installed from npm could not
+ * follow it at all (audit F05). This owns the adapter instead of pointing at one, and it refuses to
+ * report success until the installed model has been shown to rank a paraphrase above an unrelated
+ * sentence in-process.
+ */
+async function cmdEmbedSetup(args: string[]): Promise<number> {
+  let alias = DEFAULT_EMBED_ALIAS;
+  let python = process.env.KCRIB_EMBED_PYTHON ?? 'python3';
+  let yes = false;
+  let json = false;
+  for (let i = 0; i < args.length; i++) {
+    const a = args[i]!;
+    if (a === '--model') alias = args[++i] ?? alias;
+    else if (a === '--python') python = args[++i] ?? python;
+    else if (a === '--yes') yes = true;
+    else if (a === '--json') json = true;
+    else if (a === '--help' || a === '-h') {
+      process.stdout.write(embedSetupHelp());
+      return EXIT.OK;
+    } else {
+      process.stderr.write(`unknown flag for embed setup: ${a}\n\n${embedSetupHelp()}`);
+      return EXIT.BAD_ARGS;
+    }
+  }
+  const spec = resolveModelSpec(alias);
+  if (!spec) {
+    process.stderr.write(
+      `unknown model "${alias}". Known: ${EMBED_MODELS.map((m) => m.alias).join(', ')}\n`,
+    );
+    return EXIT.BAD_ARGS;
+  }
+
+  const plan = await runEmbedSetup({ spec, pythonPath: python, yes });
+  if (json) {
+    process.stdout.write(`${JSON.stringify(plan, null, 2)}\n`);
+    return plan.installed ? EXIT.OK : EXIT.ERROR;
+  }
+
+  process.stdout.write(`crib embed setup — ${spec.alias} (${spec.hfId}, dim ${spec.dim})\n`);
+  process.stdout.write(`  evidence: ${describeEvidence(spec.evidence)}\n\n`);
+  for (const { name, result } of plan.steps) {
+    process.stdout.write(`  ${result.ok ? 'ok  ' : 'FAIL'} ${name}: ${result.detail}\n`);
+  }
+  if (plan.installed) {
+    // State the mode explicitly. A user who cannot tell whether recall is semantic or lexical
+    // cannot interpret their own results — the audit's "surface retrieval mode" point.
+    process.stdout.write(
+      '\nsemantic retrieval is ENABLED for memory recall on this machine.\n' +
+        '  verify any time with: crib embed status\n',
+    );
+    return EXIT.OK;
+  }
+  if (plan.needsConsent) process.stdout.write(`\nstopped: ${plan.needsConsent}\n`);
+  if (plan.remediation.length > 0) {
+    process.stdout.write(`\n${plan.remediation.join('\n')}\n`);
+  }
+  process.stdout.write(
+    '\nmemory recall stays LEXICAL until this completes; it still works, but paraphrase queries\n' +
+      'will not match the way the semantic tier does.\n',
+  );
+  // A stopped run needs consent or an operator action; neither is an internal failure.
+  return plan.needsConsent ? EXIT.OK : EXIT.ERROR;
+}
+
+/** Usage text for `crib embed setup`, including the honest per-model evidence line. */
+function embedSetupHelp(): string {
+  const rows = EMBED_MODELS.map(
+    (m) =>
+      `  ${m.alias.padEnd(6)} ${m.hfId}\n` +
+      `         download ${m.approxDisk}, dim ${m.dim}\n` +
+      `         ${describeEvidence(m.evidence)}\n` +
+      `         ${m.note}\n`,
+  ).join('');
+  return `usage: crib embed setup [--model <alias>] [--python <path>] [--yes] [--json]
+
+Installs the on-device semantic tier for memory recall. Without --yes nothing is
+downloaded: the command reports what it would fetch and stops.
+
+models (default: ${DEFAULT_EMBED_ALIAS}):
+${rows}
+The weights are downloaded from HuggingFace by sentence-transformers under their own
+licences; crib pins the generated adapter through its integrity manifest. The remote
+embedder tier is NOT enabled by this command (see \`crib embed install --accept-remote-policy\`).
+`;
+}
+
 async function cmdEmbed(args: string[], ctx?: CmdCtx): Promise<number> {
   const [sub, ...rest] = args;
+  if (sub === 'setup') return cmdEmbedSetup(rest);
   if (sub === 'install') {
     const positionals: string[] = [];
     let modelId: string | undefined;
@@ -2750,11 +2897,12 @@ async function freshnessRevalidate(task: FreshnessTask): Promise<{ generation: s
 }
 
 /**
- * `crib freshness [<mode>|worker|hook|convert-hook]` — the freshness-mode surface (G3.4):
+ * `crib freshness [<mode>|worker|service|hook|convert-hook]` — the freshness-mode surface (G3.4):
  *   (no args / status)  mode + worker lease + in-flight + queue depth + behind-HEAD
  *   <mode>              persist manual|watch|auto in the project registry
  *   worker              foreground durable background worker (red line #5: persistent queue,
  *                       lease/heartbeat, coalescing, crash recovery, last-known-good)
+ *   service             install/status/uninstall OS supervision for the one user worker
  *   hook                the post-commit hook body: enqueue in `auto`, no-op otherwise — ALWAYS
  *                       exit 0 (fail-open; a hook must never block a commit in ANY mode)
  *   convert-hook        rewrite the legacy blocking `crib update` post-commit hook to this
@@ -2769,6 +2917,9 @@ async function cmdFreshness(args: string[], ctx?: CmdCtx): Promise<number> {
     ...FRESHNESS_MODES,
     'status',
     'worker',
+    'service',
+    'install',
+    'uninstall',
     'hook',
     'convert-hook',
   ]);
@@ -2777,10 +2928,21 @@ async function cmdFreshness(args: string[], ctx?: CmdCtx): Promise<number> {
   const sub = args.find(isSub);
   const rootPos = positionals.find((tok) => !isSub(tok));
   const repoRoot = resolve(ctx?.cwdOverride ?? rootPos ?? '.');
+  const serviceOptions = () => ({
+    platform: process.platform as 'darwin' | 'linux' | 'win32',
+    userHome: homedir(),
+    nodePath: process.execPath,
+    cliPath: join(dirname(fileURLToPath(import.meta.url)), 'bin.js'),
+    registryDir: registryDir(process.env),
+    uid: process.getuid?.() ?? 0,
+  });
   if (sub === undefined || sub === 'status') {
     const status = freshnessStatus(repoRoot);
+    const modeLabel = status.modeExplicit
+      ? status.mode
+      : `${status.mode} (default — set with \`crib freshness <mode>\`; modes: ${FRESHNESS_MODES.join('|')})`;
     process.stdout.write(
-      `freshness mode: ${status.mode}${status.modeExplicit ? '' : ' (default — set with `crib freshness <mode>`; modes: '}${FRESHNESS_MODES.join('|')}${status.modeExplicit ? '' : ')'}\n  worker: ${status.workerRunning ? `running (pid ${status.workerPid ?? '?'})` : 'not running'}\n  pending: ${status.pending}${status.dead > 0 ? `, dead-lettered: ${status.dead}` : ''}\n  in-flight: ${status.inFlight ? status.inFlight.id : 'none'}\n  last-known-good: ${status.lastKnownGood ? `${status.lastKnownGood.generation.slice(0, 16)}… @ ${status.lastKnownGood.head.slice(0, 12)}` : 'never published'}\n  behind HEAD: ${status.behindHead ? 'yes — run `crib freshness worker` (or `crib update`)' : 'no'}\n`,
+      `freshness mode: ${modeLabel}\n  worker: ${status.workerRunning ? `running (pid ${status.workerPid ?? '?'})` : 'not running'}\n  pending: ${status.pending}${status.dead > 0 ? `, dead-lettered: ${status.dead}` : ''}\n  in-flight: ${status.inFlight ? status.inFlight.id : 'none'}\n  last-known-good: ${status.lastKnownGood ? `${status.lastKnownGood.generation.slice(0, 16)}… @ ${status.lastKnownGood.head.slice(0, 12)}` : 'never published'}\n  behind HEAD: ${status.behindHead ? 'yes — run `crib freshness worker` (or `crib update`)' : 'no'}\n`,
     );
     return EXIT.OK;
   }
@@ -2791,12 +2953,54 @@ async function cmdFreshness(args: string[], ctx?: CmdCtx): Promise<number> {
       process.stderr.write(`error: ${(err as Error).message}\n`);
       return EXIT.ERROR;
     }
-    process.stdout.write(
-      `freshness mode set to ${sub}\n${sub === 'auto' ? '  start the durable worker with `crib freshness worker` (or a service manager) — the mode only changes what the worker does, it never blocks a commit.\n' : ''}${sub === 'watch' ? '  watch mode is served by `crib serve --watch` (300ms debounce, serialized, atomic publication).\n' : ''}`,
-    );
+    // Say what the mode ACTUALLY changes and when. The audited gap was a mode that persisted a
+    // preference while configuring nothing: `serve` ignored it and the generated client args never
+    // carried `--watch`, so a user could select `watch` and still be served a stale graph with no
+    // signal. `serve` now reads this mode, which makes the remaining action a server restart.
+    let autoNote = '';
+    if (sub === 'auto') {
+      try {
+        const service = queryFreshnessService(serviceOptions());
+        const installed = service.active ? service : installFreshnessService(serviceOptions());
+        autoNote = `  supervised worker: active via ${installed.manager} (${installed.path})\n`;
+      } catch (error) {
+        process.stderr.write(
+          `freshness mode was set to auto, but service installation failed: ${(error as Error).message}\nrepair with \`crib freshness service install\` after fixing the service-manager error.\n`,
+        );
+        return EXIT.ERROR;
+      }
+    }
+    const nextSteps =
+      sub === 'manual'
+        ? '  saved-but-uncommitted edits will NOT be visible to query; run `crib update` to refresh.\n'
+        : `  restart your MCP client (or \`crib serve\`) for this to take effect — the server reads this\n  mode at startup, so no client config regeneration is needed.\n${autoNote}`;
+    process.stdout.write(`freshness mode set to ${sub}\n${nextSteps}`);
     return EXIT.OK;
   }
   switch (sub) {
+    case 'service': {
+      const action = args[args.indexOf('service') + 1] ?? 'status';
+      if (!['install', 'status', 'uninstall'].includes(action)) {
+        process.stderr.write('usage: crib freshness service [install|status|uninstall]\n');
+        return EXIT.BAD_ARGS;
+      }
+      try {
+        const result =
+          action === 'install'
+            ? installFreshnessService(serviceOptions())
+            : action === 'uninstall'
+              ? uninstallFreshnessService(serviceOptions())
+              : queryFreshnessService(serviceOptions());
+        process.stdout.write(
+          `freshness service: ${result.installed ? (result.active ? 'active' : 'installed, inactive') : 'not installed'}\n` +
+            `  manager: ${result.manager}\n  definition: ${result.path}\n`,
+        );
+        return action === 'status' && result.installed && !result.active ? EXIT.ERROR : EXIT.OK;
+      } catch (error) {
+        process.stderr.write(`freshness service ${action} failed: ${(error as Error).message}\n`);
+        return EXIT.ERROR;
+      }
+    }
     case 'worker': {
       try {
         const worker = await runFreshnessWorker({
@@ -2871,7 +3075,7 @@ async function cmdFreshness(args: string[], ctx?: CmdCtx): Promise<number> {
     case '-h':
     case '--help':
       process.stdout.write(
-        `usage: crib freshness [<mode>|status|worker|hook|convert-hook]\n  modes: ${FRESHNESS_MODES.join(' | ')}\n`,
+        `usage: crib freshness [<mode>|status|worker|service|hook|convert-hook]\n  modes: ${FRESHNESS_MODES.join(' | ')}\n  service: install | status | uninstall\n`,
       );
       return EXIT.OK;
     default:
@@ -3078,6 +3282,7 @@ async function cmdViz(args: string[], ctx?: CmdCtx): Promise<number> {
   const memoryApi = memoryDeps
     ? createMemoryApi(rt.soul, rt.repoRoot, resolved.cribDir, memoryDeps)
     : undefined;
+  await ensureInstalledEmbedder();
   const { createServer } = await import('node:http');
   const { readFile } = await import('node:fs/promises');
   const { extname } = await import('node:path');
@@ -3127,6 +3332,51 @@ async function cmdViz(args: string[], ctx?: CmdCtx): Promise<number> {
           'cache-control': 'no-store',
         });
         res.end(JSON.stringify(ledger));
+        return;
+      }
+      if (requestUrl.pathname === '/memory/home.json') {
+        const events = memoryDeps?.eventJournal.read({ includeExpired: true }) ?? [];
+        const latest = (kind: 'memory.observed' | 'sync.applied') =>
+          [...events].reverse().find((event) => event.kind === kind)?.recordedAt;
+        const freshness = freshnessStatus(resolved.repoRoot);
+        const repoId = readRepoId(resolved.cribDir);
+        const syncConfigured = Boolean(
+          repoId &&
+            (readSyncConfig('local', repoId, process.env) ||
+              readSyncConfig('global', 'global', process.env)),
+        );
+        const home = readMemoryHome(
+          memoryApi,
+          {
+            retrieval: installedEmbedder
+              ? {
+                  mode: 'on-device-semantic',
+                  modelId: installedEmbedder.id,
+                }
+              : {
+                  mode: 'lexical-fallback',
+                  ...(installedEmbedderProblem ? { reason: installedEmbedderProblem } : {}),
+                },
+            capture: {
+              ...(latest('memory.observed') ? { lastSuccessfulAt: latest('memory.observed') } : {}),
+            },
+            codeIndex: {
+              lastSuccessfulAt: rt.soul.getManifest().stats.lastUpdated,
+              behindHead: freshness.behindHead,
+              workerRunning: freshness.workerRunning,
+            },
+            sync: {
+              configured: syncConfigured,
+              ...(latest('sync.applied') ? { lastSuccessfulAt: latest('sync.applied') } : {}),
+            },
+          },
+          currentRepositoryAnchor(resolved.repoRoot),
+        );
+        res.writeHead(200, {
+          'content-type': 'application/json; charset=utf-8',
+          'cache-control': 'no-store',
+        });
+        res.end(JSON.stringify(home));
         return;
       }
       if (requestUrl.pathname === '/memory/record.json') {
@@ -4066,16 +4316,19 @@ function cmdAdaptersHooks(args: string[], ctx?: CmdCtx): number {
  */
 let installedEmbedder: Embedder | undefined;
 let embedderResolved = false;
+/** A degraded semantic tier is operationally significant: retain a safe diagnostic for startup logs. */
+let installedEmbedderProblem: string | undefined;
 
 /** Resolve the tier once. Never throws: an unreadable or failed-integrity manifest leaves the
- *  incumbent ranker in place rather than failing a memory command outright. */
+ * incumbent ranker in place, but records the failure so a server never hides degraded retrieval. */
 async function ensureInstalledEmbedder(): Promise<Embedder | undefined> {
   if (embedderResolved) return installedEmbedder;
   embedderResolved = true;
   try {
     installedEmbedder = await loadInstalledEmbedder();
-  } catch {
+  } catch (err) {
     installedEmbedder = undefined;
+    installedEmbedderProblem = err instanceof Error ? err.message : String(err);
   }
   return installedEmbedder;
 }
@@ -4337,12 +4590,137 @@ function cmdIntake(args: string[], ctx?: CmdCtx): number {
 function cmdSession(args: string[], ctx?: CmdCtx): number {
   const [sub, ...rest] = args;
   if (sub === 'bootstrap') return cmdMemoryHandoff(rest, ctx);
+  if (sub === 'resume') return cmdSessionResume(rest, ctx);
+  if (sub === 'fresh') return cmdSessionFresh(rest, ctx);
   if (sub === undefined || sub === '--help' || sub === '-h') {
-    process.stdout.write('usage: crib session bootstrap [--limit N] [--json]\n');
+    process.stdout.write(
+      'usage: crib session bootstrap [--limit N] [--json]   what is unfinished, and the choice\n' +
+        '       crib session resume <intakeId> [--json]      continue that work (records a resume)\n' +
+        '       crib session fresh [--json]                  start new work, keeping the rest open\n',
+    );
     return EXIT.OK;
   }
   process.stderr.write(`unknown session subcommand: ${sub}\n`);
   return EXIT.BAD_ARGS;
+}
+
+/**
+ * `crib session resume <intakeId>` — take the "continue" branch of the handoff choice.
+ *
+ * Recording the resume is the point: without it, "I continued this" lives only in the agent's head,
+ * so the next session cannot tell a genuinely resumed intake from one that has sat untouched for a
+ * week. The append is a `resumed` checkpoint — the kind the schema already reserves for this — and
+ * it carries the CURRENT repository anchor, so the next drift check compares against the tree the
+ * work actually restarted from rather than the one it was last paused at.
+ */
+function cmdSessionResume(args: string[], ctx?: CmdCtx): number {
+  const json = args.includes('--json');
+  const intakeId = positionalsOf(args)[0];
+  if (!intakeId) {
+    process.stderr.write(
+      'usage: crib session resume <intakeId> [--json]\n  list the options with `crib session bootstrap`\n',
+    );
+    return EXIT.BAD_ARGS;
+  }
+  const runtime = intakeApi(ctx);
+  if (!runtime) {
+    process.stderr.write('could not resolve repoId for intake — run `crib index` first\n');
+    return EXIT.NOT_INDEXED;
+  }
+  const { api, repository } = runtime;
+  const handoff = api.handoff({ repository });
+  const option = handoff.continuation.options.find(
+    (o) => o.optionId === intakeId || o.intakeId === intakeId,
+  );
+  if (!option || option.kind !== 'resume' || !option.intakeId) {
+    // Refuse rather than resume something not offered: a typo'd id must not silently do nothing,
+    // and an intake that is completed/cancelled is deliberately not on the list.
+    process.stderr.write(
+      `not a resumable intake here: ${intakeId}\n  run \`crib session bootstrap\` for the current options\n`,
+    );
+    return EXIT.BAD_ARGS;
+  }
+  const brief = handoff.intakes.choices.find((c) => c.intakeId === option.intakeId);
+  const principalId = process.env.KCRIB_PRINCIPAL_ID?.trim() || DEFAULT_MIGRATION_PRINCIPAL_ID;
+  // An intake that was created but never checkpointed carries no next action, and a non-terminal
+  // checkpoint must name one. Ask for it rather than inventing a placeholder: "resuming" without a
+  // concrete next step is the vague state the checkpoint exists to prevent.
+  const nextSafeAction = stringFlag(args, '--next')?.trim() || brief?.nextSafeAction;
+  if (!nextSafeAction) {
+    process.stderr.write(
+      `${option.intakeId} has no recorded next action yet — say what resuming means:\n` +
+        `  crib session resume ${option.intakeId} --next "<the next concrete step>"\n`,
+    );
+    return EXIT.BAD_ARGS;
+  }
+  let result: unknown;
+  try {
+    result = api.checkpointIntake({
+      intakeId: option.intakeId,
+      kind: 'resumed',
+      phase: brief?.phase ?? 'executing',
+      nextSafeAction,
+      summary: 'session resumed this intake',
+      repository,
+      actor: stringFlag(args, '--actor')?.trim() || `human:${principalId}`,
+      recordedAt: new Date().toISOString(),
+    });
+  } catch (error) {
+    process.stderr.write(`could not record the resume: ${(error as Error).message}\n`);
+    return EXIT.ERROR;
+  }
+  if (json) {
+    process.stdout.write(
+      `${JSON.stringify({ resumed: option.intakeId, cautions: option.cautions, checkpoint: result }, null, 2)}\n`,
+    );
+    return EXIT.OK;
+  }
+  process.stdout.write(`resumed ${option.intakeId}\n`);
+  if (brief) process.stdout.write(`  outcome: ${brief.interpretation.outcome}\n`);
+  if (nextSafeAction) process.stdout.write(`  next: ${nextSafeAction}\n`);
+  // Cautions are printed AFTER the resume, not as a blocker: the user chose deliberately, and the
+  // drift is something to act on, not a reason to refuse the command they just ran.
+  for (const caution of option.cautions) process.stdout.write(`  ! ${caution}\n`);
+  return EXIT.OK;
+}
+
+/**
+ * `crib session fresh` — take the "start fresh" branch.
+ *
+ * Deliberately NON-DESTRUCTIVE: it closes nothing. Unfinished intakes stay resumable and keep
+ * appearing in the next handoff, because they genuinely are still unfinished — choosing to work on
+ * something else is not a statement that the old work is abandoned. Use `crib intake complete` or
+ * `crib intake cancel` to actually retire one.
+ */
+function cmdSessionFresh(args: string[], ctx?: CmdCtx): number {
+  const json = args.includes('--json');
+  const runtime = intakeApi(ctx);
+  if (!runtime) {
+    process.stderr.write('could not resolve repoId for intake — run `crib index` first\n');
+    return EXIT.NOT_INDEXED;
+  }
+  const { api, repository } = runtime;
+  const handoff = api.handoff({ repository });
+  const stillOpen = handoff.continuation.options
+    .filter((o) => o.kind === 'resume')
+    .map((o) => o.intakeId as string);
+  if (json) {
+    process.stdout.write(
+      `${JSON.stringify({ startedFresh: true, leftOpen: stillOpen, closed: [] }, null, 2)}\n`,
+    );
+    return EXIT.OK;
+  }
+  process.stdout.write('starting fresh — nothing was closed or discarded.\n');
+  if (stillOpen.length > 0) {
+    process.stdout.write(
+      `  ${stillOpen.length} intake(s) stay resumable: ${stillOpen.join(', ')}\n  resume one later with \`crib session resume <intakeId>\`\n`,
+    );
+  }
+  process.stdout.write(
+    '  record the new work with:\n' +
+      '    crib intake create --from "<request>" --outcome "<what done looks like>"\n',
+  );
+  return EXIT.OK;
 }
 
 /** blake3 digest of the working-tree state the gate observed (uncommitted file list — PRD line 277). */
@@ -4435,25 +4813,40 @@ function cmdMemoryHandoff(args: string[], ctx?: CmdCtx): number {
     out.recent.length === 0 &&
     out.intakes.count === 0
   ) {
+    // An empty state still needs a next step — "nothing here" with no action is the dead end the
+    // audit flagged in the memory panel (F09).
     process.stdout.write(
-      'handoff: nothing in flight, nothing stale, no memory yet for this repo.\n',
+      'handoff: nothing in flight, nothing stale, no memory yet for this repo.\n' +
+        '  start fresh — record what you are about to do with:\n' +
+        '    crib intake create --from "<request>" --outcome "<what done looks like>"\n',
     );
     return EXIT.OK;
   }
+  // The decision comes FIRST: a returning session's first question is "continue or start fresh?",
+  // and answering it from a `primary` field the reader has to interpret is what made this implicit.
+  const cont = out.continuation;
+  lines.push(`\nSTART HERE — ${cont.question}`);
+  for (const opt of cont.options) {
+    const mark = opt.optionId === cont.recommended ? '*' : ' ';
+    lines.push(`  ${mark} ${opt.optionId}`);
+    lines.push(`      ${opt.label}`);
+    if (opt.detail) lines.push(`      next: ${opt.detail}`);
+    for (const caution of opt.cautions) lines.push(`      ! ${caution}`);
+  }
+  lines.push(
+    cont.recommended
+      ? `  (* = suggested: ${cont.rationale})`
+      : `  (no suggestion: ${cont.rationale})`,
+  );
+  lines.push('  choose with: crib session resume <intakeId>   |   crib session fresh');
+
   section('RESUME — durable intake', out.intakes.count, out.intakes.choices.length);
-  if (out.intakes.primary) {
-    const primary = out.intakes.primary;
-    lines.push(`  ${primary.intakeId}  [${primary.status}/${primary.phase}]`);
-    lines.push(`    outcome: ${primary.interpretation.outcome}`);
-    if (primary.nextSafeAction) lines.push(`    next: ${primary.nextSafeAction}`);
-    if (primary.repositoryDrift) lines.push('    repository changed since the last checkpoint');
-  } else if (out.intakes.choices.length > 0) {
-    lines.push('  multiple resumable intakes — choose one explicitly:');
-    for (const choice of out.intakes.choices) {
-      lines.push(
-        `    ${choice.intakeId}  [${choice.status}/${choice.phase}] ${choice.interpretation.outcome}`,
-      );
-    }
+  for (const choice of out.intakes.choices) {
+    lines.push(
+      `  ${choice.intakeId}  [${choice.status}/${choice.phase}] ${choice.interpretation.outcome}`,
+    );
+    if (choice.nextSafeAction) lines.push(`    next: ${choice.nextSafeAction}`);
+    if (choice.repositoryDrift) lines.push('    repository changed since the last checkpoint');
   }
   section('IN FLIGHT — unfinished work', out.counts.openWork, out.openWork.length);
   for (const w of out.openWork) {
@@ -4592,6 +4985,97 @@ function cmdMemoryProfiles(args: string[], ctx?: CmdCtx): number {
   }
 }
 
+/** `crib memory backup` — verified plaintext backup/restore for local and global stores. */
+function cmdMemoryBackup(args: string[], ctx?: CmdCtx): number {
+  const [action, ...rest] = args;
+  const json = rest.includes('--json');
+  if (action === 'verify') {
+    const from = stringFlag(rest, '--from') ?? positionalsOf(rest)[0];
+    if (!from) {
+      process.stderr.write('usage: crib memory backup verify --from <bundle> [--json]\n');
+      return EXIT.BAD_ARGS;
+    }
+    try {
+      const manifest = verifyMemoryBackup(from);
+      if (json) process.stdout.write(`${JSON.stringify({ ok: true, manifest }, null, 2)}\n`);
+      else process.stdout.write(`backup verified: ${manifest.files.length} file(s)\n`);
+      return EXIT.OK;
+    } catch (error) {
+      process.stderr.write(`backup verification failed: ${(error as Error).message}\n`);
+      return EXIT.ERROR;
+    }
+  }
+
+  const opened = openSyncApi(ctx);
+  if (!opened) {
+    process.stderr.write('could not resolve repoId for memory — run `crib index` first\n');
+    return EXIT.NOT_INDEXED;
+  }
+  const { deps } = opened;
+  if (action === 'create') {
+    const out = stringFlag(rest, '--out');
+    if (!out) {
+      process.stderr.write('usage: crib memory backup create --out <bundle> [--json]\n');
+      return EXIT.BAD_ARGS;
+    }
+    try {
+      deps.local.ensureManifest();
+      deps.global.ensureManifest();
+      const manifest = createMemoryBackup(
+        [
+          { role: 'local', root: deps.local.rootDir },
+          { role: 'global', root: deps.global.rootDir },
+        ],
+        out,
+      );
+      if (json) process.stdout.write(`${JSON.stringify({ ok: true, out, manifest }, null, 2)}\n`);
+      else {
+        process.stdout.write(
+          `backup created: ${out} (${manifest.files.length} file(s)); sync key bytes were not included\n`,
+        );
+      }
+      return EXIT.OK;
+    } catch (error) {
+      process.stderr.write(`backup failed: ${(error as Error).message}\n`);
+      return EXIT.ERROR;
+    }
+  }
+  if (action === 'restore') {
+    const from = stringFlag(rest, '--from');
+    const stores = (stringFlag(rest, '--stores') ?? 'local,global')
+      .split(',')
+      .map((value) => value.trim())
+      .filter(Boolean);
+    if (!from || stores.some((store) => store !== 'local' && store !== 'global')) {
+      process.stderr.write(
+        'usage: crib memory backup restore --from <bundle> [--stores local,global] [--force] [--json]\n',
+      );
+      return EXIT.BAD_ARGS;
+    }
+    try {
+      const targets = stores.map((role) => ({
+        role: role as 'local' | 'global',
+        root: role === 'local' ? deps.local.rootDir : deps.global.rootDir,
+      }));
+      const result = restoreMemoryBackup(from, targets, { force: rest.includes('--force') });
+      if (json) process.stdout.write(`${JSON.stringify({ ok: true, ...result }, null, 2)}\n`);
+      else {
+        process.stdout.write(
+          `backup restored: ${result.restored.join(', ')} (${result.files} file(s)); restart agents/services before use\n`,
+        );
+      }
+      return EXIT.OK;
+    } catch (error) {
+      process.stderr.write(`restore failed: ${(error as Error).message}\n`);
+      return EXIT.ERROR;
+    }
+  }
+  process.stderr.write(
+    'usage: crib memory backup create --out <bundle> | verify --from <bundle> | restore --from <bundle> [--stores local,global] [--force] [--json]\n',
+  );
+  return EXIT.BAD_ARGS;
+}
+
 async function cmdMemory(args: string[], ctx?: CmdCtx): Promise<number> {
   // Resolve the embed tier before dispatch: the subcommands below are synchronous, and recall must
   // know which ranker it is entitled to use before it builds a scorer.
@@ -4608,6 +5092,8 @@ async function cmdMemory(args: string[], ctx?: CmdCtx): Promise<number> {
       return cmdMemoryEvents(rest, ctx);
     case 'profiles':
       return cmdMemoryProfiles(rest, ctx);
+    case 'backup':
+      return cmdMemoryBackup(rest, ctx);
     case 'search':
       return cmdMemorySearch(rest, ctx);
     case 'get':
@@ -4650,6 +5136,9 @@ async function cmdMemory(args: string[], ctx?: CmdCtx): Promise<number> {
     case '--help':
       process.stderr.write(
         'crib memory init | handoff [--limit N] [--json] (where was I? — in-flight work, undistilled captures, what went stale) | events [--include-expired] [--limit N] [--json] | profiles list [--json] | profiles register --key <profile-key> --alias <client-id>/<agent-id> [--alias ...] [--json] | recall "<query>" [--limit N] [--sources team,local,global] [--target <id>] [--with-evidence] [--include-pending] [--max-tokens N] [--json] | search "<query>" [--limit N] [--sources team,local,global] [--target <id>] [--max-tokens N] [--json] | get <id> [--with-evidence] [--json] | supersede <id> --actor <id> (--successor <id> | --claim <text>) [--reason <text>] [--json] | delete <id> --actor <id> [--reason <text>] [--json] | history <key> [--as-of <iso-ts>] [--with-evidence] [--json] | evaluate <candidate> --profile <name> | activate <candidate> | propose <memory-id> | attest <candidate> | check | audit [--repair-local] | feedback <mem-id> --signal <useful|unhelpful|contradicted> [--actor <id>] [--context <text>] [--counter-evidence <json-file>] | gc [--max-age-days N] [--dry-run] | migrate | bench [--fast] [--json] [--out <path>] | distill --provider <name> [--providers-file F] [--max-batches N] [--concurrency N] [--timeout-ms N] | capture-hook --event <session-start|turn-end|tool-use> (hooks invoke this; always exits 0 — best-effort capture, never blocks a session) | init-sync --scope repo|global --backend file|http --url <target> [--key-env <NAME>|--keyfile <path>|--gen-key] [--secret-env <NAME>] [--sync-id <id>] [--backfill] [--json] | sync [push|pull|status] [--dry-run] [--backfill] [--max-events N] [--skip] [--json] | sync rotate-key (--gen-key | --key-env <NAME> | --keyfile <path>) [--dry-run] | sync purge-sync --stale-epoch [--dry-run] | purge <mem-id>... --confirm <mem-id>... [--stores local,global] [--history-scan] [--dry-run] [--actor <id>] [--json] | conflicts [--json] | resolve <record-id> (--successor <id> | --retract) --actor <id> [--reason <text>] [--json] (see docs/memory-sync.md)\n',
+      );
+      process.stderr.write(
+        'additional operations: backup create|verify|restore; sync compact [--dry-run] [--json]\n',
       );
       return EXIT.OK;
     // Gate 4 — cross-device sync (ADR-003 D12): init-sync / sync / purge / conflicts / resolve.
@@ -4891,7 +5380,80 @@ async function cmdMemoryDistill(args: string[], ctx?: CmdCtx): Promise<number> {
 const CAPTURE_HOOK_STDIN_MAX_CHARS = 65536;
 /** session ids are hashed into the `cap:` id seed — bounded and character-restricted, never trusted verbatim. */
 const CAPTURE_HOOK_SESSION_ID_MAX_CHARS = 128;
-const CAPTURE_HOOK_TOOL_NAME_MAX_CHARS = 64;
+const CAPTURE_HOOK_ID_MAX_CHARS = 128;
+const CAPTURE_HOOK_TEXT_MAX_CHARS = 2_000;
+const CAPTURE_HOOK_ARTIFACT_MAX_CHARS = 512;
+const CAPTURE_HOOK_MAX_ARTIFACTS = 20;
+
+interface LifecycleOutcome {
+  subject: string;
+  kind: MemoryRecordKind;
+  claim: string;
+  artifacts: string[];
+  receiptId?: string;
+  assertion?: string;
+  eventOffset?: number;
+}
+
+function boundedHookText(value: unknown, max = CAPTURE_HOOK_TEXT_MAX_CHARS): string | undefined {
+  if (typeof value !== 'string') return undefined;
+  const text = value.replace(/\s+/g, ' ').trim().slice(0, max);
+  return text.length > 0 ? text : undefined;
+}
+
+/** Parse the only payload object allowed to become memory; every other hook field is provenance. */
+function lifecycleOutcomeOf(payload: Record<string, unknown>): LifecycleOutcome | undefined {
+  const raw = payload.knowledge_crib_outcome;
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return undefined;
+  const value = raw as Record<string, unknown>;
+  const intent = boundedHookText(value.intent);
+  const decision = boundedHookText(value.decision);
+  const result = boundedHookText(value.result);
+  const nextAction = boundedHookText(value.next_action);
+  if (!intent && !decision && !result && !nextAction) return undefined;
+  const lines = [
+    intent ? `Intent: ${intent}` : undefined,
+    decision ? `Decision: ${decision}` : undefined,
+    result ? `Result: ${result}` : undefined,
+    nextAction ? `Next action: ${nextAction}` : undefined,
+  ].filter((line): line is string => line !== undefined);
+  const rawKind = boundedHookText(value.kind, 32);
+  const kind: MemoryRecordKind = [
+    'fact',
+    'procedure',
+    'decision',
+    'pitfall',
+    'convention',
+  ].includes(rawKind ?? '')
+    ? (rawKind as MemoryRecordKind)
+    : decision
+      ? 'decision'
+      : 'fact';
+  const artifacts = Array.isArray(value.artifacts)
+    ? value.artifacts
+        .map((entry) => boundedHookText(entry, CAPTURE_HOOK_ARTIFACT_MAX_CHARS))
+        .filter((entry): entry is string => entry !== undefined)
+        .slice(0, CAPTURE_HOOK_MAX_ARTIFACTS)
+    : [];
+  const offsetRaw = value.event_offset ?? payload.event_offset;
+  const eventOffset =
+    typeof offsetRaw === 'number' && Number.isSafeInteger(offsetRaw) && offsetRaw >= 0
+      ? offsetRaw
+      : undefined;
+  return {
+    subject: boundedHookText(value.subject, 256) ?? 'topic:session-outcome',
+    kind,
+    claim: lines.join('\n'),
+    artifacts: [...new Set(artifacts)],
+    ...(boundedHookText(value.receipt_id, CAPTURE_HOOK_ID_MAX_CHARS)
+      ? { receiptId: boundedHookText(value.receipt_id, CAPTURE_HOOK_ID_MAX_CHARS) }
+      : {}),
+    ...(boundedHookText(value.assertion, 128)
+      ? { assertion: boundedHookText(value.assertion, 128) }
+      : {}),
+    ...(eventOffset !== undefined ? { eventOffset } : {}),
+  };
+}
 
 /** A lifecycle hook fires inside a live coding session: this command MUST never block one.
  *  Claude Code treats a nonzero hook exit (2 in particular) as a blocking error, so every runtime
@@ -4906,9 +5468,8 @@ function cmdMemoryCaptureHook(args: string[], ctx?: CmdCtx): number {
   if (!event) return failOpen(`missing --event (expected one of: ${LIFECYCLE_EVENTS.join(', ')})`);
   if (!LIFECYCLE_EVENTS.includes(event)) return failOpen(`unknown lifecycle event: ${event}`);
 
-  // Read + bound the hook payload. Only TWO fields ever cross into storage — session_id and
-  // (for tool-use) tool_name; everything else (transcript paths, tool input/output, cwd) is
-  // discarded here, before any capture, per the raw-transcripts-off law.
+  // Read + bound the hook payload. Only bounded provenance and the explicit structured outcome
+  // cross into storage; transcripts, prompts, tool inputs/outputs and cwd are never copied.
   let payload: Record<string, unknown> = {};
   try {
     const raw = readFileSync(0, 'utf8');
@@ -4929,30 +5490,19 @@ function cmdMemoryCaptureHook(args: string[], ctx?: CmdCtx): number {
     rawSessionId.length > 0
       ? rawSessionId.replace(/\s+/g, '').slice(0, CAPTURE_HOOK_SESSION_ID_MAX_CHARS)
       : undefined;
-  const rawToolName =
-    event === 'tool-use' && typeof payload.tool_name === 'string' ? payload.tool_name.trim() : '';
-  const toolName =
-    rawToolName.length > 0
-      ? rawToolName.replace(/[^A-Za-z0-9_.:-]/g, '').slice(0, CAPTURE_HOOK_TOOL_NAME_MAX_CHARS)
-      : undefined;
-  if (event === 'tool-use' && rawToolName.length > 0 && !toolName) {
-    return failOpen(
-      'tool_name reduced to nothing under the bounded charset — capturing without it',
-    );
-  }
-
-  const observation =
-    event === 'session-start'
-      ? 'coding session started (lifecycle hook)'
-      : event === 'turn-end'
-        ? 'session turn ended (lifecycle hook)'
-        : toolName
-          ? `tool-use observed (lifecycle hook): ${toolName}`
-          : 'tool-use observed (lifecycle hook)';
-  // Wall-clock-free dedupe key: identical (event, session, tool) fires collapse to one durable
-  // outbox entry — at-least-once delivery with dedupe, not per-fire volume. Turn-level granularity
-  // would need stream offsets the hook payload does not carry, so the collapse is honest.
-  const idempotencyKey = `hook:${event}:${sessionId ?? 'nosession'}${toolName ? `:${toolName}` : ''}`;
+  const clientId =
+    boundedHookText(payload.client_id, CAPTURE_HOOK_ID_MAX_CHARS)?.replace(
+      /[^A-Za-z0-9_.:-]/g,
+      '',
+    ) || 'claude-code-hook';
+  const actor =
+    boundedHookText(payload.agent_id, CAPTURE_HOOK_ID_MAX_CHARS)?.replace(
+      /[^A-Za-z0-9_.:-]/g,
+      '',
+    ) || clientId;
+  const outcome = lifecycleOutcomeOf(payload);
+  const eventOffset = outcome?.eventOffset;
+  const idempotencyKey = `hook:${event}:${sessionId ?? 'nosession'}:${eventOffset ?? 'nooffset'}`;
 
   try {
     const resolved = resolveProjectRoot({ explicitRoot: ctx?.cwdOverride });
@@ -4964,19 +5514,78 @@ function cmdMemoryCaptureHook(args: string[], ctx?: CmdCtx): number {
       );
     const deps = createMemoryDeps(rt.soul, resolved.repoRoot, resolved.cribDir);
     if (!deps) return failOpen('memory stores unresolvable — capture skipped, not blocking');
+    const occurredAt = new Date().toISOString();
+    const identity =
+      deps.identityDirectory?.resolve(resolveServerIdentity(process.env), {
+        clientId,
+        agentId: actor,
+      }) ?? resolveServerIdentity(process.env);
+    const lifecycle = deps.eventJournal.append({
+      kind: 'agent.lifecycle',
+      idempotencyKey,
+      source: {
+        clientId,
+        ...(sessionId !== undefined ? { sessionId } : {}),
+        ...(eventOffset !== undefined ? { eventOffset } : {}),
+      },
+      identity,
+      payload: { event, action: 'checkpoint-requested', hasOutcome: outcome !== undefined },
+      occurredAt,
+    });
+    if (!outcome) {
+      process.stdout.write(
+        `${JSON.stringify({
+          ok: true,
+          event,
+          eventId: lifecycle.event.id,
+          status: 'checkpoint-requested',
+          captured: false,
+        })}\n`,
+      );
+      return EXIT.OK;
+    }
+    const evidence: MemoryEvidence[] = [];
+    if (outcome.receiptId) {
+      const receipt = findReceipt(deps.local, outcome.receiptId);
+      const assertion = outcome.assertion
+        ? receipt?.assertions.find((candidate) => candidate.name === outcome.assertion)
+        : receipt?.assertions.find((candidate) => candidate.passed);
+      if (!receipt || receipt.exitCode !== 0 || !assertion?.passed) {
+        return failOpen(
+          `outcome receipt ${outcome.receiptId} is absent or does not carry the requested passing assertion; checkpoint recorded, memory skipped`,
+        );
+      }
+      evidence.push({
+        kind: 'execution-assertion',
+        verdict: 'valid',
+        checkedAt: occurredAt,
+        receiptId: receipt.id,
+        assertion: assertion.name,
+      });
+    }
     const api = createMemoryApi(rt.soul, resolved.repoRoot, resolved.cribDir, deps);
-    const result = api.capture({
-      subject: 'topic:session-lifecycle',
-      observation,
-      kind: 'fact',
-      actor: 'claude-code-hook',
+    const result = api.observe({
+      subject: outcome.subject,
+      claim: outcome.claim,
+      kind: outcome.kind,
+      appliesTo: outcome.artifacts,
+      evidence,
+      actor,
       tool: 'capture-hook',
       ...(sessionId !== undefined ? { sessionId } : {}),
       idempotencyKey,
+      ...(eventOffset !== undefined ? { eventOffset } : {}),
     });
     if (!result.ok) return failOpen(`capture refused: ${result.error}`);
     process.stdout.write(
-      `${JSON.stringify({ ok: true, event, captureId: result.id, status: result.status })}\n`,
+      `${JSON.stringify({
+        ok: true,
+        event,
+        eventId: lifecycle.event.id,
+        captureId: result.id,
+        status: result.status,
+        captured: true,
+      })}\n`,
     );
     return EXIT.OK;
   } catch (e) {
@@ -5305,7 +5914,8 @@ function renderSyncStatusLine(s: SyncStatusResult): string {
 }
 
 /**
- * `crib memory sync [push|pull|status]` (D12). Default action = status (read-only). push/pull run
+ * `crib memory sync [push|pull|status|compact]` (D12). Default action = status (read-only).
+ * push/pull run
  * the engine per CONFIGURED scope — each scope resolves its own backend + key from its config
  * (the CLI is the only surface with network reach; the MCP server never sees a backend port).
  * An unconfigured scope is reported honestly, never silently skipped.
@@ -5456,6 +6066,46 @@ async function cmdMemorySync(args: string[], ctx?: CmdCtx): Promise<number> {
         ].join('\n');
       });
       process.stdout.write(`sync ${action}${dryRun ? ' (dry-run)' : ''}:\n${lines.join('\n')}\n`);
+    }
+    return ok ? EXIT.OK : EXIT.ERROR;
+  }
+
+  if (action === 'compact') {
+    const stores: Array<{
+      store: 'local' | 'global';
+      ok: boolean;
+      before?: number;
+      after?: number;
+      removed?: number;
+      error?: string;
+    }> = [];
+    for (const scope of ['local', 'global'] as const) {
+      const store = scope === 'local' ? deps.local : deps.global;
+      if (!loadSyncState(store.rootDir)) {
+        stores.push({ store: scope, ok: false, error: 'not initialized' });
+        continue;
+      }
+      try {
+        const result = store.withLock(() => compactSyncOutbox(store.rootDir, { dryRun }));
+        stores.push({ store: scope, ok: true, ...result });
+      } catch (error) {
+        stores.push({ store: scope, ok: false, error: (error as Error).message });
+      }
+    }
+    const ran = stores.filter((store) => store.error !== 'not initialized');
+    const ok = ran.length > 0 && ran.every((store) => store.ok);
+    if (json) {
+      process.stdout.write(`${JSON.stringify({ ok, op: action, dryRun, stores }, null, 2)}\n`);
+    } else {
+      process.stdout.write(
+        `sync compact${dryRun ? ' (dry-run)' : ''}:\n${stores
+          .map((store) =>
+            store.ok
+              ? `  ${store.store}: ${store.before} → ${store.after} event(s), removed ${store.removed}`
+              : `  ${store.store}: not run — ${store.error}`,
+          )
+          .join('\n')}\n`,
+      );
     }
     return ok ? EXIT.OK : EXIT.ERROR;
   }
@@ -5641,7 +6291,9 @@ async function cmdMemorySync(args: string[], ctx?: CmdCtx): Promise<number> {
     return ok ? EXIT.OK : EXIT.ERROR;
   }
 
-  process.stderr.write(`unknown sync action: ${action} (push|pull|status|rotate-key|purge-sync)\n`);
+  process.stderr.write(
+    `unknown sync action: ${action} (push|pull|status|compact|rotate-key|purge-sync)\n`,
+  );
   return EXIT.BAD_ARGS;
 }
 
@@ -6042,7 +6694,7 @@ function evidenceSummaryOf(ev: MemoryEvidence): Record<string, unknown> {
  * there and were emitted as such before this fix).
  */
 function memoryRecallView(m: ScoredRecord, withEvidence?: boolean): Record<string, unknown> {
-  const r = m.record as MemoryRecord | MemoryRecordV2;
+  const r = m.record as MemoryRecord | MemoryRecordVersioned;
   const base: Record<string, unknown> = {
     id: r.id,
     subject: r.subject,
@@ -6055,10 +6707,10 @@ function memoryRecallView(m: ScoredRecord, withEvidence?: boolean): Record<strin
     score: m.score,
     evidenceItems: withEvidence === true ? r.evidence : r.evidence.map((e) => evidenceSummaryOf(e)),
   };
-  if (isMemoryRecordV2(r)) {
+  if (isMemoryRecordVersioned(r)) {
     return {
       ...base,
-      schemaVersion: '2',
+      schemaVersion: r.schemaVersion,
       visibility: r.visibility,
       propositionKey: r.propositionKey,
       validTime: r.validTime,
@@ -6198,7 +6850,7 @@ function memorySearchHitView(h: SearchHit, withEvidence?: boolean): Record<strin
   const view = memoryRecallView(
     {
       // ScoredRecord.record is typed MemoryRecord but a migrated twin is v2 at runtime — the same
-      // widening recallProjection itself relies on; memoryRecallView narrows via isMemoryRecordV2.
+      // widening recallProjection itself relies on; memoryRecallView narrows via isMemoryRecordVersioned.
       record: h.record as MemoryRecord,
       source: h.placement[0] ?? 'team',
       verdicts: h.verdicts,
@@ -6378,7 +7030,7 @@ function cmdMemoryGet(args: string[], ctx?: CmdCtx): number {
   const evidence =
     withEvidence === true ? record.evidence : record.evidence.map((e) => evidenceSummaryOf(e));
   let result: Record<string, unknown>;
-  if (!isMemoryRecordV2(record)) {
+  if (!isMemoryRecordVersioned(record)) {
     // Memory-1: the W3 response contract, byte-identical in shape to the MCP verb (the supersededBy
     // link rides on decisions and is surfaced only when one exists). The verdicts are the EFFECTIVE
     // four axes — a pulled tombstone must flip `lifecycle` here too (the stamped verdicts on a
@@ -6410,7 +7062,7 @@ function cmdMemoryGet(args: string[], ctx?: CmdCtx): number {
       id: record.id,
       requestedId: got.requestedId,
       ...(got.resolvedViaAlias ? { resolvedViaAlias: got.resolvedViaAlias.legacyId } : {}),
-      schemaVersion: '2',
+      schemaVersion: record.schemaVersion,
       kind: record.kind,
       subject: record.subject,
       claim: record.claim,
@@ -7475,7 +8127,7 @@ function scanTeamPrivateLines(rootDir: string): {
           } catch {
             continue; // a torn line is a shard-integrity finding, not a privacy violation
           }
-          if (isMemoryRecordV2(parsed) && parsed.visibility === 'private') {
+          if (isMemoryRecordVersioned(parsed) && parsed.visibility === 'private') {
             hits.push({ file: relative(rootDir, p), line: i + 1, id: parsed.id });
           }
         }
@@ -7525,7 +8177,7 @@ function cmdMemoryAudit(args: string[], ctx?: CmdCtx): number {
   }
   // conflicts over team records (same subject, different claims)
   const teamRecords = deps.team.readCollection('records').entries as Array<
-    MemoryRecord | MemoryRecordV2
+    MemoryRecord | MemoryRecordVersioned
   >;
   const subjects = new Map<string, number>();
   for (const r of teamRecords) subjects.set(r.subject, (subjects.get(r.subject) ?? 0) + 1);
@@ -7541,7 +8193,7 @@ function cmdMemoryAudit(args: string[], ctx?: CmdCtx): number {
   const trust: Record<string, number> = {};
   for (const r of teamRecords) {
     let axis: string;
-    if (isMemoryRecordV2(r)) {
+    if (isMemoryRecordVersioned(r)) {
       const bound = aliasIndex.aliasesFor(r.id);
       const decs =
         bound.length > 0 ? bridgedDecisions(bound, r.id, gathered.decisions) : gathered.decisions;
@@ -7792,7 +8444,7 @@ function printHelp(): void {
       '  crib export [--format F] [--procedure P] [--extracted-only] [--redact|--no-redact] render graph: rules|mermaid|graph.json|report|llm',
       '  crib viz [path] [--port N]               serve the offline web UI (Claude Design DC graph) + open browser',
       '  crib enrich [path] [--budget-tokens N]    semantic work queue; --next (token-packed batch) | run --provider <name> [--max-tokens N --max-batches N --concurrency N] | --auto [--provider <name>] | --save <file> | --overview | --scopes | --prune-stale [--apply]',
-      '  crib memory <init|evaluate|activate|propose|attest>   trusted agent-memory promotion: init policy | evaluate <cand> --profile <name> | activate <cand> | propose <mem-id> | attest <cand> (TTY)',
+      '  crib memory <init|handoff|recall|backup|sync|evaluate|activate|propose|attest>   persistent memory, recovery, sync, and trusted promotion',
       '  crib intake <create|checkpoint|list|show|complete|share>   durable intent and continuation checkpoints',
       '  crib session bootstrap [--json]       restore the deterministic resume brief for this project',
       '  crib audit-llm [path]                    re-verify every LLM artifact against the soul (grounding moat); exits non-zero on ungrounded/drift',
@@ -7805,7 +8457,7 @@ function printHelp(): void {
       '  crib init [path] [--ide <name|all>]      5-minute onboarding: index + install-hooks + mcp install + adapters + next-steps hero',
       '  crib doctor [path]                       setup health check: node/corepack/index-freshness/hooks/IDE-wiring/memory-loop/stale-builds/embed-tier/freshness/post-commit-hook/multimodal-adapters (✓/✗ + fix hints)',
       '  crib embed <install <model-dir>|status>   on-device embedder tier: install --model-id <id> --model-version <ver> [--entry <file>] | status (tier report; --accept-remote-policy opts into the remote tier)',
-      '  crib freshness [<mode>|worker|hook|convert-hook]   index freshness: modes manual|watch|auto | durable background worker | post-commit hook body (always exit 0) | convert the legacy blocking post-commit hook',
+      '  crib freshness [<mode>|worker|service|hook|convert-hook]   index freshness: manual|watch|auto | supervised worker install/status/uninstall | durable queue',
       '',
       'Global: --cwd <path>   override the project root for any command',
       '',

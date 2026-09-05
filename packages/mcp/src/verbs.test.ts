@@ -297,6 +297,50 @@ describe('M5 wedge — impact returns blast radius + describing docs', () => {
 });
 
 describe('verbs', () => {
+  it('searches the refreshed working overlay rather than the stale committed index', () => {
+    // The canonical index is deliberately built before this uncommitted edit, mirroring `crib
+    // serve --watch`: it must not discover the new token. The overlay index is a separate,
+    // ephemeral projection of the live graph and source tree.
+    writeFileSync(
+      join(repo, 'src', 'auth.ts'),
+      `${'\n'.repeat(8)}class AuthService {\n  liveOverlayToken(user) { return user; }\n}\n`,
+    );
+    const overlay = new SoulStore(soul.cribDir, { ephemeral: true });
+    overlay.load();
+    const liveLogin: Node = {
+      ...login,
+      name: 'liveOverlayToken',
+      qualifiedName: 'AuthService.liveOverlayToken',
+      hash: contentHash('liveOverlayToken'),
+    };
+    overlay.putNodes([liveLogin]);
+    const overlayIndex = new SqliteIndexStore();
+    overlayIndex.buildFromSoul(overlay, repo);
+    const watched = new Verbs({
+      soul,
+      index,
+      repoRoot: repo,
+      workingOverlay: overlay,
+      workingOverlayIndex: overlayIndex,
+    });
+    try {
+      expect((verbs.query({ q: 'liveOverlayToken' }) as unknown as QueryResult).hits).toEqual([]);
+      const query = watched.query({
+        q: 'liveOverlayToken',
+        kinds: ['symbol'],
+      }) as unknown as QueryResult;
+      expect(query.hits.map((hit) => hit.id)).toContain(liveLogin.id);
+      const brief = watched.brief({ q: 'liveOverlayToken' }) as { codeHits: Array<{ id: string }> };
+      expect(brief.codeHits.map((hit) => hit.id)).toContain(liveLogin.id);
+      const context = watched.context({
+        id: 'AuthService.liveOverlayToken',
+      }) as unknown as ContextResult;
+      expect(context.node.qualifiedName).toBe('AuthService.liveOverlayToken');
+    } finally {
+      overlayIndex.close();
+    }
+  });
+
   it('context bundles signature, callers, callees, docs', () => {
     const res = verbs.context({ id: login.id }) as unknown as ContextResult;
     expect(res.node.name).toBe('login');

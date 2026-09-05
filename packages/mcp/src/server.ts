@@ -892,6 +892,72 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
  * Binds to loopback by default: the graph contains source text, and a code-knowledge daemon should
  * never become reachable from the network by accident.
  */
+/**
+ * Loopback hosts the shared daemon will answer for.
+ *
+ * The daemon binds to 127.0.0.1, so a request arriving with some OTHER Host header did not reach it
+ * by its bind address — it reached it through a name that resolves to loopback. That is DNS
+ * rebinding: an attacker-controlled page resolves its own domain to 127.0.0.1 and the victim's
+ * browser then talks to this daemon "same-origin", with the graph's source text on the other side.
+ * The audited daemon accepted `Host: audit-untrusted.example` and answered `initialize` with 200
+ * (docs/audits/2026-09-05, F14). The visualization server already enforced this; the MCP daemon did
+ * not, and the two are the same class of local HTTP surface.
+ */
+const LOOPBACK_HOSTS = new Set(['127.0.0.1', 'localhost', '[::1]', '::1']);
+
+/** Strip the port from a Host/Origin authority, handling bracketed IPv6. */
+function authorityOf(value: string): string {
+  let h = value.trim().toLowerCase();
+  if (h.startsWith('[')) {
+    const end = h.indexOf(']');
+    return end === -1 ? h : h.slice(0, end + 1);
+  }
+  const colon = h.lastIndexOf(':');
+  if (colon > 0) h = h.slice(0, colon);
+  return h;
+}
+
+/**
+ * Is this request allowed past the transport boundary?
+ *
+ * Two independent checks, both required:
+ *   - Host must be loopback (or exactly the host the operator deliberately bound to, so an explicit
+ *     non-loopback bind is not broken by its own guard).
+ *   - Origin, WHEN PRESENT, must be loopback. A CLI or agent client sends no Origin at all; only a
+ *     browser attaches one, so a foreign Origin is by construction a cross-site attempt.
+ *
+ * This is a transport boundary, not an authorization decision: it establishes that the caller is
+ * local. It does NOT identify which local user is calling — the process still runs as one OS user
+ * and `verbs` is shared across every request. Do not treat it as multi-tenant isolation.
+ */
+export function isAllowedHttpCaller(
+  headers: { host?: string; origin?: string },
+  boundHost: string,
+): boolean {
+  const host = headers.host;
+  if (!host) return false; // HTTP/1.1 requires Host; a missing one is malformed, not trusted
+  const hostAuthority = authorityOf(host);
+  const boundAuthority = authorityOf(boundHost);
+  if (!LOOPBACK_HOSTS.has(hostAuthority) && hostAuthority !== boundAuthority) return false;
+  const origin = headers.origin;
+  if (origin === undefined || origin === 'null') return true; // non-browser caller
+  let originHost: string;
+  try {
+    originHost = authorityOf(new URL(origin).host);
+  } catch {
+    return false; // unparseable Origin — refuse rather than guess
+  }
+  return LOOPBACK_HOSTS.has(originHost) || originHost === boundAuthority;
+}
+
+/**
+ * Cap on a single JSON-RPC request body. The daemon exists to serve many small verb calls from many
+ * agents; nothing legitimate approaches this. Without a cap, an unauthenticated local process could
+ * make the shared daemon — the one holding the whole graph in memory — buffer unbounded input and
+ * take every connected agent down with it.
+ */
+export const MAX_HTTP_REQUEST_BYTES = 4 * 1024 * 1024;
+
 export async function serveHttp(
   verbs: Verbs,
   opts: { port?: number; host?: string; version?: string } = {},
@@ -899,6 +965,19 @@ export async function serveHttp(
   const version = opts.version ?? '0.0.0';
   const host = opts.host ?? '127.0.0.1';
   const httpServer = createServer((req, res) => {
+    // The boundary check runs BEFORE routing, so /health cannot be used to probe the daemon's
+    // presence and version from a rebound origin either.
+    if (!isAllowedHttpCaller({ host: req.headers.host, origin: req.headers.origin }, host)) {
+      res.writeHead(403, { 'content-type': 'application/json' });
+      res.end(
+        JSON.stringify({
+          jsonrpc: '2.0',
+          id: null,
+          error: { code: -32600, message: 'forbidden: non-local Host/Origin' },
+        }),
+      );
+      return;
+    }
     if (req.method === 'GET' && req.url === '/health') {
       res.writeHead(200, { 'content-type': 'application/json' });
       res.end(JSON.stringify({ ok: true, version }));
@@ -909,8 +988,31 @@ export async function serveHttp(
       return;
     }
     const chunks: Buffer[] = [];
-    req.on('data', (c: Buffer) => chunks.push(c));
+    let received = 0;
+    let aborted = false;
+    req.on('data', (c: Buffer) => {
+      if (aborted) return;
+      received += c.length;
+      if (received > MAX_HTTP_REQUEST_BYTES) {
+        // Stop accumulating AND stop reading: buffering the rest just to reject it would hand the
+        // caller the exhaustion it was attempting.
+        aborted = true;
+        chunks.length = 0;
+        res.writeHead(413, { 'content-type': 'application/json' });
+        res.end(
+          JSON.stringify({
+            jsonrpc: '2.0',
+            id: null,
+            error: { code: -32600, message: 'request body too large' },
+          }),
+        );
+        req.destroy();
+        return;
+      }
+      chunks.push(c);
+    });
     req.on('end', () => {
+      if (aborted) return;
       void (async () => {
         let body: unknown;
         try {

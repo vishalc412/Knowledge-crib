@@ -1,0 +1,181 @@
+{
+  "crib": {
+    "preregistration": "docs/bench/launch-gates.md",
+    "scale": 1,
+    "corpus": {
+      "records": 307,
+      "gatheredRecords": 323,
+      "eligibleRecords": 283,
+      "queries": 500,
+      "categoryCounts": {
+        "decisions": 90,
+        "preferences": 60,
+        "procedures": 60,
+        "failures": 60,
+        "temporal": 36,
+        "refactors": 36,
+        "multilingual": 88,
+        "contradictions": 20,
+        "adversarial": 20,
+        "cross-principal": 30
+      }
+    },
+    "scorerVersion": "memory-rank-v2:none:bm25:lexical-only",
+    "tieFloor": 0.015479876160990712,
+    "categories": [
+      {
+        "category": "decisions",
+        "queries": 90,
+        "recallAt5": 0.5111111111111111,
+        "precisionAt5": 0.10222222222222221,
+        "mrr": 0.5037037037037037
+      },
+      {
+        "category": "preferences",
+        "queries": 60,
+        "recallAt5": 0.5333333333333333,
+        "precisionAt5": 0.10666666666666672,
+        "mrr": 0.5116666666666666
+      },
+      {
+        "category": "procedures",
+        "queries": 60,
+        "recallAt5": 0.5,
+        "precisionAt5": 0.10000000000000005,
+        "mrr": 0.5
+      },
+      {
+        "category": "failures",
+        "queries": 60,
+        "recallAt5": 0.5166666666666667,
+        "precisionAt5": 0.10333333333333337,
+        "mrr": 0.5055555555555556
+      },
+      {
+        "category": "temporal",
+        "queries": 36,
+        "recallAt5": 1,
+        "precisionAt5": 0.2000000000000001,
+        "mrr": 0.9861111111111112
+      },
+      {
+        "category": "refactors",
+        "queries": 36,
+        "recallAt5": 0.5,
+        "precisionAt5": 0.10000000000000003,
+        "mrr": 0.5
+      },
+      {
+        "category": "multilingual",
+        "queries": 88,
+        "recallAt5": 0.011363636363636364,
+        "precisionAt5": 0.002272727272727273,
+        "mrr": 0.002272727272727273
+      },
+      {
+        "category": "contradictions",
+        "queries": 20,
+        "recallAt5": 1,
+        "precisionAt5": 0.4000000000000001,
+        "mrr": 1
+      },
+      {
+        "category": "adversarial",
+        "queries": 20,
+        "recallAt5": 1,
+        "precisionAt5": 0.20000000000000004,
+        "mrr": 1
+      },
+      {
+        "category": "cross-principal",
+        "queries": 30,
+        "recallAt5": 1,
+        "precisionAt5": 0.2000000000000001,
+        "mrr": 1
+      }
+    ],
+    "gates": [
+      {
+        "id": "G1",
+        "label": "exact recall@5 = 100%",
+        "measured": 1,
+        "threshold": 1,
+        "comparison": "gte",
+        "pass": true,
+        "detail": "153 exact-family queries — recall@5 100.0% must equal 100%"
+      },
+      {
+        "id": "G2",
+        "label": "word-disjoint paraphrase recall@5 >= 80%",
+        "measured": 0.026143790849673203,
+        "threshold": 0.8,
+        "comparison": "gte",
+        "pass": false,
+        "detail": "153 word-disjoint paraphrase queries — recall@5 2.6% (tie floor 1.5%) vs >= 80%"
+      },
+      {
+        "id": "G3",
+        "label": "MRR over every labeled query >= 0.75",
+        "measured": 0.5201333333333333,
+        "threshold": 0.75,
+        "comparison": "gte",
+        "pass": false,
+        "detail": "500 labeled queries — MRR 0.520 vs >= 0.75"
+      },
+      {
+        "id": "G4",
+        "label": "temporal + contradiction classification >= 90%",
+        "measured": 1,
+        "threshold": 0.9,
+        "comparison": "gte",
+        "pass": true,
+        "detail": "56/56 temporal+contradiction classifications correct vs >= 90%"
+      },
+      {
+        "id": "G5",
+        "label": "stale memory surfaced as current < 1%",
+        "measured": 0,
+        "threshold": 0.01,
+        "comparison": "lte",
+        "pass": true,
+        "detail": "0/36 temporal queries surfaced the superseded record vs < 1%"
+      },
+      {
+        "id": "G6",
+        "label": "untrusted content in normal recall = 0",
+        "measured": 0,
+        "threshold": 0,
+        "comparison": "lte",
+        "pass": true,
+        "detail": "0 mis-shelved/candidate/hostile records in any top-5 across 500 queries — must be 0"
+      },
+      {
+        "id": "G7",
+        "label": "unauthorised cross-principal results = 0",
+        "measured": 0,
+        "threshold": 0,
+        "comparison": "lte",
+        "pass": true,
+        "detail": "0 scoped principal queries returning a foreign principal's record across 30 — must be 0 (structural store separation)"
+      },
+      {
+        "id": "G8",
+        "label": "adversarial claim round-trip = 100%",
+        "measured": 1,
+        "threshold": 1,
+        "comparison": "gte",
+        "pass": true,
+        "detail": "20/20 hostile claims byte-identical through real-store round-trip — must be 100%"
+      }
+    ],
+    "refactorEligibility": 1,
+    "adversarialSurfacedAt5": 1,
+    "findings": [
+      "CROSS-PRINCIPAL GAP: v1 MemoryRecord carries NO principal column and recallProjection has NO principal filter — principal isolation is STRUCTURAL (store topology only). Scoped leak measured 0 over 30 scoped queries. The union probe (principal A's team store + principal B's local store, gathered together) leaked 14 foreign results across 75 ranked slots (18.7%) — any caller that merges store sets across principals WILL see cross-principal data. The fix belongs in the record schema (a principal column + a projection filter), not in this harness.",
+      "PARAPHRASE/MULTILINGUAL: these queries are word-disjoint from their claims BY CONSTRUCTION (frozen LAUNCH_STOPWORDS rule in bench/launch-corpus.ts), so the lexical-only launch default scores them at BM25 zero: G2 recall sits at the deterministic tie floor (1.5%), and those families drag the all-query MRR (G3) down with them. This IS the honest semantic-recall measurement (mirrors the P0 finding: exact 100% vs paraphrase 1.7%); a failure here is reported as a failure — disjointness is never relaxed to pass the gate.",
+      "ADVERSARIAL-AS-DATA: every hostile payload's claim round-trips through real store serialization byte-identically (20/20); recall only RANKS the text — nothing executes it — and the untrusted hostile copies (candidates pool) never enter normal recall (leak 0)."
+    ],
+    "pass": false
+  },
+  "vendors": []
+}

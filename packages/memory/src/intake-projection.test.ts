@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   type IntakeCheckpoint,
   type IntakeRequirement,
+  buildContinuation,
   createIntakeCheckpoint,
   createIntakeRequirement,
   projectIntakes,
@@ -112,5 +113,104 @@ describe('projectIntakes', () => {
       blockers: ['Waiting for credentials'],
       repositoryDrift: true,
     });
+  });
+});
+
+// ─── the continue-or-start-fresh choice ──────────────────────────────────────
+//
+// The projection already knew which intakes were resumable, but a caller had to INFER the decision
+// from the presence or absence of `primary` — and "start fresh" had no vocabulary at all. These
+// tests pin the choice as an explicit, deterministic surface: both branches always offered, and a
+// default suggested only where suggesting one is defensible.
+
+describe('buildContinuation', () => {
+  it('offers only "start fresh", and recommends it, when nothing is resumable', () => {
+    const choice = buildContinuation(projectIntakes([], [], REPOSITORY));
+    expect(choice.options.map((o) => o.optionId)).toEqual(['fresh']);
+    expect(choice.recommended).toBe('fresh');
+    expect(choice.rationale).toContain('nothing is resumable');
+  });
+
+  it('always offers "start fresh" alongside resumable work', () => {
+    const requirement = intake();
+    const choice = buildContinuation(
+      projectIntakes([requirement], [checkpoint(requirement)], REPOSITORY),
+    );
+    // Starting new work is a legitimate choice, not a fallback for when resuming is impossible.
+    expect(choice.options.some((o) => o.kind === 'fresh')).toBe(true);
+    expect(choice.options.some((o) => o.intakeId === requirement.id)).toBe(true);
+  });
+
+  it('recommends a lone resumable intake that needs no re-checking', () => {
+    const requirement = intake();
+    const choice = buildContinuation(
+      projectIntakes([requirement], [checkpoint(requirement)], REPOSITORY),
+    );
+    expect(choice.recommended).toBe(`resume:${requirement.id}`);
+    const resume = choice.options.find((o) => o.kind === 'resume');
+    expect(resume?.detail).toBe('Run the parser tests');
+    expect(resume?.cautions).toEqual([]);
+  });
+
+  it('withholds the recommendation when the repository moved under a lone intake', () => {
+    // Resuming without looking is exactly wrong here: the saved plan was written against a tree
+    // that no longer exists, so the caller must decide deliberately.
+    const requirement = intake();
+    const moved = { head: 'head-2', branch: 'feature/work', dirty: false };
+    const choice = buildContinuation(
+      projectIntakes([requirement], [checkpoint(requirement)], moved),
+    );
+    expect(choice.recommended).toBeUndefined();
+    expect(choice.rationale).toContain('deliberate look');
+    expect(choice.options[0]?.cautions.join(' ')).toContain('repository moved');
+  });
+
+  it('withholds the recommendation when the lone intake is blocked', () => {
+    const requirement = intake();
+    const choice = buildContinuation(
+      projectIntakes([requirement], [checkpoint(requirement, 'blocked')], REPOSITORY),
+    );
+    expect(choice.recommended).toBeUndefined();
+    expect(choice.options[0]?.cautions.join(' ')).toContain('blocked');
+  });
+
+  it('never invents a default when several intakes are resumable', () => {
+    const older = intake('2026-01-01T00:00:00.000Z');
+    const newer = intake('2026-02-01T00:00:00.000Z');
+    const choice = buildContinuation(
+      projectIntakes(
+        [older, newer],
+        [
+          checkpoint(older, 'progress', '2026-01-02T00:00:00.000Z'),
+          checkpoint(newer, 'progress', '2026-02-02T00:00:00.000Z'),
+        ],
+        REPOSITORY,
+      ),
+    );
+    expect(choice.recommended).toBeUndefined();
+    expect(choice.options.filter((o) => o.kind === 'resume')).toHaveLength(2);
+    expect(choice.rationale).toContain('resumes the wrong work');
+  });
+
+  it('does not offer completed or cancelled intakes as resumable', () => {
+    const done = intake();
+    const choice = buildContinuation(
+      projectIntakes([done], [checkpoint(done, 'completed')], REPOSITORY),
+    );
+    expect(choice.options.map((o) => o.optionId)).toEqual(['fresh']);
+  });
+
+  it('is deterministic: the same projection yields the same option order', () => {
+    const a = intake('2026-01-01T00:00:00.000Z');
+    const b = intake('2026-02-01T00:00:00.000Z');
+    const projection = projectIntakes(
+      [a, b],
+      [
+        checkpoint(a, 'progress', '2026-01-02T00:00:00.000Z'),
+        checkpoint(b, 'progress', '2026-02-02T00:00:00.000Z'),
+      ],
+      REPOSITORY,
+    );
+    expect(buildContinuation(projection)).toEqual(buildContinuation(projection));
   });
 });

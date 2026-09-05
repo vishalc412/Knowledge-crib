@@ -36,6 +36,13 @@ export class SymbolTable {
     return this.topLevel.get(file)?.get(name);
   }
 
+  /** An exact member declared directly under `parentQualifier` in `file`. */
+  memberSymbol(file: string, parentQualifier: string, name: string): Node | undefined {
+    return this.byFile
+      .get(file)
+      ?.find((symbol) => symbol.name === name && symbol.meta?.parentQualifier === parentQualifier);
+  }
+
   /**
    * A symbol named `name` in `file` whose `type` is in `kinds`, at ANY nesting depth. Use this for
    * languages that model namespaces as symbols (C#): a type nested under a namespace symbol is NOT
