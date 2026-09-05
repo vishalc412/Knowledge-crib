@@ -24,7 +24,17 @@ export interface ResumeBrief {
 export interface IntakeProjection {
   primary?: ResumeBrief;
   choices: ResumeBrief[];
+  /** Every intake in the projection, finished ones included — the full history. */
   count: number;
+  /**
+   * Intakes that can actually be RESUMED — `completed` and `cancelled` excluded.
+   *
+   * Distinct from `count` because a surface that offers "work to resume" must not count work that
+   * is done. The memory home read `count` and told the operator there were 3 things to resume when
+   * some of them had been finished, which is the kind of wrong number that teaches people to
+   * distrust every other number on the page.
+   */
+  resumableCount: number;
 }
 
 function checkpointStatus(checkpoint: IntakeCheckpoint | undefined): IntakeStatus {
@@ -110,6 +120,7 @@ export function projectIntakes(
     ...(resumable.length === 1 ? { primary: resumable[0] } : {}),
     choices,
     count: choices.length,
+    resumableCount: resumable.length,
   };
 }
 

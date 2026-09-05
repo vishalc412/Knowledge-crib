@@ -215,7 +215,9 @@ export function readMemoryHome(
     limits: { openWork: 10, pending: 10, attention: 10, recent: 10 },
   });
   const ledger = api.ledger({ offset: 0, limit: 1 });
-  const resumeCount = handoff.counts.openWork + handoff.intakes.count;
+  // Resumable only: `count` is the full history including completed and cancelled intakes, and a
+  // "work to resume" tile that counts finished work is simply lying to the operator.
+  const resumeCount = handoff.counts.openWork + handoff.intakes.resumableCount;
   const nextAction = handoff.intakes.primary?.nextSafeAction
     ? handoff.intakes.primary.nextSafeAction
     : handoff.counts.pendingCaptures > 0

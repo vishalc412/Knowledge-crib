@@ -31,6 +31,21 @@
     .kc-brand-title, .kc-brand-stats { display: none !important; }
     .kc-search input { width: 188px !important; }
     .kc-hide-compact { display: none !important; }
+    /* Memory is the product's primary surface, not a convenience like Tour or Blast radius. It
+       previously carried `kc-hide-compact` and vanished below 900px, leaving NO way to reach the
+       memory ledger on a narrow window — and the panel itself fits fine, so the feature was
+       unreachable rather than unusable. It collapses to its icon instead. */
+    .kc-memory-btn { padding: 0 10px !important; }
+    .kc-memory-label { display: none !important; }
+  }
+  /* Below ~620px the toolbar needs more width than the window has (measured: 651px of controls in
+     a 375px viewport), so its trailing items — Memory among them — were laid out past the right
+     edge and could not be reached at all. Wrapping keeps every control reachable rather than
+     deleting some of them: the bar grows to a second row and the canvas starts below it. */
+  @media (max-width: 620px) {
+    .kc-topbar { flex-wrap: wrap !important; height: auto !important; min-height: 58px; padding: 7px 10px !important; row-gap: 7px !important; }
+    .kc-search { order: 10; flex: 1 1 100% !important; }
+    .kc-search input { width: 100% !important; }
     .kc-memory-panel { width: calc(100% - 28px) !important; max-width: 520px !important; }
   }
 </style>
@@ -80,9 +95,9 @@
       Blast radius
     </button>
 
-    <button class="kc-hide-compact" onClick="{{ toggleMemory }}" title="Memory ledger — what the agents recorded, and what went stale when the code moved" style="height:36px; padding:0 13px; display:flex; align-items:center; gap:7px; border-radius:9px; border:1px solid {{ memBorder }}; background: {{ memBg }}; color: {{ memFg }}; font:600 12.5px 'IBM Plex Sans'; cursor:pointer;">
+    <button class="kc-memory-btn" data-kc-memory-trigger onClick="{{ toggleMemory }}" title="Memory ledger — what the agents recorded, and what went stale when the code moved" style="height:36px; padding:0 13px; display:flex; align-items:center; gap:7px; border-radius:9px; border:1px solid {{ memBorder }}; background: {{ memBg }}; color: {{ memFg }}; font:600 12.5px 'IBM Plex Sans'; cursor:pointer;">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M4 5h16M4 10h16M4 15h10M4 20h7" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></svg>
-      Memory
+      <span class="kc-memory-label">Memory</span>
     </button>
 
      <button onClick="{{ toggleTheme }}" title="Toggle theme" style="width:36px; height:36px; flex:none; display:flex; align-items:center; justify-content:center; border-radius:9px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.text }}; cursor:pointer;">
@@ -232,7 +247,7 @@
       <div style="padding:15px 16px 12px; border-bottom:1px solid {{ t.border }};">
         <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
           <span style="font-size:10.5px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color: {{ memAccent }};">Memory home</span>
-          <button aria-label="Close memory home" onClick="{{ closeMemory }}" style="width:26px; height:26px; display:flex; align-items:center; justify-content:center; border-radius:7px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.text }}; cursor:pointer; font-size:15px; line-height:1;">×</button>
+          <button aria-label="Close memory home" data-kc-memory-close onClick="{{ closeMemory }}" style="width:26px; height:26px; display:flex; align-items:center; justify-content:center; border-radius:7px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.text }}; cursor:pointer; font-size:15px; line-height:1;">×</button>
         </div>
         <div style="font-size:12.5px; line-height:1.45; color: {{ t.sub }}; margin-top:6px;">What agents recorded about this repo — and what went stale when the code moved.</div>
         <sc-if value="{{ mem.notConfigured }}" hint-placeholder-val="{{ true }}">
@@ -354,7 +369,7 @@
             <!-- group tabs -->
             <div style="display:flex; flex-wrap:wrap; gap:5px; margin-bottom:11px;">
               <sc-for list="{{ mem.tabs }}" as="tab" hint-placeholder-count="5">
-                <button onClick="{{ tab.onGo }}" style="display:inline-flex; align-items:center; gap:5px; padding:4px 9px; border-radius:7px; border:1px solid {{ tab.on ? tab.color : t.border }}; background: {{ tab.on ? 'rgba(127,127,127,0.14)' : t.chip }}; color: {{ t.text }}; font:600 11px 'IBM Plex Sans'; cursor:pointer;">
+                <button onClick="{{ tab.onGo }}" style="display:inline-flex; align-items:center; gap:5px; padding:4px 9px; border-radius:7px; border:1px solid {{ tab.borderColor }}; background: {{ tab.bg }}; color: {{ t.text }}; font:600 11px 'IBM Plex Sans'; cursor:pointer;">
                   <span style="width:8px; height:8px; border-radius:50%; background: {{ tab.color }};"></span>{{ tab.label }}
                   <span style="color: {{ t.sub }}; font-weight:500;">{{ tab.count }}</span>
                 </button>
@@ -1216,6 +1231,10 @@ class Component extends DCLogic {
     this.onUp=(e)=>{ const p=this._p; this._p=null; c.style.cursor='grab'; if(!p)return; if(p.node)p.node.pin=false; if(!p.moved){ if(p.chip) this.toggleFocusDepth(); else if(p.block&&p.block.isModule) this.selectModule(p.block.moduleId); else if(p.block&&p.block.isBack) this.clearModule(); else if(p.block&&p.block.isNode) this.select(p.block.nodeId); else if(p.block) this.selectCluster(p.block.id); else if(p.node) this.select(p.node.id); else this.closePanel(); } };
     this.onKey=(e)=>{ const k=e.key; const tag=(e.target&&e.target.tagName)||''; if(tag==='INPUT'){ if(k==='Escape')e.target.blur(); return; }
       if(this.state.tour){ if(k==='ArrowRight'||k===' '||k==='ArrowDown'){e.preventDefault(); this.tourGo(this.state.tourStep+1);} else if(k==='ArrowLeft'||k==='ArrowUp'){e.preventDefault(); this.tourGo(this.state.tourStep-1);} else if(k==='Escape'){this.exitTour();} return; }
+      // The memory overlay is dismissed FIRST: it sits above the node panel, and Escape should
+      // close what the operator is actually looking at. Previously this fell straight through to
+      // closePanel() and the memory panel could only be dismissed with the mouse.
+      if(k==='Escape'&&this.state.memOpen){ this.closeMemory(); return; }
       if(k==='Escape'){ this._cand=null; this.closePanel(); return; }
       const sel=this.state.selectedId; if(!sel)return; const nb=this._nb||[]; if(!nb.length)return;
       if(k==='ArrowRight'||k==='ArrowDown'){ e.preventDefault(); this._nIdx=((this._nIdx==null?-1:this._nIdx)+1)%nb.length; this._cand=nb[this._nIdx]; }
@@ -1285,8 +1304,30 @@ class Component extends DCLogic {
   // response can never overwrite a newer view, and closing the panel cancels the in-flight read.
   toggleMemory(){ if(this.state.memOpen){ this.closeMemory(); return; }
     this.setState({memOpen:true, memData:null, memHome:null, memDetail:null, memGroup:null, memError:null, selectedId:null, selectedClusterId:null, selectedClusterKind:null, clusterContext:false, clusterReturnId:null, selectedTrail:[], sourcePreview:null});
-    this.loadMemory(null); }
-  closeMemory(){ if(this._memAbort)this._memAbort.abort(); this.setState({memOpen:false, memData:null, memHome:null, memDetail:null, memGroup:null, memError:null}); }
+    this.loadMemory(null); this.focusMemoryPanel(); }
+  closeMemory(){ if(this._memAbort)this._memAbort.abort(); this.setState({memOpen:false, memData:null, memHome:null, memDetail:null, memGroup:null, memError:null});
+    // Return focus to what opened the panel. Without this the focus ring is left on a button whose
+    // panel is gone, and a keyboard user has to tab from the top of the page to get back.
+    this.keepFocus('[data-kc-memory-trigger]'); }
+  /**
+   * Put focus on `selector` and KEEP it there for a short window.
+   *
+   * Two things defeat a single `requestAnimationFrame` here. The target may not exist yet — the
+   * memory panel renders only after an async fetch — and once it does, the render that arrives with
+   * the loaded data REPLACES the element, discarding focus and leaving `document.body` active. So
+   * this re-asserts across a bounded ~3s window and stops once focus has stuck three times running.
+   *
+   * `setTimeout`, not `requestAnimationFrame`: rAF is PAUSED in a background tab, so an rAF version
+   * scheduled exactly one callback and then silently stopped — focus management that only works
+   * while the tab is frontmost is focus management that cannot be tested and will not be trusted.
+   */
+  keepFocus(selector, attempts){ let tries=0; let landed=0; const tick=()=>{
+      const el=document.querySelector(selector);
+      if(el){ if(document.activeElement===el){ if(++landed>=3) return; } else { el.focus(); landed=0; } }
+      if(++tries<(attempts||150)) setTimeout(tick,20); };
+    setTimeout(tick,0); }
+  /** Move focus INTO the panel once it renders, so a keyboard user lands on the new content. */
+  focusMemoryPanel(){ this.keepFocus('[data-kc-memory-close]'); }
   async loadMemory(group){ const seq=++this._memSeq; if(this._memAbort)this._memAbort.abort(); const controller=new AbortController(); this._memAbort=controller;
     this.setState({memLoading:true, memError:null, memGroup:group||null, memDetail:null});
     try{ const [res,homeRes]=await Promise.all([
@@ -1518,8 +1559,15 @@ class Component extends DCLogic {
       const groupLabel=(key)=>{ const hit=this.MEM_GROUPS.find((g)=>g[0]===key); return hit?hit[1]:key; };
       const counts=(md&&md.counts)||{};
       const totalRows=this.MEM_GROUPS.reduce((sum,g)=>sum+((configured&&counts[g[0]])||0),0);
-      const tabs=[{key:null,label:'All',color:'#8b97a8',count:configured?totalRows:0,on:!this.state.memGroup,onGo:()=>this.loadMemory(null)}]
-        .concat(this.MEM_GROUPS.map((g)=>({key:g[0],label:g[1],color:g[2],count:(configured&&counts[g[0]])||0,on:this.state.memGroup===g[0],onGo:()=>this.loadMemory(g[0])})));
+      // A ternary inside an inline style VALUE is dropped by the template's CSS parsing — the `:` of
+      // `? :` ends the declaration, so `background: {{ on ? a : b }}` rendered as no background at
+      // all and `border: 1px solid {{ … }}` lost its colour. The tabs then fell back to the browser
+      // default button face, putting dark-theme text on it at 1.03:1 contrast — effectively
+      // invisible, and measured as such in the audit. Conditionals are resolved HERE, so the
+      // template only ever interpolates a finished value.
+      const tabChrome=(on,color)=>({bg:on?'rgba(127,127,127,0.14)':t.chip, borderColor:on?color:t.border});
+      const tabs=[{key:null,label:'All',color:'#8b97a8',count:configured?totalRows:0,on:!this.state.memGroup,onGo:()=>this.loadMemory(null),...tabChrome(!this.state.memGroup,'#8b97a8')}]
+        .concat(this.MEM_GROUPS.map((g)=>({key:g[0],label:g[1],color:g[2],count:(configured&&counts[g[0]])||0,on:this.state.memGroup===g[0],onGo:()=>this.loadMemory(g[0]),...tabChrome(this.state.memGroup===g[0],g[2])})));
       const rows=((md&&md.rows)||[]).map((r)=>{ const color=groupColor(r.group);
         const chips=this.memVerdictChips(r);
         if(r.anchorStatus==='stale') chips.push(this.memChip('anchors stale','bad'));
