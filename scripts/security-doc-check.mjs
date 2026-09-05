@@ -6,7 +6,9 @@
  * properties the product is sold on:
  *
  *   (1) the soul inherits the repo ACL (no separate crib authn/authz layer — access == git ACL),
- *   (2) the MCP server is stdio-only (no network listener for MCP traffic),
+ *   (2) the MCP transport inventory is honest — stdio is the default (no listener), and the opt-in
+ *       `serve --http` shared daemon is documented with its Host/Origin allowlist, its body cap,
+ *       and the explicit statement that locality is not per-user authorization,
  *   (3) the deterministic core (index / parse / link / cluster / query / persist / federation) makes
  *       no network calls — the only network surfaces are the loopback `crib viz` HTTP server
  *       (Host-allowlisted, M0.3) and the opt-in LLM enrichment (and even there the crib process
@@ -24,8 +26,8 @@
  * Asserts:
  *   (1) the M3.7 section header exists,
  *   (2) the three load-bearing subsections exist (network surface inventory, access model, STRIDE),
- *   (3) the doc states each of the three load-bearing properties (soul inherits repo ACL; stdio-only
- *       server; deterministic core offline),
+ *   (3) the doc states each of the load-bearing properties (soul inherits repo ACL; stdio-default
+ *       server plus a bounded opt-in HTTP daemon; deterministic core offline),
  *   (4) the doc names the two real network surfaces (viz loopback HTTP + opt-in LLM enrichment) and
  *       explicitly says the crib process makes no model call,
  *   (5) the doc names the M0.3 Host-header allowlist, the M0.6 lock, the M1.3 grounding, the M1.4
@@ -66,7 +68,16 @@ try {
 
   // (3) the three load-bearing properties
   assertContains('soul inherits the repo ACL', 'property: soul inherits repo ACL');
-  assertContains('stdio only, no listener', 'property: stdio-only MCP transport');
+  // The MCP transport inventory, pinned honestly. Asserting "stdio only" kept this gate green
+  // while `serveHttp` shipped an unguarded listener (audit F14): a gate that pins a claim the code
+  // contradicts is worse than no gate. Both transports must be inventoried, and the opt-in HTTP one
+  // must state its boundary AND its limit (locality is not per-user authorization).
+  assertContains('stdio by default, no listener', 'property: stdio default MCP transport');
+  assertContains(
+    'Host/Origin-allowlisted and\n   byte-capped',
+    'property: opt-in HTTP daemon is boundary-enforced',
+  );
+  assertContains('Locality is not authorization', 'property: HTTP boundary is not authorization');
   assertContains('deterministic core is offline', 'property: deterministic core offline');
 
   // (4) the two real network surfaces + the "crib makes no model call" fact
@@ -87,6 +98,7 @@ try {
 
   // grounding: the doc must name the real source files it rests on
   assertContains('packages/mcp/src/server.ts', 'grounding: server.ts cited');
+  assertContains('packages/mcp/src/http-boundary.test.ts', 'grounding: HTTP boundary test cited');
   assertContains('packages/cli/src/viz-server.ts', 'grounding: viz-server.ts cited');
   assertContains('packages/core/src/federation.ts', 'grounding: federation.ts cited');
   assertContains('packages/mcp/src/enrichment.ts', 'grounding: enrichment.ts cited');

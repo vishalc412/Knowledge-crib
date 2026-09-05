@@ -7,7 +7,7 @@ crib. This doc is the operator-facing contract behind
 
 ```
 crib memory init-sync   # configure a store + seed the baseline (syncs NOTHING)
-crib memory sync        # push | pull | status | rotate-key | purge-sync
+crib memory sync        # push | pull | status | compact | rotate-key | purge-sync
 crib memory purge       # logical tombstone + physical rewrite + remote delete
 crib memory conflicts   # read-only conflict report
 crib memory resolve     # append-only conflict resolution
@@ -165,6 +165,27 @@ ran. A scope without config is a stated skip (`not run — no local sync config 
 crib memory init-sync ...`), not a silent one; if nothing at all is configured, or a
 configured scope fails, the run exits 1.
 
+### Outbox compaction
+
+`crib memory sync compact [--dry-run] [--json]` removes only outbox events whose ids are already in
+the durable ack ledger. Pending events retain their order; ack ids remain so the reconciliation
+sweep does not re-stage the live corpus. A malformed/torn outbox refuses compaction and leaves the
+original bytes unchanged. Replacement is atomic temp→rename under the store lock. This controls
+payload-log growth without weakening at-least-once recovery.
+
+## Verified backup and restore
+
+Use `crib memory backup create|verify|restore` for local/global canonical stores and their sync
+sidecars. The bundle is plaintext and should inherit the same filesystem protection as the memory
+home. It deliberately excludes lock/temp artifacts and the separate sync key. Team memory remains
+Git-backed and is restored with the repository.
+
+Restore verifies size and SHA-256 for every listed regular file before staging. Non-empty targets
+require `--force`; stop active agents and the freshness service before replacing a live store. A
+failed multi-store activation rolls already activated targets back. These guarantees cover process
+interruption and tested disk-write failures; Knowledge Crib does not claim power-loss durability
+until an fsync/filesystem contract is established.
+
 ## Conflicts and `crib memory resolve` (D8)
 
 Apply is never last-write-wins. On pull, four shapes:
@@ -301,9 +322,9 @@ team-lane supersede working without a mandatory extra flag.
   dedicated gate, not a rider on this one.
 - **sigv4/signed uploads are a follow-on** — the generic blob interface works with a
   user-side proxy today.
-- **Outbox compaction is deferred** — the outbox is append-only with acked marks;
-  growth is bounded per-store and the derive-and-diff sweep makes truncation safe to
-  add later.
+- **Ack-ledger archival is deferred** — acknowledged ids remain in sync-state so a compacted event
+  is not re-staged by reconciliation. The payload outbox itself is compacted with
+  `crib memory sync compact`.
 - **Per-device recipient envelopes (age-style) are deferred** — the symmetric key is
   the user's own asset on their own devices; topology-heavy envelopes are a documented
   follow-up, not a v1 requirement.

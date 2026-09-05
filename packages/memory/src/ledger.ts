@@ -233,7 +233,7 @@ export interface LedgerConflictView {
 
 export interface LedgerRow {
   id: string;
-  schemaVersion: '1' | '2';
+  schemaVersion: '1' | '2' | '3';
   kind: string;
   subject: string;
   /** the claim, capped (`MAX_LEDGER_CLAIM_CHARS`) — the full text rides on the detail fetch. */

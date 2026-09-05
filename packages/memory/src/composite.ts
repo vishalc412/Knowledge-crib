@@ -23,6 +23,7 @@
  */
 import type { CompositeEdge, CompositeNode } from '@knowledge-crib/core';
 import type { RecallProjection } from './recall.js';
+import { isMemoryRecordVersioned } from './types.js';
 
 /** The runtime edge relations of the memory composite layer (NOT in the soul's closed `Rel` enum). */
 export type MemoryCompositeRel = 'applies-to' | 'supported-by' | 'conflicts-with';
@@ -106,7 +107,7 @@ export function memoryComposite(recall: RecallProjection): MemoryComposite {
       targetId: r.subject,
     });
     // applies-to: the soul symbols/paths/subjects this memory is about.
-    for (const target of r.appliesTo) {
+    for (const target of isMemoryRecordVersioned(r) ? [] : r.appliesTo) {
       edges.push(memEdge(r.id, target, 'applies-to', 'memory applies to target'));
     }
     // supported-by: a source-quote evidence item pinned to a soul anchor by its soulId.

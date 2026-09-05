@@ -28,6 +28,7 @@
     "installer:smoke": "node scripts/install-smoke.mjs",
     "installer:test": "node scripts/build-installers.test.mjs && node scripts/install-smoke.test.mjs && node scripts/package-runtime-deps.test.mjs && node scripts/ci-workflow.test.mjs && node scripts/release-cli-smoke.test.mjs && node scripts/test-python.test.mjs && node scripts/budget-check.test.mjs && node scripts/crib-cache-stability.test.mjs && node scripts/crib-cost-report.test.mjs && node scripts/eval-check.test.mjs && node scripts/check-mule-sample.test.mjs",
     "release:metadata": "node scripts/release-metadata.test.mjs",
+    "release:evidence": "node scripts/release-evidence.mjs --require-pass",
     "release:verify": "node scripts/release-verify.mjs",
     "lint": "biome check .",
     "format": "biome format --write .",
@@ -35,6 +36,8 @@
     "clean": "corepack pnpm@9.15.0 -r exec rm -rf dist coverage .crib",
     "eval:check": "node scripts/eval-check.mjs",
     "eval:semantic": "node scripts/eval/semantic-retrieval-eval.mjs",
+    "graph:accuracy": "corepack pnpm@9.15.0 --filter @knowledge-crib/core build && corepack pnpm@9.15.0 --filter @knowledge-crib/parsers build && corepack pnpm@9.15.0 --filter @knowledge-crib/pipeline build && node scripts/graph-accuracy.mjs",
+    "sync:soak": "corepack pnpm@9.15.0 --filter @knowledge-crib/memory build && node scripts/sync-soak.mjs",
     "cost:gate": "node scripts/cost-gate.mjs",
     "swarm:gate": "node scripts/swarm/swarm-gate.mjs",
     "semantic:check": "node scripts/semantic-check.mjs",
@@ -72,7 +75,12 @@
   "pnpm": {
     "overrides": {
       "vite": "^6.4.3",
-      "esbuild": "^0.25.0"
+      "esbuild": "^0.25.0",
+      "fast-uri": "^3.1.6",
+      "ip-address": "^10.3.1",
+      "hono": "^4.12.34",
+      "@hono/node-server": "^1.19.15",
+      "qs": "^6.16.0"
     }
   },
   "repository": {

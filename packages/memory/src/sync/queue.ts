@@ -292,6 +292,61 @@ export function readStagedEvents(storeRoot: string): { events: SyncEvent[]; malf
   return { events, malformed };
 }
 
+export interface SyncOutboxCompactionResult {
+  before: number;
+  after: number;
+  removed: number;
+  dryRun: boolean;
+}
+
+export interface SyncOutboxCompactionOptions {
+  dryRun?: boolean;
+  /** Test seam for disk-full/interrupted-write acceptance; production uses atomic temp→rename. */
+  write?: (path: string, content: string) => void;
+}
+
+/**
+ * Remove outbox payload lines whose ids are already durably recorded in `sync-state.ackedEvents`.
+ * Pending events retain their original order and canonical serialization. A malformed line refuses
+ * the entire compaction so cleanup can never erase a torn event that reconciliation still needs.
+ * Caller must hold the owning MemoryStore lock when `dryRun` is false.
+ */
+export function compactSyncOutbox(
+  storeRoot: string,
+  options: SyncOutboxCompactionOptions = {},
+): SyncOutboxCompactionResult {
+  const state = loadSyncState(storeRoot);
+  if (!state)
+    throw new SyncStateError(`no ${SYNC_STATE_FILE} in ${storeRoot} — run init-sync first`);
+  const staged = readStagedEvents(storeRoot);
+  if (staged.malformed > 0) {
+    throw new SyncStateError(
+      `refusing to compact ${SYNC_OUTBOX_FILE}: ${staged.malformed} malformed line(s)`,
+    );
+  }
+  const acked = new Set(state.ackedEvents);
+  const seen = new Set<string>();
+  const pending = staged.events.filter((event) => {
+    if (acked.has(event.id) || seen.has(event.id)) return false;
+    seen.add(event.id);
+    return true;
+  });
+  const result = {
+    before: staged.events.length,
+    after: pending.length,
+    removed: staged.events.length - pending.length,
+    dryRun: options.dryRun === true,
+  };
+  if (!result.dryRun && result.removed > 0) {
+    const content = pending.map((event) => serializeSyncEvent(event)).join('\n');
+    (options.write ?? writeJsonAtomic)(
+      join(storeRoot, SYNC_OUTBOX_FILE),
+      content.length > 0 ? `${content}\n` : '',
+    );
+  }
+  return result;
+}
+
 /**
  * Record the ack for one event id in sync-state (D4 ordering law: the durable result — the
  * `putObject` — was already written; bookkeeping comes LAST, so a crash between the two is an

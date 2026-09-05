@@ -270,7 +270,12 @@ describe('D10 — private never enters git', () => {
   });
 
   it('a supersede whose successor projects private is refused with no partial supersede (D10)', () => {
-    const { team, api } = setup({ team: true });
+    // This test acts as the record's author. Bind that caller identity explicitly so the D10
+    // privacy gate is exercised after the principal-isolation boundary accepts the team record.
+    const { team, api } = setup({
+      team: true,
+      env: { ...env, KCRIB_PRINCIPAL_ID: ACTOR },
+    });
     const original = v2Record({ claim: 'the original claim', visibility: 'workspace' });
     team!.upsertEntry('records', original);
     // the payload successor defaults to 'private' — the team write gate refuses it

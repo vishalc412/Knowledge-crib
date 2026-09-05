@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { SoulStore, newManifest } from '@knowledge-crib/core';
 import {
   type CaptureOutboxEntry,
+  IntelligenceEventJournal,
   type MemoryCandidate,
   MemoryStore,
   pendingCaptures,
@@ -78,6 +79,12 @@ function outboxEntries(): CaptureOutboxEntry[] {
   return localStore().readCollection('outbox').entries as CaptureOutboxEntry[];
 }
 
+function lifecycleEvents() {
+  return new IntelligenceEventJournal({ rootDir: join(cribDir, 'intelligence') }).read({
+    includeExpired: true,
+  });
+}
+
 function runHook(
   event: string | undefined,
   stdin: string | undefined,
@@ -145,18 +152,23 @@ describe('crib memory capture-hook — the fail-open contract', () => {
     expect(outboxEntries()).toHaveLength(0);
   });
 
-  it('S6: a payload just under the cap still works (the cap bounds, it does not break the lane)', () => {
-    // Guards against "fix" the cap by rejecting everything: a large-but-legal payload must still
-    // capture, and only the whitelisted session_id may survive from it.
+  it('S6: a payload just under the cap creates only a checkpoint request without an outcome', () => {
     const big = JSON.stringify({ session_id: SESSION_ID, filler: 'x'.repeat(30_000) });
     expect(big.length).toBeLessThan(65_536);
     const r = runHook('turn-end', big);
     expect(r.status).toBe(0);
-    expect(parseAck(r.stdout).ok).toBe(true);
+    expect(JSON.parse(r.stdout)).toMatchObject({
+      ok: true,
+      event: 'turn-end',
+      status: 'checkpoint-requested',
+      captured: false,
+    });
     const staged = candidates();
-    expect(staged).toHaveLength(1);
+    expect(staged).toHaveLength(0);
+    expect(outboxEntries()).toHaveLength(0);
+    expect(lifecycleEvents()).toHaveLength(1);
     // raw-transcripts-off law: the 30KB filler never reaches storage, only bounded provenance
-    expect(JSON.stringify(staged[0])).not.toContain('xxxxxxxxxx');
+    expect(JSON.stringify(lifecycleEvents())).not.toContain('xxxxxxxxxx');
   });
 
   it('an unindexed repo exits 0 with a stderr note (a hook must not block an unindexed session)', () => {
@@ -169,8 +181,8 @@ describe('crib memory capture-hook — the fail-open contract', () => {
   });
 });
 
-describe('crib memory capture-hook — staging through the capture funnel', () => {
-  it('turn-end stages an unanchored lifecycle candidate + durable outbox entry, session provenance bounded', () => {
+describe('crib memory capture-hook — structured outcomes', () => {
+  it('turn-end without an outcome records a checkpoint request, never a pseudo-fact', () => {
     const payload = {
       session_id: SESSION_ID,
       transcript_path: '/Users/x/.claude/projects/p/transcript.jsonl',
@@ -180,46 +192,62 @@ describe('crib memory capture-hook — staging through the capture funnel', () =
     const r = runHook('turn-end', JSON.stringify(payload));
     expect(r.status).toBe(0);
 
-    const ack = parseAck(r.stdout);
-    expect(ack.ok).toBe(true);
-    expect(ack.event).toBe('turn-end');
-    expect(ack.status).toBe('pending');
-    expect(ack.captureId.startsWith('cand:')).toBe(true);
-
-    // Exactly one candidate, whose claim is the bounded lifecycle observation — NOT the payload.
-    const staged = candidates();
-    expect(staged).toHaveLength(1);
-    expect(staged[0]?.claim).toBe('session turn ended (lifecycle hook)');
-    expect(staged[0]?.claim).not.toContain(SESSION_ID);
-    expect(staged[0]?.claim).not.toContain('transcript');
-    expect(staged[0]?.authorship.actor).toBe('claude-code-hook');
-
-    // The durable outbox row (written before the staging entry) is pending and carries the
-    // bounded session provenance.
-    const pending = pendingCaptures(localStore());
-    expect(pending).toHaveLength(1);
-    expect(pending[0]?.id.startsWith('cap:')).toBe(true);
-    expect(JSON.stringify(outboxEntries())).not.toContain('transcript_path');
+    expect(JSON.parse(r.stdout)).toMatchObject({ status: 'checkpoint-requested', captured: false });
+    expect(candidates()).toHaveLength(0);
+    expect(pendingCaptures(localStore())).toHaveLength(0);
+    expect(lifecycleEvents()[0]).toMatchObject({
+      kind: 'agent.lifecycle',
+      payload: { event: 'turn-end', action: 'checkpoint-requested', hasOutcome: false },
+    });
+    expect(JSON.stringify(lifecycleEvents())).not.toContain('transcript_path');
   });
 
-  it('tool-use captures the tool NAME only — tool input never reaches storage', () => {
+  it('captures a client-neutral structured outcome with offsets and artifact references', () => {
     const r = runHook(
-      'tool-use',
+      'turn-end',
       JSON.stringify({
         session_id: SESSION_ID,
-        tool_name: 'Bash',
-        tool_input: { command: 'echo super-secret-value' },
+        client_id: 'codex',
+        agent_id: 'principal-engineer',
+        event_offset: 42,
+        transcript_path: '/private/transcript.jsonl',
+        knowledge_crib_outcome: {
+          subject: 'topic:freshness-service',
+          kind: 'decision',
+          intent: 'Keep repository context fresh after commits.',
+          decision: 'Use one user-scoped supervised worker.',
+          result: 'launchd service definition installed and active.',
+          next_action: 'Run the reboot recovery acceptance.',
+          artifacts: ['packages/cli/src/freshness-service.ts'],
+        },
       }),
     );
     expect(r.status).toBe(0);
+    const ack = parseAck(r.stdout);
+    expect(ack.status).toBe('pending');
     const staged = candidates();
-    expect(staged[0]?.claim).toBe('tool-use observed (lifecycle hook): Bash');
-    expect(JSON.stringify([staged, outboxEntries()])).not.toContain('super-secret-value');
-    expect(JSON.stringify([staged, outboxEntries()])).not.toContain('tool_input');
+    expect(staged).toHaveLength(1);
+    expect(staged[0]).toMatchObject({
+      kind: 'decision',
+      subject: 'topic:freshness-service',
+      appliesTo: ['packages/cli/src/freshness-service.ts'],
+    });
+    expect(staged[0]?.claim).toContain('Intent: Keep repository context fresh after commits.');
+    expect(staged[0]?.claim).toContain('Decision: Use one user-scoped supervised worker.');
+    expect(staged[0]?.claim).toContain('Next action: Run the reboot recovery acceptance.');
+    const pending = pendingCaptures(localStore());
+    expect(pending[0]).toMatchObject({ sessionId: SESSION_ID, eventOffset: 42 });
+    expect(JSON.stringify([staged, outboxEntries(), lifecycleEvents()])).not.toContain(
+      'transcript',
+    );
   });
 
-  it('the same payload twice is idempotent: same captureId, one outbox entry, one candidate', () => {
-    const payload = JSON.stringify({ session_id: SESSION_ID });
+  it('the same structured outcome and event offset are idempotent', () => {
+    const payload = JSON.stringify({
+      session_id: SESSION_ID,
+      event_offset: 9,
+      knowledge_crib_outcome: { result: 'The acceptance run passed.' },
+    });
     const first = runHook('session-start', payload);
     expect(first.status).toBe(0);
     const firstAck = parseAck(first.stdout);
@@ -233,9 +261,14 @@ describe('crib memory capture-hook — staging through the capture funnel', () =
     expect(pendingCaptures(localStore())).toHaveLength(1);
   });
 
-  it('different sessions get distinct durable outbox rows that dedupe to ONE candidate by content', () => {
-    const a = parseAck(runHook('turn-end', JSON.stringify({ session_id: 'sess-a' })).stdout);
-    const b = parseAck(runHook('turn-end', JSON.stringify({ session_id: 'sess-b' })).stdout);
+  it('different sessions retain provenance while identical outcomes dedupe by content', () => {
+    const outcome = { knowledge_crib_outcome: { result: 'The acceptance run passed.' } };
+    const a = parseAck(
+      runHook('turn-end', JSON.stringify({ ...outcome, session_id: 'sess-a' })).stdout,
+    );
+    const b = parseAck(
+      runHook('turn-end', JSON.stringify({ ...outcome, session_id: 'sess-b' })).stdout,
+    );
     // The claim text deliberately excludes the session id, so the content-addressed candidate id
     // is the same — the observation is one fact regardless of which session observed it. The
     // session id lives in the idempotency key, so the DURABLE rows stay distinct (each keeps its
@@ -245,5 +278,28 @@ describe('crib memory capture-hook — staging through the capture funnel', () =
     expect(pending).toHaveLength(2);
     expect(new Set(pending.map((e) => e.id)).size).toBe(2);
     expect(candidates()).toHaveLength(1);
+  });
+
+  it('keeps the checkpoint but refuses memory when a requested receipt is not verified', () => {
+    const r = runHook(
+      'turn-end',
+      JSON.stringify({
+        session_id: SESSION_ID,
+        event_offset: 77,
+        knowledge_crib_outcome: {
+          result: 'A claimed gate passed.',
+          receipt_id: 'receipt:missing',
+          assertion: 'release gate',
+        },
+      }),
+    );
+    expect(r.status).toBe(0);
+    expect(r.stderr).toContain('checkpoint recorded, memory skipped');
+    expect(candidates()).toHaveLength(0);
+    expect(pendingCaptures(localStore())).toHaveLength(0);
+    expect(lifecycleEvents()[0]).toMatchObject({
+      kind: 'agent.lifecycle',
+      payload: { event: 'turn-end', action: 'checkpoint-requested', hasOutcome: true },
+    });
   });
 });

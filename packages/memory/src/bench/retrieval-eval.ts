@@ -35,7 +35,7 @@ import {
   recallProjection,
 } from '../recall.js';
 import { MemoryStore } from '../store.js';
-import type { MemoryRecord } from '../types.js';
+import type { MemoryRecord, MemoryRecordVersioned } from '../types.js';
 import { benchHash, buildBenchRecord, quoteEvidence } from './corpus.js';
 import { heldOutQueries } from './heldout.js';
 import { mrr, p50p95, precisionAtK, recallAtK } from './metrics.js';
@@ -303,7 +303,7 @@ function evalStrategy(
 }
 
 /** memory Record shape the projection ranks (v1 read model; v2 participates via the same ports). */
-type MemoryRecordLike = MemoryRecord;
+type MemoryRecordLike = MemoryRecord | MemoryRecordVersioned;
 
 function mean(
   ranked: readonly (readonly string[])[],

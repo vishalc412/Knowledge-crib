@@ -229,3 +229,31 @@ function expectEdge(e: { provenance: string; method: string; confidence: number 
   expect(e.method).toBe('static');
   expect(e.confidence).toBe(1);
 }
+
+describe('SqlResolver — stays inside its own language (audit F11)', () => {
+  it('does not link two TypeScript symbols by bare name just because a .sql file is present', async () => {
+    // `supports()` gates this resolver on a SQL extension, but `resolve()` walks the WHOLE soul.
+    // With any .sql file in the repo it was indexing TypeScript `function` symbols into its
+    // simple-name map and emitting cross-file `calls` edges the TS resolver had deliberately
+    // refused to guess at — a confidence-1 edge from a PARAMETER named `now` to an unrelated
+    // function named `now` in another file.
+    const soul = soulFor();
+    await indexRepo(soul, MIXED, { now: '2026-01-01T00:00:00.000Z' });
+
+    const byId = new Map([...soul.iterate()].map((n) => [n.id, n]));
+    const enqueue = [...soul.iterate('symbol')].find((n) => n.qualifiedName === 'enqueue');
+    expect(enqueue, 'scheduler.ts fixture must be indexed').toBeDefined();
+
+    const fabricated = [...soul.iterateEdges()].filter(
+      (e) =>
+        e.rel === 'calls' &&
+        e.src === enqueue?.id &&
+        byId.get(e.dst)?.file?.endsWith('clock.ts') === true,
+    );
+    expect(fabricated).toEqual([]);
+
+    // The call site itself must still be recorded — dropping the edge must not hide the gap.
+    const sites = (enqueue?.meta?.calls ?? []) as Array<{ callee: string }>;
+    expect(sites.map((s) => s.callee)).toContain('now');
+  });
+});

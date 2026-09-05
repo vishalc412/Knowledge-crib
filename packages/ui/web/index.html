@@ -22,6 +22,7 @@
   ::-webkit-scrollbar { width: 9px; height: 9px; }
   ::-webkit-scrollbar-thumb { background: rgba(128,140,160,0.35); border-radius: 6px; }
   ::-webkit-scrollbar-track { background: transparent; }
+  button:focus-visible, input:focus-visible { outline: 3px solid #43d8c9 !important; outline-offset: 2px; }
   @keyframes kc-panel-in { from { opacity: 0; transform: translateX(18px); } to { opacity: 1; transform: translateX(0); } }
   @keyframes kc-fade-in { from { opacity: 0; } to { opacity: 1; } }
   @media (max-width: 900px) {
@@ -30,6 +31,7 @@
     .kc-brand-title, .kc-brand-stats { display: none !important; }
     .kc-search input { width: 188px !important; }
     .kc-hide-compact { display: none !important; }
+    .kc-memory-panel { width: calc(100% - 28px) !important; max-width: 520px !important; }
   }
 </style>
 </helmet>
@@ -225,12 +227,12 @@
 
   <!-- Memory ledger panel (G5.4) — the agents' recorded claims next to the code graph -->
   <sc-if value="{{ mem }}" hint-placeholder-val="{{ true }}">
-    <div style="position:absolute; top:80px; left:14px; bottom:14px; width:420px; max-width:420px; z-index:21; display:flex; flex-direction:column; border-radius:10px; overflow:hidden; background: {{ t.panel }}; color: {{ t.text }}; border:1px solid {{ t.border }}; backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); box-shadow:0 18px 50px rgba(0,0,0,0.3); animation: kc-panel-in 0.26s cubic-bezier(0.2,0.7,0.2,1);">
+    <div class="kc-memory-panel" role="dialog" aria-label="Knowledge Crib memory home" style="position:absolute; top:80px; left:14px; bottom:14px; width:460px; max-width:460px; z-index:21; display:flex; flex-direction:column; border-radius:10px; overflow:hidden; background: {{ t.panel }}; color: {{ t.text }}; border:1px solid {{ t.border }}; backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); box-shadow:0 18px 50px rgba(0,0,0,0.3); animation: kc-panel-in 0.26s cubic-bezier(0.2,0.7,0.2,1);">
       <!-- header -->
       <div style="padding:15px 16px 12px; border-bottom:1px solid {{ t.border }};">
         <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
-          <span style="font-size:10.5px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color: {{ memAccent }};">Memory ledger</span>
-          <button onClick="{{ closeMemory }}" style="width:26px; height:26px; display:flex; align-items:center; justify-content:center; border-radius:7px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.sub }}; cursor:pointer; font-size:15px; line-height:1;">×</button>
+          <span style="font-size:10.5px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; color: {{ memAccent }};">Memory home</span>
+          <button aria-label="Close memory home" onClick="{{ closeMemory }}" style="width:26px; height:26px; display:flex; align-items:center; justify-content:center; border-radius:7px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.text }}; cursor:pointer; font-size:15px; line-height:1;">×</button>
         </div>
         <div style="font-size:12.5px; line-height:1.45; color: {{ t.sub }}; margin-top:6px;">What agents recorded about this repo — and what went stale when the code moved.</div>
         <sc-if value="{{ mem.notConfigured }}" hint-placeholder-val="{{ true }}">
@@ -239,6 +241,29 @@
       </div>
 
       <div style="flex:1; overflow-y:auto; padding:13px 14px 16px;">
+        <sc-if value="{{ mem.homeView }}" hint-placeholder-val="{{ true }}">
+          <div style="margin-bottom:14px;">
+            <div style="display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:5px;">
+              <sc-for list="{{ mem.homeView.sections }}" as="section" hint-placeholder-count="5">
+                <div title="{{ section.help }}" style="min-width:0; padding:8px 6px; border-radius:9px; border:1px solid {{ t.border }}; background: {{ t.chip }}; text-align:center;">
+                  <div style="font-size:18px; font-weight:700; line-height:1; color: {{ section.color }};">{{ section.count }}</div>
+                  <div style="font-size:9px; font-weight:700; letter-spacing:0.02em; color: {{ t.text }}; margin-top:5px; line-height:1.2;">{{ section.label }}</div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:8px;">
+              <sc-for list="{{ mem.homeView.health }}" as="signal" hint-placeholder-count="4">
+                <div style="padding:8px 9px; border-radius:8px; border-left:3px solid {{ signal.color }}; background: {{ t.chip }}; min-width:0;">
+                  <div style="font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color: {{ t.sub }};">{{ signal.label }}</div>
+                  <div style="font-size:11px; font-weight:600; color: {{ t.text }}; margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ signal.value }}</div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="margin-top:8px; padding:9px 10px; border-radius:8px; background:rgba(67,216,201,0.10); border:1px solid rgba(67,216,201,0.35); color: {{ t.text }}; font-size:11px; line-height:1.45;">
+              <b style="color:#43d8c9;">Next safe action</b><br>{{ mem.homeView.nextAction }}
+            </div>
+          </div>
+        </sc-if>
         <!-- conflicts banner -->
         <sc-if value="{{ mem.conflicts.length }}" hint-placeholder-val="{{ true }}">
           <div style="display:flex; gap:10px; align-items:flex-start; padding:11px 12px; border-radius:11px; background: rgba(248,113,113,0.12); border:1px solid rgba(248,113,113,0.4); margin-bottom:12px;">
@@ -356,7 +381,7 @@
                 </button>
               </sc-for>
               <sc-if value="{{ mem.empty }}" hint-placeholder-val="{{ true }}">
-                <div style="font-size:12px; color: {{ t.sub }}; padding:8px 2px;">No records in this view.</div>
+                <div style="font-size:12px; color: {{ t.sub }}; padding:8px 2px; line-height:1.5;">{{ mem.emptyMessage }}</div>
               </sc-if>
               <sc-if value="{{ mem.error }}" hint-placeholder-val="{{ true }}">
                 <div style="font-size:12px; color:#f87171;">{{ mem.error }}</div>
@@ -405,7 +430,7 @@ class Component extends DCLogic {
   // (root + direct neighbors only) — lean by default, deep on demand — instead of always drawing
   // the full 2-hop neighborhood, which on a real repo can be hundreds of nodes with no "you are
   // here" (see toggleFocusDepth / the Horizon panel's expand control).
-  state = { theme: 'dark', mode: 'overview', selectedId: null, selectedClusterId: null, selectedClusterKind: null, clusterContext: false, clusterReturnId: null, selectedTrail: [], sourcePreview: null, blast: false, query: '', hidden: {}, ready: false, tour: false, tourStep: 0, zoomTick: 0, focusDepth: 1, memOpen: false, memLoading: false, memError: null, memData: null, memGroup: null, memDetail: null };
+  state = { theme: 'dark', mode: 'overview', selectedId: null, selectedClusterId: null, selectedClusterKind: null, clusterContext: false, clusterReturnId: null, selectedTrail: [], sourcePreview: null, blast: false, query: '', hidden: {}, ready: false, tour: false, tourStep: 0, zoomTick: 0, focusDepth: 1, memOpen: false, memLoading: false, memError: null, memData: null, memHome: null, memGroup: null, memDetail: null };
 
   KIND = { file:'#7c8aa5', symbol:'#5b8cff', method:'#6f9bff', function:'#8aa8ff', class:'#5b8cff', interface:'#a78bfa', 'doc-section':'#34d399', table:'#f59e0b', column:'#fbbf24', statement:'#2dd4bf', condition:'#f87171',
            // producer-emitted kinds (viz.ts deriveNodeKind + enums.ts) that were missing → gray + 'undefined' tooltip
@@ -1259,15 +1284,17 @@ class Component extends DCLogic {
   // Same fetch discipline as loadSource: AbortController + sequence guard, so a slow ledger
   // response can never overwrite a newer view, and closing the panel cancels the in-flight read.
   toggleMemory(){ if(this.state.memOpen){ this.closeMemory(); return; }
-    this.setState({memOpen:true, memData:null, memDetail:null, memGroup:null, memError:null, selectedId:null, selectedClusterId:null, selectedClusterKind:null, clusterContext:false, clusterReturnId:null, selectedTrail:[], sourcePreview:null});
+    this.setState({memOpen:true, memData:null, memHome:null, memDetail:null, memGroup:null, memError:null, selectedId:null, selectedClusterId:null, selectedClusterKind:null, clusterContext:false, clusterReturnId:null, selectedTrail:[], sourcePreview:null});
     this.loadMemory(null); }
-  closeMemory(){ if(this._memAbort)this._memAbort.abort(); this.setState({memOpen:false, memData:null, memDetail:null, memGroup:null, memError:null}); }
+  closeMemory(){ if(this._memAbort)this._memAbort.abort(); this.setState({memOpen:false, memData:null, memHome:null, memDetail:null, memGroup:null, memError:null}); }
   async loadMemory(group){ const seq=++this._memSeq; if(this._memAbort)this._memAbort.abort(); const controller=new AbortController(); this._memAbort=controller;
     this.setState({memLoading:true, memError:null, memGroup:group||null, memDetail:null});
-    try{ const res=await fetch('/memory.json'+(group?('?group='+encodeURIComponent(group)):''),{signal:controller.signal,cache:'no-store'});
-      if(!res.ok)throw new Error(await res.text());
-      const data=await res.json(); if(seq!==this._memSeq)return;
-      this.setState({memLoading:false, memData:data});
+    try{ const [res,homeRes]=await Promise.all([
+        fetch('/memory.json'+(group?('?group='+encodeURIComponent(group)):''),{signal:controller.signal,cache:'no-store'}),
+        fetch('/memory/home.json',{signal:controller.signal,cache:'no-store'})]);
+      if(!res.ok)throw new Error(await res.text()); if(!homeRes.ok)throw new Error(await homeRes.text());
+      const [data,home]=await Promise.all([res.json(),homeRes.json()]); if(seq!==this._memSeq)return;
+      this.setState({memLoading:false, memData:data, memHome:home});
     }catch(err){ if(controller.signal.aborted||seq!==this._memSeq)return; this.setState({memLoading:false, memError:String(err&&err.message||err)}); } }
   async loadMemoryDetail(id,row){ const seq=++this._memSeq; if(this._memAbort)this._memAbort.abort(); const controller=new AbortController(); this._memAbort=controller;
     this.setState({memDetail:{id,status:'loading',row}});
@@ -1483,7 +1510,7 @@ class Component extends DCLogic {
      const tOn=this.state.tour; const ts=this.TOUR[this.state.tourStep]||{title:'No tour available',text:'This project has no indexed symbols to tour yet.'}; const isLast=this.state.tourStep>=this.TOUR.length-1; const isFirst=this.state.tourStep<=0;
     // ── memory ledger view model (G5.4) ── the /memory.json projection is already display-shaped;
     // this only adds chrome (colors, chips, handlers) and the lazy per-record detail sub-view.
-    const memOpen=this.state.memOpen; const md=this.state.memData; const memDetailState=this.state.memDetail;
+    const memOpen=this.state.memOpen; const md=this.state.memData; const mh=this.state.memHome; const memDetailState=this.state.memDetail;
     let mem=null;
     if(memOpen){
       const configured=!!(md&&md.configured);
@@ -1502,6 +1529,20 @@ class Component extends DCLogic {
           time:r.recordedAt?('recorded '+r.recordedAt):(r.createdAt?('created '+r.createdAt):''), onOpen:()=>this.loadMemoryDetail(r.id,r) }; });
       const conflicts=((md&&md.conflicts)||[]).map((c)=>({subject:c.subject||c.propositionKey||c.key,count:(c.recordIds||[]).length}));
       const policy=md&&md.capturePolicy?('ref '+md.capturePolicy.trustedRef+' · profiles '+md.capturePolicy.profiles.join(', ')):null;
+      const hs=(mh&&mh.sections)||{}; const hh=(mh&&mh.health)||{};
+      const homeView=mh&&mh.configured?{
+        sections:[
+          {label:'Active',count:(hs.active&&hs.active.count)||0,color:'#34d399',help:'Current evidence-backed memory'},
+          {label:'Pending',count:(hs.pending&&hs.pending.count)||0,color:'#f59e0b',help:'Outcomes waiting for distillation'},
+          {label:'Needs review',count:(hs.needsReview&&hs.needsReview.count)||0,color:'#f87171',help:'Stale or degraded evidence'},
+          {label:'History',count:(hs.history&&hs.history.count)||0,color:'#8b97a8',help:'Full append-only ledger'},
+          {label:'Work to resume',count:(hs.resume&&hs.resume.count)||0,color:'#5b8cff',help:'Active intakes and unfinished attempts'}],
+        health:[
+          {label:'Retrieval mode',value:(hh.retrieval&&hh.retrieval.mode)||'unknown',color:hh.retrieval&&hh.retrieval.mode==='on-device-semantic'?'#34d399':'#f59e0b'},
+          {label:'Last capture',value:(hh.capture&&hh.capture.lastSuccessfulAt)||'none yet',color:hh.capture&&hh.capture.lastSuccessfulAt?'#34d399':'#8b97a8'},
+          {label:'Code index',value:hh.codeIndex&&hh.codeIndex.behindHead?'behind HEAD':((hh.codeIndex&&hh.codeIndex.lastSuccessfulAt)||'not indexed'),color:hh.codeIndex&&hh.codeIndex.behindHead?'#f87171':'#34d399'},
+          {label:'Sync',value:hh.sync&&hh.sync.configured?((hh.sync.lastSuccessfulAt)||'configured; no run yet'):'local only',color:hh.sync&&hh.sync.configured?'#34d399':'#8b97a8'}],
+        nextAction:mh.nextAction||'Capture a reusable outcome.'}:null;
       let detail=null;
       if(memDetailState){
         const onBack=()=>this.backToLedger();
@@ -1523,9 +1564,10 @@ class Component extends DCLogic {
             transitions:((d.audit&&d.audit.records)||[]).flatMap((rv)=>(rv.transitions||[]).map((tr)=>this.memAxis(tr.kind)+': '+this.memAxis(tr.from)+' → '+this.memAxis(tr.to)+' · '+tr.at.slice(0,10)+' · '+tr.actor+(tr.reason?' · '+tr.reason:''))) };
         }
       }
-      mem={ notConfigured:!!(md&&!md.configured), conflicts, conflictsPlural:conflicts.length===1?'':'s', policy,
+      mem={ notConfigured:!!(md&&!md.configured), homeView, conflicts, conflictsPlural:conflicts.length===1?'':'s', policy,
         detail, list:configured&&!detail,
         loading:!!(this.state.memLoading&&!detail), error:this.state.memError, empty:configured&&rows.length===0,
+        emptyMessage:this.state.memGroup?'No records match this lifecycle view. Return to All or inspect Needs review above.':'No durable records yet. Complete meaningful work and emit a structured Knowledge Crib outcome; generic session events only request a checkpoint.',
         tabs, rows };
     }
      return {

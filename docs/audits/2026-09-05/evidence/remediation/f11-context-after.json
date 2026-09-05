@@ -1,0 +1,109 @@
+{
+  "node": {
+    "id": "sym:packages/cli/src/freshness.ts#enqueueFreshness@L246",
+    "kind": "symbol",
+    "type": "function",
+    "name": "enqueueFreshness",
+    "qualifiedName": "enqueueFreshness",
+    "signature": "enqueueFreshness(projectRoot: string, head: string, env: NodeJS.ProcessEnv = process.env, now: () => Date = () => new Date()): EnqueueResult",
+    "lang": "typescript",
+    "file": "packages/cli/src/freshness.ts",
+    "span": {
+      "start": 246,
+      "end": 271
+    },
+    "callSites": [
+      {
+        "callee": "mutateFreshnessQueue",
+        "line": 252
+      },
+      {
+        "callee": "freshnessTaskId",
+        "line": 253
+      },
+      {
+        "callee": "findIndex",
+        "line": 254
+      },
+      {
+        "callee": "toISOString",
+        "line": 264
+      },
+      {
+        "callee": "now",
+        "line": 264
+      },
+      {
+        "callee": "map",
+        "line": 267
+      }
+    ]
+  },
+  "callers": [
+    {
+      "id": "sym:packages/cli/src/freshness.ts#postCommitFreshness@L280",
+      "name": "postCommitFreshness",
+      "qualifiedName": "postCommitFreshness",
+      "signature": "postCommitFreshness(projectRoot: string, head: string, env: NodeJS.ProcessEnv = process.env): { mode: FreshnessMode; enqueued: boolean; id?: string; ok: boolean }",
+      "type": "function",
+      "file": "packages/cli/src/freshness.ts",
+      "line": 280,
+      "confidence": 1
+    }
+  ],
+  "callees": [
+    {
+      "id": "sym:packages/cli/src/freshness.ts#mutateFreshnessQueue@L199",
+      "name": "mutateFreshnessQueue",
+      "qualifiedName": "mutateFreshnessQueue",
+      "signature": "mutateFreshnessQueue(env: NodeJS.ProcessEnv, mutate: (queue: FreshnessQueue) => T): T",
+      "type": "function",
+      "file": "packages/cli/src/freshness.ts",
+      "line": 199,
+      "confidence": 1
+    },
+    {
+      "id": "sym:packages/cli/src/freshness.ts#freshnessTaskId@L228",
+      "name": "freshnessTaskId",
+      "qualifiedName": "freshnessTaskId",
+      "signature": "freshnessTaskId(projectRoot: string, head: string): string",
+      "type": "function",
+      "file": "packages/cli/src/freshness.ts",
+      "line": 228,
+      "confidence": 1
+    }
+  ],
+  "docs": [
+    {
+      "sectionId": "expl:packages/cli/src/freshness.ts@L239",
+      "snippet": "/**",
+      "edgeType": "describes",
+      "method": "static",
+      "provenance": "EXTRACTED",
+      "confidence": 1
+    },
+    {
+      "sectionId": "doc:docs/audits/2026-09-05/launch-audit.md#f11-p2-elevated-for-graph-accuracy-claims-graph-completeness-and-confidence-need-calibration",
+      "heading": "F11 — P2, elevated for graph accuracy claims: graph completeness and confidence need calibration",
+      "anchor": "f11-p2-elevated-for-graph-accuracy-claims-graph-completeness-and-confidence-need-calibration",
+      "snippet": "F11 — P2, elevated for graph accuracy claims: graph completeness and confidence need calibration",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    },
+    {
+      "sectionId": "doc:docs/audits/2026-09-05/remediation.md#f02-p0-concurrent-writers-lost-acknowledged-freshness-work-closed-r",
+      "heading": "F02 — P0: concurrent writers lost acknowledged freshness work — **closed (R)**",
+      "anchor": "f02-p0-concurrent-writers-lost-acknowledged-freshness-work-closed-r",
+      "snippet": "F02 — P0: concurrent writers lost acknowledged freshness work — **closed (R)**",
+      "edgeType": "describes",
+      "method": "explicit",
+      "provenance": "EXTRACTED",
+      "confidence": 0.95
+    }
+  ],
+  "truncated": false,
+  "grounding": "code",
+  "hash": "blake3:c3aa442d1740bf8d44d00dc3d34dc1bf5b25a6dc64bf0306d9eee5ecbdcb037d"
+}

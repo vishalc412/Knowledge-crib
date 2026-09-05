@@ -49,7 +49,7 @@ import {
   MemoryFtsIndex,
   type MemoryRecord,
   type MemoryRecordKind,
-  type MemoryRecordV2,
+  type MemoryRecordVersioned,
   type MemorySource,
   type MemoryStore,
   type MemoryVectorStore,
@@ -76,7 +76,7 @@ import {
   effectiveVerdicts,
   gatherRecall,
   isFeedbackSignal,
-  isMemoryRecordV2,
+  isMemoryRecordVersioned,
   isRecallEligible,
   openMemoryFts,
   openMemoryVectors,
@@ -232,6 +232,12 @@ export interface VerbDeps {
    *  (canonical + dirty swap, in memory) so edits are queryable without dirtying `.crib/graph`. The
    *  semantic layer still reads from `soul` (the committed soul). */
   workingOverlay?: SoulStore;
+  /**
+   * W6 — ephemeral FTS index built from {@link workingOverlay}. Candidate generation must read the
+   * same snapshot as graph traversal: using the committed index here would hide new/edited symbols
+   * until the next durable `crib update`.
+   */
+  workingOverlayIndex?: IndexStore;
   /** Fraction of symbols (by architectural importance) the enrich queue offers. Defaults to
    *  `DEFAULT_SYMBOL_PERCENTILE`; set 1 to queue every symbol. */
   symbolPercentile?: number;
@@ -274,7 +280,7 @@ const DEFAULT_OVERVIEW_ANALYSES = 40;
  */
 function lexicalChannel(
   stores: RecallStores,
-  records: ReadonlyArray<MemoryRecord | MemoryRecordV2>,
+  records: ReadonlyArray<MemoryRecord | MemoryRecordVersioned>,
   sourcesFiltered: boolean,
   embedder?: Embedder,
 ): { fts: MemoryFtsIndex; vectors?: MemoryVectorStore; scorer: VersionedLexicalScorer } {
@@ -490,6 +496,16 @@ export class Verbs {
   /** W3 — the optional trusted agent-memory ledger (absent ⇒ memory verbs report "not configured"). */
   private readonly memory?: MemoryDeps;
 
+  /** The extracted snapshot currently exposed to callers: watch overlay when active, else canonical. */
+  private codeSoul(): SoulStore {
+    return this.deps.workingOverlay ?? this.deps.soul;
+  }
+
+  /** Candidate generator paired with {@link codeSoul}; both must describe the same source snapshot. */
+  private codeIndex(): IndexStore {
+    return this.deps.workingOverlayIndex ?? this.deps.index;
+  }
+
   constructor(private readonly deps: VerbDeps) {
     this.llm = new EnrichmentStore(deps.soul, deps.repoRoot, {
       ...(deps.symbolPercentile !== undefined ? { symbolPercentile: deps.symbolPercentile } : {}),
@@ -617,7 +633,7 @@ export class Verbs {
      *  `{ unchanged: true, hash }`. Stateless (deterministic BLAKE3 of the response). */
     ifHash?: string;
   }): Record<string, unknown> {
-    const soul = this.deps.soul;
+    const soul = this.codeSoul();
     const id = this.resolveNodeId(args.id);
     if (!id) return notFound(args.id);
     const node = soul.getNode(id);
@@ -724,7 +740,7 @@ export class Verbs {
   }): Record<string, unknown> {
     const id = this.resolveNodeId(args.id);
     if (!id) return notFound(args.id);
-    const node = this.deps.soul.getNode(id);
+    const node = this.codeSoul().getNode(id);
     if (!node) return notFound(args.id);
     return this.applyIfHash(args, { node: this.publicNode(node), source: this.bodyOf(node, args) });
   }
@@ -1327,7 +1343,7 @@ export class Verbs {
     const q = rewriteQuery(args.q, this.aliases);
     // Over-fetch by one to detect whether the BM25 result set was capped (honest `truncated` flag)
     // without an extra count query; we slice back to `limit` after the overflow check.
-    const rawHits = this.deps.index.query({
+    const rawHits = this.codeIndex().query({
       text: q,
       ...(args.kinds ? { kinds: args.kinds } : {}),
       limit: limit + 1,
@@ -1563,7 +1579,8 @@ export class Verbs {
     // 3. Discovery question: search the index and gather deep context per hit.
     // M2.4 — rewrite the discovery query with the alias dict (no-op when empty); `q` (original) is
     // still used above for node-id resolution + overview detection and echoed as the question.
-    const hits = this.deps.index.query({
+    const liveSoul = this.codeSoul();
+    const hits = this.codeIndex().query({
       text: rewriteQuery(q, this.aliases),
       limit: capInt(args.limit, DEFAULT_LIMIT, MAX_LIMIT),
     });
@@ -1573,7 +1590,7 @@ export class Verbs {
     if (needEdges) {
       outgoing = new Map<string, Edge[]>();
       incoming = new Map<string, Edge[]>();
-      for (const e of this.deps.soul.iterateEdges()) {
+      for (const e of liveSoul.iterateEdges()) {
         const o = outgoing.get(e.src);
         if (o) o.push(e);
         else outgoing.set(e.src, [e]);
@@ -1585,7 +1602,7 @@ export class Verbs {
     const keep = (e: Edge) => !args.extractedOnly || e.provenance === 'EXTRACTED';
 
     const enriched = hits.map((h) => {
-      const node = this.deps.soul.getNode(h.id);
+      const node = liveSoul.getNode(h.id);
       const hit: Record<string, unknown> = {
         id: h.id,
         kind: h.kind,
@@ -1647,7 +1664,7 @@ export class Verbs {
    *  `clusters` list (label-fixed, LLM name preferred) for back-compat with callers that read
    *  `fallback.clusters`, plus the `modules` array that is the real functional segregation. */
   private clusterSummary(): Record<string, unknown> {
-    const soul = this.deps.soul;
+    const soul = this.codeSoul();
     const map = buildFunctionalMap(soul);
     const overlay = readLlmOverlay(soul);
     const clusters = [...soul.iterate('cluster')]
@@ -2344,7 +2361,7 @@ export class Verbs {
    * the input is not already an exact id.
    */
   private resolveNodeId(idOrName: string): string | undefined {
-    const soul = this.deps.soul;
+    const soul = this.codeSoul();
     if (soul.getNode(idOrName)) return idOrName;
     const needle = idOrName.toLowerCase();
     for (const n of soul.iterate()) {
@@ -2369,7 +2386,7 @@ export class Verbs {
   }
 
   private nodeBrief(id: string, confidence: number): Record<string, unknown> {
-    const n = this.deps.soul.getNode(id);
+    const n = this.codeSoul().getNode(id);
     if (!n) return { id, confidence };
     return {
       id,
@@ -2422,7 +2439,7 @@ export class Verbs {
     const limit = DEFAULT_LIMIT;
     const offset = Math.max(0, Number.parseInt(args.cursor ?? '', 10) || 0);
     const q = rewriteQuery(args.q, this.aliases);
-    const rawHits = this.deps.index.query({ text: q, limit: limit + 1, offset });
+    const rawHits = this.codeIndex().query({ text: q, limit: limit + 1, offset });
     const moreCode = rawHits.length > limit;
     const keywordHits = moreCode ? rawHits.slice(0, limit) : rawHits;
     // Fuse keyword hits with hits ranked over AUTHORED MEANING. Keyword search alone answers
@@ -2444,7 +2461,7 @@ export class Verbs {
     const codeHits: Array<Record<string, unknown>> = [];
     const instructions: Array<Record<string, unknown>> = [];
     for (const h of hits) {
-      const node = this.deps.soul.getNode(h.id);
+      const node = this.codeSoul().getNode(h.id);
       const { read, via, inherited } = this.llm.readInherited(h.id);
       const pointer = llmPointer(read, { via, inherited });
       const grounded = pointer !== undefined;
@@ -2620,7 +2637,7 @@ export class Verbs {
     // The verdicts are the EFFECTIVE four axes — a pulled tombstone must flip `lifecycle` here too
     // (the stamped verdicts on a content-addressed entry never mutate, so the classic
     // no-decision read is unchanged).
-    if (!isMemoryRecordV2(record)) {
+    if (!isMemoryRecordVersioned(record)) {
       return this.applyIfHash(args, {
         id: record.id,
         subject: record.subject,
@@ -2651,7 +2668,7 @@ export class Verbs {
       id: record.id,
       requestedId: got.requestedId,
       ...(got.resolvedViaAlias ? { resolvedViaAlias: got.resolvedViaAlias.legacyId } : {}),
-      schemaVersion: '2',
+      schemaVersion: record.schemaVersion,
       kind: record.kind,
       subject: record.subject,
       claim: record.claim,
@@ -3686,7 +3703,7 @@ export class Verbs {
    */
   private gatherAllVerdicts(fresh: boolean): {
     entries: Array<{
-      record: MemoryRecord | MemoryRecordV2;
+      record: MemoryRecord | MemoryRecordVersioned;
       source: MemorySource;
       verdicts: EffectiveVerdicts;
       /** the as-stamped verdicts a drift check compares against (v2: the alias snapshot). */
@@ -3698,7 +3715,7 @@ export class Verbs {
     const mem = this.memory;
     const stores = this.recallStores();
     const entries: Array<{
-      record: MemoryRecord | MemoryRecordV2;
+      record: MemoryRecord | MemoryRecordVersioned;
       source: MemorySource;
       verdicts: EffectiveVerdicts;
       stamped?: Verdicts;
@@ -3711,7 +3728,11 @@ export class Verbs {
         ? (r: MemoryRecord) => mem.evaluator?.evaluate(r, mem.evalCtx as MemoryEvalContext)
         : undefined;
     for (const { record, source } of gathered.records) {
-      const evaluation = evalFn ? evalFn(record) : undefined;
+      // The evaluator grounds memory-1 `appliesTo` locators, which the v2/v3 envelopes do not
+      // carry; running it over a versioned record would read undefined fields (the F01 crash).
+      // A versioned record's applicability comes from its alias snapshot + decisions instead.
+      const versioned = isMemoryRecordVersioned(record);
+      const evaluation = evalFn && !versioned ? evalFn(record) : undefined;
       // No-poison (W5 Slice 2 + 3): local decisions overlay LOCAL records only; team/global decisions
       // are authoritative across stores. Folding local decisions into a team/global record would let a
       // single local negative event (quarantine / tombstone) retract team memory (PRD line 242).
@@ -3721,15 +3742,14 @@ export class Verbs {
           : gathered.decisions;
       // Alias-aware verdicts — the SAME pattern recallProjection applies (recall.ts), so status
       // and audit agree with recall over a migrated ledger instead of re-deriving worse axes.
-      const asVersioned = record as MemoryRecord | MemoryRecordV2;
-      const boundAliases = isMemoryRecordV2(asVersioned) ? aliasIndex.aliasesFor(record.id) : [];
+      const boundAliases = versioned ? aliasIndex.aliasesFor(record.id) : [];
       const recordDecs =
         boundAliases.length > 0 ? bridgedDecisions(boundAliases, record.id, decs) : decs;
       const migrated = conservativeVerdicts(boundAliases);
-      const stamped = isMemoryRecordV2(asVersioned) ? migrated : record.verdicts;
-      const verdicts = effectiveVerdicts(asVersioned, recordDecs, evaluation, migrated);
+      const stamped = versioned ? migrated : record.verdicts;
+      const verdicts = effectiveVerdicts(record, recordDecs, evaluation, migrated);
       entries.push({
-        record: asVersioned,
+        record,
         source,
         verdicts,
         ...(stamped !== undefined ? { stamped } : {}),
@@ -3773,7 +3793,7 @@ export class Verbs {
    *  ranks when its alias snapshot restores eligibility) answers with its v2 fields instead of
    *  the undefined v1 ones. */
   private memoryView(m: ScoredRecord, withEvidence?: boolean): Record<string, unknown> {
-    const r = m.record as MemoryRecord | MemoryRecordV2;
+    const r = m.record as MemoryRecord | MemoryRecordVersioned;
     const base: Record<string, unknown> = {
       id: r.id,
       subject: r.subject,
@@ -3799,10 +3819,10 @@ export class Verbs {
       evidenceItems:
         withEvidence === true ? r.evidence : r.evidence.map((e) => this.evidenceSummary(e)),
     };
-    if (isMemoryRecordV2(r)) {
+    if (isMemoryRecordVersioned(r)) {
       return {
         ...base,
-        schemaVersion: '2',
+        schemaVersion: r.schemaVersion,
         visibility: r.visibility,
         propositionKey: r.propositionKey,
         validTime: r.validTime,
@@ -3824,7 +3844,7 @@ export class Verbs {
     const view = this.memoryView(
       {
         // ScoredRecord.record is typed MemoryRecord but a migrated twin is v2 at runtime — the
-        // same widening recallProjection itself relies on; memoryView narrows via isMemoryRecordV2.
+        // same widening recallProjection itself relies on; memoryView narrows via isMemoryRecordVersioned.
         record: h.record as MemoryRecord,
         // The EFFECTIVE store the projection resolved the hit from — the store whose verdict
         // overlay governs (same per-source field memory_recall reports). NOT placement[0]:

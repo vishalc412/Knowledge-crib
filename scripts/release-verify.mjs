@@ -46,6 +46,8 @@ pnpm(['soul-refresh:check']);
 pnpm(['onboarding:check']);
 pnpm(['docs-site:check']);
 pnpm(['capabilities:check']);
+// F07: this writes the receipt even when a frozen quality gate is red, then fails the release.
+pnpm(['release:evidence']);
 pnpm(['publish:dry-run']);
 // crib-cache-stability.test.mjs (run inside installer:test) only rebuilds the gitignored derived
 // index when the file is ABSENT — it can't detect a STALE one (e.g. left over from a manual

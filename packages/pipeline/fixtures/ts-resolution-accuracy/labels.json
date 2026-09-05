@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "language": "typescript",
+  "task": "calls",
+  "labelPolicy": "Each entry is a unique caller-to-callee edge. Calls through an unknown or any receiver are labelled unresolved and must not emit a confidence-1 edge.",
+  "positiveEdges": [
+    "run -> Alpha.ping",
+    "run -> Beta.ping",
+    "run -> helper",
+    "run -> Overloaded.convert",
+    "Controller.execute -> Alpha.ping"
+  ],
+  "forbiddenEdges": ["run -> Shadow.ghost", "shadowed -> helper", "invoke -> Shadow.callback"],
+  "unresolvedCalls": ["dynamic.ghost", "callback"],
+  "categories": [
+    "cross-file-import",
+    "callback",
+    "shadowing",
+    "typed-parameter-receiver",
+    "new-expression-receiver",
+    "same-name-method-disambiguation",
+    "dynamic-dispatch",
+    "overload",
+    "framework-constructor-injection"
+  ]
+}

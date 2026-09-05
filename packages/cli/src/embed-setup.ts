@@ -44,29 +44,59 @@ export interface EmbedModelSpec {
   prefix: string;
   /** Approximate on-disk size of the weights, so `--help` can state the download honestly. */
   approxDisk: string;
-  /** Measured word-disjoint paraphrase recall@5 on the frozen launch corpus (gate G2, >= 80%). */
-  g2: number;
-  /** Gates passed out of 8, same run. */
-  gates: number;
+  /**
+   * What this repository can actually SHOW about this model's retrieval quality.
+   *
+   * This is a field rather than a comment because the alternative was tried and failed: the ladder
+   * previously carried bare `g2`/`gates` numbers for all three rows, attributed to a
+   * `docs/bench/embed-model-ladder.md` that does not exist in the repository — and two of those
+   * numbers disagreed with the figures that ARE committed (`docs/bench/launch-gates.md` records
+   * 43.8% for e5-base, and the R1 pre-registration records 45.0% for MiniLM on a different, much
+   * smaller harness). Printing those in `--help` would have sold a measurement no one can open.
+   *
+   * `gateVerified` rows may state a number. Everything else says plainly that it is unverified
+   * here, so a reader can tell a reproduced result from a plausible one.
+   */
+  evidence: ModelEvidence;
   /** One line on the tradeoff this model represents. */
   note: string;
 }
 
+/** Provenance for a ladder row's quality claim. */
+export type ModelEvidence =
+  | {
+      kind: 'gate-verified';
+      /** Word-disjoint paraphrase recall@5 on the frozen launch corpus (gate G2, >= 80%). */
+      g2: number;
+      /** Gates passed out of 8, same run. */
+      gates: number;
+      /** The committed document a reader can open to check the number. */
+      source: string;
+    }
+  | {
+      kind: 'unverified';
+      /** Why it is listed at all despite carrying no reproduced number. */
+      reason: string;
+    };
+
+/** One line describing a row's evidence, for `--help` and the setup preamble. */
+export function describeEvidence(evidence: ModelEvidence): string {
+  return evidence.kind === 'gate-verified'
+    ? `G2 ${(evidence.g2 * 100).toFixed(1)}%, ${evidence.gates}/8 gates (${evidence.source})`
+    : `no gate run committed in this repository — ${evidence.reason}`;
+}
+
 /**
- * The ladder — every row MEASURED through the frozen launch gate, not estimated
- * (`docs/bench/embed-model-ladder.md`, and the e5-large row reproduces the published 81.0% exactly
- * through an independent harness).
+ * The model ladder.
  *
- * The two results worth knowing before you pick:
+ * ONE row carries a committed gate run: `large` (`docs/bench/launch-gates.md`, G2 81.0%, 8/8). It is
+ * therefore the default, because shipping anything else as "the semantic tier" would be selling a
+ * threshold nothing here demonstrates.
  *
- *   1. ONLY `large` clears the 80% G2 threshold. Shipping a small model as "the semantic tier"
- *      would be selling a gate that does not pass, so `large` stays the default.
- *   2. SIZE DOES NOT PREDICT QUALITY. The 87 MB English-only MiniLM (66.0%) beats a 458 MB
- *      multilingual MiniLM (47.1%) and a 1.0 GB multilingual mpnet (59.5%) on this corpus. Anyone
- *      reasoning from parameter count would have shipped a worse default at 5-11x the download.
- *
- * `small` earns its place anyway: 66.0% is 25x the 2.6% lexical fallback for 4% of `large`'s
- * download. It is the honest answer to "I am not pulling 2 GB to try this."
+ * The other two rows are offered as smaller downloads and are labelled `unverified` — not as a
+ * hedge, but because this repository contains no run to cite for them. Do not add a number to a row
+ * without adding the run that produced it; `describeEvidence` prints whatever is here verbatim, so
+ * an invented figure becomes a user-visible claim immediately.
  */
 export const EMBED_MODELS: readonly EmbedModelSpec[] = [
   {
@@ -75,9 +105,12 @@ export const EMBED_MODELS: readonly EmbedModelSpec[] = [
     dim: 384,
     prefix: '',
     approxDisk: '~90 MB',
-    g2: 0.66,
-    gates: 6,
-    note: 'English-only; 25x the fallback for 4% of large\u2019s download. Does NOT pass the gate.',
+    evidence: {
+      kind: 'unverified',
+      reason:
+        'English-only and by far the smallest download; listed as the low-cost option for trying the tier',
+    },
+    note: 'English-only. Not gate-verified here — do not assume it clears G2.',
   },
   {
     alias: 'base',
@@ -85,19 +118,26 @@ export const EMBED_MODELS: readonly EmbedModelSpec[] = [
     dim: 768,
     prefix: 'query: ',
     approxDisk: '~1.1 GB',
-    g2: 0.699,
-    gates: 7,
-    note: 'multilingual; closest miss. Does NOT pass the gate.',
+    evidence: {
+      kind: 'unverified',
+      reason:
+        'the committed launch-gate run records 43.8% G2 for this model at an earlier configuration, below the 80% threshold',
+    },
+    note: 'multilingual, half the download of large. Not gate-verified here.',
   },
   {
     alias: 'large',
     hfId: 'intfloat/multilingual-e5-large',
     dim: 1024,
     prefix: 'query: ',
+    evidence: {
+      kind: 'gate-verified',
+      g2: 0.81,
+      gates: 8,
+      source: 'docs/bench/launch-gates.md',
+    },
     approxDisk: '~2.2 GB',
-    g2: 0.81,
-    gates: 8,
-    note: 'the only model measured to pass all 8 gates',
+    note: 'the only model with a committed run passing all 8 launch gates — the default',
   },
 ] as const;
 
@@ -463,4 +503,146 @@ export async function pinAdapter(spec: EmbedModelSpec, dir: string) {
     entry: 'embedder.mjs',
     installedAt: new Date().toISOString(),
   });
+}
+
+// ─── the orchestrator ────────────────────────────────────────────────────────
+
+/** What `crib embed setup` decided and did, as data — the CLI renders it, tests assert on it. */
+export interface SetupPlan {
+  spec: EmbedModelSpec;
+  /** Each step in the order attempted, with its human-readable outcome. */
+  steps: { name: string; result: StepResult }[];
+  /** True when the tier is installed, pinned and proven to rank. */
+  installed: boolean;
+  /** Set when the run stopped deliberately rather than failing (e.g. missing download consent). */
+  needsConsent?: string;
+  /** The exact commands an operator should run to satisfy a stopped or failed step. */
+  remediation: string[];
+}
+
+export interface SetupOptions {
+  spec: EmbedModelSpec;
+  pythonPath: string;
+  /** Consent for the one step that reaches the network (the weight download). */
+  yes: boolean;
+  home?: string;
+  run?: RunFn;
+  /** Injected so the smoke test can be exercised without a real model on the box. */
+  smoke?: (home: string) => Promise<{ ok: boolean; detail: string }>;
+  pin?: (spec: EmbedModelSpec, dir: string) => Promise<unknown>;
+}
+
+/**
+ * Run setup as a sequence of checks that STOP at the first unmet precondition.
+ *
+ * The ordering is the point: every step is cheap and local until the one that is not. Python and
+ * `sentence-transformers` are verified against the SAME interpreter that will run the adapter (a
+ * PATH-level check would pass while the adapter fails), and the weights are probed OFFLINE, so a
+ * pass proves a later query needs no network rather than merely that a download could succeed.
+ *
+ * Nothing is downloaded without `yes`. A stopped run is not a failure: it reports the exact commands
+ * to run, which is the difference between "setup failed" and "setup needs your consent for a 2.2 GB
+ * download".
+ */
+export async function runEmbedSetup(opts: SetupOptions): Promise<SetupPlan> {
+  const { spec, pythonPath, yes } = opts;
+  const run = opts.run ?? defaultRun;
+  const home = opts.home ?? embedHomeDir();
+  const smoke = opts.smoke ?? smokeTest;
+  const pin = opts.pin ?? pinAdapter;
+  const steps: SetupPlan['steps'] = [];
+  const stop = (needsConsent: string | undefined, remediation: string[]): SetupPlan => ({
+    spec,
+    steps,
+    installed: false,
+    ...(needsConsent ? { needsConsent } : {}),
+    remediation,
+  });
+
+  const python = checkPython(pythonPath, run);
+  steps.push({ name: 'python', result: python });
+  if (!python.ok) {
+    return stop(undefined, [
+      'Install Python 3.9+ and re-run, or point crib at a specific interpreter:',
+      '  crib embed setup --python /path/to/python3',
+      '  (or set KCRIB_EMBED_PYTHON)',
+    ]);
+  }
+
+  const st = checkSentenceTransformers(pythonPath, run);
+  steps.push({ name: 'sentence-transformers', result: st });
+  if (!st.ok) {
+    // Deliberately NOT auto-installed even under --yes: this mutates the operator's interpreter,
+    // which is theirs to decide. Consent for a model download is not consent to change a toolchain.
+    return stop(`sentence-transformers is not installed for ${pythonPath}`, [
+      'Install it into that interpreter, then re-run:',
+      `  ${pythonPath} -m pip install sentence-transformers`,
+    ]);
+  }
+
+  let weights = checkWeights(spec, pythonPath, run);
+  steps.push({ name: 'weights', result: weights });
+  if (!weights.ok) {
+    if (!yes) {
+      return stop(`${spec.hfId} (${spec.approxDisk}) is not cached and would be downloaded`, [
+        `Re-run with consent for the ${spec.approxDisk} download:`,
+        `  crib embed setup --model ${spec.alias} --yes`,
+        'Or fetch the weights yourself first:',
+        `  ${pythonPath} -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('${spec.hfId}')"`,
+      ]);
+    }
+    const downloaded = downloadWeights(spec, pythonPath, run);
+    steps.push({ name: 'download', result: downloaded });
+    if (!downloaded.ok) {
+      return stop(undefined, [
+        'The download failed. Check network access and disk space, then re-run.',
+      ]);
+    }
+    weights = checkWeights(spec, pythonPath, run);
+    steps.push({ name: 'weights (recheck)', result: weights });
+    if (!weights.ok) {
+      // A download reporting success but leaving nothing offline-loadable is a broken cache, not a
+      // working tier — refuse rather than pin an adapter that cannot answer a query.
+      return stop(undefined, [
+        'The weights downloaded but are still not loadable offline — the HuggingFace cache may be',
+        'partially written. Locate and clear it, then re-run:',
+        `  ${pythonPath} -c "import huggingface_hub; print(huggingface_hub.constants.HF_HUB_CACHE)"`,
+      ]);
+    }
+  }
+
+  const dir = adapterDir(spec, home);
+  writeAdapter(spec, pythonPath, dir);
+  steps.push({ name: 'adapter', result: { ok: true, detail: `wrote bridge files to ${dir}` } });
+
+  try {
+    await pin(spec, dir);
+    steps.push({
+      name: 'pin',
+      result: { ok: true, detail: `pinned ${spec.hfId} through the integrity manifest` },
+    });
+  } catch (err) {
+    steps.push({
+      name: 'pin',
+      result: { ok: false, detail: `pin failed: ${(err as Error).message.split('\n')[0]}` },
+    });
+    return stop(undefined, [
+      'The adapter could not be pinned. Re-run; if it persists, report the error above.',
+    ]);
+  }
+
+  // The last step is the only one proving the tier RANKS. A dimension check passes for a model
+  // returning noise, and the audited failure mode was precisely a configured-but-unusable tier
+  // silently serving lexical results — so success is not reported until a paraphrase outscores an
+  // unrelated sentence in-process.
+  const proof = await smoke(home);
+  steps.push({ name: 'smoke', result: proof });
+  if (!proof.ok) {
+    return stop(undefined, [
+      'The model installed but did not demonstrate semantic ranking, so the tier is NOT enabled.',
+      'Re-run `crib embed setup`; if it persists, the adapter and the interpreter disagree.',
+    ]);
+  }
+
+  return { spec, steps, installed: true, remediation: [] };
 }

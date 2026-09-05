@@ -2,17 +2,13 @@ import { execFileSync } from 'node:child_process';
 import { mkdtempSync, readdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { discoverPublishablePackages } from './workspace-packages.mjs';
 
 const forbidden = /(^|\/)([^/\s]*\.test\.[^/\s]*|__probe__)(\/|$)/;
-const packageDirs = [
-  'packages/soul-schema',
-  'packages/core',
-  'packages/parsers',
-  'packages/ui',
-  'packages/mcp',
-  'packages/pipeline',
-  'packages/cli',
-];
+// DISCOVERED, never hand-listed: a literal here validated seven of eight packages for as long as
+// `packages/memory` existed, and reported green the whole time (audit F10). Order does not matter
+// for this gate — each tarball is packed and inspected independently.
+const packageDirs = discoverPublishablePackages().map((pkg) => pkg.dir);
 
 function run(cmd, args, opts = {}) {
   return execFileSync(cmd, args, {
@@ -61,7 +57,10 @@ try {
   }
 
   process.stdout.write(listings.join(''));
-  process.stdout.write('pack:check ok - legal files present; no *.test.* or __probe__ files\n');
+  process.stdout.write(
+    `pack:check ok - ${tarballs.length}/${packageDirs.length} tarballs validated ` +
+      `(${packageDirs.join(', ')}); legal files present; no *.test.* or __probe__ files\n`,
+  );
 } finally {
   rmSync(stagingDir, { recursive: true, force: true });
 }

@@ -3,9 +3,11 @@
  *
  * What is pinned here (red lines):
  *   - mode storage/validation in the user-owned registry (never committed), default `manual`;
- *   - zero commit tax: the post-commit path is a synchronous small-file enqueue in `auto`, a no-op
- *     otherwise — timing-asserted with a generous margin (file ops measure in single-digit ms; a
- *     git commit costs tens of ms, so anything under ~25ms p95 adds no measurable blocking work);
+ *   - BOUNDED commit overhead (not zero — the `auto` post-commit path is a synchronous, locked,
+ *     small-file enqueue, so its elapsed cost is small but real; it is a no-op in other modes).
+ *     Timing-asserted against a bound rather than asserted away: file ops measure in single-digit
+ *     ms and a git commit costs tens of ms, so a p95 under ~25ms adds no measurable blocking work.
+ *     Measured on this build after the F02 locking change: p50 0.24ms, p95 0.34ms, max 0.44ms;
  *   - failed refresh preserves the prior readable generation (atomic publication, publish-first
  *     ordering) — asserted by inspecting the generation file across a failing revalidation;
  *   - durability: persistent queue, lease refusal + takeover, coalescing to one pending entry per
@@ -38,6 +40,7 @@ import {
   readWorkerState,
   resolveFreshnessMode,
   setFreshnessMode,
+  shouldServeWatch,
 } from './freshness.js';
 import { registerProject } from './registry.js';
 import { WatchMode } from './watch.js';
@@ -171,9 +174,9 @@ describe('freshness queue — persistence + coalescing', () => {
   });
 });
 
-// ─── zero commit tax ─────────────────────────────────────────────────────────
+// ─── bounded commit overhead ─────────────────────────────────────────────────
 
-describe('zero-commit-tax (red line: no measurable blocking work added to git commit)', () => {
+describe('bounded commit overhead (red line: no MEASURABLE blocking work added to git commit)', () => {
   it('the post-commit path stays synchronous and cheap in auto mode (p95 well under commit overhead)', () => {
     const root = registeredRoot();
     setFreshnessMode(root, 'auto', env);
@@ -514,7 +517,12 @@ describe('watch mode — G3.4 freshness contract', () => {
           `export const n${i} = ${i};\nexport function u${i}(): number { return n${i}; }\n`,
         );
       }
-      await until(() => refreshes.length > 0, 'coalesced burst refresh');
+      // Generous patience for the FIRST refresh only. The coalescing assertion below is unchanged
+      // — this waits longer for the debounce to fire, it does not accept more than one refresh. The
+      // headroom exists because the suite now runs process-forking concurrency tests
+      // (lock-concurrency, freshness-concurrency) in parallel, and a real parse under that CPU
+      // contention can exceed the 4s default that was tuned before those existed.
+      await until(() => refreshes.length > 0, 'coalesced burst refresh', 20_000);
       // give the (disabled) fallback + any late watcher event time — no further refresh may start
       await new Promise((r) => setTimeout(r, 900));
       expect(refreshes).toHaveLength(1);
@@ -649,3 +657,23 @@ function writeJsonAtomicForTest(path: string, value: unknown): void {
   writeFileSync(tmp, `${JSON.stringify(value, null, 2)}\n`, 'utf8');
   renameSync(tmp, path);
 }
+
+// ─── F06: the persisted mode must configure the SERVING process ──────────────
+
+describe('shouldServeWatch', () => {
+  it('watches when the persisted mode asks for it, with no --watch flag present', () => {
+    // This is the whole point of audit F06: every generated client config spawns a bare
+    // `crib serve <root>`, so if the mode does not reach this decision it configures nothing.
+    expect(shouldServeWatch(['serve', '/repo'], 'watch')).toBe(true);
+    expect(shouldServeWatch(['serve', '/repo'], 'auto')).toBe(true);
+  });
+
+  it('serves committed source only under manual', () => {
+    expect(shouldServeWatch(['serve', '/repo'], 'manual')).toBe(false);
+  });
+
+  it('keeps --watch as an explicit override for a project with no persisted mode', () => {
+    // An unregistered project resolves to `manual`; a one-off run must still be able to watch.
+    expect(shouldServeWatch(['serve', '/repo', '--watch'], 'manual')).toBe(true);
+  });
+});

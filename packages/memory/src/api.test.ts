@@ -30,6 +30,7 @@ import {
   type MemoryFeedback,
   type MemoryRecord,
   type MemoryRecordV2,
+  type MemoryRecordV3,
   MemoryStore,
   ProjectionCheckpointStore,
   RANKING_VERSION,
@@ -41,6 +42,7 @@ import {
   feedbackId,
   memoryRecordId,
   memoryRecordV2Id,
+  memoryRecordV3Id,
   syncNotConfigured,
   validTimeHoldsAt,
   validTimeWindowOf,
@@ -143,6 +145,22 @@ function v2Record(over: Partial<MemoryRecordV2> & { id?: string }): MemoryRecord
     ...over,
   };
   return base;
+}
+
+function v3Record(over: Partial<MemoryRecordV2> & { id?: string } = {}): MemoryRecordV3 {
+  const v2 = v2Record(over);
+  const namespace = {
+    principalId: v2.provenance.principalId,
+    workspaceId: 'workspace:api',
+    projectId: REPO,
+    agentProfileId: 'agent-profile:api',
+  };
+  return {
+    ...v2,
+    id: memoryRecordV3Id({ ...v2, namespace }),
+    schemaVersion: '3',
+    namespace,
+  };
 }
 
 function decisionOn(
@@ -905,6 +923,40 @@ describe('search', () => {
 // ─── get ──────────────────────────────────────────────────────────────────────
 
 describe('get', () => {
+  it('fails closed for a foreign principal across get, history, and audit', () => {
+    const { local } = setup();
+    const foreign = v3Record({
+      provenance: {
+        principalId: 'principal:other',
+        deviceId: 'device:other',
+        actorId: 'agent:other',
+        agentId: 'agent:other',
+        clientId: 'other-client',
+      },
+    });
+    local.upsertEntry('active', foreign);
+    const reader = new MemoryApi({
+      stores: { local },
+      env: { ...env, KCRIB_PRINCIPAL_ID: 'principal:reader' },
+      now: () => T0,
+    });
+
+    expect(reader.get(foreign.id).found).toBe(false);
+    expect(reader.history(foreign.subject).records).toEqual([]);
+    expect(reader.audit(foreign.id)).toEqual({ requested: foreign.id, found: false, records: [] });
+    expect(reader.ledger().total).toBe(0);
+  });
+
+  it('preserves a v3 envelope through get, search, and audit projections', () => {
+    const { local, api } = setup();
+    const rec = v3Record();
+    local.upsertEntry('active', rec);
+
+    expect(api.get(rec.id).record?.schemaVersion).toBe('3');
+    expect(() => api.search(SUBJECT)).not.toThrow();
+    expect(api.audit(rec.id).records[0]?.schemaVersion).toBe('3');
+  });
+
   it('resolves a direct id with placement and effective verdicts', () => {
     const { local, api } = setup();
     const rec = v1Record();

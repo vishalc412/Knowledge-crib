@@ -50,9 +50,9 @@ import type {
   MemoryEntry,
   MemoryFeedback,
   MemoryRecord,
-  MemoryRecordV2,
+  MemoryRecordVersioned,
 } from './types.js';
-import { isMemoryRecordV2 } from './types.js';
+import { isMemoryRecordVersioned } from './types.js';
 
 // ─── sources ─────────────────────────────────────────────────────────────────
 
@@ -61,7 +61,7 @@ export type MemorySource = 'team' | 'local' | 'global';
 
 /** A record tagged with the store it was gathered from. */
 export interface TaggedRecord {
-  record: MemoryRecord;
+  record: MemoryRecord | MemoryRecordVersioned;
   source: MemorySource;
 }
 
@@ -74,7 +74,11 @@ export interface TaggedRecord {
  * scorer is a port so the recall core stays SQLite-free and unit-testable in isolation.
  */
 export interface LexicalScorer {
-  score(record: MemoryRecord, query: string, targetIds: readonly string[]): number;
+  score(
+    record: MemoryRecord | MemoryRecordVersioned,
+    query: string,
+    targetIds: readonly string[],
+  ): number;
   /**
    * G3.2 (red line #6) — the ranking-version id naming the configuration that produced the order
    * (embedder id + scorer version + fusion strategy). OPTIONAL: the built-in exact scorer has no
@@ -97,14 +101,14 @@ export const EXACT_MATCH_BONUS = 1_000_000;
  * `subject`, and the guard keeps the scorer crash-free on a mixed-version gather).
  */
 export function exactLexicalScorer(
-  record: MemoryRecord | MemoryRecordV2,
+  record: MemoryRecord | MemoryRecordVersioned,
   query: string,
   targetIds: readonly string[],
 ): number {
   const targets = new Set(targetIds);
   const subjectExact =
     (query.length > 0 && record.subject === query) || targets.has(record.subject);
-  const appliesTo = isMemoryRecordV2(record) ? [] : record.appliesTo;
+  const appliesTo = isMemoryRecordVersioned(record) ? [] : record.appliesTo;
   let matchedTargets = 0;
   for (const a of appliesTo) {
     if (targets.has(a)) matchedTargets += 1;
@@ -162,7 +166,7 @@ export interface RecallScore {
 
 /** A recall-eligible record, ranked, with its effective verdicts + score + source. */
 export interface ScoredRecord {
-  record: MemoryRecord;
+  record: MemoryRecord | MemoryRecordVersioned;
   source: MemorySource;
   verdicts: EffectiveVerdicts;
   score: RecallScore;
@@ -262,8 +266,8 @@ export interface GatheredRecall {
  * union instead of intersecting `MemoryRecord` with `MemoryRecordV2` down to `never` — the same
  * reason {@link recallProjection} widens its gathered record before guarding.
  */
-function recordPrincipalId(record: MemoryRecord | MemoryRecordV2): string | undefined {
-  return isMemoryRecordV2(record) ? record.provenance.principalId : undefined;
+function recordPrincipalId(record: MemoryRecord | MemoryRecordVersioned): string | undefined {
+  return isMemoryRecordVersioned(record) ? record.provenance.principalId : undefined;
 }
 
 /**
@@ -288,7 +292,7 @@ function resolveCallerPrincipal(opts: GatherRecallOptions): string {
 // (recording a per-shard error rather than crashing the whole recall). The store validates on write
 // (W2), so in practice every line matches; the guards are defensive.
 
-function isRecordEntry(e: MemoryEntry): e is MemoryRecord {
+function isRecordEntry(e: MemoryEntry): e is MemoryRecord | MemoryRecordVersioned {
   return typeof (e as MemoryRecord).id === 'string' && (e as MemoryRecord).id.startsWith('mem:');
 }
 function isDecisionEntry(e: MemoryEntry): e is MemoryDecision {
@@ -374,8 +378,10 @@ export function gatherRecall(stores: RecallStores, opts: GatherRecallOptions = {
   let principalExcluded = 0;
   // The boundary accept: keep iff the record carries no principal stamp (v1 — treated as the
   // caller's own) or carries EXACTLY the caller's principal. Anything else is foreign and excluded.
-  const strictPrincipal = opts.strictPrincipal === true;
-  const acceptRecord = (record: MemoryRecord, source: MemorySource): boolean => {
+  const acceptRecord = (
+    record: MemoryRecord | MemoryRecordVersioned,
+    source: MemorySource,
+  ): boolean => {
     const ownedBy = recordPrincipalId(record);
     if (ownedBy === undefined) {
       // unstamped (memory-1). Owner is UNKNOWN, not "the caller" — a strict gather refuses it.
@@ -507,8 +513,11 @@ export function recallProjection(
   // Normalize the scorer: a supplied LexicalScorer (object with `.score`) vs the default free
   // function. A bare `??` would union the two into a non-callable type, so collapse to one shape.
   const lexical = opts.lexicalScorer;
-  const scoreRecord = (r: MemoryRecord, q: string, t: readonly string[]): number =>
-    lexical ? lexical.score(r, q, t) : exactLexicalScorer(r, q, t);
+  const scoreRecord = (
+    r: MemoryRecord | MemoryRecordVersioned,
+    q: string,
+    t: readonly string[],
+  ): number => (lexical ? lexical.score(r, q, t) : exactLexicalScorer(r, q, t));
   const bound = opts.feedbackBound ?? DEFAULT_FEEDBACK_BOUND;
   const fresh = opts.evaluator !== undefined && opts.evalCtx !== undefined;
 
@@ -556,7 +565,7 @@ export function recallProjection(
 
   const consideredBySource = { team: 0, local: 0, global: 0 };
   const eligibleEntries: {
-    record: MemoryRecord;
+    record: MemoryRecord | MemoryRecordVersioned;
     verdicts: EffectiveVerdicts;
     source: MemorySource;
   }[] = [];
@@ -564,7 +573,7 @@ export function recallProjection(
   // eligibility filtering happens INSIDE conflictGroups (unchanged semantics); memory-2 records are
   // rank-ineligible in the v1 projection but still conflict-visible (G1.1), so they must reach it.
   const consideredEntries: {
-    record: MemoryRecord;
+    record: MemoryRecord | MemoryRecordVersioned;
     verdicts: EffectiveVerdicts;
     source: MemorySource;
   }[] = [];
@@ -572,7 +581,7 @@ export function recallProjection(
   for (const { record, source } of gathered.records) {
     consideredBySource[source] += 1;
     const evaluation =
-      fresh && opts.evaluator && opts.evalCtx
+      fresh && !isMemoryRecordVersioned(record) && opts.evaluator && opts.evalCtx
         ? opts.evaluator.evaluate(record, opts.evalCtx)
         : undefined;
     // No-poison (W5 Slice 2 + 3): local decisions overlay LOCAL records only; team/global decisions
@@ -591,8 +600,7 @@ export function recallProjection(
     // Widen before the version guard: TaggedRecord.record is typed memory-1 (the v1 read model's
     // record), so narrowing it with isMemoryRecordV2 would intersect to `never` — the guard is
     // honest over the union the store can actually hand back.
-    const asVersioned: MemoryRecord | MemoryRecordV2 = record;
-    const boundAliases = isMemoryRecordV2(asVersioned) ? aliasIndex.aliasesFor(record.id) : [];
+    const boundAliases = isMemoryRecordVersioned(record) ? aliasIndex.aliasesFor(record.id) : [];
     const bridged = boundAliases.length > 0;
     const recordDecs = bridged ? bridgedDecisions(boundAliases, record.id, decs) : decs;
     // PERF — the unbridged path evaluates every record against ONE of two stable pools, so the

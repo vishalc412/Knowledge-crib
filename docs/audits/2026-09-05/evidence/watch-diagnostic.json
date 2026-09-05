@@ -1,0 +1,41 @@
+{
+  "initialWatch": {
+    "hits": [],
+    "llmHits": [],
+    "truncated": false,
+    "coverage": {
+      "semantic": 0,
+      "total": 0
+    }
+  },
+  "lastResult": {
+    "hits": [],
+    "llmHits": [],
+    "truncated": false,
+    "coverage": {
+      "semantic": 0,
+      "total": 0
+    }
+  },
+  "stderr": "watch [initial] refreshed 1 file(s) [scope 1] \u2192 +2 nodes +2 edges, +0 calls\nwatch mode active \u2014 1 dirty file(s) overlaid; committed .crib/graph untouched\nknowledge-crib MCP server on stdio \u2014 4 nodes, 3 edges ready (default responses are tiered lean; pass withLlm:true for the full analysis blob)\nwatch [watcher] refreshed 1 file(s) [scope 1] \u2192 +2 nodes +2 edges, +0 calls\nwatch [fallback] refreshed 1 file(s) [scope 1] \u2192 +2 nodes +2 edges, +0 calls\n",
+  "withoutWatch": {
+    "baselineFound": true,
+    "newSymbolFound": false,
+    "oldSymbolStillFound": true,
+    "afterMs": 2500
+  },
+  "withWatch": {
+    "fixture": "one TypeScript file; 1 sequential change(s); real stdio MCP; 50ms polling; diagnostic, not the full-repo release gate",
+    "times": [
+      {
+        "iteration": 0,
+        "found": false,
+        "ms": 3042
+      }
+    ],
+    "observationDurationP95Ms": 3042,
+    "successfulUpdates": 0,
+    "timeouts": 1,
+    "successfulUpdateP95Ms": null
+  }
+}

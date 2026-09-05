@@ -47,7 +47,7 @@ not a claim that a downstream LLM is immune to prompt injection.
 
 ## 5. Performance and reliability gates — PENDING
 
-Gates + honest method frozen in `docs/bench/perf-gates.md` (warm p95 recall @10k/100k, 5s queryable-update, zero commit tax, failed-refresh readability, sync convergence soak). Baselines from `docs/bench/scale-curve.md`; launch run re-measures on the current build.
+Gates + honest method frozen in `docs/bench/perf-gates.md` (warm p95 recall @10k/100k, 5s queryable-update, bounded commit overhead (measured, not zero), failed-refresh readability, sync convergence soak). Baselines from `docs/bench/scale-curve.md`; launch run re-measures on the current build.
 
 ## 6. Vendor comparison — BLOCKED (honest)
 

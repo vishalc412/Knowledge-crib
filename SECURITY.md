@@ -77,21 +77,43 @@ claim below is verified against source (file:line in parentheses) and re-checked
 | `.crib/llm/` | committed to the repo's git | inherits repo ACL | carries verbatim `evidence[].quote` (see M1.4) |
 | `.crib/index/`, `.crib/embeddings/` | gitignored, derived | not a source of truth | rebuildable from soul + repo |
 | `.crib/.lock` | gitignored | single-writer guard (M0.6) | prevents concurrent-write corruption |
-| MCP transport | stdio | the process boundary | whoever runs the CLI speaks to the server |
+| MCP transport | stdio (default) | the process boundary | whoever runs the CLI speaks to the server |
+| MCP transport | loopback HTTP (`serve --http`, opt-in) | Host/Origin allowlist + 4 MiB body cap | any LOCAL process; not per-user authorization |
 
 ### Network surface inventory (the whole product)
 
-There are exactly **two** network-reachable or network-originating surfaces. Both are opt-in; the
+There are exactly **three** network-reachable or network-originating surfaces. All are opt-in; the
 deterministic path has none.
 
-1. **MCP server transport — stdio only, no listener.** The server imports `StdioServerTransport`
-   and exposes a single `serveStdio()` entry point (`packages/mcp/src/server.ts:8,415-423`). A
-   repo-wide search for `StreamableHTTPServerTransport`, `SSEServerTransport`,
-   `WebSocketServerTransport`, and any HTTP transport returns zero hits. The MCP server **opens no
-   TCP/HTTP/WS listener**. To talk to it you must spawn the process and write JSON-RPC to its stdin
-   — the operating system's process-spawn ACL (not a crib layer) gates that.
+1. **MCP server transport — stdio by default, no listener.** The default `crib serve` imports
+   `StdioServerTransport` and runs `serveStdio()` (`packages/mcp/src/server.ts`). In this mode the
+   MCP server **opens no TCP/HTTP/WS listener**: to talk to it you must spawn the process and write
+   JSON-RPC to its stdin — the operating system's process-spawn ACL (not a crib layer) gates that.
+   This is the transport every installed client config uses.
 
-2. **`crib viz` HTTP server — loopback only, Host-allowlisted (M0.3).** This is the **only** HTTP
+2. **`crib serve --http` shared daemon — opt-in, loopback only, Host/Origin-allowlisted and
+   byte-capped.** A stdio server is one process per client and each holds its own full copy of the
+   graph (~213 MB here), so a large agent swarm cannot fit in memory; `serveHttp()`
+   (`packages/mcp/src/server.ts`) exists to let many local agents share ONE loaded graph. It is not
+   started unless `--http` is passed, and it binds `127.0.0.1` by default.
+
+   Its boundary is enforced before routing, for `/health` as well as JSON-RPC
+   (`isAllowedHttpCaller`): the `Host` authority must be loopback (or exactly the host an operator
+   deliberately bound to), and an `Origin`, when present at all, must also be loopback — a
+   non-browser caller sends none, so a foreign `Origin` is by construction cross-site. A foreign
+   `Host`/`Origin` is rejected with 403, closing the DNS-rebinding path by which a browser page can
+   otherwise reach a loopback daemon "same-origin". Request bodies are capped at
+   `MAX_HTTP_REQUEST_BYTES` (4 MiB) and the connection is destroyed rather than buffered past it,
+   so one local process cannot exhaust the daemon every other agent depends on. Pinned by
+   `packages/mcp/src/http-boundary.test.ts`, which replays the exact foreign-Host `initialize` that
+   the 5 September 2026 audit observed answering 200 before this control existed.
+
+   **Locality is not authorization.** This boundary establishes that the caller is local. It does
+   **not** identify which local user is calling: the daemon runs as one OS user and its `verbs`
+   object — the graph, the index, the caches — is shared by every request. Do not expose this
+   transport as a multi-tenant or remote endpoint on the strength of this control.
+
+3. **`crib viz` HTTP server — loopback only, Host-allowlisted (M0.3).** This is the **only** HTTP
    listener in the repo (`http.createServer` + `.listen(port, '127.0.0.1', …)` in
    `packages/cli/src/cli.ts:1339,1389`). It binds to `127.0.0.1` and enforces a Host-header
    allowlist `{'127.0.0.1','localhost','[::1]'}` (`packages/cli/src/viz-server.ts:15`, checker

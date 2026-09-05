@@ -166,7 +166,12 @@ import {
   __resetMemoryLockGuardForTest,
   memoryRecordId,
 } from '@knowledge-crib/memory';
-import { parseMemoryLedgerQuery, readMemoryLedger, readMemoryLedgerDetail } from './viz-server.js';
+import {
+  parseMemoryLedgerQuery,
+  readMemoryHome,
+  readMemoryLedger,
+  readMemoryLedgerDetail,
+} from './viz-server.js';
 
 const MEM_T0 = '2026-01-01T00:00:00.000Z';
 const MEM_REPO = 'r-viz-ledger';
@@ -306,5 +311,43 @@ describe('memory ledger endpoints', () => {
     } catch (err) {
       expect((err as VizHttpError).status).toBe(404);
     }
+  });
+});
+
+describe('memory home endpoint', () => {
+  it('projects lifecycle sections and independent health signals', () => {
+    const home = mkdtempSync(join(tmpdir(), 'crib-viz-home-'));
+    try {
+      const result = readMemoryHome(memApi(home), {
+        retrieval: { mode: 'on-device-semantic', modelId: 'intfloat/multilingual-e5-large' },
+        capture: { lastSuccessfulAt: MEM_T0 },
+        codeIndex: { lastSuccessfulAt: MEM_T0, behindHead: false },
+        sync: { configured: false },
+      });
+      expect(result).toMatchObject({
+        configured: true,
+        sections: {
+          active: { count: 1 },
+          pending: { count: 0 },
+          needsReview: { count: 0 },
+          history: { count: 1 },
+          resume: { count: 0 },
+        },
+        health: {
+          retrieval: { mode: 'on-device-semantic' },
+          sync: { configured: false },
+        },
+      });
+      expect(result.nextAction.toLowerCase()).toContain('capture');
+    } finally {
+      rmSync(home, { recursive: true, force: true });
+    }
+  });
+
+  it('returns an honest not-configured shape', () => {
+    expect(readMemoryHome(undefined, {})).toEqual({
+      configured: false,
+      nextAction: 'Run `crib memory init` to configure memory for this repository.',
+    });
   });
 });

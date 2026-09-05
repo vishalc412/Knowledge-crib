@@ -181,6 +181,67 @@ export function readMemoryLedger(
   return api.ledger(query);
 }
 
+export interface VizMemoryHomeOperations {
+  retrieval?: {
+    mode: 'on-device-semantic' | 'lexical-fallback';
+    modelId?: string;
+    reason?: string;
+  };
+  capture?: { lastSuccessfulAt?: string; pending?: number; dead?: number };
+  codeIndex?: { lastSuccessfulAt?: string; behindHead?: boolean; workerRunning?: boolean };
+  sync?: { configured: boolean; lastSuccessfulAt?: string; pending?: number; dead?: number };
+}
+
+/**
+ * The memory home is the session-facing projection over the same API that powers the ledger.
+ * It intentionally returns counts plus small preview lists; full history and record detail stay on
+ * their paginated endpoints.
+ */
+export function readMemoryHome(
+  api: MemoryApi | undefined,
+  health: VizMemoryHomeOperations,
+  repository: { head?: string; branch?: string; dirty: boolean; dirtyPathsDigest?: string } = {
+    dirty: false,
+  },
+) {
+  if (!api) {
+    return {
+      configured: false as const,
+      nextAction: 'Run `crib memory init` to configure memory for this repository.',
+    };
+  }
+  const handoff = api.handoff({
+    repository,
+    limits: { openWork: 10, pending: 10, attention: 10, recent: 10 },
+  });
+  const ledger = api.ledger({ offset: 0, limit: 1 });
+  const resumeCount = handoff.counts.openWork + handoff.intakes.count;
+  const nextAction = handoff.intakes.primary?.nextSafeAction
+    ? handoff.intakes.primary.nextSafeAction
+    : handoff.counts.pendingCaptures > 0
+      ? 'Run `crib memory distill --provider <name>` to review pending outcomes.'
+      : handoff.counts.needsAttention > 0
+        ? 'Open Needs review and inspect the evidence or supersede the stale claim.'
+        : 'Capture a structured outcome at the end of meaningful work so another agent can resume.';
+  return {
+    configured: true as const,
+    sections: {
+      active: { count: handoff.counts.active, preview: handoff.recent },
+      pending: { count: handoff.counts.pendingCaptures, preview: handoff.pendingCaptures },
+      needsReview: { count: handoff.counts.needsAttention, preview: handoff.needsAttention },
+      history: { count: ledger.total, groups: ledger.counts },
+      resume: {
+        count: resumeCount,
+        primary: handoff.intakes.primary,
+        choices: handoff.intakes.choices,
+        openWork: handoff.openWork,
+      },
+    },
+    health,
+    nextAction,
+  };
+}
+
 /** The `/memory/record.json` body: the full `get` projection plus the record's audit trail. */
 export type VizLedgerDetailResponse = GetResult & { audit: AuditResult };
 
