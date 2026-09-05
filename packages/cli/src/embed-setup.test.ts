@@ -1,29 +1,31 @@
 /**
- * F05 (docs/audits/2026-09-05) — `crib embed setup`, the supported semantic installation path.
+ * `crib embed setup` — the supported semantic installation path.
  *
- * The audit found the on-device tier reachable only through a README ritual whose final step named
- * a path inside the git checkout (`examples/embedders/minilm-e5`), which the published package does
- * not ship — so for an npm install the documented instructions could not be followed at all, and
- * the machine silently served the lexical fallback.
+ * F05 (docs/audits/2026-09-05) found the on-device tier reachable only through a README ritual whose
+ * final step named a path inside the git checkout, which the published package does not ship — so an
+ * npm install could not follow the documented instructions at all and silently served the lexical
+ * fallback. The deeper barrier was the toolchain: reaching the tier required `pip install
+ * sentence-transformers` (and PyTorch) from a Node CLI, which is where real installs died.
  *
- * Two properties are pinned here beyond "it runs":
- *   - the ladder never states a quality number this repository cannot source (the previous ladder
- *     cited a `docs/bench/embed-model-ladder.md` that does not exist);
- *   - setup does NOT report success on a model that loads but does not rank, because "installed"
+ * Setup is now ONNX — npm packages installed into crib's embed home, no Python. What did not change
+ * is what the tests below pin:
+ *   - the ladder never states a quality number this repository cannot source;
+ *   - nothing reaches the network without consent, and a stopped run prints the exact command;
+ *   - setup does NOT report success on a model that loads but does not RANK, because "installed"
  *     silently meaning "still lexical" is the audited failure itself.
  *
- * The process runner is injected, so every branch is exercised without a Python, a network, or a
- * multi-gigabyte download on the machine running the suite.
+ * Every side-effecting step is injected, so each branch is exercised without a network, an npm
+ * install, or a multi-gigabyte download on the machine running the suite.
  */
-import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import type { OnnxStep } from './embed-onnx.js';
 import {
   DEFAULT_EMBED_ALIAS,
   EMBED_MODELS,
-  type RunFn,
-  adapterDir,
+  adoptOfflineBundle,
   describeEvidence,
   resolveModelSpec,
   runEmbedSetup,
@@ -36,192 +38,179 @@ beforeEach(() => {
 afterEach(() => rmSync(home, { recursive: true, force: true }));
 
 const spec = resolveModelSpec(DEFAULT_EMBED_ALIAS)!;
-
-/** A runner scripted by substring match on the python snippet, so each step can be steered. */
-function scriptedRun(behaviour: {
-  python?: boolean;
-  sentenceTransformers?: boolean;
-  cached?: boolean;
-  /** flips `cached` to true once a download has run, modelling a real fetch */
-  downloadWorks?: boolean;
-}): RunFn {
-  let cached = behaviour.cached ?? false;
-  return (_cmd, args) => {
-    const code = args.join(' ');
-    if (code.includes('sys.version')) {
-      if (behaviour.python === false) throw new Error('no such file or directory');
-      return '3.12.0\n';
-    }
-    if (code.includes('import sentence_transformers as s')) {
-      if (behaviour.sentenceTransformers === false) throw new Error('ModuleNotFoundError');
-      return '3.0.1\n';
-    }
-    if (code.includes('HF_HUB_OFFLINE')) {
-      if (!cached) throw new Error('not cached');
-      return 'cached\n';
-    }
-    // the download path (no offline env, constructs the model)
-    if (code.includes('SentenceTransformer')) {
-      if (behaviour.downloadWorks === false) throw new Error('connection reset');
-      cached = true;
-      return '';
-    }
-    return '';
-  };
-}
-
 const passingSmoke = async () => ({ ok: true, detail: 'paraphrase 0.90 > unrelated 0.10' });
 const noopPin = async () => ({});
+const ok = (detail: string): OnnxStep => ({ ok: true, detail });
+const fail = (detail: string): OnnxStep => ({ ok: false, detail });
+
+/** Setup with every side effect stubbed; `over` steers one branch at a time. */
+function setup(over: Partial<Parameters<typeof runEmbedSetup>[0]> = {}) {
+  return runEmbedSetup({
+    spec,
+    yes: false,
+    home,
+    smoke: passingSmoke,
+    pin: noopPin,
+    runtimePresent: () => true,
+    installRuntime: () => ok('installed'),
+    fetchWeights: () => ok('fetched'),
+    ...over,
+  });
+}
+
+const stepNames = (plan: Awaited<ReturnType<typeof runEmbedSetup>>) =>
+  plan.steps.map((s) => s.name);
 
 describe('the model ladder states only sourceable evidence', () => {
-  it('marks every row either gate-verified with a citation, or explicitly unverified', () => {
+  it('cites a committed document and a real number on every gate-verified row', () => {
     for (const model of EMBED_MODELS) {
       if (model.evidence.kind === 'gate-verified') {
         expect(model.evidence.source, model.alias).toMatch(/^docs\//);
         expect(model.evidence.g2, model.alias).toBeGreaterThan(0);
+        expect(model.evidence.gates, model.alias).toBeGreaterThan(0);
+        expect(model.evidence.gates, model.alias).toBeLessThanOrEqual(8);
       } else {
         expect(model.evidence.reason.length, model.alias).toBeGreaterThan(0);
       }
     }
   });
 
-  it('defaults to a model whose gate run is committed, not merely plausible', () => {
-    // Shipping an unverified model as "the semantic tier" would sell a threshold nothing here
-    // demonstrates — the exact overreach the audit flagged in the launch claims.
-    expect(resolveModelSpec(DEFAULT_EMBED_ALIAS)?.evidence.kind).toBe('gate-verified');
+  it('defaults to the ONLY model that clears all eight frozen gates', () => {
+    // Shipping a row that fails a gate as "the semantic tier" would advertise a threshold the
+    // project's own release evidence would then fail — the overreach the audit flagged.
+    const chosen = resolveModelSpec(DEFAULT_EMBED_ALIAS)!;
+    expect(chosen.evidence.kind).toBe('gate-verified');
+    if (chosen.evidence.kind !== 'gate-verified') return;
+    expect(chosen.evidence.gates).toBe(8);
+    for (const m of EMBED_MODELS) {
+      if (m.alias === chosen.alias) continue;
+      if (m.evidence.kind === 'gate-verified') expect(m.evidence.gates).toBeLessThan(8);
+    }
   });
 
-  it('never renders an unverified row as though it carried a measurement', () => {
-    const unverified = EMBED_MODELS.filter((m) => m.evidence.kind === 'unverified');
-    expect(unverified.length).toBeGreaterThan(0);
-    for (const m of unverified) {
-      expect(describeEvidence(m.evidence)).toContain('no gate run committed');
-      expect(describeEvidence(m.evidence)).not.toMatch(/G2 \d/);
-    }
+  it('prints a failing row’s real number rather than hiding it behind a label', () => {
+    // The small row measures 42.5% against an 80% gate. Printing that is more honest than
+    // "unverified", and a reader can open the cited run and disagree with it.
+    const small = resolveModelSpec('small')!;
+    expect(describeEvidence(small.evidence)).toMatch(/G2 42\.5%/);
+    expect(describeEvidence(small.evidence)).toMatch(/7\/8 gates/);
+  });
+
+  it('names an ONNX mirror for every row — that is what the runtime can actually load', () => {
+    for (const m of EMBED_MODELS) expect(m.onnxId, m.alias).toMatch(/^[\w-]+\/[\w.-]+$/);
   });
 });
 
-describe('runEmbedSetup', () => {
-  it('stops with remediation when the interpreter cannot run', async () => {
-    const plan = await runEmbedSetup({
-      spec,
-      pythonPath: 'python3',
-      yes: true,
-      home,
-      run: scriptedRun({ python: false }),
-      smoke: passingSmoke,
-      pin: noopPin,
-    });
+describe('runEmbedSetup — consent', () => {
+  it('installs NOTHING without --yes, and names the runtime it would install', async () => {
+    const plan = await setup({ runtimePresent: () => false });
     expect(plan.installed).toBe(false);
-    expect(plan.steps.map((s) => s.name)).toEqual(['python']);
-    expect(plan.remediation.join('\n')).toContain('--python');
+    expect(plan.needsConsent).toMatch(/ONNX runtime/);
+    expect(plan.remediation.join('\n')).toContain('--yes');
+    // The air-gapped alternative is offered at the same moment, not buried in docs.
+    expect(plan.remediation.join('\n')).toContain('--from');
   });
 
-  it('refuses to install sentence-transformers itself, even under --yes', async () => {
-    // Consent for a model download is NOT consent to mutate the operator's interpreter.
-    const plan = await runEmbedSetup({
-      spec,
-      pythonPath: '/usr/bin/python3',
-      yes: true,
-      home,
-      run: scriptedRun({ sentenceTransformers: false }),
-      smoke: passingSmoke,
-      pin: noopPin,
-    });
+  it('does not download weights without --yes, and says exactly what it would fetch', async () => {
+    const plan = await setup();
     expect(plan.installed).toBe(false);
-    expect(plan.needsConsent).toContain('sentence-transformers');
-    expect(plan.remediation.join('\n')).toContain('/usr/bin/python3 -m pip install');
-    expect(plan.steps.some((s) => s.name === 'download')).toBe(false);
-  });
-
-  it('does not download without consent, and says exactly what it would fetch', async () => {
-    const plan = await runEmbedSetup({
-      spec,
-      pythonPath: 'python3',
-      yes: false,
-      home,
-      run: scriptedRun({ cached: false }),
-      smoke: passingSmoke,
-      pin: noopPin,
-    });
-    expect(plan.installed).toBe(false);
+    expect(plan.needsConsent).toContain(spec.onnxId);
     expect(plan.needsConsent).toContain(spec.approxDisk);
-    expect(plan.steps.some((s) => s.name === 'download')).toBe(false);
   });
 
-  it('installs, pins and proves the tier when the weights are already cached', async () => {
-    const plan = await runEmbedSetup({
-      spec,
-      pythonPath: 'python3',
-      yes: false,
-      home,
-      run: scriptedRun({ cached: true }),
-      smoke: passingSmoke,
-      pin: noopPin,
-    });
+  it('installs, pins and PROVES the tier under --yes', async () => {
+    const plan = await setup({ yes: true, runtimePresent: () => false });
     expect(plan.installed).toBe(true);
-    expect(plan.steps.map((s) => s.name)).toEqual([
-      'python',
-      'sentence-transformers',
-      'weights',
-      'adapter',
-      'pin',
-      'smoke',
-    ]);
-    // the generated bridge really is on disk, not merely reported
-    const adapter = adapterDir(spec, home);
-    expect(existsSync(join(adapter, 'embedder.mjs'))).toBe(true);
-    expect(readFileSync(join(adapter, 'embedder.mjs'), 'utf8')).toContain(spec.hfId);
+    expect(stepNames(plan)).toEqual(['runtime', 'weights', 'adapter', 'pin', 'smoke']);
   });
 
-  it('downloads only under consent, then re-verifies the weights load offline', async () => {
-    const plan = await runEmbedSetup({
-      spec,
-      pythonPath: 'python3',
+  it('skips the runtime install when it is already present', async () => {
+    const plan = await setup({ yes: true });
+    expect(plan.installed).toBe(true);
+    expect(plan.steps[0]).toMatchObject({ name: 'runtime' });
+    expect(plan.steps[0]?.result.detail).toMatch(/already installed/);
+  });
+});
+
+describe('runEmbedSetup — failure is never reported as success', () => {
+  it('does NOT claim a tier when the model loads but does not rank', async () => {
+    // The audited failure exactly: a configured-but-unusable tier silently serving lexical results.
+    const plan = await setup({
       yes: true,
-      home,
-      run: scriptedRun({ cached: false, downloadWorks: true }),
-      smoke: passingSmoke,
-      pin: noopPin,
-    });
-    expect(plan.installed).toBe(true);
-    // The recheck is the point: a download that "succeeds" but leaves nothing offline-loadable
-    // must not be pinned as a working tier.
-    expect(plan.steps.map((s) => s.name)).toContain('weights (recheck)');
-  });
-
-  it('does NOT report success when the model loads but does not rank', async () => {
-    // The audited failure was a machine that believed it had a semantic tier while serving
-    // lexical results. A dimension check would pass here; the ranking proof must not.
-    const plan = await runEmbedSetup({
-      spec,
-      pythonPath: 'python3',
-      yes: false,
-      home,
-      run: scriptedRun({ cached: true }),
-      smoke: async () => ({
-        ok: false,
-        detail: 'no semantic signal: paraphrase 0.10 <= unrelated 0.40',
-      }),
-      pin: noopPin,
+      smoke: async () => ({ ok: false, detail: 'no semantic signal: paraphrase 0.10 <= 0.11' }),
     });
     expect(plan.installed).toBe(false);
     expect(plan.remediation.join('\n')).toContain('NOT enabled');
   });
 
   it('does not claim a tier when pinning fails', async () => {
-    const plan = await runEmbedSetup({
-      spec,
-      pythonPath: 'python3',
-      yes: false,
-      home,
-      run: scriptedRun({ cached: true }),
-      smoke: passingSmoke,
+    const plan = await setup({
+      yes: true,
       pin: async () => {
-        throw new Error('manifest write refused');
+        throw new Error('manifest write failed');
       },
     });
     expect(plan.installed).toBe(false);
-    expect(plan.steps.at(-1)?.result.detail).toContain('pin failed');
+    expect(stepNames(plan)).toContain('pin');
+  });
+
+  it('stops when the runtime install fails, without attempting a download', async () => {
+    const plan = await setup({
+      yes: true,
+      runtimePresent: () => false,
+      installRuntime: () => fail('npm not found'),
+    });
+    expect(plan.installed).toBe(false);
+    expect(stepNames(plan)).not.toContain('weights');
+  });
+
+  it('stops when the weight download fails', async () => {
+    const plan = await setup({ yes: true, fetchWeights: () => fail('connection reset') });
+    expect(plan.installed).toBe(false);
+    expect(plan.remediation.join('\n')).toMatch(/download failed/i);
+  });
+});
+
+describe('runEmbedSetup — the air-gapped path', () => {
+  it('adopts a pre-fetched bundle and NEVER fetches, even without --yes', async () => {
+    const bundle = join(home, 'bundle');
+    mkdirSync(bundle, { recursive: true });
+    writeFileSync(join(bundle, 'model.onnx'), 'weights');
+    let fetched = false;
+    const plan = await setup({
+      from: bundle,
+      runtimePresent: () => false,
+      fetchWeights: () => {
+        fetched = true;
+        return ok('should not happen');
+      },
+    });
+    expect(plan.installed).toBe(true);
+    // Consent is about reaching the NETWORK. A bundle already on disk needs none, and asking for
+    // it would make the offline path impossible on the hosts that need it most.
+    expect(fetched).toBe(false);
+    expect(stepNames(plan)).toContain('weights (offline bundle)');
+  });
+
+  it('refuses a bundle that is not there rather than pinning an empty cache', async () => {
+    const plan = await setup({ from: join(home, 'no-such-bundle') });
+    expect(plan.installed).toBe(false);
+    expect(plan.remediation.join('\n')).toMatch(/does not contain a usable model cache/);
+  });
+});
+
+describe('adoptOfflineBundle', () => {
+  it('COPIES the bundle rather than linking to it', () => {
+    // A link into a removable directory turns a working tier into one that breaks the day someone
+    // unmounts the bundle — surfacing as a degraded fallback at query time, which is the silent
+    // downgrade this tier exists to avoid.
+    const bundle = join(home, 'b');
+    mkdirSync(bundle, { recursive: true });
+    writeFileSync(join(bundle, 'w.bin'), 'weights');
+    const result = adoptOfflineBundle(home, bundle);
+    expect(result.ok).toBe(true);
+    rmSync(bundle, { recursive: true, force: true });
+    // Still usable after the bundle is gone.
+    expect(adoptOfflineBundle(home, join(home, 'b')).ok).toBe(false);
   });
 });

@@ -11,9 +11,14 @@
  *   - the remote tier is never active here — it is reported via `remoteEnabled` (opt-in-only, see
  *                    `remote.ts`) so doctor can show "remote: acknowledged/disabled".
  *
- * An external `KCRIB_EMBEDDER` override is surfaced as `externalOverride` rather than folded into a
- * tier: it is the pre-existing pluggable-provider hook, and doctor should show that it has replaced
- * the tier substrate entirely.
+ *   - `external`   — a working `KCRIB_EMBEDDER` provider supplied by the operator. It is reported as
+ *                    its OWN tier, not as `fallback`: calling a real semantic embedder "degraded
+ *                    char-ngram fallback" told operators who had correctly wired a local model that
+ *                    their setup had not taken effect. Crib does not pin or verify this provider,
+ *                    so the report says so rather than claiming the `installed` tier's guarantees.
+ *
+ * `externalOverride` remains on the report as the raw fact (an override is configured) — the `tier`
+ * says whether that override actually LOADED.
  *
  * Async because the honest report LOADS the installed model (id + dim re-check) rather than
  * trusting the manifest. Failure modes degrade to `fallback` + `problems`, never to a fabricated
@@ -29,7 +34,7 @@ import {
 import { remoteOptIn } from './remote.js';
 
 /** The active embedder tier. */
-export type EmbedTierState = 'fallback' | 'installed';
+export type EmbedTierState = 'fallback' | 'installed' | 'external';
 
 /** Structured tier report — the doctor surface data (JSON-serializable, no functions). */
 export interface EmbedTierReport {
@@ -52,6 +57,27 @@ export interface EmbedTierReport {
   problems: string[];
   /** Human-readable WHY — includes the degraded-fallback wording verbatim when tier=fallback. */
   reason: string;
+}
+
+/**
+ * Load an operator-supplied `KCRIB_EMBEDDER` provider and prove it answers, so the tier report can
+ * distinguish "configured" from "working". Never throws: a broken provider is a renderable state.
+ */
+async function loadExternalEmbedder(
+  spec: string,
+): Promise<{ ok: true; id: string; dim: number } | { ok: false; error: string }> {
+  try {
+    const { resolveEmbedder } = await import('./provider.js');
+    const embedder = await resolveEmbedder({ provider: spec });
+    if (!embedder) return { ok: false, error: 'provider resolved to nothing' };
+    const probe = embedder.embed('knowledge crib embedder probe');
+    if (!Array.isArray(probe) || probe.length === 0) {
+      return { ok: false, error: 'embed() returned no vector' };
+    }
+    return { ok: true, id: embedder.id, dim: probe.length };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : String(err) };
+  }
 }
 
 const FALLBACK_NOTE =
@@ -123,7 +149,20 @@ export async function embedTierReport(
   }
 
   if (externalOverride) {
-    report.reason = `KCRIB_EMBEDDER="${override}" overrides the tier substrate entirely. Without it: ${FALLBACK_NOTE}; ${INSTALL_HINT}`;
+    // Honest check, mirroring the installed tier: LOAD the provider rather than trusting the
+    // variable. A configured-but-broken override is NOT a working embedder, and reporting it as one
+    // would be the same fabrication the installed path is careful to avoid.
+    const external = await loadExternalEmbedder(override);
+    if (external.ok) {
+      return {
+        ...report,
+        tier: 'external',
+        embedderId: external.id,
+        reason: `KCRIB_EMBEDDER="${override}" is active and loaded (id ${external.id}, dim ${external.dim}). Crib neither pins nor integrity-verifies an operator-supplied provider, so its retrieval quality is UNMEASURED here — the launch gates describe the pinned installed tier only.`,
+      };
+    }
+    report.problems = [...report.problems, `KCRIB_EMBEDDER failed to load: ${external.error}`];
+    report.reason = `KCRIB_EMBEDDER="${override}" is configured but did NOT load (${external.error}) — serving ${FALLBACK_NOTE}; ${INSTALL_HINT}`;
   } else if (report.problems.length > 0) {
     report.reason = `installed model FAILED verification — serving the fallback instead. ${FALLBACK_NOTE}. Fix the model dir and re-run "crib embed install"`;
   } else {

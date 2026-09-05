@@ -895,3 +895,128 @@ export function removeCaptureHooks(
   }
   return out;
 }
+
+// ─── which client is the user ACTUALLY using? (client detection) ──────────────
+
+/** One reason a client was detected, so the choice can be explained rather than asserted. */
+export interface ClientSignal {
+  client: ClientId;
+  /** `env` = this process is running inside that client right now (strongest). `repo` = the
+   *  repository already carries that client's own configuration. */
+  source: 'env' | 'repo';
+  /** The concrete variable or path that produced the signal — printed to the user verbatim. */
+  evidence: string;
+}
+
+export interface ClientDetection {
+  /** Detected clients, environment signals first, de-duplicated. Empty when nothing was detected. */
+  clients: ClientId[];
+  signals: ClientSignal[];
+}
+
+/**
+ * Environment signals — what is running RIGHT NOW. Each entry names a variable the client itself
+ * sets, never one a user might plausibly export for another reason (`GEMINI_API_KEY`, for example,
+ * says a key exists, not that the Gemini CLI is driving this session).
+ */
+const ENV_SIGNALS: { client: ClientId; vars: string[]; termProgram?: string[] }[] = [
+  { client: 'claude', vars: ['CLAUDECODE', 'CLAUDE_CODE_ENTRYPOINT'] },
+  { client: 'cursor', vars: ['CURSOR_TRACE_ID'], termProgram: ['cursor'] },
+  { client: 'windsurf', vars: ['WINDSURF_SESSION_ID'], termProgram: ['windsurf'] },
+  { client: 'codex', vars: ['CODEX_SANDBOX', 'CODEX_HOME'] },
+  { client: 'gemini', vars: ['GEMINI_CLI', 'GEMINI_SANDBOX'] },
+  // VS Code LAST among the editors: Cursor and Windsurf are VS Code forks and set VSCODE_* too, so
+  // an earlier match must win. VS Code's own agent IS Copilot — the `vscode` adapter deliberately
+  // has no instruction file and points here — so the detected client for instructions is `copilot`.
+  { client: 'copilot', vars: ['VSCODE_PID', 'VSCODE_GIT_ASKPASS_MAIN'], termProgram: ['vscode'] },
+];
+
+/**
+ * Repository signals — configuration THIS client created, used only when no environment signal
+ * identifies the running client.
+ *
+ * `cribOwned` marks paths crib itself writes. Such a path is evidence only when it holds content
+ * beyond crib's own managed block: after one over-broad install, `GEMINI.md` exists in every repo,
+ * and treating crib's own output as proof the user runs Gemini would make the original mistake
+ * permanent and self-justifying.
+ */
+const REPO_SIGNALS: { client: ClientId; path: string; cribOwned: boolean }[] = [
+  { client: 'claude', path: '.claude', cribOwned: false },
+  { client: 'claude', path: 'CLAUDE.md', cribOwned: true },
+  { client: 'cursor', path: '.cursor', cribOwned: true },
+  { client: 'copilot', path: '.github/copilot-instructions.md', cribOwned: true },
+  { client: 'copilot', path: '.vscode', cribOwned: false },
+  { client: 'windsurf', path: '.windsurfrules', cribOwned: true },
+  { client: 'gemini', path: '.gemini', cribOwned: false },
+  { client: 'gemini', path: 'GEMINI.md', cribOwned: true },
+  { client: 'codex', path: '.codex', cribOwned: false },
+];
+
+/**
+ * True when a file's ONLY substantive content is crib's managed block (plus optional Cursor
+ * frontmatter). Such a file is crib's own footprint, not evidence that the user uses that client.
+ */
+function isCribOnlyFile(path: string): boolean {
+  let text: string;
+  try {
+    text = readFileSync(path, 'utf8');
+  } catch {
+    return false;
+  }
+  const begin = text.indexOf(ADAPTER_BEGIN);
+  const end = text.indexOf(ADAPTER_END);
+  if (begin === -1 || end === -1) return false;
+  const outside = (text.slice(0, begin) + text.slice(end + ADAPTER_END.length))
+    .replace(/^---\r?\n[\s\S]*?\r?\n---/, '') // Cursor frontmatter crib writes itself
+    .trim();
+  return outside.length === 0;
+}
+
+/**
+ * Which client(s) is this user actually working in?
+ *
+ * `crib init` used to wire EVERY known client unconditionally, so a developer working in one editor
+ * got `GEMINI.md`, `.windsurfrules`, `.cursor/rules/` and `AGENTS.md` dropped into their repository
+ * alongside the one file they wanted. Files a user did not ask for are not a harmless default: they
+ * are committed, reviewed, and inherited by everyone who clones the repo.
+ *
+ * Environment signals win over repository signals — what is running now beats what was configured
+ * once. Both are returned so the caller can SHOW its reasoning instead of silently choosing.
+ */
+export function detectClients(
+  repoRoot: string,
+  env: NodeJS.ProcessEnv = process.env,
+): ClientDetection {
+  const signals: ClientSignal[] = [];
+  const term = (env.TERM_PROGRAM ?? '').toLowerCase();
+  for (const { client, vars, termProgram } of ENV_SIGNALS) {
+    const hitVar = vars.find((v) => (env[v] ?? '').length > 0);
+    if (hitVar) {
+      signals.push({ client, source: 'env', evidence: hitVar });
+      continue;
+    }
+    if (termProgram?.includes(term)) {
+      signals.push({ client, source: 'env', evidence: `TERM_PROGRAM=${env.TERM_PROGRAM}` });
+    }
+  }
+  // A running client is the answer; do not dilute it with stale repository configuration.
+  if (signals.length === 0) {
+    for (const { client, path, cribOwned } of REPO_SIGNALS) {
+      const abs = join(repoRoot, path);
+      if (!existsSync(abs)) continue;
+      if (cribOwned && isCribOnlyFile(abs)) continue;
+      signals.push({ client, source: 'repo', evidence: path });
+    }
+  }
+  const clients: ClientId[] = [];
+  for (const s of signals) if (!clients.includes(s.client)) clients.push(s.client);
+  return { clients, signals };
+}
+
+/** The MCP config target for a detected client. Copilot has no MCP config of its own — VS Code's
+ *  `.vscode/mcp.json` IS the Copilot config — so it maps onto the `vscode` writer. */
+export function mcpIdeForClient(
+  client: ClientId,
+): 'claude' | 'cursor' | 'vscode' | 'codex' | 'windsurf' | 'gemini' {
+  return client === 'copilot' ? 'vscode' : client;
+}

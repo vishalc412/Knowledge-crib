@@ -237,10 +237,12 @@ import {
   type LifecycleEvent,
   captureLaneSummary,
   clientAdapter,
+  detectClients,
   installCaptureHooks,
   installInstructions,
   listCaptureHooks,
   listInstructions,
+  mcpIdeForClient,
   removeCaptureHooks,
   removeInstructions,
 } from './adapters.js';
@@ -2182,26 +2184,105 @@ async function chooseFreshnessMode(repoRoot: string): Promise<FreshnessMode> {
   return mode ?? DEFAULT;
 }
 
+/**
+ * The init-time semantic-tier choice.
+ *
+ * The tier is what makes recall find a paraphrase; without it crib serves a char-ngram fallback
+ * measuring 2.6% paraphrase recall against an 80% gate. So it is offered during onboarding rather
+ * than left to a command nobody runs — but it is a multi-hundred-megabyte download, and a setup
+ * step that quietly pulls 1.1 GB is its own kind of hostile.
+ *
+ * Hence: a TTY is ASKED, with the measured tradeoff printed so the answer is informed; a
+ * non-interactive run (CI, scripted onboarding) NEVER downloads and is told the one command that
+ * would. Enter takes `large`, the only row clearing every frozen gate.
+ */
+async function chooseEmbedModel(): Promise<string | 'skip'> {
+  const DEFAULT = DEFAULT_EMBED_ALIAS;
+  if (!process.stdin.isTTY) return 'skip';
+  process.stdout.write(
+    '\n  semantic recall needs a local embedding model (no Python, offline after setup):\n',
+  );
+  for (const m of EMBED_MODELS) {
+    process.stdout.write(
+      `    ${m.alias.padEnd(6)} ${m.approxDisk.padEnd(9)} ${describeEvidence(m.evidence)}\n`,
+    );
+  }
+  process.stdout.write('    skip   —         keep the degraded lexical fallback (G2 2.6%)\n');
+  const rl = createReadline({ input: process.stdin, output: process.stdout });
+  const answer = await new Promise<string>((res) => {
+    const timer = setTimeout(() => {
+      res('');
+      rl.close();
+    }, 30_000);
+    rl.question(
+      `  model (${EMBED_MODELS.map((m) => m.alias).join('/')}/skip) [${DEFAULT}]: `,
+      (a: string) => {
+        clearTimeout(timer);
+        res(a.trim());
+        rl.close();
+      },
+    );
+  });
+  if (answer === 'skip') return 'skip';
+  if (answer === '') return DEFAULT;
+  return resolveModelSpec(answer) ? answer : DEFAULT;
+}
+
 async function cmdInit(args: string[], ctx?: CmdCtx): Promise<number> {
   const repoRoot = resolve(ctx?.cwdOverride ?? positionalsOf(args)[0] ?? '.');
   const ideIdx = args.indexOf('--ide');
-  const ide: McpIde | 'all' = ideIdx >= 0 ? ((args[ideIdx + 1] as McpIde | 'all') ?? 'all') : 'all';
-  const validIdes: Array<McpIde | 'all'> = [
+  const requested = ideIdx >= 0 ? (args[ideIdx + 1] ?? '') : undefined;
+  const validIdes: Array<ClientId | 'all'> = [
     'all',
     'claude',
     'cursor',
+    'copilot',
     'vscode',
     'codex',
     'windsurf',
     'gemini',
   ];
-  if (!validIdes.includes(ide)) {
-    process.stderr.write(`unknown --ide: ${ide}\nvalid: ${validIdes.join(', ')}\n`);
+  if (requested !== undefined && !validIdes.includes(requested as ClientId | 'all')) {
+    process.stderr.write(`unknown --ide: ${requested}\nvalid: ${validIdes.join(', ')}\n`);
     return EXIT.BAD_ARGS;
   }
 
+  // WHICH CLIENTS TO WIRE. An unspecified `--ide` used to mean "all", so a developer working in one
+  // editor had `GEMINI.md`, `.windsurfrules`, `.cursor/rules/` and `AGENTS.md` written into their
+  // repository next to the single file they wanted. Detect the client actually in use instead;
+  // `--ide all` is still available, but it is now something the operator asks for.
+  const detection = detectClients(repoRoot);
+  let clients: ClientId[];
+  let detectedNothing = false;
+  if (requested === 'all') {
+    clients = ALL_CLIENTS;
+    process.stdout.write('  clients: all (explicitly requested with --ide all)\n');
+  } else if (requested !== undefined) {
+    clients = [requested as ClientId];
+    process.stdout.write(`  clients: ${requested} (requested with --ide)\n`);
+  } else if (detection.clients.length > 0) {
+    clients = detection.clients;
+    const why = detection.signals
+      .filter((s) => detection.clients.includes(s.client))
+      .map((s) => `${s.client} (${s.source}: ${s.evidence})`)
+      .join(', ');
+    process.stdout.write(`  clients: detected ${why}\n`);
+  } else {
+    // Nothing identified the caller. Write the ONE vendor-neutral instruction file that is a
+    // cross-tool convention — and wire NO MCP config, because a config file's location IS the
+    // client identity. Guessing one would put a config in an editor the user may not even have.
+    clients = ['codex'];
+    detectedNothing = true;
+    process.stdout.write(
+      '  clients: none detected — writing the vendor-neutral AGENTS.md only, no IDE config.\n' +
+        '           Name yours with `crib init --ide <claude|cursor|copilot|codex|windsurf|gemini>`.\n',
+    );
+  }
+  // De-duplicate the MCP targets: copilot and vscode share `.vscode/mcp.json`.
+  const mcpIdes = detectedNothing ? [] : [...new Set(clients.map(mcpIdeForClient))];
+
   process.stdout.write('crib init — 5-minute onboarding\n');
-  process.stdout.write('  step 1/4: indexing the repo (deterministic, LLM-free)…\n');
+  process.stdout.write('  step 1/5: indexing the repo (deterministic, LLM-free)…\n');
   const indexCode = await cmdIndex([repoRoot], ctx);
   if (indexCode !== EXIT.OK) {
     process.stderr.write(`  index failed (exit ${indexCode}) — aborting init\n`);
@@ -2209,7 +2290,7 @@ async function cmdInit(args: string[], ctx?: CmdCtx): Promise<number> {
   }
 
   process.stdout.write(
-    '  step 2/4: wiring git hooks (non-blocking post-commit freshness hook + .crib merge driver)…\n',
+    '  step 2/5: wiring git hooks (non-blocking post-commit freshness hook + .crib merge driver)…\n',
   );
   const hooksCode = cmdInstallHooks([repoRoot], ctx, { convertAfter: true });
   if (hooksCode !== EXIT.OK) {
@@ -2229,25 +2310,66 @@ async function cmdInit(args: string[], ctx?: CmdCtx): Promise<number> {
     process.stderr.write(`  warning: freshness mode not persisted — ${(err as Error).message}\n`);
   }
 
-  process.stdout.write(`  step 3/4: wiring the MCP server into IDE config (--ide ${ide})…\n`);
-  const mcpCode = cmdMcp(['install', '--ide', ide, repoRoot], ctx);
-  if (mcpCode !== EXIT.OK) {
-    process.stderr.write(`  mcp install failed (exit ${mcpCode}) — aborting init\n`);
-    return mcpCode;
+  process.stdout.write(
+    mcpIdes.length > 0
+      ? `  step 3/5: wiring the MCP server into IDE config (${mcpIdes.join(', ')})…\n`
+      : '  step 3/5: skipped — no IDE identified, so there is no config location to write.\n' +
+          '            Run `crib mcp install --ide <name>` once you know it.\n',
+  );
+  for (const target of mcpIdes) {
+    const mcpCode = cmdMcp(['install', '--ide', target, repoRoot], ctx);
+    if (mcpCode !== EXIT.OK) {
+      process.stderr.write(
+        `  mcp install failed for ${target} (exit ${mcpCode}) — aborting init\n`,
+      );
+      return mcpCode;
+    }
   }
 
   process.stdout.write(
-    '  step 4/4: writing the vendor-neutral agent-memory protocol into instruction files…\n',
+    '  step 4/5: writing the vendor-neutral agent-memory protocol into instruction files…\n',
   );
   // Non-fatal: adapter install must never abort init (a user may not want any instruction files yet, and
   // index/hooks/mcp already succeeded). installInstructions can still throw on an fs error (EACCES/EROFS/
   // ENOSPC writing CLAUDE.md/AGENTS.md), so swallow it into a warning rather than aborting with a trace.
+  // Scoped to the SAME resolved client list as step 3 — this used to be hardcoded to `all`, so even
+  // an explicit `crib init --ide claude` still wrote GEMINI.md and .windsurfrules.
   try {
-    cmdAdapters(['install', '--client', 'all', repoRoot], ctx);
+    for (const client of clients) {
+      cmdAdapters(['install', '--client', client, repoRoot], ctx);
+    }
   } catch (e) {
     process.stderr.write(
       `  warning: instruction-adapter install failed — ${(e as Error).message}\n`,
     );
+  }
+
+  // Step 5 — the semantic tier. Last because it is the only step that can take minutes, and every
+  // step before it has already left the repository in a working state: a declined or failed model
+  // install degrades onboarding to lexical recall, never to a broken one.
+  process.stdout.write('  step 5/5: on-device semantic model for memory recall…\n');
+  const chosen = await chooseEmbedModel();
+  if (chosen === 'skip') {
+    process.stdout.write(
+      process.stdin.isTTY
+        ? '  skipped — recall stays lexical. Enable later: `crib embed setup`\n'
+        : '  skipped (non-interactive — a large download is never started unattended).\n' +
+            '           Enable with: `crib embed setup --yes`\n',
+    );
+  } else {
+    const chosenSpec = resolveModelSpec(chosen);
+    if (chosenSpec) {
+      process.stdout.write(`  installing ${chosenSpec.alias} (${chosenSpec.approxDisk})…\n`);
+      const plan = await runEmbedSetup({ spec: chosenSpec, yes: true });
+      for (const { name, result } of plan.steps) {
+        process.stdout.write(`    ${result.ok ? 'ok  ' : 'FAIL'} ${name}: ${result.detail}\n`);
+      }
+      process.stdout.write(
+        plan.installed
+          ? '  semantic retrieval is ENABLED for memory recall.\n'
+          : `  not enabled — recall stays lexical. ${plan.remediation[0] ?? 'Re-run `crib embed setup`.'}\n`,
+      );
+    }
   }
 
   process.stdout.write('\n✓ crib init complete. Next steps:\n');
@@ -2887,13 +3009,13 @@ function formatEmbedLadder(): string {
  */
 async function cmdEmbedSetup(args: string[]): Promise<number> {
   let alias = DEFAULT_EMBED_ALIAS;
-  let python = process.env.KCRIB_EMBED_PYTHON ?? 'python3';
   let yes = false;
   let json = false;
+  let from: string | undefined;
   for (let i = 0; i < args.length; i++) {
     const a = args[i]!;
     if (a === '--model') alias = args[++i] ?? alias;
-    else if (a === '--python') python = args[++i] ?? python;
+    else if (a === '--from') from = args[++i] ?? from;
     else if (a === '--yes') yes = true;
     else if (a === '--json') json = true;
     else if (a === '--help' || a === '-h') {
@@ -2912,7 +3034,7 @@ async function cmdEmbedSetup(args: string[]): Promise<number> {
     return EXIT.BAD_ARGS;
   }
 
-  const plan = await runEmbedSetup({ spec, pythonPath: python, yes });
+  const plan = await runEmbedSetup({ spec, yes, ...(from ? { from } : {}) });
   if (json) {
     process.stdout.write(`${JSON.stringify(plan, null, 2)}\n`);
     return plan.installed ? EXIT.OK : EXIT.ERROR;
@@ -2953,15 +3075,20 @@ function embedSetupHelp(): string {
       `         ${describeEvidence(m.evidence)}\n` +
       `         ${m.note}\n`,
   ).join('');
-  return `usage: crib embed setup [--model <alias>] [--python <path>] [--yes] [--json]
+  return `usage: crib embed setup [--model <alias>] [--yes] [--from <bundle-dir>] [--json]
 
-Installs the on-device semantic tier for memory recall. Without --yes nothing is
-downloaded: the command reports what it would fetch and stops.
+Installs the on-device semantic tier for memory recall. No Python: the runtime is an
+ONNX npm package installed into crib's embed home, never into your project. Without
+--yes nothing is fetched — the command reports what it would download and stops.
 
 models (default: ${DEFAULT_EMBED_ALIAS}):
 ${rows}
-The weights are downloaded from HuggingFace by sentence-transformers under their own
-licences; crib pins the generated adapter through its integrity manifest. The remote
+--from <dir>  adopt a pre-fetched bundle instead of downloading (air-gapped hosts).
+              Produce one on a networked machine with --yes, then copy its embed-home
+              models/ directory across.
+
+Weights come from HuggingFace under their own licences; crib pins the generated adapter
+through its integrity manifest and never reaches the network at query time. The remote
 embedder tier is NOT enabled by this command (see \`crib embed install --accept-remote-policy\`).
 `;
 }
@@ -4313,6 +4440,7 @@ function cmdAdapters(args: string[], ctx?: CmdCtx): number {
   const [sub, ...rest] = args;
   if (sub === 'hooks') return cmdAdaptersHooks(rest, ctx);
   let client: ClientId | 'all' = 'all';
+  let clientExplicit = false;
   let scope: 'project' | 'global' = 'project';
   let pathArg: string | undefined;
   for (let i = 0; i < rest.length; i++) {
@@ -4326,6 +4454,7 @@ function cmdAdapters(args: string[], ctx?: CmdCtx): number {
         return EXIT.BAD_ARGS;
       }
       client = value as ClientId | 'all';
+      clientExplicit = true;
       continue;
     }
     if (arg === '--scope') {
@@ -4354,7 +4483,30 @@ function cmdAdapters(args: string[], ctx?: CmdCtx): number {
 
   switch (sub) {
     case 'install': {
-      const results = installInstructions(repoRoot, { client, scope });
+      // WRITING is scoped to the client actually in use unless one is named. `list` and `remove`
+      // keep defaulting to every client — surveying and cleaning up are safe over the whole set,
+      // whereas writing files into a repository for editors the user does not run is not.
+      let installClients: (ClientId | 'all')[] = [client];
+      if (!clientExplicit) {
+        const detection = detectClients(repoRoot);
+        if (detection.clients.length > 0) {
+          installClients = detection.clients;
+          process.stdout.write(
+            `detected ${detection.signals
+              .filter((sig) => detection.clients.includes(sig.client))
+              .map((sig) => `${sig.client} (${sig.source}: ${sig.evidence})`)
+              .join(', ')} — pass --client <id|all> to override\n`,
+          );
+        } else {
+          installClients = ['codex']; // the vendor-neutral AGENTS.md
+          process.stdout.write(
+            'no client detected — writing the vendor-neutral AGENTS.md; pass --client <id|all> to choose\n',
+          );
+        }
+      }
+      const results = installClients.flatMap((id) =>
+        installInstructions(repoRoot, { client: id, scope }),
+      );
       for (const r of results) {
         if (r.note) process.stdout.write(`${r.client}: ${r.note}\n`);
         else if (r.path)
@@ -5370,7 +5522,7 @@ async function cmdMemory(args: string[], ctx?: CmdCtx): Promise<number> {
     case '-h':
     case '--help':
       process.stderr.write(
-        'crib memory init | handoff [--limit N] [--json] (where was I? — in-flight work, undistilled captures, what went stale) | events [--include-expired] [--limit N] [--json] | profiles list [--json] | profiles register --key <profile-key> --alias <client-id>/<agent-id> [--alias ...] [--json] | recall "<query>" [--limit N] [--sources team,local,global] [--target <id>] [--with-evidence] [--include-pending] [--max-tokens N] [--json] | search "<query>" [--limit N] [--sources team,local,global] [--target <id>] [--max-tokens N] [--json] | get <id> [--with-evidence] [--json] | supersede <id> --actor <id> (--successor <id> | --claim <text>) [--reason <text>] [--json] | delete <id> --actor <id> [--reason <text>] [--json] | history <key> [--as-of <iso-ts>] [--with-evidence] [--json] | evaluate <candidate> --profile <name> | activate <candidate> | propose <memory-id> | attest <candidate> | check | audit [--repair-local] | feedback <mem-id> --signal <useful|unhelpful|contradicted> [--actor <id>] [--context <text>] [--counter-evidence <json-file>] | gc [--max-age-days N] [--dry-run] | migrate | bench [--fast] [--json] [--out <path>] | distill --provider <name> [--providers-file F] [--max-batches N] [--concurrency N] [--timeout-ms N] | capture-hook --event <session-start|turn-end|tool-use> (hooks invoke this; always exits 0 — best-effort capture, never blocks a session) | init-sync --scope repo|global --backend file|http --url <target> [--key-env <NAME>|--keyfile <path>|--gen-key] [--secret-env <NAME>] [--sync-id <id>] [--backfill] [--json] | sync [push|pull|status] [--dry-run] [--backfill] [--max-events N] [--skip] [--json] | sync rotate-key (--gen-key | --key-env <NAME> | --keyfile <path>) [--dry-run] | sync purge-sync --stale-epoch [--dry-run] | purge <mem-id>... --confirm <mem-id>... [--stores local,global] [--history-scan] [--dry-run] [--actor <id>] [--json] | conflicts [--json] | resolve <record-id> (--successor <id> | --retract) --actor <id> [--reason <text>] [--json] (see docs/memory-sync.md)\n',
+        'crib memory init | remember "<claim>" [--subject <id>] [--kind convention|decision] [--global] (record + admit a human-attested claim from a terminal — recallable immediately) | admit <candidate-id> (admit an agent-staged human-attested claim, from a terminal) | handoff [--limit N] [--json] (where was I? — in-flight work, undistilled captures, what went stale) | events [--include-expired] [--limit N] [--json] | profiles list [--json] | profiles register --key <profile-key> --alias <client-id>/<agent-id> [--alias ...] [--json] | recall "<query>" [--limit N] [--sources team,local,global] [--target <id>] [--with-evidence] [--include-pending] [--max-tokens N] [--json] | search "<query>" [--limit N] [--sources team,local,global] [--target <id>] [--max-tokens N] [--json] | get <id> [--with-evidence] [--json] | supersede <id> --actor <id> (--successor <id> | --claim <text>) [--reason <text>] [--json] | delete <id> --actor <id> [--reason <text>] [--json] | history <key> [--as-of <iso-ts>] [--with-evidence] [--json] | evaluate <candidate> --profile <name> | activate <candidate> | propose <memory-id> | attest <candidate> | check | audit [--repair-local] | feedback <mem-id> --signal <useful|unhelpful|contradicted> [--actor <id>] [--context <text>] [--counter-evidence <json-file>] | gc [--max-age-days N] [--dry-run] | migrate | bench [--fast] [--json] [--out <path>] | distill --provider <name> [--providers-file F] [--max-batches N] [--concurrency N] [--timeout-ms N] | capture-hook --event <session-start|turn-end|tool-use> (hooks invoke this; always exits 0 — best-effort capture, never blocks a session) | init-sync --scope repo|global --backend file|http --url <target> [--key-env <NAME>|--keyfile <path>|--gen-key] [--secret-env <NAME>] [--sync-id <id>] [--backfill] [--json] | sync [push|pull|status] [--dry-run] [--backfill] [--max-events N] [--skip] [--json] | sync rotate-key (--gen-key | --key-env <NAME> | --keyfile <path>) [--dry-run] | sync purge-sync --stale-epoch [--dry-run] | purge <mem-id>... --confirm <mem-id>... [--stores local,global] [--history-scan] [--dry-run] [--actor <id>] [--json] | conflicts [--json] | resolve <record-id> (--successor <id> | --retract) --actor <id> [--reason <text>] [--json] (see docs/memory-sync.md)\n',
       );
       process.stderr.write(
         'additional operations: backup create|verify|restore; sync compact [--dry-run] [--json]\n',

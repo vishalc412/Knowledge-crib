@@ -24,16 +24,29 @@
  *     a real ranking check, not a dimension assertion.
  */
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { embedHomeDir, installEmbedModel } from '@knowledge-crib/core';
+import {
+  ONNX_RUNTIME_PACKAGE,
+  type OnnxAdapterSpec,
+  type OnnxStep,
+  downloadOnnxWeights,
+  installOnnxRuntime,
+  onnxModelCacheDir,
+  onnxRuntimeInstalled,
+  refreshOnnxWorker,
+  writeOnnxAdapter,
+} from './embed-onnx.js';
 
 /** A model the setup command knows how to install, with the numbers that make it choosable. */
 export interface EmbedModelSpec {
   /** Short alias accepted by `--model`. */
   alias: string;
-  /** HuggingFace repo id passed to sentence-transformers. */
+  /** HuggingFace repo id — the model's canonical identity, used for the integrity pin. */
   hfId: string;
+  /** The ONNX-hosted mirror the runtime loads. Same weights, converted; this is what ships. */
+  onnxId: string;
   dim: number;
   /**
    * Text prefix applied to BOTH sides. E5 is trained asymmetrically (`query:`/`passage:`), but
@@ -87,57 +100,63 @@ export function describeEvidence(evidence: ModelEvidence): string {
 }
 
 /**
- * The model ladder.
+ * The model ladder — one family at three sizes, so `--model` is a size/quality dial and not a change
+ * of behaviour. Every row now carries a gate run measured through the ONNX path and recorded in
+ * `docs/bench/onnx-model-ladder.md`, including the rows that FAIL a gate: a row's number is there to
+ * be argued with, and hiding a 42.5% behind "unverified" would be less honest than printing it.
  *
- * ONE row carries a committed gate run: `large` (`docs/bench/launch-gates.md`, G2 81.0%, 8/8). It is
- * therefore the default, because shipping anything else as "the semantic tier" would be selling a
- * threshold nothing here demonstrates.
+ * `large` is the default because it is the only row clearing all eight frozen gates — shipping
+ * anything else as "the semantic tier" would advertise a threshold the project's own release
+ * evidence would then fail.
  *
- * The other two rows are offered as smaller downloads and are labelled `unverified` — not as a
- * hedge, but because this repository contains no run to cite for them. Do not add a number to a row
- * without adding the run that produced it; `describeEvidence` prints whatever is here verbatim, so
- * an invented figure becomes a user-visible claim immediately.
+ * Do not add a number to a row without adding the run that produced it. `describeEvidence` prints
+ * whatever is here verbatim, so an invented figure becomes a user-visible claim immediately.
  */
 export const EMBED_MODELS: readonly EmbedModelSpec[] = [
   {
     alias: 'small',
-    hfId: 'sentence-transformers/all-MiniLM-L6-v2',
+    hfId: 'intfloat/multilingual-e5-small',
+    onnxId: 'Xenova/multilingual-e5-small',
     dim: 384,
-    prefix: '',
-    approxDisk: '~90 MB',
+    prefix: 'query: ',
+    approxDisk: '~480 MB',
     evidence: {
-      kind: 'unverified',
-      reason:
-        'English-only and by far the smallest download; listed as the low-cost option for trying the tier',
+      kind: 'gate-verified',
+      g2: 0.425,
+      gates: 7,
+      source: 'docs/bench/onnx-model-ladder.md',
     },
-    note: 'English-only. Not gate-verified here — do not assume it clears G2.',
+    note: 'fastest and smallest; clears G3 but NOT the 80% paraphrase gate. Choose it for speed, not for the advertised tier.',
   },
   {
     alias: 'base',
     hfId: 'intfloat/multilingual-e5-base',
+    onnxId: 'Xenova/multilingual-e5-base',
     dim: 768,
     prefix: 'query: ',
     approxDisk: '~1.1 GB',
     evidence: {
-      kind: 'unverified',
-      reason:
-        'the committed launch-gate run records 43.8% G2 for this model at an earlier configuration, below the 80% threshold',
+      kind: 'gate-verified',
+      g2: 0.699,
+      gates: 7,
+      source: 'docs/bench/onnx-model-ladder.md',
     },
-    note: 'multilingual, half the download of large. Not gate-verified here.',
+    note: 'half the download of large and the best MRR below it, but still short of the 80% paraphrase gate.',
   },
   {
     alias: 'large',
     hfId: 'intfloat/multilingual-e5-large',
+    onnxId: 'Xenova/multilingual-e5-large',
     dim: 1024,
     prefix: 'query: ',
+    approxDisk: '~2.1 GB',
     evidence: {
       kind: 'gate-verified',
-      g2: 0.81,
+      g2: 0.811,
       gates: 8,
-      source: 'docs/bench/launch-gates.md',
+      source: 'docs/bench/onnx-model-ladder.md',
     },
-    approxDisk: '~2.2 GB',
-    note: 'the only model with a committed run passing all 8 launch gates — the default',
+    note: 'the only row clearing all 8 frozen gates — the default, and the configuration the release evidence describes.',
   },
 ] as const;
 
@@ -522,34 +541,55 @@ export interface SetupPlan {
 
 export interface SetupOptions {
   spec: EmbedModelSpec;
-  pythonPath: string;
-  /** Consent for the one step that reaches the network (the weight download). */
+  /**
+   * Consent for the steps that reach the network: installing the ONNX runtime into the embed home
+   * and downloading the model weights. Without it the run STOPS and prints the exact commands.
+   */
   yes: boolean;
   home?: string;
-  run?: RunFn;
+  /**
+   * A directory holding a pre-fetched runtime + weights (the air-gapped path). When set, nothing
+   * reaches the network at all: the bundle is used as the model cache and no download is attempted.
+   */
+  from?: string;
   /** Injected so the smoke test can be exercised without a real model on the box. */
   smoke?: (home: string) => Promise<{ ok: boolean; detail: string }>;
   pin?: (spec: EmbedModelSpec, dir: string) => Promise<unknown>;
+  /** Injected runtime installer (tests). */
+  installRuntime?: (home: string) => OnnxStep;
+  /** Injected weight fetcher (tests). */
+  fetchWeights?: (home: string, spec: OnnxAdapterSpec) => OnnxStep;
+  /** Injected probe for "is the runtime already here?" (tests). */
+  runtimePresent?: (home: string) => boolean;
 }
 
 /**
  * Run setup as a sequence of checks that STOP at the first unmet precondition.
  *
- * The ordering is the point: every step is cheap and local until the one that is not. Python and
- * `sentence-transformers` are verified against the SAME interpreter that will run the adapter (a
- * PATH-level check would pass while the adapter fails), and the weights are probed OFFLINE, so a
- * pass proves a later query needs no network rather than merely that a download could succeed.
- *
- * Nothing is downloaded without `yes`. A stopped run is not a failure: it reports the exact commands
- * to run, which is the difference between "setup failed" and "setup needs your consent for a 2.2 GB
+ * The ordering is the point: every step is cheap and local until the one that is not, and nothing
+ * reaches the network without `yes`. A stopped run is not a failure — it reports the exact command
+ * to run, which is the difference between "setup failed" and "setup needs consent for a 1.1 GB
  * download".
+ *
+ * The steps are ONNX now, not Python. What did not change is the last one: success is not reported
+ * until a paraphrase out-scores an unrelated sentence in-process. A dimension check passes for a
+ * model returning noise, and the audited failure was precisely a configured-but-unusable tier
+ * silently serving lexical results.
  */
 export async function runEmbedSetup(opts: SetupOptions): Promise<SetupPlan> {
-  const { spec, pythonPath, yes } = opts;
-  const run = opts.run ?? defaultRun;
+  const { spec, yes } = opts;
   const home = opts.home ?? embedHomeDir();
   const smoke = opts.smoke ?? smokeTest;
   const pin = opts.pin ?? pinAdapter;
+  const installRuntime = opts.installRuntime ?? ((h: string) => installOnnxRuntime(h));
+  const fetchWeights =
+    opts.fetchWeights ?? ((h: string, sp: OnnxAdapterSpec) => downloadOnnxWeights(h, sp));
+  const runtimePresent = opts.runtimePresent ?? onnxRuntimeInstalled;
+  const adapterSpec: OnnxAdapterSpec = {
+    onnxId: spec.onnxId,
+    dim: spec.dim,
+    prefix: spec.prefix,
+  };
   const steps: SetupPlan['steps'] = [];
   const stop = (needsConsent: string | undefined, remediation: string[]): SetupPlan => ({
     spec,
@@ -559,61 +599,67 @@ export async function runEmbedSetup(opts: SetupOptions): Promise<SetupPlan> {
     remediation,
   });
 
-  const python = checkPython(pythonPath, run);
-  steps.push({ name: 'python', result: python });
-  if (!python.ok) {
-    return stop(undefined, [
-      'Install Python 3.9+ and re-run, or point crib at a specific interpreter:',
-      '  crib embed setup --python /path/to/python3',
-      '  (or set KCRIB_EMBED_PYTHON)',
-    ]);
+  // 1. The runtime. ~376 MB of npm packages into the embed home — never into the user's project,
+  //    never into crib's own dependencies (the workspace runs a hard external-dependency cap).
+  if (!runtimePresent(home)) {
+    if (!yes && !opts.from) {
+      return stop(`the ONNX runtime (${ONNX_RUNTIME_PACKAGE}) is not installed in ${home}`, [
+        'Re-run with consent to install the runtime and weights:',
+        `  crib embed setup --model ${spec.alias} --yes`,
+        'Air-gapped? Point at a pre-fetched bundle instead:',
+        `  crib embed setup --model ${spec.alias} --from /path/to/bundle`,
+      ]);
+    }
+    const installed = installRuntime(home);
+    steps.push({ name: 'runtime', result: installed });
+    if (!installed.ok) {
+      return stop(undefined, [
+        'The ONNX runtime could not be installed. Check network access, npm availability and disk',
+        'space, then re-run. For an air-gapped host, use `--from <bundle-dir>`.',
+      ]);
+    }
+  } else {
+    // The npm install is skipped, but the GENERATED worker is refreshed regardless: it ships with
+    // crib, so a stale one from a previous release would silently disagree with this release's
+    // adapter about their handshake — which hangs instead of failing.
+    refreshOnnxWorker(home);
+    steps.push({
+      name: 'runtime',
+      result: { ok: true, detail: `already installed in ${home} (worker refreshed)` },
+    });
   }
 
-  const st = checkSentenceTransformers(pythonPath, run);
-  steps.push({ name: 'sentence-transformers', result: st });
-  if (!st.ok) {
-    // Deliberately NOT auto-installed even under --yes: this mutates the operator's interpreter,
-    // which is theirs to decide. Consent for a model download is not consent to change a toolchain.
-    return stop(`sentence-transformers is not installed for ${pythonPath}`, [
-      'Install it into that interpreter, then re-run:',
-      `  ${pythonPath} -m pip install sentence-transformers`,
-    ]);
-  }
-
-  let weights = checkWeights(spec, pythonPath, run);
-  steps.push({ name: 'weights', result: weights });
-  if (!weights.ok) {
+  // 2. The weights. `--from` is the offline path: the bundle IS the cache, so nothing is fetched.
+  if (opts.from) {
+    const linked = adoptOfflineBundle(home, opts.from);
+    steps.push({ name: 'weights (offline bundle)', result: linked });
+    if (!linked.ok) {
+      return stop(undefined, [
+        `The bundle at ${opts.from} does not contain a usable model cache.`,
+        `Produce one on a networked machine with \`crib embed setup --model ${spec.alias} --yes\`,`,
+        `then copy that machine's ${onnxModelCacheDir('<embed-home>')} directory across.`,
+      ]);
+    }
+  } else {
     if (!yes) {
-      return stop(`${spec.hfId} (${spec.approxDisk}) is not cached and would be downloaded`, [
+      return stop(`${spec.onnxId} (${spec.approxDisk}) is not cached and would be downloaded`, [
         `Re-run with consent for the ${spec.approxDisk} download:`,
         `  crib embed setup --model ${spec.alias} --yes`,
-        'Or fetch the weights yourself first:',
-        `  ${pythonPath} -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('${spec.hfId}')"`,
       ]);
     }
-    const downloaded = downloadWeights(spec, pythonPath, run);
-    steps.push({ name: 'download', result: downloaded });
-    if (!downloaded.ok) {
+    const fetched = fetchWeights(home, adapterSpec);
+    steps.push({ name: 'weights', result: fetched });
+    if (!fetched.ok) {
       return stop(undefined, [
-        'The download failed. Check network access and disk space, then re-run.',
-      ]);
-    }
-    weights = checkWeights(spec, pythonPath, run);
-    steps.push({ name: 'weights (recheck)', result: weights });
-    if (!weights.ok) {
-      // A download reporting success but leaving nothing offline-loadable is a broken cache, not a
-      // working tier — refuse rather than pin an adapter that cannot answer a query.
-      return stop(undefined, [
-        'The weights downloaded but are still not loadable offline — the HuggingFace cache may be',
-        'partially written. Locate and clear it, then re-run:',
-        `  ${pythonPath} -c "import huggingface_hub; print(huggingface_hub.constants.HF_HUB_CACHE)"`,
+        'The weight download failed. Check network access and disk space, then re-run.',
       ]);
     }
   }
 
+  // 3. The adapter, pinned through the SAME integrity manifest a hand-installed model uses.
   const dir = adapterDir(spec, home);
-  writeAdapter(spec, pythonPath, dir);
-  steps.push({ name: 'adapter', result: { ok: true, detail: `wrote bridge files to ${dir}` } });
+  writeOnnxAdapter(home, adapterSpec, embedderIdFor(spec), dir);
+  steps.push({ name: 'adapter', result: { ok: true, detail: `wrote adapter to ${dir}` } });
 
   try {
     await pin(spec, dir);
@@ -631,18 +677,35 @@ export async function runEmbedSetup(opts: SetupOptions): Promise<SetupPlan> {
     ]);
   }
 
-  // The last step is the only one proving the tier RANKS. A dimension check passes for a model
-  // returning noise, and the audited failure mode was precisely a configured-but-unusable tier
-  // silently serving lexical results — so success is not reported until a paraphrase outscores an
-  // unrelated sentence in-process.
+  // 4. Prove it RANKS. The only step that distinguishes a working tier from a loaded one.
   const proof = await smoke(home);
   steps.push({ name: 'smoke', result: proof });
   if (!proof.ok) {
     return stop(undefined, [
       'The model installed but did not demonstrate semantic ranking, so the tier is NOT enabled.',
-      'Re-run `crib embed setup`; if it persists, the adapter and the interpreter disagree.',
+      'Re-run `crib embed setup`; if it persists, the adapter and the runtime disagree.',
     ]);
   }
 
   return { spec, steps, installed: true, remediation: [] };
+}
+
+/**
+ * Adopt a pre-fetched bundle as this embed home's model cache — the air-gapped path.
+ *
+ * Copying rather than symlinking: the cache is read on every model load, and a link into a
+ * removable directory turns a working tier into one that breaks the day someone unmounts the
+ * bundle. The failure would surface as a degraded fallback at query time, which is exactly the
+ * silent-downgrade behaviour this whole tier exists to avoid.
+ */
+export function adoptOfflineBundle(home: string, bundle: string): OnnxStep {
+  const cache = onnxModelCacheDir(home);
+  try {
+    if (!existsSync(bundle)) return { ok: false, detail: `bundle not found: ${bundle}` };
+    mkdirSync(cache, { recursive: true });
+    cpSync(bundle, cache, { recursive: true });
+    return { ok: true, detail: `adopted ${bundle} as the offline model cache` };
+  } catch (err) {
+    return { ok: false, detail: `could not adopt bundle: ${(err as Error).message}` };
+  }
 }
