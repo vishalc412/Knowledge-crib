@@ -830,8 +830,15 @@ export interface FreshnessStatus {
   mode: FreshnessMode;
   /** Was a mode explicitly persisted, or is this the default? (doctor distinguishes the two). */
   modeExplicit: boolean;
-  /** true when a live worker (fresh heartbeat, alive pid) holds the freshness lease. */
+  /** true when a live worker holds the freshness lease — heartbeating, OR busy (see below). */
   workerRunning: boolean;
+  /**
+   * true when the lease holder is ALIVE and still owns a leased task, but its heartbeat has gone
+   * stale — the signature of a long synchronous revalidation blocking its own timer. Distinguished
+   * from a healthy heartbeat so an operator can tell "working hard" from "answering promptly",
+   * without either being reported as dead.
+   */
+  workerBusy: boolean;
   /** pid of the lease holder when readable. */
   workerPid?: number;
   /** The task currently in flight on the lease holder, if any. */
@@ -879,10 +886,22 @@ export function freshnessStatus(
   const entry = lookupProject(projectRoot, env);
   const mode = resolveFreshnessMode(entry?.freshnessMode);
   const state = readWorkerState(env);
-  const workerRunning =
-    state !== undefined &&
-    isPidAlive(state.pid) &&
-    Date.now() - Date.parse(state.heartbeatAt) < 15_000;
+  const alive = state !== undefined && isPidAlive(state.pid);
+  const beating = state !== undefined && Date.now() - Date.parse(state.heartbeatAt) < 15_000;
+  /**
+   * BUSY IS NOT DEAD.
+   *
+   * Revalidation runs `crib update`, whose parsing is synchronous, so a large repository blocks the
+   * event loop for as long as it takes — and a blocked event loop cannot fire the heartbeat timer.
+   * Observed on this repository: the heartbeat aged past 190s while the worker was healthily
+   * reindexing, then returned to 1s the moment it finished.
+   *
+   * Reporting that worker as "not running" is simply false, and it is the kind of false that sends
+   * an operator hunting a dead process that is in fact doing their work. A live pid still holding a
+   * leased task is BUSY; only a live pid with no task and no heartbeat is unexplained.
+   */
+  const workerBusy = alive && !beating && state?.activeTask !== undefined;
+  const workerRunning = alive && (beating || workerBusy);
   const q = readFreshnessQueue(env);
   const last = readPublishedGeneration(projectRoot, env);
   const head = readHead(projectRoot);
@@ -890,6 +909,7 @@ export function freshnessStatus(
     mode,
     modeExplicit: parseFreshnessMode(entry?.freshnessMode) !== undefined,
     workerRunning,
+    workerBusy,
     ...(state && workerRunning ? { workerPid: state.pid } : {}),
     ...(state?.activeTask ? { inFlight: state.activeTask } : {}),
     pending: q.pending.filter((t) => t.projectRoot === projectRoot).length,

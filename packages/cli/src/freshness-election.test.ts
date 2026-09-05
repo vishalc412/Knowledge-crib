@@ -17,7 +17,7 @@
  * Children import the compiled `dist` build (`pretest` produces it).
  */
 import { fork } from 'node:child_process';
-import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -26,7 +26,9 @@ import {
   type FreshnessTask,
   FreshnessWorker,
   type FreshnessWorkerEvent,
+  type FreshnessWorkerState,
   enqueueFreshness,
+  freshnessStatus,
   freshnessTaskId,
   readFreshnessQueue,
   readWorkerState,
@@ -251,4 +253,64 @@ describe('freshness lease election (R01)', () => {
     await stalled.stop();
     expect(readWorkerState(env)?.epoch).toBe(successor.epoch);
   }, 30_000);
+});
+
+describe('freshnessStatus — busy is not dead', () => {
+  /**
+   * Observed live on this repository: the worker's heartbeat aged past 190s while it was healthily
+   * reindexing, then dropped back to 1s the moment it finished. Revalidation runs `crib update`,
+   * whose parsing is synchronous, so a large repository blocks the event loop — and a blocked event
+   * loop cannot fire the heartbeat timer.
+   *
+   * Status reported that worker as "not running", which sent an operator (me) hunting a dead
+   * process that was in fact doing their work. A live pid still holding a leased task is BUSY.
+   */
+  const staleState = (over: Partial<FreshnessWorkerState> = {}): FreshnessWorkerState => ({
+    pid: process.pid, // this test process — genuinely alive
+    epoch: 1,
+    startedAt: new Date(Date.now() - 60_000).toISOString(),
+    heartbeatAt: new Date(Date.now() - 200_000).toISOString(), // far past the 15s TTL
+    lastKnownGood: {},
+    ...over,
+  });
+
+  const writeState = (state: FreshnessWorkerState) => {
+    mkdirSync(join(dir, 'freshness'), { recursive: true });
+    writeFileSync(
+      join(dir, 'freshness', 'worker-state.json'),
+      `${JSON.stringify(state, null, 2)}\n`,
+    );
+  };
+
+  it('reports a live worker with a leased task as RUNNING and BUSY, not dead', () => {
+    writeState(
+      staleState({
+        activeTask: {
+          id: freshnessTaskId('/p', 'h'),
+          projectRoot: '/p',
+          head: 'h',
+          attempts: 0,
+          enqueuedAt: new Date().toISOString(),
+        },
+      }),
+    );
+    const status = freshnessStatus('/p', { env, headReader: () => 'h' });
+    expect(status.workerRunning).toBe(true);
+    expect(status.workerBusy).toBe(true);
+  });
+
+  it('still reports a live worker with NO task and no heartbeat as not running', () => {
+    // Unexplained silence is not the same as visible work — this case must stay a red flag.
+    writeState(staleState());
+    const status = freshnessStatus('/p', { env, headReader: () => 'h' });
+    expect(status.workerRunning).toBe(false);
+    expect(status.workerBusy).toBe(false);
+  });
+
+  it('a heartbeating worker is running and NOT busy', () => {
+    writeState(staleState({ heartbeatAt: new Date().toISOString() }));
+    const status = freshnessStatus('/p', { env, headReader: () => 'h' });
+    expect(status.workerRunning).toBe(true);
+    expect(status.workerBusy).toBe(false);
+  });
 });
