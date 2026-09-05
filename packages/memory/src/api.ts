@@ -1959,27 +1959,79 @@ export class MemoryApi {
     }
   }
 
+  /**
+   * R03 — is this intake requirement readable by the CALLING principal?
+   *
+   * Two ways in, and only two:
+   *   - the caller owns it (`namespace.principalId` is the caller), or
+   *   - it reached the TEAM store, which happens only through the deliberate `shareIntake` team
+   *     promotion. Presence in Git-backed team memory IS the explicit authorization.
+   *
+   * A requirement carrying no principal is treated as legacy-readable, exactly as `acceptsRecord`
+   * treats a memory-1 record with no principal column — migration compatibility, not a loophole:
+   * `createIntakeRequirement` always stamps a namespace.
+   */
+  private acceptsIntake(requirement: IntakeRequirement, teamShared: boolean): boolean {
+    if (teamShared) return true;
+    const owner = requirement.namespace?.principalId;
+    if (typeof owner !== 'string' || owner.trim().length === 0) return true;
+    return owner === this.callerPrincipal();
+  }
+
+  /**
+   * Gather the intake requirements and checkpoints the CALLER is authorized to see.
+   *
+   * The audited defect (R03) was that this merged every entry from every store with no principal or
+   * audience policy at all. Because `listIntakes`, `getIntake`, `handoff` and — through `getIntake`
+   * — `checkpointIntake` all funnel through here, one unguarded merge exposed another principal's
+   * `private` durable intake to reads, listings, handoff, and APPENDS. The repair belongs here
+   * rather than on the four public verbs, for the same reason `acceptsRecord` lives at the gather
+   * point: a future intake-returning verb must inherit the boundary instead of re-deriving it.
+   *
+   * Checkpoints have no principal of their own — they are events ON a requirement — so a checkpoint
+   * is visible exactly when its requirement is. A checkpoint whose requirement is not visible
+   * (foreign, or absent entirely) is dropped rather than orphan-exposed: `nextSafeAction` and
+   * `summary` describe the private work just as directly as the requirement does.
+   */
   private intakeEntries(): {
     requirements: IntakeRequirement[];
     checkpoints: IntakeCheckpoint[];
   } {
     const entries = new Map<string, IntakeRequirement | IntakeCheckpoint>();
-    for (const store of [this.deps.stores.team, this.deps.stores.local]) {
+    // Ids present in TEAM memory. Tracked SEPARATELY from the entry map because the map is
+    // last-wins and local is read second (deliberately — the local copy is the freshest). Judging
+    // authorization by the surviving copy's store would therefore deny every shared intake the
+    // owner also holds locally, which is all of them: `shareIntake` writes both.
+    const teamShared = new Set<string>();
+    for (const [source, store] of [
+      ['team', this.deps.stores.team],
+      ['local', this.deps.stores.local],
+    ] as const) {
       if (!store || !store.collections.includes('intakes')) continue;
       for (const entry of store.readCollection('intakes').entries) {
         if (entry.id.startsWith('intake:') || entry.id.startsWith('icp:')) {
           entries.set(entry.id, entry as IntakeRequirement | IntakeCheckpoint);
+          if (source === 'team') teamShared.add(entry.id);
         }
       }
     }
-    return {
-      requirements: [...entries.values()].filter((entry): entry is IntakeRequirement =>
-        entry.id.startsWith('intake:'),
-      ),
-      checkpoints: [...entries.values()].filter((entry): entry is IntakeCheckpoint =>
-        entry.id.startsWith('icp:'),
-      ),
-    };
+    const requirements: IntakeRequirement[] = [];
+    const visibleIntakeIds = new Set<string>();
+    for (const entry of entries.values()) {
+      if (!entry.id.startsWith('intake:')) continue;
+      const requirement = entry as IntakeRequirement;
+      if (!this.acceptsIntake(requirement, teamShared.has(requirement.id))) continue;
+      requirements.push(requirement);
+      visibleIntakeIds.add(requirement.id);
+    }
+    const checkpoints: IntakeCheckpoint[] = [];
+    for (const entry of entries.values()) {
+      if (!entry.id.startsWith('icp:')) continue;
+      const checkpoint = entry as IntakeCheckpoint;
+      if (!visibleIntakeIds.has(checkpoint.intakeId)) continue;
+      checkpoints.push(checkpoint);
+    }
+    return { requirements, checkpoints };
   }
 
   search(query: string, opts: SearchOpts = {}): SearchResponse {
