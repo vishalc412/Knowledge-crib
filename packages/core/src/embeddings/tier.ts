@@ -56,7 +56,13 @@ export interface EmbedTierReport {
 
 const FALLBACK_NOTE =
   'char-ngram is a DEGRADED OFFLINE FALLBACK (hashing-trick char n-grams), never a semantic embedder';
-const INSTALL_HINT = 'run "crib embed install" to install the pinned on-device model';
+// One command, and it names the cost up front. The previous hint pointed at
+// `examples/embedders/minilm-e5`, a path that exists only in a git checkout — the published package
+// ships dist/skills/LICENSE/NOTICE, so for an npm install the instructions could not be followed.
+const INSTALL_HINT =
+  'install the on-device tier with one command: `crib embed setup` ' +
+  '(add --yes to allow the one-time model download; `crib embed setup --list` shows the measured ' +
+  'size/quality ladder)';
 
 /**
  * Build the tier report for the CURRENT environment. `opts.home` relocates the embed home (tests);

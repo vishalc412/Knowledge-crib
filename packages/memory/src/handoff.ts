@@ -107,7 +107,9 @@ export interface HandoffAttemptEvent {
 
 export interface HandoffInput {
   attempts: readonly HandoffAttemptEvent[];
-  pending: readonly { id: string; subject?: string; observation?: string }[];
+  /** Durable-outbox rows. The captured text lives on `claim` — the field a CaptureOutboxEntry
+   *  actually carries; `observation` is accepted too so either shape may be passed. */
+  pending: readonly { id: string; subject?: string; claim?: string; observation?: string }[];
   /** every gathered record paired with its EFFECTIVE verdicts (post decision + freshness overlay). */
   records: readonly { record: MemoryRecord | MemoryRecordVersioned; verdicts: Verdicts }[];
   intakeRequirements?: readonly IntakeRequirement[];
@@ -189,7 +191,10 @@ export function buildHandoff(input: HandoffInput): HandoffResponse {
   const pendingCaptures: HandoffPendingCapture[] = pendingAll.slice(0, limits.pending).map((p) => ({
     id: p.id,
     subject: p.subject ?? '',
-    observation: trim(p.observation) ?? '',
+    // `claim` FIRST: that is the field a CaptureOutboxEntry actually carries. Reading only
+    // `observation` rendered every pending capture with an empty line — caught by running this
+    // against the repo's own ledger, not by a test.
+    observation: trim(p.claim ?? p.observation) ?? '',
   }));
 
   // ── needs attention + recent, from the same verdict-tagged pool ──

@@ -1,5 +1,34 @@
 # Launch gate pre-registration — memory quality (launch-verification)
 
+<!-- CURRENT STATE — maintained. Everything below the first `---` is an append-only history:
+     each section was true when written and several are now superseded. Read this block for the
+     answer; read the history for how it was reached. -->
+
+> ## Current state — 5 Sep 2026
+>
+> | | with an installed embed tier | out of the box (no tier) |
+> | --- | --- | --- |
+> | **Memory-quality gate** | **8/8 PASS** | **6/8 FAIL** |
+> | G2 word-disjoint paraphrase R@5 (≥80%) | 81.0% | 2.6% |
+> | G3 MRR (≥0.75) | 88.1% | 52.0% |
+> | scorer | `memory-rank-v2:<embedder>:cosine:semantic-only` | `memory-rank-v2:none:bm25:lexical-only` |
+>
+> **Both numbers are real and both matter.** The 8/8 requires an operator-installed on-device model;
+> crib ships no model. A launch claim that quotes 8/8 without that condition is false. G1, G4–G8
+> pass in both configurations.
+>
+> Installing the tier is **one command** — `crib embed setup --yes` — which generates and pins the
+> adapter itself rather than pointing at a repo path. Verified: the generated adapter reproduces
+> 8/8 and G2 0.8104575163398693, identical to the hand-measured figure.
+> `docs/bench/embed-model-ladder.md` measures four smaller models through this same gate; **none of
+> them passes** (nearest miss 69.9%), and size does not predict quality — a 87 MB model scores 66.0%
+> while a 1.0 GB one scores 59.5%.
+>
+> Known limit, not visible in G7: the principal boundary cannot exclude memory-1 records, which
+> carry no principal stamp. `crib doctor` reports this per-ledger; `strictPrincipal` closes it for
+> callers that can see more than one principal's stores.
+
+
 **Status: FROZEN BEFORE MEASUREMENT.** The thresholds, corpus composition, and construction
 invariants below were fixed before any number from THIS corpus existed (see the disclosure in
 §6 — the corpus author knows the Gate-3 fusion outcome, which is a partial blinding that is

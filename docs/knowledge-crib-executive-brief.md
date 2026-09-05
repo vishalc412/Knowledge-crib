@@ -130,7 +130,7 @@ never needed to read.* Caching only widens the gap.
    | `extract_rules` | "What business rules live in this procedure?" |
    | `detect_changes` | "What changed since the last index?" (read-only) |
 
-   *(19 verbs total; the above are the highest-value ones for executives to understand the shape.)*
+   *(see docs/STATS.md for counts; the above are the highest-value ones for executives to understand the shape.)*
 
 5. **Stay honest under measurement.** The served context is **byte-deterministic** — the same query
    returns identical bytes every time — which is both a correctness property and the precondition for

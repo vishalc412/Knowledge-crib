@@ -313,11 +313,27 @@ export interface GatherRecallOptions {
   sources?: readonly MemorySource[];
   /**
    * G7 — the caller's principal. When absent it resolves to `KCRIB_PRINCIPAL_ID` env, then
-   * `'principal:local'` (see {@link resolveCallerPrincipal}) — the boundary is therefore ON by
-   * default for every caller, including one that unions store sets across principals: any record
-   * carrying a principal stamp that is NOT the caller's never enters the gathered pool.
+   * `'principal:local'` (see {@link resolveCallerPrincipal}). Any record carrying a principal stamp
+   * that is NOT the caller's never enters the gathered pool.
+   *
+   * NOTE the limit, precisely: memory-1 records carry NO principal stamp, so this filter cannot
+   * exclude them — see {@link strictPrincipal}.
    */
   principal?: string;
+  /**
+   * Exclude records that carry NO principal stamp at all (every memory-1 record).
+   *
+   * Default `false`, deliberately. In the normal deployment each principal owns its own stores, so
+   * an unstamped record found in YOUR store is yours, and excluding it would silently empty the
+   * ledger of anyone who has not migrated to memory-2.
+   *
+   * Set it `true` whenever store sets from more than one principal can reach the same gather — a
+   * cross-device pull, a multi-principal audit, a shared daemon. There, "unstamped" means "owner
+   * unknown", and an unknown owner must not be treated as the caller. Measured before this existed:
+   * gathering principal A's team store together with principal B's local store returned all 15 of
+   * B's memory-1 records to A.
+   */
+  strictPrincipal?: boolean;
   /** env override (tests); defaults to `process.env`. Only read for the principal default. */
   env?: NodeJS.ProcessEnv;
 }
@@ -367,7 +383,13 @@ export function gatherRecall(stores: RecallStores, opts: GatherRecallOptions = {
     source: MemorySource,
   ): boolean => {
     const ownedBy = recordPrincipalId(record);
-    if (ownedBy !== undefined && ownedBy !== principal) {
+    if (ownedBy === undefined) {
+      // unstamped (memory-1). Owner is UNKNOWN, not "the caller" — a strict gather refuses it.
+      if (strictPrincipal) {
+        principalExcluded += 1;
+        return false;
+      }
+    } else if (ownedBy !== principal) {
       principalExcluded += 1;
       return false;
     }
