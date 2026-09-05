@@ -59,6 +59,7 @@ import {
   type EffectiveVerdicts,
   type MemoryEvalContext,
   type MemoryEvaluator,
+  admissibilityProblems,
   conflictGroups,
   effectiveVerdicts,
   isRecallEligible,
@@ -1153,6 +1154,14 @@ export interface AuditResult {
 export interface MemoryApiDeps {
   /** the three stores, any of which may be absent (a fresh repo has no local store yet). */
   stores: RecallStores;
+  /**
+   * How this API instance is being driven, which decides whether a `tty: true` attestation may be
+   * accepted from the caller. `'terminal'` is set ONLY by a CLI path that has itself checked
+   * `process.stdin.isTTY`; every other construction (the MCP server above all) leaves it unset and
+   * therefore cannot mint a human attestation. Defaulting to the restrictive value means a new
+   * call site is safe until it deliberately opts in.
+   */
+  attestationSource?: 'terminal';
   /** env override (tests relocate `~/.crib/memory` via `KCRIB_MEMORY_DIR`). */
   env?: NodeJS.ProcessEnv;
   /** fixed clock for determinism (tests). Defaults to the wall clock. The clock never enters an id. */
@@ -1320,9 +1329,12 @@ export class MemoryApi {
   private readonly nowFn: () => string;
   /** G3.3 — display-only clock for the volatile freshness age. Never feeds an id/hash/ifHash. */
   private readonly nowMsFn: () => number;
+  /** See {@link MemoryApiDeps.attestationSource}. Defaults to the restrictive value. */
+  private readonly attestationSource: 'terminal' | 'caller';
 
   constructor(deps: MemoryApiDeps) {
     this.deps = deps;
+    this.attestationSource = deps.attestationSource === 'terminal' ? 'terminal' : 'caller';
     this.env = deps.env ?? process.env;
     this.nowFn = deps.now ?? (() => new Date().toISOString());
     this.nowMsFn = deps.nowMs ?? Date.now;
@@ -1614,6 +1626,48 @@ export class MemoryApi {
     }
     if (typeof input.actor !== 'string' || input.actor.length === 0) {
       return { ok: false, error: 'actor is required' };
+    }
+    // WRITE-TIME ADMISSIBILITY. Structural admissibility is decidable here, and here is the only
+    // moment the author can still fix it. Staging evidence that could never support the claim —
+    // `type` where `kind` belongs, a human attestation with no `tty`/`actor`/`attestedAt`, an
+    // evidence kind the claim kind does not admit — produced an `ok: true` acknowledgement for a
+    // record that was dead on arrival: it could never be activated, never recalled, and nothing
+    // said so. Failing loudly here costs one corrected call; failing silently cost the user their
+    // trust in the whole store.
+    //
+    // Only claims that SUPPLY evidence are checked. Empty evidence stays legal: the episodic
+    // capture path stages claims whose evidence is attached later by distillation.
+    const proposedEvidence = input.evidence ?? [];
+    // A CALLER MAY NOT MINT A TERMINAL IT NEVER SAW.
+    //
+    // `tty: true` is the one field that distinguishes a human attestation from an agent asserting
+    // one, and it is what receipt-free local admission (`admitAttested`) is grounded in. It was
+    // accepted verbatim from caller-supplied evidence, so any agent could stamp it and self-grant
+    // the trust the flag represents. Crib stamps it ONLY where it observed a real terminal itself
+    // (`crib memory remember`, which reads `process.stdin.isTTY`); over an MCP call there is no
+    // terminal to have witnessed, so the claim is refused rather than quietly downgraded — a
+    // silently-stripped attestation would stage a candidate that can never be admitted, which is
+    // the same dead-on-arrival failure this validation exists to end.
+    const forgedTty = proposedEvidence.findIndex(
+      (e) => (e as unknown as Record<string, unknown>).tty === true,
+    );
+    if (forgedTty !== -1 && this.attestationSource !== 'terminal') {
+      return {
+        ok: false,
+        error: `evidence[${forgedTty}] sets \`tty: true\`, which asserts a human attested this at a terminal. That flag is stamped by crib when it observes a real terminal, never accepted from a caller. To record a human attestation run \`crib memory remember\` in a terminal; to stage an agent observation, omit \`tty\`.`,
+      };
+    }
+    if (proposedEvidence.length > 0) {
+      // Staged: attestation timestamps are stamped by crib at admission, not supplied by a caller.
+      const problems = admissibilityProblems(kind, proposedEvidence, { staged: true });
+      if (problems.length > 0) {
+        return {
+          ok: false,
+          error: `evidence cannot support a '${kind}' claim, so this memory could never be recalled: ${problems
+            .map((p) => p.problem)
+            .join('; ')}`,
+        };
+      }
     }
     const boundary = input.scopeBoundary ?? 'repo';
     const scope: MemoryScope = { boundary };

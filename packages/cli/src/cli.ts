@@ -128,6 +128,7 @@ import {
   type VerifiedDistillDecision,
   VersionedLexicalScorer,
   activateLocal,
+  admitAttested,
   appendAttemptEvent,
   applyContradictedFeedback,
   applyVerifiedDecision,
@@ -4593,6 +4594,9 @@ function createMemoryApi(
   repoRoot: string,
   cribDir: string,
   deps: NonNullable<ReturnType<typeof createMemoryDeps>>,
+  /** Pass `'terminal'` ONLY from a call site that has itself checked `process.stdin.isTTY`; it
+   *  permits a `tty` human attestation, which no other path may present. */
+  attestationSource?: 'terminal',
 ): MemoryApi {
   let head: string | undefined;
   try {
@@ -4610,6 +4614,7 @@ function createMemoryApi(
     projectionCheckpoints: deps.projectionCheckpoints,
     identityDirectory: deps.identityDirectory,
     ...(head !== undefined ? { codeHead: head } : {}),
+    ...(attestationSource ? { attestationSource } : {}),
   });
 }
 
@@ -5334,6 +5339,10 @@ async function cmdMemory(args: string[], ctx?: CmdCtx): Promise<number> {
       return cmdMemoryEvaluate(rest, ctx);
     case 'activate':
       return cmdMemoryActivate(rest, ctx);
+    case 'remember':
+      return cmdMemoryRemember(rest, ctx);
+    case 'admit':
+      return cmdMemoryAdmit(rest, ctx);
     case 'propose':
       return cmdMemoryPropose(rest, ctx);
     case 'attest':
@@ -8711,3 +8720,190 @@ main(process.argv.slice(2))
     process.stderr.write(`${err instanceof Error ? err.stack : String(err)}\n`);
     process.exitCode = EXIT.ERROR;
   });
+
+/**
+ * `crib memory remember "<claim>" [--subject <id>] [--kind convention|decision] [--global]`
+ *
+ * The one-command path for "remember this". A human types it at a terminal, so crib stamps the
+ * attestation ITSELF — `tty`/`actor`/`attestedAt` come from the observed terminal, never from
+ * caller input — and admits the claim to local trust immediately. No staging, no gate receipt, no
+ * second command: the claim is recallable when this returns.
+ *
+ * This exists because the previous shortest path to a remembered preference was `memory_observe`
+ * (which stages an untrusted candidate) followed by `crib memory evaluate --profile …` and
+ * `crib memory activate …`. Users recorded a convention, were told it worked, and never saw it
+ * again. A gate receipt is the wrong instrument for a claim that asserts nothing about code.
+ */
+async function cmdMemoryRemember(args: string[], ctx?: CmdCtx): Promise<number> {
+  const claim = positionalsOf(args)[0];
+  if (!claim || claim.trim().length === 0) {
+    process.stderr.write(
+      'usage: crib memory remember "<claim>" [--subject <id>] [--kind convention|decision] [--global]\n',
+    );
+    return EXIT.BAD_ARGS;
+  }
+  const kind = stringFlag(args, '--kind') ?? 'convention';
+  if (kind !== 'convention' && kind !== 'decision') {
+    process.stderr.write(`unknown --kind: ${kind} (convention|decision)\n`);
+    return EXIT.BAD_ARGS;
+  }
+  // The attestation is only worth anything if a human is actually here. A non-interactive run
+  // (CI, `claude -p`, a script) is an agent by another name, so it gets the staging path and is
+  // told so rather than being handed a forged attestation.
+  if (!process.stdin.isTTY) {
+    process.stderr.write(
+      'refusing to attest: `crib memory remember` records that a HUMAN asserted this, and stdin is not a terminal.\n' +
+        'Use the memory_observe MCP tool to stage an agent observation, then `crib memory admit <id>` from a terminal.\n',
+    );
+    return EXIT.ERROR;
+  }
+  // The positional is the CLAIM, never a root (the same discipline `crib memory recall` uses for
+  // its query): the root comes from --cwd / env / cwd walk-up only. Passing `args` to resolveRoot
+  // here made crib treat the sentence as a directory path.
+  const resolved = resolveRoot([], ctx);
+  if (!isIndexedRoot(resolved)) {
+    process.stderr.write('not indexed — run `crib index` first\n');
+    return EXIT.NOT_INDEXED;
+  }
+  const rt = openSoul(resolved);
+  const deps = createMemoryDeps(rt.soul, resolved.repoRoot, resolved.cribDir);
+  if (!deps) {
+    process.stderr.write('could not resolve repoId for memory — run `crib index` first\n');
+    return EXIT.NOT_INDEXED;
+  }
+  const actor = process.env.KCRIB_PRINCIPAL_ID ?? process.env.USER ?? 'human';
+  // The whole point: this call site has CHECKED `process.stdin.isTTY` above, so it — and only it —
+  // may present a `tty` attestation. Built through the shared factory so it gets `cribDir` (which
+  // is what resolves the repoId a repo-scoped claim needs) rather than a hand-rolled subset.
+  const api = createMemoryApi(rt.soul, resolved.repoRoot, resolved.cribDir, deps, 'terminal');
+  const staged = api.observe({
+    kind,
+    subject: stringFlag(args, '--subject') ?? `topic:${slugForSubject(claim)}`,
+    claim: claim.trim(),
+    evidence: [
+      {
+        kind: 'human-attestation',
+        tty: true,
+        actor,
+        attestedAt: new Date().toISOString(),
+        quote: claim.trim(),
+      } as never,
+    ],
+    actor,
+    authorKind: 'human',
+    tool: 'crib memory remember',
+    scopeBoundary: args.includes('--global') ? 'global' : 'repo',
+  });
+  if (!staged.ok) {
+    process.stderr.write(`error: ${staged.error}\n`);
+    return EXIT.ERROR;
+  }
+  const candidate = findCandidate(deps.local, staged.id);
+  if (!candidate) {
+    process.stderr.write(`error: staged candidate ${staged.id} not found for admission\n`);
+    return EXIT.ERROR;
+  }
+  const admitted = admitAttested(deps.local, candidate, {
+    evaluator: deps.evaluator,
+    soul: deps.evalCtx.soul,
+    now: () => new Date().toISOString(),
+    // Reached only after the `process.stdin.isTTY` check above — this is the human being present.
+    attestedBy: process.env.KCRIB_PRINCIPAL_ID ?? process.env.USER ?? 'human',
+  });
+  if (!admitted.ok) {
+    process.stderr.write(`error: ${admitted.error}\n`);
+    return EXIT.ERROR;
+  }
+  process.stdout.write(
+    `${JSON.stringify(
+      {
+        id: admitted.record.id,
+        kind: admitted.record.kind,
+        subject: admitted.record.subject,
+        trust: admitted.record.verdicts.trust,
+        evidence: admitted.record.verdicts.evidence,
+        recallable: true,
+      },
+      null,
+      2,
+    )}\n`,
+  );
+  return EXIT.OK;
+}
+
+/**
+ * `crib memory admit <candidate-id>` — admit an agent-staged human-attested claim, from a terminal.
+ *
+ * The counterpart to `remember`: the agent proposed, the human confirms. One command instead of
+ * `evaluate --profile …` + `activate …`, and no gate receipt, because a convention/decision claim
+ * makes no assertion about code for a receipt to gate. Anything else is redirected to the gated
+ * path rather than quietly admitted under a weaker rule.
+ */
+function cmdMemoryAdmit(args: string[], ctx?: CmdCtx): number {
+  const id = pathArg(args);
+  if (!id) {
+    process.stderr.write('usage: crib memory admit <candidate-id>\n');
+    return EXIT.BAD_ARGS;
+  }
+  if (!process.stdin.isTTY) {
+    process.stderr.write(
+      'refusing to admit: admission records that a HUMAN accepted this claim, and stdin is not a terminal.\n',
+    );
+    return EXIT.ERROR;
+  }
+  // The positional is the CANDIDATE ID, never a root — passing `args` here made crib try to resolve
+  // `cand:7a31c2…` as a directory and warn that it was not indexed.
+  const resolved = resolveRoot([], ctx);
+  if (!isIndexedRoot(resolved)) {
+    process.stderr.write('not indexed — run `crib index` first\n');
+    return EXIT.NOT_INDEXED;
+  }
+  const rt = openSoul(resolved);
+  const deps = createMemoryDeps(rt.soul, resolved.repoRoot, resolved.cribDir);
+  if (!deps) {
+    process.stderr.write('could not resolve repoId for memory — run `crib index` first\n');
+    return EXIT.NOT_INDEXED;
+  }
+  const candidate = findCandidate(deps.local, id);
+  if (!candidate) {
+    process.stderr.write(`error: no local candidate '${id}' to admit\n`);
+    return EXIT.ERROR;
+  }
+  const admitted = admitAttested(deps.local, candidate, {
+    evaluator: deps.evaluator,
+    soul: deps.evalCtx.soul,
+    now: () => new Date().toISOString(),
+    // Reached only after the `process.stdin.isTTY` check above — this is the human being present.
+    attestedBy: process.env.KCRIB_PRINCIPAL_ID ?? process.env.USER ?? 'human',
+  });
+  if (!admitted.ok) {
+    process.stderr.write(`error: ${admitted.error}\n`);
+    return EXIT.ERROR;
+  }
+  process.stdout.write(
+    `${JSON.stringify(
+      {
+        id: admitted.record.id,
+        trust: admitted.record.verdicts.trust,
+        evidence: admitted.record.verdicts.evidence,
+        cleanedUp: admitted.cleanedUp,
+        recallable: true,
+      },
+      null,
+      2,
+    )}\n`,
+  );
+  return EXIT.OK;
+}
+
+/** A stable, readable `topic:` slug for a claim with no explicit subject. */
+function slugForSubject(claim: string): string {
+  const slug = claim
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .split('-')
+    .slice(0, 6)
+    .join('-');
+  return slug.length > 0 ? slug : 'note';
+}

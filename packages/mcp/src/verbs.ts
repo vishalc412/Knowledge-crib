@@ -2531,6 +2531,12 @@ export class Verbs {
       memories: keptMem,
       conflicts,
       ...(memoryProvenance ? { provenance: memoryProvenance } : {}),
+      // Staged-but-unadmitted candidates matching this query. `brief` is the FIRST call the agent
+      // protocol tells a client to make, so an empty `memories` group here is what an agent reads as
+      // "this repo has no memory". When the reason is actually "you recorded it and nothing has
+      // admitted it yet", saying so is the difference between a working trust gate and a product
+      // that looks broken. Count only — admitting content here would defeat the gate.
+      ...this.pendingNoticeFor(args.q, limit),
       // Honest self-report: how much of THIS answer came from authored meaning rather than source.
       // Below the low-coverage floor the response says so explicitly (`hint`) instead of relying
       // on the caller to interpret the ratio.
@@ -2604,6 +2610,13 @@ export class Verbs {
     // Opt-in, and kept in its own group. `memories` remains trusted-only whatever this returns.
     if (args.includePending === true) {
       result.pending = this.pendingCandidates(args.q ?? '', limit);
+    } else {
+      // SILENCE WAS THE BUG. `memory_observe` stages an untrusted candidate, which normal recall
+      // correctly excludes — but recall then returned an empty `memories` list and said nothing,
+      // so an agent that had just recorded a claim was told, in effect, that memory does not work.
+      // Reporting the staged count (never its content — the trust gate is unchanged) turns a
+      // silent omission into an actionable state with a named next step.
+      Object.assign(result, this.pendingNoticeFor(args.q ?? '', limit));
     }
     if (fitted.budgetExhausted) result.budgetExhausted = true;
     return this.applyIfHash(args, result);
@@ -3321,6 +3334,13 @@ export class Verbs {
       scope: result.scope,
       outboxId: result.outboxId,
       idempotent: result.idempotent,
+      // What `status: 'pending'` actually MEANS for the caller's next question. Agents were
+      // reporting "recorded successfully" to users and then finding nothing on recall, because the
+      // acknowledgement described the write without saying the claim is not yet retrievable. An ack
+      // that omits that is technically true and practically misleading.
+      recallable: false,
+      nextAction:
+        'staged as an untrusted candidate — it will NOT appear in normal recall until admitted. Run `crib memory activate` to admit it to local trust, or read it meanwhile with memory_recall includePending:true.',
     });
   }
 
@@ -3555,6 +3575,28 @@ export class Verbs {
    * memory hits from being fused into one opaque list. A caller can act on a peer's finding while
    * knowing exactly what it is: a lead, not an established fact.
    */
+  /**
+   * The staged-candidate notice shared by `brief` and `memory_recall`.
+   *
+   * Reports the COUNT of `memory_observe`-staged candidates matching a query, never their content:
+   * the trust gate is unchanged, but the caller learns that its recall came back empty because the
+   * claims are awaiting admission rather than because nothing was ever recorded. Returns `{}` when
+   * there is nothing staged, so the response shape is untouched in the common case.
+   */
+  private pendingNoticeFor(query: string, limit: number): Record<string, unknown> {
+    const staged = this.pendingCandidates(query, limit).length;
+    if (staged === 0) return {};
+    return {
+      pendingNotice: {
+        count: staged,
+        reason:
+          'staged by memory_observe and NOT yet admitted, so they are not recall-eligible — this is the trust gate working, not an empty memory',
+        nextAction:
+          'call memory_recall with includePending:true to read them as untrusted, or run `crib memory activate` to admit them to local trust',
+      },
+    };
+  }
+
   private pendingCandidates(query: string, limit: number): Array<Record<string, unknown>> {
     const local = this.memory?.local;
     if (!local) return [];
