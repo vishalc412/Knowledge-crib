@@ -2834,159 +2834,36 @@ function cmdInstallHooks(
 }
 
 /**
- * `crib embed setup` — one command from the degraded lexical fallback to the semantic tier.
+ * The measured ladder, rendered for `--list`.
  *
- * Replaces a three-step README ritual whose last step named a path inside the git checkout
- * (`examples/embedders/minilm-e5`). The published package ships only `dist`/`skills`/`LICENSE`/
- * `NOTICE`, so for anyone who installed crib from npm those instructions could not be followed:
- * the directory is not on their disk. This command GENERATES the adapter instead of pointing at
- * one, then pins it through the same integrity path a hand-installed model takes.
- *
- * Consent is explicit. Installing a Python package mutates the operator's interpreter and fetching
- * weights pulls up to 2.2 GB over the network, so neither happens without `--yes`; the default
- * prints exactly what it would run and stops.
+ * Numbers come from the model table, which carries gate RESULTS rather than marketing copy — every
+ * row states its real G2 against the 80% threshold, including the rows that miss it. A ladder that
+ * hid a failing row behind a label would be selling the tier rather than describing it.
  */
-async function cmdEmbedSetup(rest: string[]): Promise<number> {
-  let modelArg = DEFAULT_EMBED_ALIAS;
-  let pythonArg: string | undefined;
-  let yes = false;
-  let json = false;
-  for (let i = 0; i < rest.length; i++) {
-    const a = rest[i]!;
-    if (a === '--model') modelArg = rest[++i] ?? modelArg;
-    else if (a === '--python') pythonArg = rest[++i];
-    else if (a === '--yes' || a === '-y') yes = true;
-    else if (a === '--json') json = true;
-    else if (a === '--list') {
-      process.stdout.write(formatEmbedLadder());
-      return EXIT.OK;
-    }
-  }
-
-  const spec = resolveModelSpec(modelArg);
-  if (!spec) {
-    process.stderr.write(
-      `unknown model "${modelArg}". Known aliases: ${EMBED_MODELS.map((m) => m.alias).join(', ')}\nRun \`crib embed setup --list\` for the measured ladder.\n`,
-    );
-    return EXIT.BAD_ARGS;
-  }
-
-  const python = pythonArg ?? process.env.KCRIB_EMBED_PYTHON ?? 'python3';
-  const out = (line: string) => {
-    if (!json) process.stdout.write(`${line}\n`);
-  };
-  const steps: { step: string; ok: boolean; detail: string }[] = [];
-  const record = (step: string, r: StepResult) => {
-    steps.push({ step, ...r });
-    out(`  ${r.ok ? 'ok  ' : 'FAIL'} ${step.padEnd(24)} ${r.detail}`);
-    return r.ok;
-  };
-  const bail = (hint: string) => {
-    if (json)
-      process.stdout.write(`${JSON.stringify({ ok: false, model: spec.hfId, steps }, null, 2)}\n`);
-    else process.stderr.write(`\n${hint}\n`);
-    return EXIT.ERROR;
-  };
-
-  out(`crib embed setup — ${spec.hfId} (${spec.approxDisk}, dim ${spec.dim})`);
-  out(`  measured: G2 ${(spec.g2 * 100).toFixed(1)}% paraphrase recall, ${spec.gates}/8 gates\n`);
-
-  if (!record('python', checkPython(python)))
-    return bail(
-      'No usable Python. Point at one explicitly:\n  crib embed setup --python /path/to/bin/python3',
-    );
-
-  if (!record('sentence-transformers', checkSentenceTransformers(python))) {
-    if (!yes)
-      return bail(
-        `This would install a package into ${python}. Re-run with --yes to allow it, or install it yourself:\n` +
-          `  ${python} -m pip install sentence-transformers`,
-      );
-    out('  ... installing sentence-transformers (--yes given)');
-    try {
-      execFileSync(python, ['-m', 'pip', 'install', '--quiet', 'sentence-transformers'], {
-        stdio: ['ignore', 'pipe', 'pipe'],
-      });
-    } catch (err) {
-      return bail(`pip install failed: ${(err as Error).message.split('\n')[0]}`);
-    }
-    if (!record('sentence-transformers', checkSentenceTransformers(python)))
-      return bail('installed, but still not importable — check for multiple interpreters');
-  }
-
-  if (!record('weights', checkWeights(spec, python))) {
-    if (!yes)
-      return bail(
-        `This would download ${spec.approxDisk} from HuggingFace. Re-run with --yes to allow it, or fetch it yourself:\n` +
-          `  ${python} -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('${spec.hfId}')"`,
-      );
-    out(
-      `  ... downloading ${spec.hfId} (${spec.approxDisk}, one time) — this is the only network step`,
-    );
-    if (!record('download', downloadWeights(spec, python)))
-      return bail('download failed — check connectivity and the model id');
-  }
-
-  const dir = adapterDir(spec);
-  writeAdapter(spec, python, dir);
-  record('adapter', { ok: true, detail: dir });
-
-  try {
-    const manifest = await pinAdapter(spec, dir);
-    record('pinned', {
-      ok: true,
-      detail: `${manifest.embedderId} · ${manifest.files.length} files hashed · ${embedManifestPath()}`,
-    });
-  } catch (err) {
-    return bail(`pin failed: ${(err as Error).message}`);
-  }
-
-  // The proof. A dimension check passes for a model returning noise; this asserts the property
-  // recall depends on — a paraphrase outranks an unrelated sentence — and that embed/embedBatch
-  // agree, which is the divergence that silently cost 8 points of recall once already.
-  const smoke = await smokeTest(embedHomeDir());
-  if (!record('smoke test', smoke))
-    return bail('the model loaded but does not rank — not activating a tier that cannot retrieve');
-
-  if (json) {
-    process.stdout.write(
-      `${JSON.stringify({ ok: true, model: spec.hfId, embedderId: embedderIdFor(spec), dim: spec.dim, g2: spec.g2, gates: spec.gates, steps }, null, 2)}\n`,
-    );
-  } else {
-    out(`\nsemantic tier ACTIVE — ${embedderIdFor(spec)}`);
-    out('  verify:  crib doctor .');
-    out('  confirm the scorer names itself on every response:');
-    out(
-      '    crib memory search "how do we handle retries" --json | jq -r .provenance.scorerVersion',
-    );
-  }
-  return EXIT.OK;
-}
-
-/** The measured ladder, rendered for `--list`. Numbers come from the model table, which carries
- *  gate results rather than marketing copy. */
 function formatEmbedLadder(): string {
+  const pct = (m: (typeof EMBED_MODELS)[number]) =>
+    m.evidence.kind === 'gate-verified' ? `${(m.evidence.g2 * 100).toFixed(1)}%` : 'n/a';
+  const gates = (m: (typeof EMBED_MODELS)[number]) =>
+    m.evidence.kind === 'gate-verified' ? `${m.evidence.gates}/8` : '—';
   const lines = [
-    'embed model ladder — measured through the frozen launch gate (docs/bench/embed-model-ladder.md)',
+    'embed model ladder — measured through the frozen launch gate (docs/bench/onnx-model-ladder.md)',
     '',
-    `  ${'alias'.padEnd(7)}${'model'.padEnd(46)}${'disk'.padStart(9)}${'G2'.padStart(8)}${'gates'.padStart(7)}`,
+    `  ${'alias'.padEnd(7)}${'model'.padEnd(40)}${'disk'.padStart(9)}${'G2'.padStart(8)}${'gates'.padStart(7)}`,
   ];
   for (const m of EMBED_MODELS) {
     lines.push(
-      `  ${m.alias.padEnd(7)}${m.hfId.padEnd(46)}${m.approxDisk.padStart(9)}${`${(m.g2 * 100).toFixed(1)}%`.padStart(8)}${`${m.gates}/8`.padStart(7)}`,
+      `  ${m.alias.padEnd(7)}${m.onnxId.padEnd(40)}${m.approxDisk.padStart(9)}${pct(m).padStart(8)}${gates(m).padStart(7)}`,
     );
   }
   lines.push(
-    `  ${'-'.padEnd(7)}${'(no tier) char-ngram lexical fallback'.padEnd(46)}${'0 B'.padStart(9)}${'2.6%'.padStart(8)}${'6/8'.padStart(7)}`,
+    `  ${'-'.padEnd(7)}${'(no tier) char-ngram lexical fallback'.padEnd(40)}${'0 B'.padStart(9)}${'2.6%'.padStart(8)}${'6/8'.padStart(7)}`,
   );
   lines.push('');
   lines.push(
     `  default: --model ${DEFAULT_EMBED_ALIAS} (the only model measured to pass all 8 gates)`,
   );
-  lines.push(
-    '  size does not predict quality: the 90 MB English model beats the 458 MB and 1.0 GB',
-  );
-  lines.push('  multilingual ones on this corpus.');
+  lines.push("  No Python: the runtime is an ONNX npm package installed into crib's embed home.");
+  lines.push('  Weights are fetched once and every later load is offline.');
   return `${lines.join('\n')}\n`;
 }
 
@@ -3016,7 +2893,10 @@ async function cmdEmbedSetup(args: string[]): Promise<number> {
     const a = args[i]!;
     if (a === '--model') alias = args[++i] ?? alias;
     else if (a === '--from') from = args[++i] ?? from;
-    else if (a === '--yes') yes = true;
+    else if (a === '--list') {
+      process.stdout.write(formatEmbedLadder());
+      return EXIT.OK;
+    } else if (a === '--yes') yes = true;
     else if (a === '--json') json = true;
     else if (a === '--help' || a === '-h') {
       process.stdout.write(embedSetupHelp());
@@ -8846,7 +8726,7 @@ function printHelp(): void {
       '  crib skill <install|list> [name] [--dest <dir>] [--client <claude>]   install bundled skills (default ~/.claude/skills)',
       '  crib init [path] [--ide <name|all>]      5-minute onboarding: index + install-hooks + mcp install + adapters + next-steps hero',
       '  crib doctor [path]                       setup health check: node/corepack/index-freshness/hooks/IDE-wiring/memory-loop/stale-builds/embed-tier/freshness/post-commit-hook/multimodal-adapters (✓/✗ + fix hints)',
-      '  crib embed setup [--model small|base|large] [--yes]   ONE command to the semantic tier: generates + pins an adapter, then proves it ranks. --list shows the measured size/quality ladder; --yes allows the pip install and the one-time model download',
+      '  crib embed setup [--model small|base|large] [--yes]   ONE command to the semantic tier: generates + pins an adapter, then proves it ranks. --list shows the measured size/quality ladder; --yes allows the one-time runtime install and model download; --from <dir> adopts a pre-fetched bundle (air-gapped)',
       '  crib embed <install <model-dir>|status>   on-device embedder tier: install --model-id <id> --model-version <ver> [--entry <file>] | status (tier report; --accept-remote-policy opts into the remote tier)',
       '  crib freshness [<mode>|worker|service|hook|convert-hook]   index freshness: manual|watch|auto | supervised worker install/status/uninstall | durable queue',
       '',

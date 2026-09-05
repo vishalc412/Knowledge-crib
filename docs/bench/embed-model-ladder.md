@@ -1,8 +1,16 @@
 # Embed model ladder — measured, not estimated
 
-<!-- CURRENT STATE — maintained. Every number here came from a run of the FROZEN launch gate
-     (docs/bench/launch-gates.md). Nothing in this file is an estimate, an extrapolation from
-     parameter count, or a vendor claim. -->
+<!-- SUPERSEDED by docs/bench/onnx-model-ladder.md. Retained because the measurements are real —
+     not withdrawn. -->
+
+> **Superseded — the numbers stand, the install does not.**
+>
+> Every figure here is a genuine run of the frozen launch gate, and
+> [`onnx-model-ladder.md`](onnx-model-ladder.md) reproduces all three of them to within rounding
+> through a different runtime. What changed is the toolchain: the semantic tier no longer requires
+> `pip install sentence-transformers`, so the `--python` flag and the interpreter checks this page
+> describes no longer exist. Read this page as the Python-era measurement it is; read the ONNX
+> ladder for what `crib embed setup` does today.
 
 > ## What to install
 >

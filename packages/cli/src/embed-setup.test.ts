@@ -89,11 +89,11 @@ describe('the model ladder states only sourceable evidence', () => {
   });
 
   it('prints a failing row’s real number rather than hiding it behind a label', () => {
-    // The small row measures 42.5% against an 80% gate. Printing that is more honest than
+    // The small row measures 66.0% against an 80% gate. Printing that is more honest than
     // "unverified", and a reader can open the cited run and disagree with it.
     const small = resolveModelSpec('small')!;
-    expect(describeEvidence(small.evidence)).toMatch(/G2 42\.5%/);
-    expect(describeEvidence(small.evidence)).toMatch(/7\/8 gates/);
+    expect(describeEvidence(small.evidence)).toMatch(/G2 66\.0%/);
+    expect(describeEvidence(small.evidence)).toMatch(/6\/8 gates/);
   });
 
   it('names an ONNX mirror for every row — that is what the runtime can actually load', () => {

@@ -115,18 +115,18 @@ export function describeEvidence(evidence: ModelEvidence): string {
 export const EMBED_MODELS: readonly EmbedModelSpec[] = [
   {
     alias: 'small',
-    hfId: 'intfloat/multilingual-e5-small',
-    onnxId: 'Xenova/multilingual-e5-small',
+    hfId: 'sentence-transformers/all-MiniLM-L6-v2',
+    onnxId: 'Xenova/all-MiniLM-L6-v2',
     dim: 384,
-    prefix: 'query: ',
-    approxDisk: '~480 MB',
+    prefix: '',
+    approxDisk: '~97 MB',
     evidence: {
       kind: 'gate-verified',
-      g2: 0.425,
-      gates: 7,
+      g2: 0.66,
+      gates: 6,
       source: 'docs/bench/onnx-model-ladder.md',
     },
-    note: 'fastest and smallest; clears G3 but NOT the 80% paraphrase gate. Choose it for speed, not for the advertised tier.',
+    note: 'English-only, and 5x smaller than the multilingual rows for BETTER paraphrase recall than multilingual-e5-small on this corpus. Misses G2 and G3 — choose it for footprint, not for the advertised tier.',
   },
   {
     alias: 'base',
