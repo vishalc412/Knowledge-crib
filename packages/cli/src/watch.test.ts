@@ -224,6 +224,65 @@ describe('WatchMode — external crib update drift', () => {
       watch.stop();
     }
   });
+
+  /**
+   * R04 (docs/audits/2026-09-05/post-merge-reaudit.md) — a canonical advance over a CLEAN working
+   * tree must still reach `onRefresh`.
+   *
+   * Consumers rebuild their read projections in that callback (`crib serve` rebuilds the overlay
+   * FTS index there and nowhere else). `refresh()` used to return early whenever the dirty set was
+   * empty, which is exactly the shape of an external `crib update` that committed everything: the
+   * server logged "canonical soul advanced — overlay resynced", `status` reported the NEW head,
+   * and queries kept being answered from the projection built against the OLD graph. The audit saw
+   * a connected reader return no match for a symbol that a freshly started reader found at once.
+   *
+   * The tree here is COMMITTED — with uncommitted files present, the dirty set is non-empty and
+   * `onRefresh` fires for that reason instead, which is why the original drift test missed this.
+   */
+  it('fires onRefresh on drift even when the working tree is CLEAN (nothing to re-parse)', async () => {
+    git(repo, ['add', '-A']);
+    git(repo, ['-c', 'user.email=t@e', '-c', 'user.name=t', 'commit', '-qm', 'base']);
+    const soul = soulFor();
+    await indexRepo(soul, repo);
+    soul.setVcsHead('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
+    soul.commit('2026-01-01T00:00:00Z');
+
+    const overlay = new WorkingOverlay(soul);
+    const refreshes: { dirty: number; reason: string }[] = [];
+    const watch = new WatchMode(soul, overlay, repo, {
+      debounceMs: 40,
+      fallbackMs: 80,
+      onRefresh: (result, reason) => refreshes.push({ dirty: result.dirty.length, reason }),
+    });
+    await watch.start();
+    try {
+      expect(overlay.dirty).toHaveLength(0); // the precondition the bug depended on
+
+      // Another process runs `crib update`: canonical advances, working tree stays clean.
+      soul.setVcsHead('bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb');
+      soul.commit('2026-02-02T00:00:00Z');
+
+      await new Promise<void>((resolve) => {
+        const t = setInterval(() => {
+          if (refreshes.some((r) => r.reason === 'drift')) {
+            clearInterval(t);
+            resolve();
+          }
+        }, 50);
+        setTimeout(() => {
+          clearInterval(t);
+          resolve();
+        }, 4000);
+      });
+      const drift = refreshes.find((r) => r.reason === 'drift');
+      expect(drift, 'onRefresh must fire for the drift so readers rebuild').toBeDefined();
+      // Honest payload: no file was re-parsed. The callback's job here is only to say
+      // "canonical moved, rebuild what you derived from it".
+      expect(drift?.dirty).toBe(0);
+    } finally {
+      watch.stop();
+    }
+  });
 });
 
 describe('WatchMode — VCS scan is the source of truth', () => {

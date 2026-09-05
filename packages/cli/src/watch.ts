@@ -26,6 +26,7 @@ import { join, relative, sep } from 'node:path';
 import type { SoulStore, WorkingOverlay } from '@knowledge-crib/core';
 import {
   type OverlayRefreshResult,
+  emptyParseStats,
   langForPath,
   refreshWorkingOverlay,
   uncommittedChanges,
@@ -134,7 +135,23 @@ export class WatchMode {
       await this.handleDrift();
       return;
     }
-    if (this.overlay.dirty.length === 0) return;
+    if (this.overlay.dirty.length === 0) {
+      // R04 — a DRIFT with an empty dirty set is still a change the reader must adopt.
+      //
+      // `handleDrift` has already reloaded canonical and resynced the overlay, so the graph this
+      // process serves is new. But when the working tree is clean — an external `crib update` that
+      // committed everything, a clean branch switch — there is nothing dirty to re-parse and this
+      // early return skipped `onRefresh` entirely. Consumers rebuild their read projections in
+      // that callback, so the audited failure followed: the server logged "canonical soul advanced
+      // — overlay resynced", reported the NEW head through `status`, and went on answering queries
+      // from the projection built against the OLD graph. A newly started reader saw the symbol
+      // immediately; the connected one never did.
+      //
+      // Nothing needs re-parsing, so no refresh is run — the callback carries an empty result whose
+      // only job is to say "canonical moved, rebuild what you derived from it".
+      if (reason === 'drift') this.opts.onRefresh?.(emptyRefreshResult(), reason);
+      return;
+    }
     this.refreshing = true;
     try {
       const result = await refreshWorkingOverlay(this.overlay, this.canonical, this.repoRoot);
@@ -167,6 +184,21 @@ export class WatchMode {
     this.watcher?.close();
     this.watcher = undefined;
   }
+}
+
+/**
+ * The zero-work refresh result announcing a canonical advance with nothing dirty to re-parse.
+ * Every count is genuinely zero: no file was re-extracted. It exists so `onRefresh` can carry the
+ * "adopt the new generation" signal in the shape consumers already handle.
+ */
+function emptyRefreshResult(): OverlayRefreshResult {
+  return {
+    dirty: [],
+    scope: [],
+    parse: emptyParseStats(),
+    resolve: { imports: 0, calls: 0, inherits: 0, implements: 0, dropped: 0 },
+    cluster: { communities: 0, members: 0 },
+  };
 }
 
 /** Normalize a watcher `filename` to a repo-relative POSIX path, or undefined if outside the repo. */
