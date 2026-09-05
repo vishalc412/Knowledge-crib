@@ -2041,6 +2041,17 @@ export class MemoryApi {
       evaluatedAt,
       codeHead,
     };
+    /**
+     * R02 — the freshness a hit reports is a fact about THAT RECORD, not about the pass.
+     *
+     * `projection.provenance.fresh` says only that an evaluator was bound for this search. Stamping
+     * it on every hit is how a migrated record whose evidence was never revalidated came back
+     * labelled `fresh`. A record the projection did not evaluate reports `unevaluated`, whatever the
+     * pass as a whole did — so the label can never again outrun the work.
+     */
+    const unevaluatedFreshness: FreshnessState = { state: 'unevaluated', evaluatedAt, codeHead };
+    const freshnessFor = (scored: { evaluated: boolean }): FreshnessState =>
+      scored.evaluated ? freshness : unevaluatedFreshness;
     const allDecisions = [...gathered.decisions, ...gathered.localDecisions];
     // PERF: hoisted out of the per-hit map below. `enrichHit` → `supersededBy` scans this pool
     // linearly for every hit, so rebuilding the array inside the map made `search` O(hits × records)
@@ -2063,23 +2074,23 @@ export class MemoryApi {
         allDecisions: scored.source === 'local' ? allDecisions : gathered.decisions,
         gatheredRecords,
         conflicts: projection.conflicts,
-        freshness,
+        freshness: freshnessFor(scored),
       }),
     );
     // G3.3 — attach the volatile freshness trio NON-enumerably (shared freshness object across
     // hits — one attach per response). canonicalStringify walks enumerable keys only, so ifHash
     // never sees these; a display layer reading `hit.freshness.generation` / `.ageMs` explicitly
     // gets the live values.
-    attachVolatileFreshness(
-      freshness,
-      {
-        generation,
-        ...(boundCache && boundCache.evaluatedAt !== null
-          ? { evaluatedAtMs: boundCache.evaluatedAt }
-          : {}),
-      },
-      this.nowMsFn(),
-    );
+    const volatile = {
+      generation,
+      ...(boundCache && boundCache.evaluatedAt !== null
+        ? { evaluatedAtMs: boundCache.evaluatedAt }
+        : {}),
+    };
+    attachVolatileFreshness(freshness, volatile, this.nowMsFn());
+    // The unevaluated variant carries the same generation/age trio so a display layer reading it
+    // sees one consistent shape — the honest difference between the two is `state`, nothing else.
+    attachVolatileFreshness(unevaluatedFreshness, volatile, this.nowMsFn());
     return {
       query,
       hits,

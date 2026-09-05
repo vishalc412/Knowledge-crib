@@ -3852,6 +3852,9 @@ export class Verbs {
         source: h.source,
         verdicts: h.verdicts,
         score: h.score,
+        // R02 — the hit carries the per-record freshness the API decided; re-derive `evaluated`
+        // from it rather than assuming every record in this view was revalidated.
+        evaluated: h.freshness.state === 'fresh',
       },
       withEvidence,
     );

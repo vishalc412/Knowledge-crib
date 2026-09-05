@@ -7081,6 +7081,9 @@ function memorySearchHitView(h: SearchHit, withEvidence?: boolean): Record<strin
       source: h.placement[0] ?? 'team',
       verdicts: h.verdicts,
       score: h.score,
+      // R02 — the hit already carries the per-record freshness the API decided; re-derive
+      // `evaluated` from it rather than assuming this view's records were all revalidated.
+      evaluated: h.freshness.state === 'fresh',
     },
     withEvidence,
   );

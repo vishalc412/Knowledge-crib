@@ -170,6 +170,14 @@ export interface ScoredRecord {
   source: MemorySource;
   verdicts: EffectiveVerdicts;
   score: RecallScore;
+  /**
+   * R02 — was THIS record revalidated against the live world during this projection, or are its
+   * verdicts the stamped/snapshotted ones? Per-record, because a pass-level "an evaluator was
+   * supplied" flag is not evidence that any particular record went through it. The serving layer
+   * reports freshness from this, so a record the evaluator skipped can never be advertised as
+   * freshly validated.
+   */
+  evaluated: boolean;
 }
 
 // ─── provenance ──────────────────────────────────────────────────────────────
@@ -568,6 +576,7 @@ export function recallProjection(
     record: MemoryRecord | MemoryRecordVersioned;
     verdicts: EffectiveVerdicts;
     source: MemorySource;
+    evaluated: boolean;
   }[] = [];
   // Every considered record with its effective verdicts — the input to conflict detection. v1
   // eligibility filtering happens INSIDE conflictGroups (unchanged semantics); memory-2 records are
@@ -576,14 +585,22 @@ export function recallProjection(
     record: MemoryRecord | MemoryRecordVersioned;
     verdicts: EffectiveVerdicts;
     source: MemorySource;
+    evaluated: boolean;
   }[] = [];
 
   for (const { record, source } of gathered.records) {
     consideredBySource[source] += 1;
+    // R02 — EVERY schema is revalidated live when a pass is bound. This guard used to exclude
+    // versioned records (`!isMemoryRecordVersioned`), which left a migrated record projecting the
+    // evidence verdict captured in its alias snapshot at migration time. A record whose source
+    // symbol was deleted AFTER migration therefore came back `valid`/`current` — migration
+    // silently laundered stale evidence into fresh advice. `effectiveVerdicts` already prefers a
+    // live evaluation over the snapshot; it simply never received one.
     const evaluation =
-      fresh && !isMemoryRecordVersioned(record) && opts.evaluator && opts.evalCtx
+      fresh && opts.evaluator && opts.evalCtx
         ? opts.evaluator.evaluate(record, opts.evalCtx)
         : undefined;
+    const evaluated = evaluation !== undefined;
     // No-poison (W5 Slice 2 + 3): local decisions overlay LOCAL records only; team/global decisions
     // are authoritative across stores (a team supersede/quarantine of an id correctly retires the
     // same-id local copy too). Folding local decisions into a team/global record would let a single
@@ -614,22 +631,25 @@ export function recallProjection(
       conservativeVerdicts(boundAliases),
       bridged ? undefined : decisionIndexFor(source),
     );
-    consideredEntries.push({ record, verdicts, source });
+    consideredEntries.push({ record, verdicts, source, evaluated });
     if (!isRecallEligible(verdicts)) continue;
-    eligibleEntries.push({ record, verdicts, source });
+    eligibleEntries.push({ record, verdicts, source, evaluated });
   }
 
-  const memories: ScoredRecord[] = eligibleEntries.map(({ record, verdicts, source }) => ({
-    record,
-    source,
-    verdicts,
-    score: {
-      lexical: scoreRecord(record, query, targetIds),
-      sourceTier: sourceTier(source),
-      evidenceQuality: evidenceQuality(verdicts),
-      feedbackAdjust: feedbackAdjust(record.id, netFeedback, bound),
-    },
-  }));
+  const memories: ScoredRecord[] = eligibleEntries.map(
+    ({ record, verdicts, source, evaluated }) => ({
+      record,
+      source,
+      verdicts,
+      evaluated,
+      score: {
+        lexical: scoreRecord(record, query, targetIds),
+        sourceTier: sourceTier(source),
+        evidenceQuality: evidenceQuality(verdicts),
+        feedbackAdjust: feedbackAdjust(record.id, netFeedback, bound),
+      },
+    }),
+  );
 
   // Priority-ordered (lexicographic) comparator — criterion 1 → 6, then newest-first tiebreak.
   memories.sort((a, b) => {
