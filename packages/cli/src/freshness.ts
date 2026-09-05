@@ -195,11 +195,27 @@ const QUEUE_LOCK_RETRIES = 1_000;
 const QUEUE_LOCK_WAIT_MS = 1;
 const queueWaitCell = new Int32Array(new SharedArrayBuffer(Int32Array.BYTES_PER_ELEMENT));
 
-/** Serialize a complete queue read-modify-write across post-commit processes. */
-function mutateFreshnessQueue<T>(env: NodeJS.ProcessEnv, mutate: (queue: FreshnessQueue) => T): T {
+/** The queue lock: serializes read-modify-write of `queue.json` across producers and the worker. */
+const QUEUE_LOCK = '.queue.lock';
+/**
+ * The lease lock: serializes worker ELECTION and every owned state write.
+ *
+ * LOCK ORDER LAW — the queue lock is OUTER, the lease lock is INNER. `claim()` and the failure
+ * path take the queue lock and then nest a lease check inside it; nothing may ever take the lease
+ * lock first and then reach for the queue lock, or two workers deadlock against each other.
+ */
+const LEASE_LOCK = '.lease.lock';
+
+/**
+ * Run `fn` under one named freshness lock, spinning while another process holds it.
+ *
+ * Shared by the queue and the lease so both obey the same contention and stale-holder policy
+ * (`CribLock` reclaims a lock whose holder pid is dead, so a killed worker never wedges the queue).
+ */
+function withFreshnessLock<T>(env: NodeJS.ProcessEnv, lockName: string, fn: () => T): T {
   let lastBusy: LockBusyError | undefined;
   for (let attempt = 0; attempt < QUEUE_LOCK_RETRIES; attempt += 1) {
-    const lock = new CribLock({ cribDir: freshnessDir(env), lockName: '.queue.lock' });
+    const lock = new CribLock({ cribDir: freshnessDir(env), lockName });
     try {
       lock.acquire();
     } catch (error) {
@@ -209,15 +225,22 @@ function mutateFreshnessQueue<T>(env: NodeJS.ProcessEnv, mutate: (queue: Freshne
       continue;
     }
     try {
-      const queue = readFreshnessQueue(env);
-      const result = mutate(queue);
-      writeQueue(queue, env);
-      return result;
+      return fn();
     } finally {
       lock.release();
     }
   }
-  throw lastBusy ?? new Error('freshness queue lock could not be acquired');
+  throw lastBusy ?? new Error(`freshness lock ${lockName} could not be acquired`);
+}
+
+/** Serialize a complete queue read-modify-write across post-commit processes. */
+function mutateFreshnessQueue<T>(env: NodeJS.ProcessEnv, mutate: (queue: FreshnessQueue) => T): T {
+  return withFreshnessLock(env, QUEUE_LOCK, () => {
+    const queue = readFreshnessQueue(env);
+    const result = mutate(queue);
+    writeQueue(queue, env);
+    return result;
+  });
 }
 
 /**
@@ -344,6 +367,17 @@ export function readPublishedGeneration(
  */
 export interface FreshnessWorkerState {
   pid: number;
+  /**
+   * FENCING TOKEN — monotonic, incremented once per successful election.
+   *
+   * Atomic election alone stops two workers from starting together; it does not stop a worker that
+   * was elected, then stalled past its lease TTL (a paused process, a swapped-out VM, a 20s GC
+   * pause), from waking up and writing over its successor's state. Every owned write re-reads this
+   * field under the lease lock and proceeds only when it still matches the writer's own epoch, so a
+   * superseded owner's write is refused rather than applied. Absent on pre-fencing state files,
+   * which read as epoch 0 — the next election writes 1 and takes ownership.
+   */
+  epoch?: number;
   startedAt: string;
   heartbeatAt: string;
   /** The task currently leased by this worker (crash recovery re-enqueues it on takeover). */
@@ -402,6 +436,8 @@ export type FreshnessWorkerEvent =
   | { kind: 'task-retry'; task: FreshnessTask; error: string }
   | { kind: 'task-dead'; task: FreshnessTask; error: string }
   | { kind: 'heartbeat' }
+  /** This worker's lease was taken by another owner; it halted rather than write over that owner. */
+  | { kind: 'superseded'; epoch: number; byPid?: number }
   | { kind: 'stopped' };
 
 /** Error thrown by {@link FreshnessWorker.start} when a live worker already holds the lease. */
@@ -445,6 +481,10 @@ export class FreshnessWorker {
   private running = false;
   private busy = false;
   private state?: FreshnessWorkerState;
+  /** This worker's fencing token, assigned by the election. 0 until `start()` wins the lease. */
+  private epoch = 0;
+  /** Set once the lease was observed to belong to someone else — latches, never un-set. */
+  private superseded = false;
   /** Resolves when the in-flight task finishes — `stop()` awaits it (no task torn mid-flight). */
   private current?: Promise<void>;
 
@@ -470,34 +510,70 @@ export class FreshnessWorker {
   async start(): Promise<void> {
     if (this.running) return;
     mkdirSync(freshnessDir(this.env), { recursive: true });
-    const existing = readWorkerState(this.env);
-    if (existing && isPidAlive(existing.pid) && this.heartbeatFresh(existing)) {
-      this.onEvent({ kind: 'refused', reason: `live worker pid ${existing.pid}` });
-      throw new WorkerAlreadyRunningError(existing.pid);
+
+    // ELECTION — the read-check-write is ONE critical section under the lease lock.
+    //
+    // The audited defect (R01) was that this sequence ran unlocked: N processes starting together
+    // each read "no live holder", each wrote its own state, and each believed it owned the lease.
+    // Twelve trials of eight contenders admitted 5-8 owners. Serializing the whole decision means
+    // the second contender necessarily reads the first's freshly written, fresh-heartbeat state.
+    const outcome = withFreshnessLock(
+      this.env,
+      LEASE_LOCK,
+      ():
+        | { won: true; state: FreshnessWorkerState; orphan?: FreshnessTask }
+        | { won: false; holderPid: number } => {
+        const existing = readWorkerState(this.env);
+        if (existing && isPidAlive(existing.pid) && this.heartbeatFresh(existing)) {
+          return { won: false, holderPid: existing.pid };
+        }
+        const stamp = new Date(this.now()).toISOString();
+        const state: FreshnessWorkerState = {
+          pid: process.pid,
+          epoch: (existing?.epoch ?? 0) + 1,
+          startedAt: stamp,
+          heartbeatAt: stamp,
+          // CARRY the predecessor's leased task into our own state before we own it. If we die
+          // between winning the lease and re-enqueueing below, the task is still reachable as an
+          // `activeTask` for the NEXT takeover — dropping it here would lose it in that window.
+          ...(existing?.activeTask ? { activeTask: existing.activeTask } : {}),
+          lastKnownGood: existing?.lastKnownGood ?? {},
+        };
+        writeJsonAtomic(statePath(this.env), state);
+        return {
+          won: true,
+          state,
+          ...(existing?.activeTask ? { orphan: existing.activeTask } : {}),
+        };
+      },
+    );
+
+    if (!outcome.won) {
+      this.onEvent({ kind: 'refused', reason: `live worker pid ${outcome.holderPid}` });
+      throw new WorkerAlreadyRunningError(outcome.holderPid);
     }
 
-    // Takeover (fresh boot or crashed predecessor): recover the crashed worker's active task back
-    // into the pending queue BEFORE claiming anything, so no leased work is ever orphaned.
+    this.state = outcome.state;
+    this.epoch = outcome.state.epoch ?? 0;
+    this.superseded = false;
+
+    // Recover the crashed predecessor's in-flight task back into the pending queue. Under the
+    // queue lock so a concurrent producer's enqueue is not clobbered; the id dup-check makes a
+    // repeated takeover idempotent.
     let recovered = 0;
-    const orphan = existing?.activeTask;
+    const orphan = outcome.orphan;
     if (orphan) {
-      // Under the queue lock: a concurrent producer's enqueue must not be clobbered by this
-      // recovery write, and two workers taking over the same crashed predecessor must not
-      // re-enqueue the orphan twice (the dup check has to observe the other's write).
       recovered = mutateFreshnessQueue(this.env, (q) => {
         if (q.pending.some((t) => t.id === orphan.id)) return 0;
         q.pending.push({ ...orphan, notBeforeMs: undefined });
         return 1;
       });
+      // Bookkeeping last: the task is durably pending before we stop calling it ours. A crash
+      // here re-runs the same idempotent recovery.
+      this.state.activeTask = undefined;
+      this.writeOwnedState();
     }
 
-    this.state = {
-      pid: process.pid,
-      startedAt: new Date(this.now()).toISOString(),
-      heartbeatAt: new Date(this.now()).toISOString(),
-      lastKnownGood: existing?.lastKnownGood ?? {},
-    };
-    writeJsonAtomic(statePath(this.env), this.state);
     this.running = true;
     this.onEvent({ kind: 'started', pid: process.pid, recovered });
 
@@ -522,7 +598,13 @@ export class FreshnessWorker {
     this.pollTimer = undefined;
     this.heartbeatTimer = undefined;
     await this.current;
-    rmSync(statePath(this.env), { force: true });
+    // Fenced release: only the CURRENT owner may remove the lease file. A worker that was already
+    // superseded must not delete its successor's state on the way out — that would hand the lease
+    // to the next arbitrary starter while the real owner is still working.
+    withFreshnessLock(this.env, LEASE_LOCK, () => {
+      const onDisk = readWorkerState(this.env);
+      if (onDisk && this.ownsLease(onDisk)) rmSync(statePath(this.env), { force: true });
+    });
     this.state = undefined;
     this.onEvent({ kind: 'stopped' });
   }
@@ -555,12 +637,73 @@ export class FreshnessWorker {
     return this.state?.lastKnownGood ?? {};
   }
 
-  /** The heartbeat: the lease liveness signal, written atomically. */
+  /** Does the on-disk lease still name THIS process and THIS election? */
+  private ownsLease(onDisk: FreshnessWorkerState): boolean {
+    return onDisk.pid === process.pid && (onDisk.epoch ?? 0) === this.epoch;
+  }
+
+  /**
+   * The one way this worker is allowed to write its state: under the lease lock, and only while
+   * the on-disk lease still matches this election's fencing token.
+   *
+   * `apply` mutates `this.state` in place and may perform the durable publication that must land
+   * with the same ownership decision. Returns false when the lease moved on — the caller must then
+   * abandon the write entirely rather than fall back to an unfenced one.
+   */
+  private writeOwnedState(apply?: () => void): boolean {
+    if (!this.state) return false;
+    const ok = withFreshnessLock(this.env, LEASE_LOCK, () => {
+      const onDisk = readWorkerState(this.env);
+      if (!onDisk || !this.ownsLease(onDisk)) return false;
+      apply?.();
+      writeJsonAtomic(statePath(this.env), this.state);
+      return true;
+    });
+    if (!ok) this.surrender();
+    return ok;
+  }
+
+  /**
+   * Stand down: another owner holds the lease. Halt the loops without touching the state file —
+   * the successor's lease and its recovery of our leased task are both already correct, and any
+   * write from here would be exactly the clobber the fencing token exists to prevent.
+   */
+  private surrender(): void {
+    if (this.superseded) return;
+    this.superseded = true;
+    this.running = false;
+    if (this.pollTimer) clearInterval(this.pollTimer);
+    if (this.heartbeatTimer) clearInterval(this.heartbeatTimer);
+    this.pollTimer = undefined;
+    this.heartbeatTimer = undefined;
+    const holder = readWorkerState(this.env);
+    this.onEvent({
+      kind: 'superseded',
+      epoch: this.epoch,
+      ...(holder ? { byPid: holder.pid } : {}),
+    });
+  }
+
+  /** The heartbeat: the lease liveness signal, written atomically and under the fence. */
   private heartbeat(): void {
     if (!this.running || !this.state) return;
-    this.state.heartbeatAt = new Date(this.now()).toISOString();
-    writeJsonAtomic(statePath(this.env), this.state);
-    this.onEvent({ kind: 'heartbeat' });
+    try {
+      const stamp = new Date(this.now()).toISOString();
+      // Renewing through the fence is also how a stalled worker DISCOVERS it was replaced: the
+      // first heartbeat after the takeover fails the epoch check and stands the worker down.
+      if (
+        !this.writeOwnedState(() => {
+          this.state!.heartbeatAt = stamp;
+        })
+      ) {
+        return;
+      }
+      this.onEvent({ kind: 'heartbeat' });
+    } catch {
+      // A heartbeat runs on a timer with no caller to catch for it. Lock contention or a transient
+      // FS error must not become an unhandled rejection that kills the host process; the lease
+      // simply ages, and a genuinely dead worker is taken over on TTL as designed.
+    }
   }
 
   private heartbeatFresh(s: FreshnessWorkerState): boolean {
@@ -582,16 +725,25 @@ export class FreshnessWorker {
 
   /** Lease the next eligible pending task (FIFO by enqueue order, skipping backoff windows). */
   private claim(): FreshnessTask | undefined {
-    if (!this.state) return undefined;
+    if (!this.state || this.superseded) return undefined;
     const nowMs = this.now();
     const task = mutateFreshnessQueue(this.env, (q) => {
       const idx = q.pending.findIndex((candidate) => (candidate.notBeforeMs ?? 0) <= nowMs);
       if (idx === -1) return undefined;
       const next = q.pending[idx]!;
+      const priorActive = this.state!.activeTask;
       // Lease FIRST (durable in state), remove from pending SECOND: a crash in the window leaves
       // the task in BOTH, which heals idempotently on takeover. The reverse order could orphan it.
-      this.state!.activeTask = next;
-      writeJsonAtomic(statePath(this.env), this.state);
+      // The lease write is FENCED, and the dequeue happens only if it lands — so a superseded
+      // worker cannot quietly consume a task that its successor is also entitled to run.
+      if (
+        !this.writeOwnedState(() => {
+          this.state!.activeTask = next;
+        })
+      ) {
+        this.state!.activeTask = priorActive;
+        return undefined;
+      }
       q.pending = q.pending.filter((_, i) => i !== idx);
       return next;
     });
@@ -605,34 +757,50 @@ export class FreshnessWorker {
     if (!this.state) return;
     try {
       const { generation } = await this.opts.revalidate(task);
-      // Durable result first: the generation file is on disk before ANY bookkeeping acknowledges it.
       const published: PublishedGeneration = {
         projectRoot: task.projectRoot,
         generation,
         head: task.head,
         publishedAt: new Date(this.now()).toISOString(),
       };
-      publishGeneration(task.projectRoot, published, this.env);
-      this.state.lastKnownGood[task.projectRoot] = published;
-      this.state.activeTask = undefined;
-      writeJsonAtomic(statePath(this.env), this.state);
+      // Publication is FENCED together with the acknowledgement, in one lease-locked step. A
+      // revalidation can outlive its own lease (a long refresh, a stalled process); an owner that
+      // lost the lease mid-flight must not publish, because its successor has already recovered
+      // this task and will publish from the state it actually owns. Durable result still lands
+      // first WITHIN the critical section: generation file, then bookkeeping.
+      if (
+        !this.writeOwnedState(() => {
+          publishGeneration(task.projectRoot, published, this.env);
+          this.state!.lastKnownGood[task.projectRoot] = published;
+          this.state!.activeTask = undefined;
+        })
+      ) {
+        return;
+      }
       this.onEvent({ kind: 'task-done', task, generation });
     } catch (err) {
       const message = (err as Error).message ?? String(err);
       const attempts = task.attempts + 1;
       const failed: FreshnessTask = { ...task, attempts };
-      mutateFreshnessQueue(this.env, (q) => {
-        if (attempts >= this.maxAttempts) {
-          // Dead-letter = lifecycle transition, never a delete (the team-ledger rule, applied to
-          // the queue): the failed entry stays auditable in `dead` with its last error.
-          q.dead = [...q.dead, { ...failed, notBeforeMs: undefined }];
-          return;
-        }
-        q.pending = [
-          ...q.pending,
-          { ...failed, notBeforeMs: this.now() + this.retryBackoff(attempts) },
-        ];
-      });
+      // Requeue-or-dead-letter and the lease release are ONE fenced decision. A superseded worker
+      // must not re-enqueue here: its successor already recovered this exact task on takeover, so
+      // an unfenced retry push would duplicate it and break the ≤1-pending-per-project law.
+      const committed = mutateFreshnessQueue(this.env, (q) =>
+        this.writeOwnedState(() => {
+          if (attempts >= this.maxAttempts) {
+            // Dead-letter = lifecycle transition, never a delete (the team-ledger rule, applied to
+            // the queue): the failed entry stays auditable in `dead` with its last error.
+            q.dead = [...q.dead, { ...failed, notBeforeMs: undefined }];
+          } else {
+            q.pending = [
+              ...q.pending,
+              { ...failed, notBeforeMs: this.now() + this.retryBackoff(attempts) },
+            ];
+          }
+          this.state!.activeTask = undefined;
+        }),
+      );
+      if (!committed) return;
       if (attempts >= this.maxAttempts)
         this.onEvent({ kind: 'task-dead', task: failed, error: message });
       else this.onEvent({ kind: 'task-retry', task: failed, error: message });
