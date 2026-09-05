@@ -20,12 +20,57 @@ The matrix below makes that claim checkable. Every cell is ✓ / ~ (partial) / �
 
 **Reading the matrix:** Knowledge-crib is the only row with ✓ across columns 1–5 simultaneously, plus a grounded (not default) LLM layer (6) and local-first portability (7). Each competitor owns one or two columns decisively — Joern/CodeQL own behavior depth for security; GraphRAG owns LLM-first semantics; Sourcegraph owns compiler-precise navigation. None ships the intersection.
 
+## The memory matrix — vs Mem0, Graphiti/Zep, Letta
+
+The matrix above covers the **code-graph** half. Knowledge-crib also ships an agent-memory ledger,
+and that is a different field with different incumbents.
+
+**How to read the cells.** The Knowledge-crib column is **measured** — every number traces to the
+frozen launch gate (`docs/bench/launch-gates.md`) or the model ladder
+(`docs/bench/embed-model-ladder.md`), both reproducible from this repo. The competitor columns are
+**capability claims read from their public documentation**, not benchmarks run here. No number in a
+competitor column is a measurement of ours, and none should be quoted as one. Re-verify against
+current vendor docs before publishing this table anywhere.
+
+| | **Knowledge-crib** | Mem0 | Graphiti / Zep | Letta |
+|---|---|---|---|---|
+| **Claims re-verified against ground truth** | **✓ — the differentiator.** Evidence anchors to a code span (`soulId` + `quote` + `targetHash`); the quote must be a normalised substring of the rehydrated span and the hash must match the live node. Code moves → `degraded`. Anchor vanishes → stable-locator reattachment: one match reattaches, zero → `orphaned`, many → `needs-review`. **100% staleness precision, 12/12 transitions.** | ✗ conversation-derived; a fact that stopped being true stays confidently true | ✗ episodes + invalidation over text, no external ground truth to check against | ✗ |
+| **Bi-temporal validity** | ✓ `validTime` vs `transactionTime` — answers "what did we believe, and when" without destroying history | ~ recency/temporal signals | ✓ its defining capability | ~ |
+| **Lineage + explicit contradiction** | ✓ `supersedes` / `contradicts` / `derivedFrom`; conflict keys on `propositionKey`, so complementary facts about one symbol are not falsely collided | ~ explicit updates and deletions | ✓ | ~ |
+| **Runs with no network and no API key** | ✓ local-first; the semantic tier is an on-device model, and there is no query-time network call in any tier | ✗ hosted platform / API key for the managed path | ~ self-hostable, model-dependent | ✓ Git-backed MemFS |
+| **Semantic recall out of the box** | ✗ **6/8, 2.6% paraphrase recall until `crib embed setup` runs** — the one place crib is behind | ✓ works from first call | ~ | ✗ semantic search not enabled by default |
+| **Semantic recall once configured** | ✓ **8/8, 81.0% word-disjoint paraphrase recall @5, MRR 88.1%** — one command, measured, reproducible | (not measured here) | (not measured here) | (not measured here) |
+| **Agent- and IDE-neutral** | ✓ one ledger across Claude Code, Cursor, Copilot, VS Code, Codex, Windsurf, Gemini; agent/session ids are provenance, never an access boundary | ~ SDK-centric | ~ | ~ |
+| **Deletion that actually deletes** | ✓ logical tombstones **plus** a documented physical purge; private memory never enters Git, because git history cannot provide irreversible deletion | ~ explicit delete API | ~ | ~ |
+| **Cost per recall** | ✓ zero marginal — no per-query model call; vectors are content-addressed and cached, so an unchanged record is embedded once ever | ~ per-call pricing on the managed path | ~ | ~ |
+| **Untrusted content kept out of recall** | ✓ measured **zero** — captured claims stay `candidate`-trust and `isRecallEligible` excludes them until evidence and policy gates promote them | ~ | ~ | ~ |
+
+### The honest read
+
+**Crib wins on verifiability, deletion, local-first operation, agent neutrality, and marginal cost.
+It loses the first five minutes.** A fresh install answers paraphrases at 2.6% until someone runs
+one command; Mem0 answers them from the first call. That row is stated in the matrix rather than
+omitted, because it is the row a buyer will hit first.
+
+What changed: installing the tier used to be three commands, the last of which named a directory
+(`examples/embedders/minilm-e5`) **that does not exist in the published package** — so for an npm
+install the documented path was unfollowable. It is now `crib embed setup --yes`, which generates
+and pins the adapter itself and proves it ranks before reporting success. The generated adapter
+reproduces the published 81.0% to every digit.
+
+What has **not** changed: crib still ships no model and still makes no network call on its own
+(`MAX_RUNTIME_DEPS = 9`, `MAX_PACKAGE_BYTES = 5 MB`, enforced by `pnpm budget:check`). The default
+model is a 2.2 GB download because the ladder shows it is the only one that passes the gate — the
+87 MB option scores 66.0%, which is 25× the fallback but 14 points short.
+
 ## What this matrix is NOT claiming
 
 - **Not "no competitor."** Each column has a best-in-class owner. The claim is the **intersection is unoccupied**.
 - **Not "better than Joern/CodeQL at security analysis."** They are deeper on taint/path queries. Knowledge-crib targets agent context + migration, not security analysis.
 - **Not "better than Sourcegraph at compiler-precise navigation."** SCIP is compiler-accurate; Knowledge-crib's extractors degrade safely and drop unresolved refs rather than guess.
 - **Not "better than GraphRAG at unstructured-text KG."** GraphRAG is LLM-first over text; Knowledge-crib is code-first with semantics as an opt-in, separately-grounded layer.
+- **Not a head-to-head benchmark against Mem0, Graphiti or Letta.** The memory matrix compares *capabilities* — crib's cells measured here, theirs read from their public docs. Running their systems on this corpus is a separate piece of work (`scripts/launch-vendor-compare.mjs` is the harness); until it runs, no relative quality number should be published.
+- **Not "semantic out of the box."** A fresh crib install is 6/8 and 2.6% paraphrase recall. The 8/8 describes a configured deployment. `crib doctor` reports which tier is live and every response names its scorer on `provenance.scorerVersion`, so the difference is visible in crib's own output rather than only in a footnote.
 
 ## The honest limits (say before an architect asks)
 

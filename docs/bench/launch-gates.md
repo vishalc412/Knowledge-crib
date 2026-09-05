@@ -13,9 +13,16 @@
 > | G3 MRR (≥0.75) | 88.1% | 52.0% |
 > | scorer | `memory-rank-v2:<embedder>:cosine:semantic-only` | `memory-rank-v2:none:bm25:lexical-only` |
 >
-> **Both numbers are real and both matter.** The 8/8 requires an operator-installed on-device model
-> (`examples/embedders/minilm-e5`); crib ships no model. A launch claim that quotes 8/8 without that
-> condition is false. G1, G4–G8 pass in both configurations.
+> **Both numbers are real and both matter.** The 8/8 requires an operator-installed on-device model;
+> crib ships no model. A launch claim that quotes 8/8 without that condition is false. G1, G4–G8
+> pass in both configurations.
+>
+> Installing the tier is **one command** — `crib embed setup --yes` — which generates and pins the
+> adapter itself rather than pointing at a repo path. Verified: the generated adapter reproduces
+> 8/8 and G2 0.8104575163398693, identical to the hand-measured figure.
+> `docs/bench/embed-model-ladder.md` measures four smaller models through this same gate; **none of
+> them passes** (nearest miss 69.9%), and size does not predict quality — a 87 MB model scores 66.0%
+> while a 1.0 GB one scores 59.5%.
 >
 > Known limit, not visible in G7: the principal boundary cannot exclude memory-1 records, which
 > carry no principal stamp. `crib doctor` reports this per-ledger; `strictPrincipal` closes it for

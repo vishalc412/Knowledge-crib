@@ -17,39 +17,45 @@ product constraint, not an oversight: the runtime-dependency and package-size bu
 bundled transformer would breach both by orders of magnitude. So the model is an operator-supplied
 artifact, and this directory is a working bridge to it.
 
-## Install
-
-**1. A Python with `sentence-transformers`** (any interpreter; a venv is fine):
+## Install — use the command, not this directory
 
 ```bash
-pip install sentence-transformers
+crib embed setup --yes
 ```
 
-**2. Fetch the weights once.** This is the only step that touches the network:
+That is the whole install. It checks your Python, installs `sentence-transformers` if missing,
+downloads the weights once, **generates and pins an adapter equivalent to this one**, and then
+proves the tier ranks before reporting success.
 
-```bash
-python3 -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('intfloat/multilingual-e5-large')"
-```
+Two reasons it exists rather than these files:
 
-~2.2 GB into the local HuggingFace cache. Every later call runs offline against that cache.
+- **This directory does not ship.** The published package contains `dist`, `skills`, `LICENSE`,
+  `NOTICE` — so `crib embed install examples/embedders/minilm-e5 …` is followable only from a git
+  checkout. For an npm install the path is simply not there.
+- **It is measured.** `crib embed setup --list` prints the size/quality ladder from
+  `docs/bench/embed-model-ladder.md`, so you pick a download size against a real number rather than
+  a parameter count. (`small` is 90 MB and scores 66.0%; only `large` passes the gate at 81.0%.)
 
-**3. Register the adapter with crib:**
-
-```bash
-crib embed install examples/embedders/minilm-e5 --model-id intfloat/multilingual-e5-large --model-version 1 --entry embedder.mjs
-```
-
-**4. Confirm:**
-
-```bash
-crib doctor .
-#   ✓ embedder tier — installed (multilingual-e5-large-1024-sym); remote disabled
-```
+The generated adapter scores **identically** to this hand-written one — G2 0.6601307189542484 for
+`small`, matching to every digit. Convenience costs nothing here.
 
 If your Python is not on `PATH` as `python3`:
 
 ```bash
-export KCRIB_EMBED_PYTHON=/path/to/venv/bin/python3
+crib embed setup --python /path/to/venv/bin/python3 --yes
+```
+
+### The manual path
+
+Still supported, and what this directory is for — reading, forking, or installing a model the
+ladder does not list:
+
+```bash
+pip install sentence-transformers
+python3 -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('intfloat/multilingual-e5-large')"
+crib embed install examples/embedders/minilm-e5 \
+  --model-id intfloat/multilingual-e5-large --model-version 1 --entry embedder.mjs
+crib doctor .
 ```
 
 ## Verify it is actually being used
