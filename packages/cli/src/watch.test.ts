@@ -285,6 +285,54 @@ describe('WatchMode — external crib update drift', () => {
   });
 });
 
+describe('WatchMode — clean Git transitions', () => {
+  it('overlays a clean branch switch without requiring an external crib update', async () => {
+    git(repo, ['add', '-A']);
+    git(repo, ['-c', 'user.email=t@e', '-c', 'user.name=t', 'commit', '-qm', 'base']);
+    const base = git(repo, ['rev-parse', 'HEAD']);
+    git(repo, ['checkout', '-qb', 'alternate']);
+    writeFileSync(
+      join(repo, 'src', 'a.ts'),
+      'export function alternateOnly(): number { return 2; }\n',
+    );
+    git(repo, ['add', 'src/a.ts']);
+    git(repo, ['-c', 'user.email=t@e', '-c', 'user.name=t', 'commit', '-qm', 'alternate']);
+    git(repo, ['checkout', '-q', base]);
+
+    const soul = soulFor();
+    await indexRepo(soul, repo);
+    const overlay = new WorkingOverlay(soul);
+    const watch = new WatchMode(soul, overlay, repo, {
+      debounceMs: 40,
+      fallbackMs: 80,
+    });
+    await watch.start();
+    try {
+      git(repo, ['checkout', '-q', 'alternate']);
+      await new Promise<void>((resolve, reject) => {
+        const timer = setTimeout(
+          () => reject(new Error('timed out waiting for clean branch transition')),
+          4000,
+        );
+        const poll = setInterval(() => {
+          if (
+            !symbolIn(overlay, 'src/a.ts', 'alternateOnly') ||
+            symbolIn(overlay, 'src/a.ts', 'greet')
+          )
+            return;
+          clearInterval(poll);
+          clearTimeout(timer);
+          resolve();
+        }, 25);
+      });
+      expect(symbolIn(overlay, 'src/a.ts', 'alternateOnly')).toBe(true);
+      expect(symbolIn(overlay, 'src/a.ts', 'greet')).toBe(false);
+    } finally {
+      watch.stop();
+    }
+  });
+});
+
 describe('WatchMode — VCS scan is the source of truth', () => {
   it('untrackedFiles respects .gitignore (gitignored untracked files are excluded from the dirty set)', () => {
     writeFileSync(join(repo, '.gitignore'), 'src/ignored.ts\n');

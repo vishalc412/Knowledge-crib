@@ -1,4 +1,4 @@
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Embedder } from '@knowledge-crib/core';
@@ -508,6 +508,8 @@ export class Verbs {
   private readonly stats = new Stats();
   /** W3 — the optional trusted agent-memory ledger (absent ⇒ memory verbs report "not configured"). */
   private readonly memory?: MemoryDeps;
+  /** Distinguishes this MCP process from the prior process a handoff should recover. */
+  private readonly serverSessionId = randomUUID();
 
   /** The extracted snapshot currently exposed to callers: watch overlay when active, else canonical. */
   private codeSoul(): SoulStore {
@@ -3042,6 +3044,7 @@ export class Verbs {
     const handoff = api.handoff({
       limits: { openWork: limit, pending: limit, attention: limit, recent: limit },
       repository: this.intakeRepository(),
+      currentSessionId: this.serverSessionId,
     });
     return this.applyIfHash(args, { ...handoff });
   }
@@ -3740,8 +3743,8 @@ export class Verbs {
         .slice(0, 16);
       journal.append({
         kind: 'agent.lifecycle',
-        idempotencyKey: `mcp:activity:${digest}:${bucket}`,
-        source: { clientId: 'knowledge-crib-mcp' },
+        idempotencyKey: `mcp:activity:${this.serverSessionId}:${digest}:${bucket}`,
+        source: { clientId: 'knowledge-crib-mcp', sessionId: this.serverSessionId },
         identity: resolveServerIdentity(process.env),
         payload: {
           event: 'mcp-activity',

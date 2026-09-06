@@ -418,6 +418,8 @@ export interface FreshnessWorkerOpts {
   heartbeatMs?: number;
   /** A worker whose heartbeat is older than this is presumed crashed; default 15000ms. */
   leaseTtlMs?: number;
+  /** Maximum grace for a live PID with an active task whose timer cannot run; default 10 minutes. */
+  busyLeaseTtlMs?: number;
   /** Failed attempts before a task dead-letters; default 3 (mirrors the capture outbox). */
   maxAttempts?: number;
   /** Retry backoff base after a failure; default 1000ms (doubles per attempt). */
@@ -471,6 +473,7 @@ export class FreshnessWorker {
   private readonly pollMs: number;
   private readonly heartbeatMs: number;
   private readonly leaseTtlMs: number;
+  private readonly busyLeaseTtlMs: number;
   private readonly maxAttempts: number;
   private readonly retryBackoffMs: number;
   private readonly now: () => number;
@@ -496,6 +499,7 @@ export class FreshnessWorker {
     this.pollMs = opts.pollMs ?? 500;
     this.heartbeatMs = opts.heartbeatMs ?? 2000;
     this.leaseTtlMs = opts.leaseTtlMs ?? 15_000;
+    this.busyLeaseTtlMs = opts.busyLeaseTtlMs ?? 10 * 60_000;
     this.maxAttempts = opts.maxAttempts ?? 3;
     this.retryBackoffMs = opts.retryBackoffMs ?? 1000;
     this.now = opts.now ?? Date.now;
@@ -524,7 +528,16 @@ export class FreshnessWorker {
         | { won: true; state: FreshnessWorkerState; orphan?: FreshnessTask }
         | { won: false; holderPid: number } => {
         const existing = readWorkerState(this.env);
-        if (existing && isPidAlive(existing.pid) && this.heartbeatFresh(existing)) {
+        // A long synchronous revalidation can block this process's event loop long enough for its
+        // timer heartbeat to age out. The active task is itself a durable lease: while its PID is
+        // alive, treating that owner as stale would duplicate work and let a successor race its
+        // publication. A dead PID remains immediately recoverable regardless of heartbeat age.
+        if (
+          existing &&
+          isPidAlive(existing.pid) &&
+          (this.heartbeatFresh(existing) ||
+            (existing.activeTask !== undefined && this.busyLeaseFresh(existing)))
+        ) {
           return { won: false, holderPid: existing.pid };
         }
         const stamp = new Date(this.now()).toISOString();
@@ -708,6 +721,11 @@ export class FreshnessWorker {
 
   private heartbeatFresh(s: FreshnessWorkerState): boolean {
     return this.now() - Date.parse(s.heartbeatAt) < this.leaseTtlMs;
+  }
+
+  /** A synchronous refresh gets a longer, bounded lease; a genuinely hung live process expires. */
+  private busyLeaseFresh(s: FreshnessWorkerState): boolean {
+    return this.now() - Date.parse(s.heartbeatAt) < this.busyLeaseTtlMs;
   }
 
   /** One serialized work step: claim → lease → revalidate → publish → dequeue. Never re-entrant. */

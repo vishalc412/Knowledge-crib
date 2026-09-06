@@ -2,7 +2,11 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { SoulStore, SqliteIndexStore, newManifest } from '@knowledge-crib/core';
-import { MemoryStore, __resetMemoryLockGuardForTest } from '@knowledge-crib/memory';
+import {
+  IntelligenceEventJournal,
+  MemoryStore,
+  __resetMemoryLockGuardForTest,
+} from '@knowledge-crib/memory';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { buildServer } from './server.js';
 import { Verbs } from './verbs.js';
@@ -64,6 +68,43 @@ function memoryCaller() {
 }
 
 describe('MCP intake continuation operations', () => {
+  it('returns the prior MCP process anchor and excludes the current process activity', () => {
+    const journal = new IntelligenceEventJournal({ rootDir: join(home, 'events') });
+    const vcs = {
+      currentHead: () => 'head-1',
+      currentBranch: () => 'feature/session-anchor',
+      changedFilesSince: () => [],
+      uncommittedChanges: () => ['src/index.ts'],
+    };
+    const prior = new Verbs({
+      soul,
+      index,
+      repoRoot: repo,
+      vcs,
+      memory: { local, eventJournal: journal },
+    });
+    prior.noteSessionActivity();
+    const current = new Verbs({
+      soul,
+      index,
+      repoRoot: repo,
+      vcs,
+      memory: { local, eventJournal: journal },
+    });
+    current.noteSessionActivity();
+
+    const handoff = current.memoryHandoff({}) as {
+      lastSession?: { sessionId?: string; branch?: string };
+    };
+    const sessions = journal.read().map((event) => event.source.sessionId);
+    expect(new Set(sessions).size).toBe(2);
+    expect(handoff.lastSession).toMatchObject({
+      sessionId: sessions[0],
+      branch: 'feature/session-anchor',
+    });
+    expect(handoff.lastSession?.sessionId).not.toBe(sessions[1]);
+  });
+
   it('creates local intake state and returns it through handoff', async () => {
     const callMemory = memoryCaller();
     const created = await callMemory({

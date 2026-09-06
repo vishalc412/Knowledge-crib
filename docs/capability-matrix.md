@@ -29,7 +29,7 @@ Nothing below has been exercised on Linux or Windows. That is not a hedge — no
 | `review` — change review from the graph | verified | on | [`bench/review-cost.md`](bench/review-cost.md) |
 | Always-fresh reads while editing (`serve --watch`) | verified, 805-file scale | opt-in | [reference watch run](audits/2026-09-05/evidence/repair/full-watch-results.json) |
 | Durable agent memory (record → admit → recall) | verified | opt-in (`crib memory init`) | [audit §R02/R03](audits/2026-09-05/post-merge-reaudit.md) |
-| Session resume after an IDE timeout | verified, every client | on when memory is initialised | [audit §R06](audits/2026-09-05/post-merge-reaudit.md) |
+| Session resume after an IDE timeout | protocol verified; runtime certification in progress | on when memory is initialised | [audit §R06](audits/2026-09-05/post-merge-reaudit.md) |
 | On-device semantic recall | verified | **opt-in** (`crib embed setup`) | [`bench/onnx-model-ladder.md`](bench/onnx-model-ladder.md) |
 | Background freshness worker (`auto` mode) | verified with caveats | opt-in | [worker recovery](audits/2026-09-05/evidence/repair/worker-recovery.json) |
 | Memory home (web UI) | verified | opt-in (`crib viz`) | [audit §R08](audits/2026-09-05/post-merge-reaudit.md) |
@@ -61,18 +61,19 @@ and not the ranking.
 
 `crib init` detects the client in use and wires only that one.
 
-| Client | Instruction file | MCP config | Lifecycle hooks | Session resume |
+| Client | Instruction file | MCP config | Lifecycle hooks | Current evidence |
 |---|---|---|---|---|
-| Claude Code | `CLAUDE.md` | `.mcp.json` | **writer** | via hooks + MCP |
-| GitHub Copilot | `.github/copilot-instructions.md` | `.vscode/mcp.json` | none | **via MCP** |
-| Cursor | `.cursor/rules/crib.mdc` | `.cursor/mcp.json` | none | **via MCP** |
-| Codex | `AGENTS.md` | `.codex/config.toml` | none | **via MCP** |
-| Windsurf | `.windsurfrules` | global config | none | **via MCP** |
-| Gemini | `GEMINI.md` | `.gemini/settings.json` | none | **via MCP** |
-| VS Code (non-Copilot) | — (Copilot's file serves it) | `.vscode/mcp.json` | none | **via MCP** |
+| Claude Code | `CLAUDE.md` | `.mcp.json` | **writer** | runtime verified |
+| GitHub Copilot | `.github/copilot-instructions.md` | `.vscode/mcp.json` | none | protocol verified with Copilot-shaped client |
+| Cursor | `.cursor/rules/crib.mdc` | `.cursor/mcp.json` | none | configuration verified |
+| Codex | `AGENTS.md` | `.codex/config.toml` | none | configuration verified |
+| Windsurf | `.windsurfrules` | global config | none | configuration verified |
+| Gemini | `GEMINI.md` | `.gemini/settings.json` | none | configuration verified |
+| VS Code (non-Copilot) | — (Copilot's file serves it) | `.vscode/mcp.json` | none | configuration verified |
 
 Only Claude Code exposes a lifecycle-hook surface. Session resume does not depend on it: the MCP
-server records the anchor for every client, which is why the six hookless clients are covered.
+server records a principal-scoped anchor for every client. That makes the shared protocol available
+to hookless clients; it does not substitute for driving each vendor runtime through certification.
 
 **Verified end to end:** Claude Code and a Copilot-shaped MCP client. The other five are wired by
 the same generated configuration and the same protocol, but have not each been driven through a
@@ -89,20 +90,16 @@ These are open, disclosed rather than fixed. None is a surprise waiting to be fo
 2. **No authenticated multi-tenancy.** The HTTP boundary is local Host/Origin validation plus a body
    cap. Identity, membership, revocation and scoped audit export do not exist. Do not expose the
    server beyond the local trust model.
-3. **CI cannot produce a passing release receipt.** The workflows provision Node and pnpm but not
-   the model weights, so `release:evidence --require-pass` cannot go green on a hosted runner even
-   though the tier passes locally.
-4. **A long revalidation can trigger a spurious lease takeover.** `crib update` parses
-   synchronously, blocking the worker's own heartbeat, so a second worker may see a stale lease and
-   take over mid-task. Epoch fencing makes this *safe* — the original stands down instead of
-   corrupting state — but the work is repeated. `crib status` reports `workerBusy` rather than
-   falsely reporting the worker dead.
-5. **The memory home shows counts without per-tile actions.** Pending captures and resumable intakes
-   are numbers; the panel names the next command and the CLI performs it
-   (`crib memory recall --include-pending`, `crib memory admit`).
-6. **A restarted reader sees the last indexed commit.** If the graph has not been updated since a
-   checkout, a fresh reader answers from the older commit. `crib status` reports
-   `aheadOfVcsHead: true` — honest, but it will surprise you if you do not look.
+3. **CI semantic evidence is expensive.** CI and tagged release jobs provision the supported model
+   on macOS, Linux and Windows and cache it by the pinned setup inputs. A cold cache downloads the
+   model independently on each platform before `release:evidence --require-pass` can pass.
+4. **A busy worker lease is bounded.** Synchronous parsing can block the normal heartbeat. An active
+   task therefore gets a ten-minute grace window; epoch fencing still prevents a late owner from
+   publishing after takeover, and a live task that exceeds the grace may be repeated.
+5. **Memory home actions remain local guidance.** Pending and resumable tiles expose the relevant
+   queue or saved work, but memory admission and intake execution remain explicit CLI or agent actions.
+6. **Only watched readers overlay a clean checkout.** A fresh manual reader still serves the last
+   indexed commit until `crib update`; status reports `aheadOfVcsHead: true` rather than hiding it.
 7. **Cross-device sync is synthetic.** A two-device file-backend soak over v1 records, with no
    power-loss or fsync claim. Not a cross-platform network trial.
 8. **Graph coverage is partial and says so.** 5,419 unresolved call sites on this repository;

@@ -33,6 +33,13 @@ describe('viz web asset: memory ledger panel (G5.4)', () => {
     expect(html).toContain('focus-visible');
   });
 
+  it('makes pending and resumable memory work actionable from the home tiles', () => {
+    expect(html).toContain('data-kc-memory-home-action');
+    expect(html).toContain('openMemoryHomeAction');
+    expect(html).toContain('Review pending outcomes');
+    expect(html).toContain('Resume saved work');
+  });
+
   it('stays self-contained — no external (CDN) scripts', () => {
     const srcs = [...html.matchAll(/<script[^>]*\ssrc="([^"]+)"/g)].map((m) => m[1] ?? '');
     expect(srcs.length).toBeGreaterThan(0);

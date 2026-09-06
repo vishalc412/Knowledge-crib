@@ -30,8 +30,8 @@ const base = {
   git: {
     commit: 'abc123',
     branch: 'codex/launch-readiness',
-    dirty: true,
-    dirtyPaths: ['packages/memory/src/recall.ts'],
+    dirty: false,
+    dirtyPaths: [],
     dirtyDigest: 'sha256:fixture',
   },
   platform: { os: 'darwin', arch: 'arm64', node: 'v22.23.1', cpu: 'fixture', ramBytes: 1 },
@@ -55,9 +55,20 @@ assert.equal(manifest.format, 'knowledge-crib-release-evidence');
 assert.equal(manifest.formatVersion, 1);
 assert.equal(manifest.acceptance.pass, true);
 assert.deepEqual(requiredGateFailures(manifest), []);
-assert.equal(manifest.reproducibility.git.dirty, true);
+assert.equal(manifest.reproducibility.git.dirty, false);
 assert.equal(manifest.retrieval.model.id, 'intfloat/multilingual-e5-large');
 assert.equal(manifest.retrieval.scorer, greenReport.scorerVersion);
+
+const dirty = buildReleaseEvidence({
+  ...base,
+  git: {
+    ...base.git,
+    dirty: true,
+    dirtyPaths: ['packages/memory/src/recall.ts'],
+  },
+});
+assert.deepEqual(requiredGateFailures(dirty), ['clean-commit']);
+assert.equal(dirty.acceptance.pass, false);
 
 const red = buildReleaseEvidence({
   ...base,

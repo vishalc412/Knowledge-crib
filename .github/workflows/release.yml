@@ -40,8 +40,31 @@ jobs:
       - name: Install dependencies
         run: corepack pnpm@9.15.0 install --frozen-lockfile
 
+      - name: Restore supported semantic tier
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4
+        with:
+          path: ${{ runner.temp }}/knowledge-crib-embed
+          key: ${{ runner.os }}-knowledge-crib-e5-large-${{ hashFiles('packages/cli/src/embed-setup.ts', 'packages/cli/src/embed-onnx.ts', 'pnpm-lock.yaml') }}
+
+      - name: Install supported semantic tier
+        env:
+          KCRIB_EMBED_HOME: ${{ runner.temp }}/knowledge-crib-embed
+        run: |
+          corepack pnpm@9.15.0 build
+          node packages/cli/dist/cli.js embed setup --model large --yes --json
+
       - name: Run release gate
+        env:
+          KCRIB_EMBED_HOME: ${{ runner.temp }}/knowledge-crib-embed
         run: corepack pnpm@9.15.0 release:verify
+
+      - name: Upload release evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: knowledge-crib-release-evidence-${{ matrix.os }}
+          path: release-evidence.json
+          if-no-files-found: error
+          retention-days: 30
 
       - name: Upload verified bundle
         if: matrix.os == 'ubuntu-latest'

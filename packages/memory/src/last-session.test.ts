@@ -25,6 +25,7 @@ function lifecycleEvent(
     sessionId?: string;
     clientId?: string;
     event?: string;
+    principalId?: string;
     branch?: string;
     head?: string;
     changedPaths?: string[];
@@ -37,6 +38,7 @@ function lifecycleEvent(
       clientId: over.clientId ?? 'copilot',
       ...(over.sessionId !== undefined ? { sessionId: over.sessionId } : {}),
     },
+    ...(over.principalId !== undefined ? { identity: { principalId: over.principalId } } : {}),
     payload: {
       event: over.event ?? 'turn-end',
       action: 'checkpoint-requested',
@@ -116,6 +118,57 @@ describe('handoff.lastSession — resuming after a timeout', () => {
       ],
     });
     expect(out.lastSession?.branch).toBe('new-branch');
+  });
+
+  it("returns only the calling principal's previous session", () => {
+    const out = buildHandoff({
+      ...BASE,
+      callerPrincipal: 'principal:A',
+      currentSessionId: 'server-now',
+      lifecycle: [
+        lifecycleEvent({
+          occurredAt: '2026-09-05T09:00:00.000Z',
+          sessionId: 'owner-old',
+          principalId: 'principal:A',
+          branch: 'owner-branch',
+        }),
+        lifecycleEvent({
+          occurredAt: '2026-09-05T10:00:00.000Z',
+          sessionId: 'foreign-newest',
+          principalId: 'principal:B',
+          branch: 'private-branch',
+        }),
+        lifecycleEvent({
+          occurredAt: '2026-09-05T11:00:00.000Z',
+          sessionId: 'server-now',
+          principalId: 'principal:A',
+          branch: 'current-server-branch',
+        }),
+      ],
+    });
+    expect(out.lastSession).toMatchObject({ sessionId: 'owner-old', branch: 'owner-branch' });
+  });
+
+  it('does not expose an unscoped legacy session to a non-default principal', () => {
+    const out = buildHandoff({
+      ...BASE,
+      callerPrincipal: 'principal:other-user',
+      lifecycle: [lifecycleEvent({ sessionId: 'legacy', branch: 'legacy-branch' })],
+    });
+    expect(out.lastSession).toBeUndefined();
+  });
+
+  it('bounds a persisted session anchor to twenty paths', () => {
+    const out = buildHandoff({
+      ...BASE,
+      lifecycle: [
+        lifecycleEvent({
+          principalId: 'principal:local',
+          changedPaths: Array.from({ length: 21 }, (_, i) => `src/${i}.ts`),
+        }),
+      ],
+    });
+    expect(out.lastSession?.changedPaths).toHaveLength(20);
   });
 
   it('carries coordinates only — never a transcript', () => {

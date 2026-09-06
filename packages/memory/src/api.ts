@@ -1970,6 +1970,7 @@ export class MemoryApi {
     opts: {
       limits?: HandoffInput['limits'];
       repository?: IntakeCheckpoint['repository'];
+      currentSessionId?: string;
     } = {},
   ): HandoffResponse {
     const pinned = [this.deps.stores.team, this.deps.stores.local, this.deps.stores.global].filter(
@@ -2018,6 +2019,8 @@ export class MemoryApi {
         intakeRequirements: requirements,
         intakeCheckpoints: checkpoints,
         ...(lifecycle ? { lifecycle } : {}),
+        callerPrincipal: this.callerPrincipal(),
+        ...(opts.currentSessionId !== undefined ? { currentSessionId: opts.currentSessionId } : {}),
         ...(opts.repository ? { repository: opts.repository } : {}),
         ...(opts.limits ? { limits: opts.limits } : {}),
       });

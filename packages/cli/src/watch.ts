@@ -26,6 +26,8 @@ import { join, relative, sep } from 'node:path';
 import type { SoulStore, WorkingOverlay } from '@knowledge-crib/core';
 import {
   type OverlayRefreshResult,
+  changedFilesSince,
+  currentHead,
   emptyParseStats,
   langForPath,
   refreshWorkingOverlay,
@@ -52,7 +54,7 @@ export interface WatchOpts {
   onWarn?: (message: string) => void;
 }
 
-export type RefreshReason = 'initial' | 'watcher' | 'fallback' | 'drift';
+export type RefreshReason = 'initial' | 'watcher' | 'fallback' | 'drift' | 'transition';
 
 /** Dirs whose churn must NOT schedule a refresh (build output, deps, the soul itself). */
 const IGNORE_PREFIXES = [
@@ -73,6 +75,10 @@ export class WatchMode {
   private debounceTimer?: NodeJS.Timeout;
   private refreshing = false;
   private stopped = false;
+  /** HEAD observed when the overlay was last seeded; detects clean checkouts with no dirty files. */
+  private observedHead?: string;
+  /** Latest clean Git transition deferred while another overlay refresh owns the mutation slot. */
+  private pendingTransitionHead?: string;
 
   constructor(
     private readonly canonical: SoulStore,
@@ -84,6 +90,7 @@ export class WatchMode {
   /** Start the watcher + fallback scan. Performs the initial dirty-set refresh. Resolves once the
    *  initial refresh completes; the watcher + fallback then run in the background until {@link stop}. */
   async start(): Promise<void> {
+    this.observedHead = this.readHead();
     await this.refresh('initial');
     this.watcher = watch(this.repoRoot, { recursive: true }, (_event, filename) => {
       const rel = toRepoRelative(this.repoRoot, filename);
@@ -109,11 +116,44 @@ export class WatchMode {
   /** The 2s backstop: catches missed watcher events, untracked files, and canonical drift. */
   private async fallbackScan(): Promise<void> {
     if (this.stopped) return;
+    const head = this.readHead();
+    if (head !== undefined && this.observedHead !== undefined && head !== this.observedHead) {
+      await this.handleTransition(head);
+      return;
+    }
+    if (head !== undefined) this.observedHead = head;
     if (this.overlay.canonicalDrifted()) {
       await this.handleDrift();
       return;
     }
     await this.refresh('fallback');
+  }
+
+  /**
+   * A clean checkout changes committed source without creating any working-tree diff. Re-seed from
+   * the indexed canonical graph, then overlay the full Git delta to the newly observed HEAD. This
+   * keeps the committed graph immutable in watch mode while connected readers immediately query the
+   * branch they are actually on.
+   */
+  private async handleTransition(head: string): Promise<void> {
+    if (this.refreshing) {
+      this.pendingTransitionHead = head;
+      return;
+    }
+    this.overlay.resync();
+    const indexedHead = this.canonical.getManifest().repo.vcsHead;
+    if (indexedHead !== undefined) {
+      try {
+        for (const path of changedFilesSince(this.repoRoot, indexedHead)) {
+          if (isWatchable(path)) this.overlay.markDirty(path);
+        }
+      } catch (err) {
+        this.opts.onWarn?.(`watch transition scan failed: ${(err as Error).message}`);
+        return; // keep observedHead unchanged so the next fallback retries the transition
+      }
+    }
+    await this.refresh('transition');
+    this.observedHead = head;
   }
 
   /** External `crib update` advanced canonical: reload + resync + recompute the dirty set. */
@@ -149,7 +189,8 @@ export class WatchMode {
       //
       // Nothing needs re-parsing, so no refresh is run — the callback carries an empty result whose
       // only job is to say "canonical moved, rebuild what you derived from it".
-      if (reason === 'drift') this.opts.onRefresh?.(emptyRefreshResult(), reason);
+      if (reason === 'drift' || reason === 'transition')
+        this.opts.onRefresh?.(emptyRefreshResult(), reason);
       return;
     }
     this.refreshing = true;
@@ -160,6 +201,9 @@ export class WatchMode {
       this.opts.onWarn?.(`watch refresh failed: ${(err as Error).message}`);
     } finally {
       this.refreshing = false;
+      const pendingHead = this.pendingTransitionHead;
+      this.pendingTransitionHead = undefined;
+      if (pendingHead !== undefined && !this.stopped) void this.handleTransition(pendingHead);
     }
   }
 
@@ -175,8 +219,17 @@ export class WatchMode {
     return [...all].filter((p) => !isExcludedByPrefix(p) && langForPath(p) !== undefined).sort();
   }
 
+  private readHead(): string | undefined {
+    try {
+      return currentHead(this.repoRoot);
+    } catch {
+      return undefined;
+    }
+  }
+
   stop(): void {
     this.stopped = true;
+    this.pendingTransitionHead = undefined;
     if (this.debounceTimer) clearTimeout(this.debounceTimer);
     this.debounceTimer = undefined;
     if (this.fallbackTimer) clearInterval(this.fallbackTimer);

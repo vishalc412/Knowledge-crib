@@ -29,6 +29,7 @@ import {
   buildContinuation,
   projectIntakes,
 } from './intake-projection.js';
+import { DEFAULT_MIGRATION_PRINCIPAL_ID } from './migrations.js';
 import type {
   IntakeCheckpoint,
   IntakeRequirement,
@@ -156,8 +157,13 @@ export interface HandoffInput {
   lifecycle?: readonly {
     occurredAt: string;
     source?: { clientId?: string; sessionId?: string };
+    identity?: { principalId?: string };
     payload?: Record<string, unknown>;
   }[];
+  /** Server-resolved caller identity. Session provenance is never an authorization credential. */
+  callerPrincipal?: string;
+  /** The server process requesting handoff; its activity is not a prior session to resume. */
+  currentSessionId?: string;
   limits?: { openWork?: number; pending?: number; attention?: number; recent?: number };
 }
 
@@ -173,10 +179,23 @@ export interface HandoffInput {
 function lastSessionOf(
   lifecycle: HandoffInput['lifecycle'],
   now: IntakeCheckpoint['repository'] | undefined,
+  callerPrincipal: string | undefined,
+  currentSessionId: string | undefined,
 ): HandoffLastSession | undefined {
   if (!lifecycle || lifecycle.length === 0) return undefined;
   for (let i = lifecycle.length - 1; i >= 0; i -= 1) {
     const event = lifecycle[i]!;
+    if (currentSessionId !== undefined && event.source?.sessionId === currentSessionId) continue;
+    const eventPrincipal = event.identity?.principalId;
+    // Events created before identity existed belong only to the original local-only namespace.
+    // Showing one to an arbitrary later principal would turn backwards compatibility into a leak.
+    if (
+      callerPrincipal !== undefined &&
+      (eventPrincipal === undefined
+        ? callerPrincipal !== DEFAULT_MIGRATION_PRINCIPAL_ID
+        : eventPrincipal !== callerPrincipal)
+    )
+      continue;
     const repo = event.payload?.repository as
       | { branch?: string; head?: string; changedPaths?: string[] }
       | undefined;
@@ -195,7 +214,9 @@ function lastSessionOf(
       ...(eventName !== undefined ? { event: eventName } : {}),
       ...(repo.branch !== undefined ? { branch: repo.branch } : {}),
       ...(repo.head !== undefined ? { head: repo.head } : {}),
-      changedPaths: Array.isArray(repo.changedPaths) ? repo.changedPaths : [],
+      changedPaths: Array.isArray(repo.changedPaths)
+        ? repo.changedPaths.filter((path): path is string => typeof path === 'string').slice(0, 20)
+        : [],
       movedSince,
     };
   }
@@ -329,7 +350,12 @@ export function buildHandoff(input: HandoffInput): HandoffResponse {
     input.repository ?? { dirty: false },
   );
 
-  const lastSession = lastSessionOf(input.lifecycle, input.repository);
+  const lastSession = lastSessionOf(
+    input.lifecycle,
+    input.repository,
+    input.callerPrincipal,
+    input.currentSessionId,
+  );
 
   return {
     openWork,

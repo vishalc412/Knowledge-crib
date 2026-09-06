@@ -260,10 +260,10 @@
           <div style="margin-bottom:14px;">
             <div style="display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:5px;">
               <sc-for list="{{ mem.homeView.sections }}" as="section" hint-placeholder-count="5">
-                <div title="{{ section.help }}" style="min-width:0; padding:8px 6px; border-radius:9px; border:1px solid {{ t.border }}; background: {{ t.chip }}; text-align:center;">
+                <button data-kc-memory-home-action title="{{ section.help }}" onClick="{{ section.onGo }}" style="min-width:0; padding:8px 6px; border-radius:9px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color:{{ t.text }}; text-align:center; cursor:pointer; font-family:'IBM Plex Sans';">
                   <div style="font-size:18px; font-weight:700; line-height:1; color: {{ section.color }};">{{ section.count }}</div>
                   <div style="font-size:9px; font-weight:700; letter-spacing:0.02em; color: {{ t.text }}; margin-top:5px; line-height:1.2;">{{ section.label }}</div>
-                </div>
+                </button>
               </sc-for>
             </div>
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:8px;">
@@ -277,6 +277,15 @@
             <div style="margin-top:8px; padding:9px 10px; border-radius:8px; background:rgba(67,216,201,0.10); border:1px solid rgba(67,216,201,0.35); color: {{ t.text }}; font-size:11px; line-height:1.45;">
               <b style="color:#43d8c9;">Next safe action</b><br>{{ mem.homeView.nextAction }}
             </div>
+            <sc-if value="{{ mem.homeAction }}" hint-placeholder-val="{{ true }}">
+              <div style="margin-top:8px; padding:10px; border-radius:8px; border:1px solid {{ t.border }}; background:{{ t.chip }};">
+                <div style="font-size:11px; font-weight:700; color:{{ t.text }};">{{ mem.homeAction.title }}</div>
+                <div style="font-size:11px; line-height:1.45; color:{{ t.sub }}; margin-top:4px;">{{ mem.homeAction.detail }}</div>
+                <sc-for list="{{ mem.homeAction.items }}" as="item" hint-placeholder-count="3">
+                  <div style="margin-top:6px; padding:6px 7px; border-radius:6px; background:{{ t.panel }}; font-size:10.5px; color:{{ t.text }}; word-break:break-word;">{{ item }}</div>
+                </sc-for>
+              </div>
+            </sc-if>
           </div>
         </sc-if>
         <!-- conflicts banner -->
@@ -1303,9 +1312,9 @@ class Component extends DCLogic {
   // Same fetch discipline as loadSource: AbortController + sequence guard, so a slow ledger
   // response can never overwrite a newer view, and closing the panel cancels the in-flight read.
   toggleMemory(){ if(this.state.memOpen){ this.closeMemory(); return; }
-    this.setState({memOpen:true, memData:null, memHome:null, memDetail:null, memGroup:null, memError:null, selectedId:null, selectedClusterId:null, selectedClusterKind:null, clusterContext:false, clusterReturnId:null, selectedTrail:[], sourcePreview:null});
+    this.setState({memOpen:true, memData:null, memHome:null, memDetail:null, memGroup:null, memHomeAction:null, memError:null, selectedId:null, selectedClusterId:null, selectedClusterKind:null, clusterContext:false, clusterReturnId:null, selectedTrail:[], sourcePreview:null});
     this.loadMemory(null); this.focusMemoryPanel(); }
-  closeMemory(){ if(this._memAbort)this._memAbort.abort(); this.setState({memOpen:false, memData:null, memHome:null, memDetail:null, memGroup:null, memError:null});
+  closeMemory(){ if(this._memAbort)this._memAbort.abort(); this.setState({memOpen:false, memData:null, memHome:null, memDetail:null, memGroup:null, memHomeAction:null, memError:null});
     // Return focus to what opened the panel. Without this the focus ring is left on a button whose
     // panel is gone, and a keyboard user has to tab from the top of the page to get back.
     this.keepFocus('[data-kc-memory-trigger]'); }
@@ -1328,6 +1337,11 @@ class Component extends DCLogic {
     setTimeout(tick,0); }
   /** Move focus INTO the panel once it renders, so a keyboard user lands on the new content. */
   focusMemoryPanel(){ this.keepFocus('[data-kc-memory-close]'); }
+  openMemoryHomeAction(kind){
+    if(kind==='active'||kind==='history'){ this.setState({memHomeAction:null}); this.loadMemory(null); return; }
+    if(kind==='needsReview'){ this.setState({memHomeAction:null}); this.loadMemory('stale'); return; }
+    this.setState({memHomeAction:kind});
+  }
   async loadMemory(group){ const seq=++this._memSeq; if(this._memAbort)this._memAbort.abort(); const controller=new AbortController(); this._memAbort=controller;
     this.setState({memLoading:true, memError:null, memGroup:group||null, memDetail:null});
     try{ const [res,homeRes]=await Promise.all([
@@ -1578,19 +1592,30 @@ class Component extends DCLogic {
       const conflicts=((md&&md.conflicts)||[]).map((c)=>({subject:c.subject||c.propositionKey||c.key,count:(c.recordIds||[]).length}));
       const policy=md&&md.capturePolicy?('ref '+md.capturePolicy.trustedRef+' · profiles '+md.capturePolicy.profiles.join(', ')):null;
       const hs=(mh&&mh.sections)||{}; const hh=(mh&&mh.health)||{};
+      const openHomeAction=(kind)=>()=>this.openMemoryHomeAction(kind);
       const homeView=mh&&mh.configured?{
         sections:[
-          {label:'Active',count:(hs.active&&hs.active.count)||0,color:'#34d399',help:'Current evidence-backed memory'},
-          {label:'Pending',count:(hs.pending&&hs.pending.count)||0,color:'#f59e0b',help:'Outcomes waiting for distillation'},
-          {label:'Needs review',count:(hs.needsReview&&hs.needsReview.count)||0,color:'#f87171',help:'Stale or degraded evidence'},
-          {label:'History',count:(hs.history&&hs.history.count)||0,color:'#8b97a8',help:'Full append-only ledger'},
-          {label:'Work to resume',count:(hs.resume&&hs.resume.count)||0,color:'#5b8cff',help:'Active intakes and unfinished attempts'}],
+          {label:'Active',count:(hs.active&&hs.active.count)||0,color:'#34d399',help:'Open the current memory ledger',onGo:openHomeAction('active')},
+          {label:'Pending',count:(hs.pending&&hs.pending.count)||0,color:'#f59e0b',help:'Review pending outcomes',onGo:openHomeAction('pending')},
+          {label:'Needs review',count:(hs.needsReview&&hs.needsReview.count)||0,color:'#f87171',help:'Inspect stale or degraded evidence',onGo:openHomeAction('needsReview')},
+          {label:'History',count:(hs.history&&hs.history.count)||0,color:'#8b97a8',help:'Open the full append-only ledger',onGo:openHomeAction('history')},
+          {label:'Work to resume',count:(hs.resume&&hs.resume.count)||0,color:'#5b8cff',help:'Resume saved work',onGo:openHomeAction('resume')}],
         health:[
           {label:'Retrieval mode',value:(hh.retrieval&&hh.retrieval.mode)||'unknown',color:hh.retrieval&&hh.retrieval.mode==='on-device-semantic'?'#34d399':'#f59e0b'},
           {label:'Last capture',value:(hh.capture&&hh.capture.lastSuccessfulAt)||'none yet',color:hh.capture&&hh.capture.lastSuccessfulAt?'#34d399':'#8b97a8'},
           {label:'Code index',value:hh.codeIndex&&hh.codeIndex.behindHead?'behind HEAD':((hh.codeIndex&&hh.codeIndex.lastSuccessfulAt)||'not indexed'),color:hh.codeIndex&&hh.codeIndex.behindHead?'#f87171':'#34d399'},
           {label:'Sync',value:hh.sync&&hh.sync.configured?((hh.sync.lastSuccessfulAt)||'configured; no run yet'):'local only',color:hh.sync&&hh.sync.configured?'#34d399':'#8b97a8'}],
         nextAction:mh.nextAction||'Capture a reusable outcome.'}:null;
+      const actionKind=this.state.memHomeAction;
+      const homeAction=actionKind==='pending'?{
+        title:'Review pending outcomes',
+        detail:'Distill these observations before they become recallable memory.',
+        items:((hs.pending&&hs.pending.preview)||[]).map((item)=>item.subject||item.id||'pending outcome').slice(0,3)
+      }:actionKind==='resume'?{
+        title:'Resume saved work',
+        detail:(hs.resume&&hs.resume.primary&&hs.resume.primary.nextSafeAction)||'Choose a saved intake from the session handoff.',
+        items:((hs.resume&&hs.resume.choices)||[]).map((item)=>item.label||item.intakeId).slice(0,3)
+      }:null;
       let detail=null;
       if(memDetailState){
         const onBack=()=>this.backToLedger();
@@ -1612,7 +1637,7 @@ class Component extends DCLogic {
             transitions:((d.audit&&d.audit.records)||[]).flatMap((rv)=>(rv.transitions||[]).map((tr)=>this.memAxis(tr.kind)+': '+this.memAxis(tr.from)+' → '+this.memAxis(tr.to)+' · '+tr.at.slice(0,10)+' · '+tr.actor+(tr.reason?' · '+tr.reason:''))) };
         }
       }
-      mem={ notConfigured:!!(md&&!md.configured), homeView, conflicts, conflictsPlural:conflicts.length===1?'':'s', policy,
+      mem={ notConfigured:!!(md&&!md.configured), homeView, homeAction, conflicts, conflictsPlural:conflicts.length===1?'':'s', policy,
         detail, list:configured&&!detail,
         loading:!!(this.state.memLoading&&!detail), error:this.state.memError, empty:configured&&rows.length===0,
         emptyMessage:this.state.memGroup?'No records match this lifecycle view. Return to All or inspect Needs review above.':'No durable records yet. Complete meaningful work and emit a structured Knowledge Crib outcome; generic session events only request a checkpoint.',
