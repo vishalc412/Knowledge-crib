@@ -10,6 +10,25 @@
 
 ---
 
+## 0. The short version
+
+```bash
+cd ~/Documents/Knowlege-crib          # the knowledge-crib repo
+corepack pnpm@9.15.0 bootstrap        # build + link + `crib setup` on the current repo
+```
+
+`bootstrap` does everything the rest of this guide describes by hand: dependencies, build, global
+link, index, git hooks, MCP config for **every** client, the mandatory agent protocol in **every**
+client's instruction file, the on-device embedding model (**~2.1 GB**, one time — `--no-embed` to
+skip), the memory stores, and the health check. Point it at another repository with
+`node scripts/bootstrap.mjs /path/to/project`.
+
+Already have `crib` on PATH? `crib setup .` is the same thing from step 3 onward.
+
+Read on if you want to wire a single client by hand, or to understand what each file does.
+
+---
+
 ## 1. One-time machine setup
 
 Knowledge-crib is a pnpm monorepo. Build it once and link the `crib` CLI onto your PATH so every
@@ -209,9 +228,12 @@ Install the shared instruction protocol for every supported client and Claude's 
 SessionStart hook:
 
 ```bash
-crib adapters install --client all --scope project
+crib adapters install --scope project          # every client (the default)
 crib adapters hooks install --client claude
 ```
+
+`crib adapters install` writes every client's instruction file by default. Narrow it with
+`--client <id>`, or `--client detected` to write only the clients this machine appears to run.
 
 Every client is then instructed to run handoff first, create or match a durable intake, checkpoint
 at plan/progress/block/end boundaries, and revalidate repository drift. Claude's SessionStart hook

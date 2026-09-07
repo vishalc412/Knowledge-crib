@@ -59,7 +59,10 @@ and not the ranking.
 
 ## Clients
 
-`crib init` detects the client in use and wires only that one.
+`crib setup` (and `crib init`) wires **every** client below — the protocol block states that crib is
+mandatory for the repository, so a client that merely failed to be detected is the wrong one to leave
+exempt. `crib init --ide <id>` narrows it to one, and `crib init --ide detected` restores the
+previous behaviour of wiring only the clients this machine appears to run.
 
 | Client | Instruction file | MCP config | Lifecycle hooks | Current evidence |
 |---|---|---|---|---|

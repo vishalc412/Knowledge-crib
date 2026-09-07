@@ -128,6 +128,16 @@ export const CURSOR_FRONTMATTER = [
  */
 export function neutralProtocolBody(): string {
   return [
+    '## Knowledge-crib is MANDATORY in this repository',
+    '',
+    'Knowledge-crib is the single source of truth for this repository’s memory and code context. It is not one option among several, and it is not decided per session: every agent, in every IDE, on every task, follows the protocol below. The sections after this one say HOW; this one says that none of them are optional.',
+    '',
+    '- **Every session starts here.** Restore durable work (§1) and recall (§2) BEFORE planning, reading files, or editing. Do not rebuild project understanding by re-reading the tree when the graph already holds it.',
+    '- **Structural questions go to the graph first.** `query`, `context`, `impact`, `review`, `explain` and `detect_changes` come before grep and before opening files (§6–§9). Read specific files only for what the graph cannot answer, and say which part that was.',
+    '- **Every reusable learning is recorded here** (§3) with admissible evidence (§4). A learning that lives only in a transcript is lost at the end of the session.',
+    '- **No substitute and no side-store.** Do not use another memory, RAG, or code-context tool in place of this one for this repository, and do not keep private project knowledge outside it. One substrate is what makes every agent and every IDE read and write the same memory.',
+    '- **Mandatory is not the same as infallible.** The honesty signals in §6–§9 still govern. Crib reports what it can see; it never certifies that an edit is safe. An empty result, a `truncated` walk, or a `note`-qualified report is a limit of the index — never an all-clear.',
+    '',
     '## Knowledge-crib agent memory protocol (vendor-neutral)',
     '',
     'This repository uses knowledge-crib as a shared, vendor-neutral memory substrate. Every agent session — Claude, Cursor, Copilot/VS Code, Codex, Windsurf, Gemini, or any MCP-capable tool — follows this protocol. It does not change your tool; it tells you how to use memory safely.',
