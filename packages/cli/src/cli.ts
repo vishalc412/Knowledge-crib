@@ -128,6 +128,7 @@ import {
   type VerifiedDistillDecision,
   VersionedLexicalScorer,
   activateLocal,
+  admitAttested,
   appendAttemptEvent,
   applyContradictedFeedback,
   applyVerifiedDecision,
@@ -236,16 +237,19 @@ import {
   type LifecycleEvent,
   captureLaneSummary,
   clientAdapter,
+  detectClients,
   installCaptureHooks,
   installInstructions,
   listCaptureHooks,
   listInstructions,
+  mcpIdeForClient,
   removeCaptureHooks,
   removeInstructions,
 } from './adapters.js';
 import {
   DEFAULT_EMBED_ALIAS,
   EMBED_MODELS,
+  type EmbedModelSpec,
   describeEvidence,
   resolveModelSpec,
   runEmbedSetup,
@@ -382,6 +386,14 @@ const VALUE_FLAGS = new Set([
   '--summary',
   '--completed-step',
   '--audience',
+  // Onboarding flags (`crib init|setup|mcp|adapters|skill`). Their values are client ids and model
+  // aliases, never paths — and `crib init --ide claude` previously resolved the repo root to
+  // `./claude` because 'claude' fell through as the first positional.
+  '--ide',
+  '--client',
+  '--embed-model',
+  '--embed-from',
+  '--model',
 ]);
 
 /** Collect positional argv tokens, skipping boolean flags AND value-taking flags + their values. */
@@ -621,6 +633,8 @@ async function main(argvRaw: string[]): Promise<number> {
       return cmdReconstruct(rest, ctx);
     case 'impact':
       return cmdImpact(rest, ctx);
+    case 'review':
+      return cmdReview(rest, ctx);
     case 'explain':
       return cmdExplain(rest, ctx);
     case 'rename':
@@ -674,6 +688,8 @@ async function main(argvRaw: string[]): Promise<number> {
       return cmdAdapters(rest, ctx);
     case 'init':
       return cmdInit(rest, ctx);
+    case 'setup':
+      return cmdSetup(rest, ctx);
     case 'doctor':
       return cmdDoctor(rest, ctx);
     case undefined:
@@ -732,6 +748,19 @@ class CliVcsAdapter implements VcsAdapter {
   }
   uncommittedChanges(root: string): string[] {
     return uncommittedChanges(root);
+  }
+  currentBranch(root: string): string | undefined {
+    try {
+      return (
+        execFileSync('git', ['rev-parse', '--abbrev-ref', 'HEAD'], {
+          cwd: root,
+          encoding: 'utf8',
+          stdio: ['ignore', 'pipe', 'ignore'],
+        }).trim() || undefined
+      );
+    } catch {
+      return undefined; // detached HEAD, no commits, or not a git repo — the anchor keeps its head
+    }
   }
 }
 
@@ -1566,6 +1595,37 @@ async function cmdReconstruct(args: string[], ctx?: CmdCtx): Promise<number> {
   return EXIT.OK;
 }
 
+/**
+ * `crib review [--since <ref>] [--limit N] [--max-tokens N]` — the review packet.
+ *
+ * The CLI twin of the `review` MCP verb, so the same answer is available in a terminal, a hook or
+ * CI without an MCP client. See the verb for why this exists rather than reading the diff.
+ */
+function cmdReview(args: string[], ctx?: CmdCtx): number {
+  const opened = openVerbs(args, ctx);
+  if (!opened) return EXIT.NOT_INDEXED;
+  const { verbs, index } = opened;
+  const since = stringFlag(args, '--since');
+  const limit = intFlag(args, '--limit');
+  const maxTokens = intFlag(args, '--max-tokens');
+  try {
+    process.stdout.write(
+      `${JSON.stringify(
+        verbs.review({
+          ...(since !== undefined ? { since } : {}),
+          ...(limit !== undefined ? { limit } : {}),
+          ...(maxTokens !== undefined ? { maxTokens } : {}),
+        }),
+        null,
+        2,
+      )}\n`,
+    );
+  } finally {
+    index.close();
+  }
+  return EXIT.OK;
+}
+
 /** `crib impact <id> --dir up|down [--depth N]` — blast radius. */
 async function cmdImpact(args: string[], ctx?: CmdCtx): Promise<number> {
   const id = positionalsOf(args)[0];
@@ -2181,26 +2241,176 @@ async function chooseFreshnessMode(repoRoot: string): Promise<FreshnessMode> {
   return mode ?? DEFAULT;
 }
 
+/**
+ * Which clients `crib init` wires — and why the default is now every one of them.
+ *
+ * This default was REVERSED deliberately. It used to be "detect the editor actually in use and
+ * write only that one", because a developer working in Copilot ran init and got `GEMINI.md`,
+ * `.windsurfrules` and three more files they had never asked for. That is still the right default
+ * for a tool a repository merely OFFERS.
+ *
+ * It is the wrong default for one a repository MANDATES. The protocol block now opens with
+ * "Knowledge-crib is MANDATORY in this repository": every agent, in every IDE, on every task. An
+ * agent that opens the repo in a client nothing happened to detect is precisely the agent that must
+ * not be running without the protocol — a missing instruction file there is not a tidy repository,
+ * it is one client silently exempt from the rule. Unrequested files are a real cost; a client that
+ * skips memory and blast-radius analysis is a larger one.
+ *
+ * The narrow behaviour survives as an explicit choice, so nothing that was possible became
+ * impossible:
+ *   `--ide <id>`      wire exactly one client
+ *   `--ide detected`  the previous default — write only what this machine appears to run
+ *   `--ide all`       every client (now also the default; still accepted so scripts keep working)
+ */
+const INIT_IDE_CHOICES: readonly (ClientId | 'all' | 'detected')[] = [
+  'all',
+  'detected',
+  ...ALL_CLIENTS,
+];
+
+/** How `crib init` resolved `--ide` into a client list, with the reason to print. */
+interface InitClientPlan {
+  clients: ClientId[];
+  /** MCP config targets, de-duplicated (copilot and vscode share `.vscode/mcp.json`). */
+  mcpIdes: ReturnType<typeof mcpIdeForClient>[];
+  why: string;
+  /** Set when `--ide detected` found nothing: write the neutral file, wire no IDE config. */
+  detectedNothing: boolean;
+}
+
+function planInitClients(requested: string | undefined, repoRoot: string): InitClientPlan {
+  const all = (clients: ClientId[], why: string): InitClientPlan => ({
+    clients,
+    mcpIdes: [...new Set(clients.map(mcpIdeForClient))],
+    why,
+    detectedNothing: false,
+  });
+  if (requested !== undefined && requested !== 'all' && requested !== 'detected') {
+    return all([requested as ClientId], `${requested} (requested with --ide)`);
+  }
+  if (requested === 'detected') {
+    const detection = detectClients(repoRoot);
+    if (detection.clients.length > 0) {
+      const why = detection.signals
+        .filter((s) => detection.clients.includes(s.client))
+        .map((s) => `${s.client} (${s.source}: ${s.evidence})`)
+        .join(', ');
+      return all(detection.clients, `detected ${why}`);
+    }
+    // Nothing identified the caller. Write the ONE vendor-neutral instruction file that is a
+    // cross-tool convention — and wire NO MCP config, because a config file's location IS the
+    // client identity. Guessing one would put a config in an editor the user may not even have.
+    return {
+      clients: ['codex'],
+      mcpIdes: [],
+      why:
+        'none detected — writing the vendor-neutral AGENTS.md only, no IDE config.\n' +
+        '           Name yours with `crib init --ide <claude|cursor|copilot|codex|windsurf|gemini>`,\n' +
+        '           or drop `--ide detected` to wire every client (the default).',
+      detectedNothing: true,
+    };
+  }
+  return all(
+    ALL_CLIENTS,
+    requested === 'all'
+      ? 'all (explicitly requested with --ide all)'
+      : 'all — crib is mandatory for this repository, so every client gets the protocol.\n' +
+          '           Narrow it with `--ide <id>`, or `--ide detected` to wire only what is in use.',
+  );
+}
+
+/** Embed-tier options parsed off an `init`/`setup` argv. */
+interface InitEmbedChoice {
+  /** `undefined` = do not touch the semantic tier at all. */
+  spec?: EmbedModelSpec;
+  /** Pre-fetched bundle directory (air-gapped): adopt instead of downloading. */
+  from?: string;
+  /** Why the tier is being skipped, when it is. */
+  skipReason?: string;
+}
+
+function parseEmbedChoice(args: string[]): InitEmbedChoice | { error: string } {
+  if (args.includes('--no-embed')) {
+    return { skipReason: 'skipped (--no-embed)' };
+  }
+  if (process.env.KCRIB_NO_EMBED === '1') {
+    return { skipReason: 'skipped (KCRIB_NO_EMBED=1)' };
+  }
+  const modelIdx = args.indexOf('--embed-model');
+  const alias = modelIdx >= 0 ? (args[modelIdx + 1] ?? '') : DEFAULT_EMBED_ALIAS;
+  if (alias === 'skip' || alias === 'none')
+    return { skipReason: `skipped (--embed-model ${alias})` };
+  const spec = resolveModelSpec(alias);
+  if (!spec) {
+    return {
+      error: `unknown --embed-model: ${alias || '(missing)'}\nvalid: ${EMBED_MODELS.map((m) => m.alias).join(', ')}, skip`,
+    };
+  }
+  const fromIdx = args.indexOf('--embed-from');
+  const from = fromIdx >= 0 ? args[fromIdx + 1] : undefined;
+  if (fromIdx >= 0 && (!from || from.startsWith('-'))) {
+    return { error: '--embed-from needs a directory holding a pre-fetched model bundle' };
+  }
+  return { spec, ...(from ? { from } : {}) };
+}
+
+/**
+ * Install the on-device semantic tier as part of onboarding, and REPORT rather than fail.
+ *
+ * This is the step that changed most: it used to prompt on a TTY and silently skip everywhere else,
+ * so every scripted or CI-driven onboarding ended with the degraded lexical fallback — 2.6%
+ * paraphrase recall — and no signal that anything was missing. A memory substrate the repository
+ * mandates cannot ship its recall in that state by default.
+ *
+ * It is still the LAST step and still non-fatal. Every step before it has already left the
+ * repository working, so a failed or refused download degrades recall to lexical — it never breaks
+ * onboarding, and it never exits non-zero.
+ */
+async function installEmbedTier(choice: InitEmbedChoice): Promise<void> {
+  if (!choice.spec) {
+    process.stdout.write(
+      `  ${choice.skipReason ?? 'skipped'} — recall stays LEXICAL (paraphrase ~2.6%).\n           Enable later with: crib embed setup --yes\n`,
+    );
+    return;
+  }
+  const spec = choice.spec;
+  process.stdout.write(
+    `  installing ${spec.alias} (${spec.hfId}, ${spec.approxDisk})${choice.from ? ` from ${choice.from}` : ''}…\n  one-time download; every query afterwards is offline. Skip with --no-embed.\n`,
+  );
+  const plan = await runEmbedSetup({
+    spec,
+    yes: true,
+    ...(choice.from ? { from: choice.from } : {}),
+  });
+  for (const { name, result } of plan.steps) {
+    process.stdout.write(`    ${result.ok ? 'ok  ' : 'FAIL'} ${name}: ${result.detail}\n`);
+  }
+  process.stdout.write(
+    plan.installed
+      ? '  semantic retrieval is ENABLED for memory recall.\n'
+      : `  not enabled — recall stays LEXICAL. ${plan.remediation[0] ?? 'Re-run `crib embed setup --yes`.'}\n`,
+  );
+}
+
 async function cmdInit(args: string[], ctx?: CmdCtx): Promise<number> {
   const repoRoot = resolve(ctx?.cwdOverride ?? positionalsOf(args)[0] ?? '.');
   const ideIdx = args.indexOf('--ide');
-  const ide: McpIde | 'all' = ideIdx >= 0 ? ((args[ideIdx + 1] as McpIde | 'all') ?? 'all') : 'all';
-  const validIdes: Array<McpIde | 'all'> = [
-    'all',
-    'claude',
-    'cursor',
-    'vscode',
-    'codex',
-    'windsurf',
-    'gemini',
-  ];
-  if (!validIdes.includes(ide)) {
-    process.stderr.write(`unknown --ide: ${ide}\nvalid: ${validIdes.join(', ')}\n`);
+  const requested = ideIdx >= 0 ? (args[ideIdx + 1] ?? '') : undefined;
+  if (requested !== undefined && !INIT_IDE_CHOICES.includes(requested as ClientId)) {
+    process.stderr.write(`unknown --ide: ${requested}\nvalid: ${INIT_IDE_CHOICES.join(', ')}\n`);
+    return EXIT.BAD_ARGS;
+  }
+  const embed = parseEmbedChoice(args);
+  if ('error' in embed) {
+    process.stderr.write(`${embed.error}\n`);
     return EXIT.BAD_ARGS;
   }
 
+  const plan = planInitClients(requested, repoRoot);
+
   process.stdout.write('crib init — 5-minute onboarding\n');
-  process.stdout.write('  step 1/4: indexing the repo (deterministic, LLM-free)…\n');
+  process.stdout.write(`  clients: ${plan.why}\n`);
+  process.stdout.write('  step 1/5: indexing the repo (deterministic, LLM-free)…\n');
   const indexCode = await cmdIndex([repoRoot], ctx);
   if (indexCode !== EXIT.OK) {
     process.stderr.write(`  index failed (exit ${indexCode}) — aborting init\n`);
@@ -2208,7 +2418,7 @@ async function cmdInit(args: string[], ctx?: CmdCtx): Promise<number> {
   }
 
   process.stdout.write(
-    '  step 2/4: wiring git hooks (non-blocking post-commit freshness hook + .crib merge driver)…\n',
+    '  step 2/5: wiring git hooks (non-blocking post-commit freshness hook + .crib merge driver)…\n',
   );
   const hooksCode = cmdInstallHooks([repoRoot], ctx, { convertAfter: true });
   if (hooksCode !== EXIT.OK) {
@@ -2228,26 +2438,40 @@ async function cmdInit(args: string[], ctx?: CmdCtx): Promise<number> {
     process.stderr.write(`  warning: freshness mode not persisted — ${(err as Error).message}\n`);
   }
 
-  process.stdout.write(`  step 3/4: wiring the MCP server into IDE config (--ide ${ide})…\n`);
-  const mcpCode = cmdMcp(['install', '--ide', ide, repoRoot], ctx);
-  if (mcpCode !== EXIT.OK) {
-    process.stderr.write(`  mcp install failed (exit ${mcpCode}) — aborting init\n`);
-    return mcpCode;
+  process.stdout.write(
+    plan.mcpIdes.length > 0
+      ? `  step 3/5: wiring the MCP server into IDE config (${plan.mcpIdes.join(', ')})…\n`
+      : '  step 3/5: skipped — no IDE identified, so there is no config location to write.\n' +
+          '            Run `crib mcp install --ide <name>` once you know it.\n',
+  );
+  for (const target of plan.mcpIdes) {
+    const mcpCode = cmdMcp(['install', '--ide', target, repoRoot], ctx);
+    if (mcpCode !== EXIT.OK) {
+      process.stderr.write(
+        `  mcp install failed for ${target} (exit ${mcpCode}) — aborting init\n`,
+      );
+      return mcpCode;
+    }
   }
 
   process.stdout.write(
-    '  step 4/4: writing the vendor-neutral agent-memory protocol into instruction files…\n',
+    '  step 4/5: writing the mandatory agent protocol into every instruction file…\n',
   );
-  // Non-fatal: adapter install must never abort init (a user may not want any instruction files yet, and
-  // index/hooks/mcp already succeeded). installInstructions can still throw on an fs error (EACCES/EROFS/
-  // ENOSPC writing CLAUDE.md/AGENTS.md), so swallow it into a warning rather than aborting with a trace.
+  // Non-fatal: adapter install must never abort init (index/hooks/mcp already succeeded).
+  // installInstructions can still throw on an fs error (EACCES/EROFS/ENOSPC writing
+  // CLAUDE.md/AGENTS.md), so swallow it into a warning rather than aborting with a trace.
   try {
-    cmdAdapters(['install', '--client', 'all', repoRoot], ctx);
+    for (const client of plan.clients) {
+      cmdAdapters(['install', '--client', client, repoRoot], ctx);
+    }
   } catch (e) {
     process.stderr.write(
       `  warning: instruction-adapter install failed — ${(e as Error).message}\n`,
     );
   }
+
+  process.stdout.write('  step 5/5: on-device semantic model for memory recall…\n');
+  await installEmbedTier(embed);
 
   process.stdout.write('\n✓ crib init complete. Next steps:\n');
   process.stdout.write('  1. Restart your IDE so it picks up the MCP server config.\n');
@@ -2255,21 +2479,99 @@ async function cmdInit(args: string[], ctx?: CmdCtx): Promise<number> {
     '  2. Ask your agent "query the crib for <symbol>", or run `crib query <text>`.\n',
   );
   process.stdout.write(
-    '  3. (optional) `crib memory init` — enable team + local agent memory for this repo.\n',
-  );
-  // Named here because a user who stops after `memory init` gets 2.6% paraphrase recall and no
-  // signal that a better tier exists. `crib doctor` says so too, but only if you run it.
-  process.stdout.write(
-    '  4. (optional) `crib embed setup` — the semantic tier for memory recall.\n' +
-      '     Without it, paraphrased questions answer at 2.6%; with it, 81.0%.\n' +
-      '     `crib embed setup --list` shows the measured size/quality ladder first.\n',
+    '  3. (optional) `crib memory init` — enable team + local agent memory for this repo.\n' +
+      '     `crib setup` does this for you, along with everything above.\n',
   );
   process.stdout.write(
-    '  5. (optional) `crib index --semantic` — add INFERRED embedding-cosine links.\n',
+    '  4. (optional) `crib index --semantic` — add INFERRED embedding-cosine links.\n',
   );
-  process.stdout.write('  6. (optional) `crib enrich --next` — drive the LLM-graph layer.\n');
+  process.stdout.write('  5. (optional) `crib enrich --next` — drive the LLM-graph layer.\n');
   process.stdout.write('  Run `crib doctor` any time to re-check setup health.\n');
   return EXIT.OK;
+}
+
+/**
+ * `crib setup [path]` — the whole installation, one command, nothing left to do afterwards.
+ *
+ * `crib init` onboards a repository. `setup` is the promise one level up, and it exists because the
+ * honest answer to "what do I run?" was previously four commands in an order nobody could infer:
+ * `crib init`, then `crib memory init`, then `crib embed setup --yes`, then `crib doctor` to find
+ * out which of them had silently no-opped.
+ *
+ * So this command runs all of it — index, git hooks, MCP wiring for every client, the mandatory
+ * protocol in every client's instruction file, the team + local memory stores, and the on-device
+ * semantic model — and finishes with the health check, so the last thing on screen is what is
+ * actually working rather than a claim that it is.
+ *
+ * It is deliberately a THIN orchestrator over commands that already exist and are already tested. A
+ * second implementation of any step would be a second thing to keep correct, and the steps that
+ * matter here (integrity-pinned model install, non-clobbering config writes) are exactly the ones
+ * that must not be re-implemented casually.
+ *
+ * Exit code: the init phase decides it. Memory-store creation and the semantic tier are reported,
+ * never fatal — a machine with no network still gets a fully wired, lexical-recall repository, and
+ * `doctor`'s own exit code is deliberately NOT propagated (a WARN-class check must not turn a
+ * successful setup into a failed script).
+ */
+async function cmdSetup(args: string[], ctx?: CmdCtx): Promise<number> {
+  if (args.includes('--help') || args.includes('-h')) {
+    process.stdout.write(setupHelp());
+    return EXIT.OK;
+  }
+  const repoRoot = resolve(ctx?.cwdOverride ?? positionalsOf(args)[0] ?? '.');
+  process.stdout.write('crib setup — full install for this repository and this machine\n\n');
+
+  const initCode = await cmdInit(args, ctx);
+  if (initCode !== EXIT.OK) {
+    process.stderr.write(
+      '\ncrib setup: onboarding failed above — nothing further was attempted.\n',
+    );
+    return initCode;
+  }
+
+  process.stdout.write('\n  memory: creating the team + local agent-memory stores…\n');
+  const memCode = cmdMemoryInit([repoRoot], ctx);
+  if (memCode !== EXIT.OK) {
+    process.stderr.write(
+      `  warning: \`crib memory init\` exited ${memCode} — memory stores are not ready.\n           Re-run \`crib memory init\` after fixing the cause above.\n`,
+    );
+  }
+
+  process.stdout.write('\n  health check:\n');
+  // Deliberately not propagated: doctor reports WARN-class rows (stale build artifacts, an
+  // un-enabled optional tier) that must not turn a successful install into a failed script. The
+  // output is the point — the operator sees exactly which rows are ✗.
+  await cmdDoctor([repoRoot], ctx);
+
+  process.stdout.write(
+    '\n✓ crib setup complete. Restart your IDE so it picks up the MCP server, then ask your\n' +
+      '  agent anything — the protocol is already in its instruction file.\n',
+  );
+  return EXIT.OK;
+}
+
+function setupHelp(): string {
+  return `usage: crib setup [path] [--ide <id|all|detected>] [--no-embed] [--embed-model <alias>] [--embed-from <dir>]
+
+The whole install in one command. Runs, in order:
+  1. crib index            — build the code graph
+  2. crib install-hooks    — post-commit freshness hook + .crib merge driver
+  3. crib mcp install      — wire the MCP server into every client's config
+  4. crib adapters install — write the MANDATORY agent protocol into every instruction file
+  5. crib embed setup      — download + pin the on-device semantic model (${DEFAULT_EMBED_ALIAS} by default)
+  6. crib memory init      — create the team + local agent-memory stores
+  7. crib doctor           — report what is actually working
+
+Defaults are "everything", because crib is the mandatory context substrate for a repo that
+installs it. Narrow it when you need to:
+  --ide <id>            wire one client only (${ALL_CLIENTS.join(', ')})
+  --ide detected        wire only the clients this machine appears to run
+  --no-embed            skip the model download entirely (recall stays lexical, ~2.6% on paraphrases)
+  --embed-model small   a ~97 MB model instead of the ${DEFAULT_EMBED_ALIAS} default
+  --embed-from <dir>    adopt a pre-fetched bundle instead of downloading (air-gapped hosts)
+
+KCRIB_NO_EMBED=1 is equivalent to --no-embed, for CI images that must never pull weights.
+`;
 }
 
 /** Duplicated from runtime.ts STALE_BUILD_MS (unexported there — runtime.ts is owned by another
@@ -2711,159 +3013,36 @@ function cmdInstallHooks(
 }
 
 /**
- * `crib embed setup` — one command from the degraded lexical fallback to the semantic tier.
+ * The measured ladder, rendered for `--list`.
  *
- * Replaces a three-step README ritual whose last step named a path inside the git checkout
- * (`examples/embedders/minilm-e5`). The published package ships only `dist`/`skills`/`LICENSE`/
- * `NOTICE`, so for anyone who installed crib from npm those instructions could not be followed:
- * the directory is not on their disk. This command GENERATES the adapter instead of pointing at
- * one, then pins it through the same integrity path a hand-installed model takes.
- *
- * Consent is explicit. Installing a Python package mutates the operator's interpreter and fetching
- * weights pulls up to 2.2 GB over the network, so neither happens without `--yes`; the default
- * prints exactly what it would run and stops.
+ * Numbers come from the model table, which carries gate RESULTS rather than marketing copy — every
+ * row states its real G2 against the 80% threshold, including the rows that miss it. A ladder that
+ * hid a failing row behind a label would be selling the tier rather than describing it.
  */
-async function cmdEmbedSetup(rest: string[]): Promise<number> {
-  let modelArg = DEFAULT_EMBED_ALIAS;
-  let pythonArg: string | undefined;
-  let yes = false;
-  let json = false;
-  for (let i = 0; i < rest.length; i++) {
-    const a = rest[i]!;
-    if (a === '--model') modelArg = rest[++i] ?? modelArg;
-    else if (a === '--python') pythonArg = rest[++i];
-    else if (a === '--yes' || a === '-y') yes = true;
-    else if (a === '--json') json = true;
-    else if (a === '--list') {
-      process.stdout.write(formatEmbedLadder());
-      return EXIT.OK;
-    }
-  }
-
-  const spec = resolveModelSpec(modelArg);
-  if (!spec) {
-    process.stderr.write(
-      `unknown model "${modelArg}". Known aliases: ${EMBED_MODELS.map((m) => m.alias).join(', ')}\nRun \`crib embed setup --list\` for the measured ladder.\n`,
-    );
-    return EXIT.BAD_ARGS;
-  }
-
-  const python = pythonArg ?? process.env.KCRIB_EMBED_PYTHON ?? 'python3';
-  const out = (line: string) => {
-    if (!json) process.stdout.write(`${line}\n`);
-  };
-  const steps: { step: string; ok: boolean; detail: string }[] = [];
-  const record = (step: string, r: StepResult) => {
-    steps.push({ step, ...r });
-    out(`  ${r.ok ? 'ok  ' : 'FAIL'} ${step.padEnd(24)} ${r.detail}`);
-    return r.ok;
-  };
-  const bail = (hint: string) => {
-    if (json)
-      process.stdout.write(`${JSON.stringify({ ok: false, model: spec.hfId, steps }, null, 2)}\n`);
-    else process.stderr.write(`\n${hint}\n`);
-    return EXIT.ERROR;
-  };
-
-  out(`crib embed setup — ${spec.hfId} (${spec.approxDisk}, dim ${spec.dim})`);
-  out(`  measured: G2 ${(spec.g2 * 100).toFixed(1)}% paraphrase recall, ${spec.gates}/8 gates\n`);
-
-  if (!record('python', checkPython(python)))
-    return bail(
-      'No usable Python. Point at one explicitly:\n  crib embed setup --python /path/to/bin/python3',
-    );
-
-  if (!record('sentence-transformers', checkSentenceTransformers(python))) {
-    if (!yes)
-      return bail(
-        `This would install a package into ${python}. Re-run with --yes to allow it, or install it yourself:\n` +
-          `  ${python} -m pip install sentence-transformers`,
-      );
-    out('  ... installing sentence-transformers (--yes given)');
-    try {
-      execFileSync(python, ['-m', 'pip', 'install', '--quiet', 'sentence-transformers'], {
-        stdio: ['ignore', 'pipe', 'pipe'],
-      });
-    } catch (err) {
-      return bail(`pip install failed: ${(err as Error).message.split('\n')[0]}`);
-    }
-    if (!record('sentence-transformers', checkSentenceTransformers(python)))
-      return bail('installed, but still not importable — check for multiple interpreters');
-  }
-
-  if (!record('weights', checkWeights(spec, python))) {
-    if (!yes)
-      return bail(
-        `This would download ${spec.approxDisk} from HuggingFace. Re-run with --yes to allow it, or fetch it yourself:\n` +
-          `  ${python} -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('${spec.hfId}')"`,
-      );
-    out(
-      `  ... downloading ${spec.hfId} (${spec.approxDisk}, one time) — this is the only network step`,
-    );
-    if (!record('download', downloadWeights(spec, python)))
-      return bail('download failed — check connectivity and the model id');
-  }
-
-  const dir = adapterDir(spec);
-  writeAdapter(spec, python, dir);
-  record('adapter', { ok: true, detail: dir });
-
-  try {
-    const manifest = await pinAdapter(spec, dir);
-    record('pinned', {
-      ok: true,
-      detail: `${manifest.embedderId} · ${manifest.files.length} files hashed · ${embedManifestPath()}`,
-    });
-  } catch (err) {
-    return bail(`pin failed: ${(err as Error).message}`);
-  }
-
-  // The proof. A dimension check passes for a model returning noise; this asserts the property
-  // recall depends on — a paraphrase outranks an unrelated sentence — and that embed/embedBatch
-  // agree, which is the divergence that silently cost 8 points of recall once already.
-  const smoke = await smokeTest(embedHomeDir());
-  if (!record('smoke test', smoke))
-    return bail('the model loaded but does not rank — not activating a tier that cannot retrieve');
-
-  if (json) {
-    process.stdout.write(
-      `${JSON.stringify({ ok: true, model: spec.hfId, embedderId: embedderIdFor(spec), dim: spec.dim, g2: spec.g2, gates: spec.gates, steps }, null, 2)}\n`,
-    );
-  } else {
-    out(`\nsemantic tier ACTIVE — ${embedderIdFor(spec)}`);
-    out('  verify:  crib doctor .');
-    out('  confirm the scorer names itself on every response:');
-    out(
-      '    crib memory search "how do we handle retries" --json | jq -r .provenance.scorerVersion',
-    );
-  }
-  return EXIT.OK;
-}
-
-/** The measured ladder, rendered for `--list`. Numbers come from the model table, which carries
- *  gate results rather than marketing copy. */
 function formatEmbedLadder(): string {
+  const pct = (m: (typeof EMBED_MODELS)[number]) =>
+    m.evidence.kind === 'gate-verified' ? `${(m.evidence.g2 * 100).toFixed(1)}%` : 'n/a';
+  const gates = (m: (typeof EMBED_MODELS)[number]) =>
+    m.evidence.kind === 'gate-verified' ? `${m.evidence.gates}/8` : '—';
   const lines = [
-    'embed model ladder — measured through the frozen launch gate (docs/bench/embed-model-ladder.md)',
+    'embed model ladder — measured through the frozen launch gate (docs/bench/onnx-model-ladder.md)',
     '',
-    `  ${'alias'.padEnd(7)}${'model'.padEnd(46)}${'disk'.padStart(9)}${'G2'.padStart(8)}${'gates'.padStart(7)}`,
+    `  ${'alias'.padEnd(7)}${'model'.padEnd(40)}${'disk'.padStart(9)}${'G2'.padStart(8)}${'gates'.padStart(7)}`,
   ];
   for (const m of EMBED_MODELS) {
     lines.push(
-      `  ${m.alias.padEnd(7)}${m.hfId.padEnd(46)}${m.approxDisk.padStart(9)}${`${(m.g2 * 100).toFixed(1)}%`.padStart(8)}${`${m.gates}/8`.padStart(7)}`,
+      `  ${m.alias.padEnd(7)}${m.onnxId.padEnd(40)}${m.approxDisk.padStart(9)}${pct(m).padStart(8)}${gates(m).padStart(7)}`,
     );
   }
   lines.push(
-    `  ${'-'.padEnd(7)}${'(no tier) char-ngram lexical fallback'.padEnd(46)}${'0 B'.padStart(9)}${'2.6%'.padStart(8)}${'6/8'.padStart(7)}`,
+    `  ${'-'.padEnd(7)}${'(no tier) char-ngram lexical fallback'.padEnd(40)}${'0 B'.padStart(9)}${'2.6%'.padStart(8)}${'6/8'.padStart(7)}`,
   );
   lines.push('');
   lines.push(
     `  default: --model ${DEFAULT_EMBED_ALIAS} (the only model measured to pass all 8 gates)`,
   );
-  lines.push(
-    '  size does not predict quality: the 90 MB English model beats the 458 MB and 1.0 GB',
-  );
-  lines.push('  multilingual ones on this corpus.');
+  lines.push("  No Python: the runtime is an ONNX npm package installed into crib's embed home.");
+  lines.push('  Weights are fetched once and every later load is offline.');
   return `${lines.join('\n')}\n`;
 }
 
@@ -2886,14 +3065,17 @@ function formatEmbedLadder(): string {
  */
 async function cmdEmbedSetup(args: string[]): Promise<number> {
   let alias = DEFAULT_EMBED_ALIAS;
-  let python = process.env.KCRIB_EMBED_PYTHON ?? 'python3';
   let yes = false;
   let json = false;
+  let from: string | undefined;
   for (let i = 0; i < args.length; i++) {
     const a = args[i]!;
     if (a === '--model') alias = args[++i] ?? alias;
-    else if (a === '--python') python = args[++i] ?? python;
-    else if (a === '--yes') yes = true;
+    else if (a === '--from') from = args[++i] ?? from;
+    else if (a === '--list') {
+      process.stdout.write(formatEmbedLadder());
+      return EXIT.OK;
+    } else if (a === '--yes') yes = true;
     else if (a === '--json') json = true;
     else if (a === '--help' || a === '-h') {
       process.stdout.write(embedSetupHelp());
@@ -2911,7 +3093,7 @@ async function cmdEmbedSetup(args: string[]): Promise<number> {
     return EXIT.BAD_ARGS;
   }
 
-  const plan = await runEmbedSetup({ spec, pythonPath: python, yes });
+  const plan = await runEmbedSetup({ spec, yes, ...(from ? { from } : {}) });
   if (json) {
     process.stdout.write(`${JSON.stringify(plan, null, 2)}\n`);
     return plan.installed ? EXIT.OK : EXIT.ERROR;
@@ -2952,15 +3134,20 @@ function embedSetupHelp(): string {
       `         ${describeEvidence(m.evidence)}\n` +
       `         ${m.note}\n`,
   ).join('');
-  return `usage: crib embed setup [--model <alias>] [--python <path>] [--yes] [--json]
+  return `usage: crib embed setup [--model <alias>] [--yes] [--from <bundle-dir>] [--json]
 
-Installs the on-device semantic tier for memory recall. Without --yes nothing is
-downloaded: the command reports what it would fetch and stops.
+Installs the on-device semantic tier for memory recall. No Python: the runtime is an
+ONNX npm package installed into crib's embed home, never into your project. Without
+--yes nothing is fetched — the command reports what it would download and stops.
 
 models (default: ${DEFAULT_EMBED_ALIAS}):
 ${rows}
-The weights are downloaded from HuggingFace by sentence-transformers under their own
-licences; crib pins the generated adapter through its integrity manifest. The remote
+--from <dir>  adopt a pre-fetched bundle instead of downloading (air-gapped hosts).
+              Produce one on a networked machine with --yes, then copy its embed-home
+              models/ directory across.
+
+Weights come from HuggingFace under their own licences; crib pins the generated adapter
+through its integrity manifest and never reaches the network at query time. The remote
 embedder tier is NOT enabled by this command (see \`crib embed install --accept-remote-policy\`).
 `;
 }
@@ -4312,6 +4499,8 @@ function cmdAdapters(args: string[], ctx?: CmdCtx): number {
   const [sub, ...rest] = args;
   if (sub === 'hooks') return cmdAdaptersHooks(rest, ctx);
   let client: ClientId | 'all' = 'all';
+  /** `--client detected` — install only for the clients this machine appears to run. */
+  let clientDetectedRequested = false;
   let scope: 'project' | 'global' = 'project';
   let pathArg: string | undefined;
   for (let i = 0; i < rest.length; i++) {
@@ -4320,9 +4509,13 @@ function cmdAdapters(args: string[], ctx?: CmdCtx): number {
       const value = rest[++i];
       if (looksLikeFlag(value) || !value) {
         process.stderr.write(
-          'usage: crib adapters <install|list|remove> [--client <id|all>] [--scope project|global]\n',
+          'usage: crib adapters <install|list|remove> [--client <id|all|detected>] [--scope project|global]\n',
         );
         return EXIT.BAD_ARGS;
+      }
+      if (value === 'detected') {
+        clientDetectedRequested = true;
+        continue;
       }
       client = value as ClientId | 'all';
       continue;
@@ -4345,7 +4538,7 @@ function cmdAdapters(args: string[], ctx?: CmdCtx): number {
   }
   if (client !== 'all' && !ALL_CLIENTS.includes(client)) {
     process.stderr.write(
-      `unknown --client: ${client}\nvalid: ${['all', ...ALL_CLIENTS].join(', ')}\n`,
+      `unknown --client: ${client}\nvalid: ${['all', 'detected', ...ALL_CLIENTS].join(', ')}\n`,
     );
     return EXIT.BAD_ARGS;
   }
@@ -4353,7 +4546,32 @@ function cmdAdapters(args: string[], ctx?: CmdCtx): number {
 
   switch (sub) {
     case 'install': {
-      const results = installInstructions(repoRoot, { client, scope });
+      // WRITES DEFAULT TO EVERY CLIENT, matching `crib init`. The protocol block now opens with
+      // "Knowledge-crib is MANDATORY in this repository"; a client that happens not to be detected
+      // is the one most likely to run without the rule, so an undetected client is the wrong thing
+      // to silently exempt. `--client detected` keeps the previous behaviour for anyone who wants
+      // a repository carrying only the instruction files their team actually reads.
+      let installClients: (ClientId | 'all')[] = [client];
+      if (clientDetectedRequested) {
+        const detection = detectClients(repoRoot);
+        if (detection.clients.length > 0) {
+          installClients = detection.clients;
+          process.stdout.write(
+            `detected ${detection.signals
+              .filter((sig) => detection.clients.includes(sig.client))
+              .map((sig) => `${sig.client} (${sig.source}: ${sig.evidence})`)
+              .join(', ')}\n`,
+          );
+        } else {
+          installClients = ['codex']; // the vendor-neutral AGENTS.md
+          process.stdout.write(
+            'no client detected — writing the vendor-neutral AGENTS.md; pass --client <id|all> to choose\n',
+          );
+        }
+      }
+      const results = installClients.flatMap((id) =>
+        installInstructions(repoRoot, { client: id, scope }),
+      );
       for (const r of results) {
         if (r.note) process.stdout.write(`${r.client}: ${r.note}\n`);
         else if (r.path)
@@ -4393,7 +4611,7 @@ function cmdAdapters(args: string[], ctx?: CmdCtx): number {
     case '-h':
     case '--help':
       process.stderr.write(
-        'usage: crib adapters <install|list|remove> [--client <id|all>] [--scope project|global]\n',
+        'usage: crib adapters <install|list|remove> [--client <id|all|detected>] [--scope project|global]\n',
       );
       return EXIT.BAD_ARGS;
     default:
@@ -4433,7 +4651,7 @@ function cmdAdaptersHooks(args: string[], ctx?: CmdCtx): number {
   }
   if (client !== 'all' && !ALL_CLIENTS.includes(client)) {
     process.stderr.write(
-      `unknown --client: ${client}\nvalid: ${['all', ...ALL_CLIENTS].join(', ')}\n`,
+      `unknown --client: ${client}\nvalid: ${['all', 'detected', ...ALL_CLIENTS].join(', ')}\n`,
     );
     return EXIT.BAD_ARGS;
   }
@@ -4593,6 +4811,9 @@ function createMemoryApi(
   repoRoot: string,
   cribDir: string,
   deps: NonNullable<ReturnType<typeof createMemoryDeps>>,
+  /** Pass `'terminal'` ONLY from a call site that has itself checked `process.stdin.isTTY`; it
+   *  permits a `tty` human attestation, which no other path may present. */
+  attestationSource?: 'terminal',
 ): MemoryApi {
   let head: string | undefined;
   try {
@@ -4610,14 +4831,22 @@ function createMemoryApi(
     projectionCheckpoints: deps.projectionCheckpoints,
     identityDirectory: deps.identityDirectory,
     ...(head !== undefined ? { codeHead: head } : {}),
+    ...(attestationSource ? { attestationSource } : {}),
   });
 }
+
+/**
+ * Bounded list of the paths a returning session most needs to see. A digest proves the working set
+ * is the same one; it cannot tell a human WHERE they were, which is the whole point of a resume.
+ */
+const RESUME_PATHS_MAX = 20;
 
 function currentRepositoryAnchor(repoRoot: string): {
   head?: string;
   branch?: string;
   dirty: boolean;
   changedPathsDigest?: string;
+  changedPaths?: string[];
 } {
   let head: string | undefined;
   let branch: string | undefined;
@@ -4647,7 +4876,10 @@ function currentRepositoryAnchor(repoRoot: string): {
     ...(branch ? { branch } : {}),
     dirty: changed.length > 0,
     ...(changed.length > 0
-      ? { changedPathsDigest: `blake3:${blake3Hex(changed.join('\n'))}` }
+      ? {
+          changedPathsDigest: `blake3:${blake3Hex(changed.join('\n'))}`,
+          changedPaths: changed.slice(0, RESUME_PATHS_MAX),
+        }
       : {}),
   };
 }
@@ -5334,6 +5566,10 @@ async function cmdMemory(args: string[], ctx?: CmdCtx): Promise<number> {
       return cmdMemoryEvaluate(rest, ctx);
     case 'activate':
       return cmdMemoryActivate(rest, ctx);
+    case 'remember':
+      return cmdMemoryRemember(rest, ctx);
+    case 'admit':
+      return cmdMemoryAdmit(rest, ctx);
     case 'propose':
       return cmdMemoryPropose(rest, ctx);
     case 'attest':
@@ -5361,7 +5597,7 @@ async function cmdMemory(args: string[], ctx?: CmdCtx): Promise<number> {
     case '-h':
     case '--help':
       process.stderr.write(
-        'crib memory init | handoff [--limit N] [--json] (where was I? — in-flight work, undistilled captures, what went stale) | events [--include-expired] [--limit N] [--json] | profiles list [--json] | profiles register --key <profile-key> --alias <client-id>/<agent-id> [--alias ...] [--json] | recall "<query>" [--limit N] [--sources team,local,global] [--target <id>] [--with-evidence] [--include-pending] [--max-tokens N] [--json] | search "<query>" [--limit N] [--sources team,local,global] [--target <id>] [--max-tokens N] [--json] | get <id> [--with-evidence] [--json] | supersede <id> --actor <id> (--successor <id> | --claim <text>) [--reason <text>] [--json] | delete <id> --actor <id> [--reason <text>] [--json] | history <key> [--as-of <iso-ts>] [--with-evidence] [--json] | evaluate <candidate> --profile <name> | activate <candidate> | propose <memory-id> | attest <candidate> | check | audit [--repair-local] | feedback <mem-id> --signal <useful|unhelpful|contradicted> [--actor <id>] [--context <text>] [--counter-evidence <json-file>] | gc [--max-age-days N] [--dry-run] | migrate | bench [--fast] [--json] [--out <path>] | distill --provider <name> [--providers-file F] [--max-batches N] [--concurrency N] [--timeout-ms N] | capture-hook --event <session-start|turn-end|tool-use> (hooks invoke this; always exits 0 — best-effort capture, never blocks a session) | init-sync --scope repo|global --backend file|http --url <target> [--key-env <NAME>|--keyfile <path>|--gen-key] [--secret-env <NAME>] [--sync-id <id>] [--backfill] [--json] | sync [push|pull|status] [--dry-run] [--backfill] [--max-events N] [--skip] [--json] | sync rotate-key (--gen-key | --key-env <NAME> | --keyfile <path>) [--dry-run] | sync purge-sync --stale-epoch [--dry-run] | purge <mem-id>... --confirm <mem-id>... [--stores local,global] [--history-scan] [--dry-run] [--actor <id>] [--json] | conflicts [--json] | resolve <record-id> (--successor <id> | --retract) --actor <id> [--reason <text>] [--json] (see docs/memory-sync.md)\n',
+        'crib memory init | remember "<claim>" [--subject <id>] [--kind convention|decision] [--global] (record + admit a human-attested claim from a terminal — recallable immediately) | admit <candidate-id> (admit an agent-staged human-attested claim, from a terminal) | handoff [--limit N] [--json] (where was I? — in-flight work, undistilled captures, what went stale) | events [--include-expired] [--limit N] [--json] | profiles list [--json] | profiles register --key <profile-key> --alias <client-id>/<agent-id> [--alias ...] [--json] | recall "<query>" [--limit N] [--sources team,local,global] [--target <id>] [--with-evidence] [--include-pending] [--max-tokens N] [--json] | search "<query>" [--limit N] [--sources team,local,global] [--target <id>] [--max-tokens N] [--json] | get <id> [--with-evidence] [--json] | supersede <id> --actor <id> (--successor <id> | --claim <text>) [--reason <text>] [--json] | delete <id> --actor <id> [--reason <text>] [--json] | history <key> [--as-of <iso-ts>] [--with-evidence] [--json] | evaluate <candidate> --profile <name> | activate <candidate> | propose <memory-id> | attest <candidate> | check | audit [--repair-local] | feedback <mem-id> --signal <useful|unhelpful|contradicted> [--actor <id>] [--context <text>] [--counter-evidence <json-file>] | gc [--max-age-days N] [--dry-run] | migrate | bench [--fast] [--json] [--out <path>] | distill --provider <name> [--providers-file F] [--max-batches N] [--concurrency N] [--timeout-ms N] | capture-hook --event <session-start|turn-end|tool-use> (hooks invoke this; always exits 0 — best-effort capture, never blocks a session) | init-sync --scope repo|global --backend file|http --url <target> [--key-env <NAME>|--keyfile <path>|--gen-key] [--secret-env <NAME>] [--sync-id <id>] [--backfill] [--json] | sync [push|pull|status] [--dry-run] [--backfill] [--max-events N] [--skip] [--json] | sync rotate-key (--gen-key | --key-env <NAME> | --keyfile <path>) [--dry-run] | sync purge-sync --stale-epoch [--dry-run] | purge <mem-id>... --confirm <mem-id>... [--stores local,global] [--history-scan] [--dry-run] [--actor <id>] [--json] | conflicts [--json] | resolve <record-id> (--successor <id> | --retract) --actor <id> [--reason <text>] [--json] (see docs/memory-sync.md)\n',
       );
       process.stderr.write(
         'additional operations: backup create|verify|restore; sync compact [--dry-run] [--json]\n',
@@ -5755,7 +5991,22 @@ function cmdMemoryCaptureHook(args: string[], ctx?: CmdCtx): number {
         ...(eventOffset !== undefined ? { eventOffset } : {}),
       },
       identity,
-      payload: { event, action: 'checkpoint-requested', hasOutcome: outcome !== undefined },
+      // THE RESUME RECORD. Previously this payload said only that a turn had ended, so a session
+      // that timed out left nothing to come back to: `checkpoint-requested` is a request to the
+      // AGENT to write a checkpoint, and an agent whose session just died cannot honour it. The
+      // design depended on the very thing that had failed.
+      //
+      // The anchor is what the hook can observe by itself — branch, HEAD, and which files were
+      // being worked on — so it survives a timeout, a crash, or a closed laptop without the agent
+      // cooperating at all. Paths only: file NAMES are already within the capture policy (intake
+      // checkpoints carry `artifactPaths`), while contents, prompts, transcripts and tool IO
+      // remain excluded.
+      payload: {
+        event,
+        action: 'checkpoint-requested',
+        hasOutcome: outcome !== undefined,
+        repository: currentRepositoryAnchor(resolved.repoRoot),
+      },
       occurredAt,
     });
     if (!outcome) {
@@ -7081,6 +7332,9 @@ function memorySearchHitView(h: SearchHit, withEvidence?: boolean): Record<strin
       source: h.placement[0] ?? 'team',
       verdicts: h.verdicts,
       score: h.score,
+      // R02 — the hit already carries the per-record freshness the API decided; re-derive
+      // `evaluated` from it rather than assuming this view's records were all revalidated.
+      evaluated: h.freshness.state === 'fresh',
     },
     withEvidence,
   );
@@ -8680,9 +8934,10 @@ function printHelp(): void {
       '  crib adapters hooks <install|list|remove> [--client <id|all>]   lane-2 capture hooks (Claude Code settings.json, project scope)',
       '                                          write the vendor-neutral agent-memory protocol into each client instruction file (W8)',
       '  crib skill <install|list> [name] [--dest <dir>] [--client <claude>]   install bundled skills (default ~/.claude/skills)',
-      '  crib init [path] [--ide <name|all>]      5-minute onboarding: index + install-hooks + mcp install + adapters + next-steps hero',
+      '  crib setup [path] [--no-embed]           THE one command: index + hooks + MCP for every client + the mandatory protocol in every instruction file + the on-device model + memory stores + doctor. Nothing to run afterwards.',
+      '  crib init [path] [--ide <id|all|detected>]   5-minute onboarding: index + install-hooks + mcp install + adapters + the semantic model + next-steps hero (defaults to every client; --ide detected wires only what is in use; --no-embed skips the model download)',
       '  crib doctor [path]                       setup health check: node/corepack/index-freshness/hooks/IDE-wiring/memory-loop/stale-builds/embed-tier/freshness/post-commit-hook/multimodal-adapters (✓/✗ + fix hints)',
-      '  crib embed setup [--model small|base|large] [--yes]   ONE command to the semantic tier: generates + pins an adapter, then proves it ranks. --list shows the measured size/quality ladder; --yes allows the pip install and the one-time model download',
+      '  crib embed setup [--model small|base|large] [--yes]   ONE command to the semantic tier: generates + pins an adapter, then proves it ranks. --list shows the measured size/quality ladder; --yes allows the one-time runtime install and model download; --from <dir> adopts a pre-fetched bundle (air-gapped)',
       '  crib embed <install <model-dir>|status>   on-device embedder tier: install --model-id <id> --model-version <ver> [--entry <file>] | status (tier report; --accept-remote-policy opts into the remote tier)',
       '  crib freshness [<mode>|worker|service|hook|convert-hook]   index freshness: manual|watch|auto | supervised worker install/status/uninstall | durable queue',
       '',
@@ -8708,3 +8963,190 @@ main(process.argv.slice(2))
     process.stderr.write(`${err instanceof Error ? err.stack : String(err)}\n`);
     process.exitCode = EXIT.ERROR;
   });
+
+/**
+ * `crib memory remember "<claim>" [--subject <id>] [--kind convention|decision] [--global]`
+ *
+ * The one-command path for "remember this". A human types it at a terminal, so crib stamps the
+ * attestation ITSELF — `tty`/`actor`/`attestedAt` come from the observed terminal, never from
+ * caller input — and admits the claim to local trust immediately. No staging, no gate receipt, no
+ * second command: the claim is recallable when this returns.
+ *
+ * This exists because the previous shortest path to a remembered preference was `memory_observe`
+ * (which stages an untrusted candidate) followed by `crib memory evaluate --profile …` and
+ * `crib memory activate …`. Users recorded a convention, were told it worked, and never saw it
+ * again. A gate receipt is the wrong instrument for a claim that asserts nothing about code.
+ */
+async function cmdMemoryRemember(args: string[], ctx?: CmdCtx): Promise<number> {
+  const claim = positionalsOf(args)[0];
+  if (!claim || claim.trim().length === 0) {
+    process.stderr.write(
+      'usage: crib memory remember "<claim>" [--subject <id>] [--kind convention|decision] [--global]\n',
+    );
+    return EXIT.BAD_ARGS;
+  }
+  const kind = stringFlag(args, '--kind') ?? 'convention';
+  if (kind !== 'convention' && kind !== 'decision') {
+    process.stderr.write(`unknown --kind: ${kind} (convention|decision)\n`);
+    return EXIT.BAD_ARGS;
+  }
+  // The attestation is only worth anything if a human is actually here. A non-interactive run
+  // (CI, `claude -p`, a script) is an agent by another name, so it gets the staging path and is
+  // told so rather than being handed a forged attestation.
+  if (!process.stdin.isTTY) {
+    process.stderr.write(
+      'refusing to attest: `crib memory remember` records that a HUMAN asserted this, and stdin is not a terminal.\n' +
+        'Use the memory_observe MCP tool to stage an agent observation, then `crib memory admit <id>` from a terminal.\n',
+    );
+    return EXIT.ERROR;
+  }
+  // The positional is the CLAIM, never a root (the same discipline `crib memory recall` uses for
+  // its query): the root comes from --cwd / env / cwd walk-up only. Passing `args` to resolveRoot
+  // here made crib treat the sentence as a directory path.
+  const resolved = resolveRoot([], ctx);
+  if (!isIndexedRoot(resolved)) {
+    process.stderr.write('not indexed — run `crib index` first\n');
+    return EXIT.NOT_INDEXED;
+  }
+  const rt = openSoul(resolved);
+  const deps = createMemoryDeps(rt.soul, resolved.repoRoot, resolved.cribDir);
+  if (!deps) {
+    process.stderr.write('could not resolve repoId for memory — run `crib index` first\n');
+    return EXIT.NOT_INDEXED;
+  }
+  const actor = process.env.KCRIB_PRINCIPAL_ID ?? process.env.USER ?? 'human';
+  // The whole point: this call site has CHECKED `process.stdin.isTTY` above, so it — and only it —
+  // may present a `tty` attestation. Built through the shared factory so it gets `cribDir` (which
+  // is what resolves the repoId a repo-scoped claim needs) rather than a hand-rolled subset.
+  const api = createMemoryApi(rt.soul, resolved.repoRoot, resolved.cribDir, deps, 'terminal');
+  const staged = api.observe({
+    kind,
+    subject: stringFlag(args, '--subject') ?? `topic:${slugForSubject(claim)}`,
+    claim: claim.trim(),
+    evidence: [
+      {
+        kind: 'human-attestation',
+        tty: true,
+        actor,
+        attestedAt: new Date().toISOString(),
+        quote: claim.trim(),
+      } as never,
+    ],
+    actor,
+    authorKind: 'human',
+    tool: 'crib memory remember',
+    scopeBoundary: args.includes('--global') ? 'global' : 'repo',
+  });
+  if (!staged.ok) {
+    process.stderr.write(`error: ${staged.error}\n`);
+    return EXIT.ERROR;
+  }
+  const candidate = findCandidate(deps.local, staged.id);
+  if (!candidate) {
+    process.stderr.write(`error: staged candidate ${staged.id} not found for admission\n`);
+    return EXIT.ERROR;
+  }
+  const admitted = admitAttested(deps.local, candidate, {
+    evaluator: deps.evaluator,
+    soul: deps.evalCtx.soul,
+    now: () => new Date().toISOString(),
+    // Reached only after the `process.stdin.isTTY` check above — this is the human being present.
+    attestedBy: process.env.KCRIB_PRINCIPAL_ID ?? process.env.USER ?? 'human',
+  });
+  if (!admitted.ok) {
+    process.stderr.write(`error: ${admitted.error}\n`);
+    return EXIT.ERROR;
+  }
+  process.stdout.write(
+    `${JSON.stringify(
+      {
+        id: admitted.record.id,
+        kind: admitted.record.kind,
+        subject: admitted.record.subject,
+        trust: admitted.record.verdicts.trust,
+        evidence: admitted.record.verdicts.evidence,
+        recallable: true,
+      },
+      null,
+      2,
+    )}\n`,
+  );
+  return EXIT.OK;
+}
+
+/**
+ * `crib memory admit <candidate-id>` — admit an agent-staged human-attested claim, from a terminal.
+ *
+ * The counterpart to `remember`: the agent proposed, the human confirms. One command instead of
+ * `evaluate --profile …` + `activate …`, and no gate receipt, because a convention/decision claim
+ * makes no assertion about code for a receipt to gate. Anything else is redirected to the gated
+ * path rather than quietly admitted under a weaker rule.
+ */
+function cmdMemoryAdmit(args: string[], ctx?: CmdCtx): number {
+  const id = pathArg(args);
+  if (!id) {
+    process.stderr.write('usage: crib memory admit <candidate-id>\n');
+    return EXIT.BAD_ARGS;
+  }
+  if (!process.stdin.isTTY) {
+    process.stderr.write(
+      'refusing to admit: admission records that a HUMAN accepted this claim, and stdin is not a terminal.\n',
+    );
+    return EXIT.ERROR;
+  }
+  // The positional is the CANDIDATE ID, never a root — passing `args` here made crib try to resolve
+  // `cand:7a31c2…` as a directory and warn that it was not indexed.
+  const resolved = resolveRoot([], ctx);
+  if (!isIndexedRoot(resolved)) {
+    process.stderr.write('not indexed — run `crib index` first\n');
+    return EXIT.NOT_INDEXED;
+  }
+  const rt = openSoul(resolved);
+  const deps = createMemoryDeps(rt.soul, resolved.repoRoot, resolved.cribDir);
+  if (!deps) {
+    process.stderr.write('could not resolve repoId for memory — run `crib index` first\n');
+    return EXIT.NOT_INDEXED;
+  }
+  const candidate = findCandidate(deps.local, id);
+  if (!candidate) {
+    process.stderr.write(`error: no local candidate '${id}' to admit\n`);
+    return EXIT.ERROR;
+  }
+  const admitted = admitAttested(deps.local, candidate, {
+    evaluator: deps.evaluator,
+    soul: deps.evalCtx.soul,
+    now: () => new Date().toISOString(),
+    // Reached only after the `process.stdin.isTTY` check above — this is the human being present.
+    attestedBy: process.env.KCRIB_PRINCIPAL_ID ?? process.env.USER ?? 'human',
+  });
+  if (!admitted.ok) {
+    process.stderr.write(`error: ${admitted.error}\n`);
+    return EXIT.ERROR;
+  }
+  process.stdout.write(
+    `${JSON.stringify(
+      {
+        id: admitted.record.id,
+        trust: admitted.record.verdicts.trust,
+        evidence: admitted.record.verdicts.evidence,
+        cleanedUp: admitted.cleanedUp,
+        recallable: true,
+      },
+      null,
+      2,
+    )}\n`,
+  );
+  return EXIT.OK;
+}
+
+/** A stable, readable `topic:` slug for a claim with no explicit subject. */
+function slugForSubject(claim: string): string {
+  const slug = claim
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .split('-')
+    .slice(0, 6)
+    .join('-');
+  return slug.length > 0 ? slug : 'note';
+}

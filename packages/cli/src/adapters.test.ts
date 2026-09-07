@@ -75,6 +75,28 @@ describe('CLIENT_ADAPTERS — registry completeness', () => {
 });
 
 describe('neutralProtocolBody — vendor-neutral contract', () => {
+  it('opens by stating that crib is MANDATORY, not one option among several', () => {
+    const body = neutralProtocolBody();
+    // The mandate is the FIRST thing in the block: an agent that reads only the opening section
+    // must still learn that none of the sections after it are optional.
+    expect(body.startsWith('## Knowledge-crib is MANDATORY in this repository')).toBe(true);
+    expect(body).toMatch(/single source of truth/i);
+    expect(body).toMatch(/every agent, in every IDE, on every task/i);
+    // Recall and graph-first come before file reading, and nothing may stand in for the substrate.
+    expect(body).toMatch(/BEFORE planning, reading files, or editing/);
+    expect(body).toMatch(/come before grep and before opening files/);
+    expect(body).toMatch(/No substitute and no side-store/i);
+  });
+
+  it('states the mandate WITHOUT weakening the honesty signals it sits above', () => {
+    const body = neutralProtocolBody();
+    // A mandate that also promised correctness would be the exact failure the honesty rules exist
+    // to prevent: "you must use this" must never become "so its answer is safe".
+    expect(body).toMatch(/Mandatory is not the same as infallible/i);
+    expect(body).toMatch(/never certifies that an edit is safe/i);
+    expect(body).toMatch(/never an all-clear/i);
+  });
+
   it('makes durable intake bootstrap and checkpointing the default session protocol', () => {
     const body = neutralProtocolBody();
     expect(body).toContain('Run handoff before relying on prior project context');

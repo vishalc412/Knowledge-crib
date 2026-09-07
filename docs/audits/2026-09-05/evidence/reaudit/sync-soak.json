@@ -1,0 +1,35 @@
+{
+  "format": "knowledge-crib-sync-soak",
+  "formatVersion": 1,
+  "startedAt": "2026-09-05T16:01:41.374Z",
+  "finishedAt": "2026-09-05T16:16:41.479Z",
+  "configuredDurationMs": 900000,
+  "elapsedMs": 900104,
+  "intervalMs": 1000,
+  "cycles": 875,
+  "pushes": 1000,
+  "pulls": 176,
+  "duplicatePulls": 174,
+  "offlineWindowCycles": 10,
+  "recordsWritten": 875,
+  "tombstonesWritten": 125,
+  "devices": [
+    {
+      "device": "a",
+      "records": 875,
+      "decisions": 125,
+      "missingRecords": [],
+      "missingDecisions": []
+    },
+    {
+      "device": "b",
+      "records": 875,
+      "decisions": 125,
+      "missingRecords": [],
+      "missingDecisions": []
+    }
+  ],
+  "errors": [],
+  "pass": true,
+  "durabilityClaim": "process restart, replay, atomic-file and interrupted-operation coverage; no power-loss/fsync claim"
+}

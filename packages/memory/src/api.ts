@@ -59,6 +59,7 @@ import {
   type EffectiveVerdicts,
   type MemoryEvalContext,
   type MemoryEvaluator,
+  admissibilityProblems,
   conflictGroups,
   effectiveVerdicts,
   isRecallEligible,
@@ -1153,6 +1154,14 @@ export interface AuditResult {
 export interface MemoryApiDeps {
   /** the three stores, any of which may be absent (a fresh repo has no local store yet). */
   stores: RecallStores;
+  /**
+   * How this API instance is being driven, which decides whether a `tty: true` attestation may be
+   * accepted from the caller. `'terminal'` is set ONLY by a CLI path that has itself checked
+   * `process.stdin.isTTY`; every other construction (the MCP server above all) leaves it unset and
+   * therefore cannot mint a human attestation. Defaulting to the restrictive value means a new
+   * call site is safe until it deliberately opts in.
+   */
+  attestationSource?: 'terminal';
   /** env override (tests relocate `~/.crib/memory` via `KCRIB_MEMORY_DIR`). */
   env?: NodeJS.ProcessEnv;
   /** fixed clock for determinism (tests). Defaults to the wall clock. The clock never enters an id. */
@@ -1320,9 +1329,12 @@ export class MemoryApi {
   private readonly nowFn: () => string;
   /** G3.3 — display-only clock for the volatile freshness age. Never feeds an id/hash/ifHash. */
   private readonly nowMsFn: () => number;
+  /** See {@link MemoryApiDeps.attestationSource}. Defaults to the restrictive value. */
+  private readonly attestationSource: 'terminal' | 'caller';
 
   constructor(deps: MemoryApiDeps) {
     this.deps = deps;
+    this.attestationSource = deps.attestationSource === 'terminal' ? 'terminal' : 'caller';
     this.env = deps.env ?? process.env;
     this.nowFn = deps.now ?? (() => new Date().toISOString());
     this.nowMsFn = deps.nowMs ?? Date.now;
@@ -1614,6 +1626,48 @@ export class MemoryApi {
     }
     if (typeof input.actor !== 'string' || input.actor.length === 0) {
       return { ok: false, error: 'actor is required' };
+    }
+    // WRITE-TIME ADMISSIBILITY. Structural admissibility is decidable here, and here is the only
+    // moment the author can still fix it. Staging evidence that could never support the claim —
+    // `type` where `kind` belongs, a human attestation with no `tty`/`actor`/`attestedAt`, an
+    // evidence kind the claim kind does not admit — produced an `ok: true` acknowledgement for a
+    // record that was dead on arrival: it could never be activated, never recalled, and nothing
+    // said so. Failing loudly here costs one corrected call; failing silently cost the user their
+    // trust in the whole store.
+    //
+    // Only claims that SUPPLY evidence are checked. Empty evidence stays legal: the episodic
+    // capture path stages claims whose evidence is attached later by distillation.
+    const proposedEvidence = input.evidence ?? [];
+    // A CALLER MAY NOT MINT A TERMINAL IT NEVER SAW.
+    //
+    // `tty: true` is the one field that distinguishes a human attestation from an agent asserting
+    // one, and it is what receipt-free local admission (`admitAttested`) is grounded in. It was
+    // accepted verbatim from caller-supplied evidence, so any agent could stamp it and self-grant
+    // the trust the flag represents. Crib stamps it ONLY where it observed a real terminal itself
+    // (`crib memory remember`, which reads `process.stdin.isTTY`); over an MCP call there is no
+    // terminal to have witnessed, so the claim is refused rather than quietly downgraded — a
+    // silently-stripped attestation would stage a candidate that can never be admitted, which is
+    // the same dead-on-arrival failure this validation exists to end.
+    const forgedTty = proposedEvidence.findIndex(
+      (e) => (e as unknown as Record<string, unknown>).tty === true,
+    );
+    if (forgedTty !== -1 && this.attestationSource !== 'terminal') {
+      return {
+        ok: false,
+        error: `evidence[${forgedTty}] sets \`tty: true\`, which asserts a human attested this at a terminal. That flag is stamped by crib when it observes a real terminal, never accepted from a caller. To record a human attestation run \`crib memory remember\` in a terminal; to stage an agent observation, omit \`tty\`.`,
+      };
+    }
+    if (proposedEvidence.length > 0) {
+      // Staged: attestation timestamps are stamped by crib at admission, not supplied by a caller.
+      const problems = admissibilityProblems(kind, proposedEvidence, { staged: true });
+      if (problems.length > 0) {
+        return {
+          ok: false,
+          error: `evidence cannot support a '${kind}' claim, so this memory could never be recalled: ${problems
+            .map((p) => p.problem)
+            .join('; ')}`,
+        };
+      }
     }
     const boundary = input.scopeBoundary ?? 'repo';
     const scope: MemoryScope = { boundary };
@@ -1916,6 +1970,7 @@ export class MemoryApi {
     opts: {
       limits?: HandoffInput['limits'];
       repository?: IntakeCheckpoint['repository'];
+      currentSessionId?: string;
     } = {},
   ): HandoffResponse {
     const pinned = [this.deps.stores.team, this.deps.stores.local, this.deps.stores.global].filter(
@@ -1945,12 +2000,27 @@ export class MemoryApi {
         : [];
       const pending = local ? pendingCaptures(local) : [];
       const { requirements, checkpoints } = this.intakeEntries();
+      // Lifecycle events are what make a TIMED-OUT session recoverable: they are the only signal
+      // here the agent did not have to write itself. Read defensively — a repo with no journal, or
+      // an unreadable one, degrades to a handoff without `lastSession` rather than failing the
+      // whole projection.
+      let lifecycle: Parameters<typeof buildHandoff>[0]['lifecycle'];
+      try {
+        lifecycle = this.deps.eventJournal
+          ?.read()
+          .filter((event) => event.kind === 'agent.lifecycle');
+      } catch {
+        lifecycle = undefined;
+      }
       return buildHandoff({
         attempts,
         pending,
         records,
         intakeRequirements: requirements,
         intakeCheckpoints: checkpoints,
+        ...(lifecycle ? { lifecycle } : {}),
+        callerPrincipal: this.callerPrincipal(),
+        ...(opts.currentSessionId !== undefined ? { currentSessionId: opts.currentSessionId } : {}),
         ...(opts.repository ? { repository: opts.repository } : {}),
         ...(opts.limits ? { limits: opts.limits } : {}),
       });
@@ -1959,27 +2029,79 @@ export class MemoryApi {
     }
   }
 
+  /**
+   * R03 — is this intake requirement readable by the CALLING principal?
+   *
+   * Two ways in, and only two:
+   *   - the caller owns it (`namespace.principalId` is the caller), or
+   *   - it reached the TEAM store, which happens only through the deliberate `shareIntake` team
+   *     promotion. Presence in Git-backed team memory IS the explicit authorization.
+   *
+   * A requirement carrying no principal is treated as legacy-readable, exactly as `acceptsRecord`
+   * treats a memory-1 record with no principal column — migration compatibility, not a loophole:
+   * `createIntakeRequirement` always stamps a namespace.
+   */
+  private acceptsIntake(requirement: IntakeRequirement, teamShared: boolean): boolean {
+    if (teamShared) return true;
+    const owner = requirement.namespace?.principalId;
+    if (typeof owner !== 'string' || owner.trim().length === 0) return true;
+    return owner === this.callerPrincipal();
+  }
+
+  /**
+   * Gather the intake requirements and checkpoints the CALLER is authorized to see.
+   *
+   * The audited defect (R03) was that this merged every entry from every store with no principal or
+   * audience policy at all. Because `listIntakes`, `getIntake`, `handoff` and — through `getIntake`
+   * — `checkpointIntake` all funnel through here, one unguarded merge exposed another principal's
+   * `private` durable intake to reads, listings, handoff, and APPENDS. The repair belongs here
+   * rather than on the four public verbs, for the same reason `acceptsRecord` lives at the gather
+   * point: a future intake-returning verb must inherit the boundary instead of re-deriving it.
+   *
+   * Checkpoints have no principal of their own — they are events ON a requirement — so a checkpoint
+   * is visible exactly when its requirement is. A checkpoint whose requirement is not visible
+   * (foreign, or absent entirely) is dropped rather than orphan-exposed: `nextSafeAction` and
+   * `summary` describe the private work just as directly as the requirement does.
+   */
   private intakeEntries(): {
     requirements: IntakeRequirement[];
     checkpoints: IntakeCheckpoint[];
   } {
     const entries = new Map<string, IntakeRequirement | IntakeCheckpoint>();
-    for (const store of [this.deps.stores.team, this.deps.stores.local]) {
+    // Ids present in TEAM memory. Tracked SEPARATELY from the entry map because the map is
+    // last-wins and local is read second (deliberately — the local copy is the freshest). Judging
+    // authorization by the surviving copy's store would therefore deny every shared intake the
+    // owner also holds locally, which is all of them: `shareIntake` writes both.
+    const teamShared = new Set<string>();
+    for (const [source, store] of [
+      ['team', this.deps.stores.team],
+      ['local', this.deps.stores.local],
+    ] as const) {
       if (!store || !store.collections.includes('intakes')) continue;
       for (const entry of store.readCollection('intakes').entries) {
         if (entry.id.startsWith('intake:') || entry.id.startsWith('icp:')) {
           entries.set(entry.id, entry as IntakeRequirement | IntakeCheckpoint);
+          if (source === 'team') teamShared.add(entry.id);
         }
       }
     }
-    return {
-      requirements: [...entries.values()].filter((entry): entry is IntakeRequirement =>
-        entry.id.startsWith('intake:'),
-      ),
-      checkpoints: [...entries.values()].filter((entry): entry is IntakeCheckpoint =>
-        entry.id.startsWith('icp:'),
-      ),
-    };
+    const requirements: IntakeRequirement[] = [];
+    const visibleIntakeIds = new Set<string>();
+    for (const entry of entries.values()) {
+      if (!entry.id.startsWith('intake:')) continue;
+      const requirement = entry as IntakeRequirement;
+      if (!this.acceptsIntake(requirement, teamShared.has(requirement.id))) continue;
+      requirements.push(requirement);
+      visibleIntakeIds.add(requirement.id);
+    }
+    const checkpoints: IntakeCheckpoint[] = [];
+    for (const entry of entries.values()) {
+      if (!entry.id.startsWith('icp:')) continue;
+      const checkpoint = entry as IntakeCheckpoint;
+      if (!visibleIntakeIds.has(checkpoint.intakeId)) continue;
+      checkpoints.push(checkpoint);
+    }
+    return { requirements, checkpoints };
   }
 
   search(query: string, opts: SearchOpts = {}): SearchResponse {
@@ -2041,6 +2163,17 @@ export class MemoryApi {
       evaluatedAt,
       codeHead,
     };
+    /**
+     * R02 — the freshness a hit reports is a fact about THAT RECORD, not about the pass.
+     *
+     * `projection.provenance.fresh` says only that an evaluator was bound for this search. Stamping
+     * it on every hit is how a migrated record whose evidence was never revalidated came back
+     * labelled `fresh`. A record the projection did not evaluate reports `unevaluated`, whatever the
+     * pass as a whole did — so the label can never again outrun the work.
+     */
+    const unevaluatedFreshness: FreshnessState = { state: 'unevaluated', evaluatedAt, codeHead };
+    const freshnessFor = (scored: { evaluated: boolean }): FreshnessState =>
+      scored.evaluated ? freshness : unevaluatedFreshness;
     const allDecisions = [...gathered.decisions, ...gathered.localDecisions];
     // PERF: hoisted out of the per-hit map below. `enrichHit` → `supersededBy` scans this pool
     // linearly for every hit, so rebuilding the array inside the map made `search` O(hits × records)
@@ -2063,23 +2196,23 @@ export class MemoryApi {
         allDecisions: scored.source === 'local' ? allDecisions : gathered.decisions,
         gatheredRecords,
         conflicts: projection.conflicts,
-        freshness,
+        freshness: freshnessFor(scored),
       }),
     );
     // G3.3 — attach the volatile freshness trio NON-enumerably (shared freshness object across
     // hits — one attach per response). canonicalStringify walks enumerable keys only, so ifHash
     // never sees these; a display layer reading `hit.freshness.generation` / `.ageMs` explicitly
     // gets the live values.
-    attachVolatileFreshness(
-      freshness,
-      {
-        generation,
-        ...(boundCache && boundCache.evaluatedAt !== null
-          ? { evaluatedAtMs: boundCache.evaluatedAt }
-          : {}),
-      },
-      this.nowMsFn(),
-    );
+    const volatile = {
+      generation,
+      ...(boundCache && boundCache.evaluatedAt !== null
+        ? { evaluatedAtMs: boundCache.evaluatedAt }
+        : {}),
+    };
+    attachVolatileFreshness(freshness, volatile, this.nowMsFn());
+    // The unevaluated variant carries the same generation/age trio so a display layer reading it
+    // sees one consistent shape — the honest difference between the two is `state`, nothing else.
+    attachVolatileFreshness(unevaluatedFreshness, volatile, this.nowMsFn());
     return {
       query,
       hits,

@@ -89,6 +89,46 @@ knowledge-crib/                 # pnpm monorepo
 
 ## Install
 
+### One command, nothing left to do
+
+```bash
+git clone https://github.com/KnowledgeCrib/knowledge-crib.git && cd knowledge-crib
+corepack pnpm@9.15.0 bootstrap          # or: node scripts/bootstrap.mjs <your-repo>
+```
+
+That installs workspace dependencies, builds every package, puts `crib` on your PATH, and then runs
+`crib setup` against the target repository — which indexes it, wires the git hooks, writes the MCP
+server config for **every** client, writes the mandatory agent protocol into **every** client's
+instruction file (`CLAUDE.md`, `AGENTS.md`, `GEMINI.md`, `.windsurfrules`,
+`.github/copilot-instructions.md`, `.cursor/rules/crib.mdc`), downloads and integrity-pins the
+on-device embedding model, creates the team + local memory stores, and finishes with the health
+check. There is no second step.
+
+Two things are worth knowing before you run it, because both are downloads:
+
+| flag | what it changes |
+|---|---|
+| *(default)* | installs the `large` embedding model — **~2.1 GB**, one time, offline afterwards |
+| `--embed-model small` | a ~97 MB model instead (lower paraphrase recall; see the ladder below) |
+| `--no-embed` (or `KCRIB_NO_EMBED=1`) | no model at all — recall stays lexical (~2.6% on paraphrases) |
+| `--embed-from <dir>` | adopt a pre-fetched bundle instead of downloading (air-gapped hosts) |
+
+The model weights are **not** committed to this repository — they are ~2.1 GB of third-party
+artifacts under their own licences. `crib setup` fetches them for you on first run and pins them
+through crib's integrity manifest; after that every query is offline.
+
+### In an already-installed environment
+
+```bash
+crib setup .       # the whole thing: index + hooks + MCP + protocol + model + memory + doctor
+crib doctor .      # ✓/✗ setup health check with fix hints
+```
+
+`crib init .` is the subset that stops before the memory stores and the health check, and
+`crib init --ide detected` narrows the wiring to the clients this machine appears to run.
+
+### Manual workspace install
+
 Knowledge-crib is a pnpm workspace. The recommended way to make the `crib` CLI available globally is to link the workspace `cli` package, not to install a separate copy from a registry. Linking keeps the global binary pointing at your local checkout so workspace dependencies resolve correctly.
 
 ```bash
@@ -110,7 +150,7 @@ Do **not** run `pnpm add -g knowledge-crib` from inside the workspace — pnpm m
 Then, in any project you want indexed:
 
 ```bash
-crib init .        # index + git hooks + IDE MCP wiring (5-minute onboarding)
+crib setup .       # everything: index + hooks + MCP + protocol + model + memory + doctor
 crib doctor .      # ✓/✗ setup health check with fix hints
 ```
 
@@ -120,7 +160,10 @@ New team member? Start with the self-contained
 
 Beta installer bundles for macOS and Windows can be built with
 `corepack pnpm@9.15.0 installer:build`; see
-[`docs/knowledge-crib-beta-installers.md`](docs/knowledge-crib-beta-installers.md).
+[`docs/knowledge-crib-beta-installers.md`](docs/knowledge-crib-beta-installers.md). The generated
+`install.sh` / `install.ps1` finish the same way `bootstrap` does: if you run them from inside a git
+repository they install the CLI **and** run `crib setup` on it. `KCRIB_NO_SETUP=1` installs the
+binary only.
 
 ## Develop
 ```bash

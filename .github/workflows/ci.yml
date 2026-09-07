@@ -38,7 +38,22 @@ jobs:
       - name: Install dependencies
         run: corepack pnpm@9.15.0 install --frozen-lockfile
 
+      - name: Restore supported semantic tier
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4
+        with:
+          path: ${{ runner.temp }}/knowledge-crib-embed
+          key: ${{ runner.os }}-knowledge-crib-e5-large-${{ hashFiles('packages/cli/src/embed-setup.ts', 'packages/cli/src/embed-onnx.ts', 'pnpm-lock.yaml') }}
+
+      - name: Install supported semantic tier
+        env:
+          KCRIB_EMBED_HOME: ${{ runner.temp }}/knowledge-crib-embed
+        run: |
+          corepack pnpm@9.15.0 build
+          node packages/cli/dist/cli.js embed setup --model large --yes --json
+
       - name: Run release gate
+        env:
+          KCRIB_EMBED_HOME: ${{ runner.temp }}/knowledge-crib-embed
         run: corepack pnpm@9.15.0 release:verify
 
   # Cross-platform / cross-Node coverage matrix: the same release:verify gate run on the other two
@@ -75,5 +90,20 @@ jobs:
       - name: Install dependencies
         run: corepack pnpm@9.15.0 install --frozen-lockfile
 
+      - name: Restore supported semantic tier
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4
+        with:
+          path: ${{ runner.temp }}/knowledge-crib-embed
+          key: ${{ runner.os }}-knowledge-crib-e5-large-${{ hashFiles('packages/cli/src/embed-setup.ts', 'packages/cli/src/embed-onnx.ts', 'pnpm-lock.yaml') }}
+
+      - name: Install supported semantic tier
+        env:
+          KCRIB_EMBED_HOME: ${{ runner.temp }}/knowledge-crib-embed
+        run: |
+          corepack pnpm@9.15.0 build
+          node packages/cli/dist/cli.js embed setup --model large --yes --json
+
       - name: Run release gate
+        env:
+          KCRIB_EMBED_HOME: ${{ runner.temp }}/knowledge-crib-embed
         run: corepack pnpm@9.15.0 release:verify

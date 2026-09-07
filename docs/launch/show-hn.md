@@ -24,7 +24,7 @@ Two stores, hard trust boundary:
 - **Soul** = sharded JSONL, committed with code, git-diffable, portable, schema-validated, atomic writes, BLAKE3-hashed. This is the source of truth.
 - **Index** = derived SQLite FTS5 + adjacency + source-body projection. Gitignored, rebuildable, never source of truth. Vectors live only here — the committed soul is deterministic forever.
 
-Agent surface: 16 MCP verbs (query, context, source, impact, dossier, rules, gaps, ownership, federation, change-detection, observability, enrichment). Responses are token-budgeted response-wide; an `ifHash` lets agents skip unchanged bodies (a repeat call with a matching hash collapses to `{unchanged:true}` — ~10× size drop measured).
+Agent surface: 17 MCP verbs (query, context, source, impact, dossier, rules, gaps, ownership, federation, change-detection, observability, enrichment). Responses are token-budgeted response-wide; an `ifHash` lets agents skip unchanged bodies (a repeat call with a matching hash collapses to `{unchanged:true}` — ~10× size drop measured).
 
 LLM enrichment is deliberately split from the deterministic core:
 1. The deterministic soul creates grounded work items.

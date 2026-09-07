@@ -28,7 +28,11 @@ const sha256 = (value) => `sha256:${createHash('sha256').update(value).digest('h
 export function buildReleaseEvidence(input) {
   const modelReady = input.embedder?.state === 'installed';
   const gateFailures = (input.launchGate?.gates ?? []).filter((g) => !g.pass).map((g) => g.id);
-  const failures = [...(!modelReady ? ['semantic-model'] : []), ...gateFailures];
+  const failures = [
+    ...(input.git?.dirty ? ['clean-commit'] : []),
+    ...(!modelReady ? ['semantic-model'] : []),
+    ...gateFailures,
+  ];
   return {
     format: 'knowledge-crib-release-evidence',
     formatVersion: RELEASE_EVIDENCE_FORMAT_VERSION,

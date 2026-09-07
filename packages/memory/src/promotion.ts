@@ -348,3 +348,121 @@ export function proposeExisting(
   };
   return proposeTeam(team, evaluation, receipt, actor, now);
 }
+
+// ─── receipt-free admission for human-attested claims ────────────────────────
+
+/** Why an attested admission was refused. `ok: false` is always explained. */
+export type AttestedAdmission =
+  | { ok: true; record: MemoryRecord; cleanedUp: boolean }
+  | { ok: false; error: string };
+
+/**
+ * Admit a HUMAN-ATTESTED claim to local trust WITHOUT a gate receipt.
+ *
+ * WHY A RECEIPT IS THE WRONG GATE HERE
+ * `activateLocal` requires a {@link GateReceipt} bound to HEAD plus a worktree digest, because the
+ * claims it was built for assert something about CODE and a receipt is what proves that assertion
+ * still holds. A `convention` or `decision` admits only `human-attestation` and `committed-policy`
+ * (the PRD admissibility matrix) — there is no execution to gate and no code anchor to drift. So
+ * demanding a receipt demanded proof of something the claim never asserted, and the practical
+ * effect was that "remember my working preference" required `crib memory evaluate --profile …`
+ * followed by `crib memory activate …`. Users reasonably concluded memory did not work.
+ *
+ * WHAT KEEPS THIS FROM BEING A TRUST HOLE
+ * The caller must supply an attestation that already carries `tty`/`actor`/`attestedAt`, and crib
+ * only ever stamps those from a REAL terminal it observed itself — `memory_observe` refuses a
+ * caller-supplied `tty`, because an agent speaking over stdio has not witnessed one. So the
+ * admission is grounded in a signal the agent cannot mint. LOCAL trust only: team trust still
+ * requires CI plus a trusted ref, and nothing here touches that path.
+ */
+export function admitAttested(
+  local: MemoryStore,
+  candidate: MemoryCandidate,
+  opts: {
+    evaluator: MemoryEvaluator;
+    soul: MemorySoulPort;
+    now: () => string;
+    /**
+     * The human doing the admitting, supplied ONLY by a call site that has verified
+     * `process.stdin.isTTY`. Its presence is what stamps `tty`/`actor`/`attestedAt` onto the
+     * attestation — so the attestation is minted by crib at the moment a human confirms, never
+     * carried in from an agent that merely claimed one.
+     */
+    attestedBy?: string;
+  },
+): AttestedAdmission {
+  if (candidate.kind !== 'convention' && candidate.kind !== 'decision') {
+    return {
+      ok: false,
+      error: `receipt-free admission covers 'convention' and 'decision' claims (this is '${candidate.kind}'), because those are the kinds whose evidence makes no assertion about code. Run \`crib memory evaluate\` then \`crib memory activate\` for the rest.`,
+    };
+  }
+  if (candidate.evidence.length === 0) {
+    return { ok: false, error: 'no evidence — a claim with nothing behind it is not admissible' };
+  }
+  const nonAttested = candidate.evidence.filter((e) => e.kind !== 'human-attestation');
+  if (nonAttested.length > 0) {
+    return {
+      ok: false,
+      error: `receipt-free admission requires every evidence item to be a human-attestation; found ${nonAttested
+        .map((e) => `'${e.kind}'`)
+        .join(', ')}. Evidence that references code must be gated by a receipt.`,
+    };
+  }
+  // STAMP THE ATTESTATION HERE. A staged candidate carries the claim; this call — reached only
+  // from a terminal — supplies the proof that a human confirmed it. Doing it here rather than
+  // trusting caller-supplied fields is the whole security property: an agent never gets to assert
+  // `tty`, so it cannot manufacture the signal that grants local trust.
+  const attestedAt = opts.now();
+  const evidence = opts.attestedBy
+    ? candidate.evidence.map((ev) =>
+        ev.kind === 'human-attestation'
+          ? ({ ...ev, tty: true, actor: opts.attestedBy, attestedAt } as typeof ev)
+          : ev,
+      )
+    : candidate.evidence;
+  // Evaluate for real. `revalidateHumanAttestation` consults neither the receipt port nor the soul,
+  // so the evaluation is complete without a receipt — but it still ENFORCES the attestation fields,
+  // which is what stops a hollow attestation from being waved through when no human stamped one.
+  const provisional = buildRecord(
+    candidate,
+    { trust: 'candidate', evidence: 'valid', applicability: 'current', lifecycle: 'active' },
+    evidence,
+    attestedAt,
+  );
+  const evaluation = opts.evaluator.evaluate(provisional, { soul: opts.soul });
+  if (evaluation.evidence !== 'valid' && evaluation.evidence !== 'degraded') {
+    return {
+      ok: false,
+      error: `attestation did not validate (${evaluation.evidence}): ${evaluation.reasons.join(', ') || 'no reason reported'}`,
+    };
+  }
+  // Stamp each evidence item with its revalidation verdict, exactly as `evaluateCandidate` does —
+  // `verdict` and `checkedAt` are REQUIRED by the record schema, and a record built from raw
+  // candidate evidence fails validation on write.
+  const stampedAt = opts.now();
+  const stampedEvidence = provisional.evidence.map((ev, i) => {
+    const item = evaluation.items[i];
+    if (!item) return ev;
+    return {
+      ...ev,
+      verdict: item.evidence === 'ignored' ? ('invalid' as const) : item.evidence,
+      checkedAt: stampedAt,
+      reason: item.reason,
+    };
+  });
+  const record = buildRecord(
+    candidate,
+    {
+      trust: 'local',
+      evidence: evaluation.evidence,
+      applicability: evaluation.applicability,
+      lifecycle: 'active',
+    },
+    stampedEvidence,
+    stampedAt,
+  );
+  local.upsertEntry('active', record);
+  const cleanedUp = local.removeEntry('candidates', candidate.id);
+  return { ok: true, record, cleanedUp };
+}

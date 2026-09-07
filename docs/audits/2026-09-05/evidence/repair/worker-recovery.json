@@ -1,0 +1,44 @@
+{
+  "format": "knowledge-crib-worker-crash-recovery-audit",
+  "generatedAt": "2026-09-05T16:52:20.198Z",
+  "contenders": 8,
+  "elected": 1,
+  "acknowledged": [
+    "/synthetic/project-0",
+    "/synthetic/project-1",
+    "/synthetic/project-2",
+    "/synthetic/project-3",
+    "/synthetic/project-4",
+    "/synthetic/project-5",
+    "/synthetic/project-6",
+    "/synthetic/project-7"
+  ],
+  "claimed": [
+    "/synthetic/project-0"
+  ],
+  "beforeCrash": {
+    "pending": [
+      "/synthetic/project-1",
+      "/synthetic/project-2",
+      "/synthetic/project-3",
+      "/synthetic/project-4",
+      "/synthetic/project-5",
+      "/synthetic/project-6",
+      "/synthetic/project-7"
+    ],
+    "active": "/synthetic/project-0"
+  },
+  "recovered": [
+    "/synthetic/project-1",
+    "/synthetic/project-2",
+    "/synthetic/project-3",
+    "/synthetic/project-4",
+    "/synthetic/project-5",
+    "/synthetic/project-6",
+    "/synthetic/project-7",
+    "/synthetic/project-0"
+  ],
+  "pending": [],
+  "acknowledgedMissingAfterRecovery": [],
+  "qualification": "Synthetic eight-project queue; concurrent real OS processes killed before any revalidation completes. Canonical memory records are not deleted."
+}

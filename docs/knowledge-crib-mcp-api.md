@@ -6,12 +6,12 @@
 
 ---
 
-## Tool consolidation (current surface: 16 tools / 46 operations)
+## Tool consolidation (current surface: 17 tools / 47 operations)
 
 Fourteen tools that differed only in which verb they called were folded behind an `op` parameter.
 Every tool costs name + description + JSON schema in the tool list of **every** session whether or
 not it is used, so a family of five rarely-used tools was a permanent tax on every conversation.
-The consolidated surface is 16 tools / 46 operations — down from 31 tools / ~6,249 tokens, a 42%
+The consolidated surface is 17 tools / 47 operations — down from 31 tools / ~6,249 tokens, a 42%
 token cut with no capability removed.
 
 These counts are not prose: they are derived from the single capability manifest

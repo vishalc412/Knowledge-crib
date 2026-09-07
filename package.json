@@ -11,6 +11,7 @@
   "packageManager": "pnpm@9.15.0",
   "scripts": {
     "build": "corepack pnpm@9.15.0 -r run build",
+    "bootstrap": "node scripts/bootstrap.mjs",
     "pretest": "corepack pnpm@9.15.0 -r run build",
     "test": "corepack pnpm@9.15.0 -r run test",
     "verify": "corepack pnpm@9.15.0 -r run build && corepack pnpm@9.15.0 -r run test && biome check .",

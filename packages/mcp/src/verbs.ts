@@ -1,3 +1,4 @@
+import { createHash, randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Embedder } from '@knowledge-crib/core';
@@ -85,6 +86,7 @@ import {
   readRepoId,
   readSyncConfig,
   recallProjection,
+  resolveServerIdentity,
   stageSyncableWrite,
 } from '@knowledge-crib/memory';
 /**
@@ -147,6 +149,12 @@ export interface VcsAdapter {
   changedFilesSince(root: string, since: string): string[];
   /** Repo-relative paths of staged + unstaged working-tree changes relative to HEAD. */
   uncommittedChanges(root: string): string[];
+  /**
+   * Current branch name, when the adapter can supply one. OPTIONAL so existing implementors and
+   * test stubs keep compiling — a session anchor without a branch is still a usable resume (HEAD
+   * identifies the commit precisely), it just reads less like something a human recognises.
+   */
+  currentBranch?(root: string): string | undefined;
 }
 
 /**
@@ -259,6 +267,11 @@ interface SemanticSearchable {
 /** Default number of `overview` analysis pointers returned before paging. Small on purpose: the
  *  list grows with every artifact authored, and orientation needs the module map, not 500 entries. */
 /** How long working-tree facts from git stay cached. See {@link Verbs.vcsFacts}. */
+/** Bounded path list on a session anchor — a resume needs a pointer, not an inventory. */
+const SESSION_ANCHOR_PATHS_MAX = 20;
+/** One anchor event per 5 minutes per distinct working set. */
+const SESSION_ANCHOR_BUCKET_MS = 5 * 60 * 1000;
+
 const VCS_FACT_TTL_MS = 2000;
 
 const DEFAULT_OVERVIEW_ANALYSES = 40;
@@ -495,6 +508,8 @@ export class Verbs {
   private readonly stats = new Stats();
   /** W3 — the optional trusted agent-memory ledger (absent ⇒ memory verbs report "not configured"). */
   private readonly memory?: MemoryDeps;
+  /** Distinguishes this MCP process from the prior process a handoff should recover. */
+  private readonly serverSessionId = randomUUID();
 
   /** The extracted snapshot currently exposed to callers: watch overlay when active, else canonical. */
   private codeSoul(): SoulStore {
@@ -1950,6 +1965,113 @@ export class Verbs {
    * anchor and the edges that touch those files (projected removals), WITHOUT mutating the soul or the
    * index. Never commits. Degrades gracefully when no adapter / no anchor / non-git.
    */
+  /**
+   * `review` — everything a reviewer needs about a change, in ONE bounded call.
+   *
+   * WHY THIS EXISTS, measured on this repository. Reviewing one commit by reading the files it
+   * touched costs ~212,000 tokens; the raw diff costs ~6,400; this call costs ~2,000. That first
+   * number is not a curiosity — it is the reason a model asked to "review this" reads ten lines and
+   * infers the rest. The honest version of the task does not fit, so the model does the dishonest
+   * version. Composing the answer from the graph makes the honest version affordable.
+   *
+   * It answers the three questions a review actually turns on, per changed symbol:
+   *   • what is this — signature and location, from the graph rather than a file read;
+   *   • who breaks if it is wrong — callers, which a diff cannot show at all;
+   *   • what did we already decide about it — trusted memory, so a review does not re-lit an
+   *     argument the team already settled.
+   *
+   * HONESTY IS PART OF THE OUTPUT. `detect_changes` degradation notes are propagated verbatim, an
+   * empty caller list is labelled rather than presented as "unused", and truncation is reported.
+   * A review tool that quietly under-reports is worse than no review tool: it converts "I did not
+   * look" into "there was nothing there".
+   */
+  review(args: {
+    since?: string;
+    /** Max changed symbols to expand. Default 12, hard cap 40. */
+    limit?: number;
+    maxTokens?: number;
+    ifHash?: string;
+  }): Record<string, unknown> {
+    const changes = this.detectChanges(args.since !== undefined ? { since: args.since } : {});
+    const changedSymbols = (changes.changedSymbols as string[] | undefined) ?? [];
+    // DECLARATIONS ONLY. `changedSymbols` counts every node in a touched file, and behaviour nodes
+    // (assignments, statements) are the large majority of the graph — a first run of this verb
+    // returned 5,156 "changed symbols" for a six-file change and spent its whole budget on
+    // `assign:…@L1009` entries. A reviewer reasons about functions, classes and methods; the
+    // statements inside them are the diff's job, not the graph's.
+    const declarations = changedSymbols.filter(
+      (id) => this.deps.soul.getNode(id)?.kind === 'symbol',
+    );
+    const limit = capInt(args.limit, 12, 40);
+    // Most-depended-upon first: with a budget, the symbols other code calls are the ones worth
+    // spending it on, because they are where a mistake propagates.
+    const selected = declarations
+      .map((id) => ({ id, callers: this.codeCallersOf(id).length }))
+      .sort((a, b) => b.callers - a.callers || a.id.localeCompare(b.id))
+      .slice(0, limit)
+      .map((entry) => entry.id);
+
+    const symbols = selected.map((id) => {
+      const node = this.deps.soul.getNode(id);
+      // Callers are the review question a diff cannot answer. Distance 1 only: "who calls this
+      // directly" is the blast radius a reviewer can actually act on, and deeper walks bury it.
+      const affected = this.codeCallersOf(id);
+      const view: Record<string, unknown> = {
+        id,
+        ...(node?.name ? { name: node.name } : {}),
+        ...(node?.kind ? { kind: node.kind } : {}),
+        ...(node?.file ? { file: node.file } : {}),
+        ...(node?.signature ? { signature: node.signature } : {}),
+        callers: affected.map((a) => ({ id: a.id, risk: a.risk })),
+      };
+      if (affected.length === 0) {
+        // The distinction the graph CANNOT make for you, stated every time rather than left to be
+        // inferred from an empty array — dynamic dispatch, property access and cross-language calls
+        // all produce this same emptiness.
+        view.callersNote =
+          'no caller edge resolved — this is NOT evidence the symbol is unused; confirm with a text search before treating it as dead';
+      }
+      return view;
+    });
+
+    // Prior decisions about the changed surface. Memory is queried by symbol NAME because a claim
+    // is authored about a concept, not about a node id that moves when the file does.
+    const memoryQuery = symbols
+      .map((v) => (typeof v.name === 'string' ? v.name : ''))
+      .filter((n) => n.length > 0)
+      .join(' ');
+    const memories =
+      memoryQuery.length > 0
+        ? ((this.memoryRecall({ q: memoryQuery, limit: 5 }).memories as unknown[]) ?? [])
+        : [];
+
+    const maxTokens = args.maxTokens === undefined ? 3000 : capMaxTokens(args.maxTokens);
+    const fitted = fitTokenBudget(symbols, maxTokens, (prefix) =>
+      JSON.stringify({ symbols: prefix, memories, budgetExhausted: true }),
+    );
+
+    const result: Record<string, unknown> = {
+      head: changes.head,
+      changedPaths: changes.changedPaths ?? [],
+      uncommittedPaths: changes.uncommittedPaths ?? [],
+      // Both counts, because they answer different questions: how much of the graph the change
+      // touches at all, and how many DECLARATIONS a human has to review.
+      changedNodeCount: changedSymbols.length,
+      changedSymbolCount: declarations.length,
+      symbols: fitted.items,
+      memories,
+      // A `note` from detect_changes QUALIFIES the whole review — it means the change set itself is
+      // degraded or narrowed, so every count below it is a floor, not a total.
+      ...(changes.note !== undefined ? { note: changes.note } : {}),
+      truncated: fitted.budgetExhausted || declarations.length > selected.length,
+    };
+    if (fitted.budgetExhausted) result.budgetExhausted = true;
+    // Staged-but-unadmitted memory matters to a reviewer for the same reason it matters to recall:
+    // an empty `memories` list should not read as "nothing was ever decided here".
+    Object.assign(result, this.pendingNoticeFor(memoryQuery, 5));
+    return this.applyIfHash(args, result);
+  }
+
   detectChanges(args: { since?: string }): Record<string, unknown> {
     const vcs = this.deps.vcs;
     const manifest = this.deps.soul.getManifest();
@@ -2531,6 +2653,12 @@ export class Verbs {
       memories: keptMem,
       conflicts,
       ...(memoryProvenance ? { provenance: memoryProvenance } : {}),
+      // Staged-but-unadmitted candidates matching this query. `brief` is the FIRST call the agent
+      // protocol tells a client to make, so an empty `memories` group here is what an agent reads as
+      // "this repo has no memory". When the reason is actually "you recorded it and nothing has
+      // admitted it yet", saying so is the difference between a working trust gate and a product
+      // that looks broken. Count only — admitting content here would defeat the gate.
+      ...this.pendingNoticeFor(args.q, limit),
       // Honest self-report: how much of THIS answer came from authored meaning rather than source.
       // Below the low-coverage floor the response says so explicitly (`hint`) instead of relying
       // on the caller to interpret the ratio.
@@ -2604,6 +2732,13 @@ export class Verbs {
     // Opt-in, and kept in its own group. `memories` remains trusted-only whatever this returns.
     if (args.includePending === true) {
       result.pending = this.pendingCandidates(args.q ?? '', limit);
+    } else {
+      // SILENCE WAS THE BUG. `memory_observe` stages an untrusted candidate, which normal recall
+      // correctly excludes — but recall then returned an empty `memories` list and said nothing,
+      // so an agent that had just recorded a claim was told, in effect, that memory does not work.
+      // Reporting the staged count (never its content — the trust gate is unchanged) turns a
+      // silent omission into an actionable state with a named next step.
+      Object.assign(result, this.pendingNoticeFor(args.q ?? '', limit));
     }
     if (fitted.budgetExhausted) result.budgetExhausted = true;
     return this.applyIfHash(args, result);
@@ -2909,6 +3044,7 @@ export class Verbs {
     const handoff = api.handoff({
       limits: { openWork: limit, pending: limit, attention: limit, recent: limit },
       repository: this.intakeRepository(),
+      currentSessionId: this.serverSessionId,
     });
     return this.applyIfHash(args, { ...handoff });
   }
@@ -3321,6 +3457,13 @@ export class Verbs {
       scope: result.scope,
       outboxId: result.outboxId,
       idempotent: result.idempotent,
+      // What `status: 'pending'` actually MEANS for the caller's next question. Agents were
+      // reporting "recorded successfully" to users and then finding nothing on recall, because the
+      // acknowledgement described the write without saying the claim is not yet retrievable. An ack
+      // that omits that is technically true and practically misleading.
+      recallable: false,
+      nextAction:
+        'staged as an untrusted candidate — it will NOT appear in normal recall until admitted. Run `crib memory activate` to admit it to local trust, or read it meanwhile with memory_recall includePending:true.',
     });
   }
 
@@ -3555,6 +3698,100 @@ export class Verbs {
    * memory hits from being fused into one opaque list. A caller can act on a peer's finding while
    * knowing exactly what it is: a lead, not an established fact.
    */
+  /**
+   * The staged-candidate notice shared by `brief` and `memory_recall`.
+   *
+   * Reports the COUNT of `memory_observe`-staged candidates matching a query, never their content:
+   * the trust gate is unchanged, but the caller learns that its recall came back empty because the
+   * claims are awaiting admission rather than because nothing was ever recorded. Returns `{}` when
+   * there is nothing staged, so the response shape is untouched in the common case.
+   */
+  /**
+   * Record where this session is working, so a session that DIES leaves something to come back to.
+   *
+   * Reported from real use: an IDE session times out and the context is gone. The lifecycle-hook
+   * path solves this only for clients that expose a hook surface — of the seven adapters, exactly
+   * one does. Every other client (Copilot, Cursor, Codex, Windsurf, Gemini) is instruction-only, so
+   * a hook-based resume helps precisely the users who did not report the problem.
+   *
+   * Every client reaches crib through THIS server, though. Observing the anchor here is therefore
+   * the client-agnostic version of the same idea, and it needs no cooperation from the agent — which
+   * matters because an agent whose session was killed cannot cooperate.
+   *
+   * Coordinates only: HEAD and the paths being worked on. Contents, prompts, transcripts and tool
+   * IO stay excluded, exactly as the capture policy requires.
+   *
+   * NEVER throws and never changes a response. A resume breadcrumb that could fail a tool call
+   * would trade a real capability for a speculative one.
+   */
+  noteSessionActivity(): void {
+    try {
+      const journal = this.deps.memory?.eventJournal;
+      const vcs = this.deps.vcs;
+      if (!journal || !vcs) return;
+      const root = this.deps.repoRoot;
+      const head = vcs.currentHead(root);
+      const branch = vcs.currentBranch?.(root);
+      const changed = vcs.uncommittedChanges(root).slice(0, SESSION_ANCHOR_PATHS_MAX);
+      // The idempotency key coalesces: one event per (anchor, time bucket). Keying on the anchor
+      // alone would freeze `lastActivity` at the first observation; keying on time alone would
+      // append on every call. Bucketing gives a moving timestamp at a bounded write rate.
+      const bucket = Math.floor(Date.now() / SESSION_ANCHOR_BUCKET_MS);
+      const digest = createHash('sha256')
+        .update(`${head}\u0000${changed.join('\u0000')}`)
+        .digest('hex')
+        .slice(0, 16);
+      journal.append({
+        kind: 'agent.lifecycle',
+        idempotencyKey: `mcp:activity:${this.serverSessionId}:${digest}:${bucket}`,
+        source: { clientId: 'knowledge-crib-mcp', sessionId: this.serverSessionId },
+        identity: resolveServerIdentity(process.env),
+        payload: {
+          event: 'mcp-activity',
+          action: 'observed',
+          hasOutcome: false,
+          repository: {
+            ...(head ? { head } : {}),
+            ...(branch ? { branch } : {}),
+            dirty: changed.length > 0,
+            ...(changed.length > 0 ? { changedPaths: changed } : {}),
+          },
+        },
+        occurredAt: new Date().toISOString(),
+      });
+    } catch {
+      // A breadcrumb is never worth a failed tool call.
+    }
+  }
+
+  /**
+   * Direct CODE callers of a symbol — documentation references excluded.
+   *
+   * `impact` reports every incoming edge, and doc sections that merely MENTION a name are edges
+   * too. For a review that is not just noise, it actively misleads: ranking by raw incoming edges
+   * put a trivial local helper called `flag` at the top of the list, because the word appears in a
+   * dozen markdown headings. "Who calls this" is a question about code.
+   */
+  private codeCallersOf(id: string): Array<{ id: string; risk: string }> {
+    const up = this.impact({ id, dir: 'up', depth: 1, limit: 25 });
+    const affected = (up.affected as Array<{ id: string; risk: string }> | undefined) ?? [];
+    return affected.filter((a) => !a.id.startsWith('doc:')).slice(0, 10);
+  }
+
+  private pendingNoticeFor(query: string, limit: number): Record<string, unknown> {
+    const staged = this.pendingCandidates(query, limit).length;
+    if (staged === 0) return {};
+    return {
+      pendingNotice: {
+        count: staged,
+        reason:
+          'staged by memory_observe and NOT yet admitted, so they are not recall-eligible — this is the trust gate working, not an empty memory',
+        nextAction:
+          'call memory_recall with includePending:true to read them as untrusted, or run `crib memory activate` to admit them to local trust',
+      },
+    };
+  }
+
   private pendingCandidates(query: string, limit: number): Array<Record<string, unknown>> {
     const local = this.memory?.local;
     if (!local) return [];
@@ -3852,6 +4089,9 @@ export class Verbs {
         source: h.source,
         verdicts: h.verdicts,
         score: h.score,
+        // R02 — the hit carries the per-record freshness the API decided; re-derive `evaluated`
+        // from it rather than assuming every record in this view was revalidated.
+        evaluated: h.freshness.state === 'fresh',
       },
       withEvidence,
     );

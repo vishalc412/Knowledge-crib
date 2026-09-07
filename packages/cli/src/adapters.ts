@@ -128,6 +128,16 @@ export const CURSOR_FRONTMATTER = [
  */
 export function neutralProtocolBody(): string {
   return [
+    '## Knowledge-crib is MANDATORY in this repository',
+    '',
+    'Knowledge-crib is the single source of truth for this repository’s memory and code context. It is not one option among several, and it is not decided per session: every agent, in every IDE, on every task, follows the protocol below. The sections after this one say HOW; this one says that none of them are optional.',
+    '',
+    '- **Every session starts here.** Restore durable work (§1) and recall (§2) BEFORE planning, reading files, or editing. Do not rebuild project understanding by re-reading the tree when the graph already holds it.',
+    '- **Structural questions go to the graph first.** `query`, `context`, `impact`, `review`, `explain` and `detect_changes` come before grep and before opening files (§6–§9). Read specific files only for what the graph cannot answer, and say which part that was.',
+    '- **Every reusable learning is recorded here** (§3) with admissible evidence (§4). A learning that lives only in a transcript is lost at the end of the session.',
+    '- **No substitute and no side-store.** Do not use another memory, RAG, or code-context tool in place of this one for this repository, and do not keep private project knowledge outside it. One substrate is what makes every agent and every IDE read and write the same memory.',
+    '- **Mandatory is not the same as infallible.** The honesty signals in §6–§9 still govern. Crib reports what it can see; it never certifies that an edit is safe. An empty result, a `truncated` walk, or a `note`-qualified report is a limit of the index — never an all-clear.',
+    '',
     '## Knowledge-crib agent memory protocol (vendor-neutral)',
     '',
     'This repository uses knowledge-crib as a shared, vendor-neutral memory substrate. Every agent session — Claude, Cursor, Copilot/VS Code, Codex, Windsurf, Gemini, or any MCP-capable tool — follows this protocol. It does not change your tool; it tells you how to use memory safely.',
@@ -169,7 +179,13 @@ export function neutralProtocolBody(): string {
     '- Run `detect_changes({})` (optionally `{ since: "<ref>" }`) and review `changedSymbols`, `removedEdges`, `changedPaths` (committed since the anchor) and `uncommittedPaths` (still in the working tree). Both path sets feed `changedSymbols`, so the check works BEFORE you commit.',
     '- A `note` QUALIFIES the report — it is degraded or narrowed in scope, never a clean bill of health. `vcs adapter not configured`, `not a git work tree` and `no incremental anchor` all return empty arrays; `no commits since the anchor …` means the commit range was empty by construction. Never read an empty result carrying a `note` as "nothing changed".',
     '',
-    '### 8. Prefer graph verbs over grep',
+    '### 8. Review a change with `review`, not by reading the files',
+    '- Asked to review, diff, or assess a change, call `review({})` FIRST. It returns what changed, each changed DECLARATION with its signature, who calls it, and prior trusted decisions about it — in one bounded call.',
+    '- This is not a style preference, it is a budget. On a real commit in this repository, reading every touched file costs ~212,000 tokens while `review` costs ~2,000 (docs/bench/review-cost.md). A review that reads files does not fit, so it degrades into skimming a few lines and guessing — which is the failure this verb exists to remove.',
+    '- Pair it with the diff: the diff says WHAT changed, `review` says who it affects and what was already decided. Read specific files only for what neither answers.',
+    '- An empty `callers` list is labelled and is NOT evidence a symbol is unused; a `note` means the change set itself is degraded, so every count is a floor.',
+    '',
+    '### 9. Prefer graph verbs over grep',
     '- Explore unfamiliar code with `query({ q: "<concept>" })`; get callers, callees, and docs for one symbol with `context({ id: "<symbol>" })`; find owning files/modules with `impact({ op: "owners", id })`; find how two symbols connect with `impact({ op: "path", from, to })`.',
     '- Rename through `rename({ from, to })` — it plans across the call graph and is dry-run by default; apply only with the returned `planId`. Never rename with find-and-replace.',
     '- `explain({ id })` reports taint/dataflow findings for one callable. `status({ op: "gaps" })` reports what the graph does NOT cover — read it before claiming coverage.',
@@ -894,4 +910,129 @@ export function removeCaptureHooks(
     out.push({ client: id, scope, path, written: changed, events: removed });
   }
   return out;
+}
+
+// ─── which client is the user ACTUALLY using? (client detection) ──────────────
+
+/** One reason a client was detected, so the choice can be explained rather than asserted. */
+export interface ClientSignal {
+  client: ClientId;
+  /** `env` = this process is running inside that client right now (strongest). `repo` = the
+   *  repository already carries that client's own configuration. */
+  source: 'env' | 'repo';
+  /** The concrete variable or path that produced the signal — printed to the user verbatim. */
+  evidence: string;
+}
+
+export interface ClientDetection {
+  /** Detected clients, environment signals first, de-duplicated. Empty when nothing was detected. */
+  clients: ClientId[];
+  signals: ClientSignal[];
+}
+
+/**
+ * Environment signals — what is running RIGHT NOW. Each entry names a variable the client itself
+ * sets, never one a user might plausibly export for another reason (`GEMINI_API_KEY`, for example,
+ * says a key exists, not that the Gemini CLI is driving this session).
+ */
+const ENV_SIGNALS: { client: ClientId; vars: string[]; termProgram?: string[] }[] = [
+  { client: 'claude', vars: ['CLAUDECODE', 'CLAUDE_CODE_ENTRYPOINT'] },
+  { client: 'cursor', vars: ['CURSOR_TRACE_ID'], termProgram: ['cursor'] },
+  { client: 'windsurf', vars: ['WINDSURF_SESSION_ID'], termProgram: ['windsurf'] },
+  { client: 'codex', vars: ['CODEX_SANDBOX', 'CODEX_HOME'] },
+  { client: 'gemini', vars: ['GEMINI_CLI', 'GEMINI_SANDBOX'] },
+  // VS Code LAST among the editors: Cursor and Windsurf are VS Code forks and set VSCODE_* too, so
+  // an earlier match must win. VS Code's own agent IS Copilot — the `vscode` adapter deliberately
+  // has no instruction file and points here — so the detected client for instructions is `copilot`.
+  { client: 'copilot', vars: ['VSCODE_PID', 'VSCODE_GIT_ASKPASS_MAIN'], termProgram: ['vscode'] },
+];
+
+/**
+ * Repository signals — configuration THIS client created, used only when no environment signal
+ * identifies the running client.
+ *
+ * `cribOwned` marks paths crib itself writes. Such a path is evidence only when it holds content
+ * beyond crib's own managed block: after one over-broad install, `GEMINI.md` exists in every repo,
+ * and treating crib's own output as proof the user runs Gemini would make the original mistake
+ * permanent and self-justifying.
+ */
+const REPO_SIGNALS: { client: ClientId; path: string; cribOwned: boolean }[] = [
+  { client: 'claude', path: '.claude', cribOwned: false },
+  { client: 'claude', path: 'CLAUDE.md', cribOwned: true },
+  { client: 'cursor', path: '.cursor', cribOwned: true },
+  { client: 'copilot', path: '.github/copilot-instructions.md', cribOwned: true },
+  { client: 'copilot', path: '.vscode', cribOwned: false },
+  { client: 'windsurf', path: '.windsurfrules', cribOwned: true },
+  { client: 'gemini', path: '.gemini', cribOwned: false },
+  { client: 'gemini', path: 'GEMINI.md', cribOwned: true },
+  { client: 'codex', path: '.codex', cribOwned: false },
+];
+
+/**
+ * True when a file's ONLY substantive content is crib's managed block (plus optional Cursor
+ * frontmatter). Such a file is crib's own footprint, not evidence that the user uses that client.
+ */
+function isCribOnlyFile(path: string): boolean {
+  let text: string;
+  try {
+    text = readFileSync(path, 'utf8');
+  } catch {
+    return false;
+  }
+  const begin = text.indexOf(ADAPTER_BEGIN);
+  const end = text.indexOf(ADAPTER_END);
+  if (begin === -1 || end === -1) return false;
+  const outside = (text.slice(0, begin) + text.slice(end + ADAPTER_END.length))
+    .replace(/^---\r?\n[\s\S]*?\r?\n---/, '') // Cursor frontmatter crib writes itself
+    .trim();
+  return outside.length === 0;
+}
+
+/**
+ * Which client(s) is this user actually working in?
+ *
+ * `crib init` used to wire EVERY known client unconditionally, so a developer working in one editor
+ * got `GEMINI.md`, `.windsurfrules`, `.cursor/rules/` and `AGENTS.md` dropped into their repository
+ * alongside the one file they wanted. Files a user did not ask for are not a harmless default: they
+ * are committed, reviewed, and inherited by everyone who clones the repo.
+ *
+ * Environment signals win over repository signals — what is running now beats what was configured
+ * once. Both are returned so the caller can SHOW its reasoning instead of silently choosing.
+ */
+export function detectClients(
+  repoRoot: string,
+  env: NodeJS.ProcessEnv = process.env,
+): ClientDetection {
+  const signals: ClientSignal[] = [];
+  const term = (env.TERM_PROGRAM ?? '').toLowerCase();
+  for (const { client, vars, termProgram } of ENV_SIGNALS) {
+    const hitVar = vars.find((v) => (env[v] ?? '').length > 0);
+    if (hitVar) {
+      signals.push({ client, source: 'env', evidence: hitVar });
+      continue;
+    }
+    if (termProgram?.includes(term)) {
+      signals.push({ client, source: 'env', evidence: `TERM_PROGRAM=${env.TERM_PROGRAM}` });
+    }
+  }
+  // A running client is the answer; do not dilute it with stale repository configuration.
+  if (signals.length === 0) {
+    for (const { client, path, cribOwned } of REPO_SIGNALS) {
+      const abs = join(repoRoot, path);
+      if (!existsSync(abs)) continue;
+      if (cribOwned && isCribOnlyFile(abs)) continue;
+      signals.push({ client, source: 'repo', evidence: path });
+    }
+  }
+  const clients: ClientId[] = [];
+  for (const s of signals) if (!clients.includes(s.client)) clients.push(s.client);
+  return { clients, signals };
+}
+
+/** The MCP config target for a detected client. Copilot has no MCP config of its own — VS Code's
+ *  `.vscode/mcp.json` IS the Copilot config — so it maps onto the `vscode` writer. */
+export function mcpIdeForClient(
+  client: ClientId,
+): 'claude' | 'cursor' | 'vscode' | 'codex' | 'windsurf' | 'gemini' {
+  return client === 'copilot' ? 'vscode' : client;
 }

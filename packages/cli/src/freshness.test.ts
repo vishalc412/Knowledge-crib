@@ -228,6 +228,7 @@ function makeWorker(
     pollMs: 10,
     heartbeatMs: 40,
     leaseTtlMs: 200,
+    busyLeaseTtlMs: 250,
     retryBackoffMs: 10,
     maxAttempts: 3,
     onEvent: (e) => events.push(e as { kind: string }),
@@ -336,12 +337,12 @@ describe('FreshnessWorker — durable processing', () => {
     a.worker.abandonForTest(); // simulates SIGKILL: loops dead, lease + active task left on disk
     expect(readWorkerState(env)?.activeTask?.head).toBe('crashy');
 
-    // heartbeat goes stale (lease TTL 200ms in the harness) → worker B takes over, re-enqueues,
+    // the bounded busy lease expires → worker B takes over, re-enqueues,
     // re-runs, and completes: at-least-once revalidation, idempotent at the same head.
     await until(() => {
       const s = readWorkerState(env);
-      return s !== undefined && Date.now() - Date.parse(s.heartbeatAt) > 200;
-    }, 'lease stale');
+      return s !== undefined && Date.now() - Date.parse(s.heartbeatAt) > 250;
+    }, 'busy lease stale');
     const b = makeWorker();
     await b.worker.start();
     try {
@@ -354,6 +355,33 @@ describe('FreshnessWorker — durable processing', () => {
       await b.worker.stop();
     }
     release(); // release the abandoned worker's gate so the test process drains cleanly
+  });
+
+  it('refuses takeover of a live busy owner even after its heartbeat ages during revalidation', async () => {
+    const root = registeredRoot();
+    enqueueFreshness(root, 'long-sync', env);
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const a = makeWorker({
+      heartbeatMs: 10_000,
+      leaseTtlMs: 50,
+      busyLeaseTtlMs: 250,
+      revalidate: async () => {
+        await gate;
+        return { generation: 'long-sync-generation' };
+      },
+    });
+    await a.worker.start();
+    await until(() => a.worker.inFlight?.head === 'long-sync', 'worker A leased long task');
+    await new Promise((resolve) => setTimeout(resolve, 75));
+
+    const b = makeWorker();
+    await expect(b.worker.start()).rejects.toBeInstanceOf(WorkerAlreadyRunningError);
+
+    release();
+    await a.worker.stop();
   });
 
   it('takes over a DEAD worker pid even while its heartbeat is recent (crash before expiry)', async () => {

@@ -54,6 +54,16 @@ assert.match(
 );
 assert.match(
   releaseWorkflow,
+  /KCRIB_EMBED_HOME/,
+  'release CI must isolate the semantic model cache from the runner home',
+);
+assert.match(
+  releaseWorkflow,
+  /embed setup --model large --yes/,
+  'release CI must install the supported semantic tier before collecting release evidence',
+);
+assert.match(
+  releaseWorkflow,
   /contents:\s*read/,
   'release CI must use read-only repository access',
 );
@@ -86,8 +96,23 @@ assert.match(
 );
 assert.match(
   tagWorkflow,
+  /KCRIB_EMBED_HOME/,
+  'tag release must isolate the semantic model cache from the runner home',
+);
+assert.match(
+  tagWorkflow,
+  /embed setup --model large --yes/,
+  'tag release must install the supported semantic tier before collecting release evidence',
+);
+assert.match(
+  tagWorkflow,
   /actions\/upload-artifact@/,
   'tag release must upload the verified bundle',
+);
+assert.match(
+  tagWorkflow,
+  /release-evidence\.json/,
+  'tag release must archive the semantic release receipt',
 );
 assert.match(
   tagWorkflow,

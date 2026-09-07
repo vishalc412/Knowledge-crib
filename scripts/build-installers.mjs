@@ -115,7 +115,30 @@ else
 fi
 
 npm install -g --cache "$CACHE_DIR" --no-audit --no-fund ${shellTarballArgs(tarballs)}
-echo "Knowledge-crib installed. Run: crib --help"
+echo "Knowledge-crib installed."
+
+# Finish the job. An installer that stops at "installed" leaves the operator to find four more
+# commands — index, MCP wiring, instruction files, the embedding model — in an order nothing states,
+# and crib is the source of truth for a repository only once all of them have run. So when the
+# current directory IS a repository, wire it now.
+#
+# Gated on a git work tree deliberately: \`crib setup\` indexes the directory it is pointed at, and
+# doing that to whatever directory an installer happened to be launched from would be a surprise,
+# not a convenience. Two opt-outs, both honoured by \`crib setup\` itself:
+#   KCRIB_NO_SETUP=1  install the binary only
+#   KCRIB_NO_EMBED=1  set up everything except the on-device model download
+# The setup step is reported but never fatal: the binary is installed either way, and a failed
+# setup is re-runnable with one command.
+if [ "\${KCRIB_NO_SETUP:-}" = "1" ]; then
+  echo "KCRIB_NO_SETUP=1 - skipping repository setup. Run 'crib setup' in your project when ready."
+elif command -v git >/dev/null 2>&1 && git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  echo "Setting up $(pwd): index, git hooks, MCP wiring for every client, the agent protocol,"
+  echo "the on-device semantic model, and the memory stores."
+  crib setup . || echo "crib setup did not complete - re-run it with 'crib setup'." >&2
+else
+  echo "Not inside a git repository - run 'crib setup' from your project to finish."
+fi
+echo "Run: crib --help"
 `;
 }
 
@@ -197,10 +220,29 @@ try {
     if ($LASTEXITCODE -ne 0) {
       throw "npm install failed with exit code $LASTEXITCODE."
     }
-    Write-Host "Knowledge-crib installed. Run: crib --help"
+    Write-Host "Knowledge-crib installed."
   } finally {
     Pop-Location
   }
+
+  # Same reasoning as the shell installer: finish the setup rather than hand the operator four more
+  # commands. Runs AFTER Pop-Location, so it targets the directory the installer was launched from
+  # and never the bundle directory. Opt out with KCRIB_NO_SETUP=1 (binary only) or KCRIB_NO_EMBED=1
+  # (everything except the model download). Never fatal - the binary is installed either way.
+  if ($env:KCRIB_NO_SETUP -eq "1") {
+    Write-Host "KCRIB_NO_SETUP=1 - skipping repository setup. Run 'crib setup' in your project when ready."
+  } elseif ((Get-Command git -ErrorAction SilentlyContinue) -and
+            (& git rev-parse --is-inside-work-tree 2>$null) -eq "true") {
+    Write-Host "Setting up $((Get-Location).Path): index, git hooks, MCP wiring for every client,"
+    Write-Host "the agent protocol, the on-device semantic model, and the memory stores."
+    & crib setup .
+    if ($LASTEXITCODE -ne 0) {
+      Write-Warning "crib setup did not complete - re-run it with 'crib setup'."
+    }
+  } else {
+    Write-Host "Not inside a git repository - run 'crib setup' from your project to finish."
+  }
+  Write-Host "Run: crib --help"
 } finally {
   Remove-Item -Recurse -Force $CacheDir -ErrorAction SilentlyContinue
 }

@@ -40,3 +40,22 @@ assert.match(
 );
 
 console.log('build-installers tests ok');
+
+// The installer finishes the setup rather than stopping at "installed": a binary on PATH is not a
+// wired repository, and the four remaining commands were previously left for the operator to
+// discover. Both opt-outs must be present in both installers, or "skip the 2.1 GB model" becomes
+// unreachable for anyone installing from a bundle.
+for (const [name, render] of [
+  ['installSh', installSh],
+  ['installPs1', installPs1],
+]) {
+  const text = render(['knowledge-crib-0.1.0.tgz']);
+  assert.match(text, /crib setup \./, `${name} should run \`crib setup .\` after installing`);
+  assert.match(text, /KCRIB_NO_SETUP/, `${name} should honour KCRIB_NO_SETUP`);
+  assert.match(text, /KCRIB_NO_EMBED/, `${name} should document KCRIB_NO_EMBED`);
+  assert.match(
+    text,
+    /rev-parse --is-inside-work-tree/,
+    `${name} should only auto-setup inside a git work tree`,
+  );
+}

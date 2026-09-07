@@ -79,7 +79,7 @@ export const RETIRED_ALIASES: Record<string, { tool: string; op: string }> = {
  * handler on the forward path. Callers may not contradict the alias: an injected `op` always wins
  * over one smuggled into `arguments`.
  */
-function installAliasRouter(server: McpServer): void {
+function installAliasRouter(server: McpServer, verbs: Verbs): void {
   const protocol = server.server;
   // `_requestHandlers` is an underscore-private Protocol field; there is no public getter for the
   // installed handler, and this is the minimal seam the wrapper needs.
@@ -99,6 +99,13 @@ function installAliasRouter(server: McpServer): void {
   }
   protocol.removeRequestHandler('tools/call');
   protocol.setRequestHandler(CallToolRequestSchema, (request, extra) => {
+    // Every client reaches crib through this one call path, whatever IDE it is, so this is where a
+    // session's coordinates can be observed without any client-specific hook. It is what makes a
+    // timed-out session recoverable for the six adapters that expose no lifecycle hook surface.
+    // Coalesced internally and never throwing — see `Verbs.noteSessionActivity`.
+    // Optional call: the router must not depend on a breadcrumb. A partial `Verbs` (tests, a future
+    // variant) still routes correctly, and a resume aid can never be the reason a tool call fails.
+    verbs.noteSessionActivity?.();
     const alias = RETIRED_ALIASES[request.params.name];
     if (!alias) return original(request, extra);
     return original(
@@ -242,6 +249,21 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
       inputSchema: { since: z.string().optional() },
     },
     async (a) => TOOL_RESULT(verbs.detectChanges(a)),
+  );
+
+  server.registerTool(
+    'review',
+    {
+      description:
+        'Everything a review needs about a change, in ONE call: what changed, each changed symbol with its signature, WHO CALLS IT (a diff cannot show this), and prior trusted decisions about it. Use this INSTEAD of reading the touched files — on a real commit that is ~2k tokens here versus ~212k reading files, which is why a file-reading review degrades into skimming. An empty `callers` list is labelled, never silently presented as "unused"; a `note` means the change set itself is degraded and every count is a floor.',
+      inputSchema: {
+        since: z.string().optional(),
+        limit: z.number().int().optional(),
+        maxTokens: z.number().int().optional(),
+        ifHash: z.string().optional(),
+      },
+    },
+    async (a) => TOOL_RESULT(verbs.review(a)),
   );
 
   // `extract_rules` had no keep-standalone rationale (unlike brief/context/query/source above):
@@ -860,7 +882,7 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
     },
   );
 
-  installAliasRouter(server);
+  installAliasRouter(server, verbs);
   assertSurfaceMatchesManifest(server);
 
   return server;

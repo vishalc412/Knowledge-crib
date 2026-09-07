@@ -1,0 +1,62 @@
+- dialog "Knowledge Crib memory home" [ref=e121]:
+  - generic [ref=e122]:
+    - generic [ref=e123]:
+      - generic [ref=e124]: Memory home
+      - button "Close memory home" [ref=e125] [cursor=pointer]: ×
+    - generic [ref=e126]: What agents recorded about this repo — and what went stale when the code moved.
+  - generic [ref=e127]:
+    - generic [ref=e128]:
+      - generic [ref=e129]:
+        - generic "Current evidence-backed memory" [ref=e130]:
+          - generic [ref=e131]: "0"
+          - generic [ref=e132]: Active
+        - generic "Outcomes waiting for distillation" [ref=e133]:
+          - generic [ref=e134]: "8"
+          - generic [ref=e135]: Pending
+        - generic "Stale or degraded evidence" [ref=e136]:
+          - generic [ref=e137]: "0"
+          - generic [ref=e138]: Needs review
+        - generic "Full append-only ledger" [ref=e139]:
+          - generic [ref=e140]: "0"
+          - generic [ref=e141]: History
+        - generic "Active intakes and unfinished attempts" [ref=e142]:
+          - generic [ref=e143]: "3"
+          - generic [ref=e144]: Work to resume
+      - generic [ref=e145]:
+        - generic [ref=e146]:
+          - generic [ref=e147]: Retrieval mode
+          - generic [ref=e148]: lexical-fallback
+        - generic [ref=e149]:
+          - generic [ref=e150]: Last capture
+          - generic [ref=e151]: none yet
+        - generic [ref=e152]:
+          - generic [ref=e153]: Code index
+          - generic [ref=e154]: 2026-09-05T15:50:10.803Z
+        - generic [ref=e155]:
+          - generic [ref=e156]: Sync
+          - generic [ref=e157]: local only
+      - generic [ref=e158]: "Next safe actionRun `crib memory distill --provider <name>` to review pending outcomes."
+    - generic [ref=e160]:
+      - text: "Capture policy:"
+      - generic [ref=e161]: ref refs/remotes/origin/HEAD · profiles self-test
+    - generic [ref=e162]:
+      - generic [ref=e163]:
+        - button "All 0" [ref=e164] [cursor=pointer]:
+          - generic [ref=e166]: All
+          - generic [ref=e167]: "0"
+        - button "Stale 0" [ref=e168] [cursor=pointer]:
+          - generic [ref=e170]: Stale
+          - generic [ref=e171]: "0"
+        - button "Moved 0" [ref=e172] [cursor=pointer]:
+          - generic [ref=e174]: Moved
+          - generic [ref=e175]: "0"
+        - button "Current 0" [ref=e176] [cursor=pointer]:
+          - generic [ref=e178]: Current
+          - generic [ref=e179]: "0"
+        - button "Unanchored 0" [ref=e180] [cursor=pointer]:
+          - generic [ref=e182]: Unanchored
+          - generic [ref=e183]: "0"
+        - button "Retracted 0" [ref=e184] [cursor=pointer]:
+          - generic [ref=e186]: Retracted
+          - generic [ref=e187]: "0"
+      - generic [ref=e188]: No durable records yet. Complete meaningful work and emit a structured Knowledge Crib outcome; generic session events only request a checkpoint.

@@ -13,7 +13,7 @@
  *   (1) temp repo, `git init`, deterministic author + commit dates, commit one TypeScript file;
  *   (2) `crib --help` lists BOTH `init` and `doctor` (discoverability — a user can't run what they
  *       can't see in --help);
- *   (3) `crib init . --ide claude` → exit 0; stdout contains "indexed" (step 1 ran), "hooks"
+ *   (3) `crib init . --ide claude --no-embed` → exit 0; stdout contains "indexed" (step 1 ran), "hooks"
  *       (step 2 ran), ".mcp.json" (step 3 wrote the IDE config), and "Next steps" (the hero);
  *       `.mcp.json` exists on disk (the wiring is real, not just a printed line);
  *       `.gitattributes` contains the kcrib merge block (hooks are real);
@@ -104,7 +104,10 @@ try {
     git(repo1, ['add', 'loan.ts'], dateEnv);
     git(repo1, ['commit', '-q', '-m', 'init'], dateEnv);
 
-    const init = runCrib(repo1, ['init', '.', '--ide', 'claude']);
+    // `--no-embed`: init now installs the on-device semantic model by default (the mandatory-context
+    // change), and a release gate must not pull ~2.1 GB of weights to prove that onboarding wires a
+    // repository. The model path has its own coverage in embed-setup.test.ts + `crib embed setup`.
+    const init = runCrib(repo1, ['init', '.', '--ide', 'claude', '--no-embed']);
     if (init.code !== 0) {
       fail(`crib init exited ${init.code}: ${init.out}`);
     } else {

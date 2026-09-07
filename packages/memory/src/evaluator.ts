@@ -28,6 +28,7 @@ import { type SoulStore, rehydrateBody } from '@knowledge-crib/core';
 import type { Node } from '@knowledge-crib/soul-schema';
 import {
   type ApplicabilityVerdict,
+  EVIDENCE_KINDS,
   type EvidenceKind,
   type EvidenceVerdict,
   type MemoryRecordKind,
@@ -305,13 +306,20 @@ export class MemoryEvaluator {
    * NOT recomputed here (it is as-authored; promotion is a W4 concern via a new record/decision).
    * Lifecycle is overlaid separately by {@link effectiveVerdicts} from decision events.
    *
+   * SCHEMA-INDEPENDENT (R02). Revalidation reads only `id`, `kind`, `claim` and `evidence` — fields
+   * every supported schema carries — so a v2/v3 envelope is revalidated by exactly the same rules
+   * as a memory-1 record. The audited defect was that recall never CALLED this for a versioned
+   * record: a migrated record kept the evidence verdict snapshotted at migration time, so a claim
+   * whose source symbol had since been deleted came back `valid`/`current`/`fresh`. Evidence
+   * validity is a property of the world now, never of the schema the claim happens to be stored in.
+   *
    * G3.3 — when the context carries a generation-keyed cache port (bound by the serving layer for
    * this pass), a memoized evaluation for the SAME record content at the SAME dependency generation
    * is returned verbatim (frozen — treat it as read-only): no evidence item is re-read. Anything
    * that could flip a verdict is a dependency slot, and a changed slot re-fingerprints the whole
    * cache (see `generation-cache.ts`).
    */
-  evaluate(record: MemoryRecord, ctx: MemoryEvalContext): RecordEvaluation {
+  evaluate(record: MemoryRecord | MemoryRecordVersioned, ctx: MemoryEvalContext): RecordEvaluation {
     const cacheKey = ctx.cache ? evaluationCacheKey(record) : undefined;
     const cached = cacheKey && ctx.cache ? ctx.cache.get(cacheKey) : undefined;
     if (cached) return cached;
@@ -799,7 +807,7 @@ export class MemoryEvaluator {
  * the record's content is a different key, and any change to a dependency slot re-fingerprints the
  * whole cache (generation-cache.ts).
  */
-function evaluationCacheKey(record: MemoryRecord): string {
+function evaluationCacheKey(record: MemoryRecord | MemoryRecordVersioned): string {
   return `${record.id}|${record.kind}|${record.claim}|${JSON.stringify(record.evidence)}`;
 }
 
@@ -1139,4 +1147,102 @@ export function supersedeDecision(
     reason,
     ts: now,
   };
+}
+
+// ─── write-time admissibility pre-flight ─────────────────────────────────────
+
+/** One reason a proposed evidence item could never support its claim. */
+export interface AdmissibilityProblem {
+  /** Index of the offending item in the supplied evidence array. */
+  index: number;
+  /** What is wrong, in the terms the author can act on. */
+  problem: string;
+}
+
+/**
+ * Would this evidence EVER let this claim become admissible? Checked at WRITE time.
+ *
+ * Reported from real use: an agent recorded a `convention` with
+ * `evidence: [{ type: 'human-attestation', quote: '...' }]`. The write returned `ok: true`, the
+ * agent told the user it had been remembered — and the claim could never be recalled, because
+ * `type` is not `kind` and a human attestation additionally requires `tty`/`actor`/`attestedAt`.
+ * Nothing surfaced that until the user concluded the whole memory system was broken.
+ *
+ * Structural admissibility is decidable the moment the claim is written, and that is the only
+ * moment the author can still fix it. This checks exactly the properties that do NOT depend on the
+ * live world — recognised kind, the PRD admissibility matrix, and the per-kind required fields.
+ * Whether a source quote still MATCHES its anchor is a question for revalidation, deliberately not
+ * asked here; a claim can be perfectly well formed and later go stale, and that is not an error.
+ *
+ * PURE. Returns an empty array when nothing is structurally wrong (including for empty evidence —
+ * the episodic capture path legitimately stages claims whose evidence is supplied later).
+ */
+export function admissibilityProblems(
+  claimKind: MemoryRecordKind,
+  evidence: readonly MemoryEvidence[],
+  opts: {
+    /**
+     * True when the evidence is being STAGED as a proposal rather than admitted.
+     *
+     * A human attestation is only valid with `tty`/`actor`/`attestedAt`, but those describe the
+     * moment a human confirms it — and crib stamps them itself, from a real terminal, at admission
+     * (`crib memory admit`). An agent relaying "the user told me to always do X" legitimately has
+     * none of them yet, and must still be able to propose the claim. Requiring them at staging time
+     * would make an honest proposal impossible while doing nothing to stop a dishonest one.
+     */
+    staged?: boolean;
+  } = {},
+): AdmissibilityProblem[] {
+  const problems: AdmissibilityProblem[] = [];
+  evidence.forEach((ev, index) => {
+    const raw = ev as unknown as Record<string, unknown>;
+    if (!isEvidenceKind(raw.kind)) {
+      // The single most common authoring mistake gets named explicitly rather than reported as a
+      // generic schema violation: `type` is what most tool schemas call this field.
+      const hint =
+        typeof raw.type === 'string'
+          ? ` — found \`type: ${JSON.stringify(raw.type)}\`; the field is \`kind\``
+          : '';
+      problems.push({
+        index,
+        problem: `evidence[${index}] has no recognised \`kind\`${hint}. Expected one of ${EVIDENCE_KINDS.join(', ')}`,
+      });
+      return;
+    }
+    const kind = raw.kind;
+    if (!admissibleFor(kind, claimKind)) {
+      problems.push({
+        index,
+        problem: `evidence[${index}] kind '${kind}' is not admissible for a '${claimKind}' claim (admissible: ${ADMISSIBLE[claimKind].join(', ')})`,
+      });
+      return;
+    }
+    // Per-kind required fields, mirroring each revalidate* method's own precondition. Only fields
+    // whose ABSENCE is unrecoverable are checked — never fields that merely affect the verdict.
+    const missing: string[] = [];
+    if (kind === 'human-attestation' && !opts.staged) {
+      if (raw.tty !== true) missing.push('tty: true');
+      if (typeof raw.actor !== 'string' || raw.actor.length === 0) missing.push('actor');
+      if (typeof raw.attestedAt !== 'string' || raw.attestedAt.length === 0) {
+        missing.push('attestedAt');
+      }
+    }
+    if (kind === 'source-quote' && (typeof raw.soulId !== 'string' || raw.soulId.length === 0)) {
+      missing.push('soulId');
+    }
+    if (kind === 'receipt-pair') {
+      if (typeof raw.failingReceiptId !== 'string') missing.push('failingReceiptId');
+      if (typeof raw.passingReceiptId !== 'string') missing.push('passingReceiptId');
+    }
+    if (kind === 'execution-assertion' && typeof raw.receiptId !== 'string') {
+      missing.push('receiptId');
+    }
+    if (missing.length > 0) {
+      problems.push({
+        index,
+        problem: `evidence[${index}] of kind '${kind}' is missing required field(s): ${missing.join(', ')}`,
+      });
+    }
+  });
+  return problems;
 }

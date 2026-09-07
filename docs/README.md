@@ -62,6 +62,9 @@ Two existing tools each prove half and serve as **design inspiration only (no co
 | — | [knowledge-crib-beta-installers.md](knowledge-crib-beta-installers.md) | macOS and Windows beta installer bundle build/install guide |
 | — | [mulesoft.md](mulesoft.md) | MuleSoft (Mule 3/4) extraction — folders/ZIPs/JARs, dialect detection, MUnit, property key-only redaction |
 | — | [memory-sync.md](memory-sync.md) | **Memory sync operator guide** — cross-device sync setup, keys, push/pull, conflicts, rotation, physical purge (Gate 4 / ADR-003) |
+| — | [capability-matrix.md](capability-matrix.md) | **START HERE BEFORE ADOPTING — the dated support boundary.** What has been measured, on which platform and clients, what is default vs opt-in, and the eight known limits carried into launch. Every row links to its evidence |
+| — | [bench/onnx-model-ladder.md](bench/onnx-model-ladder.md) | Measured semantic tiers (G2/G3 per model, no Python) — why `large` is the default and what the smaller rows really cost |
+| — | [bench/review-cost.md](bench/review-cost.md) | Why reviewing by reading files degrades into skimming: 212k tokens vs ~2k through the graph |
 | — | [launch-readiness.md](launch-readiness.md) | **Launch readiness report** — what shipped per gate, measured launch-gate verdicts (including the honest FAILs), the S1–S9 security battery, and the limitations carried |
 | — | [pdg-taint.md](pdg-taint.md) | PDG / taint analysis (G5.2) — control dependence, reaching definitions, and the source→sink rule table behind `explain` |
 

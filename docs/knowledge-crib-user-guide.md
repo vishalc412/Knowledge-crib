@@ -77,12 +77,26 @@ onboarder:
 
 ```bash
 cd /path/to/your/project
-crib init .                             # index + install-hooks + mcp install + next-steps hero
-crib doctor .                           # 6-point health check (node/corepack/index/freshness/hooks/IDE wiring)
+crib setup .                            # THE one command — see below for exactly what it runs
+crib doctor .                           # health check (node/corepack/index/freshness/hooks/IDE wiring/…)
 ```
 
-`crib init` does everything §3 describes in one command; `crib doctor` prints ✓/✗ per check with a
-fix hint and exits non-zero when the setup is broken.
+`crib setup` runs, in order: `crib index`, `crib install-hooks`, `crib mcp install` for every
+client, `crib adapters install` (the mandatory agent protocol, into every client's instruction
+file), `crib embed setup` (downloads + integrity-pins the on-device embedding model — **~2.1 GB**
+by default, one time, offline afterwards), `crib memory init`, and finally `crib doctor`. Nothing
+is left for you to run afterwards.
+
+`crib init` is the subset that stops before the memory stores and the health check. Both default to
+wiring **every** client, because the protocol they write declares crib mandatory for the repository;
+narrow it with `--ide <id>`, or `--ide detected` to wire only the clients this machine appears to
+run.
+
+Skip the model download with `--no-embed` (or `KCRIB_NO_EMBED=1`); recall then stays lexical, which
+answers paraphrased questions at ~2.6% instead of ~81%. `--embed-model small` takes a ~97 MB model
+instead, and `--embed-from <dir>` adopts a pre-fetched bundle on an air-gapped host.
+
+`crib doctor` prints ✓/✗ per check with a fix hint and exits non-zero when the setup is broken.
 
 If `link --global` fails with `ERR_PNPM_NO_GLOBAL_BIN_DIR`, run the `setup` step
 above, restart your terminal, and retry.
@@ -119,7 +133,8 @@ crib status .                           # 2. health + stats
 | `crib export [--format F] [--procedure P]` | Render: `rules` \| `mermaid` \| `graph.json` \| `report` |
 | `crib viz [path] [--port N]` | Serve the offline web UI (Cytoscape canvas) + open browser |
 | `crib enrich [path] [--status\|--next\|--auto\|--save <file>\|--overview\|--scopes\|--prune-stale [--apply]] [--layer L] [--budget-tokens N]` | Drive the LLM semantic-graph loop headlessly: status / next **token-packed** grounded batch / bounded autonomous loop (`--auto [--max-tokens N] [--max-batches N]`) / persist a `{batchId, items}` JSON / render the bible / prune stale artifacts (see §10) |
-| `crib init [path] [--ide <name\|all>]` | 5-minute onboarding: index + install-hooks + mcp install + next-steps hero |
+| `crib setup [path] [--no-embed]` | **The one command**: index + hooks + MCP for every client + the mandatory agent protocol in every instruction file + the on-device model + memory stores + `doctor`. Nothing to run afterwards |
+| `crib init [path] [--ide <id\|all\|detected>]` | 5-minute onboarding: index + install-hooks + mcp install + adapters + the semantic model + next-steps hero. Defaults to every client; `--ide detected` wires only what is in use; `--no-embed` skips the model download |
 | `crib doctor [path]` | Setup health check: node/corepack/indexed/freshness/hooks/IDE-wiring — ✓/✗ per check + fix hint, exit 1 on failure |
 | `crib ask "<question>" [--format markdown]` | Natural-language answer from the crib (deterministic — no model call) |
 | `crib context <id>` / `crib dossier <id>` / `crib impact <id> --dir up\|down` / `crib path <from> <to>` / `crib neighbors <id>` | CLI mirrors of the MCP verbs (§4) for terminal use |

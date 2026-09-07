@@ -1,0 +1,67 @@
+{
+  "withoutWatch": {
+    "baselineFound": true,
+    "newSymbolFound": false,
+    "oldSymbolStillFound": true,
+    "afterMs": 2500
+  },
+  "withWatch": {
+    "fixture": "one TypeScript file; 10 sequential change(s); real stdio MCP; 50ms polling; diagnostic, not the full-repo release gate",
+    "times": [
+      {
+        "iteration": 0,
+        "found": true,
+        "ms": 423
+      },
+      {
+        "iteration": 1,
+        "found": true,
+        "ms": 424
+      },
+      {
+        "iteration": 2,
+        "found": true,
+        "ms": 398
+      },
+      {
+        "iteration": 3,
+        "found": true,
+        "ms": 366
+      },
+      {
+        "iteration": 4,
+        "found": true,
+        "ms": 424
+      },
+      {
+        "iteration": 5,
+        "found": true,
+        "ms": 423
+      },
+      {
+        "iteration": 6,
+        "found": true,
+        "ms": 418
+      },
+      {
+        "iteration": 7,
+        "found": true,
+        "ms": 404
+      },
+      {
+        "iteration": 8,
+        "found": true,
+        "ms": 421
+      },
+      {
+        "iteration": 9,
+        "found": true,
+        "ms": 402
+      }
+    ],
+    "observationDurationP95Ms": 424,
+    "successfulUpdates": 10,
+    "timeouts": 0,
+    "successfulUpdateP95Ms": 424
+  }
+}

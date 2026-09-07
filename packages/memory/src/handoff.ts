@@ -29,6 +29,7 @@ import {
   buildContinuation,
   projectIntakes,
 } from './intake-projection.js';
+import { DEFAULT_MIGRATION_PRINCIPAL_ID } from './migrations.js';
 import type {
   IntakeCheckpoint,
   IntakeRequirement,
@@ -75,12 +76,46 @@ export interface HandoffRecent {
   createdAt: string;
 }
 
+/**
+ * Where the previous session physically was, reconstructed from lifecycle events alone.
+ *
+ * This exists for the case the rest of handoff cannot serve: an IDE session that TIMED OUT. Every
+ * other signal here — intakes, checkpoints, captures — requires the agent to have written something
+ * before it stopped, and an agent whose session was killed had no chance to. The lifecycle hook
+ * records the repository anchor on every turn without the agent's involvement, so this survives a
+ * timeout, a crash, or a closed laptop.
+ *
+ * It is deliberately NOT a substitute for an intake checkpoint: it says where you were, never what
+ * you were trying to do. A checkpoint carries intent; this carries coordinates.
+ */
+export interface HandoffLastSession {
+  /** The client-supplied session id, when the hook received one. */
+  sessionId?: string;
+  clientId?: string;
+  /** ISO timestamp of the last lifecycle event from that session. */
+  lastActivity: string;
+  /** Which lifecycle event it was (`turn-end`, `session-start`, `tool-use`). */
+  event?: string;
+  branch?: string;
+  head?: string;
+  /** Files that were modified but uncommitted when the session ended (bounded by the hook). */
+  changedPaths: string[];
+  /** True when this session ended on a DIFFERENT branch/HEAD than the repository is on now. */
+  movedSince: boolean;
+}
+
 export interface HandoffResponse {
   openWork: HandoffOpenWork[];
   pendingCaptures: HandoffPendingCapture[];
   needsAttention: HandoffAttention[];
   recent: HandoffRecent[];
   intakes: IntakeProjection;
+  /**
+   * The previous session's coordinates, when a lifecycle hook recorded any. Absent when no hook is
+   * installed — reported as absence rather than invented, so "no hook" and "no prior work" stay
+   * distinguishable.
+   */
+  lastSession?: HandoffLastSession;
   /**
    * The explicit continue-or-start-fresh decision for this session. Derived from `intakes`, so it
    * never disagrees with it — but stated as named options a caller can choose between, rather than
@@ -115,7 +150,77 @@ export interface HandoffInput {
   intakeRequirements?: readonly IntakeRequirement[];
   intakeCheckpoints?: readonly IntakeCheckpoint[];
   repository?: IntakeCheckpoint['repository'];
+  /**
+   * Lifecycle events the hook recorded, newest-last. Structurally typed so this module stays
+   * independent of the journal's shape — handoff reads coordinates, not the event schema.
+   */
+  lifecycle?: readonly {
+    occurredAt: string;
+    source?: { clientId?: string; sessionId?: string };
+    identity?: { principalId?: string };
+    payload?: Record<string, unknown>;
+  }[];
+  /** Server-resolved caller identity. Session provenance is never an authorization credential. */
+  callerPrincipal?: string;
+  /** The server process requesting handoff; its activity is not a prior session to resume. */
+  currentSessionId?: string;
   limits?: { openWork?: number; pending?: number; attention?: number; recent?: number };
+}
+
+/**
+ * Reconstruct the previous session's coordinates from the newest lifecycle event carrying a
+ * repository anchor.
+ *
+ * Newest-with-an-anchor rather than simply newest: a hook installed before this field existed still
+ * appends events, and picking the newest unconditionally would report a session with no coordinates
+ * and look like the feature is broken. Skipping to the newest event that HAS an anchor degrades to
+ * older-but-useful instead of newer-but-empty.
+ */
+function lastSessionOf(
+  lifecycle: HandoffInput['lifecycle'],
+  now: IntakeCheckpoint['repository'] | undefined,
+  callerPrincipal: string | undefined,
+  currentSessionId: string | undefined,
+): HandoffLastSession | undefined {
+  if (!lifecycle || lifecycle.length === 0) return undefined;
+  for (let i = lifecycle.length - 1; i >= 0; i -= 1) {
+    const event = lifecycle[i]!;
+    if (currentSessionId !== undefined && event.source?.sessionId === currentSessionId) continue;
+    const eventPrincipal = event.identity?.principalId;
+    // Events created before identity existed belong only to the original local-only namespace.
+    // Showing one to an arbitrary later principal would turn backwards compatibility into a leak.
+    if (
+      callerPrincipal !== undefined &&
+      (eventPrincipal === undefined
+        ? callerPrincipal !== DEFAULT_MIGRATION_PRINCIPAL_ID
+        : eventPrincipal !== callerPrincipal)
+    )
+      continue;
+    const repo = event.payload?.repository as
+      | { branch?: string; head?: string; changedPaths?: string[] }
+      | undefined;
+    if (!repo || (repo.branch === undefined && repo.head === undefined)) continue;
+    const eventName = typeof event.payload?.event === 'string' ? event.payload.event : undefined;
+    // "Moved since" is the question a returning agent actually needs answered before it trusts
+    // these coordinates: resuming against a branch you have since left is worse than not resuming.
+    const movedSince =
+      now !== undefined &&
+      ((now.head !== undefined && repo.head !== undefined && now.head !== repo.head) ||
+        (now.branch !== undefined && repo.branch !== undefined && now.branch !== repo.branch));
+    return {
+      ...(event.source?.sessionId !== undefined ? { sessionId: event.source.sessionId } : {}),
+      ...(event.source?.clientId !== undefined ? { clientId: event.source.clientId } : {}),
+      lastActivity: event.occurredAt,
+      ...(eventName !== undefined ? { event: eventName } : {}),
+      ...(repo.branch !== undefined ? { branch: repo.branch } : {}),
+      ...(repo.head !== undefined ? { head: repo.head } : {}),
+      changedPaths: Array.isArray(repo.changedPaths)
+        ? repo.changedPaths.filter((path): path is string => typeof path === 'string').slice(0, 20)
+        : [],
+      movedSince,
+    };
+  }
+  return undefined;
 }
 
 const DEFAULTS = { openWork: 10, pending: 10, attention: 10, recent: 10 } as const;
@@ -245,6 +350,13 @@ export function buildHandoff(input: HandoffInput): HandoffResponse {
     input.repository ?? { dirty: false },
   );
 
+  const lastSession = lastSessionOf(
+    input.lifecycle,
+    input.repository,
+    input.callerPrincipal,
+    input.currentSessionId,
+  );
+
   return {
     openWork,
     pendingCaptures,
@@ -252,6 +364,7 @@ export function buildHandoff(input: HandoffInput): HandoffResponse {
     recent,
     intakes,
     continuation: buildContinuation(intakes),
+    ...(lastSession ? { lastSession } : {}),
     counts: {
       openWork: openWorkAll.length,
       pendingCaptures: pendingAll.length,
