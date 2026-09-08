@@ -244,7 +244,11 @@ function lastSessionOf(
   }
   if (selected === undefined) return undefined;
   const { event } = selected;
-  const repo = event.payload!.repository as { branch?: string; head?: string; changedPaths?: string[] };
+  const repo = event.payload!.repository as {
+    branch?: string;
+    head?: string;
+    changedPaths?: string[];
+  };
   const eventName = typeof event.payload?.event === 'string' ? event.payload.event : undefined;
   // "Moved since" is the question a returning agent actually needs answered before it trusts
   // these coordinates: resuming against a branch you have since left is worse than not resuming.

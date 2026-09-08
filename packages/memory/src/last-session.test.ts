@@ -214,8 +214,16 @@ describe('handoff.lastSession — WP3: trusted caller context and determinism', 
     // WP3.4: two anchored events, identical occurredAt. Event identity — not array position —
     // decides, so a caller that passes the same events in a different order gets the SAME
     // lastSession rather than a different one.
-    const a = lifecycleEvent({ id: 'evt:aa', occurredAt: '2026-09-05T10:00:00.000Z', branch: 'b-aa' });
-    const b = lifecycleEvent({ id: 'evt:bb', occurredAt: '2026-09-05T10:00:00.000Z', branch: 'b-bb' });
+    const a = lifecycleEvent({
+      id: 'evt:aa',
+      occurredAt: '2026-09-05T10:00:00.000Z',
+      branch: 'b-aa',
+    });
+    const b = lifecycleEvent({
+      id: 'evt:bb',
+      occurredAt: '2026-09-05T10:00:00.000Z',
+      branch: 'b-bb',
+    });
     const forward = buildHandoff({ ...BASE, lifecycle: [a, b] });
     const reversed = buildHandoff({ ...BASE, lifecycle: [b, a] });
     expect(forward.lastSession?.branch).toBe('b-bb');
@@ -251,9 +259,7 @@ describe('handoff.lastSession — WP3: trusted caller context and determinism', 
   it('does NOT mark truncation when every recorded path fits', () => {
     const out = buildHandoff({
       ...BASE,
-      lifecycle: [
-        lifecycleEvent({ principalId: 'principal:local', changedPaths: ['src/a.ts'] }),
-      ],
+      lifecycle: [lifecycleEvent({ principalId: 'principal:local', changedPaths: ['src/a.ts'] })],
     });
     expect(out.lastSession?.changedPathsTruncated).toBeUndefined();
   });

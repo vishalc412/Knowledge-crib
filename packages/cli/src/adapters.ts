@@ -18,6 +18,8 @@
  * here + an `McpIde` target there, not a third hardcoded switch.
  */
 import {
+  type Dirent,
+  type Stats,
   existsSync,
   mkdirSync,
   readFileSync,
@@ -1241,7 +1243,7 @@ const FOOTPRINT_WALK_MAX = 200;
  * would mean nothing.
  */
 function isCribFootprint(abs: string): boolean {
-  let stat;
+  let stat: Stats;
   try {
     stat = statSync(abs);
   } catch {
@@ -1254,7 +1256,7 @@ function isCribFootprint(abs: string): boolean {
   let files = 0;
   while (stack.length > 0) {
     const dir = stack.pop()!;
-    let entries;
+    let entries: Dirent[];
     try {
       entries = readdirSync(dir, { withFileTypes: true });
     } catch {

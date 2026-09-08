@@ -148,7 +148,12 @@ const NETWORK_SIGNATURES = [
  * spray an entire npm log into a setup plan.
  */
 export function classifyNpmFailure(err: unknown, fallbackRepair: string): PkgFailure {
-  const e = err as { code?: string | number; status?: number | null; stderr?: string; message?: string };
+  const e = err as {
+    code?: string | number;
+    status?: number | null;
+    stderr?: string;
+    message?: string;
+  };
   const raw = String(e.stderr ?? e.message ?? err);
   const oneLine = tail(raw).replace(/\s+/g, ' ').trim();
 
@@ -206,7 +211,11 @@ export function runNpm(cwd: string, args: string[], deps: RunDeps = {}): NpmRunR
     if (stdout.status !== 0) {
       const stderrText = (stdout.stderr ?? '').trim().length > 0 ? stdout.stderr : undefined;
       const failure = classifyNpmFailure(
-        { status: stdout.status, stderr: stderrText, message: `npm ${args[0]} exited with status ${stdout.status}` },
+        {
+          status: stdout.status,
+          stderr: stderrText,
+          message: `npm ${args[0]} exited with status ${stdout.status}`,
+        },
         'Re-run with a working npm, or provision this machine by hand and use the offline bundle path',
       );
       return { ok: false, ...failure };

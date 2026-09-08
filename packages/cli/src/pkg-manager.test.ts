@@ -1,7 +1,7 @@
-import { describe, expect, it } from 'vitest';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { describe, expect, it } from 'vitest';
 import { classifyNpmFailure, resolveNpm, runNpm } from './pkg-manager.js';
 
 const NEVER_EXISTS = () => false;
@@ -105,8 +105,16 @@ describe('pkg-manager — failure taxonomy (WP1.3)', () => {
   });
 
   it('classifies registry-reachability errors as network', () => {
-    for (const sig of ['ENOTFOUND', 'ETIMEDOUT', 'getaddrinfo EAI_AGAIN', 'network tunneling socket']) {
-      const f = classifyNpmFailure({ stderr: `npm ERR! ${sig} request to https://registry.npmjs.org` }, FALLBACK);
+    for (const sig of [
+      'ENOTFOUND',
+      'ETIMEDOUT',
+      'getaddrinfo EAI_AGAIN',
+      'network tunneling socket',
+    ]) {
+      const f = classifyNpmFailure(
+        { stderr: `npm ERR! ${sig} request to https://registry.npmjs.org` },
+        FALLBACK,
+      );
       expect(f.phase).toBe('network');
       expect(f.repair).toMatch(/network/i);
     }

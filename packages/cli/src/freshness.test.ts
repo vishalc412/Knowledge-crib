@@ -19,7 +19,7 @@ import { execFileSync, spawnSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
-import { SoulStore, WorkingOverlay, newManifest } from '@knowledge-crib/core';
+import { SoulStore, newManifest } from '@knowledge-crib/core';
 import { indexRepo } from '@knowledge-crib/pipeline';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
@@ -42,6 +42,7 @@ import {
   setFreshnessMode,
   shouldServeWatch,
 } from './freshness.js';
+import { type ReaderBundle, RefreshCoordinator } from './refresh-coordinator.js';
 import { registerProject } from './registry.js';
 import { WatchMode } from './watch.js';
 
@@ -523,21 +524,19 @@ describe('watch mode — G3.4 freshness contract', () => {
     const soul = soulFor();
     await indexRepo(soul, repo);
     soul.commit('2026-01-01T00:00:00Z');
-    const overlay = new WorkingOverlay(soul);
-    const refreshes: string[][] = [];
-    // Watcher-driven (fallback effectively disabled): the burst is delivered by fs.watch events,
-    // and the 300ms debounce must coalesce the five near-simultaneous triggers into ONE refresh
-    // whose dirty set (VCS scan, source of truth) contains ALL five files. Note the dirty set
-    // persists across fallbacks, so the fallback scan alone cannot prove serialization — it re-fires
-    // for still-dirty files; only the debounce window can.
-    const watch = new WatchMode(soul, overlay, repo, {
-      debounceMs: 300,
-      fallbackMs: 60_000,
-      onRefresh: (r) => refreshes.push([...r.dirty]),
+    const bundles: ReaderBundle[] = [];
+    const coordinator = new RefreshCoordinator(soul, repo, {
+      onPublish: (b) => void bundles.push(b),
     });
+    await coordinator.initialize();
+    // Watcher-driven (fallback effectively disabled): the burst is delivered by fs.watch events,
+    // and the 300ms debounce must coalesce the five near-simultaneous triggers into ONE coordinator
+    // cycle — one published bundle whose dirty set (VCS scan, source of truth) contains ALL five
+    // files. The capture guard makes any late event a no-op: the source hash already matches.
+    const watch = new WatchMode(coordinator, repo, { debounceMs: 300, fallbackMs: 60_000 });
     await watch.start();
     try {
-      refreshes.length = 0; // ignore the initial dirty-set refresh
+      bundles.length = 0; // ignore the startup bundle
       // five concurrent triggers (a commit-shaped burst), all inside one debounce window
       for (let i = 0; i < 5; i++) {
         writeFileSync(
@@ -550,13 +549,15 @@ describe('watch mode — G3.4 freshness contract', () => {
       // headroom exists because the suite now runs process-forking concurrency tests
       // (lock-concurrency, freshness-concurrency) in parallel, and a real parse under that CPU
       // contention can exceed the 4s default that was tuned before those existed.
-      await until(() => refreshes.length > 0, 'coalesced burst refresh', 20_000);
+      await until(() => bundles.length > 0, 'coalesced burst refresh', 20_000);
       // give the (disabled) fallback + any late watcher event time — no further refresh may start
       await new Promise((r) => setTimeout(r, 900));
-      expect(refreshes).toHaveLength(1);
-      for (let i = 0; i < 5; i++) expect(refreshes[0]).toContain(`src/f${i}.ts`);
+      expect(bundles).toHaveLength(1);
+      const [burst] = bundles;
+      for (let i = 0; i < 5; i++) expect(burst?.capture.dirtyPaths).toContain(`src/f${i}.ts`);
     } finally {
       watch.stop();
+      coordinator.close();
       rmSync(repo, { recursive: true, force: true });
     }
   });
@@ -564,20 +565,16 @@ describe('watch mode — G3.4 freshness contract', () => {
   it('watch 5s queryable-update p95 — MEASURED and reported (red line #2 target)', async () => {
     makeWatchRepo();
     const soul = soulFor();
-    await indexRepo(soul, repo);
-    soul.setVcsHead('a'.repeat(40));
+    await indexRepo(soul, repo); // anchors the manifest at the real HEAD (a reachable anchor)
     soul.commit('2026-01-01T00:00:00Z');
-    const overlay = new WorkingOverlay(soul);
     let current: string | null = null; // the file whose write→queryable latency is being sampled
     let wake: (() => void) | undefined;
-    // A NEW untracked file per iteration, and wake gated on THAT file appearing in the dirty set:
-    // the dirty set persists across refreshes, so a refresh computed BEFORE the write can never
-    // satisfy the gate — the sample is honestly write → the file is queryable in the overlay.
-    const watch = new WatchMode(soul, overlay, repo, {
-      debounceMs: 300,
-      fallbackMs: 250,
-      onRefresh: (r) => {
-        if (current !== null && r.dirty.includes(current)) {
+    const coordinator = new RefreshCoordinator(soul, repo, {
+      // A NEW untracked file per iteration, gated on THAT file appearing in the PUBLISHED bundle:
+      // a bundle published before the write can never satisfy the gate — the sample is honestly
+      // write → the file is queryable in the serving bundle.
+      onPublish: (b) => {
+        if (current !== null && b.capture.dirtyPaths.includes(current)) {
           const w = wake;
           wake = undefined;
           current = null;
@@ -585,6 +582,8 @@ describe('watch mode — G3.4 freshness contract', () => {
         }
       },
     });
+    await coordinator.initialize();
+    const watch = new WatchMode(coordinator, repo, { debounceMs: 300, fallbackMs: 250 });
     await watch.start();
     const samples: number[] = [];
     try {
@@ -604,6 +603,7 @@ describe('watch mode — G3.4 freshness contract', () => {
       }
     } finally {
       watch.stop();
+      coordinator.close();
     }
     const p95 = percentile95(samples);
     // honest report of the measured value; generous CI headroom on the 5s target

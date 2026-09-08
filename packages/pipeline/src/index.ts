@@ -1,6 +1,9 @@
 /**
  * @knowledge-crib/pipeline — the phased extract→graph→index pipeline.
  */
+// The extractor fleet type backs refreshWorkingOverlay's public opts — re-export it so consumers
+// (the CLI refresh coordinator) don't need a direct @knowledge-crib/parsers dependency.
+export type { Extractor } from '@knowledge-crib/parsers';
 export * from './structure.js';
 export * from './gitignore.js';
 export * from './parse.js';

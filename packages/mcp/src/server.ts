@@ -24,8 +24,12 @@ import {
 } from './token-budget.js';
 import type { Verbs } from './verbs.js';
 
-const TOOL_RESULT = (obj: unknown) => ({
-  content: [{ type: 'text' as const, text: JSON.stringify(obj) }],
+/** Serialize a verb result at the protocol seam. The `await` is deliberate: a no-op for the
+ *  synchronous verbs, and what keeps the ONE async verb (`memorySync`) — and any verb that ever
+ *  becomes async — inside its request pin (WP4.5). Without it, JSON.stringify(pending promise)
+ *  would silently emit `{}` to the client AND release the pin before the verb's work finished. */
+const TOOL_RESULT = async (obj: unknown) => ({
+  content: [{ type: 'text' as const, text: JSON.stringify(await obj) }],
 });
 
 /** Uniform argument-validation failure for the `op` dispatchers below. A dispatcher can otherwise
@@ -142,8 +146,50 @@ function assertSurfaceMatchesManifest(server: McpServer): void {
   }
 }
 
+/**
+ * WP4.5 — request-level bundle pinning, implemented by the serving process's refresh coordinator.
+ * `retain()` before a tools/call is dispatched, `release()` after it settles. While any request is
+ * pinned, a published refresh bundle WAITS before being adopted (the swap happens in `release`),
+ * so a request that spans a publication — the async `memorySync` verb, an HTTP-pipelined call —
+ * answers from ONE bundle for its whole lifetime instead of a torn mix of two.
+ */
+export interface RequestPins {
+  retain(): void;
+  release(): void;
+}
+
+/**
+ * Wrap the installed tools/call handler with {@link RequestPins} retain/release. Installed AFTER the
+ * alias router, so the wrap covers every call path (direct + aliased names) at the protocol seam —
+ * one point, no per-tool handler edits. Mirrors `installAliasRouter`'s approach for the same reason:
+ * `Protocol.setRequestHandler` explicitly documents replacing the previous handler for a method.
+ */
+function installPinRouter(server: McpServer, pins: RequestPins): void {
+  const protocol = server.server;
+  const handlers = (
+    protocol as unknown as {
+      _requestHandlers: Map<string, (request: unknown, extra: unknown) => Promise<never>>;
+    }
+  )._requestHandlers;
+  const original = handlers.get('tools/call');
+  if (!original) {
+    // Same loud-failure contract as the alias router: absent wiring means the SDK internals
+    // changed under us, and a silent pin-less server would quietly lose the WP4.5 guarantee.
+    throw new Error('SDK tools/call handler not installed; pin router cannot be wired');
+  }
+  protocol.removeRequestHandler('tools/call');
+  protocol.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
+    pins.retain();
+    try {
+      return await original(request, extra);
+    } finally {
+      pins.release();
+    }
+  });
+}
+
 /** Build (but do not connect) the MCP server with all verbs registered. */
-export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
+export function buildServer(verbs: Verbs, version = '0.1.0', pins?: RequestPins): McpServer {
   const server = new McpServer({ name: 'knowledge-crib', version });
 
   // WP2.5 runtime evidence: the moment the client completes initialization, record its handshake
@@ -931,6 +977,7 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
   );
 
   installAliasRouter(server, verbs);
+  if (pins) installPinRouter(server, pins);
   assertSurfaceMatchesManifest(server);
 
   return server;
@@ -1030,7 +1077,7 @@ export const MAX_HTTP_REQUEST_BYTES = 4 * 1024 * 1024;
 
 export async function serveHttp(
   verbs: Verbs,
-  opts: { port?: number; host?: string; version?: string } = {},
+  opts: { port?: number; host?: string; version?: string; pins?: RequestPins } = {},
 ): Promise<{ port: number; close: () => Promise<void> }> {
   const version = opts.version ?? '0.0.0';
   const host = opts.host ?? '127.0.0.1';
@@ -1104,7 +1151,7 @@ export async function serveHttp(
           sessionIdGenerator: undefined,
           enableJsonResponse: true,
         });
-        const server = buildServer(verbs, version);
+        const server = buildServer(verbs, version, opts.pins);
         res.on('close', () => {
           void transport.close();
           void server.close();
@@ -1143,8 +1190,12 @@ export async function serveHttp(
   };
 }
 
-export async function serveStdio(verbs: Verbs, version = '0.0.0'): Promise<void> {
-  const server = buildServer(verbs, version);
+export async function serveStdio(
+  verbs: Verbs,
+  version = '0.0.0',
+  pins?: RequestPins,
+): Promise<void> {
+  const server = buildServer(verbs, version, pins);
   const transport = new StdioServerTransport();
   await server.connect(transport);
   await new Promise<void>((resolve) => {

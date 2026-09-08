@@ -36,8 +36,6 @@ import {
   REMOTE_EMBED_POLICY_VERSION,
   type RemoteEmbedPolicy,
   SoulStore,
-  SqliteIndexStore,
-  WorkingOverlay,
   embedHomeDir,
   embedManifestPath,
   embedTierReport,
@@ -297,6 +295,7 @@ import {
   listMcp,
   removeMcp,
 } from './mcp-install.js';
+import { RefreshCoordinator, coldReaderFreshness } from './refresh-coordinator.js';
 import { registerProject, registryDir } from './registry.js';
 import {
   type ResolvedRoot,
@@ -1203,6 +1202,14 @@ async function cmdStatus(args: string[], ctx?: CmdCtx): Promise<number> {
   } catch (err) {
     statusJson.freshness = { error: (err as Error).message };
   }
+  // WP4.7 — additive reader-freshness block. `crib status` is a one-shot CLI read of the committed
+  // index (no serving refresh loop), so the COLD shape applies: committed-behind-HEAD is genuine
+  // reader staleness here, and the generation fields are honestly null.
+  try {
+    statusJson.readerFreshness = coldReaderFreshness(resolved.repoRoot, resolved.cribDir);
+  } catch (err) {
+    statusJson.readerFreshness = { error: (err as Error).message };
+  }
   // G5.3 — additive multimodal block: capabilities.multimodal (already in `capabilities`, from the
   // manifest) reports whether the LAST index ingested media; this block reports which adapters a
   // re-run WOULD use, with the honest why-not per adapter. Best-effort like the freshness block.
@@ -1991,15 +1998,16 @@ async function cmdServe(args: string[], ctx?: CmdCtx): Promise<number> {
   const index = await openServeIndex(resolved, rt);
   if (!index) return EXIT.NOT_INDEXED;
   const memory = createMemoryDeps(rt.soul, resolved.repoRoot, resolved.cribDir);
-  // W6 — `crib serve --watch` installs an always-fresh working overlay: an ephemeral in-memory soul
-  // that mirrors the committed graph + swaps in re-parsed records for dirty/untracked files. Edits
-  // become queryable through the composite read model without dirtying `.crib/graph`. The overlay is
-  // never committed (SoulStore.commit() is a no-op when ephemeral), so the committed soul is safe.
+  // W6/WP4 — `crib serve --watch` serves through the refresh coordinator: every trigger (startup,
+  // file events, fallback scans, clean transitions, external `crib update`) runs one serialized
+  // cycle that builds an INVISIBLE candidate — a fresh working overlay seeded from the committed
+  // graph plus a fresh in-memory FTS projection over that same snapshot — re-checks the source,
+  // then publishes the pair as one atomic reader bundle. The serving bundle is never mutated in
+  // place, so no reader can observe a half-refreshed graph, and a published bundle waits for the
+  // in-flight request drain before the old one retires. The overlay is never committed
+  // (SoulStore.commit() is a no-op when ephemeral), so the committed soul is safe.
   let watch: WatchMode | undefined;
-  let overlay: WorkingOverlay | undefined;
-  // The durable index intentionally represents only committed source. Watch mode gets a separate
-  // in-memory FTS projection so candidate discovery and graph reads see the same working snapshot.
-  let overlayIndex: SqliteIndexStore | undefined;
+  let coordinator: RefreshCoordinator | undefined;
   // The freshness POLICY configures the serving process, not just the CLI flag (audit F06). Every
   // generated client config spawns a bare `crib serve <root>`, so a user who selected `watch`/`auto`
   // got a stale-on-save server anyway and had no way to tell. Reading the persisted mode here means
@@ -2008,31 +2016,26 @@ async function cmdServe(args: string[], ctx?: CmdCtx): Promise<number> {
   const persistedMode = getFreshnessMode(resolved.repoRoot);
   const watchRequested = shouldServeWatch(args, persistedMode);
   if (watchRequested) {
-    overlay = new WorkingOverlay(rt.soul);
-    overlayIndex = new SqliteIndexStore();
-    watch = new WatchMode(rt.soul, overlay, resolved.repoRoot, {
-      onRefresh: (result, reason) => {
-        overlayIndex!.buildFromSoul(overlay!.store, resolved.repoRoot);
-        if (result.dirty.length === 0) return;
+    coordinator = new RefreshCoordinator(rt.soul, resolved.repoRoot, {
+      onPublish: (bundle, reason) => {
+        const r = bundle.refresh;
+        const overlayNote =
+          r && r.dirty.length > 0
+            ? ` — ${r.dirty.length} file(s) overlaid [scope ${r.scope.length}] +${r.parse.nodes} nodes +${r.parse.edges} edges`
+            : '';
         process.stderr.write(
-          `watch [${reason}] refreshed ${result.dirty.length} file(s) [scope ${result.scope.length}] → ` +
-            `+${result.parse.nodes} nodes +${result.parse.edges} edges, +${result.resolve.calls} calls\n`,
-        );
-      },
-      onDrift: () => {
-        process.stderr.write(
-          'watch: canonical soul advanced (external crib update) — overlay resynced\n',
+          `watch [${reason}] gen ${bundle.generation.slice(0, 20)}${overlayNote}\n`,
         );
       },
       onWarn: (msg) => process.stderr.write(`watch: ${msg}\n`),
     });
-    await watch.start();
-    // `start()` may have no dirty files and therefore not fire onRefresh; still seed a complete
-    // in-memory index so every discovery call is paired with the active overlay snapshot.
-    overlayIndex.buildFromSoul(overlay.store, resolved.repoRoot);
+    // The first bundle is built BEFORE any watcher exists: a file event landing during startup
+    // coalesces into the coordinator's pending slot like any other trigger.
+    await coordinator.initialize();
+    const dirtyCount = coordinator.currentDirtyPaths.length;
     process.stderr.write(
       `watch mode active (${args.includes('--watch') ? '--watch' : `freshness mode ${persistedMode}`}) — ` +
-        `${overlay.dirty.length} dirty file(s) overlaid; committed .crib/graph untouched\n`,
+        `${dirtyCount} dirty file(s) overlaid; committed .crib/graph untouched\n`,
     );
   } else {
     // Say which mode is in force even when it is the passive one: "why is my saved edit not
@@ -2060,9 +2063,26 @@ async function cmdServe(args: string[], ctx?: CmdCtx): Promise<number> {
     ...(memory
       ? { memory: { ...memory, ...(installedEmbedder ? { embedder: installedEmbedder } : {}) } }
       : {}),
-    ...(overlay ? { workingOverlay: overlay.store } : {}),
-    ...(overlayIndex ? { workingOverlayIndex: overlayIndex } : {}),
+    ...(coordinator?.currentOverlay ? { workingOverlay: coordinator.currentOverlay } : {}),
+    ...(coordinator?.currentIndex ? { workingOverlayIndex: coordinator.currentIndex } : {}),
+    // WP4.7 — every serving process reports reader freshness through the status verb: watch mode
+    // from the live coordinator, manual mode from the cold committed-index shape.
+    readerFreshness: () =>
+      coordinator
+        ? coordinator.freshness()
+        : coldReaderFreshness(resolved.repoRoot, resolved.cribDir),
   });
+  if (coordinator) {
+    // The stable Verbs instance keeps its stats/alias tables across bundle swaps; only the two
+    // working-overlay slots move, and only between requests (the pin router drains in-flight calls).
+    coordinator.setAdopter((bundle) =>
+      verbs.adoptWorkingSnapshot(bundle.overlay.store, bundle.index),
+    );
+    watch = new WatchMode(coordinator, resolved.repoRoot, {
+      onWarn: (msg) => process.stderr.write(`watch: ${msg}\n`),
+    });
+    await watch.start();
+  }
   // stdout is the MCP transport; logs go to stderr only.
   const stats = rt.soul.getManifest().stats;
 
@@ -2077,7 +2097,12 @@ async function cmdServe(args: string[], ctx?: CmdCtx): Promise<number> {
       process.stderr.write('--port needs an integer\n');
       return EXIT.BAD_ARGS;
     }
-    const daemon = await serveHttp(verbs, { ...(port ? { port } : {}) });
+    // WP4.5 — in watch mode every HTTP request pins the serving bundle: a published bundle swaps in
+    // only after the in-flight request drains, so a reader never has its FTS handle closed mid-call.
+    const pins = coordinator
+      ? { retain: () => coordinator.retain(), release: () => coordinator.release() }
+      : undefined;
+    const daemon = await serveHttp(verbs, { ...(port ? { port } : {}), ...(pins ? { pins } : {}) });
     process.stderr.write(
       `knowledge-crib MCP daemon on http://127.0.0.1:${daemon.port} — ${stats.nodes} nodes, ${stats.edges} edges ready (shared by every connected agent)\n`,
     );
@@ -2089,7 +2114,7 @@ async function cmdServe(args: string[], ctx?: CmdCtx): Promise<number> {
     } finally {
       await daemon.close();
       watch?.stop();
-      overlayIndex?.close();
+      coordinator?.close();
       index.close();
     }
     return EXIT.OK;
@@ -2099,10 +2124,17 @@ async function cmdServe(args: string[], ctx?: CmdCtx): Promise<number> {
     `knowledge-crib MCP server on stdio — ${stats.nodes} nodes, ${stats.edges} edges ready (default responses are tiered lean; pass withLlm:true for the full analysis blob)\n`,
   );
   try {
-    await serveStdio(verbs);
+    // WP4.5 — same pin wiring as the HTTP daemon: stdio requests drain before a bundle swap lands.
+    await serveStdio(
+      verbs,
+      undefined,
+      coordinator
+        ? { retain: () => coordinator.retain(), release: () => coordinator.release() }
+        : undefined,
+    );
   } finally {
     watch?.stop();
-    overlayIndex?.close();
+    coordinator?.close();
     index.close();
   }
   return EXIT.OK;
@@ -3811,6 +3843,9 @@ async function cmdViz(args: string[], ctx?: CmdCtx): Promise<number> {
               configured: syncConfigured,
               ...(latest('sync.applied') ? { lastSuccessfulAt: latest('sync.applied') } : {}),
             },
+            // WP4.7 — the viz server has no refresh loop of its own; it reports the cold
+            // committed-index shape so the home page shows honest reader staleness.
+            readerFreshness: coldReaderFreshness(resolved.repoRoot, resolved.cribDir),
           },
           currentRepositoryAnchor(resolved.repoRoot),
         );

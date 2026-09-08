@@ -105,6 +105,7 @@ import {
   llmPointer,
   llmProjection,
 } from './enrichment.js';
+import type { ReaderFreshness } from './reader-freshness.js';
 import {
   DEFAULT_BODY_MAX_CHARS,
   DEFAULT_BODY_MAX_LINES,
@@ -259,6 +260,10 @@ export interface VerbDeps {
   symbolPercentile?: number;
   /** G5.2 — on-demand PDG/taint analyzer (optional; `explain` degrades when absent). */
   pdg?: PdgPort;
+  /** WP4.7 — the serving process's reader-freshness reporter (optional). Present when the process
+   *  serves a refresh-coordinated bundle (watch mode) or computes the cold one-shot shape (manual
+   *  mode / viz); `status` folds its output in as the `readerFreshness` block, best-effort. */
+  readerFreshness?: () => ReaderFreshness;
 }
 
 /** The optional semantic-search surface an IndexStore backend may provide. Backends without it
@@ -566,6 +571,23 @@ export class Verbs {
     return this.stats;
   }
 
+  /**
+   * WP4.4/WP4.5 — adopt a freshly published working snapshot (overlay store + its paired FTS
+   * projection) ATOMICALLY. The serving process's refresh coordinator calls this when a candidate
+   * bundle's generation has been verified against the live source and every in-flight request has
+   * drained, so no verb ever observes half of a bundle: the method is synchronous, and the only
+   * async verb (`memorySync`) is pinned by the request-level retain/release wrapper in server.ts —
+   * a swap never lands inside a request. `this` (and therefore the stats counters, the alias table
+   * and every closed-over handler) stays the SAME instance; only the two dep slots move. This is
+   * deliberately NOT the memory-evaluation generation: that belongs to the freshness engine and
+   * must never be conflated with the reader-snapshot generation (WP4, "report").
+   */
+  adoptWorkingSnapshot(overlay: SoulStore | undefined, overlayIndex: IndexStore | undefined): void {
+    this.deps.workingOverlay = overlay;
+    this.deps.workingOverlayIndex = overlayIndex;
+    this.graph.setWorkingOverlay(overlay);
+  }
+
   status(opts?: { dirty?: boolean }): Record<string, unknown> {
     const m = this.deps.soul.getManifest();
     const { hasLlmGraph, composite } = this.statusGraphFacts();
@@ -618,6 +640,16 @@ export class Verbs {
         }
       } catch {
         // VCS read is best-effort; never mask deterministic status.
+      }
+    }
+    // WP4.7 — the reader-freshness block, when the serving process wired a reporter. Best-effort
+    // like the VCS block: a half-initialized project must never crash a health check, and the
+    // status verb's own shape is untouched when the dep is absent (existing consumers see no key).
+    if (this.deps.readerFreshness) {
+      try {
+        result.readerFreshness = this.deps.readerFreshness();
+      } catch (err) {
+        result.readerFreshness = { error: (err as Error).message ?? String(err) };
       }
     }
     return result;

@@ -5,6 +5,7 @@ import { SoulStore, SqliteIndexStore, newManifest } from '@knowledge-crib/core';
 import { contentHash, edgeId, idFor } from '@knowledge-crib/soul-schema';
 import type { Edge, Node, Rel } from '@knowledge-crib/soul-schema';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import type { ReaderFreshness } from './reader-freshness.js';
 import { estimateTokens } from './token-budget.js';
 import { Verbs } from './verbs.js';
 import type { PdgPort } from './verbs.js';
@@ -4259,5 +4260,85 @@ describe('rename (G5.1) — plan/apply over the verb surface', () => {
     expect(res.error.code).toBe('PLAN_MISMATCH');
     expect(res.error.message).toContain('re-run the dry run');
     expect(readFileSync(join(repo, 'src', 'auth.ts'), 'utf8')).toContain('login(user, pass)');
+  });
+});
+
+// ─── WP4.5/WP4.7 — runtime bundle adoption + the status readerFreshness fold ───
+
+describe('WP4.5 adoptWorkingSnapshot — atomic adoption on the SAME Verbs instance', () => {
+  it('a live edit invisible through the committed index becomes queryable after adoption, and undefined reverts', () => {
+    // The committed bundle does not know this symbol — mirroring an uncommitted edit under watch.
+    const adoptedName = 'runtimeAdoptedToken';
+    const overlay = new SoulStore(soul.cribDir, { ephemeral: true });
+    overlay.load();
+    const adopted: Node = {
+      ...login,
+      name: adoptedName,
+      qualifiedName: `AuthService.${adoptedName}`,
+      hash: contentHash(adoptedName),
+    };
+    overlay.putNodes([adopted]);
+    const overlayIndex = new SqliteIndexStore();
+    overlayIndex.buildFromSoul(overlay, repo);
+    try {
+      // Before adoption the SAME instance answers from the committed pair — the edit is invisible.
+      expect(
+        (verbs.query({ q: adoptedName, kinds: ['symbol'] }) as unknown as QueryResult).hits,
+      ).toEqual([]);
+      // The serving coordinator's adopter call: synchronous, both slots move together.
+      verbs.adoptWorkingSnapshot(overlay, overlayIndex);
+      const query = verbs.query({ q: adoptedName, kinds: ['symbol'] }) as unknown as QueryResult;
+      expect(query.hits.map((hit) => hit.id)).toContain(adopted.id);
+      // Stopping the loop (or clearing the bundle) reverts to the committed pair — same instance.
+      verbs.adoptWorkingSnapshot(undefined, undefined);
+      expect(
+        (verbs.query({ q: adoptedName, kinds: ['symbol'] }) as unknown as QueryResult).hits,
+      ).toEqual([]);
+    } finally {
+      overlayIndex.close();
+    }
+  });
+});
+
+describe('WP4.7 — status folds readerFreshness best-effort', () => {
+  it('echoes the wired reporter under readerFreshness', () => {
+    const report: ReaderFreshness = {
+      indexedHead: 'a'.repeat(40),
+      currentHead: 'a'.repeat(40),
+      publishedGeneration: 'gen-1',
+      readerGeneration: 'gen-1',
+      refreshState: 'idle',
+      stale: false,
+      staleReasons: [],
+      lastSuccessfulRefreshAt: '2026-09-08T00:00:00.000Z',
+      lastRefreshError: null,
+    };
+    const v = new Verbs({
+      soul,
+      index,
+      repoRoot: repo,
+      readerFreshness: () => report,
+    });
+    const res = v.status() as unknown as typeof report & { readerFreshness?: typeof report };
+    expect(res.readerFreshness).toEqual(report);
+  });
+
+  it('absorbs a throwing reporter into readerFreshness.error — status itself stays healthy', () => {
+    const v = new Verbs({
+      soul,
+      index,
+      repoRoot: repo,
+      readerFreshness: () => {
+        throw new Error('vcs read failed');
+      },
+    });
+    const res = v.status() as { indexed: boolean; readerFreshness?: { error?: string } };
+    expect(res.indexed).toBe(true);
+    expect(res.readerFreshness?.error).toContain('vcs read failed');
+  });
+
+  it('omits the key entirely when no reporter is wired — existing consumers see no shape change', () => {
+    const res = verbs.status() as Record<string, unknown>;
+    expect('readerFreshness' in res).toBe(false);
   });
 });

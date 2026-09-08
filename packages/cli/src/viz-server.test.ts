@@ -3,6 +3,7 @@ import { realpath } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, relative } from 'node:path';
 import { SoulStore, newManifest } from '@knowledge-crib/core';
+import type { ReaderFreshness } from '@knowledge-crib/mcp';
 import { contentHash, idFor } from '@knowledge-crib/soul-schema';
 import type { Node } from '@knowledge-crib/soul-schema';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -323,6 +324,19 @@ describe('memory home endpoint', () => {
         capture: { lastSuccessfulAt: MEM_T0 },
         codeIndex: { lastSuccessfulAt: MEM_T0, behindHead: false },
         sync: { configured: false },
+        // WP4.7 — the viz process's (cold) reader freshness passes through to the home view
+        // verbatim, so the operator can see whether the graph they are browsing matches the tree.
+        readerFreshness: {
+          indexedHead: 'a'.repeat(40),
+          currentHead: 'a'.repeat(40),
+          publishedGeneration: null,
+          readerGeneration: null,
+          refreshState: 'idle',
+          stale: false,
+          staleReasons: [],
+          lastSuccessfulRefreshAt: MEM_T0,
+          lastRefreshError: null,
+        } satisfies ReaderFreshness,
       });
       expect(result).toMatchObject({
         configured: true,
@@ -336,6 +350,7 @@ describe('memory home endpoint', () => {
         health: {
           retrieval: { mode: 'on-device-semantic' },
           sync: { configured: false },
+          readerFreshness: { refreshState: 'idle', stale: false, staleReasons: [] },
         },
       });
       expect(result.nextAction.toLowerCase()).toContain('capture');

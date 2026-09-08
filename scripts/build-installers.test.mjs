@@ -80,13 +80,21 @@ for (const [name, render] of [
 {
   const text = installSh(['knowledge-crib-0.1.0.tgz']);
   assert.match(text, /NPM_PREFIX=\$\(npm prefix -g/, 'installSh should resolve the npm prefix');
-  assert.match(text, /node "\$CRIB_ENTRY" setup \./, 'installSh should invoke node <entry> setup .');
+  assert.match(
+    text,
+    /node "\$CRIB_ENTRY" setup \./,
+    'installSh should invoke node <entry> setup .',
+  );
 }
 // The Windows installer resolves the prefix with `npm prefix -g` (APPDATA fallback), then invokes
 // the entry via node with an explicit nonzero-exit warning — never a bare `crib`.
 {
   const text = installPs1(['knowledge-crib-0.1.0.tgz']);
   assert.match(text, /npm prefix -g/, 'installPs1 should resolve the npm prefix');
-  assert.match(text, /& node \$CribEntry setup \./, 'installPs1 should invoke node <entry> setup .');
+  assert.match(
+    text,
+    /& node \$CribEntry setup \./,
+    'installPs1 should invoke node <entry> setup .',
+  );
   assert.match(text, /\$LASTEXITCODE -ne 0[\s\S]*?crib setup did not complete/);
 }

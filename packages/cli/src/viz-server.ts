@@ -1,6 +1,7 @@
 import { readFile, realpath } from 'node:fs/promises';
 import { isAbsolute, relative, resolve } from 'node:path';
 import type { SoulStore } from '@knowledge-crib/core';
+import type { ReaderFreshness } from '@knowledge-crib/mcp';
 import {
   type AuditResult,
   DEFAULT_LEDGER_PAGE,
@@ -190,6 +191,8 @@ export interface VizMemoryHomeOperations {
   capture?: { lastSuccessfulAt?: string; pending?: number; dead?: number };
   codeIndex?: { lastSuccessfulAt?: string; behindHead?: boolean; workerRunning?: boolean };
   sync?: { configured: boolean; lastSuccessfulAt?: string; pending?: number; dead?: number };
+  /** WP4.7 — this viz process's reader freshness (cold shape: the viz server has no refresh loop). */
+  readerFreshness?: ReaderFreshness;
 }
 
 /**
