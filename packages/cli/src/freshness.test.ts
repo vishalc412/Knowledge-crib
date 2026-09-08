@@ -229,7 +229,6 @@ function makeWorker(
     pollMs: 10,
     heartbeatMs: 40,
     leaseTtlMs: 200,
-    busyLeaseTtlMs: 250,
     retryBackoffMs: 10,
     maxAttempts: 3,
     onEvent: (e) => events.push(e as { kind: string }),
@@ -338,12 +337,14 @@ describe('FreshnessWorker — durable processing', () => {
     a.worker.abandonForTest(); // simulates SIGKILL: loops dead, lease + active task left on disk
     expect(readWorkerState(env)?.activeTask?.head).toBe('crashy');
 
-    // the bounded busy lease expires → worker B takes over, re-enqueues,
-    // re-runs, and completes: at-least-once revalidation, idempotent at the same head.
+    // worker A's pid is still ALIVE (it is this test process) but its heartbeat has aged past the
+    // lease TTL — under WP5.1 that is a genuinely stalled owner (its writes are epoch-fenced, and
+    // takeover kills its child), so worker B takes over, re-enqueues, re-runs, and completes:
+    // at-least-once revalidation, idempotent at the same head.
     await until(() => {
       const s = readWorkerState(env);
       return s !== undefined && Date.now() - Date.parse(s.heartbeatAt) > 250;
-    }, 'busy lease stale');
+    }, 'stalled owner heartbeat aged past the lease TTL');
     const b = makeWorker();
     await b.worker.start();
     try {
@@ -358,7 +359,7 @@ describe('FreshnessWorker — durable processing', () => {
     release(); // release the abandoned worker's gate so the test process drains cleanly
   });
 
-  it('refuses takeover of a live busy owner even after its heartbeat ages during revalidation', async () => {
+  it('heartbeats THROUGH work: a live owner past its lease TTL is still refused (WP5.1)', async () => {
     const root = registeredRoot();
     enqueueFreshness(root, 'long-sync', env);
     let release!: () => void;
@@ -366,9 +367,8 @@ describe('FreshnessWorker — durable processing', () => {
       release = resolve;
     });
     const a = makeWorker({
-      heartbeatMs: 10_000,
+      heartbeatMs: 10,
       leaseTtlMs: 50,
-      busyLeaseTtlMs: 250,
       revalidate: async () => {
         await gate;
         return { generation: 'long-sync-generation' };
@@ -376,7 +376,12 @@ describe('FreshnessWorker — durable processing', () => {
     });
     await a.worker.start();
     await until(() => a.worker.inFlight?.head === 'long-sync', 'worker A leased long task');
-    await new Promise((resolve) => setTimeout(resolve, 75));
+    // The run outlives the lease TTL — but the supervisor's event loop is free (the WP5.1
+    // property the child-process split exists for), so heartbeats keep the lease alive
+    // THROUGH the work and a second worker is refused.
+    await new Promise((resolve) => setTimeout(resolve, 120));
+    const s = readWorkerState(env);
+    expect(Date.now() - Date.parse(s?.heartbeatAt ?? '')).toBeLessThan(50);
 
     const b = makeWorker();
     await expect(b.worker.start()).rejects.toBeInstanceOf(WorkerAlreadyRunningError);

@@ -262,6 +262,7 @@ import {
   resolveProvider,
   runProviderBatch,
 } from './enrich-provider.js';
+import { forkTaskRunner, requestCancellation } from './freshness-child.js';
 import {
   installFreshnessService,
   queryFreshnessService,
@@ -274,8 +275,12 @@ import {
   WorkerAlreadyRunningError,
   freshnessStatus,
   getFreshnessMode,
+  isPidAlive,
   parseFreshnessMode,
   postCommitFreshness,
+  readFreshnessQueue,
+  readWorkerState,
+  removePendingFreshnessTask,
   runFreshnessWorker,
   setFreshnessMode,
   shouldServeWatch,
@@ -3325,11 +3330,20 @@ async function cmdEmbed(args: string[], ctx?: CmdCtx): Promise<number> {
   return EXIT.OK;
 }
 
-/** The worker's revalidation port: refresh the project at the task's head and fingerprint the
- *  dependencies the memory evaluator's generation cache keys on (red lines #1 + #5). The SAME
- *  slots {@link bindEvaluationPass} sets at query time, so a published generation is directly
- *  comparable to the generation a later recall binds against. */
-async function freshnessRevalidate(task: FreshnessTask): Promise<{ generation: string }> {
+/** The worker's revalidation port: refresh the project and fingerprint the dependencies the
+ *  memory evaluator's generation cache keys on (red lines #1 + #5). The SAME slots
+ *  {@link bindEvaluationPass} sets at query time, so a published generation is directly
+ *  comparable to the generation a later recall binds against.
+ *
+ *  Exported because it runs in a FORKED CHILD since WP5.1 (dist/freshness-child-entry.js imports
+ *  this module and calls this port) — synchronous `crib update` parsing must never block the
+ *  supervisor's heartbeat. `actualHead` is the head the refresh ACTUALLY processed (WP5.2):
+ *  a repo that moved between enqueue and run reports the real head, and the supervisor publishes
+ *  THAT — never a newer result stamped with the original queued HEAD. */
+export async function freshnessRevalidate(task: FreshnessTask): Promise<{
+  generation: string;
+  actualHead?: string;
+}> {
   // The same locked, incremental update path a user runs — background freshness can never
   // diverge from foreground truth. A failure here throws; the worker preserves the prior
   // published generation (never publishes a broken index) and dead-letters after maxAttempts.
@@ -3367,6 +3381,8 @@ async function freshnessRevalidate(task: FreshnessTask): Promise<{ generation: s
       embedder: UNVERSIONED,
       index: UNVERSIONED,
     }),
+    // The head the update ACTUALLY ran at — the repo may have moved since the task was enqueued.
+    actualHead: currentHead(task.projectRoot) ?? task.head,
   };
 }
 
@@ -3391,6 +3407,7 @@ async function cmdFreshness(args: string[], ctx?: CmdCtx): Promise<number> {
     ...FRESHNESS_MODES,
     'status',
     'worker',
+    'cancel',
     'service',
     'install',
     'uninstall',
@@ -3475,10 +3492,54 @@ async function cmdFreshness(args: string[], ctx?: CmdCtx): Promise<number> {
         return EXIT.ERROR;
       }
     }
+    case 'cancel': {
+      // WP5.5 — explicit cancellation. `crib freshness cancel <projectRoot|taskId>` writes a
+      // durable request file (any process may write one; no lease is taken) for one task id
+      // (`fq:…`) or for every pending/in-flight task of a project root. A live worker's sweep
+      // honors the request on its next heartbeat — kill the in-flight child / drop the queued
+      // entry — and consumes it. With NO live worker the queued entries are also removed
+      // directly: nothing is running to claim them, and the request file would otherwise age out
+      // unused. If a task was claimed in the race window between the read and the removal, the
+      // removal finds nothing and the request file stays for the live worker's sweep.
+      const rest = args.slice(args.indexOf('cancel') + 1);
+      const target = rest.find((tok) => !tok.startsWith('-'));
+      if (target === undefined) {
+        process.stderr.write('usage: crib freshness cancel <projectRoot|taskId>\n');
+        return EXIT.BAD_ARGS;
+      }
+      const queue = readFreshnessQueue();
+      const state = readWorkerState();
+      const ids = target.startsWith('fq:')
+        ? [target]
+        : [...queue.pending, ...(state?.activeTask ? [state.activeTask] : [])]
+            .filter((t) => t.projectRoot === target)
+            .map((t) => t.id);
+      if (ids.length === 0) {
+        process.stdout.write(`freshness: no pending or in-flight task matches ${target}\n`);
+        return EXIT.OK;
+      }
+      for (const id of ids) requestCancellation(process.env, id);
+      const workerLive = state !== undefined && isPidAlive(state.pid);
+      let removedNow = 0;
+      if (!workerLive) {
+        for (const id of ids) if (removePendingFreshnessTask(id)) removedNow++;
+      }
+      process.stdout.write(
+        `freshness: cancellation requested for ${ids.length} task(s): ${ids.join(', ')}\n${
+          workerLive
+            ? '  the running worker honors it on its next heartbeat (in-flight run is aborted)\n'
+            : `  no live worker — ${removedNow} queued task(s) removed; any not found was already claimed and will be cancelled by the worker that claimed it\n`
+        }`,
+      );
+      return EXIT.OK;
+    }
     case 'worker': {
       try {
         const worker = await runFreshnessWorker({
-          revalidate: freshnessRevalidate,
+          // WP5.1 — revalidation runs in a FORKED CHILD: synchronous `crib update` parsing must
+          // never block this supervisor's heartbeat. The child imports the compiled
+          // dist/freshness-child-entry.js, which loads `freshnessRevalidate` lazily.
+          runTask: forkTaskRunner(),
           onEvent: (ev) => {
             if (ev.kind === 'task-done') {
               process.stdout.write(
@@ -3487,6 +3548,12 @@ async function cmdFreshness(args: string[], ctx?: CmdCtx): Promise<number> {
             } else if (ev.kind === 'task-dead') {
               process.stdout.write(
                 `freshness: task dead-lettered after retries: ${ev.task.id} — ${ev.error}\n`,
+              );
+            } else if (ev.kind === 'task-cancelled') {
+              process.stdout.write(`freshness: task cancelled: ${ev.task.id} (${ev.reason})\n`);
+            } else if (ev.kind === 'task-discarded') {
+              process.stdout.write(
+                `freshness: discarded staged result for ${ev.task.id} (${ev.reason})\n`,
               );
             } else if (ev.kind === 'refused') {
               process.stderr.write(`freshness worker refused: ${ev.reason}\n`);
