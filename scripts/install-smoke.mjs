@@ -1,4 +1,5 @@
 import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import {
   existsSync,
   mkdirSync,
@@ -13,6 +14,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { MemoryStore, memoryRecordId } from '../packages/memory/dist/index.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(__dirname, '..');
@@ -224,10 +226,180 @@ export function userDirEnv(paths) {
   };
 }
 
+// ─── WP7.6 — the uninstall-with-memory fixture ─────────────────────────────────
+//
+// The config-preservation legs above prove the CLIENT CONFIG survives reinstall/uninstall, but a
+// user's real fear is their MEMORY (`.crib/memory`). This fixture seeds one record into each store
+// the smoke can reach — a global record under the scenario home's `~/.crib/memory/global` and a
+// team record under the scenario project's `.crib/memory/team` (the `paths.ts` layout: local +
+// global live under `~/.crib`, team inside the repo) — then requires the SAME records to answer
+// recall from the REINSTALLED bin with byte-identical store files.
+
+/** The two memory store roots the user-dir scenario seeds + digests (the paths.ts layout). */
+export function scenarioMemoryRoots(paths) {
+  return {
+    global: join(paths.home, '.crib', 'memory', 'global'),
+    team: join(paths.project, '.crib', 'memory', 'team'),
+  };
+}
+
+/**
+ * The repoId the installed `crib index` minted for the scenario project (the team record's scope
+ * must carry it, and it must match what the reinstalled bin resolves on recall). `readRepoId`'s
+ * resolution order mirrored: `<cribDir>/crib.json` first, then the registry under the scenario home.
+ */
+export function scenarioRepoId(paths) {
+  const cribJson = join(paths.project, '.crib', 'crib.json');
+  try {
+    const id = JSON.parse(readFileSync(cribJson, 'utf8'))?.repo?.id;
+    if (typeof id === 'string' && id.length > 0) return id;
+  } catch {
+    // unreadable/absent manifest → fall through to the registry
+  }
+  try {
+    const registry = JSON.parse(readFileSync(join(paths.home, '.crib', 'registry.json'), 'utf8'));
+    const cribDir = resolve(paths.project, '.crib');
+    const entry = Object.values(registry?.projects ?? {}).find(
+      (candidate) => resolve(candidate?.cribDir ?? '') === cribDir,
+    );
+    if (typeof entry?.repoId === 'string' && entry.repoId.length > 0) return entry.repoId;
+  } catch {
+    // unreadable/absent registry → fall through to the throw
+  }
+  throw new Error(`could not resolve the scenario project's repoId under ${paths.project}`);
+}
+
+/**
+ * A recall-eligible record for the smoke fixture: a `decision` carried by a human attestation
+ * (admissible for decisions, and it needs NO code anchor — `revalidateHumanAttestation` keeps it
+ * valid+current, so the fixture asserts survival, not grounding). Content-addressed id via the
+ * memory package's own `memoryRecordId`, mirroring the repo's memory test fixtures.
+ */
+export function smokeMemoryRecord({ kind = 'decision', subject, claim, scope, actor, at }) {
+  const evidence = [
+    {
+      kind: 'human-attestation',
+      verdict: 'valid',
+      checkedAt: at,
+      actor,
+      tty: true,
+      attestedAt: at,
+    },
+  ];
+  const input = {
+    kind,
+    subject,
+    claim,
+    scope,
+    appliesTo: [],
+    evidence,
+    authorship: { actor, kind: 'agent', tool: 'knowledge-crib install smoke' },
+  };
+  return {
+    id: memoryRecordId(input),
+    schemaVersion: '1',
+    ...input,
+    verdicts: { trust: 'local', evidence: 'valid', applicability: 'current', lifecycle: 'active' },
+    createdAt: at,
+  };
+}
+
+/** SHA-256 every regular file under `rootDir`, keyed by path relative to `rootDir`. */
+export function fileDigests(rootDir) {
+  if (!existsSync(rootDir)) return {};
+  const out = {};
+  const walk = (dir) => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const target = join(dir, entry.name);
+      if (entry.isDirectory()) walk(target);
+      else if (entry.isFile()) {
+        out[path.relative(rootDir, target)] = createHash('sha256')
+          .update(readFileSync(target))
+          .digest('hex');
+      }
+    }
+  };
+  walk(rootDir);
+  return out;
+}
+
+/**
+ * Seed both stores through the memory package API and capture the survival contract: the record
+ * ids + a digest of every file under each store root, taken AFTER the last write so the baseline
+ * is exactly what an uninstall+reinstall must leave untouched.
+ *
+ * `KCRIB_MEMORY_DIR` pins the seeding to `<scenario home>/.crib/memory` explicitly: `memoryHome`
+ * falls back to `os.homedir()` of THIS harness process when the override is absent, and that
+ * homedir is the real user home, not the scenario home the `env` object carries. The path is the
+ * same one the installed bin resolves on recall (its subprocess reads `HOME` from `env`).
+ */
+export function seedScenarioMemory({ paths, env, at = new Date().toISOString() }) {
+  const repoId = scenarioRepoId(paths);
+  const storeEnv = { ...env, KCRIB_MEMORY_DIR: join(paths.home, '.crib', 'memory') };
+  const globalRecord = smokeMemoryRecord({
+    subject: 'topic:install-smoke',
+    claim: 'knowledge-crib install smoke: global memory survives uninstall and reinstall',
+    scope: { boundary: 'global' },
+    actor: 'install-smoke',
+    at,
+  });
+  const teamRecord = smokeMemoryRecord({
+    subject: 'topic:install-smoke',
+    claim: 'knowledge-crib install smoke: team memory survives uninstall and reinstall',
+    scope: { boundary: 'repo', repoId },
+    actor: 'install-smoke',
+    at,
+  });
+  MemoryStore.global({ env: storeEnv }).upsertEntries('records', [globalRecord]);
+  MemoryStore.team(join(paths.project, '.crib'), {
+    repoRoot: paths.project,
+    env: storeEnv,
+  }).upsertEntries('records', [teamRecord]);
+
+  const roots = scenarioMemoryRoots(paths);
+  return {
+    records: { global: globalRecord, team: teamRecord },
+    roots,
+    digests: { global: fileDigests(roots.global), team: fileDigests(roots.team) },
+  };
+}
+
+/**
+ * The survival verdict: every seeded record id must still be returned by the reinstalled bin's
+ * recall, and every store file must be byte-identical (no file added, removed, or rewritten).
+ * `recall` is the parsed `crib memory recall --json` projection; `digests` the post-cycle digests
+ * in the same `{ global, team }` shape `seedScenarioMemory` captured.
+ */
+export function validateMemorySurvived({ seed, recall, digests }) {
+  const ids = new Set((recall?.memories ?? []).map((m) => m?.id));
+  for (const [name, record] of Object.entries(seed.records)) {
+    if (!ids.has(record.id)) {
+      throw new Error(
+        `memory record ${name} (${record.id}) did not survive uninstall + reinstall — recall did not return it`,
+      );
+    }
+  }
+  for (const name of Object.keys(seed.digests)) {
+    const before = seed.digests[name];
+    const after = digests?.[name] ?? {};
+    const changed = [...new Set([...Object.keys(before), ...Object.keys(after)])].filter(
+      (rel) => before[rel] !== after[rel],
+    );
+    if (changed.length > 0) {
+      throw new Error(
+        `memory store "${name}" changed across uninstall + reinstall: ${changed.join(', ')}`,
+      );
+    }
+  }
+  return true;
+}
+
 /**
  * WP1.6 smoke: install → verify → index → wire client config → REINSTALL (upgrade) with the client
- * config preserved → UNINSTALL with the client config STILL preserved. Every path in the flow sits
- * under a `Users/jöhn doe`-style home (space + non-ASCII) on the platform's native separator.
+ * config preserved → seed memory → UNINSTALL with the client config + memory preserved →
+ * REINSTALL and prove the SAME memory records still answer recall, byte-identical (WP7.6). Every
+ * path in the flow sits under a `Users/jöhn doe`-style home (space + non-ASCII) on the platform's
+ * native separator.
  */
 export function smokeUserDirInstall({ outRoot = join(repoRoot, 'dist', 'installers') } = {}) {
   const bundle = findInstallerBundle(outRoot);
@@ -310,6 +482,12 @@ export function smokeUserDirInstall({ outRoot = join(repoRoot, 'dist', 'installe
       );
     }
 
+    // WP7.6 — seed REAL memory before the destructive leg: one global record in the scenario
+    // home's ~/.crib/memory plus one team record in <project>/.crib/memory, with ids + file
+    // digests captured. The config legs above cannot speak for this data: a user who reinstalls
+    // must get their MEMORY back, not just their client config.
+    const seed = seedScenarioMemory({ paths, env });
+
     // uninstall: the package leaves, the client config the user already wired STAYS.
     // manifest.name is the npm package name ("knowledge-crib"); manifest.package is the tarball
     // filename, which npm rm would not accept.
@@ -324,8 +502,39 @@ export function smokeUserDirInstall({ outRoot = join(repoRoot, 'dist', 'installe
       throw new Error('Uninstall modified the client MCP config — it must be preserved');
     }
 
+    // WP7.6 — reinstall after the uninstall, then prove the seeded memory survived the whole
+    // client-removal/uninstall/reinstall cycle: the same records answer recall through the
+    // REINSTALLED bin and the store files are byte-identical.
+    run(installer.command, installer.args, { env });
+    if (!existsSync(bins.primary)) {
+      throw new Error('Reinstall after the uninstall did not restore the bin');
+    }
+    const recall = JSON.parse(
+      runCapture(
+        process.execPath,
+        [bins.direct, 'memory', 'recall', 'memory survives uninstall', '--json'],
+        {
+          cwd: paths.project,
+          env,
+        },
+      ),
+    );
+    validateMemorySurvived({
+      seed,
+      recall,
+      digests: {
+        global: fileDigests(seed.roots.global),
+        team: fileDigests(seed.roots.team),
+      },
+    });
+    if (readFileSync(mcpConfigPath, 'utf8') !== configBeforeReinstall) {
+      throw new Error(
+        'Reinstall after uninstall modified the client MCP config — it must be preserved',
+      );
+    }
+
     process.stdout.write(
-      `user-dir smoke ok - install/reinstall/uninstall under ${paths.home}; client config preserved\n`,
+      `user-dir smoke ok - install/reinstall/uninstall/reinstall under ${paths.home}; client config + memory preserved\n`,
     );
     return { home: paths.home, prefix: paths.prefix };
   } finally {

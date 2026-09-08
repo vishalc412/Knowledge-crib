@@ -17,9 +17,10 @@ import type { Node } from '@knowledge-crib/soul-schema';
  *   - `sync`: honest not-available naming Gate 4;
  *   - `audit`: verdict transitions, promotions, supersessions, quarantines.
  */
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   FileSyncObjectStore,
+  IntakeTeamMirrorError,
   IntelligenceEventJournal,
   type MemoryAnchorPort,
   MemoryApi,
@@ -36,6 +37,8 @@ import {
   RANKING_VERSION,
   __resetMemoryLockGuardForTest,
   believedLifecycle,
+  canonicalMemoryJson,
+  clearMemoryCollectionCache,
   createIntakeRequirement,
   decisionId,
   derivePropositionKey,
@@ -43,6 +46,7 @@ import {
   memoryRecordId,
   memoryRecordV2Id,
   memoryRecordV3Id,
+  memoryShard,
   syncNotConfigured,
   validTimeHoldsAt,
   validTimeWindowOf,
@@ -394,6 +398,135 @@ describe('intake continuation API', () => {
         recordedAt: T1,
       }),
     ).toThrow(/unknown intake/);
+  });
+
+  it('checkpoint is durable locally when the team mirror fails', () => {
+    const { api, team } = setupMulti();
+    const requirement = api.createIntake({
+      namespace: { principalId: 'principal:local', projectId: REPO },
+      original: 'Share the resumable plan',
+      interpretation: {
+        outcome: 'Let a teammate resume',
+        scope: ['packages/memory'],
+        constraints: [],
+        acceptanceCriteria: ['Team sees next action'],
+      },
+      sensitivity: 'internal',
+      retentionPolicyId: 'default',
+      provenance: {
+        principalId: 'principal:local',
+        deviceId: 'device-1',
+        actorId: 'human:vishal',
+        clientId: 'test',
+      },
+      createdAt: T0,
+    });
+    api.checkpointIntake({
+      intakeId: requirement.id,
+      kind: 'progress',
+      phase: 'executing',
+      nextSafeAction: 'Run tests',
+      summary: 'Started',
+      repository: { dirty: false },
+      actor: 'codex',
+      recordedAt: T1,
+    });
+    // the history now carries a team-audience checkpoint: every later checkpoint must mirror
+    expect(
+      api.shareIntake(requirement.id, {
+        audience: 'team',
+        actor: 'human:vishal',
+        repository: { dirty: false },
+      }).ok,
+    ).toBe(true);
+
+    // the team mirror fails from here on — the local write must ALREADY have landed
+    vi.spyOn(team, 'upsertEntry').mockImplementation(() => {
+      throw new Error('team store unreachable');
+    });
+    let mirrored: IntakeTeamMirrorError | undefined;
+    try {
+      api.checkpointIntake({
+        intakeId: requirement.id,
+        kind: 'progress',
+        phase: 'verifying',
+        nextSafeAction: 'Re-run the suite',
+        summary: 'Implementation is ready to verify',
+        repository: { dirty: false },
+        actor: 'codex',
+        recordedAt: T2,
+      });
+    } catch (error) {
+      mirrored = error as IntakeTeamMirrorError;
+    }
+    expect(mirrored).toBeInstanceOf(IntakeTeamMirrorError);
+    expect(mirrored?.message).toContain(
+      'checkpoint is durable locally, but the team mirror failed',
+    );
+    const checkpoint = mirrored?.checkpoint;
+    expect(checkpoint?.kind).toBe('progress');
+
+    // the local checkpoint is durable on DISK: a FRESH store over the same root reads it back
+    const fresh = MemoryStore.local(REPO, { env, now: () => T0 });
+    expect(fresh.readCollection('intakes').entries.find((e) => e.id === checkpoint?.id)).toEqual(
+      checkpoint,
+    );
+  });
+
+  it('shareIntake reports the local checkpoint durable when the team copy fails', () => {
+    const { api, team } = setupMulti();
+    const requirement = api.createIntake({
+      namespace: { principalId: 'principal:local', projectId: REPO },
+      original: 'Share the resumable plan',
+      interpretation: {
+        outcome: 'Let a teammate resume',
+        scope: ['packages/memory'],
+        constraints: [],
+        acceptanceCriteria: ['Team sees next action'],
+      },
+      sensitivity: 'internal',
+      retentionPolicyId: 'default',
+      provenance: {
+        principalId: 'principal:local',
+        deviceId: 'device-1',
+        actorId: 'human:vishal',
+        clientId: 'test',
+      },
+      createdAt: T0,
+    });
+    api.checkpointIntake({
+      intakeId: requirement.id,
+      kind: 'progress',
+      phase: 'executing',
+      nextSafeAction: 'Run tests',
+      summary: 'Started',
+      repository: { dirty: false },
+      actor: 'codex',
+      recordedAt: T1,
+    });
+
+    // the team copy of the complete history fails — the local marker must still be reported
+    vi.spyOn(team, 'upsertEntries').mockImplementation(() => {
+      throw new Error('team store unreachable');
+    });
+    const result = api.shareIntake(requirement.id, {
+      audience: 'team',
+      actor: 'human:vishal',
+      repository: { dirty: false },
+    });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.localWritten).toBe(true);
+    expect(result.teamWritten).toBe(false);
+    expect(result.error).toContain('team store unreachable');
+
+    // the local share checkpoint is verifiable from a fresh store instance over the same root
+    const checkpoint = result.checkpoint;
+    expect(checkpoint?.audience).toBe('team');
+    const fresh = MemoryStore.local(REPO, { env, now: () => T0 });
+    expect(fresh.readCollection('intakes').entries.find((e) => e.id === checkpoint?.id)).toEqual(
+      checkpoint,
+    );
   });
 });
 
@@ -1055,6 +1188,32 @@ describe('search', () => {
     tick(T3); // the wall clock moved
     const second = api.search(SUBJECT, { evaluator, evalCtx });
     expect(JSON.stringify(second)).toBe(JSON.stringify(first));
+  });
+
+  it('a corrupt interior line keeps good records ranking and surfaces the error in provenance', () => {
+    const { local, api } = setup();
+    const good = v1Record({ claim: 'A.b does the thing' });
+    const other = v1Record({ claim: 'A.b does another thing' });
+    local.upsertEntry('active', good);
+    // out-of-band rewrite of the good record's shard: a corrupt line wedged BETWEEN two valid
+    // lines, exactly the torn-ledger shape a crash mid-write or a bad merge can leave behind
+    const shard = memoryShard(good.id);
+    writeFileSync(
+      local.shardPath('active', shard),
+      `${canonicalMemoryJson(good)}\nTHIS LINE IS NOT JSON\n${canonicalMemoryJson(other)}\n`,
+      'utf8',
+    );
+    clearMemoryCollectionCache(); // out-of-band writes bump no generation — the memo must not serve the pre-fault read
+
+    const res = api.search(SUBJECT);
+    // the good records on either side of the corrupt line still rank
+    expect(res.hits).toHaveLength(2);
+    expect(new Set(res.hits.map((h) => h.id))).toEqual(new Set([good.id, other.id]));
+    // and the rejected line is EXPLICIT, never silently skipped: the operator sees
+    // `<role>/active/<shard>.jsonl:2` in provenance errors
+    expect(res.provenance.errors.some((e) => e.startsWith(`local/active/${shard}.jsonl:2:`))).toBe(
+      true,
+    );
   });
 });
 

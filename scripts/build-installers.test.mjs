@@ -98,3 +98,41 @@ for (const [name, render] of [
   );
   assert.match(text, /\$LASTEXITCODE -ne 0[\s\S]*?crib setup did not complete/);
 }
+
+// WP7.6 — the installers delete ONLY their own throwaway npm cache dir. Memory lives under
+// `.crib/memory` (in the repo and in the user home), so an installer or uninstaller that swept
+// `.crib` — or any path beyond its cache — would destroy the very data the uninstall-with-memory
+// fixture promises survives. Pin every deletion line in both generated scripts to the cache path.
+{
+  const shText = installSh(['knowledge-crib-0.1.0.tgz']);
+  const shDeletions = shText.split('\n').filter((line) => /\brm\b/.test(line));
+  assert.ok(shDeletions.length > 0, 'installSh should clean up its npm cache dir');
+  for (const line of shDeletions) {
+    assert.match(
+      line,
+      /"\$CACHE_DIR"/,
+      `installSh may only rm its own cache dir, not: ${line.trim()}`,
+    );
+    assert.ok(!line.includes('.crib'), `installSh must never rm under .crib: ${line.trim()}`);
+  }
+
+  const ps1Text = installPs1(['knowledge-crib-0.1.0.tgz']);
+  const ps1Deletions = ps1Text.split('\n').filter((line) => /Remove-Item/.test(line));
+  assert.ok(ps1Deletions.length > 0, 'installPs1 should clean up its npm cache dir');
+  for (const line of ps1Deletions) {
+    assert.match(
+      line,
+      /\$CacheDir/,
+      `installPs1 may only Remove-Item its own cache dir, not: ${line.trim()}`,
+    );
+    assert.ok(!line.includes('.crib'), `installPs1 must never Remove-Item .crib: ${line.trim()}`);
+  }
+
+  // Belt and suspenders: no deletion of ANY kind anywhere in either script names `.crib`.
+  assert.doesNotMatch(shText, /rm\s[^\n]*\.crib/, 'installSh must not target .crib for deletion');
+  assert.doesNotMatch(
+    ps1Text,
+    /Remove-Item[^\n]*\.crib/,
+    'installPs1 must not target .crib for deletion',
+  );
+}

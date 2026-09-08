@@ -8,6 +8,14 @@
  *
  * Anyone can reproduce this: `node scripts/crib-bench.mjs` from a checked-out, indexed repo.
  * `--out <path>` also writes a markdown report.
+ *
+ * REPORT-ONLY BY DECISION (WP10.4): this benchmark's job is the PUBLISHED number, not the gate.
+ * The enforced token budget is budget-check.mjs's MIN_COST_SAVING cost-saving floor, which fails
+ * the build on a retrieval regression; duplicating that assertion here would give the same law
+ * two owners. The optional `--ceil <tokens>` flag exists for callers who want the total
+ * crib-default tokens over the query set to be a hard ceiling (e.g. an ad-hoc local check):
+ * when given, the run exits 1 if the total exceeds the ceiling. It is deliberately NOT wired
+ * into any CI gate — see docs/bench/perf-gates.md.
  */
 import { execFileSync } from 'node:child_process';
 import { readFileSync, writeFileSync } from 'node:fs';
@@ -29,6 +37,18 @@ if (turnsArg >= 0) {
   if (!Number.isInteger(TURNS) || TURNS < 1) {
     throw new Error(
       `--turns must be a positive integer, got ${JSON.stringify(process.argv[turnsArg + 1])}`,
+    );
+  }
+}
+
+// Optional token ceiling (report-only by default — see the header). 0 = unset = no assertion.
+const ceilArg = process.argv.indexOf('--ceil');
+let TOKEN_CEIL = 0;
+if (ceilArg >= 0) {
+  TOKEN_CEIL = Number(process.argv[ceilArg + 1]);
+  if (!Number.isInteger(TOKEN_CEIL) || TOKEN_CEIL < 1) {
+    throw new Error(
+      `--ceil must be a positive integer (max total crib-default tokens), got ${JSON.stringify(process.argv[ceilArg + 1])}`,
     );
   }
 }
@@ -187,4 +207,16 @@ const outIdx = process.argv.indexOf('--out');
 if (outIdx >= 0 && process.argv[outIdx + 1]) {
   writeFileSync(process.argv[outIdx + 1], md);
   process.stdout.write(`\nwrote ${process.argv[outIdx + 1]}\n`);
+}
+
+// The optional --ceil assertion: fail when the total crib-default tokens over the query set
+// exceeds the caller's ceiling. Unset (the default) keeps the run report-only.
+if (TOKEN_CEIL > 0 && totals.cribDefault > TOKEN_CEIL) {
+  process.stderr.write(
+    `crib-bench FAIL — total crib-default tokens ${totals.cribDefault} > ceiling ${TOKEN_CEIL}\n`,
+  );
+  process.exit(1);
+}
+if (TOKEN_CEIL > 0) {
+  process.stdout.write(`token ceiling held: ${totals.cribDefault} <= ${TOKEN_CEIL}\n`);
 }

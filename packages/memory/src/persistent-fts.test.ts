@@ -13,6 +13,7 @@ import { MemoryFtsIndex } from './fts-index.js';
 import {
   MEMORY_FTS_FORMAT_VERSION,
   type MemoryCandidate,
+  type MemoryCollection,
   type MemoryRecord,
   type MemoryRecordV2,
   MemoryStore,
@@ -22,6 +23,7 @@ import {
   memoryCandidateId,
   memoryRecordId,
   memoryRecordV2Id,
+  memoryShard,
   openMemoryFts,
 } from './index.js';
 
@@ -144,6 +146,12 @@ function globalStore(): MemoryStore {
 function scores(index: MemoryFtsIndex, query: string): string {
   const pairs = [...index.search(query).entries()].sort(([a], [b]) => a.localeCompare(b));
   return JSON.stringify(pairs);
+}
+
+/** Byte-comparable projection of the JSONL shards backing a collection (the truth the FTS serves). */
+function shardBytes(store: MemoryStore, collection: MemoryCollection, ids: string[]): string {
+  const shards = [...new Set(ids.map((id) => memoryShard(id)))].sort();
+  return JSON.stringify(shards.map((s) => readFileSync(store.shardPath(collection, s), 'utf8')));
 }
 
 /**
@@ -271,6 +279,90 @@ describe('persistent memory FTS', () => {
     expect(healed.rebuildCountForTest).toBe(1); // corrupt file deleted + rebuilt, never served
     expect(scores(healed, 'retention')).toBe(ephemeralScores({ local: store }, 'retention'));
     healed.close();
+  });
+
+  it('a crash mid-rebuild (valid meta beside a MISSING db) reopens by rebuilding, never serving an empty index', () => {
+    const store = localStore();
+    store.upsertEntry('active', v1Record('alpha retention gates the writer'));
+    const fts = openMemoryFts({ local: store });
+    prime(fts); // materialize the snapshot (the open is lazy)
+    const dbPath = fts.indexFilePath;
+    const metaPath = fts.metaFilePath as string;
+    fts.close();
+    expect(existsSync(dbPath)).toBe(true);
+
+    // Simulate the crash window: a rebuild deleted the db + sidecars but died BEFORE writeMeta
+    // (the pre-fix code removed only the index files, leaving the old VALID meta behind). The
+    // successor process finds a usable-looking header beside no database at all.
+    for (const suffix of ['', '-wal', '-shm', '-journal'])
+      rmSync(`${dbPath}${suffix}`, { force: true });
+    expect(existsSync(dbPath)).toBe(false);
+    expect(existsSync(metaPath)).toBe(true); // the header still claims a complete snapshot
+
+    const successor = openMemoryFts({ local: store });
+    prime(successor);
+    expect(successor.rebuildCountForTest).toBe(1); // db-existence guard: rebuild, never serve empty
+    expect(scores(successor, 'retention')).toBe(ephemeralScores({ local: store }, 'retention'));
+    expect(successor.search('retention').size).toBe(1); // answers the query — not silently nothing
+    successor.close();
+  });
+
+  it('repeated recovery is a no-op: a second heal-open does zero rebuilds and writes nothing', () => {
+    const store = localStore();
+    const r1 = v1Record('alpha retention gates the writer');
+    const r2 = v1Record('beta retention report', 'sym:src/beta.ts#x');
+    store.upsertEntry('active', r1);
+    store.upsertEntry('active', r2);
+    const fts = openMemoryFts({ local: store });
+    prime(fts);
+    const dbPath = fts.indexFilePath;
+    const metaPath = fts.metaFilePath as string;
+    fts.close();
+    writeFileSync(dbPath, 'this is not a sqlite database', 'utf8');
+
+    // The heal: one rebuild, ranking-identical to the shards it rebuilt from.
+    const healed = openMemoryFts({ local: store });
+    prime(healed);
+    expect(healed.rebuildCountForTest).toBe(1);
+    const healedScores = scores(healed, 'retention');
+    expect(healedScores).toBe(ephemeralScores({ local: store }, 'retention'));
+    healed.close();
+    const metaAfterHeal = readFileSync(metaPath, 'utf8');
+    const shardsAfterHeal = shardBytes(store, 'active', [r1.id, r2.id]);
+
+    // The second open over the HEALED state must take the fast path: nothing rebuilt, nothing
+    // rewritten — the WP7.4 regression is recovery that re-triggers itself every open.
+    const reopened = openMemoryFts({ local: store });
+    prime(reopened);
+    expect(reopened.rebuildCountForTest).toBe(0);
+    expect(scores(reopened, 'retention')).toBe(healedScores);
+    reopened.close();
+    expect(readFileSync(metaPath, 'utf8')).toBe(metaAfterHeal); // meta header byte-identical
+    expect(shardBytes(store, 'active', [r1.id, r2.id])).toBe(shardsAfterHeal); // shards untouched
+  });
+
+  it('an interrupted recovery converges: a torn/absent meta header after a partial heal rebuilds once, then the next open is a no-op', () => {
+    const store = localStore();
+    store.upsertEntry('active', v1Record('alpha retention gates the writer'));
+    const fts = openMemoryFts({ local: store });
+    prime(fts);
+    const metaPath = fts.metaFilePath as string;
+    fts.close();
+    expect(existsSync(metaPath)).toBe(true);
+
+    // The partial heal: a valid snapshot db whose meta header never landed (torn/absent).
+    rmSync(metaPath);
+
+    const recovered = openMemoryFts({ local: store });
+    prime(recovered);
+    expect(recovered.rebuildCountForTest).toBe(1); // the absent header forces exactly one rebuild
+    expect(scores(recovered, 'retention')).toBe(ephemeralScores({ local: store }, 'retention'));
+    recovered.close();
+
+    const next = openMemoryFts({ local: store });
+    prime(next);
+    expect(next.rebuildCountForTest).toBe(0); // converged: the rewritten header matches
+    next.close();
   });
 
   it('an index-format version mismatch rebuilds and rewrites the current version', () => {

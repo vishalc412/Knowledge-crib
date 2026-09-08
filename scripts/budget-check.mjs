@@ -12,6 +12,10 @@
  *  - cold index time on a 50-file fixture                             < MAX_INDEX_MS
  *  - incremental `crib update` time (one-file edit)                   < MAX_UPDATE_RATIO
  *    of a full index on the same fixture (the P2.1 dossier-hoist gate)
+ *  - warm recall p95 @ 10k records (MemoryApi.search, frozen method  < RECALL_P95_10K_MS
+ *    in scripts/recall-latency.mjs; @100k/300ms is opt-in via KC_BENCH_100K=1)
+ *  - heap/RSS growth over repeated `crib update` cycles              bounded by
+ *    scripts/leak-check.mjs (fails only on unbounded growth, never GC noise)
  *
  * MAX_RUNTIME_DEPS is 10, and every one of the ten is a deliberate, disclosed tradeoff (see
  * NOTICE) rather than headroom to spend carelessly. It was 6 when `web-tree-sitter` (the PHP
@@ -45,7 +49,15 @@ import {
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { LEAK_MULTIPLE, runLeakCheck } from './leak-check.mjs';
 import { sessionCost } from './lib/pricing.mjs';
+import {
+  KC_BENCH_100K_ENV,
+  RECALL_P95_10K_MS,
+  RECALL_P95_100K_MS,
+  measureRecallP95,
+  recallGateVerdict,
+} from './recall-latency.mjs';
 
 const MAX_RUNTIME_DEPS = 10;
 const MAX_PACKAGE_BYTES = 5 * 1024 * 1024; // 5 MB, mcp+cli combined
@@ -482,6 +494,79 @@ await check(`cost saving >= ${MIN_COST_SAVING}x (${COST_MODEL_TURNS}-turn task)`
     rmSync(repoRoot, { recursive: true, force: true });
   }
 });
+
+// 8. Warm recall p95 @ 10k — the WP10.4 memory-latency gate, ENFORCED. `crib memory bench` measures
+// the J1 curve but always exits 0, and nothing ran it — this check is what actually fails the build
+// when the production recall path (MemoryApi.search over the persistent FTS, fresh=false — the
+// 8.3 ms p95 the launch run validated, docs/bench/perf-gates.md) regresses past the preregistered
+// 100 ms budget. Loaded-machine honesty: on a breach the measurement settles 1s and retries once
+// over the same corpus; only two independent breaches fail the gate (other agents' CPU contention
+// cannot flake it, a real regression breaches twice).
+await check(`warm recall p95 @10k < ${RECALL_P95_10K_MS}ms`, async () => {
+  const m = await measureRecallP95({ records: 10_000, thresholdMs: RECALL_P95_10K_MS });
+  const verdict = recallGateVerdict(
+    m.passes.map((p) => p.p95),
+    RECALL_P95_10K_MS,
+  );
+  const runs = m.passes.map((p) => `${p.p95.toFixed(1)}ms`).join(' / ');
+  if (!verdict.ok) {
+    throw new Error(
+      `p95 ${runs} over ${m.iterations} warm iterations (p50 ${m.passes
+        .map((p) => p.p50.toFixed(1))
+        .join(' / ')}ms) >= ${RECALL_P95_10K_MS}ms on BOTH passes — warm recall latency regressed`,
+    );
+  }
+  process.stdout.write(
+    `       recall p95 @10k: ${runs} over ${m.iterations} warm iterations after ${m.warmup} warmup\n`,
+  );
+});
+
+// 8b. The @100k / 300ms variant — a deliberate NON-CI check: seeding a 100k corpus is a
+// minutes-scale cost, and the 300 ms budget was validated at launch. Opt in with KC_BENCH_100K=1.
+if (process.env[KC_BENCH_100K_ENV] === '1') {
+  await check(`warm recall p95 @100k < ${RECALL_P95_100K_MS}ms (KC_BENCH_100K)`, async () => {
+    const m = await measureRecallP95({ records: 100_000, thresholdMs: RECALL_P95_100K_MS });
+    const verdict = recallGateVerdict(
+      m.passes.map((p) => p.p95),
+      RECALL_P95_100K_MS,
+    );
+    const runs = m.passes.map((p) => `${p.p95.toFixed(1)}ms`).join(' / ');
+    if (!verdict.ok) {
+      throw new Error(`p95 ${runs} on BOTH passes >= ${RECALL_P95_100K_MS}ms at 100k records`);
+    }
+    process.stdout.write(`       recall p95 @100k: ${runs} over ${m.iterations} warm iterations\n`);
+  });
+}
+
+// 9. Leak check — heap/RSS growth over repeated incremental-update cycles (WP10.4 "leak checks
+// after repeated refresh"). Nothing in the repo asserted process.memoryUsage() before this: a
+// per-cycle leak in updateRepo (the loop `crib freshness auto` runs forever) would ship unnoticed.
+// Fails only on UNBOUNDED growth — > LEAK_MULTIPLE x the first-cycle delta — never on GC noise.
+await check('heap/rss bounded over repeated update cycles', async () => {
+  const r = await runLeakCheck();
+  if (r.failed) {
+    throw new Error(
+      `heap ${describeGrowth(r.heap)} / rss ${describeGrowth(r.rss)} over ${r.cycles} update cycles — ` +
+        `growth exceeds ${LEAK_MULTIPLE}x the first-cycle delta (unbounded, not GC noise)`,
+    );
+  }
+  const heap = r.heapSamples;
+  const rss = r.rssSamples;
+  process.stdout.write(
+    `       leak check: heap ${fmtMb(heap[0])}→${fmtMb(heap[heap.length - 1])} MB, ` +
+      `rss ${fmtMb(rss[0])}→${fmtMb(rss[rss.length - 1])} MB over ${r.cycles} cycles ` +
+      `(first-cycle delta ${fmtMb(r.heap.firstDeltaBytes)} MB, fail threshold ${fmtMb(r.heap.thresholdBytes)} MB)\n`,
+  );
+});
+
+function fmtMb(bytes) {
+  return (bytes / 1024 / 1024).toFixed(1);
+}
+
+function describeGrowth(c) {
+  if (c.verdict === 'insufficient') return 'insufficient samples';
+  return `growth ${(c.growthBytes / 1024 / 1024).toFixed(1)} MB (first-cycle delta ${(c.firstDeltaBytes / 1024 / 1024).toFixed(1)} MB, threshold ${(c.thresholdBytes / 1024 / 1024).toFixed(0)} MB)`;
+}
 
 if (failures.length > 0) {
   process.stderr.write(

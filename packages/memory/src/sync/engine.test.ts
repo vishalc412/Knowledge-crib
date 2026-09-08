@@ -43,6 +43,7 @@ import {
   freshTestHome,
   v1Record,
   v2Record,
+  v3Record,
 } from './sync-test-fixtures.js';
 
 const KEY = Buffer.from(KEY_HEX, 'hex');
@@ -274,6 +275,49 @@ describe('pullSync and the apply law', () => {
     const again = await pullSync(storeB, backend, runOpts());
     expect(again.batchesSeen).toBe(1);
     expect(again.applied).toHaveLength(0);
+  });
+
+  it('applies an unseen memory-3 record through the store write gate and is a no-op on re-pull', async () => {
+    const rec = v3Record();
+    storeA.upsertEntry('active', rec);
+    const push = await pushSync(storeA, backend, runOpts());
+    expect(push.pushed).toBe(1);
+    const pull = await pullSync(storeB, backend, runOpts());
+    expect(pull.ok).toBe(true);
+    expect(pull.applied).toEqual([
+      { eventId: expect.any(String), payloadId: rec.id, action: 'upserted' },
+    ]);
+    // the pulled v3 record is canonical-byte-identical to what the pushing device held
+    const landed = storeB.readShard('active', memoryShard(rec.id)).entries[0];
+    expect(landed && canonicalMemoryJson(landed) === canonicalMemoryJson(rec)).toBe(true);
+    // redelivery: the same batch again is a byte-identical no-op, never a second write
+    const again = await pullSync(storeB, backend, runOpts());
+    expect(again.batchesSeen).toBe(1);
+    expect(again.applied).toHaveLength(0);
+  });
+
+  it('applies a purge.mark as a purge ack only and never writes its payload (D11)', async () => {
+    // No producer exists yet (the CLI purge job owns it), so the mark arrives the way a peer's
+    // would: a crafted envelope staged on the shared remote under a real batch manifest.
+    const purged = v1Record();
+    const evt = buildSyncEvent({
+      kind: 'purge.mark',
+      store: 'local',
+      repoId: REPO,
+      deviceId: DEVICE,
+      principalId: PRINCIPAL,
+      payload: purged,
+      ts: NOW,
+    });
+    await stageRemoteBatch([evt]);
+    const pull = await pullSync(storeB, backend, runOpts());
+    expect(pull.ok).toBe(true);
+    expect(pull.applied).toEqual([{ eventId: evt.id, payloadId: purged.id, action: 'purge-mark' }]);
+    // the ack — the terminal state — is recorded in sync-state
+    expect(loadSyncState(storeB.rootDir)?.purgeAcks).toEqual([evt.id]);
+    // and the instruction-to-forget payload NEVER lands in any collection
+    expect(storeB.readShard('active', memoryShard(purged.id)).entries).toHaveLength(0);
+    expect(storeB.readCollection('active').entries).toHaveLength(0);
   });
 
   it('a forged payload id (bytes do not re-derive the id) is a hard conflict, never applied', async () => {

@@ -68,7 +68,10 @@ jobs:
           node scripts/release-evidence.mjs --require-pass --require-runtime-certification
           --certification-platforms darwin,linux,win32
 
+      # WP9.4 — always(): the F07 diagnostic manifest is written before the gate exits 1, so
+      # without this the evidence of a failed launch decision is stranded on the runner.
       - name: Upload release evidence
+        if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: knowledge-crib-release-evidence-${{ matrix.os }}
@@ -84,6 +87,39 @@ jobs:
           path: dist/installers/knowledge-crib-*/
           if-no-files-found: error
           retention-days: 7
+
+  # WP9.4 — ONE aggregated launch decision. Every per-OS verify cell uploads its release
+  # evidence even when it fails (see if: always() above); this job downloads all three
+  # manifests and runs the aggregation CLI, which validates each cell, prints the per-cell
+  # table, and exits non-zero on NO-GO or missing cell evidence. `if: !cancelled()` so the
+  # NO-GO path is exactly the one that must not be silent: a failed verify cell still
+  # produces a printed decision. The aggregation CLI is scripts/launch-decision.mjs
+  # (WP8/WP9 slice, plain Node — no dependencies, no corepack needed).
+  launch-decision:
+    name: Aggregate launch decision
+    needs: verify
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+
+      - name: Download per-OS release evidence
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          pattern: knowledge-crib-release-evidence-*
+          path: launch-evidence
+          merge-multiple: false
+
+      - name: Aggregate launch decision
+        run: node scripts/launch-decision.mjs --cells launch-evidence
 
   release:
     name: Create GitHub release

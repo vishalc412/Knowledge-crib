@@ -33,22 +33,35 @@ function rank(receipt) {
   return 1;
 }
 
+function platformName(receipt) {
+  // A WSL run reports process.platform 'linux'; it is labelled WSL and never presented as native.
+  return receipt.platform.wsl ? 'WSL' : PLATFORM_NAMES[receipt.platform.os];
+}
+
 export function renderClientCertificationMatrix(receipts) {
   const states = certificationSummary(receipts);
   const rows = CERTIFIED_CLIENTS.map((client) => {
     const strongest = receipts
       .filter((receipt) => receipt.client.id === client)
       .sort((a, b) => rank(b) - rank(a) || a.platform.os.localeCompare(b.platform.os))[0];
+    let stateLabel = DISPLAY_STATES[states[client]];
+    if (
+      strongest &&
+      rank(strongest) === 2 &&
+      strongest.evidence.protocol.source === 'test-client'
+    ) {
+      stateLabel = 'protocol evidence only (test client)';
+    }
     const cell = strongest
-      ? `${PLATFORM_NAMES[strongest.platform.os]} ${strongest.platform.arch} (${strongest.client.version})`
+      ? `${platformName(strongest)} ${strongest.platform.arch} (${strongest.client.version})`
       : '—';
-    return `| ${LABELS[client]} | ${DISPLAY_STATES[states[client]]} | ${cell} |`;
+    return `| ${LABELS[client]} | ${stateLabel} | ${cell} |`;
   });
   return [
     START,
     '## Client certification evidence',
     '',
-    'Generated from validated receipts. A client is runtime verified only when a vendor-client receipt proves record → interruption/restart → authorized resume on the listed platform.',
+    'Generated from validated receipts. A client is runtime verified only when a vendor-client receipt proves record → interruption/restart → authorized resume on the listed platform. Protocol evidence captured by a test client is labelled "protocol evidence only (test client)" and can never promote a row.',
     '',
     '| Client | Highest verified evidence | Strongest certified cell |',
     '|---|---|---|',

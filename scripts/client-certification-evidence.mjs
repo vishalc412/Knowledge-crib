@@ -5,8 +5,9 @@
  * client to `runtime-verified`. That label is reserved for a receipt from the vendor client which
  * completed record -> interruption/restart -> authorized resume on the named operating system.
  */
+import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, resolve, sep } from 'node:path';
 
 export const CERTIFICATION_EVIDENCE_FORMAT_VERSION = 1;
 export const CERTIFIED_CLIENTS = [
@@ -19,6 +20,7 @@ export const CERTIFIED_CLIENTS = [
   'vscode',
 ];
 const PLATFORM_IDS = new Set(['darwin', 'linux', 'win32']);
+const PROTOCOL_SOURCES = new Set(['vendor-client', 'test-client']);
 const SHA256 = /^sha256:[a-f0-9]{64}$/;
 const COMMIT = /^[a-f0-9]{40}$/;
 
@@ -52,8 +54,46 @@ function optionalEvidence(value, label, hashKey) {
   if (value.status === 'pass') sha(value[hashKey], `${label}.${hashKey}`);
 }
 
-/** Validate the complete receipt before it may influence public support language. */
-export function validateClientCertificationReceipt(receipt) {
+/**
+ * Protocol probes may be run by the vendor client or by a test client that merely speaks the same
+ * protocol shape (a Copilot-shaped harness, for example). The source is required whenever protocol
+ * evidence is claimed so the matrix can label test-client rows as evidence-only; a `not-run`
+ * placeholder carries no claim and needs no source.
+ */
+function protocolEvidence(value, label, hashKey) {
+  optionalEvidence(value, label, hashKey);
+  if (value.status === 'pass') {
+    assert(
+      PROTOCOL_SOURCES.has(value.source),
+      `${label} evidence must declare its source: vendor-client or test-client`,
+    );
+  }
+}
+
+/**
+ * Resolve a runtime evidence file (transcript or log) inside the receipts area and return its
+ * absolute path. The path must stay under the area and the file must exist on disk.
+ */
+function resolveEvidenceFile(root, path, label) {
+  assert(typeof path === 'string' && path.trim(), `${label} must be a non-empty path`);
+  const resolved = resolve(root, path);
+  assert(resolved.startsWith(`${root}${sep}`), `${label} escapes the receipts area: ${path}`);
+  assert(
+    existsSync(resolved),
+    `${label} references a file missing from the receipts area: ${path}`,
+  );
+  return resolved;
+}
+
+/**
+ * Validate the complete receipt before it may influence public support language.
+ *
+ * `options.evidenceRoot` is the receipts area (the directory the receipts are loaded from). It is
+ * required whenever a receipt claims a vendor-client runtime pass, so the referenced transcript or
+ * log file can be located and its digest verified — a hand-typed receipt with no artifact behind it
+ * cannot certify a runtime.
+ */
+export function validateClientCertificationReceipt(receipt, options = {}) {
   assert(receipt && typeof receipt === 'object', 'receipt must be an object');
   assert(
     receipt.format === 'knowledge-crib-client-certification',
@@ -67,7 +107,9 @@ export function validateClientCertificationReceipt(receipt) {
   assert(receipt.product && typeof receipt.product === 'object', 'product is required');
   assert(
     typeof receipt.product.commit === 'string' && COMMIT.test(receipt.product.commit),
-    'product.commit must be a full git commit',
+    `product.commit is a bad commit: expected a full 40-hex git commit, got ${JSON.stringify(
+      receipt.product.commit,
+    )}`,
   );
   sha(receipt.product.packageSha256, 'product.packageSha256');
   assert(receipt.client && typeof receipt.client === 'object', 'client is required');
@@ -82,16 +124,24 @@ export function validateClientCertificationReceipt(receipt) {
   assert(receipt.platform && typeof receipt.platform === 'object', 'platform is required');
   assert(PLATFORM_IDS.has(receipt.platform.os), `unsupported platform: ${receipt.platform.os}`);
   assert(
+    receipt.platform.wsl === undefined || typeof receipt.platform.wsl === 'boolean',
+    'platform.wsl must be a boolean',
+  );
+  assert(
+    receipt.platform.wsl !== true || receipt.platform.os === 'linux',
+    'platform.wsl is only valid on linux receipts',
+  );
+  assert(
     typeof receipt.platform.arch === 'string' && receipt.platform.arch.trim(),
     'platform.arch is required',
   );
   assert(
     typeof receipt.platform.node === 'string' && /^v\d+/.test(receipt.platform.node),
-    'platform.node is required',
+    'platform.node must be a Node release starting with v, for example v22.23.1',
   );
   assert(receipt.evidence && typeof receipt.evidence === 'object', 'evidence is required');
   passEvidence(receipt.evidence.configuration, 'configuration', 'configSha256');
-  optionalEvidence(receipt.evidence.protocol, 'protocol', 'transcriptSha256');
+  protocolEvidence(receipt.evidence.protocol, 'protocol', 'transcriptSha256');
   const runtime = receipt.evidence.runtime;
   optionalEvidence(runtime, 'runtime', 'logSha256');
   if (runtime.status === 'pass') {
@@ -102,6 +152,40 @@ export function validateClientCertificationReceipt(receipt) {
     assert(runtime.recordedMemory === true, 'runtime evidence must record memory');
     assert(runtime.interrupted === true, 'runtime evidence must include interruption/restart');
     assert(runtime.authorizedResume === true, 'runtime evidence must include authorized resume');
+    const artifacts = [];
+    if (runtime.transcriptPath !== undefined) {
+      artifacts.push({
+        path: runtime.transcriptPath,
+        digest: runtime.transcriptSha256,
+        pathLabel: 'runtime.transcriptPath',
+        digestLabel: 'runtime.transcriptSha256',
+      });
+    }
+    if (runtime.logPath !== undefined) {
+      artifacts.push({
+        path: runtime.logPath,
+        digest: runtime.logSha256,
+        pathLabel: 'runtime.logPath',
+        digestLabel: 'runtime.logSha256',
+      });
+    }
+    assert(
+      artifacts.length > 0,
+      'runtime evidence must reference a transcriptPath or logPath under the receipts area',
+    );
+    assert(
+      typeof options.evidenceRoot === 'string' && options.evidenceRoot.trim(),
+      'runtime evidence requires an evidence root to verify its transcript or log file',
+    );
+    const root = resolve(options.evidenceRoot);
+    for (const artifact of artifacts) {
+      const resolved = resolveEvidenceFile(root, artifact.path, artifact.pathLabel);
+      const digest = `sha256:${createHash('sha256').update(readFileSync(resolved)).digest('hex')}`;
+      assert(
+        artifact.digest === digest,
+        `${artifact.digestLabel} does not match the ${artifact.path} file`,
+      );
+    }
   }
   return receipt;
 }
@@ -125,8 +209,10 @@ export function loadClientCertificationReceipts(directory) {
           `unreadable certification receipt ${name}: ${error.message}`,
         );
       }
-      const receipt = validateClientCertificationReceipt(parsed);
-      const cell = `${receipt.client.id}/${receipt.platform.os}/${receipt.platform.arch}`;
+      const receipt = validateClientCertificationReceipt(parsed, { evidenceRoot: directory });
+      const cell = `${receipt.client.id}/${receipt.platform.os}/${receipt.platform.arch}${
+        receipt.platform.wsl ? '/wsl' : ''
+      }`;
       assert(!cells.has(cell), `duplicate certification cell: ${cell}`);
       cells.add(cell);
       return receipt;
@@ -162,6 +248,9 @@ export function missingRuntimeCertificationCells(
   const observed = new Set(
     receipts
       .filter((receipt) => receipt.evidence.runtime.status === 'pass')
+      // A WSL run reports process.platform 'linux' but is not a native-Linux runtime
+      // certification; it can never satisfy the native `${client}/linux` cell.
+      .filter((receipt) => receipt.platform.wsl !== true)
       .map((receipt) => `${receipt.client.id}/${receipt.platform.os}`),
   );
   return CERTIFIED_CLIENTS.flatMap((client) =>

@@ -76,6 +76,17 @@ function removeIndexFiles(dbPath: string): void {
   }
 }
 
+/**
+ * Delete the snapshot's usability claim FIRST, then the db + sidecars. Meta-first is the crash
+ * contract: a rebuild that dies mid-flight must never leave a valid meta beside a missing db —
+ * snapshotUsable would take the serve path, openDatabase would hand back a fresh EMPTY db, and
+ * every query would silently answer nothing while the header claims a complete snapshot.
+ */
+function removeSnapshotFiles(dbPath: string, metaPath?: string): void {
+  if (metaPath !== undefined) rmSync(metaPath, { force: true });
+  removeIndexFiles(dbPath);
+}
+
 export interface OpenMemoryFtsOptions {
   /**
    * Explicit index directory override (tests, or an operator relocating the snapshot). Defaults to
@@ -125,6 +136,12 @@ export class PersistentMemoryFts extends MemoryFtsIndex {
   private readonly forceRebuild: boolean;
   private healedOnOpen = false;
   private listenersInstalled = false;
+  /**
+   * Whether the snapshot db existed when THIS handle's open began (set in {@link openDatabase},
+   * before node:sqlite creates a missing file). Guards the crash window where a rebuild deleted
+   * the db but died before writeMeta left a valid header claiming a complete snapshot.
+   */
+  private dbExistedBeforeOpen = false;
 
   /**
    * Construct via {@link openMemoryFts} — the factory resolves the snapshot home and the ephemeral
@@ -168,12 +185,16 @@ export class PersistentMemoryFts extends MemoryFtsIndex {
     if (this.metaPath === undefined) return false; // :memory: — nothing on disk to heal
     if (this.healedOnOpen) return false;
     this.healedOnOpen = true;
-    removeIndexFiles(this.dbPath);
+    removeSnapshotFiles(this.dbPath, this.metaPath);
     return true;
   }
 
   protected override openDatabase(): DatabaseSync {
     if (this.metaPath !== undefined) {
+      // Capture existence BEFORE the parent opens the handle — node:sqlite CREATES a missing db
+      // file on open, so by the time onFirstUse/snapshotUsable runs an absent db looks present
+      // (fresh, empty, and therefore silently wrong). This flag is the only pre-open witness.
+      this.dbExistedBeforeOpen = existsSync(this.dbPath);
       // The snapshot dir is created lazily with the first open (mkdir -p is idempotent); the meta
       // header's atomic write would mkdir too, but the DB opens first.
       mkdirSync(dirname(this.dbPath), { recursive: true });
@@ -214,6 +235,7 @@ export class PersistentMemoryFts extends MemoryFtsIndex {
   private snapshotUsable(): boolean {
     if (this.metaPath === undefined) return false;
     if (!existsSync(this.metaPath)) return false;
+    if (!this.dbExistedBeforeOpen) return false; // meta without a db (crash mid-rebuild) — rebuild, never serve an empty index
     let meta: PersistentFtsMeta;
     try {
       meta = JSON.parse(readFileSync(this.metaPath, 'utf8')) as PersistentFtsMeta;
@@ -255,7 +277,7 @@ export class PersistentMemoryFts extends MemoryFtsIndex {
    */
   private rebuildFromStores(): void {
     this.discardHandle();
-    if (this.metaPath !== undefined) removeIndexFiles(this.dbPath);
+    if (this.metaPath !== undefined) removeSnapshotFiles(this.dbPath, this.metaPath);
     this.reopenWithoutFirstUse();
     const gathered = gatherRecall(this.stores);
     this.rebuild(gathered.records.map((r) => r.record));
@@ -309,7 +331,7 @@ export class PersistentMemoryFts extends MemoryFtsIndex {
         // next use lazily rebuilds (the store's generation nonce changed, so even a cross-process
         // reader converges on the same verdict).
         this.discardHandle();
-        if (this.metaPath !== undefined) removeIndexFiles(this.dbPath);
+        if (this.metaPath !== undefined) removeSnapshotFiles(this.dbPath, this.metaPath);
         return;
       }
       const upserts = notice.upserted.filter(isRecordEntry);

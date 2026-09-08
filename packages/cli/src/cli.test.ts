@@ -1134,6 +1134,140 @@ describe('crib adapters (W8) — CLI dispatch', () => {
     expect(existsSync(join(repo, 'GEMINI.md'))).toBe(true);
   });
 
+  it('crib adapters remove --client all — a seeded store survives and recall still answers', async () => {
+    // WP7.6 — the REAL memory-survival pin behind the "memory intact" name above: that test only
+    // proves sibling INSTRUCTION FILES survive a single-client removal. This one seeds an actual
+    // recall-eligible record into a mem-home global store, runs the FULL client-removal surface an
+    // operator runs when leaving crib (`adapters remove --client all` + `mcp remove`), and proves
+    // (a) the removal really removed, (b) the store JSONL bytes are untouched, (c) `crib memory
+    // recall` — the command the protocol spliced into every instruction file names as the fallback
+    // — still returns the record.
+    //
+    // The shared beforeEach indexes in memory but never commits the soul, and memory needs a
+    // committed graph + a resolvable repo.id — so this test mirrors memory-migrate.test.ts's
+    // bootstrap: SoulStore + indexRepo + commit + a crib.json locator.
+    const NOW = '2026-01-01T00:00:00.000Z';
+    const REPO_ID = 'r-adapters-survival';
+    const NODE_ID = 'sym:src/a.ts#A.b@L2';
+    mkdirSync(join(repo, 'src'), { recursive: true });
+    writeFileSync(
+      join(repo, 'src', 'a.ts'),
+      'export class A {\n  b(): number {\n    return 1;\n  }\n}\n',
+    );
+    const soul = new SoulStore(join(repo, '.crib'), { manifest: newManifest({ root: '.' }) });
+    soul.load();
+    await indexRepo(soul, repo);
+    soul.commit(NOW);
+    writeFileSync(
+      join(repo, '.crib', 'crib.json'),
+      `${JSON.stringify({ repo: { id: REPO_ID, root: '.' } }, null, 2)}\n`,
+    );
+
+    // mem-home isolates the user-scoped global store from this machine; KCRIB_EMBED_HOME pins the
+    // tier so the subprocess cannot inherit whatever model the developer happens to have
+    // installed (same discipline as memory-recall.test.ts).
+    const memHome = join(repo, 'mem-home');
+    mkdirSync(memHome, { recursive: true });
+    const cliEnv: NodeJS.ProcessEnv = {
+      ...process.env,
+      KCRIB_MEMORY_DIR: memHome,
+      KCRIB_EMBED_HOME: join(memHome, 'embed'),
+    };
+    // Every CLI call below goes through env: the memory verbs must resolve the SAME relocated
+    // stores the removal verbs run under, or the byte-identity assertion would prove nothing.
+    const run = (args: string[]): string =>
+      execFileSync(process.execPath, [CLI, ...args], {
+        cwd: repo,
+        encoding: 'utf8',
+        stdio: ['ignore', 'pipe', 'pipe'],
+        maxBuffer: 32 * 1024 * 1024,
+        env: cliEnv,
+      }).trim();
+
+    // A recall-eligible global record: admissible for a fact (source-quote) and grounded against
+    // the live soul ('return 1;' is A.b's body), so fresh revalidation keeps it eligible.
+    const input = {
+      kind: 'fact' as const,
+      subject: NODE_ID,
+      claim: 'A.b returns 1 — pinned so removal cannot silently lose memory',
+      scope: { boundary: 'global' as const },
+      appliesTo: [NODE_ID],
+      evidence: [
+        {
+          kind: 'source-quote' as const,
+          verdict: 'valid' as const,
+          checkedAt: NOW,
+          soulId: NODE_ID,
+          quote: 'return 1;',
+        },
+      ],
+      authorship: { actor: 'claude-code', kind: 'agent' as const, tool: 'claude-code' },
+    };
+    const record: MemoryRecord = {
+      id: memoryRecordId(input),
+      schemaVersion: '1',
+      ...input,
+      verdicts: {
+        trust: 'local',
+        evidence: 'valid',
+        applicability: 'current',
+        lifecycle: 'active',
+      },
+      createdAt: NOW,
+    } as MemoryRecord;
+    MemoryStore.global({ env: cliEnv }).upsertEntries('records', [record]);
+
+    // Wire the full client surface first, so the removal sweeps real files, not absent ones.
+    run(['adapters', 'install', '--client', 'all']);
+    run(['mcp', 'install', '--ide', 'all', '--bin', 'crib']);
+
+    const storeJsonlBytes = (): Map<string, string> => {
+      const files = new Map<string, string>();
+      const walk = (dir: string): void => {
+        for (const e of readdirSync(dir, { withFileTypes: true })) {
+          const p = join(dir, e.name);
+          if (e.isDirectory()) walk(p);
+          else if (e.isFile() && e.name.endsWith('.jsonl')) {
+            files.set(p, readFileSync(p, 'utf8'));
+          }
+        }
+      };
+      if (existsSync(memHome)) walk(memHome);
+      return files;
+    };
+    const before = storeJsonlBytes();
+    // the seeded record really is on disk before the removal runs (a vacuous pass would otherwise
+    // prove nothing about survival).
+    expect([...before.values()].some((bytes) => bytes.includes(record.id))).toBe(true);
+
+    const removed = run(['adapters', 'remove', '--client', 'all']);
+    expect(removed).toContain('claude: removed');
+    const mcpRemoved = run(['mcp', 'remove', '--ide', 'all']);
+    expect(mcpRemoved).toContain('removed');
+
+    // (a) the removal really removed: instruction files gone, the MCP server entry unwired.
+    expect(existsSync(join(repo, 'CLAUDE.md'))).toBe(false);
+    expect(existsSync(join(repo, 'AGENTS.md'))).toBe(false);
+    const mcpJson = existsSync(join(repo, '.mcp.json'))
+      ? (JSON.parse(readFileSync(join(repo, '.mcp.json'), 'utf8')) as {
+          mcpServers?: Record<string, unknown>;
+        })
+      : {};
+    expect(mcpJson.mcpServers?.['knowledge-crib']).toBeUndefined();
+
+    // (b) the store bytes are byte-unchanged by the whole removal surface.
+    expect(storeJsonlBytes()).toEqual(before);
+
+    // (c) recall still answers — the same record, same claim, through the relocated store.
+    const out = run(['memory', 'recall', 'A.b returns', '--json']);
+    const parsed = JSON.parse(out) as {
+      memories: Array<{ id: string; claim: string; source: string }>;
+    };
+    const surviving = parsed.memories.find((m) => m.id === record.id);
+    expect(surviving?.claim).toBe(record.claim);
+    expect(surviving?.source).toBe('global');
+  });
+
   it('rejects an unknown --client with BAD_ARGS', () => {
     const r = runCliResult(['adapters', 'install', '--client', 'nope']);
     expect(r.status).not.toBe(0);

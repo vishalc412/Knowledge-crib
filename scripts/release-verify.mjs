@@ -50,6 +50,9 @@ run('node', ['scripts/client-certification-evidence.test.mjs']);
 run('node', ['scripts/client-certification-matrix.test.mjs']);
 run('node', ['scripts/client-certification-matrix.mjs', '--check']);
 run('node', ['scripts/launch-decision.test.mjs']);
+// WP9.1 — the release-evidence manifest builder's own invariants (dirty/red/certification
+// legs, tamper/omission/duplicate) were previously orphaned: nothing ran this file.
+run('node', ['scripts/release-evidence.test.mjs']);
 // F07: this writes the receipt even when a frozen quality gate is red, then fails the release.
 pnpm(['release:evidence']);
 pnpm(['publish:dry-run']);
@@ -63,6 +66,11 @@ run('node', ['packages/cli/dist/cli.js', 'index', '.'], {
 pnpm(['installer:test']);
 pnpm(['installer:build']);
 pnpm(['installer:smoke']);
+// WP7.6 — the uninstall-with-memory leg must be part of the release gate, not only the beta
+// workflow: it is the one leg proving a seeded memory store survives client-removal / uninstall /
+// reinstall byte-identically. It reuses the installer:build output above and adds a few minutes
+// (a third full install), which is the intended cost of pinning the persistence row.
+pnpm(['installer:smoke-userdir']);
 run(
   'node',
   [

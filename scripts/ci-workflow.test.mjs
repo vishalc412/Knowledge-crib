@@ -85,6 +85,23 @@ assert.match(
   /verify:browser/,
   'release CI must run the browser acceptance suite against the real isolated backend',
 );
+// WP9.4 — logs-on-failed-jobs: BOTH CI jobs (release gate + verify matrix) must upload their
+// failure diagnostics even when a step fails. `if: always()` on the upload step is what keeps
+// release-evidence.json and run logs alive past a red gate; without it the artifact step is
+// skipped on exactly the runs where the evidence matters.
+assert.ok(
+  occurrences(releaseWorkflow, /name:\s*Upload failure diagnostics\s*\n\s+if:\s*always\(\)/g) >= 2,
+  'both CI jobs must carry an if: always() failure-diagnostics upload step',
+);
+assert.ok(
+  occurrences(releaseWorkflow, /uses:\s+actions\/upload-artifact@/g) >= 2,
+  'both CI jobs must upload failure diagnostics',
+);
+assert.match(
+  releaseWorkflow,
+  /if-no-files-found:\s*warn/,
+  'CI diagnostics upload must be best-effort (warn, not error, when no files match)',
+);
 
 for (const [name, source] of [
   ['release CI', releaseWorkflow],
@@ -142,6 +159,49 @@ assert.match(
   tagWorkflow,
   /contents:\s*write/,
   'release job must have permission to create a release',
+);
+// WP9.4 — the F07 diagnostic manifest is written before the gate exits 1, so the evidence
+// upload must not be conditioned on the gate passing: strand it on failed runners and a
+// NO-GO launch decision has no evidence to read.
+assert.match(
+  tagWorkflow,
+  /name:\s*Upload release evidence\s*\n\s+if:\s*always\(\)/,
+  'release evidence must upload even when the gate fails (if: always() on the upload step)',
+);
+// WP9.4 — ONE aggregated launch decision: a dedicated job downloads every per-OS evidence
+// artifact and combines them via the aggregation CLI. The `if: !cancelled()` pin matters —
+// the NO-GO path is exactly when the decision must still be printed.
+assert.match(
+  tagWorkflow,
+  /launch-decision:\s*\n\s+name:\s*Aggregate launch decision\s*\n\s+needs:\s*verify/,
+  'release workflow must have a launch-decision job aggregating after the verify matrix',
+);
+assert.match(
+  tagWorkflow,
+  /if:\s+\$\{\{\s*!cancelled\(\)\s*\}\}/,
+  'launch-decision must run even when a verify cell fails (if: !cancelled())',
+);
+assert.match(
+  tagWorkflow,
+  /pattern:\s*knowledge-crib-release-evidence-\*/,
+  'launch-decision must download every per-OS release evidence artifact',
+);
+assert.match(
+  tagWorkflow,
+  /scripts\/launch-decision\.mjs --cells /,
+  'launch-decision must aggregate the per-OS evidence via scripts/launch-decision.mjs --cells',
+);
+// WP9.5 / WP9.3 — a tag is a launch decision: the release gate must demand client runtime
+// certification receipts for every advertised platform cell.
+assert.match(
+  tagWorkflow,
+  /--require-runtime-certification/,
+  'tag release must require client runtime certification before shipping',
+);
+assert.match(
+  tagWorkflow,
+  /--certification-platforms darwin,linux,win32/,
+  'tag release must certify every advertised platform (darwin, linux, win32)',
 );
 
 assert.match(dependabot, /package-ecosystem:\s*"npm"/, 'Dependabot must monitor npm dependencies');
