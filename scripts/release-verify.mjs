@@ -46,6 +46,10 @@ pnpm(['soul-refresh:check']);
 pnpm(['onboarding:check']);
 pnpm(['docs-site:check']);
 pnpm(['capabilities:check']);
+run('node', ['scripts/client-certification-evidence.test.mjs']);
+run('node', ['scripts/client-certification-matrix.test.mjs']);
+run('node', ['scripts/client-certification-matrix.mjs', '--check']);
+run('node', ['scripts/launch-decision.test.mjs']);
 // F07: this writes the receipt even when a frozen quality gate is red, then fails the release.
 pnpm(['release:evidence']);
 pnpm(['publish:dry-run']);

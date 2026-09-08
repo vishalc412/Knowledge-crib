@@ -89,6 +89,38 @@ const lexical = buildReleaseEvidence({
 assert.deepEqual(requiredGateFailures(lexical), ['semantic-model']);
 assert.equal(lexical.acceptance.pass, false);
 
+const missingCertification = buildReleaseEvidence({
+  ...base,
+  requireRuntimeCertification: true,
+  certificationReceipts: [],
+});
+assert.equal(missingCertification.certification.required, true);
+assert.equal(missingCertification.certification.missingRuntimeCells.length, 21);
+assert.deepEqual(requiredGateFailures(missingCertification), ['runtime-certification']);
+
+const certifiedCells = [
+  'claude',
+  'copilot',
+  'cursor',
+  'codex',
+  'windsurf',
+  'gemini',
+  'vscode',
+].flatMap((client) =>
+  ['darwin', 'linux', 'win32'].map((os) => ({
+    client: { id: client, version: '1.0.0' },
+    platform: { os, arch: 'fixture', node: 'v22.23.1' },
+    evidence: { runtime: { status: 'pass' } },
+  })),
+);
+const certified = buildReleaseEvidence({
+  ...base,
+  requireRuntimeCertification: true,
+  certificationReceipts: certifiedCells,
+});
+assert.deepEqual(certified.certification.missingRuntimeCells, []);
+assert.equal(certified.acceptance.pass, true);
+
 const dir = mkdtempSync(join(tmpdir(), 'crib-release-evidence-'));
 try {
   const out = join(dir, 'manifest.json');

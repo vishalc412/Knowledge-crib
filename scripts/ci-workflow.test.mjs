@@ -72,6 +72,19 @@ assert.match(
   /cancel-in-progress:\s*true/,
   'release CI must cancel superseded runs',
 );
+// WP6 slice D — the browser acceptance suite runs ONLY on the ubuntu release gate (it
+// downloads real chromium), never on the Windows/matrix legs. Both pins must hold: the
+// binaries are installed and the suite actually runs.
+assert.match(
+  releaseWorkflow,
+  /playwright install --with-deps chromium/,
+  'release CI must install chromium for the browser acceptance suite',
+);
+assert.match(
+  releaseWorkflow,
+  /verify:browser/,
+  'release CI must run the browser acceptance suite against the real isolated backend',
+);
 
 for (const [name, source] of [
   ['release CI', releaseWorkflow],

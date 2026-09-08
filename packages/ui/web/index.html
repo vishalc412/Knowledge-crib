@@ -295,7 +295,7 @@
                 <sc-if value="{{ mem.pendingView.error }}" hint-placeholder-val="{{ true }}"><div style="font-size:11.5px; color:#f87171; padding:6px 2px;">{{ mem.pendingView.error }}</div></sc-if>
                 <sc-if value="{{ mem.pendingView.unwired }}" hint-placeholder-val="{{ true }}"><div style="font-size:11.5px; color: {{ t.sub }}; padding:6px 2px;">No memory stores are wired for this repo.</div></sc-if>
                 <sc-if value="{{ mem.pendingView.notice }}" hint-placeholder-val="{{ true }}">
-                  <div role="status" style="margin:6px 0; padding:8px 10px; border-radius:8px; background:rgba(52,211,153,0.12); border:1px solid rgba(52,211,153,0.4); font-size:11px; color: {{ t.text }};">{{ mem.pendingView.notice }}</div>
+                  <div role="status" data-kc-mem-admit-notice style="margin:6px 0; padding:8px 10px; border-radius:8px; background:rgba(52,211,153,0.12); border:1px solid rgba(52,211,153,0.4); font-size:11px; color: {{ t.text }};">{{ mem.pendingView.notice }}</div>
                 </sc-if>
                 <sc-if value="{{ mem.pendingView.mutationError }}" hint-placeholder-val="{{ true }}">
                   <div style="margin:6px 0; padding:8px 10px; border-radius:8px; background:rgba(248,113,113,0.12); border:1px solid rgba(248,113,113,0.4); font-size:11px; color:#f87171;">
@@ -346,7 +346,7 @@
                       <sc-if value="{{ r.notes }}" hint-placeholder-val="{{ true }}"><div style="font-size:10px; color: {{ t.sub }}; margin-top:3px; word-break:break-word;">{{ r.notes }}</div></sc-if>
                       <div style="display:flex; align-items:center; gap:6px; margin-top:6px; flex-wrap:wrap;">
                         <sc-if value="{{ r.ready }}" hint-placeholder-val="{{ true }}">
-                          <button onClick="{{ r.onAdmit }}" disabled="{{ r.busy }}" style="padding:4px 11px; border-radius:6px; border:1px solid rgba(52,211,153,0.5); background:rgba(52,211,153,0.16); color:#34d399; cursor:pointer; font:600 10.5px 'IBM Plex Sans';">{{ r.admitLabel }}</button>
+                          <button data-kc-mem-admit="{{ r.id }}" onClick="{{ r.onAdmit }}" disabled="{{ r.busy }}" style="padding:4px 11px; border-radius:6px; border:1px solid rgba(52,211,153,0.5); background:rgba(52,211,153,0.16); color:#34d399; cursor:pointer; font:600 10.5px 'IBM Plex Sans';">{{ r.admitLabel }}</button>
                         </sc-if>
                         <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; color: {{ t.sub }}; background: {{ t.panel }}; border-radius:6px; padding:4px 7px; word-break:break-all; min-width:0;">{{ r.command }}</span>
                       </div>
@@ -377,7 +377,7 @@
               <div style="margin-top:8px;">
                 <div data-kc-mem-resume-list tabindex="-1" style="outline:none;">
                   <sc-for list="{{ mem.resumeView.choices }}" as="c" hint-placeholder-count="3">
-                    <button onClick="{{ c.onOpen }}" style="display:block; width:100%; text-align:left; padding:8px 9px; border-radius:8px; border:1px solid {{ t.border }}; background: {{ t.chip }}; margin-bottom:5px; cursor:pointer; font-family:'IBM Plex Sans';">
+                    <button data-kc-mem-choice="{{ c.intakeId }}" onClick="{{ c.onOpen }}" style="display:block; width:100%; text-align:left; padding:8px 9px; border-radius:8px; border:1px solid {{ t.border }}; background: {{ t.chip }}; margin-bottom:5px; cursor:pointer; font-family:'IBM Plex Sans';">
                       <div style="display:flex; align-items:center; gap:6px;">
                         <span style="padding:2px 7px; border-radius:5px; font-size:9.5px; font-weight:700; color:#5b8cff; background:rgba(91,140,255,0.16);">{{ c.status }}</span>
                         <span style="font-size:11px; font-weight:600; color: {{ t.text }}; min-width:0; word-break:break-word;">{{ c.intakeId }}</span>
@@ -388,6 +388,11 @@
                   </sc-for>
                   <sc-if value="{{ mem.resumeView.empty }}" hint-placeholder-val="{{ true }}"><div style="font-size:10.5px; color: {{ t.sub }}; padding:4px 2px;">No saved work to resume.</div></sc-if>
                 </div>
+                <!-- the resume closes the detail on success, so the outcome lands here, at the
+                     list level — the same visible-notice pattern the pending view uses -->
+                <sc-if value="{{ mem.resumeView.notice }}" hint-placeholder-val="{{ true }}">
+                  <div role="status" data-kc-mem-resume-notice style="margin:6px 0; padding:8px 10px; border-radius:8px; background:rgba(52,211,153,0.12); border:1px solid rgba(52,211,153,0.4); font-size:11px; color: {{ t.text }};">{{ mem.resumeView.notice }}</div>
+                </sc-if>
                 <sc-if value="{{ mem.resumeView.intake }}" hint-placeholder-val="{{ true }}">
                   <div style="margin-top:6px; border-top:1px solid {{ t.border }}; padding-top:8px;">
                     <button data-kc-mem-intake-back onClick="{{ mem.resumeView.intake.onBack }}" style="height:26px; padding:0 10px; border-radius:7px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.sub }}; cursor:pointer; font:600 10.5px 'IBM Plex Sans'; margin-bottom:8px;">← Back to the list</button>
@@ -419,7 +424,7 @@
                         <div style="margin-top:8px;">
                           <label style="display:block; font-size:10.5px; color: {{ t.sub }}; margin-bottom:4px;">Next action for the record (leave empty to reuse the saved one)</label>
                           <input data-kc-mem-next onInput="{{ mem.resumeView.intake.onInputNext }}" placeholder="What resuming means, in one line" style="width:100%; box-sizing:border-box; height:28px; padding:0 9px; border-radius:7px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.text }}; font:500 11px 'IBM Plex Sans'; outline:none;">
-                          <button onClick="{{ mem.resumeView.intake.onResume }}" disabled="{{ mem.resumeView.intake.busy }}" style="margin-top:6px; padding:5px 13px; border-radius:7px; border:1px solid rgba(91,140,255,0.5); background:rgba(91,140,255,0.16); color:#5b8cff; cursor:pointer; font:600 11px 'IBM Plex Sans';">{{ mem.resumeView.intake.resumeLabel }}</button>
+                          <button data-kc-mem-resume-btn onClick="{{ mem.resumeView.intake.onResume }}" disabled="{{ mem.resumeView.intake.busy }}" style="margin-top:6px; padding:5px 13px; border-radius:7px; border:1px solid rgba(91,140,255,0.5); background:rgba(91,140,255,0.16); color:#5b8cff; cursor:pointer; font:600 11px 'IBM Plex Sans';">{{ mem.resumeView.intake.resumeLabel }}</button>
                           <div style="font-size:9.5px; color: {{ t.sub }}; margin-top:4px;">Records the resume against checkpoint {{ mem.resumeView.intake.lastCheckpoint }}. Nothing is executed.</div>
                         </div>
                       </sc-if>
@@ -1474,9 +1479,14 @@ class Component extends DCLogic {
    * scheduled exactly one callback and then silently stopped — focus management that only works
    * while the tab is frontmost is focus management that cannot be tested and will not be trusted.
    */
-  keepFocus(selector, attempts){ let tries=0; let landed=0; const tick=()=>{
-      const el=document.querySelector(selector);
-      if(el){ if(document.activeElement===el){ if(++landed>=3) return; } else { el.focus(); landed=0; } }
+  keepFocus(selector, attempts){ let tries=0; let landed=0; let established=false; const tick=()=>{
+      const el=document.querySelector(selector); const active=document.activeElement;
+      if(el){ if(active===el){ established=true; if(++landed>=3) return; }
+      // Once focus has reached the requested view, a different connected element is an operator
+      // choice. Keep repairing render-loss (body/disconnected focus), but never steal keyboard
+      // focus back from a control such as the pending-row Admit action.
+      else if(established&&active&&active!==document.body&&active.isConnected)return;
+      else { el.focus(); established=true; landed=0; } }
       if(++tries<(attempts||150)) setTimeout(tick,20); };
     setTimeout(tick,0); }
   /** Move focus INTO the panel once it renders, so a keyboard user lands on the new content. */
@@ -1547,10 +1557,10 @@ class Component extends DCLogic {
       .catch((err)=>{ if(controller.signal.aborted)return; this.setState({memPendingLoading:false, memPendingError:String(err&&err.message||err)}); });
   }
   /** WP6.4 — open one intake's detail: requirement + checkpoint history + folded brief, no work executed. */
-  async loadIntakeDetail(intakeId){
+  async loadIntakeDetail(intakeId,preserveMutationError){
     if(this._memIntakeAbort)this._memIntakeAbort.abort();
     const controller=new AbortController(); this._memIntakeAbort=controller;
-    this.setState({memIntake:{status:'loading',id:intakeId}, memMutationError:null, memResumeNext:null, memResumeNotice:null});
+    this.setState({memIntake:{status:'loading',id:intakeId}, ...(preserveMutationError?{}:{memMutationError:null}), memResumeNext:null, memResumeNotice:null});
     try{
       const res=await fetch('/memory/intake.json?id='+encodeURIComponent(intakeId),{signal:controller.signal,cache:'no-store'});
       if(!res.ok)throw new Error('intake request failed: HTTP '+res.status);
@@ -1609,7 +1619,7 @@ class Component extends DCLogic {
     }else{
       this.announceMemory('Resume did not complete.');
       this.setState({memResuming:false, memMutationError:{code:r.code,message:r.message}});
-      if(r.status===409)this.loadIntakeDetail(intakeId); // stale — reload so the form re-bases
+      if(r.status===409)this.loadIntakeDetail(intakeId,true); // stale — reload so the form re-bases without hiding why
     }
   }
   // Display vocabulary: the audit trail's raw axis names/values are projected onto the ledger's
@@ -1927,7 +1937,7 @@ class Component extends DCLogic {
             onBack:()=>this.closeIntakeDetail(), onResume:()=>this.resumeIntake(st.id),
             onInputNext:(e)=>this.setState({memResumeNext:e.target.value}) };
         }
-        resumeView={ choices, intake, empty:choices.length===0 };
+        resumeView={ choices, intake, empty:choices.length===0, notice:this.state.memResumeNotice };
       }
       let detail=null;
       if(memDetailState){

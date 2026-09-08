@@ -58,6 +58,16 @@ jobs:
           KCRIB_EMBED_HOME: ${{ runner.temp }}/knowledge-crib-embed
         run: corepack pnpm@9.15.0 release:verify
 
+      # A tag is a launch decision, not merely a build. Runtime certification receipts are
+      # required for every advertised client/OS cell; the command writes the diagnostic manifest
+      # before failing, so an incomplete matrix is actionable rather than silent.
+      - name: Require client runtime certification
+        env:
+          KCRIB_EMBED_HOME: ${{ runner.temp }}/knowledge-crib-embed
+        run: >-
+          node scripts/release-evidence.mjs --require-pass --require-runtime-certification
+          --certification-platforms darwin,linux,win32
+
       - name: Upload release evidence
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:

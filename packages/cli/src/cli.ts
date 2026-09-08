@@ -3814,9 +3814,11 @@ async function cmdExport(args: string[], ctx?: CmdCtx): Promise<number> {
 async function cmdViz(args: string[], ctx?: CmdCtx): Promise<number> {
   const positional: string[] = [];
   let port = 0;
+  let noOpen = false;
   for (let i = 0; i < args.length; i++) {
     const a = args[i]!;
     if (a === '--port') port = Number(args[++i] ?? 0);
+    else if (a === '--no-open') noOpen = true;
     else if (!a.startsWith('-')) positional.push(a);
   }
   const resolved = resolveProjectRoot({
@@ -4220,24 +4222,28 @@ async function cmdViz(args: string[], ctx?: CmdCtx): Promise<number> {
       'warning: stale cluster topology repaired in memory for this session; run `crib reindex` to persist it.\n',
     );
   }
-  // best-effort browser open (macOS/linux/windows); never fatal.
-  const { spawn } = await import('node:child_process');
-  let opener: string;
-  let openerArgs: string[];
-  if (process.platform === 'darwin') {
-    opener = 'open';
-    openerArgs = [url];
-  } else if (process.platform === 'win32') {
-    opener = 'cmd';
-    openerArgs = ['/c', 'start', '', url];
-  } else {
-    opener = 'xdg-open';
-    openerArgs = [url];
-  }
-  try {
-    spawn(opener, openerArgs, { stdio: 'ignore', detached: true }).unref();
-  } catch {
-    // ignore — the URL is printed above.
+  // best-effort browser open (macOS/linux/windows); never fatal. `--no-open` skips it — the
+  // browser-test suite (WP6 slice D) drives the server headlessly, and a spawned OS browser tab
+  // on every `pnpm verify:browser` run is pure noise.
+  if (!noOpen) {
+    const { spawn } = await import('node:child_process');
+    let opener: string;
+    let openerArgs: string[];
+    if (process.platform === 'darwin') {
+      opener = 'open';
+      openerArgs = [url];
+    } else if (process.platform === 'win32') {
+      opener = 'cmd';
+      openerArgs = ['/c', 'start', '', url];
+    } else {
+      opener = 'xdg-open';
+      openerArgs = [url];
+    }
+    try {
+      spawn(opener, openerArgs, { stdio: 'ignore', detached: true }).unref();
+    } catch {
+      // ignore — the URL is printed above.
+    }
   }
   await new Promise<void>(() => {
     // run until interrupted

@@ -56,6 +56,16 @@ jobs:
           KCRIB_EMBED_HOME: ${{ runner.temp }}/knowledge-crib-embed
         run: corepack pnpm@9.15.0 release:verify
 
+      # WP6 slice D — the browser acceptance suite drives the real `crib viz` server
+      # against a real isolated backend, so it needs real chromium. It is NOT part of
+      # release:verify (the verify matrix below stays network-free and Windows-safe);
+      # this is the one leg that downloads browser binaries.
+      - name: Install browser binaries
+        run: corepack pnpm@9.15.0 --filter knowledge-crib exec playwright install --with-deps chromium
+
+      - name: Run browser acceptance suite
+        run: corepack pnpm@9.15.0 verify:browser
+
   # Cross-platform / cross-Node coverage matrix: the same release:verify gate run on the other two
   # OSes and both supported Node lines (22 LTS + 24), so a darwin/windows-only or Node 24-only
   # regression in the node:sqlite backend, the O_EXCL lock, or path handling surfaces before users

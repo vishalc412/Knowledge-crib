@@ -19,6 +19,10 @@ import {
 import { cpus, totalmem } from 'node:os';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import {
+  loadClientCertificationReceipts,
+  missingRuntimeCertificationCells,
+} from './client-certification-evidence.mjs';
 
 export const RELEASE_EVIDENCE_FORMAT_VERSION = 1;
 
@@ -28,10 +32,16 @@ const sha256 = (value) => `sha256:${createHash('sha256').update(value).digest('h
 export function buildReleaseEvidence(input) {
   const modelReady = input.embedder?.state === 'installed';
   const gateFailures = (input.launchGate?.gates ?? []).filter((g) => !g.pass).map((g) => g.id);
+  const requiredRuntimeCertification = input.requireRuntimeCertification === true;
+  const certificationReceipts = input.certificationReceipts ?? [];
+  const missingRuntimeCells = requiredRuntimeCertification
+    ? missingRuntimeCertificationCells(certificationReceipts, input.certificationPlatforms)
+    : [];
   const failures = [
     ...(input.git?.dirty ? ['clean-commit'] : []),
     ...(!modelReady ? ['semantic-model'] : []),
     ...gateFailures,
+    ...(missingRuntimeCells.length > 0 ? ['runtime-certification'] : []),
   ];
   return {
     format: 'knowledge-crib-release-evidence',
@@ -66,6 +76,15 @@ export function buildReleaseEvidence(input) {
             },
     },
     gates: input.launchGate?.gates ?? [],
+    certification: {
+      required: requiredRuntimeCertification,
+      receipts: certificationReceipts.map((receipt) => ({
+        client: receipt.client,
+        platform: receipt.platform,
+        product: receipt.product,
+      })),
+      missingRuntimeCells,
+    },
     acceptance: {
       pass: failures.length === 0 && input.launchGate?.pass === true,
       requiredFailures: failures,
@@ -147,6 +166,28 @@ function parseClients(argv) {
   return clients;
 }
 
+function certificationOptions(argv) {
+  const receiptIndex = argv.indexOf('--certification-receipts');
+  const receiptDirectory = resolve(
+    receiptIndex >= 0
+      ? (argv[receiptIndex + 1] ?? 'docs/launch/client-certification-receipts')
+      : 'docs/launch/client-certification-receipts',
+  );
+  const platformIndex = argv.indexOf('--certification-platforms');
+  const certificationPlatforms =
+    platformIndex >= 0
+      ? (argv[platformIndex + 1] ?? '')
+          .split(',')
+          .map((value) => value.trim())
+          .filter(Boolean)
+      : undefined;
+  return {
+    requireRuntimeCertification: argv.includes('--require-runtime-certification'),
+    certificationReceipts: loadClientCertificationReceipts(receiptDirectory),
+    certificationPlatforms,
+  };
+}
+
 async function collectEmbedder() {
   const { embedHomeDir, loadInstalledEmbedder, verifyInstalledEmbed } = await import(
     '../packages/core/dist/index.js'
@@ -185,6 +226,7 @@ export async function collectReleaseEvidence(argv = process.argv.slice(2)) {
       : { strategy: 'lexical-only' },
   );
   const { instance: _instance, ...embedReceipt } = embedder;
+  const certification = certificationOptions(argv);
   return buildReleaseEvidence({
     generatedAt: new Date().toISOString(),
     git: collectGit(),
@@ -199,6 +241,7 @@ export async function collectReleaseEvidence(argv = process.argv.slice(2)) {
     schemas: collectSchemas(),
     clients: parseClients(argv),
     embedder: embedReceipt,
+    ...certification,
     launchGate,
     workload: {
       name: 'memory-launch-corpus',

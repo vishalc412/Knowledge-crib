@@ -59,28 +59,30 @@ and not the ranking.
 
 ## Clients
 
-`crib setup` (and `crib init`) wires **every** client below — the protocol block states that crib is
-mandatory for the repository, so a client that merely failed to be detected is the wrong one to leave
-exempt. `crib init --ide <id>` narrows it to one, and `crib init --ide detected` restores the
-previous behaviour of wiring only the clients this machine appears to run.
+`crib setup` (and `crib init`) wires every supported client. The following support state is generated
+from strict certification receipts; configuration or protocol probes cannot be promoted to a runtime
+claim by editing this document.
 
-| Client | Instruction file | MCP config | Lifecycle hooks | Current evidence |
-|---|---|---|---|---|
-| Claude Code | `CLAUDE.md` | `.mcp.json` | **writer** | runtime verified |
-| GitHub Copilot | `.github/copilot-instructions.md` | `.vscode/mcp.json` | none | protocol verified with Copilot-shaped client |
-| Cursor | `.cursor/rules/crib.mdc` | `.cursor/mcp.json` | none | configuration verified |
-| Codex | `AGENTS.md` | `.codex/config.toml` | none | configuration verified |
-| Windsurf | `.windsurfrules` | global config | none | configuration verified |
-| Gemini | `GEMINI.md` | `.gemini/settings.json` | none | configuration verified |
-| VS Code (non-Copilot) | — (Copilot's file serves it) | `.vscode/mcp.json` | none | configuration verified |
+<!-- client-certification:generated:start -->
+## Client certification evidence
 
-Only Claude Code exposes a lifecycle-hook surface. Session resume does not depend on it: the MCP
-server records a principal-scoped anchor for every client. That makes the shared protocol available
-to hookless clients; it does not substitute for driving each vendor runtime through certification.
+Generated from validated receipts. A client is runtime verified only when a vendor-client receipt proves record → interruption/restart → authorized resume on the listed platform.
 
-**Verified end to end:** Claude Code and a Copilot-shaped MCP client. The other five are wired by
-the same generated configuration and the same protocol, but have not each been driven through a
-full remember → timeout → resume cycle. Treat them as configured, not proven.
+| Client | Highest verified evidence | Strongest certified cell |
+|---|---|---|
+| Claude Code | not certified | — |
+| GitHub Copilot | not certified | — |
+| Cursor | not certified | — |
+| Codex | not certified | — |
+| Windsurf | not certified | — |
+| Gemini | not certified | — |
+| VS Code | not certified | — |
+
+<!-- client-certification:generated:end -->
+
+The receipts needed for a launch decision cover Claude Code, Copilot, Cursor, Codex, Windsurf,
+Gemini, and VS Code on every advertised platform. A Copilot-shaped test client is protocol evidence
+only; it is never a vendor-runtime certification.
 
 ## Known limits — read this before adopting
 
