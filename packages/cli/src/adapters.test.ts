@@ -297,6 +297,28 @@ describe('installInstructions — non-destructive writes', () => {
     expect(out.indexOf('gitnexus:end')).toBeLessThan(out.indexOf(ADAPTER_BEGIN));
   });
 
+  it('reports the orphan begin marker location and writes nothing (WP2.4)', () => {
+    // A truncated block: begin marker present, end marker missing. The splice/remove lane has always
+    // refused (content unchanged) — but silently: `written:false` with no note was indistinguishable
+    // from "already up to date". WP2.4 requires the refusal to LOCATE the defect.
+    const p = join(repo, 'CLAUDE.md');
+    writeFileSync(p, `user top\n${ADAPTER_BEGIN}\ntruncated tail with no end marker\n`);
+    const before = readFileSync(p, 'utf8');
+    const installed = installInstructions(repo, { client: 'claude', scope: 'project' }).find(
+      (r) => r.path === p,
+    )!;
+    expect(installed.written).toBe(false);
+    expect(installed.note).toMatch(/begin marker at line 2/);
+    expect(installed.note).toMatch(/no matching end marker/);
+    expect(readFileSync(p, 'utf8')).toBe(before);
+    const removed = removeInstructions(repo, { client: 'claude', scope: 'project' }).find(
+      (r) => r.path === p,
+    )!;
+    expect(removed.written).toBe(false);
+    expect(removed.note).toMatch(/begin marker at line 2/);
+    expect(readFileSync(p, 'utf8')).toBe(before);
+  });
+
   it('writes Cursor frontmatter on a fresh .mdc and preserves user frontmatter on refresh', () => {
     installInstructions(repo, { client: 'cursor', scope: 'project' });
     const mdc = join(repo, '.cursor', 'rules', 'crib.mdc');
@@ -648,6 +670,56 @@ describe('capture-hook writer (G2.1) — Claude settings.json', () => {
     result = installCaptureHooks(repo, { client: 'claude', scope: 'project' });
     expect(result[0]!.written).toBe(false);
     expect(result[0]!.note).toMatch(/unparseable/);
+  });
+
+  // WP2.4 — a malformed crib-owned entry must be LOCATED (bucket + index), never overwritten. The
+  // refusal before this fix named only the file; the user had to hunt the entry themselves.
+  it('locates a malformed crib marker entry: names hooks.<Event>[<index>], file byte-unchanged', () => {
+    // A crib-owned entry whose command carries the marker but no parseable --event: the writer can
+    // neither refresh nor strip it, so install AND remove must refuse — naming exactly where it is.
+    writeFileSync(
+      settingsPath(),
+      `${JSON.stringify(
+        {
+          hooks: {
+            Stop: [
+              { hooks: [{ type: 'command', command: 'user-own-hook' }] },
+              { hooks: [{ type: 'command', command: `${CAPTURE_HOOK_COMMAND_MARKER} --event` }] },
+            ],
+          },
+        },
+        null,
+        2,
+      )}\n`,
+    );
+    const before = readFileSync(settingsPath(), 'utf8');
+    const installed = installCaptureHooks(repo, { client: 'claude', scope: 'project' });
+    expect(installed[0]!.written).toBe(false);
+    expect(installed[0]!.note).toMatch(/hooks\.Stop\[1\]/);
+    expect(installed[0]!.note).toMatch(/unparseable/);
+    expect(readFileSync(settingsPath(), 'utf8')).toBe(before);
+    const removed = removeCaptureHooks(repo, { client: 'claude', scope: 'project' });
+    expect(removed[0]!.written).toBe(false);
+    expect(removed[0]!.note).toMatch(/hooks\.Stop\[1\]/);
+    expect(readFileSync(settingsPath(), 'utf8')).toBe(before);
+  });
+
+  it('detects a malformed crib marker in an event bucket crib does not manage', () => {
+    // The writer never touches `hooks.UserPromptSubmit`, but a crib marker there is still a crib-owned
+    // entry — and reserializing the file would reformat its bytes. Detect it anywhere in the hooks tree.
+    writeFileSync(
+      settingsPath(),
+      `${JSON.stringify(
+        { hooks: { UserPromptSubmit: [{ command: CAPTURE_HOOK_COMMAND_MARKER }] } },
+        null,
+        2,
+      )}\n`,
+    );
+    const before = readFileSync(settingsPath(), 'utf8');
+    const result = installCaptureHooks(repo, { client: 'claude', scope: 'project' });
+    expect(result[0]!.written).toBe(false);
+    expect(result[0]!.note).toMatch(/hooks\.UserPromptSubmit\[0\]/);
+    expect(readFileSync(settingsPath(), 'utf8')).toBe(before);
   });
 
   it('remove strips only the crib-owned entries and drops the empty hooks key', () => {

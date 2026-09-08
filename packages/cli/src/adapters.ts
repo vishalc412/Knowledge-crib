@@ -549,6 +549,17 @@ export function removeAdapterBlock(content: string): string {
   return `${before}${after.replace(/^\n/, '')}`;
 }
 
+/** Line (1-based) of the begin marker when it has no matching end marker — the location of a truncated
+ *  managed block (WP2.4) — or `null` when the content has no orphan begin marker. Used by install and
+ *  remove to make their existing silent refusal LOUD: the file is left byte-identical either way, but the
+ *  note now says where the defect is instead of reading as "already up to date". */
+export function orphanBeginMarkerLine(content: string): number | null {
+  const beginIdx = content.indexOf(ADAPTER_BEGIN);
+  if (beginIdx === -1) return null;
+  if (content.indexOf(ADAPTER_END, beginIdx) !== -1) return null;
+  return content.slice(0, beginIdx).split('\n').length;
+}
+
 /** True if `content` is empty or ONLY YAML frontmatter (no user body). CRLF-tolerant (`\r?\n`) so a
  *  Windows-edited frontmatter-only Cursor rule is still recognized. Only meaningful for `.mdc` targets
  *  (crib owns the frontmatter it writes there); see `removeInstructions` for the format gate. */
@@ -596,6 +607,19 @@ export function installInstructions(
     }
     for (const target of targets) {
       const existing = readOrEmpty(target.path);
+      const orphanLine = orphanBeginMarkerLine(existing);
+      if (orphanLine !== null) {
+        // WP2.4: spliceAdapterBlock refuses an orphan begin marker by returning the content
+        // unchanged — surface WHERE, so `written:false` never reads as "already up to date".
+        out.push({
+          client: id,
+          scope,
+          path: target.path,
+          written: false,
+          note: `refusing to write ${target.path}: begin marker at line ${orphanLine} has no matching end marker — fix or remove it first`,
+        });
+        continue;
+      }
       let next: string;
       if (target.format === 'mdc') {
         // Ensure the Cursor frontmatter is present (write it on a fresh file; preserve an existing
@@ -675,6 +699,19 @@ export function removeInstructions(
         continue;
       }
       const existing = readOrEmpty(target.path);
+      const orphanLine = orphanBeginMarkerLine(existing);
+      if (orphanLine !== null) {
+        // WP2.4: same located refusal on removal — removeAdapterBlock returns the content unchanged
+        // for an orphan begin marker, so say so instead of reporting a silent no-op.
+        out.push({
+          client: id,
+          scope,
+          path: target.path,
+          written: false,
+          note: `refusing to write ${target.path}: begin marker at line ${orphanLine} has no matching end marker — fix or remove it first`,
+        });
+        continue;
+      }
       const next = removeAdapterBlock(existing);
       const written = next !== existing;
       if (written) {
@@ -839,7 +876,11 @@ function parseJsonOrEmpty(path: string): Record<string, unknown> {
 }
 
 /** The orphan-marker refusal in JSON form: a reason string when the settings file cannot be safely
- *  rewritten (see the section comment), or `null` when the file is absent or safely interpretable. */
+ *  rewritten (see the section comment), or `null` when the file is absent or safely interpretable.
+ *  WP2.4: every refusal LOCATES the defect — a malformed crib marker names its `hooks.<Event>[<index>]`
+ *  — and the marker scan covers EVERY event bucket, not just the ones crib manages: a crib-owned
+ *  entry crib cannot parse anywhere in the hooks tree is a corrupted install the writer must not
+ *  paper over (reserializing would reformat the entry's bytes even though its value survives). */
 function hooksRefusal(path: string, events: readonly LifecycleEvent[]): string | null {
   if (!existsSync(path)) return null;
   let obj: unknown;
@@ -854,13 +895,17 @@ function hooksRefusal(path: string, events: readonly LifecycleEvent[]): string |
   if (hooksRoot === undefined) return null;
   if (typeof hooksRoot !== 'object' || hooksRoot === null || Array.isArray(hooksRoot))
     return `refusing to write ${path}: 'hooks' is not a JSON object`;
-  for (const { key } of hookEventPairs(events)) {
-    const bucket = (hooksRoot as Record<string, unknown>)[key];
-    if (bucket === undefined) continue;
-    if (!Array.isArray(bucket)) return `refusing to write ${path}: 'hooks.${key}' is not an array`;
-    for (const entry of bucket) {
-      if (isCribBucketEntry(entry) && eventOfCribHook(entry) === null)
-        return `refusing to write ${path}: a '${CAPTURE_HOOK_COMMAND_MARKER}' entry is present but unparseable — fix or remove it first`;
+  for (const [key, bucket] of Object.entries(hooksRoot as Record<string, unknown>)) {
+    if (!Array.isArray(bucket)) {
+      // A non-array bucket only blocks the write when crib manages it — a foreign key with an odd
+      // shape is the user's own configuration, untouched by this writer.
+      if (hookEventPairs(events).some((p) => p.key === key))
+        return `refusing to write ${path}: 'hooks.${key}' is not an array`;
+      continue;
+    }
+    for (let i = 0; i < bucket.length; i++) {
+      if (isCribBucketEntry(bucket[i]) && eventOfCribHook(bucket[i]) === null)
+        return `refusing to write ${path}: hooks.${key}[${i}] is an unparseable '${CAPTURE_HOOK_COMMAND_MARKER}' entry — fix or remove it first`;
     }
   }
   return null;

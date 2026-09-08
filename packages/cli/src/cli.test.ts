@@ -3,6 +3,7 @@ import {
   existsSync,
   mkdirSync,
   mkdtempSync,
+  readdirSync,
   readFileSync,
   realpathSync,
   rmSync,
@@ -1130,6 +1131,91 @@ describe('crib adapters (W8) — CLI dispatch', () => {
     const r = runCliResult(['adapters', 'install', '--client', 'nope']);
     expect(r.status).not.toBe(0);
     expect(r.stderr).toMatch(/unknown --client/);
+  });
+
+  it('repeated full setup is idempotent — no duplicate managed entries (WP2.3 acceptance)', () => {
+    // The WP2 acceptance sentence as one e2e against the temp repo: run the WHOLE onboarding
+    // surface (instruction files + capture hooks + MCP wiring), then run it AGAIN, and require
+    // the second pass to be a byte-for-byte no-op. A duplicated managed block / hook entry /
+    // server table would change bytes even if every file stayed parseable — byte-identity is the
+    // strongest no-duplicate proof, so marker counting only guards the one way bytes could stay
+    // identical while a block still duplicated (impossible by construction, but cheap to pin).
+    const runSetupPass = (): string =>
+      [
+        runCli(['adapters', 'install', '--client', 'all']),
+        runCli(['adapters', 'hooks', 'install']),
+        runCli(['mcp', 'install', '--ide', 'all', '--bin', 'crib']),
+      ].join('\n');
+
+    runSetupPass();
+
+    const collect = (): Map<string, string> => {
+      const files = new Map<string, string>();
+      const walk = (dir: string): void => {
+        for (const e of readdirSync(dir, { withFileTypes: true })) {
+          const p = join(dir, e.name);
+          if (e.isDirectory()) walk(p);
+          else files.set(p, readFileSync(p, 'utf8'));
+        }
+      };
+      walk(repo);
+      return files;
+    };
+    const before = collect();
+
+    const secondPass = runSetupPass();
+
+    // The second pass must report everything as already-managed, not freshly written.
+    expect(secondPass).toContain('claude: up to date');
+    expect(secondPass).toContain('hooks up to date');
+    expect(secondPass).toContain('already up to date');
+
+    // Byte-identity: every file the first pass produced is unchanged, and nothing new appeared.
+    const after = collect();
+    const drifted = [...before.keys()].filter((p) => after.get(p) !== before.get(p));
+    expect(drifted).toEqual([]);
+    expect([...after.keys()].filter((p) => !before.has(p))).toEqual([]);
+
+    // Exactly one managed instruction block per instruction file.
+    for (const p of before.keys()) {
+      if (p.endsWith('.md') || p.endsWith('.mdc') || p.endsWith('.windsurfrules')) {
+        const bytes = before.get(p) ?? '';
+        if (bytes.includes('<!-- crib:start -->')) {
+          expect(bytes.split('<!-- crib:start -->').length - 1).toBe(1);
+        }
+      }
+    }
+    // Exactly one crib hook entry per declared event bucket, no duplicates in settings.json.
+    // The NESTED shape Claude Code actually accepts: each bucket is an array of matcher groups,
+    // each group carrying its own hooks array — flatten before counting.
+    type HookGroup = { hooks?: Array<{ command?: string }> };
+    const settings = JSON.parse(readFileSync(join(repo, '.claude', 'settings.json'), 'utf8')) as {
+      hooks?: Record<string, HookGroup[]>;
+    };
+    expect(Object.keys(settings.hooks ?? {}).length).toBeGreaterThan(0);
+    for (const [event, groups] of Object.entries(settings.hooks ?? {})) {
+      const cribEntries = groups.flatMap((g) => g.hooks ?? []).filter((e) =>
+        (e.command ?? '').startsWith('crib memory capture-hook'),
+      );
+      expect(cribEntries.length).toBe(1);
+      expect(event).toMatch(/SessionStart|SessionEnd|PostToolUse|Stop|PreToolUse/);
+    }
+    // Exactly one knowledge-crib server entry per JSON MCP config.
+    const jsonMcpConfigs = [
+      join(repo, '.mcp.json'),
+      join(repo, '.cursor', 'mcp.json'),
+      join(repo, '.vscode', 'mcp.json'),
+      join(repo, '.gemini', 'settings.json'),
+    ];
+    for (const p of jsonMcpConfigs) {
+      if (!existsSync(p)) continue;
+      const root = JSON.parse(readFileSync(p, 'utf8')) as Record<string, unknown>;
+      const servers = (root.mcpServers ?? root.servers) as Record<string, unknown>;
+      expect(Object.keys(servers).filter((k) => k === 'knowledge-crib').length).toBe(1);
+    }
+    // And the codex TOML block appears once.
+    const codexToml = readFileSync(join(repo, '.codex', 'config.toml'), 'utf8');
+    expect(codexToml.split('[mcp_servers.knowledge-crib]').length - 1).toBe(1);
   });
 });
 
