@@ -129,12 +129,31 @@ echo "Knowledge-crib installed."
 #   KCRIB_NO_EMBED=1  set up everything except the on-device model download
 # The setup step is reported but never fatal: the binary is installed either way, and a failed
 # setup is re-runnable with one command.
+#
+# crib is invoked through its ABSOLUTE entry point resolved from the npm prefix that was just
+# installed into — never a bare \`crib\` PATH lookup. A bare lookup depends on the prefix's bin
+# dir already being on the CURRENT shell's PATH: false whenever the operator set a custom npm
+# prefix (npm_config_prefix), and false in any installer smoke that installs into an isolated
+# prefix on purpose. The old bare form failed there SILENTLY (the || echo swallowed it), so a
+# "successful" install had not actually set anything up.
 if [ "\${KCRIB_NO_SETUP:-}" = "1" ]; then
   echo "KCRIB_NO_SETUP=1 - skipping repository setup. Run 'crib setup' in your project when ready."
 elif command -v git >/dev/null 2>&1 && git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   echo "Setting up $(pwd): index, git hooks, MCP wiring for every client, the agent protocol,"
   echo "the on-device semantic model, and the memory stores."
-  crib setup . || echo "crib setup did not complete - re-run it with 'crib setup'." >&2
+  NPM_PREFIX=$(npm prefix -g 2>/dev/null | head -n 1 || true)
+  CRIB_ENTRY="$NPM_PREFIX/lib/node_modules/knowledge-crib/dist/cli.js"
+  if [ -n "$NPM_PREFIX" ] && [ -f "$CRIB_ENTRY" ]; then
+    # Make crib usable in THIS shell too (a new shell resolves it via the user PATH).
+    case ":$PATH:" in
+      *":$NPM_PREFIX/bin:"*) ;;
+      *) PATH="$NPM_PREFIX/bin:$PATH"; export PATH ;;
+    esac
+    node "$CRIB_ENTRY" setup . || echo "crib setup did not complete - re-run it with 'crib setup'." >&2
+  else
+    echo "Could not resolve the installed crib entry point (prefix: '$NPM_PREFIX')." >&2
+    echo "Run 'crib setup' from your project to finish setup." >&2
+  fi
 else
   echo "Not inside a git repository - run 'crib setup' from your project to finish."
 fi
@@ -229,15 +248,30 @@ try {
   # commands. Runs AFTER Pop-Location, so it targets the directory the installer was launched from
   # and never the bundle directory. Opt out with KCRIB_NO_SETUP=1 (binary only) or KCRIB_NO_EMBED=1
   # (everything except the model download). Never fatal - the binary is installed either way.
+  #
+  # crib runs through its ABSOLUTE entry point resolved from the npm prefix npm just installed
+  # into - never a bare \`crib\` PATH lookup. The bare form failed on any host where the prefix's
+  # bin dir is not on the CURRENT process PATH: custom npm prefixes (npm_config_prefix), and
+  # every installer smoke that installs into an isolated prefix on purpose. This is the exact
+  # windows-latest installer failure - \`The term 'crib' is not recognized\` at the setup step.
   if ($env:KCRIB_NO_SETUP -eq "1") {
     Write-Host "KCRIB_NO_SETUP=1 - skipping repository setup. Run 'crib setup' in your project when ready."
   } elseif ((Get-Command git -ErrorAction SilentlyContinue) -and
             (& git rev-parse --is-inside-work-tree 2>$null) -eq "true") {
     Write-Host "Setting up $((Get-Location).Path): index, git hooks, MCP wiring for every client,"
     Write-Host "the agent protocol, the on-device semantic model, and the memory stores."
-    & crib setup .
-    if ($LASTEXITCODE -ne 0) {
-      Write-Warning "crib setup did not complete - re-run it with 'crib setup'."
+    $NpmPrefix = (& npm prefix -g | Select-Object -First 1)
+    if ([string]::IsNullOrWhiteSpace($NpmPrefix)) { $NpmPrefix = Join-Path $env:APPDATA "npm" }
+    $CribEntry = Join-Path $NpmPrefix "node_modules\\knowledge-crib\\dist\\cli.js"
+    if (Test-Path -LiteralPath $CribEntry) {
+      # Immediate availability in THIS process (a new shell resolves crib via the user PATH).
+      if (-not ($env:Path -split ';' -contains $NpmPrefix)) { $env:Path = "$NpmPrefix;$env:Path" }
+      & node $CribEntry setup .
+      if ($LASTEXITCODE -ne 0) {
+        Write-Warning "crib setup did not complete - re-run it with 'crib setup'."
+      }
+    } else {
+      Write-Warning "Could not resolve the installed crib entry point under $NpmPrefix - run 'crib setup' from your project."
     }
   } else {
     Write-Host "Not inside a git repository - run 'crib setup' from your project to finish."

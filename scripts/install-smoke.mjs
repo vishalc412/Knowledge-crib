@@ -195,6 +195,145 @@ export function smokeInstall({ outRoot = join(repoRoot, 'dist', 'installers') } 
   }
 }
 
+/**
+ * WP1.6 — the spaces/non-ASCII user-dir scenario. `Users/jöhn doe` exercises BOTH failure families at
+ * once: the space breaks unquoted shell/argv path handling, and the non-ASCII ö breaks any
+ * byte-oriented path assumption (and on Windows would land in a different code page under cmd.exe).
+ * Everything user-scoped hangs off that home: the npm global prefix, the crib project, and the client
+ * MCP config, so the whole install → configure → reinstall → uninstall cycle runs under it.
+ */
+export function userDirScenarioPaths(root) {
+  const home = join(root, 'Users', 'jöhn doe');
+  return {
+    home,
+    prefix: join(home, 'npm-global'),
+    project: join(home, 'Projects', 'smoke project'),
+  };
+}
+
+/** Env under which the installer + installed CLI must both work for a relocated user dir. */
+export function userDirEnv(paths) {
+  // HOME (darwin/linux) and USERPROFILE (win32) are what Node's os.homedir() reads — crib resolves
+  // its user-scoped paths through homedir(), so pointing both at the scenario home relocates every
+  // user-scoped write the CLI makes. npm picks the prefix up from npm_config_prefix.
+  return {
+    ...process.env,
+    HOME: paths.home,
+    USERPROFILE: paths.home,
+    npm_config_prefix: paths.prefix,
+  };
+}
+
+/**
+ * WP1.6 smoke: install → verify → index → wire client config → REINSTALL (upgrade) with the client
+ * config preserved → UNINSTALL with the client config STILL preserved. Every path in the flow sits
+ * under a `Users/jöhn doe`-style home (space + non-ASCII) on the platform's native separator.
+ */
+export function smokeUserDirInstall({ outRoot = join(repoRoot, 'dist', 'installers') } = {}) {
+  const bundle = findInstallerBundle(outRoot);
+  const manifest = JSON.parse(readFileSync(bundle.manifestPath, 'utf8'));
+
+  const root = mkdtempSync(join(tmpdir(), 'knowledge-crib-userdir-'));
+  const paths = userDirScenarioPaths(root);
+  const env = userDirEnv(paths);
+  try {
+    mkdirSync(paths.home, { recursive: true });
+
+    // install — the bundle scripts must survive a HOME/prefix containing a space and non-ASCII.
+    const installer = installerCommand(bundle.bundleDir);
+    run(installer.command, installer.args, { env });
+
+    const bins = expectedBinPaths(paths.prefix);
+    if (!existsSync(bins.primary)) {
+      throw new Error(`Installer did not place the bin at ${bins.primary}`);
+    }
+    if (!existsSync(bins.direct)) {
+      throw new Error(`Installed package did not contain its CLI entry point at ${bins.direct}`);
+    }
+
+    // The installed bin itself is invoked through its spaced path (installedBinCommand quotes it
+    // correctly per platform — see its own doc comment for the cmd.exe escaping history).
+    const invocation = installedBinCommand(bins.primary);
+    run(invocation.command, invocation.args, { env });
+
+    // index + status a project that ALSO lives under the spaced home.
+    mkdirSync(join(paths.project, 'src'), { recursive: true });
+    writeFileSync(
+      join(paths.project, 'package.json'),
+      `${JSON.stringify({ name: 'user-dir-smoke', private: true, type: 'module' }, null, 2)}\n`,
+    );
+    writeFileSync(
+      join(paths.project, 'src', 'math.ts'),
+      'export function triple(value: number): number {\n  return value * 3;\n}\n',
+    );
+    run(process.execPath, [bins.direct, 'index', paths.project], { env });
+    validateSmokeStatus(
+      JSON.parse(runCapture(process.execPath, [bins.direct, 'status', paths.project], { env })),
+    );
+
+    // Wire a client MCP config: the embedded command must carry the SPACED bin path verbatim.
+    // project scope is cmdMcp's default (`--global` switches it); --bin pins the embedded command
+    // to the installed bin so the smoke does not depend on `which crib` finding the temp prefix.
+    run(
+      process.execPath,
+      [bins.direct, 'mcp', 'install', '--ide', 'claude', '--bin', bins.primary],
+      {
+        cwd: paths.project,
+        env,
+      },
+    );
+    const mcpConfigPath = join(paths.project, '.mcp.json');
+    if (!existsSync(mcpConfigPath)) {
+      throw new Error(`crib mcp install did not write ${mcpConfigPath}`);
+    }
+    const entry = JSON.parse(readFileSync(mcpConfigPath, 'utf8')).mcpServers?.['knowledge-crib'];
+    if (!entry) {
+      throw new Error(`${mcpConfigPath} has no knowledge-crib server entry`);
+    }
+    if (entry.command !== bins.primary) {
+      throw new Error(
+        `client config command does not carry the spaced bin path: expected ${bins.primary}, got ${entry.command}`,
+      );
+    }
+    const configBeforeReinstall = readFileSync(mcpConfigPath, 'utf8');
+
+    // reinstall (the same flow an upgrade takes): the install must be idempotent AND must not
+    // clobber the client config the earlier install wrote.
+    run(installer.command, installer.args, { env });
+    if (!existsSync(bins.primary)) {
+      throw new Error('Reinstall did not leave the bin in place');
+    }
+    run(invocation.command, invocation.args, { env });
+    if (readFileSync(mcpConfigPath, 'utf8') !== configBeforeReinstall) {
+      throw new Error(
+        'Reinstall modified the client MCP config — PATH + client config must be preserved',
+      );
+    }
+
+    // uninstall: the package leaves, the client config the user already wired STAYS.
+    // manifest.name is the npm package name ("knowledge-crib"); manifest.package is the tarball
+    // filename, which npm rm would not accept.
+    run('npm', ['rm', '-g', '--prefix', paths.prefix, manifest.name], { env });
+    if (existsSync(bins.primary) || existsSync(bins.direct)) {
+      throw new Error(`Uninstall left crib files behind under ${paths.prefix}`);
+    }
+    if (!existsSync(mcpConfigPath)) {
+      throw new Error('Uninstall removed the client MCP config — it must be preserved');
+    }
+    if (readFileSync(mcpConfigPath, 'utf8') !== configBeforeReinstall) {
+      throw new Error('Uninstall modified the client MCP config — it must be preserved');
+    }
+
+    process.stdout.write(
+      `user-dir smoke ok - install/reinstall/uninstall under ${paths.home}; client config preserved\n`,
+    );
+    return { home: paths.home, prefix: paths.prefix };
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+}
+
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  smokeInstall();
+  if (process.argv.includes('--user-dir')) smokeUserDirInstall();
+  else smokeInstall();
 }

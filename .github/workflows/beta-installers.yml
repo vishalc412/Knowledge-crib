@@ -55,6 +55,9 @@ jobs:
       - name: Smoke install beta bundle
         run: corepack pnpm@9.15.0 installer:smoke
 
+      - name: Smoke install under spaces/non-ASCII user dir (WP1.6)
+        run: corepack pnpm@9.15.0 installer:smoke-userdir
+
       - name: Run generated macOS installer
         if: runner.os == 'macOS'
         shell: bash

@@ -7,6 +7,8 @@ import {
   installedBinCommand,
   installerCommand,
   npmInstallArgs,
+  userDirEnv,
+  userDirScenarioPaths,
   validateSmokeStatus,
 } from './install-smoke.mjs';
 
@@ -94,5 +96,24 @@ assert.throws(
   () => validateSmokeStatus({ indexed: true, stats: { nodes: 0 } }),
   /did not extract any nodes/,
 );
+
+// WP1.6 — every path in the scenario must carry BOTH a space and a non-ASCII byte, so the smoke
+// can never silently degrade back to an ASCII-safe temp dir.
+const scenario = userDirScenarioPaths(join(path.sep === '\\' ? 'C:' : '', 'tmp', 'kc-userdir'));
+for (const p of [scenario.home, scenario.prefix, scenario.project]) {
+  assert.ok(p.includes(' '), `scenario path must contain a space: ${p}`);
+  assert.ok(
+    [...p].some((ch) => ch.codePointAt(0) > 0x7f),
+    `scenario path must contain a non-ASCII byte: ${p}`,
+  );
+}
+assert.equal(scenario.prefix.startsWith(scenario.home), true);
+assert.equal(scenario.project.startsWith(scenario.home), true);
+// The env must relocate BOTH homedir sources (HOME for darwin/linux, USERPROFILE for win32) and
+// the npm prefix — a smoke that only sets one leaves the other platform reading the real user home.
+const scenarioEnv = userDirEnv(scenario);
+assert.equal(scenarioEnv.HOME, scenario.home);
+assert.equal(scenarioEnv.USERPROFILE, scenario.home);
+assert.equal(scenarioEnv.npm_config_prefix, scenario.prefix);
 
 console.log('install-smoke tests ok');
