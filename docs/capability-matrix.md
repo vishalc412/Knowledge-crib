@@ -66,7 +66,7 @@ claim by editing this document.
 <!-- client-certification:generated:start -->
 ## Client certification evidence
 
-Generated from validated receipts. A client is runtime verified only when a vendor-client receipt proves record → interruption/restart → authorized resume on the listed platform.
+Generated from validated receipts. A client is runtime verified only when a vendor-client receipt proves record → interruption/restart → authorized resume on the listed platform. Protocol evidence captured by a test client is labelled "protocol evidence only (test client)" and can never promote a row.
 
 | Client | Highest verified evidence | Strongest certified cell |
 |---|---|---|
