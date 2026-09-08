@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { Node } from '@knowledge-crib/soul-schema';
@@ -480,6 +480,144 @@ function setupMulti() {
     },
   };
 }
+
+// ─── WP3: principal-scoped handoff over a SHARED journal (the acceptance fixture) ───
+
+/**
+ * Two principals, one machine, one repository: the same local store and the same lifecycle journal,
+ * exactly the topology a shared developer box produces. The acceptance bar from the launch plan is
+ * that principal A receives no private identifiers, coordinates, counts or recovery artifacts
+ * belonging to principal B — and symmetrically for B.
+ */
+describe('handoff — principal scoping over a shared journal (WP3 acceptance)', () => {
+  function sharedJournalFixture() {
+    const eventJournal = new IntelligenceEventJournal({
+      rootDir: join(home, 'events'),
+      now: () => T0,
+    });
+    // B's session anchor — private to B by identity.
+    eventJournal.append({
+      kind: 'agent.lifecycle',
+      idempotencyKey: 'b:activity:1',
+      source: { clientId: 'copilot', sessionId: 'sess-B' },
+      identity: { principalId: 'principal:B' },
+      payload: {
+        event: 'turn-end',
+        action: 'observed',
+        hasOutcome: false,
+        repository: {
+          branch: 'private/b-branch',
+          head: 'b'.repeat(40),
+          dirty: true,
+          changedPaths: ['src/private-b.ts'],
+        },
+      },
+      occurredAt: '2026-03-01T00:00:00.000Z',
+    });
+    // A's own anchor — A must recover these coordinates.
+    eventJournal.append({
+      kind: 'agent.lifecycle',
+      idempotencyKey: 'a:activity:1',
+      source: { clientId: 'cursor', sessionId: 'sess-A' },
+      identity: { principalId: 'principal:A' },
+      payload: {
+        event: 'turn-end',
+        action: 'observed',
+        hasOutcome: false,
+        repository: {
+          branch: 'feature/a-branch',
+          head: 'a'.repeat(40),
+          dirty: true,
+          changedPaths: ['src/a.ts'],
+        },
+      },
+      occurredAt: '2026-04-01T00:00:00.000Z',
+    });
+    const local = MemoryStore.local(REPO, { env, now: () => T0 });
+    // An UNSCOPED legacy attempt in the shared local store — no principal column, so it belongs to
+    // the default migration principal's namespace and to nobody else.
+    local.upsertEntries('attempts', [
+      {
+        id: 'att:1eca5e7d',
+        schemaVersion: '1',
+        attemptId: 'att:1eca5e7d',
+        phase: 'action',
+        subject: 'sym:src/shared.ts',
+        ts: T1,
+      },
+    ]);
+    const apiFor = (principal: string) =>
+      new MemoryApi({
+        stores: { local },
+        eventJournal,
+        env: { ...env, KCRIB_PRINCIPAL_ID: principal },
+        now: () => T0,
+      });
+    return { eventJournal, local, apiFor };
+  }
+
+  it('principal A receives none of principal B’s private identifiers or coordinates', () => {
+    const { apiFor } = sharedJournalFixture();
+    const out = apiFor('principal:A').handoff({ repository: { dirty: false } });
+    expect(out.lastSession).toMatchObject({ sessionId: 'sess-A', branch: 'feature/a-branch' });
+    const serialized = JSON.stringify(out);
+    expect(serialized).not.toContain('sess-B');
+    expect(serialized).not.toContain('private/b-branch');
+    expect(serialized).not.toContain('src/private-b.ts');
+  });
+
+  it('principal B receives none of principal A’s coordinates either — the boundary is symmetric', () => {
+    const { apiFor } = sharedJournalFixture();
+    const out = apiFor('principal:B').handoff({ repository: { dirty: false } });
+    expect(out.lastSession).toMatchObject({ sessionId: 'sess-B', branch: 'private/b-branch' });
+    expect(JSON.stringify(out)).not.toContain('sess-A');
+    expect(JSON.stringify(out)).not.toContain('feature/a-branch');
+  });
+
+  it('neither named principal sees the shared store’s unscoped legacy work — not the work, not the counts', () => {
+    const { apiFor } = sharedJournalFixture();
+    for (const principal of ['principal:A', 'principal:B']) {
+      const out = apiFor(principal).handoff({ repository: { dirty: false } });
+      expect(out.openWork).toEqual([]);
+      expect(out.counts.openWork).toBe(0);
+    }
+  });
+
+  it('the default migration principal still sees the unscoped legacy work it owns', () => {
+    const { local, eventJournal } = sharedJournalFixture();
+    const api = new MemoryApi({ stores: { local }, eventJournal, env, now: () => T0 });
+    const out = api.handoff({ repository: { dirty: false } });
+    expect(out.openWork.map((w) => w.attemptId)).toEqual(['att:1eca5e7d']);
+    expect(out.counts.openWork).toBe(1);
+    // And it recovers ITS own unscoped anchor — legacy events belong to this namespace alone.
+    expect(out.lastSession).toBeUndefined(); // no default-principal anchor was recorded
+  });
+
+  it('reports an unreadable journal as an explicit degraded state, not as "no prior work"', () => {
+    // WP3.8: a malformed line beyond the trailing one is unrecoverable evidence, and read()
+    // throws. The handoff must say so through `degraded`; silently returning a handoff without
+    // `lastSession` would be indistinguishable from a repo where no hook ever ran.
+    const root = join(home, 'events-broken');
+    mkdirSync(root, { recursive: true });
+    writeFileSync(
+      join(root, 'intelligence-events.jsonl'),
+      '{"kind":"agent.lifecycle" <- not valid JSON\n{"kind":"agent.lifecycle"}\n',
+    );
+    const journal = new IntelligenceEventJournal({ rootDir: root, now: () => T0 });
+    const local = MemoryStore.local(REPO, { env, now: () => T0 });
+    const api = new MemoryApi({ stores: { local }, eventJournal: journal, env, now: () => T0 });
+    const out = api.handoff({ repository: { dirty: false } });
+    expect(out.degraded).toEqual(['lifecycle-journal-unreadable']);
+    expect(out.lastSession).toBeUndefined();
+  });
+
+  it('a missing journal is honest ABSENCE, never a degraded state', () => {
+    const { api } = setup();
+    const out = api.handoff({ repository: { dirty: false } });
+    expect(out.degraded).toEqual([]);
+    expect(out.lastSession).toBeUndefined();
+  });
+});
 
 /** A minimal soul port for the fresh evaluator: every lookup misses (nothing is fabricated). */
 function evalSoulPort(): {

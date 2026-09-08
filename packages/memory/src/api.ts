@@ -2001,16 +2001,19 @@ export class MemoryApi {
       const pending = local ? pendingCaptures(local) : [];
       const { requirements, checkpoints } = this.intakeEntries();
       // Lifecycle events are what make a TIMED-OUT session recoverable: they are the only signal
-      // here the agent did not have to write itself. Read defensively — a repo with no journal, or
-      // an unreadable one, degrades to a handoff without `lastSession` rather than failing the
-      // whole projection.
+      // here the agent did not have to write itself. A repo with NO journal degrades to a handoff
+      // without `lastSession` (absence is honest — no hook ever ran). A journal that EXISTS but
+      // cannot be read is different: silently dropping it would read as "no previous work", the
+      // exact lie WP3.8 forbids — so the failure is reported through `degraded` instead.
       let lifecycle: Parameters<typeof buildHandoff>[0]['lifecycle'];
+      let lifecycleUnreadable = false;
       try {
         lifecycle = this.deps.eventJournal
           ?.read()
           .filter((event) => event.kind === 'agent.lifecycle');
       } catch {
         lifecycle = undefined;
+        lifecycleUnreadable = true;
       }
       return buildHandoff({
         attempts,
@@ -2019,6 +2022,7 @@ export class MemoryApi {
         intakeRequirements: requirements,
         intakeCheckpoints: checkpoints,
         ...(lifecycle ? { lifecycle } : {}),
+        ...(lifecycleUnreadable ? { lifecycleUnreadable: true } : {}),
         callerPrincipal: this.callerPrincipal(),
         ...(opts.currentSessionId !== undefined ? { currentSessionId: opts.currentSessionId } : {}),
         ...(opts.repository ? { repository: opts.repository } : {}),

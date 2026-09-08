@@ -5364,7 +5364,10 @@ function cmdMemoryHandoff(args: string[], ctx?: CmdCtx): number {
     out.counts.pendingCaptures === 0 &&
     out.counts.needsAttention === 0 &&
     out.recent.length === 0 &&
-    out.intakes.count === 0
+    out.intakes.count === 0 &&
+    // WP3.8 — a degraded read must never collapse into "nothing here": an unreadable journal
+    // with everything else empty is precisely the case where "no prior work" would be a lie.
+    out.degraded.length === 0
   ) {
     // An empty state still needs a next step — "nothing here" with no action is the dead end the
     // audit flagged in the memory panel (F09).
@@ -5374,6 +5377,20 @@ function cmdMemoryHandoff(args: string[], ctx?: CmdCtx): number {
         '    crib intake create --from "<request>" --outcome "<what done looks like>"\n',
     );
     return EXIT.OK;
+  }
+  // The degraded channel precedes every section: a projection that could not read the lifecycle
+  // journal is a caveat over the whole briefing, not one list among others.
+  if (out.degraded.length > 0) {
+    for (const marker of out.degraded) {
+      if (marker === 'lifecycle-journal-unreadable') {
+        lines.push(
+          '! DEGRADED — the lifecycle journal exists but could not be read; prior-session',
+          '  coordinates may be missing for that reason, not because none were recorded.',
+        );
+      } else {
+        lines.push(`! DEGRADED — ${marker}`);
+      }
+    }
   }
   // The decision comes FIRST: a returning session's first question is "continue or start fresh?",
   // and answering it from a `primary` field the reader has to interpret is what made this implicit.

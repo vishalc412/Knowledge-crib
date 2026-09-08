@@ -240,6 +240,9 @@ export function readMemoryHome(
       },
     },
     health,
+    // WP3.8 — an unreadable journal must not read as "no previous work existed". The home view
+    // reports the marker so the operator sees the read failed, rather than trusting an empty page.
+    degraded: handoff.degraded,
     nextAction,
   };
 }

@@ -102,6 +102,12 @@ export interface HandoffLastSession {
   changedPaths: string[];
   /** True when this session ended on a DIFFERENT branch/HEAD than the repository is on now. */
   movedSince: boolean;
+  /**
+   * Present when the hook recorded MORE than twenty changed paths and the list was cut. Without it,
+   * a bounded list is indistinguishable from a complete one — a returning agent would trust an
+   * inventory that is actually a sample (WP3.7).
+   */
+  changedPathsTruncated?: true;
 }
 
 export interface HandoffResponse {
@@ -122,6 +128,12 @@ export interface HandoffResponse {
    * a `primary` field whose absence the caller has to interpret.
    */
   continuation: ContinuationChoice;
+  /**
+   * Explicit degraded-state markers (WP3.8) — reported rather than swallowed, so "the journal could
+   * not be read" is never mistaken for "no previous work existed". Absent capabilities stay absent;
+   * failed reads say WHY here.
+   */
+  degraded: string[];
   counts: {
     openWork: number;
     pendingCaptures: number;
@@ -155,15 +167,28 @@ export interface HandoffInput {
    * independent of the journal's shape — handoff reads coordinates, not the event schema.
    */
   lifecycle?: readonly {
+    /** content-addressed event identity — the final tie-break for equal timestamps (WP3.4). */
+    id?: string;
     occurredAt: string;
     source?: { clientId?: string; sessionId?: string };
     identity?: { principalId?: string };
     payload?: Record<string, unknown>;
   }[];
-  /** Server-resolved caller identity. Session provenance is never an authorization credential. */
-  callerPrincipal?: string;
+  /**
+   * Server-resolved caller identity — REQUIRED (WP3.2). Session provenance is never an
+   * authorization credential, and a handoff without a trusted principal used to fall back to
+   * showing EVERY lifecycle event in the journal. The projection now refuses to run without one:
+   * callers reach here through `MemoryApi.handoff`, which resolves the principal from the hosting
+   * process (`KCRIB_PRINCIPAL_ID`, else the default migration principal) — never from a request.
+   */
+  callerPrincipal: string;
   /** The server process requesting handoff; its activity is not a prior session to resume. */
   currentSessionId?: string;
+  /**
+   * Set when the lifecycle journal EXISTS but could not be read (WP3.8). Reported through
+   * `degraded` instead of silently reading as "no previous work existed".
+   */
+  lifecycleUnreadable?: boolean;
   limits?: { openWork?: number; pending?: number; attention?: number; recent?: number };
 }
 
@@ -175,52 +200,72 @@ export interface HandoffInput {
  * appends events, and picking the newest unconditionally would report a session with no coordinates
  * and look like the feature is broken. Skipping to the newest event that HAS an anchor degrades to
  * older-but-useful instead of newer-but-empty.
+ *
+ * The selection is a total order, not a scan (WP3.4): newest `occurredAt` first — the journal's
+ * newest-last clock — with equal timestamps broken by event identity (`id`, content-addressed, so
+ * it is stable whichever order a caller passes the same events in) and journal position as the
+ * final fallback for a duplicated event id. The same journal therefore yields the same
+ * `lastSession` whichever order events were appended in.
  */
+const LAST_SESSION_PATHS_MAX = 20;
+
 function lastSessionOf(
   lifecycle: HandoffInput['lifecycle'],
   now: IntakeCheckpoint['repository'] | undefined,
-  callerPrincipal: string | undefined,
+  callerPrincipal: string,
   currentSessionId: string | undefined,
 ): HandoffLastSession | undefined {
   if (!lifecycle || lifecycle.length === 0) return undefined;
-  for (let i = lifecycle.length - 1; i >= 0; i -= 1) {
+  type Candidate = { event: (typeof lifecycle)[number]; index: number };
+  const isNewer = (a: Candidate, b: Candidate): boolean => {
+    if (a.event.occurredAt !== b.event.occurredAt) return a.event.occurredAt > b.event.occurredAt;
+    if ((a.event.id ?? '') !== (b.event.id ?? '')) return (a.event.id ?? '') > (b.event.id ?? '');
+    return a.index > b.index;
+  };
+  let selected: Candidate | undefined;
+  for (let i = 0; i < lifecycle.length; i += 1) {
     const event = lifecycle[i]!;
     if (currentSessionId !== undefined && event.source?.sessionId === currentSessionId) continue;
     const eventPrincipal = event.identity?.principalId;
     // Events created before identity existed belong only to the original local-only namespace.
     // Showing one to an arbitrary later principal would turn backwards compatibility into a leak.
     if (
-      callerPrincipal !== undefined &&
-      (eventPrincipal === undefined
+      eventPrincipal === undefined
         ? callerPrincipal !== DEFAULT_MIGRATION_PRINCIPAL_ID
-        : eventPrincipal !== callerPrincipal)
+        : eventPrincipal !== callerPrincipal
     )
       continue;
     const repo = event.payload?.repository as
       | { branch?: string; head?: string; changedPaths?: string[] }
       | undefined;
     if (!repo || (repo.branch === undefined && repo.head === undefined)) continue;
-    const eventName = typeof event.payload?.event === 'string' ? event.payload.event : undefined;
-    // "Moved since" is the question a returning agent actually needs answered before it trusts
-    // these coordinates: resuming against a branch you have since left is worse than not resuming.
-    const movedSince =
-      now !== undefined &&
-      ((now.head !== undefined && repo.head !== undefined && now.head !== repo.head) ||
-        (now.branch !== undefined && repo.branch !== undefined && now.branch !== repo.branch));
-    return {
-      ...(event.source?.sessionId !== undefined ? { sessionId: event.source.sessionId } : {}),
-      ...(event.source?.clientId !== undefined ? { clientId: event.source.clientId } : {}),
-      lastActivity: event.occurredAt,
-      ...(eventName !== undefined ? { event: eventName } : {}),
-      ...(repo.branch !== undefined ? { branch: repo.branch } : {}),
-      ...(repo.head !== undefined ? { head: repo.head } : {}),
-      changedPaths: Array.isArray(repo.changedPaths)
-        ? repo.changedPaths.filter((path): path is string => typeof path === 'string').slice(0, 20)
-        : [],
-      movedSince,
-    };
+    const candidate: Candidate = { event, index: i };
+    if (selected === undefined || isNewer(candidate, selected)) selected = candidate;
   }
-  return undefined;
+  if (selected === undefined) return undefined;
+  const { event } = selected;
+  const repo = event.payload!.repository as { branch?: string; head?: string; changedPaths?: string[] };
+  const eventName = typeof event.payload?.event === 'string' ? event.payload.event : undefined;
+  // "Moved since" is the question a returning agent actually needs answered before it trusts
+  // these coordinates: resuming against a branch you have since left is worse than not resuming.
+  const movedSince =
+    now !== undefined &&
+    ((now.head !== undefined && repo.head !== undefined && now.head !== repo.head) ||
+      (now.branch !== undefined && repo.branch !== undefined && now.branch !== repo.branch));
+  const changed = Array.isArray(repo.changedPaths)
+    ? repo.changedPaths.filter((path): path is string => typeof path === 'string')
+    : [];
+  return {
+    ...(event.source?.sessionId !== undefined ? { sessionId: event.source.sessionId } : {}),
+    ...(event.source?.clientId !== undefined ? { clientId: event.source.clientId } : {}),
+    lastActivity: event.occurredAt,
+    ...(eventName !== undefined ? { event: eventName } : {}),
+    ...(repo.branch !== undefined ? { branch: repo.branch } : {}),
+    ...(repo.head !== undefined ? { head: repo.head } : {}),
+    changedPaths: changed.slice(0, LAST_SESSION_PATHS_MAX),
+    ...(changed.length > LAST_SESSION_PATHS_MAX ? { changedPathsTruncated: true } : {}),
+    movedSince,
+  };
 }
 
 const DEFAULTS = { openWork: 10, pending: 10, attention: 10, recent: 10 } as const;
@@ -255,11 +300,28 @@ function byNewest(a: { ts: string; id: string }, b: { ts: string; id: string }):
  * irrelevant-to-a-human.
  */
 export function buildHandoff(input: HandoffInput): HandoffResponse {
+  // WP3.2 — fail closed. A missing principal used to mean "show every lifecycle event in the
+  // journal"; the type makes it a compile error, and this guard makes it a runtime error for
+  // callers that bypass types. Refusing is the honest behavior: there is no defensible
+  // unauthenticated view of another session's coordinates.
+  if (typeof input.callerPrincipal !== 'string' || input.callerPrincipal.trim().length === 0) {
+    throw new Error(
+      'buildHandoff requires a server-resolved callerPrincipal — refusing to project lifecycle events without one',
+    );
+  }
   const limits = { ...DEFAULTS, ...(input.limits ?? {}) };
+
+  // ── legacy ownership (WP3.5): attempts and pending captures are memory-1 records with no
+  // principal column, so they belong to the default migration principal's namespace. A caller
+  // with any other principal sees none of them — filtered BEFORE the fold, so counts and
+  // previews never contain another principal's work either (WP3.3).
+  const unscopedVisible = input.callerPrincipal === DEFAULT_MIGRATION_PRINCIPAL_ID;
+  const attempts = unscopedVisible ? input.attempts : [];
+  const pending = unscopedVisible ? input.pending : [];
 
   // ── open work: fold events per attempt, drop the ones that reached a terminal phase ──
   const byAttempt = new Map<string, HandoffOpenWork & { terminal: boolean }>();
-  for (const event of input.attempts) {
+  for (const event of attempts) {
     const existing = byAttempt.get(event.attemptId);
     const terminal = (existing?.terminal ?? false) || TERMINAL_PHASES.has(event.phase);
     // fold newest-wins for the descriptive fields, but `terminal` is sticky across every event
@@ -292,7 +354,7 @@ export function buildHandoff(input: HandoffInput): HandoffResponse {
   });
 
   // ── pending captures: raw observations the last session never distilled ──
-  const pendingAll = [...input.pending].sort((a, b) => a.id.localeCompare(b.id));
+  const pendingAll = [...pending].sort((a, b) => a.id.localeCompare(b.id));
   const pendingCaptures: HandoffPendingCapture[] = pendingAll.slice(0, limits.pending).map((p) => ({
     id: p.id,
     subject: p.subject ?? '',
@@ -365,6 +427,7 @@ export function buildHandoff(input: HandoffInput): HandoffResponse {
     intakes,
     continuation: buildContinuation(intakes),
     ...(lastSession ? { lastSession } : {}),
+    degraded: input.lifecycleUnreadable === true ? ['lifecycle-journal-unreadable'] : [],
     counts: {
       openWork: openWorkAll.length,
       pendingCaptures: pendingAll.length,
