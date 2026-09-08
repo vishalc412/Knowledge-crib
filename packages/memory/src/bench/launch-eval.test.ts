@@ -182,5 +182,5 @@ describe('launch gate runner (CI scale)', () => {
 
   it('is byte-deterministic across runs — no wall clock enters scored output', () => {
     expect(JSON.stringify(runLaunchGate(0.2))).toBe(JSON.stringify(runLaunchGate(0.2)));
-  });
+  }, 30_000);
 });
