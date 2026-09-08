@@ -5,12 +5,18 @@ import type { ReaderFreshness } from '@knowledge-crib/mcp';
 import {
   type AuditResult,
   DEFAULT_LEDGER_PAGE,
+  DEFAULT_PENDING_PAGE,
   type GetResult,
+  type IntakeCheckpoint,
+  type IntakeRequirement,
   LEDGER_GROUPS,
   type LedgerGroup,
   type LedgerResult,
   MAX_LEDGER_PAGE,
+  MAX_PENDING_PAGE,
   type MemoryApi,
+  type PendingQueueResult,
+  type ResumeBrief,
 } from '@knowledge-crib/memory';
 
 const MAX_SOURCE_LINES = 200;
@@ -262,4 +268,94 @@ export function readMemoryLedgerDetail(api: MemoryApi, id: string): VizLedgerDet
   const got = api.get(id);
   if (!got.found) throw new VizHttpError(404, `unknown memory record: ${id}`);
   return { ...got, audit: api.audit(got.id ?? id) };
+}
+
+// ─── pending queue + intake detail endpoints (WP6.1–WP6.4) ─────────────────────
+//
+// The same law as the ledger endpoints above: the server owns ONLY query validation, pagination
+// capping, and the honest `configured: false` shape. Every row, classification, and command string
+// comes from the MemoryApi's own `pending`/`getIntake`/`listIntakes` ops, so the UI can never drift
+// from backend truth — and the browser never gains a capability the CLI admission paths do not
+// have (the terminal-only paths stay terminal-only; the projection says so, the server never
+// routes around it).
+
+/** The validated pending-queue query — the ONLY params `/memory/pending.json` accepts. */
+export interface VizPendingQuery {
+  section?: 'captures' | 'staged';
+  offset: number;
+  limit: number;
+}
+
+/** The `/memory/pending.json` body: the classified queue, or the not-wired shape. */
+export type VizPendingResponse = PendingQueueResult | { configured: false };
+
+/**
+ * Parse and cap the pending-queue query, with the ledger's own discipline: bad values fail with
+ * 400 (a typo'd `section=stagged` must be visible, not mistaken for an empty queue) and `limit`
+ * is hard-capped at {@link MAX_PENDING_PAGE} so a browser request cannot inflate the payload.
+ */
+export function parseMemoryPendingQuery(params: URLSearchParams): VizPendingQuery {
+  const parseCount = (name: string, raw: string | null): number => {
+    if (raw === null) return name === 'offset' ? 0 : DEFAULT_PENDING_PAGE;
+    const n = Number(raw);
+    if (!Number.isInteger(n) || n < 0) throw new VizHttpError(400, `invalid ${name}: ${raw}`);
+    return n;
+  };
+  let section: VizPendingQuery['section'];
+  const rawSection = params.get('section');
+  if (rawSection !== null) {
+    if (rawSection !== 'captures' && rawSection !== 'staged') {
+      throw new VizHttpError(400, `unknown section: ${rawSection}`);
+    }
+    section = rawSection;
+  }
+  return {
+    offset: parseCount('offset', params.get('offset')),
+    limit: Math.min(MAX_PENDING_PAGE, parseCount('limit', params.get('limit'))),
+    ...(section !== undefined ? { section } : {}),
+  };
+}
+
+/** Serve the pending queue through the API's own projection (no memory wired → honest empty shape). */
+export function readMemoryPending(
+  api: MemoryApi | undefined,
+  query: VizPendingQuery,
+): VizPendingResponse {
+  if (!api) return { configured: false };
+  return api.pending(query);
+}
+
+/** The `/memory/intake.json` body: the requirement, its checkpoint history, and the resume brief. */
+export interface VizIntakeDetailResponse {
+  requirement: IntakeRequirement;
+  checkpoints: IntakeCheckpoint[];
+  /** the projection's own folded state (phase/status/blockers/drift) — never re-derived here. */
+  brief: ResumeBrief;
+  /** false for `completed`/`cancelled` — the UI offers resume actions ONLY when this is true. */
+  resumable: boolean;
+}
+
+/**
+ * WP6.4 — intake detail: the durable requirement plus its full checkpoint history, with the
+ * projection's own folded brief so the surface can show WHY a memory is missing (blockers) and
+ * what drift happened, without executing any of the work. Unknown id → 404, mirroring
+ * `/memory/record.json`.
+ */
+export function readMemoryIntakeDetail(
+  api: MemoryApi,
+  intakeId: string,
+  repository: IntakeCheckpoint['repository'] = { dirty: false },
+): VizIntakeDetailResponse {
+  const got = api.getIntake(intakeId);
+  if (!got) throw new VizHttpError(404, `unknown intake: ${intakeId}`);
+  const brief = api.listIntakes(repository).choices.find((c) => c.intakeId === intakeId);
+  // choices is built from EVERY requirement, so a missing brief is an internal inconsistency —
+  // reported loudly, never papered over with a half-empty response.
+  if (!brief) throw new VizHttpError(500, `intake projection missing: ${intakeId}`);
+  return {
+    requirement: got.requirement,
+    checkpoints: got.checkpoints,
+    brief,
+    resumable: brief.status !== 'completed' && brief.status !== 'cancelled',
+  };
 }

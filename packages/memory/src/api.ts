@@ -118,6 +118,11 @@ import {
 } from './migrations.js';
 import { buildCaptureOutboxEntry, pendingCaptures, stageCaptureOutboxEntry } from './outbox.js';
 import { readRepoId } from './paths.js';
+import {
+  type PendingQueueOpts,
+  type PendingQueueResult,
+  projectPendingQueue,
+} from './pending-queue.js';
 import { type CapturePolicySection, loadPolicy, trustedRefOf } from './policy.js';
 import {
   DEFAULT_RECALL_SOURCES,
@@ -3247,6 +3252,21 @@ export class MemoryApi {
       errors: [],
       rows: filtered.slice(offset, offset + limit),
     };
+  }
+
+  /**
+   * WP6.1/WP6.2 — the pending queue: raw captures awaiting distillation + staged claims awaiting
+   * admission, classified by the admission path each can actually take. A PURE projection over the
+   * local store ({@link projectPendingQueue} reuses the evaluator's own admissibility pre-flight,
+   * so the browser's `ready` can never drift from `crib memory evaluate`'s gate). Read-only.
+   *
+   * No local store → the honest `configured: false` shape (captures and candidates both live ONLY
+   * in the local store, so there is nothing to project).
+   */
+  pending(opts: PendingQueueOpts = {}): PendingQueueResult | { configured: false } {
+    const local = this.deps.stores.local;
+    if (!local) return { configured: false };
+    return projectPendingQueue(local, opts);
   }
 
   /**

@@ -318,9 +318,12 @@ import {
   VizHttpError,
   isAllowedHost,
   parseMemoryLedgerQuery,
+  parseMemoryPendingQuery,
   readMemoryHome,
+  readMemoryIntakeDetail,
   readMemoryLedger,
   readMemoryLedgerDetail,
+  readMemoryPending,
   readVizNodeSource,
   resolveVizAsset,
 } from './viz-server.js';
@@ -3944,6 +3947,41 @@ async function cmdViz(args: string[], ctx?: CmdCtx): Promise<number> {
           'cache-control': 'no-store',
         });
         res.end(JSON.stringify(detail));
+        return;
+      }
+      // WP6.1–WP6.4 — the pending queue (captures vs staged, classified for admission paths) and
+      // the intake detail (requirement + checkpoint history + resume brief, no work executed).
+      // Both read-only over the shared MemoryApi, same `no-store` law as the ledger.
+      if (requestUrl.pathname === '/memory/pending.json') {
+        const pending = readMemoryPending(
+          memoryApi,
+          parseMemoryPendingQuery(requestUrl.searchParams),
+        );
+        res.writeHead(200, {
+          'content-type': 'application/json; charset=utf-8',
+          'cache-control': 'no-store',
+        });
+        res.end(JSON.stringify(pending));
+        return;
+      }
+      if (requestUrl.pathname === '/memory/intake.json') {
+        const id = requestUrl.searchParams.get('id');
+        if (!id || !memoryApi) {
+          throw new VizHttpError(
+            memoryApi ? 400 : 404,
+            memoryApi ? 'missing id' : 'memory not configured',
+          );
+        }
+        const intake = readMemoryIntakeDetail(
+          memoryApi,
+          id,
+          currentRepositoryAnchor(resolved.repoRoot),
+        );
+        res.writeHead(200, {
+          'content-type': 'application/json; charset=utf-8',
+          'cache-control': 'no-store',
+        });
+        res.end(JSON.stringify(intake));
         return;
       }
       const path = await resolveVizAsset(assets, requestUrl.pathname);
