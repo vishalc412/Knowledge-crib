@@ -3765,6 +3765,79 @@ export class Verbs {
   }
 
   /**
+   * WP2.5 runtime evidence — record that a real client attached to this server. The MCP handshake
+   * reports the client's own name/version (`initialize` → `clientInfo`), which no configuration
+   * file can prove: `crib mcp install` writes an entry, but only this event shows the client
+   * actually CONNECTED. The idempotency key coalesces per server process, so a client that
+   * reconnects (IDE restart) appends a fresh event while one connection records once.
+   *
+   * Fail-open like noteSessionActivity: certification evidence is never worth a failed connection.
+   */
+  noteClientConnection(clientName: string, clientVersion: string | undefined): void {
+    try {
+      const journal = this.deps.memory?.eventJournal;
+      if (!journal) return;
+      journal.append({
+        kind: 'mcp.connection',
+        idempotencyKey: `mcp:connection:${this.serverSessionId}:${clientName}`,
+        source: { clientId: clientName, sessionId: this.serverSessionId },
+        identity: resolveServerIdentity(process.env),
+        payload: { client: clientName, ...(clientVersion ? { clientVersion } : {}) },
+        occurredAt: new Date().toISOString(),
+      });
+    } catch {
+      // Evidence is never worth a failed connection.
+    }
+  }
+
+  /**
+   * WP2.5 runtime evidence — record that the connected client invoked a crib TOOL. One event per
+   * (client, tool, time bucket), mirroring noteSessionActivity's coalescing: exact counts stay in
+   * the in-memory stats verb, while the journal holds the bounded-rate proof that the client
+   * exercised the runtime. `crib adapters status` reads these to report the runtime-certified
+   * state; without them "the config says the client is wired" would be the only (untruthful)
+   * evidence available.
+   *
+   * Fail-open: a tool call must never fail because its evidence could not be recorded.
+   */
+  noteToolInvocation(clientName: string, tool: string): void {
+    try {
+      const journal = this.deps.memory?.eventJournal;
+      if (!journal) return;
+      const bucket = Math.floor(Date.now() / SESSION_ANCHOR_BUCKET_MS);
+      journal.append({
+        kind: 'mcp.tool-invoked',
+        idempotencyKey: `mcp:invoke:${this.serverSessionId}:${clientName}:${tool}:${bucket}`,
+        source: { clientId: clientName, sessionId: this.serverSessionId },
+        identity: resolveServerIdentity(process.env),
+        payload: { tool },
+        occurredAt: new Date().toISOString(),
+      });
+    } catch {
+      // Evidence is never worth a failed tool call.
+    }
+  }
+
+  /** The client name this server process was initialized by (the handshake's `clientInfo.name`),
+   *  or `undefined` before the client completes initialization. Tool-invocation evidence is
+   *  attributed to it; without a handshake there is nothing to attribute. */
+  private connectedClientName: string | undefined;
+
+  /** Record the handshake result (called from the server's oninitialized hook) and remember the
+   *  client name for per-tool attribution. Returns the name for logging/tests. */
+  noteInitialized(clientName: string, clientVersion?: string): string {
+    this.connectedClientName = clientName;
+    this.noteClientConnection(clientName, clientVersion);
+    return clientName;
+  }
+
+  /** Attribute a tool invocation to the connected client. Public for the server's handler wrapper. */
+  recordToolInvocation(tool: string): void {
+    if (this.connectedClientName === undefined) return;
+    this.noteToolInvocation(this.connectedClientName, tool);
+  }
+
+  /**
    * Direct CODE callers of a symbol — documentation references excluded.
    *
    * `impact` reports every incoming edge, and doc sections that merely MENTION a name are edges

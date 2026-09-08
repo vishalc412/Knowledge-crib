@@ -28,11 +28,13 @@ import { spliceManaged } from './hooks.js';
 export type McpIde = 'claude' | 'cursor' | 'vscode' | 'codex' | 'windsurf' | 'gemini';
 export type McpScope = 'project' | 'global';
 const ALL_IDES: McpIde[] = ['claude', 'cursor', 'vscode', 'codex', 'windsurf', 'gemini'];
-const SERVER_NAME = 'knowledge-crib';
+/** The managed server entry name — exported so detection can recognize crib's own footprint in a
+ *  config file without duplicating the literal. */
+export const SERVER_NAME = 'knowledge-crib';
 
-/** Marker pair delimiting the managed TOML block (Codex config). */
-const TOML_BEGIN = '# >>> knowledge-crib managed >>>';
-const TOML_END = '# <<< knowledge-crib managed <<<';
+/** Marker pair delimiting the managed TOML block (Codex config). Exported for the same reason. */
+export const TOML_BEGIN = '# >>> knowledge-crib managed >>>';
+export const TOML_END = '# <<< knowledge-crib managed <<<';
 
 export interface McpInstallOptions {
   /** IDE target, or `'all'`. */
@@ -41,6 +43,9 @@ export interface McpInstallOptions {
   scope?: McpScope;
   /** Binary to embed as `command`. Defaults to the absolute `which crib` (PATH-independent). */
   bin?: string;
+  /** Home directory for user-scope paths. Defaults to `process.env.HOME`. Overridable so callers
+   *  (tests, the four-state install report) can inspect an environment instead of the real one. */
+  home?: string;
 }
 
 export interface McpInstallResult {
@@ -168,8 +173,13 @@ interface McpTarget {
   format: 'json-mcpServers' | 'json-servers' | 'toml' | 'claude-cli';
 }
 
-function targetFor(ide: McpIde, scope: McpScope, repoRoot: string): McpTarget | null {
-  const home = process.env.HOME ?? '';
+function targetFor(
+  ide: McpIde,
+  scope: McpScope,
+  repoRoot: string,
+  homeOverride?: string,
+): McpTarget | null {
+  const home = homeOverride ?? process.env.HOME ?? '';
   switch (ide) {
     case 'claude':
       // Project: committable .mcp.json (root key `mcpServers`). Global: `claude mcp add -s user`.
@@ -222,7 +232,7 @@ export function installMcp(repoRoot: string, opts: McpInstallOptions): McpInstal
   const out: McpInstallResult[] = [];
 
   for (const ide of ides) {
-    const target = targetFor(ide, scope, absRoot);
+    const target = targetFor(ide, scope, absRoot, opts.home);
     if (!target) {
       out.push({
         ide,
@@ -334,7 +344,7 @@ export interface McpListEntry {
 }
 export function listMcp(
   repoRoot: string,
-  opts: { ide?: McpIde | 'all'; scope?: McpScope } = {},
+  opts: { ide?: McpIde | 'all'; scope?: McpScope; home?: string } = {},
 ): McpListEntry[] {
   const ides: McpIde[] = opts.ide ? (opts.ide === 'all' ? ALL_IDES : [opts.ide]) : ALL_IDES;
   const scopes: McpScope[] = opts.scope ? [opts.scope] : ['project', 'global'];
@@ -342,7 +352,7 @@ export function listMcp(
   const out: McpListEntry[] = [];
   for (const ide of ides) {
     for (const scope of scopes) {
-      const target = targetFor(ide, scope, absRoot);
+      const target = targetFor(ide, scope, absRoot, opts.home);
       if (!target) continue;
       if (target.format === 'claude-cli') {
         out.push({
@@ -375,7 +385,7 @@ export function removeMcp(repoRoot: string, opts: McpInstallOptions): McpInstall
   const absRoot = resolve(repoRoot);
   const out: McpInstallResult[] = [];
   for (const ide of ides) {
-    const target = targetFor(ide, scope, absRoot);
+    const target = targetFor(ide, scope, absRoot, opts.home);
     if (!target) {
       out.push({
         ide,

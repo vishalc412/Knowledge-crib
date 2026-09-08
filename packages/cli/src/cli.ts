@@ -247,6 +247,7 @@ import {
   removeCaptureHooks,
   removeInstructions,
 } from './adapters.js';
+import { clientStateReport, unknownConnectedClients } from './client-states.js';
 import {
   DEFAULT_EMBED_ALIAS,
   EMBED_MODELS,
@@ -4512,14 +4513,19 @@ function cmdAdapters(args: string[], ctx?: CmdCtx): number {
   /** `--client detected` — install only for the clients this machine appears to run. */
   let clientDetectedRequested = false;
   let scope: 'project' | 'global' = 'project';
+  let json = false;
   let pathArg: string | undefined;
   for (let i = 0; i < rest.length; i++) {
     const arg = rest[i]!;
+    if (arg === '--json') {
+      json = true;
+      continue;
+    }
     if (arg === '--client') {
       const value = rest[++i];
       if (looksLikeFlag(value) || !value) {
         process.stderr.write(
-          'usage: crib adapters <install|list|remove> [--client <id|all|detected>] [--scope project|global]\n',
+          'usage: crib adapters <install|list|remove|status> [--client <id|all|detected>] [--scope project|global] [--json]\n',
         );
         return EXIT.BAD_ARGS;
       }
@@ -4617,11 +4623,36 @@ function cmdAdapters(args: string[], ctx?: CmdCtx): number {
       }
       return EXIT.OK;
     }
+    case 'status': {
+      const journalRoot = join(repoRoot, '.crib', 'intelligence');
+      const reports = clientStateReport(repoRoot, { client, scope });
+      if (json) {
+        const unknown = unknownConnectedClients(journalRoot);
+        process.stdout.write(
+          `${JSON.stringify({ clients: reports, ...(unknown.length > 0 ? { unknown } : {}) }, null, 2)}\n`,
+        );
+        return EXIT.OK;
+      }
+      for (const r of reports) {
+        const lanes = [
+          r.evidence.instructions ? 'instructions✓' : 'instructions✗',
+          r.evidence.hooks.length > 0 ? `hooks✓(${r.evidence.hooks.join(',')})` : 'hooks✗',
+          r.evidence.mcpEntry ? 'mcp✓' : 'mcp✗',
+        ].join(' ');
+        process.stdout.write(`${r.client}: ${r.state}\n  config: ${lanes}\n  ${r.note}\n`);
+      }
+      const unknown = unknownConnectedClients(journalRoot);
+      if (unknown.length > 0)
+        process.stdout.write(
+          `unknown clients in journal (not attributed to any known client): ${unknown.join(', ')}\n`,
+        );
+      return EXIT.OK;
+    }
     case undefined:
     case '-h':
     case '--help':
       process.stderr.write(
-        'usage: crib adapters <install|list|remove> [--client <id|all|detected>] [--scope project|global]\n',
+        'usage: crib adapters <install|list|remove|status> [--client <id|all|detected>] [--scope project|global] [--json]\n',
       );
       return EXIT.BAD_ARGS;
     default:

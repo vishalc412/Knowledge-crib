@@ -17,9 +17,18 @@
  * lives in `mcp-install.ts` (reusing its writers); adding a client = add a `ClientAdapter` entry
  * here + an `McpIde` target there, not a third hardcoded switch.
  */
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from 'node:fs';
 import { homedir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { basename, dirname, join } from 'node:path';
+import { SERVER_NAME, TOML_BEGIN, TOML_END } from './mcp-install.js';
 
 /** A supported agent client for the instruction-adapter registry. A superset of {@link McpIde}:
  *  includes `'copilot'` (GitHub Copilot), which has its own instruction file
@@ -1122,21 +1131,22 @@ const ENV_SIGNALS: { client: ClientId; vars: string[]; termProgram?: string[] }[
  * Repository signals — configuration THIS client created, used only when no environment signal
  * identifies the running client.
  *
- * `cribOwned` marks paths crib itself writes. Such a path is evidence only when it holds content
- * beyond crib's own managed block: after one over-broad install, `GEMINI.md` exists in every repo,
- * and treating crib's own output as proof the user runs Gemini would make the original mistake
- * permanent and self-justifying.
+ * Several of these paths are also paths CRIB writes (its own hooks, MCP config, and protocol
+ * blocks), so a signal counts only when the path carries content beyond crib's own output
+ * ({@link isCribFootprint}). After one over-broad install, `GEMINI.md` and `.cursor/` exist in
+ * every repo; treating crib's own output as proof the user runs Gemini would make the original
+ * mistake permanent and self-justifying.
  */
-const REPO_SIGNALS: { client: ClientId; path: string; cribOwned: boolean }[] = [
-  { client: 'claude', path: '.claude', cribOwned: false },
-  { client: 'claude', path: 'CLAUDE.md', cribOwned: true },
-  { client: 'cursor', path: '.cursor', cribOwned: true },
-  { client: 'copilot', path: '.github/copilot-instructions.md', cribOwned: true },
-  { client: 'copilot', path: '.vscode', cribOwned: false },
-  { client: 'windsurf', path: '.windsurfrules', cribOwned: true },
-  { client: 'gemini', path: '.gemini', cribOwned: false },
-  { client: 'gemini', path: 'GEMINI.md', cribOwned: true },
-  { client: 'codex', path: '.codex', cribOwned: false },
+const REPO_SIGNALS: { client: ClientId; path: string }[] = [
+  { client: 'claude', path: '.claude' },
+  { client: 'claude', path: 'CLAUDE.md' },
+  { client: 'cursor', path: '.cursor' },
+  { client: 'copilot', path: '.github/copilot-instructions.md' },
+  { client: 'copilot', path: '.vscode' },
+  { client: 'windsurf', path: '.windsurfrules' },
+  { client: 'gemini', path: '.gemini' },
+  { client: 'gemini', path: 'GEMINI.md' },
+  { client: 'codex', path: '.codex' },
 ];
 
 /**
@@ -1157,6 +1167,112 @@ function isCribOnlyFile(path: string): boolean {
     .replace(/^---\r?\n[\s\S]*?\r?\n---/, '') // Cursor frontmatter crib writes itself
     .trim();
   return outside.length === 0;
+}
+
+/**
+ * True when a FILE is entirely crib's own output. Covers every file crib's install paths write:
+ * the HTML-comment protocol block (isCribOnlyFile), the Codex TOML managed block, a
+ * `settings.json` whose only lane is crib's capture hooks, and an `mcp.json`/`settings.json`
+ * whose only server is crib's. Anything else in the file is the user's — including their own
+ * hook entries, their own servers, or their own top-level settings keys.
+ */
+function isCribManagedFile(path: string): boolean {
+  let text: string;
+  try {
+    text = readFileSync(path, 'utf8');
+  } catch {
+    return false;
+  }
+  const base = basename(path);
+  if (base === 'settings.json' || base === 'mcp.json') {
+    let obj: Record<string, unknown>;
+    try {
+      obj = JSON.parse(text) as Record<string, unknown>;
+    } catch {
+      return false; // unparseable config is the user's, not ours
+    }
+    // Gemini settings.json carries crib's server under mcpServers; Claude settings.json carries
+    // crib's capture hooks under hooks. A file holding either — and nothing else — is crib's.
+    const servers = (obj.mcpServers ?? obj.servers) as Record<string, unknown> | undefined;
+    if (servers !== undefined) {
+      const names = Object.keys(servers);
+      return names.length === 1 && names[0] === SERVER_NAME;
+    }
+    const outsideHooks = Object.keys(obj).filter((key) => key !== 'hooks');
+    if (outsideHooks.length > 0) return false;
+    const hooksRoot = obj.hooks;
+    if (typeof hooksRoot !== 'object' || hooksRoot === null || Array.isArray(hooksRoot))
+      return false;
+    for (const bucket of Object.values(hooksRoot as Record<string, unknown>)) {
+      if (!Array.isArray(bucket)) continue;
+      for (const entry of bucket) if (!isCribBucketEntry(entry)) return false;
+    }
+    return true;
+  }
+  // Codex config.toml: the TOML managed block is all crib ever writes there. `spliceManaged`
+  // prepends its own `#!/bin/sh` shebang on a fresh file (the shell-hook writer it reuses), so that
+  // line is stripped too — it is crib's output, and a bare shebang carries no client evidence.
+  const tomlBegin = text.indexOf(TOML_BEGIN);
+  if (tomlBegin !== -1) {
+    const tomlEnd = text.indexOf(TOML_END, tomlBegin);
+    if (tomlEnd !== -1) {
+      const outside = (text.slice(0, tomlBegin) + text.slice(tomlEnd + TOML_END.length))
+        .replace(/^#!\/bin\/sh\r?\n/, '')
+        .trim();
+      return outside.length === 0;
+    }
+  }
+  return isCribOnlyFile(path);
+}
+
+/** Cap on directory inspection: a directory too large to walk is a user's, not a footprint. */
+const FOOTPRINT_WALK_MAX = 200;
+
+/**
+ * True when a detected path is crib's own footprint — a file holding nothing but crib's managed
+ * content, or a directory holding nothing but such files. An EMPTY directory is deliberately NOT a
+ * footprint: a client creates its own config directory before writing anything into it, and the
+ * empty-`.claude` case is pinned as user evidence.
+ *
+ * This closes the self-justification loop for the WP2.5 four-state install report: `install`
+ * creates `.claude/settings.json` (hooks), `.cursor/mcp.json`, `.codex/config.toml` — exactly the
+ * paths `detectClients` reads as "the user runs this client". Without this check, installing a
+ * client would instantly manufacture the `client-detected` evidence, and the ladder's state 2
+ * would mean nothing.
+ */
+function isCribFootprint(abs: string): boolean {
+  let stat;
+  try {
+    stat = statSync(abs);
+  } catch {
+    return false;
+  }
+  if (stat.isFile()) return isCribManagedFile(abs);
+  if (!stat.isDirectory()) return false;
+  const stack = [abs];
+  let seen = 0;
+  let files = 0;
+  while (stack.length > 0) {
+    const dir = stack.pop()!;
+    let entries;
+    try {
+      entries = readdirSync(dir, { withFileTypes: true });
+    } catch {
+      return false; // an unreadable directory is not evidence either way — treat as the user's
+    }
+    for (const entry of entries) {
+      seen += 1;
+      if (seen > FOOTPRINT_WALK_MAX) return false;
+      if (entry.isSymbolicLink()) return false; // a link is user structure crib never writes
+      const child = join(dir, entry.name);
+      if (entry.isDirectory()) stack.push(child);
+      else if (entry.isFile()) {
+        files += 1;
+        if (!isCribManagedFile(child)) return false;
+      }
+    }
+  }
+  return files > 0; // every file is crib-managed; an empty directory is NOT a footprint
 }
 
 /**
@@ -1188,10 +1304,12 @@ export function detectClients(
   }
   // A running client is the answer; do not dilute it with stale repository configuration.
   if (signals.length === 0) {
-    for (const { client, path, cribOwned } of REPO_SIGNALS) {
+    for (const { client, path } of REPO_SIGNALS) {
       const abs = join(repoRoot, path);
       if (!existsSync(abs)) continue;
-      if (cribOwned && isCribOnlyFile(abs)) continue;
+      // crib's own install writes these very paths (hooks, MCP config, protocol blocks); a
+      // footprint of crib's own output is not evidence the USER runs the client.
+      if (isCribFootprint(abs)) continue;
       signals.push({ client, source: 'repo', evidence: path });
     }
   }
