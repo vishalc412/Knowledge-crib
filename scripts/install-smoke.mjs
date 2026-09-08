@@ -158,7 +158,16 @@ export function smokeInstall({ outRoot = join(repoRoot, 'dist', 'installers') } 
   const prefix = mkdtempSync(join(tmpdir(), 'knowledge-crib-install-'));
   try {
     const installer = installerCommand(bundle.bundleDir);
+    // install-macos.sh (WP1 convenience) runs `crib setup .` against whatever directory it is
+    // invoked from, gated on that directory being inside a git work tree. Without an isolated
+    // cwd here, that "wherever it is invoked from" is THIS SCRIPT'S caller — the developer's own
+    // checkout when this smoke runs locally — and setup would silently rewrite its real adapter
+    // configs (.mcp.json, .codex/config.toml, .gemini/settings.json). `prefix` is a fresh tmpdir
+    // and never a git repo, so the installer's auto-setup step takes its "not inside a git
+    // repository" no-op branch instead (see the plan rule: an evidence run must not dirty the
+    // checkout it certifies).
     run(installer.command, installer.args, {
+      cwd: prefix,
       env: { ...process.env, npm_config_prefix: prefix },
     });
 
@@ -413,7 +422,11 @@ export function smokeUserDirInstall({ outRoot = join(repoRoot, 'dist', 'installe
 
     // install — the bundle scripts must survive a HOME/prefix containing a space and non-ASCII.
     const installer = installerCommand(bundle.bundleDir);
-    run(installer.command, installer.args, { env });
+    // See smokeInstall's matching comment: without an isolated cwd, install-macos.sh's
+    // post-install `crib setup .` runs against this script's own invoker (the developer's real
+    // checkout when run locally) instead of the scenario's throwaway home. `paths.home` is never
+    // a git work tree, so the installer's auto-setup step no-ops there.
+    run(installer.command, installer.args, { cwd: paths.home, env });
 
     const bins = expectedBinPaths(paths.prefix);
     if (!existsSync(bins.primary)) {
@@ -470,8 +483,8 @@ export function smokeUserDirInstall({ outRoot = join(repoRoot, 'dist', 'installe
     const configBeforeReinstall = readFileSync(mcpConfigPath, 'utf8');
 
     // reinstall (the same flow an upgrade takes): the install must be idempotent AND must not
-    // clobber the client config the earlier install wrote.
-    run(installer.command, installer.args, { env });
+    // clobber the client config the earlier install wrote. cwd: paths.home, same reason as above.
+    run(installer.command, installer.args, { cwd: paths.home, env });
     if (!existsSync(bins.primary)) {
       throw new Error('Reinstall did not leave the bin in place');
     }
@@ -504,8 +517,8 @@ export function smokeUserDirInstall({ outRoot = join(repoRoot, 'dist', 'installe
 
     // WP7.6 — reinstall after the uninstall, then prove the seeded memory survived the whole
     // client-removal/uninstall/reinstall cycle: the same records answer recall through the
-    // REINSTALLED bin and the store files are byte-identical.
-    run(installer.command, installer.args, { env });
+    // REINSTALLED bin and the store files are byte-identical. cwd: paths.home, same reason above.
+    run(installer.command, installer.args, { cwd: paths.home, env });
     if (!existsSync(bins.primary)) {
       throw new Error('Reinstall after the uninstall did not restore the bin');
     }
