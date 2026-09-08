@@ -1340,7 +1340,10 @@ describe('crib doctor (WP2.6) — one fixture per condition, one DISTINCT diagno
         cwd: repo,
         encoding: 'utf8',
         stdio: ['ignore', 'pipe', 'pipe'],
-        env: { ...process.env, HOME: home, ...env },
+        // CI installs the semantic tier at KCRIB_EMBED_HOME before this suite. The control fixture
+        // models a fresh machine, so it must not inherit that job-level model; individual embed
+        // cases still opt in by passing their own explicit KCRIB_EMBED_HOME in `env`.
+        env: { ...process.env, HOME: home, KCRIB_EMBED_HOME: undefined, ...env },
       }).trim();
     } catch (e) {
       return ((e as { stdout?: string }).stdout ?? '').trim();
