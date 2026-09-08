@@ -463,13 +463,93 @@ describe('capture-hook writer (G2.1) — Claude settings.json', () => {
     for (const key of Object.keys(hooks)) {
       const bucket = hooks[key] as Record<string, unknown>[];
       expect(bucket).toHaveLength(1);
+      // An event bucket holds MATCHER objects, each with its own `hooks` array of command entries.
+      // A bare command entry here is rejected by the client and the hook silently never fires.
       expect(bucket[0]).toEqual({
-        type: 'command',
-        command: expect.stringMatching(/^crib memory capture-hook --event /),
+        hooks: [
+          {
+            type: 'command',
+            command: expect.stringMatching(/^crib memory capture-hook --event /),
+          },
+        ],
       });
     }
     expect((hooks.SessionStart as unknown[])[0]).toBeDefined();
     expect(JSON.stringify(hooks.SessionStart)).toContain('crib session bootstrap --json');
+  });
+
+  it('repairs a legacy flat install in place — migrated, not duplicated', () => {
+    // What every crib before this fix wrote: a bare command entry where a matcher was expected.
+    writeFileSync(
+      settingsPath(),
+      `${JSON.stringify(
+        {
+          hooks: {
+            SessionStart: [
+              {
+                type: 'command',
+                command:
+                  'crib memory capture-hook --event session-start; crib session bootstrap --json || true',
+              },
+            ],
+          },
+        },
+        null,
+        2,
+      )}\n`,
+    );
+    // The malformed entry is still recognised as crib-owned, so it is reported as installed...
+    expect(listCaptureHooks(repo, { client: 'claude', scope: 'project' })[0]!.events).toContain(
+      'session-start',
+    );
+    // ...and re-installing rewrites it rather than appending a second copy beside it.
+    expect(installCaptureHooks(repo, { client: 'claude', scope: 'project' })[0]!.written).toBe(
+      true,
+    );
+    const hooks = (JSON.parse(readFileSync(settingsPath(), 'utf8')) as Record<string, unknown>)
+      .hooks as Record<string, unknown>;
+    const bucket = hooks.SessionStart as Record<string, unknown>[];
+    expect(bucket).toHaveLength(1);
+    expect(bucket[0]!.type).toBeUndefined();
+    expect(Array.isArray(bucket[0]!.hooks)).toBe(true);
+    // And the repaired file is now the idempotent fixed point.
+    expect(installCaptureHooks(repo, { client: 'claude', scope: 'project' })[0]!.written).toBe(
+      false,
+    );
+  });
+
+  it('removing a crib hook that shares a matcher with a user hook keeps the user hook', () => {
+    writeFileSync(
+      settingsPath(),
+      `${JSON.stringify(
+        {
+          hooks: {
+            Stop: [
+              {
+                matcher: '',
+                hooks: [
+                  { type: 'command', command: 'user-own-hook' },
+                  { type: 'command', command: 'crib memory capture-hook --event turn-end' },
+                ],
+              },
+            ],
+          },
+        },
+        null,
+        2,
+      )}\n`,
+    );
+    const result = removeCaptureHooks(repo, { client: 'claude', scope: 'project' });
+    expect(result[0]!.written).toBe(true);
+    expect(result[0]!.events).toEqual(['turn-end']);
+    const obj = JSON.parse(readFileSync(settingsPath(), 'utf8')) as Record<string, unknown>;
+    expect(JSON.stringify(obj)).toContain('user-own-hook');
+    expect(JSON.stringify(obj)).not.toContain(CAPTURE_HOOK_COMMAND_MARKER);
+    // The shared matcher survives, stripped — not dropped with the user's hook inside it.
+    const bucket = (obj.hooks as Record<string, unknown>).Stop as Record<string, unknown>[];
+    expect(bucket).toHaveLength(1);
+    expect(bucket[0]!.matcher).toBe('');
+    expect(bucket[0]!.hooks).toEqual([{ type: 'command', command: 'user-own-hook' }]);
   });
 
   it('is idempotent — a second install reports written:false and changes no bytes', () => {

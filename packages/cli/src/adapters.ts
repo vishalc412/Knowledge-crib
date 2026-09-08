@@ -153,6 +153,8 @@ export function neutralProtocolBody(): string {
     '### 2. Recall before you act',
     '- Before relying on a reusable claim, call the `brief` MCP tool (or the `memory_recall` MCP tool, or `crib memory recall "<query>"`) to surface team + local memory for this repository. Memory is the source of truth across sessions — do not assume last session’s state still holds.',
     '- `brief` returns typed groups: team before local, valid before degraded, current before needs-review. Never mix memory results with BM25 code-search results into one opaque list.',
+    '- Recall and handoff read DIFFERENT stores, and neither answers for the other. `brief` and `memory_recall` read the CLAIM LEDGER (distilled reusable claims); `memory` with `op: "handoff"` reads INTAKES (durable work in progress, §1). An empty recall is evidence about the ledger alone — it is never evidence that there is no unfinished work, so do not report "no memory for this repository" on a recall alone. Check both stores before concluding either is empty.',
+    '- Recall deliberately excludes untrusted records. `memory_recall` never returns pending, invalid, superseded or retracted records, so a claim captured but not yet distilled is absent by design, not missing. Pass `includePending: true` to see those as a separate, explicitly untrusted group — leads, never facts.',
     '',
     '### 3. Record only reusable learnings',
     '- Persist a memory (via `memory_observe`, or `crib memory propose/attest`) ONLY when it is reusable beyond the current task: a non-obvious fact, a verified procedure, a decision with rationale, a pitfall and its fix, or a convention.',
@@ -670,13 +672,66 @@ function isCribHookEntry(entry: unknown): entry is Record<string, unknown> {
   );
 }
 
-/** The lifecycle event a crib-owned hook entry was written for, or `null` when unparseable. */
-function eventOfCribHook(entry: Record<string, unknown>): LifecycleEvent | null {
-  const m = /--event (session-start|turn-end|tool-use)(?:\s|;|$)/.exec(entry.command as string);
+/** The inner `hooks` array of a settings MATCHER entry, or `null` when the entry is not one.
+ *
+ * Claude Code's settings schema nests two levels — `hooks.<Event>` holds MATCHER objects, and each
+ * matcher carries its own `hooks` array of command entries. A bare command entry pushed straight
+ * into the event bucket is rejected by the client ("Hook matcher \"hooks\" must be an array of hook
+ * entries"), which is the shape crib wrote until this was fixed: the hook never fired, so
+ * SessionStart never injected the continuation block. Both shapes are recognised from here on — the
+ * flat one so an existing install can be repaired or removed, the nested one because it is what a
+ * correct install now looks like. */
+function matcherHooks(entry: unknown): unknown[] | null {
+  if (typeof entry !== 'object' || entry === null || Array.isArray(entry)) return null;
+  const inner = (entry as Record<string, unknown>).hooks;
+  return Array.isArray(inner) ? inner : null;
+}
+
+/** True when an event-bucket entry is crib-owned in EITHER shape: a legacy bare command entry, or a
+ *  matcher entry whose `hooks` array carries at least one crib command. */
+function isCribBucketEntry(entry: unknown): boolean {
+  if (isCribHookEntry(entry)) return true;
+  const inner = matcherHooks(entry);
+  return inner?.some(isCribHookEntry) ?? false;
+}
+
+/** The lifecycle event a crib-owned bucket entry was written for, or `null` when unparseable. */
+function eventOfCribHook(entry: unknown): LifecycleEvent | null {
+  const owner = isCribHookEntry(entry)
+    ? entry
+    : (matcherHooks(entry)?.find(isCribHookEntry) as Record<string, unknown> | undefined);
+  const command = owner?.command;
+  if (typeof command !== 'string') return null;
+  const m = /--event (session-start|turn-end|tool-use)(?:\s|;|$)/.exec(command);
   const event = m?.[1];
   return event && (LIFECYCLE_EVENTS as readonly string[]).includes(event)
     ? (event as LifecycleEvent)
     : null;
+}
+
+/** One crib-owned matcher entry in the shape the client's schema requires. `matcher` is omitted,
+ *  which upstream treats as match-all — these are session/turn events, not tool-name-scoped ones. */
+function cribMatcherEntry(event: LifecycleEvent): Record<string, unknown> {
+  return { hooks: [{ type: 'command', command: captureHookCommand(event) }] };
+}
+
+/** Strip crib-owned commands from one event bucket, preserving every user entry. A matcher the user
+ *  shares with a crib command is REWRITTEN without that command rather than dropped, so removing
+ *  crib never takes a sibling user hook with it. */
+function stripCribFromBucket(bucket: readonly unknown[]): unknown[] {
+  const kept: unknown[] = [];
+  for (const entry of bucket) {
+    if (isCribHookEntry(entry)) continue;
+    const inner = matcherHooks(entry);
+    if (inner === null || !inner.some(isCribHookEntry)) {
+      kept.push(entry);
+      continue;
+    }
+    const innerKept = inner.filter((h) => !isCribHookEntry(h));
+    if (innerKept.length > 0)
+      kept.push({ ...(entry as Record<string, unknown>), hooks: innerKept });
+  }
+  return kept;
 }
 
 export interface HookInstallResult {
@@ -740,7 +795,7 @@ function hooksRefusal(path: string, events: readonly LifecycleEvent[]): string |
     if (bucket === undefined) continue;
     if (!Array.isArray(bucket)) return `refusing to write ${path}: 'hooks.${key}' is not an array`;
     for (const entry of bucket) {
-      if (isCribHookEntry(entry) && eventOfCribHook(entry) === null)
+      if (isCribBucketEntry(entry) && eventOfCribHook(entry) === null)
         return `refusing to write ${path}: a '${CAPTURE_HOOK_COMMAND_MARKER}' entry is present but unparseable — fix or remove it first`;
     }
   }
@@ -784,10 +839,12 @@ export function installCaptureHooks(
     let changed = false;
     for (const { event, key } of hookEventPairs(hooks.events)) {
       const bucket = (hooksRoot[key] as unknown[] | undefined) ?? [];
-      // Drop prior crib-owned entries, then append ours last — user entries keep their position and
-      // the crib entry is byte-identical on re-runs (idempotent).
-      const kept = bucket.filter((e) => !isCribHookEntry(e));
-      kept.push({ type: 'command', command: captureHookCommand(event) });
+      // Drop prior crib-owned entries in EITHER shape, then append ours last — user entries keep
+      // their position and the crib entry is byte-identical on re-runs (idempotent). Stripping the
+      // legacy flat shape here is also the repair path: a settings file written by an older crib is
+      // migrated to the nested matcher form on the next install, in place and without duplicating.
+      const kept = stripCribFromBucket(bucket);
+      kept.push(cribMatcherEntry(event));
       if (JSON.stringify(kept) !== JSON.stringify(bucket)) changed = true;
       hooksRoot[key] = kept;
       wired.push(event);
@@ -833,7 +890,7 @@ export function listCaptureHooks(
             const bucket = (hooksRoot as Record<string, unknown>)[key];
             if (!Array.isArray(bucket)) continue;
             for (const entry of bucket) {
-              if (!isCribHookEntry(entry)) continue;
+              if (!isCribBucketEntry(entry)) continue;
               const event = eventOfCribHook(entry);
               if (event && !events.includes(event)) events.push(event);
             }
@@ -890,8 +947,10 @@ export function removeCaptureHooks(
     for (const { event, key } of hookEventPairs(hooks.events)) {
       const bucket = hooksRoot[key];
       if (!Array.isArray(bucket)) continue;
-      const kept = bucket.filter((e) => !isCribHookEntry(e));
-      if (kept.length !== bucket.length) {
+      const kept = stripCribFromBucket(bucket);
+      // Content, not length: a matcher shared with a user hook is rewritten in place, so the bucket
+      // can change while staying the same size.
+      if (JSON.stringify(kept) !== JSON.stringify(bucket)) {
         removed.push(event);
         changed = true;
       }
