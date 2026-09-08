@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   type McpInstallResult,
@@ -276,5 +277,33 @@ describe('listMcp + removeMcp', () => {
     const toml = readFileSync(join(repo, '.codex', 'config.toml'), 'utf8');
     expect(toml).not.toContain('knowledge-crib');
     expect(toml).toContain('[mcp_servers.other]'); // sibling kept
+  });
+});
+
+describe('installMcp — clean machine (no `crib` on PATH)', () => {
+  it('pins this process (node + cli.js) instead of a bare `crib` no machine can spawn', () => {
+    // CI reproduces this without help, but a dev machine has crib on PATH: strip PATH so
+    // `which` itself fails → resolveBin's fallback path, exactly like a fresh checkout.
+    const savedPath = process.env.PATH;
+    process.env.PATH = '';
+    try {
+      const r = first(installMcp(repo, { ide: 'claude', scope: 'project' }));
+      expect(r.written).toBe(true);
+      expect(r.command).toBe(process.execPath);
+      expect(r.args[0]).toMatch(/cli\.js$/);
+      expect(r.args).toEqual([r.args[0]!, 'serve', '.']);
+      // The written entry is spawnable as-is: absolute node, no PATH or exec-bit dependency.
+      const cfg = parse(r.configPath);
+      const entry = (cfg.mcpServers as Record<string, { command: string; args: string[] }>)[NAME]!;
+      expect(entry.command).toBe(process.execPath);
+      // The entry pins THIS module's compiled sibling — cli.js sits beside mcp-install.js in
+      // dist/. (Under vitest this resolves into src/, so this asserts the resolution CONTRACT;
+      // the built-layout existence is pinned end-to-end by onboarding:check, which shells out
+      // to the real dist CLI and then runs doctor over the entry init wrote.)
+      expect(entry.args[0]).toBe(resolve(dirname(fileURLToPath(import.meta.url)), 'cli.js'));
+      expect(existsSync(entry.command)).toBe(true);
+    } finally {
+      process.env.PATH = savedPath;
+    }
   });
 });

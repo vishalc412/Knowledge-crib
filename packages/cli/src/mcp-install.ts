@@ -23,6 +23,7 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { spliceManaged } from './hooks.js';
 
 export type McpIde = 'claude' | 'cursor' | 'vscode' | 'codex' | 'windsurf' | 'gemini';
@@ -226,6 +227,14 @@ function targetFor(
 /** Install/refresh the managed entry for one IDE. Returns the result; never throws (notes on failure). */
 export function installMcp(repoRoot: string, opts: McpInstallOptions): McpInstallResult[] {
   const bin = resolveBin(opts.bin);
+  // A bare `'crib'` means `which crib` FAILED on this machine (a fresh checkout, a CI runner, any
+  // machine without a global install) — an entry that spawns a bare word no shell here resolves is
+  // broken the moment it is written, and doctor correctly reports it as such. Pin THIS process's
+  // own entry point instead: absolute node + the absolute cli.js sitting next to this module.
+  // node loads the file itself, so the entry works with no PATH dependency and no exec bit.
+  const selfSpawn = !opts.bin && bin === 'crib';
+  const command = selfSpawn ? process.execPath : bin;
+  const selfArgs = selfSpawn ? [resolve(dirname(fileURLToPath(import.meta.url)), 'cli.js')] : [];
   const scope: McpScope = opts.scope ?? 'project';
   const ides: McpIde[] = opts.ide === 'all' ? ALL_IDES : [opts.ide];
   const absRoot = resolve(repoRoot);
@@ -249,9 +258,9 @@ export function installMcp(repoRoot: string, opts: McpInstallOptions): McpInstal
 
     // Claude global: shell out to `claude mcp add -s user` with no path arg → REQ-1 runtime resolution.
     if (target.format === 'claude-cli') {
-      const args = ['serve']; // no path: resolveProjectRoot via CLAUDE_PROJECT_DIR + registry at runtime
+      const args = [...selfArgs, 'serve']; // no path: resolveProjectRoot via CLAUDE_PROJECT_DIR + registry at runtime
       try {
-        execFileSync('claude', ['mcp', 'add', SERVER_NAME, '-s', 'user', '--', bin, ...args], {
+        execFileSync('claude', ['mcp', 'add', SERVER_NAME, '-s', 'user', '--', command, ...args], {
           stdio: ['ignore', 'ignore', 'ignore'],
         });
         out.push({
@@ -259,7 +268,7 @@ export function installMcp(repoRoot: string, opts: McpInstallOptions): McpInstal
           scope,
           configPath: target.configPath,
           written: true,
-          command: bin,
+          command,
           args,
           ...restartFields(ide, true),
         });
@@ -269,7 +278,7 @@ export function installMcp(repoRoot: string, opts: McpInstallOptions): McpInstal
           scope,
           configPath: target.configPath,
           written: false,
-          command: bin,
+          command,
           args,
           ...restartFields(ide, false),
           note: 'claude CLI not found on PATH; install Claude Code, or use project-scope `crib mcp install --ide claude`.',
@@ -278,12 +287,12 @@ export function installMcp(repoRoot: string, opts: McpInstallOptions): McpInstal
       continue;
     }
 
-    const args = buildArgs(ide, scope, absRoot);
+    const args = [...selfArgs, ...buildArgs(ide, scope, absRoot)];
     if (target.format === 'toml') {
       const block = [
         TOML_BEGIN,
         `[mcp_servers.${SERVER_NAME}]`,
-        `command = ${tomlString(bin)}`,
+        `command = ${tomlString(command)}`,
         // Each arg is a TOML basic string → backslash- AND quote-escaped via tomlString. The earlier
         // form only quote-escaped (`a.replace(/"/g, '\\"')`), so a win32 absolute repo path like
         // `C:\Users\runneradmin\repo` serialized as `args = ["serve", "C:\Users\…\repo"]` with RAW
@@ -306,7 +315,7 @@ export function installMcp(repoRoot: string, opts: McpInstallOptions): McpInstal
         scope,
         configPath: target.configPath,
         written,
-        command: bin,
+        command,
         args,
         ...restartFields(ide, written),
       });
@@ -315,7 +324,7 @@ export function installMcp(repoRoot: string, opts: McpInstallOptions): McpInstal
 
     // JSON config (project-scope claude/cursor/vscode, or global cursor).
     const rootKey = target.format === 'json-servers' ? 'servers' : 'mcpServers';
-    const entry: Record<string, unknown> = { command: bin, args };
+    const entry: Record<string, unknown> = { command, args };
     if (target.format === 'json-servers') entry.type = 'stdio';
     const obj = readJson(target.configPath);
     const { written, obj: next } = mergeJsonManaged(obj, rootKey, SERVER_NAME, entry);
@@ -325,7 +334,7 @@ export function installMcp(repoRoot: string, opts: McpInstallOptions): McpInstal
       scope,
       configPath: target.configPath,
       written,
-      command: bin,
+      command,
       args,
       ...restartFields(ide, written),
     });
