@@ -287,7 +287,14 @@ import {
   installHooks,
   mergeDriverFiles,
 } from './hooks.js';
-import { type McpIde, type McpScope, installMcp, listMcp, removeMcp } from './mcp-install.js';
+import {
+  type McpIde,
+  type McpScope,
+  auditMcp,
+  installMcp,
+  listMcp,
+  removeMcp,
+} from './mcp-install.js';
 import { registerProject, registryDir } from './registry.js';
 import {
   type ResolvedRoot,
@@ -2764,6 +2771,33 @@ async function cmdDoctor(args: string[], ctx?: CmdCtx): Promise<number> {
     fix: 'run `crib mcp install` (or `crib init`)',
   });
 
+  // 6b. WP2.6 — MCP config USABLE, reported independently of mere presence (6): every config
+  //     crib wrote must still parse, and the binary each entry spawns must exist on THIS machine.
+  //     An entry pins the absolute `crib` path from install time — a reinstall or another
+  //     checkout silently orphans it, which reads as "the client never connects" unless doctor
+  //     names it. Distinct kinds stay distinct in the report (unparseable ≠ missing binary), so
+  //     the operator learns WHICH half is broken before touching anything.
+  try {
+    const audit = auditMcp(repoRoot, { home: process.env.HOME });
+    const distinctFixes = [...new Set(audit.map((p) => p.fix))];
+    checks.push({
+      name: 'MCP config usable (parses, binary exists)',
+      ok: audit.length === 0,
+      detail:
+        audit.length === 0
+          ? 'no crib-managed MCP config problems'
+          : audit.map((p) => p.message).join('; '),
+      fix: distinctFixes.length > 0 ? distinctFixes.join('; or ') : undefined,
+    });
+  } catch (err) {
+    checks.push({
+      name: 'MCP config usable (parses, binary exists)',
+      ok: false,
+      detail: `audit failed: ${(err as Error).message}`,
+      fix: 'run `crib mcp list` to inspect the configs by hand',
+    });
+  }
+
   // 7. Agent-memory loop (PRD W8): once a user opts in with `crib memory init`, the loop is
   //    policy.json + team store + at least one instruction adapter present. NOT initialized is a
   //    valid, non-failing state (memory is opt-in) → reported as ✓ with a hint, not ✗.
@@ -2902,7 +2936,7 @@ async function cmdDoctor(args: string[], ctx?: CmdCtx): Promise<number> {
     checks.push({
       name: 'freshness',
       ok: deadOk,
-      detail: `mode ${fresh.mode}${fresh.modeExplicit ? '' : ' (default)'}; worker ${fresh.workerRunning ? `running (pid ${fresh.workerPid ?? '?'})` : 'not running'}; pending ${fresh.pending}; in-flight ${fresh.inFlight ? fresh.inFlight.id : 'none'}; behind HEAD ${fresh.behindHead ? 'YES' : 'no'}`,
+      detail: `mode ${fresh.mode}${fresh.modeExplicit ? '' : ' (default)'}; worker ${fresh.workerRunning ? `running (pid ${fresh.workerPid ?? '?'})` : 'not running'}; pending ${fresh.pending}; dead ${fresh.dead}; in-flight ${fresh.inFlight ? fresh.inFlight.id : 'none'}; behind HEAD ${fresh.behindHead ? 'YES' : 'no'}`,
       fix: !deadOk
         ? 'inspect `crib freshness status` and re-run `crib update` (dead-lettered tasks are retried by the worker)'
         : fresh.behindHead

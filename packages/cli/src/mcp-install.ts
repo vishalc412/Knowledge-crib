@@ -378,6 +378,152 @@ export function listMcp(
   return out;
 }
 
+/**
+ * WP2.6 — doctor's independent config/binary audit. Wiring PRESENT (listMcp) is not config
+ * USABLE: an entry embeds the absolute `crib` path resolved at install time, which a reinstall,
+ * a moved checkout, or another machine can invalidate, and a hand-edited file can corrupt
+ * after install. The audit re-reads every config crib wrote (or that exists at its targets) and
+ * answers the two questions the wiring check cannot: does the file still parse, and does the
+ * binary the entry spawns still exist on THIS machine.
+ *
+ * Pure read — a diagnostic must never repair what it inspects; each problem names its
+ * location and its remediation so `crib doctor` can report it independently.
+ */
+export type McpAuditProblemKind = 'config-unparseable' | 'binary-missing';
+
+export interface McpAuditProblem {
+  ide: McpIde;
+  scope: McpScope;
+  configPath: string;
+  kind: McpAuditProblemKind;
+  /** Human sentence naming the concrete location — the doctor row prints this verbatim. */
+  message: string;
+  fix: string;
+}
+
+/** Unescape a TOML basic string body (the inverse of {@link tomlString}). */
+function fromTomlString(s: string): string {
+  return s.replace(/\\(.)/g, (_, c: string) => (c === 'n' ? '\n' : c === 't' ? '\t' : c));
+}
+
+/** Does a spawned binary exist: absolute paths on disk, bare names on PATH. */
+function binaryAvailable(command: string): boolean {
+  if (command.includes('/') || command.includes('\\')) return existsSync(command);
+  try {
+    execFileSync('which', [command], {
+      encoding: 'utf8',
+      stdio: ['ignore', 'ignore', 'ignore'],
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Audit every MCP config target that exists. Returns one problem per (file, defect) — never
+ * throws, never writes; unreadable/undecidable states surface as problems, not crashes.
+ */
+export function auditMcp(repoRoot: string, opts: { home?: string } = {}): McpAuditProblem[] {
+  const absRoot = resolve(repoRoot);
+  const problems: McpAuditProblem[] = [];
+  const push = (
+    ide: McpIde,
+    scope: McpScope,
+    configPath: string,
+    kind: McpAuditProblemKind,
+    message: string,
+    fix: string,
+  ): void => {
+    problems.push({ ide, scope, configPath, kind, message, fix });
+  };
+
+  for (const ide of ALL_IDES) {
+    for (const scope of ['project', 'global'] as const) {
+      const target = targetFor(ide, scope, absRoot, opts.home);
+      if (!target || target.format === 'claude-cli') continue; // CLI-managed config is not a file to audit
+      if (!existsSync(target.configPath)) continue;
+      const text = readOrEmpty(target.configPath);
+
+      let command: string | undefined;
+      if (target.format === 'toml') {
+        const begin = text.indexOf(TOML_BEGIN);
+        const end = begin === -1 ? -1 : text.indexOf(TOML_END, begin);
+        if (begin === -1 || end === -1) {
+          // A file at a crib target WITHOUT a parseable managed block: either the user replaced
+          // crib's config wholesale (nothing to audit) or the block was truncated mid-edit
+          // (unusable). Only the truncated case — one marker without its pair — is a defect.
+          if (begin !== -1 || text.includes(TOML_END))
+            push(
+              ide,
+              scope,
+              target.configPath,
+              'config-unparseable',
+              `${target.configPath}: managed block truncated (one marker without its pair)`,
+              'restore the managed block between the `knowledge-crib managed` markers, or remove both markers and re-run `crib mcp install`',
+            );
+          continue;
+        }
+        const block = text.slice(begin, end);
+        const m = block.match(/command\s*=\s*"((?:[^"\\]|\\.)*)"/);
+        command = m ? fromTomlString(m[1] ?? '') : undefined;
+        if (command === undefined) {
+          push(
+            ide,
+            scope,
+            target.configPath,
+            'config-unparseable',
+            `${target.configPath}: managed block has no \`command = "…"\` line`,
+            're-run `crib mcp install --ide codex` to rewrite the managed block',
+          );
+          continue;
+        }
+      } else {
+        let obj: Record<string, unknown>;
+        try {
+          obj = JSON.parse(text) as Record<string, unknown>;
+        } catch {
+          push(
+            ide,
+            scope,
+            target.configPath,
+            'config-unparseable',
+            `${target.configPath}: not valid JSON — crib cannot read or safely rewrite it`,
+            'fix the file by hand (crib will not overwrite a config it cannot parse)',
+          );
+          continue;
+        }
+        const rootKey = target.format === 'json-servers' ? 'servers' : 'mcpServers';
+        const entry = (obj[rootKey] as Record<string, unknown> | undefined)?.[SERVER_NAME];
+        if (entry === undefined) continue; // user's own file at a target path — not crib's to audit
+        command = (entry as { command?: unknown }).command as string | undefined;
+        if (typeof command !== 'string' || command.length === 0) {
+          push(
+            ide,
+            scope,
+            target.configPath,
+            'config-unparseable',
+            `${target.configPath}: \`mcpServers.${SERVER_NAME}\` has no command`,
+            're-run `crib mcp install` (the entry is crib-managed and safely rewritable)',
+          );
+          continue;
+        }
+      }
+
+      if (!binaryAvailable(command))
+        push(
+          ide,
+          scope,
+          target.configPath,
+          'binary-missing',
+          `${ide} (${scope}) spawns \`${command}\` — that binary is not on this machine`,
+          're-run `crib mcp install` from the machine where crib is installed (the entry pins an absolute path)',
+        );
+    }
+  }
+  return problems;
+}
+
 /** Remove the managed entry for one IDE without touching sibling content. */
 export function removeMcp(repoRoot: string, opts: McpInstallOptions): McpInstallResult[] {
   const scope: McpScope = opts.scope ?? 'project';

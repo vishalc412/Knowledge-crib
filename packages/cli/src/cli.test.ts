@@ -3,8 +3,8 @@ import {
   existsSync,
   mkdirSync,
   mkdtempSync,
-  readdirSync,
   readFileSync,
+  readdirSync,
   realpathSync,
   rmSync,
   symlinkSync,
@@ -15,10 +15,17 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { crc32 } from 'node:zlib';
 import { SoulStore, newManifest, openIndex } from '@knowledge-crib/core';
+import {
+  type MemoryEvidence,
+  type MemoryRecord,
+  MemoryStore,
+  memoryRecordId,
+} from '@knowledge-crib/memory';
 import { indexRepo } from '@knowledge-crib/pipeline';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { buildMinimalPdf } from '../../../scripts/fixtures/minimal-pdf.mjs';
 import { syntheticMuleProject } from '../../../scripts/fixtures/synthetic-mule-project.mjs';
+import { TOML_BEGIN } from './mcp-install.js';
 
 /**
  * End-to-end CLI dispatch tests for the P2 surface: `context --package <pkg>` (WS-4 bulk dossierByScope)
@@ -1194,9 +1201,9 @@ describe('crib adapters (W8) — CLI dispatch', () => {
     };
     expect(Object.keys(settings.hooks ?? {}).length).toBeGreaterThan(0);
     for (const [event, groups] of Object.entries(settings.hooks ?? {})) {
-      const cribEntries = groups.flatMap((g) => g.hooks ?? []).filter((e) =>
-        (e.command ?? '').startsWith('crib memory capture-hook'),
-      );
+      const cribEntries = groups
+        .flatMap((g) => g.hooks ?? [])
+        .filter((e) => (e.command ?? '').startsWith('crib memory capture-hook'));
       expect(cribEntries.length).toBe(1);
       expect(event).toMatch(/SessionStart|SessionEnd|PostToolUse|Stop|PreToolUse/);
     }
@@ -1302,6 +1309,189 @@ describe('crib doctor — stale build artifacts (WARN-class, report-only)', () =
     // total NOT pinned — the check count varies with environment (see the doctor W8 describe
     // block above); the invariant under test here is that the stale-artifacts check is included.
     expect(r.stdout).toMatch(/crib doctor: \d+\/\d+ checks passed/);
+  });
+});
+
+/**
+ * WP2.6 — `crib doctor` must identify each of the five failure conditions the plan names
+ * INDEPENDENTLY: missing client binary, invalid configuration, unavailable model, inactive
+ * freshness service, pending migration. The register acceptance is "fixture per condition →
+ * distinct diagnosis": every fixture below plants exactly ONE defect and asserts the doctor row
+ * that names it — its own ✗, its own evidence, its own fix — never a generic "something is wrong".
+ *
+ * `runDoctor` isolates HOME per test: this dev machine has crib installed in all six clients'
+ * global configs, and without an isolated HOME the MCP-config audit would read those real global
+ * entries (and the freshness registry, and the embed home) instead of the planted fixture.
+ */
+describe('crib doctor (WP2.6) — one fixture per condition, one DISTINCT diagnosis each', () => {
+  const NOW = '2026-01-01T00:00:00.000Z';
+  let home: string;
+
+  beforeEach(() => {
+    home = mkdtempSync(join(tmpdir(), 'crib-doctor-home-'));
+  });
+  afterEach(() => rmSync(home, { recursive: true, force: true }));
+
+  /** Doctor via the BUILT CLI with an isolated HOME (+ per-test env). Doctor exits non-zero when a
+   *  planted defect fails its check, so capture stdout rather than throw. */
+  function runDoctor(env: NodeJS.ProcessEnv = {}): string {
+    try {
+      return execFileSync(process.execPath, [CLI, 'doctor'], {
+        cwd: repo,
+        encoding: 'utf8',
+        stdio: ['ignore', 'pipe', 'pipe'],
+        env: { ...process.env, HOME: home, ...env },
+      }).trim();
+    } catch (e) {
+      return ((e as { stdout?: string }).stdout ?? '').trim();
+    }
+  }
+
+  it('diagnoses a crib MCP entry whose pinned binary is gone (binary-missing)', () => {
+    // An install pins the ABSOLUTE crib path; a reinstall or another checkout silently orphans the
+    // entry, which reads downstream as "the client never connects" — doctor must name the path.
+    const bin = join(repo, '.crib', 'bin', 'crib-moved-away');
+    mkdirSync(join(repo, '.cursor'), { recursive: true });
+    writeFileSync(
+      join(repo, '.cursor', 'mcp.json'),
+      `${JSON.stringify({ mcpServers: { 'knowledge-crib': { command: bin, args: ['mcp'] } } }, null, 2)}\n`,
+    );
+    const out = runDoctor();
+    expect(out).toMatch(/✗ MCP config usable \(parses, binary exists\)/);
+    expect(out).toContain('binary is not on this machine');
+    expect(out).toContain(bin);
+    expect(out).toMatch(/re-run `crib mcp install`/);
+  });
+
+  it('diagnoses an unparseable JSON config as config-unparseable, and refuses to touch it', () => {
+    mkdirSync(join(repo, '.cursor'), { recursive: true });
+    writeFileSync(join(repo, '.cursor', 'mcp.json'), '{ "mcpServers": {  broken');
+    const out = runDoctor();
+    expect(out).toMatch(/✗ MCP config usable \(parses, binary exists\)/);
+    expect(out).toContain('not valid JSON — crib cannot read or safely rewrite it');
+    expect(out).toContain('crib will not overwrite a config it cannot parse');
+    // And the corrupt file is still there: a diagnostic must never repair what it inspects.
+    expect(existsSync(join(repo, '.cursor', 'mcp.json'))).toBe(true);
+  });
+
+  it('diagnoses a truncated TOML managed block (one marker without its pair)', () => {
+    mkdirSync(join(repo, '.codex'), { recursive: true });
+    // BEGIN with no END: the block was cut mid-edit, so codex can never parse its way out.
+    writeFileSync(
+      join(repo, '.codex', 'config.toml'),
+      `${TOML_BEGIN}\n[mcp_servers.knowledge-crib]\ncommand = "/bin/crib"\n`,
+    );
+    const out = runDoctor();
+    expect(out).toMatch(/✗ MCP config usable \(parses, binary exists\)/);
+    expect(out).toContain('managed block truncated (one marker without its pair)');
+    expect(out).toContain('knowledge-crib managed');
+  });
+
+  it('diagnoses an unavailable model (embedder tier invalid-model) with the problems echoed', () => {
+    const embedHome = join(home, 'embed');
+    mkdirSync(embedHome, { recursive: true });
+    // A manifest crib cannot parse: the install EXISTS but is unverifiable — fail closed.
+    writeFileSync(join(embedHome, 'manifest.json'), '{ "formatVersion": ');
+    const out = runDoctor({ KCRIB_EMBED_HOME: embedHome });
+    expect(out).toMatch(/✗ embedder tier — state invalid-model/);
+    expect(out).toContain('problems:');
+    expect(out).toMatch(/crib embed status/);
+  });
+
+  it('diagnoses an inactive freshness service by its dead-lettered tasks, and names the count', () => {
+    const registry = join(home, 'registry');
+    const freshDir = join(registry, 'freshness');
+    mkdirSync(freshDir, { recursive: true });
+    // A dead-lettered task = the worker exhausted its retries for this project: the actionable ✗.
+    // projectRoot must match doctor's `resolve('.')` — the physical cwd, hence realpathSync.
+    writeFileSync(
+      join(freshDir, 'queue.json'),
+      `${JSON.stringify(
+        {
+          version: 1,
+          pending: [],
+          dead: [
+            {
+              id: 'fq:deadbeef',
+              projectRoot: realpathSync(repo),
+              head: 'deadbeefdeadbeefdeadbeefdeadbeefdeadbeef',
+              attempts: 3,
+              enqueuedAt: NOW,
+            },
+          ],
+        },
+        null,
+        2,
+      )}\n`,
+    );
+    const out = runDoctor({ KCRIB_REGISTRY_DIR: registry });
+    expect(out).toMatch(
+      /✗ freshness — mode manual \(default\); worker not running; pending 0; dead 1;/,
+    );
+    expect(out).toMatch(/inspect `crib freshness status`/);
+  });
+
+  it('diagnoses pending migration (unstamped memory-1 records) and names crib memory migrate', () => {
+    const memDir = join(repo, '.crib', 'memory');
+    mkdirSync(memDir, { recursive: true });
+    // The 7b check only exists once the user opted in — policy.json present, like the W8 fixture.
+    writeFileSync(join(memDir, 'policy.json'), '{"version":1,"profiles":{}}\n');
+    // A VALID memory-1 record (content-addressed id, verdicts, evidence) with NO principal stamp —
+    // exactly what a pre-memory-2 store holds, written through the real store so the strict loader
+    // accepts it (a hand-written shard line would be refused and silently count as zero).
+    const evidence: MemoryEvidence = {
+      kind: 'source-quote',
+      verdict: 'valid',
+      checkedAt: NOW,
+      soulId: 'sym:src/a.ts#A.b',
+      quote: 'does the thing',
+      targetHash: 'blake3:abc',
+    } as MemoryEvidence;
+    const input = {
+      kind: 'fact' as const,
+      subject: 'sym:src/a.ts#A.b',
+      claim: 'A.b does the thing',
+      scope: { boundary: 'repo' as const, repoId: 'r-doctor' },
+      appliesTo: ['sym:src/a.ts#A.b'],
+      evidence: [evidence],
+      authorship: { actor: 'claude-code', kind: 'agent' as const, tool: 'claude-code' },
+    };
+    const record: MemoryRecord = {
+      id: memoryRecordId(input),
+      schemaVersion: '1',
+      ...input,
+      verdicts: {
+        trust: 'local',
+        evidence: 'valid',
+        applicability: 'current',
+        lifecycle: 'active',
+      },
+      createdAt: NOW,
+    } as MemoryRecord;
+    MemoryStore.team(join(repo, '.crib')).upsertEntries('records', [record]);
+
+    const out = runDoctor();
+    expect(out).toMatch(/✗ principal boundary enforceable — 1\/1 record\(s\) are memory-1/);
+    expect(out).toMatch(/crib memory migrate/);
+  });
+
+  it('reports NONE of the five conditions when the machine is clean', () => {
+    // The control: the same doctor run against an intact repo must pass every one of the five
+    // checks — so a fixture-driven ✗ above can never be "doctor fails on anything". policy.json +
+    // team dir are planted (the opt-in state) so the 7b migration row runs at all, with an EMPTY
+    // store: zero records means "no records yet", never a migration ✗.
+    const memDir = join(repo, '.crib', 'memory');
+    mkdirSync(join(memDir, 'team'), { recursive: true });
+    writeFileSync(join(memDir, 'policy.json'), '{"version":1,"profiles":{}}\n');
+    const out = runDoctor();
+    expect(out).toMatch(
+      /✓ MCP config usable \(parses, binary exists\) — no crib-managed MCP config problems/,
+    );
+    expect(out).toMatch(/✓ embedder tier — state lexical-only/);
+    expect(out).toMatch(
+      /✓ freshness — mode manual \(default\); worker not running; pending 0; dead 0;/,
+    );
+    expect(out).toMatch(/✓ principal boundary enforceable — no records yet/);
   });
 });
 
