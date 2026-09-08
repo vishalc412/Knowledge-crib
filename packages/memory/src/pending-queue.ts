@@ -185,7 +185,7 @@ function evidenceViews(
  * together) is NOT covered by the per-item {@link admissibilityProblems} — it is encoded here so
  * `ready` can never disagree with the gate.
  */
-function classifyStaged(candidate: MemoryCandidate): PendingStagedRow {
+export function classifyStaged(candidate: MemoryCandidate): PendingStagedRow {
   const admission = admissibilityProblems(candidate.kind, candidate.evidence, { staged: false });
   const structural = admission.filter(
     (p) =>

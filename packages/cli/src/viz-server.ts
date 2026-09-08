@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto';
 import { readFile, realpath } from 'node:fs/promises';
 import { isAbsolute, relative, resolve } from 'node:path';
 import type { SoulStore } from '@knowledge-crib/core';
@@ -357,5 +358,186 @@ export function readMemoryIntakeDetail(
     checkpoints: got.checkpoints,
     brief,
     resumable: brief.status !== 'completed' && brief.status !== 'cancelled',
+  };
+}
+
+// ─── WP6.3/WP6.5 — the local mutation boundary ───────────────────────────────
+
+/**
+ * The header a mutation POST must present (WP6.5). A header, never a query parameter: the token
+ * must not appear in URLs, logs, or browser history. The token itself is delivered same-origin by
+ * `/memory/mutation-grant.json`, which a cross-origin page cannot read (no CORS headers are ever
+ * sent), and the DNS-rebinding Host guard already runs before any route.
+ */
+export const CSRF_HEADER = 'x-crib-csrf';
+
+/** Mutation bodies are small ids and strings; anything larger is a mistake or an abuse. */
+const MAX_MUTATION_BODY_BYTES = 64 * 1024;
+
+/** A mutation body field is an id or a one-line action — 2k is generous, 64k is a hard stop. */
+const MAX_MUTATION_FIELD = 2048;
+
+/** A structured mutation failure: on the wire it is `{error: {code, message}}`, never bare text. */
+export class VizMutationError extends VizHttpError {
+  constructor(
+    readonly code: string,
+    status: number,
+    message: string,
+  ) {
+    super(status, message);
+  }
+}
+
+/** Mint the per-server CSRF token — one per `crib viz` run, rotated when the server restarts. */
+export function createCsrfToken(): string {
+  return randomBytes(32).toString('hex');
+}
+
+/**
+ * Strict Origin validation for mutations (WP6.5): the Origin header must be exactly this server's
+ * own loopback origin (derived from the Host the allowlist guard already accepted). Browsers send
+ * Origin on every cross-origin POST and on same-origin fetch POSTs alike, so a missing or foreign
+ * Origin is refused — a malicious page cannot drive the local API even with the token guessed.
+ */
+export function validateMutationOrigin(headers: {
+  host: string;
+  origin?: string | undefined;
+}): void {
+  if (headers.origin !== `http://${headers.host}`) {
+    throw new VizMutationError('unauthorized', 403, 'origin not allowed');
+  }
+}
+
+/** Require the per-server CSRF token on a mutation (WP6.5) — absent or wrong → 403. */
+export function requireCsrfToken(token: string | undefined, expected: string): void {
+  if (token === undefined || token === '') {
+    throw new VizMutationError('unauthorized', 403, 'missing CSRF token');
+  }
+  // constant-shape failure message: the token value itself never appears in a response or log
+  if (token !== expected) {
+    throw new VizMutationError('unauthorized', 403, 'invalid CSRF token');
+  }
+}
+
+/**
+ * The minimal request-stream surface {@link readMutationBody} needs — an `IncomingMessage` in
+ * production, structurally satisfied by any readable stream in tests.
+ */
+export interface MutationRequestStream {
+  on(event: 'data', listener: (chunk: Buffer) => void): unknown;
+  on(event: 'end', listener: () => void): unknown;
+  on(event: 'error', listener: (err: Error) => void): unknown;
+  destroy(): unknown;
+}
+
+/** Read one bounded JSON request body: oversize → 413, non-JSON → 400 — never a silent truncation. */
+export function readMutationBody(req: MutationRequestStream): Promise<unknown> {
+  return new Promise((resolveBody, reject) => {
+    const chunks: Buffer[] = [];
+    let size = 0;
+    let settled = false;
+    req.on('data', (chunk: Buffer) => {
+      if (settled) return;
+      size += chunk.length;
+      if (size > MAX_MUTATION_BODY_BYTES) {
+        settled = true;
+        reject(new VizMutationError('payload-too-large', 413, 'mutation body too large'));
+        req.destroy();
+        return;
+      }
+      chunks.push(chunk);
+    });
+    req.on('end', () => {
+      if (settled) return;
+      const text = Buffer.concat(chunks).toString('utf8');
+      if (text.trim() === '') {
+        reject(new VizMutationError('bad-request', 400, 'empty body'));
+        return;
+      }
+      try {
+        resolveBody(JSON.parse(text));
+      } catch {
+        reject(new VizMutationError('bad-request', 400, 'invalid JSON body'));
+      }
+    });
+    req.on('error', (e: Error) => {
+      if (settled) return;
+      settled = true;
+      reject(e);
+    });
+  });
+}
+
+function requireString(v: unknown, field: string, opts: { allowEmpty?: boolean } = {}): string {
+  const empty = v === undefined || v === null || v === '';
+  if (empty && opts.allowEmpty) return '';
+  if (typeof v !== 'string' || v.length === 0 || v.length > MAX_MUTATION_FIELD) {
+    throw new VizMutationError('bad-request', 400, `invalid ${field}`);
+  }
+  return v;
+}
+
+function requireObject(v: unknown): Record<string, unknown> {
+  if (typeof v !== 'object' || v === null || Array.isArray(v)) {
+    throw new VizMutationError('bad-request', 400, 'expected a JSON object');
+  }
+  return v as Record<string, unknown>;
+}
+
+/** The admission POST body: the content-addressed staged id (also the revision token) + gate profile. */
+export interface VizAdmissionBody {
+  /** `cand:<content-addressed>` — the id IS the revision precondition: content-addressed, so a
+   * re-admission attempt that carries a different id is a different claim, not a stale write. */
+  id: string;
+  /** the gate profile the OPERATOR chose in the UI — resolved server-side, never guessed. */
+  profile: string;
+}
+
+export function parseAdmissionBody(v: unknown): VizAdmissionBody {
+  const o = requireObject(v);
+  const id = requireString(o.id, 'id');
+  if (!id.startsWith('cand:')) {
+    throw new VizMutationError('bad-request', 400, 'not a staged claim id');
+  }
+  return { id, profile: requireString(o.profile, 'profile') };
+}
+
+/**
+ * The resume POST body. `expectedCheckpointId` is the revision precondition (WP6.5): the id of the
+ * latest checkpoint the surface saw. An intake that was never checkpointed has no revision token
+ * yet — the surface passes the empty string for that state.
+ */
+export interface VizResumeBody {
+  intakeId: string;
+  /** what resuming MEANS — required when the intake has no recorded next action (refuse, never invent). */
+  next?: string;
+  expectedCheckpointId: string;
+}
+
+export function parseResumeBody(v: unknown): VizResumeBody {
+  const o = requireObject(v);
+  const next = requireString(o.next, 'next', { allowEmpty: true });
+  return {
+    intakeId: requireString(o.intakeId, 'intakeId'),
+    ...(next !== '' ? { next } : {}),
+    expectedCheckpointId: requireString(o.expectedCheckpointId, 'expectedCheckpointId', {
+      allowEmpty: true,
+    }),
+  };
+}
+
+/**
+ * The structured error wire shape for mutation routes (WP6.5): unauthorized / stale /
+ * invalid-evidence / unavailable-service each carry a code, never just prose. Non-mutation errors
+ * reaching a mutation route collapse to `internal` — the message stays, the shape never varies.
+ */
+export function mutationErrorPayload(e: VizHttpError): {
+  error: { code: string; message: string };
+} {
+  return {
+    error: {
+      code: e instanceof VizMutationError ? e.code : 'internal',
+      message: e.message,
+    },
   };
 }

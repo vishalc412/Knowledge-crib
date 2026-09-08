@@ -138,6 +138,7 @@ import {
   buildAliasIndex,
   buildAttemptEvent,
   buildDistillWorkItem,
+  classifyStaged,
   compactAttempt,
   compactSyncOutbox,
   conservativeVerdicts,
@@ -315,17 +316,26 @@ import {
 } from './runtime.js';
 import { installSkill, listBundledSkills } from './skill-install.js';
 import {
+  CSRF_HEADER,
   VizHttpError,
+  VizMutationError,
+  createCsrfToken,
   isAllowedHost,
+  mutationErrorPayload,
+  parseAdmissionBody,
   parseMemoryLedgerQuery,
   parseMemoryPendingQuery,
+  parseResumeBody,
   readMemoryHome,
   readMemoryIntakeDetail,
   readMemoryLedger,
   readMemoryLedgerDetail,
   readMemoryPending,
+  readMutationBody,
   readVizNodeSource,
+  requireCsrfToken,
   resolveVizAsset,
+  validateMutationOrigin,
 } from './viz-server.js';
 import { WatchMode } from './watch.js';
 
@@ -3833,6 +3843,9 @@ async function cmdViz(args: string[], ctx?: CmdCtx): Promise<number> {
   const memoryApi = memoryDeps
     ? createMemoryApi(rt.soul, rt.repoRoot, resolved.cribDir, memoryDeps)
     : undefined;
+  // WP6.5 — one CSRF token per server run, delivered same-origin by /memory/mutation-grant.json
+  // and required (as a header, never a URL param) on every mutation POST.
+  const csrfToken = createCsrfToken();
   await ensureInstalledEmbedder();
   const { createServer } = await import('node:http');
   const { readFile } = await import('node:fs/promises');
@@ -3983,6 +3996,206 @@ async function cmdViz(args: string[], ctx?: CmdCtx): Promise<number> {
         });
         res.end(JSON.stringify(intake));
         return;
+      }
+      // WP6.3/WP6.5 — the local mutation boundary: admission and resume POSTs. Every write runs
+      // the SAME domain services the CLI runs (runLocalAdmission / api.checkpointIntake), behind
+      // strict Origin + per-server CSRF, with revision preconditions and idempotent duplicates.
+      // Errors are structured `{error: {code, message}}` — never bare text.
+      if (
+        requestUrl.pathname === '/memory/admit' ||
+        requestUrl.pathname === '/memory/resume' ||
+        requestUrl.pathname === '/memory/mutation-grant.json'
+      ) {
+        const sendJson = (status: number, payload: unknown): void => {
+          res.writeHead(status, {
+            'content-type': 'application/json; charset=utf-8',
+            'cache-control': 'no-store',
+          });
+          res.end(JSON.stringify(payload));
+        };
+        try {
+          if (requestUrl.pathname === '/memory/mutation-grant.json') {
+            if (!memoryDeps || !memoryApi) throw new VizHttpError(404, 'memory not configured');
+            sendJson(200, { token: csrfToken });
+            return;
+          }
+          if (!memoryDeps || !memoryApi) {
+            throw new VizMutationError('not-found', 404, 'memory not configured');
+          }
+          if (req.method !== 'POST') {
+            throw new VizMutationError('bad-request', 405, 'method not allowed');
+          }
+          // Origin first, then the CSRF header (WP6.5) — both before the body is even read.
+          validateMutationOrigin({
+            host: req.headers.host ?? '',
+            origin: Array.isArray(req.headers.origin) ? req.headers.origin[0] : req.headers.origin,
+          });
+          const headerToken = req.headers[CSRF_HEADER];
+          requireCsrfToken(
+            (Array.isArray(headerToken) ? headerToken[0] : headerToken) ?? undefined,
+            csrfToken,
+          );
+          if (requestUrl.pathname === '/memory/admit') {
+            const body = parseAdmissionBody(await readMutationBody(req));
+            // Idempotent duplicates (WP6.5): the id is content-addressed, so a claim that already
+            // activated is SUCCESS again, not an error — a double click must not 404.
+            const candidate = findCandidate(memoryDeps.local, body.id);
+            if (!candidate) {
+              const already = findActiveRecord(memoryDeps.local, body.id.replace(/^cand:/, 'mem:'));
+              if (already) {
+                sendJson(200, { admitted: true, alreadyAdmitted: true, recordId: already.id });
+              } else {
+                sendJson(
+                  404,
+                  mutationErrorPayload(
+                    new VizMutationError('not-found', 404, `no staged claim '${body.id}'`),
+                  ),
+                );
+              }
+              return;
+            }
+            // The write path re-runs the READ projection's own classification: `ready` (and only
+            // ready) may complete here — `terminal` needs a real TTY, `blocked` needs fixes first.
+            // Neither this route nor any browser code can mint `tty: true`; only a CLI call site
+            // that checked process.stdin.isTTY ever does.
+            const row = classifyStaged(candidate);
+            if (row.standing !== 'ready') {
+              sendJson(422, {
+                error: {
+                  code: row.standing === 'terminal' ? 'terminal-only' : 'invalid-evidence',
+                  message:
+                    row.standing === 'terminal'
+                      ? 'this claim needs a terminal confirmation'
+                      : 'the claim is not admissible yet',
+                  ...(row.blockers.length > 0 ? { blockers: row.blockers } : {}),
+                  command: row.command,
+                },
+              });
+              return;
+            }
+            const outcome = await runLocalAdmission(
+              resolved.repoRoot,
+              resolved.cribDir,
+              memoryDeps,
+              body.profile,
+              body.id,
+            );
+            if (!outcome.ok) {
+              const [status, code, message] =
+                outcome.code === 'no-policy'
+                  ? ([
+                      503,
+                      'unavailable',
+                      'no gate policy configured — run `crib memory init` first',
+                    ] as const)
+                  : outcome.code === 'unknown-profile'
+                    ? ([400, 'bad-request', `unknown gate profile '${body.profile}'`] as const)
+                    : outcome.code === 'gate-failed'
+                      ? ([503, 'unavailable', outcome.message] as const)
+                      : ([
+                          409,
+                          'stale',
+                          'the repository changed while the gate ran — retry from the pending queue',
+                        ] as const);
+              sendJson(status, mutationErrorPayload(new VizMutationError(code, status, message)));
+              return;
+            }
+            if (outcome.kind === 'team') {
+              sendJson(200, {
+                admitted: true,
+                alreadyShared: true,
+                recordId: outcome.recordId,
+                ref: outcome.trustedRef,
+              });
+              return;
+            }
+            sendJson(200, {
+              admitted: true,
+              recordId: outcome.recordId,
+              receiptId: outcome.receiptId,
+              evidence: outcome.evidence,
+              applicability: outcome.applicability,
+              cleanedUp: outcome.cleanedUp,
+            });
+            return;
+          }
+          // /memory/resume — mirrors `crib session resume` exactly (same api, same kind, same
+          // refusal to invent a next action), with the revision + idempotency checks the browser
+          // needs because it is stateful across reloads.
+          const body = parseResumeBody(await readMutationBody(req));
+          const repository = currentRepositoryAnchor(resolved.repoRoot);
+          const handoff = memoryApi.handoff({ repository });
+          const option = handoff.continuation.options.find(
+            (o) => o.optionId === body.intakeId || o.intakeId === body.intakeId,
+          );
+          if (!option || option.kind !== 'resume' || !option.intakeId) {
+            throw new VizMutationError(
+              'not-found',
+              404,
+              `not a resumable intake: ${body.intakeId}`,
+            );
+          }
+          const brief = handoff.intakes.choices.find((c) => c.intakeId === option.intakeId);
+          const nextSafeAction = body.next?.trim() || brief?.nextSafeAction;
+          if (!nextSafeAction) {
+            throw new VizMutationError(
+              'missing-next-action',
+              422,
+              'this intake has no recorded next action yet — say what resuming means',
+            );
+          }
+          // Revision precondition (WP6.5): the surface names the checkpoint it saw; an intake that
+          // moved on answers 409, never a blind append over a newer session's record.
+          const got = memoryApi.getIntake(option.intakeId);
+          const sorted = [...(got?.checkpoints ?? [])].sort(
+            (a, b) => a.recordedAt.localeCompare(b.recordedAt) || a.id.localeCompare(b.id),
+          );
+          const latest = sorted.length > 0 ? sorted[sorted.length - 1] : undefined;
+          if ((latest?.id ?? '') !== body.expectedCheckpointId) {
+            throw new VizMutationError(
+              'stale',
+              409,
+              'the intake changed since it was loaded — reload and retry',
+            );
+          }
+          // Idempotent duplicate (WP6.5): the exact same resume already recorded as the latest
+          // checkpoint → success without appending a second `resumed` event.
+          if (latest && latest.kind === 'resumed' && latest.nextSafeAction === nextSafeAction) {
+            sendJson(200, {
+              resumed: true,
+              alreadyResumed: true,
+              intakeId: option.intakeId,
+              checkpointId: latest.id,
+            });
+            return;
+          }
+          const principalId =
+            process.env.KCRIB_PRINCIPAL_ID?.trim() || DEFAULT_MIGRATION_PRINCIPAL_ID;
+          const checkpoint = memoryApi.checkpointIntake({
+            intakeId: option.intakeId,
+            kind: 'resumed',
+            phase: brief?.phase ?? 'executing',
+            nextSafeAction,
+            summary: 'session resumed this intake',
+            repository,
+            actor: `human:${principalId}`,
+            recordedAt: new Date().toISOString(),
+          });
+          sendJson(200, {
+            resumed: true,
+            intakeId: option.intakeId,
+            checkpointId: checkpoint.id,
+            cautions: option.cautions,
+          });
+          return;
+        } catch (e) {
+          const err =
+            e instanceof VizHttpError
+              ? e
+              : new VizMutationError('internal', 500, (e as Error).message || 'unexpected error');
+          sendJson(err.status, mutationErrorPayload(err));
+          return;
+        }
       }
       const path = await resolveVizAsset(assets, requestUrl.pathname);
       const body = await readFile(path);
@@ -8176,77 +8389,84 @@ function cmdMemoryBench(args: string[], ctx?: CmdCtx): number {
   return EXIT.OK;
 }
 
-/** `crib memory evaluate <candidate> --profile <name>` — gate → evaluate → activate (PRD line 255). */
-async function cmdMemoryEvaluate(args: string[], ctx?: CmdCtx): Promise<number> {
-  const id = pathArg(args);
-  if (!id) {
-    process.stderr.write('usage: crib memory evaluate <candidate-id> --profile <name>\n');
-    return EXIT.BAD_ARGS;
-  }
-  const profileIdx = args.indexOf('--profile');
-  const profileName = profileIdx >= 0 ? args[profileIdx + 1] : undefined;
-  if (!profileName) {
-    process.stderr.write('error: --profile <name> is required (the trusted-base gate profile)\n');
-    return EXIT.BAD_ARGS;
-  }
-  const rootArgs = args.slice();
-  if (profileIdx >= 0) rootArgs.splice(profileIdx, 2);
-  const resolved = resolveRoot(rootArgs, ctx);
-  if (!isIndexedRoot(resolved)) {
-    process.stderr.write('not indexed — run `crib index` first\n');
-    return EXIT.NOT_INDEXED;
-  }
-  const rt = openSoul(resolved);
-  const deps = createMemoryDeps(rt.soul, resolved.repoRoot, resolved.cribDir);
-  if (!deps) {
-    process.stderr.write('could not resolve repoId for memory — run `crib index` first\n');
-    return EXIT.NOT_INDEXED;
-  }
-  const policy = loadPolicy(resolved.cribDir);
+/**
+ * One local admission run's verdict — the SAME flow `crib memory evaluate` and the viz server's
+ * admission POST both run (WP6.3: "through the same domain services used by the CLI").
+ */
+type LocalAdmissionOutcome =
+  | { ok: true; kind: 'team'; recordId: string; trustedRef: string }
+  | {
+      ok: true;
+      kind: 'local';
+      recordId: string;
+      receiptId: string;
+      evidence: string;
+      applicability: string;
+      cleanedUp: boolean;
+    }
+  | {
+      ok: false;
+      code:
+        | 'no-policy'
+        | 'unknown-profile'
+        | 'unknown-candidate'
+        | 'gate-failed'
+        | 'snapshot-drift';
+      /** CLI-shaped message (may use internal vocabulary — the browser surface writes its own). */
+      message: string;
+    };
+
+/**
+ * The ONE local admission flow: policy → profile → candidate → team-trusted early exit → attempt
+ * events → snapshot → gate → drift verify → evaluate → activate → compact. The CLI command and the
+ * viz server's admission POST both call THIS function, so a browser admission can never drift from
+ * the CLI's gate. Identity is resolved server-side from the local store the caller wired (R03), and
+ * the snapshot verify IS the revision check: the content-addressed candidate id pins WHAT is being
+ * admitted, and any drift between snapshot and verify aborts the promotion.
+ */
+async function runLocalAdmission(
+  repoRoot: string,
+  cribDir: string,
+  deps: NonNullable<ReturnType<typeof createMemoryDeps>>,
+  profileName: string,
+  id: string,
+): Promise<LocalAdmissionOutcome> {
+  const policy = loadPolicy(cribDir);
   if (!policy) {
-    process.stderr.write(
-      `no trusted-base policy at ${join(resolved.cribDir, 'memory', 'policy.json')} — run \`crib memory init\` first\n`,
-    );
-    return EXIT.ERROR;
+    return {
+      ok: false,
+      code: 'no-policy',
+      message: `no trusted-base policy at ${join(cribDir, 'memory', 'policy.json')} — run \`crib memory init\` first`,
+    };
   }
   const profile = resolveProfile(policy, profileName);
   if (!profile) {
-    process.stderr.write(
-      `error: profile '${profileName}' not in trusted-base policy (have: ${Object.keys(policy.profiles).join(', ')})\n`,
-    );
-    return EXIT.BAD_ARGS;
+    return {
+      ok: false,
+      code: 'unknown-profile',
+      message: `error: profile '${profileName}' not in trusted-base policy (have: ${Object.keys(policy.profiles).join(', ')})`,
+    };
   }
   const local = deps.local;
   const candidate = findCandidate(local, id);
   if (!candidate) {
-    process.stderr.write(
-      `error: no local candidate '${id}' — observe one first (memory_observe)\n`,
-    );
-    return EXIT.ERROR;
+    return {
+      ok: false,
+      code: 'unknown-candidate',
+      message: `error: no local candidate '${id}' — observe one first (memory_observe)`,
+    };
   }
   // W5 Slice 2: if the candidate's content is ALREADY team-trusted (its would-be `mem:` id is in the
   // trusted ref with an accept decision), do NOT re-run the gate or create a local active duplicate —
   // the team record is the live memory. Tombstone any stale local active copy for the same id and stop.
   // No git / no trusted ref ⇒ team trust is not derivable ⇒ proceed with a normal local evaluation.
   const wouldBeRecordId = candidate.id.replace(/^cand:/, 'mem:');
-  const tp = resolveTrustedPresence(resolved.repoRoot, resolved.cribDir);
+  const tp = resolveTrustedPresence(repoRoot, cribDir);
   if (tp && isTeamTrustedRecord(wouldBeRecordId, tp.presence)) {
     tombstoneLocalForTeamPromotion(deps.local, wouldBeRecordId, 'evaluate', () =>
       new Date().toISOString(),
     );
-    process.stdout.write(
-      `${JSON.stringify(
-        {
-          recordId: wouldBeRecordId,
-          trust: 'team',
-          alreadyTeamTrusted: true,
-          trustedRef: tp.ref,
-        },
-        null,
-        2,
-      )}\n`,
-    );
-    return EXIT.OK;
+    return { ok: true, kind: 'team', recordId: wouldBeRecordId, trustedRef: tp.ref };
   }
   // W5 (PRD line 354): record the attempt lifecycle as structured events (the crash trail, PRD line
   // 348). Reuse the candidate's attemptId when memory_observe started one (origin === 'attempt');
@@ -8284,12 +8504,12 @@ async function cmdMemoryEvaluate(args: string[], ctx?: CmdCtx): Promise<number> 
   // the gate runs outside any lock; verification happens after.
   const before = {
     policyHash: policyHash(policy),
-    head: currentHead(resolved.repoRoot),
-    worktreeDigest: worktreeDigest(resolved.repoRoot),
+    head: currentHead(repoRoot),
+    worktreeDigest: worktreeDigest(repoRoot),
     candidateId: candidate.id,
   };
   att('observation', {
-    observation: { summary: 'gate snapshot', fileRefs: [resolved.repoRoot] },
+    observation: { summary: 'gate snapshot', fileRefs: [repoRoot] },
   });
   const gate = await runGate({
     profile,
@@ -8297,14 +8517,13 @@ async function cmdMemoryEvaluate(args: string[], ctx?: CmdCtx): Promise<number> 
     head: before.head,
     worktreeDigest: before.worktreeDigest,
     runner: 'cli',
-    repoRoot: resolved.repoRoot,
+    repoRoot,
     env: process.env,
     now: () => new Date().toISOString(),
   });
   if (!gate.ok) {
     att('outcome', { outcome: { status: 'failure' } });
-    process.stderr.write(`gate failed: ${gate.error}\n`);
-    return EXIT.ERROR;
+    return { ok: false, code: 'gate-failed', message: `gate failed: ${gate.error}` };
   }
   att('action', {
     action: { summary: `gate profile ${profileName}`, receiptIds: [gate.receipt.id] },
@@ -8312,9 +8531,9 @@ async function cmdMemoryEvaluate(args: string[], ctx?: CmdCtx): Promise<number> 
   // Reacquire + verify the snapshot (PRD line 277): a drift means the gate ran against state that
   // has since changed → the receipt MUST NOT be trusted.
   const after = {
-    policyHash: policyHash(loadPolicy(resolved.cribDir) ?? policy),
-    head: currentHead(resolved.repoRoot),
-    worktreeDigest: worktreeDigest(resolved.repoRoot),
+    policyHash: policyHash(loadPolicy(cribDir) ?? policy),
+    head: currentHead(repoRoot),
+    worktreeDigest: worktreeDigest(repoRoot),
     candidateId: findCandidate(local, id)?.id ?? '',
   };
   if (
@@ -8326,10 +8545,12 @@ async function cmdMemoryEvaluate(args: string[], ctx?: CmdCtx): Promise<number> 
     })
   ) {
     att('outcome', { outcome: { status: 'failure' } });
-    process.stderr.write(
-      'error: snapshot drift after gate run (policy/HEAD/worktree/candidate changed) — aborting promotion\n',
-    );
-    return EXIT.ERROR;
+    return {
+      ok: false,
+      code: 'snapshot-drift',
+      message:
+        'error: snapshot drift after gate run (policy/HEAD/worktree/candidate changed) — aborting promotion',
+    };
   }
   att('outcome', { outcome: { status: 'success', receiptId: gate.receipt.id } });
   att('candidate', { candidateId: candidate.id });
@@ -8373,15 +8594,78 @@ async function cmdMemoryEvaluate(args: string[], ctx?: CmdCtx): Promise<number> 
     },
   });
   compactAttempt(local, attemptId, compaction);
+  return {
+    ok: true,
+    kind: 'local',
+    recordId: result.recordId,
+    receiptId: result.receiptId,
+    evidence: evaluation.evaluation.evidence,
+    applicability: evaluation.evaluation.applicability,
+    cleanedUp: result.cleanedUp,
+  };
+}
+
+/** `crib memory evaluate <candidate> --profile <name>` — gate → evaluate → activate (PRD line 255). */
+async function cmdMemoryEvaluate(args: string[], ctx?: CmdCtx): Promise<number> {
+  const id = pathArg(args);
+  if (!id) {
+    process.stderr.write('usage: crib memory evaluate <candidate-id> --profile <name>\n');
+    return EXIT.BAD_ARGS;
+  }
+  const profileIdx = args.indexOf('--profile');
+  const profileName = profileIdx >= 0 ? args[profileIdx + 1] : undefined;
+  if (!profileName) {
+    process.stderr.write('error: --profile <name> is required (the trusted-base gate profile)\n');
+    return EXIT.BAD_ARGS;
+  }
+  const rootArgs = args.slice();
+  if (profileIdx >= 0) rootArgs.splice(profileIdx, 2);
+  const resolved = resolveRoot(rootArgs, ctx);
+  if (!isIndexedRoot(resolved)) {
+    process.stderr.write('not indexed — run `crib index` first\n');
+    return EXIT.NOT_INDEXED;
+  }
+  const rt = openSoul(resolved);
+  const deps = createMemoryDeps(rt.soul, resolved.repoRoot, resolved.cribDir);
+  if (!deps) {
+    process.stderr.write('could not resolve repoId for memory — run `crib index` first\n');
+    return EXIT.NOT_INDEXED;
+  }
+  const outcome = await runLocalAdmission(
+    resolved.repoRoot,
+    resolved.cribDir,
+    deps,
+    profileName,
+    id,
+  );
+  if (!outcome.ok) {
+    process.stderr.write(`${outcome.message}\n`);
+    return outcome.code === 'unknown-profile' ? EXIT.BAD_ARGS : EXIT.ERROR;
+  }
+  if (outcome.kind === 'team') {
+    process.stdout.write(
+      `${JSON.stringify(
+        {
+          recordId: outcome.recordId,
+          trust: 'team',
+          alreadyTeamTrusted: true,
+          trustedRef: outcome.trustedRef,
+        },
+        null,
+        2,
+      )}\n`,
+    );
+    return EXIT.OK;
+  }
   process.stdout.write(
     `${JSON.stringify(
       {
-        recordId: result.recordId,
-        receiptId: result.receiptId,
-        evidence: evaluation.evaluation.evidence,
-        applicability: evaluation.evaluation.applicability,
+        recordId: outcome.recordId,
+        receiptId: outcome.receiptId,
+        evidence: outcome.evidence,
+        applicability: outcome.applicability,
         trust: 'local',
-        cleanedUp: result.cleanedUp,
+        cleanedUp: outcome.cleanedUp,
       },
       null,
       2,

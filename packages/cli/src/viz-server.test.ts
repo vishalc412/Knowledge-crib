@@ -2,12 +2,22 @@ import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node
 import { realpath } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, relative } from 'node:path';
+import { Readable } from 'node:stream';
 import { SoulStore, newManifest } from '@knowledge-crib/core';
 import type { ReaderFreshness } from '@knowledge-crib/mcp';
 import { contentHash, idFor } from '@knowledge-crib/soul-schema';
 import type { Node } from '@knowledge-crib/soul-schema';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { VizHttpError, isAllowedHost, readVizNodeSource, resolveVizAsset } from './viz-server.js';
+import {
+  VizHttpError,
+  VizMutationError,
+  createCsrfToken,
+  isAllowedHost,
+  mutationErrorPayload,
+  parseAdmissionBody,
+  readVizNodeSource,
+  resolveVizAsset,
+} from './viz-server.js';
 
 let root: string;
 let outside: string;
@@ -175,11 +185,15 @@ import {
 import {
   parseMemoryLedgerQuery,
   parseMemoryPendingQuery,
+  parseResumeBody,
   readMemoryHome,
   readMemoryIntakeDetail,
   readMemoryLedger,
   readMemoryLedgerDetail,
   readMemoryPending,
+  readMutationBody,
+  requireCsrfToken,
+  validateMutationOrigin,
 } from './viz-server.js';
 
 const MEM_T0 = '2026-01-01T00:00:00.000Z';
@@ -617,5 +631,118 @@ describe('memory intake detail endpoint', () => {
     } finally {
       rmSync(home, { recursive: true, force: true });
     }
+  });
+});
+
+describe('mutation boundary helpers (WP6.5)', () => {
+  it('accepts only the server own loopback origin, 403 otherwise', () => {
+    expect(() =>
+      validateMutationOrigin({ host: '127.0.0.1:7331', origin: 'http://127.0.0.1:7331' }),
+    ).not.toThrow();
+    expect(() =>
+      validateMutationOrigin({ host: '127.0.0.1:7331', origin: 'http://evil.example' }),
+    ).toThrow(VizMutationError);
+    expect(() => validateMutationOrigin({ host: '127.0.0.1:7331' })).toThrow(VizMutationError);
+    try {
+      validateMutationOrigin({ host: '127.0.0.1:7331', origin: 'http://localhost:7331' });
+      expect.unreachable('a different origin must be refused');
+    } catch (err) {
+      expect((err as VizMutationError).status).toBe(403);
+      expect((err as VizMutationError).code).toBe('unauthorized');
+    }
+  });
+
+  it('requires the per-server CSRF token, 403 on absent or wrong', () => {
+    const token = createCsrfToken();
+    expect(() => requireCsrfToken(token, token)).not.toThrow();
+    for (const bad of [undefined, '', 'nope', token.slice(0, 63)]) {
+      expect(() => requireCsrfToken(bad, token)).toThrow(VizMutationError);
+    }
+    try {
+      requireCsrfToken('nope', token);
+    } catch (err) {
+      expect((err as VizMutationError).status).toBe(403);
+      // the failure message never contains the token value (no secrets in logs)
+      expect((err as VizMutationError).message).not.toContain(token);
+    }
+  });
+
+  it('mints a fresh 64-hex token per call (rotated on server restart)', () => {
+    const a = createCsrfToken();
+    const b = createCsrfToken();
+    expect(a).toMatch(/^[0-9a-f]{64}$/);
+    expect(a).not.toBe(b);
+  });
+
+  it('reads one bounded JSON body: 413 oversize, 400 non-JSON, 400 empty', async () => {
+    const req = Readable.from([Buffer.from('{"id":"cand:x","profile":"p"}')]);
+    expect(await readMutationBody(req)).toEqual({ id: 'cand:x', profile: 'p' });
+    await expect(readMutationBody(Readable.from([Buffer.from('not json')]))).rejects.toThrow(
+      VizMutationError,
+    );
+    await expect(readMutationBody(Readable.from([]))).rejects.toThrow(VizMutationError);
+    await expect(readMutationBody(Readable.from([Buffer.alloc(70_000, 'a')]))).rejects.toThrow(
+      VizMutationError,
+    );
+    try {
+      await readMutationBody(Readable.from([Buffer.alloc(70_000, 'a')]));
+      expect.unreachable('an oversize body must be refused');
+    } catch (err) {
+      expect((err as VizMutationError).status).toBe(413);
+      expect((err as VizMutationError).code).toBe('payload-too-large');
+    }
+  });
+
+  it('parses an admission body: staged ids only, profile required', () => {
+    expect(parseAdmissionBody({ id: 'cand:abc', profile: 'ci' })).toEqual({
+      id: 'cand:abc',
+      profile: 'ci',
+    });
+    for (const bad of [
+      {},
+      { id: 'mem:abc', profile: 'ci' },
+      { id: 'cand:abc' },
+      { id: '', profile: 'ci' },
+      { id: 'cand:abc', profile: '' },
+      { id: `cand:${'x'.repeat(3000)}`, profile: 'ci' },
+      [],
+      'nope',
+    ]) {
+      expect(() => parseAdmissionBody(bad)).toThrow(VizMutationError);
+    }
+  });
+
+  it('parses a resume body: empty expectedCheckpointId means "never checkpointed"', () => {
+    expect(parseResumeBody({ intakeId: 'in:1', expectedCheckpointId: 'ck:9' })).toEqual({
+      intakeId: 'in:1',
+      expectedCheckpointId: 'ck:9',
+    });
+    expect(
+      parseResumeBody({ intakeId: 'in:1', expectedCheckpointId: '', next: '  do it  ' }),
+    ).toEqual({ intakeId: 'in:1', next: '  do it  ', expectedCheckpointId: '' });
+    for (const bad of [
+      {},
+      { expectedCheckpointId: 'ck:9' },
+      { intakeId: '', expectedCheckpointId: '' },
+      { intakeId: 'in:1', expectedCheckpointId: 5 },
+    ]) {
+      expect(() => parseResumeBody(bad)).toThrow(VizMutationError);
+    }
+  });
+
+  it('serializes structured errors with a code, and no banned words on the wire', () => {
+    const fromMutation = mutationErrorPayload(
+      new VizMutationError('invalid-evidence', 422, 'not admissible yet'),
+    );
+    expect(fromMutation).toEqual({
+      error: { code: 'invalid-evidence', message: 'not admissible yet' },
+    });
+    // a non-mutation error reaching a mutation route collapses to `internal`, shape stays
+    const fromPlain = mutationErrorPayload(new VizHttpError(500, 'boom'));
+    expect(fromPlain.error.code).toBe('internal');
+    expect(fromPlain.error.message).toBe('boom');
+    // vocabulary law: no internal admission words anywhere on the mutation error surface
+    expect(JSON.stringify(fromMutation)).not.toMatch(/candidate|trust/i);
+    expect(JSON.stringify(fromPlain)).not.toMatch(/candidate|trust/i);
   });
 });
