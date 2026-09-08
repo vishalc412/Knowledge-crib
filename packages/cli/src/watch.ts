@@ -79,6 +79,14 @@ export class WatchMode {
   private observedHead?: string;
   /** Latest clean Git transition deferred while another overlay refresh owns the mutation slot. */
   private pendingTransitionHead?: string;
+  /**
+   * Drift observed while a refresh was in flight (WP4). `handleDrift` reloads canonical and RESYNCS
+   * the overlay — clearing the dirty set an in-flight `refreshWorkingOverlay` is actively reading.
+   * Run mid-flight, that produced a torn window: the refresh re-parsed files the resync had just
+   * unmarked, and the reader could adopt a snapshot built from a half-cleared overlay. Transitions
+   * already deferred for exactly this reason; drift must too, because it mutates the same state.
+   */
+  private pendingDrift = false;
 
   constructor(
     private readonly canonical: SoulStore,
@@ -123,6 +131,11 @@ export class WatchMode {
     }
     if (head !== undefined) this.observedHead = head;
     if (this.overlay.canonicalDrifted()) {
+      if (this.refreshing) {
+        // Never resync under an in-flight refresh — defer and replay from the refresh's finally.
+        this.pendingDrift = true;
+        return;
+      }
       await this.handleDrift();
       return;
     }
@@ -158,6 +171,9 @@ export class WatchMode {
 
   /** External `crib update` advanced canonical: reload + resync + recompute the dirty set. */
   private async handleDrift(): Promise<void> {
+    // Any deferred drift request is satisfied BY this call — leave it latched and the next refresh
+    // completion would replay a second resync over an already-fresh overlay.
+    this.pendingDrift = false;
     this.canonical.load();
     this.overlay.resync();
     this.opts.onDrift?.();
@@ -204,6 +220,10 @@ export class WatchMode {
       const pendingHead = this.pendingTransitionHead;
       this.pendingTransitionHead = undefined;
       if (pendingHead !== undefined && !this.stopped) void this.handleTransition(pendingHead);
+      else if (this.pendingDrift && !this.stopped) {
+        this.pendingDrift = false;
+        void this.handleDrift();
+      }
     }
   }
 

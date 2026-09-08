@@ -42,7 +42,12 @@ import { defaultExtractors } from './pipeline.js';
 import { runResolve } from './resolve/index.js';
 import type { ResolveStats } from './resolve/index.js';
 import { metaForPaths, runStructure } from './structure.js';
-import { changedFilesSince, currentHead, uncommittedChanges } from './vcs.js';
+import {
+  AnchorUnavailableError,
+  changedFilesSince,
+  currentHead,
+  uncommittedChanges,
+} from './vcs.js';
 
 export interface UpdateOpts {
   /** commit timestamp (deterministic tests). */
@@ -147,7 +152,17 @@ export async function updateRepo(
   const since = opts.since ?? manifest.stats.incrementalSince ?? manifest.repo.vcsHead;
   if (!since) return null; // no anchor yet → full index
 
-  const allChangedPaths = changedFilesSince(root, since);
+  // WP4.4 — an anchor that no longer resolves (rebase, gc) is not an error condition for the caller
+  // to crash on; it is exactly the case the full-index fallback exists for: re-anchor from scratch.
+  // Before the typed error this threw NotARepoError and `crib update` died with a stack trace on a
+  // perfectly healthy repo.
+  let allChangedPaths: string[];
+  try {
+    allChangedPaths = changedFilesSince(root, since);
+  } catch (err) {
+    if (err instanceof AnchorUnavailableError) return null;
+    throw err;
+  }
 
   if (opts.dirty) {
     for (const p of uncommittedChanges(root)) {

@@ -204,8 +204,10 @@ import { writeJsonAtomic } from '@knowledge-crib/memory';
 import {
   adapterStatuses,
   changedFilesSince,
+  contentDigestForPaths,
   currentHead,
   detectWorkspace,
+  dirtyTreeFingerprint,
   indexRepo,
   isGitRepo,
   lsTreeFiles,
@@ -304,6 +306,7 @@ import {
   openIndexOnly,
   openSoul,
   resolveProjectRoot,
+  startupHeadMismatch,
 } from './runtime.js';
 import { installSkill, listBundledSkills } from './skill-install.js';
 import {
@@ -757,6 +760,11 @@ class CliVcsAdapter implements VcsAdapter {
   }
   uncommittedChanges(root: string): string[] {
     return uncommittedChanges(root);
+  }
+  // WP4.3 — the MCP surface asks the adapter for the content-addressed digest over the SAME path
+  // list its `uncommittedChanges` returned, so CLI and MCP compute one contract, not two.
+  contentDigestFor(root: string, paths: string[]): string {
+    return contentDigestForPaths(root, paths);
   }
   currentBranch(root: string): string | undefined {
     try {
@@ -1961,6 +1969,20 @@ async function cmdServe(args: string[], ctx?: CmdCtx): Promise<number> {
     return EXIT.BAD_ARGS;
   }
   const rt = openSoul(resolved);
+  // WP4.2 — state the commit the served graph was built from, and refuse to paper over a mismatch
+  // (pure decision in runtime.ts `startupHeadMismatch`; pinned in runtime.test.ts). Archive inputs
+  // have no work tree to compare against; a live-HEAD read failure (not a repo / no commits) means
+  // "nothing to compare", never "fresh".
+  if (resolved.sourceArchive === undefined) {
+    let liveHead: string | undefined;
+    try {
+      liveHead = currentHead(resolved.repoRoot) || undefined;
+    } catch {
+      liveHead = undefined; // not a git repo / no commits — nothing to compare against
+    }
+    const mismatch = startupHeadMismatch(rt.soul.getManifest().repo.vcsHead, liveHead);
+    if (mismatch !== undefined) process.stderr.write(`${mismatch}\n`);
+  }
   // The MCP server must NEVER drop the stdio pipe on a stale/missing derived index — that is the
   // `MCP error -32000: Connection closed` failure: the serve process exits and the IDE transport
   // dies. Stale-but-present → serve it with a warning (openIndexForServe). Missing → self-heal by
@@ -4128,7 +4150,8 @@ async function cmdEnrich(args: string[], ctx?: CmdCtx): Promise<number> {
         targets = ids;
         vcsCtx = { since, head, changedPaths };
       } catch {
-        // non-git / no anchor: fall through to an unscoped whole-repo scan (targets stays undefined).
+        // non-git / rebased-away anchor (WP4.4): fall through to an UNscoped whole-repo scan — an
+        // over-approximation that is always safe, unlike trusting a diff from a stale anchor.
         vcsCtx = undefined;
       }
     }
@@ -4962,7 +4985,9 @@ function currentRepositoryAnchor(repoRoot: string): {
     dirty: changed.length > 0,
     ...(changed.length > 0
       ? {
-          changedPathsDigest: `blake3:${blake3Hex(changed.join('\n'))}`,
+          // WP4.3 — content-addressed: the digest must move when a dirty file's BYTES move, not
+          // only when the path list does. Same contract as the MCP intake anchor.
+          changedPathsDigest: contentDigestForPaths(repoRoot, changed),
           changedPaths: changed.slice(0, RESUME_PATHS_MAX),
         }
       : {}),
@@ -5266,9 +5291,14 @@ function cmdSessionFresh(args: string[], ctx?: CmdCtx): number {
   return EXIT.OK;
 }
 
-/** blake3 digest of the working-tree state the gate observed (uncommitted file list — PRD line 277). */
+/**
+ * Digest of the working-tree state the gate observed (PRD line 277). Content-addressed (WP4.3):
+ * the old digest hashed the uncommitted PATH LIST, so a second edit inside an already-dirty file
+ * left it unchanged and the gate read "nothing moved" while the bytes had. Same paths + same bytes
+ * ⇒ same digest; any content edit ⇒ different digest.
+ */
 function worktreeDigest(root: string): string {
-  return `blake3:${blake3Hex(uncommittedChanges(root).join('\n'))}`;
+  return dirtyTreeFingerprint(root).digest;
 }
 
 /** Find a candidate by id in the local `candidates` collection, or undefined. */

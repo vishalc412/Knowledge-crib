@@ -226,6 +226,63 @@ describe('WatchMode — external crib update drift', () => {
   });
 
   /**
+   * WP4 — drift must NEVER be processed under an in-flight refresh. `handleDrift` resyncs the
+   * overlay, clearing the dirty set a running `refreshWorkingOverlay` is actively reading — run
+   * mid-flight, the reader could adopt a snapshot built from a half-cleared overlay (torn window).
+   * Transitions already deferred for exactly this reason; drift mutates the same state, so it
+   * defers too. The deferred request is latched, and the latch is consumed exactly once.
+   */
+  it('defers a drift resync while a refresh is in flight, latches it, and never processes it twice', async () => {
+    const soul = soulFor();
+    await indexRepo(soul, repo);
+    soul.setVcsHead('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
+    soul.commit('2026-01-01T00:00:00Z');
+
+    const overlay = new WorkingOverlay(soul);
+    let drifts = 0;
+    const watch = new WatchMode(soul, overlay, repo, {
+      debounceMs: 40,
+      fallbackMs: 20_000, // the fallback timer is parked; fallbackScan() is driven by hand
+      onDrift: () => {
+        drifts++;
+      },
+    });
+    await watch.start();
+    const w = watch as unknown as {
+      refreshing: boolean;
+      pendingDrift: boolean;
+      fallbackScan(): Promise<void>;
+      refresh(reason: string): Promise<void>;
+    };
+    try {
+      // An overlay refresh owns the mutation slot…
+      w.refreshing = true;
+      // …and an external `crib update` advances canonical under it.
+      soul.setVcsHead('bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb');
+      soul.commit('2026-02-02T00:00:00Z');
+      await w.fallbackScan();
+
+      expect(drifts).toBe(0); // NOT resynced under the in-flight refresh
+      expect(overlay.canonicalDrifted()).toBe(true); // the overlay keeps its captured fingerprint
+      expect(w.pendingDrift).toBe(true); // …and the drift is latched, not dropped
+
+      // The refresh finishes; the next refresh entry processes the drift through the pre-refresh
+      // drift check (refreshing is false again), which must also CONSUME the latch.
+      w.refreshing = false;
+      await w.refresh('fallback');
+      expect(drifts).toBe(1);
+      expect(overlay.canonicalDrifted()).toBe(false);
+      expect(w.pendingDrift).toBe(false); // consumed — no double resync on a later refresh
+
+      // A subsequent refresh with nothing latched stays quiet.
+      await w.refresh('fallback');
+      expect(drifts).toBe(1);
+    } finally {
+      watch.stop();
+    }
+  });
+
+  /**
    * R04 (docs/audits/2026-09-05/post-merge-reaudit.md) — a canonical advance over a CLEAN working
    * tree must still reach `onRefresh`.
    *

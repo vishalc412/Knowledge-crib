@@ -96,6 +96,7 @@ import {
  * touch the network or the enricher.
  */
 import type { Edge, Node, NodeKind } from '@knowledge-crib/soul-schema';
+import { blake3Hex } from '@knowledge-crib/soul-schema';
 import {
   type EnrichNextArgs,
   type EnrichStatusArgs,
@@ -155,6 +156,13 @@ export interface VcsAdapter {
    * identifies the commit precisely), it just reads less like something a human recognises.
    */
   currentBranch?(root: string): string | undefined;
+  /**
+   * Content-addressed digest over an explicit dirty-path list (WP4.3): same paths with different
+   * bytes ⇒ different digest. OPTIONAL so test stubs keep compiling; without it the intake anchor
+   * falls back to the path-only digest, which still matches the field's `blake3:` shape but is
+   * blind to a second edit inside an already-dirty file.
+   */
+  contentDigestFor?(root: string, paths: string[]): string;
 }
 
 /**
@@ -1806,8 +1814,14 @@ export class Verbs {
     let changedPaths: string[];
     try {
       changedPaths = vcs.changedFilesSince(this.deps.repoRoot, since);
-    } catch {
-      return { note: 'not a git work tree' };
+    } catch (err) {
+      // Same distinction as detect_changes (WP4.4): a rebased-away anchor is not "not a git work
+      // tree", and the operator's repair differs — re-index, not repo debugging.
+      const name = (err as Error)?.name;
+      if (name === 'AnchorUnavailableError')
+        return { note: `indexed commit ${since} is unavailable — re-index to re-anchor` };
+      if (name === 'NotARepoError') return { note: 'not a git work tree' };
+      return { note: `vcs scan failed: ${(err as Error).message ?? String(err)}` };
     }
     const changed = new Set(changedPaths);
     const targets: string[] = [];
@@ -2102,13 +2116,24 @@ export class Verbs {
     let changedPaths: string[];
     try {
       changedPaths = vcs.changedFilesSince(this.deps.repoRoot, since);
-    } catch {
+    } catch (err) {
+      // The old catch reported 'not a git work tree' for EVERY failure, including the one that
+      // means the opposite (WP4.4): a healthy repo whose indexed anchor was rebased away or
+      // garbage-collected. An operator told "not a git work tree" audits their repo; an operator
+      // told the anchor is stale runs `crib index` and is done. The note must name the real one.
+      const name = (err as Error)?.name;
+      const note =
+        name === 'AnchorUnavailableError'
+          ? `indexed commit ${since} is unavailable — history was rewritten or the commit was garbage-collected; run \`crib index\` to re-anchor`
+          : name === 'NotARepoError'
+            ? 'not a git work tree'
+            : `vcs scan failed: ${(err as Error).message ?? String(err)}`;
       return {
         changedSymbols: [],
         newEdges: [],
         removedEdges: [],
         head,
-        note: 'not a git work tree',
+        note,
       };
     }
     // `changedFilesSince` is `since..HEAD` — a COMMIT range, so it structurally cannot see an edit
@@ -3191,12 +3216,17 @@ export class Verbs {
 
   private intakeRepository(): { head?: string; dirty: boolean; changedPathsDigest?: string } {
     const { head, dirtyFiles } = this.vcsFacts();
+    // WP4.3 — this field shares its name with the CLI session anchor's digest, so it shares the
+    // contract: content-addressed `blake3:<hex>`, not the raw joined path list. The old value was
+    // the join itself — same field name on two surfaces, two different meanings, and a digest that
+    // could not see an edit that left the path list unchanged.
+    const digest =
+      this.deps.vcs?.contentDigestFor?.(this.deps.repoRoot, dirtyFiles) ??
+      `blake3:${blake3Hex(dirtyFiles.slice().sort().join('\n'))}`;
     return {
       ...(head ? { head } : {}),
       dirty: dirtyFiles.length > 0,
-      ...(dirtyFiles.length > 0
-        ? { changedPathsDigest: dirtyFiles.slice().sort().join('\n') }
-        : {}),
+      ...(dirtyFiles.length > 0 ? { changedPathsDigest: digest } : {}),
     };
   }
 

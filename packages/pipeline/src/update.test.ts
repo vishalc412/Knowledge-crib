@@ -105,6 +105,34 @@ describe('updateRepo (M6 incremental, git-anchored)', () => {
     }
   });
 
+  it('returns null when the indexed anchor was rebased away — full re-index, never a crash (WP4.4)', async () => {
+    await indexAndCommit();
+    const orphan = git(repo, ['rev-parse', 'HEAD']); // this is what the index stamped as vcsHead
+    // Rewrite history: amend replaces the commit, and the indexed anchor stops resolving.
+    writeFileSync(join(repo, 'src', 'a.ts'), "export function greet(): string { return 'hey'; }\n");
+    git(repo, ['add', '-A']);
+    git(repo, [
+      '-c',
+      'user.email=t@t.test',
+      '-c',
+      'user.name=T',
+      'commit',
+      '-q',
+      '--amend',
+      '-m',
+      'initial',
+    ]);
+    // The amend alone leaves the orphan resolvable through the reflog — expire + gc to reach the
+    // genuinely-unresolvable state a rebase plus routine gc leaves behind.
+    git(repo, ['reflog', 'expire', '--expire=now', '--all']);
+    git(repo, ['gc', '--prune=now', '--quiet']);
+
+    // The old code threw NotARepoError from this exact state — `crib update` died with a stack
+    // trace on a perfectly healthy repo, and `detect_changes` reported "not a git work tree".
+    const result = await updateRepo(soulFor(), repo, {});
+    expect(result).toBeNull(); // caller's cue to re-anchor with a full indexRepo
+  });
+
   it('incrementally re-extracts an edited file; reverse-dep edge survives, only that shard diffs', async () => {
     await indexAndCommit();
     const h1 = git(repo, ['rev-parse', 'HEAD']);

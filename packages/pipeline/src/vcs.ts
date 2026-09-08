@@ -6,12 +6,33 @@
  * the index path — `updateRepo` falls back to a full `indexRepo`.
  */
 import { execFileSync } from 'node:child_process';
-import { sep } from 'node:path';
+import { readFileSync } from 'node:fs';
+import { join, sep } from 'node:path';
+import { blake3Hex, blake3HexBytes } from '@knowledge-crib/soul-schema';
 
 export class NotARepoError extends Error {
   constructor(root: string) {
     super(`${root} is not a git work tree`);
     this.name = 'NotARepoError';
+  }
+}
+
+/**
+ * The repo is a git work tree, but the VCS anchor the index recorded does not resolve in it — a
+ * rebase rewrote history, or the commit was garbage-collected. The OPPOSITE problem of
+ * {@link NotARepoError} (the repo is fine; the anchor is stale), and the repair strategies differ:
+ * re-anchor with a full re-index, vs treat the directory as non-git. Callers that conflated the two
+ * reported "not a git work tree" for a healthy repo and sent operators debugging the wrong thing.
+ */
+export class AnchorUnavailableError extends Error {
+  constructor(
+    readonly root: string,
+    readonly anchor: string,
+  ) {
+    super(
+      `indexed commit ${anchor} is unavailable in ${root} — history was rewritten or the commit was garbage-collected; re-index to re-anchor`,
+    );
+    this.name = 'AnchorUnavailableError';
   }
 }
 
@@ -39,11 +60,18 @@ export function currentHead(root: string): string {
 /**
  * Repo-relative POSIX paths of files changed on disk between `since..HEAD` (renames disabled so a
  * renamed file shows under both names — the store drops the old path and indexes the new).
- * Returns [] if nothing changed. Throws NotARepoError if `root` is not a git work tree.
+ * Returns [] if nothing changed. Throws {@link NotARepoError} if `root` is not a git work tree, or
+ * {@link AnchorUnavailableError} if `since` no longer resolves in it (WP4.4 — the two failures need
+ * opposite repairs, so they must not share an exception).
  */
 export function changedFilesSince(root: string, since: string): string[] {
   const out = git(root, ['diff', '--name-only', '--no-renames', `${since}..HEAD`]);
-  if (out === undefined) throw new NotARepoError(root);
+  if (out === undefined) {
+    // The old code threw NotARepoError here unconditionally, mislabeling a rebased-away anchor as
+    // "not a git work tree" and crashing `crib update` on a healthy repo.
+    if (!isGitRepo(root)) throw new NotARepoError(root);
+    throw new AnchorUnavailableError(root, since);
+  }
   return out
     .split('\n')
     .map((l) => l.trim())
@@ -73,6 +101,47 @@ export function uncommittedChanges(root: string): string[] {
 /** True if the work tree has staged or unstaged changes relative to HEAD. */
 export function hasUncommittedChanges(root: string): boolean {
   return uncommittedChanges(root).length > 0;
+}
+
+/**
+ * Content fingerprint of ONE working-tree file, binary-safe (raw bytes → blake3). A path whose
+ * file cannot be read is hashed as its ABSENCE — a staged deletion, the missing file IS the content
+ * state, and two different unreadable states must not compare equal to an empty file.
+ */
+function fileContentFingerprint(root: string, path: string): string {
+  try {
+    return blake3HexBytes(readFileSync(join(root, path)));
+  } catch {
+    return 'absent';
+  }
+}
+
+/**
+ * Content-addressed digest over an explicit path list (WP4.3): one `path ␀ contentHash` line per
+ * file (NUL-separated: a path cannot contain NUL, so the split is unambiguous), blake3 over the
+ * join. Same paths with different bytes ⇒ DIFFERENT digest — the old
+ * path-list digests answered "did the set of files change", which a save inside an already-dirty
+ * file never moves, so identical path lists with different edits collided and stale state read as
+ * unchanged.
+ */
+export function contentDigestForPaths(root: string, paths: readonly string[]): string {
+  // Sorted for canonicality: the digest must depend on the dirty SET, not the caller's enumeration
+  // order -- `uncommittedChanges` sorts, but this must not silently rely on that.
+  const parts = [...paths].sort().map((p) => `${p}\u0000${fileContentFingerprint(root, p)}`);
+  return `blake3:${blake3Hex(parts.join('\n'))}`;
+}
+
+export interface DirtyTreeFingerprint {
+  /** The dirty path list (uncommittedChanges), sorted — the digest alone cannot say WHERE. */
+  paths: string[];
+  /** Content-addressed digest: stable across re-reads, unstable across any content edit. */
+  digest: string;
+}
+
+/** Content-addressed fingerprint of the uncommitted working tree (WP4.3). */
+export function dirtyTreeFingerprint(root: string): DirtyTreeFingerprint {
+  const paths = uncommittedChanges(root);
+  return { paths, digest: contentDigestForPaths(root, paths) };
 }
 
 /**

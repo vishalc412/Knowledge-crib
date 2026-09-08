@@ -824,8 +824,12 @@ export class FreshnessWorker {
       else this.onEvent({ kind: 'task-retry', task: failed, error: message });
       // The red line lives here: NOTHING was published on this path. The prior generation file and
       // the prior lastKnownGood entry are untouched — the failed refresh cannot break the index.
-      this.state.activeTask = undefined;
-      writeJsonAtomic(statePath(this.env), this.state);
+      //
+      // The state file was ALREADY persisted fenced: `writeOwnedState` inside `mutateFreshnessQueue`
+      // cleared `activeTask` and wrote it under the lease lock (line above). The old code repeated
+      // that write here UNFENCED — a worker whose lease expired in the microseconds between the two
+      // writes would clobber its successor's freshly-won state with a stale in-memory copy, the
+      // exact clobber the fencing token exists to prevent. The redundancy is deleted, not re-fenced.
     }
   }
 
@@ -877,6 +881,14 @@ export interface FreshnessStatusOpts {
   env?: NodeJS.ProcessEnv;
   /** Injected head reader (tests); default shells `git rev-parse HEAD` best-effort. */
   headReader?: (projectRoot: string) => string | undefined;
+  /**
+   * The lease TTL the heartbeat is judged against — the same value the WORKER was constructed with.
+   * Default 15s (the worker's default leaseTtlMs). The old code hardcoded 15_000 here while the
+   * worker read its own `opts.leaseTtlMs`: a deployment that tuned the lease left the status view
+   * judging heartbeats against a window the worker was never held to, reporting a healthy worker
+   * as dead or a dead one as alive.
+   */
+  leaseTtlMs?: number;
 }
 
 function gitHead(projectRoot: string): string | undefined {
@@ -901,11 +913,12 @@ export function freshnessStatus(
 ): FreshnessStatus {
   const env = opts.env ?? process.env;
   const readHead = opts.headReader ?? gitHead;
+  const leaseTtlMs = opts.leaseTtlMs ?? 15_000;
   const entry = lookupProject(projectRoot, env);
   const mode = resolveFreshnessMode(entry?.freshnessMode);
   const state = readWorkerState(env);
   const alive = state !== undefined && isPidAlive(state.pid);
-  const beating = state !== undefined && Date.now() - Date.parse(state.heartbeatAt) < 15_000;
+  const beating = state !== undefined && Date.now() - Date.parse(state.heartbeatAt) < leaseTtlMs;
   /**
    * BUSY IS NOT DEAD.
    *
