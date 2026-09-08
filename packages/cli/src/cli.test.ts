@@ -1329,6 +1329,69 @@ describe('G5.3 multimodal — opt-in phase with production adapters', () => {
       .filter((l) => !/ExperimentalWarning|trace-warnings/.test(l))
       .join('\n');
 
+  it('embed setup --json, noninteractive and WITHOUT --yes: consent-required, machine-readable, exit 0 (WP1.7)', () => {
+    // The WP1.7 regression scenario exactly: a script (no tty interaction possible) that omits the
+    // consent flag must get `status: "consent-required"` on stdout and exit 0 — nothing was fetched,
+    // so nothing failed. An empty embed home makes the runtime stop deterministic regardless of
+    // what is installed on the machine running the suite.
+    const emptyHome = mkdtempSync(join(tmpdir(), 'crib-embed-consent-'));
+    try {
+      const r = spawnSync(process.execPath, [CLI, 'embed', 'setup', '--json'], {
+        cwd: repo,
+        encoding: 'utf8',
+        maxBuffer: 32 * 1024 * 1024,
+        env: { ...process.env, KCRIB_EMBED_HOME: emptyHome },
+      });
+      expect(r.status ?? 1).toBe(0);
+      const plan = JSON.parse(stripWarnings(r.stdout ?? '')) as {
+        status: string;
+        needsConsent?: string;
+      };
+      expect(plan.status).toBe('consent-required');
+      expect(plan.needsConsent).toMatch(/ONNX runtime/);
+    } finally {
+      rmSync(emptyHome, { recursive: true, force: true });
+    }
+  });
+
+  it('embed status surfaces the WP1.11 four-state verdict machine-readably, per state', () => {
+    // One e2e per reachable-from-disk state, each on its own relocated embed home so the test is
+    // deterministic regardless of what the suite machine has installed. `crib embed status` is the
+    // operator-facing view of `EmbedTierReport.status` — the `state:` line is the contract.
+    const runStatus = (home: string): string =>
+      stripWarnings(
+        spawnSync(process.execPath, [CLI, 'embed', 'status'], {
+          cwd: repo,
+          encoding: 'utf8',
+          maxBuffer: 32 * 1024 * 1024,
+          env: { ...process.env, KCRIB_EMBED_HOME: home },
+        }).stdout ?? '',
+      );
+
+    // lexical-only — a fresh home: nothing installed, nothing broken.
+    const freshHome = mkdtempSync(join(tmpdir(), 'crib-embed-state-fresh-'));
+    try {
+      const out = runStatus(freshHome);
+      expect(out).toContain('state: lexical-only');
+      expect(out).toContain('crib embed setup');
+    } finally {
+      rmSync(freshHome, { recursive: true, force: true });
+    }
+
+    // installation-incomplete — a runtime footprint with no manifest: a setup that died before
+    // the pin. The remediation hint differs from a fresh machine's ("re-run", not "run").
+    const partialHome = mkdtempSync(join(tmpdir(), 'crib-embed-state-partial-'));
+    try {
+      mkdirSync(join(partialHome, 'runtime', 'node_modules'), { recursive: true });
+      const out = runStatus(partialHome);
+      expect(out).toContain('state: installation-incomplete');
+      expect(out).toContain('partial install');
+      expect(out).toContain('Re-run `crib embed setup`');
+    } finally {
+      rmSync(partialHome, { recursive: true, force: true });
+    }
+  });
+
   it('doctor reports the multimodal adapters check as WARN-class ✓ with the enabling command', () => {
     const r = spawnSync(process.execPath, [CLI, 'doctor'], {
       cwd: repo,
@@ -1355,6 +1418,18 @@ describe('G5.3 multimodal — opt-in phase with production adapters', () => {
         encoding: 'utf8',
         maxBuffer: 32 * 1024 * 1024,
       });
+      // WP1.12: CI (ubuntu Node 24) once failed here as a bare "expected 1 to be +0" with the child's
+      // stderr discarded, and the failure did not reproduce in the exact CI cell (5/5 isolated
+      // passes + a full-suite run on ubuntu:24.04/glibc 2.39/Node 24.20.0). Surface the child's exit
+      // code, stderr and stdout tail in the failure so the NEXT occurrence is diagnosable
+      // from the CI log alone instead of being unreproducible forever.
+      if ((r.status ?? 1) !== 0) {
+        throw new Error(
+          `crib index --multimodal exited ${r.status} (WP1.12 diagnosability)` +
+            `\nstderr tail: ${(r.stderr ?? '').slice(-2000)}` +
+            `\nstdout tail: ${(r.stdout ?? '').slice(-2000)}`,
+        );
+      }
       expect(r.status ?? 1).toBe(0);
       const report = JSON.parse(stripWarnings(r.stdout ?? '')) as {
         multimodal: {

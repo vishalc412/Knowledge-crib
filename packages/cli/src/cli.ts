@@ -2870,11 +2870,17 @@ async function cmdDoctor(args: string[], ctx?: CmdCtx): Promise<number> {
     checks.push({
       name: 'embedder tier',
       ok: tier.problems.length === 0,
-      detail: `${tier.tier} (${tier.embedderId}); remote ${tier.remoteEnabled ? 'acknowledged' : 'disabled'}${tier.externalOverride ? '; KCRIB_EMBEDDER override active' : ''} — ${tier.reason}${tier.problems.length > 0 ? `; problems: ${tier.problems.join('; ')}` : ''}`,
+      detail: `state ${tier.status} (tier ${tier.tier}, ${tier.embedderId}); remote ${tier.remoteEnabled ? 'acknowledged' : 'disabled'}${tier.externalOverride ? '; KCRIB_EMBEDDER override active' : ''} — ${tier.reason}${tier.problems.length > 0 ? `; problems: ${tier.problems.join('; ')}` : ''}`,
+      // WP1.11: the fix names the STATE's remediation — a fresh machine is told to start setup,
+      // a half-finished one to finish it, an invalid one to look at the problems first.
       fix:
-        tier.tier === 'fallback'
+        tier.status === 'lexical-only'
           ? 'run `crib embed setup --yes` for the on-device tier (`--list` shows the measured size/quality ladder)'
-          : undefined,
+          : tier.status === 'installation-incomplete'
+            ? 're-run `crib embed setup --yes` to finish the partial install already on disk'
+            : tier.status === 'invalid-model'
+              ? 'run `crib embed status` to read the integrity problems, then re-run `crib embed setup`'
+              : undefined,
     });
   } catch (err) {
     checks.push({
@@ -3096,8 +3102,11 @@ async function cmdEmbedSetup(args: string[]): Promise<number> {
 
   const plan = await runEmbedSetup({ spec, yes, ...(from ? { from } : {}) });
   if (json) {
+    // Machine-readable contract (WP1.7): a script reads `status` — "consent-required" means nothing
+    // happened and nothing reached the network; it is not a failure, so it exits 0 exactly like the
+    // text path below. "failed" exits 1.
     process.stdout.write(`${JSON.stringify(plan, null, 2)}\n`);
-    return plan.installed ? EXIT.OK : EXIT.ERROR;
+    return plan.status === 'failed' ? EXIT.ERROR : EXIT.OK;
   }
 
   process.stdout.write(`crib embed setup — ${spec.alias} (${spec.hfId}, dim ${spec.dim})\n`);
@@ -3221,7 +3230,7 @@ async function cmdEmbed(args: string[], ctx?: CmdCtx): Promise<number> {
   // default / `status` — the same structured report doctor renders (one truth source, two views).
   const report = await embedTierReport({ env: process.env });
   process.stdout.write(
-    `embed tier: ${report.tier} (${report.embedderId})\n  remote: ${report.remoteEnabled ? 'acknowledged' : 'disabled'}\n  external override: ${report.externalOverride ? 'yes (KCRIB_EMBEDDER)' : 'no'}\n  manifest: ${report.manifestPresent ? report.manifestPath : 'absent'}\n  ${report.reason}\n`,
+    `embed tier: ${report.tier} (${report.embedderId})\n  state: ${report.status}\n  remote: ${report.remoteEnabled ? 'acknowledged' : 'disabled'}\n  external override: ${report.externalOverride ? 'yes (KCRIB_EMBEDDER)' : 'no'}\n  manifest: ${report.manifestPresent ? report.manifestPath : 'absent'}\n  ${report.reason}\n`,
   );
   for (const p of report.problems) process.stdout.write(`  problem: ${p}\n`);
   return EXIT.OK;

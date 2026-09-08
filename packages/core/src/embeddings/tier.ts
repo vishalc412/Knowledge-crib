@@ -24,6 +24,9 @@
  * trusting the manifest. Failure modes degrade to `fallback` + `problems`, never to a fabricated
  * quality claim — and never throw: a broken install must be renderable by doctor, not fatal.
  */
+import { existsSync } from 'node:fs';
+import { readdirSync } from 'node:fs';
+import { join } from 'node:path';
 import { CharNgramEmbedder } from './char-ngram.js';
 import {
   embedHomeDir,
@@ -36,9 +39,59 @@ import { remoteOptIn } from './remote.js';
 /** The active embedder tier. */
 export type EmbedTierState = 'fallback' | 'installed' | 'external';
 
+/**
+ * The four distinct installation states (WP1.11) — one machine-readable verdict per report, so
+ * `crib embed status` / `crib doctor` answer "where am I?" without the reader re-deriving it from
+ * tier + manifestPresent + problems:
+ *
+ *   - `semantic-ready`           — a verified semantic embedder is ACTIVELY serving (the pinned
+ *                                  installed model, or a `KCRIB_EMBEDDER` override that loaded).
+ *   - `lexical-only`             — nothing installed, nothing broken: a clean machine that never
+ *                                  ran setup, serving the char-ngram fallback.
+ *   - `installation-incomplete`  — no manifest, but a provisioning FOOTPRINT exists (runtime,
+ *                                  model cache, or adapters on disk): a setup that ran partway and
+ *                                  died before the pin. Its remediation ("re-run setup") differs
+ *                                  from a never-installed machine's, which is why it is its own
+ *                                  state.
+ *   - `invalid-model`            — something IS configured (a manifest, or an external provider)
+ *                                  but failed verification or load: the fallback serves, and the
+ *                                  problems field carries the reason.
+ */
+export type EmbedHealthState =
+  | 'semantic-ready'
+  | 'lexical-only'
+  | 'installation-incomplete'
+  | 'invalid-model';
+
+/**
+ * Provisioning footprint detection (WP1.11): which setup-managed subtrees under the embed home
+ * exist and are non-empty. `crib embed setup` writes exactly `runtime/`, `models/` and `adapters/`;
+ * a manifest-less home carrying any of them is an incomplete install, not a fresh one.
+ */
+export function embedHomeFootprint(home: string): {
+  runtime: boolean;
+  models: boolean;
+  adapters: boolean;
+} {
+  const nonEmpty = (p: string): boolean => {
+    try {
+      return existsSync(p) && readdirSync(p).length > 0;
+    } catch {
+      return false;
+    }
+  };
+  return {
+    runtime: nonEmpty(join(home, 'runtime')),
+    models: nonEmpty(join(home, 'models')),
+    adapters: nonEmpty(join(home, 'adapters')),
+  };
+}
+
 /** Structured tier report — the doctor surface data (JSON-serializable, no functions). */
 export interface EmbedTierReport {
   tier: EmbedTierState;
+  /** The WP1.11 four-state verdict — derived here, never re-derived by a renderer. */
+  status: EmbedHealthState;
   /** The embedder id backing the ACTIVE tier (flows into scorer version ids, red line #6). */
   embedderId: string;
   /** The degraded fallback's id — always reported, so doctor can show what you'd fall back TO. */
@@ -109,6 +162,7 @@ export async function embedTierReport(
 
   const report: EmbedTierReport = {
     tier: 'fallback',
+    status: 'lexical-only',
     embedderId: fallback.id,
     fallbackId: fallback.id,
     remoteEnabled: remoteOptIn(home),
@@ -131,6 +185,7 @@ export async function embedTierReport(
         return {
           ...report,
           tier: 'installed',
+          status: 'semantic-ready',
           embedderId: loaded.id,
           modelId: v.manifest.modelId,
           modelVersion: v.manifest.modelVersion,
@@ -157,16 +212,38 @@ export async function embedTierReport(
       return {
         ...report,
         tier: 'external',
+        status: 'semantic-ready',
         embedderId: external.id,
         reason: `KCRIB_EMBEDDER="${override}" is active and loaded (id ${external.id}, dim ${external.dim}). Crib neither pins nor integrity-verifies an operator-supplied provider, so its retrieval quality is UNMEASURED here — the launch gates describe the pinned installed tier only.`,
       };
     }
     report.problems = [...report.problems, `KCRIB_EMBEDDER failed to load: ${external.error}`];
+    report.status = 'invalid-model';
     report.reason = `KCRIB_EMBEDDER="${override}" is configured but did NOT load (${external.error}) — serving ${FALLBACK_NOTE}; ${INSTALL_HINT}`;
   } else if (report.problems.length > 0) {
+    // A manifest (or its files) failed verification/load: the install EXISTS but is invalid.
+    report.status = 'invalid-model';
     report.reason = `installed model FAILED verification — serving the fallback instead. ${FALLBACK_NOTE}. Fix the model dir and re-run "crib embed install"`;
   } else {
-    report.reason = `no pinned on-device model installed; serving ${FALLBACK_NOTE}. ${INSTALL_HINT}`;
+    // No manifest, no problems. A leftover runtime/cache/adapter footprint means a setup ran
+    // partway and died before the pin — its remediation (finish setup) differs from a fresh
+    // machine's (start one), which is the whole reason WP1.11 splits the two states.
+    const footprint = embedHomeFootprint(home);
+    const incomplete = footprint.runtime || footprint.models || footprint.adapters;
+    if (incomplete) {
+      report.status = 'installation-incomplete';
+      const parts = [
+        footprint.runtime ? 'runtime' : '',
+        footprint.models ? 'model cache' : '',
+        footprint.adapters ? 'adapters' : '',
+      ].filter(Boolean);
+      report.reason = `no pinned manifest, but a partial install is on disk (${parts.join(
+        ', ',
+      )}) — an earlier \`crib embed setup\` did not finish. Re-run \`crib embed setup\` to complete it; serving ${FALLBACK_NOTE} until then`;
+    } else {
+      report.status = 'lexical-only';
+      report.reason = `no pinned on-device model installed; serving ${FALLBACK_NOTE}. ${INSTALL_HINT}`;
+    }
   }
   return report;
 }
