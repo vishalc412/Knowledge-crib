@@ -250,6 +250,9 @@
           <button aria-label="Close memory home" data-kc-memory-close onClick="{{ closeMemory }}" style="width:26px; height:26px; display:flex; align-items:center; justify-content:center; border-radius:7px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.text }}; cursor:pointer; font-size:15px; line-height:1;">×</button>
         </div>
         <div style="font-size:12.5px; line-height:1.45; color: {{ t.sub }}; margin-top:6px;">What agents recorded about this repo — and what went stale when the code moved.</div>
+        <!-- WP6.6 — polite live region: loading, failure and successful mutations are announced to
+             assistive tech without stealing focus. Visually hidden, one pixel, clipped. -->
+        <div role="status" aria-live="polite" style="position:absolute; width:1px; height:1px; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap;">{{ mem.announce }}</div>
         <sc-if value="{{ mem.notConfigured }}" hint-placeholder-val="{{ true }}">
           <div style="margin-top:10px; padding:10px 12px; border-radius:9px; background: {{ t.chip }}; border:1px solid {{ t.border }}; font-size:12px; color: {{ t.sub }};">No memory stores are wired for this repo. Run <span style="font-family:'IBM Plex Mono',monospace; color: {{ t.text }};">crib memory init</span> to start one.</div>
         </sc-if>
@@ -278,12 +281,152 @@
               <b style="color:#43d8c9;">Next safe action</b><br>{{ mem.homeView.nextAction }}
             </div>
             <sc-if value="{{ mem.homeAction }}" hint-placeholder-val="{{ true }}">
-              <div style="margin-top:8px; padding:10px; border-radius:8px; border:1px solid {{ t.border }}; background:{{ t.chip }};">
+              <div tabindex="-1" data-kc-mem-action-head style="margin-top:8px; padding:10px; border-radius:8px; border:1px solid {{ t.border }}; background:{{ t.chip }}; outline:none;">
                 <div style="font-size:11px; font-weight:700; color:{{ t.text }};">{{ mem.homeAction.title }}</div>
                 <div style="font-size:11px; line-height:1.45; color:{{ t.sub }}; margin-top:4px;">{{ mem.homeAction.detail }}</div>
-                <sc-for list="{{ mem.homeAction.items }}" as="item" hint-placeholder-count="3">
-                  <div style="margin-top:6px; padding:6px 7px; border-radius:6px; background:{{ t.panel }}; font-size:10.5px; color:{{ t.text }}; word-break:break-word;">{{ item }}</div>
-                </sc-for>
+              </div>
+            </sc-if>
+            <!-- WP6.1–WP6.3 — the pending queue: two honest sections, per-row classification, and
+                 browser admission that runs the CLI's own domain path. Terminal and blocked rows
+                 name their exact command; only `ready` rows offer the Admit action. -->
+            <sc-if value="{{ mem.pendingView }}" hint-placeholder-val="{{ true }}">
+              <div style="margin-top:8px;">
+                <sc-if value="{{ mem.pendingView.loading }}" hint-placeholder-val="{{ true }}"><div style="font-size:11.5px; color: {{ t.sub }}; padding:6px 2px;">Loading the pending queue…</div></sc-if>
+                <sc-if value="{{ mem.pendingView.error }}" hint-placeholder-val="{{ true }}"><div style="font-size:11.5px; color:#f87171; padding:6px 2px;">{{ mem.pendingView.error }}</div></sc-if>
+                <sc-if value="{{ mem.pendingView.unwired }}" hint-placeholder-val="{{ true }}"><div style="font-size:11.5px; color: {{ t.sub }}; padding:6px 2px;">No memory stores are wired for this repo.</div></sc-if>
+                <sc-if value="{{ mem.pendingView.notice }}" hint-placeholder-val="{{ true }}">
+                  <div role="status" style="margin:6px 0; padding:8px 10px; border-radius:8px; background:rgba(52,211,153,0.12); border:1px solid rgba(52,211,153,0.4); font-size:11px; color: {{ t.text }};">{{ mem.pendingView.notice }}</div>
+                </sc-if>
+                <sc-if value="{{ mem.pendingView.mutationError }}" hint-placeholder-val="{{ true }}">
+                  <div style="margin:6px 0; padding:8px 10px; border-radius:8px; background:rgba(248,113,113,0.12); border:1px solid rgba(248,113,113,0.4); font-size:11px; color:#f87171;">
+                    {{ mem.pendingView.mutationError.message }}
+                    <sc-if value="{{ mem.pendingView.mutationError.command }}" hint-placeholder-val="{{ true }}">
+                      <div style="margin-top:5px; font-family:'IBM Plex Mono',monospace; font-size:10.5px; color: {{ t.text }}; word-break:break-all;">{{ mem.pendingView.mutationError.command }}</div>
+                    </sc-if>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ mem.pendingView.wired }}" hint-placeholder-val="{{ true }}">
+                  <div style="display:flex; gap:5px; margin:8px 0 4px;">
+                    <span style="padding:4px 8px; border-radius:6px; background: {{ t.chip }}; border:1px solid {{ t.border }}; font-size:10px; color: {{ t.sub }};">captures {{ mem.pendingView.counts.captures }}</span>
+                    <span style="padding:4px 8px; border-radius:6px; background:rgba(52,211,153,0.12); border:1px solid rgba(52,211,153,0.4); font-size:10px; color:#34d399;">ready {{ mem.pendingView.counts.ready }}</span>
+                    <span style="padding:4px 8px; border-radius:6px; background:rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.4); font-size:10px; color:#f59e0b;">terminal {{ mem.pendingView.counts.terminal }}</span>
+                    <span style="padding:4px 8px; border-radius:6px; background:rgba(248,113,113,0.12); border:1px solid rgba(248,113,113,0.4); font-size:10px; color:#f87171;">blocked {{ mem.pendingView.counts.blocked }}</span>
+                  </div>
+                  <!-- raw captures awaiting distillation — the panel shows the command; consent for an
+                       external model stays the operator's, so no distill action exists here -->
+                  <div style="font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color: {{ t.sub }}; margin:10px 0 5px;">Raw captures awaiting distillation</div>
+                  <sc-for list="{{ mem.pendingView.captureRows }}" as="r" hint-placeholder-count="3">
+                    <div style="padding:8px 9px; border-radius:8px; border:1px solid {{ t.border }}; background: {{ t.chip }}; margin-bottom:5px;">
+                      <div style="font-size:11px; font-weight:600; color: {{ t.text }}; word-break:break-word;">{{ r.subject }}</div>
+                      <div style="font-size:10.5px; line-height:1.45; color: {{ t.sub }}; margin-top:3px; word-break:break-word;">{{ r.claim }}</div>
+                      <div style="margin-top:5px; font-family:'IBM Plex Mono',monospace; font-size:10px; color: {{ t.text }}; background: {{ t.panel }}; border-radius:6px; padding:5px 7px; word-break:break-all;">{{ r.command }}</div>
+                    </div>
+                  </sc-for>
+                  <sc-if value="{{ mem.pendingView.capturesEmpty }}" hint-placeholder-val="{{ true }}"><div style="font-size:10.5px; color: {{ t.sub }}; padding:4px 2px;">No raw captures waiting.</div></sc-if>
+                  <div style="font-size:10px; color: {{ t.sub }}; margin:2px 0 4px;">{{ mem.pendingView.captures.from }}–{{ mem.pendingView.captures.to }} of {{ mem.pendingView.captures.total }}
+                    <sc-if value="{{ mem.pendingView.captures.hasPrev }}" hint-placeholder-val="{{ true }}"><button onClick="{{ mem.pendingView.captures.onPrev }}" style="margin-left:6px; padding:2px 8px; border-radius:6px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.text }}; cursor:pointer; font:600 10px 'IBM Plex Sans';">← Newer</button></sc-if>
+                    <sc-if value="{{ mem.pendingView.captures.hasNext }}" hint-placeholder-val="{{ true }}"><button onClick="{{ mem.pendingView.captures.onNext }}" style="margin-left:4px; padding:2px 8px; border-radius:6px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.text }}; cursor:pointer; font:600 10px 'IBM Plex Sans';">Older →</button></sc-if>
+                  </div>
+                  <!-- staged claims, classified by the same checks the CLI admission path runs -->
+                  <div style="font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color: {{ t.sub }}; margin:10px 0 5px;">Staged claims awaiting admission</div>
+                  <sc-for list="{{ mem.pendingView.stagedRows }}" as="r" hint-placeholder-count="3">
+                    <div style="padding:8px 9px; border-radius:8px; border:1px solid {{ t.border }}; background: {{ t.chip }}; margin-bottom:5px;">
+                      <div style="display:flex; align-items:center; gap:6px;">
+                        <span style="padding:2px 7px; border-radius:5px; font-size:9.5px; font-weight:700; color:{{ r.standingColor }}; background:rgba(127,127,127,0.14);">{{ r.standing }}</span>
+                        <span style="font-size:11px; font-weight:600; color: {{ t.text }}; word-break:break-word; min-width:0;">{{ r.subject }}</span>
+                      </div>
+                      <div style="font-size:10.5px; line-height:1.45; color: {{ t.sub }}; margin-top:3px; word-break:break-word;">{{ r.claim }}</div>
+                      <div style="display:flex; flex-wrap:wrap; gap:4px; margin-top:5px;">
+                        <span style="padding:2px 6px; border-radius:5px; background: {{ t.panel }}; font-size:9.5px; color: {{ t.sub }};">{{ r.kind }} · {{ r.scope }}</span>
+                        <sc-for list="{{ r.evidence }}" as="ev" hint-placeholder-count="2">
+                          <span style="padding:2px 6px; border-radius:5px; background: {{ t.panel }}; font-size:9.5px; color: {{ ev.color }};">{{ ev.label }}</span>
+                        </sc-for>
+                      </div>
+                      <sc-if value="{{ r.blockers }}" hint-placeholder-val="{{ true }}"><div style="font-size:10px; color:#f87171; margin-top:4px; word-break:break-word;">{{ r.blockers }}</div></sc-if>
+                      <sc-if value="{{ r.notes }}" hint-placeholder-val="{{ true }}"><div style="font-size:10px; color: {{ t.sub }}; margin-top:3px; word-break:break-word;">{{ r.notes }}</div></sc-if>
+                      <div style="display:flex; align-items:center; gap:6px; margin-top:6px; flex-wrap:wrap;">
+                        <sc-if value="{{ r.ready }}" hint-placeholder-val="{{ true }}">
+                          <button onClick="{{ r.onAdmit }}" disabled="{{ r.busy }}" style="padding:4px 11px; border-radius:6px; border:1px solid rgba(52,211,153,0.5); background:rgba(52,211,153,0.16); color:#34d399; cursor:pointer; font:600 10.5px 'IBM Plex Sans';">{{ r.admitLabel }}</button>
+                        </sc-if>
+                        <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; color: {{ t.sub }}; background: {{ t.panel }}; border-radius:6px; padding:4px 7px; word-break:break-all; min-width:0;">{{ r.command }}</span>
+                      </div>
+                    </div>
+                  </sc-for>
+                  <sc-if value="{{ mem.pendingView.stagedEmpty }}" hint-placeholder-val="{{ true }}"><div style="font-size:10.5px; color: {{ t.sub }}; padding:4px 2px;">No staged claims waiting.</div></sc-if>
+                  <div style="font-size:10px; color: {{ t.sub }}; margin:2px 0 4px;">{{ mem.pendingView.staged.from }}–{{ mem.pendingView.staged.to }} of {{ mem.pendingView.staged.total }}
+                    <sc-if value="{{ mem.pendingView.staged.hasPrev }}" hint-placeholder-val="{{ true }}"><button onClick="{{ mem.pendingView.staged.onPrev }}" style="margin-left:6px; padding:2px 8px; border-radius:6px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.text }}; cursor:pointer; font:600 10px 'IBM Plex Sans';">← Newer</button></sc-if>
+                    <sc-if value="{{ mem.pendingView.staged.hasNext }}" hint-placeholder-val="{{ true }}"><button onClick="{{ mem.pendingView.staged.onNext }}" style="margin-left:4px; padding:2px 8px; border-radius:6px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.text }}; cursor:pointer; font:600 10px 'IBM Plex Sans';">Older →</button></sc-if>
+                  </div>
+                  <!-- the gate profile is the operator's choice (WP6.3: the browser never guesses) -->
+                  <sc-if value="{{ mem.pendingView.profilesMany }}" hint-placeholder-val="{{ true }}">
+                    <label style="display:flex; align-items:center; gap:6px; margin-top:8px; font-size:10.5px; color: {{ t.sub }};">
+                      Gate profile
+                      <select onChange="{{ mem.pendingView.onProfile }}" style="flex:1; min-width:0; height:24px; border-radius:6px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.text }}; font:500 10.5px 'IBM Plex Sans';">
+                        <sc-for list="{{ mem.pendingView.profiles }}" as="p" hint-placeholder-count="2">
+                          <option selected="{{ p === mem.pendingView.profile }}">{{ p }}</option>
+                        </sc-for>
+                      </select>
+                    </label>
+                  </sc-if>
+                </sc-if>
+              </div>
+            </sc-if>
+            <!-- WP6.4 — resumable work: the choice list, then the intake detail with the resume
+                 form. Resume appends the normal checkpoint event; it never executes the work. -->
+            <sc-if value="{{ mem.resumeView }}" hint-placeholder-val="{{ true }}">
+              <div style="margin-top:8px;">
+                <div data-kc-mem-resume-list tabindex="-1" style="outline:none;">
+                  <sc-for list="{{ mem.resumeView.choices }}" as="c" hint-placeholder-count="3">
+                    <button onClick="{{ c.onOpen }}" style="display:block; width:100%; text-align:left; padding:8px 9px; border-radius:8px; border:1px solid {{ t.border }}; background: {{ t.chip }}; margin-bottom:5px; cursor:pointer; font-family:'IBM Plex Sans';">
+                      <div style="display:flex; align-items:center; gap:6px;">
+                        <span style="padding:2px 7px; border-radius:5px; font-size:9.5px; font-weight:700; color:#5b8cff; background:rgba(91,140,255,0.16);">{{ c.status }}</span>
+                        <span style="font-size:11px; font-weight:600; color: {{ t.text }}; min-width:0; word-break:break-word;">{{ c.intakeId }}</span>
+                      </div>
+                      <sc-if value="{{ c.nextSafeAction }}" hint-placeholder-val="{{ true }}"><div style="font-size:10.5px; color: {{ t.sub }}; margin-top:3px; word-break:break-word;">Next: {{ c.nextSafeAction }}</div></sc-if>
+                      <sc-if value="{{ c.cautions }}" hint-placeholder-val="{{ true }}"><div style="font-size:10px; color:#f59e0b; margin-top:3px; word-break:break-word;">{{ c.cautions }}</div></sc-if>
+                    </button>
+                  </sc-for>
+                  <sc-if value="{{ mem.resumeView.empty }}" hint-placeholder-val="{{ true }}"><div style="font-size:10.5px; color: {{ t.sub }}; padding:4px 2px;">No saved work to resume.</div></sc-if>
+                </div>
+                <sc-if value="{{ mem.resumeView.intake }}" hint-placeholder-val="{{ true }}">
+                  <div style="margin-top:6px; border-top:1px solid {{ t.border }}; padding-top:8px;">
+                    <button data-kc-mem-intake-back onClick="{{ mem.resumeView.intake.onBack }}" style="height:26px; padding:0 10px; border-radius:7px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.sub }}; cursor:pointer; font:600 10.5px 'IBM Plex Sans'; margin-bottom:8px;">← Back to the list</button>
+                    <sc-if value="{{ mem.resumeView.intake.loading }}" hint-placeholder-val="{{ true }}"><div style="font-size:11.5px; color: {{ t.sub }};">Loading the saved work…</div></sc-if>
+                    <sc-if value="{{ mem.resumeView.intake.error }}" hint-placeholder-val="{{ true }}"><div style="font-size:11.5px; color:#f87171;">{{ mem.resumeView.intake.error }}</div></sc-if>
+                    <sc-if value="{{ mem.resumeView.intake.original }}" hint-placeholder-val="{{ true }}">
+                      <div style="padding:8px 9px; border-radius:8px; border:1px solid {{ t.border }}; background: {{ t.chip }}; margin-bottom:5px;">
+                        <div style="font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color: {{ t.sub }};">The saved request</div>
+                        <div style="font-size:10.5px; line-height:1.45; color: {{ t.text }}; margin-top:3px; word-break:break-word;">{{ mem.resumeView.intake.original }}</div>
+                        <sc-if value="{{ mem.resumeView.intake.interpretation }}" hint-placeholder-val="{{ true }}"><div style="font-size:10px; color: {{ t.sub }}; margin-top:3px; word-break:break-word;">Interpreted as: {{ mem.resumeView.intake.interpretation }}</div></sc-if>
+                      </div>
+                      <div style="display:flex; flex-wrap:wrap; gap:5px; margin:6px 0;">
+                        <span style="padding:3px 8px; border-radius:6px; background: {{ t.chip }}; border:1px solid {{ t.border }}; font-size:10px; color: {{ t.sub }};">status: {{ mem.resumeView.intake.status }}</span>
+                        <span style="padding:3px 8px; border-radius:6px; background: {{ t.chip }}; border:1px solid {{ t.border }}; font-size:10px; color: {{ t.sub }};">phase: {{ mem.resumeView.intake.phase }}</span>
+                        <span style="padding:3px 8px; border-radius:6px; background: {{ t.chip }}; border:1px solid {{ t.border }}; font-size:10px; color: {{ t.sub }};">{{ mem.resumeView.intake.checkpointCount }} checkpoints</span>
+                      </div>
+                      <div style="font-size:10.5px; color: {{ t.text }}; margin-top:6px;"><b>Next safe action</b> — {{ mem.resumeView.intake.nextSafeAction }}</div>
+                      <sc-if value="{{ mem.resumeView.intake.blockers }}" hint-placeholder-val="{{ true }}"><div style="font-size:10px; color:#f87171; margin-top:4px; word-break:break-word;">{{ mem.resumeView.intake.blockers }}</div></sc-if>
+                      <sc-if value="{{ mem.resumeView.intake.drift }}" hint-placeholder-val="{{ true }}"><div style="font-size:10px; color:#f59e0b; margin-top:4px;">The repository moved since the saved checkpoint — re-check the plan against the current tree.</div></sc-if>
+                      <div style="margin-top:8px;">
+                        <div style="font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color: {{ t.sub }}; margin-bottom:4px;">Checkpoint history</div>
+                        <sc-for list="{{ mem.resumeView.intake.checkpoints }}" as="cp" hint-placeholder-count="3">
+                          <div style="font-size:10px; color: {{ t.sub }}; padding:3px 0; border-bottom:1px solid {{ t.border }}; word-break:break-word;">{{ cp.line }}</div>
+                        </sc-for>
+                      </div>
+                      <sc-if value="{{ mem.resumeView.intake.notice }}" hint-placeholder-val="{{ true }}"><div role="status" style="margin:6px 0; padding:8px 10px; border-radius:8px; background:rgba(52,211,153,0.12); border:1px solid rgba(52,211,153,0.4); font-size:11px; color: {{ t.text }};">{{ mem.resumeView.intake.notice }}</div></sc-if>
+                      <sc-if value="{{ mem.resumeView.intake.mutationError }}" hint-placeholder-val="{{ true }}"><div style="margin:6px 0; padding:8px 10px; border-radius:8px; background:rgba(248,113,113,0.12); border:1px solid rgba(248,113,113,0.4); font-size:11px; color:#f87171;">{{ mem.resumeView.intake.mutationError.message }}</div></sc-if>
+                      <sc-if value="{{ mem.resumeView.intake.resumable }}" hint-placeholder-val="{{ true }}">
+                        <div style="margin-top:8px;">
+                          <label style="display:block; font-size:10.5px; color: {{ t.sub }}; margin-bottom:4px;">Next action for the record (leave empty to reuse the saved one)</label>
+                          <input data-kc-mem-next onInput="{{ mem.resumeView.intake.onInputNext }}" placeholder="What resuming means, in one line" style="width:100%; box-sizing:border-box; height:28px; padding:0 9px; border-radius:7px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.text }}; font:500 11px 'IBM Plex Sans'; outline:none;">
+                          <button onClick="{{ mem.resumeView.intake.onResume }}" disabled="{{ mem.resumeView.intake.busy }}" style="margin-top:6px; padding:5px 13px; border-radius:7px; border:1px solid rgba(91,140,255,0.5); background:rgba(91,140,255,0.16); color:#5b8cff; cursor:pointer; font:600 11px 'IBM Plex Sans';">{{ mem.resumeView.intake.resumeLabel }}</button>
+                          <div style="font-size:9.5px; color: {{ t.sub }}; margin-top:4px;">Records the resume against checkpoint {{ mem.resumeView.intake.lastCheckpoint }}. Nothing is executed.</div>
+                        </div>
+                      </sc-if>
+                      <sc-if value="{{ !mem.resumeView.intake.resumable }}" hint-placeholder-val="{{ true }}"><div style="margin-top:8px; padding:8px 10px; border-radius:8px; background: {{ t.chip }}; border:1px solid {{ t.border }}; font-size:10.5px; color: {{ t.sub }};">This work is closed or already completed — nothing to resume.</div></sc-if>
+                    </sc-if>
+                  </div>
+                </sc-if>
               </div>
             </sc-if>
           </div>
@@ -1312,9 +1455,10 @@ class Component extends DCLogic {
   // Same fetch discipline as loadSource: AbortController + sequence guard, so a slow ledger
   // response can never overwrite a newer view, and closing the panel cancels the in-flight read.
   toggleMemory(){ if(this.state.memOpen){ this.closeMemory(); return; }
-    this.setState({memOpen:true, memData:null, memHome:null, memDetail:null, memGroup:null, memHomeAction:null, memError:null, selectedId:null, selectedClusterId:null, selectedClusterKind:null, clusterContext:false, clusterReturnId:null, selectedTrail:[], sourcePreview:null});
+    this.setState({memOpen:true, memData:null, memHome:null, memDetail:null, memGroup:null, memHomeAction:null, memError:null, memPending:null, memPendingLoading:false, memPendingError:null, memPendingOffset:0, memIntake:null, memMutationError:null, memAdmitting:null, memAnnounce:null, memProfile:null, memResumeNext:null, memResuming:false, memAdmittedNotice:null, memResumeNotice:null, selectedId:null, selectedClusterId:null, selectedClusterKind:null, clusterContext:false, clusterReturnId:null, selectedTrail:[], sourcePreview:null});
     this.loadMemory(null); this.focusMemoryPanel(); }
-  closeMemory(){ if(this._memAbort)this._memAbort.abort(); this.setState({memOpen:false, memData:null, memHome:null, memDetail:null, memGroup:null, memHomeAction:null, memError:null});
+  closeMemory(){ if(this._memAbort)this._memAbort.abort(); if(this._memPendAbort)this._memPendAbort.abort(); if(this._memIntakeAbort)this._memIntakeAbort.abort();
+    this.setState({memOpen:false, memData:null, memHome:null, memDetail:null, memGroup:null, memHomeAction:null, memError:null, memPending:null, memPendingLoading:false, memPendingError:null, memPendingOffset:0, memIntake:null, memMutationError:null, memAdmitting:null, memAnnounce:null, memProfile:null, memResumeNext:null, memResuming:false, memAdmittedNotice:null, memResumeNotice:null});
     // Return focus to what opened the panel. Without this the focus ring is left on a button whose
     // panel is gone, and a keyboard user has to tab from the top of the page to get back.
     this.keepFocus('[data-kc-memory-trigger]'); }
@@ -1338,8 +1482,10 @@ class Component extends DCLogic {
   /** Move focus INTO the panel once it renders, so a keyboard user lands on the new content. */
   focusMemoryPanel(){ this.keepFocus('[data-kc-memory-close]'); }
   openMemoryHomeAction(kind){
-    if(kind==='active'||kind==='history'){ this.setState({memHomeAction:null}); this.loadMemory(null); return; }
-    if(kind==='needsReview'){ this.setState({memHomeAction:null}); this.loadMemory('stale'); return; }
+    if(kind==='active'||kind==='history'){ this.setState({memHomeAction:null, memIntake:null}); this.loadMemory(null); return; }
+    if(kind==='needsReview'){ this.setState({memHomeAction:null, memIntake:null}); this.loadMemory('stale'); return; }
+    if(kind==='pending'){ this.setState({memHomeAction:'pending', memIntake:null, memMutationError:null, memAdmittedNotice:null}); this.loadMemoryPending(0); this.keepFocus('[data-kc-mem-action-head]'); return; }
+    if(kind==='resume'){ this.setState({memHomeAction:'resume', memIntake:null, memMutationError:null, memResumeNotice:null}); this.keepFocus('[data-kc-mem-action-head]'); return; }
     this.setState({memHomeAction:kind});
   }
   async loadMemory(group){ const seq=++this._memSeq; if(this._memAbort)this._memAbort.abort(); const controller=new AbortController(); this._memAbort=controller;
@@ -1359,6 +1505,113 @@ class Component extends DCLogic {
       this.setState({memDetail:{id,status:'ready',row,data}});
     }catch(err){ if(controller.signal.aborted||seq!==this._memSeq)return; this.setState({memDetail:{id,status:'error',message:String(err&&err.message||err)}}); } }
   backToLedger(){ this.setState({memDetail:null}); }
+  // ── WP6.3–WP6.6 — pending queue, browser admission, intake resume ──────────
+  // The read endpoints (/memory/pending.json, /memory/intake.json) are already display-shaped, so
+  // these methods own only transport (the same AbortController + sequence discipline as
+  // loadMemory), the mutation grant dance, and focus/announcement chrome. Every write goes
+  // through POST /memory/admit or /memory/resume — the same domain services the CLI runs — and a
+  // structured failure is surfaced as text, never re-interpreted here.
+  /** Announce a mutation outcome to screen readers (WP6.6) — the panel carries a polite live region. */
+  announceMemory(text){ this.setState({memAnnounce:text}); }
+  /**
+   * One mutation grant per server run, fetched same-origin on every mutation (WP6.5). The token
+   * travels as a header, never a query parameter, so it cannot appear in URLs or access logs.
+   */
+  async fetchMutationGrant(){
+    const res=await fetch('/memory/mutation-grant.json',{cache:'no-store'});
+    if(!res.ok)throw new Error('mutation grant unavailable');
+    return ((await res.json())||{}).token;
+  }
+  /** POST one mutation. Resolves {ok:true,data} or {ok:false,status,code,message[,command]} — never throws. */
+  async postMemoryMutation(path,body){
+    let token;
+    try{ token=await this.fetchMutationGrant(); }
+    catch(_e){ return {ok:false,status:503,code:'unavailable',message:'The local server did not issue a mutation grant — reload the page and retry.'}; }
+    let res, text='';
+    try{ res=await fetch(path,{method:'POST',headers:{'content-type':'application/json','x-crib-csrf':token},body:JSON.stringify(body)}); text=await res.text(); }
+    catch(_e){ return {ok:false,status:0,code:'unavailable',message:'The local server could not be reached.'}; }
+    let data=null; try{ data=text?JSON.parse(text):null; }catch(_e){ /* bare text = a non-mutation failure shape */ }
+    if(!res.ok){ const e=(data&&data.error)||{};
+      return {ok:false,status:res.status,code:e.code||'internal',message:e.message||text||('HTTP '+res.status),...(e.command?{command:e.command}:{})}; }
+    return {ok:true,data};
+  }
+  /** Page size for the pending queue — small enough for the 460px panel, capped server-side at 200. */
+  loadMemoryPending(offset){
+    const LIMIT=20; const off=Math.max(0,(offset||0));
+    if(this._memPendAbort)this._memPendAbort.abort();
+    const controller=new AbortController(); this._memPendAbort=controller;
+    this.setState({memPendingLoading:true, memPendingError:null, memPendingOffset:off});
+    fetch('/memory/pending.json?offset='+off+'&limit='+LIMIT,{signal:controller.signal,cache:'no-store'})
+      .then((res)=>{ if(!res.ok)throw new Error('queue request failed: HTTP '+res.status); return res.json(); })
+      .then((data)=>{ if(controller.signal.aborted)return; this.setState({memPendingLoading:false, memPending:data}); })
+      .catch((err)=>{ if(controller.signal.aborted)return; this.setState({memPendingLoading:false, memPendingError:String(err&&err.message||err)}); });
+  }
+  /** WP6.4 — open one intake's detail: requirement + checkpoint history + folded brief, no work executed. */
+  async loadIntakeDetail(intakeId){
+    if(this._memIntakeAbort)this._memIntakeAbort.abort();
+    const controller=new AbortController(); this._memIntakeAbort=controller;
+    this.setState({memIntake:{status:'loading',id:intakeId}, memMutationError:null, memResumeNext:null, memResumeNotice:null});
+    try{
+      const res=await fetch('/memory/intake.json?id='+encodeURIComponent(intakeId),{signal:controller.signal,cache:'no-store'});
+      if(!res.ok)throw new Error('intake request failed: HTTP '+res.status);
+      const data=await res.json(); if(controller.signal.aborted)return;
+      this.setState({memIntake:{status:'ready',id:intakeId,data}});
+      // Move focus INTO the opened detail so a keyboard user lands on the new content (WP6.6).
+      this.keepFocus('[data-kc-mem-intake-back]');
+    }catch(err){ if(controller.signal.aborted)return; this.setState({memIntake:{status:'error',id:intakeId,message:String(err&&err.message||err)}}); }
+  }
+  closeIntakeDetail(){ this.setState({memIntake:null, memResumeNext:null, memResumeNotice:null}); this.keepFocus('[data-kc-mem-resume-list]'); }
+  /**
+   * WP6.3 — admit one `ready` staged claim through the CLI's own domain path. The server re-runs
+   * the read projection's classification before completing, so a claim that changed since the page
+   * loaded comes back terminal-only/blocked, never silently promoted. Stale (409) → reload the
+   * queue; the other structured codes surface as message text (plus the exact CLI command when
+   * the path is terminal-only).
+   */
+  async admitStagedClaim(id){
+    const profiles=((this.state.memData&&this.state.memData.capturePolicy&&this.state.memData.capturePolicy.profiles)||[]);
+    const profile=this.state.memProfile||profiles[0];
+    if(!profile){ this.setState({memMutationError:{code:'unavailable',message:'No gate policy is configured for this repository — run `crib memory init` first.'}}); this.announceMemory('Admission is not available yet.'); return; }
+    this.setState({memAdmitting:id, memMutationError:null, memAdmittedNotice:null});
+    this.announceMemory('Admitting the staged claim.');
+    const r=await this.postMemoryMutation('/memory/admit',{id,profile});
+    if(r.ok){
+      const msg=(r.data&&r.data.alreadyAdmitted)?'Already admitted — nothing to do.':((r.data&&r.data.alreadyShared)?'Promoted to the shared ledger.':'Admitted — the record is now active.');
+      this.announceMemory(msg);
+      this.setState({memAdmitting:null, memAdmittedNotice:msg});
+      // Refresh the queue, the home tiles and the ledger together (the plan's post-admission law).
+      this.loadMemoryPending(this.state.memPendingOffset||0); this.loadMemory(null);
+    }else{
+      this.announceMemory('Admission did not complete.');
+      this.setState({memAdmitting:null, memMutationError:{code:r.code,message:r.message,...(r.command?{command:r.command}:{})}});
+      if(r.status===409)this.loadMemoryPending(this.state.memPendingOffset||0); // stale — reload the queue
+    }
+  }
+  /**
+   * WP6.4 — record an explicit resume: appends the same checkpoint event the CLI resume path
+   * writes, against the revision the operator saw (expectedCheckpointId from the loaded detail).
+   * It never executes the saved work, runs a shell, or contacts another client. Stale (409) →
+   * reload the intake detail so the form carries the new revision.
+   */
+  async resumeIntake(intakeId){
+    const st=this.state.memIntake; const d=(st&&st.status==='ready')?st.data:null;
+    const cps=(d&&d.checkpoints)||[]; const last=cps[cps.length-1];
+    const body={intakeId,expectedCheckpointId:last?last.id:''};
+    const next=((this.state.memResumeNext||'')).trim(); if(next)body.next=next;
+    this.setState({memResuming:true, memMutationError:null});
+    this.announceMemory('Recording the resume.');
+    const r=await this.postMemoryMutation('/memory/resume',body);
+    if(r.ok){
+      const msg=(r.data&&r.data.alreadyResumed)?'Already resumed — nothing to do.':'Resume recorded — the decision is on the intake.';
+      this.announceMemory(msg);
+      this.setState({memResuming:false, memResumeNotice:msg, memIntake:null, memResumeNext:null});
+      this.loadMemory(null); // tiles + ledger reflect the new checkpoint
+    }else{
+      this.announceMemory('Resume did not complete.');
+      this.setState({memResuming:false, memMutationError:{code:r.code,message:r.message}});
+      if(r.status===409)this.loadIntakeDetail(intakeId); // stale — reload so the form re-bases
+    }
+  }
   // Display vocabulary: the audit trail's raw axis names/values are projected onto the ledger's
   // user-facing names before rendering (the backend ledger projection does the same). The raw
   // words are spelled from char codes — this file ships verbatim as a static asset, so even the
@@ -1607,15 +1860,75 @@ class Component extends DCLogic {
           {label:'Sync',value:hh.sync&&hh.sync.configured?((hh.sync.lastSuccessfulAt)||'configured; no run yet'):'local only',color:hh.sync&&hh.sync.configured?'#34d399':'#8b97a8'}],
         nextAction:mh.nextAction||'Capture a reusable outcome.'}:null;
       const actionKind=this.state.memHomeAction;
-      const homeAction=actionKind==='pending'?{
-        title:'Review pending outcomes',
-        detail:'Distill these observations before they become recallable memory.',
-        items:((hs.pending&&hs.pending.preview)||[]).map((item)=>item.subject||item.id||'pending outcome').slice(0,3)
-      }:actionKind==='resume'?{
-        title:'Resume saved work',
-        detail:(hs.resume&&hs.resume.primary&&hs.resume.primary.nextSafeAction)||'Choose a saved intake from the session handoff.',
-        items:((hs.resume&&hs.resume.choices)||[]).map((item)=>item.label||item.intakeId).slice(0,3)
-      }:null;
+      // WP6.1–WP6.3 — the pending queue view. /memory/pending.json is already display-shaped (two
+      // honest sections, classified rows, exact commands, honest not-wired shape); this layer adds
+      // ONLY chrome and handlers, so the panel can never disagree with what the CLI admission paths
+      // would do — `ready` rows offer the same domain path `crib memory evaluate` runs, terminal and
+      // blocked rows name their exact command and no browser alternative.
+      let homeAction=null; let pendingView=null; let resumeView=null;
+      if(actionKind==='pending'){
+        homeAction={title:'Pending captures', detail:'Raw captures awaiting distillation, and staged claims awaiting admission — each classified by the same checks the CLI runs.'};
+        const mp=this.state.memPending;
+        const wired=!!(mp&&mp.configured);
+        const profiles=((md&&md.capturePolicy&&md.capturePolicy.profiles)||[]);
+        const profile=this.state.memProfile||profiles[0]||'';
+        const offset=this.state.memPendingOffset||0;
+        const PEND_LIMIT=20;
+        const mkPager=(section)=>{ const s=(wired&&mp[section])||null; if(!s)return null;
+          return { rows:s.rows, total:s.total,
+            from:s.total?String(offset+1):'0', to:String(Math.min(offset+s.rows.length,s.total)),
+            hasPrev:offset>0, hasNext:offset+s.rows.length<s.total,
+            onPrev:()=>this.loadMemoryPending(Math.max(0,offset-PEND_LIMIT)),
+            onNext:()=>this.loadMemoryPending(offset+PEND_LIMIT) }; };
+        const captures=mkPager('captures');
+        const staged=mkPager('staged');
+        const standingColor=(s)=>s==='ready'?'#34d399':(s==='terminal'?'#f59e0b':'#f87171');
+        const evChip=(ev)=>{ if(ev.admissible===false)return {label:ev.kind+' · ignored for this kind',color:'#8b97a8'};
+          return ev.browserSupported?{label:ev.kind+' · ready',color:'#34d399'}:{label:ev.kind+' · needs a terminal step',color:'#f59e0b'}; };
+        const stagedRows=staged?staged.rows.map((r)=>({
+          id:r.id, kind:r.kind, subject:r.subject, claim:r.claim, scope:r.scope,
+          standing:r.standing, standingColor:standingColor(r.standing), ready:r.standing==='ready',
+          blockers:(r.blockers||[]).join(' · ')||null, notes:(r.notes||[]).join(' · ')||null, command:r.command,
+          evidence:(r.evidence||[]).map(evChip),
+          onAdmit:r.standing==='ready'?()=>this.admitStagedClaim(r.id):null,
+          admitLabel:this.state.memAdmitting===r.id?'Admitting…':'Admit',
+          busy:this.state.memAdmitting===r.id })):null;
+        const captureRows=captures?captures.rows.map((r)=>({ id:r.id, kind:r.kind, subject:r.subject, claim:r.claim, command:r.command })):null;
+        const loaded=!!(wired&&!this.state.memPendingLoading&&!this.state.memPendingError);
+        pendingView={ wired, unwired:!wired, loading:!!this.state.memPendingLoading, error:this.state.memPendingError,
+          counts:(wired&&mp.counts)||null, profiles, profile, profilesMany:profiles.length>1,
+          captures, captureRows, capturesEmpty:!!(loaded&&captures&&captures.total===0),
+          staged, stagedRows, stagedEmpty:!!(loaded&&staged&&staged.total===0),
+          mutationError:this.state.memMutationError, notice:this.state.memAdmittedNotice,
+          onProfile:(e)=>this.setState({memProfile:e.target.value}) };
+      }else if(actionKind==='resume'){
+        homeAction={title:'Resumable work', detail:'Each saved intake with its next safe action and cautions. Resuming records the decision — it never executes the saved work.'};
+        const briefs=(hs.resume&&hs.resume.choices)||[];
+        const choices=briefs.map((c)=>({
+          intakeId:c.intakeId, status:c.status, phase:c.phase, nextSafeAction:c.nextSafeAction||null, lastActivity:c.lastActivity,
+          cautions:[].concat(c.repositoryDrift?['the repository moved since the saved checkpoint']:[])
+            .concat(c.blockers||[]).concat((c.conflicts||[]).map((cf)=>'conflicting '+cf.field)).join(' · ')||null,
+          onOpen:()=>this.loadIntakeDetail(c.intakeId) }));
+        const st=this.state.memIntake; let intake=null;
+        if(st&&st.status==='loading') intake={loading:true};
+        else if(st&&st.status==='error') intake={error:st.message};
+        else if(st&&st.status==='ready'){
+          const d=st.data||{}; const b=d.brief||{}; const req=d.requirement||{};
+          const cps=(d.checkpoints||[]).map((cp)=>({id:cp.id,kind:cp.kind,at:(cp.recordedAt||'').slice(0,16),next:cp.nextSafeAction||null,phase:cp.phase,
+            line:cp.kind+' · '+(cp.recordedAt||'').slice(0,16)+(cp.nextSafeAction?(' · next: '+cp.nextSafeAction):'')}));
+          const last=cps[cps.length-1]||null;
+          intake={ id:st.id, original:req.original||'', interpretation:(req.interpretation&&req.interpretation.outcome)||null,
+            status:b.status, phase:b.phase, nextSafeAction:b.nextSafeAction||null,
+            blockers:(b.blockers||[]).join(' · ')||null, drift:!!b.repositoryDrift,
+            resumable:!!d.resumable, checkpoints:cps, checkpointCount:String(cps.length),
+            lastCheckpoint:last?last.id:'none',
+            busy:!!this.state.memResuming, resumeLabel:this.state.memResuming?'Recording…':'Resume',
+            notice:this.state.memResumeNotice, mutationError:this.state.memMutationError,
+            onBack:()=>this.closeIntakeDetail(), onResume:()=>this.resumeIntake(st.id),
+            onInputNext:(e)=>this.setState({memResumeNext:e.target.value}) };
+        }
+        resumeView={ choices, intake, empty:choices.length===0 };
+      }
       let detail=null;
       if(memDetailState){
         const onBack=()=>this.backToLedger();
@@ -1637,7 +1950,8 @@ class Component extends DCLogic {
             transitions:((d.audit&&d.audit.records)||[]).flatMap((rv)=>(rv.transitions||[]).map((tr)=>this.memAxis(tr.kind)+': '+this.memAxis(tr.from)+' → '+this.memAxis(tr.to)+' · '+tr.at.slice(0,10)+' · '+tr.actor+(tr.reason?' · '+tr.reason:''))) };
         }
       }
-      mem={ notConfigured:!!(md&&!md.configured), homeView, homeAction, conflicts, conflictsPlural:conflicts.length===1?'':'s', policy,
+      mem={ notConfigured:!!(md&&!md.configured), homeView, homeAction, pendingView, resumeView, announce:this.state.memAnnounce||null,
+        conflicts, conflictsPlural:conflicts.length===1?'':'s', policy,
         detail, list:configured&&!detail,
         loading:!!(this.state.memLoading&&!detail), error:this.state.memError, empty:configured&&rows.length===0,
         emptyMessage:this.state.memGroup?'No records match this lifecycle view. Return to All or inspect Needs review above.':'No durable records yet. Complete meaningful work and emit a structured Knowledge Crib outcome; generic session events only request a checkpoint.',
