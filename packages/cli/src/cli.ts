@@ -266,6 +266,7 @@ import { forkTaskRunner, requestCancellation } from './freshness-child.js';
 import {
   installFreshnessService,
   queryFreshnessService,
+  restartFreshnessService,
   uninstallFreshnessService,
 } from './freshness-service.js';
 import {
@@ -3411,6 +3412,8 @@ async function cmdFreshness(args: string[], ctx?: CmdCtx): Promise<number> {
     'service',
     'install',
     'uninstall',
+    'start',
+    'restart',
     'hook',
     'convert-hook',
   ]);
@@ -3471,17 +3474,21 @@ async function cmdFreshness(args: string[], ctx?: CmdCtx): Promise<number> {
   switch (sub) {
     case 'service': {
       const action = args[args.indexOf('service') + 1] ?? 'status';
-      if (!['install', 'status', 'uninstall'].includes(action)) {
-        process.stderr.write('usage: crib freshness service [install|status|uninstall]\n');
+      if (!['install', 'start', 'restart', 'status', 'uninstall'].includes(action)) {
+        process.stderr.write(
+          'usage: crib freshness service [install|start|restart|status|uninstall]\n',
+        );
         return EXIT.BAD_ARGS;
       }
       try {
         const result =
           action === 'install'
             ? installFreshnessService(serviceOptions())
-            : action === 'uninstall'
-              ? uninstallFreshnessService(serviceOptions())
-              : queryFreshnessService(serviceOptions());
+            : action === 'start' || action === 'restart'
+              ? restartFreshnessService(serviceOptions())
+              : action === 'uninstall'
+                ? uninstallFreshnessService(serviceOptions())
+                : queryFreshnessService(serviceOptions());
         process.stdout.write(
           `freshness service: ${result.installed ? (result.active ? 'active' : 'installed, inactive') : 'not installed'}\n` +
             `  manager: ${result.manager}\n  definition: ${result.path}\n`,
