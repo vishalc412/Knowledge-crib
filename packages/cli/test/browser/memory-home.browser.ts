@@ -53,6 +53,10 @@ test.describe
       await expect(page.getByText(SEEDED.blockedClaim)).toBeVisible();
       await expect(page.locator('[data-kc-mem-admit]')).toHaveCount(1);
       await expect(page.locator('[data-kc-mem-admit]')).toHaveText('Admit');
+
+      // The template engine renders paths/equalities/literals only — a raw object
+      // reaching a {{ }} binding shows up as this string. None may ever ship.
+      await expect(page.getByText('[object Object]')).toHaveCount(0);
     });
 
     test('admitting the ready claim works from the keyboard and refreshes every surface', async ({

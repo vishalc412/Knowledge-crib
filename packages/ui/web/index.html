@@ -337,7 +337,7 @@
                       </div>
                       <div style="font-size:10.5px; line-height:1.45; color: {{ t.sub }}; margin-top:3px; word-break:break-word;">{{ r.claim }}</div>
                       <div style="display:flex; flex-wrap:wrap; gap:4px; margin-top:5px;">
-                        <span style="padding:2px 6px; border-radius:5px; background: {{ t.panel }}; font-size:9.5px; color: {{ t.sub }};">{{ r.kind }} · {{ r.scope }}</span>
+                        <span style="padding:2px 6px; border-radius:5px; background: {{ t.panel }}; font-size:9.5px; color: {{ t.sub }};">{{ r.kind }} · {{ r.scopeLabel }}</span>
                         <sc-for list="{{ r.evidence }}" as="ev" hint-placeholder-count="2">
                           <span style="padding:2px 6px; border-radius:5px; background: {{ t.panel }}; font-size:9.5px; color: {{ ev.color }};">{{ ev.label }}</span>
                         </sc-for>
@@ -1897,6 +1897,7 @@ class Component extends DCLogic {
           return ev.browserSupported?{label:ev.kind+' · ready',color:'#34d399'}:{label:ev.kind+' · needs a terminal step',color:'#f59e0b'}; };
         const stagedRows=staged?staged.rows.map((r)=>({
           id:r.id, kind:r.kind, subject:r.subject, claim:r.claim, scope:r.scope,
+          scopeLabel:(r.scope&&r.scope.boundary)?r.scope.boundary:'',
           standing:r.standing, standingColor:standingColor(r.standing), ready:r.standing==='ready',
           blockers:(r.blockers||[]).join(' · ')||null, notes:(r.notes||[]).join(' · ')||null, command:r.command,
           evidence:(r.evidence||[]).map(evChip),
