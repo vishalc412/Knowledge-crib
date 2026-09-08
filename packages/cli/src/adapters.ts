@@ -58,7 +58,10 @@ export const LIFECYCLE_EVENTS: readonly LifecycleEvent[] = [
 export interface LifecycleHooksCell {
   readonly events: readonly LifecycleEvent[];
   readonly evidence: CaptureEvidence;
-  settingsPath?(repoRoot: string): string;
+  /** Where this client's hook settings live for a scope, or `undefined` when the client has no hook
+   *  surface. Global scope points at the user-level settings file, which applies to every repository
+   *  the user opens — see the capture-hook writer for why that is safe to wire. */
+  settingsPath?(scope: AdapterScope, repoRoot: string, home: string): string;
 }
 
 /** The per-client capture-lane capability row (G2.1). REQUIRED on every {@link ClientAdapter} so the
@@ -87,8 +90,15 @@ export interface ClientAdapter {
   /** Human-readable label for `crib adapters list`. */
   label: string;
   /** Instruction file targets for a scope (the neutral protocol), or `null` when this client reads
-   *  no dedicated instruction file (VS Code's agent IS Copilot → `.github/copilot-instructions.md`). */
-  instructionTargets(scope: AdapterScope, repoRoot: string): InstructionTarget[] | null;
+   *  no dedicated instruction file at that scope (VS Code's agent IS Copilot →
+   *  `.github/copilot-instructions.md`; Cursor has no user-home rules file at all). `home` is the
+   *  user's home directory, supplied by the caller for the same reason {@link ClientAdapter.skillDest}
+   *  takes it — so a sandboxed run with no HOME cannot silently yield a relative path. */
+  instructionTargets(
+    scope: AdapterScope,
+    repoRoot: string,
+    home: string,
+  ): InstructionTarget[] | null;
   /** Skill install destination root, or `null` when this client has no skill mechanism. */
   skillDest(home: string): string | null;
   /** The capture-lane capability matrix row (see {@link CaptureLanes}). */
@@ -195,9 +205,35 @@ export function neutralProtocolBody(): string {
   ].join('\n');
 }
 
-/** The full managed block (markers + body) spliced into each instruction file. */
-export function neutralProtocolBlock(): string {
-  return `${ADAPTER_BEGIN}\n${neutralProtocolBody()}\n${ADAPTER_END}`;
+/** The gate that opens a GLOBAL-scope block.
+ *
+ * A user-level instruction file applies to every repository the user opens, including ones crib has
+ * never indexed. Stating the protocol unconditionally there would tell an agent to call `query`,
+ * `handoff` and `impact` in repositories where those verbs have nothing to answer from — turning a
+ * memory default into a reliable source of failed calls. So the global block carries its own
+ * applicability test, and an agent that cannot see `.crib/` is told to ignore the rest rather than
+ * left to discover the emptiness one failing verb at a time. Project-scope blocks need no gate: the
+ * file only exists because crib was installed into that repository. */
+function globalScopeGate(): string {
+  return [
+    '## When this protocol applies',
+    '',
+    'This block is user-level: it is loaded for EVERY repository, not just ones using knowledge-crib. It applies only when the repository you are working in has a `.crib/` directory (equivalently, `crib status` succeeds). Check that first.',
+    '',
+    '- **`.crib/` present** — everything below is MANDATORY for this repository, exactly as if it were written in the repository’s own instruction file.',
+    '- **`.crib/` absent** — crib is not set up here. Ignore the rest of this block entirely; do not call crib verbs, and do not report their absence as a problem. Offer `crib init` only if the user asks about memory or code context.',
+    '',
+    'A repository’s own instruction file, when it carries this block, takes precedence over this one — they are the same protocol, so agreeing is the normal case.',
+  ].join('\n');
+}
+
+/** The full managed block (markers + body) spliced into each instruction file. A `global`-scope block
+ *  is prefixed with {@link globalScopeGate}; the protocol body itself is identical at both scopes, so
+ *  there is exactly one place the rules are written. */
+export function neutralProtocolBlock(scope: AdapterScope = 'project'): string {
+  const body =
+    scope === 'global' ? `${globalScopeGate()}\n\n${neutralProtocolBody()}` : neutralProtocolBody();
+  return `${ADAPTER_BEGIN}\n${body}\n${ADAPTER_END}`;
 }
 
 // ─── client registry ──────────────────────────────────────────────────────────
@@ -217,8 +253,10 @@ export const CLIENT_ADAPTERS: ClientAdapter[] = [
   {
     id: 'claude',
     label: 'Claude Code',
-    instructionTargets: (scope, repoRoot) =>
-      scope === 'project' ? [{ path: join(repoRoot, 'CLAUDE.md'), format: 'md' }] : null,
+    instructionTargets: (scope, repoRoot, home) =>
+      scope === 'project'
+        ? [{ path: join(repoRoot, 'CLAUDE.md'), format: 'md' }]
+        : [{ path: join(home, '.claude', 'CLAUDE.md'), format: 'md' }],
     skillDest: (home) => join(home, '.claude', 'skills'),
     lifecycle: {
       portableCapture: { tool: 'memory', op: 'capture', evidence: 'in-repo-writer' },
@@ -231,7 +269,10 @@ export const CLIENT_ADAPTERS: ClientAdapter[] = [
         // until that path exists in-repo — a stronger label would self-assert a guarantee nobody
         // has run.
         evidence: 'verified-upstream-doc',
-        settingsPath: (repoRoot) => join(repoRoot, '.claude', 'settings.json'),
+        settingsPath: (scope, repoRoot, home) =>
+          scope === 'project'
+            ? join(repoRoot, '.claude', 'settings.json')
+            : join(home, '.claude', 'settings.json'),
       },
       // The Claude Agent SDK can wrap each turn in an embedded application, but no in-repo code or
       // verified upstream doc pins that contract for memory capture + recall injection — reported
@@ -242,6 +283,9 @@ export const CLIENT_ADAPTERS: ClientAdapter[] = [
   {
     id: 'cursor',
     label: 'Cursor',
+    // Global stays null for the same reason `skillDest` does (see below): Cursor has no user-home
+    // rules FILE — user rules are plain text managed inside Cursor Settings, which no writer can
+    // reach. Reported as a data note rather than promised and silently dropped.
     instructionTargets: (scope, repoRoot) =>
       scope === 'project'
         ? [{ path: join(repoRoot, '.cursor', 'rules', 'crib.mdc'), format: 'mdc' }]
@@ -257,6 +301,9 @@ export const CLIENT_ADAPTERS: ClientAdapter[] = [
   {
     id: 'copilot',
     label: 'GitHub Copilot',
+    // Repo-scope only: Copilot's user-level instructions are a VS Code SETTINGS key
+    // (github.copilot.chat.codeGeneration.instructions), not a markdown file this writer owns, so a
+    // global target would mean editing the user's editor settings rather than an instruction file.
     instructionTargets: (scope, repoRoot) =>
       scope === 'project'
         ? [{ path: join(repoRoot, '.github', 'copilot-instructions.md'), format: 'md' }]
@@ -277,25 +324,39 @@ export const CLIENT_ADAPTERS: ClientAdapter[] = [
   {
     id: 'codex',
     label: 'Codex',
-    // Codex reads `AGENTS.md` natively (same file as the root neutral protocol).
-    instructionTargets: (scope, repoRoot) =>
-      scope === 'project' ? [{ path: join(repoRoot, 'AGENTS.md'), format: 'md' }] : null,
+    // Codex reads `AGENTS.md` natively (same file as the root neutral protocol), and `~/.codex/AGENTS.md`
+    // as the user-level instruction file applied to every project.
+    instructionTargets: (scope, repoRoot, home) =>
+      scope === 'project'
+        ? [{ path: join(repoRoot, 'AGENTS.md'), format: 'md' }]
+        : [{ path: join(home, '.codex', 'AGENTS.md'), format: 'md' }],
     skillDest: () => null,
     lifecycle: INSTRUCTION_RECALL_ONLY,
   },
   {
     id: 'windsurf',
     label: 'Windsurf',
-    instructionTargets: (scope, repoRoot) =>
-      scope === 'project' ? [{ path: join(repoRoot, '.windsurfrules'), format: 'md' }] : null,
+    // Project rules live in `.windsurfrules`; the user-level equivalent is the global rules file
+    // under the Codeium config directory, the same tree `crib mcp install --ide windsurf` writes to.
+    instructionTargets: (scope, repoRoot, home) =>
+      scope === 'project'
+        ? [{ path: join(repoRoot, '.windsurfrules'), format: 'md' }]
+        : [
+            {
+              path: join(home, '.codeium', 'windsurf', 'memories', 'global_rules.md'),
+              format: 'md',
+            },
+          ],
     skillDest: () => null,
     lifecycle: INSTRUCTION_RECALL_ONLY,
   },
   {
     id: 'gemini',
     label: 'Gemini CLI',
-    instructionTargets: (scope, repoRoot) =>
-      scope === 'project' ? [{ path: join(repoRoot, 'GEMINI.md'), format: 'md' }] : null,
+    instructionTargets: (scope, repoRoot, home) =>
+      scope === 'project'
+        ? [{ path: join(repoRoot, 'GEMINI.md'), format: 'md' }]
+        : [{ path: join(home, '.gemini', 'GEMINI.md'), format: 'md' }],
     skillDest: () => null,
     lifecycle: INSTRUCTION_RECALL_ONLY,
   },
@@ -514,14 +575,15 @@ export interface InstructionInstallResult {
  *  sibling content outside the markers is preserved. */
 export function installInstructions(
   repoRoot: string,
-  opts: { client?: ClientId | 'all'; scope?: AdapterScope } = {},
+  opts: { client?: ClientId | 'all'; scope?: AdapterScope; home?: string } = {},
 ): InstructionInstallResult[] {
   const scope: AdapterScope = opts.scope ?? 'project';
+  const home = opts.home ?? homedir();
   const ids: ClientId[] = opts.client && opts.client !== 'all' ? [opts.client] : ALL_CLIENTS;
   const out: InstructionInstallResult[] = [];
   for (const id of ids) {
     const adapter = clientAdapter(id);
-    const targets = adapter.instructionTargets(scope, repoRoot);
+    const targets = adapter.instructionTargets(scope, repoRoot, home);
     if (!targets || targets.length === 0) {
       out.push({
         client: id,
@@ -541,9 +603,9 @@ export function installInstructions(
         // is recognized, not stacked beneath a duplicate crib default.
         const hasFrontmatter = /^---\r?\n[\s\S]*?\r?\n---/.test(existing);
         const withFrontmatter = hasFrontmatter ? existing : `${CURSOR_FRONTMATTER}${existing}`;
-        next = spliceAdapterBlock(withFrontmatter, neutralProtocolBlock());
+        next = spliceAdapterBlock(withFrontmatter, neutralProtocolBlock(scope));
       } else {
-        next = spliceAdapterBlock(existing, neutralProtocolBlock());
+        next = spliceAdapterBlock(existing, neutralProtocolBlock(scope));
       }
       const written = next !== existing;
       if (written) {
@@ -566,14 +628,15 @@ export interface InstructionListEntry {
 /** Report the current managed-block status for each client's instruction file, without writing. */
 export function listInstructions(
   repoRoot: string,
-  opts: { client?: ClientId | 'all'; scope?: AdapterScope } = {},
+  opts: { client?: ClientId | 'all'; scope?: AdapterScope; home?: string } = {},
 ): InstructionListEntry[] {
   const scope: AdapterScope = opts.scope ?? 'project';
+  const home = opts.home ?? homedir();
   const ids: ClientId[] = opts.client && opts.client !== 'all' ? [opts.client] : ALL_CLIENTS;
   const out: InstructionListEntry[] = [];
   for (const id of ids) {
     const adapter = clientAdapter(id);
-    const targets = adapter.instructionTargets(scope, repoRoot);
+    const targets = adapter.instructionTargets(scope, repoRoot, home);
     if (!targets || targets.length === 0) continue;
     for (const target of targets) {
       const present = existsSync(target.path) && readOrEmpty(target.path).includes(ADAPTER_BEGIN);
@@ -587,14 +650,15 @@ export function listInstructions(
  *  frontmatter-only after removal is deleted; a file with remaining user content is left intact. */
 export function removeInstructions(
   repoRoot: string,
-  opts: { client?: ClientId | 'all'; scope?: AdapterScope } = {},
+  opts: { client?: ClientId | 'all'; scope?: AdapterScope; home?: string } = {},
 ): InstructionInstallResult[] {
   const scope: AdapterScope = opts.scope ?? 'project';
+  const home = opts.home ?? homedir();
   const ids: ClientId[] = opts.client && opts.client !== 'all' ? [opts.client] : ALL_CLIENTS;
   const out: InstructionInstallResult[] = [];
   for (const id of ids) {
     const adapter = clientAdapter(id);
-    const targets = adapter.instructionTargets(scope, repoRoot);
+    const targets = adapter.instructionTargets(scope, repoRoot, home);
     if (!targets || targets.length === 0) {
       out.push({
         client: id,
@@ -806,15 +870,16 @@ function hooksRefusal(path: string, events: readonly LifecycleEvent[]): string |
  *  (and unsupported scopes) get a data note and no write — the cursor-skillDest honesty precedent. */
 export function installCaptureHooks(
   repoRoot: string,
-  opts: { client?: ClientId | 'all'; scope?: AdapterScope } = {},
+  opts: { client?: ClientId | 'all'; scope?: AdapterScope; home?: string } = {},
 ): HookInstallResult[] {
   const scope: AdapterScope = opts.scope ?? 'project';
+  const home = opts.home ?? homedir();
   const out: HookInstallResult[] = [];
   for (const id of hookClients(opts)) {
     const adapter = clientAdapter(id);
     const hooks = adapter.lifecycle.lifecycleHooks;
     const settingsPath = hooks?.settingsPath;
-    if (scope === 'global' || !hooks || !settingsPath) {
+    if (!hooks || !settingsPath) {
       out.push({
         client: id,
         scope,
@@ -822,12 +887,12 @@ export function installCaptureHooks(
         written: false,
         events: [],
         note: hooks
-          ? `${adapter.label} capture hooks ship project-scope only; recall stays instruction-based.`
+          ? `${adapter.label} exposes no hook surface at ${scope} scope; recall stays instruction-based.`
           : `${adapter.label} supports instruction-based recall only (no lifecycle-hook surface).`,
       });
       continue;
     }
-    const path = settingsPath(repoRoot);
+    const path = settingsPath(scope, repoRoot, home);
     const refusal = hooksRefusal(path, hooks.events);
     if (refusal) {
       out.push({ client: id, scope, path, written: false, events: [], note: refusal });
@@ -861,15 +926,16 @@ export function installCaptureHooks(
 /** Report the currently wired capture hooks per client, without writing. */
 export function listCaptureHooks(
   repoRoot: string,
-  opts: { client?: ClientId | 'all'; scope?: AdapterScope } = {},
+  opts: { client?: ClientId | 'all'; scope?: AdapterScope; home?: string } = {},
 ): HookListEntry[] {
   const scope: AdapterScope = opts.scope ?? 'project';
+  const home = opts.home ?? homedir();
   const out: HookListEntry[] = [];
   for (const id of hookClients(opts)) {
     const adapter = clientAdapter(id);
     const hooks = adapter.lifecycle.lifecycleHooks;
     const settingsPath = hooks?.settingsPath;
-    if (scope === 'global' || !hooks || !settingsPath) {
+    if (!hooks || !settingsPath) {
       out.push({
         client: id,
         scope,
@@ -879,7 +945,7 @@ export function listCaptureHooks(
       });
       continue;
     }
-    const path = settingsPath(repoRoot);
+    const path = settingsPath(scope, repoRoot, home);
     const events: LifecycleEvent[] = [];
     if (existsSync(path)) {
       try {
@@ -909,15 +975,16 @@ export function listCaptureHooks(
  *  and key intact. An event bucket left empty — and an empty `hooks` key — are dropped. */
 export function removeCaptureHooks(
   repoRoot: string,
-  opts: { client?: ClientId | 'all'; scope?: AdapterScope } = {},
+  opts: { client?: ClientId | 'all'; scope?: AdapterScope; home?: string } = {},
 ): HookInstallResult[] {
   const scope: AdapterScope = opts.scope ?? 'project';
+  const home = opts.home ?? homedir();
   const out: HookInstallResult[] = [];
   for (const id of hookClients(opts)) {
     const adapter = clientAdapter(id);
     const hooks = adapter.lifecycle.lifecycleHooks;
     const settingsPath = hooks?.settingsPath;
-    if (scope === 'global' || !hooks || !settingsPath) {
+    if (!hooks || !settingsPath) {
       out.push({
         client: id,
         scope,
@@ -925,12 +992,12 @@ export function removeCaptureHooks(
         written: false,
         events: [],
         note: hooks
-          ? `${adapter.label} capture hooks ship project-scope only.`
+          ? `${adapter.label} exposes no hook surface at ${scope} scope.`
           : `${adapter.label} supports instruction-based recall only (no lifecycle-hook surface).`,
       });
       continue;
     }
-    const path = settingsPath(repoRoot);
+    const path = settingsPath(scope, repoRoot, home);
     const refusal = hooksRefusal(path, hooks.events);
     if (refusal) {
       out.push({ client: id, scope, path, written: false, events: [], note: refusal });

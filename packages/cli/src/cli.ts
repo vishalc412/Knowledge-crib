@@ -232,6 +232,7 @@ import { blake3Hex } from '@knowledge-crib/soul-schema';
 import { buildVizGraph, buildVizOverview, vizAssetsDir } from '@knowledge-crib/ui';
 import {
   ALL_CLIENTS,
+  type AdapterScope,
   type ClientId,
   LIFECYCLE_EVENTS,
   type LifecycleEvent,
@@ -4629,18 +4630,28 @@ function cmdAdapters(args: string[], ctx?: CmdCtx): number {
 function cmdAdaptersHooks(args: string[], ctx?: CmdCtx): number {
   const [sub, ...rest] = args;
   let client: ClientId | 'all' = 'all';
+  let scope: AdapterScope = 'project';
   let pathArg: string | undefined;
+  const usage =
+    'usage: crib adapters hooks <install|list|remove> [--client <id|all>] [--scope project|global]\n';
   for (let i = 0; i < rest.length; i++) {
     const arg = rest[i]!;
     if (arg === '--client') {
       const value = rest[++i];
       if (looksLikeFlag(value) || !value) {
-        process.stderr.write(
-          'usage: crib adapters hooks <install|list|remove> [--client <id|all>]\n',
-        );
+        process.stderr.write(usage);
         return EXIT.BAD_ARGS;
       }
       client = value as ClientId | 'all';
+      continue;
+    }
+    if (arg === '--scope') {
+      const value = rest[++i];
+      if (value !== 'project' && value !== 'global') {
+        process.stderr.write(usage);
+        return EXIT.BAD_ARGS;
+      }
+      scope = value;
       continue;
     }
     if (arg.startsWith('-')) {
@@ -4659,7 +4670,7 @@ function cmdAdaptersHooks(args: string[], ctx?: CmdCtx): number {
 
   switch (sub) {
     case 'install': {
-      const results = installCaptureHooks(repoRoot, { client, scope: 'project' });
+      const results = installCaptureHooks(repoRoot, { client, scope });
       for (const r of results) {
         if (r.note) process.stdout.write(`${r.client}: ${r.note}\n`);
         else
@@ -4670,7 +4681,7 @@ function cmdAdaptersHooks(args: string[], ctx?: CmdCtx): number {
       return EXIT.OK;
     }
     case 'list': {
-      for (const e of listCaptureHooks(repoRoot, { client, scope: 'project' })) {
+      for (const e of listCaptureHooks(repoRoot, { client, scope })) {
         if (e.note) process.stdout.write(`${e.client}: ${e.note}\n`);
         else
           process.stdout.write(
@@ -4680,7 +4691,7 @@ function cmdAdaptersHooks(args: string[], ctx?: CmdCtx): number {
       return EXIT.OK;
     }
     case 'remove': {
-      const results = removeCaptureHooks(repoRoot, { client, scope: 'project' });
+      const results = removeCaptureHooks(repoRoot, { client, scope });
       for (const r of results) {
         if (r.note) process.stdout.write(`${r.client}: ${r.note}\n`);
         else if (r.written)
@@ -5597,7 +5608,7 @@ async function cmdMemory(args: string[], ctx?: CmdCtx): Promise<number> {
     case '-h':
     case '--help':
       process.stderr.write(
-        'crib memory init | remember "<claim>" [--subject <id>] [--kind convention|decision] [--global] (record + admit a human-attested claim from a terminal — recallable immediately) | admit <candidate-id> (admit an agent-staged human-attested claim, from a terminal) | handoff [--limit N] [--json] (where was I? — in-flight work, undistilled captures, what went stale) | events [--include-expired] [--limit N] [--json] | profiles list [--json] | profiles register --key <profile-key> --alias <client-id>/<agent-id> [--alias ...] [--json] | recall "<query>" [--limit N] [--sources team,local,global] [--target <id>] [--with-evidence] [--include-pending] [--max-tokens N] [--json] | search "<query>" [--limit N] [--sources team,local,global] [--target <id>] [--max-tokens N] [--json] | get <id> [--with-evidence] [--json] | supersede <id> --actor <id> (--successor <id> | --claim <text>) [--reason <text>] [--json] | delete <id> --actor <id> [--reason <text>] [--json] | history <key> [--as-of <iso-ts>] [--with-evidence] [--json] | evaluate <candidate> --profile <name> | activate <candidate> | propose <memory-id> | attest <candidate> | check | audit [--repair-local] | feedback <mem-id> --signal <useful|unhelpful|contradicted> [--actor <id>] [--context <text>] [--counter-evidence <json-file>] | gc [--max-age-days N] [--dry-run] | migrate | bench [--fast] [--json] [--out <path>] | distill --provider <name> [--providers-file F] [--max-batches N] [--concurrency N] [--timeout-ms N] | capture-hook --event <session-start|turn-end|tool-use> (hooks invoke this; always exits 0 — best-effort capture, never blocks a session) | init-sync --scope repo|global --backend file|http --url <target> [--key-env <NAME>|--keyfile <path>|--gen-key] [--secret-env <NAME>] [--sync-id <id>] [--backfill] [--json] | sync [push|pull|status] [--dry-run] [--backfill] [--max-events N] [--skip] [--json] | sync rotate-key (--gen-key | --key-env <NAME> | --keyfile <path>) [--dry-run] | sync purge-sync --stale-epoch [--dry-run] | purge <mem-id>... --confirm <mem-id>... [--stores local,global] [--history-scan] [--dry-run] [--actor <id>] [--json] | conflicts [--json] | resolve <record-id> (--successor <id> | --retract) --actor <id> [--reason <text>] [--json] (see docs/memory-sync.md)\n',
+        'crib memory init | remember "<claim>" [--subject <id>] [--kind convention|decision] [--global] (record + admit a human-attested claim from a terminal — recallable immediately) | admit <candidate-id> (admit an agent-staged human-attested claim, from a terminal) | handoff [--limit N] [--json] (where was I? — in-flight work, undistilled captures, what went stale) | events [--include-expired] [--limit N] [--json] | profiles list [--json] | profiles register --key <profile-key> --alias <client-id>/<agent-id> [--alias ...] [--json] | recall "<query>" [--limit N] [--sources team,local,global] [--target <id>] [--with-evidence] [--include-pending] [--max-tokens N] [--json] | search "<query>" [--limit N] [--sources team,local,global] [--target <id>] [--max-tokens N] [--json] | get <id> [--with-evidence] [--json] | supersede <id> --actor <id> (--successor <id> | --claim <text>) [--reason <text>] [--json] | delete <id> --actor <id> [--reason <text>] [--json] | history <key> [--as-of <iso-ts>] [--with-evidence] [--json] | evaluate <candidate> --profile <name> | activate <candidate>|--all | propose <memory-id> | attest <candidate> | check | audit [--repair-local] | feedback <mem-id> --signal <useful|unhelpful|contradicted> [--actor <id>] [--context <text>] [--counter-evidence <json-file>] | gc [--max-age-days N] [--dry-run] | migrate | bench [--fast] [--json] [--out <path>] | distill --provider <name> [--providers-file F] [--max-batches N] [--concurrency N] [--timeout-ms N] | capture-hook --event <session-start|turn-end|tool-use> (hooks invoke this; always exits 0 — best-effort capture, never blocks a session) | init-sync --scope repo|global --backend file|http --url <target> [--key-env <NAME>|--keyfile <path>|--gen-key] [--secret-env <NAME>] [--sync-id <id>] [--backfill] [--json] | sync [push|pull|status] [--dry-run] [--backfill] [--max-events N] [--skip] [--json] | sync rotate-key (--gen-key | --key-env <NAME> | --keyfile <path>) [--dry-run] | sync purge-sync --stale-epoch [--dry-run] | purge <mem-id>... --confirm <mem-id>... [--stores local,global] [--history-scan] [--dry-run] [--actor <id>] [--json] | conflicts [--json] | resolve <record-id> (--successor <id> | --retract) --actor <id> [--reason <text>] [--json] (see docs/memory-sync.md)\n',
       );
       process.stderr.write(
         'additional operations: backup create|verify|restore; sync compact [--dry-run] [--json]\n',
@@ -6009,6 +6020,23 @@ function cmdMemoryCaptureHook(args: string[], ctx?: CmdCtx): number {
       },
       occurredAt,
     });
+    // Drain the candidate backlog at the end of a turn, so a session's findings become recallable
+    // without the user typing `crib memory activate` once per candidate. This never runs a gate and
+    // never invents a receipt: with no receipt covering the current worktree it is a no-op (see
+    // activateAllPending). Best-effort by the hook's fail-open contract — a drain failure must never
+    // cost the user their capture.
+    let drained: { receiptId: string | null; activated: number } | undefined;
+    if (event === 'turn-end') {
+      try {
+        const bulk = activateAllPending(deps.local, deps, resolved.repoRoot);
+        drained = {
+          receiptId: bulk.receiptId,
+          activated: bulk.results.filter((r) => r.recordId !== undefined).length,
+        };
+      } catch {
+        /* the backlog stays pending; the capture below is what matters */
+      }
+    }
     if (!outcome) {
       process.stdout.write(
         `${JSON.stringify({
@@ -6017,6 +6045,7 @@ function cmdMemoryCaptureHook(args: string[], ctx?: CmdCtx): number {
           eventId: lifecycle.event.id,
           status: 'checkpoint-requested',
           captured: false,
+          ...(drained ? { drained } : {}),
         })}\n`,
       );
       return EXIT.OK;
@@ -6062,6 +6091,7 @@ function cmdMemoryCaptureHook(args: string[], ctx?: CmdCtx): number {
         captureId: result.id,
         status: result.status,
         captured: true,
+        ...(drained ? { drained } : {}),
       })}\n`,
     );
     return EXIT.OK;
@@ -8078,13 +8108,80 @@ async function cmdMemoryEvaluate(args: string[], ctx?: CmdCtx): Promise<number> 
 }
 
 /** `crib memory activate <candidate>` — crash-recovery against an existing receipt (no gate re-run). */
+/** One candidate's fate in a bulk activation, so the caller can report rather than assert. */
+interface BulkActivation {
+  candidateId: string;
+  recordId?: string;
+  /** The evidence verdict the EVALUATOR derived — never something this code decides. */
+  evidence?: string;
+  skipped?: string;
+}
+
+/**
+ * Activate every pending local candidate against a gate receipt that already covers the current
+ * worktree. This is the bulk form of {@link cmdMemoryActivate}, and the path the turn-end hook uses.
+ *
+ * It does NOT run a gate. Admission in crib has exactly two doors and both deliberately require
+ * something an automated hook cannot fabricate: `activate` needs a receipt from a gate that really
+ * ran against THIS head + worktree digest, and `admit` needs a TTY because it records that a human
+ * accepted the claim. Automating either by manufacturing its precondition would be the agent
+ * self-asserting a pass — the one thing §4 of the protocol forbids. So this drains the backlog only
+ * when a real receipt is already there, and reports `no-receipt` when it is not.
+ *
+ * Every candidate covered by that receipt IS activated, including ones whose evidence evaluates
+ * poorly: the verdict rides along on the record and recall-eligibility is derived from it, so a
+ * weakly-evidenced memory becomes visible-but-untrusted rather than silently dropped.
+ */
+function activateAllPending(
+  local: MemoryStore,
+  deps: ReturnType<typeof createMemoryDeps> & object,
+  repoRoot: string,
+): { receiptId: string | null; results: BulkActivation[] } {
+  const head = currentHead(repoRoot);
+  const digest = worktreeDigest(repoRoot);
+  let receipt: GateReceipt | undefined;
+  for (const e of local.readCollection('receipts').entries) {
+    const r = e as GateReceipt;
+    if (r.head === head && r.worktreeDigest === digest) {
+      receipt = r;
+      break;
+    }
+  }
+  if (!receipt) return { receiptId: null, results: [] };
+  const candidates = local.readCollection('candidates').entries.map((e) => e as MemoryCandidate);
+  const results: BulkActivation[] = [];
+  for (const candidate of candidates) {
+    try {
+      const evaluation = evaluateCandidate(candidate, {
+        evaluator: deps.evaluator,
+        soul: deps.evalCtx.soul,
+        receipt,
+        now: () => new Date().toISOString(),
+      });
+      const result = activateLocal(local, candidate, evaluation, receipt, {
+        receiptId: receipt.id,
+      });
+      results.push({
+        candidateId: candidate.id,
+        recordId: result.recordId,
+        evidence: evaluation.evaluation.evidence,
+      });
+    } catch (e) {
+      // One bad candidate must not strand the rest of the backlog.
+      results.push({ candidateId: candidate.id, skipped: (e as Error).message });
+    }
+  }
+  return { receiptId: receipt.id, results };
+}
+
 async function cmdMemoryActivate(args: string[], ctx?: CmdCtx): Promise<number> {
-  const id = pathArg(args);
-  if (!id) {
-    process.stderr.write('usage: crib memory activate <candidate-id>\n');
+  const all = args.includes('--all');
+  const id = all ? undefined : pathArg(args);
+  if (!all && !id) {
+    process.stderr.write('usage: crib memory activate <candidate-id> | --all | --all\n');
     return EXIT.BAD_ARGS;
   }
-  const resolved = resolveRoot(args, ctx);
+  const resolved = resolveRoot(all ? [] : args, ctx);
   if (!isIndexedRoot(resolved)) {
     process.stderr.write('not indexed — run `crib index` first\n');
     return EXIT.NOT_INDEXED;
@@ -8096,7 +8193,18 @@ async function cmdMemoryActivate(args: string[], ctx?: CmdCtx): Promise<number> 
     return EXIT.NOT_INDEXED;
   }
   const local = deps.local;
-  const candidate = findCandidate(local, id);
+  if (all) {
+    const bulk = activateAllPending(local, deps, resolved.repoRoot);
+    if (bulk.receiptId === null) {
+      process.stderr.write(
+        'no local receipt matching the current HEAD + worktree digest — run `crib memory evaluate <candidate> --profile <name>` first; nothing activated\n',
+      );
+      return EXIT.ERROR;
+    }
+    process.stdout.write(`${JSON.stringify({ trust: 'local', ...bulk }, null, 2)}\n`);
+    return EXIT.OK;
+  }
+  const candidate = findCandidate(local, id as string);
   if (!candidate) {
     process.stderr.write(`error: no local candidate '${id}' to activate\n`);
     return EXIT.ERROR;

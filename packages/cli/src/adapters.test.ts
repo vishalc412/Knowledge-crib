@@ -19,6 +19,7 @@ import {
   lifecycleInvariants,
   listCaptureHooks,
   listInstructions,
+  neutralProtocolBlock,
   neutralProtocolBody,
   removeAdapterBlock,
   removeCaptureHooks,
@@ -49,7 +50,7 @@ describe('CLIENT_ADAPTERS — registry completeness', () => {
   it('every client resolves a valid project-scope target (except vscode, which has none)', () => {
     for (const id of ALL_CLIENTS) {
       const adapter = clientAdapter(id);
-      const targets = adapter.instructionTargets('project', repo);
+      const targets = adapter.instructionTargets('project', repo, '/home/u');
       if (id === 'vscode') {
         expect(targets, `${id} should have no instruction target`).toBeNull();
       } else {
@@ -60,10 +61,40 @@ describe('CLIENT_ADAPTERS — registry completeness', () => {
     }
   });
 
-  it('global scope yields no instruction targets for every client', () => {
+  it('global scope resolves a user-home target for the clients that have one, null for the rest', () => {
+    // A user-level instruction file is what makes crib the DEFAULT in every repository, not only the
+    // ones `crib init` has touched. Three clients genuinely cannot offer one, and say so rather than
+    // writing a file nothing reads: Cursor has no user-home rules file, Copilot's user-level
+    // instructions are a VS Code settings key, and VS Code's agent IS Copilot.
+    const withGlobal: Record<string, string> = {
+      claude: '/home/u/.claude/CLAUDE.md',
+      codex: '/home/u/.codex/AGENTS.md',
+      gemini: '/home/u/.gemini/GEMINI.md',
+      windsurf: '/home/u/.codeium/windsurf/memories/global_rules.md',
+    };
     for (const id of ALL_CLIENTS) {
-      expect(clientAdapter(id).instructionTargets('global', repo)).toBeNull();
+      const targets = clientAdapter(id).instructionTargets('global', repo, '/home/u');
+      const expected = withGlobal[id];
+      if (expected) {
+        expect(targets, `${id} should have a global target`).not.toBeNull();
+        expect(targets!.map((t) => t.path)).toEqual([expected]);
+      } else {
+        expect(targets, `${id} has no user-home instruction file`).toBeNull();
+      }
     }
+  });
+
+  it('a global block carries the applicability gate; a project block does not', () => {
+    const global = neutralProtocolBlock('global');
+    const project = neutralProtocolBlock('project');
+    // Loaded for every repository, so it must say when it does NOT apply — otherwise an agent in a
+    // repo crib has never indexed is told to call verbs that have nothing to answer from.
+    expect(global).toContain('## When this protocol applies');
+    expect(global).toContain('`.crib/` absent');
+    expect(project).not.toContain('## When this protocol applies');
+    // Same rules at both scopes — the gate is a prefix, never a second copy of the protocol.
+    expect(global).toContain(neutralProtocolBody());
+    expect(project).toContain(neutralProtocolBody());
   });
 
   it('only claude has a skill destination (cursor loads .mdc rules, not SKILL.md dirs)', () => {
@@ -377,7 +408,13 @@ describe('capture-lane matrix (G2.1) — registry coverage', () => {
         // The hook claim carries upstream-doc evidence, not in-repo-writer: the writer below
         // installs the entry, but the fired-event guarantee is upstream documentation.
         expect(hooks!.evidence).toBe('verified-upstream-doc');
-        expect(hooks!.settingsPath?.(repo)).toBe(join(repo, '.claude', 'settings.json'));
+        expect(hooks!.settingsPath?.('project', repo, '/home/u')).toBe(
+          join(repo, '.claude', 'settings.json'),
+        );
+        // The global hook surface is what makes capture fire in repositories `crib init` never ran in.
+        expect(hooks!.settingsPath?.('global', repo, '/home/u')).toBe(
+          '/home/u/.claude/settings.json',
+        );
       } else {
         // Honest reporting: no hook surface → null, never a fabricated row.
         expect(hooks, `${id} must report instruction-based recall only`).toBeNull();
@@ -642,7 +679,7 @@ describe('capture-hook writer (G2.1) — Claude settings.json', () => {
     );
   });
 
-  it('non-claude clients and global scope are a data note, never a write', () => {
+  it('non-claude clients are a data note, never a write', () => {
     const results = installCaptureHooks(repo, { client: 'all', scope: 'project' });
     for (const r of results.filter((x) => x.client !== 'claude')) {
       expect(r.written).toBe(false);
@@ -650,11 +687,54 @@ describe('capture-hook writer (G2.1) — Claude settings.json', () => {
       expect(r.path).toBe('');
       expect(r.events).toEqual([]);
     }
-    expect(installCaptureHooks(repo, { client: 'claude', scope: 'global' })[0]!.note).toMatch(
-      /project-scope only/,
-    );
     // And the protocol body itself stays the recall mechanism for hook-less clients.
     expect(neutralProtocolBody()).toContain('`brief`');
+  });
+
+  it('global scope writes the user-level settings file, preserving the user own hooks', () => {
+    // `home` is passed explicitly on EVERY global-scope assertion in this file. A test that omitted
+    // it would fall back to homedir() and rewrite the developer's own ~/.claude/settings.json.
+    const home = mkdtempSync(join(tmpdir(), 'crib-home-'));
+    try {
+      mkdirSync(join(home, '.claude'), { recursive: true });
+      const settings = join(home, '.claude', 'settings.json');
+      writeFileSync(
+        settings,
+        `${JSON.stringify(
+          {
+            model: 'opus',
+            hooks: {
+              SessionStart: [{ hooks: [{ type: 'command', command: 'echo mine >> ~/log' }] }],
+            },
+          },
+          null,
+          2,
+        )}\n`,
+      );
+      const result = installCaptureHooks(repo, { client: 'claude', scope: 'global', home });
+      expect(result[0]!.written).toBe(true);
+      expect(result[0]!.path).toBe(settings);
+      const obj = JSON.parse(readFileSync(settings, 'utf8')) as Record<string, unknown>;
+      // The user's unrelated settings and their own SessionStart hook both survive; crib is appended
+      // as a sibling matcher rather than replacing the bucket.
+      expect(obj.model).toBe('opus');
+      const bucket = (obj.hooks as Record<string, unknown>).SessionStart as Record<
+        string,
+        unknown
+      >[];
+      expect(bucket).toHaveLength(2);
+      expect(JSON.stringify(bucket[0])).toContain('echo mine');
+      expect(JSON.stringify(bucket[1])).toContain('crib session bootstrap --json');
+      // Removal takes crib back out and leaves the user's hook exactly as it was.
+      expect(
+        removeCaptureHooks(repo, { client: 'claude', scope: 'global', home })[0]!.written,
+      ).toBe(true);
+      const after = JSON.parse(readFileSync(settings, 'utf8')) as Record<string, unknown>;
+      expect(JSON.stringify(after)).not.toContain(CAPTURE_HOOK_COMMAND_MARKER);
+      expect(JSON.stringify(after)).toContain('echo mine');
+    } finally {
+      rmSync(home, { recursive: true, force: true });
+    }
   });
 
   it('list reports the wired events, and nothing when the file is absent', () => {
