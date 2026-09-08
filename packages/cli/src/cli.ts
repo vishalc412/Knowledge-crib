@@ -5256,6 +5256,16 @@ function cmdMemoryHandoff(args: string[], ctx?: CmdCtx): number {
   const json = args.includes('--json');
   const limit = capInt(intFlag(args, '--limit'), 10, 25);
   const resolved = resolveProjectRoot({ explicitRoot: ctx?.cwdOverride });
+  // Bootstrap is wired as a user-scope SessionStart hook, so it runs in EVERY repository the user
+  // opens, including ones crib has never indexed. Without this guard those calls reached
+  // readRepoId(undefined) and died on a raw TypeError — and since the client injects SessionStart
+  // stdout into the model's context, a stack trace became the first thing every session read.
+  if (!isIndexedRoot(resolved)) {
+    process.stderr.write(
+      'not a knowledge-crib repository (no .crib index) — run `crib init` here to set one up\n',
+    );
+    return EXIT.NOT_INDEXED;
+  }
   const rt = openSoul(resolved);
   const deps = createMemoryDeps(rt.soul, resolved.repoRoot, resolved.cribDir);
   if (!deps) {
@@ -5979,6 +5989,11 @@ function cmdMemoryCaptureHook(args: string[], ctx?: CmdCtx): number {
 
   try {
     const resolved = resolveProjectRoot({ explicitRoot: ctx?.cwdOverride });
+    // Same reason as cmdMemoryHandoff: wired at user scope this fires in every repository, most of
+    // which have no index. Check first so an unindexed repo gets one plain sentence instead of
+    // readRepoId's internal "paths[0] must be of type string" leaking out of the catch below.
+    if (!isIndexedRoot(resolved))
+      return failOpen('not a knowledge-crib repository (no .crib index) — capture skipped');
     const rt = openSoul(resolved);
     const repoId = readRepoId(resolved.cribDir);
     if (!repoId)
