@@ -532,6 +532,12 @@ export async function pinAdapter(spec: EmbedModelSpec, dir: string, home: string
     modelVersion: '1',
     entry: 'embedder.mjs',
     installedAt: new Date().toISOString(),
+    // Forward the caller's home explicitly — without this, installEmbedModel falls back to its
+    // OWN embedHomeDir() default. That default coincides with the caller's home in every real
+    // invocation (both resolve KCRIB_EMBED_HOME the same way), so the bug is silent in production
+    // and only bites a caller that legitimately passes a DIFFERENT home (a test's tmpdir), where
+    // it silently published the pin into the developer's real ~/.crib/embed instead.
+    home,
     provisioning: onnxProvisioningPin(home, {
       onnxId: spec.onnxId,
       dim: spec.dim,

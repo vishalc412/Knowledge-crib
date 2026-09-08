@@ -71,3 +71,8 @@ outputs/
 # playwright browser-suite output (WP6 slice D)
 test-results/
 playwright-report/
+
+# `node scripts/release-evidence.mjs` writes its diagnostic manifest to the repo root by default
+# (release.yml overrides --out per-cell before uploading it as an artifact). Running the gate
+# locally must not dirty the checkout it certifies (WP0's evidence-outside-tracked-source rule).
+release-evidence.json

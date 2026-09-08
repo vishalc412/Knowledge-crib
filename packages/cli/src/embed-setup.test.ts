@@ -48,8 +48,17 @@ import {
 let home: string;
 beforeEach(() => {
   home = mkdtempSync(join(tmpdir(), 'crib-embed-setup-'));
+  // Defense in depth (not a substitute for pinAdapter forwarding `home` correctly): a caller
+  // that DROPS the home parameter falls back to embedHomeDir()'s own default, which reads this
+  // same env var — so pinning it here means a future regression of that forwarding bug still
+  // lands in this tmpdir instead of the developer's real ~/.crib/embed.
+  process.env.KCRIB_EMBED_HOME = home;
 });
-afterEach(() => rmSync(home, { recursive: true, force: true }));
+afterEach(() => {
+  // biome-ignore lint/performance/noDelete: env-var removal requires the delete operator
+  delete process.env.KCRIB_EMBED_HOME;
+  rmSync(home, { recursive: true, force: true });
+});
 
 const spec = resolveModelSpec(DEFAULT_EMBED_ALIAS)!;
 const passingSmoke = async () => ({ ok: true, detail: 'paraphrase 0.90 > unrelated 0.10' });
