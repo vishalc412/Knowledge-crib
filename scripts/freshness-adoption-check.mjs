@@ -21,7 +21,8 @@
  * Usage: node scripts/freshness-adoption-check.mjs [--out receipts/freshness.json] [--samples N]
  */
 import { execFileSync, spawn } from 'node:child_process';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { cpus, tmpdir, totalmem } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -485,6 +486,32 @@ async function main() {
       ),
     };
     mkdirSync(dirname(out), { recursive: true });
+    // The raw per-transition samples are written as their OWN file and referenced by digest: a
+    // receipt that claims a pass must have something behind it that can be re-read and re-checked,
+    // and a p95 with no samples is an assertion, not evidence.
+    const samplesPath = out.replace(/\.json$/, '') + '.samples.json';
+    writeFileSync(
+      samplesPath,
+      `${JSON.stringify(
+        {
+          workload: spec.workload,
+          candidateCommit: receipt.candidateCommit,
+          policySha256,
+          configuration: receipt.configuration,
+          machine: receipt.machine,
+          perTransition: receipt.perTransition,
+          failures,
+        },
+        null,
+        2,
+      )}\n`,
+    );
+    receipt.artifacts = [
+      {
+        path: samplesPath.split('/').pop(),
+        sha256: `sha256:${createHash('sha256').update(readFileSync(samplesPath)).digest('hex')}`,
+      },
+    ];
     writeFileSync(out, `${JSON.stringify(receipt, null, 2)}\n`);
     process.stdout.write(
       `freshness ${receipt.status.toUpperCase()} — p95 ${receipt.p95Ms}ms against a ${spec.p95TargetMs}ms target ` +
