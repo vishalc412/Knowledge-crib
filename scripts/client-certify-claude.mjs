@@ -244,17 +244,24 @@ async function main() {
     // Planted directly into the local store under another principal id, then the owner's own
     // client is asked to recall it. Absence here is the boundary holding.
     const foreignMarker = `foreign-${tag}`;
+    // Leg 7 plants a foreign principal's INTAKE, not a capture. The distinction is the whole
+    // point: intakes are principal-scoped durable work, while pending captures are deliberately
+    // REPO-scoped — the shared untrusted working set that lets a swarm of agents see each other's
+    // findings. An earlier version of this leg planted a capture and asserted the owner could not
+    // see it, which would have failed against correct behaviour and blamed the product for a
+    // property it never claimed. Verified directly against the server before being written here:
+    // a foreign intake is absent from the owner's handoff; a foreign capture is present by design.
     const plant = claude(
-      'leg 7: plant a foreign-principal record through the client',
-      `Use the knowledge-crib MCP memory tool with op="capture", subject="topic:foreign", observation="${foreignMarker} belongs to another principal", actor="other-principal". Reply with ONLY the returned id.`,
+      "leg 7: plant a foreign principal's durable work",
+      `Use the knowledge-crib MCP memory tool with op="intake_create", original="${foreignMarker}", summary="foreign principal work ${foreignMarker}", outcome="must never appear in another principal's session", phase="executing", actor="other-principal". Reply with ONLY the returned intake id.`,
       [],
       foreignConfigPath,
     );
-    // The record must EXIST for the exclusion to mean anything: a plant that silently failed would
+    // The intake must EXIST for the exclusion to mean anything: a plant that silently failed would
     // make this leg pass for the wrong reason.
     const plantedVisible = claude(
-      'leg 7: the foreign principal can see its own record',
-      `Use the knowledge-crib MCP memory_recall tool with q="${foreignMarker}" and includePending=true. Reply with ONLY the word PRESENT if any result contains "${foreignMarker}", otherwise ABSENT.`,
+      'leg 7: the foreign principal sees its own work',
+      `Use the knowledge-crib MCP memory tool with op="handoff". Reply with ONLY the word PRESENT if any intake's original or summary contains "${foreignMarker}", otherwise ABSENT.`,
       [],
       foreignConfigPath,
     );
@@ -262,7 +269,7 @@ async function main() {
 
     const foreign = claude(
       'leg 7: the owner must not see it',
-      `Use the knowledge-crib MCP memory_recall tool with q="${foreignMarker}" and includePending=true. Reply with ONLY the word LEAKED if any returned memory contains "${foreignMarker}", otherwise reply CLEAN.`,
+      `Use the knowledge-crib MCP memory tool with op="handoff". Reply with ONLY the word LEAKED if any intake's original or summary contains "${foreignMarker}", otherwise reply CLEAN.`,
     );
     legs.foreignPrincipalExcluded =
       foreign.status === 0 &&
