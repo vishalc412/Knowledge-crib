@@ -108,6 +108,21 @@ vendor-runtime certification, and neither is a config file that parses.
 
 These are open, disclosed rather than fixed. None is a surprise waiting to be found.
 
+1. **The shipped package is not byte-reproducible.** Building the same clean commit twice produces
+   two different tarball digests. The contents are identical — 88 of 88 files match — but `pnpm
+   pack` resolves `workspace:*` to a concrete version at pack time and rewrites the dependency keys
+   in a non-deterministic ORDER, so the packed `package.json` differs and the digest with it. Three
+   consecutive builds of one commit produced three distinct hashes.
+
+   What this does NOT undermine: the release chain never rebuilds. One artifact is built, verified,
+   carried through as a workflow artifact, and the publish step checks the downloaded bytes against
+   the digest the decision approved. Evidence stays bound to the artifact it describes.
+
+   What it DOES mean: you cannot independently rebuild this commit and confirm you got the published
+   bytes, and any rebuild mid-collection invalidates every receipt already gathered — which is why
+   `scripts/collect-acceptance-receipts.mjs` builds once, up front, and prints the digest the whole
+   pass describes. Fixing it properly means normalising the packed manifest's key order.
+
 1. **macOS only.** Service supervision (`crib freshness service`) generates Linux systemd and
    Windows Task Scheduler definitions that have never been installed or started on those platforms.
    The Windows task declares UTF-16 while the writer emits UTF-8, and the Linux unit does not quote

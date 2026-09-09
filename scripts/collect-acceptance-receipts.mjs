@@ -18,7 +18,8 @@
  * Usage: node scripts/collect-acceptance-receipts.mjs --out <dir> [--skip <type>,...]
  */
 import { execFileSync, spawnSync } from 'node:child_process';
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadLaunchPolicy } from './launch-policy.mjs';
@@ -77,6 +78,55 @@ if (dirty) {
 }
 
 process.stdout.write(`collecting acceptance receipts for ${commit} under ${policySha256}\n\n`);
+
+/**
+ * Build the shipped package ONCE for this collection pass, and report its digest.
+ *
+ * This is ordering-critical, for a reason that is not obvious. `pnpm pack` resolves `workspace:*`
+ * to a concrete version at pack time and rewrites the dependency keys in a non-deterministic ORDER
+ * — the contents are byte-identical, but the manifest's key order varies, so every build produces a
+ * different tarball digest. Three consecutive builds of one clean commit here produced three
+ * distinct hashes.
+ *
+ * That makes "rebuild the package" a destructive act in the middle of an evidence pass: receipts
+ * are bound to a package digest, so rebuilding silently invalidates every receipt already collected
+ * against the previous artifact — including a vendor certification that cost a human a signed-in
+ * client and part of an account quota. The install check therefore only SMOKES the package; the
+ * build happens here, before anything is measured, and the digest is printed so the operator can
+ * see which artifact the whole pass describes.
+ */
+function buildPackageOnce() {
+  const log = join(logsDir, 'installer-build.log');
+  process.stdout.write('  building the package once for this pass…');
+  const built = runStep('corepack', ['pnpm@9.15.0', 'installer:build'], log);
+  if (!built.ok) {
+    process.stdout.write('\r  package build FAILED — see logs/installer-build.log\n');
+    process.exit(1);
+  }
+  const tarball = join(REPO_ROOT, 'dist/installers/knowledge-crib-0.1.0/knowledge-crib-0.1.0.tgz');
+  const digest = `sha256:${createHash('sha256').update(readFileSync(tarball)).digest('hex')}`;
+  process.stdout.write(`\r  package built: ${digest}\n`);
+  // A vendor receipt already sitting in this directory was collected against a DIFFERENT artifact
+  // unless its digest matches. Saying so here is the difference between an operator re-running one
+  // command and an operator debugging a NO-GO they cannot explain.
+  const existing = join(receiptsDir, 'client-claude-darwin.json');
+  if (existsSync(existing)) {
+    try {
+      const prior = JSON.parse(readFileSync(existing, 'utf8'));
+      if (prior.product?.packageSha256 && prior.product.packageSha256 !== digest) {
+        process.stdout.write(
+          `  NOTE: the existing vendor receipt certifies ${prior.product.packageSha256}, which is\n` +
+            '        not this artifact. It must be recollected, or the decision will refuse the cell.\n',
+        );
+      }
+    } catch {
+      // A malformed receipt is the decision's problem to report, not this script's.
+    }
+  }
+  return digest;
+}
+
+const packageSha256 = buildPackageOnce();
 
 /**
  * The checks, in the order a human would run them: cheapest first, so a broken build is reported in
@@ -145,12 +195,10 @@ const CHECKS = [
   },
   {
     type: 'install',
-    command: 'pnpm installer:build && pnpm installer:smoke-userdir',
-    run: (log) => {
-      const a = runStep('corepack', ['pnpm@9.15.0', 'installer:build'], `${log}.build`);
-      if (!a.ok) return a;
-      return runStep('corepack', ['pnpm@9.15.0', 'installer:smoke-userdir'], log);
-    },
+    // Deliberately does NOT rebuild: the package is built ONCE, before any check runs, and every
+    // receipt in this pass describes that one artifact. See buildPackageOnce().
+    command: 'pnpm installer:smoke-userdir (against the package built once for this pass)',
+    run: (log) => runStep('corepack', ['pnpm@9.15.0', 'installer:smoke-userdir'], log),
   },
   {
     type: 'freshness',
@@ -208,6 +256,7 @@ for (const check of CHECKS) {
 const failed = results.filter((r) => !r.ok);
 process.stdout.write(
   `\n${results.length} checks, ${failed.length} failed${failed.length ? `: ${failed.map((f) => f.type).join(', ')}` : ''}\n` +
+    `package  -> ${packageSha256}\n` +
     `receipts -> ${receiptsDir}\n`,
 );
 if (failed.length) process.exitCode = 1;
