@@ -174,6 +174,15 @@ export function validateClientCertificationReceipt(receipt, options = {}) {
     assert(runtime.recordedMemory === true, 'runtime evidence must record memory');
     assert(runtime.interrupted === true, 'runtime evidence must include interruption/restart');
     assert(runtime.authorizedResume === true, 'runtime evidence must include authorized resume');
+    // The principal boundary is part of the runtime promise, not decoration: a receipt whose
+    // exclusion leg failed (or was never run — a blocked launch records false) must not validate
+    // as a pass. Old receipts predating the leg fail loudly here and must be re-collected, which
+    // is the A02 law: a receipt taken under looser requirements never silently satisfies a
+    // stricter promise.
+    assert(
+      runtime.foreignPrincipalExcluded === true,
+      'runtime evidence must exclude a foreign principal',
+    );
     const artifacts = [];
     if (runtime.transcriptPath !== undefined) {
       artifacts.push({

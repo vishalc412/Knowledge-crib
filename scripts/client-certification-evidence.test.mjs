@@ -172,6 +172,7 @@ try {
     recordedMemory: true,
     interrupted: true,
     authorizedResume: true,
+    foreignPrincipalExcluded: true,
     attestation,
     logSha256,
     logPath: 'logs/codex-runtime.log',
@@ -249,6 +250,21 @@ try {
     /authorized resume/,
   );
 
+  // The principal boundary gates the pass, both ways: a receipt whose exclusion leg failed, and a
+  // receipt predating the leg entirely, are refused — the cell must be re-collected.
+  assert.throws(
+    () =>
+      validateClientCertificationReceipt(
+        runtimeReceipt({ ...vendorRuntime, foreignPrincipalExcluded: false }),
+        { evidenceRoot: dir },
+      ),
+    /foreign principal/,
+  );
+  assert.throws(() => {
+    const { foreignPrincipalExcluded: _absent, ...predating } = vendorRuntime;
+    return validateClientCertificationReceipt(runtimeReceipt(predating), { evidenceRoot: dir });
+  }, /foreign principal/);
+
   // Receipt-contract tightening: a hand-typed minimal vendor-client receipt cannot pass. The
   // referenced transcript or log file must exist under the receipts area and match its digest.
   const minimalRuntime = { ...vendorRuntime };
@@ -313,6 +329,7 @@ try {
         recordedMemory: true,
         interrupted: true,
         authorizedResume: true,
+        foreignPrincipalExcluded: true,
         attestation,
         logSha256: wslLogSha256,
         logPath: 'logs/cursor-wsl.log',
@@ -340,6 +357,7 @@ try {
         recordedMemory: true,
         interrupted: true,
         authorizedResume: true,
+        foreignPrincipalExcluded: true,
         attestation,
         logSha256: nativeLogSha256,
         logPath: 'logs/cursor-native.log',

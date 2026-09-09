@@ -208,9 +208,16 @@ async function main() {
     };
     writeFileSync(foreignConfigPath, `${JSON.stringify(foreignConfig, null, 2)}\n`);
 
+    // Claude Code refuses to launch when the account's session quota is exhausted ("You've hit
+    // your session limit"). That refusal is a fact about the ACCOUNT, not evidence about the
+    // candidate: a leg it blocks is untested, and untested must never read as tested-and-held
+    // (or tested-and-leaked) in the receipt. Counted here, disclosed as `blocked` below.
+    let vendorRefusals = 0;
+    const sessionLimitRefusal = (result) =>
+      result.status !== 0 && /session limit/i.test(`${result.stdout}${result.stderr}`);
     /** Drive the REAL vendor client, one non-interactive turn, with the project's MCP config. */
-    const claude = (label, prompt, extra = [], config = configPath) =>
-      run(
+    const claude = (label, prompt, extra = [], config = configPath) => {
+      const result = run(
         log,
         label,
         'claude',
@@ -228,6 +235,9 @@ async function main() {
         ],
         { env: clientEnv, cwd: project, timeoutMs: 300_000 },
       );
+      if (sessionLimitRefusal(result)) vendorRefusals += 1;
+      return result;
+    };
 
     // ── leg 3: handshake + tool use through the vendor client ────────────────
     const handshake = claude(
@@ -276,21 +286,18 @@ async function main() {
     // see it, which would have failed against correct behaviour and blamed the product for a
     // property it never claimed. Verified directly against the server before being written here:
     // a foreign intake is absent from the owner's handoff; a foreign capture is present by design.
-    const plant = claude(
-      "leg 7: plant a foreign principal's durable work",
-      `Use the knowledge-crib MCP memory tool with op="intake_create", original="${foreignMarker}", summary="foreign principal work ${foreignMarker}", outcome="must never appear in another principal's session", phase="executing", actor="other-principal". Reply with ONLY the returned intake id.`,
-      [],
-      foreignConfigPath,
-    );
     // The intake must EXIST for the exclusion to mean anything: a plant that silently failed would
-    // make this leg pass for the wrong reason.
-    const plantedVisible = claude(
-      'leg 7: the foreign principal sees its own work',
-      `Use the knowledge-crib MCP memory tool with op="handoff". Reply with ONLY the word PRESENT if any intake's original or summary contains "${foreignMarker}", otherwise ABSENT.`,
+    // make this leg pass for the wrong reason. Plant and confirm in ONE launch under the foreign
+    // principal — the session that records the intake then hands off and must see it come back.
+    // Two launches proved the same thing and cost one more unit of the vendor account's session
+    // quota, which is exactly what this certification exhausted.
+    const plant = claude(
+      "leg 7: plant a foreign principal's durable work and see it as that principal",
+      `Use the knowledge-crib MCP memory tool twice. First with op="intake_create", original="${foreignMarker}", summary="foreign principal work ${foreignMarker}", outcome="must never appear in another principal's session", phase="executing", actor="other-principal". Then with op="handoff". Reply with ONLY the word PRESENT if the handoff shows an intake whose original or summary contains "${foreignMarker}", otherwise ABSENT.`,
       [],
       foreignConfigPath,
     );
-    legs.foreignRecordPlanted = plant.status === 0 && /PRESENT/.test(`${plantedVisible.stdout}`);
+    legs.foreignRecordPlanted = plant.status === 0 && /PRESENT/.test(`${plant.stdout}`);
 
     const foreign = claude(
       'leg 7: the owner must not see it',
@@ -301,12 +308,22 @@ async function main() {
       !/LEAKED/.test(`${foreign.stdout}`) &&
       legs.foreignRecordPlanted === true;
 
+    // The exclusion legs are part of the runtime promise, not decoration: a cell whose principal
+    // boundary was never proved — or leaked — is not runtime-verified, however well legs 3-6 went.
     const runtimePass =
-      legs.protocol && legs.recordedMemory && legs.interrupted && legs.authorizedResume;
+      legs.protocol &&
+      legs.recordedMemory &&
+      legs.interrupted &&
+      legs.authorizedResume &&
+      legs.foreignPrincipalExcluded;
 
     log('\n# legs');
     for (const [name, ok] of Object.entries(legs))
       log(`  ${name.padEnd(26)} ${ok ? 'pass' : 'FAIL'}`);
+    if (vendorRefusals > 0)
+      log(
+        `# ${vendorRefusals} launch(es) blocked by the vendor account's session limit — those legs are UNTESTED, not tested-and-failed; the receipt records the block.`,
+      );
 
     // ── the receipt ──────────────────────────────────────────────────────────
     mkdirSync(outDir, { recursive: true });
@@ -337,6 +354,9 @@ async function main() {
           interrupted: legs.interrupted === true,
           authorizedResume: legs.authorizedResume === true,
           foreignPrincipalExcluded: legs.foreignPrincipalExcluded === true,
+          // Null on a clean run. When a vendor launch refused to run, this names why — so a
+          // quota-exhausted cell can never be mistaken for one whose boundary was tested.
+          blocked: vendorRefusals > 0 ? 'vendor-session-limit' : null,
           uniqueTag: tag,
           logPath: 'claude-darwin-vendor-run.log',
           logSha256: sha256File(archivedTranscript),
@@ -354,6 +374,11 @@ async function main() {
       `\nclaude/darwin runtime: ${runtimePass ? 'PASS' : 'FAIL'} -> ${receiptPath}\n`,
     );
     if (!runtimePass) process.exitCode = 1;
+    if (!runtimePass && vendorRefusals > 0)
+      process.stdout.write(
+        'client-certify: the vendor account hit its session limit mid-run. ' +
+          'Re-run this script after the quota resets to collect the untested legs.\n',
+      );
   } finally {
     if (!argv.includes('--keep')) rmSync(workspace, { recursive: true, force: true });
     else process.stdout.write(`workspace kept at ${workspace}\n`);

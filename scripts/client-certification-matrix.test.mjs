@@ -122,6 +122,7 @@ function writeRuntimeReceipt(receiptsDir, name, runtime = {}) {
         recordedMemory: true,
         interrupted: true,
         authorizedResume: true,
+        foreignPrincipalExcluded: true,
         logSha256: `sha256:${createHash('sha256').update(bytes).digest('hex')}`,
         logPath: `logs/${logName}`,
         attestation: {
