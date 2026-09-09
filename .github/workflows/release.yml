@@ -19,14 +19,15 @@ jobs:
     timeout-minutes: 45
     strategy:
       fail-fast: false
-      # EXACTLY the cell set scripts/launch-policy.json freezes. The aggregate decision requires
-      # every policy cell by name, so a matrix that drifts from the policy fails the aggregation
-      # rather than quietly deciding on a smaller matrix (A03).
+      # EXACTLY the cell set scripts/launch-policy.json freezes — policy 2 ships macOS only, so
+      # this matrix is macOS only. The two must agree in BOTH directions: a matrix smaller than the
+      # policy fails aggregation on a missing cell, and a matrix LARGER than it uploads manifests
+      # for cells the launch does not claim, which are then judged against requirements (a browser
+      # receipt, say) that their legs never produce. Cross-platform development coverage lives in
+      # ci.yml, which is a dev gate and emits no launch evidence.
       matrix:
         os:
-          - ubuntu-latest
           - macos-latest
-          - windows-latest
         node: ['22', '24']
 
     steps:
@@ -65,15 +66,15 @@ jobs:
       # Browser acceptance belongs to a TAG, not only to PR CI: a release that never drove the
       # real UI has no browser evidence to offer, and a missing receipt type is a blocker.
       - name: Install browser binaries
-        if: matrix.os == 'ubuntu-latest'
+        if: matrix.os == 'macos-latest'
         run: corepack pnpm@9.15.0 exec playwright install --with-deps chromium
 
       - name: Run browser acceptance suite
-        if: matrix.os == 'ubuntu-latest'
+        if: matrix.os == 'macos-latest'
         run: corepack pnpm@9.15.0 verify:browser 2>&1 | tee browser-acceptance.log
 
       - name: Write browser receipt
-        if: matrix.os == 'ubuntu-latest'
+        if: matrix.os == 'macos-latest'
         run: >-
           node scripts/write-receipt.mjs browser --out receipts/browser.json
           --command "pnpm verify:browser" --artifact browser-acceptance.log
@@ -99,7 +100,8 @@ jobs:
             --out "launch-evidence/${{ matrix.os }}/${{ matrix.node }}.json" \
             --receipts receipts \
             --require-runtime-certification \
-            --certification-platforms darwin,linux,win32 \
+            --certification-platforms darwin \
+            --certification-receipts docs/launch/client-certification-receipts \
             --command "release.yml verify (${{ matrix.os }}, node ${{ matrix.node }})"
 
       - name: Upload release evidence
@@ -128,7 +130,7 @@ jobs:
           retention-days: 30
 
       - name: Upload verified bundle
-        if: matrix.os == 'ubuntu-latest' && matrix.node == '22'
+        if: matrix.os == 'macos-latest' && matrix.node == '22'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: knowledge-crib-release-bundle

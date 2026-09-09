@@ -116,9 +116,8 @@ for (const [name, source] of [
 }
 
 assert.match(tagWorkflow, /tags:\s*\n\s*- ['"]v\*['"]/, 'release workflow must run for v* tags');
-for (const os of ['ubuntu-latest', 'macos-latest', 'windows-latest']) {
-  assert.match(tagWorkflow, new RegExp(os), `tag release must verify on ${os}`);
-}
+// Which platforms a TAG verifies on is the launch policy's decision, asserted from the policy
+// itself further down rather than from a list that drifts from it.
 assert.match(
   tagWorkflow,
   /corepack pnpm@9\.15\.0 release:verify/,
@@ -209,14 +208,34 @@ assert.match(
   'release evidence must consume the typed receipts the steps wrote',
 );
 
-// The verify matrix must be the policy's cell set: three OSes on both advertised Node majors.
-assert.match(
-  tagWorkflow,
-  /node:\s*\['22',\s*'24'\]/,
-  'the release verify matrix must cover both advertised Node majors',
-);
-for (const os of ['ubuntu-latest', 'macos-latest', 'windows-latest']) {
-  assert.ok(tagWorkflow.includes(`- ${os}`), `the release verify matrix must cover ${os}`);
+// The verify matrix must be the policy's cell set — EXACTLY, in both directions. A matrix smaller
+// than the policy fails aggregation on a missing cell; a matrix larger than it uploads manifests
+// for cells the launch does not claim, which are then judged against requirements their legs never
+// produce. So this reads the committed policy rather than hardcoding a list.
+{
+  const policy = JSON.parse(readLF('scripts/launch-policy.json'));
+  const declared = new Set(policy.osNodeCells.map((cell) => cell.split('/')[0]));
+  const nodes = [...new Set(policy.osNodeCells.map((cell) => cell.split('/')[1]))].sort();
+  assert.match(
+    tagWorkflow,
+    new RegExp(`node:\\s*\\[${nodes.map((n) => `'${n}'`).join(',\\s*')}\\]`),
+    `the release verify matrix must cover exactly Node ${nodes.join(' and ')}`,
+  );
+  for (const os of declared) {
+    assert.ok(tagWorkflow.includes(`- ${os}`), `the release verify matrix must cover ${os}`);
+  }
+  for (const os of ['ubuntu-latest', 'macos-latest', 'windows-latest']) {
+    if (declared.has(os)) continue;
+    assert.ok(
+      !new RegExp(`^\\s+- ${os}$`, 'm').test(tagWorkflow),
+      `${os} is not in the launch policy, so the release matrix must not emit evidence for it`,
+    );
+  }
+  // The certification platforms the tag demands must match the policy's too.
+  assert.ok(
+    tagWorkflow.includes(`--certification-platforms ${policy.clientPlatforms.join(',')}`),
+    'the tag must require certification for exactly the policy platforms',
+  );
 }
 
 assert.match(
@@ -298,11 +317,8 @@ assert.match(
   /--require-runtime-certification/,
   'tag release must require client runtime certification before shipping',
 );
-assert.match(
-  tagWorkflow,
-  /--certification-platforms darwin,linux,win32/,
-  'tag release must certify every advertised platform (darwin, linux, win32)',
-);
+// (Which platforms must be certified is asserted from the policy above — it narrows and widens
+// with the promise, and hardcoding it here is how the two drift apart.)
 
 assert.match(dependabot, /package-ecosystem:\s*"npm"/, 'Dependabot must monitor npm dependencies');
 assert.match(
