@@ -128,6 +128,37 @@ for (const [name, render] of [
     assert.ok(!line.includes('.crib'), `installPs1 must never Remove-Item .crib: ${line.trim()}`);
   }
 
+  // The Windows installer must survive being run OUTSIDE a git repository.
+  //
+  // Found on a real windows-latest runner: `git rev-parse --is-inside-work-tree 2>$null` does not
+  // suppress a native command's stderr the way a POSIX shell does. git printing "fatal: not a git
+  // repository" raised a NativeCommandError, and under the script's `$ErrorActionPreference =
+  // "Stop"` that TERMINATED the installer — after npm had already installed the package, so a
+  // successful install reported itself as a failure. The macOS installer takes the same no-op
+  // branch silently, which is why every local run looked fine.
+  assert.doesNotMatch(
+    ps1Text,
+    /git rev-parse --is-inside-work-tree 2>\$null/,
+    'installPs1 must not probe git in a way that makes "not a repository" a terminating error',
+  );
+  assert.match(
+    ps1Text,
+    /git rev-parse --is-inside-work-tree 2>&1/,
+    'installPs1 must merge git stderr into the output stream instead of raising it',
+  );
+  assert.match(
+    ps1Text,
+    /\$ErrorActionPreference = "Continue"/,
+    'the git probe must run under a local Continue preference',
+  );
+  assert.match(
+    ps1Text,
+    /\$LASTEXITCODE -eq 0/,
+    'the git probe must judge by exit code, not by whether git wrote to stderr',
+  );
+  // And the setup branch must be gated on that computed answer, not on the raw expression.
+  assert.match(ps1Text, /elseif \(\$InsideWorkTree\)/, 'setup must be gated on $InsideWorkTree');
+
   // Belt and suspenders: no deletion of ANY kind anywhere in either script names `.crib`.
   assert.doesNotMatch(shText, /rm\s[^\n]*\.crib/, 'installSh must not target .crib for deletion');
   assert.doesNotMatch(

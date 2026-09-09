@@ -254,10 +254,26 @@ try {
   # bin dir is not on the CURRENT process PATH: custom npm prefixes (npm_config_prefix), and
   # every installer smoke that installs into an isolated prefix on purpose. This is the exact
   # windows-latest installer failure - \`The term 'crib' is not recognized\` at the setup step.
+  # Whether this directory is a git work tree, asked in a way that SURVIVES the answer being "no".
+  # \`2>$null\` does not suppress a native command's stderr in PowerShell the way it does in a POSIX
+  # shell: git writing "fatal: not a git repository" produces a NativeCommandError record, and under
+  # this script's \`$ErrorActionPreference = "Stop"\` that record TERMINATES the installer. The macOS
+  # installer takes its no-op branch quietly in the same situation, so installing outside a
+  # repository worked everywhere except Windows — where it failed after the package was already
+  # installed, leaving a successful install reported as a failed one. Merging stderr into the output
+  # stream under a local Continue preference, and judging by $LASTEXITCODE, asks the question
+  # without making the negative answer fatal.
+  $InsideWorkTree = $false
+  if (Get-Command git -ErrorAction SilentlyContinue) {
+    $PreviousPreference = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    $GitAnswer = (& git rev-parse --is-inside-work-tree 2>&1) | Out-String
+    $ErrorActionPreference = $PreviousPreference
+    $InsideWorkTree = ($LASTEXITCODE -eq 0 -and $GitAnswer.Trim() -eq "true")
+  }
   if ($env:KCRIB_NO_SETUP -eq "1") {
     Write-Host "KCRIB_NO_SETUP=1 - skipping repository setup. Run 'crib setup' in your project when ready."
-  } elseif ((Get-Command git -ErrorAction SilentlyContinue) -and
-            (& git rev-parse --is-inside-work-tree 2>$null) -eq "true") {
+  } elseif ($InsideWorkTree) {
     Write-Host "Setting up $((Get-Location).Path): index, git hooks, MCP wiring for every client,"
     Write-Host "the agent protocol, the on-device semantic model, and the memory stores."
     $NpmPrefix = (& npm prefix -g | Select-Object -First 1)
