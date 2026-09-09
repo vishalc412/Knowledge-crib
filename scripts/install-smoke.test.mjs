@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import path from 'node:path';
 import {
+  digestKey,
   expectedBinPaths,
   fileDigests,
   findInstallerBundle,
@@ -263,6 +264,29 @@ try {
 // fileDigests: missing root → empty baseline (a store that was never created survives trivially,
 // but the verdict treats it as a key-set change when the seed HAD files).
 assert.deepEqual(fileDigests(join(tmpdir(), 'kc-smoke-missing-root-')), {});
+
+// A06 — the digest KEY is portable evidence, not a host path. On a Windows runner the native
+// `path.relative` returns `records\ab.jsonl`, which the seeded-shard assertions above (and the
+// installer workflow's own checks) match against `/^records\/.*\.jsonl$/`. Deterministic here on
+// any host by driving the win32 implementation explicitly.
+{
+  const winRoot = 'C:\\Users\\run adm\\.crib\\memory\\global';
+  const winFile = `${winRoot}\\records\\ab.jsonl`;
+  // The defect, pinned: the raw native-separator relative path does NOT satisfy the contract.
+  assert.doesNotMatch(path.win32.relative(winRoot, winFile), /^records\/.*\.jsonl$/);
+  // The repair: keys are '/'-separated on every platform, so the same baseline compares across
+  // hosts and the survival assertions hold on Windows.
+  assert.equal(digestKey(winRoot, winFile, path.win32), 'records/ab.jsonl');
+  assert.match(digestKey(winRoot, winFile, path.win32), /^records\/.*\.jsonl$/);
+  // Nested directories and non-ASCII/space segments keep their content, only the separator changes.
+  assert.equal(
+    digestKey(winRoot, `${winRoot}\\a b\\ünï\\c.jsonl`, path.win32),
+    'a b/ünï/c.jsonl',
+  );
+  // POSIX keys are unchanged by the normalization (no double-mapping of a literal backslash-free
+  // path), so an existing macOS/Linux baseline stays byte-identical.
+  assert.equal(digestKey('/tmp/kc/global', '/tmp/kc/global/records/ab.jsonl', path.posix), 'records/ab.jsonl');
+}
 
 // scenarioRepoId fails closed when neither the project manifest nor the registry can resolve an id.
 assert.throws(

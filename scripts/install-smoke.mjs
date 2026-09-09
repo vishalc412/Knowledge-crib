@@ -313,7 +313,20 @@ export function smokeMemoryRecord({ kind = 'decision', subject, claim, scope, ac
   };
 }
 
-/** SHA-256 every regular file under `rootDir`, keyed by path relative to `rootDir`. */
+/**
+ * The digest KEY for one file: its path relative to `rootDir`, always '/'-separated.
+ *
+ * The keys are portable EVIDENCE — they travel in a receipt, are compared against a baseline
+ * collected on another host, and are matched by the workflow's own `records/…jsonl` assertions.
+ * Native `path.relative` returns `records\ab.jsonl` on win32, so those assertions could not hold on
+ * a Windows runner (A06). Only the key is normalized; the file CONTENT hashing below is untouched.
+ * `impl` is injectable so the win32 behavior is testable deterministically from any host.
+ */
+export function digestKey(rootDir, target, impl = path) {
+  return impl.relative(rootDir, target).split(/[\\/]/).join('/');
+}
+
+/** SHA-256 every regular file under `rootDir`, keyed by portable path relative to `rootDir`. */
 export function fileDigests(rootDir) {
   if (!existsSync(rootDir)) return {};
   const out = {};
@@ -322,7 +335,7 @@ export function fileDigests(rootDir) {
       const target = join(dir, entry.name);
       if (entry.isDirectory()) walk(target);
       else if (entry.isFile()) {
-        out[path.relative(rootDir, target)] = createHash('sha256')
+        out[digestKey(rootDir, target)] = createHash('sha256')
           .update(readFileSync(target))
           .digest('hex');
       }
