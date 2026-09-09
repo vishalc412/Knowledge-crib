@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   type McpInstallResult,
+  auditMcp,
   installMcp,
   listMcp,
   removeMcp,
@@ -305,5 +306,193 @@ describe('installMcp — clean machine (no `crib` on PATH)', () => {
     } finally {
       process.env.PATH = savedPath;
     }
+  });
+});
+
+// A04 — an install that cannot parse a user's config previously collapsed it to `{}` and wrote a
+// crib-only file over it. Every refusal below asserts the ORIGINAL BYTES, not just "some content":
+// preserving a re-serialized equivalent is still data loss for comments, key order and formatting.
+describe('installMcp — malformed config is refused, never overwritten (A04)', () => {
+  const SIBLING =
+    '{\n  "mcpServers": {\n    "other": { "command": "other-bin", "args": [] }\n  },\n';
+
+  it('refuses an unparseable strict-JSON config and preserves it byte-for-byte', () => {
+    const cfg = join(repo, '.mcp.json');
+    // A JSON comment in a client whose format is strict JSON: unparseable, and NOT ours to rewrite.
+    const original = `${SIBLING}  // knowledge-crib must not eat this file\n  "otherField": 1\n}\n`;
+    writeFileSync(cfg, original, 'utf8');
+
+    const r = first(installMcp(repo, { ide: 'claude', scope: 'project', bin: BIN }));
+
+    expect(readFileSync(cfg, 'utf8')).toBe(original); // byte-for-byte preserved
+    expect(r.written).toBe(false);
+    expect(r.refused).toBe(true);
+    expect(r.problem?.kind).toBe('config-malformed');
+    expect(r.problem?.configPath).toBe(cfg);
+    expect(r.problem?.line).toBeGreaterThan(0); // structured location, not just a message
+    expect(r.problem?.column).toBeGreaterThan(0);
+    expect(r.problem?.fix).toMatch(/repair|by hand/i);
+  });
+
+  it('refuses truncated JSON without writing', () => {
+    const cfg = join(repo, '.cursor', 'mcp.json');
+    mkdirSync(dirname(cfg), { recursive: true });
+    const original = '{ "mcpServers": { "other": { "command": "x" }\n';
+    writeFileSync(cfg, original, 'utf8');
+
+    const r = first(installMcp(repo, { ide: 'cursor', scope: 'project', bin: BIN }));
+
+    expect(readFileSync(cfg, 'utf8')).toBe(original);
+    expect(r.refused).toBe(true);
+    expect(r.written).toBe(false);
+  });
+
+  it('refuses a JSON root that is not an object', () => {
+    const cfg = join(repo, '.mcp.json');
+    const original = '[1, 2, 3]\n';
+    writeFileSync(cfg, original, 'utf8');
+
+    const r = first(installMcp(repo, { ide: 'claude', scope: 'project', bin: BIN }));
+
+    expect(readFileSync(cfg, 'utf8')).toBe(original);
+    expect(r.refused).toBe(true);
+    expect(r.problem?.kind).toBe('config-malformed');
+  });
+
+  it('creates the file when the config is absent (missing is not malformed)', () => {
+    const r = first(installMcp(repo, { ide: 'claude', scope: 'project', bin: BIN }));
+    expect(r.written).toBe(true);
+    expect(r.refused).toBeFalsy();
+    expect(existsSync(join(repo, '.mcp.json'))).toBe(true);
+  });
+
+  it('preserves sibling servers and unrelated top-level fields on a valid config', () => {
+    const cfg = join(repo, '.mcp.json');
+    writeFileSync(
+      cfg,
+      JSON.stringify(
+        { mcpServers: { other: { command: 'other-bin', args: ['x'] } }, unrelated: { keep: true } },
+        null,
+        2,
+      ),
+      'utf8',
+    );
+
+    const r = first(installMcp(repo, { ide: 'claude', scope: 'project', bin: BIN }));
+
+    expect(r.written).toBe(true);
+    expect(r.refused).toBeFalsy();
+    const after = parse(cfg);
+    expect((after.mcpServers as Record<string, unknown>).other).toEqual({
+      command: 'other-bin',
+      args: ['x'],
+    });
+    expect(after.unrelated).toEqual({ keep: true });
+    expect((after.mcpServers as Record<string, unknown>)[NAME]).toBeDefined();
+  });
+
+  it('accepts comments for VS Code (JSONC) and preserves them through the edit', () => {
+    const cfg = join(repo, '.vscode', 'mcp.json');
+    mkdirSync(dirname(cfg), { recursive: true });
+    const original = [
+      '{',
+      '  // VS Code reads mcp.json as JSONC — comments are legal here.',
+      '  "servers": {',
+      '    /* keep this block comment */',
+      '    "other": { "type": "stdio", "command": "other-bin" }',
+      '  },',
+      '  "inputs": []',
+      '}',
+      '',
+    ].join('\n');
+    writeFileSync(cfg, original, 'utf8');
+
+    const r = first(installMcp(repo, { ide: 'vscode', scope: 'project', bin: BIN }));
+
+    expect(r.refused).toBeFalsy();
+    expect(r.written).toBe(true);
+    const after = readFileSync(cfg, 'utf8');
+    expect(after).toContain('// VS Code reads mcp.json as JSONC');
+    expect(after).toContain('/* keep this block comment */');
+    expect(after).toContain('"inputs"');
+    expect(after).toContain(NAME);
+    // Still valid JSONC holding BOTH servers.
+    const parsed = JSON.parse(after.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, ''));
+    const servers = parsed.servers as Record<string, { command: string }>;
+    expect(Object.keys(servers).sort()).toEqual(['knowledge-crib', 'other']);
+    expect(servers.other!.command).toBe('other-bin');
+    expect(servers[NAME]!.command).toBe(RESOLVED_BIN);
+  });
+
+  it('is a byte-stable no-op when re-run against a JSONC config it already wrote', () => {
+    const cfg = join(repo, '.vscode', 'mcp.json');
+    mkdirSync(dirname(cfg), { recursive: true });
+    writeFileSync(cfg, '{\n  // keep\n  "servers": {}\n}\n', 'utf8');
+
+    installMcp(repo, { ide: 'vscode', scope: 'project', bin: BIN });
+    const afterFirst = readFileSync(cfg, 'utf8');
+    const second = first(installMcp(repo, { ide: 'vscode', scope: 'project', bin: BIN }));
+
+    expect(second.written).toBe(false);
+    expect(readFileSync(cfg, 'utf8')).toBe(afterFirst);
+  });
+});
+
+// A09 — doctor verified only `command`. The generated launcher is node PLUS an absolute cli.js
+// argument; a moved or deleted checkout leaves an existing interpreter pointing at nothing, which
+// the old check called usable. Client-owned launch arguments stay unvalidated and unexecuted.
+describe('auditMcp — generated launcher entry point (A09)', () => {
+  function writeClaudeEntry(command: string, args: string[]): string {
+    const cfg = join(repo, '.mcp.json');
+    writeFileSync(
+      cfg,
+      `${JSON.stringify({ mcpServers: { [NAME]: { command, args } } }, null, 2)}\n`,
+      'utf8',
+    );
+    return cfg;
+  }
+
+  it('reports a generated entry point that no longer exists', () => {
+    const cfg = writeClaudeEntry(process.execPath, [join(repo, 'gone', 'cli.js'), 'serve', '.']);
+
+    const problems = auditMcp(repo, { home });
+
+    const p = problems.find((x) => x.configPath === cfg && x.kind === 'entrypoint-missing');
+    expect(p).toBeDefined();
+    expect(p?.message).toContain(join(repo, 'gone', 'cli.js'));
+    expect(p?.fix).toMatch(/crib mcp install/);
+  });
+
+  it('accepts an existing entry point under a path with spaces and non-ASCII characters', () => {
+    const dir = join(repo, 'sp ace', 'ünïcode dïr');
+    mkdirSync(dir, { recursive: true });
+    const entry = join(dir, 'cli.js');
+    writeFileSync(entry, '#!/usr/bin/env node\n', 'utf8');
+    const cfg = writeClaudeEntry(process.execPath, [entry, 'serve', '.']);
+
+    expect(auditMcp(repo, { home }).filter((p) => p.configPath === cfg)).toEqual([]);
+  });
+
+  it('flags a missing interpreter and the missing entry point separately', () => {
+    const cfg = writeClaudeEntry(join(repo, 'no-node', 'node'), [
+      join(repo, 'gone', 'cli.js'),
+      'serve',
+      '.',
+    ]);
+
+    const kinds = auditMcp(repo, { home })
+      .filter((p) => p.configPath === cfg)
+      .map((p) => p.kind)
+      .sort();
+
+    expect(kinds).toEqual(['binary-missing', 'entrypoint-missing']);
+  });
+
+  it('does not validate or execute client-owned launch arguments', () => {
+    // Not the generated launcher shape (`…/cli.js`): a user's own server entry, whose arguments
+    // are none of crib's business — and which doctor must never run to find out.
+    const cfg = writeClaudeEntry(process.execPath, ['/nonexistent/their-server.js', '--flag']);
+
+    expect(auditMcp(repo, { home }).filter((p) => p.configPath === cfg)).toEqual([]);
   });
 });

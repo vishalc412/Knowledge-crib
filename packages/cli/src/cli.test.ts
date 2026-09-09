@@ -1500,6 +1500,30 @@ describe('crib doctor (WP2.6) — one fixture per condition, one DISTINCT diagno
     expect(out).toMatch(/re-run `crib mcp install`/);
   });
 
+  it('diagnoses a generated launcher whose cli.js is gone (entrypoint-missing, A09)', () => {
+    // The clean-machine fallback pins `<node> <abs>/cli.js`. node still exists after the checkout
+    // moves — only the SCRIPT vanishes — so a command-only check called this entry usable.
+    const gone = join(repo, 'moved-away', 'dist', 'cli.js');
+    mkdirSync(join(repo, '.cursor'), { recursive: true });
+    writeFileSync(
+      join(repo, '.cursor', 'mcp.json'),
+      `${JSON.stringify(
+        {
+          mcpServers: {
+            'knowledge-crib': { command: process.execPath, args: [gone, 'serve', '.'] },
+          },
+        },
+        null,
+        2,
+      )}\n`,
+    );
+    const out = runDoctor();
+    expect(out).toMatch(/✗ MCP config usable \(parses, binary exists\)/);
+    expect(out).toContain(gone);
+    expect(out).toContain('that script is not on this machine');
+    expect(out).toMatch(/re-run `crib mcp install`/);
+  });
+
   it('diagnoses an unparseable JSON config as config-unparseable, and refuses to touch it', () => {
     mkdirSync(join(repo, '.cursor'), { recursive: true });
     writeFileSync(join(repo, '.cursor', 'mcp.json'), '{ "mcpServers": {  broken');
