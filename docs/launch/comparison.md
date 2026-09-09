@@ -2,9 +2,21 @@
 
 # Knowledge-crib vs the field — the capability matrix
 
-**One-line claim:** Knowledge-crib is the only tool that combines a **deterministic, git-committable** code knowledge graph with **per-edge provenance/confidence**, a **behavior layer** (CFG / decision tables), **agent-native MCP delivery**, **federated blast-radius**, and **grounded opt-in LLM semantics** — in one local-first workflow.
+**What this page claims, and how far.** Across the tools surveyed below, on the dates given,
+Knowledge-crib is the only one whose *documentation and shipped behaviour* show all of: a
+**deterministic, git-committable** code knowledge graph, **per-edge provenance/confidence**, a
+**behavior layer** (CFG / decision tables), **agent-native MCP delivery**, **federated
+blast-radius**, and **grounded opt-in LLM semantics** — in one local-first workflow.
 
-The matrix below makes that claim checkable. Every cell is ✓ / ~ (partial) / ✗ with a one-line reason. **No column is unique to Knowledge-crib in isolation** — each capability exists in some specialist tool. The moat is the **intersection**: the full column-set in one committed, reviewable artifact.
+That is a claim about a **surveyed set on a date**, not about every tool that exists. It is checkable
+per dimension, and it is not a performance claim: **no head-to-head benchmark against any tool on
+this page has been run.** Where a competitor cell says ✗ or ~, it reflects that vendor's own
+documentation as read on the date in [Sources](#sources) — not a test we ran against their product.
+A dimension where their docs are ambiguous is marked `?`, not ✗.
+
+Every cell is ✓ / ~ (partial) / ✗ / ? with a one-line reason. **No dimension is unique to
+Knowledge-crib in isolation** — each capability exists in some specialist tool. The distinguishing
+property is the **intersection**.
 
 ## The 7-column matrix
 
@@ -18,7 +30,16 @@ The matrix below makes that claim checkable. Every cell is ✓ / ~ (partial) / �
 | Aider repo-map | ~ token-budgeted symbol map, but prompt-only, not persisted graph memory | ✗ no edge provenance | ✗ map of important symbols, no behavior layer | ~ sent inline to coding LLM, not a tool surface | ✗ single-repo map | ✗ no separate LLM layer (it IS the LLM client) | ✓ local |
 | Glean (enterprise search) | ✗ SaaS graph over connectors, not git-committable | ~ activity/content graph, no code-edge provenance | ✗ no code CFG/rule layer | ~ has APIs, not MCP code verbs | ~ enterprise cross-app, not code blast-radius | ~ assistant features, not grounded code semantics | ✗ SaaS |
 
-**Reading the matrix:** Knowledge-crib is the only row with ✓ across columns 1–5 simultaneously, plus a grounded (not default) LLM layer (6) and local-first portability (7). Each competitor owns one or two columns decisively — Joern/CodeQL own behavior depth for security; GraphRAG owns LLM-first semantics; Sourcegraph owns compiler-precise navigation. None ships the intersection.
+| GitNexus | ~ local code graph built from the repository; graph store, not a committed JSONL artifact reviewed in the diff | ~ graph edges from parsing, no EXTRACTED/INFERRED confidence split documented | ~ structural graph; no CFG/decision-table behavior layer documented | ✓ MCP tools + editor setup + hooks — agent-native by design | ? cross-repo blast-radius not documented | ~ LLM-assisted querying, not a separately grounded semantic layer | ✓ local-first |
+
+**Reading the matrix (surveyed set, dates in [Sources](#sources)):** within these rows,
+Knowledge-crib is the only one showing ✓ across dimensions 1–5 simultaneously, plus a grounded (not
+default) LLM layer (6) and local-first portability (7). Each competitor owns one or two dimensions
+decisively — Joern/CodeQL own behavior depth for security; GraphRAG owns LLM-first semantics;
+Sourcegraph owns compiler-precise navigation; **GitNexus is the closest neighbour on shape**, pairing
+a local code graph with MCP delivery, and the difference is the committed-artifact/provenance half
+rather than the "local graph over MCP" half. Nothing here says a tool outside this set does not ship
+the intersection.
 
 ## The memory matrix — vs Mem0, Graphiti/Zep, Letta
 
@@ -28,16 +49,18 @@ and that is a different field with different incumbents.
 **How to read the cells.** The Knowledge-crib column is **measured** — every number traces to the
 frozen launch gate (`docs/bench/launch-gates.md`) or the model ladder
 (`docs/bench/embed-model-ladder.md`), both reproducible from this repo. The competitor columns are
-**capability claims read from their public documentation**, not benchmarks run here. No number in a
-competitor column is a measurement of ours, and none should be quoted as one. Re-verify against
-current vendor docs before publishing this table anywhere.
+**capability claims read from their public documentation on 2026-09-09**, not benchmarks run here.
+No number in a competitor column is a measurement of ours, and none should be quoted as one. Each
+competitor claim links to the page it came from in [Sources](#sources); a dimension their docs do
+not settle is `?`, never ✗. Re-verify against current vendor docs before publishing this table
+anywhere — these products ship faster than this file does.
 
 | | **Knowledge-crib** | Mem0 | Graphiti / Zep | Letta |
 |---|---|---|---|---|
 | **Claims re-verified against ground truth** | **✓ — the differentiator.** Evidence anchors to a code span (`soulId` + `quote` + `targetHash`); the quote must be a normalised substring of the rehydrated span and the hash must match the live node. Code moves → `degraded`. Anchor vanishes → stable-locator reattachment: one match reattaches, zero → `orphaned`, many → `needs-review`. **100% staleness precision, 12/12 transitions.** | ✗ conversation-derived; a fact that stopped being true stays confidently true | ✗ episodes + invalidation over text, no external ground truth to check against | ✗ |
 | **Bi-temporal validity** | ✓ `validTime` vs `transactionTime` — answers "what did we believe, and when" without destroying history | ~ recency/temporal signals | ✓ its defining capability | ~ |
 | **Lineage + explicit contradiction** | ✓ `supersedes` / `contradicts` / `derivedFrom`; conflict keys on `propositionKey`, so complementary facts about one symbol are not falsely collided | ~ explicit updates and deletions | ✓ | ~ |
-| **Runs with no network and no API key** | ✓ local-first; the semantic tier is an on-device model, and there is no query-time network call in any tier | ✗ hosted platform / API key for the managed path | ~ self-hostable, model-dependent | ✓ Git-backed MemFS |
+| **Runs with no network and no API key** | ✓ local-first; the semantic tier is an on-device model, and there is no query-time network call in any tier | ~ **hosted managed platform needs an API key, but Mem0 also documents an open-source self-hosted path and a local/offline configuration** ([OSS overview][mem0-oss], [local companion][mem0-local]) — presenting Mem0 as categorically hosted would be wrong | ~ self-hostable, model-dependent | ✓ Git-backed MemFS |
 | **Semantic recall out of the box** | ✗ **6/8, 2.6% paraphrase recall until `crib embed setup` runs** — the one place crib is behind | ✓ works from first call | ~ | ✗ semantic search not enabled by default |
 | **Semantic recall once configured** | ✓ **8/8, 81.0% word-disjoint paraphrase recall @5, MRR 88.1%** — one command, measured, reproducible | (not measured here) | (not measured here) | (not measured here) |
 | **Agent- and IDE-neutral** | ✓ one ledger across Claude Code, Cursor, Copilot, VS Code, Codex, Windsurf, Gemini; agent/session ids are provenance, never an access boundary | ~ SDK-centric | ~ | ~ |
@@ -47,10 +70,12 @@ current vendor docs before publishing this table anywhere.
 
 ### The honest read
 
-**Crib wins on verifiability, deletion, local-first operation, agent neutrality, and marginal cost.
-It loses the first five minutes.** A fresh install answers paraphrases at 2.6% until someone runs
-one command; Mem0 answers them from the first call. That row is stated in the matrix rather than
-omitted, because it is the row a buyer will hit first.
+**On the dimensions above, crib's distinctive ones are verifiability against code, deletion,
+local-first operation, agent neutrality, and marginal cost. It loses the first five minutes.** A
+fresh install answers paraphrases at 2.6% until someone runs one command; Mem0's documented default
+answers them from the first call. That row is stated in the matrix rather than omitted, because it
+is the row a buyer will hit first. "Distinctive" here means *across this surveyed set on
+2026-09-09*, from documentation — not a measured win, and not a statement about tools not listed.
 
 What changed: installing the tier used to be three commands, the last of which named a directory
 (`examples/embedders/minilm-e5`) **that does not exist in the published package** — so for an npm
@@ -65,7 +90,9 @@ model is a 2.2 GB download because the ladder shows it is the only one that pass
 
 ## What this matrix is NOT claiming
 
-- **Not "no competitor."** Each column has a best-in-class owner. The claim is the **intersection is unoccupied**.
+- **Not "no competitor."** Each dimension has a best-in-class owner. The claim is that within the surveyed set, on the stated dates, no other row shows the whole intersection.
+- **Not "the only tool in existence."** This surveys named tools on named dates from their own documentation. A tool not listed here is not a tool that was ruled out.
+- **Not a claim about Mem0 being cloud-only.** Mem0 documents an open-source self-hosted path and a local configuration; the managed platform is one deployment of several.
 - **Not "better than Joern/CodeQL at security analysis."** They are deeper on taint/path queries. Knowledge-crib targets agent context + migration, not security analysis.
 - **Not "better than Sourcegraph at compiler-precise navigation."** SCIP is compiler-accurate; Knowledge-crib's extractors degrade safely and drop unresolved refs rather than guess.
 - **Not "better than GraphRAG at unstructured-text KG."** GraphRAG is LLM-first over text; Knowledge-crib is code-first with semantics as an opt-in, separately-grounded layer.
@@ -82,4 +109,25 @@ model is a 2.2 GB download because the ladder shows it is the only one that pass
 
 ## Sources
 
-Grounded in [`docs/knowledge-crib-technical-pitch.md`](../knowledge-crib-technical-pitch.md) (audit-reviewed 2026-07-13) + `release:verify` green. Market evidence: [GraphRAG](https://microsoft.github.io/graphrag/index/overview/), [Sourcegraph precise nav](https://sourcegraph.com/docs/code-navigation/precise-code-navigation), [Joern](https://docs.joern.io/), [CodeQL](https://codeql.github.com/), [Aider repo map](https://aider.chat/docs/repomap.html), [Glean enterprise KG](https://docs.glean.com/security/knowledge-graph). ("Glean" also names Meta's source-code fact DB — distinct from Glean enterprise search: [Meta Glean](https://glean.software/docs/introduction/).)
+Knowledge-crib's own cells: [`docs/knowledge-crib-technical-pitch.md`](../knowledge-crib-technical-pitch.md)
+(audit-reviewed 2026-07-13), the frozen launch gate (`docs/bench/launch-gates.md`) and
+`release:verify`. Everything in a competitor column is that vendor's documentation, read on the date
+given — no competitor product was installed, configured or measured for this page.
+
+**Code-graph tools — checked 2026-07-13, re-checked 2026-09-09:**
+[GraphRAG](https://microsoft.github.io/graphrag/index/overview/),
+[Sourcegraph precise nav](https://sourcegraph.com/docs/code-navigation/precise-code-navigation),
+[Joern](https://docs.joern.io/), [CodeQL](https://codeql.github.com/),
+[Aider repo map](https://aider.chat/docs/repomap.html),
+[Glean enterprise KG](https://docs.glean.com/security/knowledge-graph),
+[GitNexus](https://github.com/abhigyanpatwari/GitNexus). ("Glean" also names Meta's source-code fact
+DB — distinct from Glean enterprise search: [Meta Glean](https://glean.software/docs/introduction/).)
+
+**Memory tools — checked 2026-09-09:**
+
+- Mem0: [open-source overview][mem0-oss], [local companion configuration][mem0-local], [platform quickstart](https://docs.mem0.ai/platform/quickstart)
+- Graphiti / Zep: [Graphiti](https://help.getzep.com/graphiti/graphiti/overview), [Zep temporal graph](https://help.getzep.com/concepts)
+- Letta: [memory blocks](https://docs.letta.com/guides/agents/memory-blocks), [TypeScript SDK memory](https://docs.letta.com/api/typescript)
+
+[mem0-oss]: https://docs.mem0.ai/open-source/overview
+[mem0-local]: https://docs.mem0.ai/cookbooks/essentials/building-ai-companion

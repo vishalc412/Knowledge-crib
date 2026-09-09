@@ -315,6 +315,7 @@ import {
   startupHeadMismatch,
 } from './runtime.js';
 import { installSkill, listBundledSkills } from './skill-install.js';
+import { buildSupportBundle, readProductVersion } from './support-bundle.js';
 import {
   CSRF_HEADER,
   VizHttpError,
@@ -722,6 +723,8 @@ async function main(argvRaw: string[]): Promise<number> {
       return cmdSetup(rest, ctx);
     case 'doctor':
       return cmdDoctor(rest, ctx);
+    case 'support-bundle':
+      return cmdSupportBundle(rest, ctx);
     case undefined:
     case '-h':
     case '--help':
@@ -2716,6 +2719,67 @@ function formatBytes(bytes: number): string {
  * check (stale build artifacts) is WARN-class: always ✓, never reported as a failure — it surfaces
  * a backlog the next build would reclaim anyway.
  */
+/**
+ * `crib support-bundle` — the redacted snapshot a user can attach to a bug report.
+ *
+ * Deliberately thin: every decision about WHAT may travel lives in `support-bundle.ts`, which is an
+ * allowlist plus a sentinel-tested redactor. This function only gathers the sources and writes the
+ * file, so adding a diagnostic here can never accidentally widen what gets disclosed.
+ */
+async function cmdSupportBundle(args: string[], ctx?: CmdCtx): Promise<number> {
+  const repoRoot = resolve(ctx?.cwdOverride ?? positionalsOf(args)[0] ?? '.');
+  const outIdx = args.indexOf('--out');
+  const out = resolve(outIdx >= 0 ? (args[outIdx + 1] ?? '') : 'crib-support-bundle.json');
+  const bundle = buildSupportBundle({
+    repoRoot,
+    version: readProductVersion(
+      resolve(dirname(fileURLToPath(import.meta.url)), '..', 'package.json'),
+    ),
+    sources: {
+      freshnessStatus: () => {
+        const status = freshnessStatus(repoRoot);
+        return {
+          mode: status.mode,
+          workerRunning: status.workerRunning,
+          pending: status.pending,
+          dead: status.dead,
+          behindHead: status.behindHead,
+        };
+      },
+      readerFreshness: () => {
+        const f = coldReaderFreshness(repoRoot, join(repoRoot, '.crib'));
+        return {
+          readerGeneration: f.readerGeneration,
+          publishedGeneration: f.publishedGeneration,
+          stale: f.stale,
+          staleReasons: f.staleReasons,
+          lastRefreshError: f.lastRefreshError,
+        };
+      },
+      adapters: () =>
+        auditMcp(repoRoot, { home: process.env.HOME }).map((problem) => ({
+          ide: problem.ide,
+          scope: problem.scope,
+          configPath: problem.configPath,
+          message: problem.message,
+          kind: problem.kind,
+        })),
+    },
+  });
+  if (args.includes('--json')) {
+    process.stdout.write(`${JSON.stringify(bundle, null, 2)}\n`);
+    return EXIT.OK;
+  }
+  mkdirSync(dirname(out), { recursive: true });
+  writeFileSync(out, `${JSON.stringify(bundle, null, 2)}\n`, 'utf8');
+  process.stdout.write(
+    `support bundle written to ${out}\n` +
+      `  excluded by design: ${bundle.excluded.join('; ')}\n` +
+      '  read it before sending — it is plain JSON and it is yours.\n',
+  );
+  return EXIT.OK;
+}
+
 async function cmdDoctor(args: string[], ctx?: CmdCtx): Promise<number> {
   const repoRoot = resolve(ctx?.cwdOverride ?? positionalsOf(args)[0] ?? '.');
   const checks: Array<{ name: string; ok: boolean; detail: string; fix?: string }> = [];

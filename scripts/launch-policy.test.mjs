@@ -22,7 +22,7 @@ import {
 } from './launch-policy.mjs';
 
 const FROZEN_POLICY_SHA256 =
-  'sha256:4d8d954dc74b1a2aade7cbef7ec92cf35965ecff547a3ac8a0da1bae0ef00e38';
+  'sha256:0c80d28573155a1a5f540a42bb765b173eb8321b6ab5a609d14b0f2687019618';
 
 const { policy, sha256 } = loadLaunchPolicy();
 assert.equal(
@@ -50,6 +50,13 @@ assert.ok(policyClientCells(policy).includes('vscode/win32'));
 // Both advertised Node majors on all three OSes.
 assert.equal(policyOsNodeCells(policy).length, 6);
 assert.equal(policy.freshness.p95TargetMs, 5000);
+// The workload is preregistered CONCRETELY — a target with no stated workload can be met by
+// choosing an easier one after the fact.
+assert.equal(policy.freshness.workload, 'synthetic-ts-call-chain-transitions-v1');
+assert.equal(policy.freshness.files, 120);
+assert.equal(policy.freshness.samplesPerTransition, 10);
+assert.equal(policy.freshness.warmupSamples, 2);
+assert.equal(policy.freshness.transitions.length, 8);
 
 // ─── the policy validator refuses a policy that would weaken a decision ───────
 const clone = () => JSON.parse(readFileSync(DEFAULT_POLICY_PATH, 'utf8'));

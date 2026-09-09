@@ -54,7 +54,7 @@
     "adapter"
   ],
   "freshness": {
-    "workload": "crib-self-repo-transitions-v1",
+    "workload": "synthetic-ts-call-chain-transitions-v1",
     "transitions": [
       "save",
       "rename",
@@ -65,11 +65,14 @@
       "external-update",
       "restart"
     ],
+    "files": 120,
     "samplesPerTransition": 10,
     "warmupSamples": 2,
     "p95TargetMs": 5000,
     "failureTreatment": "a missed transition or a timeout counts as a failed sample, never as a discarded one",
     "configuration": "production defaults — no shortened fallback, no overridden debounce",
+    "readers": ["graph query", "brief/FTS search", "context resolution", "health generation convergence"],
+    "clock": "from the source mutation to the moment every reader agrees — not to a capture or bookkeeping event",
     "platforms": ["darwin", "linux", "win32"]
   }
 }
