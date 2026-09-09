@@ -352,6 +352,154 @@ describe('WP4.7 — readerFreshness verdicts', () => {
   });
 });
 
+// ─── A05: unknown source and unadopted publications must not read as fresh ─────
+
+describe('A05 — unknown source state is never fresh', () => {
+  it('a serving coordinator whose VCS read fails is STALE, not merely annotated', async () => {
+    const soul = await indexedSoul();
+    const coordinator = new RefreshCoordinator(soul, repo, {});
+    await coordinator.initialize();
+    try {
+      expect(coordinator.freshness().stale).toBe(false);
+      // The source becomes unreadable UNDER the serving bundle: HEAD, the committed delta and the
+      // dirty scan all fail. Nothing can be verified, so nothing may be claimed current.
+      rmSync(join(repo, '.git'), { recursive: true, force: true });
+      const f = coordinator.freshness();
+      expect(f.currentHead).toBeNull();
+      expect(f.staleReasons).toContain(STALE_REASONS.SOURCE_UNKNOWN);
+      expect(f.stale).toBe(true);
+    } finally {
+      coordinator.close();
+    }
+  });
+
+  it('a cold INDEXED reader whose VCS read fails is stale; an unindexed root stays not-stale', async () => {
+    await indexedSoul();
+    rmSync(join(repo, '.git'), { recursive: true, force: true });
+    const f = coldReaderFreshness(repo, join(repo, '.crib'));
+    expect(f.currentHead).toBeNull();
+    expect(f.staleReasons).toContain(STALE_REASONS.SOURCE_UNKNOWN);
+    expect(f.stale).toBe(true);
+  });
+
+  it('a published bundle the reader has not adopted is stale even when the source matches the reader again', async () => {
+    const soul = await indexedSoul();
+    const coordinator = new RefreshCoordinator(soul, repo, {});
+    await coordinator.initialize();
+    try {
+      const generationA = coordinator.freshness().readerGeneration;
+      coordinator.retain(); // a request pins bundle A
+      const edited = join(repo, 'src', 'churn.ts');
+      writeFileSync(edited, 'export function churn(): void {}\n');
+      coordinator.requestRefresh('watcher');
+      await coordinator.whenIdle(); // B published, NOT adopted (pinned)
+      // The source goes BACK to what A was built from, so every content comparison agrees again —
+      // the only remaining disagreement is the identity one the old reporter never made.
+      rmSync(edited);
+      const f = coordinator.freshness();
+      expect(f.readerGeneration).toBe(generationA);
+      expect(f.publishedGeneration).not.toBe(generationA);
+      expect(f.staleReasons).toContain(STALE_REASONS.ADOPTION_PENDING);
+      expect(f.stale).toBe(true);
+
+      // Releasing the request adopts the current bundle and self-heals: the coordinator converges
+      // back to a bundle that matches the live tree, and health becomes truthfully fresh.
+      coordinator.release();
+      await coordinator.whenIdle();
+      const healed = coordinator.freshness();
+      expect(healed.publishedGeneration).toBe(healed.readerGeneration);
+      expect(healed.stale).toBe(false);
+      expect(healed.staleReasons).toEqual([]);
+    } finally {
+      coordinator.close();
+    }
+  });
+});
+
+// ─── A08: every native index has bounded, exactly-once ownership ───────────────
+
+describe('A08 — superseded and retired bundles are disposed exactly once', () => {
+  it('supersedes B while A serves, closes A on adoption and C at shutdown — never an index in use', async () => {
+    const soul = await indexedSoul();
+    const closes: string[] = [];
+    const label = new Map<string, string>();
+    const coordinator = new RefreshCoordinator(soul, repo, {
+      // Instrument EVERY built bundle's index, candidates included: a leak is a close that never
+      // happens, so the assertion has to be able to see closes that should not happen too.
+      onCandidateBuilt: (b) => {
+        const idx = b.index as unknown as { close: () => void };
+        const original = idx.close.bind(b.index);
+        idx.close = () => {
+          closes.push(b.generation);
+          original();
+        };
+      },
+    });
+    await coordinator.initialize();
+    try {
+      const genA = coordinator.freshness().readerGeneration as string;
+      label.set(genA, 'A');
+      coordinator.retain(); // A is pinned by an in-flight request
+
+      writeFileSync(join(repo, 'src', 'b.ts'), 'export function bee(): void {}\n');
+      coordinator.requestRefresh('watcher');
+      await coordinator.whenIdle();
+      const genB = coordinator.freshness().publishedGeneration as string;
+      label.set(genB, 'B');
+      expect(closes).toEqual([]); // nothing is disposable yet
+
+      writeFileSync(join(repo, 'src', 'c.ts'), 'export function cee(): void {}\n');
+      coordinator.requestRefresh('watcher');
+      await coordinator.whenIdle();
+      const genC = coordinator.freshness().publishedGeneration as string;
+      label.set(genC, 'C');
+      // B was published, never adopted, and can never be adopted now: it is disposed here, once.
+      expect(closes.map((g) => label.get(g))).toEqual(['B']);
+      expect(closes).not.toContain(genA); // A is still serving a pinned request
+
+      coordinator.release(); // drains → C adopted, A retired
+      await coordinator.whenIdle();
+      expect(closes.map((g) => label.get(g))).toEqual(['B', 'A']);
+      expect(closes).not.toContain(genC); // C is the live reader
+
+      coordinator.close();
+      expect(closes.map((g) => label.get(g))).toEqual(['B', 'A', 'C']);
+      // Exactly once each — a double close is as much a defect as a missing one.
+      expect(new Set(closes).size).toBe(closes.length);
+    } finally {
+      coordinator.close(); // idempotent: the finally must not add a fourth close
+    }
+    expect(closes).toHaveLength(3);
+  });
+
+  it('a discarded mid-build candidate is disposed once, and shutdown does not re-close it', async () => {
+    const soul = await indexedSoul();
+    const closes: string[] = [];
+    let saved = false;
+    const coordinator = new RefreshCoordinator(soul, repo, {
+      onCandidateBuilt: (b) => {
+        const idx = b.index as unknown as { close: () => void };
+        const original = idx.close.bind(b.index);
+        idx.close = () => {
+          closes.push(b.generation);
+          original();
+        };
+        if (!saved) {
+          saved = true;
+          writeFileSync(join(repo, 'src', 'mid.ts'), 'export function midflight(): void {}\n');
+        }
+      },
+    });
+    await coordinator.initialize();
+    await coordinator.whenIdle();
+    const discarded = closes.length;
+    expect(discarded).toBe(1); // the candidate the re-check invalidated
+    coordinator.close();
+    expect(closes).toHaveLength(discarded + 1); // + the serving bundle, and nothing twice
+    expect(new Set(closes).size).toBe(closes.length);
+  });
+});
+
 // ─── cold readerFreshness (crib status / viz / manual serve) ───────────────────
 
 describe('coldReaderFreshness — the non-serving shape', () => {

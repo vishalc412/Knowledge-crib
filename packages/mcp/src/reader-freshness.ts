@@ -79,4 +79,8 @@ export const STALE_REASONS = {
   ANCHOR_UNAVAILABLE: 'indexed-anchor-unavailable',
   /** VCS read failed entirely — the source state is UNKNOWN and must not read as fresh. */
   SOURCE_UNKNOWN: 'source-detection-unavailable',
+  /** A newer bundle is published but the reader still serves an older one (pinned request). The
+   *  two generations DISAGREE, so the reader is behind by identity even when content comparisons
+   *  happen to agree again — the generation invariant, reported rather than assumed. */
+  ADOPTION_PENDING: 'published-generation-not-adopted',
 } as const;

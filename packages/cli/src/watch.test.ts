@@ -243,6 +243,63 @@ describe('WatchMode + RefreshCoordinator — convergence (exit gate line 375)', 
     }
   });
 
+  it('a pinned request keeps health honest: unadopted publication reads stale, and the reader converges after release (A05)', async () => {
+    const soul = soulFor();
+    await indexRepo(soul, repo);
+    soul.commit('2026-01-01T00:00:00Z');
+
+    const coordinator = new RefreshCoordinator(soul, repo, {});
+    await coordinator.initialize();
+    // The REAL trigger layer drives this one: a save on disk, no hand-called refresh.
+    const watch = new WatchMode(coordinator, repo, { fallbackMs: 100 });
+    await watch.start();
+    /** Poll a condition — a publication that is not adopted fires no onPublish callback. */
+    async function until(label: string, ok: () => boolean): Promise<void> {
+      for (let i = 0; i < 100; i++) {
+        if (ok()) return;
+        await new Promise((r) => setTimeout(r, 50));
+      }
+      throw new Error(`timed out waiting for ${label}`);
+    }
+    try {
+      expect(coordinator.freshness().stale).toBe(false);
+      const generationA = coordinator.freshness().readerGeneration;
+      coordinator.retain(); // an MCP request is in flight; adoption must wait for it
+      writeFileSync(join(repo, 'src', 'pinned.ts'), 'export function pinned(): void {}\n');
+      await until(
+        'publication while a request is pinned',
+        () => coordinator.freshness().publishedGeneration !== generationA,
+      );
+
+      // The reader still answers from the OLD bundle, so health must say so — and keep saying so
+      // even once the tree is restored to exactly what that old bundle was built from.
+      const pinnedHealth = coordinator.freshness();
+      expect(symbolIn(coordinator.currentOverlay, 'src/pinned.ts', 'pinned')).toBe(false);
+      expect(pinnedHealth.stale).toBe(true);
+      rmSync(join(repo, 'src', 'pinned.ts'));
+      const revertedHealth = coordinator.freshness();
+      expect(revertedHealth.publishedGeneration).not.toBe(revertedHealth.readerGeneration);
+      expect(revertedHealth.stale).toBe(true);
+      expect(revertedHealth.staleReasons).toContain('published-generation-not-adopted');
+
+      coordinator.release();
+      await until('reader to converge after release', () => {
+        const f = coordinator.freshness();
+        return f.publishedGeneration === f.readerGeneration && !f.stale;
+      });
+      // And the served graph agrees with the health verdict: the reverted file is gone from it.
+      // (This fixture has no VCS, so `source-detection-unavailable` is a permanent, honest
+      // annotation here — it is reported without claiming the reader is behind.)
+      expect(coordinator.freshness().staleReasons).not.toContain(
+        'published-generation-not-adopted',
+      );
+      expect(symbolIn(coordinator.currentOverlay, 'src/pinned.ts', 'pinned')).toBe(false);
+    } finally {
+      watch.stop();
+      coordinator.close();
+    }
+  });
+
   it('an untracked source file is picked up by the fallback VCS scan', async () => {
     const soul = soulFor();
     await indexRepo(soul, repo);
