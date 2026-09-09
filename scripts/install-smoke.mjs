@@ -37,6 +37,21 @@ export function expectedBinPaths(prefix, platform = process.platform) {
   };
 }
 
+/**
+ * How to invoke npm. On Windows npm is `npm.cmd`, and since the 2024 argument-injection fix Node
+ * REFUSES to spawn a `.cmd` without a shell — `execFileSync('npm', …)` fails with
+ * `spawnSync npm ENOENT`, which reads like a missing npm rather than an unspawnable one. The
+ * install legs never hit this because they shell out through the generated installer; the
+ * uninstall leg calls npm directly, so it did. Same ComSpec route the crib.cmd launcher already
+ * uses, with the arguments kept separate so Node quotes a spaced prefix exactly once.
+ */
+export function npmCommand(args, platform = process.platform, env = process.env) {
+  if (platform === 'win32') {
+    return { command: env.ComSpec || 'cmd.exe', args: ['/d', '/c', 'npm', ...args] };
+  }
+  return { command: 'npm', args };
+}
+
 export function installedBinCommand(bin, platform = process.platform, env = process.env) {
   if (platform === 'win32') {
     // Pass the .cmd path and --help as SEPARATE args (no pre-quoting, no /s). run() invokes this
@@ -517,7 +532,8 @@ export function smokeUserDirInstall({ outRoot = join(repoRoot, 'dist', 'installe
     // uninstall: the package leaves, the client config the user already wired STAYS.
     // manifest.name is the npm package name ("knowledge-crib"); manifest.package is the tarball
     // filename, which npm rm would not accept.
-    run('npm', ['rm', '-g', '--prefix', paths.prefix, manifest.name], { env });
+    const uninstall = npmCommand(['rm', '-g', '--prefix', paths.prefix, manifest.name]);
+    run(uninstall.command, uninstall.args, { env });
     if (existsSync(bins.primary) || existsSync(bins.direct)) {
       throw new Error(`Uninstall left crib files behind under ${paths.prefix}`);
     }

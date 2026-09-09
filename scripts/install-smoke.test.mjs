@@ -10,6 +10,7 @@ import {
   findInstallerBundle,
   installedBinCommand,
   installerCommand,
+  npmCommand,
   npmInstallArgs,
   scenarioMemoryRoots,
   scenarioRepoId,
@@ -264,6 +265,21 @@ try {
 // fileDigests: missing root → empty baseline (a store that was never created survives trivially,
 // but the verdict treats it as a key-set change when the seed HAD files).
 assert.deepEqual(fileDigests(join(tmpdir(), 'kc-smoke-missing-root-')), {});
+
+// npm is `npm.cmd` on Windows, and Node refuses to spawn a `.cmd` without a shell — the uninstall
+// leg failed there with `spawnSync npm ENOENT`, which reads like a missing npm rather than an
+// unspawnable one. Deterministic on any host by driving both platforms explicitly.
+assert.deepEqual(npmCommand(['rm', '-g'], 'darwin'), { command: 'npm', args: ['rm', '-g'] });
+assert.deepEqual(npmCommand(['rm', '-g'], 'linux'), { command: 'npm', args: ['rm', '-g'] });
+assert.deepEqual(
+  npmCommand(['rm', '-g', '--prefix', 'C:\\a b'], 'win32', { ComSpec: 'C:\\cmd.exe' }),
+  {
+    command: 'C:\\cmd.exe',
+    // Separate args: Node quotes the spaced prefix exactly once, the way the crib.cmd launcher does.
+    args: ['/d', '/c', 'npm', 'rm', '-g', '--prefix', 'C:\\a b'],
+  },
+);
+assert.equal(npmCommand([], 'win32', {}).command, 'cmd.exe', 'falls back when ComSpec is unset');
 
 // A06 — the digest KEY is portable evidence, not a host path. On a Windows runner the native
 // `path.relative` returns `records\ab.jsonl`, which the seeded-shard assertions above (and the

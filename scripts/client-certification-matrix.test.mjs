@@ -103,6 +103,9 @@ function writeRuntimeReceipt(receiptsDir, name, runtime = {}) {
     format: 'knowledge-crib-client-certification',
     formatVersion: 1,
     generatedAt: '2026-09-08T00:00:00.000Z',
+    // A runtime pass records the launch policy it was collected under and names who ran it: a
+    // digest proves a file is unchanged, never who produced it.
+    policySha256: `sha256:${'a'.repeat(64)}`,
     product: { commit: 'a'.repeat(40), packageSha256: `sha256:${'a'.repeat(64)}` },
     client: { id: 'codex', version: '1.0.0' },
     platform: { os: 'darwin', arch: 'arm64', node: 'v22.23.1' },
@@ -121,6 +124,11 @@ function writeRuntimeReceipt(receiptsDir, name, runtime = {}) {
         authorizedResume: true,
         logSha256: `sha256:${createHash('sha256').update(bytes).digest('hex')}`,
         logPath: `logs/${logName}`,
+        attestation: {
+          operator: 'fixture-operator',
+          host: 'fixture-host',
+          capturedAt: '2026-09-08T00:00:00.000Z',
+        },
         ...runtime,
       },
     },
