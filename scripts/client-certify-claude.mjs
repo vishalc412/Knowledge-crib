@@ -194,10 +194,11 @@ async function main() {
           prompt,
           '--mcp-config',
           config,
+          // Only crib's own verbs are allowed, so the run cannot wander into the filesystem or the
+          // network to satisfy a prompt. (`--max-turns` does not exist in Claude Code 2.1.x — the
+          // bound here is the allowlist plus the per-call timeout, not a turn counter.)
           '--allowedTools',
           'mcp__knowledge-crib__query,mcp__knowledge-crib__memory,mcp__knowledge-crib__memory_observe,mcp__knowledge-crib__memory_recall,mcp__knowledge-crib__status',
-          '--max-turns',
-          '8',
           ...extra,
         ],
         { env: clientEnv, cwd: project, timeoutMs: 300_000 },
@@ -223,7 +224,7 @@ async function main() {
       'bash',
       [
         '-c',
-        `claude -p 'Call the knowledge-crib status tool with op="health" and then wait.' --mcp-config ${JSON.stringify(configPath)} --allowedTools mcp__knowledge-crib__status --max-turns 8 & pid=$!; sleep 6; kill -9 $pid; wait $pid 2>/dev/null; echo "killed $pid"`,
+        `claude -p 'Call the knowledge-crib status tool with op="health" and then wait.' --mcp-config ${JSON.stringify(configPath)} --allowedTools mcp__knowledge-crib__status & pid=$!; sleep 6; kill -9 $pid; wait $pid 2>/dev/null; echo "killed $pid"`,
       ],
       { encoding: 'utf8', env: clientEnv, cwd: project, timeout: 120_000 },
     );
