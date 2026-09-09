@@ -98,6 +98,31 @@ async function main() {
     const version = run(log, 'client version', 'claude', ['--version']);
     clientVersion = (version.stdout ?? '').trim().split(' ')[0] || 'unknown';
 
+    // PREFLIGHT — an unauthenticated client certifies nothing, and finding that out on leg 3 costs
+    // an install, an index and four vendor launches to learn one fact available in 200ms. Note the
+    // CLI keeps its OWN credentials: being signed into the Claude desktop app does not sign in
+    // `claude`, which is why this reads as "Not logged in" on a machine already running Claude Code.
+    const auth = run(log, 'preflight: client authentication', 'claude', ['auth', 'status']);
+    let loggedIn = false;
+    try {
+      loggedIn = JSON.parse(auth.stdout ?? '{}').loggedIn === true;
+    } catch {
+      loggedIn = false;
+    }
+    if (!loggedIn) {
+      log(
+        '\nSTOPPING: the Claude Code CLI is not signed in, so no leg below could produce vendor ' +
+          'evidence.\n  Fix: run `claude auth login` in this terminal, then re-run this script.\n' +
+          '  The CLI stores its own credentials — a signed-in desktop app does not cover it.',
+      );
+      process.stderr.write(
+        'client-certify: `claude` is not signed in (claude auth status -> loggedIn false).\n' +
+          'Run `claude auth login`, then re-run this script.\n',
+      );
+      process.exitCode = 2;
+      return;
+    }
+
     // ── leg 1: install the exact candidate package into an isolated prefix ────
     const bundleDir = join(REPO_ROOT, 'dist/installers/knowledge-crib-0.1.0');
     const tarball = join(bundleDir, 'knowledge-crib-0.1.0.tgz');
