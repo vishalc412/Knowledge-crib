@@ -29,17 +29,33 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import v8 from 'node:v8';
+import { runInNewContext } from 'node:vm';
 
 /** Warmup cycles before sampling begins (absorbs one-time allocation; not measured). */
 export const LEAK_WARMUP_CYCLES = 2;
 /** Measured cycles. >= 10 per the WP10.4 register row ("leak checks after repeated refresh"). */
 export const LEAK_CYCLES = 10;
 /**
- * The growth multiplier: total growth must exceed this × the first-cycle delta before the gate
- * fires. Generous on purpose — a true leak grows ~const per cycle (so the first-cycle delta is
- * already its rate) and 10× headroom swallows scheduler/GC wobble.
+ * The growth multiplier applied to the noise floor to get the total-growth tolerance (10 × 4 MB =
+ * 40 MB over the run). Generous on purpose: below it, nothing is reported.
+ *
+ * It used to multiply the FIRST-CYCLE DELTA instead, on the reasoning that "a true leak grows
+ * ~const per cycle, so the first-cycle delta is already its rate". That reasoning inverts: if the
+ * first delta is the rate `d`, then linear growth over N samples is exactly (N−1)·d, and requiring
+ * it to exceed 10·d is impossible for N = 10. A textbook 10 MB/cycle leak retaining 90 MB over the
+ * run scored 90 MB against a 100 MB threshold and passed. The gate could only ever fire when the
+ * first delta sat below the noise floor — the one case that is NOT a steady leak.
  */
 export const LEAK_MULTIPLE = 10;
+/**
+ * Fraction of cycle-to-cycle deltas that must be positive before sustained growth is called a leak.
+ * This is what separates the three shapes that all produce a big last−first number:
+ *   - a leak            — nearly every delta positive (1.0), retention grows every cycle;
+ *   - a one-time step   — a single positive delta then flat (~0.1), bounded retention, not a leak;
+ *   - GC/scheduler noise— roughly half positive (~0.5), no trend.
+ */
+export const LEAK_RISING_FRACTION = 0.7;
 /**
  * A first-cycle delta at or below this is treated as "no measurable per-cycle cost", and the
  * fail threshold becomes LEAK_MULTIPLE × this floor — catching sustained drift without firing on
@@ -51,29 +67,89 @@ export const LEAK_NOISE_FLOOR_BYTES = 4 * 1024 * 1024;
  * Classify a growth series (one sample per cycle, after warmup). Pure — unit-tested over
  * synthetic series in leak-check.test.mjs. Returns a verdict, never throws:
  *
- *  - 'insufficient' — fewer than 3 samples (first delta + trend need 3 points minimum);
- *  - 'fail'         — last−first > LEAK_MULTIPLE × max(first-cycle delta, noise floor);
+ *  - 'insufficient' — fewer than 3 samples (a trend needs 3 points minimum);
+ *  - 'fail'         — total growth exceeds LEAK_MULTIPLE × the noise floor AND the growth is
+ *                     sustained (at least LEAK_RISING_FRACTION of the deltas are positive);
  *  - 'pass'         — anything else, including any series whose total growth is <= 0.
+ *
+ * Both conditions are load-bearing. Size alone cannot separate a leak from one large step or from
+ * GC wobble; trend alone would fire on a few MB of drift that no one cares about.
  */
 export function classifyLeakSeries(samples, opts = {}) {
-  const { leakMultiple = LEAK_MULTIPLE, noiseFloorBytes = LEAK_NOISE_FLOOR_BYTES } = opts;
+  const {
+    leakMultiple = LEAK_MULTIPLE,
+    noiseFloorBytes = LEAK_NOISE_FLOOR_BYTES,
+    risingFraction = LEAK_RISING_FRACTION,
+  } = opts;
+  const empty = { growthBytes: 0, firstDeltaBytes: 0, thresholdBytes: 0, risingFraction: 0 };
   if (!Array.isArray(samples) || samples.length < 3) {
-    return { verdict: 'insufficient', growthBytes: 0, firstDeltaBytes: 0, thresholdBytes: 0 };
+    return { verdict: 'insufficient', ...empty };
   }
   const first = samples[0];
   const last = samples[samples.length - 1];
   const firstDelta = samples[1] - samples[0];
   const growth = last - first;
-  if (growth <= 0) {
-    return { verdict: 'pass', growthBytes: growth, firstDeltaBytes: firstDelta, thresholdBytes: 0 };
-  }
-  const threshold = leakMultiple * Math.max(firstDelta, noiseFloorBytes);
-  return {
-    verdict: growth > threshold ? 'fail' : 'pass',
+  // The total-growth tolerance is fixed rather than derived from the first cycle, so a fast leak
+  // can no longer raise its own bar out of reach.
+  const threshold = leakMultiple * noiseFloorBytes;
+  let rising = 0;
+  for (let i = 1; i < samples.length; i++) if (samples[i] > samples[i - 1]) rising++;
+  const risen = rising / (samples.length - 1);
+  const base = {
     growthBytes: growth,
     firstDeltaBytes: firstDelta,
     thresholdBytes: threshold,
+    risingFraction: risen,
   };
+  if (growth <= 0) return { verdict: 'pass', ...base, thresholdBytes: 0 };
+  return { verdict: growth > threshold && risen >= risingFraction ? 'fail' : 'pass', ...base };
+}
+
+/**
+ * Force a full GC before each sample, obtaining the collector even when the process was started
+ * without `--expose-gc`.
+ *
+ * This used to be `global.gc?.()`, with a comment saying an unavailable GC was fine because the
+ * classifier's bound would absorb the noise. It was not fine. `budget:check` runs as plain `node`,
+ * so `global.gc` was always undefined and the call was always a no-op: every sample included
+ * uncollected garbage, and the gate measured when GC happened to run rather than what the update
+ * cycle retained. Two consecutive CI runs of the SAME commit range on the same runner reported
+ * heap growth of -63 MB and +59 MB — a 122 MB swing that decided pass/fail by coin flip, and the
+ * passing side only passed through the `growth <= 0` short-circuit.
+ *
+ * v8.setFlagsFromString + a `gc` binding compiled in a fresh context gets a real collector without
+ * requiring the caller to remember a CLI flag. `gcAvailable()` reports whether it worked, so a
+ * measurement taken WITHOUT a collector can be labelled degraded instead of quietly trusted.
+ */
+let cachedGc;
+function resolveGc() {
+  if (cachedGc !== undefined) return cachedGc;
+  if (typeof global.gc === 'function') {
+    cachedGc = global.gc;
+    return cachedGc;
+  }
+  try {
+    v8.setFlagsFromString('--expose-gc');
+    const fn = runInNewContext('gc');
+    v8.setFlagsFromString('--no-expose-gc');
+    cachedGc = typeof fn === 'function' ? fn : null;
+  } catch {
+    cachedGc = null;
+  }
+  return cachedGc;
+}
+
+/** Whether a real collector is available; false means every sample is GC-timing noise. */
+export function gcAvailable() {
+  return resolveGc() !== null;
+}
+
+/** Run a full collection twice — the second pass reclaims what the first made unreachable. */
+function forceGc() {
+  const gc = resolveGc();
+  if (!gc) return;
+  gc();
+  gc();
 }
 
 /** The update-fixture source (identical shape to budget-check's `fixtureSource`). */
@@ -197,9 +273,10 @@ export async function runLeakCheck(opts = {}) {
     for (let i = 0; i < cycles; i++) {
       const r = await runCycle();
       updateMs.push(r.updateMs);
-      // Expose GC when the runner has it (--expose-gc) so retained-heap noise is minimized;
-      // unavailable GC is fine — the classifier's bound is generous enough to absorb it.
-      global.gc?.();
+      // Collect BEFORE sampling, so the number is retained memory rather than whatever garbage
+      // happened not to have been collected yet. This is the difference between a leak gate and a
+      // GC-timing dice roll — see forceGc().
+      forceGc();
       const mu = process.memoryUsage();
       heapSamples.push(mu.heapUsed);
       rssSamples.push(mu.rss);
@@ -209,6 +286,9 @@ export async function runLeakCheck(opts = {}) {
     return {
       warmupCycles,
       cycles,
+      // Whether the samples were taken after a real collection. False means every number below is
+      // GC-timing noise and the verdict must be reported as degraded, never as a clean bound.
+      gcAvailable: gcAvailable(),
       heapSamples,
       rssSamples,
       updateMs,

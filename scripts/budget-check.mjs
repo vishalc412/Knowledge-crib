@@ -547,7 +547,8 @@ await check('heap/rss bounded over repeated update cycles', async () => {
   if (r.failed) {
     throw new Error(
       `heap ${describeGrowth(r.heap)} / rss ${describeGrowth(r.rss)} over ${r.cycles} update cycles — ` +
-        `growth exceeds ${LEAK_MULTIPLE}x the first-cycle delta (unbounded, not GC noise)`,
+        `growth exceeds ${LEAK_MULTIPLE}x the noise floor AND rises in ` +
+        `${(r.heap.risingFraction * 100).toFixed(0)}% of cycles (sustained, not GC noise)`,
     );
   }
   const heap = r.heapSamples;
@@ -555,7 +556,8 @@ await check('heap/rss bounded over repeated update cycles', async () => {
   process.stdout.write(
     `       leak check: heap ${fmtMb(heap[0])}→${fmtMb(heap[heap.length - 1])} MB, ` +
       `rss ${fmtMb(rss[0])}→${fmtMb(rss[rss.length - 1])} MB over ${r.cycles} cycles ` +
-      `(first-cycle delta ${fmtMb(r.heap.firstDeltaBytes)} MB, fail threshold ${fmtMb(r.heap.thresholdBytes)} MB)\n`,
+      `(first-cycle delta ${fmtMb(r.heap.firstDeltaBytes)} MB, fail threshold ${fmtMb(r.heap.thresholdBytes)} MB)` +
+      `${r.gcAvailable ? '' : ' — DEGRADED: no collector, these are GC-timing noise'}\n`,
   );
 });
 
