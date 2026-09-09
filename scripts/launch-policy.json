@@ -1,0 +1,75 @@
+{
+  "format": "knowledge-crib-launch-policy",
+  "policyVersion": 1,
+  "frozenAt": "2026-09-09",
+  "candidate": "9da78653a3b2e52dbc6899b5a1a532567dfa4533",
+  "note": "Frozen BEFORE candidate testing. The launch decision recomputes eligibility from this file plus validated measurements; nothing in an evidence manifest may select its own requirements. Changing any value here is a product decision that invalidates every receipt collected under the previous hash.",
+  "gates": [
+    { "id": "G1", "threshold": 1, "direction": "gte", "label": "exact recall@5" },
+    { "id": "G2", "threshold": 0.8, "direction": "gte", "label": "paraphrase recall@5" },
+    { "id": "G3", "threshold": 0.75, "direction": "gte", "label": "MRR over labeled queries" },
+    {
+      "id": "G4",
+      "threshold": 0.9,
+      "direction": "gte",
+      "label": "temporal + contradiction classification"
+    },
+    { "id": "G5", "threshold": 0.01, "direction": "lte", "label": "stale surfaced as current" },
+    {
+      "id": "G6",
+      "threshold": 0,
+      "direction": "lte",
+      "label": "untrusted content in normal recall"
+    },
+    {
+      "id": "G7",
+      "threshold": 0,
+      "direction": "lte",
+      "label": "cross-principal results in scoped runs"
+    },
+    { "id": "G8", "threshold": 1, "direction": "gte", "label": "adversarial round-trip fidelity" }
+  ],
+  "gateEpsilon": 1e-9,
+  "semanticModel": {
+    "requiredState": "installed",
+    "supportedScorers": ["memory-rank-v2:multilingual-e5-large-1024-sym:cosine:semantic-only"]
+  },
+  "osNodeCells": [
+    "ubuntu-latest/22",
+    "ubuntu-latest/24",
+    "macos-latest/22",
+    "macos-latest/24",
+    "windows-latest/22",
+    "windows-latest/24"
+  ],
+  "clients": ["claude", "copilot", "cursor", "codex", "windsurf", "gemini", "vscode"],
+  "clientPlatforms": ["darwin", "linux", "win32"],
+  "receiptTypes": [
+    "install",
+    "native-service",
+    "browser",
+    "recovery",
+    "security-privacy",
+    "freshness",
+    "adapter"
+  ],
+  "freshness": {
+    "workload": "crib-self-repo-transitions-v1",
+    "transitions": [
+      "save",
+      "rename",
+      "delete",
+      "clean-checkout",
+      "merge",
+      "rebase",
+      "external-update",
+      "restart"
+    ],
+    "samplesPerTransition": 10,
+    "warmupSamples": 2,
+    "p95TargetMs": 5000,
+    "failureTreatment": "a missed transition or a timeout counts as a failed sample, never as a discarded one",
+    "configuration": "production defaults — no shortened fallback, no overridden debounce",
+    "platforms": ["darwin", "linux", "win32"]
+  }
+}

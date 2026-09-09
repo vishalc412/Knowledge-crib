@@ -15,10 +15,17 @@ import {
 const SHA = `sha256:${'a'.repeat(64)}`;
 const COMMIT = 'a'.repeat(40);
 const notRun = { status: 'not-run' };
+/** Attribution for a runtime pass: who ran it, on what host, and when. */
+const attestation = {
+  operator: 'fixture-operator',
+  host: 'fixture-host',
+  capturedAt: '2026-09-08T00:00:00.000Z',
+};
 const receipt = (overrides = {}) => ({
   format: 'knowledge-crib-client-certification',
   formatVersion: 1,
   generatedAt: '2026-09-08T00:00:00.000Z',
+  policySha256: SHA,
   product: { commit: COMMIT, packageSha256: SHA },
   client: { id: 'codex', version: '1.0.0' },
   platform: { os: 'darwin', arch: 'arm64', node: 'v22.23.1' },
@@ -165,6 +172,7 @@ try {
     recordedMemory: true,
     interrupted: true,
     authorizedResume: true,
+    attestation,
     logSha256,
     logPath: 'logs/codex-runtime.log',
   };
@@ -180,6 +188,36 @@ try {
   assert.deepEqual(
     validateClientCertificationReceipt(vendorReceipt, { evidenceRoot: dir }),
     vendorReceipt,
+  );
+
+  // A runtime pass must record the launch policy it was collected under: requirements change, and
+  // a receipt taken under looser ones must not silently satisfy the stricter promise (A02).
+  assert.throws(() => {
+    const { policySha256: _dropped, ...withoutPolicy } = runtimeReceipt(vendorRuntime);
+    return validateClientCertificationReceipt(withoutPolicy, { evidenceRoot: dir });
+  }, /policySha256/);
+
+  // Attribution: a digest proves a file is unchanged, never who produced it. A runtime pass names
+  // its operator, host and capture time so a self-authored run is identifiable AS one.
+  for (const field of ['operator', 'host', 'capturedAt']) {
+    assert.throws(
+      () => {
+        const { [field]: _missing, ...partial } = attestation;
+        return validateClientCertificationReceipt(
+          runtimeReceipt({ ...vendorRuntime, attestation: partial }),
+          { evidenceRoot: dir },
+        );
+      },
+      new RegExp(`runtime\\.attestation\\.${field} is required`),
+    );
+  }
+  assert.throws(
+    () =>
+      validateClientCertificationReceipt(
+        runtimeReceipt({ ...vendorRuntime, attestation: undefined }),
+        { evidenceRoot: dir },
+      ),
+    /must carry an attestation/,
   );
 
   // The vendor-client law: a runtime pass from anything else — including a test client that
@@ -275,6 +313,7 @@ try {
         recordedMemory: true,
         interrupted: true,
         authorizedResume: true,
+        attestation,
         logSha256: wslLogSha256,
         logPath: 'logs/cursor-wsl.log',
       },
@@ -301,6 +340,7 @@ try {
         recordedMemory: true,
         interrupted: true,
         authorizedResume: true,
+        attestation,
         logSha256: nativeLogSha256,
         logPath: 'logs/cursor-native.log',
       },

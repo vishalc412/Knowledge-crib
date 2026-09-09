@@ -149,6 +149,28 @@ export function validateClientCertificationReceipt(receipt, options = {}) {
       runtime.source === 'vendor-client',
       'runtime evidence must be produced by a vendor-client',
     );
+    // The policy the run was collected under. Requirements can change (a new gate, a new platform,
+    // a client version floor); a receipt that predates the change must not silently satisfy the
+    // stricter promise, so the binding is recorded in the receipt itself and compared by the
+    // launch decision (A02).
+    sha(receipt.policySha256, 'policySha256');
+    // Attribution, not attestation. A digest proves a file did not change since it was hashed; it
+    // says nothing about who produced it. Naming the operator, the host and the capture time makes
+    // a self-authored run identifiable AS one, which is what the matrix has to disclose.
+    assert(
+      runtime.attestation && typeof runtime.attestation === 'object',
+      'runtime evidence must carry an attestation naming who ran it and where',
+    );
+    for (const field of ['operator', 'host', 'capturedAt']) {
+      assert(
+        typeof runtime.attestation[field] === 'string' && runtime.attestation[field].trim(),
+        `runtime.attestation.${field} is required`,
+      );
+    }
+    assert(
+      !Number.isNaN(Date.parse(runtime.attestation.capturedAt)),
+      'runtime.attestation.capturedAt must be ISO-8601',
+    );
     assert(runtime.recordedMemory === true, 'runtime evidence must record memory');
     assert(runtime.interrupted === true, 'runtime evidence must include interruption/restart');
     assert(runtime.authorizedResume === true, 'runtime evidence must include authorized resume');

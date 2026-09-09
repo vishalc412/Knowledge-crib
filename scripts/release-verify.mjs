@@ -49,6 +49,9 @@ pnpm(['capabilities:check']);
 run('node', ['scripts/client-certification-evidence.test.mjs']);
 run('node', ['scripts/client-certification-matrix.test.mjs']);
 run('node', ['scripts/client-certification-matrix.mjs', '--check']);
+// The frozen requirements themselves: the policy hash pin fails loudly if the launch policy was
+// edited (or merely reformatted), because every receipt collected under the old hash is then void.
+run('node', ['scripts/launch-policy.test.mjs']);
 run('node', ['scripts/launch-decision.test.mjs']);
 // WP9.1 — the release-evidence manifest builder's own invariants (dirty/red/certification
 // legs, tamper/omission/duplicate) were previously orphaned: nothing ran this file.

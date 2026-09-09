@@ -16,15 +16,26 @@ import {
   renameSync,
   writeFileSync,
 } from 'node:fs';
-import { cpus, totalmem } from 'node:os';
+import { cpus, hostname, totalmem } from 'node:os';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   loadClientCertificationReceipts,
   missingRuntimeCertificationCells,
 } from './client-certification-evidence.mjs';
+import { loadLaunchPolicy } from './launch-policy.mjs';
 
-export const RELEASE_EVIDENCE_FORMAT_VERSION = 1;
+/**
+ * Schema 2 adds the CANDIDATE IDENTITY that schema 1 left implicit: the shipped package digest, the
+ * launch-policy digest the run was judged under, the runner provenance, the command and its exit
+ * code, the wall-clock window, and the typed receipts (install, native-service, browser, recovery,
+ * security-privacy, freshness, adapter) that a unit-test total was previously allowed to stand in
+ * for. Schema 1 manifests stay LOADABLE so honest historical failures can still be read, but they
+ * are non-certifying: they cannot express the facts a launch decision now has to check.
+ */
+export const RELEASE_EVIDENCE_FORMAT_VERSION = 2;
+/** Schema versions this reader can parse at all (the newest is the only certifying one). */
+export const SUPPORTED_EVIDENCE_FORMAT_VERSIONS = [1, 2];
 
 /**
  * WP9.2 — the frozen gate set the launch decision is allowed to reason about. A report with a
@@ -87,6 +98,14 @@ export function buildReleaseEvidence(input) {
     format: 'knowledge-crib-release-evidence',
     formatVersion: RELEASE_EVIDENCE_FORMAT_VERSION,
     generatedAt: input.generatedAt,
+    // The candidate this run is evidence FOR. Every downstream check compares against these three
+    // facts, so a manifest can no longer be silently applied to a different build (A02).
+    candidate: {
+      commit: input.git?.commit,
+      dirty: input.git?.dirty === true,
+      packageSha256: input.packageSha256,
+      policySha256: input.policySha256,
+    },
     product: {
       name: 'knowledge-crib',
       packages: input.packages,
@@ -97,7 +116,18 @@ export function buildReleaseEvidence(input) {
       git: input.git,
       platform: input.platform,
       workload: input.workload,
+      runner: input.runner,
     },
+    // What actually ran, and whether it finished. A manifest generated mid-workflow cannot claim
+    // the workflow completed: the exit code and the end timestamp are recorded, not inferred.
+    run: {
+      command: input.command,
+      exitCode: input.exitCode,
+      startedAt: input.startedAt,
+      endedAt: input.endedAt,
+    },
+    receipts: input.receipts ?? {},
+    artifacts: input.artifacts ?? [],
     retrieval: {
       mode: modelReady ? 'on-device-semantic' : 'lexical-fallback',
       scorer: input.launchGate?.scorerVersion ?? 'unknown',
@@ -117,18 +147,28 @@ export function buildReleaseEvidence(input) {
     },
     gates,
     certification: {
-      required: requiredRuntimeCertification,
+      // `required` is retained as a RECORD of how this collection was invoked. It is deliberately
+      // NOT a switch the launch decision reads: evidence must not select the requirements it is
+      // judged against (A01). The decision recomputes coverage from the launch policy.
+      invokedWithRuntimeRequirement: requiredRuntimeCertification,
       receipts: certificationReceipts.map((receipt) => ({
         client: receipt.client,
         platform: receipt.platform,
         product: receipt.product,
+        policySha256: receipt.policySha256,
+        runtimeStatus: receipt.evidence?.runtime?.status ?? 'unknown',
       })),
+      // A convenience summary for humans reading the file; the decision recomputes it rather than
+      // trusting it, because a precomputed "nothing missing" is exactly what a tampered manifest
+      // would claim.
       missingRuntimeCells,
     },
     acceptance: {
       pass: failures.length === 0 && input.launchGate?.pass === true,
       requiredFailures: failures,
       preregistration: input.launchGate?.preregistration ?? 'docs/bench/launch-gates.md',
+      // Stated in the artifact itself so a reader cannot mistake a collection verdict for approval.
+      note: 'DERIVED OUTPUT of this collection run — not a launch approval. Only scripts/launch-decision.mjs, recomputing from scripts/launch-policy.json, may print a production GO.',
     },
   };
 }
@@ -155,7 +195,7 @@ export function validateReleaseEvidence(manifest) {
     `unsupported release evidence format: ${manifest.format}`,
   );
   assertEvidence(
-    manifest.formatVersion === RELEASE_EVIDENCE_FORMAT_VERSION,
+    SUPPORTED_EVIDENCE_FORMAT_VERSIONS.includes(manifest.formatVersion),
     `unsupported release evidence version: ${manifest.formatVersion}`,
   );
   assertEvidence(
@@ -220,7 +260,128 @@ export function validateReleaseEvidence(manifest) {
       'acceptance.pass is true but acceptance.requiredFailures is non-empty',
     );
   }
+  if (manifest.formatVersion >= 2) validateEvidenceIdentity(manifest);
   return manifest;
+}
+
+/**
+ * The schema-2 identity block: who this evidence is FOR and what actually produced it.
+ *
+ * Structural only — presence and shape. Whether the values MATCH the candidate under decision is a
+ * question for the decision (which knows the candidate); a validator that also judged identity
+ * would have to be handed the candidate everywhere it is used, including for diagnostics.
+ */
+function validateEvidenceIdentity(manifest) {
+  const candidate = manifest.candidate;
+  assertEvidence(candidate && typeof candidate === 'object', 'candidate is required in schema 2');
+  assertEvidence(
+    typeof candidate.commit === 'string' && COMMIT_ID.test(candidate.commit),
+    'candidate.commit must be a full git commit',
+  );
+  assertEvidence(typeof candidate.dirty === 'boolean', 'candidate.dirty must be a boolean');
+  assertEvidence(
+    typeof candidate.packageSha256 === 'string' && SHA256_DIGEST.test(candidate.packageSha256),
+    'candidate.packageSha256 must be a sha256 digest of the shipped package',
+  );
+  assertEvidence(
+    typeof candidate.policySha256 === 'string' && SHA256_DIGEST.test(candidate.policySha256),
+    'candidate.policySha256 must be the sha256 of the launch policy this run was judged under',
+  );
+  assertEvidence(
+    candidate.commit === manifest.reproducibility?.git?.commit,
+    'candidate.commit disagrees with reproducibility.git.commit',
+  );
+
+  const platform = manifest.reproducibility?.platform;
+  assertEvidence(platform && typeof platform === 'object', 'reproducibility.platform is required');
+  for (const field of ['os', 'arch', 'node']) {
+    assertEvidence(
+      typeof platform[field] === 'string' && platform[field].trim(),
+      `reproducibility.platform.${field} is required`,
+    );
+  }
+  const runner = manifest.reproducibility?.runner;
+  assertEvidence(runner && typeof runner === 'object', 'reproducibility.runner is required');
+  assertEvidence(
+    typeof runner.provider === 'string' && runner.provider.trim(),
+    'reproducibility.runner.provider is required (for example github-actions or local)',
+  );
+
+  const run = manifest.run;
+  assertEvidence(run && typeof run === 'object', 'run is required in schema 2');
+  assertEvidence(
+    typeof run.command === 'string' && run.command.trim(),
+    'run.command is required — evidence must name what produced it',
+  );
+  assertEvidence(
+    Number.isInteger(run.exitCode),
+    'run.exitCode is required — a run with no exit code did not finish',
+  );
+  for (const field of ['startedAt', 'endedAt']) {
+    assertEvidence(
+      typeof run[field] === 'string' && !Number.isNaN(Date.parse(run[field])),
+      `run.${field} must be an ISO-8601 timestamp`,
+    );
+  }
+  assertEvidence(
+    Date.parse(run.endedAt) >= Date.parse(run.startedAt),
+    'run.endedAt precedes run.startedAt',
+  );
+
+  assertEvidence(
+    manifest.receipts && typeof manifest.receipts === 'object' && !Array.isArray(manifest.receipts),
+    'receipts must be an object keyed by receipt type',
+  );
+  for (const [type, receipt] of Object.entries(manifest.receipts)) {
+    assertEvidence(receipt && typeof receipt === 'object', `receipts.${type} must be an object`);
+    assertEvidence(
+      ['pass', 'fail', 'not-run'].includes(receipt.status),
+      `receipts.${type}.status must be pass, fail or not-run`,
+    );
+    if (receipt.status !== 'pass') continue;
+    assertEvidence(
+      Array.isArray(receipt.artifacts) && receipt.artifacts.length > 0,
+      `receipts.${type} claims a pass but references no artifact`,
+    );
+    for (const artifact of receipt.artifacts) {
+      assertEvidence(
+        artifact && typeof artifact.path === 'string' && artifact.path.trim(),
+        `receipts.${type} artifact needs a path`,
+      );
+      assertEvidence(
+        typeof artifact.sha256 === 'string' && SHA256_DIGEST.test(artifact.sha256),
+        `receipts.${type} artifact ${artifact?.path} needs a sha256 digest`,
+      );
+    }
+  }
+
+  assertEvidence(Array.isArray(manifest.artifacts), 'artifacts must be an array');
+  for (const artifact of manifest.artifacts) {
+    assertEvidence(
+      artifact && typeof artifact.path === 'string' && artifact.path.trim(),
+      'artifacts entries need a path',
+    );
+    assertEvidence(
+      typeof artifact.sha256 === 'string' && SHA256_DIGEST.test(artifact.sha256),
+      `artifacts entry ${artifact?.path} needs a sha256 digest`,
+    );
+  }
+
+  for (const gate of manifest.gates) {
+    assertEvidence(
+      typeof gate.measured === 'number',
+      `gate ${gate.id} must carry its measured value in schema 2`,
+    );
+    assertEvidence(
+      typeof gate.threshold === 'number',
+      `gate ${gate.id} must carry the threshold it was judged against`,
+    );
+    assertEvidence(
+      gate.comparison === 'gte' || gate.comparison === 'lte',
+      `gate ${gate.id} must carry its comparison direction`,
+    );
+    assertEvidence(typeof gate.pass === 'boolean', `gate ${gate.id} must carry a boolean pass`);
+  }
 }
 
 /** Atomic publication: a release process never observes a half-written evidence file. */
@@ -342,7 +503,70 @@ async function collectEmbedder() {
   }
 }
 
+/** `--flag value` lookup. */
+function flag(argv, name, fallback) {
+  const index = argv.indexOf(name);
+  return index >= 0 ? (argv[index + 1] ?? fallback) : fallback;
+}
+
+/**
+ * The shipped package's digest. Evidence that cannot name the bytes it is evidence FOR cannot bind
+ * a client receipt to a candidate, so this is collected, never assumed: an absent package leaves
+ * the field undefined and the validator refuses the manifest.
+ */
+function collectPackageDigest(argv) {
+  const explicit = flag(argv, '--package');
+  const candidates = explicit ? [explicit] : [];
+  if (!explicit && existsSync('dist/installers')) {
+    for (const dir of readdirSync('dist/installers', { withFileTypes: true })) {
+      if (!dir.isDirectory()) continue;
+      const tarball = `dist/installers/${dir.name}/${dir.name}.tgz`;
+      if (existsSync(tarball)) candidates.push(tarball);
+    }
+  }
+  for (const path of candidates) {
+    if (existsSync(path)) return { packageSha256: sha256(readFileSync(path)), packagePath: path };
+  }
+  return {};
+}
+
+/** Where this ran. A local run says so rather than dressing itself as CI. */
+function collectRunner() {
+  if (process.env.GITHUB_ACTIONS === 'true') {
+    return {
+      provider: 'github-actions',
+      runId: process.env.GITHUB_RUN_ID,
+      runAttempt: process.env.GITHUB_RUN_ATTEMPT,
+      workflow: process.env.GITHUB_WORKFLOW,
+      runUrl:
+        process.env.GITHUB_SERVER_URL && process.env.GITHUB_REPOSITORY && process.env.GITHUB_RUN_ID
+          ? `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`
+          : undefined,
+    };
+  }
+  return { provider: 'local', host: hostname() };
+}
+
+/**
+ * Typed receipts collected from a directory: one JSON file per receipt type, each written by the
+ * step that actually ran it. Loading them here (rather than inferring them from a test total) is
+ * what makes a missing install/browser/recovery proof an actionable blocker instead of silence.
+ */
+function collectReceipts(argv) {
+  const directory = resolve(flag(argv, '--receipts', 'receipts'));
+  if (!existsSync(directory)) return {};
+  const receipts = {};
+  for (const name of readdirSync(directory).sort()) {
+    if (!name.endsWith('.json')) continue;
+    const parsed = JSON.parse(readFileSync(resolve(directory, name), 'utf8'));
+    const type = parsed.type ?? name.slice(0, -5);
+    receipts[type] = parsed;
+  }
+  return receipts;
+}
+
 export async function collectReleaseEvidence(argv = process.argv.slice(2)) {
+  const startedAt = new Date().toISOString();
   const embedder = await collectEmbedder();
   const { runLaunchGate } = await import('../packages/memory/dist/bench/launch-eval.js');
   const launchGate = runLaunchGate(
@@ -353,10 +577,21 @@ export async function collectReleaseEvidence(argv = process.argv.slice(2)) {
   );
   const { instance: _instance, ...embedReceipt } = embedder;
   const certification = certificationOptions(argv);
+  const { policy: _policy, sha256: policySha256 } = loadLaunchPolicy();
+  const { packageSha256, packagePath } = collectPackageDigest(argv);
   return buildReleaseEvidence({
     generatedAt: new Date().toISOString(),
     requirePass: argv.includes('--require-pass'),
     git: collectGit(),
+    policySha256,
+    ...(packageSha256 ? { packageSha256 } : {}),
+    runner: collectRunner(),
+    command: flag(argv, '--command', `node scripts/release-evidence.mjs ${argv.join(' ')}`.trim()),
+    exitCode: 0,
+    startedAt,
+    endedAt: new Date().toISOString(),
+    receipts: collectReceipts(argv),
+    artifacts: packagePath ? [{ path: packagePath, sha256: packageSha256 }] : [],
     platform: {
       os: process.platform,
       arch: process.arch,

@@ -27,6 +27,7 @@ const greenReport = {
     measured: 1,
     threshold: 1,
     direction: 'gte',
+    comparison: 'gte',
     detail: 'fixture',
     pass: true,
   })),
@@ -56,6 +57,21 @@ const base = {
   },
   launchGate: greenReport,
   workload: { name: 'memory-launch-corpus', queries: 500, records: 307, scale: 1 },
+  // schema 2 identity: what was shipped, under which policy, produced by which run.
+  packageSha256: `sha256:${'b'.repeat(64)}`,
+  policySha256: `sha256:${'c'.repeat(64)}`,
+  runner: { provider: 'github-actions', runId: '42', runUrl: 'https://example.invalid/42' },
+  command: 'pnpm release:verify',
+  exitCode: 0,
+  startedAt: '2026-09-05T00:00:00.000Z',
+  endedAt: '2026-09-05T00:05:00.000Z',
+  receipts: {
+    install: {
+      status: 'pass',
+      artifacts: [{ path: 'install.log', sha256: `sha256:${'d'.repeat(64)}` }],
+    },
+  },
+  artifacts: [{ path: 'release-evidence.json', sha256: `sha256:${'e'.repeat(64)}` }],
 };
 
 const manifest = buildReleaseEvidence(base);
@@ -108,7 +124,9 @@ const missingCertification = buildReleaseEvidence({
   requireRuntimeCertification: true,
   certificationReceipts: [],
 });
-assert.equal(missingCertification.certification.required, true);
+// `required` is now recorded as HOW the collection was invoked, not as a switch any decision
+// reads — the launch policy decides whether runtime certification is required (A01).
+assert.equal(missingCertification.certification.invokedWithRuntimeRequirement, true);
 assert.equal(missingCertification.certification.missingRuntimeCells.length, 21);
 assert.deepEqual(requiredGateFailures(missingCertification), ['runtime-certification']);
 
@@ -281,6 +299,118 @@ try {
   assert.ok(!refused.stdout.includes('GO'), 'a tampered manifest must never yield GO');
 } finally {
   rmSync(dir, { recursive: true, force: true });
+}
+
+// ─── schema 2 identity: each required fact refused BY NAME ────────────────────
+// A manifest that cannot say which build it is evidence for, what actually ran, or what artifacts
+// stand behind its receipts is not evidence — the validator refuses it before any decision reads a
+// single measurement out of it.
+{
+  const complete = buildReleaseEvidence(base);
+  validateReleaseEvidence(complete); // the fixture itself is structurally sound
+
+  /** Deep-copy, break one field, assert the named refusal. */
+  const refuses = (label, mutate, pattern) => {
+    const manifest = JSON.parse(JSON.stringify(complete));
+    mutate(manifest);
+    assert.throws(
+      () => validateReleaseEvidence(manifest),
+      pattern,
+      `${label} must be refused by name`,
+    );
+  };
+
+  refuses(
+    'a missing candidate block',
+    (m) => {
+      m.candidate = undefined;
+    },
+    /candidate is required/,
+  );
+  refuses(
+    'a candidate commit that is not a commit',
+    (m) => {
+      m.candidate.commit = 'HEAD';
+    },
+    /candidate\.commit must be a full git commit/,
+  );
+  refuses(
+    'a missing package digest',
+    (m) => {
+      m.candidate.packageSha256 = undefined;
+    },
+    /candidate\.packageSha256/,
+  );
+  refuses(
+    'a missing policy digest',
+    (m) => {
+      m.candidate.policySha256 = undefined;
+    },
+    /candidate\.policySha256/,
+  );
+  refuses(
+    'a candidate commit disagreeing with the git block',
+    (m) => {
+      m.candidate.commit = 'f'.repeat(40);
+    },
+    /candidate\.commit disagrees/,
+  );
+  refuses(
+    'a missing runner',
+    (m) => {
+      m.reproducibility.runner = undefined;
+    },
+    /runner is required/,
+  );
+  refuses(
+    'a missing run command',
+    (m) => {
+      m.run.command = undefined;
+    },
+    /run\.command is required/,
+  );
+  refuses(
+    'a missing exit code',
+    (m) => {
+      m.run.exitCode = undefined;
+    },
+    /run\.exitCode is required/,
+  );
+  refuses(
+    'an end timestamp before the start',
+    (m) => {
+      m.run.endedAt = '2026-09-04T00:00:00.000Z';
+    },
+    /run\.endedAt precedes run\.startedAt/,
+  );
+  refuses(
+    'a receipt claiming a pass with no artifact',
+    (m) => {
+      m.receipts.install.artifacts = [];
+    },
+    /receipts\.install claims a pass but references no artifact/,
+  );
+  refuses(
+    'a receipt artifact with no digest',
+    (m) => {
+      m.receipts.install.artifacts[0].sha256 = 'nope';
+    },
+    /needs a sha256 digest/,
+  );
+  refuses(
+    'a gate with no measured value',
+    (m) => {
+      m.gates[0].measured = undefined;
+    },
+    /must carry its measured value/,
+  );
+  refuses(
+    'a gate with no comparison direction',
+    (m) => {
+      m.gates[0].comparison = undefined;
+    },
+    /must carry its comparison direction/,
+  );
 }
 
 const pkg = JSON.parse(readFileSync('package.json', 'utf8'));

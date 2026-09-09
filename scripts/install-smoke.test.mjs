@@ -279,13 +279,13 @@ assert.deepEqual(fileDigests(join(tmpdir(), 'kc-smoke-missing-root-')), {});
   assert.equal(digestKey(winRoot, winFile, path.win32), 'records/ab.jsonl');
   assert.match(digestKey(winRoot, winFile, path.win32), /^records\/.*\.jsonl$/);
   // Nested directories and non-ASCII/space segments keep their content, only the separator changes.
-  assert.equal(
-    digestKey(winRoot, `${winRoot}\\a b\\ünï\\c.jsonl`, path.win32),
-    'a b/ünï/c.jsonl',
-  );
+  assert.equal(digestKey(winRoot, `${winRoot}\\a b\\ünï\\c.jsonl`, path.win32), 'a b/ünï/c.jsonl');
   // POSIX keys are unchanged by the normalization (no double-mapping of a literal backslash-free
   // path), so an existing macOS/Linux baseline stays byte-identical.
-  assert.equal(digestKey('/tmp/kc/global', '/tmp/kc/global/records/ab.jsonl', path.posix), 'records/ab.jsonl');
+  assert.equal(
+    digestKey('/tmp/kc/global', '/tmp/kc/global/records/ab.jsonl', path.posix),
+    'records/ab.jsonl',
+  );
 }
 
 // scenarioRepoId fails closed when neither the project manifest nor the registry can resolve an id.
