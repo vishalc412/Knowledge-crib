@@ -330,8 +330,14 @@ async function main() {
           );
           git(root, ['add', '-A']);
           git(root, ['commit', '-qm', `external ${counter}`]);
-          // Another process re-indexes the canonical graph underneath the running server.
-          execFileSync(process.execPath, [CLI, 'index', root], {
+          // Another process refreshes the canonical graph underneath the running server. This is
+          // `crib update` — the product's own incremental refresh, and the operation the coordinator
+          // itself names as the external-update signal ("external `crib update` detector",
+          // refresh-coordinator.ts:53). An earlier revision of this harness ran a full `crib index`
+          // here, which measures the INITIAL indexer's runtime (2.2s vs 0.8s on this workload) — a
+          // different operation from the one this transition is named for. Those numbers are
+          // archived beside the receipt rather than discarded.
+          execFileSync(process.execPath, [CLI, 'update', root], {
             stdio: ['ignore', 'ignore', 'pipe'],
           });
         },
@@ -427,6 +433,7 @@ async function main() {
       command: `node scripts/freshness-adoption-check.mjs ${argv.join(' ')}`.trim(),
       configuration: {
         watch: 'production defaults (no debounce or fallback override)',
+        externalUpdateCommand: "crib update (the product's incremental external refresh)",
         files: fileCount,
         samplesPerTransition: samples,
         warmupSamples: warmup,

@@ -1,9 +1,16 @@
 {
   "format": "knowledge-crib-launch-policy",
-  "policyVersion": 1,
+  "policyVersion": 2,
   "frozenAt": "2026-09-09",
   "candidate": "9da78653a3b2e52dbc6899b5a1a532567dfa4533",
   "note": "Frozen BEFORE candidate testing. The launch decision recomputes eligibility from this file plus validated measurements; nothing in an evidence manifest may select its own requirements. Changing any value here is a product decision that invalidates every receipt collected under the previous hash.",
+  "scope": {
+    "decision": "Version 2 NARROWS the advertised promise to what can be proven, rather than keeping a promise the evidence does not reach. This is a deliberate product decision, taken on 2026-09-09 with the operator's authorization, and it is why the policy hash changed: every receipt gathered under version 1 is void and was recollected.",
+    "certified": "Claude Code on macOS (darwin), with a vendor runtime receipt for the exact candidate package.",
+    "preview": "Copilot, Cursor, Codex, Windsurf, Gemini and VS Code on any platform, and every client on native Linux and Windows. These are wired, protocol-tested and documented, but carry NO vendor runtime evidence, so they must be described as preview/uncertified in every public artifact — never as supported.",
+    "crossDeviceSync": "preview only; production promotion requires a separate decision and scope authorization.",
+    "publication": "A GO from this policy approves THE CANDIDATE against the narrowed promise. Publishing additionally requires the tag workflow's aggregate over every osNodeCell below, which runs on real CI runners."
+  },
   "gates": [
     { "id": "G1", "threshold": 1, "direction": "gte", "label": "exact recall@5" },
     { "id": "G2", "threshold": 0.8, "direction": "gte", "label": "paraphrase recall@5" },
@@ -34,16 +41,15 @@
     "requiredState": "installed",
     "supportedScorers": ["memory-rank-v2:multilingual-e5-large-1024-sym:cosine:semantic-only"]
   },
-  "osNodeCells": [
-    "ubuntu-latest/22",
-    "ubuntu-latest/24",
-    "macos-latest/22",
-    "macos-latest/24",
-    "windows-latest/22",
-    "windows-latest/24"
-  ],
-  "clients": ["claude", "copilot", "cursor", "codex", "windsurf", "gemini", "vscode"],
-  "clientPlatforms": ["darwin", "linux", "win32"],
+  "osNodeCells": ["macos-latest/22", "macos-latest/24"],
+  "clients": ["claude"],
+  "clientPlatforms": ["darwin"],
+  "clientVersionRequirements": {},
+  "uncertified": {
+    "clients": ["copilot", "cursor", "codex", "windsurf", "gemini", "vscode"],
+    "platforms": ["linux", "win32"],
+    "meaning": "Listed here so the narrowing is explicit in the artifact rather than implied by an absence. Moving any of these into `clients`/`clientPlatforms` restores its cell as a hard requirement and changes this hash."
+  },
   "receiptTypes": [
     "install",
     "native-service",
@@ -73,6 +79,6 @@
     "configuration": "production defaults — no shortened fallback, no overridden debounce",
     "readers": ["graph query", "brief/FTS search", "context resolution", "health generation convergence"],
     "clock": "from the source mutation to the moment every reader agrees — not to a capture or bookkeeping event",
-    "platforms": ["darwin", "linux", "win32"]
+    "platforms": ["darwin"]
   }
 }

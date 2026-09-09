@@ -22,7 +22,7 @@ import {
 } from './launch-policy.mjs';
 
 const FROZEN_POLICY_SHA256 =
-  'sha256:0c80d28573155a1a5f540a42bb765b173eb8321b6ab5a609d14b0f2687019618';
+  'sha256:44da0cce45cf15c81b191de992344e21e6c7883dd0d156b3d12a4d9fbbcbcbdf';
 
 const { policy, sha256 } = loadLaunchPolicy();
 assert.equal(
@@ -44,11 +44,28 @@ assert.equal(byId.G3.direction, 'gte');
 assert.equal(byId.G6.threshold, 0);
 assert.equal(byId.G6.direction, 'lte');
 
-// 7 clients × 3 platforms = the 21 cells the current promise advertises.
-assert.equal(policyClientCells(policy).length, 21);
-assert.ok(policyClientCells(policy).includes('vscode/win32'));
-// Both advertised Node majors on all three OSes.
-assert.equal(policyOsNodeCells(policy).length, 6);
+// Policy 2 narrows the promise to what can be PROVEN: Claude Code on macOS, one cell, with a real
+// vendor runtime receipt. The narrowing is the reason the hash changed, so it is pinned here too —
+// widening it again (adding a client or a platform) restores that cell as a hard requirement.
+assert.equal(policy.policyVersion, 2);
+assert.deepEqual(policyClientCells(policy), ['claude/darwin']);
+assert.deepEqual(policy.clients, ['claude']);
+assert.deepEqual(policy.clientPlatforms, ['darwin']);
+// Everything dropped is named explicitly rather than left as an absence.
+assert.deepEqual(policy.uncertified.clients, [
+  'copilot',
+  'cursor',
+  'codex',
+  'windsurf',
+  'gemini',
+  'vscode',
+]);
+assert.deepEqual(policy.uncertified.platforms, ['linux', 'win32']);
+assert.ok(policy.scope.preview.includes('never as supported'));
+// The CI matrix narrows with the promise: both Node majors on the one supported OS.
+assert.deepEqual(policyOsNodeCells(policy), ['macos-latest/22', 'macos-latest/24']);
+// A GO is not a publication: the tag workflow still aggregates over the CI cells.
+assert.ok(policy.scope.publication.includes('real CI runners'));
 assert.equal(policy.freshness.p95TargetMs, 5000);
 // The workload is preregistered CONCRETELY — a target with no stated workload can be met by
 // choosing an easier one after the fact.

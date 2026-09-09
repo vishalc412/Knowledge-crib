@@ -18,6 +18,7 @@ import {
   aggregateLaunchDecisions,
   evaluateLaunchDecision,
   loadReleaseEvidence,
+  uncertifiedClientCells,
 } from './launch-decision.mjs';
 import { loadLaunchPolicy, policyClientCells, policyOsNodeCells } from './launch-policy.mjs';
 
@@ -349,10 +350,13 @@ refuses(
     policyClientCells(policy).length,
     'every advertised cell must be named when no receipts exist',
   );
-  assert.ok(result.blockers.includes('client-cell-uncertified:claude/win32'));
+  // Whatever the policy advertises is what must be named — under policy 2 that is one cell.
+  for (const cell of policyClientCells(policy)) {
+    assert.ok(result.blockers.includes(`client-cell-uncertified:${cell}`), `${cell} must be named`);
+  }
 }
 refuses(
-  'a full 21-cell receipt set for ANOTHER commit',
+  'a full receipt set for ANOTHER commit',
   (e) => {
     for (const receipt of e.certification.receipts) receipt.product.commit = 'f'.repeat(40);
   },
@@ -381,15 +385,27 @@ refuses(
   },
   /^client-cell-uncertified:/,
 );
-refuses(
-  'a WSL run standing in for a native linux cell',
-  (e) => {
-    for (const receipt of e.certification.receipts) {
-      if (receipt.platform.os === 'linux') receipt.platform.wsl = true;
-    }
-  },
-  /^client-cell-uncertified:[a-z]+\/linux$/,
-);
+// WSL never satisfies a native cell. Policy 2 advertises no linux cell, so this is asserted
+// directly against the coverage helper with a policy that does — the law outlives the scope.
+{
+  const linuxPolicy = { ...policy, clients: ['claude'], clientPlatforms: ['linux'] };
+  const wslReceipt = {
+    client: { id: 'claude', version: '1.0.0' },
+    platform: { os: 'linux', arch: 'x64', wsl: true },
+    product: { commit: COMMIT, packageSha256: PACKAGE },
+    policySha256: POLICY_SHA,
+    runtimeStatus: 'pass',
+  };
+  const cells = uncertifiedClientCells([wslReceipt], {
+    policy: linuxPolicy,
+    policySha256: POLICY_SHA,
+    candidate: CANDIDATE,
+  });
+  assert.ok(
+    cells.includes('client-cell-uncertified:claude/linux'),
+    'a WSL run must not satisfy the native linux cell',
+  );
+}
 
 // A client version below a policy-declared minimum cannot cover its cell.
 {
