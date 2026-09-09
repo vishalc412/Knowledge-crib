@@ -160,17 +160,65 @@ assert.match(
   /contents:\s*write/,
   'release job must have permission to create a release',
 );
-// WP9.4 — the F07 diagnostic manifest is written before the gate exits 1, so the evidence
-// upload must not be conditioned on the gate passing: strand it on failed runners and a
-// NO-GO launch decision has no evidence to read.
+// A03 — publication depends on APPROVAL, not merely on the build having run.
+//
+// The defect this section pins: `release.needs: verify` let a tag publish while the aggregate
+// decision failed or never ran, and the aggregator was invoked with no expected cell set, so a
+// single green fixture produced aggregate GO. Every assertion below is one link in the chain
+// "every policy cell ran -> one aggregate decision -> the approved bytes are the published bytes".
+
+// The final receipt is written only after the mandatory commands, so a manifest cannot describe a
+// workflow that stopped halfway; a FAILED cell's diagnostics go to a separate artifact the
+// aggregation never reads.
 assert.match(
   tagWorkflow,
-  /name:\s*Upload release evidence\s*\n\s+if:\s*always\(\)/,
-  'release evidence must upload even when the gate fails (if: always() on the upload step)',
+  /name:\s*Collect release evidence/,
+  'the tag workflow must collect release evidence after the mandatory commands',
 );
-// WP9.4 — ONE aggregated launch decision: a dedicated job downloads every per-OS evidence
-// artifact and combines them via the aggregation CLI. The `if: !cancelled()` pin matters —
-// the NO-GO path is exactly when the decision must still be printed.
+assert.match(
+  tagWorkflow,
+  /name:\s*Upload failure diagnostics\s*\n\s+if:\s*failure\(\)/,
+  'failure diagnostics must upload separately from the evidence the decision consumes',
+);
+assert.doesNotMatch(
+  tagWorkflow,
+  /name:\s*Upload release evidence\s*\n\s+if:\s*always\(\)/,
+  'a half-finished run must not contribute a manifest to the launch decision',
+);
+
+// Browser acceptance and the install cycle are TAG requirements, not only PR CI, and each writes
+// its own typed receipt — a missing receipt type is an actionable blocker downstream.
+assert.match(
+  tagWorkflow,
+  /pnpm@9\.15\.0 verify:browser/,
+  'tag verification must run the browser suite',
+);
+assert.match(
+  tagWorkflow,
+  /write-receipt\.mjs browser/,
+  'the browser leg must write its own receipt',
+);
+assert.match(
+  tagWorkflow,
+  /write-receipt\.mjs install/,
+  'the install cycle must write its own receipt',
+);
+assert.match(
+  tagWorkflow,
+  /--receipts receipts/,
+  'release evidence must consume the typed receipts the steps wrote',
+);
+
+// The verify matrix must be the policy's cell set: three OSes on both advertised Node majors.
+assert.match(
+  tagWorkflow,
+  /node:\s*\['22',\s*'24'\]/,
+  'the release verify matrix must cover both advertised Node majors',
+);
+for (const os of ['ubuntu-latest', 'macos-latest', 'windows-latest']) {
+  assert.ok(tagWorkflow.includes(`- ${os}`), `the release verify matrix must cover ${os}`);
+}
+
 assert.match(
   tagWorkflow,
   /launch-decision:\s*\n\s+name:\s*Aggregate launch decision\s*\n\s+needs:\s*verify/,
@@ -183,14 +231,66 @@ assert.match(
 );
 assert.match(
   tagWorkflow,
-  /pattern:\s*knowledge-crib-release-evidence-\*/,
-  'launch-decision must download every per-OS release evidence artifact',
+  /merge-multiple:\s*true/,
+  'the per-cell evidence must merge so the aggregation reads the policy cell ids',
 );
 assert.match(
   tagWorkflow,
   /scripts\/launch-decision\.mjs --cells /,
-  'launch-decision must aggregate the per-OS evidence via scripts/launch-decision.mjs --cells',
+  'launch-decision must aggregate the per-cell evidence via scripts/launch-decision.mjs --cells',
 );
+assert.match(
+  tagWorkflow,
+  /--candidate-commit "\$GITHUB_SHA"/,
+  'the aggregate must be bound to the tagged commit, not to whatever the manifests claim',
+);
+
+// ORDER matters as much as presence: the receipt is the LAST thing a cell writes, so a mandatory
+// command that fails after evidence generation cannot exist — there is nothing after it.
+{
+  const order = (needle) => tagWorkflow.indexOf(needle);
+  const collect = order('name: Collect release evidence');
+  for (const step of [
+    'name: Run release gate',
+    'name: Run browser acceptance suite',
+    'name: Run install cycle',
+    'name: Write browser receipt',
+    'name: Write install receipt',
+  ]) {
+    assert.ok(order(step) > 0, `the tag workflow must contain "${step}"`);
+    assert.ok(
+      order(step) < collect,
+      `"${step}" must run BEFORE the final receipt is written, or the receipt could describe work that had not happened`,
+    );
+  }
+  assert.ok(
+    order('name: Upload verified bundle') > collect,
+    'the bundle is uploaded only after the evidence for it exists',
+  );
+}
+
+// THE gate: publication needs verification AND approval, and ships only the approved bytes.
+assert.match(
+  tagWorkflow,
+  /needs:\s*\[verify,\s*launch-decision\]/,
+  'the release job must depend on BOTH the verify matrix and the aggregate launch decision',
+);
+assert.match(
+  tagWorkflow,
+  /if:\s*\$\{\{\s*needs\.launch-decision\.outputs\.decision == 'GO'\s*\}\}/,
+  'the release job must run only on an explicit GO',
+);
+assert.match(
+  tagWorkflow,
+  /name:\s*Verify downloaded bytes against the approved digest/,
+  'the release job must re-hash the downloaded package and compare it with the approved digest',
+);
+assert.match(
+  tagWorkflow,
+  /package_sha256:\s*\$\{\{\s*steps\.decide\.outputs\.package_sha256\s*\}\}/,
+  'the launch-decision job must publish the approved package digest as an output',
+);
+
 // WP9.5 / WP9.3 — a tag is a launch decision: the release gate must demand client runtime
 // certification receipts for every advertised platform cell.
 assert.match(

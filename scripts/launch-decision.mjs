@@ -256,12 +256,14 @@ export function aggregateLaunchDecisions(cells, options = {}) {
         row.blockers.push(`invalid-evidence:${row.cell}:${error.message}`);
       }
       if (row.blockers.length === 0) {
-        if (!candidate) {
-          candidate = {
-            commit: entry.manifest.candidate?.commit,
-            packageSha256: entry.manifest.candidate?.packageSha256,
-          };
-        }
+        // The caller pins what it KNOWS (a tag build knows its commit); the rest is discovered from
+        // the first valid manifest and then enforced on every other cell. Leaving a field undefined
+        // would publish an empty digest downstream, so the resolved candidate is always complete
+        // before any cell is judged against it.
+        candidate = {
+          commit: candidate?.commit ?? entry.manifest.candidate?.commit,
+          packageSha256: candidate?.packageSha256 ?? entry.manifest.candidate?.packageSha256,
+        };
         const decision = evaluateLaunchDecision(entry.manifest, {
           policy,
           policySha256,

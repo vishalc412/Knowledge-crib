@@ -429,6 +429,17 @@ const greenCells = () => osCells.map((cell) => ({ cell, manifest: completeEviden
   assert.deepEqual(all.candidate, CANDIDATE);
 }
 
+// The aggregate must publish a COMPLETE approved candidate even when the caller pinned only the
+// commit: the release job refuses to ship without a digest, so an undefined one would block a
+// legitimate GO (and, worse, invite someone to remove the check).
+{
+  const commitOnly = aggregateLaunchDecisions(greenCells(), { candidate: { commit: COMMIT } });
+  assert.equal(commitOnly.decision, 'GO', JSON.stringify(commitOnly.blockers));
+  assert.equal(commitOnly.candidate.packageSha256, PACKAGE);
+  assert.equal(commitOnly.candidate.commit, COMMIT);
+  assert.equal(commitOnly.policySha256, POLICY_SHA);
+}
+
 // One cell short of the policy set — the exact defect A03 named (a one-cell green aggregate).
 {
   const one = aggregateLaunchDecisions([{ cell: osCells[0], manifest: completeEvidence() }], {
