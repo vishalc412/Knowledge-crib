@@ -365,6 +365,95 @@ describe('persistent memory FTS', () => {
     next.close();
   });
 
+  // A07 — the snapshot header is DISPOSABLE state; the journal and shards are canonical. Every
+  // shape below replaced a valid header on disk, so the seeded record is still in the shards: the
+  // only correct outcome is one rebuild that serves it. `Object.keys(meta.stores)` on a header
+  // missing `stores` threw an unclassified TypeError out of search() instead.
+  describe('a structurally invalid snapshot header rebuilds from canonical state (A07)', () => {
+    const CORRUPTIONS: Array<[name: string, body: string]> = [
+      ['null document', 'null'],
+      ['empty object', '{}'],
+      ['missing stores', JSON.stringify({ formatVersion: MEMORY_FTS_FORMAT_VERSION })],
+      ['null stores', JSON.stringify({ formatVersion: MEMORY_FTS_FORMAT_VERSION, stores: null })],
+      [
+        'stores is an array',
+        JSON.stringify({ formatVersion: MEMORY_FTS_FORMAT_VERSION, stores: [] }),
+      ],
+      [
+        'a role entry is not an object',
+        JSON.stringify({ formatVersion: MEMORY_FTS_FORMAT_VERSION, stores: { local: 7 } }),
+      ],
+      [
+        'a role entry is missing its generation fields',
+        JSON.stringify({
+          formatVersion: MEMORY_FTS_FORMAT_VERSION,
+          stores: { local: { root: '/tmp/x' } },
+        }),
+      ],
+      [
+        'a role entry has a non-numeric gen',
+        JSON.stringify({
+          formatVersion: MEMORY_FTS_FORMAT_VERSION,
+          stores: { local: { root: '/tmp/x', gen: 'one', nonce: 'n' } },
+        }),
+      ],
+      [
+        'an unknown role key',
+        JSON.stringify({
+          formatVersion: MEMORY_FTS_FORMAT_VERSION,
+          stores: { bogus: { root: '/tmp/x', gen: 1, nonce: 'n' } },
+        }),
+      ],
+      ['a non-numeric formatVersion', JSON.stringify({ formatVersion: 'one', stores: {} })],
+      ['the document is a string', '"corrupted"'],
+    ];
+
+    for (const [name, body] of CORRUPTIONS) {
+      it(`recovers from ${name}`, () => {
+        const store = localStore();
+        const seeded = v1Record('alpha retention gates the writer');
+        store.upsertEntry('active', seeded);
+        const fts = openMemoryFts({ local: store });
+        prime(fts);
+        const metaPath = fts.metaFilePath as string;
+        const shardsBefore = shardBytes(store, 'active', [seeded.id]);
+        fts.close();
+
+        writeFileSync(metaPath, `${body}\n`, 'utf8');
+
+        const recovered = openMemoryFts({ local: store });
+        // No throw, one rebuild, and the CANONICAL memory is searchable again.
+        expect(scores(recovered, 'retention')).toBe(ephemeralScores({ local: store }, 'retention'));
+        expect(recovered.rebuildCountForTest).toBe(1);
+        expect(recovered.search('retention').size).toBe(1);
+        recovered.close();
+        // The canonical shards were never touched by the recovery.
+        expect(shardBytes(store, 'active', [seeded.id])).toBe(shardsBefore);
+
+        // Converged: the rewritten header is valid, so the next open serves the snapshot.
+        const next = openMemoryFts({ local: store });
+        prime(next);
+        expect(next.rebuildCountForTest).toBe(0);
+        next.close();
+      });
+    }
+
+    it('an interrupted rebuild (valid header, missing db) rebuilds and yields the seeded memory', () => {
+      const store = localStore();
+      store.upsertEntry('active', v1Record('alpha retention gates the writer'));
+      const fts = openMemoryFts({ local: store });
+      prime(fts);
+      const dbPath = fts.indexFilePath;
+      fts.close();
+      rmSync(dbPath, { force: true });
+
+      const recovered = openMemoryFts({ local: store });
+      expect(recovered.search('retention').size).toBe(1);
+      expect(recovered.rebuildCountForTest).toBe(1);
+      recovered.close();
+    });
+  });
+
   it('an index-format version mismatch rebuilds and rewrites the current version', () => {
     const store = localStore();
     store.upsertEntry('active', v1Record('alpha retention gates the writer'));

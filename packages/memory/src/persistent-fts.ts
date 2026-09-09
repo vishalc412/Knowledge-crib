@@ -69,6 +69,37 @@ interface PersistentFtsMeta {
 
 const ROLES: readonly MemoryStoreRole[] = ['team', 'local', 'global'];
 
+/** One store binding is valid only with all three fields present and correctly typed. */
+function isIndexStoreMeta(value: unknown): value is IndexStoreMeta {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return false;
+  const v = value as Record<string, unknown>;
+  return (
+    typeof v.root === 'string' &&
+    typeof v.gen === 'number' &&
+    Number.isFinite(v.gen) &&
+    typeof v.nonce === 'string'
+  );
+}
+
+/**
+ * Complete structural validation of a snapshot header, run before ANY field of it is compared.
+ * The header is disposable derived state — the journal and shards are canonical — so the only
+ * question it has to answer is "may this snapshot be served", and anything it cannot answer with a
+ * confident yes is a rebuild, never a throw (A07).
+ */
+function isPersistentFtsMeta(value: unknown): value is PersistentFtsMeta {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return false;
+  const v = value as Record<string, unknown>;
+  if (typeof v.formatVersion !== 'number' || !Number.isFinite(v.formatVersion)) return false;
+  const stores = v.stores;
+  if (typeof stores !== 'object' || stores === null || Array.isArray(stores)) return false;
+  for (const [role, binding] of Object.entries(stores as Record<string, unknown>)) {
+    if (!ROLES.includes(role as MemoryStoreRole)) return false; // an unknown store set
+    if (!isIndexStoreMeta(binding)) return false;
+  }
+  return true;
+}
+
 /** Delete the snapshot db + any SQLite sidecar files (targeted rm of files this module owns). */
 function removeIndexFiles(dbPath: string): void {
   for (const suffix of ['', '-wal', '-shm', '-journal']) {
@@ -236,12 +267,19 @@ export class PersistentMemoryFts extends MemoryFtsIndex {
     if (this.metaPath === undefined) return false;
     if (!existsSync(this.metaPath)) return false;
     if (!this.dbExistedBeforeOpen) return false; // meta without a db (crash mid-rebuild) — rebuild, never serve an empty index
-    let meta: PersistentFtsMeta;
+    let parsed: unknown;
     try {
-      meta = JSON.parse(readFileSync(this.metaPath, 'utf8')) as PersistentFtsMeta;
+      parsed = JSON.parse(readFileSync(this.metaPath, 'utf8'));
     } catch {
       return false; // torn/unparseable meta — rebuild (the header is disposable, the shards are truth)
     }
+    // Parsing is not validating. A header that is syntactically JSON but structurally wrong (an
+    // interrupted write, a hand-edit, a future/rolled-back format) previously reached
+    // `Object.keys(meta.stores)` and threw an unclassified TypeError out of a search call. The
+    // whole shape is checked BEFORE any field is compared, so every invalid header takes the same
+    // route as an absent one: rebuild from the canonical shards (A07).
+    if (!isPersistentFtsMeta(parsed)) return false;
+    const meta = parsed;
     if (meta.formatVersion !== MEMORY_FTS_FORMAT_VERSION) return false;
     const expected = this.expectedStoreMeta();
     const roles = new Set<MemoryStoreRole>(
