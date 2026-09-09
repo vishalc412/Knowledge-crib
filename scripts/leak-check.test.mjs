@@ -76,11 +76,9 @@ const series = (n, start, perCycle) => [...Array(n)].map((_, i) => start * MB + 
 }
 
 // ─── the measurement must know whether it can trust itself ───────────────────
-{
-  // The samples are only retention if something collected first. This was the actual production
-  // bug: `global.gc?.()` under a plain `node` invocation was a permanent no-op, so every sample
-  // carried uncollected garbage and two runs of the same work reported -63 MB and +59 MB.
-  assert.equal(gcAvailable(), true, 'a collector must be reachable without a CLI flag');
-}
+// The samples are only retention if something collected first. This was the actual production bug:
+// `global.gc?.()` under a plain `node` invocation was a permanent no-op, so every sample carried
+// uncollected garbage and two runs of the same work reported -63 MB and +59 MB.
+assert.equal(gcAvailable(), true, 'a collector must be reachable without a CLI flag');
 
 process.stdout.write('leak-check tests ok\n');
