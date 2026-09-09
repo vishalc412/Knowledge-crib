@@ -77,6 +77,10 @@ export interface WatchOpts {
   fallbackMs?: number;
   /** Invoked for non-fatal warnings (watcher setup failures). */
   onWarn?: (message: string) => void;
+  /** TEST SEAM — how the watcher is created. Defaults to `node:fs`'s `watch`. Exists because the
+   *  degradation path must be provable without depending on how a given OS and Node version report
+   *  an unwatchable directory: some throw synchronously, others emit an asynchronous 'error'. */
+  watchFactory?: typeof watch;
 }
 
 export class WatchMode {
@@ -84,6 +88,8 @@ export class WatchMode {
   private fallbackTimer?: NodeJS.Timeout;
   private debounceTimer?: NodeJS.Timeout;
   private stopped = false;
+  /** Set once the watcher is abandoned, so the warning is emitted exactly once. */
+  private degraded = false;
 
   /**
    * @param coordinator the serialized refresh loop (WP4.1). Structural, so tests pass a spy without
@@ -100,22 +106,49 @@ export class WatchMode {
    *  arriving during startup coalesces into the coordinator's pending slot like any other. */
   async start(): Promise<void> {
     try {
-      this.watcher = watch(this.repoRoot, { recursive: true }, (_event, filename) => {
-        const rel = toRepoRelative(this.repoRoot, filename);
-        if (!rel || !isWatchable(rel)) return;
-        this.scheduleRefresh();
-      });
-    } catch (err) {
-      // A platform without recursive fs.watch (some network filesystems, containers) must not lose
-      // freshness: the fallback scan keeps converging on its own.
-      this.opts.onWarn?.(
-        `file watcher unavailable (${(err as Error).message}) — fallback scan only`,
+      this.watcher = (this.opts.watchFactory ?? watch)(
+        this.repoRoot,
+        { recursive: true },
+        (_event, filename) => {
+          const rel = toRepoRelative(this.repoRoot, filename);
+          if (!rel || !isWatchable(rel)) return;
+          this.scheduleRefresh();
+        },
       );
+      // A watch can fail AFTER it is created: Node reports some failures — an unwatchable or
+      // vanished directory, an exhausted inotify limit — as an asynchronous 'error' event rather
+      // than by throwing from `watch()`, and which of the two happens varies by platform and Node
+      // version (observed on Linux + Node 24, where the synchronous throw this code assumed does
+      // not occur). Without this listener that event is an UNHANDLED 'error', which throws; with it
+      // but no degradation, the watcher would be dead while `start()` reported success. Both routes
+      // now end in the same place: warn once, drop the watcher, let the fallback keep converging.
+      this.watcher.on('error', (err: Error) => this.degradeToFallback(err));
+    } catch (err) {
+      this.degradeToFallback(err as Error);
     }
     const fb = this.opts.fallbackMs ?? 2000;
     this.fallbackTimer = setInterval(() => {
       if (!this.stopped) this.coordinator.requestRefresh('fallback');
     }, fb);
+  }
+
+  /**
+   * Give up on the file watcher and rely on the fallback scan alone.
+   *
+   * A platform without a usable recursive fs.watch (network filesystems, containers, an exhausted
+   * inotify budget) must not lose freshness — the interval keeps converging on its own, just with
+   * higher latency. Warns exactly once so a persistent watcher error cannot flood the log.
+   */
+  private degradeToFallback(err: Error): void {
+    if (this.degraded) return;
+    this.degraded = true;
+    try {
+      this.watcher?.close();
+    } catch {
+      // Closing a watcher that already failed is best-effort; the interval is what matters.
+    }
+    this.watcher = undefined;
+    this.opts.onWarn?.(`file watcher unavailable (${err.message}) — fallback scan only`);
   }
 
   /** Schedule a debounced refresh (coalesces rapid save bursts into one request). */

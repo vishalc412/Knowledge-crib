@@ -17,6 +17,7 @@
  * tests lean on `coordinator.requestRefresh('fallback')` (deterministic) rather than the OS watcher.
  */
 import { execFileSync } from 'node:child_process';
+import { EventEmitter } from 'node:events';
 import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -24,7 +25,7 @@ import { SoulStore, newManifest, pathFromId } from '@knowledge-crib/core';
 import { indexRepo, untrackedFiles } from '@knowledge-crib/pipeline';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { type ReaderBundle, RefreshCoordinator } from './refresh-coordinator.js';
-import { WatchMode } from './watch.js';
+import { WatchMode, type WatchOpts } from './watch.js';
 
 let repo: string;
 
@@ -186,19 +187,65 @@ describe('WatchMode — trigger layer (WP4.1)', () => {
     }
   });
 
-  it('degrades to fallback-only when fs.watch is unavailable', async () => {
+  // How an unwatchable directory is REPORTED is not a stable fact: some platform/Node combinations
+  // throw synchronously from `watch()`, others create the watcher and emit an asynchronous 'error'
+  // (observed on Linux + Node 24, where relying on the throw made this test fail). Both routes must
+  // degrade identically, so both are driven explicitly rather than hoping the OS picks one.
+  it.each([
+    [
+      'a synchronous throw',
+      (() => {
+        const factory = (() => {
+          throw Object.assign(new Error('ENOENT: no such file or directory'), { code: 'ENOENT' });
+        }) as unknown as WatchOpts['watchFactory'];
+        return factory;
+      })(),
+    ],
+    [
+      'an asynchronous error event',
+      (() => {
+        const factory = (() => {
+          const emitter = new EventEmitter() as EventEmitter & { close(): void };
+          emitter.close = () => {};
+          setTimeout(() => emitter.emit('error', new Error('inotify limit reached')), 5);
+          return emitter;
+        }) as unknown as WatchOpts['watchFactory'];
+        return factory;
+      })(),
+    ],
+  ])('degrades to fallback-only when the watcher fails with %s', async (_label, watchFactory) => {
     const warnings: string[] = [];
     const requests: string[] = [];
-    // A path that cannot be watched (ENOENT) exercises the setup failure path.
+    const watch = new WatchMode({ requestRefresh: (reason) => void requests.push(reason) }, repo, {
+      fallbackMs: 50,
+      onWarn: (msg) => void warnings.push(msg),
+      watchFactory,
+    });
+    await watch.start();
+    try {
+      await new Promise((r) => setTimeout(r, 180));
+      // Warned once — a persistent watcher error must not flood the log.
+      expect(warnings.filter((w) => w.includes('fallback scan only'))).toHaveLength(1);
+      // And the convergence backstop keeps running, which is the property that matters.
+      expect(requests.filter((r) => r === 'fallback').length).toBeGreaterThanOrEqual(2);
+    } finally {
+      watch.stop();
+    }
+  });
+
+  it('keeps converging on a directory that cannot be watched, however the platform reports it', async () => {
+    const requests: string[] = [];
+    // The real ENOENT path: whether it throws, errors asynchronously, or silently does nothing is
+    // the platform's business. What must hold everywhere is that the fallback still converges and
+    // nothing escapes as an unhandled error.
     const watch = new WatchMode(
       { requestRefresh: (reason) => void requests.push(reason) },
       join(repo, 'does-not-exist'),
-      { fallbackMs: 50, onWarn: (msg) => void warnings.push(msg) },
+      { fallbackMs: 50 },
     );
     await watch.start();
     try {
       await new Promise((r) => setTimeout(r, 180));
-      expect(warnings.some((w) => w.includes('fallback scan only'))).toBe(true);
       expect(requests.filter((r) => r === 'fallback').length).toBeGreaterThanOrEqual(2);
     } finally {
       watch.stop();
