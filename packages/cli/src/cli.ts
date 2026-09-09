@@ -2773,9 +2773,9 @@ async function cmdSupportBundle(args: string[], ctx?: CmdCtx): Promise<number> {
   mkdirSync(dirname(out), { recursive: true });
   writeFileSync(out, `${JSON.stringify(bundle, null, 2)}\n`, 'utf8');
   process.stdout.write(
-    `support bundle written to ${out}\n` +
-      `  excluded by design: ${bundle.excluded.join('; ')}\n` +
-      '  read it before sending — it is plain JSON and it is yours.\n',
+    `support bundle written to ${out}\n  excluded by design: ${bundle.excluded.join(
+      '; ',
+    )}\n  read it before sending — it is plain JSON and it is yours.\n`,
   );
   return EXIT.OK;
 }

@@ -333,12 +333,11 @@ function withoutRawErrorText(diagnostics: Diagnostics): Diagnostics {
       state: knownValue(diagnostics.model.state, KNOWN_MODEL_STATES),
     },
   };
-  diagnostics = narrowed;
-  const lastError = diagnostics.lastError;
-  if (lastError.availability !== 'present' || !lastError.value) return diagnostics;
+  const lastError = narrowed.lastError;
+  if (lastError.availability !== 'present' || !lastError.value) return narrowed;
   const { code, occurredAt, message } = lastError.value;
   return {
-    ...diagnostics,
+    ...narrowed,
     lastError: {
       availability: 'present',
       value: {

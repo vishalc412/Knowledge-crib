@@ -56,11 +56,7 @@ function buildFixture(fileCount) {
     const next = (i + 1) % fileCount;
     writeFileSync(
       join(root, 'src', `mod${i}.ts`),
-      `import { fn${next} } from './mod${next}.js';\n` +
-        `/** Module ${i} of the freshness workload. */\n` +
-        `export function fn${i}(depth: number): number {\n` +
-        `  return depth <= 0 ? ${i} : fn${next}(depth - 1);\n` +
-        `}\n`,
+      `import { fn${next} } from './mod${next}.js';\n/** Module ${i} of the freshness workload. */\nexport function fn${i}(depth: number): number {\n  return depth <= 0 ? ${i} : fn${next}(depth - 1);\n}\n`,
     );
   }
   writeFileSync(
@@ -227,7 +223,7 @@ async function main() {
         present: true,
         mutate: async () => {
           writeFileSync(
-            join(root, 'src', `saved.ts`),
+            join(root, 'src', 'saved.ts'),
             `export function ${name}(): number { return ${counter}; }\n`,
           );
         },
@@ -489,7 +485,7 @@ async function main() {
     // The raw per-transition samples are written as their OWN file and referenced by digest: a
     // receipt that claims a pass must have something behind it that can be re-read and re-checked,
     // and a p95 with no samples is an assertion, not evidence.
-    const samplesPath = out.replace(/\.json$/, '') + '.samples.json';
+    const samplesPath = `${out.replace(/\.json$/, '')}.samples.json`;
     writeFileSync(
       samplesPath,
       `${JSON.stringify(
