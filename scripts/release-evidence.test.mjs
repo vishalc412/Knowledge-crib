@@ -4,6 +4,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { collectReceipts } from './release-evidence.mjs';
 import {
   RELEASE_EVIDENCE_FORMAT_VERSION,
   REQUIRED_GATE_IDS,
@@ -425,5 +426,35 @@ assert.match(
   /release-evidence\.test\.mjs/,
   'release verification must run this self-check (tamper/omission/duplicate legs) after the launch-decision check',
 );
+
+// ─── raw artifacts beside a receipt are not receipts ─────────────────────────
+// The freshness harness writes `freshness.samples.json` — per-transition sample data with no
+// format field — next to its receipt. Deriving a receipt TYPE from the filename turned that into a
+// phantom "freshness.samples" receipt, and the decision died with a schema error
+// ("receipts.freshness.samples.status must be pass, fail or not-run") instead of returning a
+// verdict. Skipping is safe precisely because the policy names every required type by hand: a
+// receipt that never appears is still a blocker.
+{
+  const dir = mkdtempSync(join(tmpdir(), 'crib-receipt-artifacts-'));
+  try {
+    writeFileSync(
+      join(dir, 'freshness.json'),
+      JSON.stringify({
+        format: 'knowledge-crib-acceptance-receipt',
+        type: 'freshness',
+        status: 'pass',
+      }),
+    );
+    writeFileSync(
+      join(dir, 'freshness.samples.json'),
+      JSON.stringify({ transitions: [{ name: 'save', ms: 12 }] }),
+    );
+    const loaded = collectReceipts(['--receipts', dir]);
+    assert.deepEqual(Object.keys(loaded), ['freshness'], 'raw sample data is not a receipt');
+    assert.equal(loaded['freshness.samples'], undefined);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
 
 console.log('release evidence tests ok');

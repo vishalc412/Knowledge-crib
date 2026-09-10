@@ -552,13 +552,23 @@ function collectRunner() {
  * step that actually ran it. Loading them here (rather than inferring them from a test total) is
  * what makes a missing install/browser/recovery proof an actionable blocker instead of silence.
  */
-function collectReceipts(argv) {
+export function collectReceipts(argv) {
   const directory = resolve(flag(argv, '--receipts', 'receipts'));
   if (!existsSync(directory)) return {};
   const receipts = {};
   for (const name of readdirSync(directory).sort()) {
     if (!name.endsWith('.json')) continue;
     const parsed = JSON.parse(readFileSync(resolve(directory, name), 'utf8'));
+    // Only files that declare themselves acceptance receipts become receipts. Checks write raw
+    // artifacts beside their receipt — the freshness harness emits `freshness.samples.json`, its
+    // per-transition sample data — and inferring a receipt TYPE from a filename turned that into a
+    // phantom "freshness.samples" receipt with no status, which failed the decision with a schema
+    // error instead of a verdict.
+    //
+    // Skipping here cannot hide a missing receipt: the launch policy names every required type, and
+    // a type that never appears is a blocker by name. Absence stays loud; only non-receipts go
+    // quiet.
+    if (parsed?.format !== 'knowledge-crib-acceptance-receipt') continue;
     const type = parsed.type ?? name.slice(0, -5);
     receipts[type] = parsed;
   }
