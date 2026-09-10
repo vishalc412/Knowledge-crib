@@ -410,4 +410,38 @@ try {
   rmSync(root, { recursive: true, force: true });
 }
 
+// ─── a mixed evidence directory ──────────────────────────────────────────────
+// Acceptance and certification receipts sit side by side in a real evidence pass, and pointing the
+// loader at the wrong one of the two produced "unsupported certification receipt format" on a file
+// like adapter.json — a message that explains nothing. An acceptance receipt is now skipped by its
+// own declared format, while anything unrecognised still throws: a malformed CERTIFICATION receipt
+// silently becoming a missing cell is the exact failure this module exists to prevent.
+{
+  const mixed = mkdtempSync(join(tmpdir(), 'crib-mixed-receipts-'));
+  try {
+    writeFileSync(
+      join(mixed, 'adapter.json'),
+      JSON.stringify({
+        format: 'knowledge-crib-acceptance-receipt',
+        type: 'adapter',
+        status: 'pass',
+      }),
+    );
+    assert.deepEqual(
+      loadClientCertificationReceipts(mixed),
+      [],
+      'acceptance receipts are not cells',
+    );
+
+    writeFileSync(join(mixed, 'junk.json'), JSON.stringify({ format: 'something-else' }));
+    assert.throws(
+      () => loadClientCertificationReceipts(mixed),
+      /unsupported certification receipt format/,
+      'an unrecognised receipt must still be refused, never skipped',
+    );
+  } finally {
+    rmSync(mixed, { recursive: true, force: true });
+  }
+}
+
 console.log('client certification evidence tests ok');

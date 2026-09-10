@@ -240,6 +240,14 @@ export function loadClientCertificationReceipts(directory) {
           `unreadable certification receipt ${name}: ${error.message}`,
         );
       }
+      // An operator pointing --certification-receipts at a directory that ALSO holds acceptance
+      // receipts is an easy mistake (the two live side by side in an evidence pass), and throwing
+      // "unsupported certification receipt format" on `adapter.json` explains nothing. A file that
+      // positively identifies as another known artifact type is skipped; anything unrecognised
+      // still throws, because a malformed CERTIFICATION receipt must never be silently ignored —
+      // that would turn a broken receipt into a missing cell, which is the failure this whole
+      // module exists to make visible.
+      if (parsed?.format === 'knowledge-crib-acceptance-receipt') return undefined;
       const receipt = validateClientCertificationReceipt(parsed, { evidenceRoot: directory });
       const cell = `${receipt.client.id}/${receipt.platform.os}/${receipt.platform.arch}${
         receipt.platform.wsl ? '/wsl' : ''
@@ -247,7 +255,8 @@ export function loadClientCertificationReceipts(directory) {
       assert(!cells.has(cell), `duplicate certification cell: ${cell}`);
       cells.add(cell);
       return receipt;
-    });
+    })
+    .filter((receipt) => receipt !== undefined);
 }
 
 /** Public state is derived from valid receipts only — there is no hand-maintained override. */
