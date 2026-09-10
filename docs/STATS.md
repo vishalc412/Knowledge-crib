@@ -11,8 +11,8 @@ file is fresh. Reference this file instead of restating a count in narrative doc
 | packages | 8 (knowledge-crib, @knowledge-crib/core, @knowledge-crib/mcp, @knowledge-crib/memory, @knowledge-crib/parsers, @knowledge-crib/pipeline, @knowledge-crib/soul-schema, @knowledge-crib/ui) |
 | parser languages | 11 (agent, csharp, go, java, md, mule, php, plsql, python, rust, ts) |
 | eval fixture languages | 9 (csharp, go, java, php, plsql, python, rust, ts, ts-min) |
-| test files | 197 |
-| test call-sites (static) | 2706 |
+| test files | 209 |
+| test call-sites (static) | 2964 |
 | MCP tools registered | 17 |
 | MCP operations | 47 |
 

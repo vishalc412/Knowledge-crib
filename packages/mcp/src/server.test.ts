@@ -441,3 +441,107 @@ describe('retired alias shim', () => {
     expect(args).toEqual({});
   });
 });
+
+// ─── WP4.5: the pin router — every tools/call is bracketed by retain/release ───
+
+describe('WP4.5 pin router', () => {
+  /** Build a server WITH pins and drive its installed tools/call handler directly, like callWire
+   *  above — the SDK's own validation still runs inside the wrapped handler. */
+  function pinnedCall(
+    spy: Partial<Record<string, unknown>>,
+    pins: { retain(): void; release(): void },
+    name: string,
+    args: Record<string, unknown> = {},
+  ): Promise<unknown> {
+    const built = buildServer(spy as unknown as Verbs, '0.1.0', pins) as unknown as {
+      server: {
+        _requestHandlers: Map<string, (request: unknown, extra: unknown) => Promise<unknown>>;
+      };
+    };
+    const handler = built.server._requestHandlers.get('tools/call');
+    if (!handler) throw new Error('tools/call handler not installed');
+    return handler({ method: 'tools/call', params: { name, arguments: args } }, {});
+  }
+
+  it('brackets every call: retain before dispatch, release after settle', async () => {
+    const events: string[] = [];
+    const pins = {
+      retain: () => void events.push('retain'),
+      release: () => void events.push('release'),
+    };
+    const spy: Record<string, unknown> = {
+      query: () => {
+        events.push('query');
+        return {};
+      },
+    };
+    await pinnedCall(spy, pins, 'query', { q: 'x' });
+    expect(events).toEqual(['retain', 'query', 'release']);
+  });
+
+  it('pins the WHOLE call lifetime: while a call is in flight the bundle cannot be swapped under it', async () => {
+    const counts = { retain: 0, release: 0 };
+    const pins = {
+      retain: () => void counts.retain++,
+      release: () => void counts.release++,
+    };
+    // An async verb whose promises we settle manually — calls that span a publication. One resolver
+    // per in-flight call (a single `let settle` would be overwritten by the second call).
+    const settles: Array<() => void> = [];
+    const spy: Record<string, unknown> = {
+      query: () =>
+        new Promise((resolve) => {
+          settles.push(() => resolve({}));
+        }),
+    };
+    const first = pinnedCall(spy, pins, 'query', { q: 'a' });
+    const second = pinnedCall(spy, pins, 'query', { q: 'b' });
+    // Both calls dispatched and still in flight: two pins held, zero releases — a refresh bundle
+    // published now would WAIT (the swap lands in the last release).
+    await new Promise((r) => setTimeout(r, 20));
+    expect(counts.retain).toBe(2);
+    expect(counts.release).toBe(0);
+    for (const settle of settles) settle();
+    await Promise.all([first, second]);
+    expect(counts.retain).toBe(2);
+    expect(counts.release).toBe(2);
+  });
+
+  it('releases even when the verb throws — a failed call can never leak a pin', async () => {
+    const counts = { retain: 0, release: 0 };
+    const pins = {
+      retain: () => void counts.retain++,
+      release: () => void counts.release++,
+    };
+    const spy: Record<string, unknown> = {
+      query: () => {
+        throw new Error('boom');
+      },
+    };
+    // The SDK converts a thrown handler error into an isError CallToolResult, not a rejection —
+    // the wire-level assertion is on the payload; the pin must be released either way.
+    const res = (await pinnedCall(spy, pins, 'query', { q: 'x' })) as {
+      isError?: boolean;
+    };
+    expect(res.isError).toBe(true);
+    expect(counts).toEqual({ retain: 1, release: 1 });
+  });
+
+  it('covers aliased retired names too — the wrapper is installed AFTER the alias router', async () => {
+    const events: string[] = [];
+    const pins = {
+      retain: () => void events.push('retain'),
+      release: () => void events.push('release'),
+    };
+    const spy: Record<string, unknown> = {
+      getStats: () => ({
+        snapshot: () => {
+          events.push('getStats');
+          return {};
+        },
+      }),
+    };
+    await pinnedCall(spy, pins, 'stats'); // retired alias → status op=stats → getStats().snapshot()
+    expect(events).toEqual(['retain', 'getStats', 'release']);
+  });
+});

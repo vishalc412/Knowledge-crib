@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { Verdicts } from './enums.js';
 import { type HandoffAttemptEvent, type HandoffInput, buildHandoff } from './handoff.js';
 import { createIntakeCheckpoint, createIntakeRequirement } from './intake.js';
+import { DEFAULT_MIGRATION_PRINCIPAL_ID } from './migrations.js';
 import type { MemoryRecord } from './types.js';
 
 /**
@@ -47,7 +48,16 @@ function event(over: Partial<HandoffAttemptEvent> = {}): HandoffAttemptEvent {
 }
 
 function input(over: Partial<HandoffInput> = {}): HandoffInput {
-  return { attempts: [], pending: [], records: [], ...over };
+  return {
+    attempts: [],
+    pending: [],
+    records: [],
+    // The trusted caller is the default migration principal unless a test says otherwise — the
+    // legacy fixtures here carry no principal column, so they stay visible exactly as they are
+    // to the namespace that owns them.
+    callerPrincipal: DEFAULT_MIGRATION_PRINCIPAL_ID,
+    ...over,
+  };
 }
 
 describe('buildHandoff — unfinished work survives the context gap', () => {
@@ -165,6 +175,35 @@ describe('buildHandoff — undistilled captures are not lost', () => {
     // raw-transcripts-off: a handoff is a briefing, so long text is trimmed, never echoed whole
     expect(out.pendingCaptures[0]?.observation.length).toBeLessThanOrEqual(240);
     expect(out.pendingCaptures[0]?.observation.endsWith('…')).toBe(true);
+  });
+});
+
+describe('buildHandoff — WP3: unscoped legacy work belongs to the default migration principal', () => {
+  // Attempts and pending captures are memory-1 records with no principal column, so the explicit
+  // legacy ownership policy (WP3.5) assigns their whole namespace to the default migration
+  // principal. Any other caller sees none of it — filtered BEFORE the counts, so a foreign
+  // principal's handoff never carries another owner's work in its previews or its numbers (WP3.3).
+  const unscoped = input({
+    attempts: [
+      event({ attemptId: 'att:legacy', phase: 'action', ts: NOW, subject: 'sym:src/legacy.ts' }),
+    ],
+    pending: [{ id: 'cap:legacy', subject: 'sym:src/legacy.ts', observation: 'legacy work' }],
+  });
+
+  it('the default migration principal still sees unscoped attempts and captures', () => {
+    const out = buildHandoff(unscoped);
+    expect(out.openWork).toHaveLength(1);
+    expect(out.pendingCaptures).toHaveLength(1);
+    expect(out.counts.openWork).toBe(1);
+    expect(out.counts.pendingCaptures).toBe(1);
+  });
+
+  it('a foreign principal sees none of it — not the work, not the counts', () => {
+    const out = buildHandoff({ ...unscoped, callerPrincipal: 'principal:colleague' });
+    expect(out.openWork).toEqual([]);
+    expect(out.pendingCaptures).toEqual([]);
+    expect(out.counts.openWork).toBe(0);
+    expect(out.counts.pendingCaptures).toBe(0);
   });
 });
 

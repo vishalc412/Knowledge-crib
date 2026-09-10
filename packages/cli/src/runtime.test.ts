@@ -13,6 +13,7 @@ import {
   openIndexOnly,
   openSoul,
   resolveProjectRoot,
+  startupHeadMismatch,
   sweepStaleBuilds,
 } from './runtime.js';
 
@@ -127,6 +128,34 @@ describe('CLI runtime — index → open → query', () => {
     rmSync(join(repo, '.crib', 'index', 'crib.sqlite-shm'), { force: true });
 
     expect(() => openIndexForServe(rt)).toThrow(/derived index missing/);
+  });
+});
+
+describe('startupHeadMismatch — WP4.2 serve startup HEAD comparison', () => {
+  /**
+   * The measured defect: serve's freshness check compared only derived-index mtimes, so a graph
+   * indexed at commit X on a repo now at commit Y read as "fresh" and every query silently answered
+   * from stale source. The indexed-behind fixture must produce a warning that names BOTH commits —
+   * never silence, and never a silent re-anchor onto the newer commit the graph was not built from.
+   */
+  it('an indexed-behind graph is reported, never silently adopted', () => {
+    const warning = startupHeadMismatch('aaaa1111aaaa', 'bbbb2222bbbb');
+    expect(warning).toBeDefined();
+    expect(warning).toContain('aaaa1111aaaa'); // what is being served
+    expect(warning).toContain('bbbb2222bbbb'); // where the repo actually is
+    expect(warning).toContain('crib update'); // the repair
+  });
+
+  it('an up-to-date graph is quiet — silence only ever means agreement', () => {
+    expect(startupHeadMismatch('aaaa1111aaaa', 'aaaa1111aaaa')).toBeUndefined();
+  });
+
+  it('a missing head on either side is "nothing to compare", never "fresh"', () => {
+    // Archive inputs / non-git repos / no commits: absent means UNKNOWN, and unknown must not be
+    // laundered into a clean verdict.
+    expect(startupHeadMismatch(undefined, 'aaaa1111aaaa')).toBeUndefined();
+    expect(startupHeadMismatch('aaaa1111aaaa', undefined)).toBeUndefined();
+    expect(startupHeadMismatch(undefined, undefined)).toBeUndefined();
   });
 });
 

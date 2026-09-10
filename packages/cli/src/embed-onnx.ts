@@ -30,8 +30,20 @@
  * process, ~9ms per embed after it.
  */
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  renameSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from 'node:fs';
 import { join } from 'node:path';
+import { type EmbedProvisioningPin, hashDirFiles } from '@knowledge-crib/core';
+import { type NpmRunResult, type PkgPhase, runNpm } from './pkg-manager.js';
 
 /**
  * The npm packages the ONNX tier needs, pinned. `@huggingface/transformers` brings the ONNX runtime
@@ -40,6 +52,14 @@ import { join } from 'node:path';
  * runtime has no business in the tarball of a tool most users run lexically).
  */
 export const ONNX_RUNTIME_PACKAGE = '@huggingface/transformers@3.7.6';
+
+/**
+ * Approximate on-disk size of the runtime install, stated UP FRONT in the consent message (WP1.7:
+ * consent must carry size, destination and identity before anything is fetched). A consent that
+ * does not say how big the download is does not let the operator make the decision they are being
+ * asked to make — especially on metered or disk-constrained hosts.
+ */
+export const ONNX_RUNTIME_APPROX_DISK = '~376 MB';
 
 /** Layout under the embed home. Weights, runtime and adapters stay in separate subtrees so the
  *  integrity hash over an adapter never sweeps in a multi-gigabyte model file. */
@@ -349,16 +369,24 @@ export default new OnnxEmbedder();
 export interface OnnxStep {
   ok: boolean;
   detail: string;
+  /** WP1.3 taxonomy: which phase failed (present on failures, absent on success). */
+  phase?: PkgPhase;
+  /** the ONE action that repairs a failed step; absent on success. */
+  repair?: string;
 }
 
 /**
  * Install the ONNX runtime into the embed home. Isolated `npm install` in its own directory: it
  * never touches the user's project, their global node_modules, or crib's own installation.
+ *
+ * The install goes through the shared package-manager launcher (pkg-manager.ts): never a bare
+ * `npm` command, never a shell. That is what makes it work on Windows, where `npm` on PATH is a
+ * `.cmd` shim Node refuses to spawn without a shell — and where a shell is exactly the injection
+ * surface crib must not acquire.
  */
 export function installOnnxRuntime(
   home: string,
-  run: (cmd: string, args: string[], cwd: string) => string = (cmd, args, cwd) =>
-    execFileSync(cmd, args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }),
+  run: (dir: string) => NpmRunResult = runNpmInstall,
 ): OnnxStep {
   const dir = onnxRuntimeDir(home);
   try {
@@ -367,26 +395,57 @@ export function installOnnxRuntime(
       join(dir, 'package.json'),
       `${JSON.stringify({ name: 'crib-embed-runtime', private: true, type: 'module' }, null, 2)}\n`,
     );
-    run(
-      'npm',
-      ['install', '--no-audit', '--no-fund', '--loglevel', 'error', ONNX_RUNTIME_PACKAGE],
-      dir,
-    );
+    const result = run(dir);
     writeFileSync(join(dir, 'worker.mjs'), renderOnnxWorkerMjs());
+    if (!result.ok) {
+      return {
+        ok: false,
+        detail: `runtime install failed [${result.phase}]: ${result.message}`,
+        phase: result.phase,
+        ...(result.repair ? { repair: result.repair } : {}),
+      };
+    }
     if (!onnxRuntimeInstalled(home)) {
       return {
         ok: false,
-        detail: `npm install completed but ${ONNX_RUNTIME_PACKAGE} is not present`,
+        detail: `npm install exited 0 but ${ONNX_RUNTIME_PACKAGE} is not present`,
+        phase: 'post-install',
+        repair: `Delete ${dir} and re-run \`crib embed setup --model <alias> --yes\` to reinstall the runtime`,
       };
     }
     return { ok: true, detail: `installed ${ONNX_RUNTIME_PACKAGE} into ${dir}` };
   } catch (err) {
-    return { ok: false, detail: `runtime install failed: ${(err as Error).message}` };
+    return {
+      ok: false,
+      detail: `runtime install failed: ${(err as Error).message.split('\n')[0]}`,
+      phase: 'install',
+    };
   }
+}
+
+/** The default launcher invocation for `installOnnxRuntime` — overridable in tests. */
+function runNpmInstall(dir: string): NpmRunResult {
+  return runNpm(dir, [
+    'install',
+    '--no-audit',
+    '--no-fund',
+    '--loglevel',
+    'error',
+    ONNX_RUNTIME_PACKAGE,
+  ]);
 }
 
 /**
  * Fetch the model weights into the embed home's cache, so every later load is offline.
+ *
+ * WP1.9 — STAGED, THEN PUBLISHED. The download lands in a throwaway staging directory under the
+ * embed home (same filesystem, so the final publish is a rename) and is moved into the model cache
+ * only after BOTH checks pass:
+ *   1. inference — the dimension probe actually runs the model and its dim matches the ladder pin;
+ *   2. completeness — every staged file is non-empty, at least one `.onnx` graph is present, and
+ *      `config.json` + `tokenizer.json` exist.
+ * Until then the previous model dir is never touched: an interrupted or truncated download cannot
+ * half-replace a working tier, and a bad fetch fails with the old model still serving.
  *
  * Runs in a throwaway child process rather than in-process: the weights are large, the runtime
  * allocates aggressively while converting them, and a provisioning step must not leave that memory
@@ -405,17 +464,19 @@ export function downloadOnnxWeights(
 ): OnnxStep {
   const dir = onnxRuntimeDir(home);
   const cache = onnxModelCacheDir(home);
-  mkdirSync(cache, { recursive: true });
+  mkdirSync(home, { recursive: true });
+  const staging = mkdtempSync(join(home, '.download-staging-'));
   const script = `
 import { env, pipeline } from '@huggingface/transformers';
-env.cacheDir = ${JSON.stringify(cache)};
+env.cacheDir = ${JSON.stringify(staging)};
 env.allowRemoteModels = true;
 const extract = await pipeline('feature-extraction', ${JSON.stringify(spec.onnxId)}, { dtype: 'fp32' });
 const out = await extract([${JSON.stringify(spec.prefix)} + 'dimension probe'], { pooling: 'mean', normalize: true });
 console.log(JSON.stringify({ dim: out.dims.at(-1) }));
 `;
   try {
-    const out = run('node', ['--input-type=module', '-e', script], dir);
+    // Absolute node binary (never a PATH lookup): the same process that runs crib runs the probe.
+    const out = run(process.execPath, ['--input-type=module', '-e', script], dir);
     const line = out.trim().split('\n').at(-1) ?? '{}';
     const dim = (JSON.parse(line) as { dim?: number }).dim;
     if (dim !== spec.dim) {
@@ -424,10 +485,88 @@ console.log(JSON.stringify({ dim: out.dims.at(-1) }));
       // config error into silently mis-scored retrieval.
       return { ok: false, detail: `model reports dim ${dim}, ladder pins ${spec.dim}` };
     }
+    const staged = join(staging, ...spec.onnxId.split('/'));
+    const problem = stagedModelProblem(staged);
+    if (problem) {
+      return {
+        ok: false,
+        detail: `incomplete download: ${problem} — nothing was published, the previous model was preserved`,
+      };
+    }
+    publishStagedModel(staging, cache, spec.onnxId);
     return { ok: true, detail: `weights cached under ${cache} (dim ${dim} verified)` };
   } catch (err) {
     return { ok: false, detail: `weight download failed: ${(err as Error).message}` };
+  } finally {
+    // Staging is scratch by contract: after a publish the model dir has been renamed OUT of it,
+    // and after any failure it holds only the incomplete fetch. Either way it goes.
+    rmSync(staging, { recursive: true, force: true });
   }
+}
+
+/** Recursively list every file under `dir`, as paths relative to it. */
+function listFilesUnder(dir: string, prefix = ''): string[] {
+  const out: string[] = [];
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const rel = prefix ? `${prefix}/${entry.name}` : entry.name;
+    if (entry.isDirectory()) out.push(...listFilesUnder(join(dir, entry.name), rel));
+    else out.push(rel);
+  }
+  return out;
+}
+
+/**
+ * The completeness half of the WP1.9 gate: a model dir the runtime "successfully" fetched can still
+ * be useless — a truncated `.onnx` at 0 bytes, a missing tokenizer. Returns the first problem found
+ * (undefined = the dir is complete enough to serve).
+ *
+ * Exported because WP1.10 runs the SAME gate over an offline bundle: "adopted without verification"
+ * is how an air-gapped host ends up with a cache that pins fine and loads never.
+ */
+export function stagedModelProblem(modelDir: string): string | undefined {
+  if (!existsSync(modelDir)) return `no model directory was downloaded under ${modelDir}`;
+  const files = listFilesUnder(modelDir);
+  if (files.length === 0) return 'the model directory is empty';
+  for (const f of files) {
+    if (statSync(join(modelDir, f)).size === 0) return `${f} is zero bytes`;
+  }
+  if (!files.some((f) => f.endsWith('.onnx'))) return 'no .onnx graph was downloaded';
+  if (!files.includes('config.json')) return 'config.json is missing';
+  if (!files.includes('tokenizer.json')) return 'tokenizer.json is missing';
+  return undefined;
+}
+
+/**
+ * Move the staged model dir into the cache as a single rename, keeping the previous model intact
+ * until the new one is in place: the old dir is moved aside first, the staged dir is renamed in,
+ * and only then is the aside deleted. If the rename-in fails the aside is renamed back — the cache
+ * never holds a half-published model.
+ */
+export function publishStagedModel(staging: string, cache: string, onnxId: string): void {
+  // The ladder validates onnxId as `org/name`, but this function walks filesystem paths built
+  // from it — a malformed id must be refused here rather than turned into a rename target.
+  const [org, name] = onnxId.split('/');
+  if (!org || !name || onnxId.split('/').length !== 2) {
+    throw new Error(`invalid onnx id: ${onnxId}`);
+  }
+  const staged = join(staging, org, name);
+  const target = join(cache, org, name);
+  mkdirSync(join(cache, org), { recursive: true });
+  let aside: string | undefined;
+  if (existsSync(target)) {
+    // The pid suffix makes the aside collision-proof against a leftover from a previous crashed
+    // run: two processes cannot share a pid.
+    aside = join(cache, org, `.${name}.old-${process.pid}`);
+    rmSync(aside, { recursive: true, force: true });
+    renameSync(target, aside);
+  }
+  try {
+    renameSync(staged, target);
+  } catch (err) {
+    if (aside) renameSync(aside, target);
+    throw err;
+  }
+  if (aside) rmSync(aside, { recursive: true, force: true });
 }
 
 /** Write the generated adapter pair for one model into `dir`. Returns the adapter entrypoint. */
@@ -444,4 +583,67 @@ export function writeOnnxAdapter(
     renderOnnxEmbedderMjs(spec, id, onnxRuntimeDir(home), onnxModelCacheDir(home)),
   );
   return entry;
+}
+
+/**
+ * The dependency names whose INSTALLED versions the provisioning pin records (WP1.8). These two
+ * decide every vector the tier emits: `@huggingface/transformers` supplies the tokenizer +
+ * inference graph, and `onnxruntime-node` (its native dependency) executes the graph. A silent
+ * upgrade of either can shift the vector space under a stable embedder id, which would serve
+ * stale-cache vectors from a NEW embedding space.
+ */
+const RUNTIME_PINNED_DEPS = ['@huggingface/transformers', 'onnxruntime-node'] as const;
+
+/** Read the installed version of one package under the runtime dir (undefined = not installed). */
+function installedDepVersion(runtimeDir: string, name: string): string | undefined {
+  const segs = name.split('/');
+  if (segs.some((s) => !/^(@[\w.-]+|[\w.-]+)$/.test(s) || s === '.' || s === '..'))
+    return undefined;
+  const pj = join(runtimeDir, 'node_modules', ...segs, 'package.json');
+  if (!existsSync(pj)) return undefined;
+  try {
+    return (JSON.parse(readFileSync(pj, 'utf8')) as { version?: string }).version;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Build the WP1.8 provisioning pin from what is on disk: every weight-cache file by sha256
+ * (tokenizer included — it is part of the cache), plus the installed versions of the runtime
+ * packages the pinned behaviour depends on.
+ *
+ * Throws when the weight cache is missing or empty: setup only calls this AFTER a successful
+ * weights step, so a missing cache here is a wiring bug, not an operator state — and pinning an
+ * empty cache would write a manifest whose weight verification passes vacuously, which is the
+ * "silent downgrade" this whole module exists to prevent.
+ */
+export function onnxProvisioningPin(home: string, spec: OnnxAdapterSpec): EmbedProvisioningPin {
+  const cache = onnxModelCacheDir(home);
+  if (!existsSync(cache)) throw new Error(`weight cache is missing: ${cache}`);
+  const files = hashDirFiles(cache);
+  if (files.length === 0) throw new Error(`weight cache ${cache} is empty — nothing to pin`);
+  const runtimeDir = onnxRuntimeDir(home);
+  const deps: Record<string, string> = {};
+  for (const name of RUNTIME_PINNED_DEPS) {
+    const v = installedDepVersion(runtimeDir, name);
+    if (v) deps[name] = v;
+  }
+  return {
+    onnxId: spec.onnxId,
+    weights: { dir: cache, files },
+    // The platform key is what makes a copied embed home fail at the FIRST verification instead
+    // of later inside a dlopen: onnxruntime-node's native binaries are per-OS-per-arch, so a home
+    // rsynced from an arm64 Mac to an x64 Linux box "verifies" against every hash and then dies
+    // at import with an error that names neither the cause nor the fix.
+    ...(Object.keys(deps).length > 0
+      ? {
+          runtime: {
+            dir: runtimeDir,
+            deps,
+            platform: `${process.platform}-${process.arch}`,
+          },
+        }
+      : {}),
+  };
 }

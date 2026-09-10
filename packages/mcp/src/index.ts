@@ -11,7 +11,13 @@ export {
   DEFAULT_BODY_MAX_LINES,
   type RehydratedBody,
 } from './snippet.js';
-export { buildServer, serveHttp, serveStdio } from './server.js';
+export { buildServer, serveHttp, serveStdio, type RequestPins } from './server.js';
+export {
+  STALE_REASONS,
+  type ReaderFreshness,
+  type ReaderRefreshError,
+  type RefreshState,
+} from './reader-freshness.js';
 export {
   CAPABILITIES,
   OPERATION_COUNT,

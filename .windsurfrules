@@ -24,6 +24,8 @@ This repository uses knowledge-crib as a shared, vendor-neutral memory substrate
 ### 2. Recall before you act
 - Before relying on a reusable claim, call the `brief` MCP tool (or the `memory_recall` MCP tool, or `crib memory recall "<query>"`) to surface team + local memory for this repository. Memory is the source of truth across sessions — do not assume last session’s state still holds.
 - `brief` returns typed groups: team before local, valid before degraded, current before needs-review. Never mix memory results with BM25 code-search results into one opaque list.
+- Recall and handoff read DIFFERENT stores, and neither answers for the other. `brief` and `memory_recall` read the CLAIM LEDGER (distilled reusable claims); `memory` with `op: "handoff"` reads INTAKES (durable work in progress, §1). An empty recall is evidence about the ledger alone — it is never evidence that there is no unfinished work, so do not report "no memory for this repository" on a recall alone. Check both stores before concluding either is empty.
+- Recall deliberately excludes untrusted records. `memory_recall` never returns pending, invalid, superseded or retracted records, so a claim captured but not yet distilled is absent by design, not missing. Pass `includePending: true` to see those as a separate, explicitly untrusted group — leads, never facts.
 
 ### 3. Record only reusable learnings
 - Persist a memory (via `memory_observe`, or `crib memory propose/attest`) ONLY when it is reusable beyond the current task: a non-obvious fact, a verified procedure, a decision with rationale, a pitfall and its fix, or a convention.

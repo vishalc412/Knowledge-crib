@@ -313,4 +313,21 @@ describe('freshnessStatus — busy is not dead', () => {
     expect(status.workerRunning).toBe(true);
     expect(status.workerBusy).toBe(false);
   });
+
+  it('judges the heartbeat against the caller-supplied lease TTL, not a hardcoded 15s (WP4)', () => {
+    // 20s-old heartbeat: dead by the default 15s window, alive by a 60s configured lease. The old
+    // code hardcoded 15_000 while the worker read its own opts.leaseTtlMs, so a deployment that
+    // tuned the lease got a status view judging the worker against a window it was never held to.
+    writeState(staleState({ heartbeatAt: new Date(Date.now() - 20_000).toISOString() }));
+    const withConfiguredTtl = freshnessStatus('/p', {
+      env,
+      headReader: () => 'h',
+      leaseTtlMs: 60_000,
+    });
+    expect(withConfiguredTtl.workerRunning).toBe(true);
+    expect(withConfiguredTtl.workerBusy).toBe(false);
+    const withDefaultTtl = freshnessStatus('/p', { env, headReader: () => 'h' });
+    expect(withDefaultTtl.workerRunning).toBe(false);
+    expect(withDefaultTtl.workerBusy).toBe(false);
+  });
 });

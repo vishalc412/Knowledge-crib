@@ -96,6 +96,7 @@ import {
  * touch the network or the enricher.
  */
 import type { Edge, Node, NodeKind } from '@knowledge-crib/soul-schema';
+import { blake3Hex } from '@knowledge-crib/soul-schema';
 import {
   type EnrichNextArgs,
   type EnrichStatusArgs,
@@ -104,6 +105,7 @@ import {
   llmPointer,
   llmProjection,
 } from './enrichment.js';
+import type { ReaderFreshness } from './reader-freshness.js';
 import {
   DEFAULT_BODY_MAX_CHARS,
   DEFAULT_BODY_MAX_LINES,
@@ -155,6 +157,13 @@ export interface VcsAdapter {
    * identifies the commit precisely), it just reads less like something a human recognises.
    */
   currentBranch?(root: string): string | undefined;
+  /**
+   * Content-addressed digest over an explicit dirty-path list (WP4.3): same paths with different
+   * bytes ⇒ different digest. OPTIONAL so test stubs keep compiling; without it the intake anchor
+   * falls back to the path-only digest, which still matches the field's `blake3:` shape but is
+   * blind to a second edit inside an already-dirty file.
+   */
+  contentDigestFor?(root: string, paths: string[]): string;
 }
 
 /**
@@ -251,6 +260,10 @@ export interface VerbDeps {
   symbolPercentile?: number;
   /** G5.2 — on-demand PDG/taint analyzer (optional; `explain` degrades when absent). */
   pdg?: PdgPort;
+  /** WP4.7 — the serving process's reader-freshness reporter (optional). Present when the process
+   *  serves a refresh-coordinated bundle (watch mode) or computes the cold one-shot shape (manual
+   *  mode / viz); `status` folds its output in as the `readerFreshness` block, best-effort. */
+  readerFreshness?: () => ReaderFreshness;
 }
 
 /** The optional semantic-search surface an IndexStore backend may provide. Backends without it
@@ -558,6 +571,23 @@ export class Verbs {
     return this.stats;
   }
 
+  /**
+   * WP4.4/WP4.5 — adopt a freshly published working snapshot (overlay store + its paired FTS
+   * projection) ATOMICALLY. The serving process's refresh coordinator calls this when a candidate
+   * bundle's generation has been verified against the live source and every in-flight request has
+   * drained, so no verb ever observes half of a bundle: the method is synchronous, and the only
+   * async verb (`memorySync`) is pinned by the request-level retain/release wrapper in server.ts —
+   * a swap never lands inside a request. `this` (and therefore the stats counters, the alias table
+   * and every closed-over handler) stays the SAME instance; only the two dep slots move. This is
+   * deliberately NOT the memory-evaluation generation: that belongs to the freshness engine and
+   * must never be conflated with the reader-snapshot generation (WP4, "report").
+   */
+  adoptWorkingSnapshot(overlay: SoulStore | undefined, overlayIndex: IndexStore | undefined): void {
+    this.deps.workingOverlay = overlay;
+    this.deps.workingOverlayIndex = overlayIndex;
+    this.graph.setWorkingOverlay(overlay);
+  }
+
   status(opts?: { dirty?: boolean }): Record<string, unknown> {
     const m = this.deps.soul.getManifest();
     const { hasLlmGraph, composite } = this.statusGraphFacts();
@@ -610,6 +640,16 @@ export class Verbs {
         }
       } catch {
         // VCS read is best-effort; never mask deterministic status.
+      }
+    }
+    // WP4.7 — the reader-freshness block, when the serving process wired a reporter. Best-effort
+    // like the VCS block: a half-initialized project must never crash a health check, and the
+    // status verb's own shape is untouched when the dep is absent (existing consumers see no key).
+    if (this.deps.readerFreshness) {
+      try {
+        result.readerFreshness = this.deps.readerFreshness();
+      } catch (err) {
+        result.readerFreshness = { error: (err as Error).message ?? String(err) };
       }
     }
     return result;
@@ -1806,8 +1846,14 @@ export class Verbs {
     let changedPaths: string[];
     try {
       changedPaths = vcs.changedFilesSince(this.deps.repoRoot, since);
-    } catch {
-      return { note: 'not a git work tree' };
+    } catch (err) {
+      // Same distinction as detect_changes (WP4.4): a rebased-away anchor is not "not a git work
+      // tree", and the operator's repair differs — re-index, not repo debugging.
+      const name = (err as Error)?.name;
+      if (name === 'AnchorUnavailableError')
+        return { note: `indexed commit ${since} is unavailable — re-index to re-anchor` };
+      if (name === 'NotARepoError') return { note: 'not a git work tree' };
+      return { note: `vcs scan failed: ${(err as Error).message ?? String(err)}` };
     }
     const changed = new Set(changedPaths);
     const targets: string[] = [];
@@ -2102,13 +2148,24 @@ export class Verbs {
     let changedPaths: string[];
     try {
       changedPaths = vcs.changedFilesSince(this.deps.repoRoot, since);
-    } catch {
+    } catch (err) {
+      // The old catch reported 'not a git work tree' for EVERY failure, including the one that
+      // means the opposite (WP4.4): a healthy repo whose indexed anchor was rebased away or
+      // garbage-collected. An operator told "not a git work tree" audits their repo; an operator
+      // told the anchor is stale runs `crib index` and is done. The note must name the real one.
+      const name = (err as Error)?.name;
+      const note =
+        name === 'AnchorUnavailableError'
+          ? `indexed commit ${since} is unavailable — history was rewritten or the commit was garbage-collected; run \`crib index\` to re-anchor`
+          : name === 'NotARepoError'
+            ? 'not a git work tree'
+            : `vcs scan failed: ${(err as Error).message ?? String(err)}`;
       return {
         changedSymbols: [],
         newEdges: [],
         removedEdges: [],
         head,
-        note: 'not a git work tree',
+        note,
       };
     }
     // `changedFilesSince` is `since..HEAD` — a COMMIT range, so it structurally cannot see an edit
@@ -3191,12 +3248,17 @@ export class Verbs {
 
   private intakeRepository(): { head?: string; dirty: boolean; changedPathsDigest?: string } {
     const { head, dirtyFiles } = this.vcsFacts();
+    // WP4.3 — this field shares its name with the CLI session anchor's digest, so it shares the
+    // contract: content-addressed `blake3:<hex>`, not the raw joined path list. The old value was
+    // the join itself — same field name on two surfaces, two different meanings, and a digest that
+    // could not see an edit that left the path list unchanged.
+    const digest =
+      this.deps.vcs?.contentDigestFor?.(this.deps.repoRoot, dirtyFiles) ??
+      `blake3:${blake3Hex(dirtyFiles.slice().sort().join('\n'))}`;
     return {
       ...(head ? { head } : {}),
       dirty: dirtyFiles.length > 0,
-      ...(dirtyFiles.length > 0
-        ? { changedPathsDigest: dirtyFiles.slice().sort().join('\n') }
-        : {}),
+      ...(dirtyFiles.length > 0 ? { changedPathsDigest: digest } : {}),
     };
   }
 
@@ -3762,6 +3824,79 @@ export class Verbs {
     } catch {
       // A breadcrumb is never worth a failed tool call.
     }
+  }
+
+  /**
+   * WP2.5 runtime evidence — record that a real client attached to this server. The MCP handshake
+   * reports the client's own name/version (`initialize` → `clientInfo`), which no configuration
+   * file can prove: `crib mcp install` writes an entry, but only this event shows the client
+   * actually CONNECTED. The idempotency key coalesces per server process, so a client that
+   * reconnects (IDE restart) appends a fresh event while one connection records once.
+   *
+   * Fail-open like noteSessionActivity: certification evidence is never worth a failed connection.
+   */
+  noteClientConnection(clientName: string, clientVersion: string | undefined): void {
+    try {
+      const journal = this.deps.memory?.eventJournal;
+      if (!journal) return;
+      journal.append({
+        kind: 'mcp.connection',
+        idempotencyKey: `mcp:connection:${this.serverSessionId}:${clientName}`,
+        source: { clientId: clientName, sessionId: this.serverSessionId },
+        identity: resolveServerIdentity(process.env),
+        payload: { client: clientName, ...(clientVersion ? { clientVersion } : {}) },
+        occurredAt: new Date().toISOString(),
+      });
+    } catch {
+      // Evidence is never worth a failed connection.
+    }
+  }
+
+  /**
+   * WP2.5 runtime evidence — record that the connected client invoked a crib TOOL. One event per
+   * (client, tool, time bucket), mirroring noteSessionActivity's coalescing: exact counts stay in
+   * the in-memory stats verb, while the journal holds the bounded-rate proof that the client
+   * exercised the runtime. `crib adapters status` reads these to report the runtime-certified
+   * state; without them "the config says the client is wired" would be the only (untruthful)
+   * evidence available.
+   *
+   * Fail-open: a tool call must never fail because its evidence could not be recorded.
+   */
+  noteToolInvocation(clientName: string, tool: string): void {
+    try {
+      const journal = this.deps.memory?.eventJournal;
+      if (!journal) return;
+      const bucket = Math.floor(Date.now() / SESSION_ANCHOR_BUCKET_MS);
+      journal.append({
+        kind: 'mcp.tool-invoked',
+        idempotencyKey: `mcp:invoke:${this.serverSessionId}:${clientName}:${tool}:${bucket}`,
+        source: { clientId: clientName, sessionId: this.serverSessionId },
+        identity: resolveServerIdentity(process.env),
+        payload: { tool },
+        occurredAt: new Date().toISOString(),
+      });
+    } catch {
+      // Evidence is never worth a failed tool call.
+    }
+  }
+
+  /** The client name this server process was initialized by (the handshake's `clientInfo.name`),
+   *  or `undefined` before the client completes initialization. Tool-invocation evidence is
+   *  attributed to it; without a handshake there is nothing to attribute. */
+  private connectedClientName: string | undefined;
+
+  /** Record the handshake result (called from the server's oninitialized hook) and remember the
+   *  client name for per-tool attribution. Returns the name for logging/tests. */
+  noteInitialized(clientName: string, clientVersion?: string): string {
+    this.connectedClientName = clientName;
+    this.noteClientConnection(clientName, clientVersion);
+    return clientName;
+  }
+
+  /** Attribute a tool invocation to the connected client. Public for the server's handler wrapper. */
+  recordToolInvocation(tool: string): void {
+    if (this.connectedClientName === undefined) return;
+    this.noteToolInvocation(this.connectedClientName, tool);
   }
 
   /**

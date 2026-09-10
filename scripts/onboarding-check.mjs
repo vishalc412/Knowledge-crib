@@ -26,7 +26,8 @@
  *       value is telling a stuck user what's wrong, so it MUST fail loud on a not-init'd repo.
  *
  * Hermeticity: `--ide claude` scopes MCP wiring to a project-local `.mcp.json` inside the temp repo
- * (never the user's global `~/.claude` or `~/.cursor`). The temp repos are rmSync'd in `finally`.
+ * (never the user's global `~/.claude` or `~/.cursor`), and every CLI subprocess receives a fresh
+ * HOME. The temp repos and home are rmSync'd before exit.
  *
  * release:verify builds every package before any gate runs, so `packages/cli/dist/cli.js` exists.
  */
@@ -42,6 +43,7 @@ const CLI = resolve(REPO, 'packages', 'cli', 'dist', 'cli.js');
 const NOW = '2026-01-01T00:00:00.000Z';
 const AUTHOR_NAME = 'Onboarding Check';
 const AUTHOR_EMAIL = 'onboarding@crib.dev';
+const HOME = mkdtempSync(join(tmpdir(), 'crib-onboarding-home-'));
 
 let failed = 0;
 const fail = (msg) => {
@@ -62,7 +64,10 @@ const runCrib = (repo, args) => {
       cwd: repo,
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'pipe'],
-      env: { ...process.env, NO_COLOR: '1' },
+      // The onboarding fixture models a new developer machine. Do not inherit a model home from
+      // an earlier test fixture or CI provisioning; `init --no-embed` intentionally starts with
+      // the lexical fallback and doctor should report that state as healthy for this opt-in tier.
+      env: { ...process.env, HOME, KCRIB_EMBED_HOME: undefined, NO_COLOR: '1' },
     });
     return { code: 0, out };
   } catch (err) {
@@ -210,6 +215,7 @@ try {
   }
 }
 
+rmSync(HOME, { recursive: true, force: true });
 if (failed > 0) {
   process.stderr.write(`\nonboarding:check — ${failed} assertion(s) failed\n`);
   process.exit(1);

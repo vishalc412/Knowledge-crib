@@ -1,3 +1,5 @@
+import { realpathSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
@@ -23,6 +25,21 @@ export default defineConfig({
     // `beforeEach` in the memory/e2e suites runs a full indexRepo + index build, so the hook budget
     // has to move with the test budget or the hook times out first and reads as an unrelated failure.
     hookTimeout: 30_000,
+  },
+  // WP1.8 — the embed-setup tests dynamic-import a generated embedder from a mkdtemp dir under
+  // os.tmpdir() (pinAdapter exercises the same audited import path as the core suite). Vite's
+  // dev-file serving is restricted to the workspace root by default, so tmpdir must be
+  // allow-listed or the import fails with the misleading "Does the file exist?". Same shape and
+  // same realpath caveat as packages/core/vitest.config.ts.
+  server: {
+    fs: {
+      // realpath: on macOS tmpdir() is /var/... but ids resolve to /private/var/... — the
+      // allowlist must name the REAL path or the check denies the import.
+      allow: [realpathSync(tmpdir())],
+    },
+    deps: {
+      external: [/embedder\.mjs$/, /embedder\.cjs$/, /\/embed\//],
+    },
   },
   plugins: [
     {

@@ -43,6 +43,14 @@ const TERMINAL_CHECKPOINTS = new Set<IntakeCheckpoint['kind']>(['completed', 'ca
 export function createIntakeCheckpoint(input: IntakeCheckpointInput): IntakeCheckpoint {
   const summary = normalizeClaim(input.summary);
   const nextSafeAction = input.nextSafeAction ? normalizeClaim(input.nextSafeAction) : undefined;
+  const repository = {
+    ...(input.repository.head !== undefined ? { head: input.repository.head } : {}),
+    ...(input.repository.branch !== undefined ? { branch: input.repository.branch } : {}),
+    dirty: input.repository.dirty,
+    ...(input.repository.changedPathsDigest !== undefined
+      ? { changedPathsDigest: input.repository.changedPathsDigest }
+      : {}),
+  };
   if (!summary) throw new Error('intake checkpoint summary must not be empty');
   if (!TERMINAL_CHECKPOINTS.has(input.kind) && !nextSafeAction) {
     throw new Error(`nextSafeAction is required for non-terminal checkpoint '${input.kind}'`);
@@ -56,7 +64,7 @@ export function createIntakeCheckpoint(input: IntakeCheckpointInput): IntakeChec
     summary,
     ...(input.completedStepIds ? { completedStepIds: normalizedList(input.completedStepIds) } : {}),
     ...(input.audience ? { audience: input.audience } : {}),
-    repository: input.repository,
+    repository,
     ...(input.artifactPaths ? { artifactPaths: normalizedList(input.artifactPaths) } : {}),
     ...(input.receiptIds ? { receiptIds: normalizedList(input.receiptIds) } : {}),
     actor: normalizeClaim(input.actor),

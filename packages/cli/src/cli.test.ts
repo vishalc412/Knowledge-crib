@@ -4,6 +4,7 @@ import {
   mkdirSync,
   mkdtempSync,
   readFileSync,
+  readdirSync,
   realpathSync,
   rmSync,
   symlinkSync,
@@ -14,10 +15,17 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { crc32 } from 'node:zlib';
 import { SoulStore, newManifest, openIndex } from '@knowledge-crib/core';
+import {
+  type MemoryEvidence,
+  type MemoryRecord,
+  MemoryStore,
+  memoryRecordId,
+} from '@knowledge-crib/memory';
 import { indexRepo } from '@knowledge-crib/pipeline';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { buildMinimalPdf } from '../../../scripts/fixtures/minimal-pdf.mjs';
 import { syntheticMuleProject } from '../../../scripts/fixtures/synthetic-mule-project.mjs';
+import { TOML_BEGIN } from './mcp-install.js';
 
 /**
  * End-to-end CLI dispatch tests for the P2 surface: `context --package <pkg>` (WS-4 bulk dossierByScope)
@@ -1126,10 +1134,229 @@ describe('crib adapters (W8) — CLI dispatch', () => {
     expect(existsSync(join(repo, 'GEMINI.md'))).toBe(true);
   });
 
+  it('crib adapters remove --client all — a seeded store survives and recall still answers', async () => {
+    // WP7.6 — the REAL memory-survival pin behind the "memory intact" name above: that test only
+    // proves sibling INSTRUCTION FILES survive a single-client removal. This one seeds an actual
+    // recall-eligible record into a mem-home global store, runs the FULL client-removal surface an
+    // operator runs when leaving crib (`adapters remove --client all` + `mcp remove`), and proves
+    // (a) the removal really removed, (b) the store JSONL bytes are untouched, (c) `crib memory
+    // recall` — the command the protocol spliced into every instruction file names as the fallback
+    // — still returns the record.
+    //
+    // The shared beforeEach indexes in memory but never commits the soul, and memory needs a
+    // committed graph + a resolvable repo.id — so this test mirrors memory-migrate.test.ts's
+    // bootstrap: SoulStore + indexRepo + commit + a crib.json locator.
+    const NOW = '2026-01-01T00:00:00.000Z';
+    const REPO_ID = 'r-adapters-survival';
+    const NODE_ID = 'sym:src/a.ts#A.b@L2';
+    mkdirSync(join(repo, 'src'), { recursive: true });
+    writeFileSync(
+      join(repo, 'src', 'a.ts'),
+      'export class A {\n  b(): number {\n    return 1;\n  }\n}\n',
+    );
+    const soul = new SoulStore(join(repo, '.crib'), { manifest: newManifest({ root: '.' }) });
+    soul.load();
+    await indexRepo(soul, repo);
+    soul.commit(NOW);
+    writeFileSync(
+      join(repo, '.crib', 'crib.json'),
+      `${JSON.stringify({ repo: { id: REPO_ID, root: '.' } }, null, 2)}\n`,
+    );
+
+    // mem-home isolates the user-scoped global store from this machine; KCRIB_EMBED_HOME pins the
+    // tier so the subprocess cannot inherit whatever model the developer happens to have
+    // installed (same discipline as memory-recall.test.ts).
+    const memHome = join(repo, 'mem-home');
+    mkdirSync(memHome, { recursive: true });
+    const cliEnv: NodeJS.ProcessEnv = {
+      ...process.env,
+      KCRIB_MEMORY_DIR: memHome,
+      KCRIB_EMBED_HOME: join(memHome, 'embed'),
+    };
+    // Every CLI call below goes through env: the memory verbs must resolve the SAME relocated
+    // stores the removal verbs run under, or the byte-identity assertion would prove nothing.
+    const run = (args: string[]): string =>
+      execFileSync(process.execPath, [CLI, ...args], {
+        cwd: repo,
+        encoding: 'utf8',
+        stdio: ['ignore', 'pipe', 'pipe'],
+        maxBuffer: 32 * 1024 * 1024,
+        env: cliEnv,
+      }).trim();
+
+    // A recall-eligible global record: admissible for a fact (source-quote) and grounded against
+    // the live soul ('return 1;' is A.b's body), so fresh revalidation keeps it eligible.
+    const input = {
+      kind: 'fact' as const,
+      subject: NODE_ID,
+      claim: 'A.b returns 1 — pinned so removal cannot silently lose memory',
+      scope: { boundary: 'global' as const },
+      appliesTo: [NODE_ID],
+      evidence: [
+        {
+          kind: 'source-quote' as const,
+          verdict: 'valid' as const,
+          checkedAt: NOW,
+          soulId: NODE_ID,
+          quote: 'return 1;',
+        },
+      ],
+      authorship: { actor: 'claude-code', kind: 'agent' as const, tool: 'claude-code' },
+    };
+    const record: MemoryRecord = {
+      id: memoryRecordId(input),
+      schemaVersion: '1',
+      ...input,
+      verdicts: {
+        trust: 'local',
+        evidence: 'valid',
+        applicability: 'current',
+        lifecycle: 'active',
+      },
+      createdAt: NOW,
+    } as MemoryRecord;
+    MemoryStore.global({ env: cliEnv }).upsertEntries('records', [record]);
+
+    // Wire the full client surface first, so the removal sweeps real files, not absent ones.
+    run(['adapters', 'install', '--client', 'all']);
+    run(['mcp', 'install', '--ide', 'all', '--bin', 'crib']);
+
+    const storeJsonlBytes = (): Map<string, string> => {
+      const files = new Map<string, string>();
+      const walk = (dir: string): void => {
+        for (const e of readdirSync(dir, { withFileTypes: true })) {
+          const p = join(dir, e.name);
+          if (e.isDirectory()) walk(p);
+          else if (e.isFile() && e.name.endsWith('.jsonl')) {
+            files.set(p, readFileSync(p, 'utf8'));
+          }
+        }
+      };
+      if (existsSync(memHome)) walk(memHome);
+      return files;
+    };
+    const before = storeJsonlBytes();
+    // the seeded record really is on disk before the removal runs (a vacuous pass would otherwise
+    // prove nothing about survival).
+    expect([...before.values()].some((bytes) => bytes.includes(record.id))).toBe(true);
+
+    const removed = run(['adapters', 'remove', '--client', 'all']);
+    expect(removed).toContain('claude: removed');
+    const mcpRemoved = run(['mcp', 'remove', '--ide', 'all']);
+    expect(mcpRemoved).toContain('removed');
+
+    // (a) the removal really removed: instruction files gone, the MCP server entry unwired.
+    expect(existsSync(join(repo, 'CLAUDE.md'))).toBe(false);
+    expect(existsSync(join(repo, 'AGENTS.md'))).toBe(false);
+    const mcpJson = existsSync(join(repo, '.mcp.json'))
+      ? (JSON.parse(readFileSync(join(repo, '.mcp.json'), 'utf8')) as {
+          mcpServers?: Record<string, unknown>;
+        })
+      : {};
+    expect(mcpJson.mcpServers?.['knowledge-crib']).toBeUndefined();
+
+    // (b) the store bytes are byte-unchanged by the whole removal surface.
+    expect(storeJsonlBytes()).toEqual(before);
+
+    // (c) recall still answers — the same record, same claim, through the relocated store.
+    const out = run(['memory', 'recall', 'A.b returns', '--json']);
+    const parsed = JSON.parse(out) as {
+      memories: Array<{ id: string; claim: string; source: string }>;
+    };
+    const surviving = parsed.memories.find((m) => m.id === record.id);
+    expect(surviving?.claim).toBe(record.claim);
+    expect(surviving?.source).toBe('global');
+  });
+
   it('rejects an unknown --client with BAD_ARGS', () => {
     const r = runCliResult(['adapters', 'install', '--client', 'nope']);
     expect(r.status).not.toBe(0);
     expect(r.stderr).toMatch(/unknown --client/);
+  });
+
+  it('repeated full setup is idempotent — no duplicate managed entries (WP2.3 acceptance)', () => {
+    // The WP2 acceptance sentence as one e2e against the temp repo: run the WHOLE onboarding
+    // surface (instruction files + capture hooks + MCP wiring), then run it AGAIN, and require
+    // the second pass to be a byte-for-byte no-op. A duplicated managed block / hook entry /
+    // server table would change bytes even if every file stayed parseable — byte-identity is the
+    // strongest no-duplicate proof, so marker counting only guards the one way bytes could stay
+    // identical while a block still duplicated (impossible by construction, but cheap to pin).
+    const runSetupPass = (): string =>
+      [
+        runCli(['adapters', 'install', '--client', 'all']),
+        runCli(['adapters', 'hooks', 'install']),
+        runCli(['mcp', 'install', '--ide', 'all', '--bin', 'crib']),
+      ].join('\n');
+
+    runSetupPass();
+
+    const collect = (): Map<string, string> => {
+      const files = new Map<string, string>();
+      const walk = (dir: string): void => {
+        for (const e of readdirSync(dir, { withFileTypes: true })) {
+          const p = join(dir, e.name);
+          if (e.isDirectory()) walk(p);
+          else files.set(p, readFileSync(p, 'utf8'));
+        }
+      };
+      walk(repo);
+      return files;
+    };
+    const before = collect();
+
+    const secondPass = runSetupPass();
+
+    // The second pass must report everything as already-managed, not freshly written.
+    expect(secondPass).toContain('claude: up to date');
+    expect(secondPass).toContain('hooks up to date');
+    expect(secondPass).toContain('already up to date');
+
+    // Byte-identity: every file the first pass produced is unchanged, and nothing new appeared.
+    const after = collect();
+    const drifted = [...before.keys()].filter((p) => after.get(p) !== before.get(p));
+    expect(drifted).toEqual([]);
+    expect([...after.keys()].filter((p) => !before.has(p))).toEqual([]);
+
+    // Exactly one managed instruction block per instruction file.
+    for (const p of before.keys()) {
+      if (p.endsWith('.md') || p.endsWith('.mdc') || p.endsWith('.windsurfrules')) {
+        const bytes = before.get(p) ?? '';
+        if (bytes.includes('<!-- crib:start -->')) {
+          expect(bytes.split('<!-- crib:start -->').length - 1).toBe(1);
+        }
+      }
+    }
+    // Exactly one crib hook entry per declared event bucket, no duplicates in settings.json.
+    // The NESTED shape Claude Code actually accepts: each bucket is an array of matcher groups,
+    // each group carrying its own hooks array — flatten before counting.
+    type HookGroup = { hooks?: Array<{ command?: string }> };
+    const settings = JSON.parse(readFileSync(join(repo, '.claude', 'settings.json'), 'utf8')) as {
+      hooks?: Record<string, HookGroup[]>;
+    };
+    expect(Object.keys(settings.hooks ?? {}).length).toBeGreaterThan(0);
+    for (const [event, groups] of Object.entries(settings.hooks ?? {})) {
+      const cribEntries = groups
+        .flatMap((g) => g.hooks ?? [])
+        .filter((e) => (e.command ?? '').startsWith('crib memory capture-hook'));
+      expect(cribEntries.length).toBe(1);
+      expect(event).toMatch(/SessionStart|SessionEnd|PostToolUse|Stop|PreToolUse/);
+    }
+    // Exactly one knowledge-crib server entry per JSON MCP config.
+    const jsonMcpConfigs = [
+      join(repo, '.mcp.json'),
+      join(repo, '.cursor', 'mcp.json'),
+      join(repo, '.vscode', 'mcp.json'),
+      join(repo, '.gemini', 'settings.json'),
+    ];
+    for (const p of jsonMcpConfigs) {
+      if (!existsSync(p)) continue;
+      const root = JSON.parse(readFileSync(p, 'utf8')) as Record<string, unknown>;
+      const servers = (root.mcpServers ?? root.servers) as Record<string, unknown>;
+      expect(Object.keys(servers).filter((k) => k === 'knowledge-crib').length).toBe(1);
+    }
+    // And the codex TOML block appears once.
+    const codexToml = readFileSync(join(repo, '.codex', 'config.toml'), 'utf8');
+    expect(codexToml.split('[mcp_servers.knowledge-crib]').length - 1).toBe(1);
   });
 });
 
@@ -1216,6 +1443,216 @@ describe('crib doctor — stale build artifacts (WARN-class, report-only)', () =
     // total NOT pinned — the check count varies with environment (see the doctor W8 describe
     // block above); the invariant under test here is that the stale-artifacts check is included.
     expect(r.stdout).toMatch(/crib doctor: \d+\/\d+ checks passed/);
+  });
+});
+
+/**
+ * WP2.6 — `crib doctor` must identify each of the five failure conditions the plan names
+ * INDEPENDENTLY: missing client binary, invalid configuration, unavailable model, inactive
+ * freshness service, pending migration. The register acceptance is "fixture per condition →
+ * distinct diagnosis": every fixture below plants exactly ONE defect and asserts the doctor row
+ * that names it — its own ✗, its own evidence, its own fix — never a generic "something is wrong".
+ *
+ * `runDoctor` isolates HOME per test: this dev machine has crib installed in all six clients'
+ * global configs, and without an isolated HOME the MCP-config audit would read those real global
+ * entries (and the freshness registry, and the embed home) instead of the planted fixture.
+ */
+describe('crib doctor (WP2.6) — one fixture per condition, one DISTINCT diagnosis each', () => {
+  const NOW = '2026-01-01T00:00:00.000Z';
+  let home: string;
+
+  beforeEach(() => {
+    home = mkdtempSync(join(tmpdir(), 'crib-doctor-home-'));
+  });
+  afterEach(() => rmSync(home, { recursive: true, force: true }));
+
+  /** Doctor via the BUILT CLI with an isolated HOME (+ per-test env). Doctor exits non-zero when a
+   *  planted defect fails its check, so capture stdout rather than throw. */
+  function runDoctor(env: NodeJS.ProcessEnv = {}): string {
+    try {
+      return execFileSync(process.execPath, [CLI, 'doctor'], {
+        cwd: repo,
+        encoding: 'utf8',
+        stdio: ['ignore', 'pipe', 'pipe'],
+        // CI installs the semantic tier at KCRIB_EMBED_HOME before this suite. The control fixture
+        // models a fresh machine, so it must not inherit that job-level model; individual embed
+        // cases still opt in by passing their own explicit KCRIB_EMBED_HOME in `env`.
+        env: { ...process.env, HOME: home, KCRIB_EMBED_HOME: undefined, ...env },
+      }).trim();
+    } catch (e) {
+      return ((e as { stdout?: string }).stdout ?? '').trim();
+    }
+  }
+
+  it('diagnoses a crib MCP entry whose pinned binary is gone (binary-missing)', () => {
+    // An install pins the ABSOLUTE crib path; a reinstall or another checkout silently orphans the
+    // entry, which reads downstream as "the client never connects" — doctor must name the path.
+    const bin = join(repo, '.crib', 'bin', 'crib-moved-away');
+    mkdirSync(join(repo, '.cursor'), { recursive: true });
+    writeFileSync(
+      join(repo, '.cursor', 'mcp.json'),
+      `${JSON.stringify({ mcpServers: { 'knowledge-crib': { command: bin, args: ['mcp'] } } }, null, 2)}\n`,
+    );
+    const out = runDoctor();
+    expect(out).toMatch(/✗ MCP config usable \(parses, binary exists\)/);
+    expect(out).toContain('binary is not on this machine');
+    expect(out).toContain(bin);
+    expect(out).toMatch(/re-run `crib mcp install`/);
+  });
+
+  it('diagnoses a generated launcher whose cli.js is gone (entrypoint-missing, A09)', () => {
+    // The clean-machine fallback pins `<node> <abs>/cli.js`. node still exists after the checkout
+    // moves — only the SCRIPT vanishes — so a command-only check called this entry usable.
+    const gone = join(repo, 'moved-away', 'dist', 'cli.js');
+    mkdirSync(join(repo, '.cursor'), { recursive: true });
+    writeFileSync(
+      join(repo, '.cursor', 'mcp.json'),
+      `${JSON.stringify(
+        {
+          mcpServers: {
+            'knowledge-crib': { command: process.execPath, args: [gone, 'serve', '.'] },
+          },
+        },
+        null,
+        2,
+      )}\n`,
+    );
+    const out = runDoctor();
+    expect(out).toMatch(/✗ MCP config usable \(parses, binary exists\)/);
+    expect(out).toContain(gone);
+    expect(out).toContain('that script is not on this machine');
+    expect(out).toMatch(/re-run `crib mcp install`/);
+  });
+
+  it('diagnoses an unparseable JSON config as config-unparseable, and refuses to touch it', () => {
+    mkdirSync(join(repo, '.cursor'), { recursive: true });
+    writeFileSync(join(repo, '.cursor', 'mcp.json'), '{ "mcpServers": {  broken');
+    const out = runDoctor();
+    expect(out).toMatch(/✗ MCP config usable \(parses, binary exists\)/);
+    expect(out).toContain('not valid JSON — crib cannot read or safely rewrite it');
+    expect(out).toContain('crib will not overwrite a config it cannot parse');
+    // And the corrupt file is still there: a diagnostic must never repair what it inspects.
+    expect(existsSync(join(repo, '.cursor', 'mcp.json'))).toBe(true);
+  });
+
+  it('diagnoses a truncated TOML managed block (one marker without its pair)', () => {
+    mkdirSync(join(repo, '.codex'), { recursive: true });
+    // BEGIN with no END: the block was cut mid-edit, so codex can never parse its way out.
+    writeFileSync(
+      join(repo, '.codex', 'config.toml'),
+      `${TOML_BEGIN}\n[mcp_servers.knowledge-crib]\ncommand = "/bin/crib"\n`,
+    );
+    const out = runDoctor();
+    expect(out).toMatch(/✗ MCP config usable \(parses, binary exists\)/);
+    expect(out).toContain('managed block truncated (one marker without its pair)');
+    expect(out).toContain('knowledge-crib managed');
+  });
+
+  it('diagnoses an unavailable model (embedder tier invalid-model) with the problems echoed', () => {
+    const embedHome = join(home, 'embed');
+    mkdirSync(embedHome, { recursive: true });
+    // A manifest crib cannot parse: the install EXISTS but is unverifiable — fail closed.
+    writeFileSync(join(embedHome, 'manifest.json'), '{ "formatVersion": ');
+    const out = runDoctor({ KCRIB_EMBED_HOME: embedHome });
+    expect(out).toMatch(/✗ embedder tier — state invalid-model/);
+    expect(out).toContain('problems:');
+    expect(out).toMatch(/crib embed status/);
+  });
+
+  it('diagnoses an inactive freshness service by its dead-lettered tasks, and names the count', () => {
+    const registry = join(home, 'registry');
+    const freshDir = join(registry, 'freshness');
+    mkdirSync(freshDir, { recursive: true });
+    // A dead-lettered task = the worker exhausted its retries for this project: the actionable ✗.
+    // projectRoot must match doctor's `resolve('.')` — the physical cwd, hence realpathSync.
+    writeFileSync(
+      join(freshDir, 'queue.json'),
+      `${JSON.stringify(
+        {
+          version: 1,
+          pending: [],
+          dead: [
+            {
+              id: 'fq:deadbeef',
+              projectRoot: realpathSync(repo),
+              head: 'deadbeefdeadbeefdeadbeefdeadbeefdeadbeef',
+              attempts: 3,
+              enqueuedAt: NOW,
+            },
+          ],
+        },
+        null,
+        2,
+      )}\n`,
+    );
+    const out = runDoctor({ KCRIB_REGISTRY_DIR: registry });
+    expect(out).toMatch(
+      /✗ freshness — mode manual \(default\); worker not running; pending 0; dead 1;/,
+    );
+    expect(out).toMatch(/inspect `crib freshness status`/);
+  });
+
+  it('diagnoses pending migration (unstamped memory-1 records) and names crib memory migrate', () => {
+    const memDir = join(repo, '.crib', 'memory');
+    mkdirSync(memDir, { recursive: true });
+    // The 7b check only exists once the user opted in — policy.json present, like the W8 fixture.
+    writeFileSync(join(memDir, 'policy.json'), '{"version":1,"profiles":{}}\n');
+    // A VALID memory-1 record (content-addressed id, verdicts, evidence) with NO principal stamp —
+    // exactly what a pre-memory-2 store holds, written through the real store so the strict loader
+    // accepts it (a hand-written shard line would be refused and silently count as zero).
+    const evidence: MemoryEvidence = {
+      kind: 'source-quote',
+      verdict: 'valid',
+      checkedAt: NOW,
+      soulId: 'sym:src/a.ts#A.b',
+      quote: 'does the thing',
+      targetHash: 'blake3:abc',
+    } as MemoryEvidence;
+    const input = {
+      kind: 'fact' as const,
+      subject: 'sym:src/a.ts#A.b',
+      claim: 'A.b does the thing',
+      scope: { boundary: 'repo' as const, repoId: 'r-doctor' },
+      appliesTo: ['sym:src/a.ts#A.b'],
+      evidence: [evidence],
+      authorship: { actor: 'claude-code', kind: 'agent' as const, tool: 'claude-code' },
+    };
+    const record: MemoryRecord = {
+      id: memoryRecordId(input),
+      schemaVersion: '1',
+      ...input,
+      verdicts: {
+        trust: 'local',
+        evidence: 'valid',
+        applicability: 'current',
+        lifecycle: 'active',
+      },
+      createdAt: NOW,
+    } as MemoryRecord;
+    MemoryStore.team(join(repo, '.crib')).upsertEntries('records', [record]);
+
+    const out = runDoctor();
+    expect(out).toMatch(/✗ principal boundary enforceable — 1\/1 record\(s\) are memory-1/);
+    expect(out).toMatch(/crib memory migrate/);
+  });
+
+  it('reports NONE of the five conditions when the machine is clean', () => {
+    // The control: the same doctor run against an intact repo must pass every one of the five
+    // checks — so a fixture-driven ✗ above can never be "doctor fails on anything". policy.json +
+    // team dir are planted (the opt-in state) so the 7b migration row runs at all, with an EMPTY
+    // store: zero records means "no records yet", never a migration ✗.
+    const memDir = join(repo, '.crib', 'memory');
+    mkdirSync(join(memDir, 'team'), { recursive: true });
+    writeFileSync(join(memDir, 'policy.json'), '{"version":1,"profiles":{}}\n');
+    const out = runDoctor();
+    expect(out).toMatch(
+      /✓ MCP config usable \(parses, binary exists\) — no crib-managed MCP config problems/,
+    );
+    expect(out).toMatch(/✓ embedder tier — state lexical-only/);
+    expect(out).toMatch(
+      /✓ freshness — mode manual \(default\); worker not running; pending 0; dead 0;/,
+    );
+    expect(out).toMatch(/✓ principal boundary enforceable — no records yet/);
   });
 });
 
@@ -1329,6 +1766,69 @@ describe('G5.3 multimodal — opt-in phase with production adapters', () => {
       .filter((l) => !/ExperimentalWarning|trace-warnings/.test(l))
       .join('\n');
 
+  it('embed setup --json, noninteractive and WITHOUT --yes: consent-required, machine-readable, exit 0 (WP1.7)', () => {
+    // The WP1.7 regression scenario exactly: a script (no tty interaction possible) that omits the
+    // consent flag must get `status: "consent-required"` on stdout and exit 0 — nothing was fetched,
+    // so nothing failed. An empty embed home makes the runtime stop deterministic regardless of
+    // what is installed on the machine running the suite.
+    const emptyHome = mkdtempSync(join(tmpdir(), 'crib-embed-consent-'));
+    try {
+      const r = spawnSync(process.execPath, [CLI, 'embed', 'setup', '--json'], {
+        cwd: repo,
+        encoding: 'utf8',
+        maxBuffer: 32 * 1024 * 1024,
+        env: { ...process.env, KCRIB_EMBED_HOME: emptyHome },
+      });
+      expect(r.status ?? 1).toBe(0);
+      const plan = JSON.parse(stripWarnings(r.stdout ?? '')) as {
+        status: string;
+        needsConsent?: string;
+      };
+      expect(plan.status).toBe('consent-required');
+      expect(plan.needsConsent).toMatch(/ONNX runtime/);
+    } finally {
+      rmSync(emptyHome, { recursive: true, force: true });
+    }
+  });
+
+  it('embed status surfaces the WP1.11 four-state verdict machine-readably, per state', () => {
+    // One e2e per reachable-from-disk state, each on its own relocated embed home so the test is
+    // deterministic regardless of what the suite machine has installed. `crib embed status` is the
+    // operator-facing view of `EmbedTierReport.status` — the `state:` line is the contract.
+    const runStatus = (home: string): string =>
+      stripWarnings(
+        spawnSync(process.execPath, [CLI, 'embed', 'status'], {
+          cwd: repo,
+          encoding: 'utf8',
+          maxBuffer: 32 * 1024 * 1024,
+          env: { ...process.env, KCRIB_EMBED_HOME: home },
+        }).stdout ?? '',
+      );
+
+    // lexical-only — a fresh home: nothing installed, nothing broken.
+    const freshHome = mkdtempSync(join(tmpdir(), 'crib-embed-state-fresh-'));
+    try {
+      const out = runStatus(freshHome);
+      expect(out).toContain('state: lexical-only');
+      expect(out).toContain('crib embed setup');
+    } finally {
+      rmSync(freshHome, { recursive: true, force: true });
+    }
+
+    // installation-incomplete — a runtime footprint with no manifest: a setup that died before
+    // the pin. The remediation hint differs from a fresh machine's ("re-run", not "run").
+    const partialHome = mkdtempSync(join(tmpdir(), 'crib-embed-state-partial-'));
+    try {
+      mkdirSync(join(partialHome, 'runtime', 'node_modules'), { recursive: true });
+      const out = runStatus(partialHome);
+      expect(out).toContain('state: installation-incomplete');
+      expect(out).toContain('partial install');
+      expect(out).toContain('Re-run `crib embed setup`');
+    } finally {
+      rmSync(partialHome, { recursive: true, force: true });
+    }
+  });
+
   it('doctor reports the multimodal adapters check as WARN-class ✓ with the enabling command', () => {
     const r = spawnSync(process.execPath, [CLI, 'doctor'], {
       cwd: repo,
@@ -1355,6 +1855,18 @@ describe('G5.3 multimodal — opt-in phase with production adapters', () => {
         encoding: 'utf8',
         maxBuffer: 32 * 1024 * 1024,
       });
+      // WP1.12: CI (ubuntu Node 24) once failed here as a bare "expected 1 to be +0" with the child's
+      // stderr discarded, and the failure did not reproduce in the exact CI cell (5/5 isolated
+      // passes + a full-suite run on ubuntu:24.04/glibc 2.39/Node 24.20.0). Surface the child's exit
+      // code, stderr and stdout tail in the failure so the NEXT occurrence is diagnosable
+      // from the CI log alone instead of being unreproducible forever.
+      if ((r.status ?? 1) !== 0) {
+        throw new Error(
+          `crib index --multimodal exited ${r.status} (WP1.12 diagnosability)` +
+            `\nstderr tail: ${(r.stderr ?? '').slice(-2000)}` +
+            `\nstdout tail: ${(r.stdout ?? '').slice(-2000)}`,
+        );
+      }
       expect(r.status ?? 1).toBe(0);
       const report = JSON.parse(stripWarnings(r.stdout ?? '')) as {
         multimodal: {

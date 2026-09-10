@@ -154,6 +154,31 @@ export function installFreshnessService(opts: FreshnessServiceOptions) {
   return { ...spec, installed: true, active: true };
 }
 
+/**
+ * WP5.6 — (re)start the supervised worker. A missing definition is installed first (that IS the
+ * start path); an installed definition is restarted in place, without rewriting it, because a
+ * restart must not disturb a hand-edited unit a user is mid-fixing.
+ */
+export function restartFreshnessService(opts: FreshnessServiceOptions) {
+  const spec = freshnessServiceSpec(opts);
+  if (!existsSync(spec.path)) return { ...installFreshnessService(opts), restarted: false };
+  const run = opts.run ?? defaultServiceRun;
+  if (spec.manager === 'launchd') {
+    // -k kills the running instance if any, then starts it — restart even when it was not running.
+    run('launchctl', ['kickstart', '-k', `gui/${opts.uid}/${LABEL}`]);
+  } else if (spec.manager === 'systemd-user') {
+    run('systemctl', ['--user', 'restart', UNIT]);
+  } else {
+    try {
+      run('schtasks.exe', ['/End', '/TN', TASK]);
+    } catch {
+      // A not-running task is already in the pre-start state End aims for.
+    }
+    run('schtasks.exe', ['/Run', '/TN', TASK]);
+  }
+  return { ...spec, installed: true, active: true, restarted: true };
+}
+
 export function queryFreshnessService(opts: FreshnessServiceOptions) {
   const spec = freshnessServiceSpec(opts);
   if (!existsSync(spec.path)) return { ...spec, installed: false, active: false };

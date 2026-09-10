@@ -69,11 +69,53 @@ interface PersistentFtsMeta {
 
 const ROLES: readonly MemoryStoreRole[] = ['team', 'local', 'global'];
 
+/** One store binding is valid only with all three fields present and correctly typed. */
+function isIndexStoreMeta(value: unknown): value is IndexStoreMeta {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return false;
+  const v = value as Record<string, unknown>;
+  return (
+    typeof v.root === 'string' &&
+    typeof v.gen === 'number' &&
+    Number.isFinite(v.gen) &&
+    typeof v.nonce === 'string'
+  );
+}
+
+/**
+ * Complete structural validation of a snapshot header, run before ANY field of it is compared.
+ * The header is disposable derived state — the journal and shards are canonical — so the only
+ * question it has to answer is "may this snapshot be served", and anything it cannot answer with a
+ * confident yes is a rebuild, never a throw (A07).
+ */
+function isPersistentFtsMeta(value: unknown): value is PersistentFtsMeta {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return false;
+  const v = value as Record<string, unknown>;
+  if (typeof v.formatVersion !== 'number' || !Number.isFinite(v.formatVersion)) return false;
+  const stores = v.stores;
+  if (typeof stores !== 'object' || stores === null || Array.isArray(stores)) return false;
+  for (const [role, binding] of Object.entries(stores as Record<string, unknown>)) {
+    if (!ROLES.includes(role as MemoryStoreRole)) return false; // an unknown store set
+    if (!isIndexStoreMeta(binding)) return false;
+  }
+  return true;
+}
+
 /** Delete the snapshot db + any SQLite sidecar files (targeted rm of files this module owns). */
 function removeIndexFiles(dbPath: string): void {
   for (const suffix of ['', '-wal', '-shm', '-journal']) {
     rmSync(`${dbPath}${suffix}`, { force: true });
   }
+}
+
+/**
+ * Delete the snapshot's usability claim FIRST, then the db + sidecars. Meta-first is the crash
+ * contract: a rebuild that dies mid-flight must never leave a valid meta beside a missing db —
+ * snapshotUsable would take the serve path, openDatabase would hand back a fresh EMPTY db, and
+ * every query would silently answer nothing while the header claims a complete snapshot.
+ */
+function removeSnapshotFiles(dbPath: string, metaPath?: string): void {
+  if (metaPath !== undefined) rmSync(metaPath, { force: true });
+  removeIndexFiles(dbPath);
 }
 
 export interface OpenMemoryFtsOptions {
@@ -125,6 +167,12 @@ export class PersistentMemoryFts extends MemoryFtsIndex {
   private readonly forceRebuild: boolean;
   private healedOnOpen = false;
   private listenersInstalled = false;
+  /**
+   * Whether the snapshot db existed when THIS handle's open began (set in {@link openDatabase},
+   * before node:sqlite creates a missing file). Guards the crash window where a rebuild deleted
+   * the db but died before writeMeta left a valid header claiming a complete snapshot.
+   */
+  private dbExistedBeforeOpen = false;
 
   /**
    * Construct via {@link openMemoryFts} — the factory resolves the snapshot home and the ephemeral
@@ -168,12 +216,16 @@ export class PersistentMemoryFts extends MemoryFtsIndex {
     if (this.metaPath === undefined) return false; // :memory: — nothing on disk to heal
     if (this.healedOnOpen) return false;
     this.healedOnOpen = true;
-    removeIndexFiles(this.dbPath);
+    removeSnapshotFiles(this.dbPath, this.metaPath);
     return true;
   }
 
   protected override openDatabase(): DatabaseSync {
     if (this.metaPath !== undefined) {
+      // Capture existence BEFORE the parent opens the handle — node:sqlite CREATES a missing db
+      // file on open, so by the time onFirstUse/snapshotUsable runs an absent db looks present
+      // (fresh, empty, and therefore silently wrong). This flag is the only pre-open witness.
+      this.dbExistedBeforeOpen = existsSync(this.dbPath);
       // The snapshot dir is created lazily with the first open (mkdir -p is idempotent); the meta
       // header's atomic write would mkdir too, but the DB opens first.
       mkdirSync(dirname(this.dbPath), { recursive: true });
@@ -214,12 +266,20 @@ export class PersistentMemoryFts extends MemoryFtsIndex {
   private snapshotUsable(): boolean {
     if (this.metaPath === undefined) return false;
     if (!existsSync(this.metaPath)) return false;
-    let meta: PersistentFtsMeta;
+    if (!this.dbExistedBeforeOpen) return false; // meta without a db (crash mid-rebuild) — rebuild, never serve an empty index
+    let parsed: unknown;
     try {
-      meta = JSON.parse(readFileSync(this.metaPath, 'utf8')) as PersistentFtsMeta;
+      parsed = JSON.parse(readFileSync(this.metaPath, 'utf8'));
     } catch {
       return false; // torn/unparseable meta — rebuild (the header is disposable, the shards are truth)
     }
+    // Parsing is not validating. A header that is syntactically JSON but structurally wrong (an
+    // interrupted write, a hand-edit, a future/rolled-back format) previously reached
+    // `Object.keys(meta.stores)` and threw an unclassified TypeError out of a search call. The
+    // whole shape is checked BEFORE any field is compared, so every invalid header takes the same
+    // route as an absent one: rebuild from the canonical shards (A07).
+    if (!isPersistentFtsMeta(parsed)) return false;
+    const meta = parsed;
     if (meta.formatVersion !== MEMORY_FTS_FORMAT_VERSION) return false;
     const expected = this.expectedStoreMeta();
     const roles = new Set<MemoryStoreRole>(
@@ -255,7 +315,7 @@ export class PersistentMemoryFts extends MemoryFtsIndex {
    */
   private rebuildFromStores(): void {
     this.discardHandle();
-    if (this.metaPath !== undefined) removeIndexFiles(this.dbPath);
+    if (this.metaPath !== undefined) removeSnapshotFiles(this.dbPath, this.metaPath);
     this.reopenWithoutFirstUse();
     const gathered = gatherRecall(this.stores);
     this.rebuild(gathered.records.map((r) => r.record));
@@ -309,7 +369,7 @@ export class PersistentMemoryFts extends MemoryFtsIndex {
         // next use lazily rebuilds (the store's generation nonce changed, so even a cross-process
         // reader converges on the same verdict).
         this.discardHandle();
-        if (this.metaPath !== undefined) removeIndexFiles(this.dbPath);
+        if (this.metaPath !== undefined) removeSnapshotFiles(this.dbPath, this.metaPath);
         return;
       }
       const upserts = notice.upserted.filter(isRecordEntry);

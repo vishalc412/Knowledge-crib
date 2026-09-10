@@ -360,6 +360,18 @@ describe('strict loader (parseMemoryShard)', () => {
     expect(parsed.entries).toHaveLength(0);
     expect(parsed.errors).toHaveLength(1);
   });
+
+  it('rejects a corrupt INTERIOR line and still loads the records around it', () => {
+    const validA = validRecord({ claim: 'AuthService.login issues a JWT' });
+    const validB = validRecord({ claim: 'AuthService.login issues a session cookie' });
+    // validA-line / corrupt interior line / validB-line — the loop CONTINUES past the bad line
+    const text = `${serializeMemoryShard([validA])}{corrupt interior line\n${serializeMemoryShard([validB])}`;
+    const parsed = parseMemoryShard(text, 'team/records/00.jsonl');
+    expect(parsed.entries.map((e) => e.id)).toEqual([validA.id, validB.id]);
+    expect(parsed.errors).toHaveLength(1);
+    // 'source:line: reason' provenance — the corrupt line is line 2
+    expect(parsed.errors[0]).toMatch(/\.jsonl:2:/);
+  });
 });
 
 describe('secret scanner', () => {

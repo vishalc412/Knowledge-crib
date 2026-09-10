@@ -40,6 +40,45 @@ describe('viz web asset: memory ledger panel (G5.4)', () => {
     expect(html).toContain('Resume saved work');
   });
 
+  it('ships the pending queue view wired to its read and mutation endpoints (WP6.1–WP6.3)', () => {
+    expect(html).toContain('/memory/pending.json');
+    expect(html).toContain('/memory/intake.json');
+    expect(html).toContain('/memory/admit');
+    expect(html).toContain('/memory/resume');
+    expect(html).toContain('/memory/mutation-grant.json');
+    expect(html).toContain('x-crib-csrf');
+    expect(html).toContain('loadMemoryPending');
+    expect(html).toContain('admitStagedClaim');
+    expect(html).toContain('resumeIntake');
+    // the pending queue pages through the same limit the read endpoint defaults to
+    expect(html).toContain('PEND_LIMIT=20');
+  });
+
+  it('marks only ready rows admissible and names the terminal path honestly (WP6.3)', () => {
+    expect(html).toContain("r.standing==='ready'");
+    expect(html).toContain('No raw captures waiting.');
+    expect(html).toContain('No staged claims waiting.');
+    expect(html).toContain('No saved work to resume.');
+    // the browser never invents a distill step — the capture row names the command only
+    expect(html).toContain('Raw captures awaiting distillation');
+    expect(html).toContain('Staged claims awaiting admission');
+  });
+
+  it('keeps the resume flow honest — records the decision, never executes it (WP6.4)', () => {
+    expect(html).toContain('Records the resume against checkpoint');
+    expect(html).toContain('Nothing is executed.');
+    expect(html).toContain('leave empty to reuse the saved one');
+    expect(html).toContain('The repository moved since the saved checkpoint');
+  });
+
+  it('keeps the new views keyboard-usable and announced (WP6.6)', () => {
+    expect(html).toContain('data-kc-mem-action-head');
+    expect(html).toContain('data-kc-mem-resume-list');
+    expect(html).toContain('data-kc-mem-intake-back');
+    expect(html).toContain('role="status" aria-live="polite"');
+    expect(html).toContain('keepFocus');
+  });
+
   it('stays self-contained — no external (CDN) scripts', () => {
     const srcs = [...html.matchAll(/<script[^>]*\ssrc="([^"]+)"/g)].map((m) => m[1] ?? '');
     expect(srcs.length).toBeGreaterThan(0);

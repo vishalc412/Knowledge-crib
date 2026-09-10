@@ -11,14 +11,19 @@ import { appendFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { MemoryNamespace, MemorySensitivity } from './types.js';
 
-/** The event families shared by memory, code intelligence, sync, and client integrations. */
+/** The event families shared by memory, code intelligence, sync, and client integrations. The two
+ *  `mcp.*` kinds are the runtime-evidence plane for client certification (WP2.5): a connection event
+ *  records that a real client attached to the server, a tool-invoked event records that it actually
+ *  called a crib tool — neither is derivable from configuration, so they must be observed. */
 export type IntelligenceEventKind =
   | 'agent.lifecycle'
   | 'memory.observed'
   | 'file.changed'
   | 'git.transition'
   | 'sync.applied'
-  | 'connector.updated';
+  | 'connector.updated'
+  | 'mcp.connection'
+  | 'mcp.tool-invoked';
 
 /**
  * Server-resolved ownership context. Client/vendor agent IDs belong in source provenance; they

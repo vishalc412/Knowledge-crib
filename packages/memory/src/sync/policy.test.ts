@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { derivePropositionKey, memoryRecordId, memoryRecordV2Id } from '../ids.js';
 import { createIntakeRequirement } from '../intake.js';
 import { type SyncAdmissionReason, admissionForSync } from './policy.js';
-import { decision, feedback, v1Record, v2Record } from './sync-test-fixtures.js';
+import { decision, feedback, v1Record, v2Record, v3Record } from './sync-test-fixtures.js';
 
 function reasonOf(entry: Parameters<typeof admissionForSync>[0]): SyncAdmissionReason {
   const git = admissionForSync(entry, 'git-shard');
@@ -40,6 +40,31 @@ describe('admissionForSync (D10)', () => {
     const rec = v1Record();
     expect(admissionForSync(rec, 'git-shard')).toEqual({ admitted: true });
     expect(admissionForSync(rec, 'encrypted-remote')).toEqual({ admitted: true });
+  });
+
+  it('admits honest memory-3 workspace records to both classes (internal + ret:default)', () => {
+    const rec = v3Record();
+    expect(rec.schemaVersion).toBe('3');
+    expect(admissionForSync(rec, 'git-shard')).toEqual({ admitted: true });
+    expect(admissionForSync(rec, 'encrypted-remote')).toEqual({ admitted: true });
+  });
+
+  it('refuses a restricted memory-3 record everywhere (the sensitivity ceiling)', () => {
+    const restricted = v3Record({ sensitivity: 'restricted' });
+    expect(reasonOf(restricted)).toBe('sensitivity');
+    expect(admissionForSync(restricted, 'encrypted-remote')).toEqual({
+      admitted: false,
+      reason: 'sensitivity',
+    });
+  });
+
+  it('refuses a memory-3 record with an unknown retention id as ambiguous-policy', () => {
+    const unknown = v3Record({ retentionPolicyId: 'ret:uncommitted-draft' });
+    expect(admissionForSync(unknown, 'git-shard')).toEqual({
+      admitted: false,
+      reason: 'ambiguous-policy',
+    });
+    expect(admissionForSync(unknown, 'encrypted-remote').reason).toBe('ambiguous-policy');
   });
 
   it('refuses private memory from the git shard (the whole point of the gate)', () => {
