@@ -12,7 +12,7 @@ file is fresh. Reference this file instead of restating a count in narrative doc
 | parser languages | 11 (agent, csharp, go, java, md, mule, php, plsql, python, rust, ts) |
 | eval fixture languages | 9 (csharp, go, java, php, plsql, python, rust, ts, ts-min) |
 | test files | 197 |
-| test call-sites (static) | 2706 |
+| test call-sites (static) | 2707 |
 | MCP tools registered | 17 |
 | MCP operations | 47 |
 

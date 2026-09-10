@@ -36,4 +36,26 @@ describe('discovery excludes third-party and minified artifacts', () => {
       rmSync(root, { recursive: true, force: true });
     }
   });
+
+  // `.claude/` is not gitignored by default in user repos, so each Claude Code worktree under
+  // `.claude/worktrees/` — a full source copy — was walked as new source, duplicating the graph
+  // ~5× and multiplying index time (real-world case: 30-min init, 80% of nodes duplicates).
+  it('skips .claude worktrees during discovery', () => {
+    const root = mkdtempSync(join(tmpdir(), 'crib-discover-claude-'));
+    try {
+      mkdirSync(join(root, 'src'), { recursive: true });
+      mkdirSync(join(root, '.claude', 'worktrees', 'stale-branch', 'src'), { recursive: true });
+      writeFileSync(join(root, 'src', 'app.ts'), 'export const a = 1;\n');
+      writeFileSync(
+        join(root, '.claude', 'worktrees', 'stale-branch', 'src', 'app.ts'),
+        'export const a = 1;\n',
+      );
+
+      const found = discoverFiles(root).map((f) => f.path);
+      expect(found).toContain('src/app.ts');
+      expect(found).not.toContain('.claude/worktrees/stale-branch/src/app.ts');
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
 });

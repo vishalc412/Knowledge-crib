@@ -21,7 +21,7 @@ import { secureContentHash } from './mule/discover.js';
  *
  * This is the GUARANTEED baseline — always excluded regardless of any `.gitignore`. On top of it,
  * {@link discoverFiles} also respects the repo's own `.gitignore` (see {@link GitignoreMatcher}) so
- * machine-local state the repo already gitignores (`.claude/`, `.gstack/`, `*.log`, `.env`, …) is
+ * machine-local state the repo already gitignores (`.gstack/`, `*.log`, `.env`, …) is
  * kept out of the soul too. The baseline stays hardcoded so a repo WITHOUT a `.gitignore` still
  * skips the universal noise dirs, and so a `.gitignore` can never re-include these (a `!node_modules`
  * line must NOT resurrect `node_modules`).
@@ -51,6 +51,12 @@ export const DEFAULT_IGNORES = new Set([
   '.idea',
   '.vscode',
   '.cursor',
+  // Agent-machine-local state. `.claude/` holds Claude Code worktrees (full source copies),
+  // settings, and transcripts — never source. Artifact files under `.claude/` (skills, agents,
+  // commands, rules) are picked up separately by the artifacts glob walk, which uses its own
+  // ignore set, so they survive this skip. Not gitignored by default in user repos, so without
+  // this entry each stale worktree duplicates the whole graph (~5× index time on affected repos).
+  '.claude',
   'tmp',
   'temp',
   'logs',
