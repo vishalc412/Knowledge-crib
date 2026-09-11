@@ -4,8 +4,11 @@ import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   CERTIFIED_CLIENTS,
+  certificationStatus,
   certificationSummary,
+  certifyClientCell,
   loadClientCertificationReceipts,
+  receiptLegs,
 } from './client-certification-evidence.mjs';
 
 const START = '<!-- client-certification:generated:start -->';
@@ -24,13 +27,35 @@ const DISPLAY_STATES = {
   'not-certified': 'not certified',
   'configuration-verified': 'configuration verified',
   'protocol-verified': 'protocol verified',
+  'runtime-evidence-only': 'runtime evidence only (not a native runtime)',
   'runtime-verified': 'runtime verified',
 };
 
+/** Strength order for the display states, weakest first. */
+const STATE_ORDER = [
+  'not-certified',
+  'configuration-verified',
+  'protocol-verified',
+  'runtime-evidence-only',
+  'runtime-verified',
+];
+
+/**
+ * The state ONE receipt may display.
+ *
+ * The leg view says how strong the evidence is; the CELL judgement decides whether it may be shown as
+ * a runtime pass at all. Those are not the same question, and collapsing them is how a public table
+ * ends up contradicting the launch decision: a WSL run satisfies every leg and can still never be a
+ * native Linux or Windows runtime, so its legs must not promote the row that the decision refuses.
+ */
+function matrixState(receipt) {
+  const status = certificationStatus(receipt);
+  if (status !== 'runtime-verified') return status;
+  return certifyClientCell(receipt).ok ? 'runtime-verified' : 'runtime-evidence-only';
+}
+
 function rank(receipt) {
-  if (receipt.evidence.runtime.status === 'pass') return 3;
-  if (receipt.evidence.protocol.status === 'pass') return 2;
-  return 1;
+  return STATE_ORDER.indexOf(matrixState(receipt));
 }
 
 function platformName(receipt) {
@@ -44,11 +69,20 @@ export function renderClientCertificationMatrix(receipts) {
     const strongest = receipts
       .filter((receipt) => receipt.client.id === client)
       .sort((a, b) => rank(b) - rank(a) || a.platform.os.localeCompare(b.platform.os))[0];
-    let stateLabel = DISPLAY_STATES[states[client]];
+    // The summary is computed per CLIENT across every platform, so it can read stronger than the
+    // single strongest receipt shown beside it — a client with a native macOS runtime pass and a WSL
+    // Linux run is runtime-verified overall, but the row must disclose which evidence it is showing.
+    let stateLabel = strongest
+      ? DISPLAY_STATES[matrixState(strongest)]
+      : DISPLAY_STATES[states[client]];
+    // A test-client protocol probe speaks the protocol shape but is not the client under test, so the
+    // row says so instead of reading as a client result. Only a schema-1 receipt can be here: the
+    // certifying schema requires a vendor-client source on the handshake and tool-use legs, so it
+    // cannot express this claim at all.
     if (
       strongest &&
-      rank(strongest) === 2 &&
-      strongest.evidence.protocol.source === 'test-client'
+      matrixState(strongest) === 'protocol-verified' &&
+      receiptLegs(strongest).handshake.source === 'test-client'
     ) {
       stateLabel = 'protocol evidence only (test client)';
     }
@@ -61,7 +95,7 @@ export function renderClientCertificationMatrix(receipts) {
     START,
     '## Client certification evidence',
     '',
-    'Generated from validated receipts. A client is runtime verified only when a vendor-client receipt proves record → interruption/restart → authorized resume on the listed platform. Protocol evidence captured by a test client is labelled "protocol evidence only (test client)" and can never promote a row.',
+    'Generated from validated receipts. A client is runtime verified only when a vendor-client receipt proves record → interruption/restart → authorized resume on the listed platform. Two labels say a row is evidence and not a runtime pass: "protocol evidence only (test client)" when the handshake came from a test client rather than the client under test, and "runtime evidence only (not a native runtime)" when the run happened somewhere other than the native platform — a WSL run satisfies every leg and still cannot certify native Linux or Windows. Neither label can promote a row.',
     '',
     '| Client | Highest verified evidence | Strongest certified cell |',
     '|---|---|---|',

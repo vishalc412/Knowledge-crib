@@ -49,6 +49,11 @@ pnpm(['capabilities:check']);
 run('node', ['scripts/client-certification-evidence.test.mjs']);
 run('node', ['scripts/client-certification-matrix.test.mjs']);
 run('node', ['scripts/client-certification-matrix.mjs', '--check']);
+// WP2 — the certification harness's own executable specification. It drives the real `certifyCell`
+// against a fake vendor binary, so the gate proves the harness REFUSES a cell it cannot exercise
+// rather than only proving the receipt contract holds. A harness that could be satisfied by a stub
+// would be the single most damaging thing this release could ship.
+run('node', ['scripts/client-certify.test.mjs']);
 // The frozen requirements themselves: the policy hash pin fails loudly if the launch policy was
 // edited (or merely reformatted), because every receipt collected under the old hash is then void.
 run('node', ['scripts/launch-policy.test.mjs']);

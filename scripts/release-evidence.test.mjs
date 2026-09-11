@@ -4,6 +4,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { loadLaunchPolicy, policyClientCells } from './launch-policy.mjs';
 import { collectReceipts } from './release-evidence.mjs';
 import {
   RELEASE_EVIDENCE_FORMAT_VERSION,
@@ -131,21 +132,49 @@ assert.equal(missingCertification.certification.invokedWithRuntimeRequirement, t
 assert.equal(missingCertification.certification.missingRuntimeCells.length, 21);
 assert.deepEqual(requiredGateFailures(missingCertification), ['runtime-certification']);
 
-const certifiedCells = [
-  'claude',
-  'copilot',
-  'cursor',
-  'codex',
-  'windsurf',
-  'gemini',
-  'vscode',
-].flatMap((client) =>
-  ['darwin', 'linux', 'win32'].map((os) => ({
-    client: { id: client, version: '1.0.0' },
+// ─── a genuinely certified candidate ───────────────────────────────────────────────────────────
+//
+// The cells are DERIVED from the committed policy rather than listed here, so a client or platform
+// added to the promise cannot be certified by a fixture that never heard of it. Each receipt is a
+// version-2 certifying one: it carries all eight legs, the two vendor-asserting legs say their source
+// is the client under test, it ran natively, and it names a transcript. A version-1 shaped receipt
+// (`evidence.runtime.status: 'pass'`) can no longer cover a cell at all — it never separated the
+// tool invocation from the handshake, nor a restart from an interruption, which is exactly why the
+// certifying schema exists. This file checks the BUILDER's coverage arithmetic; the disk-backed path
+// where those transcripts are hashed is exercised by the launch-decision suite.
+const { policy: launchPolicy } = loadLaunchPolicy();
+const certifyingReceipt = (cell) => {
+  const [id, os] = cell.split('/');
+  return {
+    format: 'knowledge-crib-client-certification',
+    formatVersion: 2,
+    generatedAt: '2026-09-05T00:00:00.000Z',
+    policySha256: `sha256:${'2'.repeat(64)}`,
+    product: { commit: 'a'.repeat(40), packageSha256: `sha256:${'3'.repeat(64)}` },
+    client: { id, version: '1.0.0', driverVersion: '1.0.0', certificationMode: id },
     platform: { os, arch: 'fixture', node: 'v22.23.1' },
-    evidence: { runtime: { status: 'pass' } },
-  })),
-);
+    runId: `run-${cell}`,
+    capture: { hostname: 'fixture-host', operator: 'fixture-operator' },
+    principalMarkers: { owner: `sha256:${'4'.repeat(64)}`, foreign: `sha256:${'5'.repeat(64)}` },
+    vendor: {
+      processIdentity: `${id} 1.0.0 (/usr/local/bin/${id}, pid 4711)`,
+      transcriptPath: `logs/${cell}.log`,
+      transcriptSha256: `sha256:${'6'.repeat(64)}`,
+    },
+    legs: {
+      configuration: { status: 'pass' },
+      handshake: { status: 'pass', source: 'vendor-client' },
+      toolUse: { status: 'pass', source: 'vendor-client' },
+      record: { status: 'pass' },
+      interruption: { status: 'pass' },
+      restart: { status: 'pass' },
+      authorizedResume: { status: 'pass' },
+      foreignPrincipalExclusion: { status: 'pass' },
+    },
+  };
+};
+const certifiedCells = policyClientCells(launchPolicy).map(certifyingReceipt);
+assert.equal(certifiedCells.length, 21, 'the launch promise is 21 client/platform cells');
 const certified = buildReleaseEvidence({
   ...base,
   requireRuntimeCertification: true,
@@ -153,6 +182,26 @@ const certified = buildReleaseEvidence({
 });
 assert.deepEqual(certified.certification.missingRuntimeCells, []);
 assert.equal(certified.acceptance.pass, true);
+
+// The same 21 CELLS in the version-1 shape cover nothing. This is the schema boundary stated as a
+// fixture: a receipt that reads `runtime: pass` without the separated legs is historical evidence,
+// not a runtime claim, and the builder must not let it promote a row.
+const legacyShapedCells = policyClientCells(launchPolicy).map((cell) => {
+  const [id, os] = cell.split('/');
+  return {
+    client: { id, version: '1.0.0' },
+    platform: { os, arch: 'fixture', node: 'v22.23.1' },
+    evidence: { runtime: { status: 'pass' } },
+  };
+});
+const legacyShaped = buildReleaseEvidence({
+  ...base,
+  requireRuntimeCertification: true,
+  certificationReceipts: legacyShapedCells,
+});
+assert.equal(legacyShaped.certification.missingRuntimeCells.length, 21);
+assert.equal(legacyShaped.acceptance.pass, false);
+assert.deepEqual(requiredGateFailures(legacyShaped), ['runtime-certification']);
 
 // ─── WP9.2 — the frozen gate set, scorer identity and model revision are REQUIRED ───
 // launch-eval.ts computes pass via gates.every(), so a deleted gate would otherwise leave

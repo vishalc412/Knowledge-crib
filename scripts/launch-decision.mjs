@@ -1,12 +1,21 @@
 /** Produce a deliberately small, auditable developer-launch decision from release evidence. */
+import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
+  CertificationEvidenceError,
+  bindingProblems,
+  certifyClientCell,
+  loadClientCertificationReceipts,
+} from './client-certification-evidence.mjs';
+import {
   evaluateGate,
   loadLaunchPolicy,
   policyClientCells,
+  policyFuzzRequirements,
   policyGateIds,
+  policyGlobalReceiptTypes,
   policyOsNodeCells,
 } from './launch-policy.mjs';
 import { ReleaseEvidenceError, validateReleaseEvidence } from './release-evidence.mjs';
@@ -24,9 +33,18 @@ import { ReleaseEvidenceError, validateReleaseEvidence } from './release-evidenc
  * Every unknown is a blocker. Absent, skipped, not-run, invalid, mismatched and stale evidence all
  * produce NO-GO with a named reason — silence is never consent.
  *
+ * Client certification is CANDIDATE-scoped: the 21 vendor-runtime cells describe the build, not any
+ * one OS/Node cell. So it is judged from raw receipts the caller supplies
+ * (`options.certificationReceipts`) and NEVER from the summary a manifest copied in — a per-platform
+ * manifest that claims a runtime pass the raw receipts do not support is a tampering signal, not
+ * coverage. `options.certificationReceipts === null` means "judged at another scope" (the aggregate
+ * evaluates it once); `undefined` means "required but never supplied", which is a blocker.
+ *
  * @param options.policy       parsed launch policy (defaults to the committed one)
  * @param options.policySha256 the hash the evidence must have been collected under
  * @param options.candidate    {commit, packageSha256} the build being decided
+ * @param options.certificationReceipts raw 21-cell receipts, or null to defer to the aggregate
+ * @param options.globalReceipts        raw candidate-wide receipts (fuzz-deep), or null to defer
  */
 export function evaluateLaunchDecision(evidence, options = {}) {
   const blockers = [];
@@ -131,16 +149,57 @@ export function evaluateLaunchDecision(evidence, options = {}) {
   }
 
   // ── every advertised client/platform cell, bound to THIS candidate ──────────
-  blockers.push(
-    ...uncertifiedClientCells(evidence.certification?.receipts ?? [], {
-      policy,
-      policySha256,
-      candidate: {
-        commit: candidate.commit,
-        packageSha256: candidate.packageSha256,
-      },
-    }),
-  );
+  //
+  // From RAW receipts, never from `evidence.certification.receipts`. That summary is a manifest
+  // restating its own conclusions — the A01 defect — so it is compared against the raw coverage
+  // below rather than trusted, and a summary claim the receipts do not support names the cell.
+  const rawCertification = options.certificationReceipts;
+  if (rawCertification === null) {
+    // Candidate-scoped, and this call is a per-OS/Node-cell evaluation: the aggregate owns it so
+    // one uncertified client is reported once rather than repeated into all six cell manifests.
+  } else if (Array.isArray(rawCertification)) {
+    blockers.push(
+      ...uncertifiedClientCells(rawCertification, {
+        policy,
+        policySha256,
+        candidate: {
+          commit: candidate.commit,
+          packageSha256: candidate.packageSha256,
+        },
+      }),
+    );
+    const covered = new Set(
+      rawCertification.filter((receipt) => certifyClientCell(receipt).ok).map(certificationCellOf),
+    );
+    for (const claim of evidence.certification?.receipts ?? []) {
+      const cell = `${claim?.client?.id}/${claim?.platform?.os}`;
+      if (claim?.runtimeStatus === 'pass' && !covered.has(cell)) {
+        add(`certification-summary-unsupported:${cell}`);
+      }
+    }
+  } else if (certifying) {
+    add('certification-receipts-not-loaded');
+  }
+
+  // ── candidate-wide receipts the policy requires (the deep sweep) ────────────
+  const rawGlobal = options.globalReceipts;
+  if (rawGlobal === null) {
+    // Deferred to the aggregate, same as certification.
+  } else if (Array.isArray(rawGlobal)) {
+    blockers.push(
+      ...judgeGlobalReceipts(rawGlobal, {
+        policy,
+        policySha256,
+        candidate: {
+          commit: candidate.commit,
+          packageSha256: candidate.packageSha256,
+        },
+        evidenceRoot: options.globalReceiptsRoot,
+      }),
+    );
+  } else if (certifying) {
+    add('global-receipts-not-loaded');
+  }
 
   // ── the manifest's own conclusion is compared, never trusted ────────────────
   const recomputedPass = blockers.length === 0;
@@ -155,35 +214,48 @@ export function evaluateLaunchDecision(evidence, options = {}) {
 
 /**
  * The client/platform cells the policy advertises that this candidate cannot show a genuine vendor
- * runtime for — the A02 repair. A receipt only covers a cell when it is for this exact commit AND
- * this exact package AND was collected under this policy AND names a supported client version AND
- * carries a vendor-client runtime pass. Anything else leaves the cell open by name.
+ * runtime for — the A02 repair.
+ *
+ * Coverage comes from `certifyClientCell`, so a receipt only covers a cell when the CURRENT
+ * certifying schema produced it, for this exact commit, this exact package, under this policy, at a
+ * client version at or above that CELL's floor, carrying all eight legs including a vendor-client
+ * handshake, on a native (non-WSL) platform with its transcript still on disk. Anything else leaves
+ * the cell open by name.
+ *
+ * Two kinds of name are produced, because they answer different questions.
+ *
+ * A BINDING failure is reported whatever else the set contains (`client-receipt-foreign-commit:…`):
+ * the receipt is about ANOTHER build, and a reader has to be told that the set they were handed is
+ * not the candidate they asked about — even when every policy cell happens to be covered by the
+ * receipts that remain.
+ *
+ * Any other failure is a statement about COVERAGE, and coverage is settled per CELL. A cell another
+ * receipt certifies is certified: an extra run for that same cell — a WSL sanity check, an
+ * interrupted attempt, a test-client protocol probe — is not part of the promise and must not sink a
+ * release that satisfies it. Reporting it anyway would make the decision disagree with the public
+ * matrix, which reads this same fact the same way, and would let a diagnostic run permanently block
+ * a launch. So the finding is emitted only while its cell is actually open, and then as
+ * `client-cell-not-certifying:<cell>:<why>` — never as an absence a reader has to interpret.
  */
 export function uncertifiedClientCells(receipts, { policy, policySha256, candidate }) {
+  const options = { policy, policySha256, candidate };
   const covered = new Set();
-  const problems = [];
+  const uncertified = [];
   for (const receipt of receipts ?? []) {
-    const cell = `${receipt?.client?.id}/${receipt?.platform?.os}`;
-    if (receipt?.runtimeStatus !== 'pass') continue; // configuration/protocol evidence is not runtime
-    if (receipt?.platform?.wsl === true) continue; // WSL never satisfies a native cell
-    if (candidate.commit && receipt?.product?.commit !== candidate.commit) {
-      problems.push(`client-receipt-foreign-commit:${cell}`);
+    const verdict = certifyClientCell(receipt, options);
+    if (verdict.ok) covered.add(verdict.cell);
+    else uncertified.push({ receipt, verdict });
+  }
+  const problems = [];
+  for (const { receipt, verdict } of uncertified) {
+    // One producer for "is this receipt about another build", so the unconditional cases here and
+    // the ones `certifyClientCell` refuses can never drift apart.
+    if (bindingProblems(receipt, options).length > 0) {
+      problems.push(`${verdict.problem}:${verdict.cell}:${verdict.detail ?? 'unknown'}`);
       continue;
     }
-    if (candidate.packageSha256 && receipt?.product?.packageSha256 !== candidate.packageSha256) {
-      problems.push(`client-receipt-foreign-package:${cell}`);
-      continue;
-    }
-    if (policySha256 && receipt?.policySha256 !== policySha256) {
-      problems.push(`client-receipt-foreign-policy:${cell}`);
-      continue;
-    }
-    const requirement = policy.clientVersionRequirements?.[receipt?.client?.id];
-    if (requirement && !satisfiesMinimumVersion(receipt?.client?.version, requirement)) {
-      problems.push(`client-version-unsupported:${cell}:${receipt?.client?.version ?? 'none'}`);
-      continue;
-    }
-    covered.add(cell);
+    if (covered.has(verdict.cell)) continue;
+    problems.push(`client-cell-not-certifying:${verdict.cell}:${verdict.detail ?? 'unknown'}`);
   }
   const missing = policyClientCells(policy)
     .filter((cell) => !covered.has(cell))
@@ -191,19 +263,137 @@ export function uncertifiedClientCells(receipts, { policy, policySha256, candida
   return [...new Set([...problems, ...missing])];
 }
 
-/** Dotted numeric comparison: `version >= minimum`. Anything unparseable fails closed. */
-function satisfiesMinimumVersion(version, minimum) {
-  const parse = (value) =>
-    typeof value === 'string' ? value.trim().replace(/^v/, '').split('.').map(Number) : null;
-  const actual = parse(version);
-  const floor = parse(minimum);
-  if (!actual || !floor || actual.some(Number.isNaN) || floor.some(Number.isNaN)) return false;
-  for (let i = 0; i < Math.max(actual.length, floor.length); i++) {
-    const a = actual[i] ?? 0;
-    const b = floor[i] ?? 0;
-    if (a !== b) return a > b;
+/** The `client/os` cell a raw receipt speaks for. */
+function certificationCellOf(receipt) {
+  return `${receipt?.client?.id}/${receipt?.platform?.os}`;
+}
+
+/**
+ * Candidate-wide receipts the policy requires but that are not produced once per OS/Node cell —
+ * today the deep fuzz sweep. `fuzz-deep` is the receipt that says a million seeded inputs per
+ * extractor ran against THIS package, so it binds to the candidate exactly as a client receipt does,
+ * and its own numbers (workload, seed, iterations, fleet size, failures) are re-judged against the
+ * policy rather than read as a verdict.
+ */
+export function judgeGlobalReceipts(receipts, { policy, policySha256, candidate, evidenceRoot }) {
+  const blockers = [];
+  const required = policyGlobalReceiptTypes(policy);
+  const byType = new Map();
+  for (const receipt of receipts ?? []) {
+    if (typeof receipt?.type === 'string') byType.set(receipt.type, receipt);
   }
-  return true;
+  for (const type of required) {
+    const receipt = byType.get(type);
+    if (!receipt) {
+      blockers.push(`global-receipt-missing:${type}`);
+      continue;
+    }
+    if (receipt.status !== 'pass') {
+      blockers.push(`global-receipt-not-passing:${type}:${receipt.status ?? 'unknown'}`);
+      continue;
+    }
+    if (
+      candidate.commit &&
+      receipt.candidateCommit !== undefined &&
+      receipt.candidateCommit !== candidate.commit
+    ) {
+      blockers.push(`global-receipt-foreign-commit:${type}`);
+      continue;
+    }
+    if (!receipt.candidateCommit) blockers.push(`global-receipt-foreign-commit:${type}`);
+    if (
+      candidate.packageSha256 &&
+      receipt.candidatePackageSha256 !== undefined &&
+      receipt.candidatePackageSha256 !== candidate.packageSha256
+    ) {
+      blockers.push(`global-receipt-foreign-package:${type}`);
+      continue;
+    }
+    if (!receipt.candidatePackageSha256) blockers.push(`global-receipt-foreign-package:${type}`);
+    if (policySha256 && receipt.policySha256 !== policySha256) {
+      blockers.push(`global-receipt-foreign-policy:${type}`);
+      continue;
+    }
+    const artifacts = Array.isArray(receipt.artifacts) ? receipt.artifacts : [];
+    if (artifacts.length === 0) {
+      blockers.push(`global-receipt-artifact-missing:${type}`);
+    } else if (typeof evidenceRoot === 'string' && evidenceRoot.trim()) {
+      for (const artifact of artifacts) {
+        if (!artifactDigestMatches(resolve(evidenceRoot), artifact)) {
+          blockers.push(`global-receipt-artifact-digest:${type}:${artifact?.path ?? 'unknown'}`);
+        }
+      }
+    } else {
+      // A receipt whose evidence cannot be located is a claim, not a proof. The receipts directory
+      // is what makes the transcript checkable, so its absence is named rather than skipped.
+      blockers.push(`global-receipt-artifact-unverifiable:${type}`);
+    }
+    if (type === 'fuzz-deep') blockers.push(...judgeFuzzWorkload(receipt, policy));
+  }
+  return blockers;
+}
+
+/**
+ * Re-judge the sweep's own reported numbers against the frozen policy. A deep receipt is refused by
+ * the harness when it is too shallow, but the harness is not the authority on what a launch needs —
+ * the policy is, and it is the thing this function reads. The iteration count is compared with the
+ * policy's own figure so the number lives in exactly one place.
+ */
+function judgeFuzzWorkload(receipt, policy) {
+  const blockers = [];
+  const requirements = policyFuzzRequirements(policy);
+  const details = receipt.details ?? {};
+  if (details.workload !== requirements.workload) {
+    blockers.push(`fuzz-receipt-workload-mismatch:${details.workload ?? 'unknown'}`);
+  }
+  if (details.seed !== requirements.seed) {
+    blockers.push(`fuzz-receipt-seed-mismatch:${details.seed ?? 'unknown'}`);
+  }
+  if (
+    typeof details.iterations !== 'number' ||
+    !Number.isFinite(details.iterations) ||
+    details.iterations < requirements.requiredIterations
+  ) {
+    blockers.push(`fuzz-receipt-iterations-below-floor:${details.iterations ?? 'unknown'}`);
+  }
+  if (
+    typeof details.extractorCount !== 'number' ||
+    details.extractorCount < requirements.minimumExtractors
+  ) {
+    blockers.push(`fuzz-receipt-extractors-below-floor:${details.extractorCount ?? 'unknown'}`);
+  }
+  const failures = Array.isArray(details.failures) ? details.failures : [];
+  if (failures.length > 0) blockers.push(`fuzz-receipt-failures:${failures.length}`);
+  return blockers;
+}
+
+/**
+ * Verify one archived artifact's digest.
+ *
+ * A path recorded by the producing run is normally relative to the receipts directory it sits in;
+ * an absolute path is honoured as recorded, because the receipt is the producer's statement of where
+ * its own evidence is. Either way the file must exist AND hash to what the receipt claimed — that
+ * is the property that makes "altering a transcript after receipt generation invalidates the cell"
+ * true rather than aspirational.
+ */
+function artifactDigestMatches(root, artifact) {
+  if (typeof artifact?.path !== 'string' || typeof artifact?.sha256 !== 'string') return false;
+  const path = resolve(root, artifact.path);
+  if (!existsSync(path)) return false;
+  const digest = `sha256:${createHash('sha256').update(readFileSync(path)).digest('hex')}`;
+  return artifact.sha256 === digest;
+}
+
+/** Load the raw certification receipts a decision must judge; a throw is reported, never fatal. */
+export function loadCertificationReceiptsOrReport(directory) {
+  try {
+    return { receipts: loadClientCertificationReceipts(directory) };
+  } catch (error) {
+    if (error instanceof CertificationEvidenceError) {
+      return { receipts: [], blocker: `certification-receipts-unreadable:${error.message}` };
+    }
+    throw error;
+  }
 }
 
 /**
@@ -268,6 +458,10 @@ export function aggregateLaunchDecisions(cells, options = {}) {
           policy,
           policySha256,
           candidate,
+          // Candidate-scoped, and judged once below. Passing it into each cell would repeat the
+          // same 21 findings into all six manifests, which reads as six problems instead of one.
+          certificationReceipts: null,
+          globalReceipts: null,
         });
         row.decision = decision.decision;
         row.blockers = decision.blockers.map((blocker) => `${row.cell}:${blocker}`);
@@ -288,15 +482,60 @@ export function aggregateLaunchDecisions(cells, options = {}) {
     }
   }
 
+  // A cell set that is empty by construction says nothing about certification; naming "no-evidence"
+  // is the actionable finding, and expanding it into 21 cell names would bury it.
   if (rows.length === 0) {
-    return { decision: 'NO-GO', blockers: ['no-evidence'], cells: rows, candidate: null };
+    return {
+      decision: 'NO-GO',
+      blockers: ['no-evidence'],
+      cells: rows,
+      candidate: candidate ?? null,
+    };
   }
+
+  // ── the candidate-wide facts, judged ONCE ───────────────────────────────────
+  //
+  // These are not per-OS/Node-cell questions, so they are asked here rather than in each cell: is
+  // this BUILD certified for all 21 advertised vendor-runtime cells, and did the policy's deep sweep
+  // actually run against this package? Both read RAW receipts. A summary inside a manifest is not
+  // consulted — a manifest cannot certify itself.
+  const resolvedCandidate = candidate ?? null;
+  if (options.certificationReceipts === undefined) {
+    // Absent is not "not required": the policy advertises 21 cells, so a decision that never looked
+    // at them says so by name rather than passing silently.
+    for (const cell of policyClientCells(policy)) blockers.push(`client-cell-uncertified:${cell}`);
+    blockers.push('certification-receipts-not-loaded');
+  } else {
+    blockers.push(
+      ...uncertifiedClientCells(options.certificationReceipts, {
+        policy,
+        policySha256,
+        candidate: resolvedCandidate ?? {},
+      }),
+    );
+  }
+  if (options.globalReceipts === undefined) {
+    for (const type of policyGlobalReceiptTypes(policy)) {
+      blockers.push(`global-receipt-missing:${type}`);
+    }
+    blockers.push('global-receipts-not-loaded');
+  } else {
+    blockers.push(
+      ...judgeGlobalReceipts(options.globalReceipts, {
+        policy,
+        policySha256,
+        candidate: resolvedCandidate ?? {},
+        evidenceRoot: options.globalReceiptsRoot,
+      }),
+    );
+  }
+
   return {
     decision: rows.every((row) => row.decision === 'GO') && blockers.length === 0 ? 'GO' : 'NO-GO',
     blockers: [...new Set(blockers)],
     cells: rows,
     // The digest a publication step is allowed to ship — and only on a GO.
-    candidate: candidate ?? null,
+    candidate: resolvedCandidate,
     policySha256,
   };
 }
@@ -330,6 +569,42 @@ function expectedCells(argv) {
   return expected;
 }
 
+/**
+ * `--certification-receipts <dir>` — the 21 raw vendor-runtime receipts, loaded and validated here
+ * rather than summarized by a manifest.
+ *
+ * A load failure is REPORTED, not thrown: an unreadable or malformed receipt directory is a named
+ * blocker alongside the cell names it leaves open, so a reader sees both the cause and its
+ * consequence. Throwing would print one line and hide which cells the failure actually costs.
+ */
+function certificationReceiptsFromArgv(argv) {
+  const index = argv.indexOf('--certification-receipts');
+  if (index < 0) return undefined;
+  const directory = resolve(argv[index + 1] ?? '.');
+  const loaded = loadCertificationReceiptsOrReport(directory);
+  return { receipts: loaded.receipts, blocker: loaded.blocker };
+}
+
+/** `--global-receipts <dir>` — candidate-wide receipts (the deep sweep), loaded as raw JSON. */
+function globalReceiptsFromArgv(argv) {
+  const index = argv.indexOf('--global-receipts');
+  if (index < 0) return undefined;
+  const directory = resolve(argv[index + 1] ?? '.');
+  if (!existsSync(directory)) {
+    return { receipts: [], blocker: `global-receipts-unreadable:${directory} does not exist` };
+  }
+  const receipts = [];
+  for (const name of readdirSync(directory).sort()) {
+    if (!name.endsWith('.json')) continue;
+    try {
+      receipts.push(JSON.parse(readFileSync(join(directory, name), 'utf8')));
+    } catch (error) {
+      return { receipts: [], blocker: `global-receipts-unreadable:${name}:${error.message}` };
+    }
+  }
+  return { receipts, root: directory };
+}
+
 function mainCells(argv, cellsIndex) {
   const directory = resolve(argv[cellsIndex + 1] ?? '.');
   const found = collectCellFiles(directory);
@@ -346,6 +621,8 @@ function mainCells(argv, cellsIndex) {
   // --expect NARROWS nothing: the policy's cell set is always required. Explicit flags may only
   // ADD cells a caller knows about beyond the policy.
   const declared = expectedCells(argv);
+  const certification = certificationReceiptsFromArgv(argv);
+  const global = globalReceiptsFromArgv(argv);
   const aggregate = aggregateLaunchDecisions(cells, {
     ...(declared.length > 0
       ? {
@@ -355,10 +632,17 @@ function mainCells(argv, cellsIndex) {
         }
       : {}),
     ...(candidateFromArgv(argv) ? { candidate: candidateFromArgv(argv) } : {}),
+    ...(certification ? { certificationReceipts: certification.receipts } : {}),
+    ...(global ? { globalReceipts: global.receipts, globalReceiptsRoot: global.root } : {}),
   });
   for (const row of aggregate.cells) {
     process.stdout.write(`${row.cell}  ${row.decision}\n`);
     for (const blocker of row.blockers) process.stdout.write(`  - ${blocker}\n`);
+  }
+  for (const blocker of [certification?.blocker, global?.blocker].filter(Boolean)) {
+    process.stdout.write(`  - ${blocker}\n`);
+    aggregate.blockers.push(blocker);
+    aggregate.decision = 'NO-GO';
   }
   process.stdout.write(`${JSON.stringify(aggregate, null, 2)}\n`);
   if (aggregate.decision !== 'GO') process.exitCode = 1;
@@ -388,8 +672,12 @@ function main() {
   );
   try {
     const evidence = loadReleaseEvidence(path);
+    const certification = certificationReceiptsFromArgv(argv);
+    const global = globalReceiptsFromArgv(argv);
     const decision = evaluateLaunchDecision(evidence, {
       ...(candidateFromArgv(argv) ? { candidate: candidateFromArgv(argv) } : {}),
+      ...(certification ? { certificationReceipts: certification.receipts } : {}),
+      ...(global ? { globalReceipts: global.receipts, globalReceiptsRoot: global.root } : {}),
     });
     process.stdout.write(`${JSON.stringify(decision, null, 2)}\n`);
     if (decision.decision !== 'GO') process.exitCode = 1;

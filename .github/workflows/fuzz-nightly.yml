@@ -1,12 +1,23 @@
 name: Fuzz Nightly
 
-# The M3.5 parser-fuzz gate at scale: 10^6 seeded fast-check inputs per extractor × 9 extractors,
-# each extract run in a worker_threads isolate under a per-call budget so a sync parse hang (the
-# PL/SQL recover() class — surfaced + closed in M3.5) is caught by worker termination. The smoke
-# gate (fuzz:check, 1000 iters) runs in every release:verify; this nightly runs the deep sweep a
-# PR-time budget can't afford, so a hang/throw/invalid that only appears at 1-in-10^6 input
-# frequency surfaces before a user hits it. Seeded (seed=1) → reproducible input-for-input;
-# reproducers carry the exact (extractor, idx, text) so a finding is re-feedable.
+# The M3.5 parser-fuzz gate at scale: 10^6 seeded fast-check inputs per extractor × the shipped
+# extractor fleet (ten today — read from the policy's `fuzz.minimumExtractors`, never from a comment
+# here, because a comment counting extractors goes stale the day one is added), each extract run in a
+# worker_threads isolate under a per-call budget so a sync parse hang (the PL/SQL recover() class —
+# surfaced + closed in M3.5) is caught by worker termination. The smoke gate (fuzz:check, 1000 iters)
+# runs in every release:verify; this nightly runs the deep sweep a PR-time budget can't afford, so a
+# hang/throw/invalid that only appears at 1-in-10^6 input frequency surfaces before a user hits it.
+# Seeded (seed=1) → reproducible input-for-input; reproducers carry the exact (extractor, idx, text)
+# so a finding is re-feedable.
+#
+# The deep sweep runs against a CANDIDATE: the workspace is built here, the installer bundle is
+# packed here, and the receipt binds to that commit's bytes, its package digest and the policy
+# digest. A deep receipt for a sweep this workflow did not run — too few iterations, too few
+# extractors — is refused by the harness itself (exit 2) rather than written and explained later.
+#
+# This is the REGRESSION receipt. Its release-grade counterpart is produced once per frozen candidate
+# by the release workflow, against the same package the decision approves; the nightly's job is to
+# notice a regression within a day, and it deliberately does not certify a launch.
 
 on:
   schedule:
@@ -42,5 +53,51 @@ jobs:
       - name: Install dependencies
         run: corepack pnpm@9.15.0 install --frozen-lockfile
 
-      - name: Run nightly fuzz (10^6 iters/extractor)
-        run: corepack pnpm@9.15.0 fuzz:nightly
+      # A deep sweep must fuzz the SHIPPED parser, not a source tree. The harness loads the compiled
+      # worker (`packages/parsers/dist/fuzz/fuzz-worker.js`) and falls back to building it when the
+      # dist is absent — a fallback that would hide exactly the failure this step exists to catch: on
+      # a clean runner the old workflow ran the sweep against a build it had never verified, so a
+      # broken build surfaced as a fuzz result rather than as a build failure.
+      - name: Build workspace
+        run: corepack pnpm@9.15.0 build
+
+      # The candidate artifact the receipt binds to. `pnpm pack` is not byte-reproducible, so this
+      # tarball is packed ONCE and hashed by the receipt; it is never rebuilt mid-run, and the digest
+      # in the receipt is the digest of the bytes that were on disk when the sweep ran.
+      - name: Build the candidate package
+        run: |
+          corepack pnpm@9.15.0 installer:build
+          CANDIDATE="$(find dist/installers -maxdepth 2 -type f -name 'knowledge-crib-*.tgz' -not -name 'knowledge-crib-*-*.tgz' -print -quit)"
+          if [[ -z "$CANDIDATE" ]]; then
+            echo "no shipped package found in the installer bundle" >&2
+            exit 1
+          fi
+          echo "candidate package: $CANDIDATE"
+          echo "sha256:$(shasum -a 256 "$CANDIDATE" | cut -d' ' -f1)"
+          echo "CANDIDATE_PACKAGE=$CANDIDATE" >> "$GITHUB_ENV"
+
+      # Invoked directly rather than through `pnpm fuzz:nightly`: pnpm forwards a literal `--` into
+      # argv, so a script that takes `--receipt`/`--package` is cleaner to call as the release
+      # workflow calls write-receipt.mjs. `fuzz:nightly` stays as the operator's local deep sweep.
+      - name: Execute deep fuzz (10^6 iters/extractor)
+        run: >-
+          node scripts/fuzz-check.mjs
+          --iterations 1000000
+          --receipt fuzz-evidence/fuzz-deep.json
+          --package "$CANDIDATE_PACKAGE"
+
+      # `if: always()` for the same reason the release workflow's diagnostics are unconditional: a
+      # FAILED sweep's receipt is how the run says WHICH extractor broke, and it is written on the
+      # failing path. `if-no-files-found: warn` rather than error — an aborted run (the detector's
+      # own self-test failing) writes a receipt too, but a run killed by the timeout may leave
+      # nothing, and "no receipt" must stay a different fact from "a receipt that says fail".
+      - name: Upload the deep-fuzz receipt
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: fuzz-deep-receipt
+          path: |
+            fuzz-evidence/fuzz-deep.json
+            fuzz-evidence/fuzz-deep.json.log
+          if-no-files-found: warn
+          retention-days: 30
