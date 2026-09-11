@@ -1,6 +1,6 @@
 /** Generate the public client-support table from validated certification receipts. */
-import { readFileSync, renameSync, writeFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { existsSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
+import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   CERTIFIED_CLIENTS,
@@ -10,6 +10,7 @@ import {
   loadClientCertificationReceipts,
   receiptLegs,
 } from './client-certification-evidence.mjs';
+import { POLICY_PLATFORMS } from './launch-policy.mjs';
 
 const START = '<!-- client-certification:generated:start -->';
 const END = '<!-- client-certification:generated:end -->';
@@ -63,7 +64,85 @@ function platformName(receipt) {
   return receipt.platform.wsl ? 'WSL' : PLATFORM_NAMES[receipt.platform.os];
 }
 
-export function renderClientCertificationMatrix(receipts) {
+/**
+ * Where a cell's receipt lives, as a link relative to `docs/capability-matrix.md`.
+ *
+ * The filename is not guessed from the cell: `scripts/client-certify.mjs` writes exactly
+ * `client-<client>-<platform>-<arch>.json`, from the same values the receipt records, so for any
+ * receipt the shipped certifier produced this resolves to the real file. A receipt placed under any
+ * other name resolves to nothing, and the check below renders an em-dash rather than a link that
+ * 404s — a public table may not point at a file it has not looked for.
+ */
+function receiptLink(client, os, arch, directory) {
+  if (!directory) return '—';
+  const name = `client-${client}-${os}-${arch}.json`;
+  return existsSync(join(directory, name))
+    ? `[\`${name}\`](launch/client-certification-receipts/${name})`
+    : '—';
+}
+
+/**
+ * The advertised cells — every client on every native platform — one row each, from the same
+ * validated receipts as the summary above.
+ *
+ * The summary cannot state the promise. A client row reads "runtime verified" once ONE platform has
+ * certified it, so a reader counting rows would take seven of twenty-one cells for done — the exact
+ * overstatement the launch decision refuses. Policy version 3 removed the preview tier and made all
+ * twenty-one cells hard requirements, so the grid is the only place the boundary is legible.
+ *
+ * A cell with no receipt reads `not certified` with every remaining field an em-dash. That is the
+ * point: there is nothing to show, and a plausible version, commit or date beside an uncertified
+ * cell would be a fabricated record of a run that never happened.
+ */
+function renderCellGrid(receipts, directory) {
+  const byCell = new Map();
+  for (const receipt of receipts) {
+    const key = `${receipt.client.id}/${receipt.platform.os}`;
+    const held = byCell.get(key);
+    // Rank, not arrival: a WSL run lands on the same `linux` key as a native run, and letting file
+    // order decide would let the weaker evidence displace the stronger.
+    if (!held || rank(receipt) > rank(held)) byCell.set(key, receipt);
+  }
+  const rows = [];
+  for (const client of CERTIFIED_CLIENTS) {
+    for (const os of POLICY_PLATFORMS) {
+      const receipt = byCell.get(`${client}/${os}`);
+      if (!receipt) {
+        rows.push(
+          `| ${LABELS[client]} | ${PLATFORM_NAMES[os]} | ${DISPLAY_STATES['not-certified']} | — | — | — | — | — |`,
+        );
+        continue;
+      }
+      // Same relabel as the summary row: a test-client probe is not the client under test.
+      let stateLabel = DISPLAY_STATES[matrixState(receipt)];
+      if (
+        matrixState(receipt) === 'protocol-verified' &&
+        receiptLegs(receipt).handshake.source === 'test-client'
+      ) {
+        stateLabel = 'protocol evidence only (test client)';
+      }
+      // The cell stays the REQUIREMENT (`Linux`), never the run's platform: a WSL run reports
+      // `linux` and must be shown as failing the Linux cell, not as occupying it. The label says
+      // so, and the host column names WSL outright.
+      const host = `${receipt.platform.wsl ? 'WSL ' : ''}${receipt.platform.arch} / ${receipt.platform.node}`;
+      rows.push(
+        `| ${LABELS[client]} | ${PLATFORM_NAMES[os]} | ${stateLabel} | ${receipt.client.version} | ${host} | \`${receipt.product.commit.slice(0, 12)}\` | ${receipt.generatedAt.slice(0, 10)} | ${receiptLink(client, os, receipt.platform.arch, directory)} |`,
+      );
+    }
+  }
+  return [
+    '### Cells — every client on every native platform',
+    '',
+    'One row per advertised cell. A cell is certified only by a vendor-client receipt for that exact client on that native platform; the summary above is per client and can read stronger than any single cell.',
+    '',
+    '| Client | Platform | Runtime status | Client version | Host | Candidate commit | Certified | Receipt |',
+    '|---|---|---|---|---|---|---|---|',
+    ...rows,
+    '',
+  ];
+}
+
+export function renderClientCertificationMatrix(receipts, opts = {}) {
   const states = certificationSummary(receipts);
   const rows = CERTIFIED_CLIENTS.map((client) => {
     const strongest = receipts
@@ -101,6 +180,7 @@ export function renderClientCertificationMatrix(receipts) {
     '|---|---|---|',
     ...rows,
     '',
+    ...renderCellGrid(receipts, opts.receiptDirectory),
     END,
   ].join('\n');
 }
@@ -124,7 +204,9 @@ async function main() {
   );
   const updated = replaceGeneratedClientMatrix(
     readFileSync(docs, 'utf8'),
-    renderClientCertificationMatrix(loadClientCertificationReceipts(receiptDirectory)),
+    renderClientCertificationMatrix(loadClientCertificationReceipts(receiptDirectory), {
+      receiptDirectory,
+    }),
   );
   if (argv.includes('--check')) {
     if (updated !== readFileSync(docs, 'utf8')) {
