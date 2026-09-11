@@ -18,15 +18,20 @@ concurrency:
 
 jobs:
   verify-installers:
-    name: Verify installers (${{ matrix.os }})
+    name: Verify installers (${{ matrix.os }}, node ${{ matrix.node }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     strategy:
       fail-fast: false
+      # Both advertised installer platforms on BOTH supported Node majors. A POSIX-only run is not
+      # Windows certification, and a Node-22-only run does not cover the Node 24 the launch policy
+      # advertises — the install cycle (install → configure → uninstall → reinstall → authorized
+      # recall under a spaces/non-ASCII home) has to actually execute in every advertised cell.
       matrix:
         os:
           - macos-latest
           - windows-latest
+        node: ['22', '24']
 
     steps:
       - name: Checkout
@@ -35,7 +40,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: '22'
+          node-version: ${{ matrix.node }}
 
       - name: Enable Corepack
         run: corepack enable
@@ -54,6 +59,9 @@ jobs:
 
       - name: Smoke install beta bundle
         run: corepack pnpm@9.15.0 installer:smoke
+
+      - name: Smoke install under spaces/non-ASCII user dir (WP1.6)
+        run: corepack pnpm@9.15.0 installer:smoke-userdir
 
       - name: Run generated macOS installer
         if: runner.os == 'macOS'
@@ -74,6 +82,6 @@ jobs:
       - name: Upload beta installer bundle
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: knowledge-crib-beta-installer-${{ matrix.os }}
+          name: knowledge-crib-beta-installer-${{ matrix.os }}-node${{ matrix.node }}
           path: dist/installers/knowledge-crib-*/
           if-no-files-found: error

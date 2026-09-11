@@ -406,6 +406,26 @@ export function openIndexForServe(rt: Runtime): IndexStore {
   return openIndex(manifest.stores.index.backend, { path });
 }
 
+/**
+ * WP4.2 — the serve startup HEAD comparison, as a pure decision. Returns the mismatch warning when
+ * the served graph was indexed at a commit the repository has moved past, and undefined otherwise.
+ *
+ * The old startup path compared only derived-index mtimes; an index built at an older commit on a
+ * repo that had since moved read as "fresh" while every query answered from stale source. The
+ * mismatch is NEVER silently initialized away — the caller states what it is serving and lets the
+ * operator (or the freshness worker) decide. Watch mode heals this on its own; manual mode cannot,
+ * which is exactly why the warning must exist. `undefined` heads (archive inputs, non-git repos,
+ * no commits) mean "nothing to compare against", not "fresh".
+ */
+export function startupHeadMismatch(
+  indexedVcsHead: string | undefined,
+  liveHead: string | undefined,
+): string | undefined {
+  if (indexedVcsHead === undefined || liveHead === undefined) return undefined;
+  if (indexedVcsHead === liveHead) return undefined;
+  return `warning: serving the graph indexed at ${indexedVcsHead.slice(0, 12)} but the repository is at ${liveHead.slice(0, 12)} — queries answer from the OLDER commit. Run \`crib update\` or enable freshness (watch/auto) to refresh.`;
+}
+
 /** Resolve a manifest index path (repo-root-relative by convention) to an absolute on-disk path. */
 function resolveIndexPath(rel: string, repoRoot: string, cribDir: string): string {
   if (isAbsolute(rel)) return rel;

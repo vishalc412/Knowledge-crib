@@ -11,13 +11,32 @@
  * In-process benchmarks against a warm store reported 3ms and 487 tokens for calls that really
  * cost 150ms and 43k tokens.
  *
+ * IDLE sampling (WP10.4): after the verb calls, the serve process sits QUIESCENT for 30s with no
+ * tool calls, then RSS/CPU are sampled twice (10s apart) via ps. Reported in the cost table. The
+ * assertion is deliberately report-mostly: it FAILS only on clear unbounded growth (RSS growing
+ * more than MAX_IDLE_RSS_GROWTH_KB between the two quiescent samples — a leak, not noise); idle
+ * CPU only WARNS. A long-lived idle `crib serve` must not grow or spin.
+ *
  * Usage: node scripts/cost-gate.mjs [--update]
  *   --update rewrites the budgets from the current run. Use it deliberately, and read the diff:
  *   a budget raised without a reason is this gate being switched off one line at a time.
  */
-import { spawn } from 'node:child_process';
+import { execFileSync, spawn } from 'node:child_process';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { setTimeout as sleep } from 'node:timers/promises';
+
+/** Quiescent window before the first idle sample (no tool calls in flight). */
+const IDLE_SETTLE_MS = 30_000;
+/** Gap between the two idle RSS samples. */
+const IDLE_SAMPLE_GAP_MS = 10_000;
+/**
+ * Idle RSS may grow at most this much between the two quiescent samples before the gate fails.
+ * 64 MB is far above allocator/GC wobble on an idle process and far below any real leak.
+ */
+const MAX_IDLE_RSS_GROWTH_KB = 64 * 1024;
+/** Idle CPU above this percent warns (report-only — a busy loop is worth a human's attention). */
+const IDLE_CPU_WARN_PCT = 25;
 
 const ROOT = process.cwd();
 const BUDGET_FILE = join(ROOT, 'scripts', 'cost-budgets.json');
@@ -34,6 +53,39 @@ const UPDATE = process.argv.includes('--update');
  */
 const TOKEN_SLACK = 1.25;
 const MS_SLACK = 3.0;
+
+/**
+ * WP10.4 idle sample — RSS (KB) and CPU% of one process via `ps`, BSD/GNU-compatible flags
+ * (`-o rss=,pcpu=` suppresses the header on both macOS and Linux). Returns null if the process
+ * has already exited (ps exits non-zero for an unknown pid) rather than throwing mid-gate.
+ */
+function sampleProcess(pid) {
+  try {
+    const out = execFileSync('ps', ['-o', 'rss=,pcpu=', '-p', String(pid)], {
+      encoding: 'utf8',
+    }).trim();
+    const [rssKb, cpuPct] = out.split(/\s+/).map(Number);
+    if (!Number.isFinite(rssKb) || !Number.isFinite(cpuPct)) return null;
+    return { rssKb, cpuPct };
+  } catch {
+    return null;
+  }
+}
+
+function reportIdle(idle) {
+  if (!idle) {
+    console.log(
+      '\nidle sample: unavailable (process exited or `ps` failed — not gated, reported only)',
+    );
+    return;
+  }
+  const sign = idle.growthKb >= 0 ? '+' : '';
+  console.log(
+    `\nidle sample (${IDLE_SETTLE_MS / 1000}s settle, ${IDLE_SAMPLE_GAP_MS / 1000}s gap): ` +
+      `RSS ${(idle.rssStartKb / 1024).toFixed(1)}→${(idle.rssEndKb / 1024).toFixed(1)}MB ` +
+      `(${sign}${(idle.growthKb / 1024).toFixed(1)}MB), CPU ${idle.cpuPct.toFixed(1)}%`,
+  );
+}
 
 function rpc(proc, pending, method, params, id) {
   return new Promise((resolve) => {
@@ -124,7 +176,26 @@ async function main() {
     const r = await rpc(proc, pending, 'tools/call', { name, arguments: args }, ++id);
     measured[name] = { tokens: r.tokens, ms: Math.round(r.ms) };
   }
+
+  // WP10.4 idle sampling — let the serve process sit QUIESCENT (no tool calls in flight) for
+  // IDLE_SETTLE_MS so any post-call GC/allocator settling is over, then take two RSS/CPU samples
+  // IDLE_SAMPLE_GAP_MS apart. Growth between the two quiescent samples is the leak signal; a
+  // single high sample right after a burst of calls is not.
+  await sleep(IDLE_SETTLE_MS);
+  const idleSample1 = sampleProcess(proc.pid);
+  await sleep(IDLE_SAMPLE_GAP_MS);
+  const idleSample2 = sampleProcess(proc.pid);
   proc.kill();
+
+  const idle =
+    idleSample1 && idleSample2
+      ? {
+          rssStartKb: idleSample1.rssKb,
+          rssEndKb: idleSample2.rssKb,
+          growthKb: idleSample2.rssKb - idleSample1.rssKb,
+          cpuPct: Math.max(idleSample1.cpuPct, idleSample2.cpuPct),
+        }
+      : null;
 
   if (UPDATE || !existsSync(BUDGET_FILE)) {
     const budgets = {};
@@ -140,6 +211,7 @@ async function main() {
       console.log(
         `  ${k.padEnd(20)} ${String(v.tokens).padStart(6)} tok  ${String(v.ms).padStart(5)}ms`,
       );
+    reportIdle(idle);
     return;
   }
 
@@ -163,6 +235,19 @@ async function main() {
   }
   const total = Object.values(measured).reduce((a, v) => a + v.tokens, 0);
   console.log(`\nsession total: ${total} tokens`);
+  reportIdle(idle);
+  if (idle) {
+    if (idle.growthKb > MAX_IDLE_RSS_GROWTH_KB) {
+      failures.push(
+        `idle RSS grew ${(idle.growthKb / 1024).toFixed(1)}MB over ${IDLE_SAMPLE_GAP_MS / 1000}s quiescent — exceeds the ${(MAX_IDLE_RSS_GROWTH_KB / 1024).toFixed(0)}MB leak threshold`,
+      );
+    }
+    if (idle.cpuPct > IDLE_CPU_WARN_PCT) {
+      warnings.push(
+        `idle CPU ${idle.cpuPct.toFixed(1)}% exceeds the ${IDLE_CPU_WARN_PCT}% guideline — a quiescent serve process should not be busy`,
+      );
+    }
+  }
   if (warnings.length) {
     console.log('\nslower than guideline (informational — a loaded machine inflates these):');
     for (const w of warnings) console.log(`  ${w}`);

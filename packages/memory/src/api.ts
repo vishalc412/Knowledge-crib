@@ -132,6 +132,11 @@ import {
   stageCaptureOutboxEntry,
 } from './outbox.js';
 import { readRepoId } from './paths.js';
+import {
+  type PendingQueueOpts,
+  type PendingQueueResult,
+  projectPendingQueue,
+} from './pending-queue.js';
 import { type CapturePolicySection, loadPolicy, trustedRefOf } from './policy.js';
 import {
   DEFAULT_RECALL_SOURCES,
@@ -2079,16 +2084,19 @@ export class MemoryApi {
       const pending = local ? pendingCaptures(local) : [];
       const { requirements, checkpoints } = this.intakeEntries();
       // Lifecycle events are what make a TIMED-OUT session recoverable: they are the only signal
-      // here the agent did not have to write itself. Read defensively — a repo with no journal, or
-      // an unreadable one, degrades to a handoff without `lastSession` rather than failing the
-      // whole projection.
+      // here the agent did not have to write itself. A repo with NO journal degrades to a handoff
+      // without `lastSession` (absence is honest — no hook ever ran). A journal that EXISTS but
+      // cannot be read is different: silently dropping it would read as "no previous work", the
+      // exact lie WP3.8 forbids — so the failure is reported through `degraded` instead.
       let lifecycle: Parameters<typeof buildHandoff>[0]['lifecycle'];
+      let lifecycleUnreadable = false;
       try {
         lifecycle = this.deps.eventJournal
           ?.read()
           .filter((event) => event.kind === 'agent.lifecycle');
       } catch {
         lifecycle = undefined;
+        lifecycleUnreadable = true;
       }
       return buildHandoff({
         attempts,
@@ -2097,6 +2105,7 @@ export class MemoryApi {
         intakeRequirements: requirements,
         intakeCheckpoints: checkpoints,
         ...(lifecycle ? { lifecycle } : {}),
+        ...(lifecycleUnreadable ? { lifecycleUnreadable: true } : {}),
         callerPrincipal: this.callerPrincipal(),
         ...(opts.currentSessionId !== undefined ? { currentSessionId: opts.currentSessionId } : {}),
         ...(opts.repository ? { repository: opts.repository } : {}),
@@ -3321,6 +3330,21 @@ export class MemoryApi {
       errors: [],
       rows: filtered.slice(offset, offset + limit),
     };
+  }
+
+  /**
+   * WP6.1/WP6.2 — the pending queue: raw captures awaiting distillation + staged claims awaiting
+   * admission, classified by the admission path each can actually take. A PURE projection over the
+   * local store ({@link projectPendingQueue} reuses the evaluator's own admissibility pre-flight,
+   * so the browser's `ready` can never drift from `crib memory evaluate`'s gate). Read-only.
+   *
+   * No local store → the honest `configured: false` shape (captures and candidates both live ONLY
+   * in the local store, so there is nothing to project).
+   */
+  pending(opts: PendingQueueOpts = {}): PendingQueueResult | { configured: false } {
+    const local = this.deps.stores.local;
+    if (!local) return { configured: false };
+    return projectPendingQueue(local, opts);
   }
 
   /**

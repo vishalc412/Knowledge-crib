@@ -16,6 +16,7 @@ import {
   type MemoryRecord,
   MemoryStore,
   __resetMemoryLockGuardForTest,
+  clearMemoryCollectionCache,
   createIntakeRequirement,
   decisionId,
   globalStoreRoot,
@@ -26,6 +27,7 @@ import {
   memoryShard,
   policyPath,
   readRepoId,
+  serializeMemoryShard,
   teamStoreRoot,
   writeJsonAtomic,
 } from './index.js';
@@ -275,6 +277,60 @@ describe('shard write/read round-trip', () => {
     const s = MemoryStore.local(REPO, { env, now: () => NOW, repoRoot: '/r' });
     expect(s.readShard('active', 'ab')).toEqual({ entries: [], errors: [] });
     expect(s.readCollection('active')).toEqual({ entries: [], errors: [] });
+  });
+});
+
+describe('crash + corruption resilience', () => {
+  it('an orphan .tmp plus the previous intact snapshot is what a reader sees after a crash mid-write', () => {
+    const s = MemoryStore.local(REPO, { env, now: () => NOW, repoRoot: '/r' });
+    const r = record();
+    s.upsertEntry('active', r);
+    const path = s.shardPath('active', memoryShard(r.id));
+    // Crash mid-writeJsonAtomic: the torn write landed in '<shard>.jsonl.tmp' and the renameSync
+    // never happened — the previous snapshot is intact and an orphan '.tmp' sibling is left behind.
+    writeFileSync(
+      `${path}.tmp`,
+      '{"id":"mem:torn","schemaVersion":"1","kind":"fact"', // deliberately truncated JSON
+      'utf8',
+    );
+    expect(existsSync(`${path}.tmp`)).toBe(true);
+    // The read path never reads '.tmp' (SHARD_FILE_RE matches '<2-hex>.jsonl' only), so the reader
+    // sees the OLD snapshot, not the half-written one.
+    const { entries, errors } = s.readCollection('active');
+    expect(errors).toHaveLength(0);
+    expect(entries.map((e) => e.id)).toEqual([r.id]);
+    // the previous snapshot on disk is untouched by the crash
+    expect(readFileSync(path, 'utf8')).toContain(r.id);
+  });
+
+  it('readCollection surfaces an interior corrupt line, keeps good records, and migrations refuse', () => {
+    const s = MemoryStore.local(REPO, { env, now: () => NOW, repoRoot: '/r' });
+    const a = record('claim a');
+    // Both records must live in ONE shard file: scan claims until the second record's
+    // content-addressed id lands in a's shard (memoryShard is a uniform 2-hex hash prefix, so a
+    // hit is expected within a few hundred tries).
+    let b: MemoryRecord | undefined;
+    for (let i = 0; i < 5000 && b === undefined; i++) {
+      const cand = record(`claim b ${i}`);
+      if (memoryShard(cand.id) === memoryShard(a.id)) b = cand;
+    }
+    if (!b) throw new Error('no same-shard record found (statistically impossible)');
+    s.upsertEntries('active', [a, b]);
+    const shard = memoryShard(a.id);
+    // Out-of-band corruption of the shard: validA-line / corrupt INTERIOR line / validB-line.
+    writeFileSync(
+      s.shardPath('active', shard),
+      `${serializeMemoryShard([a])}{corrupt interior line\n${serializeMemoryShard([b])}`,
+      'utf8',
+    );
+    // CRITICAL: an out-of-band writeFileSync does NOT bump store.gen, so the read memo keyed on the
+    // old generation would keep serving the pre-corruption read. Drop it before reading.
+    clearMemoryCollectionCache();
+    const { entries, errors } = s.readCollection('active');
+    expect(entries.map((e) => e.id).sort()).toEqual([a.id, b.id].sort());
+    expect(errors).toHaveLength(1);
+    expect(errors[0]).toContain(`active/${shard}.jsonl:2`);
+    expect(() => s.migrateToV2()).toThrow(/refusing to migrate/);
   });
 });
 

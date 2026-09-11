@@ -9,8 +9,10 @@
  *     therefore the OPERATOR step, pointed at a local model directory — see `installEmbedModel`
  *     below and the limitation stated in the G3.2 report).
  *   - The install is PINNED: the manifest records the model id + version + a sha256 + byte length
- *     for every file in the model dir. `loadInstalledEmbedder` re-verifies every hash before the
- *     module is imported — a tampered or half-copied model dir is refused, never served.
+ *     for every file in the model dir, and — when setup provisioned them separately (WP1.8) —
+ *     the same content hashes for the weight cache plus the runtime dependency versions.
+ *     `loadInstalledEmbedder` re-verifies every hash before the module is imported — a tampered
+ *     or half-copied model dir is refused, never served.
  *   - The loaded module must be a local file implementing the {@link Embedder} interface (default
  *     export: an instance, or a factory `(opts) => Embedder`) — the same trust level as the
  *     pre-existing `KCRIB_EMBEDDER` module hook: operator-installed code, executed locally,
@@ -39,14 +41,66 @@ import { pathToFileURL } from 'node:url';
 import type { Embedder, EmbedderOptions } from './types.js';
 import { DEFAULT_DIM } from './types.js';
 
-/** Bump on any change to the manifest contract — a mismatch makes the install invalid (fail closed). */
-export const EMBED_MANIFEST_FORMAT_VERSION = 1;
+/**
+ * Bump on any change to the manifest contract — a mismatch makes the install invalid (fail closed).
+ *
+ * v2 (WP1.8): the optional `provisioning` block. `crib embed setup` downloads a multi-gigabyte
+ * weight cache and a ~376 MB npm runtime; v1 pinned neither, so a drifted or half-copied weight
+ * file was SERVED as long as the two-file adapter dir still matched its hashes. v2 installs pin
+ * both (content hashes for weights, installed package versions for the runtime), and the reader
+ * refuses v1 manifests rather than serving weights it cannot verify.
+ */
+export const EMBED_MANIFEST_FORMAT_VERSION = 2;
 
 /** One integrity-checked file of the installed model, relative to the model dir (POSIX separators). */
 export interface EmbedModelFileEntry {
   path: string;
   sha256: string;
   bytes: number;
+}
+
+/** A hash-pinned directory outside the model dir (the weight cache — see EmbedProvisioningPin). */
+export interface EmbedDirPin {
+  /** Absolute dir this pin was made from (files are verified relative to it). */
+  dir: string;
+  files: EmbedModelFileEntry[];
+}
+
+/**
+ * The runtime dependency pin: package name → the installed version the pinned behaviour ran
+ * against. Resolved back to `<dir>/node_modules/<name>/package.json` at verify time.
+ */
+export interface EmbedRuntimePin {
+  dir: string;
+  deps: Record<string, string>;
+  /**
+   * `${platform}-${arch}` the install ran on (e.g. `darwin-arm64`). The native inference binaries
+   * under the runtime dir are platform-specific, so an embed home copied across OSes must be
+   * refused with a clear reason instead of failing later inside a dlopen.
+   */
+  platform?: string;
+}
+
+/**
+ * The provisioning pin (WP1.8): everything `crib embed setup` downloads besides the adapter.
+ *
+ * A v1 install pinned the adapter dir — two generated files — and nothing else, which meant the
+ * actual model artifacts (weights, tokenizer) and the inference runtime were trusted by omission:
+ * a drifted or half-copied `model.onnx` was served as long as `embedder.mjs` still hashed. This
+ * block pins them by CONTENT: the weight cache by sha256 of every file, the runtime by the
+ * installed versions of the packages the pinned behaviour depends on.
+ *
+ * No revision LABEL is recorded because the HuggingFace cache on disk stores none — the content
+ * hashes are the pin, and they are strictly stronger than a ref name.
+ *
+ * Optional: a hand-installed model dir may carry its weights inside it (those are pinned via
+ * `files`); only installs that provision a separate weight cache write this block.
+ */
+export interface EmbedProvisioningPin {
+  /** The ONNX-hosted model id the weights were fetched from (e.g. `Xenova/multilingual-e5-large`). */
+  onnxId: string;
+  weights: EmbedDirPin;
+  runtime?: EmbedRuntimePin;
 }
 
 /**
@@ -68,6 +122,8 @@ export interface EmbedManifest {
   /** The JS entry module, relative to `modelDir`, whose default export is the Embedder. */
   entry: string;
   files: EmbedModelFileEntry[];
+  /** The provisioning pin (WP1.8): weights + runtime deps, when setup downloaded them separately. */
+  provisioning?: EmbedProvisioningPin;
   /** Display-only; supplied by the CLI caller. The pure module never reads the clock. */
   installedAt?: string;
 }
@@ -196,6 +252,34 @@ function listModelFiles(root: string): string[] {
   return out.sort();
 }
 
+/**
+ * Hash every file under `dir` (recursive, path-escape-guarded) as manifest entries — the shared
+ * pinning discipline for the model dir AND the weight cache (WP1.8). Throws
+ * {@link EmbedManifestError} on a path escape.
+ */
+export function hashDirFiles(dir: string): EmbedModelFileEntry[] {
+  return listModelFiles(dir).map((rel) => {
+    const { sha256, bytes } = sha256File(join(dir, rel));
+    return { path: rel, sha256, bytes };
+  });
+}
+
+/**
+ * Resolve a pinned dependency name to its package.json under a runtime dir. The name comes from the
+ * MANIFEST, which is tamperable input: every segment must be a plain package segment, so a dep
+ * entry can never become a path traversal out of `node_modules`.
+ */
+function depPackageJson(dir: string, name: string): string | undefined {
+  const segs = name.split('/');
+  if (
+    segs.length === 0 ||
+    segs.some((s) => !/^(@[\w.-]+|[\w.-]+)$/.test(s) || s === '.' || s === '..')
+  ) {
+    return undefined;
+  }
+  return join(dir, 'node_modules', ...segs, 'package.json');
+}
+
 export interface InstallEmbedModelOptions {
   /** The operator-supplied local model directory (the out-of-band acquisition lands here). */
   modelDir: string;
@@ -207,6 +291,8 @@ export interface InstallEmbedModelOptions {
   installedAt?: string;
   /** Where to write the manifest. Default {@link embedHomeDir}. */
   home?: string;
+  /** Provisioning pin for a separately-downloaded weight cache + runtime (WP1.8). */
+  provisioning?: EmbedProvisioningPin;
 }
 
 /**
@@ -244,6 +330,7 @@ export async function installEmbedModel(opts: InstallEmbedModelOptions): Promise
     modelDir,
     entry: entryRel,
     files,
+    ...(opts.provisioning ? { provisioning: opts.provisioning } : {}),
     ...(opts.installedAt ? { installedAt: opts.installedAt } : {}),
   };
   const home = opts.home ?? embedHomeDir();
@@ -280,9 +367,38 @@ export function readEmbedManifest(home: string = embedHomeDir()): EmbedManifest 
 }
 
 /**
- * Hash-verify every manifest file against the model dir. A tampered, truncated, or moved model dir
- * fails here — and since {@link loadInstalledEmbedder} calls this first, an unverified model is
- * never imported, let alone served.
+ * Hash-verify every pinned file. A tampered, truncated, or moved dir fails here — and since
+ * {@link loadInstalledEmbedder} calls this first, an unverified model is never imported, let alone
+ * served. `label` prefixes provisioning problems so an operator can tell a drifted WEIGHT from a
+ * drifted adapter apart at a glance.
+ */
+function checkPinnedFiles(
+  dir: string,
+  files: EmbedModelFileEntry[],
+  label: string,
+  problems: string[],
+): void {
+  const pfx = label ? `${label} ` : '';
+  for (const f of files) {
+    const full = join(dir, f.path);
+    if (!existsSync(full)) {
+      problems.push(`${pfx}missing file ${f.path}`);
+      continue;
+    }
+    const { sha256, bytes } = sha256File(full);
+    if (bytes !== f.bytes) problems.push(`${pfx}size drift ${f.path}: ${bytes} != ${f.bytes}`);
+    if (sha256 !== f.sha256)
+      problems.push(`${pfx}hash drift ${f.path}: content changed since install`);
+  }
+}
+
+/**
+ * Verify a pinned model dir against the manifest, plus — when the install provisioned them (WP1.8)
+ * — the weight cache and the runtime dependency versions.
+ *
+ * Hashing a multi-gigabyte weight cache costs a couple of seconds on a laptop SSD, paid at every
+ * embedder load. That is the contract this tier was built under (red line #3: an unverifiable
+ * artifact is refused, never served) and the model load it precedes already costs several seconds.
  */
 export function verifyInstalledEmbed(home: string = embedHomeDir()): EmbedVerification {
   let manifest: EmbedManifest;
@@ -302,15 +418,48 @@ export function verifyInstalledEmbed(home: string = embedHomeDir()): EmbedVerifi
   if (!manifest.modelDir || !existsSync(manifest.modelDir)) {
     problems.push(`model dir "${manifest.modelDir}" is missing`);
   } else {
-    for (const f of manifest.files) {
-      const full = join(manifest.modelDir, f.path);
-      if (!existsSync(full)) {
-        problems.push(`missing file ${f.path}`);
-        continue;
+    checkPinnedFiles(manifest.modelDir, manifest.files, '', problems);
+  }
+  if (manifest.provisioning) {
+    const pin = manifest.provisioning;
+    if (!existsSync(pin.weights.dir)) {
+      problems.push(`weight cache "${pin.weights.dir}" is missing`);
+    } else if (pin.weights.files.length === 0) {
+      problems.push(`weight cache "${pin.weights.dir}" is pinned as EMPTY — the pin is not a pin`);
+    } else {
+      checkPinnedFiles(pin.weights.dir, pin.weights.files, 'weights:', problems);
+    }
+    if (pin.runtime) {
+      if (!existsSync(pin.runtime.dir)) {
+        problems.push(`runtime dir "${pin.runtime.dir}" is missing`);
+      } else {
+        const platform = `${process.platform}-${process.arch}`;
+        if (pin.runtime.platform && pin.runtime.platform !== platform) {
+          problems.push(
+            `runtime platform drift: installed on ${pin.runtime.platform}, running on ${platform} — the embed home was copied across machines; re-run "crib embed setup"`,
+          );
+        }
+        for (const [name, pinned] of Object.entries(pin.runtime.deps).sort(([a], [b]) =>
+          a.localeCompare(b),
+        )) {
+          const pj = depPackageJson(pin.runtime.dir, name);
+          if (!pj || !existsSync(pj)) {
+            problems.push(`runtime dep ${name} is missing`);
+            continue;
+          }
+          try {
+            const installed = (JSON.parse(readFileSync(pj, 'utf8')) as { version?: string })
+              .version;
+            if (installed !== pinned) {
+              problems.push(
+                `runtime dep drift ${name}: installed ${installed ?? '?'} != pinned ${pinned}`,
+              );
+            }
+          } catch {
+            problems.push(`runtime dep ${name} has an unreadable package.json`);
+          }
+        }
       }
-      const { sha256, bytes } = sha256File(full);
-      if (bytes !== f.bytes) problems.push(`size drift ${f.path}: ${bytes} != ${f.bytes}`);
-      if (sha256 !== f.sha256) problems.push(`hash drift ${f.path}: content changed since install`);
     }
   }
   return { present: true, ok: problems.length === 0, manifest, problems };

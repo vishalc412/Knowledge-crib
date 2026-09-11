@@ -14,16 +14,21 @@ concurrency:
 
 jobs:
   verify:
-    name: Verify release (${{ matrix.os }})
+    name: Verify release (${{ matrix.os }}, Node ${{ matrix.node }})
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 30
+    timeout-minutes: 45
     strategy:
       fail-fast: false
+      # EXACTLY the cell set scripts/launch-policy.json freezes — policy 2 ships macOS only, so
+      # this matrix is macOS only. The two must agree in BOTH directions: a matrix smaller than the
+      # policy fails aggregation on a missing cell, and a matrix LARGER than it uploads manifests
+      # for cells the launch does not claim, which are then judged against requirements (a browser
+      # receipt, say) that their legs never produce. Cross-platform development coverage lives in
+      # ci.yml, which is a dev gate and emits no launch evidence.
       matrix:
         os:
-          - ubuntu-latest
           - macos-latest
-          - windows-latest
+        node: ['22', '24']
 
     steps:
       - name: Checkout
@@ -32,7 +37,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: '22'
+          node-version: ${{ matrix.node }}
 
       - name: Enable Corepack
         run: corepack enable
@@ -58,16 +63,74 @@ jobs:
           KCRIB_EMBED_HOME: ${{ runner.temp }}/knowledge-crib-embed
         run: corepack pnpm@9.15.0 release:verify
 
+      # Browser acceptance belongs to a TAG, not only to PR CI: a release that never drove the
+      # real UI has no browser evidence to offer, and a missing receipt type is a blocker.
+      - name: Install browser binaries
+        if: matrix.os == 'macos-latest'
+        run: corepack pnpm@9.15.0 exec playwright install --with-deps chromium
+
+      - name: Run browser acceptance suite
+        if: matrix.os == 'macos-latest'
+        run: corepack pnpm@9.15.0 verify:browser 2>&1 | tee browser-acceptance.log
+
+      - name: Write browser receipt
+        if: matrix.os == 'macos-latest'
+        run: >-
+          node scripts/write-receipt.mjs browser --out receipts/browser.json
+          --command "pnpm verify:browser" --artifact browser-acceptance.log
+
+      - name: Run install cycle
+        run: corepack pnpm@9.15.0 installer:smoke-userdir 2>&1 | tee install-cycle.log
+
+      - name: Write install receipt
+        run: >-
+          node scripts/write-receipt.mjs install --out receipts/install.json
+          --command "pnpm installer:smoke-userdir" --artifact install-cycle.log
+
+      # THE FINAL RECEIPT, written only after every mandatory command above has finished. Its
+      # existence is the claim that they ran; a failing step never reaches this line, so a manifest
+      # can no longer describe a workflow that stopped halfway.
+      - name: Collect release evidence
+        env:
+          KCRIB_EMBED_HOME: ${{ runner.temp }}/knowledge-crib-embed
+        shell: bash
+        run: |
+          mkdir -p "launch-evidence/${{ matrix.os }}"
+          node scripts/release-evidence.mjs \
+            --out "launch-evidence/${{ matrix.os }}/${{ matrix.node }}.json" \
+            --receipts receipts \
+            --require-runtime-certification \
+            --certification-platforms darwin \
+            --certification-receipts docs/launch/client-certification-receipts \
+            --command "release.yml verify (${{ matrix.os }}, node ${{ matrix.node }})"
+
       - name: Upload release evidence
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: knowledge-crib-release-evidence-${{ matrix.os }}
-          path: release-evidence.json
+          # The path INSIDE the artifact is the policy cell id, so the aggregation reads
+          # `<os>/<node>` rather than whatever the artifact happened to be called.
+          name: release-evidence-${{ matrix.os }}-node${{ matrix.node }}
+          path: launch-evidence/
           if-no-files-found: error
           retention-days: 30
 
+      # Diagnostics from a FAILED cell go to a separate artifact the aggregation never reads: a
+      # half-finished run must not be able to contribute a manifest to the decision.
+      - name: Upload failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: release-diagnostics-${{ matrix.os }}-node${{ matrix.node }}
+          path: |
+            release-evidence.json
+            browser-acceptance.log
+            install-cycle.log
+            receipts/
+          if-no-files-found: ignore
+          retention-days: 30
+
       - name: Upload verified bundle
-        if: matrix.os == 'ubuntu-latest'
+        if: matrix.os == 'macos-latest' && matrix.node == '22'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: knowledge-crib-release-bundle
@@ -75,9 +138,76 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
+  # WP9.4 — ONE aggregated launch decision. Every per-OS verify cell uploads its release
+  # evidence even when it fails (see if: always() above); this job downloads all three
+  # manifests and runs the aggregation CLI, which validates each cell, prints the per-cell
+  # table, and exits non-zero on NO-GO or missing cell evidence. `if: !cancelled()` so the
+  # NO-GO path is exactly the one that must not be silent: a failed verify cell still
+  # produces a printed decision. The aggregation CLI is scripts/launch-decision.mjs
+  # (WP8/WP9 slice, plain Node — no dependencies, no corepack needed).
+  launch-decision:
+    name: Aggregate launch decision
+    needs: verify
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      # The ONLY package digest publication is allowed to ship, and only when the decision is GO.
+      package_sha256: ${{ steps.decide.outputs.package_sha256 }}
+      decision: ${{ steps.decide.outputs.decision }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+
+      - name: Download per-cell release evidence
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          pattern: release-evidence-*
+          path: launch-evidence
+          # merge-multiple keeps the `<os>/<node>.json` layout from every artifact, so the cell ids
+          # the aggregation reads are exactly the ones the launch policy names.
+          merge-multiple: true
+
+      - name: Aggregate launch decision
+        id: decide
+        shell: bash
+        run: |
+          set -o pipefail
+          node scripts/launch-decision.mjs --cells launch-evidence \
+            --candidate-commit "$GITHUB_SHA" | tee decision.txt
+          status=${PIPESTATUS[0]}
+          node -e '
+            const fs = require("fs");
+            const text = fs.readFileSync("decision.txt", "utf8");
+            const json = JSON.parse(text.slice(text.indexOf("{")));
+            const out = process.env.GITHUB_OUTPUT;
+            fs.appendFileSync(out, `decision=${json.decision}\n`);
+            fs.appendFileSync(out, `package_sha256=${json.candidate?.packageSha256 ?? ""}\n`);
+          '
+          exit "$status"
+
+      - name: Upload launch decision
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: knowledge-crib-launch-decision
+          path: decision.txt
+          if-no-files-found: warn
+          retention-days: 30
+
   release:
     name: Create GitHub release
-    needs: verify
+    # Publication depends on BOTH the per-cell verification and the aggregate approval. `needs`
+    # already implies success for both, so a failed or skipped decision leaves this job unrun —
+    # which is the point: nothing may publish that the decision did not approve (A03).
+    needs: [verify, launch-decision]
+    if: ${{ needs.launch-decision.outputs.decision == 'GO' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -89,6 +219,30 @@ jobs:
         with:
           name: knowledge-crib-release-bundle
           path: release-bundle
+
+      # The decision approved specific BYTES, not a build name. Re-hash what was downloaded and
+      # refuse to publish anything else — an artifact swapped between the decision and this step
+      # is exactly the gap a digest comparison exists to close.
+      - name: Verify downloaded bytes against the approved digest
+        shell: bash
+        env:
+          APPROVED: ${{ needs.launch-decision.outputs.package_sha256 }}
+        run: |
+          if [[ -z "$APPROVED" ]]; then
+            echo "the launch decision published no approved package digest — refusing to release" >&2
+            exit 1
+          fi
+          TARBALL="$(find release-bundle -type f -name 'knowledge-crib-*.tgz' -not -name 'knowledge-crib-*-*.tgz' -print -quit)"
+          if [[ -z "$TARBALL" ]]; then
+            echo "no shipped package found in the verified bundle" >&2
+            exit 1
+          fi
+          ACTUAL="sha256:$(shasum -a 256 "$TARBALL" | cut -d' ' -f1)"
+          if [[ "$ACTUAL" != "$APPROVED" ]]; then
+            echo "downloaded package $ACTUAL does not match the approved digest $APPROVED" >&2
+            exit 1
+          fi
+          echo "package digest matches the approved decision: $ACTUAL"
 
       - name: Validate tag and bundle version
         shell: bash

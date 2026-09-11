@@ -47,6 +47,7 @@ export * from './composite.js';
 export * from './policy.js';
 export * from './capture-policy.js';
 export * from './outbox.js';
+export * from './pending-queue.js';
 export * from './distill.js';
 export * from './gate-runner.js';
 export * from './promotion.js';

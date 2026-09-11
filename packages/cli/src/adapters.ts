@@ -17,9 +17,20 @@
  * lives in `mcp-install.ts` (reusing its writers); adding a client = add a `ClientAdapter` entry
  * here + an `McpIde` target there, not a third hardcoded switch.
  */
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  type Dirent,
+  type Stats,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from 'node:fs';
 import { homedir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { basename, dirname, join } from 'node:path';
+import { SERVER_NAME, TOML_BEGIN, TOML_END } from './mcp-install.js';
 
 /** A supported agent client for the instruction-adapter registry. A superset of {@link McpIde}:
  *  includes `'copilot'` (GitHub Copilot), which has its own instruction file
@@ -58,7 +69,10 @@ export const LIFECYCLE_EVENTS: readonly LifecycleEvent[] = [
 export interface LifecycleHooksCell {
   readonly events: readonly LifecycleEvent[];
   readonly evidence: CaptureEvidence;
-  settingsPath?(repoRoot: string): string;
+  /** Where this client's hook settings live for a scope, or `undefined` when the client has no hook
+   *  surface. Global scope points at the user-level settings file, which applies to every repository
+   *  the user opens — see the capture-hook writer for why that is safe to wire. */
+  settingsPath?(scope: AdapterScope, repoRoot: string, home: string): string;
 }
 
 /** The per-client capture-lane capability row (G2.1). REQUIRED on every {@link ClientAdapter} so the
@@ -87,8 +101,15 @@ export interface ClientAdapter {
   /** Human-readable label for `crib adapters list`. */
   label: string;
   /** Instruction file targets for a scope (the neutral protocol), or `null` when this client reads
-   *  no dedicated instruction file (VS Code's agent IS Copilot → `.github/copilot-instructions.md`). */
-  instructionTargets(scope: AdapterScope, repoRoot: string): InstructionTarget[] | null;
+   *  no dedicated instruction file at that scope (VS Code's agent IS Copilot →
+   *  `.github/copilot-instructions.md`; Cursor has no user-home rules file at all). `home` is the
+   *  user's home directory, supplied by the caller for the same reason {@link ClientAdapter.skillDest}
+   *  takes it — so a sandboxed run with no HOME cannot silently yield a relative path. */
+  instructionTargets(
+    scope: AdapterScope,
+    repoRoot: string,
+    home: string,
+  ): InstructionTarget[] | null;
   /** Skill install destination root, or `null` when this client has no skill mechanism. */
   skillDest(home: string): string | null;
   /** The capture-lane capability matrix row (see {@link CaptureLanes}). */
@@ -153,6 +174,8 @@ export function neutralProtocolBody(): string {
     '### 2. Recall before you act',
     '- Before relying on a reusable claim, call the `brief` MCP tool (or the `memory_recall` MCP tool, or `crib memory recall "<query>"`) to surface team + local memory for this repository. Memory is the source of truth across sessions — do not assume last session’s state still holds.',
     '- `brief` returns typed groups: team before local, valid before degraded, current before needs-review. Never mix memory results with BM25 code-search results into one opaque list.',
+    '- Recall and handoff read DIFFERENT stores, and neither answers for the other. `brief` and `memory_recall` read the CLAIM LEDGER (distilled reusable claims); `memory` with `op: "handoff"` reads INTAKES (durable work in progress, §1). An empty recall is evidence about the ledger alone — it is never evidence that there is no unfinished work, so do not report "no memory for this repository" on a recall alone. Check both stores before concluding either is empty.',
+    '- Recall deliberately excludes untrusted records. `memory_recall` never returns pending, invalid, superseded or retracted records, so a claim captured but not yet distilled is absent by design, not missing. Pass `includePending: true` to see those as a separate, explicitly untrusted group — leads, never facts.',
     '',
     '### 3. Record only reusable learnings',
     '- Persist a memory (via `memory_observe`, or `crib memory propose/attest`) ONLY when it is reusable beyond the current task: a non-obvious fact, a verified procedure, a decision with rationale, a pitfall and its fix, or a convention.',
@@ -193,9 +216,35 @@ export function neutralProtocolBody(): string {
   ].join('\n');
 }
 
-/** The full managed block (markers + body) spliced into each instruction file. */
-export function neutralProtocolBlock(): string {
-  return `${ADAPTER_BEGIN}\n${neutralProtocolBody()}\n${ADAPTER_END}`;
+/** The gate that opens a GLOBAL-scope block.
+ *
+ * A user-level instruction file applies to every repository the user opens, including ones crib has
+ * never indexed. Stating the protocol unconditionally there would tell an agent to call `query`,
+ * `handoff` and `impact` in repositories where those verbs have nothing to answer from — turning a
+ * memory default into a reliable source of failed calls. So the global block carries its own
+ * applicability test, and an agent that cannot see `.crib/` is told to ignore the rest rather than
+ * left to discover the emptiness one failing verb at a time. Project-scope blocks need no gate: the
+ * file only exists because crib was installed into that repository. */
+function globalScopeGate(): string {
+  return [
+    '## When this protocol applies',
+    '',
+    'This block is user-level: it is loaded for EVERY repository, not just ones using knowledge-crib. It applies only when the repository you are working in has a `.crib/` directory (equivalently, `crib status` succeeds). Check that first.',
+    '',
+    '- **`.crib/` present** — everything below is MANDATORY for this repository, exactly as if it were written in the repository’s own instruction file.',
+    '- **`.crib/` absent** — crib is not set up here. Ignore the rest of this block entirely; do not call crib verbs, and do not report their absence as a problem. Offer `crib init` only if the user asks about memory or code context.',
+    '',
+    'A repository’s own instruction file, when it carries this block, takes precedence over this one — they are the same protocol, so agreeing is the normal case.',
+  ].join('\n');
+}
+
+/** The full managed block (markers + body) spliced into each instruction file. A `global`-scope block
+ *  is prefixed with {@link globalScopeGate}; the protocol body itself is identical at both scopes, so
+ *  there is exactly one place the rules are written. */
+export function neutralProtocolBlock(scope: AdapterScope = 'project'): string {
+  const body =
+    scope === 'global' ? `${globalScopeGate()}\n\n${neutralProtocolBody()}` : neutralProtocolBody();
+  return `${ADAPTER_BEGIN}\n${body}\n${ADAPTER_END}`;
 }
 
 // ─── client registry ──────────────────────────────────────────────────────────
@@ -215,8 +264,10 @@ export const CLIENT_ADAPTERS: ClientAdapter[] = [
   {
     id: 'claude',
     label: 'Claude Code',
-    instructionTargets: (scope, repoRoot) =>
-      scope === 'project' ? [{ path: join(repoRoot, 'CLAUDE.md'), format: 'md' }] : null,
+    instructionTargets: (scope, repoRoot, home) =>
+      scope === 'project'
+        ? [{ path: join(repoRoot, 'CLAUDE.md'), format: 'md' }]
+        : [{ path: join(home, '.claude', 'CLAUDE.md'), format: 'md' }],
     skillDest: (home) => join(home, '.claude', 'skills'),
     lifecycle: {
       portableCapture: { tool: 'memory', op: 'capture', evidence: 'in-repo-writer' },
@@ -232,7 +283,10 @@ export const CLIENT_ADAPTERS: ClientAdapter[] = [
         // until that path exists in-repo — a stronger label would self-assert a guarantee nobody
         // has run.
         evidence: 'verified-upstream-doc',
-        settingsPath: (repoRoot) => join(repoRoot, '.claude', 'settings.json'),
+        settingsPath: (scope, repoRoot, home) =>
+          scope === 'project'
+            ? join(repoRoot, '.claude', 'settings.json')
+            : join(home, '.claude', 'settings.json'),
       },
       // The Claude Agent SDK can wrap each turn in an embedded application, but no in-repo code or
       // verified upstream doc pins that contract for memory capture + recall injection — reported
@@ -243,6 +297,9 @@ export const CLIENT_ADAPTERS: ClientAdapter[] = [
   {
     id: 'cursor',
     label: 'Cursor',
+    // Global stays null for the same reason `skillDest` does (see below): Cursor has no user-home
+    // rules FILE — user rules are plain text managed inside Cursor Settings, which no writer can
+    // reach. Reported as a data note rather than promised and silently dropped.
     instructionTargets: (scope, repoRoot) =>
       scope === 'project'
         ? [{ path: join(repoRoot, '.cursor', 'rules', 'crib.mdc'), format: 'mdc' }]
@@ -258,6 +315,9 @@ export const CLIENT_ADAPTERS: ClientAdapter[] = [
   {
     id: 'copilot',
     label: 'GitHub Copilot',
+    // Repo-scope only: Copilot's user-level instructions are a VS Code SETTINGS key
+    // (github.copilot.chat.codeGeneration.instructions), not a markdown file this writer owns, so a
+    // global target would mean editing the user's editor settings rather than an instruction file.
     instructionTargets: (scope, repoRoot) =>
       scope === 'project'
         ? [{ path: join(repoRoot, '.github', 'copilot-instructions.md'), format: 'md' }]
@@ -278,25 +338,39 @@ export const CLIENT_ADAPTERS: ClientAdapter[] = [
   {
     id: 'codex',
     label: 'Codex',
-    // Codex reads `AGENTS.md` natively (same file as the root neutral protocol).
-    instructionTargets: (scope, repoRoot) =>
-      scope === 'project' ? [{ path: join(repoRoot, 'AGENTS.md'), format: 'md' }] : null,
+    // Codex reads `AGENTS.md` natively (same file as the root neutral protocol), and `~/.codex/AGENTS.md`
+    // as the user-level instruction file applied to every project.
+    instructionTargets: (scope, repoRoot, home) =>
+      scope === 'project'
+        ? [{ path: join(repoRoot, 'AGENTS.md'), format: 'md' }]
+        : [{ path: join(home, '.codex', 'AGENTS.md'), format: 'md' }],
     skillDest: () => null,
     lifecycle: INSTRUCTION_RECALL_ONLY,
   },
   {
     id: 'windsurf',
     label: 'Windsurf',
-    instructionTargets: (scope, repoRoot) =>
-      scope === 'project' ? [{ path: join(repoRoot, '.windsurfrules'), format: 'md' }] : null,
+    // Project rules live in `.windsurfrules`; the user-level equivalent is the global rules file
+    // under the Codeium config directory, the same tree `crib mcp install --ide windsurf` writes to.
+    instructionTargets: (scope, repoRoot, home) =>
+      scope === 'project'
+        ? [{ path: join(repoRoot, '.windsurfrules'), format: 'md' }]
+        : [
+            {
+              path: join(home, '.codeium', 'windsurf', 'memories', 'global_rules.md'),
+              format: 'md',
+            },
+          ],
     skillDest: () => null,
     lifecycle: INSTRUCTION_RECALL_ONLY,
   },
   {
     id: 'gemini',
     label: 'Gemini CLI',
-    instructionTargets: (scope, repoRoot) =>
-      scope === 'project' ? [{ path: join(repoRoot, 'GEMINI.md'), format: 'md' }] : null,
+    instructionTargets: (scope, repoRoot, home) =>
+      scope === 'project'
+        ? [{ path: join(repoRoot, 'GEMINI.md'), format: 'md' }]
+        : [{ path: join(home, '.gemini', 'GEMINI.md'), format: 'md' }],
     skillDest: () => null,
     lifecycle: INSTRUCTION_RECALL_ONLY,
   },
@@ -489,6 +563,17 @@ export function removeAdapterBlock(content: string): string {
   return `${before}${after.replace(/^\n/, '')}`;
 }
 
+/** Line (1-based) of the begin marker when it has no matching end marker — the location of a truncated
+ *  managed block (WP2.4) — or `null` when the content has no orphan begin marker. Used by install and
+ *  remove to make their existing silent refusal LOUD: the file is left byte-identical either way, but the
+ *  note now says where the defect is instead of reading as "already up to date". */
+export function orphanBeginMarkerLine(content: string): number | null {
+  const beginIdx = content.indexOf(ADAPTER_BEGIN);
+  if (beginIdx === -1) return null;
+  if (content.indexOf(ADAPTER_END, beginIdx) !== -1) return null;
+  return content.slice(0, beginIdx).split('\n').length;
+}
+
 /** True if `content` is empty or ONLY YAML frontmatter (no user body). CRLF-tolerant (`\r?\n`) so a
  *  Windows-edited frontmatter-only Cursor rule is still recognized. Only meaningful for `.mdc` targets
  *  (crib owns the frontmatter it writes there); see `removeInstructions` for the format gate. */
@@ -515,14 +600,15 @@ export interface InstructionInstallResult {
  *  sibling content outside the markers is preserved. */
 export function installInstructions(
   repoRoot: string,
-  opts: { client?: ClientId | 'all'; scope?: AdapterScope } = {},
+  opts: { client?: ClientId | 'all'; scope?: AdapterScope; home?: string } = {},
 ): InstructionInstallResult[] {
   const scope: AdapterScope = opts.scope ?? 'project';
+  const home = opts.home ?? homedir();
   const ids: ClientId[] = opts.client && opts.client !== 'all' ? [opts.client] : ALL_CLIENTS;
   const out: InstructionInstallResult[] = [];
   for (const id of ids) {
     const adapter = clientAdapter(id);
-    const targets = adapter.instructionTargets(scope, repoRoot);
+    const targets = adapter.instructionTargets(scope, repoRoot, home);
     if (!targets || targets.length === 0) {
       out.push({
         client: id,
@@ -535,6 +621,19 @@ export function installInstructions(
     }
     for (const target of targets) {
       const existing = readOrEmpty(target.path);
+      const orphanLine = orphanBeginMarkerLine(existing);
+      if (orphanLine !== null) {
+        // WP2.4: spliceAdapterBlock refuses an orphan begin marker by returning the content
+        // unchanged — surface WHERE, so `written:false` never reads as "already up to date".
+        out.push({
+          client: id,
+          scope,
+          path: target.path,
+          written: false,
+          note: `refusing to write ${target.path}: begin marker at line ${orphanLine} has no matching end marker — fix or remove it first`,
+        });
+        continue;
+      }
       let next: string;
       if (target.format === 'mdc') {
         // Ensure the Cursor frontmatter is present (write it on a fresh file; preserve an existing
@@ -542,9 +641,9 @@ export function installInstructions(
         // is recognized, not stacked beneath a duplicate crib default.
         const hasFrontmatter = /^---\r?\n[\s\S]*?\r?\n---/.test(existing);
         const withFrontmatter = hasFrontmatter ? existing : `${CURSOR_FRONTMATTER}${existing}`;
-        next = spliceAdapterBlock(withFrontmatter, neutralProtocolBlock());
+        next = spliceAdapterBlock(withFrontmatter, neutralProtocolBlock(scope));
       } else {
-        next = spliceAdapterBlock(existing, neutralProtocolBlock());
+        next = spliceAdapterBlock(existing, neutralProtocolBlock(scope));
       }
       const written = next !== existing;
       if (written) {
@@ -567,14 +666,15 @@ export interface InstructionListEntry {
 /** Report the current managed-block status for each client's instruction file, without writing. */
 export function listInstructions(
   repoRoot: string,
-  opts: { client?: ClientId | 'all'; scope?: AdapterScope } = {},
+  opts: { client?: ClientId | 'all'; scope?: AdapterScope; home?: string } = {},
 ): InstructionListEntry[] {
   const scope: AdapterScope = opts.scope ?? 'project';
+  const home = opts.home ?? homedir();
   const ids: ClientId[] = opts.client && opts.client !== 'all' ? [opts.client] : ALL_CLIENTS;
   const out: InstructionListEntry[] = [];
   for (const id of ids) {
     const adapter = clientAdapter(id);
-    const targets = adapter.instructionTargets(scope, repoRoot);
+    const targets = adapter.instructionTargets(scope, repoRoot, home);
     if (!targets || targets.length === 0) continue;
     for (const target of targets) {
       const present = existsSync(target.path) && readOrEmpty(target.path).includes(ADAPTER_BEGIN);
@@ -588,14 +688,15 @@ export function listInstructions(
  *  frontmatter-only after removal is deleted; a file with remaining user content is left intact. */
 export function removeInstructions(
   repoRoot: string,
-  opts: { client?: ClientId | 'all'; scope?: AdapterScope } = {},
+  opts: { client?: ClientId | 'all'; scope?: AdapterScope; home?: string } = {},
 ): InstructionInstallResult[] {
   const scope: AdapterScope = opts.scope ?? 'project';
+  const home = opts.home ?? homedir();
   const ids: ClientId[] = opts.client && opts.client !== 'all' ? [opts.client] : ALL_CLIENTS;
   const out: InstructionInstallResult[] = [];
   for (const id of ids) {
     const adapter = clientAdapter(id);
-    const targets = adapter.instructionTargets(scope, repoRoot);
+    const targets = adapter.instructionTargets(scope, repoRoot, home);
     if (!targets || targets.length === 0) {
       out.push({
         client: id,
@@ -612,6 +713,19 @@ export function removeInstructions(
         continue;
       }
       const existing = readOrEmpty(target.path);
+      const orphanLine = orphanBeginMarkerLine(existing);
+      if (orphanLine !== null) {
+        // WP2.4: same located refusal on removal — removeAdapterBlock returns the content unchanged
+        // for an orphan begin marker, so say so instead of reporting a silent no-op.
+        out.push({
+          client: id,
+          scope,
+          path: target.path,
+          written: false,
+          note: `refusing to write ${target.path}: begin marker at line ${orphanLine} has no matching end marker — fix or remove it first`,
+        });
+        continue;
+      }
       const next = removeAdapterBlock(existing);
       const written = next !== existing;
       if (written) {
@@ -661,47 +775,78 @@ const CLAUDE_HOOK_EVENT_KEYS: Record<LifecycleEvent, string> = {
   'tool-use': 'PostToolUse',
 };
 
-/** Seconds Claude Code waits on a crib hook before moving on (a capture run takes about one). */
-const CAPTURE_HOOK_TIMEOUT_SECONDS = 30;
-
-function isObjectRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
-/**
- * The crib capture command a hook-bucket entry carries, or undefined when the entry is not crib's.
- *
- * Claude Code reads each event bucket as MATCHER GROUPS — `{ matcher?, hooks: [{ type, command }] }`.
- * Earlier crib versions wrote the inner `{ type, command }` object straight into the bucket, a shape
- * the client does not run, so the hooks were installed and never fired. Both shapes are recognised
- * here so a re-install replaces the old entries instead of leaving them beside the new ones. A group
- * is crib-owned only when crib's command is its SOLE hook: a group a user extended is never touched.
- */
-function cribCommandOf(entry: unknown): string | undefined {
-  if (!isObjectRecord(entry)) return undefined;
-  if (typeof entry.command === 'string') {
-    return entry.command.startsWith(CAPTURE_HOOK_COMMAND_MARKER) ? entry.command : undefined;
-  }
-  const inner = entry.hooks;
-  if (!Array.isArray(inner) || inner.length !== 1 || !isObjectRecord(inner[0])) return undefined;
-  const command = inner[0].command;
-  return typeof command === 'string' && command.startsWith(CAPTURE_HOOK_COMMAND_MARKER)
-    ? command
-    : undefined;
-}
-
-/** True when a hook-bucket entry is crib-managed (the marker prefix is the begin-marker analogue). */
+/** True when a hook command entry is crib-managed: the marker prefix in `command` is the managed
+ *  block's begin marker analogue. */
 function isCribHookEntry(entry: unknown): entry is Record<string, unknown> {
-  return cribCommandOf(entry) !== undefined;
+  return (
+    typeof entry === 'object' &&
+    entry !== null &&
+    !Array.isArray(entry) &&
+    typeof (entry as Record<string, unknown>).command === 'string' &&
+    ((entry as Record<string, unknown>).command as string).startsWith(CAPTURE_HOOK_COMMAND_MARKER)
+  );
 }
 
-/** The lifecycle event a crib-owned hook entry was written for, or `null` when unparseable. */
-function eventOfCribHook(entry: Record<string, unknown>): LifecycleEvent | null {
-  const m = /--event (session-start|turn-end|tool-use)(?:\s|;|$)/.exec(cribCommandOf(entry) ?? '');
+/** The inner `hooks` array of a settings MATCHER entry, or `null` when the entry is not one.
+ *
+ * Claude Code's settings schema nests two levels — `hooks.<Event>` holds MATCHER objects, and each
+ * matcher carries its own `hooks` array of command entries. A bare command entry pushed straight
+ * into the event bucket is rejected by the client ("Hook matcher \"hooks\" must be an array of hook
+ * entries"), which is the shape crib wrote until this was fixed: the hook never fired, so
+ * SessionStart never injected the continuation block. Both shapes are recognised from here on — the
+ * flat one so an existing install can be repaired or removed, the nested one because it is what a
+ * correct install now looks like. */
+function matcherHooks(entry: unknown): unknown[] | null {
+  if (typeof entry !== 'object' || entry === null || Array.isArray(entry)) return null;
+  const inner = (entry as Record<string, unknown>).hooks;
+  return Array.isArray(inner) ? inner : null;
+}
+
+/** True when an event-bucket entry is crib-owned in EITHER shape: a legacy bare command entry, or a
+ *  matcher entry whose `hooks` array carries at least one crib command. */
+function isCribBucketEntry(entry: unknown): boolean {
+  if (isCribHookEntry(entry)) return true;
+  const inner = matcherHooks(entry);
+  return inner?.some(isCribHookEntry) ?? false;
+}
+
+/** The lifecycle event a crib-owned bucket entry was written for, or `null` when unparseable. */
+function eventOfCribHook(entry: unknown): LifecycleEvent | null {
+  const owner = isCribHookEntry(entry)
+    ? entry
+    : (matcherHooks(entry)?.find(isCribHookEntry) as Record<string, unknown> | undefined);
+  const command = owner?.command;
+  if (typeof command !== 'string') return null;
+  const m = /--event (session-start|turn-end|tool-use)(?:\s|;|$)/.exec(command);
   const event = m?.[1];
   return event && (LIFECYCLE_EVENTS as readonly string[]).includes(event)
     ? (event as LifecycleEvent)
     : null;
+}
+
+/** One crib-owned matcher entry in the shape the client's schema requires. `matcher` is omitted,
+ *  which upstream treats as match-all — these are session/turn events, not tool-name-scoped ones. */
+function cribMatcherEntry(event: LifecycleEvent): Record<string, unknown> {
+  return { hooks: [{ type: 'command', command: captureHookCommand(event) }] };
+}
+
+/** Strip crib-owned commands from one event bucket, preserving every user entry. A matcher the user
+ *  shares with a crib command is REWRITTEN without that command rather than dropped, so removing
+ *  crib never takes a sibling user hook with it. */
+function stripCribFromBucket(bucket: readonly unknown[]): unknown[] {
+  const kept: unknown[] = [];
+  for (const entry of bucket) {
+    if (isCribHookEntry(entry)) continue;
+    const inner = matcherHooks(entry);
+    if (inner === null || !inner.some(isCribHookEntry)) {
+      kept.push(entry);
+      continue;
+    }
+    const innerKept = inner.filter((h) => !isCribHookEntry(h));
+    if (innerKept.length > 0)
+      kept.push({ ...(entry as Record<string, unknown>), hooks: innerKept });
+  }
+  return kept;
 }
 
 export interface HookInstallResult {
@@ -745,7 +890,11 @@ function parseJsonOrEmpty(path: string): Record<string, unknown> {
 }
 
 /** The orphan-marker refusal in JSON form: a reason string when the settings file cannot be safely
- *  rewritten (see the section comment), or `null` when the file is absent or safely interpretable. */
+ *  rewritten (see the section comment), or `null` when the file is absent or safely interpretable.
+ *  WP2.4: every refusal LOCATES the defect — a malformed crib marker names its `hooks.<Event>[<index>]`
+ *  — and the marker scan covers EVERY event bucket, not just the ones crib manages: a crib-owned
+ *  entry crib cannot parse anywhere in the hooks tree is a corrupted install the writer must not
+ *  paper over (reserializing would reformat the entry's bytes even though its value survives). */
 function hooksRefusal(path: string, events: readonly LifecycleEvent[]): string | null {
   if (!existsSync(path)) return null;
   let obj: unknown;
@@ -760,13 +909,17 @@ function hooksRefusal(path: string, events: readonly LifecycleEvent[]): string |
   if (hooksRoot === undefined) return null;
   if (typeof hooksRoot !== 'object' || hooksRoot === null || Array.isArray(hooksRoot))
     return `refusing to write ${path}: 'hooks' is not a JSON object`;
-  for (const { key } of hookEventPairs(events)) {
-    const bucket = (hooksRoot as Record<string, unknown>)[key];
-    if (bucket === undefined) continue;
-    if (!Array.isArray(bucket)) return `refusing to write ${path}: 'hooks.${key}' is not an array`;
-    for (const entry of bucket) {
-      if (isCribHookEntry(entry) && eventOfCribHook(entry) === null)
-        return `refusing to write ${path}: a '${CAPTURE_HOOK_COMMAND_MARKER}' entry is present but unparseable — fix or remove it first`;
+  for (const [key, bucket] of Object.entries(hooksRoot as Record<string, unknown>)) {
+    if (!Array.isArray(bucket)) {
+      // A non-array bucket only blocks the write when crib manages it — a foreign key with an odd
+      // shape is the user's own configuration, untouched by this writer.
+      if (hookEventPairs(events).some((p) => p.key === key))
+        return `refusing to write ${path}: 'hooks.${key}' is not an array`;
+      continue;
+    }
+    for (let i = 0; i < bucket.length; i++) {
+      if (isCribBucketEntry(bucket[i]) && eventOfCribHook(bucket[i]) === null)
+        return `refusing to write ${path}: hooks.${key}[${i}] is an unparseable '${CAPTURE_HOOK_COMMAND_MARKER}' entry — fix or remove it first`;
     }
   }
   return null;
@@ -776,15 +929,16 @@ function hooksRefusal(path: string, events: readonly LifecycleEvent[]): string |
  *  (and unsupported scopes) get a data note and no write — the cursor-skillDest honesty precedent. */
 export function installCaptureHooks(
   repoRoot: string,
-  opts: { client?: ClientId | 'all'; scope?: AdapterScope } = {},
+  opts: { client?: ClientId | 'all'; scope?: AdapterScope; home?: string } = {},
 ): HookInstallResult[] {
   const scope: AdapterScope = opts.scope ?? 'project';
+  const home = opts.home ?? homedir();
   const out: HookInstallResult[] = [];
   for (const id of hookClients(opts)) {
     const adapter = clientAdapter(id);
     const hooks = adapter.lifecycle.lifecycleHooks;
     const settingsPath = hooks?.settingsPath;
-    if (scope === 'global' || !hooks || !settingsPath) {
+    if (!hooks || !settingsPath) {
       out.push({
         client: id,
         scope,
@@ -792,12 +946,12 @@ export function installCaptureHooks(
         written: false,
         events: [],
         note: hooks
-          ? `${adapter.label} capture hooks ship project-scope only; recall stays instruction-based.`
+          ? `${adapter.label} exposes no hook surface at ${scope} scope; recall stays instruction-based.`
           : `${adapter.label} supports instruction-based recall only (no lifecycle-hook surface).`,
       });
       continue;
     }
-    const path = settingsPath(repoRoot);
+    const path = settingsPath(scope, repoRoot, home);
     const refusal = hooksRefusal(path, hooks.events);
     if (refusal) {
       out.push({ client: id, scope, path, written: false, events: [], note: refusal });
@@ -809,30 +963,24 @@ export function installCaptureHooks(
     let changed = false;
     for (const { event, key } of hookEventPairs(hooks.events)) {
       const bucket = (hooksRoot[key] as unknown[] | undefined) ?? [];
-      // Drop prior crib-owned entries, then append ours last — user entries keep their position and
-      // the crib entry is byte-identical on re-runs (idempotent).
-      const kept = bucket.filter((e) => !isCribHookEntry(e));
-      kept.push({
-        hooks: [
-          {
-            type: 'command',
-            command: captureHookCommand(event),
-            timeout: CAPTURE_HOOK_TIMEOUT_SECONDS,
-          },
-        ],
-      });
+      // Drop prior crib-owned entries in EITHER shape, then append ours last — user entries keep
+      // their position and the crib entry is byte-identical on re-runs (idempotent). Stripping the
+      // legacy flat shape here is also the repair path: a settings file written by an older crib is
+      // migrated to the nested matcher form on the next install, in place and without duplicating.
+      const kept = stripCribFromBucket(bucket);
+      kept.push(cribMatcherEntry(event));
       if (JSON.stringify(kept) !== JSON.stringify(bucket)) changed = true;
       hooksRoot[key] = kept;
       wired.push(event);
     }
-    // Retire crib entries on hook keys this client no longer wires (PostToolUse, from installs that
-    // predate dropping it). User entries on those keys are untouched; an emptied key is omitted.
+    // Retire crib commands on hook keys this client no longer wires (PostToolUse, from installs
+    // that predate dropping it). User entries on those keys survive; an emptied key is omitted.
     for (const { event, key } of hookEventPairs(LIFECYCLE_EVENTS)) {
       if (hooks.events.includes(event)) continue;
       const bucket = hooksRoot[key];
       if (!Array.isArray(bucket)) continue;
-      const kept = bucket.filter((e) => !isCribHookEntry(e));
-      if (kept.length === bucket.length) continue;
+      const kept = stripCribFromBucket(bucket);
+      if (JSON.stringify(kept) === JSON.stringify(bucket)) continue;
       changed = true;
       hooksRoot[key] = kept.length > 0 ? kept : undefined;
     }
@@ -848,15 +996,16 @@ export function installCaptureHooks(
 /** Report the currently wired capture hooks per client, without writing. */
 export function listCaptureHooks(
   repoRoot: string,
-  opts: { client?: ClientId | 'all'; scope?: AdapterScope } = {},
+  opts: { client?: ClientId | 'all'; scope?: AdapterScope; home?: string } = {},
 ): HookListEntry[] {
   const scope: AdapterScope = opts.scope ?? 'project';
+  const home = opts.home ?? homedir();
   const out: HookListEntry[] = [];
   for (const id of hookClients(opts)) {
     const adapter = clientAdapter(id);
     const hooks = adapter.lifecycle.lifecycleHooks;
     const settingsPath = hooks?.settingsPath;
-    if (scope === 'global' || !hooks || !settingsPath) {
+    if (!hooks || !settingsPath) {
       out.push({
         client: id,
         scope,
@@ -866,7 +1015,7 @@ export function listCaptureHooks(
       });
       continue;
     }
-    const path = settingsPath(repoRoot);
+    const path = settingsPath(scope, repoRoot, home);
     const events: LifecycleEvent[] = [];
     if (existsSync(path)) {
       try {
@@ -877,7 +1026,7 @@ export function listCaptureHooks(
             const bucket = (hooksRoot as Record<string, unknown>)[key];
             if (!Array.isArray(bucket)) continue;
             for (const entry of bucket) {
-              if (!isCribHookEntry(entry)) continue;
+              if (!isCribBucketEntry(entry)) continue;
               const event = eventOfCribHook(entry);
               if (event && !events.includes(event)) events.push(event);
             }
@@ -896,15 +1045,16 @@ export function listCaptureHooks(
  *  and key intact. An event bucket left empty — and an empty `hooks` key — are dropped. */
 export function removeCaptureHooks(
   repoRoot: string,
-  opts: { client?: ClientId | 'all'; scope?: AdapterScope } = {},
+  opts: { client?: ClientId | 'all'; scope?: AdapterScope; home?: string } = {},
 ): HookInstallResult[] {
   const scope: AdapterScope = opts.scope ?? 'project';
+  const home = opts.home ?? homedir();
   const out: HookInstallResult[] = [];
   for (const id of hookClients(opts)) {
     const adapter = clientAdapter(id);
     const hooks = adapter.lifecycle.lifecycleHooks;
     const settingsPath = hooks?.settingsPath;
-    if (scope === 'global' || !hooks || !settingsPath) {
+    if (!hooks || !settingsPath) {
       out.push({
         client: id,
         scope,
@@ -912,12 +1062,12 @@ export function removeCaptureHooks(
         written: false,
         events: [],
         note: hooks
-          ? `${adapter.label} capture hooks ship project-scope only.`
+          ? `${adapter.label} exposes no hook surface at ${scope} scope.`
           : `${adapter.label} supports instruction-based recall only (no lifecycle-hook surface).`,
       });
       continue;
     }
-    const path = settingsPath(repoRoot);
+    const path = settingsPath(scope, repoRoot, home);
     const refusal = hooksRefusal(path, hooks.events);
     if (refusal) {
       out.push({ client: id, scope, path, written: false, events: [], note: refusal });
@@ -936,8 +1086,10 @@ export function removeCaptureHooks(
     for (const { event, key } of hookEventPairs(LIFECYCLE_EVENTS)) {
       const bucket = hooksRoot[key];
       if (!Array.isArray(bucket)) continue;
-      const kept = bucket.filter((e) => !isCribHookEntry(e));
-      if (kept.length !== bucket.length) {
+      const kept = stripCribFromBucket(bucket);
+      // Content, not length: a matcher shared with a user hook is rewritten in place, so the bucket
+      // can change while staying the same size.
+      if (JSON.stringify(kept) !== JSON.stringify(bucket)) {
         removed.push(event);
         changed = true;
       }
@@ -997,21 +1149,22 @@ const ENV_SIGNALS: { client: ClientId; vars: string[]; termProgram?: string[] }[
  * Repository signals — configuration THIS client created, used only when no environment signal
  * identifies the running client.
  *
- * `cribOwned` marks paths crib itself writes. Such a path is evidence only when it holds content
- * beyond crib's own managed block: after one over-broad install, `GEMINI.md` exists in every repo,
- * and treating crib's own output as proof the user runs Gemini would make the original mistake
- * permanent and self-justifying.
+ * Several of these paths are also paths CRIB writes (its own hooks, MCP config, and protocol
+ * blocks), so a signal counts only when the path carries content beyond crib's own output
+ * ({@link isCribFootprint}). After one over-broad install, `GEMINI.md` and `.cursor/` exist in
+ * every repo; treating crib's own output as proof the user runs Gemini would make the original
+ * mistake permanent and self-justifying.
  */
-const REPO_SIGNALS: { client: ClientId; path: string; cribOwned: boolean }[] = [
-  { client: 'claude', path: '.claude', cribOwned: false },
-  { client: 'claude', path: 'CLAUDE.md', cribOwned: true },
-  { client: 'cursor', path: '.cursor', cribOwned: true },
-  { client: 'copilot', path: '.github/copilot-instructions.md', cribOwned: true },
-  { client: 'copilot', path: '.vscode', cribOwned: false },
-  { client: 'windsurf', path: '.windsurfrules', cribOwned: true },
-  { client: 'gemini', path: '.gemini', cribOwned: false },
-  { client: 'gemini', path: 'GEMINI.md', cribOwned: true },
-  { client: 'codex', path: '.codex', cribOwned: false },
+const REPO_SIGNALS: { client: ClientId; path: string }[] = [
+  { client: 'claude', path: '.claude' },
+  { client: 'claude', path: 'CLAUDE.md' },
+  { client: 'cursor', path: '.cursor' },
+  { client: 'copilot', path: '.github/copilot-instructions.md' },
+  { client: 'copilot', path: '.vscode' },
+  { client: 'windsurf', path: '.windsurfrules' },
+  { client: 'gemini', path: '.gemini' },
+  { client: 'gemini', path: 'GEMINI.md' },
+  { client: 'codex', path: '.codex' },
 ];
 
 /**
@@ -1032,6 +1185,112 @@ function isCribOnlyFile(path: string): boolean {
     .replace(/^---\r?\n[\s\S]*?\r?\n---/, '') // Cursor frontmatter crib writes itself
     .trim();
   return outside.length === 0;
+}
+
+/**
+ * True when a FILE is entirely crib's own output. Covers every file crib's install paths write:
+ * the HTML-comment protocol block (isCribOnlyFile), the Codex TOML managed block, a
+ * `settings.json` whose only lane is crib's capture hooks, and an `mcp.json`/`settings.json`
+ * whose only server is crib's. Anything else in the file is the user's — including their own
+ * hook entries, their own servers, or their own top-level settings keys.
+ */
+function isCribManagedFile(path: string): boolean {
+  let text: string;
+  try {
+    text = readFileSync(path, 'utf8');
+  } catch {
+    return false;
+  }
+  const base = basename(path);
+  if (base === 'settings.json' || base === 'mcp.json') {
+    let obj: Record<string, unknown>;
+    try {
+      obj = JSON.parse(text) as Record<string, unknown>;
+    } catch {
+      return false; // unparseable config is the user's, not ours
+    }
+    // Gemini settings.json carries crib's server under mcpServers; Claude settings.json carries
+    // crib's capture hooks under hooks. A file holding either — and nothing else — is crib's.
+    const servers = (obj.mcpServers ?? obj.servers) as Record<string, unknown> | undefined;
+    if (servers !== undefined) {
+      const names = Object.keys(servers);
+      return names.length === 1 && names[0] === SERVER_NAME;
+    }
+    const outsideHooks = Object.keys(obj).filter((key) => key !== 'hooks');
+    if (outsideHooks.length > 0) return false;
+    const hooksRoot = obj.hooks;
+    if (typeof hooksRoot !== 'object' || hooksRoot === null || Array.isArray(hooksRoot))
+      return false;
+    for (const bucket of Object.values(hooksRoot as Record<string, unknown>)) {
+      if (!Array.isArray(bucket)) continue;
+      for (const entry of bucket) if (!isCribBucketEntry(entry)) return false;
+    }
+    return true;
+  }
+  // Codex config.toml: the TOML managed block is all crib ever writes there. `spliceManaged`
+  // prepends its own `#!/bin/sh` shebang on a fresh file (the shell-hook writer it reuses), so that
+  // line is stripped too — it is crib's output, and a bare shebang carries no client evidence.
+  const tomlBegin = text.indexOf(TOML_BEGIN);
+  if (tomlBegin !== -1) {
+    const tomlEnd = text.indexOf(TOML_END, tomlBegin);
+    if (tomlEnd !== -1) {
+      const outside = (text.slice(0, tomlBegin) + text.slice(tomlEnd + TOML_END.length))
+        .replace(/^#!\/bin\/sh\r?\n/, '')
+        .trim();
+      return outside.length === 0;
+    }
+  }
+  return isCribOnlyFile(path);
+}
+
+/** Cap on directory inspection: a directory too large to walk is a user's, not a footprint. */
+const FOOTPRINT_WALK_MAX = 200;
+
+/**
+ * True when a detected path is crib's own footprint — a file holding nothing but crib's managed
+ * content, or a directory holding nothing but such files. An EMPTY directory is deliberately NOT a
+ * footprint: a client creates its own config directory before writing anything into it, and the
+ * empty-`.claude` case is pinned as user evidence.
+ *
+ * This closes the self-justification loop for the WP2.5 four-state install report: `install`
+ * creates `.claude/settings.json` (hooks), `.cursor/mcp.json`, `.codex/config.toml` — exactly the
+ * paths `detectClients` reads as "the user runs this client". Without this check, installing a
+ * client would instantly manufacture the `client-detected` evidence, and the ladder's state 2
+ * would mean nothing.
+ */
+function isCribFootprint(abs: string): boolean {
+  let stat: Stats;
+  try {
+    stat = statSync(abs);
+  } catch {
+    return false;
+  }
+  if (stat.isFile()) return isCribManagedFile(abs);
+  if (!stat.isDirectory()) return false;
+  const stack = [abs];
+  let seen = 0;
+  let files = 0;
+  while (stack.length > 0) {
+    const dir = stack.pop()!;
+    let entries: Dirent[];
+    try {
+      entries = readdirSync(dir, { withFileTypes: true });
+    } catch {
+      return false; // an unreadable directory is not evidence either way — treat as the user's
+    }
+    for (const entry of entries) {
+      seen += 1;
+      if (seen > FOOTPRINT_WALK_MAX) return false;
+      if (entry.isSymbolicLink()) return false; // a link is user structure crib never writes
+      const child = join(dir, entry.name);
+      if (entry.isDirectory()) stack.push(child);
+      else if (entry.isFile()) {
+        files += 1;
+        if (!isCribManagedFile(child)) return false;
+      }
+    }
+  }
+  return files > 0; // every file is crib-managed; an empty directory is NOT a footprint
 }
 
 /**
@@ -1063,10 +1322,12 @@ export function detectClients(
   }
   // A running client is the answer; do not dilute it with stale repository configuration.
   if (signals.length === 0) {
-    for (const { client, path, cribOwned } of REPO_SIGNALS) {
+    for (const { client, path } of REPO_SIGNALS) {
       const abs = join(repoRoot, path);
       if (!existsSync(abs)) continue;
-      if (cribOwned && isCribOnlyFile(abs)) continue;
+      // crib's own install writes these very paths (hooks, MCP config, protocol blocks); a
+      // footprint of crib's own output is not evidence the USER runs the client.
+      if (isCribFootprint(abs)) continue;
       signals.push({ client, source: 'repo', evidence: path });
     }
   }

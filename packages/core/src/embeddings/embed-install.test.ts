@@ -6,7 +6,7 @@
  * leaves NO manifest (the fallback tier stays active rather than a broken install silently serving);
  * nothing here ever touches the network.
  */
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -16,6 +16,7 @@ import {
   EmbedModelNotInstalledError,
   embedHomeDir,
   embedManifestPath,
+  hashDirFiles,
   installEmbedModel,
   loadInstalledEmbedder,
   readEmbedManifest,
@@ -156,5 +157,165 @@ describe('provider integration — the "installed" tier id', () => {
     await expect(resolveEmbedder({ provider: 'installed' })).rejects.toBeInstanceOf(
       EmbedModelNotInstalledError,
     );
+  });
+});
+
+// ─── WP1.8: the provisioning pin — weights + runtime deps ──────────────────────
+
+let cacheDir: string;
+let runtimeDir: string;
+
+/** A fake provisioning footprint: a weight cache (weights + tokenizer) and a runtime with pinned
+ *  package versions — the on-disk shape `crib embed setup` leaves behind, at fixture scale. */
+function writeProvisioning(): void {
+  cacheDir = mkdtempSync(join(tmpdir(), 'crib-embed-cache-'));
+  runtimeDir = mkdtempSync(join(tmpdir(), 'crib-embed-runtime-'));
+  mkdirSync(join(cacheDir, 'onnx'), { recursive: true });
+  writeFileSync(join(cacheDir, 'tokenizer.json'), '{"tokenizer":"fixture"}\n', 'utf8');
+  writeFileSync(join(cacheDir, 'onnx', 'model.onnx'), 'weights-bytes-fixture', 'utf8');
+  mkdirSync(join(runtimeDir, 'node_modules', '@huggingface', 'transformers'), {
+    recursive: true,
+  });
+  writeFileSync(
+    join(runtimeDir, 'node_modules', '@huggingface', 'transformers', 'package.json'),
+    '{"name":"@huggingface/transformers","version":"3.7.6"}\n',
+    'utf8',
+  );
+}
+
+/** Install the fixture model WITH the provisioning pin — the WP1.8 manifest shape. */
+async function installWithProvisioning() {
+  return installEmbedModel({
+    modelDir,
+    modelId: 'fixture-model',
+    modelVersion: '1.0.0',
+    home,
+    provisioning: {
+      onnxId: 'Xenova/fixture-model',
+      weights: { dir: cacheDir, files: hashDirFiles(cacheDir) },
+      runtime: { dir: runtimeDir, deps: { '@huggingface/transformers': '3.7.6' } },
+    },
+  });
+}
+
+describe('WP1.8 provisioning pin — weights and runtime deps are verified, not trusted', () => {
+  beforeEach(() => {
+    writeFixtureModel();
+    writeProvisioning();
+  });
+  afterEach(() => {
+    rmSync(cacheDir, { recursive: true, force: true });
+    rmSync(runtimeDir, { recursive: true, force: true });
+  });
+
+  it('the manifest records the weight files by sha256 and the runtime deps by installed version', async () => {
+    const m = await installWithProvisioning();
+    expect(m.provisioning?.onnxId).toBe('Xenova/fixture-model');
+    expect(m.provisioning?.weights.dir).toBe(cacheDir);
+    expect(m.provisioning?.weights.files.map((f) => f.path)).toEqual([
+      'onnx/model.onnx',
+      'tokenizer.json',
+    ]);
+    expect(m.provisioning?.runtime?.deps).toEqual({ '@huggingface/transformers': '3.7.6' });
+    expect(verifyInstalledEmbed(home).ok).toBe(true);
+  });
+
+  it('a tampered WEIGHT file fails verification even though the adapter dir is intact', async () => {
+    await installWithProvisioning();
+    writeFileSync(join(cacheDir, 'onnx', 'model.onnx'), 'tampered-bytes', 'utf8');
+    const v = verifyInstalledEmbed(home);
+    expect(v.ok).toBe(false);
+    // The weights: label is what tells an operator this drift is in the 2 GB cache, not the adapter.
+    expect(v.problems.join('\n')).toContain('weights: hash drift onnx/model.onnx');
+    await expect(loadInstalledEmbedder(home)).rejects.toBeInstanceOf(EmbedIntegrityError);
+  });
+
+  it('a vanished weight file (half-copied cache) fails verification', async () => {
+    await installWithProvisioning();
+    rmSync(join(cacheDir, 'tokenizer.json'), { force: true });
+    const v = verifyInstalledEmbed(home);
+    expect(v.ok).toBe(false);
+    expect(v.problems.join('\n')).toContain('weights: missing file tokenizer.json');
+  });
+
+  it('an upgraded runtime dep fails verification — the vector space must not shift silently', async () => {
+    await installWithProvisioning();
+    writeFileSync(
+      join(runtimeDir, 'node_modules', '@huggingface', 'transformers', 'package.json'),
+      '{"name":"@huggingface/transformers","version":"3.7.7"}\n',
+      'utf8',
+    );
+    const v = verifyInstalledEmbed(home);
+    expect(v.ok).toBe(false);
+    expect(v.problems.join('\n')).toContain(
+      'runtime dep drift @huggingface/transformers: installed 3.7.7 != pinned 3.7.6',
+    );
+  });
+
+  it('a missing runtime dep fails verification', async () => {
+    await installWithProvisioning();
+    rmSync(join(runtimeDir, 'node_modules'), { recursive: true, force: true });
+    const v = verifyInstalledEmbed(home);
+    expect(v.ok).toBe(false);
+    expect(v.problems.join('\n')).toContain('runtime dep @huggingface/transformers is missing');
+  });
+
+  it('a runtime pinned on a DIFFERENT platform fails verification — a copied embed home must be refused up front', async () => {
+    // WP1.9: the onnxruntime native binaries are per-OS-per-arch. An embed home rsynced across
+    // machines passes every hash check (the files are bit-identical) and then dies inside a dlopen
+    // with an error naming neither the cause nor the fix. The platform key surfaces that at the
+    // FIRST verification, with a remediation.
+    await installWithProvisioning();
+    const m = readEmbedManifest(home)!;
+    m.provisioning!.runtime!.platform = 'other-os-x99';
+    writeFileSync(embedManifestPath(home), `${JSON.stringify(m, null, 2)}\n`, 'utf8');
+    const v = verifyInstalledEmbed(home);
+    expect(v.ok).toBe(false);
+    expect(v.problems.join('\n')).toContain('runtime platform drift: installed on other-os-x99');
+    expect(v.problems.join('\n')).toContain(`running on ${process.platform}-${process.arch}`);
+  });
+
+  it('an EMPTY weights pin is refused — a vacuous pin would pass every future check', async () => {
+    writeFileSync(
+      embedManifestPath(home),
+      JSON.stringify({
+        formatVersion: 2,
+        embedderId: 'x',
+        modelId: 'x',
+        modelVersion: '1',
+        dim: 8,
+        modelDir,
+        entry: 'embedder.mjs',
+        files: [],
+        provisioning: { onnxId: 'x', weights: { dir: cacheDir, files: [] } },
+      }),
+      'utf8',
+    );
+    const v = verifyInstalledEmbed(home);
+    expect(v.ok).toBe(false);
+    expect(v.problems.join('\n')).toContain('is pinned as EMPTY');
+  });
+
+  it('a dep name from a tampered manifest is never resolved outside node_modules', async () => {
+    await installWithProvisioning();
+    // A hand-edited manifest trying to make the verifier read an arbitrary package.json.
+    const m = readEmbedManifest(home)!;
+    m.provisioning!.runtime!.deps = { '../../../../etc/hosts': '1.0.0' };
+    writeFileSync(embedManifestPath(home), `${JSON.stringify(m, null, 2)}\n`, 'utf8');
+    const v = verifyInstalledEmbed(home);
+    expect(v.ok).toBe(false);
+    expect(v.problems.join('\n')).toContain('runtime dep ../../../../etc/hosts is missing');
+  });
+
+  it('a v1 manifest (weights never pinned) is refused — unverifiable weights are not served', async () => {
+    const m = await installWithProvisioning();
+    writeFileSync(
+      embedManifestPath(home),
+      JSON.stringify({ ...m, formatVersion: 1 }, null, 2),
+      'utf8',
+    );
+    expect(() => readEmbedManifest(home)).toThrow(/formatVersion 1 != 2/);
+    const v = verifyInstalledEmbed(home);
+    expect(v.ok).toBe(false);
   });
 });

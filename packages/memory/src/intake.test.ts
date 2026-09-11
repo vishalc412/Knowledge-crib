@@ -93,4 +93,36 @@ describe('intake checkpoint', () => {
 
     expect(a.id).toBe(b.id);
   });
+
+  it('persists only the checkpoint repository anchor, not lifecycle changed paths', () => {
+    const intake = createIntakeRequirement(fixture());
+    // Lifecycle anchors carry a bounded path list for a returning session. A durable checkpoint
+    // intentionally stores only its digest: paths belong to the lifecycle projection, while the
+    // checkpoint schema stays a compact, privacy-preserving resume fingerprint.
+    const repository = {
+      head: 'abc123',
+      branch: 'feature/parser',
+      dirty: true,
+      changedPathsDigest: 'blake3:dirty-tree',
+      changedPaths: ['packages/memory/src/intake.ts'],
+    };
+
+    const checkpoint = createIntakeCheckpoint({
+      intakeId: intake.id,
+      kind: 'resumed',
+      phase: 'executing',
+      nextSafeAction: 'Run the focused recovery tests',
+      summary: 'Resumed after repository drift',
+      repository,
+      actor: 'codex',
+      recordedAt: NOW,
+    });
+
+    expect(checkpoint.repository).toEqual({
+      head: 'abc123',
+      branch: 'feature/parser',
+      dirty: true,
+      changedPathsDigest: 'blake3:dirty-tree',
+    });
+  });
 });

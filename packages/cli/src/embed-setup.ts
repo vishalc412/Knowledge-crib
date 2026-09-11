@@ -24,18 +24,22 @@
  *     a real ranking check, not a dimension assertion.
  */
 import { execFileSync } from 'node:child_process';
-import { cpSync, existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { embedHomeDir, installEmbedModel } from '@knowledge-crib/core';
 import {
+  ONNX_RUNTIME_APPROX_DISK,
   ONNX_RUNTIME_PACKAGE,
   type OnnxAdapterSpec,
   type OnnxStep,
   downloadOnnxWeights,
   installOnnxRuntime,
   onnxModelCacheDir,
+  onnxProvisioningPin,
   onnxRuntimeInstalled,
+  publishStagedModel,
   refreshOnnxWorker,
+  stagedModelProblem,
   writeOnnxAdapter,
 } from './embed-onnx.js';
 
@@ -513,14 +517,32 @@ export async function smokeTest(home: string): Promise<{ ok: boolean; detail: st
   };
 }
 
-/** Pin the generated adapter through the same integrity path a hand-installed model takes. */
-export async function pinAdapter(spec: EmbedModelSpec, dir: string) {
+/**
+ * Pin the generated adapter through the same integrity path a hand-installed model takes — plus
+ * (WP1.8) the provisioning pin for everything setup downloaded BESIDES the adapter: the weight
+ * cache by sha256 of every file, the runtime by installed dependency versions. Without the
+ * provisioning pin the manifest verified two generated .mjs files and trusted 2.1 GB of weights
+ * by omission.
+ */
+export async function pinAdapter(spec: EmbedModelSpec, dir: string, home: string) {
   return installEmbedModel({
     modelDir: dir,
     modelId: spec.hfId,
+    // Ladder-row label. The ARTIFACT identity is the content hashes, not this string.
     modelVersion: '1',
     entry: 'embedder.mjs',
     installedAt: new Date().toISOString(),
+    // Forward the caller's home explicitly — without this, installEmbedModel falls back to its
+    // OWN embedHomeDir() default. That default coincides with the caller's home in every real
+    // invocation (both resolve KCRIB_EMBED_HOME the same way), so the bug is silent in production
+    // and only bites a caller that legitimately passes a DIFFERENT home (a test's tmpdir), where
+    // it silently published the pin into the developer's real ~/.crib/embed instead.
+    home,
+    provisioning: onnxProvisioningPin(home, {
+      onnxId: spec.onnxId,
+      dim: spec.dim,
+      prefix: spec.prefix,
+    }),
   });
 }
 
@@ -533,6 +555,15 @@ export interface SetupPlan {
   steps: { name: string; result: StepResult }[];
   /** True when the tier is installed, pinned and proven to rank. */
   installed: boolean;
+  /**
+   * Machine-readable terminal state (WP1.7), so a noninteractive caller never has to parse prose:
+   *   installed         the tier is installed, pinned and proven to rank
+   *   consent-required  nothing happened; the run stopped BEFORE any download, waiting on --yes
+   *   failed            a step that was consented to did not succeed; see remediation
+   * A run that stopped for consent is deliberately NOT "failed" — the plan's own contract is that
+   * nothing reached the network, which is the expected behaviour without `--yes`.
+   */
+  status: 'installed' | 'consent-required' | 'failed';
   /** Set when the run stopped deliberately rather than failing (e.g. missing download consent). */
   needsConsent?: string;
   /** The exact commands an operator should run to satisfy a stopped or failed step. */
@@ -554,7 +585,7 @@ export interface SetupOptions {
   from?: string;
   /** Injected so the smoke test can be exercised without a real model on the box. */
   smoke?: (home: string) => Promise<{ ok: boolean; detail: string }>;
-  pin?: (spec: EmbedModelSpec, dir: string) => Promise<unknown>;
+  pin?: (spec: EmbedModelSpec, dir: string, home: string) => Promise<unknown>;
   /** Injected runtime installer (tests). */
   installRuntime?: (home: string) => OnnxStep;
   /** Injected weight fetcher (tests). */
@@ -595,6 +626,7 @@ export async function runEmbedSetup(opts: SetupOptions): Promise<SetupPlan> {
     spec,
     steps,
     installed: false,
+    status: needsConsent ? 'consent-required' : 'failed',
     ...(needsConsent ? { needsConsent } : {}),
     remediation,
   });
@@ -603,19 +635,26 @@ export async function runEmbedSetup(opts: SetupOptions): Promise<SetupPlan> {
   //    never into crib's own dependencies (the workspace runs a hard external-dependency cap).
   if (!runtimePresent(home)) {
     if (!yes && !opts.from) {
-      return stop(`the ONNX runtime (${ONNX_RUNTIME_PACKAGE}) is not installed in ${home}`, [
-        'Re-run with consent to install the runtime and weights:',
-        `  crib embed setup --model ${spec.alias} --yes`,
-        'Air-gapped? Point at a pre-fetched bundle instead:',
-        `  crib embed setup --model ${spec.alias} --from /path/to/bundle`,
-      ]);
+      return stop(
+        `the ONNX runtime (${ONNX_RUNTIME_PACKAGE}, ${ONNX_RUNTIME_APPROX_DISK}) is not installed ` +
+          `and would be downloaded into ${home}`,
+        [
+          'Re-run with consent to install the runtime and weights:',
+          `  crib embed setup --model ${spec.alias} --yes`,
+          'Air-gapped? Point at a pre-fetched bundle instead:',
+          `  crib embed setup --model ${spec.alias} --from /path/to/bundle`,
+        ],
+      );
     }
     const installed = installRuntime(home);
     steps.push({ name: 'runtime', result: installed });
     if (!installed.ok) {
+      // The launcher's classified repair (discovery/network/install/post-install) is specific;
+      // the generic text remains only as the fallback for steps that produced none.
       return stop(undefined, [
-        'The ONNX runtime could not be installed. Check network access, npm availability and disk',
-        'space, then re-run. For an air-gapped host, use `--from <bundle-dir>`.',
+        installed.repair ??
+          'The ONNX runtime could not be installed. Check network access, npm availability and disk' +
+            ' space, then re-run. For an air-gapped host, use `--from <bundle-dir>`.',
       ]);
     }
   } else {
@@ -631,7 +670,7 @@ export async function runEmbedSetup(opts: SetupOptions): Promise<SetupPlan> {
 
   // 2. The weights. `--from` is the offline path: the bundle IS the cache, so nothing is fetched.
   if (opts.from) {
-    const linked = adoptOfflineBundle(home, opts.from);
+    const linked = adoptOfflineBundle(home, opts.from, spec.onnxId);
     steps.push({ name: 'weights (offline bundle)', result: linked });
     if (!linked.ok) {
       return stop(undefined, [
@@ -642,10 +681,14 @@ export async function runEmbedSetup(opts: SetupOptions): Promise<SetupPlan> {
     }
   } else {
     if (!yes) {
-      return stop(`${spec.onnxId} (${spec.approxDisk}) is not cached and would be downloaded`, [
-        `Re-run with consent for the ${spec.approxDisk} download:`,
-        `  crib embed setup --model ${spec.alias} --yes`,
-      ]);
+      return stop(
+        `${spec.onnxId} (${spec.approxDisk}) is not cached and would be downloaded into ` +
+          `${onnxModelCacheDir(home)}`,
+        [
+          `Re-run with consent for the ${spec.approxDisk} download:`,
+          `  crib embed setup --model ${spec.alias} --yes`,
+        ],
+      );
     }
     const fetched = fetchWeights(home, adapterSpec);
     steps.push({ name: 'weights', result: fetched });
@@ -662,7 +705,7 @@ export async function runEmbedSetup(opts: SetupOptions): Promise<SetupPlan> {
   steps.push({ name: 'adapter', result: { ok: true, detail: `wrote adapter to ${dir}` } });
 
   try {
-    await pin(spec, dir);
+    await pin(spec, dir, home);
     steps.push({
       name: 'pin',
       result: { ok: true, detail: `pinned ${spec.hfId} through the integrity manifest` },
@@ -687,7 +730,7 @@ export async function runEmbedSetup(opts: SetupOptions): Promise<SetupPlan> {
     ]);
   }
 
-  return { spec, steps, installed: true, remediation: [] };
+  return { spec, steps, installed: true, status: 'installed', remediation: [] };
 }
 
 /**
@@ -697,14 +740,41 @@ export async function runEmbedSetup(opts: SetupOptions): Promise<SetupPlan> {
  * removable directory turns a working tier into one that breaks the day someone unmounts the
  * bundle. The failure would surface as a degraded fallback at query time, which is exactly the
  * silent-downgrade behaviour this whole tier exists to avoid.
+ *
+ * WP1.10 — when `onnxId` is supplied (the setup flow always supplies it), the bundle passes the
+ * SAME gate a network download does: copy into staging, verify the model dir is complete (the
+ * `stagedModelProblem` checklist), then publish by atomic swap so a bad bundle never replaces a
+ * working cache. Without `onnxId` the legacy whole-cache copy is kept for callers that relocate a
+ * cache without a specific model in mind.
  */
-export function adoptOfflineBundle(home: string, bundle: string): OnnxStep {
+export function adoptOfflineBundle(home: string, bundle: string, onnxId?: string): OnnxStep {
   const cache = onnxModelCacheDir(home);
   try {
     if (!existsSync(bundle)) return { ok: false, detail: `bundle not found: ${bundle}` };
-    mkdirSync(cache, { recursive: true });
-    cpSync(bundle, cache, { recursive: true });
-    return { ok: true, detail: `adopted ${bundle} as the offline model cache` };
+    if (!onnxId) {
+      mkdirSync(cache, { recursive: true });
+      cpSync(bundle, cache, { recursive: true });
+      return { ok: true, detail: `adopted ${bundle} as the offline model cache` };
+    }
+    mkdirSync(home, { recursive: true });
+    const staging = mkdtempSync(join(home, '.bundle-staging-'));
+    try {
+      cpSync(bundle, staging, { recursive: true });
+      const problem = stagedModelProblem(join(staging, ...onnxId.split('/')));
+      if (problem) {
+        return {
+          ok: false,
+          detail: `bundle incomplete: ${problem} — nothing was adopted, the previous model was preserved`,
+        };
+      }
+      publishStagedModel(staging, cache, onnxId);
+      return {
+        ok: true,
+        detail: `adopted ${bundle} as the offline model cache (verified complete)`,
+      };
+    } finally {
+      rmSync(staging, { recursive: true, force: true });
+    }
   } catch (err) {
     return { ok: false, detail: `could not adopt bundle: ${(err as Error).message}` };
   }

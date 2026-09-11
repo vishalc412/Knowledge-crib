@@ -32,6 +32,16 @@ import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync 
 import { dirname, join } from 'node:path';
 import { CribLock, LockBusyError } from '@knowledge-crib/core';
 import {
+  type ChildTaskDescriptor,
+  type TaskRunner,
+  clearStagedResult,
+  consumeCancellationRequest,
+  inProcessTaskRunner,
+  pruneCancellationRequests,
+  pruneStagedResults,
+  readCancellationRequests,
+} from './freshness-child.js';
+import {
   type RegisteredProject,
   lookupProject,
   readRegistry,
@@ -248,6 +258,23 @@ function mutateFreshnessQueue<T>(env: NodeJS.ProcessEnv, mutate: (queue: Freshne
  * the same (project, head) re-derives the same id and coalescing can compare ids instead of
  * trusting wall-clock ordering. No Date.now/new Date anywhere near this — wall-clock law.
  */
+/**
+ * WP5.5 — durable removal of a QUEUED task by id (the no-worker cancellation path). Returns the
+ * removed task, or undefined when it is not pending (already claimed, done, or unknown — the
+ * caller then leaves any cancel request in place for the live worker's sweep to honor).
+ */
+export function removePendingFreshnessTask(
+  taskId: string,
+  env: NodeJS.ProcessEnv = process.env,
+): FreshnessTask | undefined {
+  return mutateFreshnessQueue(env, (q) => {
+    const idx = q.pending.findIndex((t) => t.id === taskId);
+    if (idx === -1) return undefined;
+    const [task] = q.pending.splice(idx, 1);
+    return task;
+  });
+}
+
 export function freshnessTaskId(projectRoot: string, head: string): string {
   const digest = createHash('sha256').update(`${projectRoot} ${head}`).digest('hex');
   return `fq:${digest.slice(0, 24)}`;
@@ -393,7 +420,7 @@ export function readWorkerState(
   return readJson<FreshnessWorkerState>(statePath(env));
 }
 
-function isPidAlive(pid: number): boolean {
+export function isPidAlive(pid: number): boolean {
   try {
     process.kill(pid, 0); // signal 0 = existence probe
     return true;
@@ -405,21 +432,36 @@ function isPidAlive(pid: number): boolean {
 
 // ─── the worker ──────────────────────────────────────────────────────────────
 
-/** The port integration injects: actually revalidate this project at `task.head`. */
-export type RevalidateFn = (task: FreshnessTask) => Promise<{ generation: string }>;
+/**
+ * The port integration injects: actually revalidate this project at `task.head`.
+ * `actualHead` is what the port ACTUALLY processed — a child whose repo moved mid-run reports the
+ * real head, and the supervisor publishes THAT (WP5.2: never stamp a newer result with the queued HEAD).
+ */
+export type RevalidateFn = (task: FreshnessTask) => Promise<{
+  generation: string;
+  actualHead?: string;
+}>;
 
 export interface FreshnessWorkerOpts {
   env?: NodeJS.ProcessEnv;
-  /** The revalidation implementation (memory evaluator + soul update). Required. */
-  revalidate: RevalidateFn;
+  /**
+   * The revalidation implementation (memory evaluator + soul update). Required unless `runTask`
+   * is provided: the default runner executes this IN-PROCESS (the unit-test seam).
+   */
+  revalidate?: RevalidateFn;
+  /**
+   * WP5.1: how one task's revalidation actually runs. The production wiring passes the real
+   * forked runner ({@link forkTaskRunner}) so synchronous parsing cannot block this supervisor's
+   * loop; the default wraps `revalidate` in-process. Either way the runner's ONLY output is a
+   * staged result — activation stays here, fenced.
+   */
+  runTask?: TaskRunner;
   /** Poll interval for the work loop; default 500ms. */
   pollMs?: number;
   /** Heartbeat write interval (the lease liveness signal); default 2000ms. */
   heartbeatMs?: number;
   /** A worker whose heartbeat is older than this is presumed crashed; default 15000ms. */
   leaseTtlMs?: number;
-  /** Maximum grace for a live PID with an active task whose timer cannot run; default 10 minutes. */
-  busyLeaseTtlMs?: number;
   /** Failed attempts before a task dead-letters; default 3 (mirrors the capture outbox). */
   maxAttempts?: number;
   /** Retry backoff base after a failure; default 1000ms (doubles per attempt). */
@@ -437,6 +479,10 @@ export type FreshnessWorkerEvent =
   | { kind: 'task-done'; task: FreshnessTask; generation: string }
   | { kind: 'task-retry'; task: FreshnessTask; error: string }
   | { kind: 'task-dead'; task: FreshnessTask; error: string }
+  /** WP5.5: a stuck task was cancelled — its child was killed, its late publication refused. */
+  | { kind: 'task-cancelled'; task: FreshnessTask; reason: string }
+  /** A staged result was discarded without activation (aborted child / stale epoch). */
+  | { kind: 'task-discarded'; task: FreshnessTask; reason: string }
   | { kind: 'heartbeat' }
   /** This worker's lease was taken by another owner; it halted rather than write over that owner. */
   | { kind: 'superseded'; epoch: number; byPid?: number }
@@ -456,24 +502,33 @@ export class WorkerAlreadyRunningError extends Error {
  * DURABILITY MECHANICS (mirroring the G2.2 outbox's ordering law — durable result first,
  * bookkeeping last, every crash window heals as an idempotent no-op):
  *   - queue: `freshness/queue.json`, atomic temp→rename, survives process death by construction.
- *   - lease: `freshness/worker-state.json` carries pid + heartbeatAt. Start refuses while the
- *     holder is alive AND its heartbeat is fresh; takes over otherwise (crashed owner).
+ *   - lease: `freshness/worker-state.json` carries pid + heartbeatAt + epoch. Start refuses while
+ *     the holder is alive AND its heartbeat is fresh; takes over otherwise (crashed owner). Since
+ *     WP5 the revalidation runs in a CHILD, a healthy supervisor heartbeats straight through the
+ *     work — a live owner with a stale heartbeat is a genuinely stalled process, and takeover at
+ *     TTL is safe: every owned write is fenced by the epoch token, and its surrender path kills
+ *     its obsolete child. The former ten-minute busy grace is retired (WP5.1).
  *   - crash recovery: a takeover re-enqueues the crashed worker's `activeTask` (it was leased but
  *     never finished — at-least-once revalidation; re-running at the same HEAD re-derives the same
- *     generation, so redelivery is idempotent).
- *   - publication order: revalidate → publishGeneration (durable result) → lastKnownGood in state
- *     → dequeue. A crash between publish and dequeue re-runs the task and re-publishes the SAME
+ *     generation, so redelivery is idempotent). A crashed supervisor's orphaned child exits on
+ *     `disconnect` and refuses to stage for a dead supervisor pid (WP5.3).
+ *   - publication order: revalidate (in the child) → staged result → ACTIVATION, which is the
+ *     supervisor's fenced commit: publishGeneration (durable result) → lastKnownGood in state →
+ *     dequeue. A crash between staging and activation re-runs the task and publishes the SAME
  *     generation. A failed revalidation publishes NOTHING: the prior generation file and the
  *     lastKnownGood entry stand — never a broken index.
  *   - coalescing: the enqueue path guarantees ≤1 pending entry per project, so a commit burst
  *     collapses to one revalidation at the newest HEAD.
+ *   - cancellation (WP5.5): any process writes a durable cancel request; the supervisor's sweep
+ *     (on the heartbeat, which fires THROUGH child work) kills the in-flight child or drops the
+ *     pending entry, and activation refuses a racing late result from the cancelled run.
  */
 export class FreshnessWorker {
   private readonly env: NodeJS.ProcessEnv;
+  private readonly runTask: TaskRunner;
   private readonly pollMs: number;
   private readonly heartbeatMs: number;
   private readonly leaseTtlMs: number;
-  private readonly busyLeaseTtlMs: number;
   private readonly maxAttempts: number;
   private readonly retryBackoffMs: number;
   private readonly now: () => number;
@@ -490,16 +545,28 @@ export class FreshnessWorker {
   private superseded = false;
   /** Resolves when the in-flight task finishes — `stop()` awaits it (no task torn mid-flight). */
   private current?: Promise<void>;
+  /** WP5.5 — abort channel for the in-flight run: cancellation and surrender fire it. */
+  private activeAbort?: AbortController;
+  /**
+   * WP5.5 — runs whose late publication must be refused (`taskId@enqueuedAt`, one-shot: consumed
+   * at the refusal so a later re-enqueue of the same content-addressed id is a fresh run).
+   */
+  private readonly cancelledRuns = new Set<string>();
 
   constructor(private readonly opts: FreshnessWorkerOpts) {
-    if (typeof opts.revalidate !== 'function') {
-      throw new Error('FreshnessWorker requires a revalidate(task) implementation');
-    }
     this.env = opts.env ?? process.env;
+    const runner =
+      opts.runTask ??
+      (opts.revalidate ? inProcessTaskRunner(opts.revalidate, this.env) : undefined);
+    if (!runner) {
+      throw new Error(
+        'FreshnessWorker requires a revalidate(task) or runTask(descriptor, signal) implementation',
+      );
+    }
+    this.runTask = runner;
     this.pollMs = opts.pollMs ?? 500;
     this.heartbeatMs = opts.heartbeatMs ?? 2000;
     this.leaseTtlMs = opts.leaseTtlMs ?? 15_000;
-    this.busyLeaseTtlMs = opts.busyLeaseTtlMs ?? 10 * 60_000;
     this.maxAttempts = opts.maxAttempts ?? 3;
     this.retryBackoffMs = opts.retryBackoffMs ?? 1000;
     this.now = opts.now ?? Date.now;
@@ -528,16 +595,12 @@ export class FreshnessWorker {
         | { won: true; state: FreshnessWorkerState; orphan?: FreshnessTask }
         | { won: false; holderPid: number } => {
         const existing = readWorkerState(this.env);
-        // A long synchronous revalidation can block this process's event loop long enough for its
-        // timer heartbeat to age out. The active task is itself a durable lease: while its PID is
-        // alive, treating that owner as stale would duplicate work and let a successor race its
-        // publication. A dead PID remains immediately recoverable regardless of heartbeat age.
-        if (
-          existing &&
-          isPidAlive(existing.pid) &&
-          (this.heartbeatFresh(existing) ||
-            (existing.activeTask !== undefined && this.busyLeaseFresh(existing)))
-        ) {
+        // WP5.1: the revalidation runs in a CHILD, so a healthy holder's heartbeat never ages
+        // during work — a live holder with a stale heartbeat is a genuinely stalled process, and
+        // taking it over at TTL is safe: its owned writes are all fenced (they will be refused,
+        // not applied), and its surrender path kills its obsolete child. The retired ten-minute
+        // busy grace used to shield the stalled owner here; it also shielded real stalls.
+        if (existing && isPidAlive(existing.pid) && this.heartbeatFresh(existing)) {
           return { won: false, holderPid: existing.pid };
         }
         const stamp = new Date(this.now()).toISOString();
@@ -689,6 +752,9 @@ export class FreshnessWorker {
     if (this.heartbeatTimer) clearInterval(this.heartbeatTimer);
     this.pollTimer = undefined;
     this.heartbeatTimer = undefined;
+    // WP5.2 — terminate the obsolete child: its result could never be activated under this
+    // (now lost) lease, so letting it run would only hold the repo open for nothing.
+    this.activeAbort?.abort();
     const holder = readWorkerState(this.env);
     this.onEvent({
       kind: 'superseded',
@@ -717,15 +783,60 @@ export class FreshnessWorker {
       // FS error must not become an unhandled rejection that kills the host process; the lease
       // simply ages, and a genuinely dead worker is taken over on TTL as designed.
     }
+    // The sweep rides the heartbeat because the heartbeat fires THROUGH a child's work — that is
+    // the whole point of the WP5 split: cancellation takes effect while the child is still running.
+    try {
+      this.sweepCancellationRequests();
+    } catch {
+      // A sweep failure must never take the heartbeat loop down with it.
+    }
   }
 
   private heartbeatFresh(s: FreshnessWorkerState): boolean {
     return this.now() - Date.parse(s.heartbeatAt) < this.leaseTtlMs;
   }
 
-  /** A synchronous refresh gets a longer, bounded lease; a genuinely hung live process expires. */
-  private busyLeaseFresh(s: FreshnessWorkerState): boolean {
-    return this.now() - Date.parse(s.heartbeatAt) < this.busyLeaseTtlMs;
+  /** WP5.5 — the one-shot refusal key: the task id plus the run's enqueue stamp, so a later
+   *  re-enqueue of the same content-addressed id is a fresh run, never a refused one. */
+  private cancelRunKey(task: FreshnessTask): string {
+    return `${task.id}@${task.enqueuedAt}`;
+  }
+
+  /**
+   * WP5.5 — consume durable cancellation requests. For an IN-FLIGHT task: mark the run for
+   * late-publication refusal, kill the child, and let the run's own abort path release the lease.
+   * For a QUEUED task: remove it under the queue lock — it never runs and is never requeued.
+   * A request matching neither is LEFT for a later claim window and pruned by age.
+   */
+  private sweepCancellationRequests(): void {
+    if (!this.running || this.superseded || !this.state) return;
+    const requests = readCancellationRequests(this.env);
+    for (const req of requests) {
+      const active = this.state.activeTask;
+      if (active && active.id === req.taskId) {
+        this.cancelledRuns.add(this.cancelRunKey(active));
+        consumeCancellationRequest(this.env, req.taskId);
+        this.activeAbort?.abort();
+        continue;
+      }
+      let cancelled: FreshnessTask | undefined;
+      const removed = mutateFreshnessQueue(this.env, (q) => {
+        const idx = q.pending.findIndex((t) => t.id === req.taskId);
+        if (idx === -1) return false;
+        cancelled = q.pending[idx]!;
+        q.pending.splice(idx, 1);
+        return true;
+      });
+      if (removed && cancelled) {
+        consumeCancellationRequest(this.env, req.taskId);
+        this.onEvent({ kind: 'task-cancelled', task: cancelled, reason: 'cancelled while queued' });
+      }
+    }
+    // Bounded residue: stale requests (their task never appeared) and staged files from crashed
+    // children (inert by epoch) both age out.
+    const DAY_MS = 24 * 60 * 60_000;
+    pruneCancellationRequests(this.env, DAY_MS, this.now);
+    pruneStagedResults(this.env, DAY_MS, this.now);
   }
 
   /** One serialized work step: claim → lease → revalidate → publish → dequeue. Never re-entrant. */
@@ -770,33 +881,93 @@ export class FreshnessWorker {
     return task;
   }
 
-  /** Run one revalidation with the publish ordering that guarantees last-known-good survival. */
+  /**
+   * Run one task through the WP5 protocol: hand the child the descriptor, await its STAGED result,
+   * and activate it here — inside the fenced commit, after re-checking epoch and cancellation.
+   */
   private async run(task: FreshnessTask): Promise<void> {
     if (!this.state) return;
+    // The abort channel is the cancellation/lease-loss path (WP5.2/WP5.5): the sweep fires it for
+    // a cancelled run, surrender fires it when the lease is lost, and the runner terminates its
+    // child. A staged result that still races through is refused at activation.
+    const controller = new AbortController();
+    this.activeAbort = controller;
+    const descriptor: ChildTaskDescriptor = {
+      taskId: task.id,
+      projectRoot: task.projectRoot,
+      head: task.head,
+      epoch: this.epoch,
+      supervisorPid: process.pid,
+    };
     try {
-      const { generation } = await this.opts.revalidate(task);
+      const staged = await this.runTask(descriptor, controller.signal);
+      if (controller.signal.aborted || staged.epoch !== this.epoch) {
+        // A result from a killed child, or one commissioned by an obsolete election: discard it
+        // without activation. The task itself is owned by whoever holds the lease now (the
+        // successor recovered it, or the cancellation already ended the run).
+        this.onEvent({
+          kind: 'task-discarded',
+          task,
+          reason: controller.signal.aborted ? 'run aborted' : 'stale epoch',
+        });
+        // ...but the CLAIM must not leak: the task was taken off the queue when it was leased,
+        // so leaving activeTask set would drop it between the two — lost AND reported busy.
+        // Fenced: a superseded worker's clear fails harmlessly (its successor recovered the task).
+        this.writeOwnedState(() => {
+          this.state!.activeTask = undefined;
+        });
+        return;
+      }
       const published: PublishedGeneration = {
         projectRoot: task.projectRoot,
-        generation,
-        head: task.head,
+        generation: staged.generation,
+        // WP5.2 honesty: publish the head the child ACTUALLY processed — never stamp a newer
+        // result with the original queued HEAD.
+        head: staged.actualHead,
         publishedAt: new Date(this.now()).toISOString(),
       };
-      // Publication is FENCED together with the acknowledgement, in one lease-locked step. A
-      // revalidation can outlive its own lease (a long refresh, a stalled process); an owner that
-      // lost the lease mid-flight must not publish, because its successor has already recovered
-      // this task and will publish from the state it actually owns. Durable result still lands
-      // first WITHIN the critical section: generation file, then bookkeeping.
+      // ACTIVATION — the supervisor's job and ONLY here: publication, bookkeeping and the
+      // acknowledgement land together inside one lease-locked, epoch-checked commit. An owner
+      // that lost the lease mid-flight cannot publish (its successor recovered the task), and a
+      // CANCELLED task refuses its racing late publication inside the same critical section.
+      let refused = false;
       if (
         !this.writeOwnedState(() => {
+          const key = this.cancelRunKey(task);
+          if (this.cancelledRuns.has(key)) {
+            this.cancelledRuns.delete(key); // one-shot: consume at the refusal
+            this.state!.activeTask = undefined;
+            refused = true;
+            return;
+          }
           publishGeneration(task.projectRoot, published, this.env);
           this.state!.lastKnownGood[task.projectRoot] = published;
           this.state!.activeTask = undefined;
         })
       ) {
+        return; // superseded — nothing published, successor owns the task
+      }
+      clearStagedResult(this.env, task.id);
+      if (refused) {
+        this.onEvent({ kind: 'task-cancelled', task, reason: 'late result refused' });
         return;
       }
-      this.onEvent({ kind: 'task-done', task, generation });
+      this.onEvent({ kind: 'task-done', task, generation: staged.generation });
     } catch (err) {
+      if (controller.signal.aborted) {
+        // The run was killed by cancellation or by lease loss. Cancellation is terminal for this
+        // run: release the lease, publish nothing, requeue nothing. A superseded worker stays
+        // silent — its successor recovered this exact task on takeover.
+        const key = this.cancelRunKey(task);
+        if (this.cancelledRuns.has(key)) {
+          this.cancelledRuns.delete(key);
+          this.writeOwnedState(() => {
+            this.state!.activeTask = undefined;
+          });
+          this.onEvent({ kind: 'task-cancelled', task, reason: 'child terminated' });
+        }
+        return;
+      }
       const message = (err as Error).message ?? String(err);
       const attempts = task.attempts + 1;
       const failed: FreshnessTask = { ...task, attempts };
@@ -824,8 +995,14 @@ export class FreshnessWorker {
       else this.onEvent({ kind: 'task-retry', task: failed, error: message });
       // The red line lives here: NOTHING was published on this path. The prior generation file and
       // the prior lastKnownGood entry are untouched — the failed refresh cannot break the index.
-      this.state.activeTask = undefined;
-      writeJsonAtomic(statePath(this.env), this.state);
+      //
+      // The state file was ALREADY persisted fenced: `writeOwnedState` inside `mutateFreshnessQueue`
+      // cleared `activeTask` and wrote it under the lease lock (line above). The old code repeated
+      // that write here UNFENCED — a worker whose lease expired in the microseconds between the two
+      // writes would clobber its successor's freshly-won state with a stale in-memory copy, the
+      // exact clobber the fencing token exists to prevent. The redundancy is deleted, not re-fenced.
+    } finally {
+      if (this.activeAbort === controller) this.activeAbort = undefined;
     }
   }
 
@@ -851,10 +1028,12 @@ export interface FreshnessStatus {
   /** true when a live worker holds the freshness lease — heartbeating, OR busy (see below). */
   workerRunning: boolean;
   /**
-   * true when the lease holder is ALIVE and still owns a leased task, but its heartbeat has gone
-   * stale — the signature of a long synchronous revalidation blocking its own timer. Distinguished
-   * from a healthy heartbeat so an operator can tell "working hard" from "answering promptly",
-   * without either being reported as dead.
+   * true when the lease holder is ALIVE and owns a leased task, independent of heartbeat
+   * freshness. Before WP5 this meant "a synchronous revalidation is blocking its own timer";
+   * revalidation now runs in a child, so a busy worker normally heartbeats too — and one whose
+   * heartbeat goes stale while holding a task is a stalled supervisor worth surfacing, not a
+   * dead process. Either way, holding a live task means it is NOT dead: takeover waits for the
+   * lease TTL, and the fence guarantees a stalled owner cannot clobber its successor.
    */
   workerBusy: boolean;
   /** pid of the lease holder when readable. */
@@ -877,6 +1056,14 @@ export interface FreshnessStatusOpts {
   env?: NodeJS.ProcessEnv;
   /** Injected head reader (tests); default shells `git rev-parse HEAD` best-effort. */
   headReader?: (projectRoot: string) => string | undefined;
+  /**
+   * The lease TTL the heartbeat is judged against — the same value the WORKER was constructed with.
+   * Default 15s (the worker's default leaseTtlMs). The old code hardcoded 15_000 here while the
+   * worker read its own `opts.leaseTtlMs`: a deployment that tuned the lease left the status view
+   * judging heartbeats against a window the worker was never held to, reporting a healthy worker
+   * as dead or a dead one as alive.
+   */
+  leaseTtlMs?: number;
 }
 
 function gitHead(projectRoot: string): string | undefined {
@@ -901,24 +1088,23 @@ export function freshnessStatus(
 ): FreshnessStatus {
   const env = opts.env ?? process.env;
   const readHead = opts.headReader ?? gitHead;
+  const leaseTtlMs = opts.leaseTtlMs ?? 15_000;
   const entry = lookupProject(projectRoot, env);
   const mode = resolveFreshnessMode(entry?.freshnessMode);
   const state = readWorkerState(env);
   const alive = state !== undefined && isPidAlive(state.pid);
-  const beating = state !== undefined && Date.now() - Date.parse(state.heartbeatAt) < 15_000;
+  const beating = state !== undefined && Date.now() - Date.parse(state.heartbeatAt) < leaseTtlMs;
   /**
-   * BUSY IS NOT DEAD.
+   * BUSY IS NOT DEAD — and since WP5, busy no longer implies stalled either.
    *
-   * Revalidation runs `crib update`, whose parsing is synchronous, so a large repository blocks the
-   * event loop for as long as it takes — and a blocked event loop cannot fire the heartbeat timer.
-   * Observed on this repository: the heartbeat aged past 190s while the worker was healthily
-   * reindexing, then returned to 1s the moment it finished.
-   *
-   * Reporting that worker as "not running" is simply false, and it is the kind of false that sends
-   * an operator hunting a dead process that is in fact doing their work. A live pid still holding a
-   * leased task is BUSY; only a live pid with no task and no heartbeat is unexplained.
+   * Revalidation runs in a forked child, so a worker holding a task normally keeps heartbeating;
+   * `workerBusy` reports task ownership independent of heartbeat freshness (WP5.1 keeps it as an
+   * operational status). A live pid still holding a leased task is BUSY even when its heartbeat
+   * has aged — that combination used to mean "healthy but blocked" and now means "stalled
+   * supervisor"; either way it is not a dead process, and the epoch fence means the takeover
+   * after the lease TTL is safe.
    */
-  const workerBusy = alive && !beating && state?.activeTask !== undefined;
+  const workerBusy = alive && state?.activeTask !== undefined;
   const workerRunning = alive && (beating || workerBusy);
   const q = readFreshnessQueue(env);
   const last = readPublishedGeneration(projectRoot, env);

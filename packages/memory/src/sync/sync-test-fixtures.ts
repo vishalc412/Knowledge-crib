@@ -13,11 +13,13 @@ import {
   type MemoryFeedback,
   type MemoryRecord,
   type MemoryRecordV2,
+  type MemoryRecordV3,
   decisionId,
   derivePropositionKey,
   feedbackId,
   memoryRecordId,
   memoryRecordV2Id,
+  memoryRecordV3Id,
 } from '../index.js';
 import { type SyncEvent, buildSyncEvent } from './event.js';
 
@@ -96,6 +98,57 @@ export function v2Record(
       actorId: 'claude-code',
       clientId: 'claude-code',
     },
+    lineage: {},
+    sensitivity: over.sensitivity ?? 'internal',
+    retentionPolicyId: over.retentionPolicyId ?? 'ret:default',
+  };
+}
+
+/** A fully-valid memory-3 record (v3 seed — the namespace is content-addressed too; governance
+ *  fields settable for the admission matrix, mirroring {@link v2Record}). */
+export function v3Record(
+  over: {
+    claim?: string;
+    visibility?: MemoryRecordV3['visibility'];
+    sensitivity?: MemoryRecordV3['sensitivity'];
+    retentionPolicyId?: string;
+  } = {},
+): MemoryRecordV3 {
+  const subject = 'sym:src/a.ts#A.b';
+  const claim = over.claim ?? 'A.b does the thing';
+  const evidence_ = [evidence()];
+  const namespace = {
+    principalId: PRINCIPAL,
+    workspaceId: 'workspace:knowledge-crib',
+    projectId: 'project:knowledge-crib',
+    agentProfileId: 'agent-profile:one',
+  };
+  const id = memoryRecordV3Id({
+    kind: 'fact',
+    subject,
+    propositionKey: derivePropositionKey({ subject }),
+    claim,
+    evidence: evidence_,
+    namespace,
+  });
+  return {
+    id,
+    schemaVersion: '3',
+    visibility: over.visibility ?? 'workspace',
+    kind: 'fact',
+    subject,
+    propositionKey: derivePropositionKey({ subject }),
+    claim,
+    validTime: { from: NOW, to: LATER },
+    transactionTime: { observedAt: NOW, recordedAt: NOW },
+    evidence: evidence_,
+    provenance: {
+      principalId: PRINCIPAL,
+      deviceId: DEVICE,
+      actorId: 'claude-code',
+      clientId: 'claude-code',
+    },
+    namespace,
     lineage: {},
     sensitivity: over.sensitivity ?? 'internal',
     retentionPolicyId: over.retentionPolicyId ?? 'ret:default',

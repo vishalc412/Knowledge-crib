@@ -56,6 +56,33 @@ jobs:
           KCRIB_EMBED_HOME: ${{ runner.temp }}/knowledge-crib-embed
         run: corepack pnpm@9.15.0 release:verify
 
+      # WP6 slice D — the browser acceptance suite drives the real `crib viz` server
+      # against a real isolated backend, so it needs real chromium. It is NOT part of
+      # release:verify (the verify matrix below stays network-free and Windows-safe);
+      # this is the one leg that downloads browser binaries.
+      - name: Install browser binaries
+        run: corepack pnpm@9.15.0 --filter knowledge-crib exec playwright install --with-deps chromium
+
+      - name: Run browser acceptance suite
+        run: corepack pnpm@9.15.0 verify:browser
+
+      # WP9.4 — logs-on-failed-jobs: the gate writes release-evidence.json (and run logs) before
+      # failing, so without an upload that evidence dies with the runner. Best-effort by design:
+      # wildcards + if-no-files-found: warn mean a passing run uploads nothing, and a missing
+      # path never fails the step. pnpm's own failure logs land outside the workspace (npm
+      # cache _logs dir), so the workspace *.log wildcard is what is reachable here.
+      - name: Upload failure diagnostics
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: knowledge-crib-ci-diagnostics-release-gate
+          path: |
+            release-evidence.json
+            *.log
+            **/*.log
+          if-no-files-found: warn
+          retention-days: 7
+
   # Cross-platform / cross-Node coverage matrix: the same release:verify gate run on the other two
   # OSes and both supported Node lines (22 LTS + 24), so a darwin/windows-only or Node 24-only
   # regression in the node:sqlite backend, the O_EXCL lock, or path handling surfaces before users
@@ -107,3 +134,18 @@ jobs:
         env:
           KCRIB_EMBED_HOME: ${{ runner.temp }}/knowledge-crib-embed
         run: corepack pnpm@9.15.0 release:verify
+
+      # WP9.4 — logs-on-failed-jobs for every matrix cell: same best-effort diagnostics
+      # upload as the release gate (wildcards + if-no-files-found: warn), namespaced per
+      # OS/Node cell so a darwin/windows-only regression keeps its logs.
+      - name: Upload failure diagnostics
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: knowledge-crib-ci-diagnostics-${{ matrix.os }}-node${{ matrix.node }}
+          path: |
+            release-evidence.json
+            *.log
+            **/*.log
+          if-no-files-found: warn
+          retention-days: 7

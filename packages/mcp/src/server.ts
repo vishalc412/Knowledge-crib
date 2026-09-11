@@ -24,8 +24,12 @@ import {
 } from './token-budget.js';
 import type { Verbs } from './verbs.js';
 
-const TOOL_RESULT = (obj: unknown) => ({
-  content: [{ type: 'text' as const, text: JSON.stringify(obj) }],
+/** Serialize a verb result at the protocol seam. The `await` is deliberate: a no-op for the
+ *  synchronous verbs, and what keeps the ONE async verb (`memorySync`) — and any verb that ever
+ *  becomes async — inside its request pin (WP4.5). Without it, JSON.stringify(pending promise)
+ *  would silently emit `{}` to the client AND release the pin before the verb's work finished. */
+const TOOL_RESULT = async (obj: unknown) => ({
+  content: [{ type: 'text' as const, text: JSON.stringify(await obj) }],
 });
 
 /** Uniform argument-validation failure for the `op` dispatchers below. A dispatcher can otherwise
@@ -142,9 +146,61 @@ function assertSurfaceMatchesManifest(server: McpServer): void {
   }
 }
 
+/**
+ * WP4.5 — request-level bundle pinning, implemented by the serving process's refresh coordinator.
+ * `retain()` before a tools/call is dispatched, `release()` after it settles. While any request is
+ * pinned, a published refresh bundle WAITS before being adopted (the swap happens in `release`),
+ * so a request that spans a publication — the async `memorySync` verb, an HTTP-pipelined call —
+ * answers from ONE bundle for its whole lifetime instead of a torn mix of two.
+ */
+export interface RequestPins {
+  retain(): void;
+  release(): void;
+}
+
+/**
+ * Wrap the installed tools/call handler with {@link RequestPins} retain/release. Installed AFTER the
+ * alias router, so the wrap covers every call path (direct + aliased names) at the protocol seam —
+ * one point, no per-tool handler edits. Mirrors `installAliasRouter`'s approach for the same reason:
+ * `Protocol.setRequestHandler` explicitly documents replacing the previous handler for a method.
+ */
+function installPinRouter(server: McpServer, pins: RequestPins): void {
+  const protocol = server.server;
+  const handlers = (
+    protocol as unknown as {
+      _requestHandlers: Map<string, (request: unknown, extra: unknown) => Promise<never>>;
+    }
+  )._requestHandlers;
+  const original = handlers.get('tools/call');
+  if (!original) {
+    // Same loud-failure contract as the alias router: absent wiring means the SDK internals
+    // changed under us, and a silent pin-less server would quietly lose the WP4.5 guarantee.
+    throw new Error('SDK tools/call handler not installed; pin router cannot be wired');
+  }
+  protocol.removeRequestHandler('tools/call');
+  protocol.setRequestHandler(CallToolRequestSchema, async (request, extra) => {
+    pins.retain();
+    try {
+      return await original(request, extra);
+    } finally {
+      pins.release();
+    }
+  });
+}
+
 /** Build (but do not connect) the MCP server with all verbs registered. */
-export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
+export function buildServer(verbs: Verbs, version = '0.1.0', pins?: RequestPins): McpServer {
   const server = new McpServer({ name: 'knowledge-crib', version });
+
+  // WP2.5 runtime evidence: the moment the client completes initialization, record its handshake
+  // identity (clientInfo name + version) in the journal. No configuration file can prove a client
+  // ever attached — only this observation can, and `crib adapters status` reports the
+  // mcp-connected / runtime-certified states from it. Optional-chained for the same reason the
+  // alias router's noteSessionActivity is: a partial Verbs (tests) must still build a server.
+  server.server.oninitialized = () => {
+    const client = server.server.getClientVersion();
+    if (client?.name) verbs.noteInitialized?.(client.name, client.version);
+  };
 
   server.registerTool(
     'context',
@@ -165,7 +221,10 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
         ifHash: z.string().optional(),
       },
     },
-    async (a) => TOOL_RESULT(verbs.context(a)),
+    async (a) => {
+      verbs.recordToolInvocation?.('context');
+      return TOOL_RESULT(verbs.context(a));
+    },
   );
 
   server.registerTool(
@@ -181,7 +240,10 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
         ifHash: z.string().optional(),
       },
     },
-    async (a) => TOOL_RESULT(verbs.source(a)),
+    async (a) => {
+      verbs.recordToolInvocation?.('source');
+      return TOOL_RESULT(verbs.source(a));
+    },
   );
 
   server.registerTool(
@@ -204,8 +266,9 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
         maxTokens: z.number().int().positive().max(MAX_MAX_TOKENS).optional(),
       },
     },
-    async (a) =>
-      TOOL_RESULT(
+    async (a) => {
+      verbs.recordToolInvocation?.('query');
+      return TOOL_RESULT(
         verbs.query({
           q: a.q,
           ...(a.kinds ? { kinds: a.kinds as NodeKind[] } : {}),
@@ -220,7 +283,8 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
           ...(a.cursor !== undefined ? { cursor: a.cursor } : {}),
           ...(a.maxTokens !== undefined ? { maxTokens: a.maxTokens } : {}),
         }),
-      ),
+      );
+    },
   );
 
   server.registerTool(
@@ -238,7 +302,10 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
         withLlm: z.boolean().optional(),
       },
     },
-    async (a) => TOOL_RESULT(verbs.overview(a)),
+    async (a) => {
+      verbs.recordToolInvocation?.('overview');
+      return TOOL_RESULT(verbs.overview(a));
+    },
   );
 
   server.registerTool(
@@ -248,7 +315,10 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
         'Dry-run delta report since a git ref. Reports `changedPaths` (committed since the anchor) AND `uncommittedPaths` (working tree), both folded into `changedSymbols`/`removedEdges`, so it is usable as a PRE-commit check. A `note` means the report is degraded or narrowed in scope — an empty result carrying one is not a clean bill of health. Run BEFORE committing.',
       inputSchema: { since: z.string().optional() },
     },
-    async (a) => TOOL_RESULT(verbs.detectChanges(a)),
+    async (a) => {
+      verbs.recordToolInvocation?.('detect_changes');
+      return TOOL_RESULT(verbs.detectChanges(a));
+    },
   );
 
   server.registerTool(
@@ -263,7 +333,10 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
         ifHash: z.string().optional(),
       },
     },
-    async (a) => TOOL_RESULT(verbs.review(a)),
+    async (a) => {
+      verbs.recordToolInvocation?.('review');
+      return TOOL_RESULT(verbs.review(a));
+    },
   );
 
   // `extract_rules` had no keep-standalone rationale (unlike brief/context/query/source above):
@@ -298,7 +371,10 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
         ifHash: z.string().optional(),
       },
     },
-    async (a) => TOOL_RESULT(verbs.brief(a)),
+    async (a) => {
+      verbs.recordToolInvocation?.('brief');
+      return TOOL_RESULT(verbs.brief(a));
+    },
   );
 
   server.registerTool(
@@ -317,7 +393,10 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
         ifHash: z.string().optional(),
       },
     },
-    async (a) => TOOL_RESULT(verbs.memoryRecall(a)),
+    async (a) => {
+      verbs.recordToolInvocation?.('memory_recall');
+      return TOOL_RESULT(verbs.memoryRecall(a));
+    },
   );
 
   server.registerTool(
@@ -344,7 +423,10 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
         ifHash: z.string().optional(),
       },
     },
-    async (a) => TOOL_RESULT(verbs.memoryObserve(a)),
+    async (a) => {
+      verbs.recordToolInvocation?.('memory_observe');
+      return TOOL_RESULT(verbs.memoryObserve(a));
+    },
   );
 
   // G5.2 — on-demand PDG/taint analysis for one callable (TypeScript/JavaScript). Opt-in: nothing
@@ -359,7 +441,10 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
         id: z.string(),
       },
     },
-    async (a) => TOOL_RESULT(verbs.explain(a)),
+    async (a) => {
+      verbs.recordToolInvocation?.('explain');
+      return TOOL_RESULT(verbs.explain(a));
+    },
   );
 
   // G5.1 — safe symbol rename. Default DRY-RUN: derives the reviewed plan and a deterministic plan
@@ -378,7 +463,10 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
         depth: z.number().int().min(1).max(6).optional(),
       },
     },
-    async (a) => TOOL_RESULT(verbs.rename(a)),
+    async (a) => {
+      verbs.recordToolInvocation?.('rename');
+      return TOOL_RESULT(verbs.rename(a));
+    },
   );
 
   // One dispatcher instead of four near-identical tools (memory_get / memory_status / memory_audit /
@@ -443,6 +531,7 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
       },
     },
     async (a) => {
+      verbs.recordToolInvocation?.('memory');
       switch (a.op) {
         case 'get':
           if (!a.id)
@@ -709,6 +798,7 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
       },
     },
     async (a) => {
+      verbs.recordToolInvocation?.('enrich');
       const { op, ...rest } = a as Record<string, unknown> & { op: string };
       switch (op) {
         case 'status':
@@ -750,6 +840,7 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
       },
     },
     async (a) => {
+      verbs.recordToolInvocation?.('impact');
       const { op, ...rest } = a as Record<string, unknown> & { op?: string };
       switch (op ?? 'blast') {
         case 'blast':
@@ -797,6 +888,7 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
       },
     },
     async (a) => {
+      verbs.recordToolInvocation?.('dossier');
       const { op, ...rest } = a as Record<string, unknown> & { op?: string };
       switch (op ?? 'one') {
         case 'one':
@@ -842,6 +934,7 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
       },
     },
     async (a) => {
+      verbs.recordToolInvocation?.('neighbors');
       const { op, ...rest } = a as Record<string, unknown> & { op?: string };
       switch (op ?? 'edges') {
         case 'edges':
@@ -868,6 +961,7 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
       },
     },
     async (a) => {
+      verbs.recordToolInvocation?.('status');
       const { op, ...rest } = a as Record<string, unknown> & { op?: string };
       switch (op ?? 'health') {
         case 'health':
@@ -883,6 +977,7 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
   );
 
   installAliasRouter(server, verbs);
+  if (pins) installPinRouter(server, pins);
   assertSurfaceMatchesManifest(server);
 
   return server;
@@ -982,7 +1077,7 @@ export const MAX_HTTP_REQUEST_BYTES = 4 * 1024 * 1024;
 
 export async function serveHttp(
   verbs: Verbs,
-  opts: { port?: number; host?: string; version?: string } = {},
+  opts: { port?: number; host?: string; version?: string; pins?: RequestPins } = {},
 ): Promise<{ port: number; close: () => Promise<void> }> {
   const version = opts.version ?? '0.0.0';
   const host = opts.host ?? '127.0.0.1';
@@ -1056,7 +1151,7 @@ export async function serveHttp(
           sessionIdGenerator: undefined,
           enableJsonResponse: true,
         });
-        const server = buildServer(verbs, version);
+        const server = buildServer(verbs, version, opts.pins);
         res.on('close', () => {
           void transport.close();
           void server.close();
@@ -1095,8 +1190,12 @@ export async function serveHttp(
   };
 }
 
-export async function serveStdio(verbs: Verbs, version = '0.0.0'): Promise<void> {
-  const server = buildServer(verbs, version);
+export async function serveStdio(
+  verbs: Verbs,
+  version = '0.0.0',
+  pins?: RequestPins,
+): Promise<void> {
+  const server = buildServer(verbs, version, pins);
   const transport = new StdioServerTransport();
   await server.connect(transport);
   await new Promise<void>((resolve) => {

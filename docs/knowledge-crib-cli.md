@@ -149,14 +149,18 @@ activation fails. This is process-interruption recovery, not an fsync or power-l
 crib freshness manual
 crib freshness watch
 crib freshness auto
+crib freshness service install
+crib freshness service start
+crib freshness service restart
 crib freshness service status
 crib freshness service uninstall
 ```
 
 `auto` installs and starts one user-scoped supervised worker. macOS uses a LaunchAgent with
 `RunAtLoad` and `KeepAlive`; Linux uses a systemd user service with `Restart=on-failure`; Windows
-uses a Task Scheduler logon trigger with restart-on-failure. `service install|status|uninstall`
-exposes the same lifecycle directly. The worker reads the shared project registry and coalesces the
+uses a Task Scheduler logon trigger with restart-on-failure. `service install|start|restart|status|uninstall`
+exposes the same lifecycle directly (`start`/`restart` install the definition first if it is
+absent, then restart it in place without rewriting it). The worker reads the shared project registry and coalesces the
 durable freshness queue across repositories.
 
 ## `crib reindex [path]`

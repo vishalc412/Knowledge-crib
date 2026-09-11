@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { Node } from '@knowledge-crib/soul-schema';
@@ -17,9 +17,10 @@ import type { Node } from '@knowledge-crib/soul-schema';
  *   - `sync`: honest not-available naming Gate 4;
  *   - `audit`: verdict transitions, promotions, supersessions, quarantines.
  */
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   FileSyncObjectStore,
+  IntakeTeamMirrorError,
   IntelligenceEventJournal,
   type MemoryAnchorPort,
   MemoryApi,
@@ -36,6 +37,8 @@ import {
   RANKING_VERSION,
   __resetMemoryLockGuardForTest,
   believedLifecycle,
+  canonicalMemoryJson,
+  clearMemoryCollectionCache,
   createIntakeRequirement,
   decisionId,
   derivePropositionKey,
@@ -43,6 +46,7 @@ import {
   memoryRecordId,
   memoryRecordV2Id,
   memoryRecordV3Id,
+  memoryShard,
   syncNotConfigured,
   validTimeHoldsAt,
   validTimeWindowOf,
@@ -395,6 +399,135 @@ describe('intake continuation API', () => {
       }),
     ).toThrow(/unknown intake/);
   });
+
+  it('checkpoint is durable locally when the team mirror fails', () => {
+    const { api, team } = setupMulti();
+    const requirement = api.createIntake({
+      namespace: { principalId: 'principal:local', projectId: REPO },
+      original: 'Share the resumable plan',
+      interpretation: {
+        outcome: 'Let a teammate resume',
+        scope: ['packages/memory'],
+        constraints: [],
+        acceptanceCriteria: ['Team sees next action'],
+      },
+      sensitivity: 'internal',
+      retentionPolicyId: 'default',
+      provenance: {
+        principalId: 'principal:local',
+        deviceId: 'device-1',
+        actorId: 'human:vishal',
+        clientId: 'test',
+      },
+      createdAt: T0,
+    });
+    api.checkpointIntake({
+      intakeId: requirement.id,
+      kind: 'progress',
+      phase: 'executing',
+      nextSafeAction: 'Run tests',
+      summary: 'Started',
+      repository: { dirty: false },
+      actor: 'codex',
+      recordedAt: T1,
+    });
+    // the history now carries a team-audience checkpoint: every later checkpoint must mirror
+    expect(
+      api.shareIntake(requirement.id, {
+        audience: 'team',
+        actor: 'human:vishal',
+        repository: { dirty: false },
+      }).ok,
+    ).toBe(true);
+
+    // the team mirror fails from here on — the local write must ALREADY have landed
+    vi.spyOn(team, 'upsertEntry').mockImplementation(() => {
+      throw new Error('team store unreachable');
+    });
+    let mirrored: IntakeTeamMirrorError | undefined;
+    try {
+      api.checkpointIntake({
+        intakeId: requirement.id,
+        kind: 'progress',
+        phase: 'verifying',
+        nextSafeAction: 'Re-run the suite',
+        summary: 'Implementation is ready to verify',
+        repository: { dirty: false },
+        actor: 'codex',
+        recordedAt: T2,
+      });
+    } catch (error) {
+      mirrored = error as IntakeTeamMirrorError;
+    }
+    expect(mirrored).toBeInstanceOf(IntakeTeamMirrorError);
+    expect(mirrored?.message).toContain(
+      'checkpoint is durable locally, but the team mirror failed',
+    );
+    const checkpoint = mirrored?.checkpoint;
+    expect(checkpoint?.kind).toBe('progress');
+
+    // the local checkpoint is durable on DISK: a FRESH store over the same root reads it back
+    const fresh = MemoryStore.local(REPO, { env, now: () => T0 });
+    expect(fresh.readCollection('intakes').entries.find((e) => e.id === checkpoint?.id)).toEqual(
+      checkpoint,
+    );
+  });
+
+  it('shareIntake reports the local checkpoint durable when the team copy fails', () => {
+    const { api, team } = setupMulti();
+    const requirement = api.createIntake({
+      namespace: { principalId: 'principal:local', projectId: REPO },
+      original: 'Share the resumable plan',
+      interpretation: {
+        outcome: 'Let a teammate resume',
+        scope: ['packages/memory'],
+        constraints: [],
+        acceptanceCriteria: ['Team sees next action'],
+      },
+      sensitivity: 'internal',
+      retentionPolicyId: 'default',
+      provenance: {
+        principalId: 'principal:local',
+        deviceId: 'device-1',
+        actorId: 'human:vishal',
+        clientId: 'test',
+      },
+      createdAt: T0,
+    });
+    api.checkpointIntake({
+      intakeId: requirement.id,
+      kind: 'progress',
+      phase: 'executing',
+      nextSafeAction: 'Run tests',
+      summary: 'Started',
+      repository: { dirty: false },
+      actor: 'codex',
+      recordedAt: T1,
+    });
+
+    // the team copy of the complete history fails — the local marker must still be reported
+    vi.spyOn(team, 'upsertEntries').mockImplementation(() => {
+      throw new Error('team store unreachable');
+    });
+    const result = api.shareIntake(requirement.id, {
+      audience: 'team',
+      actor: 'human:vishal',
+      repository: { dirty: false },
+    });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.localWritten).toBe(true);
+    expect(result.teamWritten).toBe(false);
+    expect(result.error).toContain('team store unreachable');
+
+    // the local share checkpoint is verifiable from a fresh store instance over the same root
+    const checkpoint = result.checkpoint;
+    expect(checkpoint?.audience).toBe('team');
+    const fresh = MemoryStore.local(REPO, { env, now: () => T0 });
+    expect(fresh.readCollection('intakes').entries.find((e) => e.id === checkpoint?.id)).toEqual(
+      checkpoint,
+    );
+  });
 });
 
 describe('observe event plane', () => {
@@ -480,6 +613,144 @@ function setupMulti() {
     },
   };
 }
+
+// ─── WP3: principal-scoped handoff over a SHARED journal (the acceptance fixture) ───
+
+/**
+ * Two principals, one machine, one repository: the same local store and the same lifecycle journal,
+ * exactly the topology a shared developer box produces. The acceptance bar from the launch plan is
+ * that principal A receives no private identifiers, coordinates, counts or recovery artifacts
+ * belonging to principal B — and symmetrically for B.
+ */
+describe('handoff — principal scoping over a shared journal (WP3 acceptance)', () => {
+  function sharedJournalFixture() {
+    const eventJournal = new IntelligenceEventJournal({
+      rootDir: join(home, 'events'),
+      now: () => T0,
+    });
+    // B's session anchor — private to B by identity.
+    eventJournal.append({
+      kind: 'agent.lifecycle',
+      idempotencyKey: 'b:activity:1',
+      source: { clientId: 'copilot', sessionId: 'sess-B' },
+      identity: { principalId: 'principal:B' },
+      payload: {
+        event: 'turn-end',
+        action: 'observed',
+        hasOutcome: false,
+        repository: {
+          branch: 'private/b-branch',
+          head: 'b'.repeat(40),
+          dirty: true,
+          changedPaths: ['src/private-b.ts'],
+        },
+      },
+      occurredAt: '2026-03-01T00:00:00.000Z',
+    });
+    // A's own anchor — A must recover these coordinates.
+    eventJournal.append({
+      kind: 'agent.lifecycle',
+      idempotencyKey: 'a:activity:1',
+      source: { clientId: 'cursor', sessionId: 'sess-A' },
+      identity: { principalId: 'principal:A' },
+      payload: {
+        event: 'turn-end',
+        action: 'observed',
+        hasOutcome: false,
+        repository: {
+          branch: 'feature/a-branch',
+          head: 'a'.repeat(40),
+          dirty: true,
+          changedPaths: ['src/a.ts'],
+        },
+      },
+      occurredAt: '2026-04-01T00:00:00.000Z',
+    });
+    const local = MemoryStore.local(REPO, { env, now: () => T0 });
+    // An UNSCOPED legacy attempt in the shared local store — no principal column, so it belongs to
+    // the default migration principal's namespace and to nobody else.
+    local.upsertEntries('attempts', [
+      {
+        id: 'att:1eca5e7d',
+        schemaVersion: '1',
+        attemptId: 'att:1eca5e7d',
+        phase: 'action',
+        subject: 'sym:src/shared.ts',
+        ts: T1,
+      },
+    ]);
+    const apiFor = (principal: string) =>
+      new MemoryApi({
+        stores: { local },
+        eventJournal,
+        env: { ...env, KCRIB_PRINCIPAL_ID: principal },
+        now: () => T0,
+      });
+    return { eventJournal, local, apiFor };
+  }
+
+  it('principal A receives none of principal B’s private identifiers or coordinates', () => {
+    const { apiFor } = sharedJournalFixture();
+    const out = apiFor('principal:A').handoff({ repository: { dirty: false } });
+    expect(out.lastSession).toMatchObject({ sessionId: 'sess-A', branch: 'feature/a-branch' });
+    const serialized = JSON.stringify(out);
+    expect(serialized).not.toContain('sess-B');
+    expect(serialized).not.toContain('private/b-branch');
+    expect(serialized).not.toContain('src/private-b.ts');
+  });
+
+  it('principal B receives none of principal A’s coordinates either — the boundary is symmetric', () => {
+    const { apiFor } = sharedJournalFixture();
+    const out = apiFor('principal:B').handoff({ repository: { dirty: false } });
+    expect(out.lastSession).toMatchObject({ sessionId: 'sess-B', branch: 'private/b-branch' });
+    expect(JSON.stringify(out)).not.toContain('sess-A');
+    expect(JSON.stringify(out)).not.toContain('feature/a-branch');
+  });
+
+  it('neither named principal sees the shared store’s unscoped legacy work — not the work, not the counts', () => {
+    const { apiFor } = sharedJournalFixture();
+    for (const principal of ['principal:A', 'principal:B']) {
+      const out = apiFor(principal).handoff({ repository: { dirty: false } });
+      expect(out.openWork).toEqual([]);
+      expect(out.counts.openWork).toBe(0);
+    }
+  });
+
+  it('the default migration principal still sees the unscoped legacy work it owns', () => {
+    const { local, eventJournal } = sharedJournalFixture();
+    const api = new MemoryApi({ stores: { local }, eventJournal, env, now: () => T0 });
+    const out = api.handoff({ repository: { dirty: false } });
+    expect(out.openWork.map((w) => w.attemptId)).toEqual(['att:1eca5e7d']);
+    expect(out.counts.openWork).toBe(1);
+    // And it recovers ITS own unscoped anchor — legacy events belong to this namespace alone.
+    expect(out.lastSession).toBeUndefined(); // no default-principal anchor was recorded
+  });
+
+  it('reports an unreadable journal as an explicit degraded state, not as "no prior work"', () => {
+    // WP3.8: a malformed line beyond the trailing one is unrecoverable evidence, and read()
+    // throws. The handoff must say so through `degraded`; silently returning a handoff without
+    // `lastSession` would be indistinguishable from a repo where no hook ever ran.
+    const root = join(home, 'events-broken');
+    mkdirSync(root, { recursive: true });
+    writeFileSync(
+      join(root, 'intelligence-events.jsonl'),
+      '{"kind":"agent.lifecycle" <- not valid JSON\n{"kind":"agent.lifecycle"}\n',
+    );
+    const journal = new IntelligenceEventJournal({ rootDir: root, now: () => T0 });
+    const local = MemoryStore.local(REPO, { env, now: () => T0 });
+    const api = new MemoryApi({ stores: { local }, eventJournal: journal, env, now: () => T0 });
+    const out = api.handoff({ repository: { dirty: false } });
+    expect(out.degraded).toEqual(['lifecycle-journal-unreadable']);
+    expect(out.lastSession).toBeUndefined();
+  });
+
+  it('a missing journal is honest ABSENCE, never a degraded state', () => {
+    const { api } = setup();
+    const out = api.handoff({ repository: { dirty: false } });
+    expect(out.degraded).toEqual([]);
+    expect(out.lastSession).toBeUndefined();
+  });
+});
 
 /** A minimal soul port for the fresh evaluator: every lookup misses (nothing is fabricated). */
 function evalSoulPort(): {
@@ -917,6 +1188,32 @@ describe('search', () => {
     tick(T3); // the wall clock moved
     const second = api.search(SUBJECT, { evaluator, evalCtx });
     expect(JSON.stringify(second)).toBe(JSON.stringify(first));
+  });
+
+  it('a corrupt interior line keeps good records ranking and surfaces the error in provenance', () => {
+    const { local, api } = setup();
+    const good = v1Record({ claim: 'A.b does the thing' });
+    const other = v1Record({ claim: 'A.b does another thing' });
+    local.upsertEntry('active', good);
+    // out-of-band rewrite of the good record's shard: a corrupt line wedged BETWEEN two valid
+    // lines, exactly the torn-ledger shape a crash mid-write or a bad merge can leave behind
+    const shard = memoryShard(good.id);
+    writeFileSync(
+      local.shardPath('active', shard),
+      `${canonicalMemoryJson(good)}\nTHIS LINE IS NOT JSON\n${canonicalMemoryJson(other)}\n`,
+      'utf8',
+    );
+    clearMemoryCollectionCache(); // out-of-band writes bump no generation — the memo must not serve the pre-fault read
+
+    const res = api.search(SUBJECT);
+    // the good records on either side of the corrupt line still rank
+    expect(res.hits).toHaveLength(2);
+    expect(new Set(res.hits.map((h) => h.id))).toEqual(new Set([good.id, other.id]));
+    // and the rejected line is EXPLICIT, never silently skipped: the operator sees
+    // `<role>/active/<shard>.jsonl:2` in provenance errors
+    expect(res.provenance.errors.some((e) => e.startsWith(`local/active/${shard}.jsonl:2:`))).toBe(
+      true,
+    );
   });
 });
 

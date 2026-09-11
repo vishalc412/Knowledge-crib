@@ -178,6 +178,30 @@ describe('detect_changes (M6 read-only dry run)', () => {
     }
   });
 
+  it('names a rebased-away anchor as an anchor problem, NOT "not a git work tree" (WP4.4)', () => {
+    // The anchor `h1` no longer resolves: rebase or gc. The old catch reported 'not a git work
+    // tree' for this state, sending the operator to audit a perfectly healthy repo instead of
+    // running the one command that fixes it.
+    const err = new Error('indexed commit h1 is unavailable');
+    err.name = 'AnchorUnavailableError';
+    const v = new Verbs({
+      soul,
+      index,
+      repoRoot: repo,
+      vcs: {
+        currentHead: () => 'h2',
+        changedFilesSince: () => {
+          throw err;
+        },
+        uncommittedChanges: () => [],
+      },
+    });
+    const res = v.detectChanges({}) as Record<string, unknown>;
+    expect(res.note).toContain('indexed commit h1 is unavailable');
+    expect(res.note).toContain('crib index');
+    expect(res.note).not.toContain('not a git work tree');
+  });
+
   it('honours an explicit --since override', () => {
     const v = new Verbs({ soul, index, repoRoot: repo, vcs: stubAdapter(['src/token.ts']) });
     const res = v.detectChanges({ since: 'h0' }) as Record<string, unknown>;

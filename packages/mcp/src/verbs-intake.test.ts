@@ -105,6 +105,69 @@ describe('MCP intake continuation operations', () => {
     expect(handoff.lastSession?.sessionId).not.toBe(sessions[1]);
   });
 
+  it('WP3.1 — two clients in ONE process share the process session id; client names stay provenance', () => {
+    // The session id is a server-process fact, not a client fact: whatever client is talking to
+    // this server, resumability is keyed by the process that owns the journal. Client names ride
+    // in `source.clientId` (provenance) and never appear in `identity` (authorization).
+    const journal = new IntelligenceEventJournal({ rootDir: join(home, 'events') });
+    const vcs = {
+      currentHead: () => 'head-shared',
+      currentBranch: () => 'feature/shared',
+      changedFilesSince: () => [],
+      uncommittedChanges: () => [],
+    };
+    const verbs = new Verbs({
+      soul,
+      index,
+      repoRoot: repo,
+      vcs,
+      memory: { local, eventJournal: journal },
+    });
+    verbs.noteClientConnection('claude', '2.1');
+    verbs.noteClientConnection('cursor', '0.45');
+    verbs.noteToolInvocation('claude', 'brief');
+    verbs.noteSessionActivity();
+
+    const events = journal.read();
+    expect(events.length).toBeGreaterThan(0);
+    const sessionIds = new Set(events.map((event) => event.source.sessionId));
+    expect(sessionIds.size).toBe(1); // ONE server process, ONE session id — regardless of client
+    for (const event of events) {
+      expect(event.identity.principalId).toBeDefined(); // server-resolved, never client-supplied
+      expect(['claude', 'cursor', 'knowledge-crib-mcp']).toContain(event.source.clientId);
+    }
+  });
+
+  it('WP3.8 — an unreadable journal surfaces through handoff as a degraded state, never as absence', () => {
+    const root = join(home, 'events-corrupt');
+    mkdirSync(root, { recursive: true });
+    writeFileSync(
+      join(root, 'intelligence-events.jsonl'),
+      '{"kind":"agent.lifecycle" <- not valid JSON\n{"kind":"agent.lifecycle"}\n',
+    );
+    const journal = new IntelligenceEventJournal({ rootDir: root });
+    const verbs = new Verbs({
+      soul,
+      index,
+      repoRoot: repo,
+      memory: { local, eventJournal: journal },
+    });
+    const handoff = verbs.memoryHandoff({}) as { degraded?: string[] };
+    expect(handoff.degraded).toEqual(['lifecycle-journal-unreadable']);
+  });
+
+  it('reports an EMPTY degraded channel when the journal is healthy', () => {
+    const journal = new IntelligenceEventJournal({ rootDir: join(home, 'events-ok') });
+    const verbs = new Verbs({
+      soul,
+      index,
+      repoRoot: repo,
+      memory: { local, eventJournal: journal },
+    });
+    const handoff = verbs.memoryHandoff({}) as { degraded?: string[] };
+    expect(handoff.degraded).toEqual([]);
+  });
+
   it('creates local intake state and returns it through handoff', async () => {
     const callMemory = memoryCaller();
     const created = await callMemory({

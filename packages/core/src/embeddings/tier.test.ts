@@ -5,7 +5,7 @@
  *   - the remote tier is DISABLED unless the operator explicitly accepted the current data policy
  *     (disabled-by-default is a red line; every fail-open shape fails this suite).
  */
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -89,6 +89,8 @@ describe('embedTierReport — the doctor surface', () => {
     expect(r.tier).toBe('fallback');
     expect(r.integrityOk).toBe(false);
     expect(r.problems.length).toBeGreaterThan(0);
+    // WP1.11: the install EXISTS but is broken — that is `invalid-model`, not `lexical-only`.
+    expect(r.status).toBe('invalid-model');
   });
 
   it('remoteEnabled reflects the policy gate, and defaults to FALSE', async () => {
@@ -101,6 +103,57 @@ describe('embedTierReport — the doctor surface', () => {
     const r = await embedTierReport({ home });
     expect(r.externalOverride).toBe(true);
     expect(r.tier).toBe('fallback');
+    // A configured override that does not load is a BROKEN semantic configuration, not a fresh
+    // machine — the state must not say lexical-only.
+    expect(r.status).toBe('invalid-model');
+  });
+});
+
+// ─── WP1.11: the four distinct installation states ────────────────────────────
+
+describe('embedTierReport.status — each state reachable and reported', () => {
+  it('lexical-only: a fresh embed home, nothing installed, nothing broken', async () => {
+    const r = await embedTierReport({ home });
+    expect(r.status).toBe('lexical-only');
+    expect(r.problems).toEqual([]);
+  });
+
+  it('semantic-ready: the verified install actively serving', async () => {
+    await installFixture();
+    const r = await embedTierReport({ home });
+    expect(r.status).toBe('semantic-ready');
+    expect(r.tier).toBe('installed');
+  });
+
+  it('installation-incomplete: a partial footprint without a manifest', async () => {
+    // A setup that installed the runtime (or fetched weights) and died before the pin leaves
+    // exactly this shape — no manifest, non-empty managed subtree.
+    mkdirSync(join(home, 'runtime', 'node_modules'), { recursive: true });
+    const r = await embedTierReport({ home });
+    expect(r.status).toBe('installation-incomplete');
+    expect(r.reason).toContain('partial install');
+    expect(r.reason).toContain('crib embed setup');
+    expect(r.problems).toEqual([]);
+  });
+
+  it('installation-incomplete also holds for a fetched-but-unpinned model cache', async () => {
+    mkdirSync(join(home, 'models', 'Xenova', 'multilingual-e5-large'), { recursive: true });
+    const r = await embedTierReport({ home });
+    expect(r.status).toBe('installation-incomplete');
+  });
+
+  it('invalid-model: a tampered manifest pin', async () => {
+    await installFixture();
+    writeFileSync(join(modelDir, 'embedder.mjs'), `${FIXTURE_EMBEDDER}\n// tampered\n`, 'utf8');
+    const r = await embedTierReport({ home });
+    expect(r.status).toBe('invalid-model');
+    expect(r.problems.length).toBeGreaterThan(0);
+  });
+
+  it('the footprint check ignores an EMPTY managed dir — an empty runtime dir is not an install', async () => {
+    mkdirSync(join(home, 'runtime'), { recursive: true });
+    const r = await embedTierReport({ home });
+    expect(r.status).toBe('lexical-only');
   });
 });
 

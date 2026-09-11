@@ -177,7 +177,12 @@ describe('crib memory capture-hook — the fail-open contract', () => {
     rmSync(cribDir, { recursive: true, force: true });
     const r = runHook('turn-end', JSON.stringify({ session_id: SESSION_ID }));
     expect(r.status).toBe(0);
-    expect(r.stderr).toContain('repoId');
+    expect(r.stderr).toMatch(/not a knowledge-crib repository|repoId/);
+    // Wired at user scope this hook fires in every repository, so an unindexed one must produce a
+    // plain sentence — never a leaked internal error, and never anything on stdout, which the client
+    // injects into the model's context.
+    expect(r.stderr).not.toMatch(/paths\[0\]|TypeError|ERR_INVALID_ARG_TYPE/);
+    expect(r.stdout.trim()).toBe('');
   });
 });
 

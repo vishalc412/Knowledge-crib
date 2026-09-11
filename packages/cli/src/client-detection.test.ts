@@ -10,11 +10,18 @@
  * Unrequested files in a repository are not a harmless default: they get committed, reviewed, and
  * inherited by everyone who clones it.
  */
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { ADAPTER_BEGIN, ADAPTER_END, detectClients, mcpIdeForClient } from './adapters.js';
+import {
+  ADAPTER_BEGIN,
+  ADAPTER_END,
+  detectClients,
+  installCaptureHooks,
+  mcpIdeForClient,
+} from './adapters.js';
+import { installMcp } from './mcp-install.js';
 
 let repo: string;
 
@@ -91,6 +98,60 @@ describe('detectClients — repository signals', () => {
     mkdirSync(join(repo, '.gemini'), { recursive: true });
     // What is running now beats what was configured once.
     expect(detectClients(repo, { CLAUDECODE: '1' }).clients).toEqual(['claude']);
+  });
+});
+
+/**
+ * `isCribFootprint` — the WP2.5 self-justification guard. Crib's own install writes
+ * `.claude/settings.json` (hooks) and `.cursor/mcp.json` (the MCP entry) — the very paths the
+ * repo-signal lane reads. Without this suppression, `crib adapters install` would manufacture
+ * `client-detected` evidence for every client it just configured, and the four-state report
+ * (WP2.5) could never show a gap between "configured" and "actually present".
+ */
+describe('detectClients — crib’s own footprint is not client evidence', () => {
+  it('does NOT detect claude from the settings.json crib’s hook writer produced', () => {
+    installCaptureHooks(repo, { client: 'claude', scope: 'project', home: repo });
+    expect(detectClients(repo, BARE).clients).not.toContain('claude');
+  });
+
+  it('does NOT detect cursor from the mcp.json crib’s MCP writer produced', () => {
+    installMcp(repo, { ide: 'cursor', scope: 'project', bin: '/bin/crib' });
+    expect(detectClients(repo, BARE).clients).not.toContain('cursor');
+  });
+
+  it('does NOT detect codex from the config.toml managed block crib wrote', () => {
+    installMcp(repo, { ide: 'codex', scope: 'project', bin: '/bin/crib' });
+    expect(detectClients(repo, BARE).clients).not.toContain('codex');
+  });
+
+  it('DOES detect a client when the user has real content alongside crib’s managed block', () => {
+    // The user's own hooks in the same settings.json prove a Claude Code user exists here;
+    // suppression must not swallow genuine evidence to protect its own honesty rule.
+    installCaptureHooks(repo, { client: 'claude', scope: 'project', home: repo });
+    const settings = JSON.parse(readFileSync(join(repo, '.claude', 'settings.json'), 'utf8'));
+    // The writer's own buckets are SessionStart/Stop/PostToolUse; add the user's hook alongside.
+    settings.hooks.Stop ??= [];
+    settings.hooks.Stop.push({
+      matcher: 'Write',
+      hooks: [{ type: 'command', command: '/usr/local/bin/my-own-hook' }],
+    });
+    writeFileSync(join(repo, '.claude', 'settings.json'), JSON.stringify(settings, null, 2));
+    expect(detectClients(repo, BARE).clients).toContain('claude');
+  });
+
+  it('DOES detect a client whose config file has a sibling server crib did not write', () => {
+    installMcp(repo, { ide: 'cursor', scope: 'project', bin: '/bin/crib' });
+    const mcp = JSON.parse(readFileSync(join(repo, '.cursor', 'mcp.json'), 'utf8'));
+    mcp.mcpServers['my-own-server'] = { command: '/usr/local/bin/other', args: [] };
+    writeFileSync(join(repo, '.cursor', 'mcp.json'), JSON.stringify(mcp, null, 2));
+    expect(detectClients(repo, BARE).clients).toContain('cursor');
+  });
+
+  it('still counts an EMPTY .claude directory as user evidence (pinned pre-WP2.5 behavior)', () => {
+    // A user who created `.claude` by hand but put nothing in it still chose Claude Code; only
+    // non-empty crib-managed content is a footprint.
+    mkdirSync(join(repo, '.claude'), { recursive: true });
+    expect(detectClients(repo, BARE).clients).toEqual(['claude']);
   });
 });
 

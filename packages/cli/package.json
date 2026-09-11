@@ -12,17 +12,19 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run --reporter=dot"
+    "test": "vitest run --reporter=dot",
+    "test:browser": "playwright test"
   },
   "dependencies": {
-    "@knowledge-crib/soul-schema": "workspace:*",
     "@knowledge-crib/core": "workspace:*",
+    "@knowledge-crib/mcp": "workspace:*",
     "@knowledge-crib/memory": "workspace:*",
     "@knowledge-crib/pipeline": "workspace:*",
-    "@knowledge-crib/mcp": "workspace:*",
+    "@knowledge-crib/soul-schema": "workspace:*",
     "@knowledge-crib/ui": "workspace:*"
   },
   "devDependencies": {
+    "@playwright/test": "1.61.1",
     "vitest": "^3.2.6"
   },
   "repository": {

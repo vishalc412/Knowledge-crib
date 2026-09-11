@@ -22,6 +22,7 @@ import {
   feedback,
   v1Record,
   v2Record,
+  v3Record,
 } from './sync-test-fixtures.js';
 
 function intakeEntries() {
@@ -152,6 +153,20 @@ describe('verifyPayloadId (D8 step 2)', () => {
     expect(verifyPayloadId(v2Record()).ok).toBe(true);
     expect(verifyPayloadId(decision('quarantine', 'mem:x')).ok).toBe(true);
     expect(verifyPayloadId(feedback('useful', 'mem:x')).ok).toBe(true);
+  });
+
+  it('accepts honestly-derived mem: v3 payloads (namespace in the seed)', () => {
+    expect(verifyPayloadId(v3Record()).ok).toBe(true);
+  });
+
+  it('rejects a hand-edited v3 payload (id no longer re-derives)', () => {
+    const rec = v3Record();
+    const edited = { ...rec, claim: 'A.b does the OTHER thing' };
+    const check = verifyPayloadId(edited);
+    expect(check.ok).toBe(false);
+    // the id derives over the EDITED content (namespace included), so it differs from the true id
+    expect(check.expectedId).not.toBe(rec.id);
+    expect(check.actualId).toBe(rec.id);
   });
 
   it('accepts honestly-derived intake and checkpoint payloads', () => {

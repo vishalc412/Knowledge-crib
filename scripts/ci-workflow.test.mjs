@@ -72,6 +72,36 @@ assert.match(
   /cancel-in-progress:\s*true/,
   'release CI must cancel superseded runs',
 );
+// WP6 slice D — the browser acceptance suite runs ONLY on the ubuntu release gate (it
+// downloads real chromium), never on the Windows/matrix legs. Both pins must hold: the
+// binaries are installed and the suite actually runs.
+assert.match(
+  releaseWorkflow,
+  /playwright install --with-deps chromium/,
+  'release CI must install chromium for the browser acceptance suite',
+);
+assert.match(
+  releaseWorkflow,
+  /verify:browser/,
+  'release CI must run the browser acceptance suite against the real isolated backend',
+);
+// WP9.4 — logs-on-failed-jobs: BOTH CI jobs (release gate + verify matrix) must upload their
+// failure diagnostics even when a step fails. `if: always()` on the upload step is what keeps
+// release-evidence.json and run logs alive past a red gate; without it the artifact step is
+// skipped on exactly the runs where the evidence matters.
+assert.ok(
+  occurrences(releaseWorkflow, /name:\s*Upload failure diagnostics\s*\n\s+if:\s*always\(\)/g) >= 2,
+  'both CI jobs must carry an if: always() failure-diagnostics upload step',
+);
+assert.ok(
+  occurrences(releaseWorkflow, /uses:\s+actions\/upload-artifact@/g) >= 2,
+  'both CI jobs must upload failure diagnostics',
+);
+assert.match(
+  releaseWorkflow,
+  /if-no-files-found:\s*warn/,
+  'CI diagnostics upload must be best-effort (warn, not error, when no files match)',
+);
 
 for (const [name, source] of [
   ['release CI', releaseWorkflow],
@@ -86,9 +116,8 @@ for (const [name, source] of [
 }
 
 assert.match(tagWorkflow, /tags:\s*\n\s*- ['"]v\*['"]/, 'release workflow must run for v* tags');
-for (const os of ['ubuntu-latest', 'macos-latest', 'windows-latest']) {
-  assert.match(tagWorkflow, new RegExp(os), `tag release must verify on ${os}`);
-}
+// Which platforms a TAG verifies on is the launch policy's decision, asserted from the policy
+// itself further down rather than from a list that drifts from it.
 assert.match(
   tagWorkflow,
   /corepack pnpm@9\.15\.0 release:verify/,
@@ -130,6 +159,166 @@ assert.match(
   /contents:\s*write/,
   'release job must have permission to create a release',
 );
+// A03 — publication depends on APPROVAL, not merely on the build having run.
+//
+// The defect this section pins: `release.needs: verify` let a tag publish while the aggregate
+// decision failed or never ran, and the aggregator was invoked with no expected cell set, so a
+// single green fixture produced aggregate GO. Every assertion below is one link in the chain
+// "every policy cell ran -> one aggregate decision -> the approved bytes are the published bytes".
+
+// The final receipt is written only after the mandatory commands, so a manifest cannot describe a
+// workflow that stopped halfway; a FAILED cell's diagnostics go to a separate artifact the
+// aggregation never reads.
+assert.match(
+  tagWorkflow,
+  /name:\s*Collect release evidence/,
+  'the tag workflow must collect release evidence after the mandatory commands',
+);
+assert.match(
+  tagWorkflow,
+  /name:\s*Upload failure diagnostics\s*\n\s+if:\s*failure\(\)/,
+  'failure diagnostics must upload separately from the evidence the decision consumes',
+);
+assert.doesNotMatch(
+  tagWorkflow,
+  /name:\s*Upload release evidence\s*\n\s+if:\s*always\(\)/,
+  'a half-finished run must not contribute a manifest to the launch decision',
+);
+
+// Browser acceptance and the install cycle are TAG requirements, not only PR CI, and each writes
+// its own typed receipt — a missing receipt type is an actionable blocker downstream.
+assert.match(
+  tagWorkflow,
+  /pnpm@9\.15\.0 verify:browser/,
+  'tag verification must run the browser suite',
+);
+assert.match(
+  tagWorkflow,
+  /write-receipt\.mjs browser/,
+  'the browser leg must write its own receipt',
+);
+assert.match(
+  tagWorkflow,
+  /write-receipt\.mjs install/,
+  'the install cycle must write its own receipt',
+);
+assert.match(
+  tagWorkflow,
+  /--receipts receipts/,
+  'release evidence must consume the typed receipts the steps wrote',
+);
+
+// The verify matrix must be the policy's cell set — EXACTLY, in both directions. A matrix smaller
+// than the policy fails aggregation on a missing cell; a matrix larger than it uploads manifests
+// for cells the launch does not claim, which are then judged against requirements their legs never
+// produce. So this reads the committed policy rather than hardcoding a list.
+{
+  const policy = JSON.parse(readLF('scripts/launch-policy.json'));
+  const declared = new Set(policy.osNodeCells.map((cell) => cell.split('/')[0]));
+  const nodes = [...new Set(policy.osNodeCells.map((cell) => cell.split('/')[1]))].sort();
+  assert.match(
+    tagWorkflow,
+    new RegExp(`node:\\s*\\[${nodes.map((n) => `'${n}'`).join(',\\s*')}\\]`),
+    `the release verify matrix must cover exactly Node ${nodes.join(' and ')}`,
+  );
+  for (const os of declared) {
+    assert.ok(tagWorkflow.includes(`- ${os}`), `the release verify matrix must cover ${os}`);
+  }
+  for (const os of ['ubuntu-latest', 'macos-latest', 'windows-latest']) {
+    if (declared.has(os)) continue;
+    assert.ok(
+      !new RegExp(`^\\s+- ${os}$`, 'm').test(tagWorkflow),
+      `${os} is not in the launch policy, so the release matrix must not emit evidence for it`,
+    );
+  }
+  // The certification platforms the tag demands must match the policy's too.
+  assert.ok(
+    tagWorkflow.includes(`--certification-platforms ${policy.clientPlatforms.join(',')}`),
+    'the tag must require certification for exactly the policy platforms',
+  );
+}
+
+assert.match(
+  tagWorkflow,
+  /launch-decision:\s*\n\s+name:\s*Aggregate launch decision\s*\n\s+needs:\s*verify/,
+  'release workflow must have a launch-decision job aggregating after the verify matrix',
+);
+assert.match(
+  tagWorkflow,
+  /if:\s+\$\{\{\s*!cancelled\(\)\s*\}\}/,
+  'launch-decision must run even when a verify cell fails (if: !cancelled())',
+);
+assert.match(
+  tagWorkflow,
+  /merge-multiple:\s*true/,
+  'the per-cell evidence must merge so the aggregation reads the policy cell ids',
+);
+assert.match(
+  tagWorkflow,
+  /scripts\/launch-decision\.mjs --cells /,
+  'launch-decision must aggregate the per-cell evidence via scripts/launch-decision.mjs --cells',
+);
+assert.match(
+  tagWorkflow,
+  /--candidate-commit "\$GITHUB_SHA"/,
+  'the aggregate must be bound to the tagged commit, not to whatever the manifests claim',
+);
+
+// ORDER matters as much as presence: the receipt is the LAST thing a cell writes, so a mandatory
+// command that fails after evidence generation cannot exist — there is nothing after it.
+{
+  const order = (needle) => tagWorkflow.indexOf(needle);
+  const collect = order('name: Collect release evidence');
+  for (const step of [
+    'name: Run release gate',
+    'name: Run browser acceptance suite',
+    'name: Run install cycle',
+    'name: Write browser receipt',
+    'name: Write install receipt',
+  ]) {
+    assert.ok(order(step) > 0, `the tag workflow must contain "${step}"`);
+    assert.ok(
+      order(step) < collect,
+      `"${step}" must run BEFORE the final receipt is written, or the receipt could describe work that had not happened`,
+    );
+  }
+  assert.ok(
+    order('name: Upload verified bundle') > collect,
+    'the bundle is uploaded only after the evidence for it exists',
+  );
+}
+
+// THE gate: publication needs verification AND approval, and ships only the approved bytes.
+assert.match(
+  tagWorkflow,
+  /needs:\s*\[verify,\s*launch-decision\]/,
+  'the release job must depend on BOTH the verify matrix and the aggregate launch decision',
+);
+assert.match(
+  tagWorkflow,
+  /if:\s*\$\{\{\s*needs\.launch-decision\.outputs\.decision == 'GO'\s*\}\}/,
+  'the release job must run only on an explicit GO',
+);
+assert.match(
+  tagWorkflow,
+  /name:\s*Verify downloaded bytes against the approved digest/,
+  'the release job must re-hash the downloaded package and compare it with the approved digest',
+);
+assert.match(
+  tagWorkflow,
+  /package_sha256:\s*\$\{\{\s*steps\.decide\.outputs\.package_sha256\s*\}\}/,
+  'the launch-decision job must publish the approved package digest as an output',
+);
+
+// WP9.5 / WP9.3 — a tag is a launch decision: the release gate must demand client runtime
+// certification receipts for every advertised platform cell.
+assert.match(
+  tagWorkflow,
+  /--require-runtime-certification/,
+  'tag release must require client runtime certification before shipping',
+);
+// (Which platforms must be certified is asserted from the policy above — it narrows and widens
+// with the promise, and hardcoding it here is how the two drift apart.)
 
 assert.match(dependabot, /package-ecosystem:\s*"npm"/, 'Dependabot must monitor npm dependencies');
 assert.match(

@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { SoulStore, newManifest } from '@knowledge-crib/core';
@@ -12,6 +12,7 @@ import {
   derivePropositionKey,
   memoryRecordId,
   memoryRecordV2Id,
+  memoryShard,
   migrateRecordV1ToV2,
   migrationProvenance,
 } from '@knowledge-crib/memory';
@@ -396,6 +397,52 @@ describe('crib memory audit + recall over a migrated ledger (the v2-awareness fi
     expect(twin.appliesTo).toBeUndefined();
     expect(twin.createdAt).toBeUndefined();
     expect(twin.trust).toBe('local');
+  });
+
+  it('reports a corrupt interior shard line — a diagnostic that reports, never repairs', () => {
+    // Audit is the doctor-precedent verb: a corrupt shard line must surface as a per-shard parse
+    // error while BOTH well-formed neighbours still tally (the parser continues past the bad
+    // line, so no record is lost to it), and the run must leave the shard byte-identical —
+    // exit 0, never a silent repair. Corrupt lines never become entries, so `invalid` (which
+    // counts PARSED entries failing validation) stays 0 and audit remains a green diagnostic.
+    const a = v1Record('loan_pkg threshold constant is 30');
+    const shard = memoryShard(a.id);
+    // a second record in the SAME shard, so the planted line is genuinely interior (a corrupt
+    // FIRST or LAST line would not pin that the parser resumes after it). Brute-force claim
+    // variants until the content hash lands in the same 2-hex shard (~1/256 per try).
+    let b: MemoryRecord | undefined;
+    for (let i = 1; i <= 50_000 && b === undefined; i++) {
+      const candidate = v1Record(`loan_pkg auto-rejects above C_THRESHOLD (variant ${i})`);
+      if (memoryShard(candidate.id) === shard) b = candidate;
+    }
+    expect(b).toBeTruthy();
+    teamStore().upsertEntries('records', [a, b!]);
+    const shardFile = join(cribDir, 'memory', 'team', 'records', `${shard}.jsonl`);
+    const lines = readFileSync(shardFile, 'utf8')
+      .split('\n')
+      .filter((l) => l.trim().length > 0);
+    expect(lines).toHaveLength(2);
+    const planted = `${lines[0]}\n{"planted":"corrupt interior line"}\n${lines[1]}\n`;
+    writeFileSync(shardFile, planted);
+
+    const r = run(['memory', 'audit']);
+    expect(r.status).toBe(0);
+    const parsed = JSON.parse(r.stdout) as {
+      totalEntries: number;
+      invalid: number;
+      trust: Record<string, number>;
+      perStore: Array<{ store: string; entries: number; invalid: number; errors: string[] }>;
+    };
+    expect(parsed.invalid).toBe(0);
+    expect(parsed.totalEntries).toBe(2);
+    // both neighbours still tallied — the parser continued past the corrupt line
+    expect(parsed.trust).toEqual({ local: 2 });
+    const team = parsed.perStore.find((s) => s.store === 'team');
+    expect(team?.entries).toBe(2);
+    expect(team?.invalid).toBe(0);
+    expect(team?.errors).toContain(`team/records/${shard}.jsonl:2: missing or non-string 'id'`);
+    // the diagnostic never mutated the shard: the corrupt line is still there, byte-identical
+    expect(readFileSync(shardFile, 'utf8')).toBe(planted);
   });
 });
 

@@ -36,8 +36,6 @@ import {
   REMOTE_EMBED_POLICY_VERSION,
   type RemoteEmbedPolicy,
   SoulStore,
-  SqliteIndexStore,
-  WorkingOverlay,
   embedHomeDir,
   embedManifestPath,
   embedTierReport,
@@ -141,6 +139,7 @@ import {
   buildAliasIndex,
   buildAttemptEvent,
   buildDistillWorkItem,
+  classifyStaged,
   compactAttempt,
   compactSyncOutbox,
   conservativeVerdicts,
@@ -207,8 +206,10 @@ import { writeJsonAtomic } from '@knowledge-crib/memory';
 import {
   adapterStatuses,
   changedFilesSince,
+  contentDigestForPaths,
   currentHead,
   detectWorkspace,
+  dirtyTreeFingerprint,
   indexRepo,
   isGitRepo,
   lsTreeFiles,
@@ -236,6 +237,7 @@ import { blake3Hex } from '@knowledge-crib/soul-schema';
 import { buildVizGraph, buildVizOverview, vizAssetsDir } from '@knowledge-crib/ui';
 import {
   ALL_CLIENTS,
+  type AdapterScope,
   type ClientId,
   LIFECYCLE_EVENTS,
   type LifecycleEvent,
@@ -250,6 +252,7 @@ import {
   removeCaptureHooks,
   removeInstructions,
 } from './adapters.js';
+import { clientStateReport, unknownConnectedClients } from './client-states.js';
 import {
   DEFAULT_EMBED_ALIAS,
   EMBED_MODELS,
@@ -264,9 +267,11 @@ import {
   resolveProvider,
   runProviderBatch,
 } from './enrich-provider.js';
+import { forkTaskRunner, requestCancellation } from './freshness-child.js';
 import {
   installFreshnessService,
   queryFreshnessService,
+  restartFreshnessService,
   uninstallFreshnessService,
 } from './freshness-service.js';
 import {
@@ -276,8 +281,12 @@ import {
   WorkerAlreadyRunningError,
   freshnessStatus,
   getFreshnessMode,
+  isPidAlive,
   parseFreshnessMode,
   postCommitFreshness,
+  readFreshnessQueue,
+  readWorkerState,
+  removePendingFreshnessTask,
   runFreshnessWorker,
   setFreshnessMode,
   shouldServeWatch,
@@ -289,7 +298,15 @@ import {
   installHooks,
   mergeDriverFiles,
 } from './hooks.js';
-import { type McpIde, type McpScope, installMcp, listMcp, removeMcp } from './mcp-install.js';
+import {
+  type McpIde,
+  type McpScope,
+  auditMcp,
+  installMcp,
+  listMcp,
+  removeMcp,
+} from './mcp-install.js';
+import { RefreshCoordinator, coldReaderFreshness } from './refresh-coordinator.js';
 import { registerProject, registryDir } from './registry.js';
 import {
   type ResolvedRoot,
@@ -299,6 +316,7 @@ import {
   openIndexOnly,
   openSoul,
   resolveProjectRoot,
+  startupHeadMismatch,
 } from './runtime.js';
 import { installSkill, listBundledSkills } from './skill-install.js';
 import {
@@ -309,15 +327,28 @@ import {
   sessionKey,
   writeNudgeState,
 } from './stop-nudge.js';
+import { buildSupportBundle, readProductVersion } from './support-bundle.js';
 import {
+  CSRF_HEADER,
   VizHttpError,
+  VizMutationError,
+  createCsrfToken,
   isAllowedHost,
+  mutationErrorPayload,
+  parseAdmissionBody,
   parseMemoryLedgerQuery,
+  parseMemoryPendingQuery,
+  parseResumeBody,
   readMemoryHome,
+  readMemoryIntakeDetail,
   readMemoryLedger,
   readMemoryLedgerDetail,
+  readMemoryPending,
+  readMutationBody,
   readVizNodeSource,
+  requireCsrfToken,
   resolveVizAsset,
+  validateMutationOrigin,
 } from './viz-server.js';
 import { WatchMode } from './watch.js';
 
@@ -704,6 +735,8 @@ async function main(argvRaw: string[]): Promise<number> {
       return cmdSetup(rest, ctx);
     case 'doctor':
       return cmdDoctor(rest, ctx);
+    case 'support-bundle':
+      return cmdSupportBundle(rest, ctx);
     case undefined:
     case '-h':
     case '--help':
@@ -760,6 +793,11 @@ class CliVcsAdapter implements VcsAdapter {
   }
   uncommittedChanges(root: string): string[] {
     return uncommittedChanges(root);
+  }
+  // WP4.3 — the MCP surface asks the adapter for the content-addressed digest over the SAME path
+  // list its `uncommittedChanges` returned, so CLI and MCP compute one contract, not two.
+  contentDigestFor(root: string, paths: string[]): string {
+    return contentDigestForPaths(root, paths);
   }
   currentBranch(root: string): string | undefined {
     try {
@@ -1197,6 +1235,14 @@ async function cmdStatus(args: string[], ctx?: CmdCtx): Promise<number> {
     statusJson.freshness = freshnessStatus(resolved.repoRoot);
   } catch (err) {
     statusJson.freshness = { error: (err as Error).message };
+  }
+  // WP4.7 — additive reader-freshness block. `crib status` is a one-shot CLI read of the committed
+  // index (no serving refresh loop), so the COLD shape applies: committed-behind-HEAD is genuine
+  // reader staleness here, and the generation fields are honestly null.
+  try {
+    statusJson.readerFreshness = coldReaderFreshness(resolved.repoRoot, resolved.cribDir);
+  } catch (err) {
+    statusJson.readerFreshness = { error: (err as Error).message };
   }
   // G5.3 — additive multimodal block: capabilities.multimodal (already in `capabilities`, from the
   // manifest) reports whether the LAST index ingested media; this block reports which adapters a
@@ -1964,6 +2010,20 @@ async function cmdServe(args: string[], ctx?: CmdCtx): Promise<number> {
     return EXIT.BAD_ARGS;
   }
   const rt = openSoul(resolved);
+  // WP4.2 — state the commit the served graph was built from, and refuse to paper over a mismatch
+  // (pure decision in runtime.ts `startupHeadMismatch`; pinned in runtime.test.ts). Archive inputs
+  // have no work tree to compare against; a live-HEAD read failure (not a repo / no commits) means
+  // "nothing to compare", never "fresh".
+  if (resolved.sourceArchive === undefined) {
+    let liveHead: string | undefined;
+    try {
+      liveHead = currentHead(resolved.repoRoot) || undefined;
+    } catch {
+      liveHead = undefined; // not a git repo / no commits — nothing to compare against
+    }
+    const mismatch = startupHeadMismatch(rt.soul.getManifest().repo.vcsHead, liveHead);
+    if (mismatch !== undefined) process.stderr.write(`${mismatch}\n`);
+  }
   // The MCP server must NEVER drop the stdio pipe on a stale/missing derived index — that is the
   // `MCP error -32000: Connection closed` failure: the serve process exits and the IDE transport
   // dies. Stale-but-present → serve it with a warning (openIndexForServe). Missing → self-heal by
@@ -1972,15 +2032,16 @@ async function cmdServe(args: string[], ctx?: CmdCtx): Promise<number> {
   const index = await openServeIndex(resolved, rt);
   if (!index) return EXIT.NOT_INDEXED;
   const memory = createMemoryDeps(rt.soul, resolved.repoRoot, resolved.cribDir);
-  // W6 — `crib serve --watch` installs an always-fresh working overlay: an ephemeral in-memory soul
-  // that mirrors the committed graph + swaps in re-parsed records for dirty/untracked files. Edits
-  // become queryable through the composite read model without dirtying `.crib/graph`. The overlay is
-  // never committed (SoulStore.commit() is a no-op when ephemeral), so the committed soul is safe.
+  // W6/WP4 — `crib serve --watch` serves through the refresh coordinator: every trigger (startup,
+  // file events, fallback scans, clean transitions, external `crib update`) runs one serialized
+  // cycle that builds an INVISIBLE candidate — a fresh working overlay seeded from the committed
+  // graph plus a fresh in-memory FTS projection over that same snapshot — re-checks the source,
+  // then publishes the pair as one atomic reader bundle. The serving bundle is never mutated in
+  // place, so no reader can observe a half-refreshed graph, and a published bundle waits for the
+  // in-flight request drain before the old one retires. The overlay is never committed
+  // (SoulStore.commit() is a no-op when ephemeral), so the committed soul is safe.
   let watch: WatchMode | undefined;
-  let overlay: WorkingOverlay | undefined;
-  // The durable index intentionally represents only committed source. Watch mode gets a separate
-  // in-memory FTS projection so candidate discovery and graph reads see the same working snapshot.
-  let overlayIndex: SqliteIndexStore | undefined;
+  let coordinator: RefreshCoordinator | undefined;
   // The freshness POLICY configures the serving process, not just the CLI flag (audit F06). Every
   // generated client config spawns a bare `crib serve <root>`, so a user who selected `watch`/`auto`
   // got a stale-on-save server anyway and had no way to tell. Reading the persisted mode here means
@@ -1989,31 +2050,26 @@ async function cmdServe(args: string[], ctx?: CmdCtx): Promise<number> {
   const persistedMode = getFreshnessMode(resolved.repoRoot);
   const watchRequested = shouldServeWatch(args, persistedMode);
   if (watchRequested) {
-    overlay = new WorkingOverlay(rt.soul);
-    overlayIndex = new SqliteIndexStore();
-    watch = new WatchMode(rt.soul, overlay, resolved.repoRoot, {
-      onRefresh: (result, reason) => {
-        overlayIndex!.buildFromSoul(overlay!.store, resolved.repoRoot);
-        if (result.dirty.length === 0) return;
+    coordinator = new RefreshCoordinator(rt.soul, resolved.repoRoot, {
+      onPublish: (bundle, reason) => {
+        const r = bundle.refresh;
+        const overlayNote =
+          r && r.dirty.length > 0
+            ? ` — ${r.dirty.length} file(s) overlaid [scope ${r.scope.length}] +${r.parse.nodes} nodes +${r.parse.edges} edges`
+            : '';
         process.stderr.write(
-          `watch [${reason}] refreshed ${result.dirty.length} file(s) [scope ${result.scope.length}] → ` +
-            `+${result.parse.nodes} nodes +${result.parse.edges} edges, +${result.resolve.calls} calls\n`,
-        );
-      },
-      onDrift: () => {
-        process.stderr.write(
-          'watch: canonical soul advanced (external crib update) — overlay resynced\n',
+          `watch [${reason}] gen ${bundle.generation.slice(0, 20)}${overlayNote}\n`,
         );
       },
       onWarn: (msg) => process.stderr.write(`watch: ${msg}\n`),
     });
-    await watch.start();
-    // `start()` may have no dirty files and therefore not fire onRefresh; still seed a complete
-    // in-memory index so every discovery call is paired with the active overlay snapshot.
-    overlayIndex.buildFromSoul(overlay.store, resolved.repoRoot);
+    // The first bundle is built BEFORE any watcher exists: a file event landing during startup
+    // coalesces into the coordinator's pending slot like any other trigger.
+    await coordinator.initialize();
+    const dirtyCount = coordinator.currentDirtyPaths.length;
     process.stderr.write(
       `watch mode active (${args.includes('--watch') ? '--watch' : `freshness mode ${persistedMode}`}) — ` +
-        `${overlay.dirty.length} dirty file(s) overlaid; committed .crib/graph untouched\n`,
+        `${dirtyCount} dirty file(s) overlaid; committed .crib/graph untouched\n`,
     );
   } else {
     // Say which mode is in force even when it is the passive one: "why is my saved edit not
@@ -2041,9 +2097,26 @@ async function cmdServe(args: string[], ctx?: CmdCtx): Promise<number> {
     ...(memory
       ? { memory: { ...memory, ...(installedEmbedder ? { embedder: installedEmbedder } : {}) } }
       : {}),
-    ...(overlay ? { workingOverlay: overlay.store } : {}),
-    ...(overlayIndex ? { workingOverlayIndex: overlayIndex } : {}),
+    ...(coordinator?.currentOverlay ? { workingOverlay: coordinator.currentOverlay } : {}),
+    ...(coordinator?.currentIndex ? { workingOverlayIndex: coordinator.currentIndex } : {}),
+    // WP4.7 — every serving process reports reader freshness through the status verb: watch mode
+    // from the live coordinator, manual mode from the cold committed-index shape.
+    readerFreshness: () =>
+      coordinator
+        ? coordinator.freshness()
+        : coldReaderFreshness(resolved.repoRoot, resolved.cribDir),
   });
+  if (coordinator) {
+    // The stable Verbs instance keeps its stats/alias tables across bundle swaps; only the two
+    // working-overlay slots move, and only between requests (the pin router drains in-flight calls).
+    coordinator.setAdopter((bundle) =>
+      verbs.adoptWorkingSnapshot(bundle.overlay.store, bundle.index),
+    );
+    watch = new WatchMode(coordinator, resolved.repoRoot, {
+      onWarn: (msg) => process.stderr.write(`watch: ${msg}\n`),
+    });
+    await watch.start();
+  }
   // stdout is the MCP transport; logs go to stderr only.
   const stats = rt.soul.getManifest().stats;
 
@@ -2058,7 +2131,12 @@ async function cmdServe(args: string[], ctx?: CmdCtx): Promise<number> {
       process.stderr.write('--port needs an integer\n');
       return EXIT.BAD_ARGS;
     }
-    const daemon = await serveHttp(verbs, { ...(port ? { port } : {}) });
+    // WP4.5 — in watch mode every HTTP request pins the serving bundle: a published bundle swaps in
+    // only after the in-flight request drains, so a reader never has its FTS handle closed mid-call.
+    const pins = coordinator
+      ? { retain: () => coordinator.retain(), release: () => coordinator.release() }
+      : undefined;
+    const daemon = await serveHttp(verbs, { ...(port ? { port } : {}), ...(pins ? { pins } : {}) });
     process.stderr.write(
       `knowledge-crib MCP daemon on http://127.0.0.1:${daemon.port} — ${stats.nodes} nodes, ${stats.edges} edges ready (shared by every connected agent)\n`,
     );
@@ -2070,7 +2148,7 @@ async function cmdServe(args: string[], ctx?: CmdCtx): Promise<number> {
     } finally {
       await daemon.close();
       watch?.stop();
-      overlayIndex?.close();
+      coordinator?.close();
       index.close();
     }
     return EXIT.OK;
@@ -2080,10 +2158,17 @@ async function cmdServe(args: string[], ctx?: CmdCtx): Promise<number> {
     `knowledge-crib MCP server on stdio — ${stats.nodes} nodes, ${stats.edges} edges ready (default responses are tiered lean; pass withLlm:true for the full analysis blob)\n`,
   );
   try {
-    await serveStdio(verbs);
+    // WP4.5 — same pin wiring as the HTTP daemon: stdio requests drain before a bundle swap lands.
+    await serveStdio(
+      verbs,
+      undefined,
+      coordinator
+        ? { retain: () => coordinator.retain(), release: () => coordinator.release() }
+        : undefined,
+    );
   } finally {
     watch?.stop();
-    overlayIndex?.close();
+    coordinator?.close();
     index.close();
   }
   return EXIT.OK;
@@ -2662,6 +2747,67 @@ function formatBytes(bytes: number): string {
  * check (stale build artifacts) is WARN-class: always ✓, never reported as a failure — it surfaces
  * a backlog the next build would reclaim anyway.
  */
+/**
+ * `crib support-bundle` — the redacted snapshot a user can attach to a bug report.
+ *
+ * Deliberately thin: every decision about WHAT may travel lives in `support-bundle.ts`, which is an
+ * allowlist plus a sentinel-tested redactor. This function only gathers the sources and writes the
+ * file, so adding a diagnostic here can never accidentally widen what gets disclosed.
+ */
+async function cmdSupportBundle(args: string[], ctx?: CmdCtx): Promise<number> {
+  const repoRoot = resolve(ctx?.cwdOverride ?? positionalsOf(args)[0] ?? '.');
+  const outIdx = args.indexOf('--out');
+  const out = resolve(outIdx >= 0 ? (args[outIdx + 1] ?? '') : 'crib-support-bundle.json');
+  const bundle = buildSupportBundle({
+    repoRoot,
+    version: readProductVersion(
+      resolve(dirname(fileURLToPath(import.meta.url)), '..', 'package.json'),
+    ),
+    sources: {
+      freshnessStatus: () => {
+        const status = freshnessStatus(repoRoot);
+        return {
+          mode: status.mode,
+          workerRunning: status.workerRunning,
+          pending: status.pending,
+          dead: status.dead,
+          behindHead: status.behindHead,
+        };
+      },
+      readerFreshness: () => {
+        const f = coldReaderFreshness(repoRoot, join(repoRoot, '.crib'));
+        return {
+          readerGeneration: f.readerGeneration,
+          publishedGeneration: f.publishedGeneration,
+          stale: f.stale,
+          staleReasons: f.staleReasons,
+          lastRefreshError: f.lastRefreshError,
+        };
+      },
+      adapters: () =>
+        auditMcp(repoRoot, { home: process.env.HOME }).map((problem) => ({
+          ide: problem.ide,
+          scope: problem.scope,
+          configPath: problem.configPath,
+          message: problem.message,
+          kind: problem.kind,
+        })),
+    },
+  });
+  if (args.includes('--json')) {
+    process.stdout.write(`${JSON.stringify(bundle, null, 2)}\n`);
+    return EXIT.OK;
+  }
+  mkdirSync(dirname(out), { recursive: true });
+  writeFileSync(out, `${JSON.stringify(bundle, null, 2)}\n`, 'utf8');
+  process.stdout.write(
+    `support bundle written to ${out}\n  excluded by design: ${bundle.excluded.join(
+      '; ',
+    )}\n  read it before sending — it is plain JSON and it is yours.\n`,
+  );
+  return EXIT.OK;
+}
+
 async function cmdDoctor(args: string[], ctx?: CmdCtx): Promise<number> {
   const repoRoot = resolve(ctx?.cwdOverride ?? positionalsOf(args)[0] ?? '.');
   const checks: Array<{ name: string; ok: boolean; detail: string; fix?: string }> = [];
@@ -2790,6 +2936,33 @@ async function cmdDoctor(args: string[], ctx?: CmdCtx): Promise<number> {
     fix: 'run `crib mcp install` (or `crib init`)',
   });
 
+  // 6b. WP2.6 — MCP config USABLE, reported independently of mere presence (6): every config
+  //     crib wrote must still parse, and the binary each entry spawns must exist on THIS machine.
+  //     An entry pins the absolute `crib` path from install time — a reinstall or another
+  //     checkout silently orphans it, which reads as "the client never connects" unless doctor
+  //     names it. Distinct kinds stay distinct in the report (unparseable ≠ missing binary), so
+  //     the operator learns WHICH half is broken before touching anything.
+  try {
+    const audit = auditMcp(repoRoot, { home: process.env.HOME });
+    const distinctFixes = [...new Set(audit.map((p) => p.fix))];
+    checks.push({
+      name: 'MCP config usable (parses, binary exists)',
+      ok: audit.length === 0,
+      detail:
+        audit.length === 0
+          ? 'no crib-managed MCP config problems'
+          : audit.map((p) => p.message).join('; '),
+      fix: distinctFixes.length > 0 ? distinctFixes.join('; or ') : undefined,
+    });
+  } catch (err) {
+    checks.push({
+      name: 'MCP config usable (parses, binary exists)',
+      ok: false,
+      detail: `audit failed: ${(err as Error).message}`,
+      fix: 'run `crib mcp list` to inspect the configs by hand',
+    });
+  }
+
   // 7. Agent-memory loop (PRD W8): once a user opts in with `crib memory init`, the loop is
   //    policy.json + team store + at least one instruction adapter present. NOT initialized is a
   //    valid, non-failing state (memory is opt-in) → reported as ✓ with a hint, not ✗.
@@ -2897,11 +3070,17 @@ async function cmdDoctor(args: string[], ctx?: CmdCtx): Promise<number> {
     checks.push({
       name: 'embedder tier',
       ok: tier.problems.length === 0,
-      detail: `${tier.tier} (${tier.embedderId}); remote ${tier.remoteEnabled ? 'acknowledged' : 'disabled'}${tier.externalOverride ? '; KCRIB_EMBEDDER override active' : ''} — ${tier.reason}${tier.problems.length > 0 ? `; problems: ${tier.problems.join('; ')}` : ''}`,
+      detail: `state ${tier.status} (tier ${tier.tier}, ${tier.embedderId}); remote ${tier.remoteEnabled ? 'acknowledged' : 'disabled'}${tier.externalOverride ? '; KCRIB_EMBEDDER override active' : ''} — ${tier.reason}${tier.problems.length > 0 ? `; problems: ${tier.problems.join('; ')}` : ''}`,
+      // WP1.11: the fix names the STATE's remediation — a fresh machine is told to start setup,
+      // a half-finished one to finish it, an invalid one to look at the problems first.
       fix:
-        tier.tier === 'fallback'
+        tier.status === 'lexical-only'
           ? 'run `crib embed setup --yes` for the on-device tier (`--list` shows the measured size/quality ladder)'
-          : undefined,
+          : tier.status === 'installation-incomplete'
+            ? 're-run `crib embed setup --yes` to finish the partial install already on disk'
+            : tier.status === 'invalid-model'
+              ? 'run `crib embed status` to read the integrity problems, then re-run `crib embed setup`'
+              : undefined,
     });
   } catch (err) {
     checks.push({
@@ -2922,7 +3101,7 @@ async function cmdDoctor(args: string[], ctx?: CmdCtx): Promise<number> {
     checks.push({
       name: 'freshness',
       ok: deadOk,
-      detail: `mode ${fresh.mode}${fresh.modeExplicit ? '' : ' (default)'}; worker ${fresh.workerRunning ? `running (pid ${fresh.workerPid ?? '?'})` : 'not running'}; pending ${fresh.pending}; in-flight ${fresh.inFlight ? fresh.inFlight.id : 'none'}; behind HEAD ${fresh.behindHead ? 'YES' : 'no'}`,
+      detail: `mode ${fresh.mode}${fresh.modeExplicit ? '' : ' (default)'}; worker ${fresh.workerRunning ? `running (pid ${fresh.workerPid ?? '?'})` : 'not running'}; pending ${fresh.pending}; dead ${fresh.dead}; in-flight ${fresh.inFlight ? fresh.inFlight.id : 'none'}; behind HEAD ${fresh.behindHead ? 'YES' : 'no'}`,
       fix: !deadOk
         ? 'inspect `crib freshness status` and re-run `crib update` (dead-lettered tasks are retried by the worker)'
         : fresh.behindHead
@@ -3123,8 +3302,11 @@ async function cmdEmbedSetup(args: string[]): Promise<number> {
 
   const plan = await runEmbedSetup({ spec, yes, ...(from ? { from } : {}) });
   if (json) {
+    // Machine-readable contract (WP1.7): a script reads `status` — "consent-required" means nothing
+    // happened and nothing reached the network; it is not a failure, so it exits 0 exactly like the
+    // text path below. "failed" exits 1.
     process.stdout.write(`${JSON.stringify(plan, null, 2)}\n`);
-    return plan.installed ? EXIT.OK : EXIT.ERROR;
+    return plan.status === 'failed' ? EXIT.ERROR : EXIT.OK;
   }
 
   process.stdout.write(`crib embed setup — ${spec.alias} (${spec.hfId}, dim ${spec.dim})\n`);
@@ -3248,17 +3430,26 @@ async function cmdEmbed(args: string[], ctx?: CmdCtx): Promise<number> {
   // default / `status` — the same structured report doctor renders (one truth source, two views).
   const report = await embedTierReport({ env: process.env });
   process.stdout.write(
-    `embed tier: ${report.tier} (${report.embedderId})\n  remote: ${report.remoteEnabled ? 'acknowledged' : 'disabled'}\n  external override: ${report.externalOverride ? 'yes (KCRIB_EMBEDDER)' : 'no'}\n  manifest: ${report.manifestPresent ? report.manifestPath : 'absent'}\n  ${report.reason}\n`,
+    `embed tier: ${report.tier} (${report.embedderId})\n  state: ${report.status}\n  remote: ${report.remoteEnabled ? 'acknowledged' : 'disabled'}\n  external override: ${report.externalOverride ? 'yes (KCRIB_EMBEDDER)' : 'no'}\n  manifest: ${report.manifestPresent ? report.manifestPath : 'absent'}\n  ${report.reason}\n`,
   );
   for (const p of report.problems) process.stdout.write(`  problem: ${p}\n`);
   return EXIT.OK;
 }
 
-/** The worker's revalidation port: refresh the project at the task's head and fingerprint the
- *  dependencies the memory evaluator's generation cache keys on (red lines #1 + #5). The SAME
- *  slots {@link bindEvaluationPass} sets at query time, so a published generation is directly
- *  comparable to the generation a later recall binds against. */
-async function freshnessRevalidate(task: FreshnessTask): Promise<{ generation: string }> {
+/** The worker's revalidation port: refresh the project and fingerprint the dependencies the
+ *  memory evaluator's generation cache keys on (red lines #1 + #5). The SAME slots
+ *  {@link bindEvaluationPass} sets at query time, so a published generation is directly
+ *  comparable to the generation a later recall binds against.
+ *
+ *  Exported because it runs in a FORKED CHILD since WP5.1 (dist/freshness-child-entry.js imports
+ *  this module and calls this port) — synchronous `crib update` parsing must never block the
+ *  supervisor's heartbeat. `actualHead` is the head the refresh ACTUALLY processed (WP5.2):
+ *  a repo that moved between enqueue and run reports the real head, and the supervisor publishes
+ *  THAT — never a newer result stamped with the original queued HEAD. */
+export async function freshnessRevalidate(task: FreshnessTask): Promise<{
+  generation: string;
+  actualHead?: string;
+}> {
   // The same locked, incremental update path a user runs — background freshness can never
   // diverge from foreground truth. A failure here throws; the worker preserves the prior
   // published generation (never publishes a broken index) and dead-letters after maxAttempts.
@@ -3296,6 +3487,8 @@ async function freshnessRevalidate(task: FreshnessTask): Promise<{ generation: s
       embedder: UNVERSIONED,
       index: UNVERSIONED,
     }),
+    // The head the update ACTUALLY ran at — the repo may have moved since the task was enqueued.
+    actualHead: currentHead(task.projectRoot) ?? task.head,
   };
 }
 
@@ -3320,9 +3513,12 @@ async function cmdFreshness(args: string[], ctx?: CmdCtx): Promise<number> {
     ...FRESHNESS_MODES,
     'status',
     'worker',
+    'cancel',
     'service',
     'install',
     'uninstall',
+    'start',
+    'restart',
     'hook',
     'convert-hook',
   ]);
@@ -3383,17 +3579,21 @@ async function cmdFreshness(args: string[], ctx?: CmdCtx): Promise<number> {
   switch (sub) {
     case 'service': {
       const action = args[args.indexOf('service') + 1] ?? 'status';
-      if (!['install', 'status', 'uninstall'].includes(action)) {
-        process.stderr.write('usage: crib freshness service [install|status|uninstall]\n');
+      if (!['install', 'start', 'restart', 'status', 'uninstall'].includes(action)) {
+        process.stderr.write(
+          'usage: crib freshness service [install|start|restart|status|uninstall]\n',
+        );
         return EXIT.BAD_ARGS;
       }
       try {
         const result =
           action === 'install'
             ? installFreshnessService(serviceOptions())
-            : action === 'uninstall'
-              ? uninstallFreshnessService(serviceOptions())
-              : queryFreshnessService(serviceOptions());
+            : action === 'start' || action === 'restart'
+              ? restartFreshnessService(serviceOptions())
+              : action === 'uninstall'
+                ? uninstallFreshnessService(serviceOptions())
+                : queryFreshnessService(serviceOptions());
         process.stdout.write(
           `freshness service: ${result.installed ? (result.active ? 'active' : 'installed, inactive') : 'not installed'}\n` +
             `  manager: ${result.manager}\n  definition: ${result.path}\n`,
@@ -3404,10 +3604,54 @@ async function cmdFreshness(args: string[], ctx?: CmdCtx): Promise<number> {
         return EXIT.ERROR;
       }
     }
+    case 'cancel': {
+      // WP5.5 — explicit cancellation. `crib freshness cancel <projectRoot|taskId>` writes a
+      // durable request file (any process may write one; no lease is taken) for one task id
+      // (`fq:…`) or for every pending/in-flight task of a project root. A live worker's sweep
+      // honors the request on its next heartbeat — kill the in-flight child / drop the queued
+      // entry — and consumes it. With NO live worker the queued entries are also removed
+      // directly: nothing is running to claim them, and the request file would otherwise age out
+      // unused. If a task was claimed in the race window between the read and the removal, the
+      // removal finds nothing and the request file stays for the live worker's sweep.
+      const rest = args.slice(args.indexOf('cancel') + 1);
+      const target = rest.find((tok) => !tok.startsWith('-'));
+      if (target === undefined) {
+        process.stderr.write('usage: crib freshness cancel <projectRoot|taskId>\n');
+        return EXIT.BAD_ARGS;
+      }
+      const queue = readFreshnessQueue();
+      const state = readWorkerState();
+      const ids = target.startsWith('fq:')
+        ? [target]
+        : [...queue.pending, ...(state?.activeTask ? [state.activeTask] : [])]
+            .filter((t) => t.projectRoot === target)
+            .map((t) => t.id);
+      if (ids.length === 0) {
+        process.stdout.write(`freshness: no pending or in-flight task matches ${target}\n`);
+        return EXIT.OK;
+      }
+      for (const id of ids) requestCancellation(process.env, id);
+      const workerLive = state !== undefined && isPidAlive(state.pid);
+      let removedNow = 0;
+      if (!workerLive) {
+        for (const id of ids) if (removePendingFreshnessTask(id)) removedNow++;
+      }
+      process.stdout.write(
+        `freshness: cancellation requested for ${ids.length} task(s): ${ids.join(', ')}\n${
+          workerLive
+            ? '  the running worker honors it on its next heartbeat (in-flight run is aborted)\n'
+            : `  no live worker — ${removedNow} queued task(s) removed; any not found was already claimed and will be cancelled by the worker that claimed it\n`
+        }`,
+      );
+      return EXIT.OK;
+    }
     case 'worker': {
       try {
         const worker = await runFreshnessWorker({
-          revalidate: freshnessRevalidate,
+          // WP5.1 — revalidation runs in a FORKED CHILD: synchronous `crib update` parsing must
+          // never block this supervisor's heartbeat. The child imports the compiled
+          // dist/freshness-child-entry.js, which loads `freshnessRevalidate` lazily.
+          runTask: forkTaskRunner(),
           onEvent: (ev) => {
             if (ev.kind === 'task-done') {
               process.stdout.write(
@@ -3416,6 +3660,12 @@ async function cmdFreshness(args: string[], ctx?: CmdCtx): Promise<number> {
             } else if (ev.kind === 'task-dead') {
               process.stdout.write(
                 `freshness: task dead-lettered after retries: ${ev.task.id} — ${ev.error}\n`,
+              );
+            } else if (ev.kind === 'task-cancelled') {
+              process.stdout.write(`freshness: task cancelled: ${ev.task.id} (${ev.reason})\n`);
+            } else if (ev.kind === 'task-discarded') {
+              process.stdout.write(
+                `freshness: discarded staged result for ${ev.task.id} (${ev.reason})\n`,
               );
             } else if (ev.kind === 'refused') {
               process.stderr.write(`freshness worker refused: ${ev.reason}\n`);
@@ -3656,9 +3906,11 @@ async function cmdExport(args: string[], ctx?: CmdCtx): Promise<number> {
 async function cmdViz(args: string[], ctx?: CmdCtx): Promise<number> {
   const positional: string[] = [];
   let port = 0;
+  let noOpen = false;
   for (let i = 0; i < args.length; i++) {
     const a = args[i]!;
     if (a === '--port') port = Number(args[++i] ?? 0);
+    else if (a === '--no-open') noOpen = true;
     else if (!a.startsWith('-')) positional.push(a);
   }
   const resolved = resolveProjectRoot({
@@ -3689,6 +3941,9 @@ async function cmdViz(args: string[], ctx?: CmdCtx): Promise<number> {
   const memoryApi = memoryDeps
     ? createMemoryApi(rt.soul, rt.repoRoot, resolved.cribDir, memoryDeps)
     : undefined;
+  // WP6.5 — one CSRF token per server run, delivered same-origin by /memory/mutation-grant.json
+  // and required (as a header, never a URL param) on every mutation POST.
+  const csrfToken = createCsrfToken();
   await ensureInstalledEmbedder();
   const { createServer } = await import('node:http');
   const { readFile } = await import('node:fs/promises');
@@ -3776,6 +4031,9 @@ async function cmdViz(args: string[], ctx?: CmdCtx): Promise<number> {
               configured: syncConfigured,
               ...(latest('sync.applied') ? { lastSuccessfulAt: latest('sync.applied') } : {}),
             },
+            // WP4.7 — the viz server has no refresh loop of its own; it reports the cold
+            // committed-index shape so the home page shows honest reader staleness.
+            readerFreshness: coldReaderFreshness(resolved.repoRoot, resolved.cribDir),
           },
           currentRepositoryAnchor(resolved.repoRoot),
         );
@@ -3802,6 +4060,241 @@ async function cmdViz(args: string[], ctx?: CmdCtx): Promise<number> {
         res.end(JSON.stringify(detail));
         return;
       }
+      // WP6.1–WP6.4 — the pending queue (captures vs staged, classified for admission paths) and
+      // the intake detail (requirement + checkpoint history + resume brief, no work executed).
+      // Both read-only over the shared MemoryApi, same `no-store` law as the ledger.
+      if (requestUrl.pathname === '/memory/pending.json') {
+        const pending = readMemoryPending(
+          memoryApi,
+          parseMemoryPendingQuery(requestUrl.searchParams),
+        );
+        res.writeHead(200, {
+          'content-type': 'application/json; charset=utf-8',
+          'cache-control': 'no-store',
+        });
+        res.end(JSON.stringify(pending));
+        return;
+      }
+      if (requestUrl.pathname === '/memory/intake.json') {
+        const id = requestUrl.searchParams.get('id');
+        if (!id || !memoryApi) {
+          throw new VizHttpError(
+            memoryApi ? 400 : 404,
+            memoryApi ? 'missing id' : 'memory not configured',
+          );
+        }
+        const intake = readMemoryIntakeDetail(
+          memoryApi,
+          id,
+          currentRepositoryAnchor(resolved.repoRoot),
+        );
+        res.writeHead(200, {
+          'content-type': 'application/json; charset=utf-8',
+          'cache-control': 'no-store',
+        });
+        res.end(JSON.stringify(intake));
+        return;
+      }
+      // WP6.3/WP6.5 — the local mutation boundary: admission and resume POSTs. Every write runs
+      // the SAME domain services the CLI runs (runLocalAdmission / api.checkpointIntake), behind
+      // strict Origin + per-server CSRF, with revision preconditions and idempotent duplicates.
+      // Errors are structured `{error: {code, message}}` — never bare text.
+      if (
+        requestUrl.pathname === '/memory/admit' ||
+        requestUrl.pathname === '/memory/resume' ||
+        requestUrl.pathname === '/memory/mutation-grant.json'
+      ) {
+        const sendJson = (status: number, payload: unknown): void => {
+          res.writeHead(status, {
+            'content-type': 'application/json; charset=utf-8',
+            'cache-control': 'no-store',
+          });
+          res.end(JSON.stringify(payload));
+        };
+        try {
+          if (requestUrl.pathname === '/memory/mutation-grant.json') {
+            if (!memoryDeps || !memoryApi) throw new VizHttpError(404, 'memory not configured');
+            sendJson(200, { token: csrfToken });
+            return;
+          }
+          if (!memoryDeps || !memoryApi) {
+            throw new VizMutationError('not-found', 404, 'memory not configured');
+          }
+          if (req.method !== 'POST') {
+            throw new VizMutationError('bad-request', 405, 'method not allowed');
+          }
+          // Origin first, then the CSRF header (WP6.5) — both before the body is even read.
+          validateMutationOrigin({
+            host: req.headers.host ?? '',
+            origin: Array.isArray(req.headers.origin) ? req.headers.origin[0] : req.headers.origin,
+          });
+          const headerToken = req.headers[CSRF_HEADER];
+          requireCsrfToken(
+            (Array.isArray(headerToken) ? headerToken[0] : headerToken) ?? undefined,
+            csrfToken,
+          );
+          if (requestUrl.pathname === '/memory/admit') {
+            const body = parseAdmissionBody(await readMutationBody(req));
+            // Idempotent duplicates (WP6.5): the id is content-addressed, so a claim that already
+            // activated is SUCCESS again, not an error — a double click must not 404.
+            const candidate = findCandidate(memoryDeps.local, body.id);
+            if (!candidate) {
+              const already = findActiveRecord(memoryDeps.local, body.id.replace(/^cand:/, 'mem:'));
+              if (already) {
+                sendJson(200, { admitted: true, alreadyAdmitted: true, recordId: already.id });
+              } else {
+                sendJson(
+                  404,
+                  mutationErrorPayload(
+                    new VizMutationError('not-found', 404, `no staged claim '${body.id}'`),
+                  ),
+                );
+              }
+              return;
+            }
+            // The write path re-runs the READ projection's own classification: `ready` (and only
+            // ready) may complete here — `terminal` needs a real TTY, `blocked` needs fixes first.
+            // Neither this route nor any browser code can mint `tty: true`; only a CLI call site
+            // that checked process.stdin.isTTY ever does.
+            const row = classifyStaged(candidate);
+            if (row.standing !== 'ready') {
+              sendJson(422, {
+                error: {
+                  code: row.standing === 'terminal' ? 'terminal-only' : 'invalid-evidence',
+                  message:
+                    row.standing === 'terminal'
+                      ? 'this claim needs a terminal confirmation'
+                      : 'the claim is not admissible yet',
+                  ...(row.blockers.length > 0 ? { blockers: row.blockers } : {}),
+                  command: row.command,
+                },
+              });
+              return;
+            }
+            const outcome = await runLocalAdmission(
+              resolved.repoRoot,
+              resolved.cribDir,
+              memoryDeps,
+              body.profile,
+              body.id,
+            );
+            if (!outcome.ok) {
+              const [status, code, message] =
+                outcome.code === 'no-policy'
+                  ? ([
+                      503,
+                      'unavailable',
+                      'no gate policy configured — run `crib memory init` first',
+                    ] as const)
+                  : outcome.code === 'unknown-profile'
+                    ? ([400, 'bad-request', `unknown gate profile '${body.profile}'`] as const)
+                    : outcome.code === 'gate-failed'
+                      ? ([503, 'unavailable', outcome.message] as const)
+                      : ([
+                          409,
+                          'stale',
+                          'the repository changed while the gate ran — retry from the pending queue',
+                        ] as const);
+              sendJson(status, mutationErrorPayload(new VizMutationError(code, status, message)));
+              return;
+            }
+            if (outcome.kind === 'team') {
+              sendJson(200, {
+                admitted: true,
+                alreadyShared: true,
+                recordId: outcome.recordId,
+                ref: outcome.trustedRef,
+              });
+              return;
+            }
+            sendJson(200, {
+              admitted: true,
+              recordId: outcome.recordId,
+              receiptId: outcome.receiptId,
+              evidence: outcome.evidence,
+              applicability: outcome.applicability,
+              cleanedUp: outcome.cleanedUp,
+            });
+            return;
+          }
+          // /memory/resume — mirrors `crib session resume` exactly (same api, same kind, same
+          // refusal to invent a next action), with the revision + idempotency checks the browser
+          // needs because it is stateful across reloads.
+          const body = parseResumeBody(await readMutationBody(req));
+          const repository = currentRepositoryAnchor(resolved.repoRoot);
+          const handoff = memoryApi.handoff({ repository });
+          const option = handoff.continuation.options.find(
+            (o) => o.optionId === body.intakeId || o.intakeId === body.intakeId,
+          );
+          if (!option || option.kind !== 'resume' || !option.intakeId) {
+            throw new VizMutationError(
+              'not-found',
+              404,
+              `not a resumable intake: ${body.intakeId}`,
+            );
+          }
+          const brief = handoff.intakes.choices.find((c) => c.intakeId === option.intakeId);
+          const nextSafeAction = body.next?.trim() || brief?.nextSafeAction;
+          if (!nextSafeAction) {
+            throw new VizMutationError(
+              'missing-next-action',
+              422,
+              'this intake has no recorded next action yet — say what resuming means',
+            );
+          }
+          // Revision precondition (WP6.5): the surface names the checkpoint it saw; an intake that
+          // moved on answers 409, never a blind append over a newer session's record.
+          const got = memoryApi.getIntake(option.intakeId);
+          const sorted = [...(got?.checkpoints ?? [])].sort(
+            (a, b) => a.recordedAt.localeCompare(b.recordedAt) || a.id.localeCompare(b.id),
+          );
+          const latest = sorted.length > 0 ? sorted[sorted.length - 1] : undefined;
+          if ((latest?.id ?? '') !== body.expectedCheckpointId) {
+            throw new VizMutationError(
+              'stale',
+              409,
+              'the intake changed since it was loaded — reload and retry',
+            );
+          }
+          // Idempotent duplicate (WP6.5): the exact same resume already recorded as the latest
+          // checkpoint → success without appending a second `resumed` event.
+          if (latest && latest.kind === 'resumed' && latest.nextSafeAction === nextSafeAction) {
+            sendJson(200, {
+              resumed: true,
+              alreadyResumed: true,
+              intakeId: option.intakeId,
+              checkpointId: latest.id,
+            });
+            return;
+          }
+          const principalId =
+            process.env.KCRIB_PRINCIPAL_ID?.trim() || DEFAULT_MIGRATION_PRINCIPAL_ID;
+          const checkpoint = memoryApi.checkpointIntake({
+            intakeId: option.intakeId,
+            kind: 'resumed',
+            phase: brief?.phase ?? 'executing',
+            nextSafeAction,
+            summary: 'session resumed this intake',
+            repository,
+            actor: `human:${principalId}`,
+            recordedAt: new Date().toISOString(),
+          });
+          sendJson(200, {
+            resumed: true,
+            intakeId: option.intakeId,
+            checkpointId: checkpoint.id,
+            cautions: option.cautions,
+          });
+          return;
+        } catch (e) {
+          const err =
+            e instanceof VizHttpError
+              ? e
+              : new VizMutationError('internal', 500, (e as Error).message || 'unexpected error');
+          sendJson(err.status, mutationErrorPayload(err));
+          return;
+        }
+      }
       const path = await resolveVizAsset(assets, requestUrl.pathname);
       const body = await readFile(path);
       res.writeHead(200, { 'content-type': MIME[extname(path)] ?? 'application/octet-stream' });
@@ -3825,24 +4318,28 @@ async function cmdViz(args: string[], ctx?: CmdCtx): Promise<number> {
       'warning: stale cluster topology repaired in memory for this session; run `crib reindex` to persist it.\n',
     );
   }
-  // best-effort browser open (macOS/linux/windows); never fatal.
-  const { spawn } = await import('node:child_process');
-  let opener: string;
-  let openerArgs: string[];
-  if (process.platform === 'darwin') {
-    opener = 'open';
-    openerArgs = [url];
-  } else if (process.platform === 'win32') {
-    opener = 'cmd';
-    openerArgs = ['/c', 'start', '', url];
-  } else {
-    opener = 'xdg-open';
-    openerArgs = [url];
-  }
-  try {
-    spawn(opener, openerArgs, { stdio: 'ignore', detached: true }).unref();
-  } catch {
-    // ignore — the URL is printed above.
+  // best-effort browser open (macOS/linux/windows); never fatal. `--no-open` skips it — the
+  // browser-test suite (WP6 slice D) drives the server headlessly, and a spawned OS browser tab
+  // on every `pnpm verify:browser` run is pure noise.
+  if (!noOpen) {
+    const { spawn } = await import('node:child_process');
+    let opener: string;
+    let openerArgs: string[];
+    if (process.platform === 'darwin') {
+      opener = 'open';
+      openerArgs = [url];
+    } else if (process.platform === 'win32') {
+      opener = 'cmd';
+      openerArgs = ['/c', 'start', '', url];
+    } else {
+      opener = 'xdg-open';
+      openerArgs = [url];
+    }
+    try {
+      spawn(opener, openerArgs, { stdio: 'ignore', detached: true }).unref();
+    } catch {
+      // ignore — the URL is printed above.
+    }
   }
   await new Promise<void>(() => {
     // run until interrupted
@@ -4115,7 +4612,8 @@ async function cmdEnrich(args: string[], ctx?: CmdCtx): Promise<number> {
         targets = ids;
         vcsCtx = { since, head, changedPaths };
       } catch {
-        // non-git / no anchor: fall through to an unscoped whole-repo scan (targets stays undefined).
+        // non-git / rebased-away anchor (WP4.4): fall through to an UNscoped whole-repo scan — an
+        // over-approximation that is always safe, unlike trusting a diff from a stale anchor.
         vcsCtx = undefined;
       }
     }
@@ -4534,14 +5032,19 @@ function cmdAdapters(args: string[], ctx?: CmdCtx): number {
   /** `--client detected` — install only for the clients this machine appears to run. */
   let clientDetectedRequested = false;
   let scope: 'project' | 'global' = 'project';
+  let json = false;
   let pathArg: string | undefined;
   for (let i = 0; i < rest.length; i++) {
     const arg = rest[i]!;
+    if (arg === '--json') {
+      json = true;
+      continue;
+    }
     if (arg === '--client') {
       const value = rest[++i];
       if (looksLikeFlag(value) || !value) {
         process.stderr.write(
-          'usage: crib adapters <install|list|remove> [--client <id|all|detected>] [--scope project|global]\n',
+          'usage: crib adapters <install|list|remove|status> [--client <id|all|detected>] [--scope project|global] [--json]\n',
         );
         return EXIT.BAD_ARGS;
       }
@@ -4639,11 +5142,36 @@ function cmdAdapters(args: string[], ctx?: CmdCtx): number {
       }
       return EXIT.OK;
     }
+    case 'status': {
+      const journalRoot = join(repoRoot, '.crib', 'intelligence');
+      const reports = clientStateReport(repoRoot, { client, scope });
+      if (json) {
+        const unknown = unknownConnectedClients(journalRoot);
+        process.stdout.write(
+          `${JSON.stringify({ clients: reports, ...(unknown.length > 0 ? { unknown } : {}) }, null, 2)}\n`,
+        );
+        return EXIT.OK;
+      }
+      for (const r of reports) {
+        const lanes = [
+          r.evidence.instructions ? 'instructions✓' : 'instructions✗',
+          r.evidence.hooks.length > 0 ? `hooks✓(${r.evidence.hooks.join(',')})` : 'hooks✗',
+          r.evidence.mcpEntry ? 'mcp✓' : 'mcp✗',
+        ].join(' ');
+        process.stdout.write(`${r.client}: ${r.state}\n  config: ${lanes}\n  ${r.note}\n`);
+      }
+      const unknown = unknownConnectedClients(journalRoot);
+      if (unknown.length > 0)
+        process.stdout.write(
+          `unknown clients in journal (not attributed to any known client): ${unknown.join(', ')}\n`,
+        );
+      return EXIT.OK;
+    }
     case undefined:
     case '-h':
     case '--help':
       process.stderr.write(
-        'usage: crib adapters <install|list|remove> [--client <id|all|detected>] [--scope project|global]\n',
+        'usage: crib adapters <install|list|remove|status> [--client <id|all|detected>] [--scope project|global] [--json]\n',
       );
       return EXIT.BAD_ARGS;
     default:
@@ -4661,18 +5189,28 @@ function cmdAdapters(args: string[], ctx?: CmdCtx): number {
 function cmdAdaptersHooks(args: string[], ctx?: CmdCtx): number {
   const [sub, ...rest] = args;
   let client: ClientId | 'all' = 'all';
+  let scope: AdapterScope = 'project';
   let pathArg: string | undefined;
+  const usage =
+    'usage: crib adapters hooks <install|list|remove> [--client <id|all>] [--scope project|global]\n';
   for (let i = 0; i < rest.length; i++) {
     const arg = rest[i]!;
     if (arg === '--client') {
       const value = rest[++i];
       if (looksLikeFlag(value) || !value) {
-        process.stderr.write(
-          'usage: crib adapters hooks <install|list|remove> [--client <id|all>]\n',
-        );
+        process.stderr.write(usage);
         return EXIT.BAD_ARGS;
       }
       client = value as ClientId | 'all';
+      continue;
+    }
+    if (arg === '--scope') {
+      const value = rest[++i];
+      if (value !== 'project' && value !== 'global') {
+        process.stderr.write(usage);
+        return EXIT.BAD_ARGS;
+      }
+      scope = value;
       continue;
     }
     if (arg.startsWith('-')) {
@@ -4691,7 +5229,7 @@ function cmdAdaptersHooks(args: string[], ctx?: CmdCtx): number {
 
   switch (sub) {
     case 'install': {
-      const results = installCaptureHooks(repoRoot, { client, scope: 'project' });
+      const results = installCaptureHooks(repoRoot, { client, scope });
       for (const r of results) {
         if (r.note) process.stdout.write(`${r.client}: ${r.note}\n`);
         else
@@ -4702,7 +5240,7 @@ function cmdAdaptersHooks(args: string[], ctx?: CmdCtx): number {
       return EXIT.OK;
     }
     case 'list': {
-      for (const e of listCaptureHooks(repoRoot, { client, scope: 'project' })) {
+      for (const e of listCaptureHooks(repoRoot, { client, scope })) {
         if (e.note) process.stdout.write(`${e.client}: ${e.note}\n`);
         else
           process.stdout.write(
@@ -4712,7 +5250,7 @@ function cmdAdaptersHooks(args: string[], ctx?: CmdCtx): number {
       return EXIT.OK;
     }
     case 'remove': {
-      const results = removeCaptureHooks(repoRoot, { client, scope: 'project' });
+      const results = removeCaptureHooks(repoRoot, { client, scope });
       for (const r of results) {
         if (r.note) process.stdout.write(`${r.client}: ${r.note}\n`);
         else if (r.written)
@@ -4922,7 +5460,9 @@ function currentRepositoryAnchor(repoRoot: string): {
     dirty: changed.length > 0,
     ...(changed.length > 0
       ? {
-          changedPathsDigest: `blake3:${blake3Hex(changed.join('\n'))}`,
+          // WP4.3 — content-addressed: the digest must move when a dirty file's BYTES move, not
+          // only when the path list does. Same contract as the MCP intake anchor.
+          changedPathsDigest: contentDigestForPaths(repoRoot, changed),
           changedPaths: changed.slice(0, RESUME_PATHS_MAX),
         }
       : {}),
@@ -5226,9 +5766,14 @@ function cmdSessionFresh(args: string[], ctx?: CmdCtx): number {
   return EXIT.OK;
 }
 
-/** blake3 digest of the working-tree state the gate observed (uncommitted file list — PRD line 277). */
+/**
+ * Digest of the working-tree state the gate observed (PRD line 277). Content-addressed (WP4.3):
+ * the old digest hashed the uncommitted PATH LIST, so a second edit inside an already-dirty file
+ * left it unchanged and the gate read "nothing moved" while the bytes had. Same paths + same bytes
+ * ⇒ same digest; any content edit ⇒ different digest.
+ */
 function worktreeDigest(root: string): string {
-  return `blake3:${blake3Hex(uncommittedChanges(root).join('\n'))}`;
+  return dirtyTreeFingerprint(root).digest;
 }
 
 /** Find a candidate by id in the local `candidates` collection, or undefined. */
@@ -5290,6 +5835,16 @@ function cmdMemoryHandoff(args: string[], ctx?: CmdCtx): number {
   const json = args.includes('--json');
   const limit = capInt(intFlag(args, '--limit'), 10, 25);
   const resolved = resolveProjectRoot({ explicitRoot: ctx?.cwdOverride });
+  // Bootstrap is wired as a user-scope SessionStart hook, so it runs in EVERY repository the user
+  // opens, including ones crib has never indexed. Without this guard those calls reached
+  // readRepoId(undefined) and died on a raw TypeError — and since the client injects SessionStart
+  // stdout into the model's context, a stack trace became the first thing every session read.
+  if (!isIndexedRoot(resolved)) {
+    process.stderr.write(
+      'not a knowledge-crib repository (no .crib index) — run `crib init` here to set one up\n',
+    );
+    return EXIT.NOT_INDEXED;
+  }
   const rt = openSoul(resolved);
   const deps = createMemoryDeps(rt.soul, resolved.repoRoot, resolved.cribDir);
   if (!deps) {
@@ -5314,7 +5869,10 @@ function cmdMemoryHandoff(args: string[], ctx?: CmdCtx): number {
     out.counts.pendingCaptures === 0 &&
     out.counts.needsAttention === 0 &&
     out.recent.length === 0 &&
-    out.intakes.count === 0
+    out.intakes.count === 0 &&
+    // WP3.8 — a degraded read must never collapse into "nothing here": an unreadable journal
+    // with everything else empty is precisely the case where "no prior work" would be a lie.
+    out.degraded.length === 0
   ) {
     // An empty state still needs a next step — "nothing here" with no action is the dead end the
     // audit flagged in the memory panel (F09).
@@ -5324,6 +5882,20 @@ function cmdMemoryHandoff(args: string[], ctx?: CmdCtx): number {
         '    crib intake create --from "<request>" --outcome "<what done looks like>"\n',
     );
     return EXIT.OK;
+  }
+  // The degraded channel precedes every section: a projection that could not read the lifecycle
+  // journal is a caveat over the whole briefing, not one list among others.
+  if (out.degraded.length > 0) {
+    for (const marker of out.degraded) {
+      if (marker === 'lifecycle-journal-unreadable') {
+        lines.push(
+          '! DEGRADED — the lifecycle journal exists but could not be read; prior-session',
+          '  coordinates may be missing for that reason, not because none were recorded.',
+        );
+      } else {
+        lines.push(`! DEGRADED — ${marker}`);
+      }
+    }
   }
   // The decision comes FIRST: a returning session's first question is "continue or start fresh?",
   // and answering it from a `primary` field the reader has to interpret is what made this implicit.
@@ -5642,7 +6214,7 @@ async function cmdMemory(args: string[], ctx?: CmdCtx): Promise<number> {
     case '-h':
     case '--help':
       process.stderr.write(
-        'crib memory init | remember "<claim>" [--subject <id>] [--kind convention|decision] [--global] (record + admit a human-attested claim from a terminal — recallable immediately) | admit <candidate-id> (admit an agent-staged human-attested claim, from a terminal) | handoff [--limit N] [--json] (where was I? — in-flight work, undistilled captures, what went stale) | events [--include-expired] [--limit N] [--json] | profiles list [--json] | profiles register --key <profile-key> --alias <client-id>/<agent-id> [--alias ...] [--json] | recall "<query>" [--limit N] [--sources team,local,global] [--target <id>] [--with-evidence] [--include-pending] [--max-tokens N] [--json] | search "<query>" [--limit N] [--sources team,local,global] [--target <id>] [--max-tokens N] [--json] | get <id> [--with-evidence] [--json] | supersede <id> --actor <id> (--successor <id> | --claim <text>) [--reason <text>] [--json] | delete <id> --actor <id> [--reason <text>] [--json] | history <key> [--as-of <iso-ts>] [--with-evidence] [--json] | evaluate <candidate> --profile <name> | activate <candidate> | propose <memory-id> | attest <candidate> | check | audit [--repair-local] | feedback <mem-id> --signal <useful|unhelpful|contradicted> [--actor <id>] [--context <text>] [--counter-evidence <json-file>] | gc [--max-age-days N] [--dry-run] | migrate | bench [--fast] [--json] [--out <path>] | distill --provider <name> [--providers-file F] [--max-batches N] [--concurrency N] [--timeout-ms N] | capture-hook --event <session-start|turn-end|tool-use> (hooks invoke this; always exits 0 — best-effort capture, never blocks a session) | init-sync --scope repo|global --backend file|http --url <target> [--key-env <NAME>|--keyfile <path>|--gen-key] [--secret-env <NAME>] [--sync-id <id>] [--backfill] [--json] | sync [push|pull|status] [--dry-run] [--backfill] [--max-events N] [--skip] [--json] | sync rotate-key (--gen-key | --key-env <NAME> | --keyfile <path>) [--dry-run] | sync purge-sync --stale-epoch [--dry-run] | purge <mem-id>... --confirm <mem-id>... [--stores local,global] [--history-scan] [--dry-run] [--actor <id>] [--json] | conflicts [--json] | resolve <record-id> (--successor <id> | --retract) --actor <id> [--reason <text>] [--json] (see docs/memory-sync.md)\n',
+        'crib memory init | remember "<claim>" [--subject <id>] [--kind convention|decision] [--global] (record + admit a human-attested claim from a terminal — recallable immediately) | admit <candidate-id> (admit an agent-staged human-attested claim, from a terminal) | handoff [--limit N] [--json] (where was I? — in-flight work, undistilled captures, what went stale) | events [--include-expired] [--limit N] [--json] | profiles list [--json] | profiles register --key <profile-key> --alias <client-id>/<agent-id> [--alias ...] [--json] | recall "<query>" [--limit N] [--sources team,local,global] [--target <id>] [--with-evidence] [--include-pending] [--max-tokens N] [--json] | search "<query>" [--limit N] [--sources team,local,global] [--target <id>] [--max-tokens N] [--json] | get <id> [--with-evidence] [--json] | supersede <id> --actor <id> (--successor <id> | --claim <text>) [--reason <text>] [--json] | delete <id> --actor <id> [--reason <text>] [--json] | history <key> [--as-of <iso-ts>] [--with-evidence] [--json] | evaluate <candidate> --profile <name> | activate <candidate>|--all | propose <memory-id> | attest <candidate> | check | audit [--repair-local] | feedback <mem-id> --signal <useful|unhelpful|contradicted> [--actor <id>] [--context <text>] [--counter-evidence <json-file>] | gc [--max-age-days N] [--dry-run] | migrate | bench [--fast] [--json] [--out <path>] | distill --provider <name> [--providers-file F] [--max-batches N] [--concurrency N] [--timeout-ms N] | capture-hook --event <session-start|turn-end|tool-use> (hooks invoke this; always exits 0 — best-effort capture, never blocks a session) | init-sync --scope repo|global --backend file|http --url <target> [--key-env <NAME>|--keyfile <path>|--gen-key] [--secret-env <NAME>] [--sync-id <id>] [--backfill] [--json] | sync [push|pull|status] [--dry-run] [--backfill] [--max-events N] [--skip] [--json] | sync rotate-key (--gen-key | --key-env <NAME> | --keyfile <path>) [--dry-run] | sync purge-sync --stale-epoch [--dry-run] | purge <mem-id>... --confirm <mem-id>... [--stores local,global] [--history-scan] [--dry-run] [--actor <id>] [--json] | conflicts [--json] | resolve <record-id> (--successor <id> | --retract) --actor <id> [--reason <text>] [--json] (see docs/memory-sync.md)\n',
       );
       process.stderr.write(
         'additional operations: backup create|verify|restore; sync compact [--dry-run] [--json]\n',
@@ -6060,6 +6632,11 @@ function cmdMemoryCaptureHook(args: string[], ctx?: CmdCtx): number {
 
   try {
     const resolved = resolveProjectRoot({ explicitRoot: ctx?.cwdOverride });
+    // Same reason as cmdMemoryHandoff: wired at user scope this fires in every repository, most of
+    // which have no index. Check first so an unindexed repo gets one plain sentence instead of
+    // readRepoId's internal "paths[0] must be of type string" leaking out of the catch below.
+    if (!isIndexedRoot(resolved))
+      return failOpen('not a knowledge-crib repository (no .crib index) — capture skipped');
     const rt = openSoul(resolved);
     const repoId = readRepoId(resolved.cribDir);
     if (!repoId)
@@ -6102,6 +6679,23 @@ function cmdMemoryCaptureHook(args: string[], ctx?: CmdCtx): number {
       },
       occurredAt,
     });
+    // Drain the candidate backlog at the end of a turn, so a session's findings become recallable
+    // without the user typing `crib memory activate` once per candidate. This never runs a gate and
+    // never invents a receipt: with no receipt covering the current worktree it is a no-op (see
+    // activateAllPending). Best-effort by the hook's fail-open contract — a drain failure must never
+    // cost the user their capture.
+    let drained: { receiptId: string | null; activated: number } | undefined;
+    if (event === 'turn-end') {
+      try {
+        const bulk = activateAllPending(deps.local, deps, resolved.repoRoot);
+        drained = {
+          receiptId: bulk.receiptId,
+          activated: bulk.results.filter((r) => r.recordId !== undefined).length,
+        };
+      } catch {
+        /* the backlog stays pending; the capture below is what matters */
+      }
+    }
     if (!outcome) {
       const nudge = stopNudgeReason(
         event,
@@ -6125,6 +6719,7 @@ function cmdMemoryCaptureHook(args: string[], ctx?: CmdCtx): number {
           eventId: lifecycle.event.id,
           status: 'checkpoint-requested',
           captured: false,
+          ...(drained ? { drained } : {}),
         })}\n`,
       );
       return EXIT.OK;
@@ -6170,6 +6765,7 @@ function cmdMemoryCaptureHook(args: string[], ctx?: CmdCtx): number {
         captureId: result.id,
         status: result.status,
         captured: true,
+        ...(drained ? { drained } : {}),
       })}\n`,
     );
     return EXIT.OK;
@@ -7971,77 +8567,84 @@ function cmdMemoryBench(args: string[], ctx?: CmdCtx): number {
   return EXIT.OK;
 }
 
-/** `crib memory evaluate <candidate> --profile <name>` — gate → evaluate → activate (PRD line 255). */
-async function cmdMemoryEvaluate(args: string[], ctx?: CmdCtx): Promise<number> {
-  const id = pathArg(args);
-  if (!id) {
-    process.stderr.write('usage: crib memory evaluate <candidate-id> --profile <name>\n');
-    return EXIT.BAD_ARGS;
-  }
-  const profileIdx = args.indexOf('--profile');
-  const profileName = profileIdx >= 0 ? args[profileIdx + 1] : undefined;
-  if (!profileName) {
-    process.stderr.write('error: --profile <name> is required (the trusted-base gate profile)\n');
-    return EXIT.BAD_ARGS;
-  }
-  const rootArgs = args.slice();
-  if (profileIdx >= 0) rootArgs.splice(profileIdx, 2);
-  const resolved = resolveRoot(rootArgs, ctx);
-  if (!isIndexedRoot(resolved)) {
-    process.stderr.write('not indexed — run `crib index` first\n');
-    return EXIT.NOT_INDEXED;
-  }
-  const rt = openSoul(resolved);
-  const deps = createMemoryDeps(rt.soul, resolved.repoRoot, resolved.cribDir);
-  if (!deps) {
-    process.stderr.write('could not resolve repoId for memory — run `crib index` first\n');
-    return EXIT.NOT_INDEXED;
-  }
-  const policy = loadPolicy(resolved.cribDir);
+/**
+ * One local admission run's verdict — the SAME flow `crib memory evaluate` and the viz server's
+ * admission POST both run (WP6.3: "through the same domain services used by the CLI").
+ */
+type LocalAdmissionOutcome =
+  | { ok: true; kind: 'team'; recordId: string; trustedRef: string }
+  | {
+      ok: true;
+      kind: 'local';
+      recordId: string;
+      receiptId: string;
+      evidence: string;
+      applicability: string;
+      cleanedUp: boolean;
+    }
+  | {
+      ok: false;
+      code:
+        | 'no-policy'
+        | 'unknown-profile'
+        | 'unknown-candidate'
+        | 'gate-failed'
+        | 'snapshot-drift';
+      /** CLI-shaped message (may use internal vocabulary — the browser surface writes its own). */
+      message: string;
+    };
+
+/**
+ * The ONE local admission flow: policy → profile → candidate → team-trusted early exit → attempt
+ * events → snapshot → gate → drift verify → evaluate → activate → compact. The CLI command and the
+ * viz server's admission POST both call THIS function, so a browser admission can never drift from
+ * the CLI's gate. Identity is resolved server-side from the local store the caller wired (R03), and
+ * the snapshot verify IS the revision check: the content-addressed candidate id pins WHAT is being
+ * admitted, and any drift between snapshot and verify aborts the promotion.
+ */
+async function runLocalAdmission(
+  repoRoot: string,
+  cribDir: string,
+  deps: NonNullable<ReturnType<typeof createMemoryDeps>>,
+  profileName: string,
+  id: string,
+): Promise<LocalAdmissionOutcome> {
+  const policy = loadPolicy(cribDir);
   if (!policy) {
-    process.stderr.write(
-      `no trusted-base policy at ${join(resolved.cribDir, 'memory', 'policy.json')} — run \`crib memory init\` first\n`,
-    );
-    return EXIT.ERROR;
+    return {
+      ok: false,
+      code: 'no-policy',
+      message: `no trusted-base policy at ${join(cribDir, 'memory', 'policy.json')} — run \`crib memory init\` first`,
+    };
   }
   const profile = resolveProfile(policy, profileName);
   if (!profile) {
-    process.stderr.write(
-      `error: profile '${profileName}' not in trusted-base policy (have: ${Object.keys(policy.profiles).join(', ')})\n`,
-    );
-    return EXIT.BAD_ARGS;
+    return {
+      ok: false,
+      code: 'unknown-profile',
+      message: `error: profile '${profileName}' not in trusted-base policy (have: ${Object.keys(policy.profiles).join(', ')})`,
+    };
   }
   const local = deps.local;
   const candidate = findCandidate(local, id);
   if (!candidate) {
-    process.stderr.write(
-      `error: no local candidate '${id}' — observe one first (memory_observe)\n`,
-    );
-    return EXIT.ERROR;
+    return {
+      ok: false,
+      code: 'unknown-candidate',
+      message: `error: no local candidate '${id}' — observe one first (memory_observe)`,
+    };
   }
   // W5 Slice 2: if the candidate's content is ALREADY team-trusted (its would-be `mem:` id is in the
   // trusted ref with an accept decision), do NOT re-run the gate or create a local active duplicate —
   // the team record is the live memory. Tombstone any stale local active copy for the same id and stop.
   // No git / no trusted ref ⇒ team trust is not derivable ⇒ proceed with a normal local evaluation.
   const wouldBeRecordId = candidate.id.replace(/^cand:/, 'mem:');
-  const tp = resolveTrustedPresence(resolved.repoRoot, resolved.cribDir);
+  const tp = resolveTrustedPresence(repoRoot, cribDir);
   if (tp && isTeamTrustedRecord(wouldBeRecordId, tp.presence)) {
     tombstoneLocalForTeamPromotion(deps.local, wouldBeRecordId, 'evaluate', () =>
       new Date().toISOString(),
     );
-    process.stdout.write(
-      `${JSON.stringify(
-        {
-          recordId: wouldBeRecordId,
-          trust: 'team',
-          alreadyTeamTrusted: true,
-          trustedRef: tp.ref,
-        },
-        null,
-        2,
-      )}\n`,
-    );
-    return EXIT.OK;
+    return { ok: true, kind: 'team', recordId: wouldBeRecordId, trustedRef: tp.ref };
   }
   // W5 (PRD line 354): record the attempt lifecycle as structured events (the crash trail, PRD line
   // 348). Reuse the candidate's attemptId when memory_observe started one (origin === 'attempt');
@@ -8079,12 +8682,12 @@ async function cmdMemoryEvaluate(args: string[], ctx?: CmdCtx): Promise<number> 
   // the gate runs outside any lock; verification happens after.
   const before = {
     policyHash: policyHash(policy),
-    head: currentHead(resolved.repoRoot),
-    worktreeDigest: worktreeDigest(resolved.repoRoot),
+    head: currentHead(repoRoot),
+    worktreeDigest: worktreeDigest(repoRoot),
     candidateId: candidate.id,
   };
   att('observation', {
-    observation: { summary: 'gate snapshot', fileRefs: [resolved.repoRoot] },
+    observation: { summary: 'gate snapshot', fileRefs: [repoRoot] },
   });
   const gate = await runGate({
     profile,
@@ -8092,14 +8695,13 @@ async function cmdMemoryEvaluate(args: string[], ctx?: CmdCtx): Promise<number> 
     head: before.head,
     worktreeDigest: before.worktreeDigest,
     runner: 'cli',
-    repoRoot: resolved.repoRoot,
+    repoRoot,
     env: process.env,
     now: () => new Date().toISOString(),
   });
   if (!gate.ok) {
     att('outcome', { outcome: { status: 'failure' } });
-    process.stderr.write(`gate failed: ${gate.error}\n`);
-    return EXIT.ERROR;
+    return { ok: false, code: 'gate-failed', message: `gate failed: ${gate.error}` };
   }
   att('action', {
     action: { summary: `gate profile ${profileName}`, receiptIds: [gate.receipt.id] },
@@ -8107,9 +8709,9 @@ async function cmdMemoryEvaluate(args: string[], ctx?: CmdCtx): Promise<number> 
   // Reacquire + verify the snapshot (PRD line 277): a drift means the gate ran against state that
   // has since changed → the receipt MUST NOT be trusted.
   const after = {
-    policyHash: policyHash(loadPolicy(resolved.cribDir) ?? policy),
-    head: currentHead(resolved.repoRoot),
-    worktreeDigest: worktreeDigest(resolved.repoRoot),
+    policyHash: policyHash(loadPolicy(cribDir) ?? policy),
+    head: currentHead(repoRoot),
+    worktreeDigest: worktreeDigest(repoRoot),
     candidateId: findCandidate(local, id)?.id ?? '',
   };
   if (
@@ -8121,10 +8723,12 @@ async function cmdMemoryEvaluate(args: string[], ctx?: CmdCtx): Promise<number> 
     })
   ) {
     att('outcome', { outcome: { status: 'failure' } });
-    process.stderr.write(
-      'error: snapshot drift after gate run (policy/HEAD/worktree/candidate changed) — aborting promotion\n',
-    );
-    return EXIT.ERROR;
+    return {
+      ok: false,
+      code: 'snapshot-drift',
+      message:
+        'error: snapshot drift after gate run (policy/HEAD/worktree/candidate changed) — aborting promotion',
+    };
   }
   att('outcome', { outcome: { status: 'success', receiptId: gate.receipt.id } });
   att('candidate', { candidateId: candidate.id });
@@ -8168,15 +8772,78 @@ async function cmdMemoryEvaluate(args: string[], ctx?: CmdCtx): Promise<number> 
     },
   });
   compactAttempt(local, attemptId, compaction);
+  return {
+    ok: true,
+    kind: 'local',
+    recordId: result.recordId,
+    receiptId: result.receiptId,
+    evidence: evaluation.evaluation.evidence,
+    applicability: evaluation.evaluation.applicability,
+    cleanedUp: result.cleanedUp,
+  };
+}
+
+/** `crib memory evaluate <candidate> --profile <name>` — gate → evaluate → activate (PRD line 255). */
+async function cmdMemoryEvaluate(args: string[], ctx?: CmdCtx): Promise<number> {
+  const id = pathArg(args);
+  if (!id) {
+    process.stderr.write('usage: crib memory evaluate <candidate-id> --profile <name>\n');
+    return EXIT.BAD_ARGS;
+  }
+  const profileIdx = args.indexOf('--profile');
+  const profileName = profileIdx >= 0 ? args[profileIdx + 1] : undefined;
+  if (!profileName) {
+    process.stderr.write('error: --profile <name> is required (the trusted-base gate profile)\n');
+    return EXIT.BAD_ARGS;
+  }
+  const rootArgs = args.slice();
+  if (profileIdx >= 0) rootArgs.splice(profileIdx, 2);
+  const resolved = resolveRoot(rootArgs, ctx);
+  if (!isIndexedRoot(resolved)) {
+    process.stderr.write('not indexed — run `crib index` first\n');
+    return EXIT.NOT_INDEXED;
+  }
+  const rt = openSoul(resolved);
+  const deps = createMemoryDeps(rt.soul, resolved.repoRoot, resolved.cribDir);
+  if (!deps) {
+    process.stderr.write('could not resolve repoId for memory — run `crib index` first\n');
+    return EXIT.NOT_INDEXED;
+  }
+  const outcome = await runLocalAdmission(
+    resolved.repoRoot,
+    resolved.cribDir,
+    deps,
+    profileName,
+    id,
+  );
+  if (!outcome.ok) {
+    process.stderr.write(`${outcome.message}\n`);
+    return outcome.code === 'unknown-profile' ? EXIT.BAD_ARGS : EXIT.ERROR;
+  }
+  if (outcome.kind === 'team') {
+    process.stdout.write(
+      `${JSON.stringify(
+        {
+          recordId: outcome.recordId,
+          trust: 'team',
+          alreadyTeamTrusted: true,
+          trustedRef: outcome.trustedRef,
+        },
+        null,
+        2,
+      )}\n`,
+    );
+    return EXIT.OK;
+  }
   process.stdout.write(
     `${JSON.stringify(
       {
-        recordId: result.recordId,
-        receiptId: result.receiptId,
-        evidence: evaluation.evaluation.evidence,
-        applicability: evaluation.evaluation.applicability,
+        recordId: outcome.recordId,
+        receiptId: outcome.receiptId,
+        evidence: outcome.evidence,
+        applicability: outcome.applicability,
         trust: 'local',
-        cleanedUp: result.cleanedUp,
+        cleanedUp: outcome.cleanedUp,
       },
       null,
       2,
@@ -8186,13 +8853,80 @@ async function cmdMemoryEvaluate(args: string[], ctx?: CmdCtx): Promise<number> 
 }
 
 /** `crib memory activate <candidate>` — crash-recovery against an existing receipt (no gate re-run). */
+/** One candidate's fate in a bulk activation, so the caller can report rather than assert. */
+interface BulkActivation {
+  candidateId: string;
+  recordId?: string;
+  /** The evidence verdict the EVALUATOR derived — never something this code decides. */
+  evidence?: string;
+  skipped?: string;
+}
+
+/**
+ * Activate every pending local candidate against a gate receipt that already covers the current
+ * worktree. This is the bulk form of {@link cmdMemoryActivate}, and the path the turn-end hook uses.
+ *
+ * It does NOT run a gate. Admission in crib has exactly two doors and both deliberately require
+ * something an automated hook cannot fabricate: `activate` needs a receipt from a gate that really
+ * ran against THIS head + worktree digest, and `admit` needs a TTY because it records that a human
+ * accepted the claim. Automating either by manufacturing its precondition would be the agent
+ * self-asserting a pass — the one thing §4 of the protocol forbids. So this drains the backlog only
+ * when a real receipt is already there, and reports `no-receipt` when it is not.
+ *
+ * Every candidate covered by that receipt IS activated, including ones whose evidence evaluates
+ * poorly: the verdict rides along on the record and recall-eligibility is derived from it, so a
+ * weakly-evidenced memory becomes visible-but-untrusted rather than silently dropped.
+ */
+function activateAllPending(
+  local: MemoryStore,
+  deps: ReturnType<typeof createMemoryDeps> & object,
+  repoRoot: string,
+): { receiptId: string | null; results: BulkActivation[] } {
+  const head = currentHead(repoRoot);
+  const digest = worktreeDigest(repoRoot);
+  let receipt: GateReceipt | undefined;
+  for (const e of local.readCollection('receipts').entries) {
+    const r = e as GateReceipt;
+    if (r.head === head && r.worktreeDigest === digest) {
+      receipt = r;
+      break;
+    }
+  }
+  if (!receipt) return { receiptId: null, results: [] };
+  const candidates = local.readCollection('candidates').entries.map((e) => e as MemoryCandidate);
+  const results: BulkActivation[] = [];
+  for (const candidate of candidates) {
+    try {
+      const evaluation = evaluateCandidate(candidate, {
+        evaluator: deps.evaluator,
+        soul: deps.evalCtx.soul,
+        receipt,
+        now: () => new Date().toISOString(),
+      });
+      const result = activateLocal(local, candidate, evaluation, receipt, {
+        receiptId: receipt.id,
+      });
+      results.push({
+        candidateId: candidate.id,
+        recordId: result.recordId,
+        evidence: evaluation.evaluation.evidence,
+      });
+    } catch (e) {
+      // One bad candidate must not strand the rest of the backlog.
+      results.push({ candidateId: candidate.id, skipped: (e as Error).message });
+    }
+  }
+  return { receiptId: receipt.id, results };
+}
+
 async function cmdMemoryActivate(args: string[], ctx?: CmdCtx): Promise<number> {
-  const id = pathArg(args);
-  if (!id) {
-    process.stderr.write('usage: crib memory activate <candidate-id>\n');
+  const all = args.includes('--all');
+  const id = all ? undefined : pathArg(args);
+  if (!all && !id) {
+    process.stderr.write('usage: crib memory activate <candidate-id> | --all | --all\n');
     return EXIT.BAD_ARGS;
   }
-  const resolved = resolveRoot(args, ctx);
+  const resolved = resolveRoot(all ? [] : args, ctx);
   if (!isIndexedRoot(resolved)) {
     process.stderr.write('not indexed — run `crib index` first\n');
     return EXIT.NOT_INDEXED;
@@ -8204,7 +8938,18 @@ async function cmdMemoryActivate(args: string[], ctx?: CmdCtx): Promise<number> 
     return EXIT.NOT_INDEXED;
   }
   const local = deps.local;
-  const candidate = findCandidate(local, id);
+  if (all) {
+    const bulk = activateAllPending(local, deps, resolved.repoRoot);
+    if (bulk.receiptId === null) {
+      process.stderr.write(
+        'no local receipt matching the current HEAD + worktree digest — run `crib memory evaluate <candidate> --profile <name>` first; nothing activated\n',
+      );
+      return EXIT.ERROR;
+    }
+    process.stdout.write(`${JSON.stringify({ trust: 'local', ...bulk }, null, 2)}\n`);
+    return EXIT.OK;
+  }
+  const candidate = findCandidate(local, id as string);
   if (!candidate) {
     process.stderr.write(`error: no local candidate '${id}' to activate\n`);
     return EXIT.ERROR;

@@ -17,6 +17,17 @@ export function blake3Hex(input: string): string {
   return bytesToHex(bytes);
 }
 
+/**
+ * Raw 64-char hex of blake3 over raw BYTES, no prefix. The string form coerces via UTF-8, which is
+ * correct for text but collapses distinct invalid byte sequences onto U+FFFD — a theoretical
+ * collision for binary content (file bytes). Content-addressed working-tree digests hash file
+ * contents (WP4.3), so they must go through this binary-safe form.
+ */
+export function blake3HexBytes(input: Uint8Array): string {
+  const bytes = blake3(input, { dkLen: DIGEST_BYTES });
+  return bytesToHex(bytes);
+}
+
 /** Prefixed content hash: "blake3:<hex>". Stored on Node.hash. */
 export function contentHash(input: string): string {
   return `blake3:${blake3Hex(input)}`;
