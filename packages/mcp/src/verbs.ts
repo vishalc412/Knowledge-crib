@@ -42,6 +42,8 @@ import {
   type FusionStrategy,
   type IntelligenceEventJournal,
   MemoryApi,
+  type MemoryCandidate,
+  type MemoryComposite,
   type MemoryDecision,
   type MemoryEvalContext,
   type MemoryEvaluator,
@@ -79,6 +81,7 @@ import {
   isFeedbackSignal,
   isMemoryRecordVersioned,
   isRecallEligible,
+  memoryComposite,
   openMemoryFts,
   openMemoryVectors,
   pendingCaptures,
@@ -87,6 +90,7 @@ import {
   readSyncConfig,
   recallProjection,
   resolveServerIdentity,
+  soulTargetResolver,
   stageSyncableWrite,
 } from '@knowledge-crib/memory';
 /**
@@ -572,6 +576,7 @@ export class Verbs {
         extracted: { nodes: m.stats.nodes, edges: m.stats.edges },
         semantic: composite.diagnostics,
         composite: { nodes: composite.nodes.length, edges: composite.edges.length },
+        ...this.memoryGraphCounts(),
       },
     };
     if (this.deps.vcs) {
@@ -670,6 +675,9 @@ export class Verbs {
       docs: docs.items,
       truncated: docs.truncated,
     };
+    // The memories written about this code — including ones staged a moment ago (labelled pending).
+    const memories = this.memoriesAt(id);
+    if (memories.length > 0) result.memories = memories;
     if (args.withSource) result.source = this.bodyOf(node, args);
     if (args.withRules && node.type && CALLABLE_SYMBOL_TYPES.has(node.type)) {
       result.rules = decisionTable(soul, id, { includeTables: true });
@@ -1234,11 +1242,17 @@ export class Verbs {
       frontier = next;
     }
     const page = bound(affected, capInt(args.limit, DEFAULT_LIMIT, MAX_LIMIT));
+    // Memories anchored in the blast radius: the knowledge an edit here can silently make stale.
+    const memories = this.memoriesAt(
+      id,
+      page.items.map((a) => a.id),
+    );
     return {
       root: id,
       dir: args.dir,
       affected: page.items,
       relatedDocs: this.docsFor(id, 0, args.extractedOnly),
+      ...(memories.length > 0 ? { memories } : {}),
       truncated: page.truncated,
       ...(page.cursor ? { cursor: page.cursor } : {}),
     };
@@ -1899,7 +1913,7 @@ export class Verbs {
     includeLlm?: boolean;
   }): Record<string, unknown> {
     const includeLlm = args.includeLlm === true && args.extractedOnly !== true;
-    const composite = includeLlm ? this.graph.composite() : undefined;
+    const composite = includeLlm ? this.compositeWithMemory() : undefined;
     const id =
       this.resolveNodeId(args.id) ??
       (composite?.nodes.some((node) => node.id === args.id) ? args.id : undefined);
@@ -2437,7 +2451,7 @@ export class Verbs {
     if (opts.includeLlm !== true || opts.extractedOnly === true) {
       return this.adjacency(id, dir, opts.extractedOnly);
     }
-    return this.graph.composite().edges.filter((edge) => {
+    return this.compositeWithMemory().edges.filter((edge) => {
       if (dir === 'up') return edge.dst === id;
       if (dir === 'down') return edge.src === id;
       return edge.src === id || edge.dst === id;
@@ -3449,21 +3463,25 @@ export class Verbs {
         ...(result.violations !== undefined ? { violations: result.violations } : {}),
       });
     }
+    const admitted = result.status === 'active';
     return this.applyIfHash(args, {
       ok: true,
       id: result.id,
       status: result.status,
+      ...(result.recordId !== undefined ? { recordId: result.recordId } : {}),
+      ...(result.admission !== undefined ? { admission: result.admission } : {}),
       origin: result.origin,
       scope: result.scope,
       outboxId: result.outboxId,
       idempotent: result.idempotent,
-      // What `status: 'pending'` actually MEANS for the caller's next question. Agents were
-      // reporting "recorded successfully" to users and then finding nothing on recall, because the
-      // acknowledgement described the write without saying the claim is not yet retrievable. An ack
-      // that omits that is technically true and practically misleading.
-      recallable: false,
-      nextAction:
-        'staged as an untrusted candidate — it will NOT appear in normal recall until admitted. Run `crib memory activate` to admit it to local trust, or read it meanwhile with memory_recall includePending:true.',
+      // What the status actually MEANS for the caller's next question. Agents were reporting
+      // "recorded successfully" to users and then finding nothing on recall, because the
+      // acknowledgement described the write without saying whether the claim is retrievable. An
+      // ack that omits that is technically true and practically misleading.
+      recallable: admitted,
+      nextAction: admitted
+        ? `admitted to local trust (${result.admission?.reason ?? 'grounded'}) — recallable now via memory_recall and brief.`
+        : `staged as an untrusted candidate${result.admission ? ` (held: ${result.admission.reason})` : ''} — it will NOT appear in normal recall until admitted. Run \`crib memory activate\` to admit it to local trust, or read it meanwhile with memory_recall includePending:true.`,
     });
   }
 
@@ -3828,6 +3846,96 @@ export class Verbs {
       .sort((a, b) => b.score - a.score || String(a.view.id).localeCompare(String(b.view.id)))
       .slice(0, limit)
       .map((x) => x.view);
+  }
+
+  /**
+   * The memory layer of the graph — recall-eligible records plus staged candidates (labelled
+   * `pending` / `untrusted`), each linked to the code it cites (`supported-by`) and is about
+   * (`applies-to`). Rebuilt from the stores on every call, so a write shows up in the very next
+   * graph read with no index step in between. `undefined` when memory is not configured.
+   */
+  private memoryGraph(): MemoryComposite | undefined {
+    const stores = this.recallStores();
+    if (!stores) return undefined;
+    const projection = recallProjection(gatherRecall(stores));
+    const pending = (this.memory?.local?.readCollection('candidates').entries ??
+      []) as unknown as MemoryCandidate[];
+    const soul = this.deps.soul;
+    return memoryComposite(projection, {
+      pending,
+      resolveTarget: soulTargetResolver((id) => soul.getNode(id)),
+    });
+  }
+
+  /** The code composite with the memory layer folded in (a soul node always wins an id collision). */
+  private compositeWithMemory(): ReturnType<GraphStore['composite']> {
+    const base = this.graph.composite();
+    const memory = this.memoryGraph();
+    return memory && memory.nodes.length > 0 ? this.graph.mergeComposite(base, memory) : base;
+  }
+
+  /**
+   * Memories linked to `id` — directly, or through a node inside it (a quote cited from one line of
+   * a function is about that function; a file covers everything it holds) — and to any `alsoIds`.
+   * Pending candidates are included and labelled, active records first. Capped at 20.
+   */
+  private memoriesAt(id: string, alsoIds: readonly string[] = []): Array<Record<string, unknown>> {
+    const graph = this.memoryGraph();
+    if (!graph || graph.nodes.length === 0) return [];
+    const soul = this.deps.soul;
+    const root = soul.getNode(id);
+    const direct = new Set([id, ...alsoIds]);
+    const covers = (dst: string): boolean => {
+      if (direct.has(dst)) return true;
+      const node = soul.getNode(dst);
+      if (!root?.file || !node || node.file !== root.file) return false;
+      if (root.kind === 'file') return true;
+      return Boolean(
+        root.span &&
+          node.span &&
+          node.span.start >= root.span.start &&
+          node.span.end <= root.span.end,
+      );
+    };
+    const via = new Map<string, Set<string>>();
+    for (const edge of graph.edges) {
+      if (edge.rel === 'conflicts-with' || !covers(edge.dst)) continue;
+      const rels = via.get(edge.src) ?? new Set<string>();
+      rels.add(edge.rel);
+      via.set(edge.src, rels);
+    }
+    return graph.nodes
+      .filter((node) => via.has(node.id))
+      .sort((a, b) =>
+        a.status === b.status ? a.id.localeCompare(b.id) : a.status === 'active' ? -1 : 1,
+      )
+      .slice(0, 20)
+      .map((node) => ({
+        id: node.id,
+        claim: node.claim,
+        status: node.status,
+        trust: node.trust,
+        via: [...(via.get(node.id) ?? [])].sort(),
+      }));
+  }
+
+  /** `status` — how much memory the graph holds, how much is pending, and how many links land. */
+  private memoryGraphCounts(): {
+    memory?: { nodes: number; pending: number; linkedEdges: number };
+  } {
+    const graph = this.memoryGraph();
+    if (!graph) return {};
+    const ids = new Set(graph.nodes.map((node) => node.id));
+    const soul = this.deps.soul;
+    return {
+      memory: {
+        nodes: graph.nodes.length,
+        pending: graph.nodes.filter((node) => node.status === 'pending').length,
+        linkedEdges: graph.edges.filter(
+          (edge) => ids.has(edge.dst) || soul.getNode(edge.dst) !== undefined,
+        ).length,
+      },
+    };
   }
 
   private recallStores():

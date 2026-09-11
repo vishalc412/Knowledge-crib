@@ -43,6 +43,15 @@ import {
   buildAliasIndex,
   conservativeVerdicts,
 } from './aliases.js';
+import {
+  type AdmissionDecision,
+  admissionSignals,
+  admitGrounded,
+  decideAutoAdmission,
+  evaluateForAdmission,
+  groundAgentEvidence,
+  unresolvedTargetsIn,
+} from './auto-admit.js';
 import { type CapturePolicyViolation, checkCapturePolicy } from './capture-policy.js';
 import {
   type EvidenceKind,
@@ -116,7 +125,12 @@ import {
   DEFAULT_RETENTION_POLICY_ID,
   migrationProvenance,
 } from './migrations.js';
-import { buildCaptureOutboxEntry, pendingCaptures, stageCaptureOutboxEntry } from './outbox.js';
+import {
+  buildCaptureOutboxEntry,
+  markCaptureDone,
+  pendingCaptures,
+  stageCaptureOutboxEntry,
+} from './outbox.js';
 import { readRepoId } from './paths.js';
 import { type CapturePolicySection, loadPolicy, trustedRefOf } from './policy.js';
 import {
@@ -708,7 +722,12 @@ export interface ObserveSuccess {
   ok: true;
   /** `cand:<blake3>` — content-addressed; a repeat observation upserts the same id. */
   id: string;
-  status: 'pending';
+  /** `active` = the gate admitted it to local trust in this call (recallable now); else `pending`. */
+  status: 'pending' | 'active';
+  /** the admitted record's `mem:` id — present only when `status` is `active`. */
+  recordId?: string;
+  /** the gate's decision + reason — absent when no evaluator is wired (nothing was decided). */
+  admission?: AdmissionDecision;
   origin: 'observe' | 'attempt';
   scope: MemoryScope;
   /** true iff this content id was already staged (the idempotence signal). */
@@ -1507,7 +1526,14 @@ export class MemoryApi {
     eventOffset?: number;
     anchorStatus?: CaptureAnchorStatus;
   }):
-    | { ok: true; id: string; duplicate: boolean; outboxId: string; idempotent: boolean }
+    | {
+        ok: true;
+        id: string;
+        candidate: MemoryCandidate;
+        duplicate: boolean;
+        outboxId: string;
+        idempotent: boolean;
+      }
     | { ok: false; error: string; violations?: readonly CapturePolicyViolation[] } {
     const local = this.deps.stores.local;
     if (!local) return { ok: false, error: 'no local memory store is configured for capture' };
@@ -1595,6 +1621,7 @@ export class MemoryApi {
     return {
       ok: true,
       id: candidate.id,
+      candidate,
       duplicate: staged.duplicate,
       outboxId: outboxEntry.id,
       idempotent: staged.idempotent,
@@ -1657,9 +1684,29 @@ export class MemoryApi {
         error: `evidence[${forgedTty}] sets \`tty: true\`, which asserts a human attested this at a terminal. That flag is stamped by crib when it observes a real terminal, never accepted from a caller. To record a human attestation run \`crib memory remember\` in a terminal; to stage an agent observation, omit \`tty\`.`,
       };
     }
-    if (proposedEvidence.length > 0) {
+    // Agents cite code as path + line + quote; pin each quote that VERIFIES to its soul span so the
+    // evaluator can check it. Grounding runs BEFORE the admissibility check — a verified citation
+    // now carries the soulId that check requires, where it used to be refused outright — and before
+    // staging, so the candidate and any admitted record share one content id.
+    const evidence = this.deps.soul
+      ? groundAgentEvidence(this.deps.soul, proposedEvidence)
+      : proposedEvidence;
+    const unverified = this.deps.soul
+      ? evidence.findIndex(
+          (e) => e.kind === 'source-quote' && !e.soulId && typeof e.path === 'string',
+        )
+      : -1;
+    if (unverified !== -1) {
+      const cite = evidence[unverified];
+      const where = `${String(cite?.path)}${typeof cite?.line === 'number' ? `:${cite.line}` : ''}`;
+      return {
+        ok: false,
+        error: `evidence[${unverified}] quotes ${where}, but that text was not found in the indexed code there — re-read the file and quote it exactly (re-index first if the file changed since the last \`crib index\`).`,
+      };
+    }
+    if (evidence.length > 0) {
       // Staged: attestation timestamps are stamped by crib at admission, not supplied by a caller.
-      const problems = admissibilityProblems(kind, proposedEvidence, { staged: true });
+      const problems = admissibilityProblems(kind, evidence, { staged: true });
       if (problems.length > 0) {
         return {
           ok: false,
@@ -1689,7 +1736,7 @@ export class MemoryApi {
       claim: input.claim,
       scope,
       appliesTo: input.appliesTo ?? [],
-      evidence: input.evidence ?? [],
+      evidence,
       authorship: {
         actor: input.actor,
         kind: input.authorKind ?? 'agent',
@@ -1729,7 +1776,7 @@ export class MemoryApi {
           scopeBoundary: boundary,
           origin,
         },
-        evidenceRefs: observationEvidenceRefs(input.evidence ?? []),
+        evidenceRefs: observationEvidenceRefs(evidence),
         occurredAt: this.now(),
       });
       const checkpoints = this.deps.projectionCheckpoints;
@@ -1754,16 +1801,47 @@ export class MemoryApi {
         error: `observation staged but intelligence event was not recorded: ${message}`,
       };
     }
+    const admission = this.autoAdmit(local, staged.candidate, staged.outboxId);
     return {
       ok: true,
       id: staged.id,
-      status: 'pending',
+      status: admission?.recordId !== undefined ? 'active' : 'pending',
+      ...(admission?.recordId !== undefined ? { recordId: admission.recordId } : {}),
+      ...(admission !== undefined ? { admission: admission.decision } : {}),
       origin,
       scope,
       duplicate: staged.duplicate,
       outboxId: staged.outboxId,
       idempotent: staged.idempotent,
     };
+  }
+
+  /**
+   * Gated auto-admission (auto-admit.ts): evaluate the staged candidate fresh, let the gate decide,
+   * and on `admit` write the local-trust record and close its outbox entry under one lock hold.
+   * Absent an evaluator there is nothing to decide WITH, so the claim stays pending exactly as it
+   * did before this gate existed — and no decision is reported.
+   */
+  private autoAdmit(
+    local: MemoryStore,
+    candidate: MemoryCandidate,
+    outboxId: string,
+  ): { decision: AdmissionDecision; recordId?: string } | undefined {
+    const { evaluator, evalCtx, soul } = this.deps;
+    if (!evaluator || !evalCtx) return undefined;
+    const now = () => this.now();
+    const evaluation = evaluateForAdmission(evaluator, evalCtx, candidate, now);
+    const unresolved = soul
+      ? unresolvedTargetsIn(soul, candidate.appliesTo)
+      : candidate.appliesTo.length;
+    const decision = decideAutoAdmission(admissionSignals(candidate, evaluation, unresolved));
+    if (decision.verdict !== 'admit') return { decision };
+    const record = local.withLock(() => {
+      const admitted = admitGrounded(local, candidate, evaluation, decision, now);
+      markCaptureDone(local, outboxId, { candidateId: candidate.id });
+      return admitted;
+    });
+    return { decision, recordId: record.id };
   }
 
   // ── search ─────────────────────────────────────────────────────────────────

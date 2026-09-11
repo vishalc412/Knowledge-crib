@@ -92,6 +92,7 @@ import {
   IntelligenceEventJournal,
   MemoryApi,
   type MemoryCandidate,
+  type MemoryCompositeOpts,
   type MemoryDecision,
   MemoryEvaluator,
   type MemoryEvidence,
@@ -168,6 +169,7 @@ import {
   localRecordsToTombstone,
   localStoreRoot,
   memoryCandidateId,
+  memoryComposite,
   memoryHome,
   openMemoryFts,
   openMemoryVectors,
@@ -189,6 +191,7 @@ import {
   runMemoryBench,
   runMemoryCheck,
   sameSubjectRecords,
+  soulTargetResolver,
   stageSyncableWrite,
   syncConfigPath,
   syncEngineStatus,
@@ -218,6 +221,7 @@ import {
   runCluster,
   showFileAtRef,
   uncommittedChanges,
+  untrackedFiles,
   updateRepo,
 } from '@knowledge-crib/pipeline';
 import { DEFAULT_IGNORES } from '@knowledge-crib/pipeline';
@@ -297,6 +301,14 @@ import {
   resolveProjectRoot,
 } from './runtime.js';
 import { installSkill, listBundledSkills } from './skill-install.js';
+import {
+  decideStopNudge,
+  nudgeWorkPaths,
+  readNudgeState,
+  recordSessionStart,
+  sessionKey,
+  writeNudgeState,
+} from './stop-nudge.js';
 import {
   VizHttpError,
   isAllowedHost,
@@ -2469,6 +2481,22 @@ async function cmdInit(args: string[], ctx?: CmdCtx): Promise<number> {
       `  warning: instruction-adapter install failed — ${(e as Error).message}\n`,
     );
   }
+  // Lifecycle capture hooks — Claude Code is the one client with a verified hook surface. They wire
+  // the SessionStart bootstrap and the Stop nudge that asks the agent to record what it learned;
+  // without them memory is write-only-if-remembered. Non-fatal, like the adapters above.
+  if (plan.clients.includes('claude')) {
+    try {
+      for (const r of installCaptureHooks(repoRoot, { client: 'claude', scope: 'project' })) {
+        process.stdout.write(
+          r.note
+            ? `  capture hooks: ${r.note}\n`
+            : `  capture hooks ${r.written ? 'installed' : 'up to date'} (${r.events.join(', ')}) → ${r.path}\n`,
+        );
+      }
+    } catch (e) {
+      process.stderr.write(`  warning: capture-hook install failed — ${(e as Error).message}\n`);
+    }
+  }
 
   process.stdout.write('  step 5/5: on-device semantic model for memory recall…\n');
   await installEmbedTier(embed);
@@ -3648,12 +3676,16 @@ async function cmdViz(args: string[], ctx?: CmdCtx): Promise<number> {
     runCluster(rt.soul);
     repairedClusters = true;
   }
-  const graph = buildVizGraph(rt.soul);
-  const overview = buildVizOverview(rt.soul);
-  const assets = vizAssetsDir();
   // G5.4 — the memory ledger rides on the SAME MemoryApi the MCP verbs and CLI subcommands use;
   // repos without a memory store serve the honest `configured: false` shape, not an error.
   const memoryDeps = createMemoryDeps(rt.soul, rt.repoRoot, resolved.cribDir);
+  // The graph shows memory too — trusted records and pending candidates, linked to their code.
+  const graph = buildVizGraph(
+    rt.soul,
+    memoryDeps ? vizMemoryLayer(rt.soul, memoryDeps) : undefined,
+  );
+  const overview = buildVizOverview(rt.soul);
+  const assets = vizAssetsDir();
   const memoryApi = memoryDeps
     ? createMemoryApi(rt.soul, rt.repoRoot, resolved.cribDir, memoryDeps)
     : undefined;
@@ -4799,6 +4831,19 @@ function createMemoryDeps(soul: SoulStore, repoRoot: string, cribDir: string) {
   };
 }
 
+/** The memory layer `crib viz` folds into the graph — the same projection the MCP graph verbs use
+ *  (recall-eligible records + pending candidates, path targets resolved to file nodes). */
+function vizMemoryLayer(soul: SoulStore, deps: NonNullable<ReturnType<typeof createMemoryDeps>>) {
+  const stores = { team: deps.team, local: deps.local, global: deps.global };
+  const pending = deps.local.readCollection('candidates').entries as unknown as NonNullable<
+    MemoryCompositeOpts['pending']
+  >;
+  return memoryComposite(recallProjection(gatherRecall(stores)), {
+    pending,
+    resolveTarget: soulTargetResolver((id) => soul.getNode(id)),
+  });
+}
+
 /**
  * Gate 1.3 — build the portable {@link MemoryApi} over the CLI's three stores. The SAME adapter
  * the MCP verbs use (verbs.ts `memoryApi()`): soul anchored through `SoulStoreAnchorPort`, fresh
@@ -5917,6 +5962,53 @@ function lifecycleOutcomeOf(payload: Record<string, unknown>): LifecycleOutcome 
   };
 }
 
+/** Claude Code's Stop-hook exit code for "do not stop yet" (stderr becomes the agent's context). */
+const STOP_HOOK_BLOCK_EXIT = 2;
+const STOP_NUDGE_STATE_FILE = 'stop-nudge.json';
+
+/**
+ * The Stop-hook memory nudge (stop-nudge.ts). `session-start` records the starting tree; `turn-end`
+ * returns the reason to block with when the session did work it has not been asked about. Returns
+ * undefined otherwise — and on ANY failure, because a nudge is a courtesy and must never break the
+ * fail-open hook contract. `KCRIB_STOP_NUDGE=off` disables it.
+ */
+function stopNudgeReason(
+  event: LifecycleEvent,
+  payload: Record<string, unknown>,
+  sessionId: string | undefined,
+  repoId: string,
+  repoRoot: string,
+  head: string | undefined,
+): string | undefined {
+  if (!sessionId || process.env.KCRIB_STOP_NUDGE === 'off') return undefined;
+  if (event !== 'session-start' && event !== 'turn-end') return undefined;
+  try {
+    const path = join(localStoreRoot(repoId, process.env), STOP_NUDGE_STATE_FILE);
+    const state = readNudgeState(path);
+    const key = sessionKey(sessionId);
+    // Its own uncapped snapshot, not the resume anchor's: that one lists tracked changes only (a
+    // session that just CREATED files looked idle) and is capped for the journal payload.
+    const snap = {
+      ...(head ? { head } : {}),
+      changedPaths: nudgeWorkPaths(uncommittedChanges(repoRoot), untrackedFiles(repoRoot)),
+    };
+    const now = new Date().toISOString();
+    if (event === 'session-start') {
+      const next = recordSessionStart(state, key, snap, now);
+      if (next !== state) writeNudgeState(path, next);
+      return undefined;
+    }
+    const { decision, next } = decideStopNudge(state, key, snap, {
+      stopHookActive: payload.stop_hook_active === true,
+      now,
+    });
+    if (next !== state) writeNudgeState(path, next);
+    return decision.nudge ? decision.reason : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 /** A lifecycle hook fires inside a live coding session: this command MUST never block one.
  *  Claude Code treats a nonzero hook exit (2 in particular) as a blocking error, so every runtime
  *  failure — bad payload, unindexed repo, policy refusal, store error — degrades to stderr + EXIT.OK.
@@ -5982,6 +6074,7 @@ function cmdMemoryCaptureHook(args: string[], ctx?: CmdCtx): number {
         clientId,
         agentId: actor,
       }) ?? resolveServerIdentity(process.env);
+    const repository = currentRepositoryAnchor(resolved.repoRoot);
     const lifecycle = deps.eventJournal.append({
       kind: 'agent.lifecycle',
       idempotencyKey,
@@ -6005,11 +6098,26 @@ function cmdMemoryCaptureHook(args: string[], ctx?: CmdCtx): number {
         event,
         action: 'checkpoint-requested',
         hasOutcome: outcome !== undefined,
-        repository: currentRepositoryAnchor(resolved.repoRoot),
+        repository,
       },
       occurredAt,
     });
     if (!outcome) {
+      const nudge = stopNudgeReason(
+        event,
+        payload,
+        sessionId,
+        repoId,
+        resolved.repoRoot,
+        repository.head,
+      );
+      if (nudge !== undefined) {
+        // The one deliberate non-zero exit: Claude Code's documented Stop contract treats exit 2 as
+        // "prevent stopping, continue", feeding stderr to the agent. stop-nudge.ts guarantees it
+        // fires at most once per session per HEAD and never while already continuing.
+        process.stderr.write(`${nudge}\n`);
+        return STOP_HOOK_BLOCK_EXIT;
+      }
       process.stdout.write(
         `${JSON.stringify({
           ok: true,

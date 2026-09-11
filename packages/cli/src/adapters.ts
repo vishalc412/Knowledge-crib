@@ -221,7 +221,10 @@ export const CLIENT_ADAPTERS: ClientAdapter[] = [
     lifecycle: {
       portableCapture: { tool: 'memory', op: 'capture', evidence: 'in-repo-writer' },
       lifecycleHooks: {
-        events: ['session-start', 'turn-end', 'tool-use'],
+        // PostToolUse ('tool-use') is deliberately NOT wired: it spawns the crib CLI after every
+        // tool call (~1s each, measured) to journal a checkpoint marker. SessionStart (bootstrap)
+        // and Stop (the memory nudge) are the two moments worth a process spawn.
+        events: ['session-start', 'turn-end'],
         // settings.json hooks exist upstream (SessionStart / Stop / PostToolUse run a configured
         // command) — but the fired-event guarantee is upstream documentation, not in-repo
         // execution: this repo only writes the entry (capture-hook writer below), and the durable
@@ -658,21 +661,43 @@ const CLAUDE_HOOK_EVENT_KEYS: Record<LifecycleEvent, string> = {
   'tool-use': 'PostToolUse',
 };
 
-/** True when a hook command entry is crib-managed: the marker prefix in `command` is the managed
- *  block's begin marker analogue. */
+/** Seconds Claude Code waits on a crib hook before moving on (a capture run takes about one). */
+const CAPTURE_HOOK_TIMEOUT_SECONDS = 30;
+
+function isObjectRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+/**
+ * The crib capture command a hook-bucket entry carries, or undefined when the entry is not crib's.
+ *
+ * Claude Code reads each event bucket as MATCHER GROUPS — `{ matcher?, hooks: [{ type, command }] }`.
+ * Earlier crib versions wrote the inner `{ type, command }` object straight into the bucket, a shape
+ * the client does not run, so the hooks were installed and never fired. Both shapes are recognised
+ * here so a re-install replaces the old entries instead of leaving them beside the new ones. A group
+ * is crib-owned only when crib's command is its SOLE hook: a group a user extended is never touched.
+ */
+function cribCommandOf(entry: unknown): string | undefined {
+  if (!isObjectRecord(entry)) return undefined;
+  if (typeof entry.command === 'string') {
+    return entry.command.startsWith(CAPTURE_HOOK_COMMAND_MARKER) ? entry.command : undefined;
+  }
+  const inner = entry.hooks;
+  if (!Array.isArray(inner) || inner.length !== 1 || !isObjectRecord(inner[0])) return undefined;
+  const command = inner[0].command;
+  return typeof command === 'string' && command.startsWith(CAPTURE_HOOK_COMMAND_MARKER)
+    ? command
+    : undefined;
+}
+
+/** True when a hook-bucket entry is crib-managed (the marker prefix is the begin-marker analogue). */
 function isCribHookEntry(entry: unknown): entry is Record<string, unknown> {
-  return (
-    typeof entry === 'object' &&
-    entry !== null &&
-    !Array.isArray(entry) &&
-    typeof (entry as Record<string, unknown>).command === 'string' &&
-    ((entry as Record<string, unknown>).command as string).startsWith(CAPTURE_HOOK_COMMAND_MARKER)
-  );
+  return cribCommandOf(entry) !== undefined;
 }
 
 /** The lifecycle event a crib-owned hook entry was written for, or `null` when unparseable. */
 function eventOfCribHook(entry: Record<string, unknown>): LifecycleEvent | null {
-  const m = /--event (session-start|turn-end|tool-use)(?:\s|;|$)/.exec(entry.command as string);
+  const m = /--event (session-start|turn-end|tool-use)(?:\s|;|$)/.exec(cribCommandOf(entry) ?? '');
   const event = m?.[1];
   return event && (LIFECYCLE_EVENTS as readonly string[]).includes(event)
     ? (event as LifecycleEvent)
@@ -787,10 +812,29 @@ export function installCaptureHooks(
       // Drop prior crib-owned entries, then append ours last — user entries keep their position and
       // the crib entry is byte-identical on re-runs (idempotent).
       const kept = bucket.filter((e) => !isCribHookEntry(e));
-      kept.push({ type: 'command', command: captureHookCommand(event) });
+      kept.push({
+        hooks: [
+          {
+            type: 'command',
+            command: captureHookCommand(event),
+            timeout: CAPTURE_HOOK_TIMEOUT_SECONDS,
+          },
+        ],
+      });
       if (JSON.stringify(kept) !== JSON.stringify(bucket)) changed = true;
       hooksRoot[key] = kept;
       wired.push(event);
+    }
+    // Retire crib entries on hook keys this client no longer wires (PostToolUse, from installs that
+    // predate dropping it). User entries on those keys are untouched; an emptied key is omitted.
+    for (const { event, key } of hookEventPairs(LIFECYCLE_EVENTS)) {
+      if (hooks.events.includes(event)) continue;
+      const bucket = hooksRoot[key];
+      if (!Array.isArray(bucket)) continue;
+      const kept = bucket.filter((e) => !isCribHookEntry(e));
+      if (kept.length === bucket.length) continue;
+      changed = true;
+      hooksRoot[key] = kept.length > 0 ? kept : undefined;
     }
     if (changed) {
       mkdirSync(dirname(path), { recursive: true });
@@ -887,7 +931,9 @@ export function removeCaptureHooks(
     const hooksRoot = { ...((obj.hooks as Record<string, unknown>) ?? {}) };
     const removed: LifecycleEvent[] = [];
     let changed = false;
-    for (const { event, key } of hookEventPairs(hooks.events)) {
+    // Every lifecycle key, not just the ones wired today: an uninstall also clears entries left by
+    // an older crib that wired more events.
+    for (const { event, key } of hookEventPairs(LIFECYCLE_EVENTS)) {
       const bucket = hooksRoot[key];
       if (!Array.isArray(bucket)) continue;
       const kept = bucket.filter((e) => !isCribHookEntry(e));

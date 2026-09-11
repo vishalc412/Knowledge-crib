@@ -324,7 +324,7 @@ export function buildServer(verbs: Verbs, version = '0.1.0'): McpServer {
     'memory_observe',
     {
       description:
-        "Stage a LOCAL memory candidate. Never writes team memory and never evaluates it - promotion is a separate CLI/CI step (crib memory evaluate/activate/propose). Re-observing the same claim upserts the same id. Returns { memory: 'not configured' } when no local store is wired.",
+        "Record an observation to LOCAL memory. Cite code as evidence items { kind: 'source-quote', path, line, quote } with the exact text: crib grounds each quote against the indexed code, and a claim it can vouch for is admitted to local trust in the same call (status 'active', recallable: true, linked into the code graph). Anything else stays a pending candidate and `admission.reason` says what would admit it; a quote not found in the code is refused outright. Decisions and conventions need a person (`crib memory remember`). Never writes team memory - team promotion stays a CLI/CI step. Re-observing the same claim upserts the same id. Returns { memory: 'not configured' } when no local store is wired.",
       inputSchema: {
         kind: z.enum(['fact', 'procedure', 'decision', 'pitfall', 'convention']),
         subject: z.string(),

@@ -437,7 +437,7 @@ describe('capture-lane matrix (G2.1) — registry coverage', () => {
 
   it('captureLaneSummary renders the lane data (regenerated, never hand-written)', () => {
     expect(captureLaneSummary('claude')).toMatch(
-      /Claude Code: portable capture via memory\(\{op:'capture'\}\) \[in-repo-writer\]; lifecycle hooks \(session-start, turn-end, tool-use\) \[verified-upstream-doc\]/,
+      /Claude Code: portable capture via memory\(\{op:'capture'\}\) \[in-repo-writer\]; lifecycle hooks \(session-start, turn-end\) \[verified-upstream-doc\]/,
     );
     expect(captureLaneSummary('cursor')).toMatch(
       /Cursor: portable capture via memory\(\{op:'capture'\}\) \[in-repo-writer\]; instruction-based recall only \(no lifecycle-hook surface\)/,
@@ -456,16 +456,22 @@ describe('capture-hook writer (G2.1) — Claude settings.json', () => {
   it('installs one managed entry per declared event, mapped to the upstream hook keys', () => {
     const results = installCaptureHooks(repo, { client: 'claude', scope: 'project' });
     expect(results[0]!.written).toBe(true);
-    expect(results[0]!.events).toEqual(['session-start', 'turn-end', 'tool-use']);
+    expect(results[0]!.events).toEqual(['session-start', 'turn-end']);
     const obj = JSON.parse(readFileSync(settingsPath(), 'utf8')) as Record<string, unknown>;
     const hooks = obj.hooks as Record<string, unknown>;
-    expect(Object.keys(hooks).sort()).toEqual(['PostToolUse', 'SessionStart', 'Stop']);
+    expect(Object.keys(hooks).sort()).toEqual(['SessionStart', 'Stop']);
     for (const key of Object.keys(hooks)) {
       const bucket = hooks[key] as Record<string, unknown>[];
       expect(bucket).toHaveLength(1);
+      // The matcher-group shape Claude Code runs — NOT a bare { type, command } in the bucket.
       expect(bucket[0]).toEqual({
-        type: 'command',
-        command: expect.stringMatching(/^crib memory capture-hook --event /),
+        hooks: [
+          {
+            type: 'command',
+            command: expect.stringMatching(/^crib memory capture-hook --event /),
+            timeout: 30,
+          },
+        ],
       });
     }
     expect((hooks.SessionStart as unknown[])[0]).toBeDefined();
@@ -501,6 +507,64 @@ describe('capture-hook writer (G2.1) — Claude settings.json', () => {
     expect(JSON.stringify(stop)).toContain(CAPTURE_HOOK_COMMAND_MARKER);
     // The user's entry keeps its position (first).
     expect((stop[0]!.hooks as { command: string }[])[0]!.command).toBe('user-own-hook');
+  });
+
+  it('migrates entries an earlier crib wrote (flat shape, PostToolUse) on re-install', () => {
+    writeFileSync(
+      settingsPath(),
+      `${JSON.stringify(
+        {
+          hooks: {
+            SessionStart: [{ type: 'command', command: captureHookCommand('session-start') }],
+            Stop: [{ type: 'command', command: captureHookCommand('turn-end') }],
+            PostToolUse: [
+              { type: 'command', command: captureHookCommand('tool-use') },
+              { hooks: [{ type: 'command', command: 'user-post-tool' }] },
+            ],
+          },
+        },
+        null,
+        2,
+      )}\n`,
+    );
+    const result = installCaptureHooks(repo, { client: 'claude', scope: 'project' });
+    expect(result[0]!.written).toBe(true);
+    const hooks = (
+      JSON.parse(readFileSync(settingsPath(), 'utf8')) as { hooks: Record<string, unknown[]> }
+    ).hooks;
+    expect(hooks.SessionStart).toHaveLength(1);
+    expect(hooks.Stop).toHaveLength(1);
+    expect(hooks.Stop![0]).toMatchObject({ hooks: [{ type: 'command' }] });
+    expect(JSON.stringify(hooks.PostToolUse)).not.toContain(CAPTURE_HOOK_COMMAND_MARKER);
+    expect(JSON.stringify(hooks.PostToolUse)).toContain('user-post-tool');
+  });
+
+  it('never claims a matcher group a user extended with their own hook', () => {
+    writeFileSync(
+      settingsPath(),
+      `${JSON.stringify(
+        {
+          hooks: {
+            Stop: [
+              {
+                hooks: [
+                  { type: 'command', command: captureHookCommand('turn-end') },
+                  { type: 'command', command: 'user-own-hook' },
+                ],
+              },
+            ],
+          },
+        },
+        null,
+        2,
+      )}\n`,
+    );
+    installCaptureHooks(repo, { client: 'claude', scope: 'project' });
+    const stop = (
+      JSON.parse(readFileSync(settingsPath(), 'utf8')) as { hooks: Record<string, unknown[]> }
+    ).hooks.Stop!;
+    expect(stop).toHaveLength(2);
+    expect(JSON.stringify(stop[0])).toContain('user-own-hook');
   });
 
   it('refuses to write an unparseable settings file (the orphan-marker rule in JSON form)', () => {
@@ -548,9 +612,9 @@ describe('capture-hook writer (G2.1) — Claude settings.json', () => {
     installCaptureHooks(repo, { client: 'claude', scope: 'project' });
     const result = removeCaptureHooks(repo, { client: 'claude', scope: 'project' });
     expect(result[0]!.written).toBe(true);
-    expect(result[0]!.events).toEqual(['session-start', 'turn-end', 'tool-use']);
+    expect(result[0]!.events).toEqual(['session-start', 'turn-end']);
     const obj = JSON.parse(readFileSync(settingsPath(), 'utf8')) as Record<string, unknown>;
-    // The user's own Stop hook survives; the crib SessionStart/PostToolUse buckets are gone and
+    // The user's own Stop hook survives; the crib SessionStart bucket is gone and
     // the hooks key itself is dropped (only Stop remained, and its only entry is the user's).
     expect(JSON.stringify(obj)).toContain('user-own-hook');
     expect(JSON.stringify(obj)).not.toContain(CAPTURE_HOOK_COMMAND_MARKER);
@@ -583,7 +647,6 @@ describe('capture-hook writer (G2.1) — Claude settings.json', () => {
     expect(listCaptureHooks(repo, { client: 'claude', scope: 'project' })[0]!.events).toEqual([
       'session-start',
       'turn-end',
-      'tool-use',
     ]);
     expect(captureHookCommand('turn-end')).toBe(`${CAPTURE_HOOK_COMMAND_MARKER} --event turn-end`);
   });
