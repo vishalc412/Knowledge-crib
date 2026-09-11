@@ -50,6 +50,7 @@ import {
   decideAutoAdmission,
   evaluateForAdmission,
   groundAgentEvidence,
+  isIndexedFile,
   unresolvedTargetsIn,
 } from './auto-admit.js';
 import { type CapturePolicyViolation, checkCapturePolicy } from './capture-policy.js';
@@ -1693,9 +1694,18 @@ export class MemoryApi {
     // evaluator can check it. Grounding runs BEFORE the admissibility check — a verified citation
     // now carries the soulId that check requires, where it used to be refused outright — and before
     // staging, so the candidate and any admitted record share one content id.
-    const evidence = this.deps.soul
-      ? groundAgentEvidence(this.deps.soul, proposedEvidence)
-      : proposedEvidence;
+    // An agent relaying what the user said: stamp WHO relayed each unconfirmed attestation. The stamp
+    // can only ever earn `degraded` (evaluator.ts) — recallable locally, refused by every path that
+    // needs a person. No timestamp: re-observing the same statement must upsert the same id.
+    const relayed =
+      this.attestationSource === 'terminal'
+        ? proposedEvidence
+        : proposedEvidence.map((e) =>
+            e.kind === 'human-attestation' && e.tty !== true
+              ? ({ ...e, relayedBy: input.actor } as MemoryEvidence)
+              : e,
+          );
+    const evidence = this.deps.soul ? groundAgentEvidence(this.deps.soul, relayed) : relayed;
     const unverified = this.deps.soul
       ? evidence.findIndex(
           (e) => e.kind === 'source-quote' && !e.soulId && typeof e.path === 'string',
@@ -1703,10 +1713,16 @@ export class MemoryApi {
       : -1;
     if (unverified !== -1) {
       const cite = evidence[unverified];
-      const where = `${String(cite?.path)}${typeof cite?.line === 'number' ? `:${cite.line}` : ''}`;
+      const path = String(cite?.path);
+      const where = `${path}${typeof cite?.line === 'number' ? `:${cite.line}` : ''}`;
+      // Two different fixes, so two different messages: a file the index has never seen needs a
+      // re-index; a quote missing from an indexed file needs a correct quote.
+      const notIndexed = this.deps.soul !== undefined && !isIndexedFile(this.deps.soul, path);
       return {
         ok: false,
-        error: `evidence[${unverified}] quotes ${where}, but that text was not found in the indexed code there — re-read the file and quote it exactly (re-index first if the file changed since the last \`crib index\`).`,
+        error: notIndexed
+          ? `evidence[${unverified}] cites ${where}, but ${path} is not in the index (a new file, an ignored path, or an index older than the file) — run \`crib update\` so crib can verify the quote, then observe again.`
+          : `evidence[${unverified}] quotes ${where}, but that text was not found in the indexed code there — re-read the file and quote it exactly (re-index first if the file changed since the last \`crib index\`).`,
       };
     }
     if (evidence.length > 0) {

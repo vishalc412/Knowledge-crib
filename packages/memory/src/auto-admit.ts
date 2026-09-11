@@ -70,8 +70,25 @@ export function groundAgentEvidence(
         ...(node.span ? { startLine: node.span.start } : {}),
       };
     }
+    // No declaration span holds the quote — a top-level constant, an import, a config or YAML line.
+    // Anchor to the file node itself: its hash is the file's content hash, so drift is still caught.
+    const fileNode = nodes.find((n) => n.kind === 'file' && n.file === ev.path);
+    if (fileNode) {
+      const startLine = line !== undefined ? Math.max(1, line - FILE_QUOTE_WINDOW) : 1;
+      if (verifyQuote(port, fileNode, ev.quote, startLine).verdict === 'grounded') {
+        return { ...ev, soulId: fileNode.id, targetHash: fileNode.hash, startLine };
+      }
+    }
     return ev;
   });
+}
+
+/** Lines above a cited line that file-level grounding still searches (agents' line numbers drift). */
+const FILE_QUOTE_WINDOW = 20;
+
+/** True when the index holds any node in `path` — separates "not indexed yet" from "quote not found". */
+export function isIndexedFile(port: GroundingPort, path: string): boolean {
+  return port.allNodes().some((n) => n.file === path);
 }
 
 /** Spanned nodes of `path` that hold `line` (all spanned nodes when absent), narrowest first. */
@@ -150,6 +167,8 @@ export interface AdmissionSignals {
   invalidItems: number;
   /** `appliesTo` targets the index does not know (0 when every target resolves, or none given). */
   unresolvedTargets: number;
+  /** human attestations an agent relayed and no person has confirmed yet (`relayed-unconfirmed`). */
+  relayedItems?: number;
 }
 
 export function admissionSignals(
@@ -168,6 +187,7 @@ export function admissionSignals(
     degradedItems: count('degraded'),
     invalidItems: count('invalid'),
     unresolvedTargets,
+    relayedItems: evaluation.items.filter((item) => item.reason === 'relayed-unconfirmed').length,
   };
 }
 
@@ -177,8 +197,10 @@ export function admissionSignals(
  *
  * The rule is "admit what crib itself can vouch for, hold the rest — and say what would change the
  * answer". Holds, checked in order:
- *   1. `decision` / `convention` — those kinds admit only human attestation or committed policy,
- *      which an agent cannot mint over MCP; a person confirms them with `crib memory remember`.
+ *   1. `decision` / `convention` WITHOUT the user's relayed words — those kinds admit only human
+ *      attestation or committed policy. When the agent relays what the user said (a
+ *      `relayed-unconfirmed` attestation) the claim IS admitted locally, labelled unconfirmed; a
+ *      person makes it verified with `crib memory remember`.
  *   2. any citation that does not match the code — the author's picture of the code is off, and
  *      admitting the matching rest would launder that confusion into trusted memory.
  *   3. nothing verifiable at all — no evidence item crib could check.
@@ -194,8 +216,16 @@ export function admissionSignals(
 export function decideAutoAdmission(s: AdmissionSignals): AdmissionDecision {
   const hold = (reason: string): AdmissionDecision => ({ verdict: 'hold', reason });
   if (s.kind === 'decision' || s.kind === 'convention') {
+    // The user's own words, relayed by the agent: admitted locally so they are REMEMBERED, labelled
+    // unconfirmed so nobody mistakes them for a verified record. Escalation still needs a person.
+    if ((s.relayedItems ?? 0) > 0 && s.invalidItems === 0 && s.evidence !== 'invalid') {
+      return {
+        verdict: 'admit',
+        reason: `relayed: kept as the user's stated ${s.kind} (unconfirmed) — recallable on this device; the user can confirm it with \`crib memory remember\` to make it verified and team-shareable`,
+      };
+    }
     return hold(
-      `a ${s.kind} needs a person's confirmation — ask the user to record it with \`crib memory remember\``,
+      `a ${s.kind} needs the user's own words — relay them as evidence { kind: 'human-attestation', quote: '<what they said>' }, or ask the user to record it with \`crib memory remember\``,
     );
   }
   if (s.invalidItems > 0) {

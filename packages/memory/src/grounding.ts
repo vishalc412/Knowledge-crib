@@ -64,10 +64,17 @@ export function verifyQuote(
   startLine?: number,
 ): QuoteCheck {
   if (!quote || !quote.trim()) return { verdict: 'unsupported', reason: 'no quote' };
-  if (!node || !node.file || !node.span) {
+  // A file node carries no span — the file IS its span. Without this, a quote from a top-level
+  // declaration, an import, or any config/YAML/JSON file (which index as a span-less file node only)
+  // could never verify. Redaction and deny policies still apply inside rehydration.
+  const anchor =
+    node?.kind === 'file' && node.file && !node.span
+      ? { ...node, span: { start: 1, end: Number.MAX_SAFE_INTEGER } }
+      : node;
+  if (!anchor || !anchor.file || !anchor.span) {
     return { verdict: 'unsupported', reason: 'anchor node has no on-disk span' };
   }
-  const body = port.rehydrate(node, {
+  const body = port.rehydrate(anchor, {
     maxChars: VERIFY_MAX_CHARS,
     ...(startLine ? { startLine } : {}),
   });

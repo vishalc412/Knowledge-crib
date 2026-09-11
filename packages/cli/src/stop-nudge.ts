@@ -43,9 +43,11 @@ const MAX_START_PATHS = 2_000;
 
 export const STOP_NUDGE_REASON =
   'crib memory: this session changed code. Before you stop — if you learned something reusable ' +
-  '(a non-obvious fact, a pitfall and its fix, a verified procedure), record it with the ' +
-  '`memory_observe` tool: kind, subject, claim, and evidence as source-quote items carrying path, ' +
-  'line and the exact quoted text, so crib can verify and admit it. Nothing reusable? Just stop — ' +
+  '(a non-obvious fact, a pitfall and its fix, a verified procedure) or the user stated a ' +
+  'preference or decision, record it with the `memory_observe` tool: kind, subject, claim, and ' +
+  'evidence — source-quote items carrying path, line and the exact quoted text for code, or ' +
+  "{ kind: 'human-attestation', quote: <the user's words> } for what the user said — so crib can " +
+  'verify and admit it. Nothing reusable? Just stop — ' +
   'you will not be asked again until the next commit.';
 
 /** Directories the hooks and crib itself write on every turn — their churn is never "work". */

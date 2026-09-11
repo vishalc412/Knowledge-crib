@@ -274,6 +274,22 @@ export function proposeTeam(
       evaluation.record.id,
     );
   }
+  // A human attestation no person confirmed at a terminal — typically the user's words relayed by
+  // an agent — is local memory, never team-grade. Confirmation re-stamps it as a real attestation.
+  // Runtime-shaped read, like the D10 check below: a record typed memory-1 can carry a memory-2
+  // envelope whose evidence lives elsewhere, and this guard must never throw before D10 runs.
+  const recordEvidence = (evaluation.record as unknown as { evidence?: unknown }).evidence;
+  const unconfirmed = Array.isArray(recordEvidence)
+    ? (recordEvidence as MemoryRecord['evidence']).findIndex(
+        (ev) => ev.kind === 'human-attestation' && ev.tty !== true,
+      )
+    : -1;
+  if (unconfirmed !== -1) {
+    throw new ProposalRefusedError(
+      `evidence[${unconfirmed}] is a human attestation no person confirmed at a terminal — confirm it with \`crib memory remember\` before proposing it to the team`,
+      evaluation.record.id,
+    );
+  }
   // D10 (prophylactic): private never enters git. The promoted record is TYPED as the memory-1
   // envelope today, so the check reads the runtime shape instead of the static type — if the
   // pipeline ever starts carrying memory-2 records (or a cast hides one), the proposal gate fails
@@ -431,6 +447,15 @@ export function admitAttested(
     attestedAt,
   );
   const evaluation = opts.evaluator.evaluate(provisional, { soul: opts.soul });
+  // A relayed attestation is `degraded`, which the check below would otherwise wave through. This
+  // path exists to record that a PERSON confirmed the claim, so it must have that confirmation.
+  const unconfirmed = evaluation.items.findIndex((item) => item.reason === 'relayed-unconfirmed');
+  if (unconfirmed !== -1) {
+    return {
+      ok: false,
+      error: `evidence[${unconfirmed}] was relayed by an agent and no person confirmed it at a terminal — receipt-free admission records that confirmation, so it needs one`,
+    };
+  }
   if (evaluation.evidence !== 'valid' && evaluation.evidence !== 'degraded') {
     return {
       ok: false,

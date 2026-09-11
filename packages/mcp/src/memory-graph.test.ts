@@ -30,8 +30,18 @@ const SOURCE = [
   '    return this.cached;',
   '  }',
   '}',
+  'export const TEAM_LIMIT = 8;',
   '',
 ].join('\n');
+
+/** The file node the indexer emits for every file — span-less; its hash is the content hash. */
+const FILE_NODE: Node = {
+  id: idFor({ kind: 'file', path: FILE }),
+  kind: 'file',
+  file: FILE,
+  lang: 'typescript',
+  hash: `blake3:${'c'.repeat(64)}`,
+} as Node;
 
 const SYMBOL: Node = {
   id: idFor({ kind: 'symbol', path: FILE, qualifiedName: 'Team.displayNumber', startLine: 2 }),
@@ -58,7 +68,7 @@ beforeEach(() => {
   writeFileSync(join(repo, FILE), SOURCE);
   soul = new SoulStore(join(repo, '.crib'), { manifest: newManifest({ now: NOW }) });
   soul.load();
-  soul.putNodes([SYMBOL]);
+  soul.putNodes([FILE_NODE, SYMBOL]);
   soul.commit(NOW);
   writeFileSync(
     join(repo, '.crib', 'crib.json'),
@@ -157,6 +167,55 @@ describe('memory write → graph, same process, no reindex', () => {
     expect(memories[0]).toMatchObject({ status: 'pending', trust: 'untrusted' });
     expect(memories[0]?.via).toEqual(['applies-to']);
     expect((verbs.status().graph as { memory: { pending: number } }).memory.pending).toBe(1);
+  });
+
+  it('admits a quote from a top-level declaration no symbol span covers, anchored to the file', () => {
+    const ack = verbs.memoryObserve({
+      kind: 'fact',
+      subject: 'topic:team-limit',
+      claim: 'Teams are capped at eight members by a module-level constant',
+      appliesTo: [FILE],
+      evidence: [
+        { kind: 'source-quote', path: FILE, line: 6, quote: 'export const TEAM_LIMIT = 8;' },
+      ],
+      actor: 'claude-code',
+      tool: 'test',
+    });
+    expect(ack.status).toBe('active');
+    const memories = verbs.context({ id: FILE_NODE.id }).memories as Array<{ id: string }>;
+    expect(memories.map((m) => m.id)).toContain(ack.recordId);
+  });
+
+  it('says a cited file is not indexed instead of claiming the quote was not found', () => {
+    const ack = verbs.memoryObserve({
+      kind: 'fact',
+      subject: 'topic:new-file',
+      claim: 'A file written after the last index',
+      evidence: [{ kind: 'source-quote', path: 'src/brand-new.ts', line: 1, quote: 'export {}' }],
+      actor: 'claude-code',
+      tool: 'test',
+    });
+    expect(ack.ok).toBe(false);
+    expect(String(ack.error)).toMatch(/not in the index/);
+  });
+
+  it('remembers a preference the user stated, relayed by the agent — recallable, labelled unconfirmed', () => {
+    const ack = verbs.memoryObserve({
+      kind: 'convention',
+      subject: 'topic:package-manager',
+      claim: 'Use pnpm instead of npm for every install command in this repository',
+      evidence: [{ kind: 'human-attestation', quote: 'always use pnpm, never npm' }],
+      actor: 'claude-code',
+      tool: 'test',
+    });
+    expect(ack.status).toBe('active');
+    expect(String((ack.admission as { reason: string }).reason)).toMatch(/relayed/);
+    const recall = verbs.memoryRecall({ q: 'pnpm npm install command package manager' });
+    const hit = (recall.memories as Array<Record<string, unknown>>).find((m) =>
+      String(m.claim).includes('pnpm'),
+    );
+    expect(hit).toBeDefined();
+    expect(JSON.stringify(hit)).toContain('degraded');
   });
 
   it('context carries no memories key when nothing was written about the code', () => {
