@@ -27,7 +27,7 @@ describe('viz web asset: memory ledger panel (G5.4)', () => {
     expect(html).toContain('/memory.json');
     expect(html).toContain('/memory/record.json');
     expect(html).toContain('/memory/home.json');
-    expect(html).toContain('Work to resume');
+    expect(html).toContain('Work in progress');
     expect(html).toContain('Needs review');
     expect(html).toContain('Retrieval mode');
     expect(html).toContain('focus-visible');
@@ -37,7 +37,36 @@ describe('viz web asset: memory ledger panel (G5.4)', () => {
     expect(html).toContain('data-kc-memory-home-action');
     expect(html).toContain('openMemoryHomeAction');
     expect(html).toContain('Review pending outcomes');
-    expect(html).toContain('Resume saved work');
+    expect(html).toContain('Continue, finish or cancel saved work');
+  });
+
+  it('ships session maintenance: close work, re-check and dismiss pending captures', () => {
+    // endpoints the viz server exposes behind the same Origin + CSRF mutation boundary
+    expect(html).toContain('/memory/intake/close');
+    expect(html).toContain('/memory/pending/recheck');
+    expect(html).toContain('/memory/pending/dismiss');
+    expect(html).toContain('closeIntake');
+    expect(html).toContain('recheckPending');
+    expect(html).toContain('dismissCapture');
+    // the controls themselves
+    expect(html).toContain('data-kc-mem-recheck');
+    expect(html).toContain('data-kc-mem-dismiss');
+    expect(html).toContain('data-kc-mem-intake-done');
+    expect(html).toContain('data-kc-mem-intake-cancel');
+    // stale work is labelled, finished work is counted apart instead of crowding the list
+    expect(html).toContain("'stale · idle '");
+    expect(html).toContain('kept in history.');
+    // the old next step named a command needing an LLM provider nobody configured
+    expect(code).not.toContain('distill --provider');
+  });
+
+  it('opens on the architecture Overview by default, whatever the graph size', () => {
+    expect(html).toContain("mode:this.overview.length?'overview':'focus'");
+    expect(html).not.toContain("mode:this.largeGraph?'overview':'focus'");
+  });
+
+  it('renders a ledger row verdict from evidenceVerdict, never the evidence array', () => {
+    expect(html).toContain('v.evidenceVerdict');
   });
 
   it('ships the pending queue view wired to its read and mutation endpoints (WP6.1–WP6.3)', () => {
@@ -58,9 +87,9 @@ describe('viz web asset: memory ledger panel (G5.4)', () => {
     expect(html).toContain("r.standing==='ready'");
     expect(html).toContain('No raw captures waiting.');
     expect(html).toContain('No staged claims waiting.');
-    expect(html).toContain('No saved work to resume.');
-    // the browser never invents a distill step — the capture row names the command only
-    expect(html).toContain('Raw captures awaiting distillation');
+    expect(html).toContain('No work in progress.');
+    // captured learnings get re-check and dismiss controls — never an external-model distill step
+    expect(html).toContain('Captured learnings waiting for review');
     expect(html).toContain('Staged claims awaiting admission');
   });
 

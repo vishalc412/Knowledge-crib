@@ -128,6 +128,7 @@ import {
 } from './migrations.js';
 import {
   buildCaptureOutboxEntry,
+  deadLetterCapture,
   markCaptureDone,
   pendingCaptures,
   stageCaptureOutboxEntry,
@@ -745,6 +746,20 @@ export interface ObserveSuccess {
 }
 
 export type ObserveResult = ObserveSuccess | CaptureFailure;
+
+/** What {@link MemoryApi.recheckPending} did to the pending backlog. */
+export interface PendingRecheckResult {
+  /** captures examined in this pass (bounded by `limit`). */
+  checked: number;
+  /** captures the gate admitted — now local-trust records, gone from the queue. */
+  admitted: Array<{ captureId: string; recordId: string; subject: string; reason: string }>;
+  /** captures still pending, each with the gate's reason (what would admit it). */
+  held: Array<{ captureId: string; subject: string; reason: string }>;
+  /** pending captures left after the pass (including any beyond `limit`). */
+  remaining: number;
+  /** why nothing was checked, when the API has no store or evaluator to check with. */
+  skipped?: string;
+}
 
 /** One loose-name anchoring outcome (internal to {@link capture}, shared by both resolvers). */
 interface AnchorHit {
@@ -1865,6 +1880,148 @@ export class MemoryApi {
     return { decision, recordId: record.id };
   }
 
+  // ── maintenance: the pending backlog ───────────────────────────────────────
+
+  /**
+   * Re-run today's admission over the pending capture backlog.
+   *
+   * Captures staged before the gate existed — or before their quotes could be grounded — sat pending
+   * forever: nothing re-examined them, so the memory home's Pending count only ever grew and the
+   * learnings in it never reached recall. This walks the backlog oldest-first, grounds each
+   * capture's evidence exactly as {@link observe} does, evaluates it fresh and lets the SAME gate
+   * decide. An admitted capture becomes a local-trust record and leaves the queue; a held one stays,
+   * with the reason reported. Nothing is deleted, and nothing a fresh write would be refused is
+   * admitted here.
+   */
+  recheckPending(opts: { limit?: number } = {}): PendingRecheckResult {
+    const local = this.deps.stores.local;
+    const { evaluator, evalCtx, soul } = this.deps;
+    if (!local || !evaluator || !evalCtx) {
+      return {
+        checked: 0,
+        admitted: [],
+        held: [],
+        remaining: local ? pendingCaptures(local).length : 0,
+        skipped: 'no local store or evaluator is wired',
+      };
+    }
+    const limit = Math.max(1, Math.min(opts.limit ?? 50, 500));
+    const backlog = pendingCaptures(local)
+      .sort((a, b) => a.proposedAt.localeCompare(b.proposedAt) || a.id.localeCompare(b.id))
+      .slice(0, limit);
+    const now = () => this.now();
+    const admitted: PendingRecheckResult['admitted'] = [];
+    const held: PendingRecheckResult['held'] = [];
+    for (const entry of backlog) {
+      const kind = entry.kind;
+      if (!isMemoryRecordKind(kind)) {
+        held.push({
+          captureId: entry.id,
+          subject: entry.subject,
+          reason: `unknown kind '${kind}'`,
+        });
+        continue;
+      }
+      const staged = {
+        kind,
+        subject: entry.subject,
+        claim: entry.claim,
+        scope: entry.scope,
+        appliesTo: entry.appliesTo,
+        evidence: entry.evidence,
+        authorship: entry.authorship,
+      };
+      const stagedCandidateId = memoryCandidateId(staged);
+      const relayed =
+        entry.authorship.kind === 'agent'
+          ? entry.evidence.map((e) =>
+              e.kind === 'human-attestation' && e.tty !== true
+                ? ({ ...e, relayedBy: entry.authorship.actor } as MemoryEvidence)
+                : e,
+            )
+          : entry.evidence;
+      const evidence = soul ? groundAgentEvidence(soul, relayed) : relayed;
+      const problems =
+        evidence.length > 0 ? admissibilityProblems(kind, evidence, { staged: true }) : [];
+      if (problems.length > 0) {
+        held.push({
+          captureId: entry.id,
+          subject: entry.subject,
+          reason: problems.map((p) => p.problem).join('; '),
+        });
+        continue;
+      }
+      const candidate: MemoryCandidate = {
+        id: memoryCandidateId({ ...staged, evidence }),
+        schemaVersion: '1',
+        ...staged,
+        evidence,
+        origin: entry.origin,
+        proposedAt: entry.proposedAt,
+      };
+      const evaluation = evaluateForAdmission(evaluator, evalCtx, candidate, now);
+      const unresolved = soul
+        ? unresolvedTargetsIn(soul, candidate.appliesTo)
+        : candidate.appliesTo.length;
+      const decision = decideAutoAdmission(admissionSignals(candidate, evaluation, unresolved));
+      if (decision.verdict !== 'admit') {
+        held.push({ captureId: entry.id, subject: entry.subject, reason: decision.reason });
+        continue;
+      }
+      const record = local.withLock(() => {
+        const written = admitGrounded(local, candidate, evaluation, decision, now);
+        local.removeEntry('candidates', stagedCandidateId);
+        markCaptureDone(local, entry.id, { candidateId: candidate.id });
+        return written;
+      });
+      admitted.push({
+        captureId: entry.id,
+        recordId: record.id,
+        subject: entry.subject,
+        reason: decision.reason,
+      });
+    }
+    return { checked: backlog.length, admitted, held, remaining: pendingCaptures(local).length };
+  }
+
+  /**
+   * Retire one pending capture the operator does not want. A dead-letter TRANSITION, never a delete:
+   * the entry stays readable in the `dead` collection with who dismissed it and why, and its staged
+   * candidate is withdrawn so it stops counting as work. Dismissing an id that is not pending is a
+   * no-op success (`dismissed: false`), so a double click is harmless.
+   */
+  dismissPending(
+    captureId: string,
+    input: { actor: string; reason?: string },
+  ): { ok: true; dismissed: boolean } | { ok: false; error: string } {
+    const local = this.deps.stores.local;
+    if (!local) return { ok: false, error: 'no local memory store is configured' };
+    if (typeof input.actor !== 'string' || input.actor.trim().length === 0) {
+      return { ok: false, error: 'actor is required' };
+    }
+    const entry = pendingCaptures(local).find((e) => e.id === captureId);
+    if (!entry) return { ok: true, dismissed: false };
+    const reason = `dismissed by ${input.actor.trim()}${input.reason ? `: ${input.reason}` : ''}`;
+    local.withLock(() => {
+      deadLetterCapture(local, captureId, reason);
+      if (isMemoryRecordKind(entry.kind)) {
+        local.removeEntry(
+          'candidates',
+          memoryCandidateId({
+            kind: entry.kind,
+            subject: entry.subject,
+            claim: entry.claim,
+            scope: entry.scope,
+            appliesTo: entry.appliesTo,
+            evidence: entry.evidence,
+            authorship: entry.authorship,
+          }),
+        );
+      }
+    });
+    return { ok: true, dismissed: true };
+  }
+
   // ── search ─────────────────────────────────────────────────────────────────
 
   /**
@@ -2042,9 +2199,13 @@ export class MemoryApi {
     }
   }
 
-  listIntakes(repository: IntakeCheckpoint['repository'] = { dirty: false }): IntakeProjection {
+  listIntakes(
+    repository: IntakeCheckpoint['repository'] = { dirty: false },
+    /** pass `now` to mark idle unfinished work stale (see `projectIntakes`). */
+    opts: { now?: string; staleAfterDays?: number } = {},
+  ): IntakeProjection {
     const { requirements, checkpoints } = this.intakeEntries();
-    return projectIntakes(requirements, checkpoints, repository);
+    return projectIntakes(requirements, checkpoints, repository, opts);
   }
 
   getIntake(
@@ -2070,6 +2231,8 @@ export class MemoryApi {
       limits?: HandoffInput['limits'];
       repository?: IntakeCheckpoint['repository'];
       currentSessionId?: string;
+      /** pass the current time to mark idle unfinished work stale (surfaces shown to a person). */
+      now?: string;
     } = {},
   ): HandoffResponse {
     const pinned = [this.deps.stores.team, this.deps.stores.local, this.deps.stores.global].filter(
@@ -2126,6 +2289,7 @@ export class MemoryApi {
         ...(opts.currentSessionId !== undefined ? { currentSessionId: opts.currentSessionId } : {}),
         ...(opts.repository ? { repository: opts.repository } : {}),
         ...(opts.limits ? { limits: opts.limits } : {}),
+        ...(opts.now !== undefined ? { now: opts.now } : {}),
       });
     } finally {
       for (const store of pinned) store.unpinGeneration();

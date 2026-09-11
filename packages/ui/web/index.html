@@ -312,14 +312,20 @@
                     <span style="padding:4px 8px; border-radius:6px; background:rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.4); font-size:10px; color:#f59e0b;">terminal {{ mem.pendingView.counts.terminal }}</span>
                     <span style="padding:4px 8px; border-radius:6px; background:rgba(248,113,113,0.12); border:1px solid rgba(248,113,113,0.4); font-size:10px; color:#f87171;">blocked {{ mem.pendingView.counts.blocked }}</span>
                   </div>
-                  <!-- raw captures awaiting distillation — the panel shows the command; consent for an
-                       external model stays the operator's, so no distill action exists here -->
-                  <div style="font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color: {{ t.sub }}; margin:10px 0 5px;">Raw captures awaiting distillation</div>
+                  <!-- session maintenance: re-run today's verification over the whole backlog -->
+                  <button data-kc-mem-recheck onClick="{{ mem.pendingView.onRecheck }}" disabled="{{ mem.pendingView.recheckBusy }}" style="margin:4px 0 2px; padding:5px 12px; border-radius:7px; border:1px solid rgba(67,216,201,0.5); background:rgba(67,216,201,0.14); color:#43d8c9; cursor:pointer; font:600 11px 'IBM Plex Sans';">{{ mem.pendingView.recheckLabel }}</button>
+                  <div style="font-size:9.5px; color: {{ t.sub }}; margin-bottom:4px;">Admits every capture whose evidence verifies against the code today. Nothing is deleted.</div>
+                  <!-- captured learnings not admitted yet: re-check verifies them; dismiss retires one
+                       into the dead-letter history (never a delete) -->
+                  <div style="font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color: {{ t.sub }}; margin:10px 0 5px;">Captured learnings waiting for review</div>
                   <sc-for list="{{ mem.pendingView.captureRows }}" as="r" hint-placeholder-count="3">
                     <div style="padding:8px 9px; border-radius:8px; border:1px solid {{ t.border }}; background: {{ t.chip }}; margin-bottom:5px;">
                       <div style="font-size:11px; font-weight:600; color: {{ t.text }}; word-break:break-word;">{{ r.subject }}</div>
                       <div style="font-size:10.5px; line-height:1.45; color: {{ t.sub }}; margin-top:3px; word-break:break-word;">{{ r.claim }}</div>
-                      <div style="margin-top:5px; font-family:'IBM Plex Mono',monospace; font-size:10px; color: {{ t.text }}; background: {{ t.panel }}; border-radius:6px; padding:5px 7px; word-break:break-all;">{{ r.command }}</div>
+                      <div style="display:flex; align-items:center; gap:6px; margin-top:6px; flex-wrap:wrap;">
+                        <button data-kc-mem-dismiss="{{ r.id }}" onClick="{{ r.onDismiss }}" disabled="{{ r.busy }}" style="padding:4px 11px; border-radius:6px; border:1px solid rgba(248,113,113,0.5); background:rgba(248,113,113,0.12); color:#f87171; cursor:pointer; font:600 10.5px 'IBM Plex Sans';">{{ r.dismissLabel }}</button>
+                        <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; color: {{ t.sub }}; background: {{ t.panel }}; border-radius:6px; padding:4px 7px; word-break:break-all; min-width:0;">{{ r.command }}</span>
+                      </div>
                     </div>
                   </sc-for>
                   <sc-if value="{{ mem.pendingView.capturesEmpty }}" hint-placeholder-val="{{ true }}"><div style="font-size:10.5px; color: {{ t.sub }}; padding:4px 2px;">No raw captures waiting.</div></sc-if>
@@ -380,13 +386,16 @@
                     <button data-kc-mem-choice="{{ c.intakeId }}" onClick="{{ c.onOpen }}" style="display:block; width:100%; text-align:left; padding:8px 9px; border-radius:8px; border:1px solid {{ t.border }}; background: {{ t.chip }}; margin-bottom:5px; cursor:pointer; font-family:'IBM Plex Sans';">
                       <div style="display:flex; align-items:center; gap:6px;">
                         <span style="padding:2px 7px; border-radius:5px; font-size:9.5px; font-weight:700; color:#5b8cff; background:rgba(91,140,255,0.16);">{{ c.status }}</span>
-                        <span style="font-size:11px; font-weight:600; color: {{ t.text }}; min-width:0; word-break:break-word;">{{ c.intakeId }}</span>
+                        <sc-if value="{{ c.staleLabel }}" hint-placeholder-val="{{ true }}"><span style="padding:2px 7px; border-radius:5px; font-size:9.5px; font-weight:700; color:#f59e0b; background:rgba(245,158,11,0.16);">{{ c.staleLabel }}</span></sc-if>
+                        <span style="font-size:11px; font-weight:600; color: {{ t.text }}; min-width:0; word-break:break-word;">{{ c.title }}</span>
                       </div>
+                      <div style="font-size:9.5px; color: {{ t.sub }}; margin-top:2px;">{{ c.activityLabel }}</div>
                       <sc-if value="{{ c.nextSafeAction }}" hint-placeholder-val="{{ true }}"><div style="font-size:10.5px; color: {{ t.sub }}; margin-top:3px; word-break:break-word;">Next: {{ c.nextSafeAction }}</div></sc-if>
                       <sc-if value="{{ c.cautions }}" hint-placeholder-val="{{ true }}"><div style="font-size:10px; color:#f59e0b; margin-top:3px; word-break:break-word;">{{ c.cautions }}</div></sc-if>
                     </button>
                   </sc-for>
-                  <sc-if value="{{ mem.resumeView.empty }}" hint-placeholder-val="{{ true }}"><div style="font-size:10.5px; color: {{ t.sub }}; padding:4px 2px;">No saved work to resume.</div></sc-if>
+                  <sc-if value="{{ mem.resumeView.empty }}" hint-placeholder-val="{{ true }}"><div style="font-size:10.5px; color: {{ t.sub }}; padding:4px 2px;">No work in progress.</div></sc-if>
+                  <sc-if value="{{ mem.resumeView.closedLabel }}" hint-placeholder-val="{{ true }}"><div style="font-size:10px; color: {{ t.sub }}; padding:2px 2px 4px;">{{ mem.resumeView.closedLabel }}</div></sc-if>
                 </div>
                 <!-- the resume closes the detail on success, so the outcome lands here, at the
                      list level — the same visible-notice pattern the pending view uses -->
@@ -426,6 +435,12 @@
                           <input data-kc-mem-next onInput="{{ mem.resumeView.intake.onInputNext }}" placeholder="What resuming means, in one line" style="width:100%; box-sizing:border-box; height:28px; padding:0 9px; border-radius:7px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.text }}; font:500 11px 'IBM Plex Sans'; outline:none;">
                           <button data-kc-mem-resume-btn onClick="{{ mem.resumeView.intake.onResume }}" disabled="{{ mem.resumeView.intake.busy }}" style="margin-top:6px; padding:5px 13px; border-radius:7px; border:1px solid rgba(91,140,255,0.5); background:rgba(91,140,255,0.16); color:#5b8cff; cursor:pointer; font:600 11px 'IBM Plex Sans';">{{ mem.resumeView.intake.resumeLabel }}</button>
                           <div style="font-size:9.5px; color: {{ t.sub }}; margin-top:4px;">Records the resume against checkpoint {{ mem.resumeView.intake.lastCheckpoint }}. Nothing is executed.</div>
+                          <!-- session maintenance: close the work so it stops showing as in progress -->
+                          <div style="display:flex; gap:6px; margin-top:10px; padding-top:8px; border-top:1px solid {{ t.border }};">
+                            <button data-kc-mem-intake-done onClick="{{ mem.resumeView.intake.onDone }}" disabled="{{ mem.resumeView.intake.closing }}" style="padding:5px 13px; border-radius:7px; border:1px solid rgba(52,211,153,0.5); background:rgba(52,211,153,0.14); color:#34d399; cursor:pointer; font:600 11px 'IBM Plex Sans';">{{ mem.resumeView.intake.doneLabel }}</button>
+                            <button data-kc-mem-intake-cancel onClick="{{ mem.resumeView.intake.onCancel }}" disabled="{{ mem.resumeView.intake.closing }}" style="padding:5px 13px; border-radius:7px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.sub }}; cursor:pointer; font:600 11px 'IBM Plex Sans';">{{ mem.resumeView.intake.cancelLabel }}</button>
+                          </div>
+                          <div style="font-size:9.5px; color: {{ t.sub }}; margin-top:4px;">Closing appends a checkpoint; the work and its history stay readable.</div>
                         </div>
                       </sc-if>
                       <sc-if value="{{ !mem.resumeView.intake.resumable }}" hint-placeholder-val="{{ true }}"><div style="margin-top:8px; padding:8px 10px; border-radius:8px; background: {{ t.chip }}; border:1px solid {{ t.border }}; font-size:10.5px; color: {{ t.sub }};">This work is closed or already completed — nothing to resume.</div></sc-if>
@@ -758,7 +773,9 @@ class Component extends DCLogic {
       for (let i=0; i<warmSteps; i++) { this.alpha = Math.max(0.15, this.alpha); this.step(); }
       this.fit();
       this.alpha = 0.15;
-      this.setState({loading:false, mode:this.largeGraph?'overview':'focus'});
+      // Overview is the default for every graph that has overview blocks — the architecture first,
+      // then a click into a module. Focus stays one button away.
+      this.setState({loading:false, mode:this.overview.length?'overview':'focus'});
     } catch (err) {
       this.setState({error: String(err && err.message || err), loading:false});
     }
@@ -767,7 +784,7 @@ class Component extends DCLogic {
   // ---------- layout ----------
   step(){
     if(this.alpha<0.025) return;
-    if(this.largeGraph && this.state.mode === 'overview') return;
+    if(this.state.mode === 'overview') return;
     const ns=this.visibleNodes(), hid=this.state.hidden;
     if(!ns || !ns.length) return;
     const ld=(this.props.linkDistance ?? 1.6);
@@ -1168,7 +1185,7 @@ class Component extends DCLogic {
     const hid=this.state.hidden; const sel=this.state.selectedId; const hl=this.highlight;
     const q=(this.state.query||'').trim().toLowerCase();
     const isMatch=(n)=>q&&(n.label.toLowerCase().includes(q)||(n.qualified||'').toLowerCase().includes(q)||(n.file||'').toLowerCase().includes(q));
-    if(this.largeGraph && this.state.mode === 'overview' && !q){
+    if(this.state.mode === 'overview' && this.overview.length && !q){
       this.drawOverview(ctx,th);
       return;
     }
@@ -1377,13 +1394,13 @@ class Component extends DCLogic {
   // ---------- interaction ----------
   bind(){ const c=this.canvas;
     this.onWheel=(e)=>{ e.preventDefault(); this._vt=null; const [wx,wy]=this.s2w(e.offsetX,e.offsetY); const f=Math.exp(-e.deltaY*0.0014); this.view.k=Math.min(3.5,Math.max(0.18,this.view.k*f)); const [nx,ny]=this.s2w(e.offsetX,e.offsetY); this.view.cx+=wx-nx; this.view.cy+=wy-ny; };
-    this.onDown=(e)=>{ c.setPointerCapture(e.pointerId); const chip=this.hitExpandChip(e.offsetX,e.offsetY); const block=!chip&&this.largeGraph&&this.state.mode==='overview'?this.hitOverview(e.offsetX,e.offsetY):null; const n=(chip||block)?null:this.hit(e.offsetX,e.offsetY); this._p={x:e.offsetX,y:e.offsetY,sx:e.offsetX,sy:e.offsetY,node:n,block,chip,moved:false}; if(n){ n.pin=true; c.style.cursor='grabbing'; } else c.style.cursor='grabbing'; };
+    this.onDown=(e)=>{ c.setPointerCapture(e.pointerId); const chip=this.hitExpandChip(e.offsetX,e.offsetY); const block=!chip&&this.state.mode==='overview'&&this.overview.length?this.hitOverview(e.offsetX,e.offsetY):null; const n=(chip||block)?null:this.hit(e.offsetX,e.offsetY); this._p={x:e.offsetX,y:e.offsetY,sx:e.offsetX,sy:e.offsetY,node:n,block,chip,moved:false}; if(n){ n.pin=true; c.style.cursor='grabbing'; } else c.style.cursor='grabbing'; };
     this.onMove=(e)=>{ const p=this._p;
       if(p){ const dx=e.offsetX-p.x, dy=e.offsetY-p.y; if(Math.abs(e.offsetX-p.sx)+Math.abs(e.offsetY-p.sy)>3)p.moved=true;
         if(p.chip){ p.x=e.offsetX; p.y=e.offsetY; return; }
         if(p.block){ p.x=e.offsetX; p.y=e.offsetY; return; }
         if(p.node){ const [wx,wy]=this.s2w(e.offsetX,e.offsetY); p.node.x=wx; p.node.y=wy; p.node.vx=0; p.node.vy=0; this.reheat(0.3); } else { this._vt=null; this.view.cx-=dx/this.view.k; this.view.cy-=dy/this.view.k; } p.x=e.offsetX; p.y=e.offsetY; return; }
-      const chip=this.hitExpandChip(e.offsetX,e.offsetY); const block=!chip&&this.largeGraph&&this.state.mode==='overview'?this.hitOverview(e.offsetX,e.offsetY):null; const n=(chip||block)?null:this.hit(e.offsetX,e.offsetY); this.hoverId=n?n.id:null; c.style.cursor=(chip||n||block)?'pointer':'grab'; this.tip(n,e.offsetX,e.offsetY);
+      const chip=this.hitExpandChip(e.offsetX,e.offsetY); const block=!chip&&this.state.mode==='overview'&&this.overview.length?this.hitOverview(e.offsetX,e.offsetY):null; const n=(chip||block)?null:this.hit(e.offsetX,e.offsetY); this.hoverId=n?n.id:null; c.style.cursor=(chip||n||block)?'pointer':'grab'; this.tip(n,e.offsetX,e.offsetY);
     };
     this.onUp=(e)=>{ const p=this._p; this._p=null; c.style.cursor='grab'; if(!p)return; if(p.node)p.node.pin=false; if(!p.moved){ if(p.chip) this.toggleFocusDepth(); else if(p.block&&p.block.isModule) this.selectModule(p.block.moduleId); else if(p.block&&p.block.isBack) this.clearModule(); else if(p.block&&p.block.isNode) this.select(p.block.nodeId); else if(p.block) this.selectCluster(p.block.id); else if(p.node) this.select(p.node.id); else this.closePanel(); } };
     this.onKey=(e)=>{ const k=e.key; const tag=(e.target&&e.target.tagName)||''; if(tag==='INPUT'){ if(k==='Escape')e.target.blur(); return; }
@@ -1622,6 +1639,51 @@ class Component extends DCLogic {
       if(r.status===409)this.loadIntakeDetail(intakeId,true); // stale — reload so the form re-bases without hiding why
     }
   }
+  /** Close one piece of work — done or cancelled — with the same append-only checkpoint the CLI writes. */
+  async closeIntake(intakeId,outcome){
+    this.setState({memClosing:outcome, memMutationError:null});
+    this.announceMemory(outcome==='completed'?'Marking the work done.':'Cancelling the work.');
+    const r=await this.postMemoryMutation('/memory/intake/close',{intakeId,outcome});
+    if(r.ok){
+      const msg=(r.data&&r.data.alreadyClosed)?'Already closed — nothing to do.':(outcome==='completed'?'Marked done — it no longer shows as work in progress.':'Cancelled — it no longer shows as work in progress.');
+      this.announceMemory(msg);
+      this.setState({memClosing:null, memResumeNotice:msg, memIntake:null});
+      this.loadMemory(null);
+    }else{
+      this.announceMemory('Closing did not complete.');
+      this.setState({memClosing:null, memMutationError:{code:r.code,message:r.message}});
+    }
+  }
+  /** Re-run today's verification over every pending capture; the ones that verify become active memories. */
+  async recheckPending(){
+    this.setState({memRechecking:true, memMutationError:null, memAdmittedNotice:null});
+    this.announceMemory('Re-checking pending captures against the code.');
+    const r=await this.postMemoryMutation('/memory/pending/recheck',{});
+    if(r.ok){
+      const d=r.data||{}; const admitted=(d.admitted||[]).length; const held=(d.held||[]).length;
+      const msg=d.skipped?('Re-check skipped — '+d.skipped):('Re-checked '+(d.checked||0)+': '+admitted+' admitted, '+held+' still pending.');
+      this.announceMemory(msg);
+      this.setState({memRechecking:false, memAdmittedNotice:msg});
+      this.loadMemoryPending(0); this.loadMemory(null);
+    }else{
+      this.announceMemory('Re-check did not complete.');
+      this.setState({memRechecking:false, memMutationError:{code:r.code,message:r.message}});
+    }
+  }
+  /** Retire one pending capture — kept in the dead-letter history, never deleted. */
+  async dismissCapture(id){
+    this.setState({memDismissing:id, memMutationError:null, memAdmittedNotice:null});
+    const r=await this.postMemoryMutation('/memory/pending/dismiss',{id});
+    if(r.ok){
+      const msg=(r.data&&r.data.dismissed)?'Dismissed — kept in history, no longer pending.':'Already gone — nothing to dismiss.';
+      this.announceMemory(msg);
+      this.setState({memDismissing:null, memAdmittedNotice:msg});
+      this.loadMemoryPending(this.state.memPendingOffset||0); this.loadMemory(null);
+    }else{
+      this.announceMemory('Dismiss did not complete.');
+      this.setState({memDismissing:null, memMutationError:{code:r.code,message:r.message}});
+    }
+  }
   // Display vocabulary: the audit trail's raw axis names/values are projected onto the ledger's
   // user-facing names before rendering (the backend ledger projection does the same). The raw
   // words are spelled from char codes — this file ships verbatim as a static asset, so even the
@@ -1631,25 +1693,29 @@ class Component extends DCLogic {
     if(raw===String.fromCharCode(116,114,117,115,116)) return 'standing';
     return raw; }
   memChip(label,tone){ const T={good:['rgba(52,211,153,0.16)','#34d399'],warn:['rgba(245,158,11,0.16)','#f59e0b'],bad:['rgba(248,113,113,0.16)','#f87171'],dim:['rgba(139,151,168,0.18)','#8b97a8'],info:['rgba(91,140,255,0.16)','#5b8cff']}; const pair=T[tone]||T.dim; return {label,bg:pair[0],fg:pair[1]}; }
-  memVerdictChips(v){ const out=[this.memChip('standing: '+this.memAxis(v.standing),v.standing==='team'?'good':(v.standing==='local'?'info':'warn')),
-      this.memChip('evidence: '+v.evidence,v.evidence==='valid'?'good':(v.evidence==='degraded'?'warn':'bad')),
+  // A ledger ROW carries its verdict as `evidenceVerdict` and the per-item evidence views as the
+  // `evidence` array; a record DETAIL passes `verdicts.evidence` as the string. Reading `evidence`
+  // blindly rendered "evidence: [object Object]" on every ledger row.
+  memVerdictChips(v){ const ev=typeof v.evidence==='string'?v.evidence:(v.evidenceVerdict||'unverified');
+    const out=[this.memChip('standing: '+this.memAxis(v.standing),v.standing==='team'?'good':(v.standing==='local'?'info':'warn')),
+      this.memChip('evidence: '+ev,ev==='valid'?'good':(ev==='degraded'?'warn':'bad')),
       this.memChip('applies: '+v.applicability,v.applicability==='current'?'good':'warn')];
     if(v.lifecycle!=='active') out.push(this.memChip(this.memAxis(v.lifecycle),v.lifecycle==='active'?'good':'bad'));
     if(v.quarantined) out.push(this.memChip('quarantined','bad'));
     return out; }
   toggleTheme(){ this.setState(s=>({theme:s.theme==='dark'?'light':'dark'})); }
   toggleBlast(){ this.setState(s=>({blast:!s.blast})); this.reheat(0.2); }
-  showOverview(){ if(!this.largeGraph)return; this.setState({mode:'overview', selectedId:null, selectedClusterId:null, selectedClusterKind:null, clusterContext:false, clusterReturnId:null, selectedTrail:[], sourcePreview:null}); }
+  showOverview(){ if(!this.overview.length)return; this.setState({mode:'overview', selectedId:null, selectedClusterId:null, selectedClusterKind:null, clusterContext:false, clusterReturnId:null, selectedTrail:[], sourcePreview:null}); }
   showFocus(){ if(this.state.selectedId){ this.arrangeNodeFocus(this.state.selectedId); this.setState({mode:'focus'}); this.reheat(0.08); return; } this.setState({mode:'focus'}); setTimeout(()=>this.fit(),0); this.reheat(0.25); }
   bumpZoom(){ this.setState(s=>({zoomTick:(s.zoomTick||0)+1})); }
-  zoomOut(){ if(this.largeGraph&&this.state.mode==='overview'){ this.overviewZoom=Math.max(0.45,this.overviewZoom/1.18); this.bumpZoom(); return; } this.view.k=Math.max(0.12,this.view.k/1.18); this.bumpZoom(); }
-  zoomIn(){ if(this.largeGraph&&this.state.mode==='overview'){ this.overviewZoom=Math.min(2.8,this.overviewZoom*1.18); this.bumpZoom(); return; } this.view.k=Math.min(4.5,this.view.k*1.18); this.bumpZoom(); }
-  resetView(){ if(this.largeGraph&&this.state.mode==='overview'){ this.overviewZoom=1; this.bumpZoom(); return; } this.fit(); this.bumpZoom(); }
+  zoomOut(){ if(this.state.mode==='overview'&&this.overview.length){ this.overviewZoom=Math.max(0.45,this.overviewZoom/1.18); this.bumpZoom(); return; } this.view.k=Math.max(0.12,this.view.k/1.18); this.bumpZoom(); }
+  zoomIn(){ if(this.state.mode==='overview'&&this.overview.length){ this.overviewZoom=Math.min(2.8,this.overviewZoom*1.18); this.bumpZoom(); return; } this.view.k=Math.min(4.5,this.view.k*1.18); this.bumpZoom(); }
+  resetView(){ if(this.state.mode==='overview'&&this.overview.length){ this.overviewZoom=1; this.bumpZoom(); return; } this.fit(); this.bumpZoom(); }
   onSearch(e){
     const query=e.target.value;
     this.selectedModule=null;
     this._searchProjection=null;
-    this.setState({query,mode:query.trim()?'focus':(this.largeGraph?'overview':'focus'),selectedId:null,selectedClusterId:null,selectedClusterKind:null,clusterContext:false,clusterReturnId:null,selectedTrail:[],sourcePreview:null},()=>{
+    this.setState({query,mode:query.trim()?'focus':(this.overview.length?'overview':'focus'),selectedId:null,selectedClusterId:null,selectedClusterKind:null,clusterContext:false,clusterReturnId:null,selectedTrail:[],sourcePreview:null},()=>{
       if(query.trim())this.arrangeSearch(query);
       if(!this.largeGraph||query.trim())this.fit();
       this.bumpZoom();
@@ -1814,7 +1880,7 @@ class Component extends DCLogic {
     const kindList=kinds.map(k=>({ key:k, label:this.KLABEL[k]||k, color:this.KIND[k]||'#888', op:this.state.hidden[k]?0.32:(this.NOISE_KINDS.has(k)?0.5:1), onToggle:()=>this.toggleKind(k) }));
     const sel=this.buildDetail();
      const blastOn=this.state.blast;
-     const overviewOn=this.largeGraph&&this.state.mode==='overview';
+     const overviewOn=this.state.mode==='overview'&&this.overview.length>0;
      const focusOn=!overviewOn;
     // Focus empty-state: large repo, focus mode, nothing selected and no search — show the "how to
     // start" hint. Small graphs default to focus with nodes already visible, so no hint there.
@@ -1862,7 +1928,7 @@ class Component extends DCLogic {
           {label:'Pending',count:(hs.pending&&hs.pending.count)||0,color:'#f59e0b',help:'Review pending outcomes',onGo:openHomeAction('pending')},
           {label:'Needs review',count:(hs.needsReview&&hs.needsReview.count)||0,color:'#f87171',help:'Inspect stale or degraded evidence',onGo:openHomeAction('needsReview')},
           {label:'History',count:(hs.history&&hs.history.count)||0,color:'#8b97a8',help:'Open the full append-only ledger',onGo:openHomeAction('history')},
-          {label:'Work to resume',count:(hs.resume&&hs.resume.count)||0,color:'#5b8cff',help:'Resume saved work',onGo:openHomeAction('resume')}],
+          {label:'Work in progress',count:(hs.resume&&hs.resume.count)||0,color:'#5b8cff',help:'Continue, finish or cancel saved work',onGo:openHomeAction('resume')}],
         health:[
           {label:'Retrieval mode',value:(hh.retrieval&&hh.retrieval.mode)||'unknown',color:hh.retrieval&&hh.retrieval.mode==='on-device-semantic'?'#34d399':'#f59e0b'},
           {label:'Last capture',value:(hh.capture&&hh.capture.lastSuccessfulAt)||'none yet',color:hh.capture&&hh.capture.lastSuccessfulAt?'#34d399':'#8b97a8'},
@@ -1877,7 +1943,7 @@ class Component extends DCLogic {
       // blocked rows name their exact command and no browser alternative.
       let homeAction=null; let pendingView=null; let resumeView=null;
       if(actionKind==='pending'){
-        homeAction={title:'Pending captures', detail:'Raw captures awaiting distillation, and staged claims awaiting admission — each classified by the same checks the CLI runs.'};
+        homeAction={title:'Pending memories', detail:'Learnings agents captured that crib has not admitted yet. Re-check verifies them against the code today; dismiss what you do not want kept. Each new session also re-checks automatically.'};
         const mp=this.state.memPending;
         const wired=!!(mp&&mp.configured);
         const profiles=((md&&md.capturePolicy&&md.capturePolicy.profiles)||[]);
@@ -1904,18 +1970,27 @@ class Component extends DCLogic {
           onAdmit:r.standing==='ready'?()=>this.admitStagedClaim(r.id):null,
           admitLabel:this.state.memAdmitting===r.id?'Admitting…':'Admit',
           busy:this.state.memAdmitting===r.id })):null;
-        const captureRows=captures?captures.rows.map((r)=>({ id:r.id, kind:r.kind, subject:r.subject, claim:r.claim, command:r.command })):null;
+        const captureRows=captures?captures.rows.map((r)=>({ id:r.id, kind:r.kind, subject:r.subject, claim:r.claim, command:r.command,
+          onDismiss:()=>this.dismissCapture(r.id), dismissLabel:this.state.memDismissing===r.id?'Dismissing…':'Dismiss', busy:this.state.memDismissing===r.id })):null;
         const loaded=!!(wired&&!this.state.memPendingLoading&&!this.state.memPendingError);
         pendingView={ wired, unwired:!wired, loading:!!this.state.memPendingLoading, error:this.state.memPendingError,
           counts:(wired&&mp.counts)||null, profiles, profile, profilesMany:profiles.length>1,
           captures, captureRows, capturesEmpty:!!(loaded&&captures&&captures.total===0),
           staged, stagedRows, stagedEmpty:!!(loaded&&staged&&staged.total===0),
           mutationError:this.state.memMutationError, notice:this.state.memAdmittedNotice,
+          onRecheck:()=>this.recheckPending(), recheckBusy:!!this.state.memRechecking,
+          recheckLabel:this.state.memRechecking?'Re-checking…':'Re-check against the code',
           onProfile:(e)=>this.setState({memProfile:e.target.value}) };
       }else if(actionKind==='resume'){
-        homeAction={title:'Resumable work', detail:'Each saved intake with its next safe action and cautions. Resuming records the decision — it never executes the saved work.'};
-        const briefs=(hs.resume&&hs.resume.choices)||[];
+        homeAction={title:'Work in progress', detail:'Saved work, active first. Open one to continue it, mark it done, or cancel it. Stale = no checkpoint for two weeks or more; nothing closes on its own.'};
+        const allBriefs=(hs.resume&&hs.resume.choices)||[];
+        const isClosed=(c)=>c.status==='completed'||c.status==='cancelled';
+        const briefs=allBriefs.filter((c)=>!isClosed(c)).sort((a,b)=>(a.stale?1:0)-(b.stale?1:0));
+        const closedCount=allBriefs.length-briefs.length;
         const choices=briefs.map((c)=>({
+          title:(c.interpretation&&c.interpretation.outcome)||c.original||c.intakeId,
+          staleLabel:c.stale?('stale · idle '+c.idleDays+'d'):null,
+          activityLabel:'last activity '+String(c.lastActivity||'').slice(0,10)+(typeof c.idleDays==='number'&&!c.stale?(' · '+c.idleDays+'d ago'):''),
           intakeId:c.intakeId, status:c.status, phase:c.phase, nextSafeAction:c.nextSafeAction||null, lastActivity:c.lastActivity,
           cautions:[].concat(c.repositoryDrift?['the repository moved since the saved checkpoint']:[])
             .concat(c.blockers||[]).concat((c.conflicts||[]).map((cf)=>'conflicting '+cf.field)).join(' · ')||null,
@@ -1934,11 +2009,16 @@ class Component extends DCLogic {
             resumable:!!d.resumable, checkpoints:cps, checkpointCount:String(cps.length),
             lastCheckpoint:last?last.id:'none',
             busy:!!this.state.memResuming, resumeLabel:this.state.memResuming?'Recording…':'Resume',
+            closing:!!this.state.memClosing,
+            doneLabel:this.state.memClosing==='completed'?'Marking done…':'Mark done',
+            cancelLabel:this.state.memClosing==='cancelled'?'Cancelling…':'Cancel work',
+            onDone:()=>this.closeIntake(st.id,'completed'), onCancel:()=>this.closeIntake(st.id,'cancelled'),
             notice:this.state.memResumeNotice, mutationError:this.state.memMutationError,
             onBack:()=>this.closeIntakeDetail(), onResume:()=>this.resumeIntake(st.id),
             onInputNext:(e)=>this.setState({memResumeNext:e.target.value}) };
         }
-        resumeView={ choices, intake, empty:choices.length===0, notice:this.state.memResumeNotice };
+        resumeView={ choices, intake, empty:choices.length===0, notice:this.state.memResumeNotice,
+          closedLabel:closedCount?(closedCount+' finished or cancelled item'+(closedCount===1?'':'s')+' kept in history.'):null };
       }
       let detail=null;
       if(memDetailState){
@@ -1965,7 +2045,7 @@ class Component extends DCLogic {
         conflicts, conflictsPlural:conflicts.length===1?'':'s', policy,
         detail, list:configured&&!detail,
         loading:!!(this.state.memLoading&&!detail), error:this.state.memError, empty:configured&&rows.length===0,
-        emptyMessage:this.state.memGroup?'No records match this lifecycle view. Return to All or inspect Needs review above.':'No durable records yet. Complete meaningful work and emit a structured Knowledge Crib outcome; generic session events only request a checkpoint.',
+        emptyMessage:this.state.memGroup?'No records match this lifecycle view. Return to All or inspect Needs review above.':'No memories yet. Agents record what they learn with memory_observe while they work, and every new session re-checks anything still pending.',
         tabs, rows };
     }
      return {

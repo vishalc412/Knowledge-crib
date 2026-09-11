@@ -3116,6 +3116,7 @@ export class Verbs {
       limits: { openWork: limit, pending: limit, attention: limit, recent: limit },
       repository: this.intakeRepository(),
       currentSessionId: this.serverSessionId,
+      now: new Date().toISOString(),
     });
     return this.applyIfHash(args, { ...handoff });
   }
@@ -3168,7 +3169,8 @@ export class Verbs {
 
   memoryIntakeCheckpoint(args: {
     id: string;
-    phase: 'intake' | 'planning' | 'executing' | 'blocked' | 'verifying';
+    /** `done` / `cancelled` CLOSE the work, so it stops showing as work to resume. */
+    phase: 'intake' | 'planning' | 'executing' | 'blocked' | 'verifying' | 'done' | 'cancelled';
     summary: string;
     nextSafeAction: string;
     completedStepIds?: string[];
@@ -3177,17 +3179,27 @@ export class Verbs {
   }): Record<string, unknown> {
     const api = this.memoryApi();
     if (!api) return this.applyIfHash(args, { memory: 'not configured' });
+    // Agents could record progress but never close work over MCP, so finished work piled up as
+    // "work to resume" in every client but the CLI. A terminal phase writes the same completed /
+    // cancelled checkpoint `crib intake complete|cancel` writes.
+    const terminal = args.phase === 'done' || args.phase === 'cancelled';
     try {
       const checkpoint = api.checkpointIntake({
         intakeId: args.id,
         kind:
-          args.phase === 'planning'
-            ? 'plan-selected'
-            : args.phase === 'blocked'
-              ? 'blocked'
-              : 'progress',
-        phase: args.phase,
-        nextSafeAction: args.nextSafeAction,
+          args.phase === 'done'
+            ? 'completed'
+            : args.phase === 'cancelled'
+              ? 'cancelled'
+              : args.phase === 'planning'
+                ? 'plan-selected'
+                : args.phase === 'blocked'
+                  ? 'blocked'
+                  : 'progress',
+        phase: terminal
+          ? 'complete'
+          : (args.phase as Exclude<typeof args.phase, 'done' | 'cancelled'>),
+        ...(terminal ? {} : { nextSafeAction: args.nextSafeAction }),
         summary: args.summary,
         completedStepIds: args.completedStepIds ?? [],
         repository: this.intakeRepository(),
@@ -3206,7 +3218,9 @@ export class Verbs {
   memoryIntakeList(args: { ifHash?: string }): Record<string, unknown> {
     const api = this.memoryApi();
     if (!api) return this.applyIfHash(args, { memory: 'not configured' });
-    return this.applyIfHash(args, { ...api.listIntakes(this.intakeRepository()) });
+    return this.applyIfHash(args, {
+      ...api.listIntakes(this.intakeRepository(), { now: new Date().toISOString() }),
+    });
   }
 
   memoryIntakeGet(args: { id: string; ifHash?: string }): Record<string, unknown> {
