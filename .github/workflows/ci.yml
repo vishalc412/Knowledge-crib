@@ -39,7 +39,7 @@ jobs:
         run: corepack pnpm@9.15.0 install --frozen-lockfile
 
       - name: Restore supported semantic tier
-        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v4
         with:
           path: ${{ runner.temp }}/knowledge-crib-embed
           key: ${{ runner.os }}-knowledge-crib-e5-large-${{ hashFiles('packages/cli/src/embed-setup.ts', 'packages/cli/src/embed-onnx.ts', 'pnpm-lock.yaml') }}
@@ -118,7 +118,7 @@ jobs:
         run: corepack pnpm@9.15.0 install --frozen-lockfile
 
       - name: Restore supported semantic tier
-        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v4
         with:
           path: ${{ runner.temp }}/knowledge-crib-embed
           key: ${{ runner.os }}-knowledge-crib-e5-large-${{ hashFiles('packages/cli/src/embed-setup.ts', 'packages/cli/src/embed-onnx.ts', 'pnpm-lock.yaml') }}
