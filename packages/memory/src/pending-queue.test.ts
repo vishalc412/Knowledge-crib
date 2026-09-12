@@ -117,8 +117,9 @@ describe('projectPendingQueue sections', () => {
     expect(q.counts.captures).toBe(1);
     expect(q.counts.staged).toBe(1);
     expect(q.captures?.rows.map((r) => r.id)).toEqual([pending.id]);
-    // the raw capture carries the distill COMMAND — consent stays the operator's, never the browser's
-    expect(q.captures?.rows[0]?.command).toBe('crib memory distill --provider <name>');
+    // the raw capture names the maintenance command that needs no configuration: re-check it
+    // against the code (distill needed an LLM provider the operator never set up)
+    expect(q.captures?.rows[0]?.command).toBe('crib memory recheck');
     expect(q.captures?.rows[0]?.section).toBe('captures');
     expect(q.staged?.rows).toHaveLength(1);
     expect(q.staged?.rows[0]?.section).toBe('staged');
@@ -305,7 +306,7 @@ describe('user-facing vocabulary', () => {
       ...q.captures!.rows.map((r) => r.command),
       ...q.staged!.rows.map((r) => r.command),
     ];
-    for (const cmd of commands) expect(cmd).toMatch(/^crib memory (admit|evaluate|distill) /);
+    for (const cmd of commands) expect(cmd).toMatch(/^crib memory (admit|evaluate|recheck)\b/);
   });
 });
 

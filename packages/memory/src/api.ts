@@ -43,6 +43,16 @@ import {
   buildAliasIndex,
   conservativeVerdicts,
 } from './aliases.js';
+import {
+  type AdmissionDecision,
+  admissionSignals,
+  admitGrounded,
+  decideAutoAdmission,
+  evaluateForAdmission,
+  groundAgentEvidence,
+  isIndexedFile,
+  unresolvedTargetsIn,
+} from './auto-admit.js';
 import { type CapturePolicyViolation, checkCapturePolicy } from './capture-policy.js';
 import {
   type EvidenceKind,
@@ -116,7 +126,13 @@ import {
   DEFAULT_RETENTION_POLICY_ID,
   migrationProvenance,
 } from './migrations.js';
-import { buildCaptureOutboxEntry, pendingCaptures, stageCaptureOutboxEntry } from './outbox.js';
+import {
+  buildCaptureOutboxEntry,
+  deadLetterCapture,
+  markCaptureDone,
+  pendingCaptures,
+  stageCaptureOutboxEntry,
+} from './outbox.js';
 import { readRepoId } from './paths.js';
 import {
   type PendingQueueOpts,
@@ -713,7 +729,12 @@ export interface ObserveSuccess {
   ok: true;
   /** `cand:<blake3>` — content-addressed; a repeat observation upserts the same id. */
   id: string;
-  status: 'pending';
+  /** `active` = the gate admitted it to local trust in this call (recallable now); else `pending`. */
+  status: 'pending' | 'active';
+  /** the admitted record's `mem:` id — present only when `status` is `active`. */
+  recordId?: string;
+  /** the gate's decision + reason — absent when no evaluator is wired (nothing was decided). */
+  admission?: AdmissionDecision;
   origin: 'observe' | 'attempt';
   scope: MemoryScope;
   /** true iff this content id was already staged (the idempotence signal). */
@@ -725,6 +746,20 @@ export interface ObserveSuccess {
 }
 
 export type ObserveResult = ObserveSuccess | CaptureFailure;
+
+/** What {@link MemoryApi.recheckPending} did to the pending backlog. */
+export interface PendingRecheckResult {
+  /** captures examined in this pass (bounded by `limit`). */
+  checked: number;
+  /** captures the gate admitted — now local-trust records, gone from the queue. */
+  admitted: Array<{ captureId: string; recordId: string; subject: string; reason: string }>;
+  /** captures still pending, each with the gate's reason (what would admit it). */
+  held: Array<{ captureId: string; subject: string; reason: string }>;
+  /** pending captures left after the pass (including any beyond `limit`). */
+  remaining: number;
+  /** why nothing was checked, when the API has no store or evaluator to check with. */
+  skipped?: string;
+}
 
 /** One loose-name anchoring outcome (internal to {@link capture}, shared by both resolvers). */
 interface AnchorHit {
@@ -1512,7 +1547,14 @@ export class MemoryApi {
     eventOffset?: number;
     anchorStatus?: CaptureAnchorStatus;
   }):
-    | { ok: true; id: string; duplicate: boolean; outboxId: string; idempotent: boolean }
+    | {
+        ok: true;
+        id: string;
+        candidate: MemoryCandidate;
+        duplicate: boolean;
+        outboxId: string;
+        idempotent: boolean;
+      }
     | { ok: false; error: string; violations?: readonly CapturePolicyViolation[] } {
     const local = this.deps.stores.local;
     if (!local) return { ok: false, error: 'no local memory store is configured for capture' };
@@ -1600,6 +1642,7 @@ export class MemoryApi {
     return {
       ok: true,
       id: candidate.id,
+      candidate,
       duplicate: staged.duplicate,
       outboxId: outboxEntry.id,
       idempotent: staged.idempotent,
@@ -1662,9 +1705,44 @@ export class MemoryApi {
         error: `evidence[${forgedTty}] sets \`tty: true\`, which asserts a human attested this at a terminal. That flag is stamped by crib when it observes a real terminal, never accepted from a caller. To record a human attestation run \`crib memory remember\` in a terminal; to stage an agent observation, omit \`tty\`.`,
       };
     }
-    if (proposedEvidence.length > 0) {
+    // Agents cite code as path + line + quote; pin each quote that VERIFIES to its soul span so the
+    // evaluator can check it. Grounding runs BEFORE the admissibility check — a verified citation
+    // now carries the soulId that check requires, where it used to be refused outright — and before
+    // staging, so the candidate and any admitted record share one content id.
+    // An agent relaying what the user said: stamp WHO relayed each unconfirmed attestation. The stamp
+    // can only ever earn `degraded` (evaluator.ts) — recallable locally, refused by every path that
+    // needs a person. No timestamp: re-observing the same statement must upsert the same id.
+    const relayed =
+      this.attestationSource === 'terminal'
+        ? proposedEvidence
+        : proposedEvidence.map((e) =>
+            e.kind === 'human-attestation' && e.tty !== true
+              ? ({ ...e, relayedBy: input.actor } as MemoryEvidence)
+              : e,
+          );
+    const evidence = this.deps.soul ? groundAgentEvidence(this.deps.soul, relayed) : relayed;
+    const unverified = this.deps.soul
+      ? evidence.findIndex(
+          (e) => e.kind === 'source-quote' && !e.soulId && typeof e.path === 'string',
+        )
+      : -1;
+    if (unverified !== -1) {
+      const cite = evidence[unverified];
+      const path = String(cite?.path);
+      const where = `${path}${typeof cite?.line === 'number' ? `:${cite.line}` : ''}`;
+      // Two different fixes, so two different messages: a file the index has never seen needs a
+      // re-index; a quote missing from an indexed file needs a correct quote.
+      const notIndexed = this.deps.soul !== undefined && !isIndexedFile(this.deps.soul, path);
+      return {
+        ok: false,
+        error: notIndexed
+          ? `evidence[${unverified}] cites ${where}, but ${path} is not in the index (a new file, an ignored path, or an index older than the file) — run \`crib update\` so crib can verify the quote, then observe again.`
+          : `evidence[${unverified}] quotes ${where}, but that text was not found in the indexed code there — re-read the file and quote it exactly (re-index first if the file changed since the last \`crib index\`).`,
+      };
+    }
+    if (evidence.length > 0) {
       // Staged: attestation timestamps are stamped by crib at admission, not supplied by a caller.
-      const problems = admissibilityProblems(kind, proposedEvidence, { staged: true });
+      const problems = admissibilityProblems(kind, evidence, { staged: true });
       if (problems.length > 0) {
         return {
           ok: false,
@@ -1694,7 +1772,7 @@ export class MemoryApi {
       claim: input.claim,
       scope,
       appliesTo: input.appliesTo ?? [],
-      evidence: input.evidence ?? [],
+      evidence,
       authorship: {
         actor: input.actor,
         kind: input.authorKind ?? 'agent',
@@ -1734,7 +1812,7 @@ export class MemoryApi {
           scopeBoundary: boundary,
           origin,
         },
-        evidenceRefs: observationEvidenceRefs(input.evidence ?? []),
+        evidenceRefs: observationEvidenceRefs(evidence),
         occurredAt: this.now(),
       });
       const checkpoints = this.deps.projectionCheckpoints;
@@ -1759,16 +1837,189 @@ export class MemoryApi {
         error: `observation staged but intelligence event was not recorded: ${message}`,
       };
     }
+    const admission = this.autoAdmit(local, staged.candidate, staged.outboxId);
     return {
       ok: true,
       id: staged.id,
-      status: 'pending',
+      status: admission?.recordId !== undefined ? 'active' : 'pending',
+      ...(admission?.recordId !== undefined ? { recordId: admission.recordId } : {}),
+      ...(admission !== undefined ? { admission: admission.decision } : {}),
       origin,
       scope,
       duplicate: staged.duplicate,
       outboxId: staged.outboxId,
       idempotent: staged.idempotent,
     };
+  }
+
+  /**
+   * Gated auto-admission (auto-admit.ts): evaluate the staged candidate fresh, let the gate decide,
+   * and on `admit` write the local-trust record and close its outbox entry under one lock hold.
+   * Absent an evaluator there is nothing to decide WITH, so the claim stays pending exactly as it
+   * did before this gate existed — and no decision is reported.
+   */
+  private autoAdmit(
+    local: MemoryStore,
+    candidate: MemoryCandidate,
+    outboxId: string,
+  ): { decision: AdmissionDecision; recordId?: string } | undefined {
+    const { evaluator, evalCtx, soul } = this.deps;
+    if (!evaluator || !evalCtx) return undefined;
+    const now = () => this.now();
+    const evaluation = evaluateForAdmission(evaluator, evalCtx, candidate, now);
+    const unresolved = soul
+      ? unresolvedTargetsIn(soul, candidate.appliesTo)
+      : candidate.appliesTo.length;
+    const decision = decideAutoAdmission(admissionSignals(candidate, evaluation, unresolved));
+    if (decision.verdict !== 'admit') return { decision };
+    const record = local.withLock(() => {
+      const admitted = admitGrounded(local, candidate, evaluation, decision, now);
+      markCaptureDone(local, outboxId, { candidateId: candidate.id });
+      return admitted;
+    });
+    return { decision, recordId: record.id };
+  }
+
+  // ── maintenance: the pending backlog ───────────────────────────────────────
+
+  /**
+   * Re-run today's admission over the pending capture backlog.
+   *
+   * Captures staged before the gate existed — or before their quotes could be grounded — sat pending
+   * forever: nothing re-examined them, so the memory home's Pending count only ever grew and the
+   * learnings in it never reached recall. This walks the backlog oldest-first, grounds each
+   * capture's evidence exactly as {@link observe} does, evaluates it fresh and lets the SAME gate
+   * decide. An admitted capture becomes a local-trust record and leaves the queue; a held one stays,
+   * with the reason reported. Nothing is deleted, and nothing a fresh write would be refused is
+   * admitted here.
+   */
+  recheckPending(opts: { limit?: number } = {}): PendingRecheckResult {
+    const local = this.deps.stores.local;
+    const { evaluator, evalCtx, soul } = this.deps;
+    if (!local || !evaluator || !evalCtx) {
+      return {
+        checked: 0,
+        admitted: [],
+        held: [],
+        remaining: local ? pendingCaptures(local).length : 0,
+        skipped: 'no local store or evaluator is wired',
+      };
+    }
+    const limit = Math.max(1, Math.min(opts.limit ?? 50, 500));
+    const backlog = pendingCaptures(local)
+      .sort((a, b) => a.proposedAt.localeCompare(b.proposedAt) || a.id.localeCompare(b.id))
+      .slice(0, limit);
+    const now = () => this.now();
+    const admitted: PendingRecheckResult['admitted'] = [];
+    const held: PendingRecheckResult['held'] = [];
+    for (const entry of backlog) {
+      const kind = entry.kind;
+      if (!isMemoryRecordKind(kind)) {
+        held.push({
+          captureId: entry.id,
+          subject: entry.subject,
+          reason: `unknown kind '${kind}'`,
+        });
+        continue;
+      }
+      const staged = {
+        kind,
+        subject: entry.subject,
+        claim: entry.claim,
+        scope: entry.scope,
+        appliesTo: entry.appliesTo,
+        evidence: entry.evidence,
+        authorship: entry.authorship,
+      };
+      const stagedCandidateId = memoryCandidateId(staged);
+      const relayed =
+        entry.authorship.kind === 'agent'
+          ? entry.evidence.map((e) =>
+              e.kind === 'human-attestation' && e.tty !== true
+                ? ({ ...e, relayedBy: entry.authorship.actor } as MemoryEvidence)
+                : e,
+            )
+          : entry.evidence;
+      const evidence = soul ? groundAgentEvidence(soul, relayed) : relayed;
+      const problems =
+        evidence.length > 0 ? admissibilityProblems(kind, evidence, { staged: true }) : [];
+      if (problems.length > 0) {
+        held.push({
+          captureId: entry.id,
+          subject: entry.subject,
+          reason: problems.map((p) => p.problem).join('; '),
+        });
+        continue;
+      }
+      const candidate: MemoryCandidate = {
+        id: memoryCandidateId({ ...staged, evidence }),
+        schemaVersion: '1',
+        ...staged,
+        evidence,
+        origin: entry.origin,
+        proposedAt: entry.proposedAt,
+      };
+      const evaluation = evaluateForAdmission(evaluator, evalCtx, candidate, now);
+      const unresolved = soul
+        ? unresolvedTargetsIn(soul, candidate.appliesTo)
+        : candidate.appliesTo.length;
+      const decision = decideAutoAdmission(admissionSignals(candidate, evaluation, unresolved));
+      if (decision.verdict !== 'admit') {
+        held.push({ captureId: entry.id, subject: entry.subject, reason: decision.reason });
+        continue;
+      }
+      const record = local.withLock(() => {
+        const written = admitGrounded(local, candidate, evaluation, decision, now);
+        local.removeEntry('candidates', stagedCandidateId);
+        markCaptureDone(local, entry.id, { candidateId: candidate.id });
+        return written;
+      });
+      admitted.push({
+        captureId: entry.id,
+        recordId: record.id,
+        subject: entry.subject,
+        reason: decision.reason,
+      });
+    }
+    return { checked: backlog.length, admitted, held, remaining: pendingCaptures(local).length };
+  }
+
+  /**
+   * Retire one pending capture the operator does not want. A dead-letter TRANSITION, never a delete:
+   * the entry stays readable in the `dead` collection with who dismissed it and why, and its staged
+   * candidate is withdrawn so it stops counting as work. Dismissing an id that is not pending is a
+   * no-op success (`dismissed: false`), so a double click is harmless.
+   */
+  dismissPending(
+    captureId: string,
+    input: { actor: string; reason?: string },
+  ): { ok: true; dismissed: boolean } | { ok: false; error: string } {
+    const local = this.deps.stores.local;
+    if (!local) return { ok: false, error: 'no local memory store is configured' };
+    if (typeof input.actor !== 'string' || input.actor.trim().length === 0) {
+      return { ok: false, error: 'actor is required' };
+    }
+    const entry = pendingCaptures(local).find((e) => e.id === captureId);
+    if (!entry) return { ok: true, dismissed: false };
+    const reason = `dismissed by ${input.actor.trim()}${input.reason ? `: ${input.reason}` : ''}`;
+    local.withLock(() => {
+      deadLetterCapture(local, captureId, reason);
+      if (isMemoryRecordKind(entry.kind)) {
+        local.removeEntry(
+          'candidates',
+          memoryCandidateId({
+            kind: entry.kind,
+            subject: entry.subject,
+            claim: entry.claim,
+            scope: entry.scope,
+            appliesTo: entry.appliesTo,
+            evidence: entry.evidence,
+            authorship: entry.authorship,
+          }),
+        );
+      }
+    });
+    return { ok: true, dismissed: true };
   }
 
   // ── search ─────────────────────────────────────────────────────────────────
@@ -1948,9 +2199,13 @@ export class MemoryApi {
     }
   }
 
-  listIntakes(repository: IntakeCheckpoint['repository'] = { dirty: false }): IntakeProjection {
+  listIntakes(
+    repository: IntakeCheckpoint['repository'] = { dirty: false },
+    /** pass `now` to mark idle unfinished work stale (see `projectIntakes`). */
+    opts: { now?: string; staleAfterDays?: number } = {},
+  ): IntakeProjection {
     const { requirements, checkpoints } = this.intakeEntries();
-    return projectIntakes(requirements, checkpoints, repository);
+    return projectIntakes(requirements, checkpoints, repository, opts);
   }
 
   getIntake(
@@ -1976,6 +2231,8 @@ export class MemoryApi {
       limits?: HandoffInput['limits'];
       repository?: IntakeCheckpoint['repository'];
       currentSessionId?: string;
+      /** pass the current time to mark idle unfinished work stale (surfaces shown to a person). */
+      now?: string;
     } = {},
   ): HandoffResponse {
     const pinned = [this.deps.stores.team, this.deps.stores.local, this.deps.stores.global].filter(
@@ -2032,6 +2289,7 @@ export class MemoryApi {
         ...(opts.currentSessionId !== undefined ? { currentSessionId: opts.currentSessionId } : {}),
         ...(opts.repository ? { repository: opts.repository } : {}),
         ...(opts.limits ? { limits: opts.limits } : {}),
+        ...(opts.now !== undefined ? { now: opts.now } : {}),
       });
     } finally {
       for (const store of pinned) store.unpinGeneration();

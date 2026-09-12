@@ -190,6 +190,8 @@ export interface HandoffInput {
    */
   lifecycleUnreadable?: boolean;
   limits?: { openWork?: number; pending?: number; attention?: number; recent?: number };
+  /** The current time — when present, unfinished intakes idle past the threshold are marked stale. */
+  now?: string;
 }
 
 /**
@@ -414,6 +416,7 @@ export function buildHandoff(input: HandoffInput): HandoffResponse {
     input.intakeRequirements ?? [],
     input.intakeCheckpoints ?? [],
     input.repository ?? { dirty: false },
+    input.now !== undefined ? { now: input.now } : {},
   );
 
   const lastSession = lastSessionOf(

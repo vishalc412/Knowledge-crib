@@ -19,7 +19,19 @@ export interface ResumeBrief {
   repositoryDrift: boolean;
   conflicts: Array<{ field: string; values: string[] }>;
   lastActivity: string;
+  /** Present only when projected with a clock: whole days since the last recorded activity. */
+  idleDays?: number;
+  /**
+   * Unfinished, but idle past the staleness threshold. Stale work is set apart from "work to
+   * resume" so abandoned intakes stop crowding the continue prompt — and it is NEVER closed
+   * automatically: only a person or agent completing or cancelling it retires it.
+   */
+  stale?: true;
 }
+
+/** Days without a checkpoint after which unfinished work is shown as stale rather than resumable. */
+export const STALE_AFTER_DAYS = 14;
+const DAY_MS = 86_400_000;
 
 export interface IntakeProjection {
   primary?: ResumeBrief;
@@ -35,6 +47,8 @@ export interface IntakeProjection {
    * distrust every other number on the page.
    */
   resumableCount: number;
+  /** Present only when projected with a clock: unfinished intakes idle past the threshold. */
+  staleCount?: number;
 }
 
 function checkpointStatus(checkpoint: IntakeCheckpoint | undefined): IntakeStatus {
@@ -64,7 +78,24 @@ export function projectIntakes(
   requirements: readonly IntakeRequirement[],
   checkpoints: readonly IntakeCheckpoint[],
   repository: IntakeCheckpoint['repository'],
+  /**
+   * `now` turns on staleness. Without it the projection stays a pure function of the entries (no
+   * wall clock), exactly as before — surfaces that show work to a person pass the current time.
+   */
+  opts: { now?: string; staleAfterDays?: number } = {},
 ): IntakeProjection {
+  const nowMs = opts.now !== undefined ? Date.parse(opts.now) : Number.NaN;
+  const staleAfterDays = opts.staleAfterDays ?? STALE_AFTER_DAYS;
+  const staleness = (
+    status: IntakeStatus,
+    lastActivity: string,
+  ): Pick<ResumeBrief, 'idleDays' | 'stale'> => {
+    const since = Date.parse(lastActivity);
+    if (Number.isNaN(nowMs) || Number.isNaN(since)) return {};
+    const idleDays = Math.max(0, Math.floor((nowMs - since) / DAY_MS));
+    const open = status !== 'completed' && status !== 'cancelled';
+    return { idleDays, ...(open && idleDays >= staleAfterDays ? { stale: true as const } : {}) };
+  };
   const uniqueRequirements = new Map(requirements.map((entry) => [entry.id, entry]));
   const byIntake = new Map<string, IntakeCheckpoint[]>();
   for (const checkpoint of checkpoints) {
@@ -93,19 +124,22 @@ export function projectIntakes(
     if (terminalStatuses.size > 1) {
       conflicts.push({ field: 'status', values: [...terminalStatuses].sort() });
     }
+    const status = checkpointStatus(latest);
+    const lastActivity = latest?.recordedAt ?? requirement.createdAt;
     return {
       intakeId: requirement.id,
       original: requirement.original,
       interpretation: requirement.interpretation,
       phase: latest?.phase ?? 'intake',
-      status: checkpointStatus(latest),
+      status,
       ...(latest?.nextSafeAction ? { nextSafeAction: latest.nextSafeAction } : {}),
       completedStepIds: [...completedStepIds].sort(),
       blockers: [...blockers].sort(),
       audience: latest?.audience ?? 'private',
       repositoryDrift: repositoryDrifted(latest?.repository, repository),
       conflicts,
-      lastActivity: latest?.recordedAt ?? requirement.createdAt,
+      lastActivity,
+      ...staleness(status, lastActivity),
     };
   });
 
@@ -114,13 +148,14 @@ export function projectIntakes(
     return a.intakeId.localeCompare(b.intakeId);
   });
   const resumable = choices.filter(
-    (choice) => choice.status !== 'completed' && choice.status !== 'cancelled',
+    (choice) => choice.status !== 'completed' && choice.status !== 'cancelled' && !choice.stale,
   );
   return {
     ...(resumable.length === 1 ? { primary: resumable[0] } : {}),
     choices,
     count: choices.length,
     resumableCount: resumable.length,
+    ...(Number.isNaN(nowMs) ? {} : { staleCount: choices.filter((c) => c.stale).length }),
   };
 }
 
@@ -184,8 +219,15 @@ const FRESH_OPTION: ContinuationOption = {
  */
 export function buildContinuation(projection: IntakeProjection): ContinuationChoice {
   const resumable = projection.choices.filter(
-    (choice) => choice.status !== 'completed' && choice.status !== 'cancelled',
+    (choice) => choice.status !== 'completed' && choice.status !== 'cancelled' && !choice.stale,
   );
+  // Stale work is not offered as an option (continuing month-old work blindly is the wrong default),
+  // but it is never hidden either: the rationale names it and how to close it.
+  const staleCount = projection.choices.filter((choice) => choice.stale).length;
+  const staleNote =
+    staleCount > 0
+      ? ` — ${staleCount} idle intake(s) set aside as stale; close them with \`crib intake complete <id>\` or \`crib intake cancel <id>\``
+      : '';
   const options: ContinuationOption[] = resumable.map((choice) => {
     const cautions: string[] = [];
     if (choice.repositoryDrift) {
@@ -210,10 +252,13 @@ export function buildContinuation(projection: IntakeProjection): ContinuationCho
 
   if (resumable.length === 0) {
     return {
-      question: 'No unfinished work is saved for this project. Start fresh?',
+      question:
+        staleCount > 0
+          ? 'No active work is saved — only stale work that went idle. Start fresh?'
+          : 'No unfinished work is saved for this project. Start fresh?',
       options,
       recommended: 'fresh',
-      rationale: 'nothing is resumable, so there is nothing to continue',
+      rationale: `nothing is resumable, so there is nothing to continue${staleNote}`,
     };
   }
   if (resumable.length === 1) {
@@ -225,15 +270,16 @@ export function buildContinuation(projection: IntakeProjection): ContinuationCho
       // A lone clean intake is a defensible default. One carrying drift or blockers is not: that is
       // exactly the state where resuming without looking produces work against a stale plan.
       ...(clean ? { recommended: only.optionId } : {}),
-      rationale: clean
-        ? 'exactly one intake is resumable and nothing about it needs re-checking'
-        : 'one intake is resumable but needs a deliberate look first — see its cautions',
+      rationale: `${
+        clean
+          ? 'exactly one intake is resumable and nothing about it needs re-checking'
+          : 'one intake is resumable but needs a deliberate look first — see its cautions'
+      }${staleNote}`,
     };
   }
   return {
     question: `${resumable.length} unfinished intakes are saved. Continue one, or start fresh?`,
     options,
-    rationale:
-      'several intakes are resumable, so no default is offered — naming the wrong one silently resumes the wrong work',
+    rationale: `several intakes are resumable, so no default is offered — naming the wrong one silently resumes the wrong work${staleNote}`,
   };
 }

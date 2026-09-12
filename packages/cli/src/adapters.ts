@@ -272,7 +272,10 @@ export const CLIENT_ADAPTERS: ClientAdapter[] = [
     lifecycle: {
       portableCapture: { tool: 'memory', op: 'capture', evidence: 'in-repo-writer' },
       lifecycleHooks: {
-        events: ['session-start', 'turn-end', 'tool-use'],
+        // PostToolUse ('tool-use') is deliberately NOT wired: it spawns the crib CLI after every
+        // tool call (~1s each, measured) to journal a checkpoint marker. SessionStart (bootstrap)
+        // and Stop (the memory nudge) are the two moments worth a process spawn.
+        events: ['session-start', 'turn-end'],
         // settings.json hooks exist upstream (SessionStart / Stop / PostToolUse run a configured
         // command) — but the fired-event guarantee is upstream documentation, not in-repo
         // execution: this repo only writes the entry (capture-hook writer below), and the durable
@@ -970,6 +973,17 @@ export function installCaptureHooks(
       hooksRoot[key] = kept;
       wired.push(event);
     }
+    // Retire crib commands on hook keys this client no longer wires (PostToolUse, from installs
+    // that predate dropping it). User entries on those keys survive; an emptied key is omitted.
+    for (const { event, key } of hookEventPairs(LIFECYCLE_EVENTS)) {
+      if (hooks.events.includes(event)) continue;
+      const bucket = hooksRoot[key];
+      if (!Array.isArray(bucket)) continue;
+      const kept = stripCribFromBucket(bucket);
+      if (JSON.stringify(kept) === JSON.stringify(bucket)) continue;
+      changed = true;
+      hooksRoot[key] = kept.length > 0 ? kept : undefined;
+    }
     if (changed) {
       mkdirSync(dirname(path), { recursive: true });
       writeFileSync(path, `${JSON.stringify({ ...obj, hooks: hooksRoot }, null, 2)}\n`, 'utf8');
@@ -1067,7 +1081,9 @@ export function removeCaptureHooks(
     const hooksRoot = { ...((obj.hooks as Record<string, unknown>) ?? {}) };
     const removed: LifecycleEvent[] = [];
     let changed = false;
-    for (const { event, key } of hookEventPairs(hooks.events)) {
+    // Every lifecycle key, not just the ones wired today: an uninstall also clears entries left by
+    // an older crib that wired more events.
+    for (const { event, key } of hookEventPairs(LIFECYCLE_EVENTS)) {
       const bucket = hooksRoot[key];
       if (!Array.isArray(bucket)) continue;
       const kept = stripCribFromBucket(bucket);

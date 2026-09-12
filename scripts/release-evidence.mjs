@@ -20,6 +20,7 @@ import { cpus, hostname, totalmem } from 'node:os';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
+  certifyClientCell,
   loadClientCertificationReceipts,
   missingRuntimeCertificationCells,
 } from './client-certification-evidence.mjs';
@@ -156,7 +157,12 @@ export function buildReleaseEvidence(input) {
         platform: receipt.platform,
         product: receipt.product,
         policySha256: receipt.policySha256,
-        runtimeStatus: receipt.evidence?.runtime?.status ?? 'unknown',
+        formatVersion: receipt.formatVersion,
+        // The claim THIS manifest is making on the receipt's behalf. The launch decision compares it
+        // against what the raw receipts actually support and names every cell where the two disagree
+        // (`certification-summary-unsupported:<cell>`), so this summary is a restatement to be
+        // checked — never the thing that certifies a cell.
+        runtimeStatus: certifyClientCell(receipt).ok ? 'pass' : 'not-certified',
       })),
       // A convenience summary for humans reading the file; the decision recomputes it rather than
       // trusting it, because a precomputed "nothing missing" is exactly what a tampered manifest

@@ -90,6 +90,7 @@ import {
   IntelligenceEventJournal,
   MemoryApi,
   type MemoryCandidate,
+  type MemoryCompositeOpts,
   type MemoryDecision,
   MemoryEvaluator,
   type MemoryEvidence,
@@ -167,6 +168,7 @@ import {
   localRecordsToTombstone,
   localStoreRoot,
   memoryCandidateId,
+  memoryComposite,
   memoryHome,
   openMemoryFts,
   openMemoryVectors,
@@ -188,6 +190,7 @@ import {
   runMemoryBench,
   runMemoryCheck,
   sameSubjectRecords,
+  soulTargetResolver,
   stageSyncableWrite,
   syncConfigPath,
   syncEngineStatus,
@@ -219,6 +222,7 @@ import {
   runCluster,
   showFileAtRef,
   uncommittedChanges,
+  untrackedFiles,
   updateRepo,
 } from '@knowledge-crib/pipeline';
 import { DEFAULT_IGNORES } from '@knowledge-crib/pipeline';
@@ -315,6 +319,14 @@ import {
   startupHeadMismatch,
 } from './runtime.js';
 import { installSkill, listBundledSkills } from './skill-install.js';
+import {
+  decideStopNudge,
+  nudgeWorkPaths,
+  readNudgeState,
+  recordSessionStart,
+  sessionKey,
+  writeNudgeState,
+} from './stop-nudge.js';
 import { buildSupportBundle, readProductVersion } from './support-bundle.js';
 import {
   CSRF_HEADER,
@@ -324,6 +336,8 @@ import {
   isAllowedHost,
   mutationErrorPayload,
   parseAdmissionBody,
+  parseDismissBody,
+  parseIntakeCloseBody,
   parseMemoryLedgerQuery,
   parseMemoryPendingQuery,
   parseResumeBody,
@@ -2554,6 +2568,22 @@ async function cmdInit(args: string[], ctx?: CmdCtx): Promise<number> {
       `  warning: instruction-adapter install failed — ${(e as Error).message}\n`,
     );
   }
+  // Lifecycle capture hooks — Claude Code is the one client with a verified hook surface. They wire
+  // the SessionStart bootstrap and the Stop nudge that asks the agent to record what it learned;
+  // without them memory is write-only-if-remembered. Non-fatal, like the adapters above.
+  if (plan.clients.includes('claude')) {
+    try {
+      for (const r of installCaptureHooks(repoRoot, { client: 'claude', scope: 'project' })) {
+        process.stdout.write(
+          r.note
+            ? `  capture hooks: ${r.note}\n`
+            : `  capture hooks ${r.written ? 'installed' : 'up to date'} (${r.events.join(', ')}) → ${r.path}\n`,
+        );
+      }
+    } catch (e) {
+      process.stderr.write(`  warning: capture-hook install failed — ${(e as Error).message}\n`);
+    }
+  }
 
   process.stdout.write('  step 5/5: on-device semantic model for memory recall…\n');
   await installEmbedTier(embed);
@@ -3900,12 +3930,16 @@ async function cmdViz(args: string[], ctx?: CmdCtx): Promise<number> {
     runCluster(rt.soul);
     repairedClusters = true;
   }
-  const graph = buildVizGraph(rt.soul);
-  const overview = buildVizOverview(rt.soul);
-  const assets = vizAssetsDir();
   // G5.4 — the memory ledger rides on the SAME MemoryApi the MCP verbs and CLI subcommands use;
   // repos without a memory store serve the honest `configured: false` shape, not an error.
   const memoryDeps = createMemoryDeps(rt.soul, rt.repoRoot, resolved.cribDir);
+  // The graph shows memory too — trusted records and pending candidates, linked to their code.
+  const graph = buildVizGraph(
+    rt.soul,
+    memoryDeps ? vizMemoryLayer(rt.soul, memoryDeps) : undefined,
+  );
+  const overview = buildVizOverview(rt.soul);
+  const assets = vizAssetsDir();
   const memoryApi = memoryDeps
     ? createMemoryApi(rt.soul, rt.repoRoot, resolved.cribDir, memoryDeps)
     : undefined;
@@ -4070,6 +4104,9 @@ async function cmdViz(args: string[], ctx?: CmdCtx): Promise<number> {
       if (
         requestUrl.pathname === '/memory/admit' ||
         requestUrl.pathname === '/memory/resume' ||
+        requestUrl.pathname === '/memory/intake/close' ||
+        requestUrl.pathname === '/memory/pending/recheck' ||
+        requestUrl.pathname === '/memory/pending/dismiss' ||
         requestUrl.pathname === '/memory/mutation-grant.json'
       ) {
         const sendJson = (status: number, payload: unknown): void => {
@@ -4101,6 +4138,60 @@ async function cmdViz(args: string[], ctx?: CmdCtx): Promise<number> {
             (Array.isArray(headerToken) ? headerToken[0] : headerToken) ?? undefined,
             csrfToken,
           );
+          const operator = `human:${process.env.KCRIB_PRINCIPAL_ID ?? process.env.USER ?? 'operator'}`;
+          // Session maintenance from the memory home: close work, re-check or dismiss pending
+          // captures. The same MemoryApi operations the CLI runs — append-only, never a delete.
+          if (requestUrl.pathname === '/memory/intake/close') {
+            const body = parseIntakeCloseBody(await readMutationBody(req));
+            const existing = memoryApi.getIntake(body.intakeId);
+            if (!existing) {
+              throw new VizMutationError('not-found', 404, `no intake '${body.intakeId}'`);
+            }
+            if (
+              existing.checkpoints.some((c) => c.kind === 'completed' || c.kind === 'cancelled')
+            ) {
+              sendJson(200, { closed: true, alreadyClosed: true });
+              return;
+            }
+            const anchor = currentRepositoryAnchor(resolved.repoRoot);
+            const checkpoint = memoryApi.checkpointIntake({
+              intakeId: body.intakeId,
+              kind: body.outcome,
+              phase: 'complete',
+              summary:
+                body.summary ??
+                (body.outcome === 'completed'
+                  ? 'Marked done from the memory home'
+                  : 'Cancelled from the memory home'),
+              completedStepIds: [],
+              repository: {
+                ...(anchor.head ? { head: anchor.head } : {}),
+                ...(anchor.branch ? { branch: anchor.branch } : {}),
+                dirty: anchor.dirty,
+                ...(anchor.changedPathsDigest
+                  ? { changedPathsDigest: anchor.changedPathsDigest }
+                  : {}),
+              },
+              actor: operator,
+              recordedAt: new Date().toISOString(),
+            });
+            sendJson(200, { closed: true, outcome: body.outcome, checkpointId: checkpoint.id });
+            return;
+          }
+          if (requestUrl.pathname === '/memory/pending/recheck') {
+            sendJson(200, memoryApi.recheckPending({ limit: 200 }));
+            return;
+          }
+          if (requestUrl.pathname === '/memory/pending/dismiss') {
+            const body = parseDismissBody(await readMutationBody(req));
+            const result = memoryApi.dismissPending(body.id, {
+              actor: operator,
+              ...(body.reason ? { reason: body.reason } : {}),
+            });
+            if (!result.ok) throw new VizMutationError('bad-request', 400, result.error);
+            sendJson(200, result);
+            return;
+          }
           if (requestUrl.pathname === '/memory/admit') {
             const body = parseAdmissionBody(await readMutationBody(req));
             // Idempotent duplicates (WP6.5): the id is content-addressed, so a claim that already
@@ -5337,6 +5428,19 @@ function createMemoryDeps(soul: SoulStore, repoRoot: string, cribDir: string) {
   };
 }
 
+/** The memory layer `crib viz` folds into the graph — the same projection the MCP graph verbs use
+ *  (recall-eligible records + pending candidates, path targets resolved to file nodes). */
+function vizMemoryLayer(soul: SoulStore, deps: NonNullable<ReturnType<typeof createMemoryDeps>>) {
+  const stores = { team: deps.team, local: deps.local, global: deps.global };
+  const pending = deps.local.readCollection('candidates').entries as unknown as NonNullable<
+    MemoryCompositeOpts['pending']
+  >;
+  return memoryComposite(recallProjection(gatherRecall(stores)), {
+    pending,
+    resolveTarget: soulTargetResolver((id) => soul.getNode(id)),
+  });
+}
+
 /**
  * Gate 1.3 — build the portable {@link MemoryApi} over the CLI's three stores. The SAME adapter
  * the MCP verbs use (verbs.ts `memoryApi()`): soul anchored through `SoulStoreAnchorPort`, fresh
@@ -5444,7 +5548,7 @@ function cmdIntake(args: string[], ctx?: CmdCtx): number {
   const [sub, ...rest] = args;
   if (sub === undefined || sub === '--help' || sub === '-h') {
     process.stdout.write(
-      'usage: crib intake create|checkpoint|list|show|complete|share [options]\n',
+      'usage: crib intake create|checkpoint|list|show|complete|cancel|share [options]\n',
     );
     return EXIT.OK;
   }
@@ -5503,7 +5607,9 @@ function cmdIntake(args: string[], ctx?: CmdCtx): number {
     }
 
     const id = positionalsOf(rest)[0];
-    if (sub === 'list') return output(api.listIntakes(repository));
+    if (sub === 'list') {
+      return output(api.listIntakes(repository, { now: new Date().toISOString() }));
+    }
     if (!id) throw new CliUsageError(`crib intake ${sub} requires an intake id`);
     if (sub === 'show') {
       const found = api.getIntake(id);
@@ -5519,6 +5625,22 @@ function cmdIntake(args: string[], ctx?: CmdCtx): number {
           phase: 'complete',
           summary: stringFlag(rest, '--summary')?.trim() || 'Completed',
           completedStepIds: repeatedFlag(rest, '--completed-step'),
+          repository,
+          actor,
+          recordedAt: new Date().toISOString(),
+        }),
+      );
+    }
+    if (sub === 'cancel') {
+      // Retires work that will not be finished, so it stops showing as work to resume. Like
+      // `complete`, an append-only checkpoint — the intake and its history stay readable.
+      return output(
+        api.checkpointIntake({
+          intakeId: id,
+          kind: 'cancelled',
+          phase: 'complete',
+          summary: stringFlag(rest, '--summary')?.trim() || 'Cancelled',
+          completedStepIds: [],
           repository,
           actor,
           recordedAt: new Date().toISOString(),
@@ -5587,7 +5709,8 @@ function cmdIntake(args: string[], ctx?: CmdCtx): number {
 
 function cmdSession(args: string[], ctx?: CmdCtx): number {
   const [sub, ...rest] = args;
-  if (sub === 'bootstrap') return cmdMemoryHandoff(rest, ctx);
+  // Bootstrap runs at every SessionStart, so it is also where session maintenance happens.
+  if (sub === 'bootstrap') return cmdMemoryHandoff([...rest, '--maintain'], ctx);
   if (sub === 'resume') return cmdSessionResume(rest, ctx);
   if (sub === 'fresh') return cmdSessionFresh(rest, ctx);
   if (sub === undefined || sub === '--help' || sub === '-h') {
@@ -5807,12 +5930,26 @@ function cmdMemoryHandoff(args: string[], ctx?: CmdCtx): number {
     return EXIT.NOT_INDEXED;
   }
   const api = createMemoryApi(rt.soul, resolved.repoRoot, resolved.cribDir, deps);
+  // Session maintenance (`crib session bootstrap`, i.e. every SessionStart): re-check the pending
+  // backlog against today's gate BEFORE reporting, so learnings captured earlier reach recall
+  // without anyone running a command. Bounded and fail-soft — a session start must never fail.
+  let maintenance: ReturnType<typeof api.recheckPending> | undefined;
+  if (args.includes('--maintain')) {
+    try {
+      maintenance = api.recheckPending({ limit: 25 });
+    } catch {
+      maintenance = undefined;
+    }
+  }
   const out = api.handoff({
     limits: { openWork: limit, pending: limit, attention: limit, recent: limit },
     repository: currentRepositoryAnchor(resolved.repoRoot),
+    now: new Date().toISOString(),
   });
   if (json) {
-    process.stdout.write(`${JSON.stringify(out, null, 2)}\n`);
+    process.stdout.write(
+      `${JSON.stringify(maintenance ? { ...out, maintenance } : out, null, 2)}\n`,
+    );
     return EXIT.OK;
   }
   const lines: string[] = [];
@@ -6165,11 +6302,16 @@ async function cmdMemory(args: string[], ctx?: CmdCtx): Promise<number> {
     // `captureHookCommand`). Fail-open by contract: see cmdMemoryCaptureHook.
     case 'capture-hook':
       return cmdMemoryCaptureHook(rest, ctx);
+    // Session maintenance over the pending backlog: admit what now verifies, retire what is unwanted.
+    case 'recheck':
+      return cmdMemoryRecheck(rest, ctx);
+    case 'dismiss':
+      return cmdMemoryDismiss(rest, ctx);
     case undefined:
     case '-h':
     case '--help':
       process.stderr.write(
-        'crib memory init | remember "<claim>" [--subject <id>] [--kind convention|decision] [--global] (record + admit a human-attested claim from a terminal — recallable immediately) | admit <candidate-id> (admit an agent-staged human-attested claim, from a terminal) | handoff [--limit N] [--json] (where was I? — in-flight work, undistilled captures, what went stale) | events [--include-expired] [--limit N] [--json] | profiles list [--json] | profiles register --key <profile-key> --alias <client-id>/<agent-id> [--alias ...] [--json] | recall "<query>" [--limit N] [--sources team,local,global] [--target <id>] [--with-evidence] [--include-pending] [--max-tokens N] [--json] | search "<query>" [--limit N] [--sources team,local,global] [--target <id>] [--max-tokens N] [--json] | get <id> [--with-evidence] [--json] | supersede <id> --actor <id> (--successor <id> | --claim <text>) [--reason <text>] [--json] | delete <id> --actor <id> [--reason <text>] [--json] | history <key> [--as-of <iso-ts>] [--with-evidence] [--json] | evaluate <candidate> --profile <name> | activate <candidate>|--all | propose <memory-id> | attest <candidate> | check | audit [--repair-local] | feedback <mem-id> --signal <useful|unhelpful|contradicted> [--actor <id>] [--context <text>] [--counter-evidence <json-file>] | gc [--max-age-days N] [--dry-run] | migrate | bench [--fast] [--json] [--out <path>] | distill --provider <name> [--providers-file F] [--max-batches N] [--concurrency N] [--timeout-ms N] | capture-hook --event <session-start|turn-end|tool-use> (hooks invoke this; always exits 0 — best-effort capture, never blocks a session) | init-sync --scope repo|global --backend file|http --url <target> [--key-env <NAME>|--keyfile <path>|--gen-key] [--secret-env <NAME>] [--sync-id <id>] [--backfill] [--json] | sync [push|pull|status] [--dry-run] [--backfill] [--max-events N] [--skip] [--json] | sync rotate-key (--gen-key | --key-env <NAME> | --keyfile <path>) [--dry-run] | sync purge-sync --stale-epoch [--dry-run] | purge <mem-id>... --confirm <mem-id>... [--stores local,global] [--history-scan] [--dry-run] [--actor <id>] [--json] | conflicts [--json] | resolve <record-id> (--successor <id> | --retract) --actor <id> [--reason <text>] [--json] (see docs/memory-sync.md)\n',
+        'crib memory init | remember "<claim>" [--subject <id>] [--kind convention|decision] [--global] (record + admit a human-attested claim from a terminal — recallable immediately) | admit <candidate-id> (admit an agent-staged human-attested claim, from a terminal) | handoff [--limit N] [--json] (where was I? — in-flight work, undistilled captures, what went stale) | events [--include-expired] [--limit N] [--json] | profiles list [--json] | profiles register --key <profile-key> --alias <client-id>/<agent-id> [--alias ...] [--json] | recall "<query>" [--limit N] [--sources team,local,global] [--target <id>] [--with-evidence] [--include-pending] [--max-tokens N] [--json] | search "<query>" [--limit N] [--sources team,local,global] [--target <id>] [--max-tokens N] [--json] | get <id> [--with-evidence] [--json] | supersede <id> --actor <id> (--successor <id> | --claim <text>) [--reason <text>] [--json] | delete <id> --actor <id> [--reason <text>] [--json] | history <key> [--as-of <iso-ts>] [--with-evidence] [--json] | evaluate <candidate> --profile <name> | activate <candidate>|--all | propose <memory-id> | attest <candidate> | check | audit [--repair-local] | feedback <mem-id> --signal <useful|unhelpful|contradicted> [--actor <id>] [--context <text>] [--counter-evidence <json-file>] | gc [--max-age-days N] [--dry-run] | migrate | bench [--fast] [--json] [--out <path>] | distill --provider <name> [--providers-file F] [--max-batches N] [--concurrency N] [--timeout-ms N] | recheck [--limit N] [--json] (re-run the admission gate over pending captures) | dismiss <cap-id> [--reason <text>] [--json] (retire one pending capture) | capture-hook --event <session-start|turn-end|tool-use> (hooks invoke this; always exits 0 — best-effort capture, never blocks a session) | init-sync --scope repo|global --backend file|http --url <target> [--key-env <NAME>|--keyfile <path>|--gen-key] [--secret-env <NAME>] [--sync-id <id>] [--backfill] [--json] | sync [push|pull|status] [--dry-run] [--backfill] [--max-events N] [--skip] [--json] | sync rotate-key (--gen-key | --key-env <NAME> | --keyfile <path>) [--dry-run] | sync purge-sync --stale-epoch [--dry-run] | purge <mem-id>... --confirm <mem-id>... [--stores local,global] [--history-scan] [--dry-run] [--actor <id>] [--json] | conflicts [--json] | resolve <record-id> (--successor <id> | --retract) --actor <id> [--reason <text>] [--json] (see docs/memory-sync.md)\n',
       );
       process.stderr.write(
         'additional operations: backup create|verify|restore; sync compact [--dry-run] [--json]\n',
@@ -6489,6 +6631,131 @@ function lifecycleOutcomeOf(payload: Record<string, unknown>): LifecycleOutcome 
   };
 }
 
+/** Open the portable MemoryApi for a CLI maintenance command, or print why it cannot be opened. */
+function openMaintenanceApi(ctx?: CmdCtx): MemoryApi | undefined {
+  const resolved = resolveProjectRoot({ explicitRoot: ctx?.cwdOverride });
+  if (!isIndexedRoot(resolved)) {
+    process.stderr.write('not indexed — run `crib index` first\n');
+    return undefined;
+  }
+  const rt = openSoul(resolved);
+  const deps = createMemoryDeps(rt.soul, resolved.repoRoot, resolved.cribDir);
+  if (!deps) {
+    process.stderr.write('could not resolve repoId for memory — run `crib index` first\n');
+    return undefined;
+  }
+  return createMemoryApi(rt.soul, resolved.repoRoot, resolved.cribDir, deps);
+}
+
+/**
+ * `crib memory recheck [--limit N] [--json]` — re-run today's admission gate over the pending capture
+ * backlog. Learnings captured before they could be verified are admitted once they check out; the
+ * rest stay pending with the reason. `crib session bootstrap` runs a bounded pass automatically.
+ */
+function cmdMemoryRecheck(args: string[], ctx?: CmdCtx): number {
+  if (args.includes('--help')) {
+    process.stdout.write('usage: crib memory recheck [--limit N] [--json]\n');
+    return EXIT.OK;
+  }
+  const api = openMaintenanceApi(ctx);
+  if (!api) return EXIT.NOT_INDEXED;
+  const result = api.recheckPending({ limit: capInt(intFlag(args, '--limit'), 200, 500) });
+  if (args.includes('--json')) {
+    process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+    return EXIT.OK;
+  }
+  if (result.skipped) {
+    process.stdout.write(`recheck: skipped — ${result.skipped}\n`);
+    return EXIT.OK;
+  }
+  process.stdout.write(
+    `recheck: ${result.checked} pending capture(s) checked — ${result.admitted.length} admitted, ${result.held.length} still pending, ${result.remaining} left in the queue\n`,
+  );
+  for (const a of result.admitted)
+    process.stdout.write(`  admitted  ${a.subject} → ${a.recordId}\n`);
+  for (const h of result.held) {
+    process.stdout.write(`  pending   ${h.subject} (${h.captureId}): ${h.reason}\n`);
+  }
+  return EXIT.OK;
+}
+
+/** `crib memory dismiss <cap-id> [--reason <text>] [--json]` — retire one pending capture (dead-letter, never a delete). */
+function cmdMemoryDismiss(args: string[], ctx?: CmdCtx): number {
+  if (args.includes('--help')) {
+    process.stdout.write('usage: crib memory dismiss <cap-id> [--reason <text>] [--json]\n');
+    return EXIT.OK;
+  }
+  const id = positionalsOf(args)[0];
+  if (!id) {
+    process.stderr.write('usage: crib memory dismiss <cap-id> [--reason <text>] [--json]\n');
+    return EXIT.BAD_ARGS;
+  }
+  const api = openMaintenanceApi(ctx);
+  if (!api) return EXIT.NOT_INDEXED;
+  const actor = `human:${process.env.KCRIB_PRINCIPAL_ID ?? process.env.USER ?? 'operator'}`;
+  const reason = stringFlag(args, '--reason')?.trim();
+  const result = api.dismissPending(id, { actor, ...(reason ? { reason } : {}) });
+  if (!result.ok) {
+    process.stderr.write(`error: ${result.error}\n`);
+    return EXIT.ERROR;
+  }
+  process.stdout.write(
+    args.includes('--json')
+      ? `${JSON.stringify(result)}\n`
+      : result.dismissed
+        ? `dismissed ${id}\n`
+        : `nothing to dismiss: ${id} is not pending\n`,
+  );
+  return EXIT.OK;
+}
+
+/** Claude Code's Stop-hook exit code for "do not stop yet" (stderr becomes the agent's context). */
+const STOP_HOOK_BLOCK_EXIT = 2;
+const STOP_NUDGE_STATE_FILE = 'stop-nudge.json';
+
+/**
+ * The Stop-hook memory nudge (stop-nudge.ts). `session-start` records the starting tree; `turn-end`
+ * returns the reason to block with when the session did work it has not been asked about. Returns
+ * undefined otherwise — and on ANY failure, because a nudge is a courtesy and must never break the
+ * fail-open hook contract. `KCRIB_STOP_NUDGE=off` disables it.
+ */
+function stopNudgeReason(
+  event: LifecycleEvent,
+  payload: Record<string, unknown>,
+  sessionId: string | undefined,
+  repoId: string,
+  repoRoot: string,
+  head: string | undefined,
+): string | undefined {
+  if (!sessionId || process.env.KCRIB_STOP_NUDGE === 'off') return undefined;
+  if (event !== 'session-start' && event !== 'turn-end') return undefined;
+  try {
+    const path = join(localStoreRoot(repoId, process.env), STOP_NUDGE_STATE_FILE);
+    const state = readNudgeState(path);
+    const key = sessionKey(sessionId);
+    // Its own uncapped snapshot, not the resume anchor's: that one lists tracked changes only (a
+    // session that just CREATED files looked idle) and is capped for the journal payload.
+    const snap = {
+      ...(head ? { head } : {}),
+      changedPaths: nudgeWorkPaths(uncommittedChanges(repoRoot), untrackedFiles(repoRoot)),
+    };
+    const now = new Date().toISOString();
+    if (event === 'session-start') {
+      const next = recordSessionStart(state, key, snap, now);
+      if (next !== state) writeNudgeState(path, next);
+      return undefined;
+    }
+    const { decision, next } = decideStopNudge(state, key, snap, {
+      stopHookActive: payload.stop_hook_active === true,
+      now,
+    });
+    if (next !== state) writeNudgeState(path, next);
+    return decision.nudge ? decision.reason : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 /** A lifecycle hook fires inside a live coding session: this command MUST never block one.
  *  Claude Code treats a nonzero hook exit (2 in particular) as a blocking error, so every runtime
  *  failure — bad payload, unindexed repo, policy refusal, store error — degrades to stderr + EXIT.OK.
@@ -6559,6 +6826,7 @@ function cmdMemoryCaptureHook(args: string[], ctx?: CmdCtx): number {
         clientId,
         agentId: actor,
       }) ?? resolveServerIdentity(process.env);
+    const repository = currentRepositoryAnchor(resolved.repoRoot);
     const lifecycle = deps.eventJournal.append({
       kind: 'agent.lifecycle',
       idempotencyKey,
@@ -6582,7 +6850,7 @@ function cmdMemoryCaptureHook(args: string[], ctx?: CmdCtx): number {
         event,
         action: 'checkpoint-requested',
         hasOutcome: outcome !== undefined,
-        repository: currentRepositoryAnchor(resolved.repoRoot),
+        repository,
       },
       occurredAt,
     });
@@ -6604,6 +6872,21 @@ function cmdMemoryCaptureHook(args: string[], ctx?: CmdCtx): number {
       }
     }
     if (!outcome) {
+      const nudge = stopNudgeReason(
+        event,
+        payload,
+        sessionId,
+        repoId,
+        resolved.repoRoot,
+        repository.head,
+      );
+      if (nudge !== undefined) {
+        // The one deliberate non-zero exit: Claude Code's documented Stop contract treats exit 2 as
+        // "prevent stopping, continue", feeding stderr to the agent. stop-nudge.ts guarantees it
+        // fires at most once per session per HEAD and never while already continuing.
+        process.stderr.write(`${nudge}\n`);
+        return STOP_HOOK_BLOCK_EXIT;
+      }
       process.stdout.write(
         `${JSON.stringify({
           ok: true,

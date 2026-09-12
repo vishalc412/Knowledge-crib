@@ -223,18 +223,29 @@ export function readMemoryHome(
   const handoff = api.handoff({
     repository,
     limits: { openWork: 10, pending: 10, attention: 10, recent: 10 },
+    now: new Date().toISOString(),
   });
   const ledger = api.ledger({ offset: 0, limit: 1 });
   // Resumable only: `count` is the full history including completed and cancelled intakes, and a
-  // "work to resume" tile that counts finished work is simply lying to the operator.
+  // "work to resume" tile that counts finished work is simply lying to the operator. Stale work
+  // (idle for two weeks or more) is counted apart for the same reason.
   const resumeCount = handoff.counts.openWork + handoff.intakes.resumableCount;
+  const staleCount = handoff.intakes.staleCount ?? 0;
+  const pending = handoff.counts.pendingCaptures;
+  // One action a PERSON can take right now, most urgent first. Every line says where to click —
+  // never a command that needs configuration the operator has not done (the old pending hint
+  // named `crib memory distill --provider <name>`, which needs an LLM provider nobody set up).
   const nextAction = handoff.intakes.primary?.nextSafeAction
     ? handoff.intakes.primary.nextSafeAction
-    : handoff.counts.pendingCaptures > 0
-      ? 'Run `crib memory distill --provider <name>` to review pending outcomes.'
-      : handoff.counts.needsAttention > 0
-        ? 'Open Needs review and inspect the evidence or supersede the stale claim.'
-        : 'Capture a structured outcome at the end of meaningful work so another agent can resume.';
+    : resumeCount > 1
+      ? `${resumeCount} pieces of work are in progress — open Work to resume, continue one, and mark the finished ones done.`
+      : pending > 0
+        ? `${pending} captured learning(s) are waiting — open Pending and press Re-check to admit the ones that verify against the code; dismiss the rest.`
+        : staleCount > 0
+          ? `${staleCount} piece(s) of work went idle for two weeks or more — open Work to resume and mark each one done or cancel it.`
+          : handoff.counts.needsAttention > 0
+            ? 'Open Needs review and inspect the evidence or supersede the stale claim.'
+            : 'Nothing needs you. Agents capture memories with memory_observe as they work, and each session re-checks what is pending.';
   return {
     configured: true as const,
     sections: {
@@ -244,6 +255,7 @@ export function readMemoryHome(
       history: { count: ledger.total, groups: ledger.counts },
       resume: {
         count: resumeCount,
+        staleCount,
         primary: handoff.intakes.primary,
         choices: handoff.intakes.choices,
         openWork: handoff.openWork,
@@ -255,6 +267,43 @@ export function readMemoryHome(
     degraded: handoff.degraded,
     nextAction,
   };
+}
+
+/** The close-work POST body: which intake, and whether it was finished or abandoned. */
+export interface VizIntakeCloseBody {
+  intakeId: string;
+  outcome: 'completed' | 'cancelled';
+  summary?: string;
+}
+
+export function parseIntakeCloseBody(v: unknown): VizIntakeCloseBody {
+  const o = requireObject(v);
+  const outcome = requireString(o.outcome, 'outcome');
+  if (outcome !== 'completed' && outcome !== 'cancelled') {
+    throw new VizMutationError('bad-request', 400, "outcome must be 'completed' or 'cancelled'");
+  }
+  const summary = requireString(o.summary ?? '', 'summary', { allowEmpty: true }).trim();
+  return {
+    intakeId: requireString(o.intakeId, 'intakeId'),
+    outcome,
+    ...(summary ? { summary } : {}),
+  };
+}
+
+/** The dismiss POST body: one pending capture id, with an optional reason for the audit trail. */
+export interface VizDismissBody {
+  id: string;
+  reason?: string;
+}
+
+export function parseDismissBody(v: unknown): VizDismissBody {
+  const o = requireObject(v);
+  const id = requireString(o.id, 'id');
+  if (!id.startsWith('cap:')) {
+    throw new VizMutationError('bad-request', 400, 'not a pending capture id');
+  }
+  const reason = requireString(o.reason ?? '', 'reason', { allowEmpty: true }).trim();
+  return { id, ...(reason ? { reason } : {}) };
 }
 
 /** The `/memory/record.json` body: the full `get` projection plus the record's audit trail. */

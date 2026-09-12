@@ -496,7 +496,7 @@ describe('capture-lane matrix (G2.1) — registry coverage', () => {
 
   it('captureLaneSummary renders the lane data (regenerated, never hand-written)', () => {
     expect(captureLaneSummary('claude')).toMatch(
-      /Claude Code: portable capture via memory\(\{op:'capture'\}\) \[in-repo-writer\]; lifecycle hooks \(session-start, turn-end, tool-use\) \[verified-upstream-doc\]/,
+      /Claude Code: portable capture via memory\(\{op:'capture'\}\) \[in-repo-writer\]; lifecycle hooks \(session-start, turn-end\) \[verified-upstream-doc\]/,
     );
     expect(captureLaneSummary('cursor')).toMatch(
       /Cursor: portable capture via memory\(\{op:'capture'\}\) \[in-repo-writer\]; instruction-based recall only \(no lifecycle-hook surface\)/,
@@ -515,10 +515,10 @@ describe('capture-hook writer (G2.1) — Claude settings.json', () => {
   it('installs one managed entry per declared event, mapped to the upstream hook keys', () => {
     const results = installCaptureHooks(repo, { client: 'claude', scope: 'project' });
     expect(results[0]!.written).toBe(true);
-    expect(results[0]!.events).toEqual(['session-start', 'turn-end', 'tool-use']);
+    expect(results[0]!.events).toEqual(['session-start', 'turn-end']);
     const obj = JSON.parse(readFileSync(settingsPath(), 'utf8')) as Record<string, unknown>;
     const hooks = obj.hooks as Record<string, unknown>;
-    expect(Object.keys(hooks).sort()).toEqual(['PostToolUse', 'SessionStart', 'Stop']);
+    expect(Object.keys(hooks).sort()).toEqual(['SessionStart', 'Stop']);
     for (const key of Object.keys(hooks)) {
       const bucket = hooks[key] as Record<string, unknown>[];
       expect(bucket).toHaveLength(1);
@@ -535,6 +535,36 @@ describe('capture-hook writer (G2.1) — Claude settings.json', () => {
     }
     expect((hooks.SessionStart as unknown[])[0]).toBeDefined();
     expect(JSON.stringify(hooks.SessionStart)).toContain('crib session bootstrap --json');
+  });
+
+  it("retires the PostToolUse entry an earlier crib wired, keeping the user's hooks there", () => {
+    writeFileSync(
+      settingsPath(),
+      `${JSON.stringify(
+        {
+          hooks: {
+            PostToolUse: [
+              { hooks: [{ type: 'command', command: captureHookCommand('tool-use') }] },
+              { hooks: [{ type: 'command', command: 'user-post-tool' }] },
+            ],
+          },
+        },
+        null,
+        2,
+      )}\n`,
+    );
+    expect(installCaptureHooks(repo, { client: 'claude', scope: 'project' })[0]!.written).toBe(
+      true,
+    );
+    const hooks = (
+      JSON.parse(readFileSync(settingsPath(), 'utf8')) as { hooks: Record<string, unknown[]> }
+    ).hooks;
+    expect(JSON.stringify(hooks.PostToolUse)).not.toContain(CAPTURE_HOOK_COMMAND_MARKER);
+    expect(JSON.stringify(hooks.PostToolUse)).toContain('user-post-tool');
+    expect(Object.keys(hooks).sort()).toEqual(['PostToolUse', 'SessionStart', 'Stop']);
+    // Uninstall clears every crib command, including on keys no longer wired.
+    removeCaptureHooks(repo, { client: 'claude', scope: 'project' });
+    expect(readFileSync(settingsPath(), 'utf8')).not.toContain(CAPTURE_HOOK_COMMAND_MARKER);
   });
 
   it('repairs a legacy flat install in place — migrated, not duplicated', () => {
@@ -737,9 +767,9 @@ describe('capture-hook writer (G2.1) — Claude settings.json', () => {
     installCaptureHooks(repo, { client: 'claude', scope: 'project' });
     const result = removeCaptureHooks(repo, { client: 'claude', scope: 'project' });
     expect(result[0]!.written).toBe(true);
-    expect(result[0]!.events).toEqual(['session-start', 'turn-end', 'tool-use']);
+    expect(result[0]!.events).toEqual(['session-start', 'turn-end']);
     const obj = JSON.parse(readFileSync(settingsPath(), 'utf8')) as Record<string, unknown>;
-    // The user's own Stop hook survives; the crib SessionStart/PostToolUse buckets are gone and
+    // The user's own Stop hook survives; the crib SessionStart bucket is gone and
     // the hooks key itself is dropped (only Stop remained, and its only entry is the user's).
     expect(JSON.stringify(obj)).toContain('user-own-hook');
     expect(JSON.stringify(obj)).not.toContain(CAPTURE_HOOK_COMMAND_MARKER);
@@ -815,7 +845,6 @@ describe('capture-hook writer (G2.1) — Claude settings.json', () => {
     expect(listCaptureHooks(repo, { client: 'claude', scope: 'project' })[0]!.events).toEqual([
       'session-start',
       'turn-end',
-      'tool-use',
     ]);
     expect(captureHookCommand('turn-end')).toBe(`${CAPTURE_HOOK_COMMAND_MARKER} --event turn-end`);
   });

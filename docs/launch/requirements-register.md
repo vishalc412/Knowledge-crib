@@ -127,7 +127,7 @@ Conventions:
 |---|---|---|---|---|---|
 | WP8.1 | Isolated per-client runtime certification (7 clients × advertised OS cells) | cert harness + receipts | remember → interrupt → restart → authorized resume per client | cert-<client> per cell | open |
 | WP8.2 | Receipts: version, commit, package digest, client version, OS/arch/runtime, scenario results, sanitized hashes, separate config/protocol/runtime verdicts | evidence schema | receipt validation passes | evidence-schema | open |
-| WP8.3 | Copilot-shaped test client labelled protocol evidence only; WSL labelled WSL | cert harness | labels enforced in matrix generation | evidence-schema | open |
+| WP8.3 | Copilot-shaped test client labelled protocol evidence only; WSL labelled WSL | cert harness | labels enforced in matrix generation | evidence-schema | done (both labels are enforced in `scripts/client-certification-matrix.mjs` and pinned by name in `client-certification-matrix.test.mjs`: a test-client handshake renders "protocol evidence only (test client)" on the summary row AND the cell while a vendor-client probe keeps the plain label, and a WSL run renders "runtime evidence only (not a native runtime)" with `WSL` in the host column and no `runtime verified` row for that client. The certifying schema refuses a test-client handshake outright, so the label is reachable only from a non-certifying schema-1 receipt. Note this is the LABELLING requirement and not WP8.1: the twenty-one real vendor cells remain open, and the grid renders all twenty-one as `not certified`.) |
 
 ## WP9 — Complete, enforceable release evidence
 

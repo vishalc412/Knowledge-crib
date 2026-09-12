@@ -533,7 +533,7 @@ describe('memory pending queue endpoint', () => {
       // the configured literal discriminates the union — after this guard the queue is narrowed
       if (!q.configured) throw new Error('expected a configured pending queue');
       expect(q.counts).toEqual({ captures: 1, staged: 1, ready: 1, terminal: 0, blocked: 0 });
-      expect(q.captures?.rows[0]?.command).toBe('crib memory distill --provider <name>');
+      expect(q.captures?.rows[0]?.command).toBe('crib memory recheck');
       expect(q.staged?.rows[0]?.standing).toBe('ready');
       // section filter narrows rows but never hides counts
       const staged = readMemoryPending(

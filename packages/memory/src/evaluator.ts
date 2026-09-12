@@ -219,6 +219,7 @@ export type ItemReason =
   | 'assertion-failed'
   | 'policy-drift'
   | 'not-attested'
+  | 'relayed-unconfirmed'
   | 'inadmissible-kind'
   | 'not-applicable'
   | 'ok'
@@ -651,6 +652,23 @@ export class MemoryEvaluator {
 
   /** human-attestation: a TTY attestation (tty === true + actor + attestedAt). No code anchor → current. */
   private revalidateHumanAttestation(ev: MemoryEvidence): EvidenceRevalidation {
+    // The user's words, relayed by an agent over a non-terminal path (crib stamps `relayedBy` on
+    // arrival). Recallable locally, never proof: `degraded`, so every path that needs a person —
+    // team proposal, receipt-free attested admission — still refuses it until a terminal confirms.
+    if (
+      ev.tty !== true &&
+      typeof ev.relayedBy === 'string' &&
+      ev.relayedBy.length > 0 &&
+      typeof ev.quote === 'string' &&
+      ev.quote.trim().length > 0
+    ) {
+      return {
+        kind: 'human-attestation',
+        evidence: 'degraded',
+        applicability: 'current',
+        reason: 'relayed-unconfirmed',
+      };
+    }
     if (ev.tty !== true || !ev.actor || !ev.attestedAt) {
       return {
         kind: 'human-attestation',

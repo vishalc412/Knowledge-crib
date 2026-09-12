@@ -310,7 +310,7 @@ export function projectPendingQueue(
     .map((entry) => ({
       ...baseRow(entry),
       section: 'captures' as const,
-      command: 'crib memory distill --provider <name>',
+      command: 'crib memory recheck',
     }))
     .sort((a, b) => b.proposedAt.localeCompare(a.proposedAt) || a.id.localeCompare(b.id));
 

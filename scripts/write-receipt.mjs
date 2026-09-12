@@ -8,10 +8,15 @@ import { execFileSync } from 'node:child_process';
  * means the command completed, not that it was scheduled. The launch decision requires one receipt
  * per policy receipt type and refuses the missing ones by name.
  *
+ * Two vocabularies, one writer. An ACCEPTANCE type (`install`, `browser`, …) is collected once per
+ * OS/Node cell; a GLOBAL type (`fuzz-deep`) is collected once per candidate. Both are policy-
+ * declared and both are refused if the policy does not know the name — a receipt for a type nobody
+ * requires is not evidence, it is a typo that looks like progress.
+ *
  * Usage:
  *   node scripts/write-receipt.mjs <type> --out receipts/install.json \
  *     --command "pnpm installer:smoke" [--artifact <path>...] [--status pass|fail] \
- *     [--p95-ms <n> --workload <name>]
+ *     [--package <candidate-tarball>] [--p95-ms <n>] [--workload <name>]
  */
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -33,12 +38,22 @@ function flags(argv, name) {
   return out.filter(Boolean);
 }
 
-export function buildReceipt({ type, argv, now = new Date().toISOString() }) {
+/**
+ * Build a receipt envelope. Exported so a check that ALREADY knows what it measured (the fuzz
+ * harness, which owns its own transcript and its own per-extractor results) can write its receipt
+ * in-process rather than re-describing itself to a second script on a command line — a description
+ * that could disagree with what actually ran.
+ *
+ * `details` carries check-specific facts (a deep sweep's seed, iterations, extractor list and
+ * failures). It is nested rather than spread so a detail can never overwrite an envelope field like
+ * `status` or `candidateCommit`: the envelope is the part the decision reads structurally, and a
+ * producer must not be able to rewrite it by choosing a field name.
+ */
+export function buildReceipt({ type, argv, now = new Date().toISOString(), details }) {
   const { policy, sha256: policySha256 } = loadLaunchPolicy();
-  if (!policy.receiptTypes.includes(type)) {
-    throw new Error(
-      `unknown receipt type ${type}; the launch policy declares ${policy.receiptTypes.join(', ')}`,
-    );
+  const known = [...policy.receiptTypes, ...policy.globalReceiptTypes];
+  if (!known.includes(type)) {
+    throw new Error(`unknown receipt type ${type}; the launch policy declares ${known.join(', ')}`);
   }
   const artifacts = flags(argv, '--artifact').map((path) => {
     if (!existsSync(path)) throw new Error(`receipt artifact does not exist: ${path}`);
@@ -49,6 +64,13 @@ export function buildReceipt({ type, argv, now = new Date().toISOString() }) {
     throw new Error(
       `a passing ${type} receipt must reference at least one --artifact; a claim with nothing behind it is not evidence`,
     );
+  }
+  // The candidate ARTIFACT, not the candidate source. A receipt that binds only to a commit cannot
+  // notice that the tarball it certifies was rebuilt — and a rebuilt tarball is a different product
+  // even when the commit is identical (`pnpm pack` is not byte-reproducible here).
+  const packagePath = flag(argv, '--package');
+  if (packagePath && !existsSync(packagePath)) {
+    throw new Error(`receipt package does not exist: ${packagePath}`);
   }
   let commit;
   try {
@@ -64,6 +86,7 @@ export function buildReceipt({ type, argv, now = new Date().toISOString() }) {
     status,
     recordedAt: now,
     candidateCommit: commit,
+    ...(packagePath ? { candidatePackageSha256: sha256(readFileSync(packagePath)) } : {}),
     policySha256,
     command: flag(argv, '--command', ''),
     platform: { os: process.platform, arch: process.arch, node: process.version },
@@ -74,6 +97,7 @@ export function buildReceipt({ type, argv, now = new Date().toISOString() }) {
     artifacts,
     ...(p95 !== undefined ? { p95Ms: Number(p95) } : {}),
     ...(flag(argv, '--workload') ? { workload: flag(argv, '--workload') } : {}),
+    ...(details !== undefined ? { details } : {}),
   };
 }
 

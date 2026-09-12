@@ -5,9 +5,12 @@
 > agent-agnostic, incrementally upgraded as the project evolves. Delivered as **one fast MCP server**
 > (not a skill). Greenfield, all-new, **Apache-2.0**.
 
-**Status:** `0.1.0` release candidate. Run the full release gate before tagging or publishing; see
-[production readiness](docs/knowledge-crib-production-readiness.md) and the
-[build plan](docs/knowledge-crib-build-plan.md).
+**Status:** implemented and release-gated, `0.1.0` — not yet tagged/published. Before adopting, read
+the dated [capability matrix](docs/capability-matrix.md): what is measured vs unverified, what is
+default vs opt-in, and the known limits carried into launch. Drift-prone counts (packages,
+languages, test surface, MCP tool count) live in one generated source —
+[docs/STATS.md](docs/STATS.md) — refreshed by `pnpm docs:stats`; reference it instead of restating
+a number here.
 
 ---
 
@@ -29,8 +32,9 @@ cost": lean by default, deep on demand.
 
 ### Measured, not projected (run it yourself)
 Two reproducible harnesses measure the real token and dollar gap against Knowledge-crib's own
-indexed source (18,050 nodes · 32,600 edges · 351 clusters). Prices: input $3, output $15,
-cache-write $3.75, cache-read $0.30 per 1M tokens (Sonnet-class list; overridable via env).
+indexed source (current self-index topology: `crib status` — the numbers below were measured on
+2026-07-16; re-running the harness reprints them against today's tree). Prices: input $3, output
+$15, cache-write $3.75, cache-read $0.30 per 1M tokens (Sonnet-class list; overridable via env).
 
 **One cross-package task** — "understand the query pipeline" — answered two ways
 (`node scripts/crib-ab-task.mjs`):
@@ -63,28 +67,38 @@ Two existing tools each prove half and serve as **design inspiration only (no co
 **Parse → graph → persist as a committable "soul" → build a fast index from it → serve to agents over MCP.**
 
 ## Architecture
-- **GraphStore** — `.crib/graph` is sole graph source of truth. `extracted/` holds deterministic
-  JSONL; `semantic/` holds grounded model-authored artifacts. Composite view joins both.
+- **GraphStore** — `.crib/graph` is the sole graph source of truth. `extracted/` holds deterministic
+  JSONL; `semantic/` holds grounded model-authored artifacts. The composite view joins both; a
+  working overlay + materialized layers keep large graphs fast to open without changing the store.
+- **Memory** — `@knowledge-crib/memory`: a durable agent-memory ledger (observe → evaluate/admit →
+  recall, bi-temporal so records can be superseded, not silently edited), team memory over Git,
+  and opt-in encrypted cross-device sync. Sessions can resume after an IDE timeout via intake
+  checkpoints.
 - **IndexStore** — derived SQLite + FTS5 query layer; gitignored and rebuildable from GraphStore.
-- **SoulStore** — compatibility writer/view for deterministic `graph/extracted` layer.
-  Vector search and alternate graph backends do not ship in `0.1.0`.
+- **Semantic recall** — on-device ONNX embeddings behind `crib embed setup` (opt-in): the default
+  `large` model reaches 81.1% paraphrase recall / 0.881 MRR with no Python and no network after
+  download; a machine without it serves the char-ngram fallback (~2.6% paraphrase recall). The
+  measured ladder is in [docs/bench/onnx-model-ladder.md](docs/bench/onnx-model-ladder.md).
+- **Freshness** — `crib serve --watch` re-indexes on save (verified at 805-file scale) and a
+  background `--auto` worker keeps the soul fresh while you work.
 
-The deterministic core (parse / graph / impact / search) **never needs a network**. LLM enrichment is
-opt-in and off the query hot path: the bundled `/crib-enrich` skill lets the host agent author a
-grounded semantic graph, while the server remains provider-neutral.
+The deterministic core (parse / graph / impact / search) **never needs a network**, and the server
+itself **makes no model calls** — LLM enrichment is opt-in and authored by the host agent through
+the bundled `/crib-enrich` skill, so the server stays provider-neutral.
 
 ## Repo layout
 ```
-knowledge-crib/                 # pnpm monorepo
+knowledge-crib/                 # pnpm workspace — 8 packages (canonical counts: docs/STATS.md)
   packages/
     soul-schema/   # JSON Schema + TS types (the contract)
-    core/          # GraphModel, SoulStore, IndexStore
-    parsers/       # offline extractors: TS, PL/SQL, Python, Java, C#, Go, Rust, PHP, Markdown
-    pipeline/      # extract → resolve → link → cluster → index
-    mcp/           # MCP server (npx knowledge-crib)
-    cli/           # crib index|update|export|serve|mcp|viz|install-hooks|merge-driver
-    ui/            # offline React/canvas graph visualization
-  docs/            # the spec package
+    core/          # GraphStore, SoulStore, materialize, manifest, validation
+    memory/        # durable agent memory: ledger, admission, team-over-Git, encrypted sync
+    parsers/       # offline extractors — 11 incl. TS, Java, Python, C#, Go, Rust, PHP, PL/SQL, Markdown, Mule, agent artifacts
+    pipeline/      # discover → extract → resolve → link → cluster → index
+    mcp/           # the MCP server (17 tools / 47 operations)
+    cli/           # 36 verbs: index | setup | doctor | update | serve | embed | memory | viz | …
+    ui/            # offline graph visualization + memory home (`crib viz`)
+  docs/            # the spec package; START with docs/capability-matrix.md
 ```
 
 ## Install
@@ -109,7 +123,7 @@ Two things are worth knowing before you run it, because both are downloads:
 | flag | what it changes |
 |---|---|
 | *(default)* | installs the `large` embedding model — **~2.1 GB**, one time, offline afterwards |
-| `--embed-model small` | a ~97 MB model instead (lower paraphrase recall; see the ladder below) |
+| `--embed-model small` | a ~97 MB model instead (lower paraphrase recall; see the ladder above) |
 | `--no-embed` (or `KCRIB_NO_EMBED=1`) | no model at all — recall stays lexical (~2.6% on paraphrases) |
 | `--embed-from <dir>` | adopt a pre-fetched bundle instead of downloading (air-gapped hosts) |
 
@@ -174,7 +188,8 @@ corepack pnpm@9.15.0 release:verify
 Requires Node >= 22.5 and pnpm 9.15.0 via Corepack.
 
 ## Document index (read in order)
-See [`docs/README.md`](docs/README.md) for the complete specification and guide index.
+See [`docs/README.md`](docs/README.md) for the complete specification and guide index, and
+[`docs/capability-matrix.md`](docs/capability-matrix.md) for the dated support boundary.
 
 ## Community
 

@@ -10,6 +10,7 @@ const workflow = readLF('.github/workflows/beta-installers.yml');
 const releaseWorkflow = readLF('.github/workflows/ci.yml');
 const tagWorkflow = readLF('.github/workflows/release.yml');
 const soulRefreshWorkflow = readLF('.github/workflows/crib-soul-refresh.yml');
+const nightlyWorkflow = readLF('.github/workflows/fuzz-nightly.yml');
 const occurrences = (text, pattern) => [...text.matchAll(pattern)].length;
 const dependabot = readLF('.github/dependabot.yml');
 
@@ -44,6 +45,130 @@ assert.equal(
   occurrences(workflow, /^\s+timeout-minutes:/gm),
   1,
   'installer CI must define its job timeout once',
+);
+
+// ─── the nightly deep sweep ─────────────────────────────────────────────────────────────────────
+//
+// The defect this section pins: the nightly ran the deep sweep against whatever `dist/` happened to
+// exist, so the fuzz result was also the first test of the build — a compile error arrived as a
+// fuzz finding, and a hang caused by a stale artefact read as a parser bug. And a nightly that
+// fuzzed a package it never built could produce no receipt at all: nothing in the workflow named the
+// candidate bytes, so there was nothing to bind a receipt to.
+//
+// ORDER is the requirement, not mere presence: install → build → deep fuzz → upload.
+{
+  const order = (needle) => nightlyWorkflow.indexOf(needle);
+  const steps = {
+    install: order('name: Install dependencies'),
+    build: order('name: Build workspace'),
+    candidate: order('name: Build the candidate package'),
+    fuzz: order('name: Execute deep fuzz'),
+    upload: order('name: Upload the deep-fuzz receipt'),
+  };
+  for (const [label, index] of Object.entries(steps)) {
+    assert.ok(index > 0, `the nightly must contain the "${label}" step`);
+  }
+  assert.ok(
+    steps.install < steps.build,
+    'the nightly must build the workspace AFTER installing dependencies',
+  );
+  assert.ok(
+    steps.build < steps.fuzz,
+    'the deep sweep must run against the BUILT workspace: fuzzing before the build makes the fuzz ' +
+      'result double as a compile test, and a hang from a stale artefact read as a parser bug',
+  );
+  assert.ok(
+    steps.candidate < steps.fuzz,
+    'the candidate package must be packed before the sweep it is the subject of',
+  );
+  assert.ok(steps.fuzz < steps.upload, 'the receipt is uploaded after the sweep that produced it');
+}
+assert.match(
+  nightlyWorkflow,
+  /corepack pnpm@9\.15\.0 build\b/,
+  'the nightly must run a full workspace build, not a per-package one',
+);
+// The sweep refuses a shallow run (exit 2) when asked for a receipt, so the nightly's declared
+// iterations must not fall below the policy's floor. Read from the policy rather than compared with
+// a literal: if the floor rises, this fails here instead of failing at 03:00 in a nightly.
+{
+  const policy = JSON.parse(readLF('scripts/launch-policy.json'));
+  const declared = /--iterations (\d+)/.exec(nightlyWorkflow);
+  assert.ok(declared, 'the nightly must state the deep sweep iteration count explicitly');
+  assert.ok(
+    Number(declared[1]) >= policy.fuzz.requiredIterations,
+    `the nightly runs ${declared?.[1]} iterations but the launch policy requires ` +
+      `${policy.fuzz.requiredIterations}; a receipt for the smaller sweep would be refused`,
+  );
+}
+assert.match(
+  nightlyWorkflow,
+  /--receipt fuzz-evidence\/fuzz-deep\.json/,
+  'the nightly must write the candidate-bound deep-fuzz receipt',
+);
+assert.match(
+  nightlyWorkflow,
+  /--package "\$CANDIDATE_PACKAGE"/,
+  'the receipt must bind to the candidate package bytes, not only to the commit',
+);
+assert.match(
+  nightlyWorkflow,
+  /echo "CANDIDATE_PACKAGE=\$CANDIDATE" >> "\$GITHUB_ENV"/,
+  'the candidate package path must be resolved once and reused, so the receipt names the bytes ' +
+    'that were on disk when the sweep ran',
+);
+// The receipt is uploaded even when the sweep fails: a failed sweep's receipt is how the run says
+// WHICH extractor broke, and it is written on the failing path.
+assert.match(
+  nightlyWorkflow,
+  /name:\s*Upload the deep-fuzz receipt\s*\n\s+if:\s*always\(\)/,
+  'the deep-fuzz receipt must upload on the failing path too',
+);
+assert.match(
+  nightlyWorkflow,
+  /if-no-files-found:\s*warn/,
+  'a run killed by the timeout may leave no receipt, and that must stay a different fact from a ' +
+    'receipt that says fail — so the upload is best-effort',
+);
+assert.match(
+  nightlyWorkflow,
+  /fuzz-evidence\/fuzz-deep\.json\.log/,
+  'the archived transcript must be uploaded beside the receipt it is hashed into',
+);
+assert.match(
+  nightlyWorkflow,
+  /workflow_dispatch:/,
+  'the nightly must allow manual workflow_dispatch',
+);
+assert.match(
+  nightlyWorkflow,
+  /cron:\s*'13 9 \* \* \*'/,
+  'the nightly must stay off the :00/:30 marks',
+);
+assert.match(
+  nightlyWorkflow,
+  /node-version:\s*'22'/,
+  'the nightly must run on the standardized Node 22',
+);
+assert.match(
+  nightlyWorkflow,
+  /contents:\s*read/,
+  'the nightly must use read-only repository access',
+);
+assert.equal(
+  occurrences(nightlyWorkflow, /^permissions:/gm),
+  1,
+  'the nightly must define permissions once',
+);
+assert.equal(
+  occurrences(nightlyWorkflow, /^concurrency:/gm),
+  1,
+  'the nightly must define concurrency once',
+);
+assert.equal(
+  occurrences(nightlyWorkflow, /^\s+timeout-minutes:/gm),
+  1,
+  'the nightly must define its job timeout once',
 );
 
 assert.match(releaseWorkflow, /ubuntu-latest/, 'release CI must run on Linux');
@@ -107,6 +232,7 @@ for (const [name, source] of [
   ['release CI', releaseWorkflow],
   ['installer CI', workflow],
   ['tag release', tagWorkflow],
+  ['fuzz nightly', nightlyWorkflow],
 ]) {
   const actionRefs = [...source.matchAll(/uses:\s+actions\/[\w-]+@([^\s]+)/g)];
   assert.ok(actionRefs.length > 0, `${name} must use GitHub Actions`);
@@ -238,10 +364,20 @@ assert.match(
   );
 }
 
+// The aggregate must see EVERY evidence source, and `needs` is the only thing that makes it wait.
+//
+// The defect this pins: with `needs: verify` alone, the aggregate could start as soon as the hosted
+// matrix finished — while the twenty-one certification jobs and the deep sweep were still running —
+// so the decision was computed from a directory the receipts had not been written into yet. Absent
+// evidence is a NO-GO, which means the race does not publish a bad release; it publishes a NO-GO on a
+// release that was actually clean, and a decision that is wrong in the safe direction is still wrong.
+// It must list all four: the candidate it is bound to, the cell matrix, the certification jobs and
+// the sweep.
 assert.match(
   tagWorkflow,
-  /launch-decision:\s*\n\s+name:\s*Aggregate launch decision\s*\n\s+needs:\s*verify/,
-  'release workflow must have a launch-decision job aggregating after the verify matrix',
+  /launch-decision:\s*\n\s+name:\s*Aggregate launch decision\s*\n\s+needs:\s*\[candidate,\s*verify,\s*certify,\s*fuzz\]/,
+  'the launch-decision job must wait for the candidate, the verify matrix, the certification jobs ' +
+    'and the deep sweep — anything less computes the decision over a partially-written directory',
 );
 assert.match(
   tagWorkflow,
@@ -309,6 +445,138 @@ assert.match(
   /package_sha256:\s*\$\{\{\s*steps\.decide\.outputs\.package_sha256\s*\}\}/,
   'the launch-decision job must publish the approved package digest as an output',
 );
+
+// ─── WP5: build once, certify natively, sweep once ──────────────────────────────────────────────
+//
+// The defects this section pins, in order of how badly each one would have corrupted a decision:
+//
+//   (a) SIX CANDIDATES. `pnpm pack` is not byte-reproducible (dependency-key ordering), and the
+//       aggregate enforces ONE `packageSha256` across every manifest. Six independent builds would
+//       therefore produce six digests and a NO-GO on a completely clean tree — evidence of a
+//       non-existent defect. The candidate must be built and attested in exactly one job, and every
+//       other job must DOWNLOAD it.
+//   (b) A SUMMARISED RECEIPT. A manifest carries its own certification summary. The decision must
+//       read the raw receipts, so the workflow has to hand them over as files.
+//   (c) A DEGRADED CERTIFICATION. A cell with no runner or a signed-out client must leave the cell
+//       uncertified and say so by name — never soften into a warning.
+{
+  const order = (needle) => tagWorkflow.indexOf(needle);
+
+  // (a) exactly one attestation, and the two jobs that pack must not both exist. Counting the
+  // digest-producing step is how "build once" is asserted: a second one is a second candidate.
+  assert.equal(
+    occurrences(tagWorkflow, /name:\s*Attest the candidate package/g),
+    1,
+    'the package digest must be attested in exactly one job — a second attestation is a second ' +
+      'candidate, and pnpm pack is not byte-reproducible, so the aggregate would refuse them',
+  );
+  assert.match(
+    tagWorkflow,
+    /package_sha256:\s*\$\{\{\s*steps\.attest\.outputs\.package_sha256\s*\}\}/,
+    'the candidate job must publish the attested digest as a job output',
+  );
+  assert.match(
+    tagWorkflow,
+    /CANDIDATE_SHA256:\s*\$\{\{\s*needs\.candidate\.outputs\.package_sha256\s*\}\}/,
+    'the aggregate must be bound to the ATTESTED digest, never to a digest it computed itself',
+  );
+  // Every later job downloads those bytes. The pattern is per-job rather than global: the point is
+  // that no evidence-producing job is left building its own tarball.
+  assert.ok(
+    occurrences(tagWorkflow, /name:\s*Download the candidate package/g) >= 3,
+    'each evidence-producing job must download the attested candidate rather than pack its own',
+  );
+
+  // (b) the RAW receipts reach the aggregate as files, from three separate artifact sets: the
+  // per-cell manifests, the twenty-one client receipts, and the global deep-fuzz receipt.
+  assert.match(
+    tagWorkflow,
+    /--certification-receipts launch-evidence\/client-certification-receipts/,
+    'the aggregate must receive the raw certification receipts directory',
+  );
+  assert.match(
+    tagWorkflow,
+    /--global-receipts launch-evidence\/global-receipts/,
+    'the aggregate must receive the raw global (deep-fuzz) receipts directory',
+  );
+  assert.match(
+    tagWorkflow,
+    /--candidate-package "\$CANDIDATE_SHA256"/,
+    'the aggregate must judge the attested package digest, not a digest it derived',
+  );
+  assert.ok(
+    occurrences(tagWorkflow, /merge-multiple:\s*true/g) >= 3,
+    'the manifests, the client receipts and the global receipts must each merge by policy cell id',
+  );
+
+  // (c) the certification matrix is the policy's client set × platform set, read from the policy so
+  // it widens and narrows with the launch promise instead of drifting from it.
+  const policy = JSON.parse(readLF('scripts/launch-policy.json'));
+  assert.match(
+    tagWorkflow,
+    new RegExp(`client:\\s*\\[${policy.clients.join(',\\s*')}\\]`),
+    `the certification matrix must cover exactly the policy clients: ${policy.clients.join(', ')}`,
+  );
+  assert.match(
+    tagWorkflow,
+    new RegExp(`platform:\\s*\\[${policy.clientPlatforms.join(',\\s*')}\\]`),
+    `the certification matrix must cover exactly the policy platforms: ${policy.clientPlatforms.join(', ')}`,
+  );
+  // A NATIVE host per platform — `self-hosted, certification, <os>` — and never a hosted runner,
+  // because WSL satisfies neither linux nor win32 and a hosted runner satisfies neither.
+  assert.match(
+    tagWorkflow,
+    /runs-on:\s*\[self-hosted,\s*certification,\s*'\$\{\{\s*matrix\.platform\s*\}\}'\]/,
+    'each certification cell must run on its own native self-hosted runner',
+  );
+  assert.match(
+    tagWorkflow,
+    /node scripts\/client-certify\.mjs/,
+    'the certification cells must drive the real vendor client through the certification harness',
+  );
+  assert.match(
+    tagWorkflow,
+    /--candidate-commit "\$GITHUB_SHA"/,
+    'each certification receipt must bind to the tagged commit',
+  );
+
+  // The deep sweep runs ONCE, against the attested candidate, at the policy's iteration floor.
+  {
+    const declared = /--iterations (\d+)/.exec(tagWorkflow);
+    assert.ok(declared, 'the tag workflow must state the deep sweep iteration count explicitly');
+    assert.ok(
+      Number(declared[1]) >= policy.fuzz.requiredIterations,
+      `the tag sweep runs ${declared[1]} iterations but the policy requires ` +
+        `${policy.fuzz.requiredIterations}; a receipt for the smaller sweep would be refused`,
+    );
+    assert.match(
+      tagWorkflow,
+      /--receipt global-receipts\/fuzz-deep\.json/,
+      'the tag sweep must write the candidate-bound deep-fuzz receipt',
+    );
+    assert.match(
+      tagWorkflow,
+      /--package "\$CANDIDATE_PACKAGE"/,
+      'the deep sweep must run against the attested candidate bytes',
+    );
+    assert.ok(
+      order('name: Deep fuzz the candidate') > order('name: Download the candidate package'),
+      'the sweep must run after the candidate is downloaded, not against a stale dist/',
+    );
+  }
+
+  // NOTHING SECRET: credentials live in the platform keychain or the vendor profile, so the
+  // workflow may not reference repository secrets at all. `secrets.` anywhere in this file is a
+  // design regression — a runner that needs a secret to certify has not been provisioned for
+  // certification. The one token used is the automatic, per-run `github.token`, scoped to `contents:
+  // write` on the single publishing job.
+  assert.doesNotMatch(
+    tagWorkflow,
+    /\$\{\{\s*secrets\./,
+    'credentials are an operational prerequisite held in the platform keychain — the certification ' +
+      'workflow must not read repository secrets',
+  );
+}
 
 // WP9.5 / WP9.3 — a tag is a launch decision: the release gate must demand client runtime
 // certification receipts for every advertised platform cell.

@@ -51,6 +51,7 @@ export * from './pending-queue.js';
 export * from './distill.js';
 export * from './gate-runner.js';
 export * from './promotion.js';
+export * from './auto-admit.js';
 export * from './trusted-ref.js';
 export * from './attempt.js';
 export * from './tombstone.js';

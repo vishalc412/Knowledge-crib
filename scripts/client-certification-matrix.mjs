@@ -1,12 +1,16 @@
 /** Generate the public client-support table from validated certification receipts. */
-import { readFileSync, renameSync, writeFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { existsSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
+import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   CERTIFIED_CLIENTS,
+  certificationStatus,
   certificationSummary,
+  certifyClientCell,
   loadClientCertificationReceipts,
+  receiptLegs,
 } from './client-certification-evidence.mjs';
+import { POLICY_PLATFORMS } from './launch-policy.mjs';
 
 const START = '<!-- client-certification:generated:start -->';
 const END = '<!-- client-certification:generated:end -->';
@@ -24,13 +28,35 @@ const DISPLAY_STATES = {
   'not-certified': 'not certified',
   'configuration-verified': 'configuration verified',
   'protocol-verified': 'protocol verified',
+  'runtime-evidence-only': 'runtime evidence only (not a native runtime)',
   'runtime-verified': 'runtime verified',
 };
 
+/** Strength order for the display states, weakest first. */
+const STATE_ORDER = [
+  'not-certified',
+  'configuration-verified',
+  'protocol-verified',
+  'runtime-evidence-only',
+  'runtime-verified',
+];
+
+/**
+ * The state ONE receipt may display.
+ *
+ * The leg view says how strong the evidence is; the CELL judgement decides whether it may be shown as
+ * a runtime pass at all. Those are not the same question, and collapsing them is how a public table
+ * ends up contradicting the launch decision: a WSL run satisfies every leg and can still never be a
+ * native Linux or Windows runtime, so its legs must not promote the row that the decision refuses.
+ */
+function matrixState(receipt) {
+  const status = certificationStatus(receipt);
+  if (status !== 'runtime-verified') return status;
+  return certifyClientCell(receipt).ok ? 'runtime-verified' : 'runtime-evidence-only';
+}
+
 function rank(receipt) {
-  if (receipt.evidence.runtime.status === 'pass') return 3;
-  if (receipt.evidence.protocol.status === 'pass') return 2;
-  return 1;
+  return STATE_ORDER.indexOf(matrixState(receipt));
 }
 
 function platformName(receipt) {
@@ -38,17 +64,104 @@ function platformName(receipt) {
   return receipt.platform.wsl ? 'WSL' : PLATFORM_NAMES[receipt.platform.os];
 }
 
-export function renderClientCertificationMatrix(receipts) {
+/**
+ * Where a cell's receipt lives, as a link relative to `docs/capability-matrix.md`.
+ *
+ * The filename is not guessed from the cell: `scripts/client-certify.mjs` writes exactly
+ * `client-<client>-<platform>-<arch>.json`, from the same values the receipt records, so for any
+ * receipt the shipped certifier produced this resolves to the real file. A receipt placed under any
+ * other name resolves to nothing, and the check below renders an em-dash rather than a link that
+ * 404s — a public table may not point at a file it has not looked for.
+ */
+function receiptLink(client, os, arch, directory) {
+  if (!directory) return '—';
+  const name = `client-${client}-${os}-${arch}.json`;
+  return existsSync(join(directory, name))
+    ? `[\`${name}\`](launch/client-certification-receipts/${name})`
+    : '—';
+}
+
+/**
+ * The advertised cells — every client on every native platform — one row each, from the same
+ * validated receipts as the summary above.
+ *
+ * The summary cannot state the promise. A client row reads "runtime verified" once ONE platform has
+ * certified it, so a reader counting rows would take seven of twenty-one cells for done — the exact
+ * overstatement the launch decision refuses. Policy version 3 removed the preview tier and made all
+ * twenty-one cells hard requirements, so the grid is the only place the boundary is legible.
+ *
+ * A cell with no receipt reads `not certified` with every remaining field an em-dash. That is the
+ * point: there is nothing to show, and a plausible version, commit or date beside an uncertified
+ * cell would be a fabricated record of a run that never happened.
+ */
+function renderCellGrid(receipts, directory) {
+  const byCell = new Map();
+  for (const receipt of receipts) {
+    const key = `${receipt.client.id}/${receipt.platform.os}`;
+    const held = byCell.get(key);
+    // Rank, not arrival: a WSL run lands on the same `linux` key as a native run, and letting file
+    // order decide would let the weaker evidence displace the stronger.
+    if (!held || rank(receipt) > rank(held)) byCell.set(key, receipt);
+  }
+  const rows = [];
+  for (const client of CERTIFIED_CLIENTS) {
+    for (const os of POLICY_PLATFORMS) {
+      const receipt = byCell.get(`${client}/${os}`);
+      if (!receipt) {
+        rows.push(
+          `| ${LABELS[client]} | ${PLATFORM_NAMES[os]} | ${DISPLAY_STATES['not-certified']} | — | — | — | — | — |`,
+        );
+        continue;
+      }
+      // Same relabel as the summary row: a test-client probe is not the client under test.
+      let stateLabel = DISPLAY_STATES[matrixState(receipt)];
+      if (
+        matrixState(receipt) === 'protocol-verified' &&
+        receiptLegs(receipt).handshake.source === 'test-client'
+      ) {
+        stateLabel = 'protocol evidence only (test client)';
+      }
+      // The cell stays the REQUIREMENT (`Linux`), never the run's platform: a WSL run reports
+      // `linux` and must be shown as failing the Linux cell, not as occupying it. The label says
+      // so, and the host column names WSL outright.
+      const host = `${receipt.platform.wsl ? 'WSL ' : ''}${receipt.platform.arch} / ${receipt.platform.node}`;
+      rows.push(
+        `| ${LABELS[client]} | ${PLATFORM_NAMES[os]} | ${stateLabel} | ${receipt.client.version} | ${host} | \`${receipt.product.commit.slice(0, 12)}\` | ${receipt.generatedAt.slice(0, 10)} | ${receiptLink(client, os, receipt.platform.arch, directory)} |`,
+      );
+    }
+  }
+  return [
+    '### Cells — every client on every native platform',
+    '',
+    'One row per advertised cell. A cell is certified only by a vendor-client receipt for that exact client on that native platform; the summary above is per client and can read stronger than any single cell.',
+    '',
+    '| Client | Platform | Runtime status | Client version | Host | Candidate commit | Certified | Receipt |',
+    '|---|---|---|---|---|---|---|---|',
+    ...rows,
+    '',
+  ];
+}
+
+export function renderClientCertificationMatrix(receipts, opts = {}) {
   const states = certificationSummary(receipts);
   const rows = CERTIFIED_CLIENTS.map((client) => {
     const strongest = receipts
       .filter((receipt) => receipt.client.id === client)
       .sort((a, b) => rank(b) - rank(a) || a.platform.os.localeCompare(b.platform.os))[0];
-    let stateLabel = DISPLAY_STATES[states[client]];
+    // The summary is computed per CLIENT across every platform, so it can read stronger than the
+    // single strongest receipt shown beside it — a client with a native macOS runtime pass and a WSL
+    // Linux run is runtime-verified overall, but the row must disclose which evidence it is showing.
+    let stateLabel = strongest
+      ? DISPLAY_STATES[matrixState(strongest)]
+      : DISPLAY_STATES[states[client]];
+    // A test-client protocol probe speaks the protocol shape but is not the client under test, so the
+    // row says so instead of reading as a client result. Only a schema-1 receipt can be here: the
+    // certifying schema requires a vendor-client source on the handshake and tool-use legs, so it
+    // cannot express this claim at all.
     if (
       strongest &&
-      rank(strongest) === 2 &&
-      strongest.evidence.protocol.source === 'test-client'
+      matrixState(strongest) === 'protocol-verified' &&
+      receiptLegs(strongest).handshake.source === 'test-client'
     ) {
       stateLabel = 'protocol evidence only (test client)';
     }
@@ -61,12 +174,13 @@ export function renderClientCertificationMatrix(receipts) {
     START,
     '## Client certification evidence',
     '',
-    'Generated from validated receipts. A client is runtime verified only when a vendor-client receipt proves record → interruption/restart → authorized resume on the listed platform. Protocol evidence captured by a test client is labelled "protocol evidence only (test client)" and can never promote a row.',
+    'Generated from validated receipts. A client is runtime verified only when a vendor-client receipt proves record → interruption/restart → authorized resume on the listed platform. Two labels say a row is evidence and not a runtime pass: "protocol evidence only (test client)" when the handshake came from a test client rather than the client under test, and "runtime evidence only (not a native runtime)" when the run happened somewhere other than the native platform — a WSL run satisfies every leg and still cannot certify native Linux or Windows. Neither label can promote a row.',
     '',
     '| Client | Highest verified evidence | Strongest certified cell |',
     '|---|---|---|',
     ...rows,
     '',
+    ...renderCellGrid(receipts, opts.receiptDirectory),
     END,
   ].join('\n');
 }
@@ -90,7 +204,9 @@ async function main() {
   );
   const updated = replaceGeneratedClientMatrix(
     readFileSync(docs, 'utf8'),
-    renderClientCertificationMatrix(loadClientCertificationReceipts(receiptDirectory)),
+    renderClientCertificationMatrix(loadClientCertificationReceipts(receiptDirectory), {
+      receiptDirectory,
+    }),
   );
   if (argv.includes('--check')) {
     if (updated !== readFileSync(docs, 'utf8')) {

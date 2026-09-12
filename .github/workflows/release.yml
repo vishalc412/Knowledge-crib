@@ -1,5 +1,34 @@
 name: Release
 
+# A tag is a launch decision, not a build. The shape below is the chain the launch policy says must
+# hold: build the candidate ONCE -> attest its bytes -> verify six hosted OS/Node cells -> certify the
+# twenty-one native vendor-runtime cells -> deep-fuzz the same bytes once -> aggregate every raw
+# receipt into ONE decision -> publish only on GO, and only the digest that decision approved.
+#
+# Two rules explain most of the file:
+#
+#   1. ONE candidate. `pnpm pack` is not byte-reproducible, so six independent builds would produce
+#      six digests and the aggregate would (correctly) refuse them as a mixed-candidate set. The
+#      `candidate` job therefore packs once, attests the digest, and every later job downloads those
+#      exact bytes. The workspace is still built per cell — a runner cannot execute a build it did not
+#      produce — but the SHIPPED artifact is built in exactly one place.
+#   2. RAW receipts, never summaries. The aggregate re-reads the twenty-one client receipts and the
+#      deep-fuzz receipt from disk and validates them itself. Nothing here may hand it a summary a
+#      manifest wrote about itself.
+#
+# OPERATIONAL PREREQUISITES — the workflow cannot satisfy these by itself, and it is NO-GO without
+# them:
+#   * Three self-hosted certification runners registered with the labels
+#     `self-hosted, certification, darwin|linux|win32`. They must be NATIVE hosts. WSL satisfies
+#     neither linux nor win32: the launch decision refuses a WSL receipt by that name.
+#   * All seven vendor clients installed and SIGNED IN on each host: Claude Code, GitHub Copilot,
+#     Cursor, VS Code, Codex, Windsurf, Gemini.
+#   * Credentials in the platform keychain or the vendor's own profile store. This file must never
+#     contain, interpolate or echo a credential, and no step may print one: the vendor clients read
+#     their own profiles and the harness asserts on exit status, never on output. Nothing secret
+#     belongs in repository secrets either — a runner that needs a secret to certify is a runner that
+#     has not been provisioned for certification.
+
 on:
   push:
     tags:
@@ -13,22 +42,196 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  verify:
-    name: Verify release (${{ matrix.os }}, Node ${{ matrix.node }})
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 45
+  # ── the candidate: built and attested exactly once ────────────────────────────────────────────
+  candidate:
+    name: Build and attest the candidate (ubuntu, Node 22)
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    outputs:
+      # The bytes every other job is judged against, and the only digest publication may ship.
+      package_sha256: ${{ steps.attest.outputs.package_sha256 }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install dependencies
+        run: corepack pnpm@9.15.0 install --frozen-lockfile
+
+      - name: Restore supported semantic tier
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4
+        with:
+          path: ${{ runner.temp }}/knowledge-crib-embed
+          key: ${{ runner.os }}-knowledge-crib-e5-large-${{ hashFiles('packages/cli/src/embed-setup.ts', 'packages/cli/src/embed-onnx.ts', 'pnpm-lock.yaml') }}
+
+      - name: Install supported semantic tier
+        env:
+          KCRIB_EMBED_HOME: ${{ runner.temp }}/knowledge-crib-embed
+        run: |
+          corepack pnpm@9.15.0 build
+          node packages/cli/dist/cli.js embed setup --model large --yes --json
+
+      # The complete release gate — the frozen quality gates, the whole test suite, the packaging and
+      # isolation checks, the launch-decision self-checks. It also builds the installer bundle, which
+      # is why the candidate is packed here and nowhere else.
+      - name: Run release gate
+        env:
+          KCRIB_EMBED_HOME: ${{ runner.temp }}/knowledge-crib-embed
+        run: corepack pnpm@9.15.0 release:verify
+
+      - name: Build the candidate package
+        run: |
+          CANDIDATE="$(find dist/installers -maxdepth 2 -type f -name 'knowledge-crib-*.tgz' -not -name 'knowledge-crib-*-*.tgz' -print -quit)"
+          if [[ -z "$CANDIDATE" ]]; then
+            echo "no shipped package found in the installer bundle" >&2
+            exit 1
+          fi
+          echo "candidate package: $CANDIDATE"
+          echo "CANDIDATE_PACKAGE=$CANDIDATE" >> "$GITHUB_ENV"
+
+      # Attested once, read by everything downstream. A digest computed later, from a rebuild, would
+      # be the digest of different bytes — the whole reason this job exists.
+      - name: Attest the candidate package
+        id: attest
+        shell: bash
+        run: |
+          DIGEST="sha256:$(shasum -a 256 "$CANDIDATE_PACKAGE" | cut -d' ' -f1)"
+          echo "package_sha256=$DIGEST" >> "$GITHUB_OUTPUT"
+          echo "CANDIDATE_SHA256=$DIGEST" >> "$GITHUB_ENV"
+          {
+            echo "The bytes this release is judged against:"
+            echo ""
+            echo "    $CANDIDATE_PACKAGE"
+            echo "    $DIGEST"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload the candidate package
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: candidate-package
+          path: dist/installers/knowledge-crib-*/
+          if-no-files-found: error
+          retention-days: 30
+
+  # ── the twenty-one native vendor-runtime cells ────────────────────────────────────────────────
+  #
+  # One job per (client, platform): seven clients on three NATIVE hosts. Each job runs the real
+  # vendor client against the candidate and writes ONE certifying receipt; the receipt is refused by
+  # the loader unless it carries all eight legs, with handshake and tool-use saying their source is
+  # the client under test, on a non-WSL platform.
+  #
+  # A missing runner, an absent client or a signed-out account does not degrade this to a warning: the
+  # cell simply has no receipt, and `client-cell-uncertified:<client>/<os>` is the NO-GO blocker. That
+  # is the intended outcome — an unavailable vendor/platform combination leaves the release NO-GO until
+  # it becomes executable or the launch promise is explicitly changed.
+  certify:
+    name: Certify ${{ matrix.client }} on ${{ matrix.platform }} (native)
+    needs: candidate
+    if: ${{ !cancelled() }}
     strategy:
       fail-fast: false
-      # EXACTLY the cell set scripts/launch-policy.json freezes — policy 2 ships macOS only, so
-      # this matrix is macOS only. The two must agree in BOTH directions: a matrix smaller than the
-      # policy fails aggregation on a missing cell, and a matrix LARGER than it uploads manifests
-      # for cells the launch does not claim, which are then judged against requirements (a browser
-      # receipt, say) that their legs never produce. Cross-platform development coverage lives in
-      # ci.yml, which is a dev gate and emits no launch evidence.
+      matrix:
+        platform: [darwin, linux, win32]
+        client: [claude, copilot, cursor, codex, windsurf, gemini, vscode]
+    runs-on: [self-hosted, certification, '${{ matrix.platform }}']
+    timeout-minutes: 120
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install dependencies
+        run: corepack pnpm@9.15.0 install --frozen-lockfile
+
+      # The candidate bytes, not a rebuild. The receipt binds to this digest; a host that packed its
+      # own tarball would certify bytes the decision never sees.
+      - name: Download the candidate package
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: candidate-package
+          path: dist/installers
+
+      - name: Build the workspace
+        run: corepack pnpm@9.15.0 build
+
+      - name: Resolve the candidate package
+        shell: bash
+        run: |
+          CANDIDATE="$(find dist/installers -maxdepth 2 -type f -name 'knowledge-crib-*.tgz' -not -name 'knowledge-crib-*-*.tgz' -print -quit)"
+          if [[ -z "$CANDIDATE" ]]; then
+            echo "the candidate package artifact did not contain a shipped tarball" >&2
+            exit 1
+          fi
+          echo "CANDIDATE_PACKAGE=$CANDIDATE" >> "$GITHUB_ENV"
+
+      # The vendor client is invoked by the driver, which also owns the sign-in preflight: checking
+      # first is what stops a five-minute run ending in "not signed in". Only the exit status and the
+      # sanitized transcript are used — never the client's output, which may contain prompts.
+      - name: Certify ${{ matrix.client }}
+        env:
+          # Where the vendor client keeps its own credentials. Never a repository secret, never
+          # printed: the harness reads exit status, not credentials.
+          KCRIB_CERTIFY_PLATFORM: ${{ matrix.platform }}
+        run: >-
+          node scripts/client-certify.mjs
+          --client ${{ matrix.client }}
+          --package "$CANDIDATE_PACKAGE"
+          --candidate-commit "$GITHUB_SHA"
+          --out client-certification-receipts
+
+      # Uploaded unconditionally: a BLOCKED receipt is a diagnostic, and the loader refuses it as
+      # certification anyway, so it cannot promote a cell. `if-no-files-found: warn` keeps "the run
+      # was killed before it wrote anything" a different fact from "the receipt says blocked".
+      - name: Upload the certification receipt
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: client-certification-${{ matrix.client }}-${{ matrix.platform }}
+          path: client-certification-receipts/
+          if-no-files-found: warn
+          retention-days: 30
+
+  # ── the six hosted OS/Node verification cells ─────────────────────────────────────────────────
+  #
+  # These are the platform-acceptance cells: the install cycle, the browser suite, the semantic tier
+  # and the frozen G1..G8 launch gate, each collected as a typed receipt on the OS/Node combination
+  # the policy names. They deliberately do NOT rebuild the candidate — they download it, so every
+  # manifest binds the same digest the certification receipts and the deep sweep bind.
+  verify:
+    name: Verify release (${{ matrix.os }}, Node ${{ matrix.node }})
+    needs: candidate
+    if: ${{ !cancelled() }}
+    strategy:
+      fail-fast: false
+      # EXACTLY the cell set scripts/launch-policy.json freezes. The two must agree in BOTH
+      # directions: a matrix smaller than the policy fails aggregation on a missing cell, and a matrix
+      # LARGER than it uploads manifests for cells the launch does not claim, which are then judged
+      # against requirements their legs never produce.
       matrix:
         os:
           - macos-latest
+          - ubuntu-latest
+          - windows-latest
         node: ['22', '24']
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
 
     steps:
       - name: Checkout
@@ -58,10 +261,34 @@ jobs:
           corepack pnpm@9.15.0 build
           node packages/cli/dist/cli.js embed setup --model large --yes --json
 
-      - name: Run release gate
-        env:
-          KCRIB_EMBED_HOME: ${{ runner.temp }}/knowledge-crib-embed
-        run: corepack pnpm@9.15.0 release:verify
+      # The attested bytes. This cell will not re-pack them, so its manifest's `candidate.packageSha256`
+      # is the candidate job's digest rather than whatever this runner happened to produce.
+      - name: Download the candidate package
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: candidate-package
+          path: dist/installers
+
+      - name: Resolve the candidate package
+        shell: bash
+        run: |
+          CANDIDATE="$(find dist/installers -maxdepth 2 -type f -name 'knowledge-crib-*.tgz' -not -name 'knowledge-crib-*-*.tgz' -print -quit)"
+          if [[ -z "$CANDIDATE" ]]; then
+            echo "the candidate package artifact did not contain a shipped tarball" >&2
+            exit 1
+          fi
+          echo "CANDIDATE_PACKAGE=$CANDIDATE" >> "$GITHUB_ENV"
+
+      # The twenty-one raw vendor receipts, so this cell can state its own certification coverage.
+      # Best-effort on purpose: if the certification jobs have not produced them, the cell still runs
+      # and writes a manifest that NAMES the gap instead of the run dying at the download step.
+      - name: Download the vendor certification receipts
+        continue-on-error: true
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          pattern: client-certification-*
+          path: docs/launch/client-certification-receipts
+          merge-multiple: true
 
       # Browser acceptance belongs to a TAG, not only to PR CI: a release that never drove the
       # real UI has no browser evidence to offer, and a missing receipt type is a blocker.
@@ -99,8 +326,9 @@ jobs:
           node scripts/release-evidence.mjs \
             --out "launch-evidence/${{ matrix.os }}/${{ matrix.node }}.json" \
             --receipts receipts \
+            --package "$CANDIDATE_PACKAGE" \
             --require-runtime-certification \
-            --certification-platforms darwin \
+            --certification-platforms darwin,linux,win32 \
             --certification-receipts docs/launch/client-certification-receipts \
             --command "release.yml verify (${{ matrix.os }}, node ${{ matrix.node }})"
 
@@ -129,6 +357,8 @@ jobs:
           if-no-files-found: ignore
           retention-days: 30
 
+      # ONE leg uploads the shipped bytes — and it uploads the DOWNLOADED candidate, not a fresh
+      # build, so what the release job re-hashes is what the decision approved.
       - name: Upload verified bundle
         if: matrix.os == 'macos-latest' && matrix.node == '22'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -138,19 +368,86 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
-  # WP9.4 — ONE aggregated launch decision. Every per-OS verify cell uploads its release
-  # evidence even when it fails (see if: always() above); this job downloads all three
-  # manifests and runs the aggregation CLI, which validates each cell, prints the per-cell
-  # table, and exits non-zero on NO-GO or missing cell evidence. `if: !cancelled()` so the
-  # NO-GO path is exactly the one that must not be silent: a failed verify cell still
-  # produces a printed decision. The aggregation CLI is scripts/launch-decision.mjs
-  # (WP8/WP9 slice, plain Node — no dependencies, no corepack needed).
-  launch-decision:
-    name: Aggregate launch decision
-    needs: verify
+  # ── the deep sweep, once, against the candidate ───────────────────────────────────────────────
+  fuzz:
+    name: Deep fuzz the candidate (ubuntu, Node 22)
+    needs: candidate
     if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install dependencies
+        run: corepack pnpm@9.15.0 install --frozen-lockfile
+
+      - name: Build workspace
+        run: corepack pnpm@9.15.0 build
+
+      - name: Download the candidate package
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: candidate-package
+          path: dist/installers
+
+      - name: Resolve the candidate package
+        shell: bash
+        run: |
+          CANDIDATE="$(find dist/installers -maxdepth 2 -type f -name 'knowledge-crib-*.tgz' -not -name 'knowledge-crib-*-*.tgz' -print -quit)"
+          if [[ -z "$CANDIDATE" ]]; then
+            echo "the candidate package artifact did not contain a shipped tarball" >&2
+            exit 1
+          fi
+          echo "CANDIDATE_PACKAGE=$CANDIDATE" >> "$GITHUB_ENV"
+
+      # The release-grade deep sweep — 10^6 seeded inputs per extractor. It shares the receipt TYPE
+      # with the nightly, so a REGRESSION receipt written by the nightly under the same policy is
+      # readable diagnostics, but only this candidate-bound one can satisfy the launch decision: the
+      # decision hashes the transcript beside the receipt and refuses a receipt whose numbers are
+      # below the policy floor.
+      - name: Execute deep fuzz (10^6 iters/extractor)
+        run: >-
+          node scripts/fuzz-check.mjs
+          --iterations 1000000
+          --receipt global-receipts/fuzz-deep.json
+          --package "$CANDIDATE_PACKAGE"
+
+      # Unconditional, for the same reason as the nightly's: a FAILED sweep's receipt is how the run
+      # says WHICH extractor broke, and it is written on the failing path.
+      - name: Upload the deep-fuzz receipt
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: global-receipts
+          path: |
+            global-receipts/fuzz-deep.json
+            global-receipts/fuzz-deep.json.log
+          if-no-files-found: warn
+          retention-days: 30
+
+  # ── ONE aggregated launch decision ────────────────────────────────────────────────────────────
+  #
+  # The aggregate loads the six manifests AND the raw twenty-one client receipts AND the raw
+  # deep-fuzz receipt, validates each against the committed policy, and prints the per-cell table. It
+  # does not trust the summary any manifest wrote about its own certification — a manifest cannot
+  # certify itself. `if: !cancelled()` so the NO-GO path is exactly the one that must not be silent:
+  # a failed verify or certification job still produces a printed decision naming what is missing.
+  launch-decision:
+    name: Aggregate launch decision
+    needs: [candidate, verify, certify, fuzz]
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
     outputs:
       # The ONLY package digest publication is allowed to ship, and only when the decision is GO.
       package_sha256: ${{ steps.decide.outputs.package_sha256 }}
@@ -174,13 +471,43 @@ jobs:
           # the aggregation reads are exactly the ones the launch policy names.
           merge-multiple: true
 
+      # Best-effort: if certification produced nothing, the decision must say so by name rather than
+      # the aggregation failing to start.
+      - name: Download the vendor certification receipts
+        continue-on-error: true
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          pattern: client-certification-*
+          path: launch-evidence/client-certification-receipts
+          merge-multiple: true
+
+      - name: Download the global receipts
+        continue-on-error: true
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: global-receipts
+          path: launch-evidence/global-receipts
+
+      # The decision is bound to the tagged COMMIT and to the attested PACKAGE digest, both supplied
+      # by the caller — a manifest may not pick the build it is evidence for. It independently loads
+      # and validates the twenty-one raw certification receipts and the raw deep-fuzz receipt; the
+      # per-manifest certification summaries are compared against them, never trusted.
       - name: Aggregate launch decision
         id: decide
         shell: bash
+        env:
+          CANDIDATE_SHA256: ${{ needs.candidate.outputs.package_sha256 }}
         run: |
           set -o pipefail
+          if [[ -z "$CANDIDATE_SHA256" ]]; then
+            echo "the candidate job attested no package digest — there is nothing to decide about" >&2
+            exit 1
+          fi
           node scripts/launch-decision.mjs --cells launch-evidence \
-            --candidate-commit "$GITHUB_SHA" | tee decision.txt
+            --certification-receipts launch-evidence/client-certification-receipts \
+            --global-receipts launch-evidence/global-receipts \
+            --candidate-commit "$GITHUB_SHA" \
+            --candidate-package "$CANDIDATE_SHA256" | tee decision.txt
           status=${PIPESTATUS[0]}
           node -e '
             const fs = require("fs");
@@ -205,7 +532,9 @@ jobs:
     name: Create GitHub release
     # Publication depends on BOTH the per-cell verification and the aggregate approval. `needs`
     # already implies success for both, so a failed or skipped decision leaves this job unrun —
-    # which is the point: nothing may publish that the decision did not approve (A03).
+    # which is the point: nothing may publish that the decision did not approve (A03). The
+    # certification and fuzz jobs reach this only THROUGH the decision, which is what makes the
+    # decision the authority rather than a second opinion on a green matrix.
     needs: [verify, launch-decision]
     if: ${{ needs.launch-decision.outputs.decision == 'GO' }}
     runs-on: ubuntu-latest
