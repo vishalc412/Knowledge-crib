@@ -5,7 +5,9 @@
 > agent-agnostic, incrementally upgraded as the project evolves. Delivered as **one fast MCP server**
 > (not a skill). Greenfield, all-new, **Apache-2.0**.
 
-**Status:** implemented and release-gated, `0.1.0` — not yet tagged/published. Before adopting, read
+**Status:** `0.1.0` release candidate — certification is currently **NO-GO** (see the launch
+decision in [docs/launch/developer-launch-decision.md](docs/launch/developer-launch-decision.md));
+not yet tagged/published. Before adopting, read
 the dated [capability matrix](docs/capability-matrix.md): what is measured vs unverified, what is
 default vs opt-in, and the known limits carried into launch. Drift-prone counts (packages,
 languages, test surface, MCP tool count) live in one generated source —
