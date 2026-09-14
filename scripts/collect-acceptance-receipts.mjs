@@ -105,6 +105,47 @@ const hashPackage = (path) =>
   `sha256:${createHash('sha256').update(readFileSync(path)).digest('hex')}`;
 
 /**
+ * Refuse a receipts directory that already holds this pass's kind of evidence.
+ *
+ * The guarantee is exactly this: the RECEIPTS directory must not already hold a previous pass's
+ * acceptance receipts (or their unparseable residue) when this pass starts collecting. Vendor
+ * receipts (`client-*.json`) are the one thing allowed: the cells download them into place, and
+ * this pass only ever reads them. The guarantee is deliberately narrower than "the whole --out is
+ * fresh": `manifest.json` inside the cell directory is written by the separate manifest step,
+ * which overwrites its own output on every re-run, and a half-finished pass never reaches the
+ * upload at all — the refusal here is about a STANDING receipt being read as this pass's work,
+ * either aggregated as if this pass produced it or sitting in a failed check's place and reading
+ * as a pass that never happened.
+ */
+export function assertUnusedReceiptsDir(receiptsDir) {
+  let names;
+  try {
+    names = readdirSync(receiptsDir);
+  } catch {
+    return; // nothing there to reuse
+  }
+  for (const name of names
+    .filter((n) => n.endsWith('.json') && !/^client-.*\.json$/.test(n))
+    .sort()) {
+    let prior;
+    try {
+      prior = JSON.parse(readFileSync(join(receiptsDir, name), 'utf8'));
+    } catch {
+      throw new Error(
+        `${receiptsDir} already holds ${name}, which is not readable JSON.
+Evidence directories are never reused — give this pass its own --out.`,
+      );
+    }
+    if (prior?.format === 'knowledge-crib-acceptance-receipt') {
+      throw new Error(
+        `${receiptsDir} already holds ${name}, a receipt from a previous pass.
+Evidence directories are never reused — give this pass its own --out.`,
+      );
+    }
+  }
+}
+
+/**
  * Report every vendor receipt already in this directory that certifies a DIFFERENT artifact.
  *
  * Saying so is the difference between an operator re-running one command and an operator debugging a
@@ -320,6 +361,15 @@ export async function collectAcceptanceReceipts() {
       die(`--package points at ${resolved}, which does not exist.`);
     }
   }
+  // Like the argument refusals above, this is a static fact about the invocation, checked BEFORE
+  // the working-tree verdict: an operator who pointed --out at a directory a previous pass
+  // already filled should hear that immediately, not after a git-status run that may change under
+  // them.
+  try {
+    assertUnusedReceiptsDir(receiptsDir);
+  } catch (error) {
+    die(`refusing to collect: ${error.message}`);
+  }
 
   const dirty = execFileSync('git', ['status', '--porcelain=v1'], {
     cwd: REPO_ROOT,
@@ -529,7 +579,8 @@ export async function collectAcceptanceReceipts() {
       // Artifact paths are stored relative to `outDir` (never machine-absolute): the evidence tree is
       // copied to the launch judge — `~/crib-launch-evidence/<date>/` to another machine, or an artifact
       // download in CI — and a receipt naming this machine's absolute path certifies nowhere else. The
-      // decision resolves them with `--receipts-root <outDir>`.
+      // decision resolves them against the receipts root it is handed: the cell directory that
+      // contains the receipt in the release workflow's `--cells` layout.
       //
       // `--product-source` records WHICH product the check exercised, and an installed-candidate
       // receipt must name (the hash of) the executable it ran — a receipt claiming the installed

@@ -1,0 +1,490 @@
+name: Release verification
+
+# The verification half of a launch: build the candidate ONCE -> attest its bytes -> run the complete
+# acceptance collector in all six hosted OS/Node cells -> certify the twenty-one native
+# vendor-runtime cells -> deep-fuzz the same bytes once. This file is a REUSABLE workflow so the
+# verification chain is callable before publication (workflow_dispatch) and from the release
+# workflow (workflow_call), which aggregates the evidence into one decision and publishes only on GO.
+#
+# Three rules explain most of the file:
+#
+#   1. ONE candidate. `pnpm pack` is not byte-reproducible, so six independent builds would produce
+#      six digests and the aggregate would (correctly) refuse them as a mixed-candidate set. The
+#      `candidate` job therefore packs once, attests the digest, and every later job downloads those
+#      exact bytes. The workspace is still built per cell — a runner cannot execute a build it did
+#      not produce — but the SHIPPED artifact is built in exactly one place.
+#   2. RAW receipts, never summaries. Every receipt the decision judges arrives as a file, and each
+#      evidence family travels in its own artifact with its own explicit root: the per-cell
+#      acceptance evidence (`release-evidence-*`), the vendor certification receipts
+#      (`client-certification-*`), and the global receipts (`global-receipts`). Nothing is downloaded
+#      into another family's root — a client or global receipt dropped inside the cells root used to
+#      be interpreted as an OS/Node cell, which is how valid evidence became a bogus cell.
+#   3. EVIDENCE LIVES OUTSIDE THE CHECKOUT. The collector refuses a dirty working tree, and the
+#      launch decision refuses any manifest whose candidate is dirty — so every file a pass writes
+#      goes under `${{ runner.temp }}`, never into the repository. A receipt written inside the
+#      checkout would fail the very checks it is evidence for. The same rule keeps run outputs
+#      separate: every output directory is scoped by run id and attempt, so a pass on a persistent
+#      (self-hosted) runner can never append to a previous run's evidence.
+#
+# Re-run attempts: GitHub artifacts are immutable and PERSIST across re-run attempts of a run, so a
+# re-executed job re-uploading the same name would fail with a 409 while its previous-attempt
+# artifact still exists. Every upload here carries `overwrite: true`, which deletes the caller's own
+# same-named artifact first — a re-executed job replaces ONLY its own output, and jobs that did not
+# re-run keep their original artifacts. Exact names (no attempt-stamped patterns) mean a download
+# can never merge two attempts' evidence into one directory.
+#
+# OPERATIONAL PREREQUISITES — the workflow cannot satisfy these by itself, and it is NO-GO without
+# them:
+#   * Three self-hosted certification runners registered with the labels
+#     `self-hosted, certification, darwin|linux|win32`. They must be NATIVE hosts. WSL satisfies
+#     neither linux nor win32: the launch decision refuses a WSL receipt by that name.
+#   * All seven vendor clients installed and SIGNED IN on each host: Claude Code, GitHub Copilot,
+#     Cursor, VS Code, Codex, Windsurf, Gemini.
+#   * Credentials in the platform keychain or the vendor's own profile store. This file must never
+#     contain, interpolate or echo a credential, and no step may print one: the vendor clients read
+#     their own profiles and the harness asserts on exit status, never on output. Nothing secret
+#     belongs in repository secrets either — a runner that needs a secret to certify is a runner that
+#     has not been provisioned for certification.
+#   * Bash on every runner (git-bash is enough on Windows). Steps that expand environment variables
+#     pin `shell: bash` because the Windows default shell reads "$CANDIDATE_PACKAGE" as an empty
+#     PowerShell variable; where a check can be expressed as a structured Node invocation instead, it
+#     is — the collector spawns its checks as argv, not shell strings.
+
+on:
+  workflow_call:
+    outputs:
+      package_sha256:
+        description: The digest of the one candidate this pass built and attested.
+        value: ${{ jobs.candidate.outputs.package_sha256 }}
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  # ── the candidate: built and attested exactly once ────────────────────────────────────────────
+  candidate:
+    name: Build and attest the candidate (ubuntu, Node 22)
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    outputs:
+      # The bytes every other job is judged against, and the only digest publication may ship.
+      package_sha256: ${{ steps.attest.outputs.package_sha256 }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install dependencies
+        run: corepack pnpm@9.15.0 install --frozen-lockfile
+
+      - name: Restore supported semantic tier
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4
+        with:
+          path: ${{ runner.temp }}/knowledge-crib-embed
+          key: ${{ runner.os }}-knowledge-crib-e5-large-${{ hashFiles('packages/cli/src/embed-setup.ts', 'packages/cli/src/embed-onnx.ts', 'pnpm-lock.yaml') }}
+
+      - name: Install supported semantic tier
+        env:
+          KCRIB_EMBED_HOME: ${{ runner.temp }}/knowledge-crib-embed
+        run: |
+          corepack pnpm@9.15.0 build
+          node packages/cli/dist/cli.js embed setup --model large --yes --json
+
+      # The complete release gate — the frozen quality gates, the whole test suite, the packaging and
+      # isolation checks, the launch-decision self-checks. It also builds the installer bundle, which
+      # is why the candidate is packed here and nowhere else.
+      - name: Run release gate
+        env:
+          KCRIB_EMBED_HOME: ${{ runner.temp }}/knowledge-crib-embed
+        run: corepack pnpm@9.15.0 release:verify
+
+      - name: Build the candidate package
+        run: |
+          CANDIDATE="$(find dist/installers -maxdepth 2 -type f -name 'knowledge-crib-*.tgz' -not -name 'knowledge-crib-*-*.tgz' -print -quit)"
+          if [[ -z "$CANDIDATE" ]]; then
+            echo "no shipped package found in the installer bundle" >&2
+            exit 1
+          fi
+          echo "candidate package: $CANDIDATE"
+          echo "CANDIDATE_PACKAGE=$CANDIDATE" >> "$GITHUB_ENV"
+
+      # Attested once, read by everything downstream. A digest computed later, from a rebuild, would
+      # be the digest of different bytes — the whole reason this job exists.
+      - name: Attest the candidate package
+        id: attest
+        shell: bash
+        run: |
+          DIGEST="sha256:$(shasum -a 256 "$CANDIDATE_PACKAGE" | cut -d' ' -f1)"
+          echo "package_sha256=$DIGEST" >> "$GITHUB_OUTPUT"
+          echo "CANDIDATE_SHA256=$DIGEST" >> "$GITHUB_ENV"
+          {
+            echo "The bytes this release is judged against:"
+            echo ""
+            echo "    $CANDIDATE_PACKAGE"
+            echo "    $DIGEST"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # The COMPLETE candidate-bundle directory layout travels with the artifact: the upload path is
+      # a wildcard WITHOUT a trailing slash, so the hierarchy is preserved from the wildcard onward
+      # and the artifact contains `knowledge-crib-<version>/` itself — manifest, every workspace
+      # package, and the installers. A trailing slash uploads only the directory's CONTENTS, which
+      # flattens the bundle; the collector takes the tarball's PARENT as the bundle directory, and a
+      # flattened download has no manifest beside the tarball to verify against.
+      - name: Upload the candidate package
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: candidate-package
+          path: dist/installers/knowledge-crib-*
+          if-no-files-found: error
+          retention-days: 30
+          overwrite: true
+
+  # ── the twenty-one native vendor-runtime cells ────────────────────────────────────────────────
+  #
+  # One job per (client, platform): seven clients on three NATIVE hosts. Each job runs the real
+  # vendor client against the candidate and writes ONE certifying receipt; the receipt is refused by
+  # the loader unless it carries all eight legs, with handshake and tool-use saying their source is
+  # the client under test, on a non-WSL platform.
+  #
+  # A missing runner, an absent client or a signed-out account does not degrade this to a warning: the
+  # cell simply has no receipt, and `client-cell-uncertified:<client>/<os>` is the NO-GO blocker. That
+  # is the intended outcome — an unavailable vendor/platform combination leaves the release NO-GO until
+  # it becomes executable or the launch promise is explicitly changed.
+  certify:
+    name: Certify ${{ matrix.client }} on ${{ matrix.platform }} (native)
+    needs: candidate
+    if: ${{ !cancelled() }}
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [darwin, linux, win32]
+        client: [claude, copilot, cursor, codex, windsurf, gemini, vscode]
+    runs-on: [self-hosted, certification, '${{ matrix.platform }}']
+    timeout-minutes: 120
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install dependencies
+        run: corepack pnpm@9.15.0 install --frozen-lockfile
+
+      # The candidate bytes, not a rebuild. The receipt binds to this digest; a host that packed its
+      # own tarball would certify bytes the decision never sees.
+      - name: Download the candidate package
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: candidate-package
+          path: dist/installers
+
+      - name: Build the workspace
+        run: corepack pnpm@9.15.0 build
+
+      - name: Resolve the candidate package
+        shell: bash
+        run: |
+          CANDIDATE="$(find dist/installers -maxdepth 2 -type f -name 'knowledge-crib-*.tgz' -not -name 'knowledge-crib-*-*.tgz' -print -quit)"
+          if [[ -z "$CANDIDATE" ]]; then
+            echo "the candidate package artifact did not contain a shipped tarball" >&2
+            exit 1
+          fi
+          echo "CANDIDATE_PACKAGE=$CANDIDATE" >> "$GITHUB_ENV"
+
+      # The vendor client is invoked by the driver, which also owns the sign-in preflight: checking
+      # first is what stops a five-minute run ending in "not signed in". Only the exit status and the
+      # sanitized transcript are used — never the client's output, which may contain prompts.
+      #
+      # `shell: bash` because these runners include win32, where the default shell reads
+      # "$CANDIDATE_PACKAGE" as an (empty) PowerShell variable and the receipt writer would refuse on
+      # a missing package. The OUT directory is scoped by run id and attempt and lives outside the
+      # checkout: a certification runner is self-hosted, its disk persists between runs, and a
+      # receipt from a previous run must never sit in this pass's output directory. The candidate
+      # commit is the COMMIT the checkout holds, not $GITHUB_SHA: an annotated tag push puts the
+      # TAG OBJECT's sha in GITHUB_SHA, and every receipt/manifest binds to the peeled commit.
+      - name: Certify ${{ matrix.client }}
+        shell: bash
+        run: >-
+          node scripts/client-certify.mjs
+          --client ${{ matrix.client }}
+          --package "$CANDIDATE_PACKAGE"
+          --candidate-commit "$(git rev-parse HEAD)"
+          --out "${{ runner.temp }}/certify-receipts/r${{ github.run_id }}a${{ github.run_attempt }}"
+
+      # Uploaded unconditionally: a BLOCKED receipt is a diagnostic, and the loader refuses it as
+      # certification anyway, so it cannot promote a cell. `if-no-files-found: warn` keeps "the run
+      # was killed before it wrote anything" a different fact from "the receipt says blocked".
+      - name: Upload the certification receipt
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: client-certification-${{ matrix.client }}-${{ matrix.platform }}
+          path: ${{ runner.temp }}/certify-receipts/r${{ github.run_id }}a${{ github.run_attempt }}/
+          if-no-files-found: warn
+          retention-days: 30
+          overwrite: true
+
+  # ── the six hosted OS/Node verification cells ─────────────────────────────────────────────────
+  #
+  # These are the platform-acceptance cells: the COMPLETE acceptance collector installs the candidate
+  # into an isolated prefix and exercises it — the adapter probe, the install cycle, the browser
+  # suite, the security and recovery batteries, native service, freshness — on the OS/Node
+  # combination the policy names. Every check runs on EVERY platform: browser acceptance belongs to a
+  # TAG on all three operating systems, not only to the one that historically had Chromium. They
+  # deliberately do NOT rebuild the candidate — they download it, so every manifest binds the same
+  # digest the certification receipts and the deep sweep bind.
+  verify:
+    name: Verify release (${{ matrix.os }}, Node ${{ matrix.node }})
+    needs: candidate
+    if: ${{ !cancelled() }}
+    strategy:
+      fail-fast: false
+      # EXACTLY the cell set scripts/launch-policy.json freezes. The two must agree in BOTH
+      # directions: a matrix smaller than the policy fails aggregation on a missing cell, and a matrix
+      # LARGER than it uploads manifests for cells the launch does not claim, which are then judged
+      # against requirements their legs never produce.
+      matrix:
+        os:
+          - macos-latest
+          - ubuntu-latest
+          - windows-latest
+        node: ['22', '24']
+    runs-on: ${{ matrix.os }}
+    # The collector runs the full acceptance battery (install, browser, security, recovery, native
+    # service, freshness, adapter) on each cell, including a bounded npm install of the candidate —
+    # a longer budget than the old receipt-writer steps, which ran only two of the seven.
+    timeout-minutes: 120
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: ${{ matrix.node }}
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install dependencies
+        run: corepack pnpm@9.15.0 install --frozen-lockfile
+
+      - name: Restore supported semantic tier
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4
+        with:
+          path: ${{ runner.temp }}/knowledge-crib-embed
+          key: ${{ runner.os }}-knowledge-crib-e5-large-${{ hashFiles('packages/cli/src/embed-setup.ts', 'packages/cli/src/embed-onnx.ts', 'pnpm-lock.yaml') }}
+
+      - name: Install supported semantic tier
+        env:
+          KCRIB_EMBED_HOME: ${{ runner.temp }}/knowledge-crib-embed
+        run: |
+          corepack pnpm@9.15.0 build
+          node packages/cli/dist/cli.js embed setup --model large --yes --json
+
+      # The attested bytes. This cell will not re-pack them, so its manifest's `candidate.packageSha256`
+      # is the candidate job's digest rather than whatever this runner happened to produce.
+      - name: Download the candidate package
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: candidate-package
+          path: dist/installers
+
+      - name: Resolve the candidate package
+        shell: bash
+        run: |
+          CANDIDATE="$(find dist/installers -maxdepth 2 -type f -name 'knowledge-crib-*.tgz' -not -name 'knowledge-crib-*-*.tgz' -print -quit)"
+          if [[ -z "$CANDIDATE" ]]; then
+            echo "the candidate package artifact did not contain a shipped tarball" >&2
+            exit 1
+          fi
+          echo "CANDIDATE_PACKAGE=$CANDIDATE" >> "$GITHUB_ENV"
+
+      # The twenty-one raw vendor receipts, so this cell can state its own certification coverage.
+      # They land in THIS cell's receipts directory — the cell's own evidence root, outside the
+      # checkout — never in a shared tree the cells discovery walks. Best-effort on purpose: if the
+      # certification jobs have not produced them, the cell still runs and writes a manifest that
+      # NAMES the gap instead of the run dying at the download step.
+      - name: Download the vendor certification receipts
+        continue-on-error: true
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          pattern: client-certification-*
+          path: ${{ runner.temp }}/evidence/cells/${{ matrix.os }}/${{ matrix.node }}/receipts
+          merge-multiple: true
+
+      # Chromium on EVERY platform: browser acceptance is one of the seven checks the collector runs,
+      # so a cell without browser binaries fails the browser check and the cell goes red. `--with-deps`
+      # installs the system libraries only Linux needs; the same flag on the other platforms is a
+      # no-op but the explicit branch keeps the intent readable. `shell: bash` because the step reads
+      # $RUNNER_OS, and the Windows default shell would not see it as a POSIX env var.
+      - name: Install browser binaries
+        shell: bash
+        run: |
+          if [[ "$RUNNER_OS" == "Linux" ]]; then
+            corepack pnpm@9.15.0 exec playwright install --with-deps chromium
+          else
+            corepack pnpm@9.15.0 exec playwright install chromium
+          fi
+
+      # THE COMPLETE ACCEPTANCE COLLECTOR, in certifying mode, in every cell. It verifies the
+      # downloaded bundle against its own manifest checksums, installs it into an isolated prefix,
+      # and runs all seven checks — each one exercising the INSTALLED candidate and writing a typed
+      # receipt plus its transcript into the cell directory. `shell: bash` for the same
+      # environment-variable reason as every other step that expands "$CANDIDATE_PACKAGE".
+      - name: Run the complete acceptance collector
+        env:
+          KCRIB_EMBED_HOME: ${{ runner.temp }}/knowledge-crib-embed
+        shell: bash
+        run: >-
+          node scripts/collect-acceptance-receipts.mjs
+          --out "${{ runner.temp }}/evidence/cells/${{ matrix.os }}/${{ matrix.node }}"
+          --package "$CANDIDATE_PACKAGE"
+          --candidate-commit "$(git rev-parse HEAD)"
+
+      # THE FINAL RECEIPT, written only after the collector has completed every check. Its existence
+      # is the claim that they ran; a failing check never reaches this line, so a manifest can no
+      # longer describe a workflow that stopped halfway. The manifest lands INSIDE the cell directory
+      # the collector filled — one evidence root per cell — and reads the receipts from that same
+      # directory, each reader recognizing only its own formats.
+      - name: Collect release evidence
+        env:
+          KCRIB_EMBED_HOME: ${{ runner.temp }}/knowledge-crib-embed
+        shell: bash
+        run: |
+          node scripts/release-evidence.mjs \
+            --out "${{ runner.temp }}/evidence/cells/${{ matrix.os }}/${{ matrix.node }}/manifest.json" \
+            --receipts "${{ runner.temp }}/evidence/cells/${{ matrix.os }}/${{ matrix.node }}/receipts" \
+            --package "$CANDIDATE_PACKAGE" \
+            --require-runtime-certification \
+            --certification-platforms darwin,linux,win32 \
+            --certification-receipts "${{ runner.temp }}/evidence/cells/${{ matrix.os }}/${{ matrix.node }}/receipts" \
+            --command "release-verify.yml verify (${{ matrix.os }}, node ${{ matrix.node }})"
+
+      # The artifact preserves the COMPLETE cell directory — manifest, acceptance receipts, and
+      # artifacts (logs) — rooted one level up so the artifact contains `cells/<os>/<node>/...` and a
+      # merge download reconstructs exactly the policy's evidence layout.
+      - name: Upload release evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: release-evidence-${{ matrix.os }}-node${{ matrix.node }}
+          path: ${{ runner.temp }}/evidence/
+          if-no-files-found: error
+          retention-days: 30
+          overwrite: true
+
+      # Diagnostics from a FAILED cell go to a separate artifact the aggregation never reads: a
+      # half-finished run must not be able to contribute a manifest to the decision. Whatever the
+      # failing pass managed to write — partial receipts, check transcripts — travels under a name
+      # no evidence download pattern matches.
+      - name: Upload failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: release-diagnostics-${{ matrix.os }}-node${{ matrix.node }}
+          path: ${{ runner.temp }}/evidence/cells/${{ matrix.os }}/${{ matrix.node }}/
+          if-no-files-found: ignore
+          retention-days: 30
+          overwrite: true
+
+      # ONE leg uploads the shipped bytes — and it uploads the DOWNLOADED candidate, not a fresh
+      # build, so what the release job re-hashes is what the decision approved.
+      - name: Upload verified bundle
+        if: matrix.os == 'macos-latest' && matrix.node == '22'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: knowledge-crib-release-bundle
+          path: dist/installers/knowledge-crib-*
+          if-no-files-found: error
+          retention-days: 7
+          overwrite: true
+
+  # ── the deep sweep, once, against the candidate ───────────────────────────────────────────────
+  fuzz:
+    name: Deep fuzz the candidate (ubuntu, Node 22)
+    needs: candidate
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Setup Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22'
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install dependencies
+        run: corepack pnpm@9.15.0 install --frozen-lockfile
+
+      - name: Build workspace
+        run: corepack pnpm@9.15.0 build
+
+      - name: Download the candidate package
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: candidate-package
+          path: dist/installers
+
+      - name: Resolve the candidate package
+        shell: bash
+        run: |
+          CANDIDATE="$(find dist/installers -maxdepth 2 -type f -name 'knowledge-crib-*.tgz' -not -name 'knowledge-crib-*-*.tgz' -print -quit)"
+          if [[ -z "$CANDIDATE" ]]; then
+            echo "the candidate package artifact did not contain a shipped tarball" >&2
+            exit 1
+          fi
+          echo "CANDIDATE_PACKAGE=$CANDIDATE" >> "$GITHUB_ENV"
+
+      # The release-grade deep sweep — 10^6 seeded inputs per extractor. It shares the receipt TYPE
+      # with the nightly, so a REGRESSION receipt written by the nightly under the same policy is
+      # readable diagnostics, but only this candidate-bound one can satisfy the launch decision: the
+      # decision hashes the transcript beside the receipt and refuses a receipt whose numbers are
+      # below the policy floor. The receipt and its transcript live under runner.temp — OUTSIDE the
+      # checkout, like every other evidence family — and the transcript path recorded in the receipt
+      # is RELATIVE to the receipt, so the digest still verifies after the artifacts are downloaded
+      # to the judge's evidence/global root. `shell: bash` for "$CANDIDATE_PACKAGE", as everywhere.
+      - name: Execute deep fuzz (10^6 iters/extractor)
+        shell: bash
+        run: >-
+          node scripts/fuzz-check.mjs
+          --iterations 1000000
+          --receipt "${{ runner.temp }}/evidence/global/fuzz-deep.json"
+          --package "$CANDIDATE_PACKAGE"
+
+      # Unconditional, for the same reason as the nightly's: a FAILED sweep's receipt is how the run
+      # says WHICH extractor broke, and it is written on the failing path. The upload path is the
+      # global evidence DIRECTORY, so the artifact carries the receipt and its transcript together —
+      # the transcript is half of what the decision hashes.
+      - name: Upload the deep-fuzz receipt
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: global-receipts
+          path: ${{ runner.temp }}/evidence/global
+          if-no-files-found: warn
+          retention-days: 30
+          overwrite: true

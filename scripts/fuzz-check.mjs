@@ -47,7 +47,7 @@ import { execFileSync } from 'node:child_process';
  * missing, the parsers package is built first.
  */
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
+import { dirname, relative, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { loadLaunchPolicy, policyFuzzRequirements } from './launch-policy.mjs';
 import { buildReceipt } from './write-receipt.mjs';
@@ -129,6 +129,14 @@ function fail(msg) {
 function finish(status, details) {
   const archived = archiveTranscript();
   if (!receiptPath) return;
+  // The transcript is recorded RELATIVE to the receipt's own directory, with --artifact-root telling
+  // the writer what to resolve it against. The decision resolves artifact paths against the
+  // receipts root it was handed, and resolve() honours an absolute path VERBATIM — so a
+  // machine-absolute transcript path (what resolve(logPath) is) only verifies on the machine and
+  // directory that produced it. The CI layout moves the receipts OUT of the checkout entirely, so
+  // an absolute path is a receipt whose own evidence can never check: every real release run NO-GOs
+  // on the transcript digest. Relative-to-the-receipt is how the collector's artifacts already work.
+  const receiptDir = dirname(resolve(receiptPath));
   const receipt = buildReceipt({
     type: 'fuzz-deep',
     now: new Date().toISOString(),
@@ -139,7 +147,9 @@ function finish(status, details) {
       status === 'pass' ? '0' : '1',
       '--status',
       status,
-      ...(archived ? ['--artifact', archived] : []),
+      ...(archived
+        ? ['--artifact', relative(receiptDir, archived), '--artifact-root', receiptDir]
+        : []),
       ...(packagePath ? ['--package', packagePath] : []),
     ],
     details: {

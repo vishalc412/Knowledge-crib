@@ -24,12 +24,15 @@ import { execFileSync } from 'node:child_process';
  * archived --command/--exit-code pairs (a caller's --status must agree with them or the writer
  * refuses).
  *
- * Artifact paths are stored VERBATIM. The launch decision resolves them against the
- * `--receipts-root` it was given, so a receipt that stores a machine-absolute path only certifies
- * from the machine and directory it was written on — evidence that cannot survive being copied to
- * the launch judge is not evidence. By default an --artifact path is resolved against the writer's
- * cwd; `--artifact-root` says the path is relative to that directory instead (the acceptance
- * collector passes its --out dir, so the whole evidence tree is relocatable).
+ * Artifact paths are stored VERBATIM. The launch decision resolves them against the receipts
+ * root it was handed — in the release workflow's `--cells` layout that is the CELL DIRECTORY that
+ * contains the receipt (each manifest entry carries its own evidence root); the `--receipts-root`
+ * flag covers only the legacy single-root `--evidence` mode. So a receipt that stores a
+ * machine-absolute path only certifies from the machine and directory it was written on — evidence
+ * that cannot survive being copied to the launch judge is not evidence. By default an --artifact
+ * path is resolved against the writer's cwd; `--artifact-root` says the path is relative to that
+ * directory instead (the acceptance collector passes its --out dir, so the whole evidence tree is
+ * relocatable).
  */
 import { createHash, randomUUID } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -68,7 +71,8 @@ export function buildReceipt({ type, argv, now = new Date().toISOString(), detai
   if (!known.includes(type)) {
     throw new Error(`unknown receipt type ${type}; the launch policy declares ${known.join(', ')}`);
   }
-  // Artifact paths are stored VERBATIM — the decision resolves them against --receipts-root — but
+  // Artifact paths are stored VERBATIM — the decision resolves them against the receipts root it
+  // was handed — but
   // existence and digest are checked against real bytes before the receipt is written. By default
   // that means the writer's cwd; --artifact-root names the directory a (relative) path is against,
   // which is how the collector writes `logs/<type>.log` entries that still verify on any machine.

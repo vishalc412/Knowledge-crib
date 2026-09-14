@@ -215,7 +215,7 @@ assert.match(
   problems('install', {}, { evidenceRoot: undefined }).join('\n'),
   /receipt-artifact-unverifiable:install/,
 );
-// A --receipts-root that is not there (a typo) is the same verdict — a NAMED blocker, not the
+// A receipts root that is not there (a typo) is the same verdict — a NAMED blocker, not the
 // ENOENT crash acceptanceReceiptProblems used to throw from insideRoot's realpathSync(root).
 assert.match(
   problems('install', {}, { evidenceRoot: join(root, 'does-not-exist') }).join('\n'),

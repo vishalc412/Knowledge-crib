@@ -566,8 +566,9 @@ async function main() {
     );
     receipt.artifacts = [
       {
-        // Relative to the RECEIPTS DIRECTORY'S PARENT — the evidence root the collector points the
-        // decision's --receipts-root at — never a machine-absolute path: the evidence tree is
+        // Relative to the RECEIPTS DIRECTORY'S PARENT — the evidence root the launch decision
+        // resolves receipts against, in the workflow's --cells layout the cell directory
+        // containing the receipt — never a machine-absolute path: the evidence tree is
         // copied to the launch judge, and bytes that only exist at this machine's absolute path
         // certify nowhere else.
         path: relative(dirname(dirname(out)), samplesPath),

@@ -71,7 +71,7 @@ function artifactProblem(type, artifact, evidenceRoot) {
     evidenceRoot.trim() === '' ||
     !existsSync(evidenceRoot)
   ) {
-    // No artifact-root context — or a --receipts-root that is not actually there (a typo) — means
+    // No artifact-root context — or a receipts root that is not actually there (a typo) — means
     // the bytes cannot be verified at all. A named blocker, not a skip and not an ENOENT crash.
     return `receipt-artifact-unverifiable:${type}`;
   }

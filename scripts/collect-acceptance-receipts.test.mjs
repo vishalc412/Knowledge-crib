@@ -16,7 +16,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { resolveChecks } from './collect-acceptance-receipts.mjs';
+import { assertUnusedReceiptsDir, resolveChecks } from './collect-acceptance-receipts.mjs';
 import { receiptProduct } from './freshness-adoption-check.mjs';
 import { assertBlockRemoved, assertManagedBlock } from './installed-adapter-check.mjs';
 import { buildReceipt } from './write-receipt.mjs';
@@ -332,5 +332,46 @@ assert.match(ghostBin.stderr, /--bin does not exist/);
 const omitRule = probe(['--bin', stubBin], { ...process.env, STUB_OMIT_RULE: '1' });
 assert.equal(omitRule.status, 1);
 assert.match(omitRule.stderr, /does not carry the mandatory protocol rule/);
+
+// ── the output directory must be this pass's alone ──────────────────────────────────────────────
+// A receipt left in --out by a previous pass would be aggregated as if this pass produced it —
+// or sit in a failed check's place and read as a pass that never happened. The refusal fires on
+// any leftover non-vendor JSON: a parseable acceptance receipt, or a file too broken to parse
+// (which is itself residue). Vendor receipts stay allowed: the cells download them into place,
+// and this pass only reads them.
+const unusedDir = join(root, 'unused');
+const vendorReceipt = JSON.stringify({
+  format: 'knowledge-crib-client-receipt',
+  product: { packageSha256: `sha256:${'0'.repeat(64)}` },
+});
+// empty / nonexistent: nothing to reuse, no refusal
+mkdirSync(unusedDir);
+assert.doesNotThrow(() => assertUnusedReceiptsDir(unusedDir));
+assert.doesNotThrow(() => assertUnusedReceiptsDir(join(root, 'never-created')));
+// vendor receipts are the one allowed occupant
+writeFileSync(join(unusedDir, 'client-claude-darwin.json'), vendorReceipt);
+writeFileSync(join(unusedDir, 'client-cursor-win32.json'), vendorReceipt);
+assert.doesNotThrow(() => assertUnusedReceiptsDir(unusedDir));
+// a previous pass's acceptance receipt: refused, by name
+writeFileSync(
+  join(unusedDir, 'adapter.json'),
+  JSON.stringify({ format: 'knowledge-crib-acceptance-receipt' }),
+);
+assert.throws(
+  () => assertUnusedReceiptsDir(unusedDir),
+  /already holds adapter\.json, a receipt from a previous pass/,
+);
+rmSync(join(unusedDir, 'adapter.json'));
+// broken JSON in the receipts directory is residue too: refused, by name
+writeFileSync(join(unusedDir, 'stale.json'), '{not json');
+assert.throws(
+  () => assertUnusedReceiptsDir(unusedDir),
+  /already holds stale\.json, which is not readable JSON/,
+);
+rmSync(join(unusedDir, 'stale.json'));
+// a readable non-acceptance JSON is neither this pass's evidence nor its business to parse
+// beyond its format — a stray tool config in the directory does not block collection.
+writeFileSync(join(unusedDir, 'settings.json'), JSON.stringify({ format: 'something-else' }));
+assert.doesNotThrow(() => assertUnusedReceiptsDir(unusedDir));
 
 console.log('collector check tests ok');

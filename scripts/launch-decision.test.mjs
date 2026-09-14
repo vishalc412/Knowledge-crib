@@ -22,6 +22,7 @@ import {
   mkdirSync,
   mkdtempSync,
   readFileSync,
+  readdirSync,
   rmSync,
   symlinkSync,
   writeFileSync,
@@ -1239,23 +1240,32 @@ const aggregateOptions = (overrides = {}) => ({
 // the only way this run can reach GO is by loading and validating the 21 raw receipts itself, which
 // is exactly the independence the plan demands of the aggregate. A CLI that trusted a manifest's
 // copied-in summary would return NO-GO here, and this assertion would catch it.
-for (const cell of OS_CELLS) {
-  mkdirSync(join(cellsDir, dirname(cell)), { recursive: true });
-  const manifest = completeEvidence();
-  manifest.certification.receipts = [];
-  writeFileSync(join(cellsDir, `${cell}.json`), JSON.stringify(manifest));
+//
+// The layout is the workflow's layout (Task 4): each cell directory contains its manifest AND the
+// typed-receipt artifacts its manifest points at, so the cell directory is its own evidence root.
+function writeCell(root, cell, manifest = completeEvidence()) {
+  const cellDir = join(root, ...cell.split('/'));
+  mkdirSync(cellDir, { recursive: true });
+  writeFileSync(join(cellDir, 'manifest.json'), JSON.stringify(manifest));
+  // The cell directory is its own evidence root: every typed receipt's artifact path resolves
+  // inside it, so the logs completeEvidence() just wrote to acceptanceDir are copied in.
+  for (const name of readdirSync(acceptanceDir)) {
+    cpSync(join(acceptanceDir, name), join(cellDir, name));
+  }
+  return cellDir;
 }
-assert.deepEqual(loadReleaseEvidence(join(cellsDir, `${OS_CELLS[0]}.json`)).candidate.dirty, false);
+for (const cell of OS_CELLS) {
+  const cellDir = writeCell(cellsDir, cell);
+  const manifest = JSON.parse(readFileSync(join(cellDir, 'manifest.json'), 'utf8'));
+  manifest.certification.receipts = [];
+  writeFileSync(join(cellDir, 'manifest.json'), JSON.stringify(manifest));
+}
+assert.deepEqual(
+  loadReleaseEvidence(join(cellsDir, ...OS_CELLS[0].split('/'), 'manifest.json')).candidate.dirty,
+  false,
+);
 
-const RECEIPTS_ARGS = [
-  '--certification-receipts',
-  receiptsDir,
-  '--global-receipts',
-  globalDir,
-  // The CLI resolves typed-receipt artifacts against this root; without it they are unverifiable.
-  '--receipts-root',
-  acceptanceDir,
-];
+const RECEIPTS_ARGS = ['--certification-receipts', receiptsDir, '--global-receipts', globalDir];
 const decideCli = (args) =>
   spawnSync(
     process.execPath,
@@ -1400,6 +1410,72 @@ const decideCli = (args) =>
     'file names that do not match the policy cell ids cannot pass',
   );
   assert.match(dashedRun.stdout, /missing-evidence:/);
+}
+
+// ─── the workflow artifact layout (Task 4) ─────────────────────────────────────────────────────
+//
+// The decision job downloads three SEPARATE evidence roots: cells/, clients/ and global/. This is
+// the integration contract for that layout, run through the REAL CLI against the ACTUAL artifact
+// structure: exactly the six policy cells are judged, valid client/global receipts that end up
+// inside the cells root are never interpreted as cells, and one failed or missing cell is a
+// NO-GO that names it — which is what prevents publication.
+{
+  const evidence = join(root, 'workflow-evidence');
+  const cellsRoot = join(evidence, 'cells');
+  const clientsRoot = join(evidence, 'clients');
+  const globalRoot = join(evidence, 'global');
+  for (const cell of OS_CELLS) writeCell(cellsRoot, cell);
+  cpSync(receiptsDir, clientsRoot, { recursive: true });
+  cpSync(globalDir, globalRoot, { recursive: true });
+  // The hazard the recursive walker used to have: receipts downloaded into the cells root and
+  // read as cells. Drop one of each kind there — they are valid receipts, exactly what a workflow
+  // mistake or an artifact merge would place here.
+  writeFileSync(
+    join(cellsRoot, 'claude-darwin.json'),
+    JSON.stringify(loadClientCertificationReceipts(receiptsDir)[0]),
+  );
+  writeFileSync(join(cellsRoot, 'fuzz-deep.json'), JSON.stringify(fuzzReceipt()));
+
+  const layoutArgs = [
+    join(repoRoot, 'scripts/launch-decision.mjs'),
+    '--cells',
+    cellsRoot,
+    '--certification-receipts',
+    clientsRoot,
+    '--global-receipts',
+    globalRoot,
+    '--candidate-commit',
+    COMMIT,
+    '--candidate-package',
+    PACKAGE,
+  ];
+  const green = spawnSync(process.execPath, layoutArgs, { encoding: 'utf8', cwd: repoRoot });
+  assert.equal(green.status, 0, green.stdout + green.stderr);
+  const report = JSON.parse(green.stdout.slice(green.stdout.indexOf('{')));
+  assert.equal(report.decision, 'GO');
+  assert.deepEqual(
+    report.cells.map((row) => row.cell).sort(),
+    [...OS_CELLS].sort(),
+    'the decision sees exactly the six policy cells — a receipt inside the cells root is not a cell',
+  );
+  assert.ok(
+    report.cells.every((row) => row.decision === 'GO'),
+    'every judged cell is green through its own directory as evidence root',
+  );
+
+  // One failed cell: remove one cell's manifest, and the decision must name it and refuse.
+  const failed = OS_CELLS[1];
+  rmSync(join(cellsRoot, ...failed.split('/'), 'manifest.json'));
+  const missing = spawnSync(process.execPath, layoutArgs, { encoding: 'utf8', cwd: repoRoot });
+  assert.notEqual(missing.status, 0, 'a missing cell must prevent publication');
+  assert.match(missing.stdout, new RegExp(`missing-evidence:${failed.replace('/', '\\/')}`));
+  const missingReport = JSON.parse(missing.stdout.slice(missing.stdout.indexOf('{')));
+  assert.equal(missingReport.decision, 'NO-GO');
+  assert.deepEqual(
+    missingReport.cells.filter((row) => row.decision === 'NO-GO').map((row) => row.cell),
+    [failed],
+    'the failed cell is named, and only it is red',
+  );
 }
 
 // ─── a schema-1 manifest still loads, and still cannot certify ────────────────────────────────

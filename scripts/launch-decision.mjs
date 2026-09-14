@@ -1,7 +1,7 @@
 /** Produce a deliberately small, auditable developer-launch decision from release evidence. */
 import { createHash } from 'node:crypto';
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { acceptanceReceiptProblems, nodeMajorOf } from './acceptance-receipt.mjs';
 import {
@@ -475,9 +475,11 @@ export function aggregateLaunchDecisions(cells, options = {}) {
           // same 21 findings into all six manifests, which reads as six problems instead of one.
           certificationReceipts: null,
           globalReceipts: null,
-          // The directory the manifest's acceptance-receipt artifacts resolve against. Absent
+          // The directory the manifest's acceptance-receipt artifacts resolve against: the cell's
+          // OWN directory when the caller knows it (the workflow layout gives every cell its own
+          // receipts and logs), falling back to a single caller-declared root. Absent entirely
           // means the bytes cannot be located, which the validator names per receipt.
-          receiptsEvidenceRoot: options.receiptsEvidenceRoot,
+          receiptsEvidenceRoot: entry.evidenceRoot ?? options.receiptsEvidenceRoot,
         });
         row.decision = decision.decision;
         row.blockers = decision.blockers.map((blocker) => `${row.cell}:${blocker}`);
@@ -556,21 +558,25 @@ export function aggregateLaunchDecisions(cells, options = {}) {
   };
 }
 
-/** Collect one entry per *.json under the cells directory; the cell id is the path minus .json. */
-function collectCellFiles(directory) {
-  const files = [];
-  const walk = (dir, prefix) => {
-    if (!existsSync(dir)) return;
-    for (const entry of readdirSync(dir, { withFileTypes: true }).sort((a, b) =>
-      a.name.localeCompare(b.name),
-    )) {
-      if (entry.isDirectory()) walk(join(dir, entry.name), `${prefix}${entry.name}/`);
-      else if (entry.name.endsWith('.json'))
-        files.push({ path: join(dir, entry.name), cell: `${prefix}${entry.name.slice(0, -5)}` });
-    }
-  };
-  walk(directory, '');
-  return files;
+/**
+ * Collect the POLICY-DECLARED cell locations — and nothing else.
+ *
+ * The old discovery walked the --cells directory recursively and treated every *.json it met as a
+ * cell manifest, so any receipt the workflow downloaded into that directory became a bogus OS/Node
+ * cell: a green client certification receipt read as a seventh cell named after its file. Cell ids
+ * are policy facts, not filesystem facts: for each declared `<os>/<node>` id exactly one manifest
+ * is read, at `<cells>/<os>/<node>/manifest.json`, and every other file under the root is simply
+ * never interpreted. A cell whose manifest is absent yields a `null` manifest, which the aggregate
+ * reports as `missing-evidence:<cell>` — the same named refusal the re-run of a failed cell must
+ * produce. Each entry also carries its own `evidenceRoot` (the cell directory), so the manifest's
+ * typed-receipt artifacts resolve against the directory that actually contains them.
+ */
+function collectDeclaredCells(directory, extraCells, policy) {
+  const declared = [...new Set([...policyOsNodeCells(policy), ...(extraCells ?? [])])];
+  return declared.map((cell) => {
+    const cellDir = join(directory, ...cell.split('/'));
+    return { cell, manifestPath: join(cellDir, 'manifest.json'), evidenceRoot: cellDir };
+  });
 }
 
 /** Expected cell ids come from repeatable --expect name[,name...] flags. */
@@ -628,30 +634,59 @@ function receiptsRootFromArgv(argv) {
   return resolve(argv[index + 1] ?? '.');
 }
 
+/**
+ * `--json-out <file>` — the aggregate as PURE JSON, in its own file.
+ *
+ * Stdout is for the operator: per-cell rows and blocker lines come BEFORE the aggregate JSON, so a
+ * caller that scrapes stdout has to guess where the JSON starts — and a blocker line can itself
+ * carry a brace (an unreadable receipt reports the JSON.parse failure, which quotes the offending
+ * text), which makes "everything from the first `{`" a parser that works only until the first
+ * corrupt file. This file is the machine contract: exactly the aggregate, byte for byte, with no
+ * human output in front of it. Nothing is written on the --json-out-absent path — the stdout
+ * aggregate stays exactly what it always was.
+ */
+function writeJsonOut(argv, aggregate) {
+  const index = argv.indexOf('--json-out');
+  if (index < 0) return;
+  const path = resolve(argv[index + 1] ?? 'launch-decision.json');
+  mkdirSync(dirname(path), { recursive: true });
+  writeFileSync(path, `${JSON.stringify(aggregate, null, 2)}\n`);
+}
+
 function mainCells(argv, cellsIndex) {
   const directory = resolve(argv[cellsIndex + 1] ?? '.');
-  const found = collectCellFiles(directory);
-  const cells = found.map((entry) => {
-    let manifest;
-    try {
-      manifest = JSON.parse(readFileSync(entry.path, 'utf8'));
-    } catch {
-      // Unreadable JSON fails structural validation below -> invalid-evidence:<cell>.
-      manifest = {};
-    }
-    return { cell: entry.cell, manifest };
-  });
   // --expect NARROWS nothing: the policy's cell set is always required. Explicit flags may only
   // ADD cells a caller knows about beyond the policy.
   const declared = expectedCells(argv);
+  const policy = loadLaunchPolicy().policy;
+  const found = collectDeclaredCells(directory, declared, policy);
+  const cells = found.map((entry) => {
+    let manifest;
+    if (existsSync(entry.manifestPath)) {
+      try {
+        manifest = JSON.parse(readFileSync(entry.manifestPath, 'utf8'));
+      } catch (error) {
+        // Unreadable JSON fails structural validation below -> invalid-evidence:<cell>. The parse
+        // failure itself is kept as the format a reader sees: a manifest that failed to PARSE is
+        // residue from an interrupted pass, and `format: undefined` would hide that behind a
+        // message that reads like a version problem.
+        manifest = { format: `unreadable manifest JSON (${error.message})` };
+      }
+    }
+    // A missing manifest stays `undefined`: the aggregate reports it as missing-evidence:<cell>
+    // rather than validating an invented one.
+    return {
+      cell: entry.cell,
+      ...(manifest !== undefined ? { manifest } : {}),
+      evidenceRoot: entry.evidenceRoot,
+    };
+  });
   const certification = certificationReceiptsFromArgv(argv);
   const global = globalReceiptsFromArgv(argv);
   const aggregate = aggregateLaunchDecisions(cells, {
     ...(declared.length > 0
       ? {
-          expectedCells: [
-            ...new Set([...policyOsNodeCells(loadLaunchPolicy().policy), ...declared]),
-          ],
+          expectedCells: [...new Set([...policyOsNodeCells(policy), ...declared])],
         }
       : {}),
     ...(candidateFromArgv(argv) ? { candidate: candidateFromArgv(argv) } : {}),
@@ -669,6 +704,7 @@ function mainCells(argv, cellsIndex) {
     aggregate.decision = 'NO-GO';
   }
   process.stdout.write(`${JSON.stringify(aggregate, null, 2)}\n`);
+  writeJsonOut(argv, aggregate);
   if (aggregate.decision !== 'GO') process.exitCode = 1;
 }
 
@@ -705,6 +741,7 @@ function main() {
       ...(receiptsRootFromArgv(argv) ? { receiptsEvidenceRoot: receiptsRootFromArgv(argv) } : {}),
     });
     process.stdout.write(`${JSON.stringify(decision, null, 2)}\n`);
+    writeJsonOut(argv, decision);
     if (decision.decision !== 'GO') process.exitCode = 1;
   } catch (error) {
     process.stderr.write(`${error.message}\n`);
