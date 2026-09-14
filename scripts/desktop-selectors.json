@@ -1,0 +1,135 @@
+{
+  "format": "knowledge-crib-desktop-selectors",
+  "formatVersion": 1,
+  "sets": [
+    {
+      "scenario": "copilot",
+      "platform": "darwin",
+      "editor": "vscode",
+      "testedVersions": [],
+      "controls": {
+        "commandPalette": { "role": "textArea", "name": "Type the name of a command to run." },
+        "chatInput": { "role": "textArea", "name": "Ask Copilot" },
+        "chatSubmit": { "role": "button", "name": "Send" },
+        "agentModeIndicator": { "role": "staticText", "name": "Agent" },
+        "cribServerToggle": { "role": "checkBox", "name": "crib" },
+        "mcpServerItem": { "role": "treeItem", "name": "crib" },
+        "sessionNotice": { "role": "staticText", "name": "MCP server crib connected" }
+      }
+    },
+    {
+      "scenario": "copilot",
+      "platform": "win32",
+      "editor": "vscode",
+      "testedVersions": [],
+      "controls": {
+        "commandPalette": { "role": "edit", "name": "Type the name of a command to run." },
+        "chatInput": { "role": "edit", "name": "Ask Copilot" },
+        "chatSubmit": { "role": "button", "name": "Send" },
+        "agentModeIndicator": { "role": "text", "name": "Agent" },
+        "cribServerToggle": { "role": "checkBox", "name": "crib" },
+        "mcpServerItem": { "role": "treeItem", "name": "crib" },
+        "sessionNotice": { "role": "text", "name": "MCP server crib connected" }
+      }
+    },
+    {
+      "scenario": "copilot",
+      "platform": "linux",
+      "editor": "vscode",
+      "testedVersions": [],
+      "controls": {
+        "commandPalette": { "role": "text", "name": "Type the name of a command to run." },
+        "chatInput": { "role": "text", "name": "Ask Copilot" },
+        "chatSubmit": { "role": "push button", "name": "Send" },
+        "agentModeIndicator": { "role": "label", "name": "Agent" },
+        "cribServerToggle": { "role": "check box", "name": "crib" },
+        "mcpServerItem": { "role": "tree item", "name": "crib" },
+        "sessionNotice": { "role": "label", "name": "MCP server crib connected" }
+      }
+    },
+    {
+      "scenario": "vscode",
+      "platform": "darwin",
+      "editor": "vscode",
+      "testedVersions": [],
+      "controls": {
+        "commandPalette": { "role": "textArea", "name": "Type the name of a command to run." },
+        "chatInput": { "role": "textArea", "name": "Ask" },
+        "chatSubmit": { "role": "button", "name": "Send" },
+        "mcpServerList": { "role": "treeItem", "name": "Installed MCP servers" },
+        "cribServerToggle": { "role": "checkBox", "name": "crib" },
+        "sessionNotice": { "role": "staticText", "name": "MCP server crib connected" }
+      }
+    },
+    {
+      "scenario": "vscode",
+      "platform": "win32",
+      "editor": "vscode",
+      "testedVersions": [],
+      "controls": {
+        "commandPalette": { "role": "edit", "name": "Type the name of a command to run." },
+        "chatInput": { "role": "edit", "name": "Ask" },
+        "chatSubmit": { "role": "button", "name": "Send" },
+        "mcpServerList": { "role": "treeItem", "name": "Installed MCP servers" },
+        "cribServerToggle": { "role": "checkBox", "name": "crib" },
+        "sessionNotice": { "role": "text", "name": "MCP server crib connected" }
+      }
+    },
+    {
+      "scenario": "vscode",
+      "platform": "linux",
+      "editor": "vscode",
+      "testedVersions": [],
+      "controls": {
+        "commandPalette": { "role": "text", "name": "Type the name of a command to run." },
+        "chatInput": { "role": "text", "name": "Ask" },
+        "chatSubmit": { "role": "push button", "name": "Send" },
+        "mcpServerList": { "role": "tree item", "name": "Installed MCP servers" },
+        "cribServerToggle": { "role": "check box", "name": "crib" },
+        "sessionNotice": { "role": "label", "name": "MCP server crib connected" }
+      }
+    },
+    {
+      "scenario": "windsurf",
+      "platform": "darwin",
+      "editor": "windsurf",
+      "testedVersions": [],
+      "controls": {
+        "commandPalette": { "role": "textArea", "name": "Type the name of a command to run." },
+        "chatInput": { "role": "textArea", "name": "Ask anything about your codebase" },
+        "chatSubmit": { "role": "button", "name": "Send" },
+        "mcpServerList": { "role": "treeItem", "name": "Manage MCP Servers" },
+        "cribServerToggle": { "role": "checkBox", "name": "crib" },
+        "sessionNotice": { "role": "staticText", "name": "crib connected" }
+      }
+    },
+    {
+      "scenario": "windsurf",
+      "platform": "win32",
+      "editor": "windsurf",
+      "testedVersions": [],
+      "controls": {
+        "commandPalette": { "role": "edit", "name": "Type the name of a command to run." },
+        "chatInput": { "role": "edit", "name": "Ask anything about your codebase" },
+        "chatSubmit": { "role": "button", "name": "Send" },
+        "mcpServerList": { "role": "treeItem", "name": "Manage MCP Servers" },
+        "cribServerToggle": { "role": "checkBox", "name": "crib" },
+        "sessionNotice": { "role": "text", "name": "crib connected" }
+      }
+    },
+    {
+      "scenario": "windsurf",
+      "platform": "linux",
+      "editor": "windsurf",
+      "testedVersions": [],
+      "controls": {
+        "commandPalette": { "role": "text", "name": "Type the name of a command to run." },
+        "chatInput": { "role": "text", "name": "Ask anything about your codebase" },
+        "chatSubmit": { "role": "push button", "name": "Send" },
+        "mcpServerList": { "role": "tree item", "name": "Manage MCP Servers" },
+        "cribServerToggle": { "role": "check box", "name": "crib" },
+        "sessionNotice": { "role": "label", "name": "crib connected" }
+      }
+    }
+  ]
+}

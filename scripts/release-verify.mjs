@@ -54,6 +54,12 @@ run('node', ['scripts/client-certification-matrix.mjs', '--check']);
 // rather than only proving the receipt contract holds. A harness that could be satisfied by a stub
 // would be the single most damaging thing this release could ship.
 run('node', ['scripts/client-certify.test.mjs']);
+// Task 7 — the native editor scenarios: the nine-operation automation contract, the three platform
+// desktop backends (Swift/AXUIElement, C#/UI Automation, Python/AT-SPI), the versioned selector
+// law (no fixed coordinates, no untested editor versions), and the scenario engine's honesty gate
+// — a host with no validated selector set must produce a BLOCKED, non-certifying v3 receipt that
+// still validates and feeds the launch matrix under the same cell names.
+run('node', ['scripts/desktop-backend.test.mjs']);
 // The frozen requirements themselves: the policy hash pin fails loudly if the launch policy was
 // edited (or merely reformatted), because every receipt collected under the old hash is then void.
 run('node', ['scripts/launch-policy.test.mjs']);

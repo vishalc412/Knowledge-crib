@@ -1215,7 +1215,14 @@ function resolveLaunchable(command, args = []) {
  * own sub-table rather than a JSON key, which is why this branches on format instead of mutating one
  * shape.
  */
-function applyIsolationEnv(ctx, spec) {
+/**
+ * The operator's half of the config contract: the shipped installer writes command+args only, so
+ * the isolating env (which stores the candidate writes to, and the principal it answers for) is
+ * added to the config AFTER the installer wrote it — disclosed, never hidden, because the receipt
+ * hashes the FINAL file. Exported because the desktop scenario engine performs the same step on the
+ * config its installer path generates before wiring the recorder into it.
+ */
+export function applyIsolationEnv(ctx, spec) {
   const env = {
     KCRIB_MEMORY_DIR: ctx.cribMemoryDir,
     KCRIB_REGISTRY_DIR: ctx.cribRegistryDir,
