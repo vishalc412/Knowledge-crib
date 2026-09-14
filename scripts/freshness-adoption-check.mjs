@@ -18,13 +18,14 @@
  * target cannot be retuned after seeing the numbers. A missed transition or a timeout is a failed
  * sample, never a discarded one.
  *
- * Usage: node scripts/freshness-adoption-check.mjs [--out receipts/freshness.json] [--samples N]
+ * Usage: node scripts/freshness-adoption-check.mjs --package <candidate-tarball> \
+ *   [--out receipts/freshness.json] [--samples N] [--run-id <id>]
  */
 import { execFileSync, spawn } from 'node:child_process';
-import { createHash } from 'node:crypto';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { createHash, randomUUID } from 'node:crypto';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { cpus, tmpdir, totalmem } from 'node:os';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadLaunchPolicy } from './launch-policy.mjs';
 
@@ -208,6 +209,25 @@ async function main() {
   const fileCount = Number(flag(argv, '--files', String(spec.files ?? 120)));
   const timeoutMs = Number(flag(argv, '--timeout-ms', '30000'));
   const out = resolve(flag(argv, '--out', 'receipts/freshness.json'));
+  // v2 receipts bind the candidate PACKAGE, not just the commit. The harness is invoked by the
+  // acceptance collector with the artifact the whole launch describes; standalone it REFUSES to
+  // run at all — a measurement whose receipt could not certify the candidate is worse than no
+  // measurement, because it looks like evidence.
+  const packagePath =
+    flag(argv, '--package') === undefined ? undefined : resolve(flag(argv, '--package'));
+  const runId = flag(argv, '--run-id') ?? randomUUID();
+  if (packagePath !== undefined && !existsSync(packagePath)) {
+    process.stderr.write(
+      `freshness: REFUSES to run — --package points at ${packagePath}, which does not exist.\n`,
+    );
+    process.exit(2);
+  }
+  if (packagePath === undefined) {
+    process.stderr.write(
+      'freshness: REFUSES to run — a v2 receipt must bind the candidate package, so the\n  measurement would not be certifying evidence. Fix: pass --package <candidate-tarball>.\n',
+    );
+    process.exit(2);
+  }
 
   const root = buildFixture(fileCount);
   const { child, port } = await startServer(root);
@@ -418,16 +438,22 @@ async function main() {
     // The same samples with the mutation's own runtime removed: what the SERVER contributed.
     const adoptionOnly = rows.map((r) => Math.max(r.ms - r.mutationMs, 0));
     const p95 = percentile(all, 95);
+    const status = failures.length === 0 && p95 <= spec.p95TargetMs ? 'pass' : 'fail';
+    const command = `node scripts/freshness-adoption-check.mjs ${argv.join(' ')}`.trim();
     const receipt = {
       format: 'knowledge-crib-acceptance-receipt',
-      formatVersion: 1,
+      formatVersion: 2,
       type: 'freshness',
-      status: failures.length === 0 && p95 <= spec.p95TargetMs ? 'pass' : 'fail',
+      status,
       recordedAt: new Date().toISOString(),
+      runId,
       candidateCommit: git(REPO_ROOT, ['rev-parse', 'HEAD']),
+      candidatePackageSha256: `sha256:${createHash('sha256').update(readFileSync(packagePath)).digest('hex')}`,
       policySha256,
       workload: spec.workload,
-      command: `node scripts/freshness-adoption-check.mjs ${argv.join(' ')}`.trim(),
+      command,
+      // v2: the receipt archives what actually ran, and the status above is derivable from it.
+      commandResults: [{ command, exitCode: status === 'pass' ? 0 : 1 }],
       configuration: {
         watch: 'production defaults (no debounce or fallback override)',
         externalUpdateCommand: "crib update (the product's incremental external refresh)",
@@ -504,7 +530,11 @@ async function main() {
     );
     receipt.artifacts = [
       {
-        path: samplesPath.split('/').pop(),
+        // Relative to the RECEIPTS DIRECTORY'S PARENT — the evidence root the collector points the
+        // decision's --receipts-root at — never a machine-absolute path: the evidence tree is
+        // copied to the launch judge, and bytes that only exist at this machine's absolute path
+        // certify nowhere else.
+        path: relative(dirname(dirname(out)), samplesPath),
         sha256: `sha256:${createHash('sha256').update(readFileSync(samplesPath)).digest('hex')}`,
       },
     ];

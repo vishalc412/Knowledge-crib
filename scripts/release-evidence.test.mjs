@@ -68,8 +68,23 @@ const base = {
   startedAt: '2026-09-05T00:00:00.000Z',
   endedAt: '2026-09-05T00:05:00.000Z',
   receipts: {
+    // A full v2 acceptance envelope, matching the manifest's own identity fields: the receipts block
+    // no longer accepts a bare {status, artifacts} blob, because that shape could be written by hand
+    // instead of by the step that ran the check.
     install: {
+      format: 'knowledge-crib-acceptance-receipt',
+      formatVersion: 2,
+      type: 'install',
       status: 'pass',
+      recordedAt: '2026-09-05T00:04:00.000Z',
+      runId: 'fixture-run',
+      candidateCommit: 'a'.repeat(40),
+      candidatePackageSha256: `sha256:${'b'.repeat(64)}`,
+      policySha256: `sha256:${'c'.repeat(64)}`,
+      command: 'pnpm installer:smoke-userdir',
+      commandResults: [{ command: 'pnpm installer:smoke-userdir', exitCode: 0 }],
+      platform: { os: 'darwin', arch: 'arm64', node: 'v22.23.1' },
+      runner: { provider: 'github-actions', runId: '42' },
       artifacts: [{ path: 'install.log', sha256: `sha256:${'d'.repeat(64)}` }],
     },
   },
@@ -448,6 +463,20 @@ try {
     /needs a sha256 digest/,
   );
   refuses(
+    'a receipt blob with no envelope format',
+    (m) => {
+      m.receipts.install.format = undefined;
+    },
+    /receipts\.install must declare format knowledge-crib-acceptance-receipt/,
+  );
+  refuses(
+    'a receipt in an unreadable envelope version',
+    (m) => {
+      m.receipts.install.formatVersion = 99;
+    },
+    /receipts\.install\.formatVersion 99 is not a readable acceptance-receipt version/,
+  );
+  refuses(
     'a gate with no measured value',
     (m) => {
       m.gates[0].measured = undefined;
@@ -501,6 +530,31 @@ assert.match(
     const loaded = collectReceipts(['--receipts', dir]);
     assert.deepEqual(Object.keys(loaded), ['freshness'], 'raw sample data is not a receipt');
     assert.equal(loaded['freshness.samples'], undefined);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+// Two files declaring the SAME receipt type is a structural refusal, not a merge: whichever one won
+// silently, the other half of the disagreement — the stale or failing one — would go on certifying
+// unseen. The throw names both the type and the file that lost.
+{
+  const dir = mkdtempSync(join(tmpdir(), 'crib-receipt-duplicate-'));
+  try {
+    const receipt = {
+      format: 'knowledge-crib-acceptance-receipt',
+      formatVersion: 2,
+      type: 'install',
+      status: 'pass',
+    };
+    writeFileSync(join(dir, 'a.json'), JSON.stringify(receipt));
+    writeFileSync(join(dir, 'b.json'), JSON.stringify(receipt));
+    assert.throws(
+      () => collectReceipts(['--receipts', dir]),
+      (error) =>
+        error instanceof ReleaseEvidenceError && /duplicate install receipt/i.test(error.message),
+      'two receipts declaring the same type must be a structural refusal',
+    );
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

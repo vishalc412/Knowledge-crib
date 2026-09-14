@@ -58,6 +58,10 @@ run('node', ['scripts/client-certify.test.mjs']);
 // edited (or merely reformatted), because every receipt collected under the old hash is then void.
 run('node', ['scripts/launch-policy.test.mjs']);
 run('node', ['scripts/launch-decision.test.mjs']);
+// Task 2 — the shared acceptance-receipt validator's own executable specification: identity, cell,
+// run-identity, derived-status and artifact-byte gates, plus the v2 writer. Orphaned like the
+// evidence tests above were: nothing ran it, so the validator could rot between releases.
+run('node', ['scripts/acceptance-receipt.test.mjs']);
 // WP9.1 — the release-evidence manifest builder's own invariants (dirty/red/certification
 // legs, tamper/omission/duplicate) were previously orphaned: nothing ran this file.
 run('node', ['scripts/release-evidence.test.mjs']);

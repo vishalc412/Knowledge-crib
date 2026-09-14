@@ -31,9 +31,9 @@
  * anything during the pass changes those bytes.
  */
 import { execFileSync, spawnSync } from 'node:child_process';
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadLaunchPolicy } from './launch-policy.mjs';
 
@@ -48,7 +48,7 @@ const die = (message) => {
   process.exit(2);
 };
 
-/** Run a command, tee its output to `logPath`, and report whether it succeeded. */
+/** Run a command, tee its output to `logPath`, and report its ACTUAL completion status. */
 function runStep(command, args, logPath) {
   const started = Date.now();
   const result = spawnSync(command, args, {
@@ -62,7 +62,14 @@ function runStep(command, args, logPath) {
     `exit ${result.status} after ${((Date.now() - started) / 1000).toFixed(1)}s\n\n` +
     `${result.stdout ?? ''}\n${result.stderr ?? ''}`;
   writeFileSync(logPath, body);
-  return { ok: result.status === 0, ms: Date.now() - started, stdout: result.stdout ?? '' };
+  // exitCode is the fact the receipt's status is DERIVED from. A spawn that died without a status
+  // (timeout kill, signal) gets -1 — never a silent 0.
+  return {
+    ok: result.status === 0,
+    ms: Date.now() - started,
+    stdout: result.stdout ?? '',
+    exitCode: result.status ?? -1,
+  };
 }
 
 const argv = process.argv.slice(2);
@@ -215,6 +222,10 @@ function resolveCandidate() {
 
 const candidate = resolveCandidate();
 const packageSha256 = candidate.digest;
+// One run identity for the whole pass. Every receipt in this directory carries the same runId, so
+// a stale receipt left by a PREVIOUS pass is identifiable as foreign instead of blending in — and
+// the decision can refuse two receipts that claim one run but disagree.
+const passRunId = randomUUID();
 
 /**
  * The checks, in the order a human would run them: cheapest first, so a broken build is reported in
@@ -229,10 +240,21 @@ const CHECKS = [
   {
     type: 'security-privacy',
     command: 'pnpm security:battery && pnpm security:check',
+    // Two commands, each archived with its OWN exit code. The battery passing while the checker
+    // fails (or vice versa) is a different fact from "the check failed", and a single merged
+    // verdict would let the failing half hide behind its sibling.
     run: (log) => {
       const a = runStep('corepack', ['pnpm@9.15.0', 'security:battery'], `${log}.battery`);
       const b = runStep('corepack', ['pnpm@9.15.0', 'security:check'], log);
-      return { ok: a.ok && b.ok, ms: a.ms + b.ms, stdout: b.stdout };
+      return {
+        ok: a.ok && b.ok,
+        ms: a.ms + b.ms,
+        stdout: b.stdout,
+        commandResults: [
+          { command: 'pnpm security:battery', exitCode: a.exitCode },
+          { command: 'pnpm security:check', exitCode: b.exitCode },
+        ],
+      };
     },
   },
   {
@@ -295,12 +317,21 @@ const CHECKS = [
     type: 'freshness',
     command: 'node scripts/freshness-adoption-check.mjs',
     // The freshness harness writes its OWN receipt: it carries per-transition samples and a p95 the
-    // generic writer knows nothing about.
+    // generic writer knows nothing about. It receives the same --package and --run-id this pass
+    // binds every other receipt with, so its v2 envelope describes the same candidate.
     ownReceipt: true,
     run: (log) =>
       runStep(
         'node',
-        ['scripts/freshness-adoption-check.mjs', '--out', join(receiptsDir, 'freshness.json')],
+        [
+          'scripts/freshness-adoption-check.mjs',
+          '--out',
+          join(receiptsDir, 'freshness.json'),
+          '--package',
+          candidate.path,
+          '--run-id',
+          passRunId,
+        ],
         log,
       ),
   },
@@ -340,7 +371,19 @@ for (const check of CHECKS) {
   }
   results.push({ type: check.type, ok: outcome.ok });
   if (check.ownReceipt) continue;
+  // The archived command results: every constituent command with its actual exit code. A
+  // multi-command check (the security battery + its checker) archives one entry per command; a
+  // single-command check archives the one command that ran. `--status` is deliberately NOT passed:
+  // the writer derives status from these facts, which is what stops a nonzero exit from being
+  // written down as a pass.
+  const commandResults = outcome.commandResults ?? [
+    { command: check.command, exitCode: outcome.exitCode },
+  ];
   const receipt = join(receiptsDir, `${check.type}.json`);
+  // Artifact paths are stored relative to `outDir` (never machine-absolute): the evidence tree is
+  // copied to the launch judge — `~/crib-launch-evidence/<date>/` to another machine, or an artifact
+  // download in CI — and a receipt naming this machine's absolute path certifies nowhere else. The
+  // decision resolves them with `--receipts-root <outDir>`.
   const write = spawnSync(
     'node',
     [
@@ -348,12 +391,20 @@ for (const check of CHECKS) {
       check.type,
       '--out',
       receipt,
-      '--command',
-      check.command,
+      '--package',
+      candidate.path,
+      '--run-id',
+      passRunId,
+      '--artifact-root',
+      outDir,
       '--artifact',
-      logPath,
-      '--status',
-      outcome.ok ? 'pass' : 'fail',
+      relative(outDir, logPath),
+      ...commandResults.flatMap((result) => [
+        '--command',
+        result.command,
+        '--exit-code',
+        String(result.exitCode),
+      ]),
     ],
     { cwd: REPO_ROOT, encoding: 'utf8' },
   );

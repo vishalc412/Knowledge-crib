@@ -298,21 +298,31 @@ jobs:
 
       - name: Run browser acceptance suite
         if: matrix.os == 'macos-latest'
+        # `shell: bash` (not the platform default) for two reasons: pipefail, so `pnpm | tee`
+        # fails the step when pnpm fails and the receipt write below never runs, and $VAR
+        # expansion under pwsh, where "$CANDIDATE_PACKAGE" is a PS variable (empty) — the
+        # receipt writer would then refuse on a missing package and the cell goes red.
+        shell: bash
         run: corepack pnpm@9.15.0 verify:browser 2>&1 | tee browser-acceptance.log
 
       - name: Write browser receipt
         if: matrix.os == 'macos-latest'
+        shell: bash
         run: >-
           node scripts/write-receipt.mjs browser --out receipts/browser.json
-          --command "pnpm verify:browser" --artifact browser-acceptance.log
+          --command "pnpm verify:browser" --exit-code 0 --artifact browser-acceptance.log
+          --package "$CANDIDATE_PACKAGE"
 
       - name: Run install cycle
+        shell: bash
         run: corepack pnpm@9.15.0 installer:smoke-userdir 2>&1 | tee install-cycle.log
 
       - name: Write install receipt
+        shell: bash
         run: >-
           node scripts/write-receipt.mjs install --out receipts/install.json
-          --command "pnpm installer:smoke-userdir" --artifact install-cycle.log
+          --command "pnpm installer:smoke-userdir" --exit-code 0 --artifact install-cycle.log
+          --package "$CANDIDATE_PACKAGE"
 
       # THE FINAL RECEIPT, written only after every mandatory command above has finished. Its
       # existence is the claim that they ran; a failing step never reaches this line, so a manifest

@@ -3,6 +3,7 @@ import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { acceptanceReceiptProblems, nodeMajorOf } from './acceptance-receipt.mjs';
 import {
   CertificationEvidenceError,
   bindingProblems,
@@ -122,30 +123,33 @@ export function evaluateLaunchDecision(evidence, options = {}) {
       add(`gate-contradiction:${policyGate.id}`);
   }
 
-  // ── typed receipts: a missing type is an actionable blocker, never an inference ──
+  // ── typed receipts: one shared validator, so every consumer checks every fact ──
+  //
+  // This loop used to check status, an artifacts array, and — only when present — the commit. It
+  // never checked the package identity, the policy digest, the run identity, the actual command
+  // exit codes, or the artifact BYTES, and it never checked that the receipt's platform matches the
+  // cell it is offered to. All of that now lives in one shared validator
+  // (scripts/acceptance-receipt.mjs) so the decision and the evidence reader cannot drift; this
+  // loop keeps only the fact the validator cannot know: whether the policy-required type exists.
   const receipts = evidence.receipts ?? {};
+  const cellPlatform = evidence.reproducibility?.platform;
+  const cell = { os: cellPlatform?.os, nodeMajor: nodeMajorOf(cellPlatform?.node) };
   for (const type of policy.receiptTypes) {
     const receipt = receipts[type];
     if (!receipt) {
       add(`receipt-missing:${type}`);
       continue;
     }
-    if (receipt.status !== 'pass')
-      add(`receipt-not-passing:${type}:${receipt.status ?? 'unknown'}`);
-    else if (!Array.isArray(receipt.artifacts) || receipt.artifacts.length === 0)
-      add(`receipt-artifact-missing:${type}`);
-    if (receipt.candidateCommit !== undefined && receipt.candidateCommit !== candidate.commit)
-      add(`receipt-candidate-mismatch:${type}`);
-  }
-
-  // ── freshness receipt must meet the PREREGISTERED target ────────────────────
-  const freshness = receipts.freshness;
-  if (freshness?.status === 'pass') {
-    const p95 = freshness.p95Ms;
-    if (typeof p95 !== 'number' || !Number.isFinite(p95)) add('freshness-p95-not-finite');
-    else if (p95 > policy.freshness.p95TargetMs) add(`freshness-p95-exceeded:${p95}`);
-    if (freshness.workload !== policy.freshness.workload)
-      add(`freshness-workload-mismatch:${freshness.workload ?? 'unknown'}`);
+    for (const problem of acceptanceReceiptProblems(receipt, {
+      type,
+      candidate,
+      policySha256,
+      policy,
+      cell,
+      evidenceRoot: options.receiptsEvidenceRoot,
+    })) {
+      add(problem);
+    }
   }
 
   // ── every advertised client/platform cell, bound to THIS candidate ──────────
@@ -280,7 +284,16 @@ export function judgeGlobalReceipts(receipts, { policy, policySha256, candidate,
   const required = policyGlobalReceiptTypes(policy);
   const byType = new Map();
   for (const receipt of receipts ?? []) {
-    if (typeof receipt?.type === 'string') byType.set(receipt.type, receipt);
+    if (typeof receipt?.type !== 'string') continue;
+    // Two receipts of one type used to be last-wins here, which let a stale fuzz-deep from a
+    // previous pass silently overwrite the fresh one. A duplicate is named as such and the FIRST
+    // one is still judged below — a blocker on the judged receipt is what the operator needs, not
+    // a fresh-looking verdict produced by an overwrite.
+    if (byType.has(receipt.type)) {
+      blockers.push(`global-receipt-duplicate:${receipt.type}`);
+      continue;
+    }
+    byType.set(receipt.type, receipt);
   }
   for (const type of required) {
     const receipt = byType.get(type);
@@ -462,6 +475,9 @@ export function aggregateLaunchDecisions(cells, options = {}) {
           // same 21 findings into all six manifests, which reads as six problems instead of one.
           certificationReceipts: null,
           globalReceipts: null,
+          // The directory the manifest's acceptance-receipt artifacts resolve against. Absent
+          // means the bytes cannot be located, which the validator names per receipt.
+          receiptsEvidenceRoot: options.receiptsEvidenceRoot,
         });
         row.decision = decision.decision;
         row.blockers = decision.blockers.map((blocker) => `${row.cell}:${blocker}`);
@@ -605,6 +621,13 @@ function globalReceiptsFromArgv(argv) {
   return { receipts, root: directory };
 }
 
+/** `--receipts-root <dir>` — the evidence root the typed receipts' artifacts resolve against. */
+function receiptsRootFromArgv(argv) {
+  const index = argv.indexOf('--receipts-root');
+  if (index < 0) return undefined;
+  return resolve(argv[index + 1] ?? '.');
+}
+
 function mainCells(argv, cellsIndex) {
   const directory = resolve(argv[cellsIndex + 1] ?? '.');
   const found = collectCellFiles(directory);
@@ -634,6 +657,7 @@ function mainCells(argv, cellsIndex) {
     ...(candidateFromArgv(argv) ? { candidate: candidateFromArgv(argv) } : {}),
     ...(certification ? { certificationReceipts: certification.receipts } : {}),
     ...(global ? { globalReceipts: global.receipts, globalReceiptsRoot: global.root } : {}),
+    ...(receiptsRootFromArgv(argv) ? { receiptsEvidenceRoot: receiptsRootFromArgv(argv) } : {}),
   });
   for (const row of aggregate.cells) {
     process.stdout.write(`${row.cell}  ${row.decision}\n`);
@@ -678,6 +702,7 @@ function main() {
       ...(candidateFromArgv(argv) ? { candidate: candidateFromArgv(argv) } : {}),
       ...(certification ? { certificationReceipts: certification.receipts } : {}),
       ...(global ? { globalReceipts: global.receipts, globalReceiptsRoot: global.root } : {}),
+      ...(receiptsRootFromArgv(argv) ? { receiptsEvidenceRoot: receiptsRootFromArgv(argv) } : {}),
     });
     process.stdout.write(`${JSON.stringify(decision, null, 2)}\n`);
     if (decision.decision !== 'GO') process.exitCode = 1;

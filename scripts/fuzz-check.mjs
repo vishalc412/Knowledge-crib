@@ -135,6 +135,8 @@ function finish(status, details) {
     argv: [
       '--command',
       `node scripts/fuzz-check.mjs --iterations ${iterations}`,
+      '--exit-code',
+      status === 'pass' ? '0' : '1',
       '--status',
       status,
       ...(archived ? ['--artifact', archived] : []),
@@ -179,6 +181,13 @@ if (receiptPath) {
       `--iterations ${iterations} is below the policy's required ${requirements.requiredIterations}`,
     );
   }
+  if (!packagePath) {
+    // v2 receipts carry a REQUIRED candidate package digest. A fuzz-deep receipt that describes no
+    // package certifies a sweep of bytes that are not the shipped product.
+    problems.push(
+      'a fuzz-deep receipt must describe a candidate package: pass --package <tarball>',
+    );
+  }
   if (packagePath && !existsSync(packagePath)) {
     problems.push(`--package ${packagePath} does not exist`);
   }
@@ -188,7 +197,7 @@ if (receiptPath) {
         .map((p) => `  - ${p}`)
         .join('\n')}
   A deep receipt for a smaller sweep is a smoke run wearing the deep receipt's name.
-  Fix: raise --iterations, or run without --receipt.
+  Fix: raise --iterations and pass --package, or run without --receipt.
 `,
     );
     process.exit(2);

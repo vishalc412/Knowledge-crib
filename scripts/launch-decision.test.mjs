@@ -17,7 +17,15 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  cpSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -64,7 +72,8 @@ const root = mkdtempSync(join(tmpdir(), 'crib-launch-decision-'));
 const receiptsDir = join(root, 'client-receipts');
 const globalDir = join(root, 'global-receipts');
 const cellsDir = join(root, 'cells');
-for (const directory of [join(receiptsDir, 'logs'), globalDir, cellsDir]) {
+const acceptanceDir = join(root, 'acceptance-receipts');
+for (const directory of [join(receiptsDir, 'logs'), globalDir, cellsDir, acceptanceDir]) {
   mkdirSync(directory, { recursive: true });
 }
 process.on('exit', () => rmSync(root, { recursive: true, force: true }));
@@ -74,6 +83,38 @@ const logName = (cell) => `${cell.replace(/\//g, '-')}.log`;
 const logBytes = (cell) => `session start -> record -> interrupt -> restart -> resume (${cell})\n`;
 const cellOf = (receipt) => `${receipt?.client?.id}/${receipt?.platform?.os}`;
 const receiptFor = (receipts, cell) => receipts.find((receipt) => cellOf(receipt) === cell);
+
+/**
+ * A complete v2 acceptance receipt for `type`, backed by REAL bytes in `acceptanceDir`.
+ *
+ * The manifest's receipts are claims about files on disk like any other receipt, so the GO fixture
+ * writes one log per policy receipt type and points every envelope at it — which is what lets the
+ * deleted-log and altered-digest probes below mean anything.
+ */
+function acceptanceReceipt(type, overrides = {}) {
+  const bytes = `acceptance-${type} pass\n`;
+  writeFileSync(join(acceptanceDir, `${type}.log`), bytes);
+  return {
+    format: 'knowledge-crib-acceptance-receipt',
+    formatVersion: 2,
+    type,
+    status: 'pass',
+    recordedAt: CAPTURED_AT,
+    runId: `acceptance-${type}`,
+    candidateCommit: COMMIT,
+    candidatePackageSha256: PACKAGE,
+    policySha256: POLICY_SHA,
+    command: `pnpm ${type}`,
+    commandResults: [{ command: `pnpm ${type}`, exitCode: 0 }],
+    platform: { os: 'linux', arch: 'x64', node: 'v22.23.1' },
+    runner: { provider: 'github-actions', runId: '1', runUrl: 'https://example.invalid/1' },
+    artifacts: [{ path: `${type}.log`, sha256: digestOf(bytes) }],
+    ...(type === 'freshness'
+      ? { p95Ms: policy.freshness.p95TargetMs - 1, workload: policy.freshness.workload }
+      : {}),
+    ...overrides,
+  };
+}
 
 /** Every leg passing, which is what a genuine native vendor run records. */
 const allPassLegs = (overrides = {}) => ({
@@ -231,17 +272,7 @@ function completeEvidence() {
       pass: true,
     })),
     receipts: Object.fromEntries(
-      policy.receiptTypes.map((type) => [
-        type,
-        {
-          status: 'pass',
-          candidateCommit: COMMIT,
-          artifacts: [{ path: `${type}.log`, sha256: DIGEST }],
-          ...(type === 'freshness'
-            ? { p95Ms: policy.freshness.p95TargetMs - 1, workload: policy.freshness.workload }
-            : {}),
-        },
-      ]),
+      policy.receiptTypes.map((type) => [type, acceptanceReceipt(type)]),
     ),
     artifacts: [{ path: 'release-evidence.json', sha256: DIGEST }],
     certification: { receipts: manifestCertificationClaim() },
@@ -258,6 +289,8 @@ function fixtureOptions(overrides = {}) {
     certificationReceipts: certificationReceipts(),
     globalReceipts: [fuzzReceipt()],
     globalReceiptsRoot: globalDir,
+    // The typed receipts' artifacts resolve against this real directory on disk.
+    receiptsEvidenceRoot: acceptanceDir,
     ...overrides,
   };
 }
@@ -477,7 +510,10 @@ for (const type of policy.receiptTypes) {
   refuses(
     `a not-run ${type} receipt`,
     (e) => {
-      e.receipts[type] = { status: 'not-run' };
+      e.receipts[type] = acceptanceReceipt(type, {
+        status: 'not-run',
+        commandResults: [{ command: `pnpm ${type}`, exitCode: 1 }],
+      });
     },
     new RegExp(`^receipt-not-passing:${type}:not-run$`),
   );
@@ -485,7 +521,7 @@ for (const type of policy.receiptTypes) {
 refuses(
   'a receipt with no artifact behind it',
   (e) => {
-    e.receipts.browser = { status: 'pass', artifacts: [] };
+    e.receipts.browser = acceptanceReceipt('browser', { artifacts: [] });
   },
   /^receipt-artifact-missing:browser$/,
 );
@@ -494,7 +530,151 @@ refuses(
   (e) => {
     e.receipts.install.candidateCommit = 'e'.repeat(40);
   },
-  /^receipt-candidate-mismatch:install$/,
+  /^receipt-foreign-commit:install$/,
+);
+
+// ─── A02 (receipt half): every acceptance receipt must bind THIS candidate under THIS policy ───
+refuses(
+  'a receipt collected for another package',
+  (e) => {
+    e.receipts.install.candidatePackageSha256 = FOREIGN_MARKER;
+  },
+  /^receipt-foreign-package:install$/,
+);
+refuses(
+  'a receipt with no package digest at all',
+  (e) => {
+    e.receipts.install.candidatePackageSha256 = undefined;
+  },
+  /^receipt-foreign-package:install$/,
+);
+refuses(
+  'a receipt judged under another policy',
+  (e) => {
+    e.receipts.install.policySha256 = FOREIGN_MARKER;
+  },
+  /^receipt-foreign-policy:install$/,
+);
+
+// ─── the receipt must describe the cell it is offered to ───────────────────────────────────────
+refuses(
+  'a receipt from another OS',
+  (e) => {
+    e.receipts.install.platform.os = 'darwin';
+  },
+  /^receipt-platform-mismatch:install:darwin$/,
+);
+refuses(
+  'a receipt from another Node major',
+  (e) => {
+    e.receipts.install.platform.node = 'v24.1.0';
+  },
+  /^receipt-node-mismatch:install:v24\.1\.0$/,
+);
+
+// ─── run identity and command results: status must be recomputable from facts ───────────────────
+refuses(
+  'a receipt with no run identity',
+  (e) => {
+    e.receipts.install.runId = undefined;
+  },
+  /^receipt-run-identity-missing:install$/,
+);
+refuses(
+  'a receipt that archived no command results',
+  (e) => {
+    e.receipts.install.commandResults = [];
+  },
+  /^receipt-exit-code-missing:install$/,
+);
+refuses(
+  'a nonzero exit code written down as a pass',
+  (e) => {
+    e.receipts.install.commandResults = [{ command: 'pnpm installer:smoke-userdir', exitCode: 1 }];
+  },
+  /^receipt-status-contradiction:install:pass$/,
+);
+
+// ─── the envelope itself: v1 stays readable but never certifies ────────────────────────────────
+refuses(
+  'a v1 receipt',
+  (e) => {
+    e.receipts.install.formatVersion = 1;
+  },
+  /^receipt-schema-non-certifying:install:v1$/,
+);
+refuses(
+  'a receipt in an unknown envelope',
+  (e) => {
+    e.receipts.install.format = 'someone-elses-receipt';
+  },
+  /^receipt-unknown-format:install:someone-elses-receipt$/,
+);
+refuses(
+  'a receipt of one type filed under another',
+  (e) => {
+    e.receipts.install.type = 'browser';
+  },
+  /^receipt-type-mismatch:install:browser$/,
+);
+
+// ─── artifact bytes: existing, inside the evidence root, digest-verified ──────────────────────
+refuses(
+  'an artifact whose digest disagrees with the bytes on disk',
+  (e) => {
+    e.receipts.install.artifacts = [{ path: 'install.log', sha256: FOREIGN_MARKER }];
+  },
+  /^receipt-artifact-digest:install:install\.log$/,
+);
+refuses(
+  'an artifact path escaping the evidence root by traversal',
+  (e) => {
+    const bytes = 'bytes outside the acceptance evidence root\n';
+    writeFileSync(join(root, 'outside.log'), bytes);
+    e.receipts.install.artifacts = [{ path: '../outside.log', sha256: digestOf(bytes) }];
+  },
+  /^receipt-artifact-outside-root:install:\.\.\/outside\.log$/,
+);
+{
+  // A symlink INSIDE the root that resolves outside it, carrying the escape target's REAL digest:
+  // containment is judged on the resolved path, not the spelling.
+  const bytes = 'bytes outside the acceptance evidence root\n';
+  writeFileSync(join(root, 'outside.log'), bytes);
+  symlinkSync(join(root, 'outside.log'), join(acceptanceDir, 'escape.log'));
+  refuses(
+    'a symlink inside the root that escapes it',
+    (e) => {
+      e.receipts.install.artifacts = [{ path: 'escape.log', sha256: digestOf(bytes) }];
+    },
+    /^receipt-artifact-outside-root:install:escape\.log$/,
+  );
+}
+{
+  // A deleted log is a missing artifact named by path. The evidence is built FIRST — acceptanceReceipt
+  // writes the real bytes it will point at, so deleting before building would just be undone — and the
+  // log is restored afterwards so later probes keep certifying against real bytes.
+  const logPath = join(acceptanceDir, 'install.log');
+  const saved = readFileSync(logPath);
+  const evidence = completeEvidence();
+  const options = fixtureOptions();
+  rmSync(logPath);
+  try {
+    const result = evaluateLaunchDecision(evidence, options);
+    assert.equal(result.decision, 'NO-GO', 'a deleted artifact log must be NO-GO');
+    assert.ok(
+      result.blockers.some((blocker) => blocker === 'receipt-artifact-missing:install:install.log'),
+      `expected receipt-artifact-missing:install:install.log, got ${JSON.stringify(result.blockers)}`,
+    );
+  } finally {
+    writeFileSync(logPath, saved);
+  }
+}
+refuses(
+  'no evidence root supplied for the typed receipts',
+  (_e, options) => {
+    options.receiptsEvidenceRoot = undefined;
+  },
+  /^receipt-artifact-unverifiable:install$/,
 );
 
 // ─── the preregistered freshness target is enforced, not decorative ───────────────────────────
@@ -894,12 +1074,27 @@ refuses(
   },
   /^global-receipt-artifact-unverifiable:fuzz-deep$/,
 );
+// Two receipts claiming the one global type: the first is still judged, but the duplicate is named —
+// a type that appears twice is two runs disagreeing about who speaks for it, not extra assurance.
+refuses(
+  'two deep-fuzz receipts for one global type',
+  (_e, options) => {
+    options.globalReceipts = [fuzzReceipt(), fuzzReceipt()];
+  },
+  /^global-receipt-duplicate:fuzz-deep$/,
+);
 
 // ─── the manifest's own conclusion is compared, never trusted ─────────────────────────────────
 {
   const evidence = completeEvidence();
   evidence.acceptance = { pass: true, requiredFailures: [] };
-  evidence.receipts.recovery = { status: 'fail' };
+  // A HONEST failing receipt: exit code 1 archived, status derived as fail, artifacts real. The
+  // manifest claims acceptance passed anyway, so BOTH facts are named — the receipt's own failure and
+  // the manifest's disagreement with it.
+  evidence.receipts.recovery = acceptanceReceipt('recovery', {
+    status: 'fail',
+    commandResults: [{ command: 'pnpm recovery', exitCode: 1 }],
+  });
   const result = decide(evidence);
   assert.ok(result.blockers.includes('acceptance-contradiction'));
   assert.ok(result.blockers.includes('receipt-not-passing:recovery:fail'));
@@ -912,6 +1107,8 @@ const aggregateOptions = (overrides = {}) => ({
   certificationReceipts: certificationReceipts(),
   globalReceipts: [fuzzReceipt()],
   globalReceiptsRoot: globalDir,
+  // Per-cell decisions verify typed-receipt artifacts against this real root on disk.
+  receiptsEvidenceRoot: acceptanceDir,
   ...overrides,
 });
 
@@ -1050,7 +1247,15 @@ for (const cell of OS_CELLS) {
 }
 assert.deepEqual(loadReleaseEvidence(join(cellsDir, `${OS_CELLS[0]}.json`)).candidate.dirty, false);
 
-const RECEIPTS_ARGS = ['--certification-receipts', receiptsDir, '--global-receipts', globalDir];
+const RECEIPTS_ARGS = [
+  '--certification-receipts',
+  receiptsDir,
+  '--global-receipts',
+  globalDir,
+  // The CLI resolves typed-receipt artifacts against this root; without it they are unverifiable.
+  '--receipts-root',
+  acceptanceDir,
+];
 const decideCli = (args) =>
   spawnSync(
     process.execPath,
@@ -1161,7 +1366,14 @@ const decideCli = (args) =>
       status: 'pass',
     }),
   );
-  const mixedRun = decideCli(['--certification-receipts', mixed, '--global-receipts', globalDir]);
+  const mixedRun = decideCli([
+    '--certification-receipts',
+    mixed,
+    '--global-receipts',
+    globalDir,
+    '--receipts-root',
+    acceptanceDir,
+  ]);
   assert.equal(mixedRun.status, 0, mixedRun.stdout + mixedRun.stderr);
   assert.match(mixedRun.stdout, /"decision": "GO"/);
 }

@@ -328,6 +328,23 @@ assert.match(
   /write-receipt\.mjs install/,
   'the install cycle must write its own receipt',
 );
+// The check steps and the receipt writes must pin `shell: bash`. The platform-default shell breaks
+// both halves of the receipt contract on the windows cells: pwsh expands "$CANDIDATE_PACKAGE" as a
+// PowerShell variable (empty), and `bash -e` without pipefail lets `pnpm | tee log` succeed on
+// tee's exit status when pnpm failed — the receipt write would then run and archive `--exit-code 0`
+// for a check that did not pass. The launch gate would certify a failed install cycle.
+for (const step of [
+  'Run browser acceptance suite',
+  'Write browser receipt',
+  'Run install cycle',
+  'Write install receipt',
+]) {
+  assert.match(
+    tagWorkflow,
+    new RegExp(`name:\\s*${step}\\b[\\s\\S]{0,600}?shell:\\s*bash`),
+    `${step} must pin shell: bash — only under pipefail is the receipt's --exit-code the measured status`,
+  );
+}
 assert.match(
   tagWorkflow,
   /--receipts receipts/,
