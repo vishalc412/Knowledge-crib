@@ -33,12 +33,15 @@
 import { execFileSync, spawn, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import {
+  constants,
+  accessSync,
   appendFileSync,
   cpSync,
   existsSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
+  readdirSync,
   rmSync,
   writeFileSync,
 } from 'node:fs';
@@ -59,7 +62,7 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(HERE, '..');
 
 /** Bumped when a driver's behaviour changes, so a receipt names the driver that produced it. */
-export const DRIVER_VERSION = '1.0.0';
+export const DRIVER_VERSION = '1.1.0';
 
 /**
  * The eleven behaviours every driver must attempt, in the order they are attempted.
@@ -193,27 +196,46 @@ function makeLog(path) {
 }
 
 /**
- * The command line of a live process, or undefined when it cannot be read.
+ * The FULL command line of a live process (its argv, space-joined), or undefined when it cannot be
+ * read.
  *
  * Needed because the interruption leg's whole claim is "the VENDOR CLIENT was killed". A PID on its
  * own cannot support that claim: the vendor client spawns an MCP server child, and a harness that
- * killed the child and called it an interruption would be certifying a leg it never exercised. So
- * the identity of the process is read BEFORE it is killed and recorded with the leg.
+ * killed the child and called it an interruption would be certifying a leg it never exercised. The
+ * full argv is read BEFORE the kill and recorded with the leg, because the full argv is also what
+ * keeps a Node-shebang vendor CLI identifiable — a basename would read `node` and refuse every
+ * CLI that ships as a script.
  */
 export function processCommand(pid) {
   try {
     if (process.platform === 'linux') {
-      return readFileSync(`/proc/${pid}/comm`, 'utf8').trim() || undefined;
+      // NUL-separated argv; filtering empties keeps the trailing separator from adding a phantom arg.
+      return (
+        readFileSync(`/proc/${pid}/cmdline`, 'utf8').split('\0').filter(Boolean).join(' ') ||
+        undefined
+      );
     }
     if (process.platform === 'darwin') {
-      return execFileSync('ps', ['-o', 'comm=', '-p', String(pid)], { encoding: 'utf8' }).trim();
+      return (
+        execFileSync('ps', ['-o', 'command=', '-p', String(pid)], { encoding: 'utf8' }).trim() ||
+        undefined
+      );
     }
     if (process.platform === 'win32') {
-      const csv = execFileSync('tasklist', ['/FI', `PID eq ${pid}`, '/FO', 'CSV', '/NH'], {
-        encoding: 'utf8',
-      }).trim();
-      const name = /^"([^"]+)"/.exec(csv)?.[1];
-      return name || undefined;
+      if (!Number.isInteger(pid)) return undefined;
+      // The pid is integer-guarded, so interpolating it into the filter string carries no injection
+      // surface; PowerShell's own quoting handles the rest.
+      const result = spawnSync(
+        'powershell.exe',
+        [
+          '-NoProfile',
+          '-NonInteractive',
+          '-Command',
+          `(Get-CimInstance Win32_Process -Filter "ProcessId=${pid}").CommandLine`,
+        ],
+        { encoding: 'utf8', timeout: 30_000 },
+      );
+      return (result.stdout ?? '').trim() || undefined;
     }
   } catch {
     return undefined;
@@ -222,12 +244,134 @@ export function processCommand(pid) {
 }
 
 /**
+ * One snapshot row per visible process: pid, parent pid and full command line. A single `ps` (POSIX)
+ * or one PowerShell dump (win32) is taken up front so walking the tree never races a second query
+ * against a dying process — the ancestry is frozen at snapshot time, which is exactly the moment
+ * the caller needs it: before the kill.
+ */
+function snapshotProcesses() {
+  if (process.platform === 'win32') {
+    const result = spawnSync(
+      'powershell.exe',
+      [
+        '-NoProfile',
+        '-NonInteractive',
+        '-Command',
+        'Get-CimInstance Win32_Process | Select-Object ProcessId,ParentProcessId,CommandLine | ConvertTo-Json -Compress',
+      ],
+      { encoding: 'utf8', timeout: 60_000 },
+    );
+    let rows = [];
+    try {
+      rows = JSON.parse(result.stdout ?? 'null') ?? [];
+    } catch {
+      rows = [];
+    }
+    if (!Array.isArray(rows)) rows = [rows];
+    return rows
+      .map((row) => ({
+        pid: Number(row?.ProcessId),
+        ppid: Number(row?.ParentProcessId),
+        command: typeof row?.CommandLine === 'string' ? row.CommandLine : undefined,
+      }))
+      .filter((row) => Number.isInteger(row.pid));
+  }
+  return execFileSync('ps', ['-axo', 'pid=,ppid=,command='], { encoding: 'utf8' })
+    .split('\n')
+    .map((line) => /^\s*(\d+)\s+(\d+)\s+(.*)$/.exec(line))
+    .filter(Boolean)
+    .map(([, pid, ppid, command]) => ({
+      pid: Number(pid),
+      ppid: Number(ppid),
+      command: command.trim(),
+    }));
+}
+
+/**
+ * The process and its descendants, as [{pid, command}] — the tree that `killProcessTree` is about to
+ * signal. Snapshotting it before the kill is what makes the MCP-child-only trap visible: a
+ * masquerading process whose own image no longer names the vendor path shows up here as a tree with
+ * no matching node, and the leg refuses instead of certifying a child-kill as an interruption.
+ */
+export function processTree(pid) {
+  try {
+    const list = snapshotProcesses();
+    const childrenOf = new Map();
+    for (const proc of list) {
+      if (!childrenOf.has(proc.ppid)) childrenOf.set(proc.ppid, []);
+      childrenOf.get(proc.ppid).push(proc);
+    }
+    const nodes = [];
+    const queue = [pid];
+    const seen = new Set();
+    while (queue.length > 0) {
+      const current = queue.shift();
+      if (seen.has(current)) continue;
+      seen.add(current);
+      const self = list.find((proc) => proc.pid === current);
+      nodes.push({ pid: current, command: self?.command ?? processCommand(current) });
+      for (const child of childrenOf.get(current) ?? []) queue.push(child.pid);
+    }
+    return nodes;
+  } catch {
+    // No snapshot, no tree — but the target itself is still knowable, and one node beats zero.
+    return [{ pid, command: processCommand(pid) }];
+  }
+}
+
+/**
+ * Is the pid still alive? Signal 0 probes without delivering anything. EPERM means alive but not
+ * ours to signal, which is the honest answer `true` on a multi-user host.
+ */
+export function processAlive(pid) {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (error) {
+    return error?.code !== 'ESRCH';
+  }
+}
+
+/**
+ * Poll until the pid is gone, or the deadline passes. "The kill was signalled" and "the process is
+ * dead" are different claims — a client that ignores SIGKILL-because-it-is-already-a-zombie or a
+ * taskkill that failed silently must not certify an interruption, so termination is CONFIRMED
+ * before the leg can pass.
+ */
+export async function confirmTermination(pid, timeoutMs = 10_000) {
+  const deadline = Date.now() + timeoutMs;
+  while (true) {
+    if (!processAlive(pid)) return true;
+    const remaining = deadline - Date.now();
+    if (remaining <= 0) return false;
+    await new Promise((resolve) => setTimeout(resolve, Math.min(250, remaining)));
+  }
+}
+
+/**
+ * Does this command line name this executable? Full-path matching over normalized separators, so a
+ * Node-shebang CLI (`node /prefix/bin/claude …`) still matches the resolved `…/bin/claude`. On
+ * Windows paths are case-insensitive; elsewhere the byte-for-byte rule holds.
+ */
+export function commandLineMatches(commandLine, executablePath) {
+  if (!commandLine || !executablePath) return false;
+  const normalize = (value) => value.replaceAll('\\', '/');
+  const needle = normalize(executablePath);
+  const haystack = normalize(commandLine);
+  if (process.platform === 'win32') {
+    return haystack.toLowerCase().includes(needle.toLowerCase());
+  }
+  return haystack.includes(needle);
+}
+
+/**
  * Kill a process AND its children.
  *
  * On POSIX the child is spawned `detached`, so it leads its own process group — killing the GROUP is
  * what makes the interruption honest for a client that spawned helpers. On Windows `taskkill /T`
  * walks the tree. Either way the TARGET is the vendor process, and its identity was verified by the
- * caller first.
+ * caller first. This reports only that the SIGNAL was delivered; the caller must still confirm the
+ * process actually terminated (`confirmTermination`).
  */
 export function killProcessTree(pid) {
   if (process.platform === 'win32') {
@@ -316,10 +460,10 @@ const CLIENT_SPECS = [
     configRelPath: ['.codex', 'config.toml'],
     configFormat: 'toml',
     projectScoped: false,
-    // Codex reads its MCP servers from $CODEX_HOME/config.toml, so the run points CODEX_HOME at the
-    // scenario's own tree. That is the isolation: the operator's real ~/.codex is never read.
-    homeEnvVar: 'CODEX_HOME',
-    homeRelPath: '.codex',
+    // The shipped installer writes a PROJECT-scoped config (packages/cli/src/mcp-install.ts places it
+    // at <project>/.codex/config.toml), and Codex reads it from the cwd — so no CODEX_HOME override is
+    // needed: the harness runs every turn with cwd at the scenario's project, and the operator's real
+    // ~/.codex is never read.
     authProbe: {
       args: ['login', 'status'],
       parse: (out, status) => status === 0 || /logged in/i.test(out),
@@ -417,7 +561,10 @@ export function clientSpec(clientId) {
 /** Run a command, capturing everything into the transcript. Never throws — legs report status. */
 function run(log, label, command, args, options = {}) {
   const started = Date.now();
-  const result = spawnSync(command, args, {
+  // The platform-safe launch rules apply to every spawn (Windows `.cmd` shims run through cmd.exe);
+  // the transcript still names the ORIGINAL command so the log reads like the intent.
+  const launch = resolveLaunchable(command, args);
+  const result = spawnSync(launch.command, launch.args, {
     encoding: 'utf8',
     timeout: options.timeoutMs ?? 240_000,
     maxBuffer: 32 * 1024 * 1024,
@@ -475,8 +622,10 @@ function createDriver(spec) {
         };
       }
       ctx.vendorBin = resolved.binary;
+      ctx.vendorResolvedPaths = spec.binaries.map((name) => whichSync(name)).filter(Boolean);
       ctx.vendorVersion = resolved.version;
-      const auth = spawnSync(resolved.binary, spec.authProbe.args, {
+      const authLaunch = launchableCommand(resolved.binary, spec.authProbe.args);
+      const auth = spawnSync(authLaunch.command, authLaunch.args, {
         encoding: 'utf8',
         timeout: 60_000,
         env: ctx.clientEnv,
@@ -681,48 +830,92 @@ function createDriver(spec) {
      * interrupt — kill the VENDOR CLIENT process, having first proved it IS the vendor client.
      *
      * This is the leg that cannot be faked. The client spawns an MCP server child; killing the child
-     * would leave the client running and prove nothing about interruption, so the harness reads the
-     * target's command line while it is alive, refuses to call it an interruption unless that
-     * command IS the vendor binary, and only then kills the process group.
+     * would leave the client running and prove nothing about interruption. The harness snapshots the
+     * target's process tree while it is alive — full argv, not a basename, because a Node-shebang CLI
+     * shows as `node /path/to/cli` and only the full path names it — refuses to call it an
+     * interruption unless some node of the tree IS the resolved vendor executable, and only then
+     * kills the process group and CONFIRMS the process actually terminated. A signalled-but-alive
+     * target certifies nothing.
      */
     async interrupt(ctx) {
       if (ctx.blockedBecause) {
         return blocked(['vendorProcessInterrupted'], ctx.blockedBecause);
       }
+      const interruptPrompt = `Call the knowledge-crib status tool with op="health" and then wait.`;
       const launched = await ctx.launchDetached(
         'interrupt: launch the vendor client, then kill IT mid-session',
-        `Call the knowledge-crib status tool with op="health" and then wait.`,
+        interruptPrompt,
       );
       if (!launched.ok) {
         return { vendorProcessInterrupted: { status: 'fail', reason: launched.reason } };
       }
-      // Read the identity BEFORE the kill: afterwards the process is gone and the claim
-      // "the vendor client was interrupted" becomes unfalsifiable.
-      const observed = processCommand(launched.pid);
-      ctx.log(`# interrupt target pid ${launched.pid} command ${observed ?? '<unreadable>'}`);
-      const observedBase = observed ? basename(observed).replace(/\.(exe|cmd|bat)$/i, '') : '';
-      const isVendor = spec.binaries.some(
-        (name) => observedBase === name.replace(/\.(exe|cmd|bat)$/i, ''),
+      // Snapshot identity BEFORE the kill: afterwards the process is gone and the claim
+      // "the vendor client was interrupted" becomes unfalsifiable. The tree (not just the target
+      // pid) is what exposes the MCP-child-only masquerade: a process whose own image no longer
+      // names the vendor path shows up as a tree with no matching node.
+      const targetCommand = processCommand(launched.pid);
+      const tree = processTree(launched.pid);
+      const vendorPaths = ctx.vendorResolvedPaths ?? [];
+      // Command lines carry the PROMPT as an argument; the transcript archives them, so the prompt is
+      // redacted out of anything logged or recorded — same rule as every turn.
+      const redactPrompt = (command) =>
+        command
+          ? command.split(interruptPrompt).join(`<prompt:redacted ${sha256(interruptPrompt)}>`)
+          : command;
+      const sanitizeTreeLine = (command) =>
+        sanitizeOutput(redactPrompt(command), [
+          ctx.tag,
+          ctx.foreignMarker,
+          ctx.ownerPrincipal,
+          ctx.foreignPrincipal,
+        ]) || null;
+      for (const node of tree) {
+        const line = node.command ? sanitizeTreeLine(node.command) : '<unreadable>';
+        ctx.log(`# interrupt tree pid ${node.pid} command ${line}`);
+      }
+      const matchingNode = tree.find((node) =>
+        vendorPaths.some((path) => commandLineMatches(node.command, path)),
       );
+      const matchedPath = matchingNode
+        ? vendorPaths.find((path) => commandLineMatches(matchingNode.command, path))
+        : null;
       const killed = killProcessTree(launched.pid);
+      // Settle first: reaping the detached child clears the zombie before the liveness poll, so
+      // processAlive cannot false-negative on a dead-but-unreaped pid.
       await launched.settle();
+      const terminated = await confirmTermination(launched.pid, ctx.terminationTimeoutMs);
       ctx.interruptEvidence = {
         targetPid: launched.pid,
-        targetCommand: observed ?? null,
+        targetCommand: sanitizeTreeLine(targetCommand),
+        tree: tree.map((node) => ({ pid: node.pid, command: sanitizeTreeLine(node.command) })),
         killed,
+        terminated,
+        matchedPath,
+        operationsAtInterrupt: operationCount(protocolRead(ctx, 'owner')),
       };
-      if (!isVendor) {
+      if (!matchingNode) {
         return {
           vendorProcessInterrupted: {
             status: 'fail',
-            reason: `the killed process was ${JSON.stringify(observedBase || null)}, not the ${spec.displayName} client — killing an MCP subprocess is not interrupting the vendor client`,
+            reason: `the killed process tree showed no ${spec.displayName} client (resolved executables: ${vendorPaths.join(', ') || 'unresolved'}) — killing an MCP subprocess is not interrupting the vendor client`,
+          },
+        };
+      }
+      if (!killed) {
+        return {
+          vendorProcessInterrupted: {
+            status: 'fail',
+            reason: `could not signal the vendor process ${launched.pid}`,
           },
         };
       }
       return {
-        vendorProcessInterrupted: killed
+        vendorProcessInterrupted: terminated
           ? { status: 'pass' }
-          : { status: 'fail', reason: `could not signal the vendor process ${launched.pid}` },
+          : {
+              status: 'fail',
+              reason: `signalled the vendor process ${launched.pid} but it did not terminate within ${ctx.terminationTimeoutMs}ms — an unconfirmed kill is not an interruption`,
+            },
       };
     },
 
@@ -753,6 +946,13 @@ function createDriver(spec) {
       );
       const restartedText = `${restarted.stdout ?? ''}`;
       const restartedOk = restarted.status === 0;
+      // A restart is a DIFFERENT process, and the fresh spawn's pid is the proof: a client that
+      // reappears under the pid the interruption just killed is the same process, not a restart, and
+      // no amount of correct answers inside it can certify this leg. (The interrupt phase either ran
+      // and recorded a target pid, or the interruption leg already failed — no target to compare
+      // against means the distinctness claim is vacuously true and the other checks carry the leg.)
+      const distinctProcess =
+        restarted.pid !== undefined && restarted.pid !== ctx.interruptEvidence?.targetPid;
       const found = /FOUND/.test(restartedText);
       // "The client restarted" is NOT "a process exited 0". A stub that prints nothing and returns 0
       // would otherwise certify this leg — the same error `invoke` refuses when it reads a handshake
@@ -774,7 +974,7 @@ function createDriver(spec) {
         resultMarker: ctx.tag,
       });
       const restartedWords = restartedOk && answered;
-      const restartOk = restartedWords && restartEvidence;
+      const restartOk = restartedWords && distinctProcess && restartEvidence;
       const resumeOk = found && resumeEvidence;
 
       // The floor for the exclusion check: captured AFTER the restarted turn and BEFORE the
@@ -838,7 +1038,9 @@ function createDriver(spec) {
           : failed(
               restarted,
               restartedWords
-                ? 'the restarted client answered, but the protocol recording shows no completed memory operation after the interruption — a printed answer is not a restarted session'
+                ? distinctProcess
+                  ? 'the restarted client answered, but the protocol recording shows no completed memory operation after the interruption — a printed answer is not a restarted session'
+                  : `the restarted client ran as pid ${restarted.pid}, the same process the interruption killed (${ctx.interruptEvidence?.targetPid}) — a restart must be a fresh process`
                 : restartedOk
                   ? 'the restarted client exited 0 but returned no answer to the handoff query, so no session was proven'
                   : `the restarted client exited ${restarted.status}`,
@@ -900,18 +1102,30 @@ function failed(result, because) {
   };
 }
 
-/** Resolve a vendor executable by trying each declared name, then reading its version. */
-function resolveBinary(spec) {
+/**
+ * Resolve a vendor executable by trying each declared name, then reading its version. The name is
+ * resolved to an ABSOLUTE PATH before anything is spawned: the spawn itself then goes through the
+ * platform launch rules (Windows `.cmd` shims need cmd.exe), and the recorded `binary`/`resolvedPath`
+ * are what the interruption leg later matches process command lines against — a bare `claude` could
+ * never be matched against a `node …/bin/claude` argv, but the full path can.
+ */
+export function resolveBinary(spec) {
   for (const name of spec.binaries) {
-    const probe = spawnSync(name, spec.versionArgs, { encoding: 'utf8', timeout: 60_000 });
-    if (probe.error && probe.error.code === 'ENOENT') continue;
+    const resolvedPath = whichSync(name);
+    if (!resolvedPath) continue;
+    const versionLaunch = launchableCommand(resolvedPath, spec.versionArgs);
+    const probe = spawnSync(versionLaunch.command, versionLaunch.args, {
+      encoding: 'utf8',
+      timeout: 60_000,
+    });
+    if (probe.error) continue;
     const text = `${probe.stdout ?? ''}${probe.stderr ?? ''}`.trim();
     // `code --version` prints the version on the FIRST line and the commit on the next; Claude Code,
     // Cursor and the rest print one token. Taking the first version-shaped token covers both without
     // a per-client parser.
     const version = /v?\d+\.\d+\.\d+(?:[-.\w]*)?/.exec(text)?.[0];
     if (!version) continue;
-    return { status: 'pass', binary: name, version, resolvedPath: whichSync(name) ?? name };
+    return { status: 'pass', binary: resolvedPath, version, resolvedPath };
   }
   return {
     status: 'blocked',
@@ -919,13 +1133,78 @@ function resolveBinary(spec) {
   };
 }
 
-function whichSync(name) {
-  const cmd = process.platform === 'win32' ? 'where' : 'which';
-  try {
-    return execFileSync(cmd, [name], { encoding: 'utf8' }).split('\n')[0].trim() || undefined;
-  } catch {
-    return undefined;
+/**
+ * The file names a bare command can resolve to on Windows, in PATHEXT order. Pure (platform and
+ * PATHEXT are parameters) so tests can exercise Windows resolution rules on any host. A name that
+ * already carries a path separator is a path, not a PATH search, and an extension already listed in
+ * PATHEXT needs no candidates appended.
+ */
+export function executableCandidates(
+  name,
+  platform = process.platform,
+  pathExt = process.env.PATHEXT,
+) {
+  if (name.includes('/') || name.includes('\\')) return [name];
+  if (platform !== 'win32') return [name];
+  const extensions = (pathExt ?? '.COM;.EXE;.BAT;.CMD;.VBS;.VBE;.JS;.WSF;.WSH')
+    .split(';')
+    .map((extension) => extension.trim().toLowerCase())
+    .filter((extension) => extension.length > 0);
+  const lowered = name.toLowerCase();
+  if (extensions.some((extension) => lowered.endsWith(extension))) return [name];
+  return [name, ...extensions.map((extension) => name + extension)];
+}
+
+/**
+ * Resolve a command to an absolute path by walking PATH with Node APIs — no `which`/`where`
+ * subprocess. Spaces and Unicode in directory names are handled naturally because each candidate is
+ * constructed as one path string and probed with access(), never split or re-parsed by a shell. On
+ * Windows X_OK is not meaningful (execute permission is a file-content decision, not an ACL one), so
+ * existence is the check; on POSIX the executable bit is required.
+ */
+export function whichSync(name) {
+  const pathEnv = process.env.PATH ?? '';
+  const mode = process.platform === 'win32' ? constants.F_OK : constants.X_OK;
+  for (const dir of pathEnv.split(process.platform === 'win32' ? ';' : ':')) {
+    if (dir.length === 0) continue;
+    for (const candidate of executableCandidates(name)) {
+      const full = resolve(dir, candidate);
+      try {
+        accessSync(full, mode);
+        return full;
+      } catch {
+        // Not present or not executable in this directory — keep walking PATH.
+      }
+    }
   }
+  return undefined;
+}
+
+/**
+ * How to spawn a command safely on this platform. Node cannot execute Windows `.cmd`/`.bat`
+ * launchers directly (CVE-2024-27964), and `shell: true` would re-parse every argument into an
+ * injection surface — so a launcher is invoked through `cmd.exe /d /s /c` with each argument passed
+ * as its OWN argv element. Everything else launches as itself. The platform is a parameter so the
+ * Windows rules are unit-testable on any host.
+ */
+export function launchableCommand(command, args = [], platform = process.platform) {
+  if (platform === 'win32' && /\.(cmd|bat)$/i.test(command)) {
+    return { command: 'cmd.exe', args: ['/d', '/s', '/c', command, ...args] };
+  }
+  return { command, args };
+}
+
+/**
+ * Resolve a command for spawning: a PATH entry becomes an absolute path (which is also what keeps
+ * the vendor process identifiable later — the command line of a Node-launched CLI names the script,
+ * and only the full path matches it), then both are mapped through the platform-safe launch rules.
+ * A bare name that does not resolve falls back to itself so the spawn reports the honest ENOENT.
+ */
+function resolveLaunchable(command, args = []) {
+  if (command.includes('/') || command.includes('\\')) {
+    return launchableCommand(command, args);
+  }
+  return launchableCommand(whichSync(command) ?? command, args);
 }
 
 /**
@@ -1099,6 +1378,24 @@ function protocolRead(ctx, which) {
 }
 
 /**
+ * Completed operations currently visible in a recording FILE — the observable MCP session activity.
+ * The recorder flushes atomically after every completed operation (initialize included), so a count
+ * above zero means a launched client really opened a session; zero means the process has not spoken
+ * to the server yet, or never will. Any read failure is zero, because a poll must never crash the
+ * leg it is gating.
+ */
+function completedOperationCount(recordingPath) {
+  try {
+    if (!existsSync(recordingPath)) return 0;
+    const recording = JSON.parse(readFileSync(recordingPath, 'utf8'));
+    if (recordingProblems(recording).length > 0) return 0;
+    return operationCount(recording);
+  } catch {
+    return 0;
+  }
+}
+
+/**
  * The correlated-evidence query: a COMPLETED operation in one principal's recording matching the
  * criteria, returned as a receipt-shaped reference (which recording, which operation, which
  * request id) or null. Null is a refusal, never a pass.
@@ -1133,7 +1430,19 @@ function archivedRecording(source, outDir, name) {
  * that the only way to exercise this code is to own seven signed-in vendor accounts.
  */
 export async function certifyCell(options) {
-  const { spec, client, packagePath, candidateCommit, outDir, keep = false } = options;
+  const {
+    spec,
+    client,
+    packagePath,
+    candidateCommit,
+    outDir,
+    keep = false,
+    // How long to wait for OBSERVED session activity after a detached launch, and how long to wait
+    // for the interrupted process to be confirmed dead. Both are options (not constants) so the
+    // fixture tests can run the same code paths on seconds instead of minutes.
+    activityTimeoutMs = 120_000,
+    terminationTimeoutMs = 10_000,
+  } = options;
   const { sha256: policySha256 } = loadLaunchPolicy();
   const driver = createDriver(spec);
 
@@ -1205,9 +1514,10 @@ export async function certifyCell(options) {
 
     // ── fixture: install the exact candidate tarball into an isolated prefix ──
     const bundleDir = dirname(packagePath);
+    // Node API, not `ls`: `ls` is not guaranteed on every PATH (and its output format is
+    // locale-dependent), while readdirSync answers in one call whatever the directory is named.
     const deps = existsSync(bundleDir)
-      ? execFileSync('ls', [bundleDir], { encoding: 'utf8' })
-          .split('\n')
+      ? readdirSync(bundleDir)
           .filter((n) => n.endsWith('.tgz') && join(bundleDir, n) !== packagePath)
           .map((n) => join(bundleDir, n))
       : [];
@@ -1263,6 +1573,11 @@ export async function certifyCell(options) {
       protocolMarkers,
       cribMemoryDir: join(cribHome, 'memory'),
       cribRegistryDir: cribHome,
+      // Every pid this run detached, registered at spawn: the finally-block teardown kills exactly
+      // these and nothing else.
+      launchedPids: [],
+      activityTimeoutMs,
+      terminationTimeoutMs,
       blockedBecause:
         install.status === 0
           ? undefined
@@ -1282,7 +1597,8 @@ export async function certifyCell(options) {
           log(
             `\n$ ${ctx.vendorBin} <prompt:redacted ${sha256(prompt)}>   [${label}, config ${configPath ?? ctx.configPath}]`,
           );
-          const result = spawnSync(ctx.vendorBin, finalArgs, {
+          const turnLaunch = launchableCommand(ctx.vendorBin, finalArgs);
+          const result = spawnSync(turnLaunch.command, turnLaunch.args, {
             encoding: 'utf8',
             env: clientEnv,
             cwd: project,
@@ -1333,19 +1649,40 @@ export async function certifyCell(options) {
         try {
           const args = spec.headless.args(prompt, ctx);
           log(`\n$ ${ctx.vendorBin} <prompt:redacted ${sha256(prompt)}>   [${label}, detached]`);
-          const child = spawn(ctx.vendorBin, args, {
+          const launch = launchableCommand(ctx.vendorBin, args);
+          const child = spawn(launch.command, launch.args, {
             env: clientEnv,
             cwd: project,
             detached: true,
             stdio: 'ignore',
           });
-          // Give the client time to start, spawn its MCP server and open a session before it dies.
-          await new Promise((r) => setTimeout(r, 8_000));
-          if (child.exitCode !== null) {
-            return {
-              ok: false,
-              reason: `the vendor client exited (${child.exitCode}) before it could be interrupted`,
-            };
+          // Registered the moment it exists: the teardown kills every pid THIS run launched, and
+          // nothing else — cleanup removes only the run's isolated processes.
+          ctx.launchedPids.push(child.pid);
+          // Session activity is OBSERVED, never assumed. A fixed delay could not tell "the client
+          // is mid-session" from "the client is dying slowly" or "the client never spoke to the
+          // server at all", so the harness waits for the one signal that proves the session is real:
+          // a completed operation in the owner's protocol recording. The recorder flushes atomically
+          // per operation, so the count is current whenever it is read; a client that exits early is
+          // caught by the exit check inside the same loop, and one that never opens a session is
+          // refused by name at the deadline instead of being interrupted for nothing.
+          const deadline = Date.now() + ctx.activityTimeoutMs;
+          for (;;) {
+            if (child.exitCode !== null) {
+              return {
+                ok: false,
+                reason: `the vendor client exited (${child.exitCode}) before it could be interrupted`,
+              };
+            }
+            if (completedOperationCount(ownerRecordingPath) > 0) break;
+            const remaining = deadline - Date.now();
+            if (remaining <= 0) {
+              return {
+                ok: false,
+                reason: `no MCP session activity was observed within ${ctx.activityTimeoutMs}ms of launching the vendor client — interrupting a process that never opened a session would prove nothing`,
+              };
+            }
+            await new Promise((r) => setTimeout(r, Math.min(250, remaining)));
           }
           return {
             ok: true,
@@ -1500,6 +1837,20 @@ export async function certifyCell(options) {
         processIdentity: ctx?.vendorBin
           ? `${spec.displayName} ${ctx.vendorVersion ?? 'unknown'} (${ctx.vendorBin})`
           : null,
+        // What the interruption actually killed, when an interruption ran: the target pid, its
+        // prompt-redacted verified command and tree, whether the signal was delivered, and whether
+        // termination was CONFIRMED. Present on every passing interruption receipt — every such
+        // receipt proves the intended vendor process terminated — and null when the leg never
+        // launched.
+        interruptedProcess: ctx?.interruptEvidence
+          ? {
+              pid: ctx.interruptEvidence.targetPid,
+              verifiedCommand: ctx.interruptEvidence.targetCommand,
+              tree: ctx.interruptEvidence.tree,
+              killed: ctx.interruptEvidence.killed,
+              terminated: ctx.interruptEvidence.terminated,
+            }
+          : null,
         transcriptPath: logName,
         transcriptSha256: sha256File(archived),
       },
@@ -1515,6 +1866,19 @@ export async function certifyCell(options) {
     writeFileSync(receiptPath, `${JSON.stringify(receipt, null, 2)}\n`);
     return { receipt, behaviours, legs, archived, receiptPath };
   } finally {
+    // Kill anything this run detached that is STILL alive, before the workspace that holds its
+    // recordings goes away. Only pids registered by THIS run are signalled — cleanup removes the
+    // run's isolated processes and nothing else — and each kill is confirmed so a survivor cannot
+    // outlive its evidence.
+    for (const pid of ctx?.launchedPids ?? []) {
+      if (processAlive(pid)) {
+        killProcessTree(pid);
+        // Best-effort bounded wait: the workspace is about to disappear, and a pid that lingers
+        // half a second longer is harmless — one that survives to write into a deleted directory is
+        // not.
+        await confirmTermination(pid, 5_000);
+      }
+    }
     if (!keep) rmSync(workspace, { recursive: true, force: true });
     else process.stdout.write(`workspace kept at ${workspace}\n`);
   }

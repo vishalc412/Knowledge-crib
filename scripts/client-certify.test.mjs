@@ -23,7 +23,7 @@
  * Run: node scripts/client-certify.test.mjs
  */
 import assert from 'node:assert/strict';
-import { execFileSync, spawnSync } from 'node:child_process';
+import { execFileSync, spawn, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import {
   chmodSync,
@@ -35,7 +35,7 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { delimiter, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   CERTIFICATION_LEGS,
@@ -49,8 +49,17 @@ import {
   buildForeignConfig,
   certifyCell,
   clientSpec,
+  commandLineMatches,
+  confirmTermination,
+  executableCandidates,
   isWsl,
+  killProcessTree,
+  launchableCommand,
+  processAlive,
+  processTree,
+  resolveBinary,
   sanitizeOutput,
+  whichSync,
   wireProtocolRecorder,
 } from './client-certify.mjs';
 import { serverCommandSha256 } from './client-protocol-recorder.mjs';
@@ -652,6 +661,111 @@ function writeCooperatingVendor(dir, name) {
 }
 
 /**
+ * A vendor client that MASQUERADES. It answers --version and the sign-in probe exactly like a real
+ * client, and when the interrupt prompt arrives it opens a REAL MCP session through a helper child —
+ * but the process that stays alive at the launched pid is `sleep`: the script execs into it, so the
+ * target's own image no longer names the vendor path. The protocol activity is genuine (the
+ * recorder records it, which is what opens the observed-activity gate), yet no node of the live
+ * tree IS the vendor client. A harness that identified its target by basename, or that certified
+ * any killed tree, would pass this client; one that matches the resolved executable path against
+ * the full-argv tree must refuse — and the receipt must still show the kill LANDED, because the
+ * refusal is about identity, not about the signal failing.
+ */
+function writeMasqueradingVendor(dir, name) {
+  const helperPath = join(dir, 'masquerade-helper.js');
+  writeFileSync(
+    helperPath,
+    [
+      '#!/usr/bin/env node',
+      '// The MCP half of the masquerade: a REAL session against the server the config names (the',
+      '// recorder, in a certified run), so protocol activity is genuine. The masquerade lives in the',
+      '// process table, not the protocol: the client script execs into `sleep`, so the vendor path',
+      '// only ever appears on THIS helper — a child process, not the client.',
+      "const { spawn } = require('node:child_process');",
+      "const fs = require('node:fs');",
+      '',
+      'const configPath = process.argv[2];',
+      'if (!configPath) process.exit(0);',
+      'let server = null;',
+      'try {',
+      "  const parsed = JSON.parse(fs.readFileSync(configPath, 'utf8'));",
+      "  server = (parsed.mcpServers || parsed.servers || {})['knowledge-crib'] || null;",
+      '} catch {',
+      '  server = null;',
+      '}',
+      'if (!server) process.exit(0);',
+      '',
+      'const child = spawn(server.command, server.args || [], {',
+      '  env: Object.assign({}, process.env, server.env || {}),',
+      "  stdio: ['pipe', 'pipe', 'inherit'],",
+      '});',
+      '// The session must complete, so drain the server side; the recorder needs its bytes flowing.',
+      "child.stdout.setEncoding('utf8');",
+      "child.stdout.on('data', () => {});",
+      'child.stdin.write(',
+      '  JSON.stringify({',
+      "    jsonrpc: '2.0',",
+      '    id: 1,',
+      "    method: 'initialize',",
+      '    params: {',
+      "      protocolVersion: '2025-06-18',",
+      '      capabilities: {},',
+      "      clientInfo: { name: 'masquerading-vendor', version: '9.9.9' },",
+      '    },',
+      "  }) + '\\n');",
+      '// Stay alive until the tree is killed: the point is a live session for the harness to interrupt.',
+      "child.on('exit', () => process.exit(0));",
+      'setInterval(() => {}, 60000);',
+      '',
+    ].join('\n'),
+  );
+  chmodSync(helperPath, 0o755);
+
+  const path = join(dir, name);
+  writeFileSync(
+    path,
+    [
+      '#!/bin/sh',
+      '# The client half of the masquerade: a real vendor surface everywhere except the one place the',
+      '# interruption leg cares about — the process that survives at the launched pid.',
+      'if [ "$1" = "--version" ]; then',
+      '  echo "9.9.9 (masquerading vendor)"',
+      '  exit 0',
+      'fi',
+      'if [ "$1" = "auth" ]; then',
+      '  echo \'{"loggedIn":true}\'',
+      '  exit 0',
+      'fi',
+      'case "$*" in',
+      '  *"status tool"*)',
+      '    # The interrupt prompt: open the session in a child, then replace this image with sleep so',
+      '    # no live process at the target pid names the vendor path.',
+      '    config=',
+      '    prev=',
+      '    for arg in "$@"; do',
+      '      if [ "$prev" = "--mcp-config" ]; then',
+      '        config=$arg',
+      '      fi',
+      '      prev=$arg',
+      '    done',
+      '    if [ -n "$config" ]; then',
+      '      node "$(dirname "$0")/masquerade-helper.js" "$config" &',
+      '    fi',
+      '    exec sleep 300',
+      '    ;;',
+      '  *)',
+      "    echo '{}'",
+      '    exit 0',
+      '    ;;',
+      'esac',
+      '',
+    ].join('\n'),
+  );
+  chmodSync(path, 0o755);
+  return path;
+}
+
+/**
  * A crib stub that SERVES the MCP protocol — the server side of the fake wire. It installs a config
  * naming itself, and in `serve` mode it answers newline-delimited JSON-RPC like the real server
  * would: initialize, query, status, and the two memory ops the certification prompts exercise. Its
@@ -798,7 +912,14 @@ function makeStubTarball(dir, { serve = false } = {}) {
   return tarball;
 }
 
-async function runEndToEnd({ signedIn, stubPackage = false, serve = false, vendor = 'fake' }) {
+async function runEndToEnd({
+  signedIn,
+  stubPackage = false,
+  serve = false,
+  vendor = 'fake',
+  activityTimeoutMs = 20_000,
+  terminationTimeoutMs = 5_000,
+}) {
   const scratch = mkdtempSync(join(tmpdir(), 'crib-certify-test-'));
   const bin = join(scratch, 'bin');
   const out = join(scratch, 'receipts');
@@ -807,6 +928,7 @@ async function runEndToEnd({ signedIn, stubPackage = false, serve = false, vendo
   mkdirSync(packageDir, { recursive: true });
   if (vendor === 'wordEcho') writeWordEchoVendor(bin, 'claude');
   else if (vendor === 'cooperating') writeCooperatingVendor(bin, 'claude');
+  else if (vendor === 'masquerading') writeMasqueradingVendor(bin, 'claude');
   else writeFakeVendor(bin, 'claude', { signedIn });
   // Two candidate shapes, and the difference between them is the point of having both. Without a
   // tarball the install fails and the run never reaches a turn — which is how a real host with no
@@ -833,6 +955,10 @@ async function runEndToEnd({ signedIn, stubPackage = false, serve = false, vendo
       packagePath: fakePackage,
       candidateCommit: HEAD,
       outDir: out,
+      // The real run waits minutes for observed session activity and termination; the same code
+      // paths run in seconds here, which is the only way the fixture legs stay testable.
+      activityTimeoutMs,
+      terminationTimeoutMs,
     });
     return { result, out, scratch };
   } finally {
@@ -1300,17 +1426,40 @@ if (cooperatingRun) {
     }
   });
 
-  check('the only leg that fails is the one this host cannot honestly run', () => {
-    // Interrupting requires killing a process that IS the vendor binary; a node-shebang fixture is
-    // not one, on any platform, and the leg says so rather than passing by default.
+  check('every leg passes, and the interruption receipt proves the intended process died', () => {
+    // Full-argv identity makes the node-shebang fixture identifiable — its command line names the
+    // resolved vendor path — so the interruption leg runs for real on this host: the vendor client
+    // is matched in the tree, signalled, and its termination CONFIRMED, and the receipt archives
+    // that proof instead of assuming it.
     const notPassed = CERTIFICATION_LEGS.filter((leg) => result.legs[leg].status !== 'pass');
-    assert.deepEqual(
-      notPassed,
-      ['interruption'],
-      `unexpected non-passing legs: ${notPassed.join(', ')}`,
+    assert.deepEqual(notPassed, [], `unexpected non-passing legs: ${notPassed.join(', ')}`);
+    assert.equal(
+      result.receipt.blockedReason,
+      undefined,
+      'an all-pass receipt must not carry a blockedReason',
     );
-    assert.match(result.legs.interruption.detail, /not the .* client/);
-    assert.ok(result.receipt.blockedReason, 'a blocked receipt must still name why');
+    const interrupted = result.receipt.vendor.interruptedProcess;
+    assert.ok(interrupted, 'the receipt must archive interruptedProcess evidence');
+    assert.ok(Number.isInteger(interrupted.pid), 'the interrupted pid must be an integer');
+    assert.equal(interrupted.killed, true, 'the kill signal must be confirmed delivered');
+    assert.equal(
+      interrupted.terminated,
+      true,
+      'termination must be confirmed, never assumed from a signal',
+    );
+    assert.ok(
+      Array.isArray(interrupted.tree) && interrupted.tree.length > 0,
+      'the killed process tree must be archived',
+    );
+    assert.match(
+      interrupted.verifiedCommand,
+      /<prompt:redacted /,
+      'the archived command line must carry the redacted prompt, not the prompt itself',
+    );
+    assert.ok(
+      !interrupted.verifiedCommand.includes('status tool'),
+      'the interrupt prompt must not survive into the archived command line',
+    );
   });
 
   check('the shared-journal receipt validates against the version-3 contract', () => {
@@ -1326,6 +1475,215 @@ if (cooperatingRun) {
       assert.ok(!text.includes('principal:claude-foreign'), 'the raw foreign principal leaked');
       assert.ok(!/foreign-certify-[0-9a-f]+/.test(text), 'the raw foreign marker leaked');
     }
+  });
+
+  rmSync(scratch, { recursive: true, force: true });
+}
+
+// ─── 3e. native launch, process identity, and the masquerading client ────────────────────────────
+// The Task-6 launch regressions. Three of the plan's named cases are already pinned above — early
+// process exit (§3c: the client exits 0 before it could be interrupted), restart without a session
+// (§3b: "returned no answer"), and failed authentication (§3: "not signed in") — so this section
+// covers the rest: PATH resolution through hostile directory names, a missing binary, the Windows
+// launcher shims, full-argv process identity, an honest kill, and the client whose MCP session
+// lives in a CHILD process while the launched image is no longer the vendor.
+
+process.stdout.write('\n[client-certify] native launch and process identity\n');
+
+check('whichSync resolves a binary through a PATH directory with spaces and Unicode', () => {
+  // The old harness delegated this to `which`; the Node walk must not be worse than the shell at
+  // the one thing shells are good at, and PATH entries with spaces and non-ASCII bytes are common.
+  const dir = join(tmpdir(), 'crib chemin certifié – tâche');
+  mkdirSync(dir, { recursive: true });
+  const binPath = join(dir, 'claude');
+  writeFileSync(binPath, '#!/bin/sh\necho 9.9.9\n');
+  chmodSync(binPath, 0o755);
+  const originalPath = process.env.PATH;
+  try {
+    process.env.PATH = `${dir}${delimiter}${originalPath}`;
+    assert.equal(whichSync('claude'), binPath);
+    // resolveBinary must pass through the same PATH walk and probe the resolved absolute file.
+    const resolved = resolveBinary(clientSpec('claude'));
+    assert.equal(resolved.status, 'pass');
+    assert.equal(resolved.resolvedPath, binPath);
+    assert.equal(resolved.version, '9.9.9');
+  } finally {
+    process.env.PATH = originalPath;
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+check('resolveBinary refuses by name when no vendor executable is on PATH', () => {
+  const originalPath = process.env.PATH;
+  try {
+    process.env.PATH = tmpdir();
+    const resolved = resolveBinary(clientSpec('claude'));
+    assert.equal(resolved.status, 'blocked');
+    assert.match(resolved.reason, /no Claude Code executable found on PATH/);
+  } finally {
+    process.env.PATH = originalPath;
+  }
+});
+
+check('a Windows .cmd launcher is invoked through cmd.exe, never a shell', () => {
+  const launch = launchableCommand('C:\\Tools\\crib.cmd', ['-p', 'x'], 'win32');
+  assert.deepEqual(launch, {
+    command: 'cmd.exe',
+    args: ['/d', '/s', '/c', 'C:\\Tools\\crib.cmd', '-p', 'x'],
+  });
+  // CVE-2024-27964: a .cmd file is interpreted by cmd.exe and Node cannot exec it directly — and
+  // `shell: true` would re-parse every argument into an injection surface. The /c form with each
+  // argument as its own argv element is the one that does neither. Everything else launches as
+  // itself, on every platform.
+  assert.deepEqual(launchableCommand('C:\\Tools\\claude.exe', ['-p'], 'win32'), {
+    command: 'C:\\Tools\\claude.exe',
+    args: ['-p'],
+  });
+  assert.deepEqual(launchableCommand('/usr/local/bin/claude', ['-p'], 'linux'), {
+    command: '/usr/local/bin/claude',
+    args: ['-p'],
+  });
+});
+
+check('executableCandidates enumerates a bare name the way the Windows loader would', () => {
+  assert.deepEqual(executableCandidates('claude', 'win32', '.COM;.EXE;.CMD'), [
+    'claude',
+    'claude.com',
+    'claude.exe',
+    'claude.cmd',
+  ]);
+  // A name that already carries a PATHEXT extension, or a path separator, is not a PATH search.
+  assert.deepEqual(executableCandidates('claude.cmd', 'win32', '.COM;.EXE;.CMD'), ['claude.cmd']);
+  assert.deepEqual(executableCandidates('bin\\claude', 'win32'), ['bin\\claude']);
+  assert.deepEqual(executableCandidates('bin/claude', 'linux'), ['bin/claude']);
+  // Non-Windows never appends extensions to a bare name.
+  assert.deepEqual(executableCandidates('claude', 'linux'), ['claude']);
+});
+
+check('commandLineMatches identifies a process by its full executable path in argv', () => {
+  // The whole point of full-argv identity: a Node-launched CLI shows as `node /path/claude …`, and
+  // the resolved path is the only honest needle. A basename would match anything; a merely similar
+  // path must not count.
+  assert.equal(commandLineMatches('node /x/bin/claude -p hi', '/x/bin/claude'), true);
+  assert.equal(commandLineMatches('sleep 300', '/x/bin/claude'), false);
+  assert.equal(commandLineMatches('node /x/other/claude -p hi', '/x/bin/claude'), false);
+  assert.equal(commandLineMatches(undefined, '/x/bin/claude'), false);
+});
+
+// confirmTermination is async, so the process probes run at top level — this file already runs its
+// e2e scenarios under top-level await — and report through check() like every other case.
+let live = null;
+try {
+  const LIVE_MARK = 'crib-live-process-probe';
+  live = spawn(process.execPath, ['-e', `setInterval(() => {}, 60000) /* ${LIVE_MARK} */`], {
+    stdio: 'ignore',
+  });
+  await new Promise((r) => setTimeout(r, 500));
+  check('a live process is visible in its own process tree with its full argv', () => {
+    assert.equal(processAlive(live.pid), true);
+    const tree = processTree(live.pid);
+    assert.ok(Array.isArray(tree) && tree.length > 0, 'no tree was produced for a live pid');
+    assert.equal(tree[0].pid, live.pid, 'the tree root must be the target pid');
+    assert.match(
+      tree[0].command ?? '',
+      new RegExp(LIVE_MARK),
+      'the tree root must carry the full argv, not a basename',
+    );
+  });
+  const signalled = killProcessTree(live.pid);
+  const confirmed = await confirmTermination(live.pid, 5_000);
+  check('killProcessTree signals a live tree and confirmTermination confirms its death', () => {
+    assert.equal(signalled, true, 'a live process must be signalled');
+    assert.equal(confirmed, true, 'a killed process must be confirmed dead');
+    assert.equal(processAlive(live.pid), false, 'the pid must be gone after the confirmed kill');
+  });
+} catch (error) {
+  failures.push(`live-process probe: ${error.message}`);
+  process.stderr.write(`  FAIL the live-process probe threw\n    ${error.message}\n`);
+} finally {
+  if (live?.pid && processAlive(live.pid)) killProcessTree(live.pid);
+}
+
+try {
+  const dead = spawnSync(process.execPath, ['-e', 'process.exit(0)']);
+  const signalled = killProcessTree(dead.pid);
+  const confirmed = await confirmTermination(dead.pid, 1_000);
+  check('an already-dead pid cannot be signalled, but its death confirms immediately', () => {
+    assert.ok(Number.isInteger(dead.pid), 'spawnSync must report the child pid');
+    assert.equal(signalled, false, 'killProcessTree must not claim a kill on a dead pid');
+    assert.equal(confirmed, true, 'an already-dead pid confirms as terminated');
+  });
+} catch (error) {
+  failures.push(`dead-pid probe: ${error.message}`);
+  process.stderr.write(`  FAIL the dead-pid probe threw\n    ${error.message}\n`);
+}
+
+// ─── 3f. the masquerading client: the kill lands on a child, never on the vendor ─────────────────
+// The MCP-child-only termination case. Every prerequisite succeeds, the protocol session is REAL
+// (the recorder observes it, so the observed-activity gate opens), and the process tree the harness
+// kills really dies — but the launched image exec'd into `sleep` and only a CHILD ever spoke the
+// protocol. An interruption leg that certified this run would certify killing a subprocess as
+// "interrupting the vendor client"; the identity refusal is the one defence against it.
+
+process.stdout.write(
+  '\n[client-certify] an MCP-child masquerade cannot certify as an interruption\n',
+);
+
+let masqueradingRun;
+try {
+  masqueradingRun = await runEndToEnd({
+    signedIn: true,
+    stubPackage: true,
+    serve: true,
+    vendor: 'masquerading',
+  });
+} catch (error) {
+  failures.push(`masquerading run threw: ${error.message}`);
+  process.stderr.write(
+    `  FAIL the masquerading run threw instead of writing a receipt\n    ${error.message}\n`,
+  );
+}
+
+if (masqueradingRun) {
+  const { result, out, scratch } = masqueradingRun;
+
+  check('the masquerading client is refused by IDENTITY, not by a failed kill', () => {
+    assert.equal(result.legs.interruption.status, 'fail', 'the masquerade was certified');
+    assert.match(
+      result.legs.interruption.detail,
+      /showed no .* client/,
+      'the refusal must name the identity gap',
+    );
+    const interrupted = result.receipt.vendor.interruptedProcess;
+    assert.ok(interrupted, 'the refused kill must still archive its evidence');
+    assert.equal(
+      interrupted.killed,
+      true,
+      'the signal was delivered — the refusal is about identity, not about a failed signal',
+    );
+    assert.equal(
+      interrupted.terminated,
+      true,
+      'the tree really died — a confirmed MCP-child kill is a real kill, and still not an interruption',
+    );
+    const commands = (interrupted.tree ?? []).map((node) => node.command ?? '');
+    assert.ok(commands.length > 0, 'the killed tree must be archived');
+    assert.ok(
+      commands.some(
+        (command) => /^sleep( |$)/.test(command) || command.includes('masquerade-helper'),
+      ),
+      `the killed tree must be the masquerading one (sleep image + helper child): ${JSON.stringify(commands)}`,
+    );
+    assert.ok(
+      !commands.some((command) => command.includes('bin/claude')),
+      'no killed node may name the vendor path — that is the masquerade the leg must refuse',
+    );
+  });
+
+  check('the masquerading receipt still validates against the version-3 contract', () => {
+    // A refused interruption is a finding, and a receipt that cannot be loaded is a missing cell.
+    const validated = validateClientCertificationReceipt(result.receipt, { evidenceRoot: out });
+    assert.equal(validated.formatVersion, 3);
   });
 
   rmSync(scratch, { recursive: true, force: true });
