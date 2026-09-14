@@ -31,7 +31,12 @@ import { loadLaunchPolicy } from './launch-policy.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(HERE, '..');
-const CLI = join(REPO_ROOT, 'packages/cli/dist/cli.js');
+// The executable under measurement. The acceptance collector passes the INSTALLED candidate's
+// CLI via --cli (Task 3: a freshness receipt must describe the product a launch ships, and the
+// product it ships is the one npm installs, not the workspace dist). Standalone, the default is
+// still the workspace copy — the harness stays runnable while developing. Set by main() from
+// --cli BEFORE any workload runs; every spawn below goes through this one path.
+let CLI = join(REPO_ROOT, 'packages/cli/dist/cli.js');
 
 function flag(argv, name, fallback) {
   const index = argv.indexOf(name);
@@ -43,6 +48,20 @@ function git(root, args) {
     encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'pipe'],
   }).trim();
+}
+
+/**
+ * The receipt's product identity, in the SAME schema write-receipt.mjs records: a workspace receipt
+ * carries ONLY `source` (no executable hash — nothing was installed), an installed-candidate
+ * receipt carries the sha256 of the executable it measured. One schema, two sources, so the
+ * decision never has to know which writer produced a receipt to read its product field.
+ */
+export function receiptProduct({ cliPath, cliFile }) {
+  if (cliPath === undefined) return { source: 'workspace' };
+  return {
+    source: 'installed-candidate',
+    executableSha256: `sha256:${createHash('sha256').update(readFileSync(cliFile)).digest('hex')}`,
+  };
 }
 
 /**
@@ -228,6 +247,20 @@ async function main() {
     );
     process.exit(2);
   }
+  // --cli names the executable under measurement. Refused BEFORE the fixture is built so a typo
+  // fails in milliseconds, not after a full workload on the wrong product.
+  const cliPath = flag(argv, '--cli');
+  if (cliPath !== undefined) {
+    const resolvedCli = resolve(cliPath);
+    if (!existsSync(resolvedCli)) {
+      process.stderr.write(
+        `freshness: REFUSES to run — --cli points at ${resolvedCli}, which does not exist.\n`,
+      );
+      process.exit(2);
+    }
+    CLI = resolvedCli;
+  }
+  const product = receiptProduct({ cliPath, cliFile: CLI });
 
   const root = buildFixture(fileCount);
   const { child, port } = await startServer(root);
@@ -450,6 +483,9 @@ async function main() {
       candidateCommit: git(REPO_ROOT, ['rev-parse', 'HEAD']),
       candidatePackageSha256: `sha256:${createHash('sha256').update(readFileSync(packagePath)).digest('hex')}`,
       policySha256,
+      // Task 3: the same product identity the collector's receipts carry — which executable the
+      // measurement exercised (installed candidate vs workspace dist) and the hash of its bytes.
+      product,
       workload: spec.workload,
       command,
       // v2: the receipt archives what actually ran, and the status above is derivable from it.

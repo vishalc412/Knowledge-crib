@@ -112,6 +112,23 @@ export function findInstallerBundle(outRoot = join(repoRoot, 'dist', 'installers
   return candidates[0];
 }
 
+/**
+ * Choose the installer bundle a smoke run exercises. `bundleDir` is explicit: the certifying
+ * acceptance collector names the SUPPLIED candidate bundle instead of trusting mtime discovery —
+ * mtime-newest happily picks whatever a check packed a moment ago, which is how a smoke can
+ * certify a rebuilt artifact while the receipts still describe the supplied one (Task 3).
+ */
+export function selectBundle({ outRoot = join(repoRoot, 'dist', 'installers'), bundleDir } = {}) {
+  if (bundleDir !== undefined) {
+    const manifestPath = join(bundleDir, 'manifest.json');
+    if (!existsSync(manifestPath)) {
+      throw new Error(`--bundle is not an installer bundle (no manifest.json): ${bundleDir}`);
+    }
+    return { bundleDir: resolve(bundleDir), manifestPath };
+  }
+  return findInstallerBundle(outRoot);
+}
+
 function run(cmd, args, opts = {}) {
   process.stdout.write(`$ ${[cmd, ...args].join(' ')}\n`);
   execFileSync(cmd, args, { stdio: 'inherit', ...opts });
@@ -159,8 +176,8 @@ export function npmInstallArgs(prefix, tarballs) {
   ];
 }
 
-export function smokeInstall({ outRoot = join(repoRoot, 'dist', 'installers') } = {}) {
-  const bundle = findInstallerBundle(outRoot);
+export function smokeInstall({ outRoot, bundleDir } = {}) {
+  const bundle = selectBundle({ outRoot, bundleDir });
 
   const manifest = JSON.parse(readFileSync(bundle.manifestPath, 'utf8'));
   const packageNames = manifest.packages ?? [manifest.package];
@@ -438,8 +455,8 @@ export function validateMemorySurvived({ seed, recall, digests }) {
  * path in the flow sits under a `Users/jöhn doe`-style home (space + non-ASCII) on the platform's
  * native separator.
  */
-export function smokeUserDirInstall({ outRoot = join(repoRoot, 'dist', 'installers') } = {}) {
-  const bundle = findInstallerBundle(outRoot);
+export function smokeUserDirInstall({ outRoot, bundleDir } = {}) {
+  const bundle = selectBundle({ outRoot, bundleDir });
   const manifest = JSON.parse(readFileSync(bundle.manifestPath, 'utf8'));
 
   const root = mkdtempSync(join(tmpdir(), 'knowledge-crib-userdir-'));
@@ -585,6 +602,8 @@ export function smokeUserDirInstall({ outRoot = join(repoRoot, 'dist', 'installe
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  if (process.argv.includes('--user-dir')) smokeUserDirInstall();
-  else smokeInstall();
+  const bundleFlag = process.argv.indexOf('--bundle');
+  const bundleDir = bundleFlag >= 0 ? process.argv[bundleFlag + 1] : undefined;
+  if (process.argv.includes('--user-dir')) smokeUserDirInstall({ bundleDir });
+  else smokeInstall({ bundleDir });
 }

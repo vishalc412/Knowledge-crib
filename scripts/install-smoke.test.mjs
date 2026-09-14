@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import path from 'node:path';
 import {
   digestKey,
@@ -15,6 +15,7 @@ import {
   scenarioMemoryRoots,
   scenarioRepoId,
   seedScenarioMemory,
+  selectBundle,
   smokeMemoryRecord,
   userDirEnv,
   userDirScenarioPaths,
@@ -72,6 +73,42 @@ assert.throws(
   () => findInstallerBundle(join(process.cwd(), 'missing-installers')),
   /No installer bundles found/,
 );
+
+// Task 3 — `--bundle` names the candidate explicitly; mtime discovery is only the default. Without
+// this seam a certifying smoke run could pick up whatever a check packed a moment ago and certify a
+// rebuilt artifact while the receipts still describe the supplied one.
+{
+  const explicitRoot = mkdtempSync(join(tmpdir(), 'kc-select-bundle-'));
+  try {
+    // An explicit bundleDir that is not a bundle (no manifest.json) is refused by name.
+    mkdirSync(join(explicitRoot, 'not-a-bundle'));
+    assert.throws(
+      () => selectBundle({ bundleDir: join(explicitRoot, 'not-a-bundle') }),
+      /not an installer bundle/,
+    );
+    // Two bundles: 'chosen' is older, 'newer-mtime' was just written. Discovery picks the newest;
+    // an explicit bundleDir names the supplied one regardless of what was packed more recently.
+    mkdirSync(join(explicitRoot, 'knowledge-crib-chosen'));
+    writeFileSync(join(explicitRoot, 'knowledge-crib-chosen', 'manifest.json'), '{}\n');
+    mkdirSync(join(explicitRoot, 'knowledge-crib-newer'));
+    writeFileSync(join(explicitRoot, 'knowledge-crib-newer', 'manifest.json'), '{}\n');
+    assert.equal(
+      selectBundle({ outRoot: explicitRoot }).bundleDir,
+      join(explicitRoot, 'knowledge-crib-newer'),
+    );
+    assert.equal(
+      selectBundle({ bundleDir: join(explicitRoot, 'knowledge-crib-chosen') }).bundleDir,
+      resolve(join(explicitRoot, 'knowledge-crib-chosen')),
+      'an explicit bundleDir wins over mtime discovery',
+    );
+    assert.equal(
+      selectBundle({ bundleDir: join(explicitRoot, 'knowledge-crib-chosen') }).manifestPath,
+      resolve(join(explicitRoot, 'knowledge-crib-chosen', 'manifest.json')),
+    );
+  } finally {
+    rmSync(explicitRoot, { recursive: true, force: true });
+  }
+}
 
 assert.deepEqual(npmInstallArgs('/tmp/kc', ['/tmp/dep.tgz', '/tmp/pkg.tgz']), [
   'install',

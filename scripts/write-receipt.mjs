@@ -17,7 +17,8 @@ import { execFileSync } from 'node:child_process';
  *   node scripts/write-receipt.mjs <type> --out receipts/install.json \
  *     --package <candidate-tarball> --command "pnpm installer:smoke" --exit-code 0 \
  *     [--command "..." --exit-code N ...] [--artifact <path>...] [--artifact-root <dir>] \
- *     [--run-id <id>] [--p95-ms <n>] [--workload <name>]
+ *     [--run-id <id>] [--p95-ms <n>] [--workload <name>] \
+ *     [--product-source <workspace|installed-candidate>] [--executable <installed cli.js>]
  *
  * `--package` is required, and `--status` is no longer a claim: pass/fail is derived from the
  * archived --command/--exit-code pairs (a caller's --status must agree with them or the writer
@@ -127,6 +128,30 @@ export function buildReceipt({ type, argv, now = new Date().toISOString(), detai
       `--status ${declaredStatus} contradicts the recorded command results, which derive ${status}; a receipt may not disagree with what actually ran`,
     );
   }
+  // Task 3: WHICH product did the check exercise? A receipt that ran the workspace's own dist says
+  // `workspace`; one that ran the installed candidate names the executable it was handed, hashed —
+  // never the machine-absolute path itself, which would make the evidence non-relocatable. An
+  // installed-candidate receipt WITHOUT an executable is a claim about bytes nobody hashed.
+  const productSource = flag(argv, '--product-source') ?? 'workspace';
+  if (productSource !== 'workspace' && productSource !== 'installed-candidate') {
+    throw new Error(
+      `--product-source must be workspace or installed-candidate, got ${productSource}`,
+    );
+  }
+  const executable = flag(argv, '--executable');
+  if (productSource === 'installed-candidate') {
+    if (executable === undefined) {
+      throw new Error(
+        '--executable is required when --product-source is installed-candidate: a receipt claiming the installed product must hash the executable it ran',
+      );
+    }
+    if (!existsSync(executable)) {
+      throw new Error(`--executable does not exist: ${executable}`);
+    }
+  }
+  if (executable !== undefined && !existsSync(executable)) {
+    throw new Error(`--executable does not exist: ${executable}`);
+  }
   if (status === 'pass' && artifacts.length === 0) {
     throw new Error(
       `a passing ${type} receipt must reference at least one --artifact; a claim with nothing behind it is not evidence`,
@@ -153,6 +178,10 @@ export function buildReceipt({ type, argv, now = new Date().toISOString(), detai
     command: commands.length === 1 ? commands[0] : commands.join(' && '),
     commandResults,
     platform: { os: process.platform, arch: process.arch, node: process.version },
+    product: {
+      source: productSource,
+      ...(executable !== undefined ? { executableSha256: sha256(readFileSync(executable)) } : {}),
+    },
     runner:
       process.env.GITHUB_ACTIONS === 'true'
         ? { provider: 'github-actions', runId: process.env.GITHUB_RUN_ID }

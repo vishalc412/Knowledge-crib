@@ -62,6 +62,13 @@ run('node', ['scripts/launch-decision.test.mjs']);
 // run-identity, derived-status and artifact-byte gates, plus the v2 writer. Orphaned like the
 // evidence tests above were: nothing ran it, so the validator could rot between releases.
 run('node', ['scripts/acceptance-receipt.test.mjs']);
+// Task 3 — the candidate bundle's verification (manifest + every workspace package checksum, the
+// before/after digest guard, the isolated install's bin contract) and the collector's check table:
+// which product each check exercises, the installed-adapter/install/freshness seams, and the
+// writer's product flags. Nothing else runs these; they are the specification of "exercise the
+// supplied installed candidate".
+run('node', ['scripts/candidate-bundle.test.mjs']);
+run('node', ['scripts/collect-acceptance-receipts.test.mjs']);
 // WP9.1 — the release-evidence manifest builder's own invariants (dirty/red/certification
 // legs, tamper/omission/duplicate) were previously orphaned: nothing ran this file.
 run('node', ['scripts/release-evidence.test.mjs']);
