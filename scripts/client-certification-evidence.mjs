@@ -7,12 +7,15 @@
  * interruption/restart, authorized resume, and foreign-principal exclusion — on the named native
  * operating system, for this exact candidate package, collected under this exact policy.
  *
- * Version 2 is the CERTIFYING schema; version 1 stays readable for diagnostics only. The distinction
- * is not cosmetic. Version 1 recorded interruption and restart as one fact and never separated tool
- * invocation from the handshake, so its receipts cannot express the legs the launch promise now
- * requires — and a receipt that cannot express a required fact cannot certify it. Rather than let a
- * legacy receipt silently satisfy a stricter promise (the A02 failure), only a version-2 receipt may
- * cover a cell; `certifyClientCell` says so by name.
+ * Version 3 is the CERTIFYING schema; versions 1 and 2 stay readable for diagnostics only. The
+ * distinction is not cosmetic. Version 1 recorded interruption and restart as one fact and never
+ * separated tool invocation from the handshake; version 2 separated the legs but judged them from
+ * the vendor client's printed words, which a client can echo without ever speaking to the server.
+ * Version 3 correlates each passing leg with recorded protocol traffic — the two hashed principal
+ * configurations and the recorder transcripts they produced — and a receipt that cannot express a
+ * required fact cannot certify it. Rather than let a legacy receipt silently satisfy a stricter
+ * promise (the A02 failure), only a version-3 receipt may cover a cell; `certifyClientCell` says so
+ * by name.
  *
  * The vocabulary is the POLICY's. `CERTIFIED_CLIENTS` and the platform set are re-exported from
  * `launch-policy.mjs` rather than restated here: a second copy of "which clients are advertised" is
@@ -22,11 +25,12 @@
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join, resolve, sep } from 'node:path';
+import { RECORDING_FORMAT, recordingProblems } from './client-protocol-recorder.mjs';
 import { POLICY_CLIENTS, POLICY_PLATFORMS, policyClientVersionFloor } from './launch-policy.mjs';
 
-/** Version 2 certifies. Version 1 is readable so an honest historical failure stays legible. */
-export const CERTIFICATION_EVIDENCE_FORMAT_VERSION = 2;
-export const SUPPORTED_CERTIFICATION_FORMAT_VERSIONS = [1, 2];
+/** Version 3 certifies. Versions 1 and 2 are readable so an honest historical failure stays legible. */
+export const CERTIFICATION_EVIDENCE_FORMAT_VERSION = 3;
+export const SUPPORTED_CERTIFICATION_FORMAT_VERSIONS = [1, 2, 3];
 
 export const CERTIFIED_CLIENTS = [...POLICY_CLIENTS];
 const PLATFORM_IDS = new Set(POLICY_PLATFORMS);
@@ -58,6 +62,21 @@ const LEG_STATUSES = ['pass', 'fail', 'blocked', 'not-run'];
  * `vendor-client` may satisfy them in the certifying schema.
  */
 const VENDOR_ASSERTING_LEGS = ['handshake', 'toolUse'];
+
+/**
+ * The legs whose PASS is a claim about recorded protocol traffic. In the v3 schema each of them
+ * carries a `protocol` array of recorder references — `{recording: 'owner' | 'foreign', operation,
+ * request}` naming the completed operation the leg's printed-word evidence is correlated with — so
+ * a leg can no longer pass on vocabulary alone.
+ */
+const PROTOCOL_DEPENDENT_LEGS = [
+  'handshake',
+  'toolUse',
+  'record',
+  'restart',
+  'authorizedResume',
+  'foreignPrincipalExclusion',
+];
 
 export class CertificationEvidenceError extends Error {
   constructor(message) {
@@ -108,7 +127,7 @@ export function certificationCell(receipt) {
  * being inferred.
  */
 export function receiptLegs(receipt) {
-  if (receipt?.formatVersion === 2) {
+  if (receipt?.formatVersion >= 2) {
     return Object.fromEntries(
       CERTIFICATION_LEGS.map((leg) => [leg, receipt.legs?.[leg] ?? { status: 'not-run' }]),
     );
@@ -246,6 +265,13 @@ export function certifyClientCell(receipt, options = {}) {
       'a certifying receipt references no runtime transcript or log',
     );
   }
+  // The certifying schema's legs are correlated claims: each passing protocol leg must reference
+  // the completed operation it rests on, and the receipt must carry the hashed configurations and
+  // recordings that produced that traffic. A receipt whose legs pass without them is the
+  // word-matching false positive the v3 schema exists to refuse — enforced here, on a receipt that
+  // arrives already parsed, with the same rules the validator applies on disk.
+  const [protocolProblem] = protocolRefProblems(receipt);
+  if (protocolProblem) return fail(protocolProblem.problem, protocolProblem.detail);
   return { ok: true, cell };
 }
 
@@ -483,6 +509,191 @@ function validateVersion2(receipt, options) {
 }
 
 /**
+ * Structural problems with a v3 receipt's protocol claims. Pure data inspection, no disk access,
+ * so `certifyClientCell` can refuse a word-only receipt that arrives already parsed with the same
+ * rules the validator enforces on disk.
+ *
+ * The configurations and recordings are demanded exactly when a protocol-dependent leg PASSES: a
+ * blocked or failed run legitimately wires nothing, records nothing, and still validates as the
+ * honest failure it wrote down. A passing leg is the opposite case — a claim about protocol
+ * traffic — and a claim without the traffic behind it is assertion, not evidence.
+ */
+function protocolRefProblems(receipt) {
+  const problems = [];
+  const cell = certificationCell(receipt);
+  const fail = (detail) => problems.push({ problem: 'client-cell-uncertified', cell, detail });
+  const passing = PROTOCOL_DEPENDENT_LEGS.filter((leg) => receipt?.legs?.[leg]?.status === 'pass');
+
+  for (const leg of passing) {
+    const refs = receipt.legs[leg].protocol;
+    if (!Array.isArray(refs) || refs.length === 0) {
+      fail(`legs.${leg} passed without protocol evidence`);
+      continue;
+    }
+    for (const ref of refs) {
+      if (
+        !ref ||
+        (ref.recording !== 'owner' && ref.recording !== 'foreign') ||
+        !Number.isInteger(ref.operation) ||
+        ref.operation < 0 ||
+        typeof ref.request !== 'string' ||
+        !ref.request
+      ) {
+        fail(`legs.${leg} carries a malformed protocol reference`);
+      }
+    }
+    // The exclusion leg is the boundary claim, and the boundary is two-sided by construction: the
+    // foreign principal's plant and confirm operations on one recording, the owner's
+    // marker-absent retrieval on the other. An exclusion that references only one side proves
+    // only half the boundary.
+    if (leg === 'foreignPrincipalExclusion') {
+      const sides = new Set(refs.map((ref) => ref?.recording));
+      if (!sides.has('owner') || !sides.has('foreign')) {
+        fail('the exclusion leg must reference both the owner and the foreign recordings');
+      }
+    }
+  }
+  if (passing.length === 0) return problems;
+
+  const configurations = receipt.configurations;
+  if (!configurations?.owner || !configurations?.foreign) {
+    fail('passing protocol legs require the hashed owner and foreign configurations');
+    return problems;
+  }
+  for (const side of ['owner', 'foreign']) {
+    const config = configurations[side];
+    if (typeof config.sha256 !== 'string' || !SHA256.test(config.sha256)) {
+      fail(`configurations.${side}.sha256 must be a sha256 digest`);
+    }
+    if (typeof config.principalSha256 !== 'string' || !SHA256.test(config.principalSha256)) {
+      fail(`configurations.${side}.principalSha256 must be a sha256 digest`);
+    }
+  }
+  // The configurations must be two DIFFERENT principals over the SAME stores and the SAME candidate:
+  // one principal id proves nothing about exclusion, and two different servers or repositories
+  // proves nothing about the product being shipped.
+  if (configurations.owner.principalSha256 !== receipt.principalMarkers?.owner) {
+    fail('configurations.owner.principalSha256 must match principalMarkers.owner');
+  }
+  if (configurations.owner.principalSha256 === configurations.foreign.principalSha256) {
+    fail('the owner and foreign configurations must carry different principals');
+  }
+  if (
+    JSON.stringify(configurations.owner.stores ?? null) !==
+    JSON.stringify(configurations.foreign.stores ?? null)
+  ) {
+    fail(
+      'the owner and foreign configurations must share the same isolated journal and repository',
+    );
+  }
+  if (
+    configurations.owner.serverCommandSha256 !== null &&
+    configurations.owner.serverCommandSha256 !== undefined &&
+    configurations.foreign.serverCommandSha256 !== null &&
+    configurations.foreign.serverCommandSha256 !== undefined &&
+    configurations.owner.serverCommandSha256 !== configurations.foreign.serverCommandSha256
+  ) {
+    fail('the owner and foreign configurations must launch the same installed candidate');
+  }
+  if (passing.includes('foreignPrincipalExclusion')) {
+    for (const key of ['ownerRecording', 'foreignRecording']) {
+      const recording = receipt.protocol?.[key];
+      if (
+        !recording ||
+        typeof recording.path !== 'string' ||
+        !recording.path ||
+        typeof recording.sha256 !== 'string' ||
+        !SHA256.test(recording.sha256)
+      ) {
+        fail(`protocol.${key} is required when the exclusion leg passes`);
+      }
+    }
+  }
+  return problems;
+}
+
+/** The recorder transcripts a v3 receipt archives, with the side each is attributed to. */
+function declaredRecordings(receipt) {
+  const protocol = receipt?.protocol;
+  if (!protocol || typeof protocol !== 'object') return [];
+  const recordings = [];
+  for (const [key, side] of [
+    ['ownerRecording', 'owner'],
+    ['foreignRecording', 'foreign'],
+  ]) {
+    const recording = protocol[key];
+    if (recording === undefined || recording === null) continue;
+    recordings.push({ key, side, path: recording.path, sha256: recording.sha256 });
+  }
+  return recordings;
+}
+
+/**
+ * Recompute each archived recording's digest from disk and re-judge its contents with the
+ * recorder's own rules. The recording is what ties a passing leg to a COMPLETED operation by a
+ * NAMED principal, so a recording that fails its own schema — or is attributed to the wrong
+ * principal, or shows a different server command than the configurations claim — voids the
+ * protocol evidence the legs rest on.
+ */
+function verifyRecordings(recordings, receipt, evidenceRoot) {
+  const root = resolve(evidenceRoot);
+  for (const recording of recordings) {
+    sha(recording.sha256, `protocol.${recording.key}.sha256`);
+    const resolved = resolveEvidenceFile(root, recording.path, `protocol.${recording.key}.path`);
+    const digest = `sha256:${createHash('sha256').update(readFileSync(resolved)).digest('hex')}`;
+    assert(
+      recording.sha256 === digest,
+      `protocol.${recording.key}.sha256 does not match the ${recording.path} file`,
+    );
+    let parsed;
+    try {
+      parsed = JSON.parse(readFileSync(resolved, 'utf8'));
+    } catch (error) {
+      throw new CertificationEvidenceError(
+        `protocol.${recording.key} is not parseable: ${error.message}`,
+      );
+    }
+    const problems = recordingProblems(parsed);
+    assert(
+      problems.length === 0,
+      `protocol.${recording.key} is not a valid recording: ${problems[0]}`,
+    );
+    const config = receipt.configurations?.[recording.side];
+    if (config?.principalSha256 && parsed.principalSha256 !== config.principalSha256) {
+      throw new CertificationEvidenceError(
+        `protocol.${recording.key} is attributed to another principal than configurations.${recording.side}`,
+      );
+    }
+    if (config?.serverCommandSha256 && parsed.serverCommandSha256 !== config.serverCommandSha256) {
+      throw new CertificationEvidenceError(
+        `protocol.${recording.key} shows a different server command than configurations.${recording.side}`,
+      );
+    }
+  }
+}
+
+/**
+ * Version 3 = version 2 + the correlated protocol evidence. The two configurations and the
+ * archived recordings are demanded exactly when the legs that lean on them pass, so a blocked or
+ * broken run keeps validating as the failure it recorded — which keeps the failure legible
+ * instead of turning every wiring problem into an unreadable receipt.
+ */
+function validateVersion3(receipt, options) {
+  validateVersion2(receipt, options);
+  const [problem] = protocolRefProblems(receipt);
+  if (problem) {
+    throw new CertificationEvidenceError(`${problem.problem}:${problem.cell}:${problem.detail}`);
+  }
+  const recordings = declaredRecordings(receipt);
+  if (recordings.length === 0) return;
+  assert(
+    typeof options.evidenceRoot === 'string' && options.evidenceRoot.trim(),
+    'archived protocol recordings require an evidence root to verify them',
+  );
+  verifyRecordings(recordings, receipt, options.evidenceRoot);
+}
+
+/**
  * Validate the complete receipt before it may influence public support language.
  *
  * `options.evidenceRoot` is the receipts area (the directory the receipts are loaded from). It is
@@ -536,7 +747,8 @@ export function validateClientCertificationReceipt(receipt, options = {}) {
     'platform.node must be a Node release starting with v, for example v22.23.1',
   );
 
-  if (receipt.formatVersion === 2) validateVersion2(receipt, options);
+  if (receipt.formatVersion === 3) validateVersion3(receipt, options);
+  else if (receipt.formatVersion === 2) validateVersion2(receipt, options);
   else validateVersion1(receipt, options);
 
   const [binding] = bindingProblems(receipt, options);
@@ -575,6 +787,11 @@ export function loadClientCertificationReceipts(directory) {
       // that would turn a broken receipt into a missing cell, which is the failure this whole
       // module exists to make visible.
       if (parsed?.format === 'knowledge-crib-acceptance-receipt') return undefined;
+      // A version-3 receipt archives its protocol recordings in the same directory, next to the
+      // receipt that references them — an attachment to that receipt, not a receipt itself. The
+      // recording positively identifies by its own format; refusing it here would make every real
+      // evidence directory unloadable.
+      if (parsed?.format === RECORDING_FORMAT) return undefined;
       const receipt = validateClientCertificationReceipt(parsed, { evidenceRoot: directory });
       const cell = `${certificationCell(receipt)}/${receipt.platform.arch}${
         receipt.platform.wsl ? '/wsl' : ''
@@ -583,7 +800,7 @@ export function loadClientCertificationReceipts(directory) {
       cells.add(cell);
       // Two cells may legitimately share a host binary (a Copilot and a VS Code run, say), but each
       // is a separate RUN. A reused run id means one run's evidence is being counted twice.
-      if (receipt.formatVersion === 2) {
+      if (receipt.formatVersion >= 2) {
         assert(!runIds.has(receipt.runId), `duplicate certification run id: ${receipt.runId}`);
         runIds.add(receipt.runId);
       }

@@ -2,17 +2,23 @@
  * Tests for the vendor-certification harness.
  *
  * THE HARD PART TO TEST is that this script must produce a receipt which is (a) valid under the
- * version-2 contract, and (b) honest — a cell whose vendor runtime could not actually be exercised
+ * version-3 contract, and (b) honest — a cell whose vendor runtime could not actually be exercised
  * comes back UNCERTIFIED with a named reason, never a fabricated pass. The tests below drive the
- * real `certifyCell` against a FAKE vendor binary and a deliberately broken environment, because
+ * real `certifyCell` against FAKE vendor binaries and a deliberately broken environment, because
  * that is the one path this host can actually reach: on a machine with no signed-in vendor accounts
  * and no native Linux/Windows runner, the honest output of this harness is exactly a blocked,
  * non-certifying receipt. Asserting that it emits one — and that the receipt still validates — is
  * asserting the behaviour that matters most, not a stand-in for it.
  *
- * NO VENDOR ACCOUNT, NO NETWORK, NO REAL PACKAGE: the fake binary is four lines of shell, the
- * "candidate" is a file that is not a tarball (so the isolated install fails by design), and the
- * assertions are on the resulting verdict.
+ * THE v3 ADDITION is that passing legs are judged from recorded PROTOCOL traffic, not from the
+ * words the client printed. That claim is only as good as the two scenarios that pin it: a client
+ * that prints every expected word and never spawns a server must fail every leg by name (the v2
+ * false positive, rebuilt), and a client that actually speaks the protocol against a shared-journal
+ * stub must pass the six protocol-dependent legs with a receipt naming two distinct principals.
+ *
+ * NO VENDOR ACCOUNT, NO NETWORK, NO REAL PACKAGE: the fake binaries are a few lines of shell and
+ * node, the "candidate" is either a file that is not a tarball (so the isolated install fails by
+ * design) or a stub package, and the assertions are on the resulting verdict.
  *
  * Run: node scripts/client-certify.test.mjs
  */
@@ -40,11 +46,14 @@ import {
   CLIENT_IDS,
   DRIVER_VERSION,
   LEG_BEHAVIOURS,
+  buildForeignConfig,
   certifyCell,
   clientSpec,
   isWsl,
   sanitizeOutput,
+  wireProtocolRecorder,
 } from './client-certify.mjs';
+import { serverCommandSha256 } from './client-protocol-recorder.mjs';
 import { POLICY_CLIENTS } from './launch-policy.mjs';
 
 const HERE = fileURLToPath(new URL('.', import.meta.url));
@@ -52,6 +61,10 @@ const REPO_ROOT = resolve(HERE, '..');
 const HEAD = execFileSync('git', ['-C', REPO_ROOT, 'rev-parse', 'HEAD'], {
   encoding: 'utf8',
 }).trim();
+
+/** Same digest shape the harness and recorder use, so a re-hash is comparable to the declared one. */
+const sha256File = (path) =>
+  `sha256:${createHash('sha256').update(readFileSync(path)).digest('hex')}`;
 
 const failures = [];
 function check(label, fn) {
@@ -162,6 +175,264 @@ check('the run markers are redacted when passed as extra redactions', () => {
   assert.ok(!out.includes('foreign-certify-abc123'), 'the foreign marker survived');
 });
 
+// ─── 2b. the recorder wiring: owner and foreign configurations over one shared store ─────────────
+// "Create owner and foreign configurations that share the same isolated journal and repository,
+// carry different authenticated principal IDs, launch the same installed candidate, use the
+// vendor-specific configuration mechanism, and are individually hashed and recorded."
+
+process.stdout.write(
+  '\n[client-certify] the recorder wiring builds two principals over one store\n',
+);
+
+/** The ctx subset wireProtocolRecorder/buildForeignConfig consume, against fixtures on disk. */
+function recorderCtx(dir, name) {
+  return {
+    configPath: join(dir, name),
+    recorderPath: join(HERE, 'client-protocol-recorder.mjs'),
+    ownerRecordingPath: join(dir, 'owner-recording.json'),
+    foreignRecordingPath: join(dir, 'foreign-recording.json'),
+    ownerPrincipal: 'principal:claude-owner',
+    foreignPrincipal: 'principal:claude-foreign',
+    protocolMarkers: ['certify-abc123', 'foreign-certify-abc123', 'certifiedSymbol', 'intake:'],
+  };
+}
+
+const fakeCribBin = '/opt/crib-prefix/bin/crib';
+const claudeSpec = clientSpec('claude');
+
+function writeJsonFixture(ctx) {
+  writeFileSync(
+    ctx.configPath,
+    `${JSON.stringify(
+      {
+        mcpServers: {
+          'knowledge-crib': {
+            command: fakeCribBin,
+            args: ['serve', '.'],
+            env: {
+              KCRIB_MEMORY_DIR: '/tmp/crib-home/memory',
+              KCRIB_REGISTRY_DIR: '/tmp/crib-home',
+              KCRIB_PRINCIPAL_ID: ctx.ownerPrincipal,
+            },
+          },
+        },
+      },
+      null,
+      2,
+    )}\n`,
+  );
+}
+
+function writeTomlFixture(ctx) {
+  // The codex-style managed block the installer writes, plus the env sub-table isolation appends.
+  writeFileSync(
+    ctx.configPath,
+    [
+      '# >>> knowledge-crib managed >>>',
+      '[mcp_servers.knowledge-crib]',
+      `command = ${JSON.stringify(fakeCribBin)}`,
+      'args = ["serve", "."]',
+      'startup_timeout_sec = 20',
+      'tool_timeout_sec = 60',
+      '# <<< knowledge-crib managed <<<',
+      '',
+      '[mcp_servers.knowledge-crib.env]',
+      `KCRIB_MEMORY_DIR = ${JSON.stringify('/tmp/crib-home/memory')}`,
+      `KCRIB_REGISTRY_DIR = ${JSON.stringify('/tmp/crib-home')}`,
+      `KCRIB_PRINCIPAL_ID = ${JSON.stringify(ctx.ownerPrincipal)}`,
+      '',
+    ].join('\n'),
+  );
+}
+
+/** Recompute the identity digest over the config's declared server launch, both sides of the wire. */
+function declaredServerCommandSha256(config) {
+  const parsed = typeof config === 'string' ? JSON.parse(config) : config;
+  const server = parsed.mcpServers?.['knowledge-crib'] ?? parsed.servers?.['knowledge-crib'];
+  const args = server.args ?? [];
+  const at = (flag) => args.indexOf(flag);
+  // The wired config launches the recorder, whose own --server/-- argument pair names the real one.
+  return serverCommandSha256(args[at('--server') + 1], args.slice(at('--') + 1));
+}
+
+check('JSON: the recorder is wired between the client and the candidate, env intact', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'crib-wire-test-'));
+  const ctx = recorderCtx(dir, 'claude.json');
+  writeJsonFixture(ctx);
+  const original = wireProtocolRecorder(ctx, claudeSpec, ctx.ownerPrincipal);
+  assert.equal(
+    original.server,
+    fakeCribBin,
+    'the original launch must be captured before rewiring',
+  );
+  assert.deepEqual(original.serverArgs, ['serve', '.']);
+
+  const final = JSON.parse(readFileSync(ctx.configPath, 'utf8'));
+  const server = final.mcpServers['knowledge-crib'];
+  assert.equal(
+    server.command,
+    process.execPath,
+    'the config must launch node, not the candidate directly',
+  );
+  assert.equal(server.args[0], ctx.recorderPath, 'the first arg must be the recorder shim');
+  const at = (flag) => server.args.indexOf(flag);
+  assert.ok(at('--server') !== -1 && server.args[at('--server') + 1] === fakeCribBin);
+  assert.ok(at('--record') !== -1 && server.args[at('--record') + 1] === ctx.ownerRecordingPath);
+  assert.ok(at('--principal') !== -1 && server.args[at('--principal') + 1] === ctx.ownerPrincipal);
+  assert.equal(server.args[at('--markers') + 1], ctx.protocolMarkers.join(','));
+  assert.deepEqual(server.args.slice(at('--') + 1), ['serve', '.']);
+  assert.equal(
+    server.env.KCRIB_PRINCIPAL_ID,
+    ctx.ownerPrincipal,
+    'the isolation env must survive rewiring',
+  );
+  assert.equal(server.env.KCRIB_MEMORY_DIR, '/tmp/crib-home/memory');
+});
+
+check('JSON: the foreign config swaps principal and recording, and NOTHING else', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'crib-wire-test-'));
+  const ctx = recorderCtx(dir, 'claude.json');
+  writeJsonFixture(ctx);
+  wireProtocolRecorder(ctx, claudeSpec, ctx.ownerPrincipal);
+  const ownerFinal = readFileSync(ctx.configPath, 'utf8');
+  const foreignText = buildForeignConfig(ctx, claudeSpec, ownerFinal);
+
+  const foreign = JSON.parse(foreignText);
+  const server = foreign.mcpServers['knowledge-crib'];
+  assert.equal(
+    server.env.KCRIB_PRINCIPAL_ID,
+    ctx.foreignPrincipal,
+    'the principal must be swapped',
+  );
+  assert.equal(server.env.KCRIB_PRINCIPAL_ID !== ctx.ownerPrincipal, true);
+  // The shared stores are the point: both principals work over the SAME journal and repository.
+  assert.equal(server.env.KCRIB_MEMORY_DIR, '/tmp/crib-home/memory');
+  assert.equal(server.env.KCRIB_REGISTRY_DIR, '/tmp/crib-home');
+  assert.ok(
+    !foreignText.includes(ctx.ownerPrincipal),
+    'the owner principal leaked into the foreign config',
+  );
+  assert.ok(!foreignText.includes(ctx.ownerRecordingPath), 'the owner recording path leaked');
+  const at = (flag) => server.args.indexOf(flag);
+  assert.equal(server.args[0], ctx.recorderPath, 'the foreign config still launches the same shim');
+  assert.equal(server.args[at('--principal') + 1], ctx.foreignPrincipal);
+  assert.equal(server.args[at('--record') + 1], ctx.foreignRecordingPath);
+
+  // Both configurations launch the SAME installed candidate, provable from the configs alone.
+  const ownerConfig = JSON.parse(ownerFinal);
+  assert.equal(
+    declaredServerCommandSha256(ownerConfig),
+    declaredServerCommandSha256(foreign),
+    'owner and foreign must launch the same server command',
+  );
+  assert.equal(
+    declaredServerCommandSha256(ownerConfig),
+    serverCommandSha256(fakeCribBin, ['serve', '.']),
+    'the wired config must name the original candidate launch',
+  );
+});
+
+check('TOML: the managed block is rewired in place, env sub-table preserved', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'crib-wire-test-'));
+  const ctx = recorderCtx(dir, 'toml-config');
+  const tomlSpec = { ...claudeSpec, configFormat: 'toml' };
+  writeTomlFixture(ctx);
+  const original = wireProtocolRecorder(ctx, tomlSpec, ctx.ownerPrincipal);
+  assert.equal(original.server, fakeCribBin, 'the TOML original launch must be captured too');
+
+  const final = readFileSync(ctx.configPath, 'utf8');
+  assert.ok(
+    final.includes(`command = ${JSON.stringify(process.execPath)}`),
+    'node must replace the candidate',
+  );
+  assert.ok(final.includes(ctx.recorderPath), 'the recorder path must appear in args');
+  assert.ok(
+    final.includes("'--server'") || final.includes('"--server"'),
+    'the server flag must be spliced in',
+  );
+  assert.ok(
+    final.includes(JSON.stringify(fakeCribBin).replace(/"/g, '')) || final.includes(fakeCribBin),
+  );
+  assert.ok(
+    final.includes(`KCRIB_MEMORY_DIR = ${JSON.stringify('/tmp/crib-home/memory')}`),
+    'the env sub-table must survive',
+  );
+  assert.ok(
+    final.includes(ctx.ownerPrincipal),
+    'the owner principal must be present before the swap',
+  );
+  assert.ok(
+    final.includes('[mcp_servers.knowledge-crib.env]'),
+    'the env sub-table header must survive',
+  );
+});
+
+check('TOML: the foreign swap re-principals the managed block only', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'crib-wire-test-'));
+  const ctx = recorderCtx(dir, 'toml-config');
+  const tomlSpec = { ...claudeSpec, configFormat: 'toml' };
+  writeTomlFixture(ctx);
+  wireProtocolRecorder(ctx, tomlSpec, ctx.ownerPrincipal);
+  const ownerFinal = readFileSync(ctx.configPath, 'utf8');
+  const foreignText = buildForeignConfig(ctx, tomlSpec, ownerFinal);
+  assert.ok(!foreignText.includes(ctx.ownerPrincipal), 'the owner principal survived the swap');
+  assert.ok(
+    !foreignText.includes(ctx.ownerRecordingPath),
+    'the owner recording path survived the swap',
+  );
+  assert.ok(foreignText.includes(ctx.foreignPrincipal), 'the foreign principal must be present');
+  assert.ok(
+    foreignText.includes(ctx.foreignRecordingPath),
+    'the foreign recording path must be present',
+  );
+  assert.ok(
+    foreignText.includes(`KCRIB_MEMORY_DIR = ${JSON.stringify('/tmp/crib-home/memory')}`),
+    'the shared store must survive',
+  );
+  assert.ok(
+    foreignText.includes('[mcp_servers.knowledge-crib]'),
+    'the managed block must remain a block',
+  );
+});
+
+check('a config with no knowledge-crib entry is refused, in both directions', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'crib-wire-test-'));
+  const ctx = recorderCtx(dir, 'claude.json');
+  writeFileSync(ctx.configPath, `${JSON.stringify({ mcpServers: {} }, null, 2)}\n`);
+  assert.throws(
+    () => wireProtocolRecorder(ctx, claudeSpec, ctx.ownerPrincipal),
+    /knowledge-crib.* entry/,
+  );
+  const ownerFinal = readFileSync(ctx.configPath, 'utf8');
+  assert.throws(() => buildForeignConfig(ctx, claudeSpec, ownerFinal), /carries no .* entry/);
+});
+
+check('TOML without the managed block is refused, not silently skipped', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'crib-wire-test-'));
+  const ctx = recorderCtx(dir, 'toml-config');
+  const tomlSpec = { ...claudeSpec, configFormat: 'toml' };
+  writeFileSync(ctx.configPath, '[mcp_servers.something-else]\ncommand = "/bin/false"\n');
+  assert.throws(
+    () => wireProtocolRecorder(ctx, tomlSpec, ctx.ownerPrincipal),
+    /managed TOML block/,
+  );
+});
+
+check('a TOML foreign swap with no owner principal to replace is refused', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'crib-wire-test-'));
+  const ctx = recorderCtx(dir, 'toml-config');
+  const tomlSpec = { ...claudeSpec, configFormat: 'toml' };
+  writeTomlFixture(ctx);
+  wireProtocolRecorder(ctx, tomlSpec, ctx.ownerPrincipal);
+  const ownerFinal = readFileSync(ctx.configPath, 'utf8')
+    .split(ctx.ownerPrincipal)
+    .join('principal:somebody-else');
+  assert.throws(
+    () => buildForeignConfig(ctx, tomlSpec, ownerFinal),
+    /does not carry the value to re-principal/,
+  );
+});
+
 // ─── 3. the end-to-end path: a broken environment must yield an honest receipt ───────────────────
 // This is the assertion the whole file exists for.
 
@@ -188,7 +459,322 @@ function writeFakeVendor(dir, name, { signedIn }) {
 }
 
 /**
- * A real, installable tarball whose `crib` binary exits 0 and does nothing else.
+ * The v2 false positive, rebuilt as a regression. This client prints every word the v2 harness
+ * word-matched on — the queried id, an intake id, FOUND, PRESENT, CLEAN — and never once launches
+ * MCP server the config names. Under v2 it certified every leg; under v3 each leg must refuse by
+ * name, because the recordings those legs are judged from do not exist.
+ */
+function writeWordEchoVendor(dir, name) {
+  const path = join(dir, name);
+  // The turn argv is `-p <prompt> --mcp-config …`, so $2 is the prompt. Case order matters: the
+  // plant prompt contains BOTH "twice" and "intake_create", and "twice" must win.
+  writeFileSync(
+    path,
+    [
+      '#!/bin/sh',
+      'case "$1" in',
+      '  --version) echo "9.9.9 (word-echo vendor)"; exit 0;;',
+      '  auth) echo \'{"loggedIn":true}\'; exit 0;;',
+      'esac',
+      'prompt=$2',
+      'case "$prompt" in',
+      '  *"status tool"*) echo waiting; exit 0;;',
+      '  *"query tool"*) echo "certifiedSymbol"; exit 0;;',
+      '  *twice*) echo "PRESENT"; exit 0;;',
+      '  *"intake_create"*) echo "intake:never-created"; exit 0;;',
+      '  *"FOUND"*) echo "FOUND"; exit 0;;',
+      '  *"LEAKED"*) echo "CLEAN"; exit 0;;',
+      '  *) echo "{}"; exit 0;;',
+      'esac',
+      '',
+    ].join('\n'),
+  );
+  chmodSync(path, 0o755);
+  return path;
+}
+
+/**
+ * A vendor client that actually speaks MCP. It reads the config the harness wired, launches the
+ * server entry that config names (the recorder, in a certified run), and invokes the tools the
+ * prompts ask for over newline-delimited JSON-RPC. It is a fixture on the CLIENT side of the wire,
+ * so every leg the harness judges from protocol traffic is exercised for real — including the
+ * foreign principal's plant, which runs through the swapped-in foreign config like any real
+ * client would.
+ */
+function writeCooperatingVendor(dir, name) {
+  const path = join(dir, name);
+  writeFileSync(
+    path,
+    [
+      '#!/usr/bin/env node',
+      "const { spawn } = require('node:child_process');",
+      "const fs = require('node:fs');",
+      '',
+      'const args = process.argv.slice(2);',
+      "const say = (text) => { process.stdout.write(String(text) + '\\n'); };",
+      '',
+      "if (args[0] === '--version') { say('9.9.9 (cooperating vendor)'); process.exit(0); }",
+      "if (args[0] === 'auth') { say('{\"loggedIn\":true}'); process.exit(0); }",
+      '',
+      "const promptIndex = args.indexOf('-p');",
+      "const configIndex = args.indexOf('--mcp-config');",
+      "if (promptIndex === -1 || configIndex === -1) { say('{}'); process.exit(0); }",
+      'const prompt = args[promptIndex + 1];',
+      'const configPath = args[configIndex + 1];',
+      '',
+      'let server = null;',
+      'try {',
+      "  const parsed = JSON.parse(fs.readFileSync(configPath, 'utf8'));",
+      "  server = (parsed.mcpServers || parsed.servers || {})['knowledge-crib'] || null;",
+      '} catch {',
+      '  server = null;',
+      '}',
+      "if (!server) { say('{}'); process.exit(0); }",
+      '',
+      'const child = spawn(server.command, server.args || [], {',
+      '  env: Object.assign({}, process.env, server.env || {}),',
+      "  stdio: ['pipe', 'pipe', 'inherit'],",
+      '});',
+      '',
+      'let nextId = 1;',
+      'const pending = new Map();',
+      "let outBuffer = '';",
+      "child.stdout.setEncoding('utf8');",
+      "child.stdout.on('data', (chunk) => {",
+      '  outBuffer += chunk;',
+      "  let newline = outBuffer.indexOf('\\n');",
+      '  while (newline !== -1) {',
+      '    const line = outBuffer.slice(0, newline);',
+      '    outBuffer = outBuffer.slice(newline + 1);',
+      "    newline = outBuffer.indexOf('\\n');",
+      '    if (line.trim().length === 0) continue;',
+      '    let message;',
+      '    try { message = JSON.parse(line); } catch { continue; }',
+      '    if (message.id === undefined || message.id === null) continue;',
+      '    const waiter = pending.get(String(message.id));',
+      '    if (!waiter) continue;',
+      '    pending.delete(String(message.id));',
+      '    waiter(message.result === undefined ? null : message.result);',
+      '  }',
+      '});',
+      '',
+      'const call = (method, params) =>',
+      '  new Promise((resolve) => {',
+      '    const id = nextId;',
+      '    nextId += 1;',
+      '    pending.set(String(id), resolve);',
+      "    child.stdin.write(JSON.stringify({ jsonrpc: '2.0', id, method, params }) + '\\n');",
+      '  });',
+      '',
+      'const textOf = (result) =>',
+      "  Array.isArray(result && result.content) && typeof result.content[0].text === 'string'",
+      '    ? result.content[0].text',
+      '    : JSON.stringify(result);',
+      '',
+      'const pairsOf = (text) => {',
+      '  const pairs = {};',
+      '  for (const match of text.matchAll(/([A-Za-z_]+)="([^"]*)"/g)) pairs[match[1]] = match[2];',
+      '  return pairs;',
+      '};',
+      '',
+      'const firstQuotedAfter = (text, needle) => {',
+      '  const at = text.indexOf(needle);',
+      '  if (at === -1) return null;',
+      '  const match = /"([^"]*)"/.exec(text.slice(at + needle.length));',
+      '  return match ? match[1] : null;',
+      '};',
+      '',
+      '(async () => {',
+      "  await call('initialize', {",
+      "    protocolVersion: '2025-06-18',",
+      '    capabilities: {},',
+      "    clientInfo: { name: 'cooperating-vendor', version: '9.9.9' },",
+      '  });',
+      '',
+      "  if (prompt.includes('status tool')) {",
+      '    // The interrupt leg needs the client still alive when the harness comes to kill it:',
+      '    // answer the status call, then hold the process open until something interrupts it.',
+      "    const result = await call('tools/call', { name: 'status', arguments: { op: 'health' } });",
+      '    say(textOf(result));',
+      '    child.stdin.end();',
+      '    setInterval(() => {}, 60000);',
+      '    return;',
+      '  }',
+      '',
+      "  if (prompt.includes('query tool')) {",
+      "    const q = firstQuotedAfter(prompt, 'q=') || 'certifiedSymbol';",
+      "    const result = await call('tools/call', { name: 'query', arguments: { q } });",
+      '    say(textOf(result));',
+      "  } else if (prompt.includes('twice')) {",
+      '    const pairs = pairsOf(prompt);',
+      "    await call('tools/call', { name: 'memory', arguments: {",
+      "      op: 'intake_create',",
+      '      original: pairs.original,',
+      '      summary: pairs.summary,',
+      '      outcome: pairs.outcome,',
+      '      phase: pairs.phase,',
+      '      actor: pairs.actor,',
+      '    } });',
+      "    const handoff = await call('tools/call', { name: 'memory', arguments: { op: 'handoff' } });",
+      "    say(textOf(handoff).includes(pairs.original || String.fromCharCode(0)) ? 'PRESENT' : 'ABSENT');",
+      "  } else if (prompt.includes('intake_create')) {",
+      '    const pairs = pairsOf(prompt);',
+      "    const result = await call('tools/call', { name: 'memory', arguments: {",
+      "      op: 'intake_create',",
+      '      original: pairs.original,',
+      '      summary: pairs.summary,',
+      '      outcome: pairs.outcome,',
+      '      phase: pairs.phase,',
+      '      actor: pairs.actor,',
+      '    } });',
+      '    say(textOf(result));',
+      "  } else if (prompt.includes('FOUND')) {",
+      "    const tag = firstQuotedAfter(prompt, 'contains ');",
+      "    const result = await call('tools/call', { name: 'memory', arguments: { op: 'handoff' } });",
+      "    say(tag && textOf(result).includes(tag) ? 'FOUND' : 'MISSING');",
+      "  } else if (prompt.includes('LEAKED')) {",
+      "    const marker = firstQuotedAfter(prompt, 'contains ');",
+      "    const result = await call('tools/call', { name: 'memory', arguments: { op: 'handoff' } });",
+      "    say(marker && textOf(result).includes(marker) ? 'LEAKED' : 'CLEAN');",
+      '  } else {',
+      "    say('{}');",
+      '  }',
+      '',
+      '  child.stdin.end();',
+      '  const giveUp = setTimeout(() => process.exit(0), 5000);',
+      "  child.on('exit', () => { clearTimeout(giveUp); process.exit(0); });",
+      '})();',
+      '',
+    ].join('\n'),
+  );
+  chmodSync(path, 0o755);
+  return path;
+}
+
+/**
+ * A crib stub that SERVES the MCP protocol — the server side of the fake wire. It installs a config
+ * naming itself, and in `serve` mode it answers newline-delimited JSON-RPC like the real server
+ * would: initialize, query, status, and the two memory ops the certification prompts exercise. Its
+ * store is keyed by KCRIB_PRINCIPAL_ID, so an intake created under the foreign principal is
+ * genuinely invisible to the owner's handoff — the exclusion boundary the v3 scenario proves is
+ * real, not asserted.
+ */
+function servingCribSource() {
+  return [
+    '#!/usr/bin/env node',
+    "const fs = require('node:fs');",
+    "const path = require('node:path');",
+    '',
+    'const args = process.argv.slice(2);',
+    '',
+    "if (args[0] === 'mcp' && args[1] === 'install') {",
+    '  // The vendor-specific configuration mechanism the installer step exercises: write the config',
+    '  // the harness expects, naming the exact --bin it was handed.',
+    '  const binFlag = args.indexOf("--bin");',
+    '  const bin = binFlag !== -1 ? args[binFlag + 1] : process.argv[1];',
+    '  const project = args[args.length - 1];',
+    '  fs.mkdirSync(project, { recursive: true });',
+    '  fs.writeFileSync(',
+    "    path.join(project, '.mcp.json'),",
+    "    JSON.stringify({ mcpServers: { 'knowledge-crib': { command: bin, args: ['serve', '.'], env: {} } } }, null, 2) + '\\n',",
+    '  );',
+    '  process.exit(0);',
+    '}',
+    '',
+    "if (args[0] === 'index' || (args[0] === 'memory' && args[1] === 'init')) process.exit(0);",
+    '',
+    "if (args[0] !== 'serve') process.exit(0);",
+    '',
+    "const principal = process.env.KCRIB_PRINCIPAL_ID || 'unknown-principal';",
+    "const storePath = path.join(process.env.KCRIB_MEMORY_DIR || '.', 'stub-store.json');",
+    '',
+    'const readStore = () => {',
+    '  try {',
+    "    return JSON.parse(fs.readFileSync(storePath, 'utf8'));",
+    '  } catch {',
+    '    return {};',
+    '  }',
+    '};',
+    '',
+    'const respond = (id, result) => {',
+    `  process.stdout.write(JSON.stringify({ jsonrpc: '2.0', id, result }) + '\\n');`,
+    '};',
+    '',
+    'const textResult = (id, text) => respond(id, { content: [{ type: "text", text }] });',
+    '',
+    "let buffer = '';",
+    "process.stdin.setEncoding('utf8');",
+    "process.stdin.on('data', (chunk) => {",
+    '  buffer += chunk;',
+    "  let newline = buffer.indexOf('\\n');",
+    '  while (newline !== -1) {',
+    '    const line = buffer.slice(0, newline);',
+    '    buffer = buffer.slice(newline + 1);',
+    "    newline = buffer.indexOf('\\n');",
+    '    if (line.trim().length === 0) continue;',
+    '    let message;',
+    '    try { message = JSON.parse(line); } catch { continue; }',
+    '    if (message.id === undefined || message.id === null) continue;',
+    "    if (message.method === 'initialize') {",
+    '      respond(message.id, {',
+    `        sessionId: 'stub-' + principal,`,
+    "        protocolVersion: '2025-06-18',",
+    '        capabilities: {},',
+    "        serverInfo: { name: 'knowledge-crib', version: '0.1.0' },",
+    '      });',
+    '      continue;',
+    '    }',
+    "    if (message.method !== 'tools/call') {",
+    '      respond(message.id, { content: [{ type: "text", text: "unsupported method" }] });',
+    '      continue;',
+    '    }',
+    '    const tool = message.params && message.params.name;',
+    '    const params = (message.params && message.params.arguments) || {};',
+    "    if (tool === 'query') {",
+    `      textResult(message.id, 'first hit: ' + (params.q || '') + ' (certifiedSymbol verified)');`,
+    '      continue;',
+    '    }',
+    "    if (tool === 'status') {",
+    '      textResult(message.id, JSON.stringify({ op: params.op, status: "ok" }));',
+    '      continue;',
+    '    }',
+    "    if (tool === 'memory') {",
+    "      if (params.op === 'intake_create') {",
+    '        const store = readStore();',
+    '        const mine = store[principal] || (store[principal] = []);',
+    '        mine.push({',
+    '          original: params.original,',
+    '          summary: params.summary,',
+    '          outcome: params.outcome,',
+    '          phase: params.phase,',
+    '          actor: params.actor,',
+    '        });',
+    '        fs.mkdirSync(path.dirname(storePath), { recursive: true });',
+    "        fs.writeFileSync(storePath, JSON.stringify(store, null, 2) + '\\n');",
+    `        textResult(message.id, 'created intake:' + mine.length + ' original=' + params.original + ' summary=' + params.summary);`,
+    '        continue;',
+    '      }',
+    "      if (params.op === 'handoff') {",
+    '        const mine = readStore()[principal] || [];',
+    '        textResult(message.id,',
+    `          'handoff: ' + mine.length + ' intakes: ' +`,
+    `            mine.map((record) => 'intake original=' + record.original + ' summary=' + record.summary).join(' | '));`,
+    '        continue;',
+    '      }',
+    `      textResult(message.id, 'memory: unsupported op ' + params.op);`,
+    '      continue;',
+    '    }',
+    `    textResult(message.id, 'unknown tool ' + tool);`,
+    '  }',
+    '});',
+    "process.stdin.on('end', () => process.exit(0));",
+    '',
+  ].join('\n');
+}
+
+/**
+ * A real, installable tarball whose `crib` binary exits 0 and does nothing else — or, with
+ * `{ serve: true }`, one that answers the MCP protocol like the real server would.
  *
  * This is the strongest available test of the harness's honesty. Everything a cell needs in order to
  * be certifiable succeeds here: the package installs, `crib` resolves, the vendor client is signed in
@@ -196,7 +782,7 @@ function writeFakeVendor(dir, name, { signedIn }) {
  * would come back RUNTIME-VERIFIED — and a client that prints nothing is not a client that reached
  * the MCP server. So the assertion is that it still FAILS, leg by leg, with a named reason.
  */
-function makeStubTarball(dir) {
+function makeStubTarball(dir, { serve = false } = {}) {
   const pkg = join(dir, 'stub-package');
   mkdirSync(pkg, { recursive: true });
   writeFileSync(
@@ -204,7 +790,7 @@ function makeStubTarball(dir) {
     `${JSON.stringify({ name: 'knowledge-crib', version: '0.1.0', bin: { crib: './crib.js' } }, null, 2)}\n`,
   );
   const crib = join(pkg, 'crib.js');
-  writeFileSync(crib, '#!/usr/bin/env node\nprocess.exit(0);\n');
+  writeFileSync(crib, serve ? servingCribSource() : '#!/usr/bin/env node\nprocess.exit(0);\n');
   chmodSync(crib, 0o755);
   execFileSync('npm', ['pack', '--pack-destination', dir], { cwd: pkg, stdio: 'pipe' });
   const tarball = join(dir, 'knowledge-crib-0.1.0.tgz');
@@ -212,21 +798,23 @@ function makeStubTarball(dir) {
   return tarball;
 }
 
-async function runEndToEnd({ signedIn, stubPackage = false }) {
+async function runEndToEnd({ signedIn, stubPackage = false, serve = false, vendor = 'fake' }) {
   const scratch = mkdtempSync(join(tmpdir(), 'crib-certify-test-'));
   const bin = join(scratch, 'bin');
   const out = join(scratch, 'receipts');
   const packageDir = join(scratch, 'pkg');
   mkdirSync(bin, { recursive: true });
   mkdirSync(packageDir, { recursive: true });
-  writeFakeVendor(bin, 'claude', { signedIn });
+  if (vendor === 'wordEcho') writeWordEchoVendor(bin, 'claude');
+  else if (vendor === 'cooperating') writeCooperatingVendor(bin, 'claude');
+  else writeFakeVendor(bin, 'claude', { signedIn });
   // Two candidate shapes, and the difference between them is the point of having both. Without a
   // tarball the install fails and the run never reaches a turn — which is how a real host with no
   // package behaves, and the receipt must say so rather than throwing. With one, every prerequisite
   // succeeds and the run reaches every leg, so the legs themselves are what must refuse.
   let fakePackage;
   if (stubPackage) {
-    fakePackage = makeStubTarball(packageDir);
+    fakePackage = makeStubTarball(packageDir, { serve });
   } else {
     fakePackage = join(packageDir, 'not-a-package.tgz');
     writeFileSync(fakePackage, 'this is not a tarball\n');
@@ -271,15 +859,15 @@ if (e2e) {
     const file = join(out, `client-claude-${process.platform}-${process.arch}.json`);
     assert.ok(existsSync(file), `no receipt was written at ${file}`);
     const onDisk = JSON.parse(readFileSync(file, 'utf8'));
-    assert.equal(onDisk.formatVersion, 2, 'on-disk receipt must be version 2');
+    assert.equal(onDisk.formatVersion, 3, 'on-disk receipt must be version 3');
     assert.equal(onDisk.client.driverVersion, DRIVER_VERSION);
   });
 
-  check('the receipt VALIDATES against the version-2 contract', () => {
+  check('the receipt VALIDATES against the version-3 contract', () => {
     // It must validate even though it certifies nothing: a blocked receipt that cannot be loaded is
     // indistinguishable from a missing cell, and the decision needs to name it.
     const validated = validateClientCertificationReceipt(result.receipt, { evidenceRoot: out });
-    assert.equal(validated.formatVersion, 2);
+    assert.equal(validated.formatVersion, 3);
   });
 
   check('no leg claims a pass, because no vendor runtime was exercised', () => {
@@ -498,10 +1086,246 @@ if (stubbed) {
     assert.ok(!text.includes('foreign-certify-'), 'the raw foreign marker leaked into the archive');
   });
 
-  check('the stub receipt still validates against the version-2 contract', () => {
+  check('the stub receipt still validates against the version-3 contract', () => {
     const validated = validateClientCertificationReceipt(result.receipt, { evidenceRoot: out });
-    assert.equal(validated.formatVersion, 2);
+    assert.equal(validated.formatVersion, 3);
     assert.equal(validated.legs.handshake.source, 'vendor-client');
+  });
+
+  rmSync(scratch, { recursive: true, force: true });
+}
+
+// ─── 3c. the v2 false positive, rebuilt: word-echoing must certify nothing ─────────────────────────
+// The v2 harness passed a leg when the right word appeared in an exit-0 turn. This client prints
+// every one of those words — the queried id, an intake id, FOUND, PRESENT, CLEAN — and never once
+// launches the server its config names. Under v3 every protocol-dependent leg must refuse BY NAME,
+// while the prerequisites pass, proving the refusals are about the missing wire and nothing else.
+
+process.stdout.write('\n[client-certify] a word-echoing client certifies nothing under v3\n');
+
+let wordEchoRun;
+try {
+  wordEchoRun = await runEndToEnd({
+    signedIn: true,
+    stubPackage: true,
+    serve: true,
+    vendor: 'wordEcho',
+  });
+} catch (error) {
+  failures.push(`word-echo run threw: ${error.message}`);
+  process.stderr.write(
+    `  FAIL the word-echo run threw instead of writing a receipt\n    ${error.message}\n`,
+  );
+}
+
+if (wordEchoRun) {
+  const { result, out, scratch } = wordEchoRun;
+
+  check('the word-echo run has every prerequisite, so its refusals are about the wire', () => {
+    assert.equal(result.behaviours.vendorBinaryResolved.status, 'pass');
+    assert.equal(result.behaviours.vendorAuthenticated.status, 'pass');
+    assert.equal(result.behaviours.configGeneratedByInstaller.status, 'pass');
+    assert.equal(result.behaviours.configTargetsInstalledCandidate.status, 'pass');
+  });
+
+  check('every protocol-dependent leg refuses the echoed word by name', () => {
+    const expected = {
+      handshake: /a printed word is not a handshake/,
+      toolUse: /no tool result returned to the vendor client/,
+      record: /a printed id is not a record/,
+      restart: /a printed answer is not a restarted session/,
+      authorizedResume: /a printed word is not a recovered session/,
+      foreignPrincipalExclusion: /never exercised on the wire/,
+    };
+    for (const [leg, pattern] of Object.entries(expected)) {
+      assert.equal(result.legs[leg].status, 'fail', `${leg} did not fail`);
+      assert.match(
+        result.legs[leg].detail,
+        pattern,
+        `${leg} must name the protocol gap, not the printed word`,
+      );
+    }
+  });
+
+  check('a client that never launches a server cannot pass the interrupt leg either', () => {
+    assert.equal(result.legs.interruption.status, 'fail');
+    assert.match(
+      result.legs.interruption.detail,
+      /exited \(0\) before it could be interrupted/,
+      'the interruption refusal must name the pre-kill exit',
+    );
+  });
+
+  check('only the configuration leg passes, and no recording exists to appeal to', () => {
+    const passed = CERTIFICATION_LEGS.filter((leg) => result.legs[leg].status === 'pass');
+    assert.deepEqual(
+      passed,
+      ['configuration'],
+      `a word-echoing client passed: ${passed.join(', ')}`,
+    );
+    // No server was ever launched, so no recorder ever ran: the null recordings ARE the finding.
+    assert.equal(
+      result.receipt.protocol.ownerRecording,
+      null,
+      'an owner recording exists without a session',
+    );
+    assert.equal(
+      result.receipt.protocol.foreignRecording,
+      null,
+      'a foreign recording exists without a session',
+    );
+  });
+
+  check('the word-echo receipt still validates against the version-3 contract', () => {
+    const validated = validateClientCertificationReceipt(result.receipt, { evidenceRoot: out });
+    assert.equal(validated.formatVersion, 3);
+  });
+
+  rmSync(scratch, { recursive: true, force: true });
+}
+
+// ─── 3d. the real shared-journal scenario: two principals, one store, on the wire ──────────────────
+// The positive control for the whole v3 design. A client that actually speaks MCP runs against a
+// stub server whose store is keyed by principal, over one shared journal: the six protocol legs
+// must PASS, each judged from recorded protocol traffic, and the receipt must name two distinct
+// principals whose configurations hash differently but launch the same candidate.
+
+process.stdout.write(
+  '\n[client-certify] a protocol-speaking client proves the shared-journal boundary\n',
+);
+
+let cooperatingRun;
+try {
+  cooperatingRun = await runEndToEnd({
+    signedIn: true,
+    stubPackage: true,
+    serve: true,
+    vendor: 'cooperating',
+  });
+} catch (error) {
+  failures.push(`cooperating run threw: ${error.message}`);
+  process.stderr.write(
+    `  FAIL the cooperating run threw instead of writing a receipt\n    ${error.message}\n`,
+  );
+}
+
+if (cooperatingRun) {
+  const { result, out, scratch } = cooperatingRun;
+
+  check('the six protocol-dependent legs PASS, each with protocol references', () => {
+    for (const leg of [
+      'handshake',
+      'toolUse',
+      'record',
+      'restart',
+      'authorizedResume',
+      'foreignPrincipalExclusion',
+    ]) {
+      assert.equal(
+        result.legs[leg].status,
+        'pass',
+        `${leg} did not pass against the speaking client`,
+      );
+      assert.ok(
+        Array.isArray(result.legs[leg].protocol) && result.legs[leg].protocol.length > 0,
+        `${leg} passed without protocol references`,
+      );
+    }
+  });
+
+  check('the exclusion leg cites BOTH sides of the wire, owner and foreign', () => {
+    const cited = new Set(
+      result.legs.foreignPrincipalExclusion.protocol.map((ref) => ref.recording),
+    );
+    assert.ok(cited.has('foreign'), 'the exclusion pass never cited the foreign recording');
+    assert.ok(cited.has('owner'), 'the exclusion pass never cited the owner recording');
+  });
+
+  check('the receipt names two distinct principals over one shared store and one candidate', () => {
+    const receipt = result.receipt;
+    assert.equal(receipt.formatVersion, 3);
+    const { owner, foreign } = receipt.configurations;
+    assert.ok(owner && foreign, 'both configurations must be recorded');
+    assert.notEqual(
+      owner.principalSha256,
+      foreign.principalSha256,
+      'owner and foreign must carry different principal digests',
+    );
+    assert.equal(owner.principalSha256, receipt.principalMarkers.owner);
+    assert.deepEqual(
+      owner.stores,
+      foreign.stores,
+      'the two principals must share the SAME journal and repository',
+    );
+    assert.equal(
+      owner.serverCommandSha256,
+      foreign.serverCommandSha256,
+      'both configurations must launch the same server command',
+    );
+    assert.ok(owner.serverCommandSha256, 'the server command digest must be recorded');
+    assert.notEqual(
+      owner.sha256,
+      foreign.sha256,
+      'the two configs must hash differently (principal differs)',
+    );
+  });
+
+  check('both recordings are archived, re-hashable, and attributed to their principals', () => {
+    const receipt = result.receipt;
+    for (const [side, configuration] of [
+      ['ownerRecording', receipt.configurations.owner],
+      ['foreignRecording', receipt.configurations.foreign],
+    ]) {
+      const entry = receipt.protocol[side];
+      assert.ok(entry, `${side} was not archived`);
+      const archivedPath = join(out, entry.path);
+      assert.ok(existsSync(archivedPath), `the archived ${side} is missing at ${entry.path}`);
+      assert.equal(
+        sha256File(archivedPath),
+        entry.sha256,
+        `the archived ${side} does not match the digest the receipt declares`,
+      );
+      const recording = JSON.parse(readFileSync(archivedPath, 'utf8'));
+      assert.equal(
+        recording.principalSha256,
+        configuration.principalSha256,
+        `${side} must be attributed to its principal's digest`,
+      );
+      assert.equal(
+        recording.serverCommandSha256,
+        configuration.serverCommandSha256,
+        `${side} must name the same server command its configuration launches`,
+      );
+      assert.ok(recording.operations.length > 0, `${side} recorded no protocol traffic`);
+    }
+  });
+
+  check('the only leg that fails is the one this host cannot honestly run', () => {
+    // Interrupting requires killing a process that IS the vendor binary; a node-shebang fixture is
+    // not one, on any platform, and the leg says so rather than passing by default.
+    const notPassed = CERTIFICATION_LEGS.filter((leg) => result.legs[leg].status !== 'pass');
+    assert.deepEqual(
+      notPassed,
+      ['interruption'],
+      `unexpected non-passing legs: ${notPassed.join(', ')}`,
+    );
+    assert.match(result.legs.interruption.detail, /not the .* client/);
+    assert.ok(result.receipt.blockedReason, 'a blocked receipt must still name why');
+  });
+
+  check('the shared-journal receipt validates against the version-3 contract', () => {
+    const validated = validateClientCertificationReceipt(result.receipt, { evidenceRoot: out });
+    assert.equal(validated.formatVersion, 3);
+  });
+
+  check('no principal string or fixture marker survives into any archived artifact', () => {
+    const receiptJson = JSON.stringify(result.receipt);
+    const transcript = readFileSync(join(out, result.receipt.vendor.transcriptPath), 'utf8');
+    for (const text of [receiptJson, transcript]) {
+      assert.ok(!text.includes('principal:claude-owner'), 'the raw owner principal leaked');
+      assert.ok(!text.includes('principal:claude-foreign'), 'the raw foreign principal leaked');
+      assert.ok(!/foreign-certify-[0-9a-f]+/.test(text), 'the raw foreign marker leaked');
+    }
   });
 
   rmSync(scratch, { recursive: true, force: true });

@@ -36,6 +36,11 @@ import {
   loadClientCertificationReceipts,
 } from './client-certification-evidence.mjs';
 import {
+  RECORDER_VERSION,
+  RECORDING_FORMAT,
+  RECORDING_FORMAT_VERSION,
+} from './client-protocol-recorder.mjs';
+import {
   aggregateLaunchDecisions,
   evaluateLaunchDecision,
   loadReleaseEvidence,
@@ -117,33 +122,78 @@ function acceptanceReceipt(type, overrides = {}) {
   };
 }
 
-/** Every leg passing, which is what a genuine native vendor run records. */
+/** A protocol reference: the archived recording, the completed operation, and its request id. */
+const protocolRef = (recording, operation) => ({
+  recording,
+  operation,
+  request: `fixture-${recording}-${operation}`,
+});
+
+/** Every leg passing, each protocol leg citing the completed operation it rests on. */
 const allPassLegs = (overrides = {}) => ({
   configuration: { status: 'pass' },
-  handshake: { status: 'pass', source: 'vendor-client' },
-  toolUse: { status: 'pass', source: 'vendor-client' },
-  record: { status: 'pass' },
+  handshake: { status: 'pass', source: 'vendor-client', protocol: [protocolRef('owner', 1)] },
+  toolUse: { status: 'pass', source: 'vendor-client', protocol: [protocolRef('owner', 3)] },
+  record: { status: 'pass', protocol: [protocolRef('owner', 3)] },
   interruption: { status: 'pass' },
-  restart: { status: 'pass' },
-  authorizedResume: { status: 'pass' },
-  foreignPrincipalExclusion: { status: 'pass' },
+  restart: { status: 'pass', protocol: [protocolRef('owner', 7)] },
+  authorizedResume: { status: 'pass', protocol: [protocolRef('owner', 9)] },
+  // The boundary claim is two-sided: the foreign principal's plant on its own recording, the
+  // owner's marker-absent retrieval on the other.
+  foreignPrincipalExclusion: {
+    status: 'pass',
+    protocol: [protocolRef('foreign', 1), protocolRef('owner', 9)],
+  },
   ...overrides,
 });
 
+/** The one installed candidate both principals launch — same stores, same command, two identities. */
+const SHARED_STORES = {
+  journal: '/tmp/crib-launch-journal',
+  repository: '/tmp/crib-launch-registry',
+};
+const SERVER_COMMAND = `sha256:${'d'.repeat(64)}`;
+
+/** A recorder transcript attributed to one side's principal, in the shape the recorder writes. */
+function recordingBytes(cell, side, principalSha256) {
+  return `${JSON.stringify({
+    format: RECORDING_FORMAT,
+    formatVersion: RECORDING_FORMAT_VERSION,
+    recorderVersion: RECORDER_VERSION,
+    recordedAt: CAPTURED_AT,
+    principalSha256,
+    serverCommandSha256: SERVER_COMMAND,
+    sessions: [{ id: `session-${cell}-${side}` }],
+    operations: Array.from({ length: 10 }, (_, index) => ({
+      id: `op-${cell}-${side}-${index}`,
+      method: 'tools/call',
+      status: 'completed',
+      tool: 'memory',
+    })),
+  })}\n`;
+}
+
 /**
- * Write one certifying receipt for `cell`, backed by a real log under `directory/logs/`.
+ * Write one certifying receipt for `cell`, backed by a real log AND both archived recordings under
+ * `directory`.
  *
- * Nothing here is a shortcut: the log is written first, its digest is computed from those bytes, and
- * the receipt points at it by the same relative path the loader will resolve. That is the only way
- * the "altering a transcript invalidates its cell" probe below can mean anything.
+ * Nothing here is a shortcut: every artifact is written first, its digest is computed from those
+ * bytes, and the receipt points at it by the same relative path the loader will resolve. That is
+ * the only way the "altering a transcript invalidates its cell" and tampering probes below can
+ * mean anything — and the recordings carry the principal attribution the validator re-judges.
  */
 function writeCertifyingReceipt(directory, cell, overrides = {}) {
   const [id, os] = cell.split('/');
   const bytes = logBytes(cell);
   writeFileSync(join(directory, 'logs', logName(cell)), bytes);
+  const ownerBytes = recordingBytes(cell, 'owner', DIGEST);
+  const foreignBytes = recordingBytes(cell, 'foreign', FOREIGN_MARKER);
+  mkdirSync(join(directory, 'recordings'), { recursive: true });
+  writeFileSync(join(directory, 'recordings', `${id}-${os}-owner-recording.json`), ownerBytes);
+  writeFileSync(join(directory, 'recordings', `${id}-${os}-foreign-recording.json`), foreignBytes);
   const receipt = {
     format: 'knowledge-crib-client-certification',
-    formatVersion: 2,
+    formatVersion: 3,
     generatedAt: CAPTURED_AT,
     policySha256: POLICY_SHA,
     product: { commit: COMMIT, packageSha256: PACKAGE },
@@ -152,6 +202,30 @@ function writeCertifyingReceipt(directory, cell, overrides = {}) {
     runId: `run-${id}-${os}`,
     capture: { hostname: 'fixture-host', operator: 'fixture-operator', capturedAt: CAPTURED_AT },
     principalMarkers: { owner: DIGEST, foreign: FOREIGN_MARKER },
+    configurations: {
+      owner: {
+        sha256: `sha256:${'e'.repeat(64)}`,
+        principalSha256: DIGEST,
+        stores: SHARED_STORES,
+        serverCommandSha256: SERVER_COMMAND,
+      },
+      foreign: {
+        sha256: `sha256:${'f'.repeat(64)}`,
+        principalSha256: FOREIGN_MARKER,
+        stores: SHARED_STORES,
+        serverCommandSha256: SERVER_COMMAND,
+      },
+    },
+    protocol: {
+      ownerRecording: {
+        path: `recordings/${id}-${os}-owner-recording.json`,
+        sha256: digestOf(ownerBytes),
+      },
+      foreignRecording: {
+        path: `recordings/${id}-${os}-foreign-recording.json`,
+        sha256: digestOf(foreignBytes),
+      },
+    },
     vendor: {
       processIdentity: `${id} ${CLIENT_VERSION} (/usr/local/bin/${id}, pid 4711)`,
       logPath: `logs/${logName(cell)}`,

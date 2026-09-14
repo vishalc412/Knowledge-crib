@@ -89,7 +89,7 @@ claim by editing this document.
 <!-- client-certification:generated:start -->
 ## Client certification evidence
 
-Generated from validated receipts. A client is runtime verified only when a vendor-client receipt proves record → interruption/restart → authorized resume on the listed platform. Two labels say a row is evidence and not a runtime pass: "protocol evidence only (test client)" when the handshake came from a test client rather than the client under test, and "runtime evidence only (not a native runtime)" when the run happened somewhere other than the native platform — a WSL run satisfies every leg and still cannot certify native Linux or Windows. Neither label can promote a row.
+Generated from validated receipts. A client is runtime verified only when a vendor-client receipt proves record → interruption/restart → authorized resume on the listed platform. Three labels say a row is evidence and not a runtime pass: "protocol evidence only (test client)" when the handshake came from a test client rather than the client under test, "runtime evidence only (not a native runtime)" when the run happened somewhere other than the native platform — a WSL run satisfies every leg and still cannot certify native Linux or Windows — and "runtime evidence only (legacy receipt schema)" when the receipt predates the certifying schema and is kept as readable history. No label can promote a row.
 
 | Client | Highest verified evidence | Strongest certified cell |
 |---|---|---|

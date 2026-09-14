@@ -151,18 +151,27 @@ assert.deepEqual(requiredGateFailures(missingCertification), ['runtime-certifica
 //
 // The cells are DERIVED from the committed policy rather than listed here, so a client or platform
 // added to the promise cannot be certified by a fixture that never heard of it. Each receipt is a
-// version-2 certifying one: it carries all eight legs, the two vendor-asserting legs say their source
-// is the client under test, it ran natively, and it names a transcript. A version-1 shaped receipt
-// (`evidence.runtime.status: 'pass'`) can no longer cover a cell at all — it never separated the
-// tool invocation from the handshake, nor a restart from an interruption, which is exactly why the
-// certifying schema exists. This file checks the BUILDER's coverage arithmetic; the disk-backed path
-// where those transcripts are hashed is exercised by the launch-decision suite.
+// version-3 certifying one: it carries all eight legs, each protocol leg cites the archived
+// operation it rests on, the two vendor-asserting legs say their source is the client under test,
+// it ran natively, and it names a transcript plus the hashed two-principal configurations and
+// recordings behind the boundary claim. A version-1 or version-2 shaped receipt can no longer cover
+// a cell at all — neither separates the protocol claim from the word that made it, which is exactly
+// why the certifying schema exists. This file checks the BUILDER's coverage arithmetic; the
+// disk-backed path where those transcripts are hashed is exercised by the launch-decision suite.
 const { policy: launchPolicy } = loadLaunchPolicy();
 const certifyingReceipt = (cell) => {
   const [id, os] = cell.split('/');
+  const ownerPrincipal = `sha256:${'4'.repeat(64)}`;
+  const foreignPrincipal = `sha256:${'5'.repeat(64)}`;
+  const stores = { journal: '/tmp/crib-release-journal', repository: '/tmp/crib-release-registry' };
+  const protocolRef = (recording, operation) => ({
+    recording,
+    operation,
+    request: `fixture-${recording}-${operation}`,
+  });
   return {
     format: 'knowledge-crib-client-certification',
-    formatVersion: 2,
+    formatVersion: 3,
     generatedAt: '2026-09-05T00:00:00.000Z',
     policySha256: `sha256:${'2'.repeat(64)}`,
     product: { commit: 'a'.repeat(40), packageSha256: `sha256:${'3'.repeat(64)}` },
@@ -170,7 +179,31 @@ const certifyingReceipt = (cell) => {
     platform: { os, arch: 'fixture', node: 'v22.23.1' },
     runId: `run-${cell}`,
     capture: { hostname: 'fixture-host', operator: 'fixture-operator' },
-    principalMarkers: { owner: `sha256:${'4'.repeat(64)}`, foreign: `sha256:${'5'.repeat(64)}` },
+    principalMarkers: { owner: ownerPrincipal, foreign: foreignPrincipal },
+    configurations: {
+      owner: {
+        sha256: `sha256:${'7'.repeat(64)}`,
+        principalSha256: ownerPrincipal,
+        stores,
+        serverCommandSha256: `sha256:${'8'.repeat(64)}`,
+      },
+      foreign: {
+        sha256: `sha256:${'9'.repeat(64)}`,
+        principalSha256: foreignPrincipal,
+        stores,
+        serverCommandSha256: `sha256:${'8'.repeat(64)}`,
+      },
+    },
+    protocol: {
+      ownerRecording: {
+        path: `recordings/${cell}-owner-recording.json`,
+        sha256: `sha256:${'a'.repeat(64)}`,
+      },
+      foreignRecording: {
+        path: `recordings/${cell}-foreign-recording.json`,
+        sha256: `sha256:${'b'.repeat(64)}`,
+      },
+    },
     vendor: {
       processIdentity: `${id} 1.0.0 (/usr/local/bin/${id}, pid 4711)`,
       transcriptPath: `logs/${cell}.log`,
@@ -178,13 +211,16 @@ const certifyingReceipt = (cell) => {
     },
     legs: {
       configuration: { status: 'pass' },
-      handshake: { status: 'pass', source: 'vendor-client' },
-      toolUse: { status: 'pass', source: 'vendor-client' },
-      record: { status: 'pass' },
+      handshake: { status: 'pass', source: 'vendor-client', protocol: [protocolRef('owner', 1)] },
+      toolUse: { status: 'pass', source: 'vendor-client', protocol: [protocolRef('owner', 3)] },
+      record: { status: 'pass', protocol: [protocolRef('owner', 3)] },
       interruption: { status: 'pass' },
-      restart: { status: 'pass' },
-      authorizedResume: { status: 'pass' },
-      foreignPrincipalExclusion: { status: 'pass' },
+      restart: { status: 'pass', protocol: [protocolRef('owner', 7)] },
+      authorizedResume: { status: 'pass', protocol: [protocolRef('owner', 9)] },
+      foreignPrincipalExclusion: {
+        status: 'pass',
+        protocol: [protocolRef('foreign', 1), protocolRef('owner', 9)],
+      },
     },
   };
 };

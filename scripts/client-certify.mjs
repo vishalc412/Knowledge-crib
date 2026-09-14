@@ -46,6 +46,13 @@ import { hostname, tmpdir, userInfo } from 'node:os';
 import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { CERTIFIED_CLIENTS } from './client-certification-evidence.mjs';
+import {
+  RECORDER_VERSION,
+  findCompletedOperation,
+  operationCount,
+  recordingProblems,
+  serverCommandSha256,
+} from './client-protocol-recorder.mjs';
 import { loadLaunchPolicy } from './launch-policy.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -540,20 +547,60 @@ function createDriver(spec) {
         };
         return results;
       }
+      // The recorder is wired into the SAME config the installer wrote, so the legs below are judged
+      // from what actually crossed the wire, not from the words the client printed. Without it the
+      // run has no protocol evidence at all and every protocol-dependent leg refuses — the honest
+      // outcome for a cell whose wire was never tapped, and the one a word-matching client cannot
+      // talk its way past.
+      try {
+        const originalCommand = wireProtocolRecorder(ctx, spec);
+        ctx.serverCommandSha256 = serverCommandSha256(
+          originalCommand.server,
+          originalCommand.serverArgs,
+        );
+        ctx.ownerConfigSha256 = sha256File(ctx.configPath);
+        // The foreign principal's config is derived from the FINAL owner bytes: same journal,
+        // repository and candidate, a different authenticated principal, individually hashed.
+        ctx.foreignConfig = buildForeignConfig(ctx, spec, readFileSync(ctx.configPath, 'utf8'));
+        ctx.foreignConfigSha256 = sha256(ctx.foreignConfig);
+      } catch (error) {
+        results.configTargetsInstalledCandidate = {
+          status: 'fail',
+          reason: `the generated config could not be wired with the protocol recorder: ${sanitizeOutput(error?.message ?? String(error))}`,
+        };
+        return results;
+      }
       const final = readFileSync(ctx.configPath, 'utf8');
-      const pointsAtCandidate = /"command"\s*:\s*"/.test(final)
-        ? new RegExp(`"command"\\s*:\\s*"${escapeRegExp(ctx.cribBin)}"`).test(final)
-        : new RegExp(`command\\s*=\\s*"${escapeRegExp(ctx.cribBin)}"`).test(final);
-      results.configTargetsInstalledCandidate = pointsAtCandidate
-        ? { status: 'pass' }
-        : {
-            status: 'fail',
-            reason: `the generated config does not launch the installed candidate at ${ctx.cribBin}`,
-          };
-      ctx.log(
-        `\n# the final ${spec.configRelPath.join('/')} (isolating env applied by the operator)`,
+      // The rewired config launches the recorder with the candidate as its payload, so "points at
+      // the candidate" now means the candidate appears as the recorder's --server argument (or, on a
+      // config this driver failed to rewire, as the direct command — either way the bytes must
+      // name the installed candidate).
+      const candidateQuoted = final.includes(`"${ctx.cribBin}"`);
+      const throughRecorder = final.includes('"--server"');
+      const directCommand = new RegExp(`command"?\\s*[=:]\\s*"${escapeRegExp(ctx.cribBin)}"`).test(
+        final,
       );
-      ctx.log(sanitizeOutput(readFileSync(ctx.configPath, 'utf8')));
+      results.configTargetsInstalledCandidate =
+        candidateQuoted && (throughRecorder || directCommand)
+          ? { status: 'pass' }
+          : {
+              status: 'fail',
+              reason: `the generated config does not launch the installed candidate at ${ctx.cribBin}`,
+            };
+      ctx.log(
+        `\n# the final ${spec.configRelPath.join('/')} (isolating env and protocol recorder applied by the operator)`,
+      );
+      // The wired config is archived in the transcript, and it now carries the recorder's --markers
+      // argument and the isolation env's principal — raw fixture tokens and principal IDs that must
+      // never survive into evidence, so they are redacted with the same list every turn uses.
+      ctx.log(
+        sanitizeOutput(readFileSync(ctx.configPath, 'utf8'), [
+          ctx.tag,
+          ctx.foreignMarker,
+          ctx.ownerPrincipal,
+          ctx.foreignPrincipal,
+        ]),
+      );
       return results;
     },
 
@@ -575,29 +622,58 @@ function createDriver(spec) {
         `Use the knowledge-crib MCP server. Call its query tool with q="certifiedSymbol" and reply with ONLY the id of the first hit.`,
       );
       const handshakeText = `${handshake.stdout ?? ''}${handshake.stderr ?? ''}`;
-      const handshakeOk = handshake.status === 0 && /certifiedSymbol/.test(handshakeText);
+      // CORRELATED EVIDENCE, not word-matching: the client must have printed the queried id AND the
+      // owner's recording must show a COMPLETED query operation whose request carried the fixture
+      // marker and whose result carried it back. A client that echoes the vocabulary certifies
+      // nothing here — the printed word without the protocol operation is exactly the false
+      // positive this leg exists to refuse.
+      const handshakeEvidence = protocolMatch(ctx, 'owner', {
+        method: 'tools/call',
+        tool: 'query',
+        requestMarker: 'certifiedSymbol',
+        resultMarker: 'certifiedSymbol',
+      });
+      const handshakeWords = handshake.status === 0 && /certifiedSymbol/.test(handshakeText);
+      const handshakeOk = handshakeWords && handshakeEvidence;
 
       const record = ctx.turn(
         'invoke: record a uniquely tagged authorized intake',
         `Use the knowledge-crib MCP memory tool with op="intake_create", original="${ctx.tag}", summary="vendor certification run ${ctx.tag}", outcome="prove a ${spec.displayName} session records and later recovers an authorized intake", phase="executing", actor="${spec.id}-certification". Then reply with ONLY the returned intake id.`,
       );
+      // The record operation is identified by its REQUEST carrying the run tag — the handoff turns
+      // below carry no tag in their params, so this uniquely names the intake_create among every
+      // other memory call in the recording — and by its RESULT returning an intake id.
+      const recordEvidence = protocolMatch(ctx, 'owner', {
+        method: 'tools/call',
+        tool: 'memory',
+        requestMarker: ctx.tag,
+        resultMarker: 'intake:',
+      });
+      const recordWords = record.status === 0 && /intake:/.test(`${record.stdout ?? ''}`);
+      const recordOk = recordWords && recordEvidence;
       return {
         handshakeThroughVendorClient: handshakeOk
-          ? { status: 'pass' }
+          ? { status: 'pass', protocol: [handshakeEvidence] }
           : failed(
               handshake,
-              `handshake exit ${handshake.status}; the tool result did not return the queried id`,
+              handshakeWords
+                ? 'the client echoed the queried id, but the protocol recording shows no completed query operation carrying it — a printed word is not a handshake'
+                : `handshake exit ${handshake.status}; the tool result did not return the queried id`,
             ),
         // One turn proves both: the handshake leg is "the server was reached", the tool-use leg is
         // "its result came back to the client". A run that reached the server but got nothing back
         // fails here and not above, which is the distinction v1 could not express.
         toolInvocationThroughVendorClient: handshakeOk
-          ? { status: 'pass' }
+          ? { status: 'pass', protocol: [handshakeEvidence] }
           : failed(handshake, 'no tool result returned to the vendor client'),
-        authorizedRecordThroughVendorClient:
-          record.status === 0 && /intake:/.test(`${record.stdout ?? ''}`)
-            ? { status: 'pass' }
-            : failed(record, `record exit ${record.status}; no intake id was returned`),
+        authorizedRecordThroughVendorClient: recordOk
+          ? { status: 'pass', protocol: [recordEvidence] }
+          : failed(
+              record,
+              recordWords
+                ? 'the client printed an intake id, but the protocol recording shows no completed memory operation carrying the run tag — a printed id is not a record'
+                : `record exit ${record.status}; no intake id was returned`,
+            ),
       };
     },
 
@@ -666,6 +742,11 @@ function createDriver(spec) {
           ctx.blockedBecause,
         );
       }
+      // The protocol floor: every operation recorded BEFORE this point belongs to the pre-restart
+      // sessions. The restart leg must find an operation that happened AFTER the interruption — a
+      // recording accumulates across a cell's sessions, and without a floor the record turn that
+      // preceded the kill would satisfy the post-restart legs.
+      const floor = operationCount(protocolRead(ctx, 'owner'));
       const restarted = ctx.turn(
         'restartAndResume: fresh process recovers the authorized session',
         `Use the knowledge-crib MCP memory tool with op="handoff". Reply with ONLY the word FOUND if any intake's original field contains "${ctx.tag}", otherwise reply MISSING.`,
@@ -679,43 +760,109 @@ function createDriver(spec) {
       // either word proves a live session, and which word it is decides the resume leg below. That
       // distinction is the whole reason restart and resume are two legs and not one.
       const answered = /\b(FOUND|MISSING)\b/.test(restartedText);
+      // And the answer has to have CROSSED THE WIRE: a completed memory operation after the floor,
+      // whose result carried the tag back for the resume leg. The words alone certify nothing.
+      const restartEvidence = protocolMatch(ctx, 'owner', {
+        method: 'tools/call',
+        tool: 'memory',
+        fromIndex: floor,
+      });
+      const resumeEvidence = protocolMatch(ctx, 'owner', {
+        method: 'tools/call',
+        tool: 'memory',
+        fromIndex: floor,
+        resultMarker: ctx.tag,
+      });
+      const restartedWords = restartedOk && answered;
+      const restartOk = restartedWords && restartEvidence;
+      const resumeOk = found && resumeEvidence;
 
-      const plant = ctx.turn(
+      // The floor for the exclusion check: captured AFTER the restarted turn and BEFORE the
+      // exclusion turn, so the owner operation that must NOT carry the foreign marker is the
+      // exclusion handoff itself — never the earlier turns, whose results predate the plant.
+      const ownerExclusionFloor = operationCount(protocolRead(ctx, 'owner'));
+
+      // The foreign principal runs from the SAME config path, its bytes swapped in place: the same
+      // journal, repository and candidate as the owner, a different authenticated principal, its
+      // traffic attributed to its own recording. Swapping the bytes at the path the client already
+      // discovers — rather than pointing it at a second path with a flag only some clients have —
+      // is what makes "the vendor-specific configuration mechanism" true for every driver.
+      const plant = ctx.foreignTurn(
         "restartAndResume: plant a foreign principal's durable work and confirm it as that principal",
         `Use the knowledge-crib MCP memory tool twice. First with op="intake_create", original="${ctx.foreignMarker}", summary="foreign principal work ${ctx.foreignMarker}", outcome="must never appear in another principal's session", phase="executing", actor="other-principal". Then with op="handoff". Reply with ONLY the word PRESENT if the handoff shows an intake whose original or summary contains "${ctx.foreignMarker}", otherwise ABSENT.`,
-        ctx.foreignConfigPath,
       );
-      const planted = plant.status === 0 && /PRESENT/.test(`${plant.stdout ?? ''}`);
+      // Planted means BOTH the foreign principal's recording shows the intake_create (its REQUEST
+      // carried the foreign marker) AND the confirm handoff's RESULT carried it back to that
+      // principal. Absence of the marker on the owner's side proves nothing unless the foreign
+      // side actually created and retrieved its own work — an absent record and a hidden one look
+      // identical from the owner's side, and only one of them is the boundary holding.
+      const createEvidence = protocolMatch(ctx, 'foreign', {
+        method: 'tools/call',
+        tool: 'memory',
+        requestMarker: ctx.foreignMarker,
+      });
+      const confirmEvidence = createEvidence
+        ? protocolMatch(ctx, 'foreign', {
+            method: 'tools/call',
+            tool: 'memory',
+            fromIndex: createEvidence.operation + 1,
+            resultMarker: ctx.foreignMarker,
+          })
+        : null;
+      const plantedWords = plant.status === 0 && /PRESENT/.test(`${plant.stdout ?? ''}`);
+      const planted = plantedWords && createEvidence && confirmEvidence;
 
       const foreign = ctx.turn(
         'restartAndResume: the owner must not see it',
         `Use the knowledge-crib MCP memory tool with op="handoff". Reply with ONLY the word LEAKED if any intake's original or summary contains "${ctx.foreignMarker}", otherwise reply CLEAN.`,
       );
       const leaked = /LEAKED/.test(`${foreign.stdout ?? ''}`);
-      ctx.log(`# foreign principal: planted=${planted} leaked=${leaked}`);
+      // The owner's completed handoff after the plant floor, whose result did NOT carry the foreign
+      // marker. This is the operation the exclusion claim is actually made about — "the owner
+      // printed CLEAN" is a word, and only the protocol shows the owner really asked.
+      const exclusionEvidence = protocolMatch(ctx, 'owner', {
+        method: 'tools/call',
+        tool: 'memory',
+        fromIndex: ownerExclusionFloor,
+        absentResultMarker: ctx.foreignMarker,
+      });
+      const exclusionWords = !leaked && foreign.status === 0;
+      const exclusionOk = planted && exclusionWords && exclusionEvidence;
+      ctx.log(
+        `# foreign principal: planted=${planted} leaked=${leaked} protocolEvidence=${Boolean(exclusionEvidence)}`,
+      );
 
       return {
-        vendorProcessRestarted:
-          restartedOk && answered
-            ? { status: 'pass' }
-            : failed(
-                restarted,
-                restartedOk
+        vendorProcessRestarted: restartOk
+          ? { status: 'pass', protocol: [restartEvidence] }
+          : failed(
+              restarted,
+              restartedWords
+                ? 'the restarted client answered, but the protocol recording shows no completed memory operation after the interruption — a printed answer is not a restarted session'
+                : restartedOk
                   ? 'the restarted client exited 0 but returned no answer to the handoff query, so no session was proven'
                   : `the restarted client exited ${restarted.status}`,
-              ),
-        authorizedSessionResumed: found
-          ? { status: 'pass' }
-          : failed(restarted, 'the restarted client did not recover the tagged intake'),
-        foreignPrincipalExclusion:
-          planted && !leaked && foreign.status === 0
-            ? { status: 'pass' }
-            : {
-                status: 'fail',
-                reason: planted
-                  ? `the owner's client reported the foreign marker (leaked=${leaked}, exit ${foreign.status})`
+            ),
+        authorizedSessionResumed: resumeOk
+          ? { status: 'pass', protocol: [resumeEvidence] }
+          : failed(
+              restarted,
+              found
+                ? 'the restarted client reported FOUND, but the protocol recording shows no completed handoff whose result carried the run tag — a printed word is not a recovered session'
+                : 'the restarted client did not recover the tagged intake',
+            ),
+        foreignPrincipalExclusion: exclusionOk
+          ? { status: 'pass', protocol: [createEvidence, confirmEvidence, exclusionEvidence] }
+          : {
+              status: 'fail',
+              reason: planted
+                ? exclusionWords
+                  ? 'the owner reported CLEAN, but the protocol recording shows no completed handoff for the owner after the plant — a printed word is not an exclusion proof'
+                  : `the owner's client reported the foreign marker (leaked=${leaked}, exit ${foreign.status})`
+                : plantedWords
+                  ? 'the foreign client reported PRESENT, but its own recording shows no completed create-and-retrieve pair carrying the foreign marker — the exclusion was never exercised on the wire'
                   : 'the foreign intake could not be planted and confirmed, so the exclusion was never exercised',
-              },
+            },
       };
     },
 
@@ -812,6 +959,174 @@ function applyIsolationEnv(ctx, spec) {
 }
 
 /**
+ * Insert the transparent protocol recorder into the config the installer just wrote.
+ *
+ * The config's command becomes `node client-protocol-recorder.mjs --server <original command>
+ * --record <owner recording> --principal <owner principal> --markers … -- <original args>`, so the
+ * recorder forwards every byte unchanged between the vendor client and the candidate while tapping
+ * the protocol. Returns the ORIGINAL command/args — the identity of the server both configurations
+ * launch, which the receipt binds as a digest. Throws on any config shape this driver cannot
+ * rewire, so the failure lands in a named failing leg instead of a run with silent no-evidence.
+ *
+ * Exported for the tests: the TOML splice and the JSON rewrite are the two shapes the shipped
+ * installer writes, and each is checkable against a fixture without driving a whole cell.
+ */
+export function wireProtocolRecorder(ctx, spec) {
+  const markersArg = ctx.protocolMarkers.join(',');
+  const recorderArgs = (record, principal, original) => [
+    ctx.recorderPath,
+    '--server',
+    original.server,
+    '--record',
+    record,
+    '--principal',
+    principal,
+    '--markers',
+    markersArg,
+    '--',
+    ...original.serverArgs,
+  ];
+  const raw = readFileSync(ctx.configPath, 'utf8');
+  if (spec.configFormat === 'toml') {
+    const TOML_BEGIN = '# >>> knowledge-crib managed >>>';
+    const TOML_END = '# <<< knowledge-crib managed <<<';
+    const begin = raw.indexOf(TOML_BEGIN);
+    const end = raw.indexOf(TOML_END);
+    if (begin === -1 || end === -1 || end < begin) {
+      throw new Error('the managed TOML block the installer writes is missing or unreadable');
+    }
+    const block = raw.slice(begin, end + TOML_END.length);
+    const commandMatch = /command\s*=\s*("(?:[^"\\]|\\.)*")/.exec(block);
+    const argsMatch = /\nargs\s*=\s*\[(.*)\]/.exec(block);
+    if (!commandMatch || !argsMatch) {
+      throw new Error('the managed TOML block declares no command/args to intercept');
+    }
+    // The installer writes every string as a TOML basic string escaped by the same rules as JSON
+    // (packages/cli/src/mcp-install.ts), so the literals parse as JSON here — win32 backslashes
+    // included. Any other escaping is a config this driver must refuse rather than half-read.
+    const original = {
+      server: JSON.parse(commandMatch[1]),
+      serverArgs: JSON.parse(`[${argsMatch[1]}]`),
+    };
+    const rewired = [
+      TOML_BEGIN,
+      '[mcp_servers.knowledge-crib]',
+      `command = ${JSON.stringify(process.execPath)}`,
+      `args = [${recorderArgs(ctx.ownerRecordingPath, ctx.ownerPrincipal, original)
+        .map(JSON.stringify)
+        .join(', ')}]`,
+      'startup_timeout_sec = 20',
+      'tool_timeout_sec = 60',
+      TOML_END,
+    ].join('\n');
+    // Spliced between the markers, so whatever the env step appended after TOML_END survives.
+    writeFileSync(
+      ctx.configPath,
+      `${raw.slice(0, begin)}${rewired}${raw.slice(end + TOML_END.length)}`,
+    );
+    return original;
+  }
+  const parsed = JSON.parse(raw);
+  const root = spec.configFormat === 'json-servers' ? 'servers' : 'mcpServers';
+  const server = parsed?.[root]?.['knowledge-crib'];
+  if (!server) throw new Error(`the installer wrote no ${root}['knowledge-crib'] entry`);
+  const original = { server: server.command, serverArgs: [...(server.args ?? [])] };
+  server.command = process.execPath;
+  server.args = recorderArgs(ctx.ownerRecordingPath, ctx.ownerPrincipal, original);
+  writeFileSync(ctx.configPath, `${JSON.stringify(parsed, null, 2)}\n`);
+  return original;
+}
+
+/**
+ * The foreign principal's config, derived from the FINAL owner bytes: the same isolating env values
+ * for journal and repository, a different authenticated principal, its traffic attributed to its
+ * own recording. TOML is rewritten textually — every value the harness and installer wrote into it
+ * is a JSON-escaped basic string, so the exact literal appears and an exact swap cannot corrupt
+ * anything around it. JSON is rewritten structurally.
+ *
+ * Exported for the tests, like `wireProtocolRecorder`: the derivation is what makes the foreign
+ * principal the SAME stores and a DIFFERENT identity, and that is checkable against fixtures.
+ */
+export function buildForeignConfig(ctx, spec, finalOwnerConfig) {
+  if (spec.configFormat === 'toml') {
+    let out = finalOwnerConfig;
+    for (const [from, to] of [
+      [JSON.stringify(ctx.ownerPrincipal), JSON.stringify(ctx.foreignPrincipal)],
+      [JSON.stringify(ctx.ownerRecordingPath), JSON.stringify(ctx.foreignRecordingPath)],
+    ]) {
+      if (!out.includes(from)) {
+        throw new Error(
+          `the final owner config does not carry the value to re-principal (${from})`,
+        );
+      }
+      out = out.split(from).join(to);
+    }
+    return out;
+  }
+  const parsed = JSON.parse(finalOwnerConfig);
+  const root = spec.configFormat === 'json-servers' ? 'servers' : 'mcpServers';
+  const server = parsed?.[root]?.['knowledge-crib'];
+  if (!server) {
+    throw new Error(
+      `the final owner config carries no ${root}['knowledge-crib'] entry to re-principal`,
+    );
+  }
+  server.env = { ...(server.env ?? {}), KCRIB_PRINCIPAL_ID: ctx.foreignPrincipal };
+  server.args = (server.args ?? []).map((arg) =>
+    arg === ctx.ownerRecordingPath
+      ? ctx.foreignRecordingPath
+      : arg === ctx.ownerPrincipal
+        ? ctx.foreignPrincipal
+        : arg,
+  );
+  return `${JSON.stringify(parsed, null, 2)}\n`;
+}
+
+/**
+ * The parsed recording for one principal, or null when it is absent or fails validation. A missing
+ * recording is a FINDING ("no protocol traffic was ever tapped"), not an empty success — every
+ * protocol-dependent leg treats null as no evidence and refuses.
+ */
+function protocolRead(ctx, which) {
+  const path = which === 'foreign' ? ctx.foreignRecordingPath : ctx.ownerRecordingPath;
+  if (!existsSync(path)) return null;
+  try {
+    const recording = JSON.parse(readFileSync(path, 'utf8'));
+    return recordingProblems(recording).length === 0 ? recording : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The correlated-evidence query: a COMPLETED operation in one principal's recording matching the
+ * criteria, returned as a receipt-shaped reference (which recording, which operation, which
+ * request id) or null. Null is a refusal, never a pass.
+ */
+function protocolMatch(ctx, which, criteria) {
+  const recording = protocolRead(ctx, which);
+  if (!recording) return null;
+  const found = findCompletedOperation(recording, criteria);
+  return found ? { recording: which, operation: found.index, request: found.operation.id } : null;
+}
+
+/**
+ * Copy one principal's recording into the receipt's outDir and describe it, or null when it does not
+ * exist. Null is recorded rather than omitted: "no protocol traffic was ever tapped" is a fact the
+ * decision needs to read, and the recordings themselves are archived artifacts the validator
+ * re-hashes — a claim about the wire that the wire's own file can confirm or refute.
+ */
+function archivedRecording(source, outDir, name) {
+  try {
+    if (!source || !existsSync(source)) return null;
+    cpSync(source, join(outDir, name));
+    return { path: name, sha256: sha256File(join(outDir, name)) };
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Certify one cell end to end and return the receipt object.
  *
  * Exported so a test can drive the whole harness against a fake vendor binary — the alternative is
@@ -837,6 +1152,22 @@ export async function certifyCell(options) {
   const tag = `certify-${createHash('sha256').update(`${candidateCommit}:${Date.now()}:${spec.id}`).digest('hex').slice(0, 16)}`;
   const foreignMarker = `foreign-${tag}`;
   const ownerPrincipal = `principal:${spec.id}-owner`;
+  // The foreign principal is a DIFFERENT authenticated principal over the SAME isolated journal and
+  // repository — the boundary the exclusion leg is actually about. The recordings are per-principal
+  // because traffic must be attributed before anything is redacted, and the markers below are the
+  // synthetic fixture tokens the recorder evaluates over the RAW protocol bytes (pre-redaction) and
+  // archives ONLY as digest-keyed booleans.
+  const foreignPrincipal = `principal:${spec.id}-foreign`;
+  const recorderPath = join(HERE, 'client-protocol-recorder.mjs');
+  const ownerRecordingPath = join(
+    workspace,
+    `${spec.id}-${process.platform}-${process.arch}-owner-recording.json`,
+  );
+  const foreignRecordingPath = join(
+    workspace,
+    `${spec.id}-${process.platform}-${process.arch}-foreign-recording.json`,
+  );
+  const protocolMarkers = [tag, foreignMarker, 'certifiedSymbol', 'intake:'];
 
   // Everything of crib's is isolated; the vendor client runs under the OPERATOR's real profile,
   // because a client with an empty HOME has no credentials and exits in 100ms — an unauthenticated
@@ -925,6 +1256,11 @@ export async function certifyCell(options) {
       tag,
       foreignMarker,
       ownerPrincipal,
+      foreignPrincipal,
+      recorderPath,
+      ownerRecordingPath,
+      foreignRecordingPath,
+      protocolMarkers,
       cribMemoryDir: join(cribHome, 'memory'),
       cribRegistryDir: cribHome,
       blockedBecause:
@@ -957,13 +1293,40 @@ export async function certifyCell(options) {
           const tail = `${result.stdout ?? ''}${result.stderr ?? ''}`.trim();
           if (tail)
             log(
-              `  output (redacted, bounded): ${sanitizeOutput(tail.slice(0, 600), [tag, foreignMarker])}`,
+              `  output (redacted, bounded): ${sanitizeOutput(tail.slice(0, 600), [tag, foreignMarker, ownerPrincipal, foreignPrincipal])}`,
             );
           return result;
         } catch (error) {
           const message = sanitizeOutput(error?.message ?? String(error));
           log(`  the vendor client could not be launched: ${message}`);
           return { status: null, stdout: '', stderr: '', harnessError: message };
+        }
+      },
+      /**
+       * A turn under the FOREIGN principal's config, byte-swapped in place at the SAME path the
+       * owner's turns used. Only some clients accept a --mcp-config flag, but every client
+       * discovers its config from the location it already reads — so swapping the bytes (and
+       * restoring them in a finally) is the one mechanism that is the vendor's own for all seven
+       * drivers. The v2 harness never initialized the foreign configuration at all, which is how
+       * "the foreign plant" came to run under the OWNER's principal.
+       */
+      foreignTurn(label, prompt) {
+        // A run whose installer wrote no config has nothing to swap. Throwing here would take the
+        // whole restartAndResume phase down and turn three honestly-failing legs into one BLOCKED
+        // receipt with a crash reason — so the missing config is reported as the turn's own failure
+        // and each leg keeps its own named refusal.
+        if (!existsSync(ctx.configPath)) {
+          const message = 'the installer wrote no config, so the foreign principal had none to run';
+          log(`# foreign turn refused: ${message}`);
+          return { status: null, stdout: '', stderr: '', harnessError: message };
+        }
+        const ownerBytes = readFileSync(ctx.configPath, 'utf8');
+        writeFileSync(ctx.configPath, ctx.foreignConfig ?? ownerBytes);
+        try {
+          log(`# foreign config swapped in (${ctx.foreignConfigSha256 ?? 'unhashed'})`);
+          return ctx.turn(label, prompt);
+        } finally {
+          writeFileSync(ctx.configPath, ownerBytes);
         }
       },
       async launchDetached(label, prompt) {
@@ -1058,7 +1421,7 @@ export async function certifyCell(options) {
 
     const receipt = {
       format: 'knowledge-crib-client-certification',
-      formatVersion: 2,
+      formatVersion: 3,
       generatedAt: new Date().toISOString(),
       policySha256,
       product: { commit: candidateCommit, packageSha256 },
@@ -1085,6 +1448,53 @@ export async function certifyCell(options) {
         dirty: gitDirty(),
       },
       principalMarkers: { owner: sha256(ownerPrincipal), foreign: sha256(foreignMarker) },
+      // The two configurations the scenario ran — present only when both were hashed, which is the
+      // only state in which a protocol-dependent leg could have passed. Same journal, repository
+      // and candidate (the stores and server command digests must agree); DIFFERENT authenticated
+      // principals; each config individually hashed so the receipt names the bytes it ran.
+      ...(ctx?.ownerConfigSha256 && ctx?.foreignConfigSha256
+        ? {
+            configurations: {
+              owner: {
+                sha256: ctx.ownerConfigSha256,
+                principalSha256: sha256(ownerPrincipal),
+                format: spec.configFormat,
+                stores: {
+                  memoryDirSha256: sha256(ctx.cribMemoryDir),
+                  registryDirSha256: sha256(ctx.cribRegistryDir),
+                },
+                serverCommandSha256: ctx.serverCommandSha256 ?? null,
+              },
+              foreign: {
+                sha256: ctx.foreignConfigSha256,
+                principalSha256: sha256(foreignPrincipal),
+                format: spec.configFormat,
+                stores: {
+                  memoryDirSha256: sha256(ctx.cribMemoryDir),
+                  registryDirSha256: sha256(ctx.cribRegistryDir),
+                },
+                serverCommandSha256: ctx.serverCommandSha256 ?? null,
+              },
+            },
+          }
+        : {}),
+      // The protocol evidence: which recorder produced the recordings, and where the archived
+      // copies are. A null recording is a FINDING (no protocol traffic was tapped on that side),
+      // never an omission — the validator refuses any protocol-dependent passing leg whose
+      // recording is missing.
+      protocol: {
+        recorderVersion: RECORDER_VERSION,
+        ownerRecording: archivedRecording(
+          ctx?.ownerRecordingPath,
+          outDir,
+          `${spec.id}-${process.platform}-${process.arch}-owner-recording.json`,
+        ),
+        foreignRecording: archivedRecording(
+          ctx?.foreignRecordingPath,
+          outDir,
+          `${spec.id}-${process.platform}-${process.arch}-foreign-recording.json`,
+        ),
+      },
       legs,
       vendor: {
         processIdentity: ctx?.vendorBin
@@ -1144,11 +1554,20 @@ export function buildLegs(behaviours, logName, logDigest) {
     // The two vendor-asserting legs name their source unconditionally. Only `vendor-client` may
     // satisfy them, and the loader refuses the receipt outright if either says otherwise — so a
     // harness that merely spoke the protocol could not produce a version-2 receipt at all.
+    // A PASSING leg also carries the protocol references its behaviours were judged from: which
+    // recording, which operation, which request id. The validator re-reads those recordings from
+    // the archived artifacts, so a leg's pass is checkable against the wire, not just against the
+    // receipt's own say-so.
+    const protocolRefs =
+      status === 'pass'
+        ? values.flatMap((v) => (Array.isArray(v?.protocol) ? v.protocol : []))
+        : [];
     legs[leg] = {
       status,
       ...(leg === 'handshake' || leg === 'toolUse' ? { source: 'vendor-client' } : {}),
       logPath: logName,
       logSha256: logDigest,
+      ...(protocolRefs.length > 0 ? { protocol: protocolRefs } : {}),
       ...(values.find((v) => v.reason)?.reason
         ? { detail: values.find((v) => v.reason).reason }
         : {}),

@@ -3,6 +3,7 @@ import { existsSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
+  CERTIFICATION_EVIDENCE_FORMAT_VERSION,
   CERTIFIED_CLIENTS,
   certificationStatus,
   certificationSummary,
@@ -29,6 +30,7 @@ const DISPLAY_STATES = {
   'configuration-verified': 'configuration verified',
   'protocol-verified': 'protocol verified',
   'runtime-evidence-only': 'runtime evidence only (not a native runtime)',
+  'legacy-evidence-only': 'runtime evidence only (legacy receipt schema)',
   'runtime-verified': 'runtime verified',
 };
 
@@ -38,6 +40,7 @@ const STATE_ORDER = [
   'configuration-verified',
   'protocol-verified',
   'runtime-evidence-only',
+  'legacy-evidence-only',
   'runtime-verified',
 ];
 
@@ -52,7 +55,13 @@ const STATE_ORDER = [
 function matrixState(receipt) {
   const status = certificationStatus(receipt);
   if (status !== 'runtime-verified') return status;
-  return certifyClientCell(receipt).ok ? 'runtime-verified' : 'runtime-evidence-only';
+  if (certifyClientCell(receipt).ok) return 'runtime-verified';
+  // A v1/v2 receipt is readable history from a schema that can no longer certify a cell — but it
+  // WAS a native run, and the "not a native runtime" label would claim the run happened somewhere
+  // it did not. The legacy schema is named instead, the same fact the launch decision reports.
+  if (receipt?.formatVersion !== CERTIFICATION_EVIDENCE_FORMAT_VERSION)
+    return 'legacy-evidence-only';
+  return 'runtime-evidence-only';
 }
 
 function rank(receipt) {
@@ -174,7 +183,7 @@ export function renderClientCertificationMatrix(receipts, opts = {}) {
     START,
     '## Client certification evidence',
     '',
-    'Generated from validated receipts. A client is runtime verified only when a vendor-client receipt proves record → interruption/restart → authorized resume on the listed platform. Two labels say a row is evidence and not a runtime pass: "protocol evidence only (test client)" when the handshake came from a test client rather than the client under test, and "runtime evidence only (not a native runtime)" when the run happened somewhere other than the native platform — a WSL run satisfies every leg and still cannot certify native Linux or Windows. Neither label can promote a row.',
+    'Generated from validated receipts. A client is runtime verified only when a vendor-client receipt proves record → interruption/restart → authorized resume on the listed platform. Three labels say a row is evidence and not a runtime pass: "protocol evidence only (test client)" when the handshake came from a test client rather than the client under test, "runtime evidence only (not a native runtime)" when the run happened somewhere other than the native platform — a WSL run satisfies every leg and still cannot certify native Linux or Windows — and "runtime evidence only (legacy receipt schema)" when the receipt predates the certifying schema and is kept as readable history. No label can promote a row.',
     '',
     '| Client | Highest verified evidence | Strongest certified cell |',
     '|---|---|---|',
