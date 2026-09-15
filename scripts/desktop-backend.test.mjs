@@ -696,6 +696,184 @@ await checkAsync(
 
 // ─── 6. the CLI refusals ──────────────────────────────────────────────────────────────────────────
 
+process.stdout.write('\n[desktop] the in-scenario failure paths\n');
+
+// The two failure paths INSIDE the engine, with every provisioning fact injected so the only thing
+// under test is what the engine does when the editor UI itself refuses: (a) a session with no
+// signed-in surface must stop the scenario right there and name the surface — never continue and
+// never fabricate; (b) a control lookup that fails mid-scenario (selector drift) must crash into a
+// receipt that RETAINS what the run established before the drift, so an operator can tell drift
+// from a provisioning gap. The stub helper speaks the shared wire envelope over the full contract;
+// its launchApplication spawns a REAL sacrificial child the test itself owns (a node process that
+// sleeps) and reports THAT child's pid — never a hardcoded number, which could collide with a live
+// host process and make the engine's teardown signal a process the run never launched.
+function writeScenarioStubHelper(dir, { tree, refuseFindElement }) {
+  const helper = join(dir, 'scenario-stub-helper.mjs');
+  writeFileSync(
+    helper,
+    [
+      'import { spawn } from "node:child_process";',
+      'const [operation, payloadJson] = process.argv.slice(2);',
+      'const payload = JSON.parse(payloadJson || "{}");',
+      `const tree = ${JSON.stringify(tree)};`,
+      `const refuseFindElement = ${refuseFindElement ? 'true' : 'false'};`,
+      'if (operation === "launchApplication") {',
+      '  const child = spawn(',
+      '    process.execPath,',
+      '    ["-e", "setTimeout(() => {}, 600000)"],',
+      '    { stdio: "ignore", detached: true },',
+      '  );',
+      '  child.unref();',
+      '  console.log(JSON.stringify({ ok: true, operation, result: { pid: child.pid } }));',
+      '} else if (operation === "captureDiagnostics") {',
+      '  console.log(JSON.stringify({ ok: true, operation, result: { tree } }));',
+      '} else if (operation === "findElement" && refuseFindElement) {',
+      '  console.log(JSON.stringify({ ok: false, operation,',
+      '    error: `no element matched role=${JSON.stringify(payload.role)} name=${JSON.stringify(payload.name)}` }));',
+      '} else {',
+      '  console.log(JSON.stringify({ ok: true, operation, result: {} }));',
+      '}',
+    ].join('\n'),
+  );
+  return helper;
+}
+
+// Everything both failure tests share: a fixture repo whose .vscode/mcp.json satisfies preflight, a
+// non-tarball candidate (the installer leg is honestly blocked and the engine proceeds), an editor
+// resolved by injection, and the SHIPPED selector set for this platform with one recorded version —
+// so preflight passes and the engine's own behaviour is the only variable left.
+function scenarioCellFactory(workspace, stubHelper) {
+  const fixtureRepo = join(workspace, 'fixture');
+  const packagePath = join(workspace, 'candidate.tgz');
+  const outDir = join(workspace, 'receipts');
+  mkdirSync(join(fixtureRepo, '.vscode'), { recursive: true });
+  writeFileSync(join(fixtureRepo, '.vscode', 'mcp.json'), '{}\n');
+  writeFileSync(packagePath, 'not really a tarball');
+  const shipped = loadSelectorSets().find(
+    (set) => set.scenario === 'copilot' && set.platform === process.platform,
+  );
+  const selectorSets = [{ ...shipped, testedVersions: ['1.99.9'] }];
+  return {
+    outDir,
+    run: () =>
+      certifyDesktopCell({
+        scenario: desktopScenario('copilot'),
+        platform: process.platform,
+        packagePath,
+        candidateCommit: HEAD,
+        fixtureRepo,
+        outDir,
+        selectorSets,
+        editorResolver: () => ({ status: 'pass', binary: '/opt/test/bin/code', version: '1.99.9' }),
+        backendResolver: () => ({
+          status: 'pass',
+          backend: DESKTOP_BACKENDS[process.platform],
+          helperPath: stubHelper,
+          interpreter: process.execPath,
+        }),
+      }),
+  };
+}
+
+await checkAsync(
+  'an unsigned editor session is the first named blocker — the scenario never starts',
+  async () => {
+    const workspace = mkdtempSync(join(tmpdir(), 'crib-desktop-unsigned-'));
+    try {
+      const stubHelper = writeScenarioStubHelper(workspace, {
+        // No element anywhere in the tree names the signed-in Copilot surface, and findElement
+        // would refuse too — the assertion below proves the engine stopped BEFORE any control step.
+        tree: [{ name: 'Menu Bar', children: [{ name: 'File', children: [] }] }],
+        refuseFindElement: true,
+      });
+      const { run, outDir } = scenarioCellFactory(workspace, stubHelper);
+      const { receipt, legs, behaviours } = await run();
+
+      assert.equal(receipt.formatVersion, 3);
+      assert.equal(behaviours.vendorBinaryResolved.status, 'pass');
+      assert.equal(behaviours.vendorAuthenticated.status, 'blocked');
+      assert.match(
+        behaviours.vendorAuthenticated.reason,
+        /no signed-in Copilot surface/,
+        'the unsigned session must name the surface that is absent',
+      );
+      assert.equal(
+        receipt.blockedReason,
+        behaviours.vendorAuthenticated.reason,
+        'the first named blocker must be the unsigned session, not a later echo',
+      );
+      const statuses = Object.values(legs).map((leg) => leg.status);
+      assert.ok(
+        statuses.every((status) => status === 'blocked'),
+        `an unsigned session blocks every leg: ${statuses.join(', ')}`,
+      );
+      assert.equal(legs.handshake.source, 'vendor-client');
+      assert.deepEqual(
+        Object.keys(legs).sort(),
+        [...CERTIFICATION_LEGS].sort(),
+        'the blocked receipt must still carry exactly the eight legs',
+      );
+      validateClientCertificationReceipt(receipt, { evidenceRoot: outDir });
+    } finally {
+      rmSync(workspace, { recursive: true, force: true });
+    }
+  },
+);
+
+await checkAsync(
+  'a control that cannot be found mid-scenario crashes into a receipt that keeps what passed',
+  async () => {
+    const workspace = mkdtempSync(join(tmpdir(), 'crib-desktop-drift-'));
+    try {
+      const stubHelper = writeScenarioStubHelper(workspace, {
+        // The signed-in surface IS present, so the engine passes the sign-in gate and dies on the
+        // first control lookup — selector drift, the failure an operator must be able to name.
+        tree: [{ name: 'Editor', children: [{ name: 'Copilot', children: [] }] }],
+        refuseFindElement: true,
+      });
+      const { run, outDir } = scenarioCellFactory(workspace, stubHelper);
+      const { receipt, legs, behaviours, receiptPath } = await run();
+
+      // what the run established BEFORE the drift must survive on the receipt
+      assert.equal(behaviours.vendorBinaryResolved.status, 'pass');
+      assert.equal(
+        behaviours.vendorAuthenticated.status,
+        'pass',
+        'the signed-in pass must survive the later crash — erasing it would read as a sign-in failure',
+      );
+      assert.equal(behaviours.configGeneratedByInstaller.status, 'blocked');
+      assert.equal(receipt.blockedReason, behaviours.configGeneratedByInstaller.reason);
+
+      // the crash shape: everything after the drift is blocked BY NAME, never absent
+      const crashShape =
+        /the scenario engine stopped before attempting this behaviour: findElement failed: no element matched/;
+      assert.match(behaviours.handshakeThroughVendorClient.reason, crashShape);
+      assert.match(behaviours.toolInvocationThroughVendorClient.reason, crashShape);
+      assert.equal(legs.handshake.status, 'blocked');
+      assert.match(legs.handshake.detail ?? '', crashShape);
+
+      const statuses = Object.values(legs).map((leg) => leg.status);
+      assert.ok(
+        statuses.every((status) => status !== 'pass'),
+        'no leg may pass on a scenario that drifted',
+      );
+      assert.deepEqual(
+        Object.keys(legs).sort(),
+        [...CERTIFICATION_LEGS].sort(),
+        'the crashed receipt must still carry exactly the eight legs',
+      );
+      assert.equal(
+        receiptPath,
+        join(outDir, `client-copilot-${process.platform}-${process.arch}.json`),
+      );
+      assert.equal(certificationCell(receipt), `copilot/${process.platform}`);
+      validateClientCertificationReceipt(receipt, { evidenceRoot: outDir });
+    } finally {
+      rmSync(workspace, { recursive: true, force: true });
+    }
+  },
+);
+
 process.stdout.write('\n[desktop] the CLI refusals\n');
 
 check('the CLI refuses to start without its required inputs (exit 2)', () => {

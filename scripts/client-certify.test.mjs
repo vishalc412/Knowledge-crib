@@ -35,7 +35,7 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { delimiter, join, resolve } from 'node:path';
+import { delimiter, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   CERTIFICATION_LEGS,
@@ -503,6 +503,59 @@ function writeWordEchoVendor(dir, name) {
 }
 
 /**
+ * A vendor whose account is out of quota: preflight succeeds (--version, auth), but every headless
+ * turn exits 1 with a quota-shaped refusal on stderr. This is the failure shape a real vendor
+ * account in quota trouble produces, and each turn leg must name ITS OWN exit rather than folding
+ * into one generic blocked receipt.
+ */
+function writeQuotaVendor(dir, name) {
+  const path = join(dir, name);
+  writeFileSync(
+    path,
+    [
+      '#!/bin/sh',
+      'case "$1" in',
+      '  --version) echo "9.9.9 (quota vendor)"; exit 0;;',
+      '  auth) echo \'{"loggedIn":true}\'; exit 0;;',
+      'esac',
+      'echo "usage limit reached: monthly quota exhausted for this account" >&2',
+      'exit 1',
+      '',
+    ].join('\n'),
+  );
+  chmodSync(path, 0o755);
+  return path;
+}
+
+/**
+ * A vendor that hangs on the interrupt prompt: it passes preflight and stays ALIVE after the
+ * detached launch, but never opens an MCP session. The harness must refuse to interrupt it by name
+ * at the activity deadline — interrupting a process that never spoke to the server would certify
+ * nothing — and the run must stay bounded instead of waiting the real 120s deadline.
+ */
+function writeHungVendor(dir, name) {
+  const path = join(dir, name);
+  writeFileSync(
+    path,
+    [
+      '#!/bin/sh',
+      'case "$1" in',
+      '  --version) echo "9.9.9 (hung vendor)"; exit 0;;',
+      '  auth) echo \'{"loggedIn":true}\'; exit 0;;',
+      'esac',
+      'prompt=$2',
+      'case "$prompt" in',
+      '  *"status tool"*) sleep 60; exit 0;;',
+      '  *) echo "{}"; exit 0;;',
+      'esac',
+      '',
+    ].join('\n'),
+  );
+  chmodSync(path, 0o755);
+  return path;
+}
+
+/**
  * A vendor client that actually speaks MCP. It reads the config the harness wired, launches the
  * server entry that config names (the recorder, in a certified run), and invokes the tools the
  * prompts ask for over newline-delimited JSON-RPC. It is a fixture on the CLIENT side of the wire,
@@ -919,6 +972,8 @@ async function runEndToEnd({
   vendor = 'fake',
   activityTimeoutMs = 20_000,
   terminationTimeoutMs = 5_000,
+  cleanupTimeoutMs,
+  processControl,
 }) {
   const scratch = mkdtempSync(join(tmpdir(), 'crib-certify-test-'));
   const bin = join(scratch, 'bin');
@@ -929,6 +984,8 @@ async function runEndToEnd({
   if (vendor === 'wordEcho') writeWordEchoVendor(bin, 'claude');
   else if (vendor === 'cooperating') writeCooperatingVendor(bin, 'claude');
   else if (vendor === 'masquerading') writeMasqueradingVendor(bin, 'claude');
+  else if (vendor === 'quota') writeQuotaVendor(bin, 'claude');
+  else if (vendor === 'hung') writeHungVendor(bin, 'claude');
   else writeFakeVendor(bin, 'claude', { signedIn });
   // Two candidate shapes, and the difference between them is the point of having both. Without a
   // tarball the install fails and the run never reaches a turn — which is how a real host with no
@@ -944,11 +1001,23 @@ async function runEndToEnd({
 
   const originalPath = process.env.PATH;
   const originalWrite = process.stdout.write.bind(process.stdout);
-  process.env.PATH = `${bin}:${originalPath}`;
   // The harness echoes its transcript to stdout so an operator watching the run sees the same bytes
   // the receipt hashes. In a test that is noise; it is swallowed here and restored below.
   process.stdout.write = () => true;
   try {
+    // `delimiter` (not a hardcoded ':'), so the shadow works on every platform the suite can run
+    // on. The mutation AND the shadow assertion both live inside the try: the only PATH restore is
+    // the finally, so a throwing assertion outside it would leak the mutated PATH to every check
+    // after this one.
+    process.env.PATH = `${bin}${delimiter}${originalPath}`;
+    // The shadow is a PREPEND, so a missing or misnamed fake would fall through to the operator's REAL
+    // vendor binary — the exact leak this suite must not have. Assert the fake wins BEFORE the run:
+    // a fallthrough becomes a loud failure here instead of a live vendor turn later.
+    const shadowed = whichSync('claude');
+    assert.ok(
+      shadowed === join(bin, 'claude'),
+      `the fake claude must shadow any real one on PATH; whichSync resolved ${shadowed ?? 'nothing'}`,
+    );
     const result = await certifyCell({
       spec: clientSpec('claude'),
       client: 'certify-test',
@@ -959,6 +1028,8 @@ async function runEndToEnd({
       // paths run in seconds here, which is the only way the fixture legs stay testable.
       activityTimeoutMs,
       terminationTimeoutMs,
+      cleanupTimeoutMs,
+      processControl,
     });
     return { result, out, scratch };
   } finally {
@@ -1689,6 +1760,510 @@ if (masqueradingRun) {
   rmSync(scratch, { recursive: true, force: true });
 }
 
+// ─── 3g. driver seams: fixture resolution without PATH, and the named failure shapes ───────────
+
+process.stdout.write(
+  '\n[client-certify] driver seams, hung sessions, quota refusals, cleanup survival\n',
+);
+
+/**
+ * Run certifyCell in-process with stdout swallowed — the transcript still archives every byte, so
+ * the receipt is complete; only the operator echo is muted, exactly like runEndToEnd does.
+ */
+async function runCellQuiet(options) {
+  const originalWrite = process.stdout.write.bind(process.stdout);
+  process.stdout.write = () => true;
+  try {
+    return await certifyCell(options);
+  } finally {
+    process.stdout.write = originalWrite;
+  }
+}
+
+/** A package path that exists but is not a tarball, so the install phase fails fast and honestly. */
+function notAPackage(dir) {
+  mkdirSync(dir, { recursive: true });
+  const path = join(dir, 'not-a-package.tgz');
+  writeFileSync(path, 'this is not a tarball\n');
+  return path;
+}
+
+check('every driver refuses resolution by name when PATH holds no vendor binary', () => {
+  // All seven drivers, not just claude: the refusal must interpolate the DISPLAY name and the exact
+  // candidate list it tried, so an operator can act on it — and cursor's two-name fallback must
+  // appear in its reason as "tried: cursor-agent, cursor".
+  const originalPath = process.env.PATH;
+  const emptyBin = mkdtempSync(join(tmpdir(), 'crib-empty-path-'));
+  process.env.PATH = emptyBin;
+  try {
+    for (const id of CLIENT_IDS) {
+      const spec = clientSpec(id);
+      const resolved = resolveBinary(spec);
+      assert.equal(resolved.status, 'blocked', `${id} must refuse on an empty PATH`);
+      assert.equal(
+        resolved.reason,
+        `no ${spec.displayName} executable found on PATH (tried: ${spec.binaries.join(', ')})`,
+        `${id} must name exactly what it tried`,
+      );
+    }
+  } finally {
+    process.env.PATH = originalPath;
+    rmSync(emptyBin, { recursive: true, force: true });
+  }
+});
+
+check('cursor falls through its first name to the second when only the second exists', () => {
+  const scratch = mkdtempSync(join(tmpdir(), 'crib-cursor-fallback-'));
+  const bin = join(scratch, 'bin');
+  mkdirSync(bin, { recursive: true });
+  // A first name that RESOLVES but reports no version: resolveBinary must not stop at the first
+  // X_OK hit — a binary that cannot even name its version is not a usable vendor runtime, and the
+  // second name is the one that must win.
+  writeFileSync(
+    join(bin, 'cursor-agent'),
+    [
+      '#!/bin/sh',
+      'case "$1" in',
+      '  --version) echo "no version here"; exit 0;;',
+      'esac',
+      'exit 1',
+      '',
+    ].join('\n'),
+  );
+  writeFakeVendor(bin, 'cursor', { signedIn: true });
+  chmodSync(join(bin, 'cursor-agent'), 0o755);
+  const originalPath = process.env.PATH;
+  // REPLACE, not prepend: a real cursor-agent on the host PATH would make this test certify the
+  // operator's own installation instead of the fixture.
+  process.env.PATH = bin;
+  try {
+    const resolved = resolveBinary(clientSpec('cursor'));
+    assert.equal(
+      resolved.status,
+      'pass',
+      `the working second name must win: ${resolved.reason ?? ''}`,
+    );
+    assert.equal(resolved.binary, join(bin, 'cursor'));
+    assert.equal(resolved.version, '9.9.9');
+  } finally {
+    process.env.PATH = originalPath;
+    rmSync(scratch, { recursive: true, force: true });
+  }
+});
+
+check('json-servers configs are rewired under the servers root, like mcpServers', () => {
+  // copilot and vscode declare configFormat json-servers — the same wiring the claude-format check
+  // proves, but over the OTHER root key. A driver that only handled mcpServers would silently
+  // certify nothing for those two clients.
+  const dir = mkdtempSync(join(tmpdir(), 'crib-wire-test-'));
+  const ctx = recorderCtx(dir, 'vscode-mcp.json');
+  writeFileSync(
+    ctx.configPath,
+    `${JSON.stringify(
+      {
+        servers: {
+          'knowledge-crib': {
+            command: fakeCribBin,
+            args: ['serve', '.'],
+            env: { KCRIB_PRINCIPAL_ID: ctx.ownerPrincipal },
+          },
+        },
+      },
+      null,
+      2,
+    )}\n`,
+  );
+  const serversSpec = { ...claudeSpec, configFormat: 'json-servers' };
+  const original = wireProtocolRecorder(ctx, serversSpec, ctx.ownerPrincipal);
+  assert.equal(original.server, fakeCribBin, 'the servers-root config must be captured too');
+  const final = JSON.parse(readFileSync(ctx.configPath, 'utf8'));
+  const server = final.servers['knowledge-crib'];
+  assert.equal(
+    server.command,
+    process.execPath,
+    'the servers root must be rewired to the recorder',
+  );
+  assert.equal(server.args[0], ctx.recorderPath);
+  const ownerFinal = readFileSync(ctx.configPath, 'utf8');
+  const foreignText = buildForeignConfig(ctx, serversSpec, ownerFinal);
+  const foreign = JSON.parse(foreignText);
+  assert.equal(
+    foreign.servers['knowledge-crib'].env.KCRIB_PRINCIPAL_ID,
+    ctx.foreignPrincipal,
+    'the foreign swap must work over the servers root too',
+  );
+  rmSync(dir, { recursive: true, force: true });
+});
+
+check('the real codex spec wires its TOML config the same way', () => {
+  // The toml checks above drive a SYNTHETIC spec; this one drives the shipped codex driver spec
+  // itself, so a codex spec that lost its configFormat could not slip through unexercised.
+  const dir = mkdtempSync(join(tmpdir(), 'crib-wire-test-'));
+  const ctx = recorderCtx(dir, 'codex-config.toml');
+  writeTomlFixture(ctx);
+  const codexSpec = clientSpec('codex');
+  assert.equal(codexSpec.configFormat, 'toml', 'the shipped codex spec must declare TOML');
+  const original = wireProtocolRecorder(ctx, codexSpec, ctx.ownerPrincipal);
+  assert.equal(original.server, fakeCribBin);
+  const rewired = readFileSync(ctx.configPath, 'utf8');
+  assert.ok(
+    rewired.includes(ctx.recorderPath),
+    'the codex managed block must be rewired to the recorder shim',
+  );
+  assert.ok(rewired.includes(ctx.ownerPrincipal));
+  const foreignText = buildForeignConfig(ctx, codexSpec, rewired);
+  assert.ok(foreignText.includes(ctx.foreignPrincipal));
+  assert.ok(!foreignText.includes(ctx.ownerPrincipal), 'the owner principal must not leak');
+  rmSync(dir, { recursive: true, force: true });
+});
+
+check('the shipped copilot and vscode specs wire their json-servers config the same way', () => {
+  // The servers-root rewiring above drives a SYNTHETIC json-servers spec; this check drives the
+  // two SHIPPED specs that actually declare json-servers, so a spec that lost its configFormat
+  // or configRelPath could not slip through unexercised — bullet 5 requires every shipped
+  // driver definition to be tested, not just a stand-in.
+  for (const id of ['copilot', 'vscode']) {
+    const spec = clientSpec(id);
+    assert.equal(
+      spec.configFormat,
+      'json-servers',
+      `the shipped ${id} spec must declare json-servers`,
+    );
+    const dir = mkdtempSync(join(tmpdir(), 'crib-wire-test-'));
+    try {
+      const ctx = recorderCtx(dir, join(...spec.configRelPath));
+      mkdirSync(dirname(ctx.configPath), { recursive: true });
+      writeFileSync(
+        ctx.configPath,
+        `${JSON.stringify(
+          {
+            servers: {
+              'knowledge-crib': {
+                command: fakeCribBin,
+                args: ['serve', '.'],
+                env: { KCRIB_PRINCIPAL_ID: ctx.ownerPrincipal },
+              },
+            },
+          },
+          null,
+          2,
+        )}\n`,
+      );
+      const original = wireProtocolRecorder(ctx, spec, ctx.ownerPrincipal);
+      assert.equal(original.server, fakeCribBin, `the ${id} servers-root config must be captured`);
+      const final = JSON.parse(readFileSync(ctx.configPath, 'utf8'));
+      const server = final.servers['knowledge-crib'];
+      assert.equal(
+        server.command,
+        process.execPath,
+        `the ${id} servers root must be rewired to the recorder`,
+      );
+      assert.equal(server.args[0], ctx.recorderPath);
+      const rewiredText = readFileSync(ctx.configPath, 'utf8');
+      const foreignText = buildForeignConfig(ctx, spec, rewiredText);
+      const foreign = JSON.parse(foreignText);
+      assert.equal(
+        foreign.servers['knowledge-crib'].env.KCRIB_PRINCIPAL_ID,
+        ctx.foreignPrincipal,
+        `the ${id} foreign swap must work over the servers root`,
+      );
+      assert.ok(
+        !foreignText.includes(ctx.ownerPrincipal),
+        `the ${id} foreign config must not leak the owner principal`,
+      );
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  }
+});
+
+let seamRun;
+let seamCalls = 0;
+const sentinel = 'seam-refusal: the injected resolver refused on purpose';
+try {
+  const scratch = mkdtempSync(join(tmpdir(), 'crib-seam-test-'));
+  seamRun = await runCellQuiet({
+    spec: clientSpec('claude'),
+    client: 'certify-test',
+    packagePath: notAPackage(join(scratch, 'pkg')),
+    candidateCommit: HEAD,
+    outDir: join(scratch, 'receipts'),
+    resolveVendorBinary: () => {
+      seamCalls += 1;
+      return { status: 'blocked', reason: sentinel };
+    },
+    whichVendorBinary: () => undefined,
+  });
+  seamRun.seamCalls = seamCalls;
+  seamRun.scratch = scratch;
+} catch (error) {
+  failures.push(`injected-seam run threw: ${error.message}`);
+  process.stderr.write(`  FAIL the injected-seam run threw\n    ${error.message}\n`);
+}
+
+if (seamRun) {
+  const { seamCalls, scratch } = seamRun;
+  check('certifyCell resolves the vendor through the injected seam, never through PATH', () => {
+    // No PATH mutation happened for this run at all: the seam is the only way preflight reached a
+    // binary, which is what keeps the ordinary suite off the operator's real vendor clients.
+    assert.ok(seamCalls > 0, 'the injected resolver must be the one preflight consults');
+    assert.equal(seamRun.behaviours.vendorBinaryResolved.status, 'blocked');
+    assert.equal(
+      seamRun.behaviours.vendorBinaryResolved.reason,
+      sentinel,
+      'the receipt must carry the injected refusal verbatim',
+    );
+    assert.match(
+      seamRun.behaviours.vendorAuthenticated.reason,
+      /executable was not found/,
+      'an unresolved binary must block the sign-in probe by name',
+    );
+  });
+  rmSync(scratch, { recursive: true, force: true });
+}
+
+for (const id of ['windsurf', 'vscode']) {
+  let headlessRun;
+  try {
+    const scratch = mkdtempSync(join(tmpdir(), `crib-headless-${id}-`));
+    headlessRun = await runCellQuiet({
+      spec: clientSpec(id),
+      client: 'certify-test',
+      packagePath: notAPackage(join(scratch, 'pkg')),
+      candidateCommit: HEAD,
+      outDir: join(scratch, 'receipts'),
+      resolveVendorBinary: () => ({
+        status: 'pass',
+        binary: `/fixture/bin/${id}`,
+        version: '9.9.9',
+        resolvedPath: `/fixture/bin/${id}`,
+      }),
+      whichVendorBinary: () => `/fixture/bin/${id}`,
+    });
+    headlessRun.scratch = scratch;
+  } catch (error) {
+    failures.push(`headless-null ${id} run threw: ${error.message}`);
+    process.stderr.write(`  FAIL the headless-null ${id} run threw\n    ${error.message}\n`);
+  }
+
+  if (headlessRun) {
+    const { scratch } = headlessRun;
+    check(`${id} has no headless entrypoint, so sign-in is blocked by name`, () => {
+      assert.equal(
+        headlessRun.behaviours.vendorBinaryResolved.status,
+        'pass',
+        'the injected fixture binary must resolve',
+      );
+      assert.equal(headlessRun.behaviours.vendorBinaryResolved.binary, `/fixture/bin/${id}`);
+      assert.equal(headlessRun.behaviours.vendorAuthenticated.status, 'blocked');
+      assert.match(
+        headlessRun.behaviours.vendorAuthenticated.reason,
+        /no supported non-interactive entrypoint/,
+        `${id} must name the missing headless entrypoint as the block`,
+      );
+    });
+    rmSync(scratch, { recursive: true, force: true });
+  }
+}
+
+let quotaRun;
+try {
+  quotaRun = await runEndToEnd({
+    signedIn: true,
+    stubPackage: true,
+    serve: true,
+    vendor: 'quota',
+  });
+} catch (error) {
+  failures.push(`quota run threw: ${error.message}`);
+  process.stderr.write(
+    `  FAIL the quota run threw instead of writing a receipt\n    ${error.message}\n`,
+  );
+}
+
+if (quotaRun) {
+  const { result, out, scratch } = quotaRun;
+
+  check('a quota-refusing account fails each turn leg by its own exit, not a generic block', () => {
+    assert.equal(result.behaviours.vendorBinaryResolved.status, 'pass');
+    assert.equal(result.behaviours.vendorAuthenticated.status, 'pass');
+    assert.equal(result.behaviours.configGeneratedByInstaller.status, 'pass');
+    assert.equal(result.behaviours.handshakeThroughVendorClient.status, 'fail');
+    assert.match(
+      result.behaviours.handshakeThroughVendorClient.reason,
+      /handshake exit 1/,
+      'the handshake leg must name the vendor exit it observed',
+    );
+    assert.equal(result.behaviours.authorizedRecordThroughVendorClient.status, 'fail');
+    assert.match(
+      result.behaviours.authorizedRecordThroughVendorClient.reason,
+      /record exit 1/,
+      'the record leg must name the vendor exit it observed',
+    );
+  });
+
+  check('the quota refusal survives into the archived transcript, redacted but intact', () => {
+    const transcript = readFileSync(result.archived, 'utf8');
+    assert.match(
+      transcript,
+      /usage limit reached/,
+      'the bounded redacted tail must preserve the vendor refusal a reader can act on',
+    );
+    assert.match(transcript, /exit 1/);
+  });
+
+  check('the quota receipt still validates against the version-3 contract', () => {
+    const validated = validateClientCertificationReceipt(result.receipt, { evidenceRoot: out });
+    assert.equal(validated.formatVersion, 3);
+  });
+
+  rmSync(scratch, { recursive: true, force: true });
+}
+
+// A recording+delegating process-control seam: the hung run's vendor is launched detached,
+// registered in launchedPids, and left ALIVE at the activity deadline — so the finally-block
+// teardown is the one place an ordinary fixture run signals a real (fake) pid. Passing the seam
+// here proves the teardown and the interrupt leg call ONLY the injected trio, never the module
+// functions directly, which is what keeps process control testable without a host-wide kill.
+const hungSeam = { alive: [], killed: [], confirmed: [] };
+
+let hungRun;
+try {
+  hungRun = await runEndToEnd({
+    signedIn: true,
+    stubPackage: true,
+    serve: true,
+    vendor: 'hung',
+    activityTimeoutMs: 2_000,
+    terminationTimeoutMs: 5_000,
+    cleanupTimeoutMs: 3_000,
+    processControl: {
+      alive: (pid) => {
+        hungSeam.alive.push(pid);
+        return processAlive(pid);
+      },
+      killTree: (pid) => {
+        hungSeam.killed.push(pid);
+        return killProcessTree(pid);
+      },
+      confirm: async (pid, timeoutMs) => {
+        hungSeam.confirmed.push({ pid, timeoutMs });
+        return confirmTermination(pid, timeoutMs);
+      },
+    },
+  });
+} catch (error) {
+  failures.push(`hung-session run threw: ${error.message}`);
+  process.stderr.write(
+    `  FAIL the hung-session run threw instead of writing a receipt\n    ${error.message}\n`,
+  );
+}
+
+if (hungRun) {
+  const { result, out, scratch } = hungRun;
+
+  check('a live vendor that never opens a session is refused at the activity deadline', () => {
+    assert.equal(result.behaviours.vendorProcessInterrupted.status, 'fail');
+    assert.match(
+      result.behaviours.vendorProcessInterrupted.reason,
+      /no MCP session activity was observed within 2000ms/,
+      'the refusal must name the activity deadline, not kill a session that never existed',
+    );
+  });
+
+  check(
+    'the teardown signals the launched pid only through the injected process-control seam',
+    () => {
+      // The hung vendor was still alive when the run gave up on it, so teardown MUST have signalled
+      // it — and only via the injected seam, with the teardown's own bounded wait rather than a
+      // hardcoded one.
+      assert.ok(
+        hungSeam.alive.length > 0,
+        'the injected alive() must be asked about the launched pid',
+      );
+      assert.ok(
+        hungSeam.killed.length > 0,
+        'the injected killTree() must receive the launched pid',
+      );
+      const confirmed = hungSeam.confirmed.find(
+        (call) => hungSeam.killed.includes(call.pid) && call.timeoutMs === 3_000,
+      );
+      assert.ok(
+        confirmed,
+        `the injected confirm() must be called with the INJECTED cleanup bound (3_000ms), saw ${JSON.stringify(hungSeam.confirmed)}`,
+      );
+    },
+  );
+
+  check('the hung-session receipt still validates against the version-3 contract', () => {
+    const validated = validateClientCertificationReceipt(result.receipt, { evidenceRoot: out });
+    assert.equal(validated.formatVersion, 3);
+  });
+
+  rmSync(scratch, { recursive: true, force: true });
+}
+
+let cleanupRun;
+try {
+  const scratch = mkdtempSync(join(tmpdir(), 'crib-cleanup-test-'));
+  let capturedWorkspace = null;
+  const result = await runCellQuiet({
+    spec: clientSpec('claude'),
+    client: 'certify-test',
+    packagePath: notAPackage(join(scratch, 'pkg')),
+    candidateCommit: HEAD,
+    outDir: join(scratch, 'receipts'),
+    removeWorkspace: (workspace) => {
+      capturedWorkspace = workspace;
+      throw new Error('simulated cleanup failure: the workspace could not be removed');
+    },
+  });
+  cleanupRun = { result, scratch, capturedWorkspace };
+} catch (error) {
+  failures.push(`cleanup-failure run threw: ${error.message}`);
+  process.stderr.write(`  FAIL the cleanup-failure run threw\n    ${error.message}\n`);
+}
+
+if (cleanupRun) {
+  const { result, scratch, capturedWorkspace } = cleanupRun;
+  check('a cleanup failure is recorded on the result and never masks the receipt', () => {
+    assert.ok(result.receipt, 'the receipt must still be returned');
+    assert.ok(
+      existsSync(result.receiptPath),
+      `the receipt file must survive on disk at ${result.receiptPath}`,
+    );
+    assert.match(
+      result.cleanupError,
+      /simulated cleanup failure/,
+      'the cleanup failure must be recorded on the result, not thrown',
+    );
+  });
+  check(
+    'a cleanup failure is stamped into the persisted receipt, not just the in-memory result',
+    () => {
+      // An archived receipt that omits a real cleanup failure reads as a clean run at audit time —
+      // the failure must reach the on-disk bytes the receipt hash covers.
+      assert.match(
+        result.receipt.cleanupError,
+        /simulated cleanup failure/,
+        'the returned receipt must carry the cleanup failure',
+      );
+      const onDisk = JSON.parse(readFileSync(result.receiptPath, 'utf8'));
+      assert.match(
+        onDisk.cleanupError,
+        /simulated cleanup failure/,
+        'the receipt FILE must be re-written with the cleanup failure',
+      );
+      assert.ok(
+        validateClientCertificationReceipt(onDisk, { evidenceRoot: dirname(result.receiptPath) }),
+        'the stamped receipt must still validate',
+      );
+    },
+  );
+  if (capturedWorkspace) rmSync(capturedWorkspace, { recursive: true, force: true });
+  rmSync(scratch, { recursive: true, force: true });
+}
+
 // ─── 4. the driver refusal paths ────────────────────────────────────────────────────────────────
 
 process.stdout.write('\n[client-certify] the CLI refuses what it cannot certify\n');
@@ -1742,24 +2317,72 @@ check('a short commit is refused, so a receipt can never bind an ambiguous revis
   assert.match(out, /full 40-hex commit/);
 });
 
-check('the compatibility wrapper refuses when there is no candidate bundle to certify', () => {
-  // It forwards to the real harness; a missing bundle must be a named refusal, not a crash. This
-  // host may or may not have built installers, so the wrapper is exercised on the missing-package
-  // path it takes when nothing has been built.
+check('the compatibility wrapper refuses a missing package and never forwards', () => {
+  // The wrapper's own default package is dist/installers/... — which EXISTS on a host that has run
+  // `build:installers`, so a wrapper spawn with no --package forwards into the REAL harness on this
+  // very host: a live npm install from the registry and, if the operator is signed in, real vendor
+  // turns against their account. The deterministic form pins an explicit nonexistent package, so the
+  // wrapper can only take its refusal path no matter what is built on the machine running the suite.
+  const scratch = mkdtempSync(join(tmpdir(), 'crib-wrapper-test-'));
+  const out = join(scratch, 'receipts');
   const probe = spawnSync(
     process.execPath,
-    [join(HERE, 'client-certify-claude.mjs'), '--out', join(tmpdir(), 'crib-wrapper-test')],
-    { encoding: 'utf8', cwd: REPO_ROOT },
+    [
+      join(HERE, 'client-certify-claude.mjs'),
+      '--package',
+      join(scratch, 'no-such-candidate.tgz'),
+      '--out',
+      out,
+    ],
+    { encoding: 'utf8', cwd: REPO_ROOT, timeout: 120_000 },
   );
-  const out = `${probe.stdout ?? ''}${probe.stderr ?? ''}`;
+  const combined = `${probe.stdout ?? ''}${probe.stderr ?? ''}`;
+  assert.equal(
+    probe.status,
+    2,
+    `the wrapper must REFUSE with exit 2 when the package is missing; got status ${probe.status}:\n${combined.slice(0, 400)}`,
+  );
+  assert.match(combined, /client-certify-claude REFUSES to start:/);
+  assert.match(combined, /no candidate package at/);
   assert.ok(
-    /forwarding to scripts\/client-certify\.mjs --client claude/.test(out) || probe.status === 2,
-    `the wrapper must announce the forward or refuse by name; got:\n${out.slice(0, 400)}`,
+    !/forwarding to scripts\/client-certify\.mjs/.test(probe.stdout ?? ''),
+    `a refused wrapper must not announce a forward; stdout was:\n${(probe.stdout ?? '').slice(0, 400)}`,
   );
-  assert.ok(
-    probe.status === 0 || probe.status === 1 || probe.status === 2,
-    `the wrapper must exit with a deliberate status, got ${probe.status}`,
+});
+
+check('the compatibility wrapper refuses when it cannot read HEAD', () => {
+  // The other refusal gate: a package may exist, but a wrapper that cannot name the commit it would
+  // certify must refuse too. Provoke it with a PATH that has no git — the wrapper reads HEAD with
+  // execFileSync('git', …), so an unresolvable git is the honest way to reach this branch without
+  // faking a package.
+  const scratch = mkdtempSync(join(tmpdir(), 'crib-wrapper-test-'));
+  const emptyBin = join(scratch, 'empty-bin');
+  mkdirSync(emptyBin, { recursive: true });
+  const probe = spawnSync(
+    process.execPath,
+    [
+      join(HERE, 'client-certify-claude.mjs'),
+      '--package',
+      join(HERE, 'client-certify.mjs'),
+      '--out',
+      join(scratch, 'receipts'),
+    ],
+    {
+      encoding: 'utf8',
+      cwd: REPO_ROOT,
+      timeout: 120_000,
+      // node and git both live on PATH; emptying it leaves the wrapper unable to run git at all.
+      env: { ...process.env, PATH: emptyBin },
+    },
   );
+  const combined = `${probe.stdout ?? ''}${probe.stderr ?? ''}`;
+  assert.equal(
+    probe.status,
+    2,
+    `expected refusal exit 2, got ${probe.status}:\n${combined.slice(0, 400)}`,
+  );
+  assert.match(combined, /client-certify-claude REFUSES to start:/);
+  assert.match(combined, /could not read HEAD/);
 });
 
 check('a WSL host is detected rather than reported as native linux', () => {

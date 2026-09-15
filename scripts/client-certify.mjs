@@ -583,7 +583,17 @@ function run(log, label, command, args, options = {}) {
  * behaviour results keyed by {@link CERTIFICATION_BEHAVIOURS} id; a behaviour it could not attempt
  * comes back `blocked` with a reason, never absent.
  */
-function createDriver(spec) {
+// Injection seam for the vendor executable resolution: the real defaults walk PATH, so ordinary
+// certification runs are unchanged — but a test can hand in fakes WITHOUT touching PATH, which is
+// what keeps the ordinary suite off the operator's real vendor binaries even when one is installed.
+function createDriver(
+  spec,
+  {
+    resolveVendorBinary = resolveBinary,
+    whichVendorBinary = whichSync,
+    preflightTimeoutMs = 60_000,
+  } = {},
+) {
   const blocked = (ids, reason) =>
     Object.fromEntries(ids.map((id) => [id, { status: 'blocked', reason }]));
   const behaviourIds = (phase) =>
@@ -604,14 +614,14 @@ function createDriver(spec) {
       }
       if (!spec.headless) {
         return {
-          vendorBinaryResolved: resolveBinary(spec),
+          vendorBinaryResolved: resolveVendorBinary(spec),
           vendorAuthenticated: {
             status: 'blocked',
             reason: `the ${spec.displayName} vendor runtime has no supported non-interactive entrypoint, so sign-in cannot be exercised`,
           },
         };
       }
-      const resolved = resolveBinary(spec);
+      const resolved = resolveVendorBinary(spec);
       if (resolved.status !== 'pass') {
         return {
           vendorBinaryResolved: resolved,
@@ -622,12 +632,14 @@ function createDriver(spec) {
         };
       }
       ctx.vendorBin = resolved.binary;
-      ctx.vendorResolvedPaths = spec.binaries.map((name) => whichSync(name)).filter(Boolean);
+      ctx.vendorResolvedPaths = spec.binaries
+        .map((name) => whichVendorBinary(name))
+        .filter(Boolean);
       ctx.vendorVersion = resolved.version;
       const authLaunch = launchableCommand(resolved.binary, spec.authProbe.args);
       const auth = spawnSync(authLaunch.command, authLaunch.args, {
         encoding: 'utf8',
-        timeout: 60_000,
+        timeout: preflightTimeoutMs,
         env: ctx.clientEnv,
         cwd: ctx.project,
       });
@@ -879,11 +891,11 @@ function createDriver(spec) {
       const matchedPath = matchingNode
         ? vendorPaths.find((path) => commandLineMatches(matchingNode.command, path))
         : null;
-      const killed = killProcessTree(launched.pid);
+      const killed = ctx.processControl.killTree(launched.pid);
       // Settle first: reaping the detached child clears the zombie before the liveness poll, so
       // processAlive cannot false-negative on a dead-but-unreaped pid.
       await launched.settle();
-      const terminated = await confirmTermination(launched.pid, ctx.terminationTimeoutMs);
+      const terminated = await ctx.processControl.confirm(launched.pid, ctx.terminationTimeoutMs);
       ctx.interruptEvidence = {
         targetPid: launched.pid,
         targetCommand: sanitizeTreeLine(targetCommand),
@@ -1449,9 +1461,36 @@ export async function certifyCell(options) {
     // fixture tests can run the same code paths on seconds instead of minutes.
     activityTimeoutMs = 120_000,
     terminationTimeoutMs = 10_000,
+    // Resolution seam, threaded to createDriver's preflight: tests pass fakes here so the ordinary
+    // suite exercises preflight against fixtures WITHOUT mutating PATH and without ever reaching a
+    // real vendor binary that happens to be installed on the host. An injected whichVendorBinary
+    // must resolve the SAME path the injected resolveVendorBinary reports, or the interrupt leg's
+    // command-line identity check refuses the launched process.
+    resolveVendorBinary = resolveBinary,
+    whichVendorBinary = whichSync,
+    // The remaining time bounds, for the same reason as the two above: the sign-in preflight probe,
+    // the candidate install and the installed-binary index, and each vendor turn all default to
+    // their production values but remain options so a fixture run can shrink them instead of
+    // waiting minutes for a timeout the test is deliberately walking into.
+    preflightTimeoutMs = 60_000,
+    installTimeoutMs = 600_000,
+    turnTimeoutMs = 300_000,
+    cleanupTimeoutMs = 5_000,
+    // Process-control seam. The teardown and the interrupt leg signal ONLY pids this run
+    // registered, but the kill/confirm calls themselves are host-wide operations — a test must be
+    // able to observe (or refuse) them without a real process tree. The default is the module's own
+    // trio; an injected seam gets every call site: the interrupt leg and the finally-block guard.
+    processControl = {
+      alive: processAlive,
+      killTree: killProcessTree,
+      confirm: confirmTermination,
+    },
+    // Workspace removal seam: the finally block must never let a cleanup failure mask the receipt,
+    // and the only way to TEST that guarantee is to let a run hand in a removal that throws.
+    removeWorkspace = rmSync,
   } = options;
   const { sha256: policySha256 } = loadLaunchPolicy();
-  const driver = createDriver(spec);
+  const driver = createDriver(spec, { resolveVendorBinary, whichVendorBinary, preflightTimeoutMs });
 
   const workspace = mkdtempSync(join(tmpdir(), `crib-certify-${spec.id}-`));
   const home = join(workspace, 'home');
@@ -1533,7 +1572,7 @@ export async function certifyCell(options) {
       'fixture: install the candidate into an isolated prefix',
       'npm',
       ['install', '-g', '--prefix', prefix, '--no-audit', '--no-fund', ...deps, packagePath],
-      { env: clientEnv, timeoutMs: 600_000 },
+      { env: clientEnv, timeoutMs: installTimeoutMs },
     );
 
     writeFileSync(
@@ -1553,7 +1592,7 @@ export async function certifyCell(options) {
         ['index', project],
         {
           env: clientEnv,
-          timeoutMs: 600_000,
+          timeoutMs: installTimeoutMs,
         },
       );
       run(log, 'fixture: initialize memory', cribBin, ['memory', 'init'], {
@@ -1585,6 +1624,9 @@ export async function certifyCell(options) {
       launchedPids: [],
       activityTimeoutMs,
       terminationTimeoutMs,
+      installTimeoutMs,
+      turnTimeoutMs,
+      processControl,
       blockedBecause:
         install.status === 0
           ? undefined
@@ -1609,7 +1651,7 @@ export async function certifyCell(options) {
             encoding: 'utf8',
             env: clientEnv,
             cwd: project,
-            timeout: 300_000,
+            timeout: turnTimeoutMs,
             maxBuffer: 32 * 1024 * 1024,
           });
           log(`  exit ${result.status}`);
@@ -1745,6 +1787,9 @@ export async function certifyCell(options) {
     }
   }
 
+  // Set by the receipt block below and read by the finally guard, so a cleanup failure can be
+  // recorded on the returned object instead of replacing it.
+  let result = null;
   try {
     log('\n# behaviours');
     for (const { id } of CERTIFICATION_BEHAVIOURS) {
@@ -1871,23 +1916,55 @@ export async function certifyCell(options) {
     // evidence only exists if the caller remembered to save it is a run whose evidence can be lost.
     const receiptPath = join(outDir, `client-${spec.id}-${process.platform}-${process.arch}.json`);
     writeFileSync(receiptPath, `${JSON.stringify(receipt, null, 2)}\n`);
-    return { receipt, behaviours, legs, archived, receiptPath };
+    result = { receipt, behaviours, legs, archived, receiptPath };
+    return result;
   } finally {
     // Kill anything this run detached that is STILL alive, before the workspace that holds its
     // recordings goes away. Only pids registered by THIS run are signalled — cleanup removes the
     // run's isolated processes and nothing else — and each kill is confirmed so a survivor cannot
-    // outlive its evidence.
-    for (const pid of ctx?.launchedPids ?? []) {
-      if (processAlive(pid)) {
-        killProcessTree(pid);
-        // Best-effort bounded wait: the workspace is about to disappear, and a pid that lingers
-        // half a second longer is harmless — one that survives to write into a deleted directory is
-        // not.
-        await confirmTermination(pid, 5_000);
+    // outlive its evidence. The signals go through the injected process-control seam so a test can
+    // observe (or refuse) them without a real process tree.
+    //
+    // A cleanup failure must never mask the result: before this guard, a throwing rmSync replaced
+    // the returned receipt with the throw, so the run's evidence was lost to a janitor error. Now
+    // the failure is recorded on the result, stamped into the persisted receipt, and the receipt
+    // still reaches the caller.
+    try {
+      for (const pid of ctx?.launchedPids ?? []) {
+        if (processControl.alive(pid)) {
+          processControl.killTree(pid);
+          // Best-effort bounded wait: the workspace is about to disappear, and a pid that lingers
+          // half a second longer is harmless — one that survives to write into a deleted directory is
+          // not.
+          await processControl.confirm(pid, cleanupTimeoutMs);
+        }
+      }
+      if (!keep) removeWorkspace(workspace, { recursive: true, force: true });
+      else process.stdout.write(`workspace kept at ${workspace}\n`);
+    } catch (cleanupError) {
+      // `result` is assigned only after the receipt write succeeded, so it is exactly the "a receipt
+      // exists" signal: the message must not claim a receipt was written when the try block died
+      // before persisting one.
+      process.stderr.write(
+        `certifyCell cleanup failed ${result ? 'after' : 'before'} the receipt was written: ${cleanupError?.message ?? cleanupError}\n`,
+      );
+      if (result) {
+        const msg = String(cleanupError?.message ?? cleanupError);
+        result.cleanupError = msg;
+        // The persisted receipt must carry the same event the run experienced: an archived receipt
+        // that silently omits a real cleanup failure reads as a clean run at audit time. The
+        // re-write is guarded because a second failure here must not mask the cleanup error it is
+        // reporting.
+        result.receipt.cleanupError = msg;
+        try {
+          writeFileSync(result.receiptPath, `${JSON.stringify(result.receipt, null, 2)}\n`);
+        } catch (rewriteError) {
+          process.stderr.write(
+            `certifyCell cleanup error could not be written back into the receipt: ${rewriteError?.message ?? rewriteError}\n`,
+          );
+        }
       }
     }
-    if (!keep) rmSync(workspace, { recursive: true, force: true });
-    else process.stdout.write(`workspace kept at ${workspace}\n`);
   }
 }
 
