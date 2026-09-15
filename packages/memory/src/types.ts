@@ -544,6 +544,106 @@ export interface MemoryManifest {
   meta?: Record<string, unknown>;
 }
 
+// ─── connected memory graph (WP-G1) ──────────────────────────────────────────
+
+/**
+ * A graph node: repository, service, concept, or artifact (mirrors the WP-G0 corpus fixture's
+ * `type`). An entity is metadata about a traversal endpoint — the ASSERTIONS carry the claims.
+ */
+export type GraphEntityKind = 'repository' | 'service' | 'concept' | 'artifact';
+
+/**
+ * One connected-memory-graph node registration. Carries BOTH ids by design:
+ *  - `id` (`gent:<blake3>`) is the STORAGE identity — content-addressed from the identity seed
+ *    `{kind, name, namespace.principalId, scope}` (see ids.ts `graphEntityId`), so
+ *    re-registering the same entity upserts by id. Editable metadata (`members`, `labels`,
+ *    `meta`) is deliberately OUTSIDE the seed: growing an entity's membership must never
+ *    re-address it.
+ *  - `ref` is the CANONICAL TRAVERSAL node id the corpus pre-registers (`entity:<repoId>` for
+ *    the repository kind, `entity:<repoId>/<name>` otherwise, `entity:<name>` for global scope)
+ *    — assertions and expected evidence paths speak `ref`, never `gent:`.
+ */
+export interface GraphEntity {
+  /** `gent:<blake3>` — content-addressed from the identity seed (see ids.ts). */
+  id: string;
+  schemaVersion: '1';
+  kind: GraphEntityKind;
+  name: string;
+  /** the canonical traversal node id (`entity:<repoId>[/<name>]` / `entity:<name>`). */
+  ref: string;
+  namespace: MemoryNamespace;
+  /** which store placement the entity lives in (a repo entity never surfaces as global). */
+  scope: MemoryScope;
+  /** symbol/artifact refs that are part of this entity — editable, never part of the id seed. */
+  members?: string[];
+  /** editable display labels — never part of the id seed. */
+  labels?: string[];
+  provenance: MemoryProvenance;
+  meta?: Record<string, unknown>;
+}
+
+/**
+ * One versioned subject–predicate–object assertion (the plan's "Relationship assertion"). The
+ * id seed is the assertion's scoped content identity — `{predicate, subject, object,
+ * namespace.principalId, scope, validAt}` — so a re-derived assertion (a repeated backfill
+ * import) re-addresses to the same id and the write is an idempotent merge. `knownAt` (the
+ * supporting record's transaction time) is deliberately EXCLUDED: the same assertion learned at
+ * a different moment is still the same assertion, and seeding transaction time would break the
+ * byte-identical re-import exit criterion. `supportedBy` is excluded too — supporters are
+ * merged at submit time, never identity.
+ *
+ * `validAt` is derived from the supporting record's `validTime.from` (when the relationship
+ * held in the world); `knownAt` from its `transactionTime.recordedAt` (when the store learned
+ * it). Neither is ever invented from ingestion time — that determinism is what makes repeated
+ * imports produce the same canonical assertions (the WP-G1 exit criterion).
+ *
+ * `admission` is const `'proposed'`: WP-G1 stores PROPOSALS only. The producer may never mint a
+ * trusted assertion (the plan's isolation law) — the schema const fails closed here, and the
+ * submit path refuses a caller-supplied value separately (mirrors the tty:true refusal).
+ */
+export interface GraphAssertion {
+  /** `grel:<blake3>` — content-addressed from the scoped content identity (see ids.ts). */
+  id: string;
+  schemaVersion: '1';
+  predicate: string;
+  /** the subject endpoint's canonical traversal ref (`mem:`/`intake:`/`topic:`/`sym:`/…). */
+  subject: string;
+  /** the object endpoint's canonical traversal ref. */
+  object: string;
+  namespace: MemoryNamespace;
+  scope: MemoryScope;
+  /** when the assertion held in the world (the supporting record's `validTime.from`). */
+  validAt: string;
+  /** when the store learned the assertion (the supporting record's transaction time). */
+  knownAt: string;
+  /** the record ids whose content supports deriving this assertion — never empty. */
+  supportedBy: string[];
+  /** const `'proposed'` — admission state is assigned by the pipeline, never the producer. */
+  admission: 'proposed';
+  provenance: MemoryProvenance;
+  meta?: Record<string, unknown>;
+}
+
+/**
+ * An append-only entity-alias resolution decision (the plan's "Resolution decision"). Binds two
+ * entity REFS — the traversal layer's vocabulary, not `gent:` storage ids — because WP-G2's
+ * projection walks refs. `kind` fixes the direction: `'establish'` asserts `entityA` is an
+ * alias of `entityB`; `'reverse'` records the retraction of that binding (append-only, never a
+ * rewrite). Self-aliases are rejected now; full cycle rejection lands with the WP-G2 projection.
+ */
+export interface GraphResolutionDecision {
+  /** `gres:<blake3>` — content-addressed from `{kind, entityA, entityB}` (see ids.ts). */
+  id: string;
+  schemaVersion: '1';
+  kind: 'establish' | 'reverse';
+  entityA: string;
+  entityB: string;
+  actor: string;
+  reason?: string;
+  ts: string;
+  meta?: Record<string, unknown>;
+}
+
 /** Any memory record line, v1 or v2, plus a migration alias (a JSONL shard line is one of these). */
 export type MemoryEntry =
   | MemoryRecord
@@ -557,4 +657,7 @@ export type MemoryEntry =
   | MemoryFeedback
   | MemoryAlias
   | IntakeRequirement
-  | IntakeCheckpoint;
+  | IntakeCheckpoint
+  | GraphEntity
+  | GraphAssertion
+  | GraphResolutionDecision;

@@ -62,6 +62,7 @@ export * from './bench/heldout.js';
 export * from './bench/scenarios.js';
 export * from './bench/run.js';
 export * from './bench/retrieval-eval.js';
+export * from './graph.js';
 export * from './graph-corpus/corpus.js';
 export * from './sync/event.js';
 export * from './sync/crypto.js';
