@@ -377,6 +377,23 @@ function judgeFuzzWorkload(receipt, policy) {
   }
   const failures = Array.isArray(details.failures) ? details.failures : [];
   if (failures.length > 0) blockers.push(`fuzz-receipt-failures:${failures.length}`);
+  // The candidate binding (Task 9): a deep receipt must prove WHICH packaged parser bytes
+  // executed — details.candidate with the verified parsers package, worker and grammar hashes.
+  // Without this backstop, a receipt whose sweep actually ran the checkout build (the harness's
+  // binding block deleted or reordered behind the import) could still satisfy every floor above,
+  // because candidatePackageSha256 is the hash of the --package tarball bytes on disk regardless
+  // of what the sweep imported.
+  const candidate = details.candidate;
+  if (
+    !candidate ||
+    typeof candidate.parsersPackageSha256 !== 'string' ||
+    typeof candidate.worker?.sha256 !== 'string' ||
+    !Array.isArray(candidate.grammars) ||
+    candidate.grammars.length === 0 ||
+    candidate.isolatedPrefix !== true
+  ) {
+    blockers.push('fuzz-receipt-unbound-candidate');
+  }
   return blockers;
 }
 

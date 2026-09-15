@@ -268,6 +268,17 @@ function fuzzReceipt(overrides = {}) {
       iterations: FUZZ.requiredIterations,
       extractorCount: FUZZ.minimumExtractors,
       failures: [],
+      // The candidate binding the harness records (Task 9): the receipt proves which packaged
+      // parser bytes executed — judgeFuzzWorkload refuses a deep receipt without it.
+      candidate: {
+        package: 'knowledge-crib-0.1.0.tgz',
+        parsersPackage: 'knowledge-crib-parsers-0.1.0.tgz',
+        parsersPackageSha256: PACKAGE,
+        worker: { path: 'dist/fuzz/fuzz-worker.js', sha256: `sha256:${'e'.repeat(64)}` },
+        grammars: [{ path: 'grammars/tree-sitter-php.wasm', sha256: `sha256:${'e'.repeat(64)}` }],
+        runtimeDependencies: ['fast-check'],
+        isolatedPrefix: true,
+      },
     },
     ...overrides,
   };
@@ -1123,6 +1134,18 @@ refuses(
     ];
   },
   /^fuzz-receipt-failures:1$/,
+);
+// The Task 9 backstop: a deep receipt that does not prove which packaged parser bytes executed —
+// the binding block's evidence (verified parsers package, worker and grammar hashes) absent —
+// could describe a sweep that actually ran the checkout build while candidatePackageSha256 still
+// names the --package tarball on disk. Such a receipt certifies nothing and is refused by name.
+refuses(
+  'a deep-fuzz receipt that does not prove which packaged parser bytes executed',
+  (_e, options) => {
+    const { candidate, ...details } = fuzzReceipt().details;
+    options.globalReceipts = [fuzzReceipt({ details })];
+  },
+  /^fuzz-receipt-unbound-candidate$/,
 );
 refuses(
   'a deep-fuzz receipt with no artifact behind it',

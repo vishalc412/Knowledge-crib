@@ -67,7 +67,12 @@ jobs:
       - name: Build the candidate package
         run: |
           corepack pnpm@9.15.0 installer:build
-          CANDIDATE="$(find dist/installers -maxdepth 2 -type f -name 'knowledge-crib-*.tgz' -not -name 'knowledge-crib-*-*.tgz' -print -quit)"
+          # The ROOT package tarball only: workspace packages ship as knowledge-crib-<name>-<version>.tgz
+          # (a LETTER after the prefix), so a version starting with a digit — including prereleases like
+          # knowledge-crib-0.2.0-beta.1.tgz — identifies the root alone. The old
+          # `-not -name 'knowledge-crib-*-*.tgz'` exclusion matched on ANY hyphen, so it also excluded
+          # every prerelease-versioned root tarball and the step exited 1 the day one shipped.
+          CANDIDATE="$(find dist/installers -maxdepth 2 -type f -name 'knowledge-crib-[0-9]*.tgz' -print -quit)"
           if [[ -z "$CANDIDATE" ]]; then
             echo "no shipped package found in the installer bundle" >&2
             exit 1
