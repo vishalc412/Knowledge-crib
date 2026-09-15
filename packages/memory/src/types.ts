@@ -93,6 +93,8 @@ export interface MemoryEvidence {
   actor?: string;
   tty?: true;
   attestedAt?: string;
+  /** the attestation anchor this item vouches for (the human-attestation evidence's anchor id). */
+  attestationId?: string;
 
   // receipt-pair (Pitfall: failing + subsequent passing)
   failingReceiptId?: string;
