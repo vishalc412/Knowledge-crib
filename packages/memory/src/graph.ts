@@ -87,6 +87,17 @@ export function isGraphRef(ref: string): boolean {
   );
 }
 
+/**
+ * Is `value` a legal single ref/scope SEGMENT — the grammar the graph schemas pin
+ * (`^[A-Za-z0-9][A-Za-z0-9._-]*$`, no `/`)? A record's `namespace.projectId` is only
+ * minLength-1 in record-v3, so a caller placing records into graph scopes (the backfill)
+ * must verify the segment grammar itself: a repoId like `org/repo` would fail graph
+ * validation only at entry creation, aborting the caller's whole derivation.
+ */
+export function isGraphSegment(value: string): boolean {
+  return /^[A-Za-z0-9][A-Za-z0-9._-]*$/.test(value);
+}
+
 // ─── the entity ref convention ────────────────────────────────────────────────
 
 /**
