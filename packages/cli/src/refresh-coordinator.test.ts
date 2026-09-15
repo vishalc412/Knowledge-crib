@@ -246,6 +246,9 @@ describe('WP4.7 — readerFreshness verdicts', () => {
       expect(f.stale).toBe(false);
       expect(f.staleReasons).toEqual([]);
       expect(f.readerGeneration).toBe(f.publishedGeneration);
+      expect(f.graphGeneration).toBe(f.readerGeneration);
+      expect(f.graphSourcePosition).toBeTruthy();
+      expect(f.codeRevision).toBe(f.currentHead);
       expect(f.lastRefreshError).toBeNull();
       expect(f.lastSuccessfulRefreshAt).toBeTruthy();
     } finally {
