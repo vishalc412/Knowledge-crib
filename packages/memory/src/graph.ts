@@ -129,6 +129,22 @@ export function graphEntityRef(input: {
   return kind === 'repository' ? `entity:${repoId}` : `entity:${repoId}/${name}`;
 }
 
+/**
+ * Instant-order comparison for two schema-valid ISO stamps — `Date.parse`, NEVER a raw string
+ * compare: the graph schemas admit offset (`+05:00`) and optional-fraction forms where
+ * lexicographic order is NOT instant order (a `+14:00` wall-clock string sorts after a `Z`
+ * stamp while naming an EARLIER instant). Returns <0 when `a` is the earlier instant, 0 for the
+ * same instant (any spelling), >0 when `a` is later. Unparseable stamps fall back to the raw
+ * compare (defensive — the schema gate already admitted both forms; the store's private
+ * `laterTimestamp` carries the same law for merges).
+ */
+export function compareGraphInstants(a: string, b: string): number {
+  const pa = Date.parse(a);
+  const pb = Date.parse(b);
+  if (!Number.isNaN(pa) && !Number.isNaN(pb)) return pa === pb ? 0 : pa < pb ? -1 : 1;
+  return a < b ? -1 : a > b ? 1 : 0;
+}
+
 // ─── the scope law ───────────────────────────────────────────────────────────
 
 /**
