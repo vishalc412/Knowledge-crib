@@ -654,6 +654,127 @@ assert.match(
   }
 }
 
+// ─── Task 10: preflight the certification host, serialize the desktop per platform ──────────────
+//
+// The defect this section pins: a certification cell scheduled onto an unprovisioned host used to
+// burn its full budget discovering that — a five-minute run ending in "not signed in", or a launch
+// left queued forever. The host preflight (scripts/host-preflight.mjs) must run BEFORE any
+// expensive work and publish its report unconditionally, so missing infrastructure is a named
+// preflight failure with uploaded blockers, not a timeout.
+{
+  // The certify job block, sliced so the order assertions below judge THIS job's steps — the
+  // candidate and verify jobs carry identically named steps (Checkout, Setup Node).
+  const certifyStart = verifyWorkflow.indexOf('  certify:');
+  assert.ok(certifyStart >= 0, 'the verification workflow must have a certify job');
+  const certifyJob = verifyWorkflow.slice(certifyStart, verifyWorkflow.indexOf('  verify:'));
+  const certifyOrder = (needle) => certifyJob.indexOf(needle);
+
+  // Existence first: every order comparison below is an indexOf difference, and a DELETED step
+  // turns its indexOf into -1, making some pins pass vacuously — delete the preflight step and
+  // "preflight runs before install" reads "-1 < 40", true; delete Checkout and "preflight runs
+  // after checkout" reads "40 > -1", also true. A deleted step must fail HERE, named, never feed
+  // an order pin vacuous arithmetic.
+  for (const step of [
+    'name: Preflight the certification host',
+    'name: Checkout',
+    'uses: actions/setup-node@',
+    'name: Install dependencies',
+  ]) {
+    assert.ok(
+      certifyOrder(step) >= 0,
+      `the certify job must still have a step matching "${step}" — an order pin against a deleted step is vacuous`,
+    );
+  }
+
+  // The preflight runs after Checkout and Setup Node — it is a Node script, so a host without node
+  // on PATH must fail on a missing interpreter AFTER the runner image named it, never as an
+  // anonymous "command not found" in place of the blockers — and BEFORE any expensive work
+  // (dependency install, candidate download, the 120-minute certification).
+  assert.ok(
+    certifyOrder('name: Preflight the certification host') > certifyOrder('name: Checkout'),
+    'the host preflight must run after the checkout — it executes scripts/host-preflight.mjs',
+  );
+  assert.ok(
+    certifyOrder('name: Preflight the certification host') >
+      certifyOrder('uses: actions/setup-node@'),
+    'the host preflight must run after Node is set up — on a host without node on PATH it would die ' +
+      'on a missing interpreter instead of naming its blockers',
+  );
+  assert.ok(
+    certifyOrder('name: Preflight the certification host') <
+      certifyOrder('name: Install dependencies'),
+    'the preflight must run before the expensive work — a host missing infrastructure fails in ' +
+      'seconds with named blockers, never as a five-minute run ending in "not signed in"',
+  );
+  assert.match(
+    certifyJob,
+    /node scripts\/host-preflight\.mjs/,
+    'the preflight step must invoke the host preflight module',
+  );
+  assert.match(
+    certifyJob,
+    /--platform \$\{\{ matrix\.platform \}\}/,
+    'the preflight must be told which platform cell it is validating',
+  );
+  assert.match(
+    certifyJob,
+    /--json "\$\{\{ runner\.temp \}\}\/certify-preflight\/r\$\{\{ github\.run_id \}\}a\$\{\{ github\.run_attempt \}\}\/preflight\.json"/,
+    'the preflight report must go to a run-scoped directory outside the checkout — a self-hosted ' +
+      "runner's disk persists between runs, and a previous run's report must never sit in this " +
+      "pass's output",
+  );
+
+  // The report uploads UNCONDITIONALLY: a blocked preflight's named blockers are the diagnostic,
+  // and "the run was killed before the preflight wrote anything" must stay a distinct fact
+  // (if-no-files-found: warn) rather than a masked one. Pinned against the upload STEP's own block,
+  // not the whole job — any other upload in the job would otherwise satisfy a whole-job pin, and
+  // the per-cell name and the preflight path must belong to THIS step.
+  const uploadStep = certifyJob
+    .split('\n      - name:')
+    .find((block) => /Upload the host preflight report/.test(block));
+  assert.ok(uploadStep, 'the certify job must have a preflight report upload step');
+  assert.match(
+    uploadStep,
+    /Upload the host preflight report\s*\n\s*if:\s*always\(\)\s*\n\s*uses:\s*actions\/upload-artifact@/,
+    'the preflight report must upload even when the preflight blocked — the blockers are the diagnostic',
+  );
+  assert.match(
+    uploadStep,
+    /name:\s*certify-preflight-\$\{\{ matrix\.client \}\}-\$\{\{ matrix\.platform \}\}/,
+    'the preflight report artifact must be per-cell — the seven clients of one platform queue on ' +
+      'the same host, and each must publish its own report',
+  );
+  assert.match(
+    uploadStep,
+    /if-no-files-found:\s*warn/,
+    '"the preflight never wrote a report" must be its own signal, not a silent success',
+  );
+  assert.match(
+    uploadStep,
+    /path:\s*\$\{\{ runner\.temp \}\}\/certify-preflight\/r\$\{\{ github\.run_id \}\}a\$\{\{ github\.run_attempt \}\}\//,
+    'the upload must carry the preflight report DIRECTORY this run wrote — a wrong path uploads ' +
+      'nothing while if-no-files-found: warn reports the absence, which is the failure this pin names',
+  );
+
+  // GUI execution is serialized per platform WITHOUT a job-level concurrency group. A concurrency
+  // group admits one running and one pending job and CANCELS any further queued matrix cell to
+  // admit a newer arrival, so `concurrency: certification-${{ matrix.platform }}` would turn the
+  // seven-client queue into missing receipts — exactly the missing-evidence failure this workflow
+  // must not manufacture. Serialization comes from the ONE registered runner per platform (a
+  // self-hosted runner executes one job at a time; Actions queues every further cell indefinitely)
+  // plus the scenario harness's per-platform desktop lock. This negative pin keeps a future change
+  // from "fixing" serialization with a stanza that silently cancels cells. The pattern allows
+  // leading whitespace because a JOB-level stanza is INDENTED under the job key — anchoring at
+  // column 0 would miss exactly the regression this pin exists to catch — while the header comment
+  // explaining the design starts with `#` and never matches.
+  assert.doesNotMatch(
+    verifyWorkflow,
+    /^[ \t]*concurrency:/m,
+    'per-platform serialization must NOT use a concurrency group — it cancels the queued matrix ' +
+      'cells (one running + one pending, newest arrival wins), manufacturing missing receipts',
+  );
+}
+
 // WP9.5 / WP9.3 — a tag is a launch decision: the release gate must demand client runtime
 // certification receipts for every advertised platform cell.
 assert.match(

@@ -60,6 +60,12 @@ run('node', ['scripts/client-certify.test.mjs']);
 // — a host with no validated selector set must produce a BLOCKED, non-certifying v3 receipt that
 // still validates and feeds the launch matrix under the same cell names.
 run('node', ['scripts/desktop-backend.test.mjs']);
+// Task 10 — the host preflight's own executable specification. Every certification cell runs the
+// preflight before any expensive work; its suite proves a missing fact becomes a NAMED blocker
+// (never a silently satisfied check), that WSL and GitHub-hosted runners are refused as
+// certification cells, and that the per-platform desktop lock serializes GUI execution (a held
+// lock makes client-desktop-certify REFUSE to start; releasing it lets the run proceed).
+run('node', ['scripts/host-preflight.test.mjs']);
 // The frozen requirements themselves: the policy hash pin fails loudly if the launch policy was
 // edited (or merely reformatted), because every receipt collected under the old hash is then void.
 run('node', ['scripts/launch-policy.test.mjs']);

@@ -45,10 +45,32 @@ name: Release verification
 #     their own profiles and the harness asserts on exit status, never on output. Nothing secret
 #     belongs in repository secrets either — a runner that needs a secret to certify is a runner that
 #     has not been provisioned for certification.
+#   * An OPERATOR ATTESTATION on each host, at `~/.config/knowledge-crib/certification-host.json`
+#     (or $KCRIB_CERTIFICATION_ATTESTATION in the runner's own environment — never a secret): the
+#     facts a program cannot probe (dedicated test accounts, every client signed in, accessibility
+#     permission, credentials in vendor secure storage, no unrelated user projects) are never
+#     silently satisfied. The host preflight turns each missing fact into a named blocker.
 #   * Bash on every runner (git-bash is enough on Windows). Steps that expand environment variables
 #     pin `shell: bash` because the Windows default shell reads "$CANDIDATE_PACKAGE" as an empty
 #     PowerShell variable; where a check can be expressed as a structured Node invocation instead, it
 #     is — the collector spawns its checks as argv, not shell strings.
+#
+# HOST PREFLIGHT: every certification cell runs scripts/host-preflight.mjs BEFORE any expensive work
+# (dependency install, candidate download, the 120-minute certification), so a host missing
+# infrastructure fails in seconds with named blockers and a uploaded report — never as a five-minute
+# run ending in "not signed in", and never as evidence about a host that was never provisioned.
+#
+# GUI EXECUTION IS SERIALIZED PER PLATFORM — never two runs sharing one active desktop. The
+# serialization does NOT use a job-level `concurrency:` group: a concurrency group admits one running
+# and one pending job and CANCELS any further queued matrix cell to admit a newer arrival, so seven
+# cells per platform would surface as missing receipts — exactly the missing-evidence failure this
+# workflow must not manufacture. Instead:
+#   * Each platform is ONE registered host, and a self-hosted runner executes one job at a time —
+#     Actions queues every further cell (all seven clients, across workflow runs) on that machine
+#     indefinitely, so every cell eventually runs and none ever shares the desktop.
+#   * The scenario harness additionally takes a per-platform desktop lock (an O_EXCL lock file naming
+#     its holder by pid) before launching anything, so a manual invocation or a second runner service
+#     pointed at the same desktop refuses to start rather than racing the active session.
 
 on:
   workflow_call:
@@ -180,6 +202,35 @@ jobs:
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '22'
+
+      # The host preflight — before any expensive work. It probes what a machine can verify itself
+      # (native identity, architecture, Node, interactive desktop, sleep/lock disabled, automation
+      # backend, every client binary with its resolved version) and refuses to silently satisfy the
+      # facts only an operator can affirm (dedicated test accounts, signed-in clients, accessibility
+      # permission, vendor secure storage, clean certification account), which live in the operator
+      # attestation on the HOST. A blocked preflight fails this cell in seconds with named blockers
+      # instead of burning a 120-minute certification on a host that was never provisioned. The
+      # report is scoped by run id and attempt and lives outside the checkout, like the receipts.
+      - name: Preflight the certification host
+        run: >-
+          node scripts/host-preflight.mjs
+          --platform ${{ matrix.platform }}
+          --json "${{ runner.temp }}/certify-preflight/r${{ github.run_id }}a${{ github.run_attempt }}/preflight.json"
+
+      # Uploaded unconditionally: a BLOCKED preflight's report is the diagnostic that names what the
+      # host is missing — the whole point of failing fast. `if-no-files-found: warn` keeps "the run
+      # was killed before the preflight wrote anything" a different fact from "the preflight ran and
+      # named its blockers". The name is per-cell so the seven clients of one platform (which queue
+      # on the same host) each publish their own report.
+      - name: Upload the host preflight report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: certify-preflight-${{ matrix.client }}-${{ matrix.platform }}
+          path: ${{ runner.temp }}/certify-preflight/r${{ github.run_id }}a${{ github.run_attempt }}/
+          if-no-files-found: warn
+          retention-days: 30
+          overwrite: true
 
       - name: Enable Corepack
         run: corepack enable

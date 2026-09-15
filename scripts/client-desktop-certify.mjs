@@ -74,6 +74,7 @@ import {
 } from './client-protocol-recorder.mjs';
 import { invokeBackend, resolveDesktopBackend } from './desktop-backends.mjs';
 import { loadSelectorSets, resolveSelectors } from './desktop-selectors.mjs';
+import { acquireDesktopLock } from './host-preflight.mjs';
 import { POLICY_PLATFORMS, loadLaunchPolicy } from './launch-policy.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -1230,15 +1231,34 @@ async function main() {
     process.exit(2);
   }
 
-  const { receipt, legs, receiptPath } = await certifyDesktopCell({
-    scenario,
-    platform,
-    packagePath: resolve(packagePath),
-    candidateCommit,
-    fixtureRepo: resolve(fixtureRepo),
-    outDir,
-    keep,
-  });
+  // GUI execution is SERIALIZED per platform: never two runs sharing one active desktop. The
+  // workflow deliberately has NO job-level concurrency group — it would cancel the queued matrix
+  // cells — so serialization is the ONE registered runner per platform (Actions queues every
+  // further cell indefinitely). This lock is the same guarantee for every run the workflow does
+  // NOT schedule (a manual invocation, a second runner pointed at the same desktop). Taken after
+  // arg validation so the engine and its suite stay unaffected, and released in a finally so a
+  // blocked or crashed run never wedges the platform.
+  const desktopLock = acquireDesktopLock(platform);
+  if (desktopLock.status !== 'acquired') {
+    process.stderr.write(`client-desktop-certify REFUSES to start:\n  - ${desktopLock.reason}\n`);
+    process.exit(1);
+  }
+
+  let cell;
+  try {
+    cell = await certifyDesktopCell({
+      scenario,
+      platform,
+      packagePath: resolve(packagePath),
+      candidateCommit,
+      fixtureRepo: resolve(fixtureRepo),
+      outDir,
+      keep,
+    });
+  } finally {
+    desktopLock.release();
+  }
+  const { receipt, legs, receiptPath } = cell;
 
   const notPassed = Object.entries(legs).filter(([, leg]) => leg.status !== 'pass');
   const runtimeVerified = notPassed.length === 0;
