@@ -3,9 +3,16 @@ import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { acceptanceReceiptProblems, nodeMajorOf } from './acceptance-receipt.mjs';
 import {
+  ACCEPTANCE_RECEIPT_FORMAT_VERSION,
+  SUPPORTED_ACCEPTANCE_FORMAT_VERSIONS,
+  acceptanceReceiptProblems,
+  nodeMajorOf,
+} from './acceptance-receipt.mjs';
+import {
+  CERTIFICATION_EVIDENCE_FORMAT_VERSION,
   CertificationEvidenceError,
+  SUPPORTED_CERTIFICATION_FORMAT_VERSIONS,
   bindingProblems,
   certifyClientCell,
   loadClientCertificationReceipts,
@@ -59,6 +66,43 @@ export function evaluateLaunchDecision(evidence, options = {}) {
 
   if (!evidence || typeof evidence !== 'object') {
     return { decision: 'NO-GO', blockers: ['evidence-missing'], certifying: false };
+  }
+
+  // ── the policy's receipt-schema contract agrees with the validators ──────────
+  // Version 4 names the receipt schemas that may certify a cell, and the validators this decision
+  // loads receipts through are the other half of that contract. A policy that disagrees with them
+  // has selected requirements to fit the evidence it can already read — the A02 shape — so the
+  // disagreement itself is a blocker, by kind, before any evidence is judged.
+  for (const [kind, declared, required] of [
+    [
+      'acceptance',
+      policy.receiptSchemas?.acceptance,
+      {
+        format: 'knowledge-crib-acceptance-receipt',
+        requiredFormatVersion: ACCEPTANCE_RECEIPT_FORMAT_VERSION,
+        readableFormatVersions: SUPPORTED_ACCEPTANCE_FORMAT_VERSIONS,
+      },
+    ],
+    [
+      'clientCertification',
+      policy.receiptSchemas?.clientCertification,
+      {
+        format: 'knowledge-crib-client-certification',
+        requiredFormatVersion: CERTIFICATION_EVIDENCE_FORMAT_VERSION,
+        readableFormatVersions: SUPPORTED_CERTIFICATION_FORMAT_VERSIONS,
+      },
+    ],
+  ]) {
+    // Field-by-field, not JSON.stringify of the whole object: the policy file is JSON hand-maintained
+    // under a frozen byte-hash, and a semantically identical policy whose keys were written in a
+    // different order must not read as a contract change. Only the three fields that define the
+    // contract are compared — anything else on the object is the policy's own prose.
+    const agrees =
+      declared?.format === required.format &&
+      declared?.requiredFormatVersion === required.requiredFormatVersion &&
+      JSON.stringify(declared?.readableFormatVersions) ===
+        JSON.stringify(required.readableFormatVersions);
+    if (!agrees) add(`policy-receipt-schema-mismatch:${kind}`);
   }
 
   // Schema 1 predates candidate identity, typed receipts and recorded measurements. It stays

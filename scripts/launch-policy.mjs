@@ -17,6 +17,13 @@
  * floor, and a policy that tries to reintroduce a preview tier or accept WSL as a native runtime is
  * refused outright. A promise that can be quietly narrowed is the defect this file exists to
  * prevent, so the narrowing is now the thing that fails loudly.
+ *
+ * Version 4 adds the receipt-schema contract: WHICH format versions may certify a cell, and which
+ * older ones stay readable as history. Version 3 froze the twenty-one-cell promise but never named
+ * the evidence contract, so a receipt was never told which schema it was collected under — the
+ * boundary a receipt may certify was whatever the validators happened to accept. Naming it here
+ * puts the contract in the hashed policy, where a receipt can cite it and the decision can check
+ * the validators agree.
  */
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
@@ -68,7 +75,35 @@ export const POLICY_ACCEPTANCE_RECEIPT_TYPES = [
 export const POLICY_GLOBAL_RECEIPT_TYPES = ['fuzz-deep'];
 const RUNNER_OSES = ['macos-latest', 'ubuntu-latest', 'windows-latest'];
 const NODE_MAJORS = ['22', '24'];
-export const EXPECTED_POLICY_VERSION = 3;
+export const EXPECTED_POLICY_VERSION = 4;
+
+/**
+ * The receipt-format contract this policy freezes: the format string and format version each kind
+ * of certifying receipt must carry, and the older versions that stay readable as history.
+ *
+ * These values MIRROR the validators' constants (ACCEPTANCE_RECEIPT_FORMAT_VERSION and
+ * SUPPORTED_ACCEPTANCE_FORMAT_VERSIONS in acceptance-receipt.mjs, CERTIFICATION_EVIDENCE_FORMAT_VERSION
+ * and SUPPORTED_CERTIFICATION_FORMAT_VERSIONS in client-certification-evidence.mjs) rather than
+ * importing them: client-certification-evidence.mjs imports THIS module at module scope (for
+ * the policy's client and platform lists), so a cycle back would evaluate its top-level
+ * constants against an uninitialized policy and throw; acceptance-receipt.mjs stays
+ * independent entirely. The restatement
+ * cannot drift silently — launch-policy.test.mjs pins these exact values to the validators'
+ * constants, and the launch decision refuses a policy whose contract disagrees with the validators
+ * it loads receipts through (blocker `policy-receipt-schema-mismatch`).
+ */
+export const POLICY_RECEIPT_SCHEMAS = {
+  acceptance: {
+    format: 'knowledge-crib-acceptance-receipt',
+    requiredFormatVersion: 2,
+    readableFormatVersions: [1, 2],
+  },
+  clientCertification: {
+    format: 'knowledge-crib-client-certification',
+    requiredFormatVersion: 3,
+    readableFormatVersions: [1, 2, 3],
+  },
+};
 
 /** `macos-latest/22` -> { os: 'macos-latest', node: '22' } */
 function parseOsNodeCell(cell) {
@@ -177,7 +212,7 @@ export function validateLaunchPolicy(policy) {
       : 0;
   assertPolicy(
     !uncertifiedSize,
-    'launch policy declares an `uncertified` set: version 3 has no preview tier for clients or platforms. Every advertised cell is a hard requirement, and a cell that cannot be executed leaves the release NO-GO rather than becoming preview.',
+    'launch policy declares an `uncertified` set: version 4 has no preview tier for clients or platforms. Every advertised cell is a hard requirement, and a cell that cannot be executed leaves the release NO-GO rather than becoming preview.',
   );
 
   // per-cell version floors ────────────────────────────────────────────────────────────────────
@@ -229,6 +264,49 @@ export function validateLaunchPolicy(policy) {
   // verified; the aggregation would then pass for lack of a manifest rather than for a measurement.
   const expectedGrid = RUNNER_OSES.flatMap((os) => NODE_MAJORS.map((node) => `${os}/${node}`));
   assertSameSet(policy.osNodeCells, expectedGrid, 'OS/Node cell');
+
+  // receipt schemas ──────────────────────────────────────────────────────────────────────────────
+  // The evidence contract is part of the promise: without it, the boundary a receipt may certify
+  // is whatever the validators happen to accept, and a weakened validator would silently weaken
+  // the policy. So the policy names the contract, and the launch decision cross-checks it against
+  // the validators it actually loads receipts through.
+  assertPolicy(
+    policy.receiptSchemas &&
+      typeof policy.receiptSchemas === 'object' &&
+      !Array.isArray(policy.receiptSchemas),
+    'launch policy receiptSchemas is required: version 4 names the receipt schema contract every certifying receipt is collected under',
+  );
+  const unknownSchemaKinds = Object.keys(policy.receiptSchemas).filter(
+    // hasOwn, not a truthiness lookup: an invented kind named after an Object.prototype property
+    // (say "toString") would otherwise read as declared, and the guard below would never fire.
+    (kind) => !Object.hasOwn(POLICY_RECEIPT_SCHEMAS, kind),
+  );
+  assertPolicy(
+    unknownSchemaKinds.length === 0,
+    `launch policy declares an unknown receipt schema kind: ${unknownSchemaKinds.join(', ')}`,
+  );
+  for (const [kind, expected] of Object.entries(POLICY_RECEIPT_SCHEMAS)) {
+    const declared = policy.receiptSchemas[kind];
+    assertPolicy(
+      declared && typeof declared === 'object',
+      `launch policy receipt schema ${kind} is required`,
+    );
+    assertPolicy(
+      declared.format === expected.format,
+      `launch policy receipt schema ${kind} must declare format ${expected.format}, got ${JSON.stringify(declared.format)}`,
+    );
+    assertPolicy(
+      declared.requiredFormatVersion === expected.requiredFormatVersion,
+      `launch policy receipt schema ${kind} requiredFormatVersion must be ${expected.requiredFormatVersion}, got ${JSON.stringify(declared.requiredFormatVersion)} — a required version the policy names but refuses to read is a contract that cannot be met`,
+    );
+    assertPolicy(
+      Array.isArray(declared.readableFormatVersions) &&
+        declared.readableFormatVersions.includes(declared.requiredFormatVersion) &&
+        JSON.stringify(declared.readableFormatVersions) ===
+          JSON.stringify(expected.readableFormatVersions),
+      `launch policy receipt schema ${kind} readableFormatVersions must be [${expected.readableFormatVersions.join(', ')}] — readable history including the required version, nothing invented`,
+    );
+  }
 
   // receipt types ──────────────────────────────────────────────────────────────────────────────
   for (const [field, vocabulary] of [

@@ -1,16 +1,16 @@
 {
   "format": "knowledge-crib-launch-policy",
-  "policyVersion": 3,
-  "frozenAt": "2026-09-12",
+  "policyVersion": 4,
+  "frozenAt": "2026-09-15",
   "note": "Frozen BEFORE candidate testing. The launch decision recomputes eligibility from this file plus validated measurements; nothing in an evidence manifest may select its own requirements. Changing any value here is a product decision that invalidates every receipt collected under the previous hash.",
   "scope": {
-    "decision": "Version 3 WIDENS the promise back to its full advertised boundary and makes it non-narrowable: seven vendor clients on three native operating systems, twenty-one cells, no waivers. Version 2 had narrowed the promise to Claude Code on macOS and named the rest preview; that narrowing is removed, and with it the `uncertified` escape hatch. Every one of the twenty-one cells is now a hard requirement, and a cell that cannot be executed leaves the release NO-GO rather than becoming preview.",
+    "decision": "Version 4 keeps the full boundary version 3 froze — seven vendor clients on three native operating systems, twenty-one cells, no waivers — and names the evidence contract that boundary is certified under: acceptance receipts must be `knowledge-crib-acceptance-receipt` format version 2 and client certification receipts `knowledge-crib-client-certification` format version 3, each carrying the correlated protocol and process evidence those schemas require. Receipts from older format versions stay readable as history — a historical failure is never unreadable — but only the required format versions may certify a cell, so the boundary a receipt may certify is stated by this policy and not left to whatever the validators happen to accept. Every one of the twenty-one cells is a hard requirement, and a cell that cannot be executed leaves the release NO-GO rather than becoming preview.",
     "certified": "All seven clients (Claude Code, GitHub Copilot, Cursor, VS Code, Codex, Windsurf, Gemini) on all three native platforms (darwin, linux, win32), each with a vendor runtime receipt for the exact candidate package.",
-    "preview": "Nothing. There is no preview tier for clients or platforms under version 3. Cross-device sync remains the only preview-scoped feature, and it is a feature, not a client cell.",
+    "preview": "Nothing. There is no preview tier for clients or platforms under version 4. Cross-device sync remains the only preview-scoped feature, and it is a feature, not a client cell.",
     "wsl": "WSL is NOT a native Linux or Windows runtime. A receipt whose platform.wsl is true reports process.platform 'linux' from a Windows host and can never satisfy a native linux or win32 cell.",
     "clientVersions": "clientVersionRequirements records the MINIMUM supported version of each client on each platform. The floors are operator-declared at freeze time: a floor is a support decision, not a measurement, and it is confirmed on first certification of that cell. Grounded anchors observed on the freezing host: Claude Code 2.1.269, codex-cli 0.148.0, cursor-agent 2026.08.25 (date-versioned), VS Code 3.19.19.",
     "crossDeviceSync": "preview only; production promotion requires a separate decision and scope authorization.",
-    "publication": "A GO from this policy approves THE CANDIDATE against the full promise. Publishing additionally requires the tag workflow's aggregate over every osNodeCell below, over the twenty-one client cells, and over the deep-fuzz global receipt, all of which run on real runners and real vendor hosts."
+    "publication": "A GO from this policy approves THE CANDIDATE against the full promise. Publishing additionally requires the tag workflow's aggregate over every osNodeCell below, over the twenty-one client cells, and over the deep-fuzz global receipt, all of which run on real runners and real vendor hosts. Reports and receipts are release artifacts published OUTSIDE the candidate source tree: committing them into the tree they certify would change the identity of the commit the evidence names. The generated support matrix is regenerated from the published receipts and is stamped with this policy's exact version and hash, so a reader can tell which frozen contract its states speak for."
   },
   "gates": [
     { "id": "G1", "threshold": 1, "direction": "gte", "label": "exact recall@5" },
@@ -74,6 +74,18 @@
     "vscode/darwin": "1.99.0",
     "vscode/linux": "1.99.0",
     "vscode/win32": "1.99.0"
+  },
+  "receiptSchemas": {
+    "acceptance": {
+      "format": "knowledge-crib-acceptance-receipt",
+      "requiredFormatVersion": 2,
+      "readableFormatVersions": [1, 2]
+    },
+    "clientCertification": {
+      "format": "knowledge-crib-client-certification",
+      "requiredFormatVersion": 3,
+      "readableFormatVersions": [1, 2, 3]
+    }
   },
   "receiptTypes": [
     "install",

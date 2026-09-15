@@ -1,14 +1,16 @@
 # Knowledge Crib — capability matrix
 
-**Dated 12 September 2026.** Branch `debug/auditMaster`. The launch promise is policy version 3 —
+**Dated 15 September 2026.** Branch `debug/auditMaster`. The launch promise is policy version 4 —
 seven clients on three native platforms, twenty-one cells, no waivers — and **no cell is certified
 yet, so the release is NO-GO**; [Clients](#clients) below says what that does and does not mean. This
 page states what has been MEASURED, on what, and what has not. It is the support boundary: if a
 capability is not listed as verified here, treat it as unverified regardless of what any other
 document claims.
 
-Every row links to the evidence that produced it. A row with no evidence link is a claim, and there
-are none of those here by design.
+Every row names its evidence. Rows about in-repo artifacts link to them; the client certification
+grid names each cell's receipt file instead — receipts are release artifacts published **outside
+the candidate source tree**, so a repo-relative link would point at a path this repository does
+not carry. A row with no evidence named is a claim, and there are none of those here by design.
 
 ## What was tested, and on what
 
@@ -62,15 +64,20 @@ and not the ranking.
 
 ## Clients
 
-**Launch scope (policy version 3, `scripts/launch-policy.json`, frozen 2026-09-12).** The promised
+**Launch scope (policy version 4, `scripts/launch-policy.json`, frozen 2026-09-15).** The promised
 boundary is **seven clients on three native platforms — twenty-one cells, no waivers**. A cell is
 Claude Code, GitHub Copilot, Cursor, VS Code, Codex, Windsurf or Gemini on macOS, native Linux or
 native Windows, and it is met only by a vendor-client runtime receipt for the exact candidate
 package: record → interruption/restart → authorized resume, driven through the real client binary.
+Version 4 keeps that boundary unchanged and names the evidence contract it is certified under —
+client certification receipts at format version 3 (acceptance receipts at format version 2), with
+the correlated protocol and process evidence those schemas require. Receipts from older format
+versions stay readable as history but cannot certify a cell.
 
-There is **no preview tier** under version 3. Version 2 had narrowed the promise to Claude Code on
+There is **no preview tier** under version 4. Version 2 had narrowed the promise to Claude Code on
 macOS and named the other twenty cells preview; that narrowing and its `uncertified` escape hatch
-are gone. A cell that cannot be executed leaves the release **NO-GO** rather than becoming preview.
+are gone, and version 3's removal of them stands. A cell that cannot be executed leaves the release
+**NO-GO** rather than becoming preview.
 
 **No cell is certified today, so the launch decision is NO-GO**, with a named
 `client-cell-uncertified:*` blocker for every cell. That is the correct output and not a defect of
@@ -86,10 +93,21 @@ failing the cell, and labels it.
 from strict certification receipts; configuration or protocol probes cannot be promoted to a runtime
 claim by editing this document.
 
+The committed block below is the **contract view**: it is regenerated bare — with no receipt
+directory — by the same generator the release gate runs, so every cell reads `not certified` until
+receipts exist, and the committed block can never go stale against evidence that lives outside the
+tree. The receipt-backed matrix is a **published release artifact**, generated beside the receipts
+with `client-certification-matrix.mjs --receipts <dir> --stdout` and never committed here: a receipt
+certifies a commit, so committing it into the tree it certifies would change the commit the
+evidence names. When a certified run exists, read the published support matrix for its states; the
+committed grid below stays the promise, not the record.
+
 <!-- client-certification:generated:start -->
 ## Client certification evidence
 
-Generated from validated receipts. A client is runtime verified only when a vendor-client receipt proves record → interruption/restart → authorized resume on the listed platform. Three labels say a row is evidence and not a runtime pass: "protocol evidence only (test client)" when the handshake came from a test client rather than the client under test, "runtime evidence only (not a native runtime)" when the run happened somewhere other than the native platform — a WSL run satisfies every leg and still cannot certify native Linux or Windows — and "runtime evidence only (legacy receipt schema)" when the receipt predates the certifying schema and is kept as readable history. No label can promote a row.
+Generated under launch policy version 4 (`sha256:2761abf1a666ad4a1f0ccf16dfaa94272f65db0feabeed417aaaa634f26025b1`). Every state below is judged against that exact frozen contract; a receipt naming any other hash is evidence about the run and never a certified cell.
+
+Generated from validated receipts. A client is runtime verified only when a vendor-client receipt proves record → interruption/restart → authorized resume on the listed platform. Four labels say a row is evidence and not a runtime pass: "protocol evidence only (test client)" when the handshake came from a test client rather than the client under test, "runtime evidence only (not a native runtime)" when the run happened somewhere other than the native platform — a WSL run satisfies every leg and still cannot certify native Linux or Windows — "runtime evidence only (legacy receipt schema)" when the receipt predates the certifying schema and is kept as readable history, and "runtime evidence only (collected under a different policy)" when the receipt was collected under a policy hash other than the one named above. No label can promote a row.
 
 | Client | Highest verified evidence | Strongest certified cell |
 |---|---|---|
@@ -105,29 +123,29 @@ Generated from validated receipts. A client is runtime verified only when a vend
 
 One row per advertised cell. A cell is certified only by a vendor-client receipt for that exact client on that native platform; the summary above is per client and can read stronger than any single cell.
 
-| Client | Platform | Runtime status | Client version | Host | Candidate commit | Certified | Receipt |
-|---|---|---|---|---|---|---|---|
-| Claude Code | macOS | not certified | — | — | — | — | — |
-| Claude Code | Linux | not certified | — | — | — | — | — |
-| Claude Code | Windows | not certified | — | — | — | — | — |
-| GitHub Copilot | macOS | not certified | — | — | — | — | — |
-| GitHub Copilot | Linux | not certified | — | — | — | — | — |
-| GitHub Copilot | Windows | not certified | — | — | — | — | — |
-| Cursor | macOS | not certified | — | — | — | — | — |
-| Cursor | Linux | not certified | — | — | — | — | — |
-| Cursor | Windows | not certified | — | — | — | — | — |
-| Codex | macOS | not certified | — | — | — | — | — |
-| Codex | Linux | not certified | — | — | — | — | — |
-| Codex | Windows | not certified | — | — | — | — | — |
-| Windsurf | macOS | not certified | — | — | — | — | — |
-| Windsurf | Linux | not certified | — | — | — | — | — |
-| Windsurf | Windows | not certified | — | — | — | — | — |
-| Gemini | macOS | not certified | — | — | — | — | — |
-| Gemini | Linux | not certified | — | — | — | — | — |
-| Gemini | Windows | not certified | — | — | — | — | — |
-| VS Code | macOS | not certified | — | — | — | — | — |
-| VS Code | Linux | not certified | — | — | — | — | — |
-| VS Code | Windows | not certified | — | — | — | — | — |
+| Client | Platform | Runtime status | Client version | Host | Candidate commit | Package digest | Certified | Receipt |
+|---|---|---|---|---|---|---|---|---|
+| Claude Code | macOS | not certified | — | — | — | — | — | — |
+| Claude Code | Linux | not certified | — | — | — | — | — | — |
+| Claude Code | Windows | not certified | — | — | — | — | — | — |
+| GitHub Copilot | macOS | not certified | — | — | — | — | — | — |
+| GitHub Copilot | Linux | not certified | — | — | — | — | — | — |
+| GitHub Copilot | Windows | not certified | — | — | — | — | — | — |
+| Cursor | macOS | not certified | — | — | — | — | — | — |
+| Cursor | Linux | not certified | — | — | — | — | — | — |
+| Cursor | Windows | not certified | — | — | — | — | — | — |
+| Codex | macOS | not certified | — | — | — | — | — | — |
+| Codex | Linux | not certified | — | — | — | — | — | — |
+| Codex | Windows | not certified | — | — | — | — | — | — |
+| Windsurf | macOS | not certified | — | — | — | — | — | — |
+| Windsurf | Linux | not certified | — | — | — | — | — | — |
+| Windsurf | Windows | not certified | — | — | — | — | — | — |
+| Gemini | macOS | not certified | — | — | — | — | — | — |
+| Gemini | Linux | not certified | — | — | — | — | — | — |
+| Gemini | Windows | not certified | — | — | — | — | — | — |
+| VS Code | macOS | not certified | — | — | — | — | — | — |
+| VS Code | Linux | not certified | — | — | — | — | — | — |
+| VS Code | Windows | not certified | — | — | — | — | — | — |
 
 <!-- client-certification:generated:end -->
 
@@ -170,7 +188,9 @@ These are open, disclosed rather than fixed. None is a surprise waiting to be fo
 
    What this does NOT undermine: the release chain never rebuilds. One artifact is built, verified,
    carried through as a workflow artifact, and the publish step checks the downloaded bytes against
-   the digest the decision approved. Evidence stays bound to the artifact it describes.
+   the digest the decision approved. Evidence stays bound to the artifact it describes. That digest
+   is a **checksum** — it says which bytes a receipt examined — and nothing more: no provenance
+   attestation of how those bytes were produced exists, so none is claimed.
 
    What it DOES mean: you cannot independently rebuild this commit and confirm you got the published
    bytes, and any rebuild mid-collection invalidates every receipt already gathered — which is why

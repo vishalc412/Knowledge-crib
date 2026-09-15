@@ -10,6 +10,14 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import {
+  ACCEPTANCE_RECEIPT_FORMAT_VERSION,
+  SUPPORTED_ACCEPTANCE_FORMAT_VERSIONS,
+} from './acceptance-receipt.mjs';
+import {
+  CERTIFICATION_EVIDENCE_FORMAT_VERSION,
+  SUPPORTED_CERTIFICATION_FORMAT_VERSIONS,
+} from './client-certification-evidence.mjs';
+import {
   DEFAULT_POLICY_PATH,
   EXPECTED_POLICY_VERSION,
   LaunchPolicyError,
@@ -29,6 +37,20 @@ import {
 } from './launch-policy.mjs';
 
 const FROZEN_POLICY_SHA256 =
+  'sha256:2761abf1a666ad4a1f0ccf16dfaa94272f65db0feabeed417aaaa634f26025b1';
+
+/**
+ * The version-3 policy hash, kept here as a HEADSTONE rather than deleted.
+ *
+ * Version 3 froze the twenty-one-cell promise but did not name the receipt schemas that may
+ * certify it, so a receipt collected under v3 was never told which evidence contract it was
+ * collected under. Version 4 makes that contract explicit — acceptance receipts must be format
+ * version 2 and client certification receipts format version 3, with the correlated protocol and
+ * process evidence those schemas require — so every receipt collected under this hash describes a
+ * weaker evidence contract than the one a version-4 decision judges against, and the fact that
+ * the hash moved is the only mechanical reason it cannot contribute.
+ */
+const VOID_POLICY_V3_SHA256 =
   'sha256:c05ad25952bbe23ad259ac7f11c703adebe5921541badfee90b94ebb98852988';
 
 /**
@@ -52,6 +74,12 @@ assert.equal(
 );
 // The hash is over the FILE BYTES, so a reformat is a change.
 assert.equal(hashLaunchPolicyBytes(readFileSync(DEFAULT_POLICY_PATH)), FROZEN_POLICY_SHA256);
+assert.notEqual(
+  sha256,
+  VOID_POLICY_V3_SHA256,
+  'the policy must no longer carry the version-3 hash: receipts collected under it name no ' +
+    'evidence contract, and cannot certify the version-4 one',
+);
 assert.notEqual(
   sha256,
   VOID_POLICY_V2_SHA256,
@@ -84,9 +112,35 @@ assert.deepEqual(policy.semanticModel.supportedScorers, [
 ]);
 assert.equal(policy.semanticModel.requiredState, 'installed');
 
-// ─── version 3: the FULL promise, which may not be narrowed ──────────────────
+// ─── version 4: the FULL promise plus the named evidence contract ───────────
 assert.equal(policy.policyVersion, EXPECTED_POLICY_VERSION);
-assert.equal(policy.policyVersion, 3);
+assert.equal(policy.policyVersion, 4);
+// Version 4 changes NOTHING about the promise itself: the same twenty-one cells, the same gates,
+// the same thresholds. What it adds is the receipt-schema contract, so the boundary a receipt may
+// certify is stated by the policy and not left to whatever the validators happen to accept.
+assert.deepEqual(policy.receiptSchemas.acceptance, {
+  format: 'knowledge-crib-acceptance-receipt',
+  requiredFormatVersion: ACCEPTANCE_RECEIPT_FORMAT_VERSION,
+  readableFormatVersions: SUPPORTED_ACCEPTANCE_FORMAT_VERSIONS,
+});
+assert.equal(ACCEPTANCE_RECEIPT_FORMAT_VERSION, 2);
+assert.deepEqual(policy.receiptSchemas.clientCertification, {
+  format: 'knowledge-crib-client-certification',
+  requiredFormatVersion: CERTIFICATION_EVIDENCE_FORMAT_VERSION,
+  readableFormatVersions: SUPPORTED_CERTIFICATION_FORMAT_VERSIONS,
+});
+assert.equal(CERTIFICATION_EVIDENCE_FORMAT_VERSION, 3);
+// The same boundary from the validators' side: the required version is the newest readable one and
+// every older schema stays readable, so a historical failure is never unreadable — but only the
+// required version can certify, and the policy says so in the same words the decision uses.
+assert.equal(Math.max(...SUPPORTED_ACCEPTANCE_FORMAT_VERSIONS), ACCEPTANCE_RECEIPT_FORMAT_VERSION);
+assert.equal(
+  Math.max(...SUPPORTED_CERTIFICATION_FORMAT_VERSIONS),
+  CERTIFICATION_EVIDENCE_FORMAT_VERSION,
+);
+assert.match(policy.scope.decision, /format version 2/i);
+assert.match(policy.scope.decision, /format version 3/i);
+assert.match(policy.scope.decision, /readable/i);
 // Exactly 21 cells: seven clients, three native platforms, and no waiver anywhere.
 assert.deepEqual(policy.clients, POLICY_CLIENTS);
 assert.deepEqual(policy.clientPlatforms, POLICY_PLATFORMS);
@@ -216,9 +270,54 @@ refuses(
 refuses(
   'a stale policy version',
   (p) => {
-    p.policyVersion = 2;
+    p.policyVersion = 3;
   },
   /Bump the validator and this assertion together/,
+);
+refuses(
+  'a policy with no receipt-schema contract',
+  (p) => {
+    p.receiptSchemas = undefined;
+  },
+  /receipt schema/,
+);
+refuses(
+  'a receipt-schema contract weakened below the certifying schemas',
+  (p) => {
+    p.receiptSchemas.acceptance.requiredFormatVersion = 1;
+  },
+  /acceptance.*requiredFormatVersion.*2/,
+);
+refuses(
+  'a required receipt version the policy refuses to read',
+  (p) => {
+    p.receiptSchemas.clientCertification.readableFormatVersions = [1, 2];
+  },
+  /clientCertification.*readableFormatVersions/,
+);
+refuses(
+  'an invented receipt-schema kind',
+  (p) => {
+    p.receiptSchemas.browser = {
+      format: 'x',
+      requiredFormatVersion: 1,
+      readableFormatVersions: [1],
+    };
+  },
+  /unknown receipt schema kind/,
+);
+refuses(
+  'an invented receipt-schema kind named after a prototype property',
+  (p) => {
+    // 'toString' must be caught by hasOwn, not by a truthiness lookup: POLICY_RECEIPT_SCHEMAS
+    // ['toString'] resolves to Object.prototype.toString and reads as declared without it.
+    p.receiptSchemas.toString = {
+      format: 'x',
+      requiredFormatVersion: 1,
+      readableFormatVersions: [1],
+    };
+  },
+  /unknown receipt schema kind/,
 );
 refuses(
   'an empty gate set',

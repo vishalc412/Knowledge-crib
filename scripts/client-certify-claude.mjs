@@ -36,7 +36,11 @@ function flag(argv, name, fallback) {
 }
 
 const argv = process.argv.slice(2);
-const outDir = resolve(flag(argv, '--out', 'receipts'));
+const outDirFlag = flag(argv, '--out');
+// Same law as the harness it forwards to: receipts are release artifacts published outside the
+// candidate source tree, so --out is required — a default inside the tree would change the commit
+// the evidence names.
+const outDir = outDirFlag ? resolve(outDirFlag) : null;
 const keep = argv.includes('--keep');
 
 // A bundle produced by `pnpm build:installers` holds the candidate tarball beside its dependency
@@ -47,6 +51,11 @@ const defaultPackage = join(bundleDir, 'knowledge-crib-0.1.0.tgz');
 const packagePath = resolve(flag(argv, '--package', defaultPackage));
 
 const problems = [];
+if (!outDir) {
+  problems.push(
+    '--out <release-artifact-directory> is required — receipts are release artifacts published outside the candidate source tree, never committed into the tree they certify',
+  );
+}
 if (!existsSync(packagePath)) {
   problems.push(
     `no candidate package at ${packagePath}\n  Build one first: corepack pnpm@9.15.0 build:installers`,

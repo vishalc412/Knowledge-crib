@@ -2043,7 +2043,11 @@ async function main() {
   const client = flag(argv, '--client');
   const packagePath = flag(argv, '--package');
   const candidateCommit = flag(argv, '--candidate-commit');
-  const outDir = resolve(flag(argv, '--out', 'client-certification-receipts'));
+  const outDirFlag = flag(argv, '--out');
+  // Receipts are release artifacts published OUTSIDE the candidate source tree. A default
+  // directory inside the tree would put the receipt into the candidate it certifies and change
+  // the commit the evidence names, so --out is required and stated as an artifact path.
+  const outDir = outDirFlag ? resolve(outDirFlag) : null;
   const keep = argv.includes('--keep');
 
   const problems = [];
@@ -2057,6 +2061,10 @@ async function main() {
       '--package <candidate-tarball> is required — a receipt must bind the bytes it certified',
     );
   else if (!existsSync(packagePath)) problems.push(`--package ${packagePath} does not exist`);
+  if (!outDir)
+    problems.push(
+      '--out <release-artifact-directory> is required — receipts are release artifacts published outside the candidate source tree, never committed into the tree they certify',
+    );
   if (!candidateCommit || !/^[a-f0-9]{40}$/.test(candidateCommit)) {
     problems.push('--candidate-commit must be a full 40-hex commit');
   } else {

@@ -2290,6 +2290,48 @@ check('a missing --package is refused, because a receipt must bind the bytes it 
   assert.match(out, /--package <candidate-tarball> is required/);
 });
 
+check('a missing --out is refused, because receipts are release artifacts outside the tree', () => {
+  // No --candidate-commit either, so the problems accumulate and the run can only take the refusal
+  // path — it must never reach the driver. The refusal names --out because a receipts directory
+  // inside the candidate source tree would change the identity of the commit it certifies.
+  const { status, out } = runCli([
+    '--client',
+    'claude',
+    '--package',
+    join(HERE, 'client-certify.mjs'),
+  ]);
+  assert.equal(status, 2);
+  assert.match(out, /--out .*is required/);
+  assert.match(out, /release artifact/);
+});
+
+check('missing --package AND missing --out are each reported — neither hides the other', () => {
+  // The two refusal problems are independent ifs, never an else-if chain: chaining them would let
+  // the --out branch hide the package check, or worse print "--package undefined does not exist"
+  // for an argument that was simply absent. Both lines must be in the same refusal.
+  const { status, out } = runCli(['--client', 'claude']);
+  assert.equal(status, 2);
+  assert.match(out, /--package <candidate-tarball> is required/);
+  assert.match(out, /--out .*is required/);
+});
+
+check('a nonexistent --package is refused even when --out is present', () => {
+  // --out given means the missing-argument checks are satisfied, so this is exactly the shape the
+  // old chain garbled: the existence check must fire on the package alone, not on the pair.
+  const scratch = mkdtempSync(join(tmpdir(), 'crib-certify-refusal-'));
+  const { status, out } = runCli([
+    '--client',
+    'claude',
+    '--package',
+    join(scratch, 'no-such-candidate.tgz'),
+    '--out',
+    join(scratch, 'receipts'),
+  ]);
+  assert.equal(status, 2);
+  assert.match(out, /--package .*does not exist/);
+  rmSync(scratch, { recursive: true, force: true });
+});
+
 check('a non-HEAD --candidate-commit is refused', () => {
   const other = '0'.repeat(40);
   const { status, out } = runCli([
@@ -2348,6 +2390,22 @@ check('the compatibility wrapper refuses a missing package and never forwards', 
     !/forwarding to scripts\/client-certify\.mjs/.test(probe.stdout ?? ''),
     `a refused wrapper must not announce a forward; stdout was:\n${(probe.stdout ?? '').slice(0, 400)}`,
   );
+});
+
+check('the compatibility wrapper refuses a missing --out like the harness it forwards to', () => {
+  // Same determinism as the package refusal: a pinned nonexistent package means the wrapper can
+  // only refuse. Without --out the refusal must say so — the wrapper forwards the flag, and a
+  // default inside the tree would be the one path no certifier may take.
+  const scratch = mkdtempSync(join(tmpdir(), 'crib-wrapper-test-'));
+  const probe = spawnSync(
+    process.execPath,
+    [join(HERE, 'client-certify-claude.mjs'), '--package', join(scratch, 'no-candidate.tgz')],
+    { encoding: 'utf8', cwd: REPO_ROOT, timeout: 120_000 },
+  );
+  const combined = `${probe.stdout ?? ''}${probe.stderr ?? ''}`;
+  assert.equal(probe.status, 2);
+  assert.match(combined, /--out .*is required/);
+  assert.match(combined, /release artifact/);
 });
 
 check('the compatibility wrapper refuses when it cannot read HEAD', () => {

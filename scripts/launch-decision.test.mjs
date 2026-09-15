@@ -576,6 +576,51 @@ refuses(
   },
   /^policy-mismatch:/,
 );
+// Version 4 names the receipt-schema contract IN THE POLICY, so the decision must refuse to judge
+// when the policy and the validators describe different evidence boundaries — a policy that still
+// accepts schema-1 acceptance receipts is not the boundary the validators enforce, and certifying
+// under that disagreement would be the A02 shape again: requirements selected to fit the evidence.
+refuses(
+  'a policy whose receipt-schema contract disagrees with the validators',
+  (e, options) => {
+    const drifted = JSON.parse(JSON.stringify(policy));
+    drifted.receiptSchemas.acceptance.requiredFormatVersion = 1;
+    options.policy = drifted;
+    options.policySha256 = POLICY_SHA;
+  },
+  /^policy-receipt-schema-mismatch:acceptance$/,
+);
+refuses(
+  'a policy whose client-receipt contract disagrees with the validators',
+  (e, options) => {
+    const drifted = JSON.parse(JSON.stringify(policy));
+    drifted.receiptSchemas.clientCertification.requiredFormatVersion = 2;
+    options.policy = drifted;
+    options.policySha256 = POLICY_SHA;
+  },
+  /^policy-receipt-schema-mismatch:clientCertification$/,
+);
+// The cross-check is field-by-field, not JSON.stringify of the whole object: a policy whose
+// receipt-schema contract is written with the same fields in a DIFFERENT KEY ORDER describes the
+// same contract, and a whole-object stringify comparison would have refused it as a mismatch.
+// Everything else complete, the reordered policy must still GO.
+{
+  const reordered = JSON.parse(JSON.stringify(policy));
+  reordered.receiptSchemas = Object.fromEntries(
+    Object.entries(reordered.receiptSchemas)
+      .reverse()
+      .map(([kind, schema]) => [kind, Object.fromEntries(Object.entries(schema).reverse())]),
+  );
+  const result = decide(completeEvidence(), {
+    policy: reordered,
+    policySha256: POLICY_SHA,
+  });
+  assert.equal(
+    result.decision,
+    'GO',
+    `a reordered-but-identical receipt-schema contract must not read as a mismatch: ${JSON.stringify(result.blockers)}`,
+  );
+}
 refuses(
   'a run that did not exit 0',
   (e) => {

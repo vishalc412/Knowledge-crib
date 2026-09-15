@@ -885,6 +885,7 @@ check('the CLI refuses to start without its required inputs (exit 2)', () => {
   assert.match(run.stderr, /--scenario/);
   assert.match(run.stderr, /--candidate-commit/);
   assert.match(run.stderr, /--fixture-repo/);
+  assert.match(run.stderr, /--out/);
 });
 
 check('the CLI refuses a --platform that is not this host (exit 2)', () => {

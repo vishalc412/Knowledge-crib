@@ -476,13 +476,24 @@ function parseClients(argv) {
   return clients;
 }
 
-function certificationOptions(argv) {
+// Exported for the CLI-flag regression in release-evidence.test.mjs: the refusal fires at parse
+// time, before embedder collection and the launch gate run, so the test exercises the parser.
+export function parseCertificationOptions(argv) {
   const receiptIndex = argv.indexOf('--certification-receipts');
-  const receiptDirectory = resolve(
-    receiptIndex >= 0
-      ? (argv[receiptIndex + 1] ?? 'docs/launch/client-certification-receipts')
-      : 'docs/launch/client-certification-receipts',
-  );
+  // Receipts are release artifacts published OUTSIDE the candidate source tree, so there is no
+  // in-tree default to fall back to: without the flag the collector has no certification evidence
+  // and the launch decision reports the twenty-one cells as blockers by name. Committing receipts
+  // into the candidate tree would change the identity of the commit the evidence names.
+  let certificationReceipts = [];
+  if (receiptIndex >= 0) {
+    const target = argv[receiptIndex + 1];
+    if (!target) {
+      throw new ReleaseEvidenceError(
+        '--certification-receipts requires a directory of published release artifacts',
+      );
+    }
+    certificationReceipts = loadClientCertificationReceipts(resolve(target));
+  }
   const platformIndex = argv.indexOf('--certification-platforms');
   const certificationPlatforms =
     platformIndex >= 0
@@ -493,7 +504,7 @@ function certificationOptions(argv) {
       : undefined;
   return {
     requireRuntimeCertification: argv.includes('--require-runtime-certification'),
-    certificationReceipts: loadClientCertificationReceipts(receiptDirectory),
+    certificationReceipts,
     certificationPlatforms,
   };
 }
@@ -618,7 +629,7 @@ export async function collectReleaseEvidence(argv = process.argv.slice(2)) {
       : { strategy: 'lexical-only' },
   );
   const { instance: _instance, ...embedReceipt } = embedder;
-  const certification = certificationOptions(argv);
+  const certification = parseCertificationOptions(argv);
   const { policy: _policy, sha256: policySha256 } = loadLaunchPolicy();
   const { packageSha256, packagePath } = collectPackageDigest(argv);
   return buildReleaseEvidence({

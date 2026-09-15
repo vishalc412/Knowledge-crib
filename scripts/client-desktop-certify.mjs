@@ -1178,7 +1178,10 @@ async function main() {
   const candidateCommit = flag(argv, '--candidate-commit');
   const fixtureRepo = flag(argv, '--fixture-repo');
   const platform = flag(argv, '--platform', process.platform);
-  const outDir = resolve(flag(argv, '--out', 'client-certification-receipts'));
+  const outDirFlag = flag(argv, '--out');
+  // Same law as client-certify: receipts are release artifacts outside the candidate source tree,
+  // so --out is required — a default inside the tree would change the commit the evidence names.
+  const outDir = outDirFlag ? resolve(outDirFlag) : null;
   const keep = argv.includes('--keep');
 
   const problems = [];
@@ -1196,6 +1199,10 @@ async function main() {
       '--package <candidate-tarball> is required — a receipt must bind the bytes it certified',
     );
   else if (!existsSync(packagePath)) problems.push(`--package ${packagePath} does not exist`);
+  if (!outDir)
+    problems.push(
+      '--out <release-artifact-directory> is required — receipts are release artifacts published outside the candidate source tree, never committed into the tree they certify',
+    );
   if (!candidateCommit || !/^[a-f0-9]{40}$/.test(candidateCommit)) {
     problems.push('--candidate-commit must be a full 40-hex commit');
   } else {

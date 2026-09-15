@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadLaunchPolicy, policyClientCells } from './launch-policy.mjs';
-import { collectReceipts } from './release-evidence.mjs';
+import { collectReceipts, parseCertificationOptions } from './release-evidence.mjs';
 import {
   RELEASE_EVIDENCE_FORMAT_VERSION,
   REQUIRED_GATE_IDS,
@@ -17,6 +17,34 @@ import {
 } from './release-evidence.mjs';
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+
+// Publication boundary: release evidence lives outside the candidate source tree, so the collector
+// must not carry an in-tree receipts default. Asserted textually — behavioral coverage would mean
+// creating receipts inside the candidate tree, which is exactly what this forbids.
+assert.ok(
+  !readFileSync(join(repoRoot, 'scripts/release-evidence.mjs'), 'utf8').includes(
+    'docs/launch/client-certification-receipts',
+  ),
+  'release-evidence.mjs must not default to an in-tree receipt directory: receipts are release artifacts published outside the candidate source tree',
+);
+
+// The flag refuses a missing value BY NAME at parse time, before any collection runs: a
+// `--certification-receipts` with no directory would otherwise read as "no certification
+// evidence" and quietly produce a manifest that cannot certify a single cell.
+assert.throws(
+  () => parseCertificationOptions(['--certification-receipts']),
+  (error) =>
+    error instanceof ReleaseEvidenceError &&
+    /--certification-receipts requires a directory/.test(error.message),
+  'a --certification-receipts with no value must be refused by name',
+);
+// And the absent flag stays the honest default: no receipts, named as blockers downstream —
+// never an in-tree directory read silently.
+assert.deepEqual(parseCertificationOptions([]), {
+  requireRuntimeCertification: false,
+  certificationReceipts: [],
+  certificationPlatforms: undefined,
+});
 
 const greenReport = {
   preregistration: 'docs/bench/launch-gates.md',
