@@ -10,6 +10,7 @@ import {
   GRAPH_ASSERTION_SCHEMA,
   GRAPH_ENTITY_SCHEMA,
   GRAPH_RESOLUTION_SCHEMA,
+  GRAPH_RESOLUTION_V2_SCHEMA,
   INTAKE_CHECKPOINT_SCHEMA,
   INTAKE_SCHEMA,
   MEMORY_MANIFEST_SCHEMA,
@@ -33,6 +34,7 @@ import type {
   GraphAssertion,
   GraphEntity,
   GraphResolutionDecision,
+  GraphResolutionDecisionV2,
   IntakeCheckpoint,
   IntakeRequirement,
   MemoryAlias,
@@ -64,6 +66,7 @@ const validateIntakeCheckpointFn: ValidateFunction = ajv.compile(INTAKE_CHECKPOI
 const validateGraphEntityFn: ValidateFunction = ajv.compile(GRAPH_ENTITY_SCHEMA);
 const validateGraphAssertionFn: ValidateFunction = ajv.compile(GRAPH_ASSERTION_SCHEMA);
 const validateGraphResolutionFn: ValidateFunction = ajv.compile(GRAPH_RESOLUTION_SCHEMA);
+const validateGraphResolutionV2Fn: ValidateFunction = ajv.compile(GRAPH_RESOLUTION_V2_SCHEMA);
 
 /** Thrown when a memory record fails schema validation before a write. */
 export class MemorySchemaError extends Error {
@@ -219,12 +222,20 @@ export function assertValidGraphAssertion(assertion: GraphAssertion): void {
 }
 
 export function assertValidGraphResolutionDecision(decision: GraphResolutionDecision): void {
-  const ok: boolean = validateGraphResolutionFn(decision);
+  const validator =
+    decision.schemaVersion === '2' ? validateGraphResolutionV2Fn : validateGraphResolutionFn;
+  const ok: boolean = validator(decision);
   if (!ok) {
-    throw new MemorySchemaError('graph-resolution', validateGraphResolutionFn.errors, decision.id);
+    throw new MemorySchemaError('graph-resolution', validator.errors, decision.id);
   }
   if (decision.entityA === decision.entityB) {
     throw new MemorySchemaError('graph-resolution', [{ selfAlias: true }], decision.id);
+  }
+  if (
+    decision.schemaVersion === '2' &&
+    decision.namespace.principalId !== (decision as GraphResolutionDecisionV2).provenance.principalId
+  ) {
+    throw new MemorySchemaError('graph-resolution', [{ namespacePrincipalMismatch: true }], decision.id);
   }
 }
 
@@ -281,7 +292,10 @@ const GRAPH_VALIDATORS: Record<
 > = {
   gent: { '1': { validate: validateGraphEntityFn, label: 'graph-entity' } },
   grel: { '1': { validate: validateGraphAssertionFn, label: 'graph-assertion' } },
-  gres: { '1': { validate: validateGraphResolutionFn, label: 'graph-resolution' } },
+  gres: {
+    '1': { validate: validateGraphResolutionFn, label: 'graph-resolution' },
+    '2': { validate: validateGraphResolutionV2Fn, label: 'graph-resolution-v2' },
+  },
 };
 
 /** Validate any memory entry by its id prefix (records: by id prefix + declared schemaVersion).

@@ -85,6 +85,7 @@ import {
   evaluationCacheFor,
 } from './generation-cache.js';
 import { verifyQuote } from './grounding.js';
+import { type GraphProjection, projectGraph } from './graph-projection.js';
 import {
   type HandoffAttemptEvent,
   type HandoffInput,
@@ -173,6 +174,9 @@ import { type ConflictRecord, loadSyncState, saveSyncState } from './sync/queue.
 import { type SyncStageContext, stageSyncableWrite } from './sync/stage.js';
 import type {
   CaptureOutboxEntry,
+  GraphAssertion,
+  GraphEntity,
+  GraphResolutionDecision,
   IntakeCheckpoint,
   IntakeRequirement,
   MemoryAlias,
@@ -191,6 +195,13 @@ import type {
 import { isMemoryRecordV2, isMemoryRecordVersioned } from './types.js';
 
 type ReadableMemoryRecord = MemoryRecord | MemoryRecordV2 | MemoryRecordV3;
+
+/** The only graph placement choices exposed to callers; repository identity is resolved server-side. */
+export interface GraphProjectionReadOpts {
+  scope?: 'global' | 'repo';
+  at?: string;
+  knownBy?: string;
+}
 
 // ─── the anchor port (capture's loose-name resolution) ────────────────────────
 
@@ -1306,6 +1317,15 @@ function isDecisionEntry(e: { id?: unknown }): e is MemoryDecision {
 function isFeedbackEntry(e: { id?: unknown }): e is MemoryFeedback {
   return typeof e.id === 'string' && e.id.startsWith('fb:');
 }
+function isGraphEntityEntry(e: { id?: unknown }): e is GraphEntity {
+  return typeof e.id === 'string' && e.id.startsWith('gent:');
+}
+function isGraphAssertionEntry(e: { id?: unknown }): e is GraphAssertion {
+  return typeof e.id === 'string' && e.id.startsWith('grel:');
+}
+function isGraphResolutionEntry(e: { id?: unknown }): e is GraphResolutionDecision {
+  return typeof e.id === 'string' && e.id.startsWith('gres:');
+}
 
 /** Stable, de-duplicated event references — evidence bodies never enter the operational journal. */
 function observationEvidenceRefs(evidence: readonly MemoryEvidence[]): string[] {
@@ -1382,6 +1402,45 @@ export class MemoryApi {
 
   private now(): string {
     return this.nowFn();
+  }
+
+  /**
+   * The authorized temporal graph view. Graph entries are gathered from the local/global stores,
+   * but the pure projection receives the authenticated principal and a server-derived placement,
+   * so a caller cannot traverse another principal or repository by supplying identifiers.
+   */
+  graphProjection(opts: GraphProjectionReadOpts = {}): GraphProjection {
+    const boundary = opts.scope ?? 'global';
+    const repoId = boundary === 'repo' ? this.resolveRepoId() : undefined;
+    if (boundary === 'repo' && repoId === undefined) {
+      throw new Error('repository graph scope is unavailable because this server has no repository id');
+    }
+
+    const assertions: GraphAssertion[] = [];
+    const entities: GraphEntity[] = [];
+    const decisions: GraphResolutionDecision[] = [];
+    for (const { store } of this.orderedStores()) {
+      if (!store.collections.includes('graph')) continue;
+      for (const entry of store.readCollection('graph').entries) {
+        if (isGraphAssertionEntry(entry)) assertions.push(entry);
+        else if (isGraphEntityEntry(entry)) entities.push(entry);
+        else if (isGraphResolutionEntry(entry)) decisions.push(entry);
+      }
+    }
+
+    return projectGraph(
+      {
+        assertions,
+        entities,
+        decisions,
+        records: this.gatherAllRecords().map(({ record }) => ({ id: record.id })),
+      },
+      {
+        principalId: this.callerPrincipal(),
+        scope: boundary === 'repo' ? { boundary, repoId } : { boundary },
+      },
+      { ...(opts.at !== undefined ? { at: opts.at } : {}), ...(opts.knownBy !== undefined ? { knownBy: opts.knownBy } : {}) },
+    );
   }
 
   // ── capture ────────────────────────────────────────────────────────────────

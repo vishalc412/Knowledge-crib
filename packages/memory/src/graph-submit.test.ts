@@ -152,6 +152,9 @@ function resolution(actor: string): ReturnType<typeof createGraphResolutionDecis
     kind: 'establish',
     entityA: 'entity:graph-store-test/OrderService',
     entityB: 'entity:ledger/OrderService',
+    namespace: NAMESPACE,
+    scope: REPO_SCOPE,
+    provenance: PROVENANCE,
     actor,
     ts: T0,
   });

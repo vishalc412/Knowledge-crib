@@ -464,12 +464,23 @@ export function graphResolutionId(decision: {
   kind: string;
   entityA: string;
   entityB: string;
+  schemaVersion?: string;
+  namespace?: { principalId: string };
+  scope?: { boundary: string; repoId?: string };
 }): string {
+  const scoped =
+    decision.schemaVersion === '2' && decision.namespace !== undefined && decision.scope !== undefined;
   return `gres:${blake3Hex(
     canonical({
       kind: decision.kind,
       entityA: decision.entityA,
       entityB: decision.entityB,
+      ...(scoped
+        ? {
+            principalId: decision.namespace?.principalId,
+            scope: scopeHash(decision.scope as { boundary: 'repo' | 'global'; repoId?: string }),
+          }
+        : {}),
     }),
   )}`;
 }

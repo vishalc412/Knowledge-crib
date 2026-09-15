@@ -91,11 +91,22 @@ function decision(input: {
   entityA: string;
   entityB: string;
   ts?: string;
+  principalId?: string;
+  scope?: MemoryScope;
 }): GraphResolutionDecision {
+  const principalId = input.principalId ?? P1;
   return createGraphResolutionDecision({
     kind: input.kind,
     entityA: input.entityA,
     entityB: input.entityB,
+    namespace: { principalId },
+    scope: input.scope ?? GLOBAL,
+    provenance: {
+      principalId,
+      deviceId: 'device:projection-test',
+      actorId: 'agent:projection-test',
+      clientId: 'vitest',
+    },
     actor: 'agent:projection-test',
     ts: input.ts ?? T1,
   });
@@ -139,7 +150,7 @@ describe('WP-G2 projection — authorization', () => {
       { principalId: P1, scope: GLOBAL },
     );
     expect(p.current.map((a) => a.id)).toEqual([mine.id]);
-    expect(p.diagnostics.excludedForeign).toBe(1);
+    expect(p.diagnostics.excludedForeign).toBe(0);
   });
 
   it('a global viewer never sees repo-scoped assertions (isolation)', () => {
@@ -176,6 +187,27 @@ describe('WP-G2 projection — authorization', () => {
       { principalId: P1, scope: REPO_A },
     );
     expect(new Set(p.current.map((a) => a.id))).toEqual(new Set([globalEdge.id, ownRepo.id]));
+  });
+
+  it('does not fold a foreign principal alias decision into the caller graph', () => {
+    const edgeOfB = assertion({
+      predicate: 'part-of',
+      subject: 'sym:svc/b.ts#beta',
+      object: 'entity:svc-b',
+    });
+    const foreign = decision({
+      kind: 'establish',
+      entityA: 'entity:svc-a',
+      entityB: 'entity:svc-b',
+      principalId: P2,
+    });
+    const p = projectGraph(
+      { assertions: [edgeOfB], decisions: [foreign], records: RECORDS },
+      { principalId: P1, scope: GLOBAL },
+    );
+
+    expect(p.aliases.bindings).toEqual([]);
+    expect(graphNeighbors(p, 'entity:svc-a')).toEqual([]);
   });
 });
 

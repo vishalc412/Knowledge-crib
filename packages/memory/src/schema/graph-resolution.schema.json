@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://knowledge-crib.dev/schema/memory-1/graph-resolution.schema.json",
   "title": "GraphResolutionDecision",
-  "description": "An append-only entity-alias resolution decision (WP-G1 contract; the WP-G2 projection consumes it). Binds traversal refs, never storage ids.",
+  "description": "Legacy v1 unscoped entity-alias resolution decision. It remains readable only for migration compatibility; new writes use graph-resolution-v2.schema.json.",
   "type": "object",
   "required": ["id", "schemaVersion", "kind", "entityA", "entityB", "actor", "ts"],
   "properties": {

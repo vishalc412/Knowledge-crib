@@ -12,6 +12,7 @@ import feedbackSchema from './schema/feedback.schema.json' with { type: 'json' }
 import graphAssertionSchema from './schema/graph-assertion.schema.json' with { type: 'json' };
 import graphEntitySchema from './schema/graph-entity.schema.json' with { type: 'json' };
 import graphResolutionSchema from './schema/graph-resolution.schema.json' with { type: 'json' };
+import graphResolutionV2Schema from './schema/graph-resolution-v2.schema.json' with { type: 'json' };
 import intakeCheckpointSchema from './schema/intake-checkpoint.schema.json' with { type: 'json' };
 import intakeSchema from './schema/intake.schema.json' with { type: 'json' };
 import manifestSchema from './schema/manifest.schema.json' with { type: 'json' };
@@ -38,6 +39,7 @@ export const INTAKE_CHECKPOINT_SCHEMA = intakeCheckpointSchema as Record<string,
 export const GRAPH_ENTITY_SCHEMA = graphEntitySchema as Record<string, unknown>;
 export const GRAPH_ASSERTION_SCHEMA = graphAssertionSchema as Record<string, unknown>;
 export const GRAPH_RESOLUTION_SCHEMA = graphResolutionSchema as Record<string, unknown>;
+export const GRAPH_RESOLUTION_V2_SCHEMA = graphResolutionV2Schema as Record<string, unknown>;
 
 /** file-name → schema object, for writing a self-describing `.crib/memory/schema/` directory. */
 export const VENDORED_MEMORY_SCHEMAS: Record<string, Record<string, unknown>> = {
@@ -58,4 +60,5 @@ export const VENDORED_MEMORY_SCHEMAS: Record<string, Record<string, unknown>> = 
   'graph-entity.schema.json': GRAPH_ENTITY_SCHEMA,
   'graph-assertion.schema.json': GRAPH_ASSERTION_SCHEMA,
   'graph-resolution.schema.json': GRAPH_RESOLUTION_SCHEMA,
+  'graph-resolution-v2.schema.json': GRAPH_RESOLUTION_V2_SCHEMA,
 };

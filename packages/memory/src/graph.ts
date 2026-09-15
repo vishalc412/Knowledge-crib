@@ -241,6 +241,9 @@ export function createGraphResolutionDecision(
     kind: 'establish' | 'reverse';
     entityA: string;
     entityB: string;
+    namespace: MemoryNamespace;
+    scope: MemoryScope;
+    provenance: MemoryProvenance;
     actor: string;
     reason?: string;
     ts: string;
@@ -248,11 +251,14 @@ export function createGraphResolutionDecision(
   } & Record<string, unknown>,
 ): GraphResolutionDecision {
   const decision: GraphResolutionDecision = {
-    id: graphResolutionId(input),
-    schemaVersion: '1',
+    id: graphResolutionId({ ...input, schemaVersion: '2' }),
+    schemaVersion: '2',
     kind: input.kind,
     entityA: input.entityA,
     entityB: input.entityB,
+    namespace: input.namespace,
+    scope: input.scope,
+    provenance: input.provenance,
     actor: input.actor,
     ts: input.ts,
     ...(input.reason !== undefined ? { reason: input.reason } : {}),

@@ -55,7 +55,14 @@
  */
 import { MEMORY_GRAPH_PREDICATES, compareGraphInstants, isMemoryGraphPredicate } from './graph.js';
 import type { MemoryGraphPredicate } from './graph.js';
-import type { GraphAssertion, GraphEntity, GraphResolutionDecision, MemoryScope } from './types.js';
+import { DEFAULT_MIGRATION_PRINCIPAL_ID } from './migrations.js';
+import {
+  type GraphAssertion,
+  type GraphEntity,
+  type GraphResolutionDecision,
+  type MemoryScope,
+  isGraphResolutionDecisionV2,
+} from './types.js';
 
 /** Who is asking: the authorization pair every visible entry must match. */
 export interface GraphViewer {
@@ -116,7 +123,7 @@ export interface GraphAliasView {
 }
 
 export interface GraphProjectionDiagnostics {
-  /** Assertions withheld by authorization — a COUNT only, never content (zero disclosure). */
+  /** Always zero to avoid disclosing the presence of foreign assertions through diagnostics. */
   excludedForeign: number;
   /** Assertions no supporter of which resolves in the gathered universe. */
   unsupported: GraphUnsupportedAssertion[];
@@ -147,11 +154,26 @@ export interface GraphProjection {
 // ─── authorization ────────────────────────────────────────────────────────────
 
 /** The read-side placement law: mirrors `isWellFormedGraphScope`'s write-side placement. */
+function visibleScope(scope: MemoryScope, viewer: GraphViewer): boolean {
+  if (viewer.scope.boundary === 'global') return scope.boundary === 'global';
+  if (scope.boundary === 'global') return true;
+  return scope.repoId === viewer.scope.repoId;
+}
+
 function visibleTo(assertion: GraphAssertion, viewer: GraphViewer): boolean {
-  if (assertion.namespace.principalId !== viewer.principalId) return false;
-  if (viewer.scope.boundary === 'global') return assertion.scope.boundary === 'global';
-  if (assertion.scope.boundary === 'global') return true;
-  return assertion.scope.repoId === viewer.scope.repoId;
+  return (
+    assertion.namespace.principalId === viewer.principalId && visibleScope(assertion.scope, viewer)
+  );
+}
+
+/** Legacy unscoped decisions may never alter a non-default principal's graph. */
+function visibleDecision(decision: GraphResolutionDecision, viewer: GraphViewer): boolean {
+  if (!isGraphResolutionDecisionV2(decision)) {
+    return viewer.principalId === DEFAULT_MIGRATION_PRINCIPAL_ID && viewer.scope.boundary === 'global';
+  }
+  return (
+    decision.namespace.principalId === viewer.principalId && visibleScope(decision.scope, viewer)
+  );
 }
 
 // ─── the alias fold ───────────────────────────────────────────────────────────
@@ -212,6 +234,7 @@ class AliasTable {
 /** Fold decisions into the alias view. Decisions with ts > knownBy are DEFERRED, not rejected. */
 function foldAliases(
   decisions: readonly GraphResolutionDecision[] | undefined,
+  viewer: GraphViewer,
   knownBy: string | undefined,
 ): { view: GraphAliasView; rejected: GraphRejectedDecision[]; deferred: number } {
   const rejected: GraphRejectedDecision[] = [];
@@ -219,7 +242,9 @@ function foldAliases(
   let deferred = 0;
 
   // Deterministic fold order: (ts instant, id) — array order must never matter.
-  const ordered = [...(decisions ?? [])].sort(
+  const ordered = [...(decisions ?? [])]
+    .filter((decision) => visibleDecision(decision, viewer))
+    .sort(
     (x, y) => compareGraphInstants(x.ts, y.ts) || (x.id < y.id ? -1 : x.id > y.id ? 1 : 0),
   );
 
@@ -303,13 +328,11 @@ export function projectGraph(
     resolvable.add(entity.id);
   }
 
-  let excludedForeign = 0;
   const unsupported: GraphUnsupportedAssertion[] = [];
   const supported: GraphAssertion[] = [];
 
   for (const assertion of input.assertions) {
     if (!visibleTo(assertion, viewer)) {
-      excludedForeign += 1; // a count only — the diagnostic channel must not leak foreign content
       continue;
     }
     const missing = assertion.supportedBy.filter((ref) => !resolvable.has(ref));
@@ -324,7 +347,7 @@ export function projectGraph(
     view: aliases,
     rejected: rejectedDecisions,
     deferred: deferredDecisions,
-  } = foldAliases(input.decisions, opts.knownBy);
+  } = foldAliases(input.decisions, viewer, opts.knownBy);
 
   const inWindow = (a: GraphAssertion): boolean =>
     (opts.at === undefined || compareGraphInstants(a.validAt, opts.at) <= 0) &&
@@ -380,7 +403,7 @@ export function projectGraph(
     aliases,
     conflicts,
     counts,
-    diagnostics: { excludedForeign, unsupported, rejectedDecisions, deferredDecisions },
+    diagnostics: { excludedForeign: 0, unsupported, rejectedDecisions, deferredDecisions },
   };
 }
 

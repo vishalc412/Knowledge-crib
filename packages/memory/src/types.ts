@@ -631,8 +631,8 @@ export interface GraphAssertion {
  * alias of `entityB`; `'reverse'` records the retraction of that binding (append-only, never a
  * rewrite). Self-aliases are rejected now; full cycle rejection lands with the WP-G2 projection.
  */
-export interface GraphResolutionDecision {
-  /** `gres:<blake3>` — content-addressed from `{kind, entityA, entityB}` (see ids.ts). */
+export interface GraphResolutionDecisionV1 {
+  /** Legacy, unscoped resolution decision. Read only for the default migration principal. */
   id: string;
   schemaVersion: '1';
   kind: 'establish' | 'reverse';
@@ -642,6 +642,32 @@ export interface GraphResolutionDecision {
   reason?: string;
   ts: string;
   meta?: Record<string, unknown>;
+}
+
+/** A principal- and scope-bound alias decision. New writers emit v2 exclusively. */
+export interface GraphResolutionDecisionV2 {
+  /** `gres:<blake3>` — content-addressed from binding plus principal and scope (see ids.ts). */
+  id: string;
+  schemaVersion: '2';
+  kind: 'establish' | 'reverse';
+  entityA: string;
+  entityB: string;
+  namespace: MemoryNamespace;
+  scope: MemoryScope;
+  provenance: MemoryProvenance;
+  actor: string;
+  reason?: string;
+  ts: string;
+  meta?: Record<string, unknown>;
+}
+
+/** v1 is retained solely for explicit migration compatibility; new writes are v2. */
+export type GraphResolutionDecision = GraphResolutionDecisionV1 | GraphResolutionDecisionV2;
+
+export function isGraphResolutionDecisionV2(
+  decision: GraphResolutionDecision,
+): decision is GraphResolutionDecisionV2 {
+  return decision.schemaVersion === '2';
 }
 
 /** Any memory record line, v1 or v2, plus a migration alias (a JSONL shard line is one of these). */
