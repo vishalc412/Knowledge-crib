@@ -18,6 +18,11 @@ import {
   satisfiesMinimumVersion,
   validateClientCertificationReceipt,
 } from './client-certification-evidence.mjs';
+import {
+  RECORDER_VERSION,
+  RECORDING_FORMAT,
+  RECORDING_FORMAT_VERSION,
+} from './client-protocol-recorder.mjs';
 import { loadLaunchPolicy } from './launch-policy.mjs';
 
 // The floors are the policy's, so the floor cases read the committed policy rather than restating a
@@ -26,6 +31,7 @@ const { policy } = loadLaunchPolicy();
 
 const SHA_A = `sha256:${'a'.repeat(64)}`;
 const SHA_B = `sha256:${'b'.repeat(64)}`;
+const SHA_C = `sha256:${'c'.repeat(64)}`;
 const COMMIT = 'a'.repeat(40);
 const CAPTURED_AT = '2026-09-08T00:00:00.000Z';
 const notRun = { status: 'not-run' };
@@ -55,18 +61,30 @@ const receipt = (overrides = {}) => ({
 const configuration = { status: 'pass', configSha256: SHA_A };
 const vendorProtocol = { status: 'pass', transcriptSha256: SHA_A, source: 'vendor-client' };
 
-// ─── version 2: the certifying schema ───────────────────────────────────────────────────────────
+// ─── version 3: the certifying schema ───────────────────────────────────────────────────────────
 
-/** Every leg passing, with handshake/toolUse attributed to the vendor client. */
+/** A protocol reference: the archived recording, the completed operation, and its request id. */
+const protocolRef = (recording, operation) => ({
+  recording,
+  operation,
+  request: `fixture-${recording}-${operation}`,
+});
+
+/** Every leg passing, each protocol leg citing the completed operation it rests on. */
 const allPassLegs = (overrides = {}) => ({
   configuration: { status: 'pass' },
-  handshake: { status: 'pass', source: 'vendor-client' },
-  toolUse: { status: 'pass', source: 'vendor-client' },
-  record: { status: 'pass' },
+  handshake: { status: 'pass', source: 'vendor-client', protocol: [protocolRef('owner', 1)] },
+  toolUse: { status: 'pass', source: 'vendor-client', protocol: [protocolRef('owner', 3)] },
+  record: { status: 'pass', protocol: [protocolRef('owner', 3)] },
   interruption: { status: 'pass' },
-  restart: { status: 'pass' },
-  authorizedResume: { status: 'pass' },
-  foreignPrincipalExclusion: { status: 'pass' },
+  restart: { status: 'pass', protocol: [protocolRef('owner', 7)] },
+  authorizedResume: { status: 'pass', protocol: [protocolRef('owner', 9)] },
+  // The boundary claim is two-sided by construction: the foreign principal's plant on its own
+  // recording, the owner's marker-absent retrieval on the other.
+  foreignPrincipalExclusion: {
+    status: 'pass',
+    protocol: [protocolRef('foreign', 1), protocolRef('owner', 9)],
+  },
   ...overrides,
 });
 
@@ -84,10 +102,99 @@ const without = (object, key) => {
   return rest;
 };
 
+/** The isolated stores both principals share — the whole point is one journal, two identities. */
+const SHARED_STORES = {
+  journal: '/tmp/crib-certification-memory',
+  repository: '/tmp/crib-certification-registry',
+};
+
 /**
- * A complete version-2 receipt whose log actually exists under `dir`, so every fixture is backed by
- * a real artifact — a certifying receipt the loader must accept, which a test can then break one
- * fact at a time.
+ * A recorder transcript attributed to one side's principal, in the exact shape the transparent
+ * recorder writes — so the validator's re-judgement (its own recordingProblems, the recomputed
+ * digest, the principal and server-command attribution) runs against bytes that satisfy it.
+ */
+function fixtureRecordingBytes(name, side, principalSha256) {
+  return `${JSON.stringify({
+    format: RECORDING_FORMAT,
+    formatVersion: RECORDING_FORMAT_VERSION,
+    recorderVersion: RECORDER_VERSION,
+    recordedAt: CAPTURED_AT,
+    principalSha256,
+    serverCommandSha256: SHA_A,
+    sessions: [{ id: `session-${name}-${side}` }],
+    operations: Array.from({ length: 10 }, (_, index) => ({
+      id: `op-${name}-${side}-${index}`,
+      method: 'tools/call',
+      status: 'completed',
+      tool: 'memory',
+    })),
+  })}\n`;
+}
+
+/**
+ * A complete version-3 receipt whose log AND archived recordings actually exist under `dir`, so
+ * every fixture is backed by real artifacts — two principals over one store and one candidate,
+ * every passing protocol leg referencing its completed operation. A certifying receipt the loader
+ * must accept, which a test can then break one fact at a time.
+ */
+function v3Receipt(dir, name, overrides = {}) {
+  const bytes = runtimeBytes(name);
+  mkdirSync(join(dir, 'logs'), { recursive: true });
+  writeFileSync(join(dir, 'logs', `${name}.log`), bytes);
+  mkdirSync(join(dir, 'recordings'), { recursive: true });
+  const ownerBytes = fixtureRecordingBytes(name, 'owner', SHA_A);
+  const foreignBytes = fixtureRecordingBytes(name, 'foreign', SHA_B);
+  writeFileSync(join(dir, 'recordings', `${name}-owner-recording.json`), ownerBytes);
+  writeFileSync(join(dir, 'recordings', `${name}-foreign-recording.json`), foreignBytes);
+  return {
+    format: 'knowledge-crib-client-certification',
+    formatVersion: 3,
+    generatedAt: CAPTURED_AT,
+    policySha256: SHA_A,
+    product: { commit: COMMIT, packageSha256: SHA_A },
+    client: { id: 'codex', version: '9.9.9', driverVersion: '1.0.0', certificationMode: 'codex' },
+    platform: { os: 'darwin', arch: 'arm64', node: 'v22.23.1' },
+    runId: `run-${name}`,
+    capture: { hostname: 'fixture-host', operator: 'fixture-operator', capturedAt: CAPTURED_AT },
+    principalMarkers: { owner: SHA_A, foreign: SHA_B },
+    configurations: {
+      owner: {
+        sha256: SHA_A,
+        principalSha256: SHA_A,
+        stores: SHARED_STORES,
+        serverCommandSha256: SHA_A,
+      },
+      foreign: {
+        sha256: SHA_B,
+        principalSha256: SHA_B,
+        stores: SHARED_STORES,
+        serverCommandSha256: SHA_A,
+      },
+    },
+    protocol: {
+      ownerRecording: {
+        path: `recordings/${name}-owner-recording.json`,
+        sha256: digestOf(ownerBytes),
+      },
+      foreignRecording: {
+        path: `recordings/${name}-foreign-recording.json`,
+        sha256: digestOf(foreignBytes),
+      },
+    },
+    vendor: {
+      processIdentity: 'codex 9.9.9 (/usr/local/bin/codex, pid 4711)',
+      logPath: `logs/${name}.log`,
+      logSha256: digestOf(bytes),
+    },
+    legs: allPassLegs(),
+    ...overrides,
+  };
+}
+
+/**
+ * The schema version three replaced: legs and a vendor transcript, but no protocol evidence — the
+ * shape a word-echo client could satisfy. It stays LOADABLE as history and can never cover a cell,
+ * which is exactly the migration story the loader has to keep telling.
  */
 function v2Receipt(dir, name, overrides = {}) {
   const bytes = runtimeBytes(name);
@@ -114,8 +221,8 @@ function v2Receipt(dir, name, overrides = {}) {
   };
 }
 
-assert.equal(CERTIFICATION_EVIDENCE_FORMAT_VERSION, 2);
-assert.deepEqual(SUPPORTED_CERTIFICATION_FORMAT_VERSIONS, [1, 2]);
+assert.equal(CERTIFICATION_EVIDENCE_FORMAT_VERSION, 3);
+assert.deepEqual(SUPPORTED_CERTIFICATION_FORMAT_VERSIONS, [1, 2, 3]);
 assert.deepEqual(CERTIFICATION_LEGS, [
   'configuration',
   'handshake',
@@ -155,7 +262,7 @@ assert.throws(
   CertificationEvidenceError,
 );
 assert.throws(
-  () => validateClientCertificationReceipt(receipt({ formatVersion: 3 })),
+  () => validateClientCertificationReceipt(receipt({ formatVersion: 4 })),
   /unsupported certification receipt version/,
 );
 assert.throws(
@@ -421,12 +528,36 @@ try {
   // A v1 receipt that only configured itself is still readable as configuration evidence.
   assert.equal(certificationStatus(receipt()), 'configuration-verified');
 
-  // ─── version 2: a complete certifying receipt ───────────────────────────────────────────────
-  const v2Dir = join(root, 'v2');
-  mkdirSync(v2Dir);
-  const certifying = v2Receipt(v2Dir, 'codex-darwin');
+  // ─── version 2: readable history, never certifying ──────────────────────────────────────────
+  //
+  // v2 separated the eight legs and demanded a vendor transcript, but its success condition was
+  // still word-matching on client output — a word-echo client could pass every leg, which is the
+  // false positive the v3 correlated evidence exists to refuse. A v2 receipt stays loadable as
+  // history and tops out below certification, by the same law as v1: only the current certifying
+  // schema may produce GO (A02).
+  const legacyDir = join(root, 'legacy-v2');
+  mkdirSync(legacyDir);
+  const legacy = v2Receipt(legacyDir, 'codex-v2');
   assert.deepEqual(
-    validateClientCertificationReceipt(certifying, { evidenceRoot: v2Dir }),
+    validateClientCertificationReceipt(legacy, { evidenceRoot: legacyDir }),
+    legacy,
+    'a version-2 receipt stays loadable as history',
+  );
+  assert.deepEqual(certifyClientCell(legacy), {
+    ok: false,
+    problem: 'client-cell-uncertified',
+    cell: 'codex/darwin',
+    detail: 'receipt schema v2 is not certifying',
+  });
+  assert.equal(certificationStatus(legacy), 'runtime-verified');
+  assert.ok(missingRuntimeCertificationCells([legacy]).includes('codex/darwin'));
+
+  // ─── version 3: a complete certifying receipt ───────────────────────────────────────────────
+  const v3Dir = join(root, 'v3');
+  mkdirSync(v3Dir);
+  const certifying = v3Receipt(v3Dir, 'codex-darwin');
+  assert.deepEqual(
+    validateClientCertificationReceipt(certifying, { evidenceRoot: v3Dir }),
     certifying,
   );
   assert.deepEqual(certifyClientCell(certifying), { ok: true, cell: 'codex/darwin' });
@@ -451,7 +582,7 @@ try {
   assert.throws(
     () =>
       validateClientCertificationReceipt(certifying, {
-        evidenceRoot: v2Dir,
+        evidenceRoot: v3Dir,
         candidate: { commit: 'c'.repeat(40), packageSha256: SHA_A },
       }),
     /client-receipt-foreign-commit:codex\/darwin:a{40}/,
@@ -461,7 +592,7 @@ try {
   // is refused by name; one above it passes — so the floor is a floor, not a ban.
   const floor = policy.clientVersionRequirements['codex/darwin'];
   assert.ok(floor, 'the policy must state a codex/darwin floor for this test to mean anything');
-  const belowFloor = v2Receipt(v2Dir, 'codex-old', {
+  const belowFloor = v3Receipt(v3Dir, 'codex-old', {
     client: { id: 'codex', version: '0.0.1', driverVersion: '1.0.0', certificationMode: 'codex' },
   });
   assert.deepEqual(certifyClientCell(belowFloor, { policy }), {
@@ -472,24 +603,24 @@ try {
   });
   assert.deepEqual(certifyClientCell(certifying, { policy }), { ok: true, cell: 'codex/darwin' });
 
-  // ─── version 2: every deviation is a named refusal ──────────────────────────────────────────
+  // ─── version 3: every deviation is a named refusal ──────────────────────────────────────────
   const broken =
     (overrides, name = 'codex-broken') =>
     () =>
-      validateClientCertificationReceipt(v2Receipt(v2Dir, name, overrides), {
-        evidenceRoot: v2Dir,
+      validateClientCertificationReceipt(v3Receipt(v3Dir, name, overrides), {
+        evidenceRoot: v3Dir,
       });
 
   assert.throws(() => {
     const { policySha256: _dropped, ...withoutPolicy } = certifying;
-    return validateClientCertificationReceipt(withoutPolicy, { evidenceRoot: v2Dir });
+    return validateClientCertificationReceipt(withoutPolicy, { evidenceRoot: v3Dir });
   }, /policySha256/);
   for (const field of ['driverVersion', 'certificationMode']) {
     assert.throws(
       () => {
-        const fixture = v2Receipt(v2Dir, `codex-no-${field}`);
+        const fixture = v3Receipt(v3Dir, `codex-no-${field}`);
         fixture.client = without(fixture.client, field);
-        return validateClientCertificationReceipt(fixture, { evidenceRoot: v2Dir });
+        return validateClientCertificationReceipt(fixture, { evidenceRoot: v3Dir });
       },
       new RegExp(`client\\.${field} is required`),
     );
@@ -501,21 +632,21 @@ try {
     /unknown certification mode: slack/,
   );
   assert.throws(() => {
-    const fixture = without(v2Receipt(v2Dir, 'codex-no-runid'), 'runId');
-    return validateClientCertificationReceipt(fixture, { evidenceRoot: v2Dir });
+    const fixture = without(v3Receipt(v3Dir, 'codex-no-runid'), 'runId');
+    return validateClientCertificationReceipt(fixture, { evidenceRoot: v3Dir });
   }, /runId is required/);
 
   // Who ran it, where and when — the same attribution a v1 runtime pass must carry.
   assert.throws(() => {
-    const fixture = without(v2Receipt(v2Dir, 'codex-no-capture'), 'capture');
-    return validateClientCertificationReceipt(fixture, { evidenceRoot: v2Dir });
+    const fixture = without(v3Receipt(v3Dir, 'codex-no-capture'), 'capture');
+    return validateClientCertificationReceipt(fixture, { evidenceRoot: v3Dir });
   }, /capture is required/);
   for (const field of ['hostname', 'operator', 'capturedAt']) {
     assert.throws(
       () => {
-        const fixture = v2Receipt(v2Dir, `codex-capture-${field}`);
+        const fixture = v3Receipt(v3Dir, `codex-capture-${field}`);
         fixture.capture = without(fixture.capture, field);
-        return validateClientCertificationReceipt(fixture, { evidenceRoot: v2Dir });
+        return validateClientCertificationReceipt(fixture, { evidenceRoot: v3Dir });
       },
       new RegExp(`capture\\.${field} is required`),
     );
@@ -528,8 +659,8 @@ try {
   // Sanitized principal markers: the receipt names both principals by digest, and they must differ —
   // an "exclusion" leg whose two markers are the same proves nothing was excluded.
   assert.throws(() => {
-    const fixture = without(v2Receipt(v2Dir, 'codex-no-markers'), 'principalMarkers');
-    return validateClientCertificationReceipt(fixture, { evidenceRoot: v2Dir });
+    const fixture = without(v3Receipt(v3Dir, 'codex-no-markers'), 'principalMarkers');
+    return validateClientCertificationReceipt(fixture, { evidenceRoot: v3Dir });
   }, /principalMarkers is required/);
   assert.throws(
     broken({ principalMarkers: { owner: 'owner-principal', foreign: SHA_B } }),
@@ -542,9 +673,9 @@ try {
 
   // Legs: all eight present, each with a valid status.
   assert.throws(() => {
-    const fixture = v2Receipt(v2Dir, 'codex-no-leg');
+    const fixture = v3Receipt(v3Dir, 'codex-no-leg');
     fixture.legs = without(fixture.legs, 'toolUse');
-    return validateClientCertificationReceipt(fixture, { evidenceRoot: v2Dir });
+    return validateClientCertificationReceipt(fixture, { evidenceRoot: v3Dir });
   }, /legs\.toolUse is required/);
   assert.throws(
     broken({ legs: allPassLegs({ record: { status: 'maybe' } }) }),
@@ -569,7 +700,7 @@ try {
   for (const leg of ['handshake', 'toolUse']) {
     assert.deepEqual(
       certifyClientCell(
-        v2Receipt(v2Dir, `codex-sourceless-${leg}`, {
+        v3Receipt(v3Dir, `codex-sourceless-${leg}`, {
           legs: allPassLegs({ [leg]: { status: 'pass', source: 'test-client' } }),
         }),
       ),
@@ -583,7 +714,7 @@ try {
   }
   // A receipt carrying no legs at all is refused rather than read as "nothing failed".
   assert.equal(
-    certifyClientCell(v2Receipt(v2Dir, 'codex-no-legs', { legs: {} })).detail,
+    certifyClientCell(v3Receipt(v3Dir, 'codex-no-legs', { legs: {} })).detail,
     'legs.handshake was not produced by a vendor-client',
   );
 
@@ -594,9 +725,22 @@ try {
     /blockedReason \(legs not passed: restart\) is required/,
   );
   // …and a receipt that says why is READABLE — an honest failure stays legible, so a blocked receipt
-  // needs neither artifacts nor an evidence root to load.
-  const blockedFixture = v2Receipt(v2Dir, 'codex-blocked', {
-    legs: allPassLegs({ interruption: { status: 'blocked' }, restart: { status: 'not-run' } }),
+  // needs neither artifacts nor an evidence root to load. Under v3 that means a run that never
+  // exercised the wire: passing protocol legs would demand verifiable recordings, so the blocked
+  // fixture is the vendor that refused to start at all — nothing passed, nothing to verify.
+  const blockedFixture = v3Receipt(v3Dir, 'codex-blocked', {
+    legs: {
+      configuration: { status: 'pass' },
+      handshake: { status: 'blocked', source: 'vendor-client' },
+      toolUse: { status: 'blocked', source: 'vendor-client' },
+      record: { status: 'blocked' },
+      interruption: { status: 'blocked' },
+      restart: { status: 'not-run' },
+      authorizedResume: { status: 'blocked' },
+      foreignPrincipalExclusion: { status: 'blocked' },
+    },
+    configurations: undefined,
+    protocol: undefined,
     blockedReason: 'the vendor client refused to start without an interactive desktop session',
   });
   blockedFixture.vendor = undefined;
@@ -609,20 +753,21 @@ try {
     ok: false,
     problem: 'client-cell-uncertified',
     cell: 'codex/darwin',
-    detail: 'legs not passed: interruption, restart',
+    detail:
+      'legs not passed: handshake, toolUse, record, interruption, restart, authorizedResume, foreignPrincipalExclusion',
   });
 
   // A certifying receipt is a claim that a real vendor process ran. Legs alone are assertion; the
   // transcript is what makes them evidence, and the vendor process identity is what says WHICH
   // binary produced it — a harness that merely speaks the protocol has a transcript too.
   assert.throws(() => {
-    const fixture = without(v2Receipt(v2Dir, 'codex-unbacked'), 'vendor');
-    return validateClientCertificationReceipt(fixture, { evidenceRoot: v2Dir });
+    const fixture = without(v3Receipt(v3Dir, 'codex-unbacked'), 'vendor');
+    return validateClientCertificationReceipt(fixture, { evidenceRoot: v3Dir });
   }, /a certifying receipt must reference a vendor transcript or log/);
   assert.throws(() => {
-    const fixture = v2Receipt(v2Dir, 'codex-nameless');
+    const fixture = v3Receipt(v3Dir, 'codex-nameless');
     fixture.vendor = without(fixture.vendor, 'processIdentity');
-    return validateClientCertificationReceipt(fixture, { evidenceRoot: v2Dir });
+    return validateClientCertificationReceipt(fixture, { evidenceRoot: v3Dir });
   }, /vendor\.processIdentity is required/);
   assert.throws(
     () => validateClientCertificationReceipt(certifying, {}),
@@ -655,11 +800,114 @@ try {
     /legs\.restart\.transcriptPath references a file missing from the receipts area/,
   );
 
+  // ─── version 3: the protocol evidence itself is checked ─────────────────────────────────────
+  //
+  // Legs alone are assertion; a passing protocol leg must cite the completed operation it rests
+  // on, or it is the word-matching false positive this schema exists to refuse.
+  assert.throws(
+    broken({ legs: allPassLegs({ record: { status: 'pass' } }) }),
+    /legs\.record passed without protocol evidence/,
+  );
+  assert.deepEqual(
+    certifyClientCell(
+      v3Receipt(v3Dir, 'codex-unreferenced', { legs: allPassLegs({ record: { status: 'pass' } }) }),
+    ),
+    {
+      ok: false,
+      problem: 'client-cell-uncertified',
+      cell: 'codex/darwin',
+      detail: 'legs.record passed without protocol evidence',
+    },
+    'the same refusal must hold at the no-disk judgement site the launch decision calls',
+  );
+  assert.throws(
+    broken({
+      legs: allPassLegs({
+        foreignPrincipalExclusion: { status: 'pass', protocol: [protocolRef('owner', 9)] },
+      }),
+    }),
+    /the exclusion leg must reference both the owner and the foreign recordings/,
+  );
+  assert.throws(
+    broken({
+      configurations: {
+        owner: {
+          sha256: SHA_A,
+          principalSha256: SHA_A,
+          stores: SHARED_STORES,
+          serverCommandSha256: SHA_A,
+        },
+        foreign: {
+          sha256: SHA_B,
+          principalSha256: SHA_A,
+          stores: SHARED_STORES,
+          serverCommandSha256: SHA_A,
+        },
+      },
+    }),
+    /the owner and foreign configurations must carry different principals/,
+  );
+  assert.throws(
+    broken({
+      configurations: {
+        owner: {
+          sha256: SHA_A,
+          principalSha256: SHA_A,
+          stores: SHARED_STORES,
+          serverCommandSha256: SHA_A,
+        },
+        foreign: {
+          sha256: SHA_B,
+          principalSha256: SHA_B,
+          stores: { journal: '/tmp/elsewhere', repository: '/tmp/elsewhere-registry' },
+          serverCommandSha256: SHA_A,
+        },
+      },
+    }),
+    /must share the same isolated journal and repository/,
+  );
+  // A recording that no longer hashes to what the receipt declares, or that is attributed to a
+  // different principal than the configuration claims, voids the protocol evidence the legs rest
+  // on — the archived artifact is the check, not the receipt's say-so.
+  {
+    const tamperedDir = join(root, 'tampered');
+    mkdirSync(tamperedDir);
+    const tampered = v3Receipt(tamperedDir, 'codex-tampered');
+    writeFileSync(join(tamperedDir, 'recordings', 'codex-tampered-owner-recording.json'), '{}\n');
+    assert.throws(
+      () => validateClientCertificationReceipt(tampered, { evidenceRoot: tamperedDir }),
+      /protocol\.ownerRecording\.sha256 does not match/,
+    );
+  }
+  assert.throws(
+    () =>
+      validateClientCertificationReceipt(
+        v3Receipt(v3Dir, 'codex-misattributed', {
+          configurations: {
+            owner: {
+              sha256: SHA_A,
+              principalSha256: SHA_A,
+              stores: SHARED_STORES,
+              serverCommandSha256: SHA_A,
+            },
+            foreign: {
+              sha256: SHA_B,
+              principalSha256: SHA_C,
+              stores: SHARED_STORES,
+              serverCommandSha256: SHA_A,
+            },
+          },
+        }),
+        { evidenceRoot: v3Dir },
+      ),
+    /protocol\.foreignRecording is attributed to another principal than configurations\.foreign/,
+  );
+
   // ─── a transcript altered AFTER the receipt was generated invalidates its cell ──────────────
   {
     const alteredDir = join(root, 'altered');
     mkdirSync(alteredDir);
-    const fresh = v2Receipt(alteredDir, 'codex-altered');
+    const fresh = v3Receipt(alteredDir, 'codex-altered');
     writeFileSync(join(alteredDir, `${fresh.runId}.json`), `${JSON.stringify(fresh)}\n`);
     assert.equal(loadClientCertificationReceipts(alteredDir).length, 1);
     // The digest is the whole point: the receipt is unchanged, the artifact is not, and the cell
@@ -682,12 +930,12 @@ try {
     driverVersion: '1.0.0',
     certificationMode: 'cursor',
   };
-  const wslReceipt = v2Receipt(v2Dir, 'cursor-wsl', {
+  const wslReceipt = v3Receipt(v3Dir, 'cursor-wsl', {
     client: cursorClient,
     platform: { os: 'linux', arch: 'x64', node: 'v22.23.1', wsl: true },
   });
   assert.deepEqual(
-    validateClientCertificationReceipt(wslReceipt, { evidenceRoot: v2Dir }),
+    validateClientCertificationReceipt(wslReceipt, { evidenceRoot: v3Dir }),
     wslReceipt,
   );
   assert.deepEqual(certifyClientCell(wslReceipt), {
@@ -700,7 +948,7 @@ try {
   assert.ok(missingRuntimeCertificationCells([wslReceipt]).includes('cursor/linux'));
 
   // Contrast: a native linux runtime pass does satisfy the native-linux cell.
-  const nativeLinuxReceipt = v2Receipt(v2Dir, 'cursor-native', {
+  const nativeLinuxReceipt = v3Receipt(v3Dir, 'cursor-native', {
     client: cursorClient,
     platform: { os: 'linux', arch: 'x64', node: 'v22.23.1' },
   });
@@ -710,39 +958,25 @@ try {
   // ─── loading a directory ────────────────────────────────────────────────────────────────────
   const loadedDir = join(root, 'loaded');
   mkdirSync(loadedDir);
-  // Three cells, each with its own log inside THIS directory, so the loader can verify every digest.
+  // Three cells, each built against THIS directory — the factory writes each receipt's log and
+  // archived recordings under it, so the loader can verify every digest and every recording.
   const loadedFixtures = [
-    v2Receipt(loadedDir, 'codex-darwin'),
-    {
-      ...nativeLinuxReceipt,
-      runId: 'run-cursor-loaded',
-      vendor: {
-        processIdentity: 'cursor 2025.01.01 (/usr/local/bin/cursor, pid 4712)',
-        logPath: 'logs/cursor-loaded.log',
-        logSha256: digestOf(runtimeBytes('cursor-loaded')),
+    v3Receipt(loadedDir, 'codex-darwin'),
+    v3Receipt(loadedDir, 'cursor-loaded', {
+      client: cursorClient,
+      platform: { os: 'linux', arch: 'x64', node: 'v22.23.1' },
+    }),
+    v3Receipt(loadedDir, 'claude-win32', {
+      client: {
+        id: 'claude',
+        version: '2.1.0',
+        driverVersion: '1.0.0',
+        certificationMode: 'claude',
       },
-    },
-    {
-      ...v2Receipt(loadedDir, 'claude-win32', {
-        client: {
-          id: 'claude',
-          version: '2.1.0',
-          driverVersion: '1.0.0',
-          certificationMode: 'claude',
-        },
-        platform: { os: 'win32', arch: 'x64', node: 'v22.23.1' },
-      }),
-      vendor: {
-        processIdentity: 'claude 2.1.0 (/usr/local/bin/claude, pid 4713)',
-        logPath: 'logs/claude-win32.log',
-        logSha256: digestOf(runtimeBytes('claude-win32')),
-      },
-    },
+      platform: { os: 'win32', arch: 'x64', node: 'v22.23.1' },
+    }),
   ];
   for (const fixture of loadedFixtures) {
-    const fileName = fixture.vendor.logPath.replace('logs/', '');
-    mkdirSync(join(loadedDir, 'logs'), { recursive: true });
-    writeFileSync(join(loadedDir, 'logs', fileName), runtimeBytes(fileName.replace('.log', '')));
     writeFileSync(join(loadedDir, `${fixture.runId}.json`), `${JSON.stringify(fixture)}\n`);
   }
   const loaded = loadClientCertificationReceipts(loadedDir);
@@ -774,8 +1008,8 @@ try {
   // The same client on the same platform, twice: one cell, counted once.
   const duplicateCellDir = join(root, 'duplicate-cell');
   mkdirSync(duplicateCellDir);
-  const first = v2Receipt(duplicateCellDir, 'codex-one');
-  const second = v2Receipt(duplicateCellDir, 'codex-two');
+  const first = v3Receipt(duplicateCellDir, 'codex-one');
+  const second = v3Receipt(duplicateCellDir, 'codex-two');
   writeFileSync(join(duplicateCellDir, 'a.json'), `${JSON.stringify(first)}\n`);
   writeFileSync(join(duplicateCellDir, 'b.json'), `${JSON.stringify(second)}\n`);
   assert.throws(
@@ -788,8 +1022,8 @@ try {
   const duplicateRunDir = join(root, 'duplicate-run');
   mkdirSync(duplicateRunDir);
   const sharedRun = 'run-shared-0001';
-  const runA = v2Receipt(duplicateRunDir, 'codex-shared', { runId: sharedRun });
-  const runB = v2Receipt(duplicateRunDir, 'vscode-shared', {
+  const runA = v3Receipt(duplicateRunDir, 'codex-shared', { runId: sharedRun });
+  const runB = v3Receipt(duplicateRunDir, 'vscode-shared', {
     runId: sharedRun,
     client: {
       id: 'vscode',
@@ -809,7 +1043,7 @@ try {
   // silently becoming a missing cell is the failure this module exists to prevent.
   const invalidDir = join(root, 'invalid');
   mkdirSync(invalidDir);
-  const invalid = v2Receipt(invalidDir, 'codex-invalid');
+  const invalid = v3Receipt(invalidDir, 'codex-invalid');
   invalid.vendor.logPath = 'logs/absent.log';
   writeFileSync(join(invalidDir, 'codex-darwin.json'), `${JSON.stringify(invalid)}\n`);
   assert.throws(() => loadClientCertificationReceipts(invalidDir), CertificationEvidenceError);
@@ -841,6 +1075,19 @@ try {
       loadClientCertificationReceipts(mixed),
       [],
       'acceptance receipts are not cells',
+    );
+
+    // The version-3 receipt archives its protocol recordings in the SAME directory, next to the
+    // receipt that references them — an attachment, positively identified by its own format, not
+    // a malformed certification receipt to refuse.
+    writeFileSync(
+      join(mixed, 'codex-darwin-owner-recording.json'),
+      JSON.stringify({ format: RECORDING_FORMAT, formatVersion: RECORDING_FORMAT_VERSION }),
+    );
+    assert.deepEqual(
+      loadClientCertificationReceipts(mixed),
+      [],
+      'archived protocol recordings are evidence attachments, not cells',
     );
 
     writeFileSync(join(mixed, 'junk.json'), JSON.stringify({ format: 'something-else' }));

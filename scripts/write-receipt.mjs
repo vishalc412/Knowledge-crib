@@ -15,10 +15,26 @@ import { execFileSync } from 'node:child_process';
  *
  * Usage:
  *   node scripts/write-receipt.mjs <type> --out receipts/install.json \
- *     --command "pnpm installer:smoke" [--artifact <path>...] [--status pass|fail] \
- *     [--package <candidate-tarball>] [--p95-ms <n>] [--workload <name>]
+ *     --package <candidate-tarball> --command "pnpm installer:smoke" --exit-code 0 \
+ *     [--command "..." --exit-code N ...] [--artifact <path>...] [--artifact-root <dir>] \
+ *     [--run-id <id>] [--p95-ms <n>] [--workload <name>] \
+ *     [--product-source <workspace|installed-candidate>] [--executable <installed cli.js>]
+ *
+ * `--package` is required, and `--status` is no longer a claim: pass/fail is derived from the
+ * archived --command/--exit-code pairs (a caller's --status must agree with them or the writer
+ * refuses).
+ *
+ * Artifact paths are stored VERBATIM. The launch decision resolves them against the receipts
+ * root it was handed — in the release workflow's `--cells` layout that is the CELL DIRECTORY that
+ * contains the receipt (each manifest entry carries its own evidence root); the `--receipts-root`
+ * flag covers only the legacy single-root `--evidence` mode. So a receipt that stores a
+ * machine-absolute path only certifies from the machine and directory it was written on — evidence
+ * that cannot survive being copied to the launch judge is not evidence. By default an --artifact
+ * path is resolved against the writer's cwd; `--artifact-root` says the path is relative to that
+ * directory instead (the acceptance collector passes its --out dir, so the whole evidence tree is
+ * relocatable).
  */
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { hostname } from 'node:os';
 import { dirname, resolve } from 'node:path';
@@ -55,22 +71,95 @@ export function buildReceipt({ type, argv, now = new Date().toISOString(), detai
   if (!known.includes(type)) {
     throw new Error(`unknown receipt type ${type}; the launch policy declares ${known.join(', ')}`);
   }
+  // Artifact paths are stored VERBATIM — the decision resolves them against the receipts root it
+  // was handed — but
+  // existence and digest are checked against real bytes before the receipt is written. By default
+  // that means the writer's cwd; --artifact-root names the directory a (relative) path is against,
+  // which is how the collector writes `logs/<type>.log` entries that still verify on any machine.
+  const artifactRoot =
+    flag(argv, '--artifact-root') === undefined
+      ? undefined
+      : resolve(flag(argv, '--artifact-root'));
+  const artifactPath = (path) => (artifactRoot === undefined ? path : resolve(artifactRoot, path));
   const artifacts = flags(argv, '--artifact').map((path) => {
-    if (!existsSync(path)) throw new Error(`receipt artifact does not exist: ${path}`);
-    return { path, sha256: sha256(readFileSync(path)) };
+    const absolute = artifactPath(path);
+    if (!existsSync(absolute)) throw new Error(`receipt artifact does not exist: ${path}`);
+    return { path, sha256: sha256(readFileSync(absolute)) };
   });
-  const status = flag(argv, '--status', 'pass');
+  // The candidate ARTIFACT, not the candidate source. A receipt that binds only to a commit cannot
+  // notice that the tarball it certifies was rebuilt — and a rebuilt tarball is a different product
+  // even when the commit is identical (`pnpm pack` is not byte-reproducible here). In v2 the
+  // binding is REQUIRED: a receipt with no package digest certifies nothing.
+  const packagePath = flag(argv, '--package');
+  if (packagePath === undefined) {
+    throw new Error(
+      '--package is required: an acceptance receipt that binds no candidate package cannot certify the launch',
+    );
+  }
+  if (!existsSync(packagePath)) {
+    throw new Error(`receipt package does not exist: ${packagePath}`);
+  }
+  // v2 archives every constituent command WITH its actual exit code. Status is then DERIVED from
+  // those facts (all zero ⇒ pass) instead of being asserted by whoever invokes this writer — the
+  // nonzero-exit-as-pass laundering route is closed at the source. Multi-command checks (the
+  // security battery + its checker) archive one entry per command; a single joined display string
+  // would let a failed constituent hide behind a sibling's success.
+  const commands = flags(argv, '--command');
+  const exitCodes = flags(argv, '--exit-code');
+  if (commands.length === 0) {
+    throw new Error(`a ${type} receipt must archive at least one --command with its --exit-code`);
+  }
+  if (commands.length !== exitCodes.length) {
+    throw new Error(
+      `--command and --exit-code must appear the same number of times (got ${commands.length} commands and ${exitCodes.length} exit codes); every command's completion must be recorded, not just some`,
+    );
+  }
+  const commandResults = commands.map((command, i) => {
+    const exitCode = Number(exitCodes[i]);
+    if (!Number.isInteger(exitCode)) {
+      throw new Error(
+        `--exit-code must be an integer exit status, got ${JSON.stringify(exitCodes[i])}`,
+      );
+    }
+    return { command, exitCode };
+  });
+  const status = commandResults.every((result) => result.exitCode === 0) ? 'pass' : 'fail';
+  // A caller may still pass --status, but it must AGREE with the facts. Allowing a contradiction
+  // here would move the laundering one flag earlier, not remove it.
+  const declaredStatus = flag(argv, '--status');
+  if (declaredStatus !== undefined && declaredStatus !== status) {
+    throw new Error(
+      `--status ${declaredStatus} contradicts the recorded command results, which derive ${status}; a receipt may not disagree with what actually ran`,
+    );
+  }
+  // Task 3: WHICH product did the check exercise? A receipt that ran the workspace's own dist says
+  // `workspace`; one that ran the installed candidate names the executable it was handed, hashed —
+  // never the machine-absolute path itself, which would make the evidence non-relocatable. An
+  // installed-candidate receipt WITHOUT an executable is a claim about bytes nobody hashed.
+  const productSource = flag(argv, '--product-source') ?? 'workspace';
+  if (productSource !== 'workspace' && productSource !== 'installed-candidate') {
+    throw new Error(
+      `--product-source must be workspace or installed-candidate, got ${productSource}`,
+    );
+  }
+  const executable = flag(argv, '--executable');
+  if (productSource === 'installed-candidate') {
+    if (executable === undefined) {
+      throw new Error(
+        '--executable is required when --product-source is installed-candidate: a receipt claiming the installed product must hash the executable it ran',
+      );
+    }
+    if (!existsSync(executable)) {
+      throw new Error(`--executable does not exist: ${executable}`);
+    }
+  }
+  if (executable !== undefined && !existsSync(executable)) {
+    throw new Error(`--executable does not exist: ${executable}`);
+  }
   if (status === 'pass' && artifacts.length === 0) {
     throw new Error(
       `a passing ${type} receipt must reference at least one --artifact; a claim with nothing behind it is not evidence`,
     );
-  }
-  // The candidate ARTIFACT, not the candidate source. A receipt that binds only to a commit cannot
-  // notice that the tarball it certifies was rebuilt — and a rebuilt tarball is a different product
-  // even when the commit is identical (`pnpm pack` is not byte-reproducible here).
-  const packagePath = flag(argv, '--package');
-  if (packagePath && !existsSync(packagePath)) {
-    throw new Error(`receipt package does not exist: ${packagePath}`);
   }
   let commit;
   try {
@@ -79,17 +168,24 @@ export function buildReceipt({ type, argv, now = new Date().toISOString(), detai
     commit = undefined;
   }
   const p95 = flag(argv, '--p95-ms');
+  const runId = flag(argv, '--run-id') ?? randomUUID();
   return {
     format: 'knowledge-crib-acceptance-receipt',
-    formatVersion: 1,
+    formatVersion: 2,
     type,
     status,
     recordedAt: now,
+    runId,
     candidateCommit: commit,
-    ...(packagePath ? { candidatePackageSha256: sha256(readFileSync(packagePath)) } : {}),
+    candidatePackageSha256: sha256(readFileSync(packagePath)),
     policySha256,
-    command: flag(argv, '--command', ''),
+    command: commands.length === 1 ? commands[0] : commands.join(' && '),
+    commandResults,
     platform: { os: process.platform, arch: process.arch, node: process.version },
+    product: {
+      source: productSource,
+      ...(executable !== undefined ? { executableSha256: sha256(readFileSync(executable)) } : {}),
+    },
     runner:
       process.env.GITHUB_ACTIONS === 'true'
         ? { provider: 'github-actions', runId: process.env.GITHUB_RUN_ID }
@@ -105,7 +201,9 @@ function main() {
   const argv = process.argv.slice(2);
   const type = argv[0];
   if (!type || type.startsWith('--')) {
-    process.stderr.write('usage: write-receipt.mjs <type> --out <path> --command "..."\n');
+    process.stderr.write(
+      'usage: write-receipt.mjs <type> --out <path> --package <tarball> --command "..." --exit-code <n> [--artifact <path>...]\n',
+    );
     process.exitCode = 1;
     return;
   }

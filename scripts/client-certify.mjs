@@ -33,12 +33,15 @@
 import { execFileSync, spawn, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import {
+  constants,
+  accessSync,
   appendFileSync,
   cpSync,
   existsSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
+  readdirSync,
   rmSync,
   writeFileSync,
 } from 'node:fs';
@@ -46,13 +49,20 @@ import { hostname, tmpdir, userInfo } from 'node:os';
 import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { CERTIFIED_CLIENTS } from './client-certification-evidence.mjs';
+import {
+  RECORDER_VERSION,
+  findCompletedOperation,
+  operationCount,
+  recordingProblems,
+  serverCommandSha256,
+} from './client-protocol-recorder.mjs';
 import { loadLaunchPolicy } from './launch-policy.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(HERE, '..');
 
 /** Bumped when a driver's behaviour changes, so a receipt names the driver that produced it. */
-export const DRIVER_VERSION = '1.0.0';
+export const DRIVER_VERSION = '1.1.0';
 
 /**
  * The eleven behaviours every driver must attempt, in the order they are attempted.
@@ -186,27 +196,46 @@ function makeLog(path) {
 }
 
 /**
- * The command line of a live process, or undefined when it cannot be read.
+ * The FULL command line of a live process (its argv, space-joined), or undefined when it cannot be
+ * read.
  *
  * Needed because the interruption leg's whole claim is "the VENDOR CLIENT was killed". A PID on its
  * own cannot support that claim: the vendor client spawns an MCP server child, and a harness that
- * killed the child and called it an interruption would be certifying a leg it never exercised. So
- * the identity of the process is read BEFORE it is killed and recorded with the leg.
+ * killed the child and called it an interruption would be certifying a leg it never exercised. The
+ * full argv is read BEFORE the kill and recorded with the leg, because the full argv is also what
+ * keeps a Node-shebang vendor CLI identifiable — a basename would read `node` and refuse every
+ * CLI that ships as a script.
  */
 export function processCommand(pid) {
   try {
     if (process.platform === 'linux') {
-      return readFileSync(`/proc/${pid}/comm`, 'utf8').trim() || undefined;
+      // NUL-separated argv; filtering empties keeps the trailing separator from adding a phantom arg.
+      return (
+        readFileSync(`/proc/${pid}/cmdline`, 'utf8').split('\0').filter(Boolean).join(' ') ||
+        undefined
+      );
     }
     if (process.platform === 'darwin') {
-      return execFileSync('ps', ['-o', 'comm=', '-p', String(pid)], { encoding: 'utf8' }).trim();
+      return (
+        execFileSync('ps', ['-o', 'command=', '-p', String(pid)], { encoding: 'utf8' }).trim() ||
+        undefined
+      );
     }
     if (process.platform === 'win32') {
-      const csv = execFileSync('tasklist', ['/FI', `PID eq ${pid}`, '/FO', 'CSV', '/NH'], {
-        encoding: 'utf8',
-      }).trim();
-      const name = /^"([^"]+)"/.exec(csv)?.[1];
-      return name || undefined;
+      if (!Number.isInteger(pid)) return undefined;
+      // The pid is integer-guarded, so interpolating it into the filter string carries no injection
+      // surface; PowerShell's own quoting handles the rest.
+      const result = spawnSync(
+        'powershell.exe',
+        [
+          '-NoProfile',
+          '-NonInteractive',
+          '-Command',
+          `(Get-CimInstance Win32_Process -Filter "ProcessId=${pid}").CommandLine`,
+        ],
+        { encoding: 'utf8', timeout: 30_000 },
+      );
+      return (result.stdout ?? '').trim() || undefined;
     }
   } catch {
     return undefined;
@@ -215,12 +244,134 @@ export function processCommand(pid) {
 }
 
 /**
+ * One snapshot row per visible process: pid, parent pid and full command line. A single `ps` (POSIX)
+ * or one PowerShell dump (win32) is taken up front so walking the tree never races a second query
+ * against a dying process — the ancestry is frozen at snapshot time, which is exactly the moment
+ * the caller needs it: before the kill.
+ */
+function snapshotProcesses() {
+  if (process.platform === 'win32') {
+    const result = spawnSync(
+      'powershell.exe',
+      [
+        '-NoProfile',
+        '-NonInteractive',
+        '-Command',
+        'Get-CimInstance Win32_Process | Select-Object ProcessId,ParentProcessId,CommandLine | ConvertTo-Json -Compress',
+      ],
+      { encoding: 'utf8', timeout: 60_000 },
+    );
+    let rows = [];
+    try {
+      rows = JSON.parse(result.stdout ?? 'null') ?? [];
+    } catch {
+      rows = [];
+    }
+    if (!Array.isArray(rows)) rows = [rows];
+    return rows
+      .map((row) => ({
+        pid: Number(row?.ProcessId),
+        ppid: Number(row?.ParentProcessId),
+        command: typeof row?.CommandLine === 'string' ? row.CommandLine : undefined,
+      }))
+      .filter((row) => Number.isInteger(row.pid));
+  }
+  return execFileSync('ps', ['-axo', 'pid=,ppid=,command='], { encoding: 'utf8' })
+    .split('\n')
+    .map((line) => /^\s*(\d+)\s+(\d+)\s+(.*)$/.exec(line))
+    .filter(Boolean)
+    .map(([, pid, ppid, command]) => ({
+      pid: Number(pid),
+      ppid: Number(ppid),
+      command: command.trim(),
+    }));
+}
+
+/**
+ * The process and its descendants, as [{pid, command}] — the tree that `killProcessTree` is about to
+ * signal. Snapshotting it before the kill is what makes the MCP-child-only trap visible: a
+ * masquerading process whose own image no longer names the vendor path shows up here as a tree with
+ * no matching node, and the leg refuses instead of certifying a child-kill as an interruption.
+ */
+export function processTree(pid) {
+  try {
+    const list = snapshotProcesses();
+    const childrenOf = new Map();
+    for (const proc of list) {
+      if (!childrenOf.has(proc.ppid)) childrenOf.set(proc.ppid, []);
+      childrenOf.get(proc.ppid).push(proc);
+    }
+    const nodes = [];
+    const queue = [pid];
+    const seen = new Set();
+    while (queue.length > 0) {
+      const current = queue.shift();
+      if (seen.has(current)) continue;
+      seen.add(current);
+      const self = list.find((proc) => proc.pid === current);
+      nodes.push({ pid: current, command: self?.command ?? processCommand(current) });
+      for (const child of childrenOf.get(current) ?? []) queue.push(child.pid);
+    }
+    return nodes;
+  } catch {
+    // No snapshot, no tree — but the target itself is still knowable, and one node beats zero.
+    return [{ pid, command: processCommand(pid) }];
+  }
+}
+
+/**
+ * Is the pid still alive? Signal 0 probes without delivering anything. EPERM means alive but not
+ * ours to signal, which is the honest answer `true` on a multi-user host.
+ */
+export function processAlive(pid) {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (error) {
+    return error?.code !== 'ESRCH';
+  }
+}
+
+/**
+ * Poll until the pid is gone, or the deadline passes. "The kill was signalled" and "the process is
+ * dead" are different claims — a client that ignores SIGKILL-because-it-is-already-a-zombie or a
+ * taskkill that failed silently must not certify an interruption, so termination is CONFIRMED
+ * before the leg can pass.
+ */
+export async function confirmTermination(pid, timeoutMs = 10_000) {
+  const deadline = Date.now() + timeoutMs;
+  while (true) {
+    if (!processAlive(pid)) return true;
+    const remaining = deadline - Date.now();
+    if (remaining <= 0) return false;
+    await new Promise((resolve) => setTimeout(resolve, Math.min(250, remaining)));
+  }
+}
+
+/**
+ * Does this command line name this executable? Full-path matching over normalized separators, so a
+ * Node-shebang CLI (`node /prefix/bin/claude …`) still matches the resolved `…/bin/claude`. On
+ * Windows paths are case-insensitive; elsewhere the byte-for-byte rule holds.
+ */
+export function commandLineMatches(commandLine, executablePath) {
+  if (!commandLine || !executablePath) return false;
+  const normalize = (value) => value.replaceAll('\\', '/');
+  const needle = normalize(executablePath);
+  const haystack = normalize(commandLine);
+  if (process.platform === 'win32') {
+    return haystack.toLowerCase().includes(needle.toLowerCase());
+  }
+  return haystack.includes(needle);
+}
+
+/**
  * Kill a process AND its children.
  *
  * On POSIX the child is spawned `detached`, so it leads its own process group — killing the GROUP is
  * what makes the interruption honest for a client that spawned helpers. On Windows `taskkill /T`
  * walks the tree. Either way the TARGET is the vendor process, and its identity was verified by the
- * caller first.
+ * caller first. This reports only that the SIGNAL was delivered; the caller must still confirm the
+ * process actually terminated (`confirmTermination`).
  */
 export function killProcessTree(pid) {
   if (process.platform === 'win32') {
@@ -309,10 +460,10 @@ const CLIENT_SPECS = [
     configRelPath: ['.codex', 'config.toml'],
     configFormat: 'toml',
     projectScoped: false,
-    // Codex reads its MCP servers from $CODEX_HOME/config.toml, so the run points CODEX_HOME at the
-    // scenario's own tree. That is the isolation: the operator's real ~/.codex is never read.
-    homeEnvVar: 'CODEX_HOME',
-    homeRelPath: '.codex',
+    // The shipped installer writes a PROJECT-scoped config (packages/cli/src/mcp-install.ts places it
+    // at <project>/.codex/config.toml), and Codex reads it from the cwd — so no CODEX_HOME override is
+    // needed: the harness runs every turn with cwd at the scenario's project, and the operator's real
+    // ~/.codex is never read.
     authProbe: {
       args: ['login', 'status'],
       parse: (out, status) => status === 0 || /logged in/i.test(out),
@@ -410,7 +561,10 @@ export function clientSpec(clientId) {
 /** Run a command, capturing everything into the transcript. Never throws — legs report status. */
 function run(log, label, command, args, options = {}) {
   const started = Date.now();
-  const result = spawnSync(command, args, {
+  // The platform-safe launch rules apply to every spawn (Windows `.cmd` shims run through cmd.exe);
+  // the transcript still names the ORIGINAL command so the log reads like the intent.
+  const launch = resolveLaunchable(command, args);
+  const result = spawnSync(launch.command, launch.args, {
     encoding: 'utf8',
     timeout: options.timeoutMs ?? 240_000,
     maxBuffer: 32 * 1024 * 1024,
@@ -429,7 +583,17 @@ function run(log, label, command, args, options = {}) {
  * behaviour results keyed by {@link CERTIFICATION_BEHAVIOURS} id; a behaviour it could not attempt
  * comes back `blocked` with a reason, never absent.
  */
-function createDriver(spec) {
+// Injection seam for the vendor executable resolution: the real defaults walk PATH, so ordinary
+// certification runs are unchanged — but a test can hand in fakes WITHOUT touching PATH, which is
+// what keeps the ordinary suite off the operator's real vendor binaries even when one is installed.
+function createDriver(
+  spec,
+  {
+    resolveVendorBinary = resolveBinary,
+    whichVendorBinary = whichSync,
+    preflightTimeoutMs = 60_000,
+  } = {},
+) {
   const blocked = (ids, reason) =>
     Object.fromEntries(ids.map((id) => [id, { status: 'blocked', reason }]));
   const behaviourIds = (phase) =>
@@ -450,14 +614,14 @@ function createDriver(spec) {
       }
       if (!spec.headless) {
         return {
-          vendorBinaryResolved: resolveBinary(spec),
+          vendorBinaryResolved: resolveVendorBinary(spec),
           vendorAuthenticated: {
             status: 'blocked',
             reason: `the ${spec.displayName} vendor runtime has no supported non-interactive entrypoint, so sign-in cannot be exercised`,
           },
         };
       }
-      const resolved = resolveBinary(spec);
+      const resolved = resolveVendorBinary(spec);
       if (resolved.status !== 'pass') {
         return {
           vendorBinaryResolved: resolved,
@@ -468,10 +632,14 @@ function createDriver(spec) {
         };
       }
       ctx.vendorBin = resolved.binary;
+      ctx.vendorResolvedPaths = spec.binaries
+        .map((name) => whichVendorBinary(name))
+        .filter(Boolean);
       ctx.vendorVersion = resolved.version;
-      const auth = spawnSync(resolved.binary, spec.authProbe.args, {
+      const authLaunch = launchableCommand(resolved.binary, spec.authProbe.args);
+      const auth = spawnSync(authLaunch.command, authLaunch.args, {
         encoding: 'utf8',
-        timeout: 60_000,
+        timeout: preflightTimeoutMs,
         env: ctx.clientEnv,
         cwd: ctx.project,
       });
@@ -540,20 +708,60 @@ function createDriver(spec) {
         };
         return results;
       }
+      // The recorder is wired into the SAME config the installer wrote, so the legs below are judged
+      // from what actually crossed the wire, not from the words the client printed. Without it the
+      // run has no protocol evidence at all and every protocol-dependent leg refuses — the honest
+      // outcome for a cell whose wire was never tapped, and the one a word-matching client cannot
+      // talk its way past.
+      try {
+        const originalCommand = wireProtocolRecorder(ctx, spec);
+        ctx.serverCommandSha256 = serverCommandSha256(
+          originalCommand.server,
+          originalCommand.serverArgs,
+        );
+        ctx.ownerConfigSha256 = sha256File(ctx.configPath);
+        // The foreign principal's config is derived from the FINAL owner bytes: same journal,
+        // repository and candidate, a different authenticated principal, individually hashed.
+        ctx.foreignConfig = buildForeignConfig(ctx, spec, readFileSync(ctx.configPath, 'utf8'));
+        ctx.foreignConfigSha256 = sha256(ctx.foreignConfig);
+      } catch (error) {
+        results.configTargetsInstalledCandidate = {
+          status: 'fail',
+          reason: `the generated config could not be wired with the protocol recorder: ${sanitizeOutput(error?.message ?? String(error))}`,
+        };
+        return results;
+      }
       const final = readFileSync(ctx.configPath, 'utf8');
-      const pointsAtCandidate = /"command"\s*:\s*"/.test(final)
-        ? new RegExp(`"command"\\s*:\\s*"${escapeRegExp(ctx.cribBin)}"`).test(final)
-        : new RegExp(`command\\s*=\\s*"${escapeRegExp(ctx.cribBin)}"`).test(final);
-      results.configTargetsInstalledCandidate = pointsAtCandidate
-        ? { status: 'pass' }
-        : {
-            status: 'fail',
-            reason: `the generated config does not launch the installed candidate at ${ctx.cribBin}`,
-          };
-      ctx.log(
-        `\n# the final ${spec.configRelPath.join('/')} (isolating env applied by the operator)`,
+      // The rewired config launches the recorder with the candidate as its payload, so "points at
+      // the candidate" now means the candidate appears as the recorder's --server argument (or, on a
+      // config this driver failed to rewire, as the direct command — either way the bytes must
+      // name the installed candidate).
+      const candidateQuoted = final.includes(`"${ctx.cribBin}"`);
+      const throughRecorder = final.includes('"--server"');
+      const directCommand = new RegExp(`command"?\\s*[=:]\\s*"${escapeRegExp(ctx.cribBin)}"`).test(
+        final,
       );
-      ctx.log(sanitizeOutput(readFileSync(ctx.configPath, 'utf8')));
+      results.configTargetsInstalledCandidate =
+        candidateQuoted && (throughRecorder || directCommand)
+          ? { status: 'pass' }
+          : {
+              status: 'fail',
+              reason: `the generated config does not launch the installed candidate at ${ctx.cribBin}`,
+            };
+      ctx.log(
+        `\n# the final ${spec.configRelPath.join('/')} (isolating env and protocol recorder applied by the operator)`,
+      );
+      // The wired config is archived in the transcript, and it now carries the recorder's --markers
+      // argument and the isolation env's principal — raw fixture tokens and principal IDs that must
+      // never survive into evidence, so they are redacted with the same list every turn uses.
+      ctx.log(
+        sanitizeOutput(readFileSync(ctx.configPath, 'utf8'), [
+          ctx.tag,
+          ctx.foreignMarker,
+          ctx.ownerPrincipal,
+          ctx.foreignPrincipal,
+        ]),
+      );
       return results;
     },
 
@@ -575,29 +783,58 @@ function createDriver(spec) {
         `Use the knowledge-crib MCP server. Call its query tool with q="certifiedSymbol" and reply with ONLY the id of the first hit.`,
       );
       const handshakeText = `${handshake.stdout ?? ''}${handshake.stderr ?? ''}`;
-      const handshakeOk = handshake.status === 0 && /certifiedSymbol/.test(handshakeText);
+      // CORRELATED EVIDENCE, not word-matching: the client must have printed the queried id AND the
+      // owner's recording must show a COMPLETED query operation whose request carried the fixture
+      // marker and whose result carried it back. A client that echoes the vocabulary certifies
+      // nothing here — the printed word without the protocol operation is exactly the false
+      // positive this leg exists to refuse.
+      const handshakeEvidence = protocolMatch(ctx, 'owner', {
+        method: 'tools/call',
+        tool: 'query',
+        requestMarker: 'certifiedSymbol',
+        resultMarker: 'certifiedSymbol',
+      });
+      const handshakeWords = handshake.status === 0 && /certifiedSymbol/.test(handshakeText);
+      const handshakeOk = handshakeWords && handshakeEvidence;
 
       const record = ctx.turn(
         'invoke: record a uniquely tagged authorized intake',
         `Use the knowledge-crib MCP memory tool with op="intake_create", original="${ctx.tag}", summary="vendor certification run ${ctx.tag}", outcome="prove a ${spec.displayName} session records and later recovers an authorized intake", phase="executing", actor="${spec.id}-certification". Then reply with ONLY the returned intake id.`,
       );
+      // The record operation is identified by its REQUEST carrying the run tag — the handoff turns
+      // below carry no tag in their params, so this uniquely names the intake_create among every
+      // other memory call in the recording — and by its RESULT returning an intake id.
+      const recordEvidence = protocolMatch(ctx, 'owner', {
+        method: 'tools/call',
+        tool: 'memory',
+        requestMarker: ctx.tag,
+        resultMarker: 'intake:',
+      });
+      const recordWords = record.status === 0 && /intake:/.test(`${record.stdout ?? ''}`);
+      const recordOk = recordWords && recordEvidence;
       return {
         handshakeThroughVendorClient: handshakeOk
-          ? { status: 'pass' }
+          ? { status: 'pass', protocol: [handshakeEvidence] }
           : failed(
               handshake,
-              `handshake exit ${handshake.status}; the tool result did not return the queried id`,
+              handshakeWords
+                ? 'the client echoed the queried id, but the protocol recording shows no completed query operation carrying it — a printed word is not a handshake'
+                : `handshake exit ${handshake.status}; the tool result did not return the queried id`,
             ),
         // One turn proves both: the handshake leg is "the server was reached", the tool-use leg is
         // "its result came back to the client". A run that reached the server but got nothing back
         // fails here and not above, which is the distinction v1 could not express.
         toolInvocationThroughVendorClient: handshakeOk
-          ? { status: 'pass' }
+          ? { status: 'pass', protocol: [handshakeEvidence] }
           : failed(handshake, 'no tool result returned to the vendor client'),
-        authorizedRecordThroughVendorClient:
-          record.status === 0 && /intake:/.test(`${record.stdout ?? ''}`)
-            ? { status: 'pass' }
-            : failed(record, `record exit ${record.status}; no intake id was returned`),
+        authorizedRecordThroughVendorClient: recordOk
+          ? { status: 'pass', protocol: [recordEvidence] }
+          : failed(
+              record,
+              recordWords
+                ? 'the client printed an intake id, but the protocol recording shows no completed memory operation carrying the run tag — a printed id is not a record'
+                : `record exit ${record.status}; no intake id was returned`,
+            ),
       };
     },
 
@@ -605,48 +842,92 @@ function createDriver(spec) {
      * interrupt — kill the VENDOR CLIENT process, having first proved it IS the vendor client.
      *
      * This is the leg that cannot be faked. The client spawns an MCP server child; killing the child
-     * would leave the client running and prove nothing about interruption, so the harness reads the
-     * target's command line while it is alive, refuses to call it an interruption unless that
-     * command IS the vendor binary, and only then kills the process group.
+     * would leave the client running and prove nothing about interruption. The harness snapshots the
+     * target's process tree while it is alive — full argv, not a basename, because a Node-shebang CLI
+     * shows as `node /path/to/cli` and only the full path names it — refuses to call it an
+     * interruption unless some node of the tree IS the resolved vendor executable, and only then
+     * kills the process group and CONFIRMS the process actually terminated. A signalled-but-alive
+     * target certifies nothing.
      */
     async interrupt(ctx) {
       if (ctx.blockedBecause) {
         return blocked(['vendorProcessInterrupted'], ctx.blockedBecause);
       }
+      const interruptPrompt = `Call the knowledge-crib status tool with op="health" and then wait.`;
       const launched = await ctx.launchDetached(
         'interrupt: launch the vendor client, then kill IT mid-session',
-        `Call the knowledge-crib status tool with op="health" and then wait.`,
+        interruptPrompt,
       );
       if (!launched.ok) {
         return { vendorProcessInterrupted: { status: 'fail', reason: launched.reason } };
       }
-      // Read the identity BEFORE the kill: afterwards the process is gone and the claim
-      // "the vendor client was interrupted" becomes unfalsifiable.
-      const observed = processCommand(launched.pid);
-      ctx.log(`# interrupt target pid ${launched.pid} command ${observed ?? '<unreadable>'}`);
-      const observedBase = observed ? basename(observed).replace(/\.(exe|cmd|bat)$/i, '') : '';
-      const isVendor = spec.binaries.some(
-        (name) => observedBase === name.replace(/\.(exe|cmd|bat)$/i, ''),
+      // Snapshot identity BEFORE the kill: afterwards the process is gone and the claim
+      // "the vendor client was interrupted" becomes unfalsifiable. The tree (not just the target
+      // pid) is what exposes the MCP-child-only masquerade: a process whose own image no longer
+      // names the vendor path shows up as a tree with no matching node.
+      const targetCommand = processCommand(launched.pid);
+      const tree = processTree(launched.pid);
+      const vendorPaths = ctx.vendorResolvedPaths ?? [];
+      // Command lines carry the PROMPT as an argument; the transcript archives them, so the prompt is
+      // redacted out of anything logged or recorded — same rule as every turn.
+      const redactPrompt = (command) =>
+        command
+          ? command.split(interruptPrompt).join(`<prompt:redacted ${sha256(interruptPrompt)}>`)
+          : command;
+      const sanitizeTreeLine = (command) =>
+        sanitizeOutput(redactPrompt(command), [
+          ctx.tag,
+          ctx.foreignMarker,
+          ctx.ownerPrincipal,
+          ctx.foreignPrincipal,
+        ]) || null;
+      for (const node of tree) {
+        const line = node.command ? sanitizeTreeLine(node.command) : '<unreadable>';
+        ctx.log(`# interrupt tree pid ${node.pid} command ${line}`);
+      }
+      const matchingNode = tree.find((node) =>
+        vendorPaths.some((path) => commandLineMatches(node.command, path)),
       );
-      const killed = killProcessTree(launched.pid);
+      const matchedPath = matchingNode
+        ? vendorPaths.find((path) => commandLineMatches(matchingNode.command, path))
+        : null;
+      const killed = ctx.processControl.killTree(launched.pid);
+      // Settle first: reaping the detached child clears the zombie before the liveness poll, so
+      // processAlive cannot false-negative on a dead-but-unreaped pid.
       await launched.settle();
+      const terminated = await ctx.processControl.confirm(launched.pid, ctx.terminationTimeoutMs);
       ctx.interruptEvidence = {
         targetPid: launched.pid,
-        targetCommand: observed ?? null,
+        targetCommand: sanitizeTreeLine(targetCommand),
+        tree: tree.map((node) => ({ pid: node.pid, command: sanitizeTreeLine(node.command) })),
         killed,
+        terminated,
+        matchedPath,
+        operationsAtInterrupt: operationCount(protocolRead(ctx, 'owner')),
       };
-      if (!isVendor) {
+      if (!matchingNode) {
         return {
           vendorProcessInterrupted: {
             status: 'fail',
-            reason: `the killed process was ${JSON.stringify(observedBase || null)}, not the ${spec.displayName} client — killing an MCP subprocess is not interrupting the vendor client`,
+            reason: `the killed process tree showed no ${spec.displayName} client (resolved executables: ${vendorPaths.join(', ') || 'unresolved'}) — killing an MCP subprocess is not interrupting the vendor client`,
+          },
+        };
+      }
+      if (!killed) {
+        return {
+          vendorProcessInterrupted: {
+            status: 'fail',
+            reason: `could not signal the vendor process ${launched.pid}`,
           },
         };
       }
       return {
-        vendorProcessInterrupted: killed
+        vendorProcessInterrupted: terminated
           ? { status: 'pass' }
-          : { status: 'fail', reason: `could not signal the vendor process ${launched.pid}` },
+          : {
+              status: 'fail',
+              reason: `signalled the vendor process ${launched.pid} but it did not terminate within ${ctx.terminationTimeoutMs}ms — an unconfirmed kill is not an interruption`,
+            },
       };
     },
 
@@ -666,12 +947,24 @@ function createDriver(spec) {
           ctx.blockedBecause,
         );
       }
+      // The protocol floor: every operation recorded BEFORE this point belongs to the pre-restart
+      // sessions. The restart leg must find an operation that happened AFTER the interruption — a
+      // recording accumulates across a cell's sessions, and without a floor the record turn that
+      // preceded the kill would satisfy the post-restart legs.
+      const floor = operationCount(protocolRead(ctx, 'owner'));
       const restarted = ctx.turn(
         'restartAndResume: fresh process recovers the authorized session',
         `Use the knowledge-crib MCP memory tool with op="handoff". Reply with ONLY the word FOUND if any intake's original field contains "${ctx.tag}", otherwise reply MISSING.`,
       );
       const restartedText = `${restarted.stdout ?? ''}`;
       const restartedOk = restarted.status === 0;
+      // A restart is a DIFFERENT process, and the fresh spawn's pid is the proof: a client that
+      // reappears under the pid the interruption just killed is the same process, not a restart, and
+      // no amount of correct answers inside it can certify this leg. (The interrupt phase either ran
+      // and recorded a target pid, or the interruption leg already failed — no target to compare
+      // against means the distinctness claim is vacuously true and the other checks carry the leg.)
+      const distinctProcess =
+        restarted.pid !== undefined && restarted.pid !== ctx.interruptEvidence?.targetPid;
       const found = /FOUND/.test(restartedText);
       // "The client restarted" is NOT "a process exited 0". A stub that prints nothing and returns 0
       // would otherwise certify this leg — the same error `invoke` refuses when it reads a handshake
@@ -679,43 +972,111 @@ function createDriver(spec) {
       // either word proves a live session, and which word it is decides the resume leg below. That
       // distinction is the whole reason restart and resume are two legs and not one.
       const answered = /\b(FOUND|MISSING)\b/.test(restartedText);
+      // And the answer has to have CROSSED THE WIRE: a completed memory operation after the floor,
+      // whose result carried the tag back for the resume leg. The words alone certify nothing.
+      const restartEvidence = protocolMatch(ctx, 'owner', {
+        method: 'tools/call',
+        tool: 'memory',
+        fromIndex: floor,
+      });
+      const resumeEvidence = protocolMatch(ctx, 'owner', {
+        method: 'tools/call',
+        tool: 'memory',
+        fromIndex: floor,
+        resultMarker: ctx.tag,
+      });
+      const restartedWords = restartedOk && answered;
+      const restartOk = restartedWords && distinctProcess && restartEvidence;
+      const resumeOk = found && resumeEvidence;
 
-      const plant = ctx.turn(
+      // The floor for the exclusion check: captured AFTER the restarted turn and BEFORE the
+      // exclusion turn, so the owner operation that must NOT carry the foreign marker is the
+      // exclusion handoff itself — never the earlier turns, whose results predate the plant.
+      const ownerExclusionFloor = operationCount(protocolRead(ctx, 'owner'));
+
+      // The foreign principal runs from the SAME config path, its bytes swapped in place: the same
+      // journal, repository and candidate as the owner, a different authenticated principal, its
+      // traffic attributed to its own recording. Swapping the bytes at the path the client already
+      // discovers — rather than pointing it at a second path with a flag only some clients have —
+      // is what makes "the vendor-specific configuration mechanism" true for every driver.
+      const plant = ctx.foreignTurn(
         "restartAndResume: plant a foreign principal's durable work and confirm it as that principal",
         `Use the knowledge-crib MCP memory tool twice. First with op="intake_create", original="${ctx.foreignMarker}", summary="foreign principal work ${ctx.foreignMarker}", outcome="must never appear in another principal's session", phase="executing", actor="other-principal". Then with op="handoff". Reply with ONLY the word PRESENT if the handoff shows an intake whose original or summary contains "${ctx.foreignMarker}", otherwise ABSENT.`,
-        ctx.foreignConfigPath,
       );
-      const planted = plant.status === 0 && /PRESENT/.test(`${plant.stdout ?? ''}`);
+      // Planted means BOTH the foreign principal's recording shows the intake_create (its REQUEST
+      // carried the foreign marker) AND the confirm handoff's RESULT carried it back to that
+      // principal. Absence of the marker on the owner's side proves nothing unless the foreign
+      // side actually created and retrieved its own work — an absent record and a hidden one look
+      // identical from the owner's side, and only one of them is the boundary holding.
+      const createEvidence = protocolMatch(ctx, 'foreign', {
+        method: 'tools/call',
+        tool: 'memory',
+        requestMarker: ctx.foreignMarker,
+      });
+      const confirmEvidence = createEvidence
+        ? protocolMatch(ctx, 'foreign', {
+            method: 'tools/call',
+            tool: 'memory',
+            fromIndex: createEvidence.operation + 1,
+            resultMarker: ctx.foreignMarker,
+          })
+        : null;
+      const plantedWords = plant.status === 0 && /PRESENT/.test(`${plant.stdout ?? ''}`);
+      const planted = plantedWords && createEvidence && confirmEvidence;
 
       const foreign = ctx.turn(
         'restartAndResume: the owner must not see it',
         `Use the knowledge-crib MCP memory tool with op="handoff". Reply with ONLY the word LEAKED if any intake's original or summary contains "${ctx.foreignMarker}", otherwise reply CLEAN.`,
       );
       const leaked = /LEAKED/.test(`${foreign.stdout ?? ''}`);
-      ctx.log(`# foreign principal: planted=${planted} leaked=${leaked}`);
+      // The owner's completed handoff after the plant floor, whose result did NOT carry the foreign
+      // marker. This is the operation the exclusion claim is actually made about — "the owner
+      // printed CLEAN" is a word, and only the protocol shows the owner really asked.
+      const exclusionEvidence = protocolMatch(ctx, 'owner', {
+        method: 'tools/call',
+        tool: 'memory',
+        fromIndex: ownerExclusionFloor,
+        absentResultMarker: ctx.foreignMarker,
+      });
+      const exclusionWords = !leaked && foreign.status === 0;
+      const exclusionOk = planted && exclusionWords && exclusionEvidence;
+      ctx.log(
+        `# foreign principal: planted=${planted} leaked=${leaked} protocolEvidence=${Boolean(exclusionEvidence)}`,
+      );
 
       return {
-        vendorProcessRestarted:
-          restartedOk && answered
-            ? { status: 'pass' }
-            : failed(
-                restarted,
-                restartedOk
+        vendorProcessRestarted: restartOk
+          ? { status: 'pass', protocol: [restartEvidence] }
+          : failed(
+              restarted,
+              restartedWords
+                ? distinctProcess
+                  ? 'the restarted client answered, but the protocol recording shows no completed memory operation after the interruption — a printed answer is not a restarted session'
+                  : `the restarted client ran as pid ${restarted.pid}, the same process the interruption killed (${ctx.interruptEvidence?.targetPid}) — a restart must be a fresh process`
+                : restartedOk
                   ? 'the restarted client exited 0 but returned no answer to the handoff query, so no session was proven'
                   : `the restarted client exited ${restarted.status}`,
-              ),
-        authorizedSessionResumed: found
-          ? { status: 'pass' }
-          : failed(restarted, 'the restarted client did not recover the tagged intake'),
-        foreignPrincipalExclusion:
-          planted && !leaked && foreign.status === 0
-            ? { status: 'pass' }
-            : {
-                status: 'fail',
-                reason: planted
-                  ? `the owner's client reported the foreign marker (leaked=${leaked}, exit ${foreign.status})`
+            ),
+        authorizedSessionResumed: resumeOk
+          ? { status: 'pass', protocol: [resumeEvidence] }
+          : failed(
+              restarted,
+              found
+                ? 'the restarted client reported FOUND, but the protocol recording shows no completed handoff whose result carried the run tag — a printed word is not a recovered session'
+                : 'the restarted client did not recover the tagged intake',
+            ),
+        foreignPrincipalExclusion: exclusionOk
+          ? { status: 'pass', protocol: [createEvidence, confirmEvidence, exclusionEvidence] }
+          : {
+              status: 'fail',
+              reason: planted
+                ? exclusionWords
+                  ? 'the owner reported CLEAN, but the protocol recording shows no completed handoff for the owner after the plant — a printed word is not an exclusion proof'
+                  : `the owner's client reported the foreign marker (leaked=${leaked}, exit ${foreign.status})`
+                : plantedWords
+                  ? 'the foreign client reported PRESENT, but its own recording shows no completed create-and-retrieve pair carrying the foreign marker — the exclusion was never exercised on the wire'
                   : 'the foreign intake could not be planted and confirmed, so the exclusion was never exercised',
-              },
+            },
       };
     },
 
@@ -753,18 +1114,30 @@ function failed(result, because) {
   };
 }
 
-/** Resolve a vendor executable by trying each declared name, then reading its version. */
-function resolveBinary(spec) {
+/**
+ * Resolve a vendor executable by trying each declared name, then reading its version. The name is
+ * resolved to an ABSOLUTE PATH before anything is spawned: the spawn itself then goes through the
+ * platform launch rules (Windows `.cmd` shims need cmd.exe), and the recorded `binary`/`resolvedPath`
+ * are what the interruption leg later matches process command lines against — a bare `claude` could
+ * never be matched against a `node …/bin/claude` argv, but the full path can.
+ */
+export function resolveBinary(spec) {
   for (const name of spec.binaries) {
-    const probe = spawnSync(name, spec.versionArgs, { encoding: 'utf8', timeout: 60_000 });
-    if (probe.error && probe.error.code === 'ENOENT') continue;
+    const resolvedPath = whichSync(name);
+    if (!resolvedPath) continue;
+    const versionLaunch = launchableCommand(resolvedPath, spec.versionArgs);
+    const probe = spawnSync(versionLaunch.command, versionLaunch.args, {
+      encoding: 'utf8',
+      timeout: 60_000,
+    });
+    if (probe.error) continue;
     const text = `${probe.stdout ?? ''}${probe.stderr ?? ''}`.trim();
     // `code --version` prints the version on the FIRST line and the commit on the next; Claude Code,
     // Cursor and the rest print one token. Taking the first version-shaped token covers both without
     // a per-client parser.
     const version = /v?\d+\.\d+\.\d+(?:[-.\w]*)?/.exec(text)?.[0];
     if (!version) continue;
-    return { status: 'pass', binary: name, version, resolvedPath: whichSync(name) ?? name };
+    return { status: 'pass', binary: resolvedPath, version, resolvedPath };
   }
   return {
     status: 'blocked',
@@ -772,13 +1145,78 @@ function resolveBinary(spec) {
   };
 }
 
-function whichSync(name) {
-  const cmd = process.platform === 'win32' ? 'where' : 'which';
-  try {
-    return execFileSync(cmd, [name], { encoding: 'utf8' }).split('\n')[0].trim() || undefined;
-  } catch {
-    return undefined;
+/**
+ * The file names a bare command can resolve to on Windows, in PATHEXT order. Pure (platform and
+ * PATHEXT are parameters) so tests can exercise Windows resolution rules on any host. A name that
+ * already carries a path separator is a path, not a PATH search, and an extension already listed in
+ * PATHEXT needs no candidates appended.
+ */
+export function executableCandidates(
+  name,
+  platform = process.platform,
+  pathExt = process.env.PATHEXT,
+) {
+  if (name.includes('/') || name.includes('\\')) return [name];
+  if (platform !== 'win32') return [name];
+  const extensions = (pathExt ?? '.COM;.EXE;.BAT;.CMD;.VBS;.VBE;.JS;.WSF;.WSH')
+    .split(';')
+    .map((extension) => extension.trim().toLowerCase())
+    .filter((extension) => extension.length > 0);
+  const lowered = name.toLowerCase();
+  if (extensions.some((extension) => lowered.endsWith(extension))) return [name];
+  return [name, ...extensions.map((extension) => name + extension)];
+}
+
+/**
+ * Resolve a command to an absolute path by walking PATH with Node APIs — no `which`/`where`
+ * subprocess. Spaces and Unicode in directory names are handled naturally because each candidate is
+ * constructed as one path string and probed with access(), never split or re-parsed by a shell. On
+ * Windows X_OK is not meaningful (execute permission is a file-content decision, not an ACL one), so
+ * existence is the check; on POSIX the executable bit is required.
+ */
+export function whichSync(name) {
+  const pathEnv = process.env.PATH ?? '';
+  const mode = process.platform === 'win32' ? constants.F_OK : constants.X_OK;
+  for (const dir of pathEnv.split(process.platform === 'win32' ? ';' : ':')) {
+    if (dir.length === 0) continue;
+    for (const candidate of executableCandidates(name)) {
+      const full = resolve(dir, candidate);
+      try {
+        accessSync(full, mode);
+        return full;
+      } catch {
+        // Not present or not executable in this directory — keep walking PATH.
+      }
+    }
   }
+  return undefined;
+}
+
+/**
+ * How to spawn a command safely on this platform. Node cannot execute Windows `.cmd`/`.bat`
+ * launchers directly (CVE-2024-27964), and `shell: true` would re-parse every argument into an
+ * injection surface — so a launcher is invoked through `cmd.exe /d /s /c` with each argument passed
+ * as its OWN argv element. Everything else launches as itself. The platform is a parameter so the
+ * Windows rules are unit-testable on any host.
+ */
+export function launchableCommand(command, args = [], platform = process.platform) {
+  if (platform === 'win32' && /\.(cmd|bat)$/i.test(command)) {
+    return { command: 'cmd.exe', args: ['/d', '/s', '/c', command, ...args] };
+  }
+  return { command, args };
+}
+
+/**
+ * Resolve a command for spawning: a PATH entry becomes an absolute path (which is also what keeps
+ * the vendor process identifiable later — the command line of a Node-launched CLI names the script,
+ * and only the full path matches it), then both are mapped through the platform-safe launch rules.
+ * A bare name that does not resolve falls back to itself so the spawn reports the honest ENOENT.
+ */
+function resolveLaunchable(command, args = []) {
+  if (command.includes('/') || command.includes('\\')) {
+    return launchableCommand(command, args);
+  }
+  return launchableCommand(whichSync(command) ?? command, args);
 }
 
 /**
@@ -789,7 +1227,14 @@ function whichSync(name) {
  * own sub-table rather than a JSON key, which is why this branches on format instead of mutating one
  * shape.
  */
-function applyIsolationEnv(ctx, spec) {
+/**
+ * The operator's half of the config contract: the shipped installer writes command+args only, so
+ * the isolating env (which stores the candidate writes to, and the principal it answers for) is
+ * added to the config AFTER the installer wrote it — disclosed, never hidden, because the receipt
+ * hashes the FINAL file. Exported because the desktop scenario engine performs the same step on the
+ * config its installer path generates before wiring the recorder into it.
+ */
+export function applyIsolationEnv(ctx, spec) {
   const env = {
     KCRIB_MEMORY_DIR: ctx.cribMemoryDir,
     KCRIB_REGISTRY_DIR: ctx.cribRegistryDir,
@@ -812,15 +1257,240 @@ function applyIsolationEnv(ctx, spec) {
 }
 
 /**
+ * Insert the transparent protocol recorder into the config the installer just wrote.
+ *
+ * The config's command becomes `node client-protocol-recorder.mjs --server <original command>
+ * --record <owner recording> --principal <owner principal> --markers … -- <original args>`, so the
+ * recorder forwards every byte unchanged between the vendor client and the candidate while tapping
+ * the protocol. Returns the ORIGINAL command/args — the identity of the server both configurations
+ * launch, which the receipt binds as a digest. Throws on any config shape this driver cannot
+ * rewire, so the failure lands in a named failing leg instead of a run with silent no-evidence.
+ *
+ * Exported for the tests: the TOML splice and the JSON rewrite are the two shapes the shipped
+ * installer writes, and each is checkable against a fixture without driving a whole cell.
+ */
+export function wireProtocolRecorder(ctx, spec) {
+  const markersArg = ctx.protocolMarkers.join(',');
+  const recorderArgs = (record, principal, original) => [
+    ctx.recorderPath,
+    '--server',
+    original.server,
+    '--record',
+    record,
+    '--principal',
+    principal,
+    '--markers',
+    markersArg,
+    '--',
+    ...original.serverArgs,
+  ];
+  const raw = readFileSync(ctx.configPath, 'utf8');
+  if (spec.configFormat === 'toml') {
+    const TOML_BEGIN = '# >>> knowledge-crib managed >>>';
+    const TOML_END = '# <<< knowledge-crib managed <<<';
+    const begin = raw.indexOf(TOML_BEGIN);
+    const end = raw.indexOf(TOML_END);
+    if (begin === -1 || end === -1 || end < begin) {
+      throw new Error('the managed TOML block the installer writes is missing or unreadable');
+    }
+    const block = raw.slice(begin, end + TOML_END.length);
+    const commandMatch = /command\s*=\s*("(?:[^"\\]|\\.)*")/.exec(block);
+    const argsMatch = /\nargs\s*=\s*\[(.*)\]/.exec(block);
+    if (!commandMatch || !argsMatch) {
+      throw new Error('the managed TOML block declares no command/args to intercept');
+    }
+    // The installer writes every string as a TOML basic string escaped by the same rules as JSON
+    // (packages/cli/src/mcp-install.ts), so the literals parse as JSON here — win32 backslashes
+    // included. Any other escaping is a config this driver must refuse rather than half-read.
+    const original = {
+      server: JSON.parse(commandMatch[1]),
+      serverArgs: JSON.parse(`[${argsMatch[1]}]`),
+    };
+    const rewired = [
+      TOML_BEGIN,
+      '[mcp_servers.knowledge-crib]',
+      `command = ${JSON.stringify(process.execPath)}`,
+      `args = [${recorderArgs(ctx.ownerRecordingPath, ctx.ownerPrincipal, original)
+        .map(JSON.stringify)
+        .join(', ')}]`,
+      'startup_timeout_sec = 20',
+      'tool_timeout_sec = 60',
+      TOML_END,
+    ].join('\n');
+    // Spliced between the markers, so whatever the env step appended after TOML_END survives.
+    writeFileSync(
+      ctx.configPath,
+      `${raw.slice(0, begin)}${rewired}${raw.slice(end + TOML_END.length)}`,
+    );
+    return original;
+  }
+  const parsed = JSON.parse(raw);
+  const root = spec.configFormat === 'json-servers' ? 'servers' : 'mcpServers';
+  const server = parsed?.[root]?.['knowledge-crib'];
+  if (!server) throw new Error(`the installer wrote no ${root}['knowledge-crib'] entry`);
+  const original = { server: server.command, serverArgs: [...(server.args ?? [])] };
+  server.command = process.execPath;
+  server.args = recorderArgs(ctx.ownerRecordingPath, ctx.ownerPrincipal, original);
+  writeFileSync(ctx.configPath, `${JSON.stringify(parsed, null, 2)}\n`);
+  return original;
+}
+
+/**
+ * The foreign principal's config, derived from the FINAL owner bytes: the same isolating env values
+ * for journal and repository, a different authenticated principal, its traffic attributed to its
+ * own recording. TOML is rewritten textually — every value the harness and installer wrote into it
+ * is a JSON-escaped basic string, so the exact literal appears and an exact swap cannot corrupt
+ * anything around it. JSON is rewritten structurally.
+ *
+ * Exported for the tests, like `wireProtocolRecorder`: the derivation is what makes the foreign
+ * principal the SAME stores and a DIFFERENT identity, and that is checkable against fixtures.
+ */
+export function buildForeignConfig(ctx, spec, finalOwnerConfig) {
+  if (spec.configFormat === 'toml') {
+    let out = finalOwnerConfig;
+    for (const [from, to] of [
+      [JSON.stringify(ctx.ownerPrincipal), JSON.stringify(ctx.foreignPrincipal)],
+      [JSON.stringify(ctx.ownerRecordingPath), JSON.stringify(ctx.foreignRecordingPath)],
+    ]) {
+      if (!out.includes(from)) {
+        throw new Error(
+          `the final owner config does not carry the value to re-principal (${from})`,
+        );
+      }
+      out = out.split(from).join(to);
+    }
+    return out;
+  }
+  const parsed = JSON.parse(finalOwnerConfig);
+  const root = spec.configFormat === 'json-servers' ? 'servers' : 'mcpServers';
+  const server = parsed?.[root]?.['knowledge-crib'];
+  if (!server) {
+    throw new Error(
+      `the final owner config carries no ${root}['knowledge-crib'] entry to re-principal`,
+    );
+  }
+  server.env = { ...(server.env ?? {}), KCRIB_PRINCIPAL_ID: ctx.foreignPrincipal };
+  server.args = (server.args ?? []).map((arg) =>
+    arg === ctx.ownerRecordingPath
+      ? ctx.foreignRecordingPath
+      : arg === ctx.ownerPrincipal
+        ? ctx.foreignPrincipal
+        : arg,
+  );
+  return `${JSON.stringify(parsed, null, 2)}\n`;
+}
+
+/**
+ * The parsed recording for one principal, or null when it is absent or fails validation. A missing
+ * recording is a FINDING ("no protocol traffic was ever tapped"), not an empty success — every
+ * protocol-dependent leg treats null as no evidence and refuses.
+ */
+function protocolRead(ctx, which) {
+  const path = which === 'foreign' ? ctx.foreignRecordingPath : ctx.ownerRecordingPath;
+  if (!existsSync(path)) return null;
+  try {
+    const recording = JSON.parse(readFileSync(path, 'utf8'));
+    return recordingProblems(recording).length === 0 ? recording : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Completed operations currently visible in a recording FILE — the observable MCP session activity.
+ * The recorder flushes atomically after every completed operation (initialize included), so a count
+ * above zero means a launched client really opened a session; zero means the process has not spoken
+ * to the server yet, or never will. Any read failure is zero, because a poll must never crash the
+ * leg it is gating.
+ */
+function completedOperationCount(recordingPath) {
+  try {
+    if (!existsSync(recordingPath)) return 0;
+    const recording = JSON.parse(readFileSync(recordingPath, 'utf8'));
+    if (recordingProblems(recording).length > 0) return 0;
+    return operationCount(recording);
+  } catch {
+    return 0;
+  }
+}
+
+/**
+ * The correlated-evidence query: a COMPLETED operation in one principal's recording matching the
+ * criteria, returned as a receipt-shaped reference (which recording, which operation, which
+ * request id) or null. Null is a refusal, never a pass.
+ */
+function protocolMatch(ctx, which, criteria) {
+  const recording = protocolRead(ctx, which);
+  if (!recording) return null;
+  const found = findCompletedOperation(recording, criteria);
+  return found ? { recording: which, operation: found.index, request: found.operation.id } : null;
+}
+
+/**
+ * Copy one principal's recording into the receipt's outDir and describe it, or null when it does not
+ * exist. Null is recorded rather than omitted: "no protocol traffic was ever tapped" is a fact the
+ * decision needs to read, and the recordings themselves are archived artifacts the validator
+ * re-hashes — a claim about the wire that the wire's own file can confirm or refute.
+ */
+function archivedRecording(source, outDir, name) {
+  try {
+    if (!source || !existsSync(source)) return null;
+    cpSync(source, join(outDir, name));
+    return { path: name, sha256: sha256File(join(outDir, name)) };
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Certify one cell end to end and return the receipt object.
  *
  * Exported so a test can drive the whole harness against a fake vendor binary — the alternative is
  * that the only way to exercise this code is to own seven signed-in vendor accounts.
  */
 export async function certifyCell(options) {
-  const { spec, client, packagePath, candidateCommit, outDir, keep = false } = options;
+  const {
+    spec,
+    client,
+    packagePath,
+    candidateCommit,
+    outDir,
+    keep = false,
+    // How long to wait for OBSERVED session activity after a detached launch, and how long to wait
+    // for the interrupted process to be confirmed dead. Both are options (not constants) so the
+    // fixture tests can run the same code paths on seconds instead of minutes.
+    activityTimeoutMs = 120_000,
+    terminationTimeoutMs = 10_000,
+    // Resolution seam, threaded to createDriver's preflight: tests pass fakes here so the ordinary
+    // suite exercises preflight against fixtures WITHOUT mutating PATH and without ever reaching a
+    // real vendor binary that happens to be installed on the host. An injected whichVendorBinary
+    // must resolve the SAME path the injected resolveVendorBinary reports, or the interrupt leg's
+    // command-line identity check refuses the launched process.
+    resolveVendorBinary = resolveBinary,
+    whichVendorBinary = whichSync,
+    // The remaining time bounds, for the same reason as the two above: the sign-in preflight probe,
+    // the candidate install and the installed-binary index, and each vendor turn all default to
+    // their production values but remain options so a fixture run can shrink them instead of
+    // waiting minutes for a timeout the test is deliberately walking into.
+    preflightTimeoutMs = 60_000,
+    installTimeoutMs = 600_000,
+    turnTimeoutMs = 300_000,
+    cleanupTimeoutMs = 5_000,
+    // Process-control seam. The teardown and the interrupt leg signal ONLY pids this run
+    // registered, but the kill/confirm calls themselves are host-wide operations — a test must be
+    // able to observe (or refuse) them without a real process tree. The default is the module's own
+    // trio; an injected seam gets every call site: the interrupt leg and the finally-block guard.
+    processControl = {
+      alive: processAlive,
+      killTree: killProcessTree,
+      confirm: confirmTermination,
+    },
+    // Workspace removal seam: the finally block must never let a cleanup failure mask the receipt,
+    // and the only way to TEST that guarantee is to let a run hand in a removal that throws.
+    removeWorkspace = rmSync,
+  } = options;
   const { sha256: policySha256 } = loadLaunchPolicy();
-  const driver = createDriver(spec);
+  const driver = createDriver(spec, { resolveVendorBinary, whichVendorBinary, preflightTimeoutMs });
 
   const workspace = mkdtempSync(join(tmpdir(), `crib-certify-${spec.id}-`));
   const home = join(workspace, 'home');
@@ -837,6 +1507,22 @@ export async function certifyCell(options) {
   const tag = `certify-${createHash('sha256').update(`${candidateCommit}:${Date.now()}:${spec.id}`).digest('hex').slice(0, 16)}`;
   const foreignMarker = `foreign-${tag}`;
   const ownerPrincipal = `principal:${spec.id}-owner`;
+  // The foreign principal is a DIFFERENT authenticated principal over the SAME isolated journal and
+  // repository — the boundary the exclusion leg is actually about. The recordings are per-principal
+  // because traffic must be attributed before anything is redacted, and the markers below are the
+  // synthetic fixture tokens the recorder evaluates over the RAW protocol bytes (pre-redaction) and
+  // archives ONLY as digest-keyed booleans.
+  const foreignPrincipal = `principal:${spec.id}-foreign`;
+  const recorderPath = join(HERE, 'client-protocol-recorder.mjs');
+  const ownerRecordingPath = join(
+    workspace,
+    `${spec.id}-${process.platform}-${process.arch}-owner-recording.json`,
+  );
+  const foreignRecordingPath = join(
+    workspace,
+    `${spec.id}-${process.platform}-${process.arch}-foreign-recording.json`,
+  );
+  const protocolMarkers = [tag, foreignMarker, 'certifiedSymbol', 'intake:'];
 
   // Everything of crib's is isolated; the vendor client runs under the OPERATOR's real profile,
   // because a client with an empty HOME has no credentials and exits in 100ms — an unauthenticated
@@ -874,9 +1560,10 @@ export async function certifyCell(options) {
 
     // ── fixture: install the exact candidate tarball into an isolated prefix ──
     const bundleDir = dirname(packagePath);
+    // Node API, not `ls`: `ls` is not guaranteed on every PATH (and its output format is
+    // locale-dependent), while readdirSync answers in one call whatever the directory is named.
     const deps = existsSync(bundleDir)
-      ? execFileSync('ls', [bundleDir], { encoding: 'utf8' })
-          .split('\n')
+      ? readdirSync(bundleDir)
           .filter((n) => n.endsWith('.tgz') && join(bundleDir, n) !== packagePath)
           .map((n) => join(bundleDir, n))
       : [];
@@ -885,7 +1572,7 @@ export async function certifyCell(options) {
       'fixture: install the candidate into an isolated prefix',
       'npm',
       ['install', '-g', '--prefix', prefix, '--no-audit', '--no-fund', ...deps, packagePath],
-      { env: clientEnv, timeoutMs: 600_000 },
+      { env: clientEnv, timeoutMs: installTimeoutMs },
     );
 
     writeFileSync(
@@ -905,7 +1592,7 @@ export async function certifyCell(options) {
         ['index', project],
         {
           env: clientEnv,
-          timeoutMs: 600_000,
+          timeoutMs: installTimeoutMs,
         },
       );
       run(log, 'fixture: initialize memory', cribBin, ['memory', 'init'], {
@@ -925,8 +1612,21 @@ export async function certifyCell(options) {
       tag,
       foreignMarker,
       ownerPrincipal,
+      foreignPrincipal,
+      recorderPath,
+      ownerRecordingPath,
+      foreignRecordingPath,
+      protocolMarkers,
       cribMemoryDir: join(cribHome, 'memory'),
       cribRegistryDir: cribHome,
+      // Every pid this run detached, registered at spawn: the finally-block teardown kills exactly
+      // these and nothing else.
+      launchedPids: [],
+      activityTimeoutMs,
+      terminationTimeoutMs,
+      installTimeoutMs,
+      turnTimeoutMs,
+      processControl,
       blockedBecause:
         install.status === 0
           ? undefined
@@ -946,18 +1646,19 @@ export async function certifyCell(options) {
           log(
             `\n$ ${ctx.vendorBin} <prompt:redacted ${sha256(prompt)}>   [${label}, config ${configPath ?? ctx.configPath}]`,
           );
-          const result = spawnSync(ctx.vendorBin, finalArgs, {
+          const turnLaunch = launchableCommand(ctx.vendorBin, finalArgs);
+          const result = spawnSync(turnLaunch.command, turnLaunch.args, {
             encoding: 'utf8',
             env: clientEnv,
             cwd: project,
-            timeout: 300_000,
+            timeout: turnTimeoutMs,
             maxBuffer: 32 * 1024 * 1024,
           });
           log(`  exit ${result.status}`);
           const tail = `${result.stdout ?? ''}${result.stderr ?? ''}`.trim();
           if (tail)
             log(
-              `  output (redacted, bounded): ${sanitizeOutput(tail.slice(0, 600), [tag, foreignMarker])}`,
+              `  output (redacted, bounded): ${sanitizeOutput(tail.slice(0, 600), [tag, foreignMarker, ownerPrincipal, foreignPrincipal])}`,
             );
           return result;
         } catch (error) {
@@ -966,23 +1667,71 @@ export async function certifyCell(options) {
           return { status: null, stdout: '', stderr: '', harnessError: message };
         }
       },
+      /**
+       * A turn under the FOREIGN principal's config, byte-swapped in place at the SAME path the
+       * owner's turns used. Only some clients accept a --mcp-config flag, but every client
+       * discovers its config from the location it already reads — so swapping the bytes (and
+       * restoring them in a finally) is the one mechanism that is the vendor's own for all seven
+       * drivers. The v2 harness never initialized the foreign configuration at all, which is how
+       * "the foreign plant" came to run under the OWNER's principal.
+       */
+      foreignTurn(label, prompt) {
+        // A run whose installer wrote no config has nothing to swap. Throwing here would take the
+        // whole restartAndResume phase down and turn three honestly-failing legs into one BLOCKED
+        // receipt with a crash reason — so the missing config is reported as the turn's own failure
+        // and each leg keeps its own named refusal.
+        if (!existsSync(ctx.configPath)) {
+          const message = 'the installer wrote no config, so the foreign principal had none to run';
+          log(`# foreign turn refused: ${message}`);
+          return { status: null, stdout: '', stderr: '', harnessError: message };
+        }
+        const ownerBytes = readFileSync(ctx.configPath, 'utf8');
+        writeFileSync(ctx.configPath, ctx.foreignConfig ?? ownerBytes);
+        try {
+          log(`# foreign config swapped in (${ctx.foreignConfigSha256 ?? 'unhashed'})`);
+          return ctx.turn(label, prompt);
+        } finally {
+          writeFileSync(ctx.configPath, ownerBytes);
+        }
+      },
       async launchDetached(label, prompt) {
         try {
           const args = spec.headless.args(prompt, ctx);
           log(`\n$ ${ctx.vendorBin} <prompt:redacted ${sha256(prompt)}>   [${label}, detached]`);
-          const child = spawn(ctx.vendorBin, args, {
+          const launch = launchableCommand(ctx.vendorBin, args);
+          const child = spawn(launch.command, launch.args, {
             env: clientEnv,
             cwd: project,
             detached: true,
             stdio: 'ignore',
           });
-          // Give the client time to start, spawn its MCP server and open a session before it dies.
-          await new Promise((r) => setTimeout(r, 8_000));
-          if (child.exitCode !== null) {
-            return {
-              ok: false,
-              reason: `the vendor client exited (${child.exitCode}) before it could be interrupted`,
-            };
+          // Registered the moment it exists: the teardown kills every pid THIS run launched, and
+          // nothing else — cleanup removes only the run's isolated processes.
+          ctx.launchedPids.push(child.pid);
+          // Session activity is OBSERVED, never assumed. A fixed delay could not tell "the client
+          // is mid-session" from "the client is dying slowly" or "the client never spoke to the
+          // server at all", so the harness waits for the one signal that proves the session is real:
+          // a completed operation in the owner's protocol recording. The recorder flushes atomically
+          // per operation, so the count is current whenever it is read; a client that exits early is
+          // caught by the exit check inside the same loop, and one that never opens a session is
+          // refused by name at the deadline instead of being interrupted for nothing.
+          const deadline = Date.now() + ctx.activityTimeoutMs;
+          for (;;) {
+            if (child.exitCode !== null) {
+              return {
+                ok: false,
+                reason: `the vendor client exited (${child.exitCode}) before it could be interrupted`,
+              };
+            }
+            if (completedOperationCount(ownerRecordingPath) > 0) break;
+            const remaining = deadline - Date.now();
+            if (remaining <= 0) {
+              return {
+                ok: false,
+                reason: `no MCP session activity was observed within ${ctx.activityTimeoutMs}ms of launching the vendor client — interrupting a process that never opened a session would prove nothing`,
+              };
+            }
+            await new Promise((r) => setTimeout(r, Math.min(250, remaining)));
           }
           return {
             ok: true,
@@ -1038,6 +1787,9 @@ export async function certifyCell(options) {
     }
   }
 
+  // Set by the receipt block below and read by the finally guard, so a cleanup failure can be
+  // recorded on the returned object instead of replacing it.
+  let result = null;
   try {
     log('\n# behaviours');
     for (const { id } of CERTIFICATION_BEHAVIOURS) {
@@ -1058,7 +1810,7 @@ export async function certifyCell(options) {
 
     const receipt = {
       format: 'knowledge-crib-client-certification',
-      formatVersion: 2,
+      formatVersion: 3,
       generatedAt: new Date().toISOString(),
       policySha256,
       product: { commit: candidateCommit, packageSha256 },
@@ -1085,10 +1837,71 @@ export async function certifyCell(options) {
         dirty: gitDirty(),
       },
       principalMarkers: { owner: sha256(ownerPrincipal), foreign: sha256(foreignMarker) },
+      // The two configurations the scenario ran — present only when both were hashed, which is the
+      // only state in which a protocol-dependent leg could have passed. Same journal, repository
+      // and candidate (the stores and server command digests must agree); DIFFERENT authenticated
+      // principals; each config individually hashed so the receipt names the bytes it ran.
+      ...(ctx?.ownerConfigSha256 && ctx?.foreignConfigSha256
+        ? {
+            configurations: {
+              owner: {
+                sha256: ctx.ownerConfigSha256,
+                principalSha256: sha256(ownerPrincipal),
+                format: spec.configFormat,
+                stores: {
+                  memoryDirSha256: sha256(ctx.cribMemoryDir),
+                  registryDirSha256: sha256(ctx.cribRegistryDir),
+                },
+                serverCommandSha256: ctx.serverCommandSha256 ?? null,
+              },
+              foreign: {
+                sha256: ctx.foreignConfigSha256,
+                principalSha256: sha256(foreignPrincipal),
+                format: spec.configFormat,
+                stores: {
+                  memoryDirSha256: sha256(ctx.cribMemoryDir),
+                  registryDirSha256: sha256(ctx.cribRegistryDir),
+                },
+                serverCommandSha256: ctx.serverCommandSha256 ?? null,
+              },
+            },
+          }
+        : {}),
+      // The protocol evidence: which recorder produced the recordings, and where the archived
+      // copies are. A null recording is a FINDING (no protocol traffic was tapped on that side),
+      // never an omission — the validator refuses any protocol-dependent passing leg whose
+      // recording is missing.
+      protocol: {
+        recorderVersion: RECORDER_VERSION,
+        ownerRecording: archivedRecording(
+          ctx?.ownerRecordingPath,
+          outDir,
+          `${spec.id}-${process.platform}-${process.arch}-owner-recording.json`,
+        ),
+        foreignRecording: archivedRecording(
+          ctx?.foreignRecordingPath,
+          outDir,
+          `${spec.id}-${process.platform}-${process.arch}-foreign-recording.json`,
+        ),
+      },
       legs,
       vendor: {
         processIdentity: ctx?.vendorBin
           ? `${spec.displayName} ${ctx.vendorVersion ?? 'unknown'} (${ctx.vendorBin})`
+          : null,
+        // What the interruption actually killed, when an interruption ran: the target pid, its
+        // prompt-redacted verified command and tree, whether the signal was delivered, and whether
+        // termination was CONFIRMED. Present on every passing interruption receipt — every such
+        // receipt proves the intended vendor process terminated — and null when the leg never
+        // launched.
+        interruptedProcess: ctx?.interruptEvidence
+          ? {
+              pid: ctx.interruptEvidence.targetPid,
+              verifiedCommand: ctx.interruptEvidence.targetCommand,
+              tree: ctx.interruptEvidence.tree,
+              killed: ctx.interruptEvidence.killed,
+              terminated: ctx.interruptEvidence.terminated,
+            }
           : null,
         transcriptPath: logName,
         transcriptSha256: sha256File(archived),
@@ -1103,10 +1916,55 @@ export async function certifyCell(options) {
     // evidence only exists if the caller remembered to save it is a run whose evidence can be lost.
     const receiptPath = join(outDir, `client-${spec.id}-${process.platform}-${process.arch}.json`);
     writeFileSync(receiptPath, `${JSON.stringify(receipt, null, 2)}\n`);
-    return { receipt, behaviours, legs, archived, receiptPath };
+    result = { receipt, behaviours, legs, archived, receiptPath };
+    return result;
   } finally {
-    if (!keep) rmSync(workspace, { recursive: true, force: true });
-    else process.stdout.write(`workspace kept at ${workspace}\n`);
+    // Kill anything this run detached that is STILL alive, before the workspace that holds its
+    // recordings goes away. Only pids registered by THIS run are signalled — cleanup removes the
+    // run's isolated processes and nothing else — and each kill is confirmed so a survivor cannot
+    // outlive its evidence. The signals go through the injected process-control seam so a test can
+    // observe (or refuse) them without a real process tree.
+    //
+    // A cleanup failure must never mask the result: before this guard, a throwing rmSync replaced
+    // the returned receipt with the throw, so the run's evidence was lost to a janitor error. Now
+    // the failure is recorded on the result, stamped into the persisted receipt, and the receipt
+    // still reaches the caller.
+    try {
+      for (const pid of ctx?.launchedPids ?? []) {
+        if (processControl.alive(pid)) {
+          processControl.killTree(pid);
+          // Best-effort bounded wait: the workspace is about to disappear, and a pid that lingers
+          // half a second longer is harmless — one that survives to write into a deleted directory is
+          // not.
+          await processControl.confirm(pid, cleanupTimeoutMs);
+        }
+      }
+      if (!keep) removeWorkspace(workspace, { recursive: true, force: true });
+      else process.stdout.write(`workspace kept at ${workspace}\n`);
+    } catch (cleanupError) {
+      // `result` is assigned only after the receipt write succeeded, so it is exactly the "a receipt
+      // exists" signal: the message must not claim a receipt was written when the try block died
+      // before persisting one.
+      process.stderr.write(
+        `certifyCell cleanup failed ${result ? 'after' : 'before'} the receipt was written: ${cleanupError?.message ?? cleanupError}\n`,
+      );
+      if (result) {
+        const msg = String(cleanupError?.message ?? cleanupError);
+        result.cleanupError = msg;
+        // The persisted receipt must carry the same event the run experienced: an archived receipt
+        // that silently omits a real cleanup failure reads as a clean run at audit time. The
+        // re-write is guarded because a second failure here must not mask the cleanup error it is
+        // reporting.
+        result.receipt.cleanupError = msg;
+        try {
+          writeFileSync(result.receiptPath, `${JSON.stringify(result.receipt, null, 2)}\n`);
+        } catch (rewriteError) {
+          process.stderr.write(
+            `certifyCell cleanup error could not be written back into the receipt: ${rewriteError?.message ?? rewriteError}\n`,
+          );
+        }
+      }
+    }
   }
 }
 
@@ -1144,11 +2002,20 @@ export function buildLegs(behaviours, logName, logDigest) {
     // The two vendor-asserting legs name their source unconditionally. Only `vendor-client` may
     // satisfy them, and the loader refuses the receipt outright if either says otherwise — so a
     // harness that merely spoke the protocol could not produce a version-2 receipt at all.
+    // A PASSING leg also carries the protocol references its behaviours were judged from: which
+    // recording, which operation, which request id. The validator re-reads those recordings from
+    // the archived artifacts, so a leg's pass is checkable against the wire, not just against the
+    // receipt's own say-so.
+    const protocolRefs =
+      status === 'pass'
+        ? values.flatMap((v) => (Array.isArray(v?.protocol) ? v.protocol : []))
+        : [];
     legs[leg] = {
       status,
       ...(leg === 'handshake' || leg === 'toolUse' ? { source: 'vendor-client' } : {}),
       logPath: logName,
       logSha256: logDigest,
+      ...(protocolRefs.length > 0 ? { protocol: protocolRefs } : {}),
       ...(values.find((v) => v.reason)?.reason
         ? { detail: values.find((v) => v.reason).reason }
         : {}),
@@ -1176,7 +2043,11 @@ async function main() {
   const client = flag(argv, '--client');
   const packagePath = flag(argv, '--package');
   const candidateCommit = flag(argv, '--candidate-commit');
-  const outDir = resolve(flag(argv, '--out', 'client-certification-receipts'));
+  const outDirFlag = flag(argv, '--out');
+  // Receipts are release artifacts published OUTSIDE the candidate source tree. A default
+  // directory inside the tree would put the receipt into the candidate it certifies and change
+  // the commit the evidence names, so --out is required and stated as an artifact path.
+  const outDir = outDirFlag ? resolve(outDirFlag) : null;
   const keep = argv.includes('--keep');
 
   const problems = [];
@@ -1190,6 +2061,10 @@ async function main() {
       '--package <candidate-tarball> is required — a receipt must bind the bytes it certified',
     );
   else if (!existsSync(packagePath)) problems.push(`--package ${packagePath} does not exist`);
+  if (!outDir)
+    problems.push(
+      '--out <release-artifact-directory> is required — receipts are release artifacts published outside the candidate source tree, never committed into the tree they certify',
+    );
   if (!candidateCommit || !/^[a-f0-9]{40}$/.test(candidateCommit)) {
     problems.push('--candidate-commit must be a full 40-hex commit');
   } else {

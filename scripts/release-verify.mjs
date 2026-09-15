@@ -54,10 +54,33 @@ run('node', ['scripts/client-certification-matrix.mjs', '--check']);
 // rather than only proving the receipt contract holds. A harness that could be satisfied by a stub
 // would be the single most damaging thing this release could ship.
 run('node', ['scripts/client-certify.test.mjs']);
+// Task 7 — the native editor scenarios: the nine-operation automation contract, the three platform
+// desktop backends (Swift/AXUIElement, C#/UI Automation, Python/AT-SPI), the versioned selector
+// law (no fixed coordinates, no untested editor versions), and the scenario engine's honesty gate
+// — a host with no validated selector set must produce a BLOCKED, non-certifying v3 receipt that
+// still validates and feeds the launch matrix under the same cell names.
+run('node', ['scripts/desktop-backend.test.mjs']);
+// Task 10 — the host preflight's own executable specification. Every certification cell runs the
+// preflight before any expensive work; its suite proves a missing fact becomes a NAMED blocker
+// (never a silently satisfied check), that WSL and GitHub-hosted runners are refused as
+// certification cells, and that the per-platform desktop lock serializes GUI execution (a held
+// lock makes client-desktop-certify REFUSE to start; releasing it lets the run proceed).
+run('node', ['scripts/host-preflight.test.mjs']);
 // The frozen requirements themselves: the policy hash pin fails loudly if the launch policy was
 // edited (or merely reformatted), because every receipt collected under the old hash is then void.
 run('node', ['scripts/launch-policy.test.mjs']);
 run('node', ['scripts/launch-decision.test.mjs']);
+// Task 2 — the shared acceptance-receipt validator's own executable specification: identity, cell,
+// run-identity, derived-status and artifact-byte gates, plus the v2 writer. Orphaned like the
+// evidence tests above were: nothing ran it, so the validator could rot between releases.
+run('node', ['scripts/acceptance-receipt.test.mjs']);
+// Task 3 — the candidate bundle's verification (manifest + every workspace package checksum, the
+// before/after digest guard, the isolated install's bin contract) and the collector's check table:
+// which product each check exercises, the installed-adapter/install/freshness seams, and the
+// writer's product flags. Nothing else runs these; they are the specification of "exercise the
+// supplied installed candidate".
+run('node', ['scripts/candidate-bundle.test.mjs']);
+run('node', ['scripts/collect-acceptance-receipts.test.mjs']);
 // WP9.1 — the release-evidence manifest builder's own invariants (dirty/red/certification
 // legs, tamper/omission/duplicate) were previously orphaned: nothing ran this file.
 run('node', ['scripts/release-evidence.test.mjs']);

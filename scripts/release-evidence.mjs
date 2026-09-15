@@ -20,6 +20,10 @@ import { cpus, hostname, totalmem } from 'node:os';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
+  ACCEPTANCE_RECEIPT_FORMAT,
+  SUPPORTED_ACCEPTANCE_FORMAT_VERSIONS,
+} from './acceptance-receipt.mjs';
+import {
   certifyClientCell,
   loadClientCertificationReceipts,
   missingRuntimeCertificationCells,
@@ -340,6 +344,19 @@ function validateEvidenceIdentity(manifest) {
   );
   for (const [type, receipt] of Object.entries(manifest.receipts)) {
     assertEvidence(receipt && typeof receipt === 'object', `receipts.${type} must be an object`);
+    // Typed acceptance receipts must DECLARE their envelope. The manifest's receipts block used to
+    // accept any {status, artifacts} object, so a hand-written blob could stand in for a receipt
+    // written by the step that actually ran the check. The shared acceptance-receipt module owns
+    // the format constants (and the version gate below uses the same list, so a version readable
+    // here is readable everywhere).
+    assertEvidence(
+      receipt.format === ACCEPTANCE_RECEIPT_FORMAT,
+      `receipts.${type} must declare format ${ACCEPTANCE_RECEIPT_FORMAT}`,
+    );
+    assertEvidence(
+      SUPPORTED_ACCEPTANCE_FORMAT_VERSIONS.includes(receipt.formatVersion),
+      `receipts.${type}.formatVersion ${receipt.formatVersion} is not a readable acceptance-receipt version`,
+    );
     assertEvidence(
       ['pass', 'fail', 'not-run'].includes(receipt.status),
       `receipts.${type}.status must be pass, fail or not-run`,
@@ -459,13 +476,24 @@ function parseClients(argv) {
   return clients;
 }
 
-function certificationOptions(argv) {
+// Exported for the CLI-flag regression in release-evidence.test.mjs: the refusal fires at parse
+// time, before embedder collection and the launch gate run, so the test exercises the parser.
+export function parseCertificationOptions(argv) {
   const receiptIndex = argv.indexOf('--certification-receipts');
-  const receiptDirectory = resolve(
-    receiptIndex >= 0
-      ? (argv[receiptIndex + 1] ?? 'docs/launch/client-certification-receipts')
-      : 'docs/launch/client-certification-receipts',
-  );
+  // Receipts are release artifacts published OUTSIDE the candidate source tree, so there is no
+  // in-tree default to fall back to: without the flag the collector has no certification evidence
+  // and the launch decision reports the twenty-one cells as blockers by name. Committing receipts
+  // into the candidate tree would change the identity of the commit the evidence names.
+  let certificationReceipts = [];
+  if (receiptIndex >= 0) {
+    const target = argv[receiptIndex + 1];
+    if (!target) {
+      throw new ReleaseEvidenceError(
+        '--certification-receipts requires a directory of published release artifacts',
+      );
+    }
+    certificationReceipts = loadClientCertificationReceipts(resolve(target));
+  }
   const platformIndex = argv.indexOf('--certification-platforms');
   const certificationPlatforms =
     platformIndex >= 0
@@ -476,7 +504,7 @@ function certificationOptions(argv) {
       : undefined;
   return {
     requireRuntimeCertification: argv.includes('--require-runtime-certification'),
-    certificationReceipts: loadClientCertificationReceipts(receiptDirectory),
+    certificationReceipts,
     certificationPlatforms,
   };
 }
@@ -576,6 +604,15 @@ export function collectReceipts(argv) {
     // quiet.
     if (parsed?.format !== 'knowledge-crib-acceptance-receipt') continue;
     const type = parsed.type ?? name.slice(0, -5);
+    // Two receipts declaring the same type used to be last-wins, which is how a stale receipt from
+    // a previous pass survives beside the fresh one and certifies a candidate it never saw. Two
+    // files for one type is a structural refusal: the operator must delete the stale one, not have
+    // the directory order decide which evidence the launch reads.
+    if (receipts[type] !== undefined) {
+      throw new ReleaseEvidenceError(
+        `duplicate ${type} receipt: ${name} and an earlier file in ${directory} both declare type ${type}; remove the stale one before collecting evidence`,
+      );
+    }
     receipts[type] = parsed;
   }
   return receipts;
@@ -592,7 +629,7 @@ export async function collectReleaseEvidence(argv = process.argv.slice(2)) {
       : { strategy: 'lexical-only' },
   );
   const { instance: _instance, ...embedReceipt } = embedder;
-  const certification = certificationOptions(argv);
+  const certification = parseCertificationOptions(argv);
   const { policy: _policy, sha256: policySha256 } = loadLaunchPolicy();
   const { packageSha256, packagePath } = collectPackageDigest(argv);
   return buildReleaseEvidence({

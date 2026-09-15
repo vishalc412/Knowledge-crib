@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadLaunchPolicy, policyClientCells } from './launch-policy.mjs';
-import { collectReceipts } from './release-evidence.mjs';
+import { collectReceipts, parseCertificationOptions } from './release-evidence.mjs';
 import {
   RELEASE_EVIDENCE_FORMAT_VERSION,
   REQUIRED_GATE_IDS,
@@ -17,6 +17,34 @@ import {
 } from './release-evidence.mjs';
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+
+// Publication boundary: release evidence lives outside the candidate source tree, so the collector
+// must not carry an in-tree receipts default. Asserted textually — behavioral coverage would mean
+// creating receipts inside the candidate tree, which is exactly what this forbids.
+assert.ok(
+  !readFileSync(join(repoRoot, 'scripts/release-evidence.mjs'), 'utf8').includes(
+    'docs/launch/client-certification-receipts',
+  ),
+  'release-evidence.mjs must not default to an in-tree receipt directory: receipts are release artifacts published outside the candidate source tree',
+);
+
+// The flag refuses a missing value BY NAME at parse time, before any collection runs: a
+// `--certification-receipts` with no directory would otherwise read as "no certification
+// evidence" and quietly produce a manifest that cannot certify a single cell.
+assert.throws(
+  () => parseCertificationOptions(['--certification-receipts']),
+  (error) =>
+    error instanceof ReleaseEvidenceError &&
+    /--certification-receipts requires a directory/.test(error.message),
+  'a --certification-receipts with no value must be refused by name',
+);
+// And the absent flag stays the honest default: no receipts, named as blockers downstream —
+// never an in-tree directory read silently.
+assert.deepEqual(parseCertificationOptions([]), {
+  requireRuntimeCertification: false,
+  certificationReceipts: [],
+  certificationPlatforms: undefined,
+});
 
 const greenReport = {
   preregistration: 'docs/bench/launch-gates.md',
@@ -68,8 +96,23 @@ const base = {
   startedAt: '2026-09-05T00:00:00.000Z',
   endedAt: '2026-09-05T00:05:00.000Z',
   receipts: {
+    // A full v2 acceptance envelope, matching the manifest's own identity fields: the receipts block
+    // no longer accepts a bare {status, artifacts} blob, because that shape could be written by hand
+    // instead of by the step that ran the check.
     install: {
+      format: 'knowledge-crib-acceptance-receipt',
+      formatVersion: 2,
+      type: 'install',
       status: 'pass',
+      recordedAt: '2026-09-05T00:04:00.000Z',
+      runId: 'fixture-run',
+      candidateCommit: 'a'.repeat(40),
+      candidatePackageSha256: `sha256:${'b'.repeat(64)}`,
+      policySha256: `sha256:${'c'.repeat(64)}`,
+      command: 'pnpm installer:smoke-userdir',
+      commandResults: [{ command: 'pnpm installer:smoke-userdir', exitCode: 0 }],
+      platform: { os: 'darwin', arch: 'arm64', node: 'v22.23.1' },
+      runner: { provider: 'github-actions', runId: '42' },
       artifacts: [{ path: 'install.log', sha256: `sha256:${'d'.repeat(64)}` }],
     },
   },
@@ -136,18 +179,27 @@ assert.deepEqual(requiredGateFailures(missingCertification), ['runtime-certifica
 //
 // The cells are DERIVED from the committed policy rather than listed here, so a client or platform
 // added to the promise cannot be certified by a fixture that never heard of it. Each receipt is a
-// version-2 certifying one: it carries all eight legs, the two vendor-asserting legs say their source
-// is the client under test, it ran natively, and it names a transcript. A version-1 shaped receipt
-// (`evidence.runtime.status: 'pass'`) can no longer cover a cell at all — it never separated the
-// tool invocation from the handshake, nor a restart from an interruption, which is exactly why the
-// certifying schema exists. This file checks the BUILDER's coverage arithmetic; the disk-backed path
-// where those transcripts are hashed is exercised by the launch-decision suite.
+// version-3 certifying one: it carries all eight legs, each protocol leg cites the archived
+// operation it rests on, the two vendor-asserting legs say their source is the client under test,
+// it ran natively, and it names a transcript plus the hashed two-principal configurations and
+// recordings behind the boundary claim. A version-1 or version-2 shaped receipt can no longer cover
+// a cell at all — neither separates the protocol claim from the word that made it, which is exactly
+// why the certifying schema exists. This file checks the BUILDER's coverage arithmetic; the
+// disk-backed path where those transcripts are hashed is exercised by the launch-decision suite.
 const { policy: launchPolicy } = loadLaunchPolicy();
 const certifyingReceipt = (cell) => {
   const [id, os] = cell.split('/');
+  const ownerPrincipal = `sha256:${'4'.repeat(64)}`;
+  const foreignPrincipal = `sha256:${'5'.repeat(64)}`;
+  const stores = { journal: '/tmp/crib-release-journal', repository: '/tmp/crib-release-registry' };
+  const protocolRef = (recording, operation) => ({
+    recording,
+    operation,
+    request: `fixture-${recording}-${operation}`,
+  });
   return {
     format: 'knowledge-crib-client-certification',
-    formatVersion: 2,
+    formatVersion: 3,
     generatedAt: '2026-09-05T00:00:00.000Z',
     policySha256: `sha256:${'2'.repeat(64)}`,
     product: { commit: 'a'.repeat(40), packageSha256: `sha256:${'3'.repeat(64)}` },
@@ -155,7 +207,31 @@ const certifyingReceipt = (cell) => {
     platform: { os, arch: 'fixture', node: 'v22.23.1' },
     runId: `run-${cell}`,
     capture: { hostname: 'fixture-host', operator: 'fixture-operator' },
-    principalMarkers: { owner: `sha256:${'4'.repeat(64)}`, foreign: `sha256:${'5'.repeat(64)}` },
+    principalMarkers: { owner: ownerPrincipal, foreign: foreignPrincipal },
+    configurations: {
+      owner: {
+        sha256: `sha256:${'7'.repeat(64)}`,
+        principalSha256: ownerPrincipal,
+        stores,
+        serverCommandSha256: `sha256:${'8'.repeat(64)}`,
+      },
+      foreign: {
+        sha256: `sha256:${'9'.repeat(64)}`,
+        principalSha256: foreignPrincipal,
+        stores,
+        serverCommandSha256: `sha256:${'8'.repeat(64)}`,
+      },
+    },
+    protocol: {
+      ownerRecording: {
+        path: `recordings/${cell}-owner-recording.json`,
+        sha256: `sha256:${'a'.repeat(64)}`,
+      },
+      foreignRecording: {
+        path: `recordings/${cell}-foreign-recording.json`,
+        sha256: `sha256:${'b'.repeat(64)}`,
+      },
+    },
     vendor: {
       processIdentity: `${id} 1.0.0 (/usr/local/bin/${id}, pid 4711)`,
       transcriptPath: `logs/${cell}.log`,
@@ -163,13 +239,16 @@ const certifyingReceipt = (cell) => {
     },
     legs: {
       configuration: { status: 'pass' },
-      handshake: { status: 'pass', source: 'vendor-client' },
-      toolUse: { status: 'pass', source: 'vendor-client' },
-      record: { status: 'pass' },
+      handshake: { status: 'pass', source: 'vendor-client', protocol: [protocolRef('owner', 1)] },
+      toolUse: { status: 'pass', source: 'vendor-client', protocol: [protocolRef('owner', 3)] },
+      record: { status: 'pass', protocol: [protocolRef('owner', 3)] },
       interruption: { status: 'pass' },
-      restart: { status: 'pass' },
-      authorizedResume: { status: 'pass' },
-      foreignPrincipalExclusion: { status: 'pass' },
+      restart: { status: 'pass', protocol: [protocolRef('owner', 7)] },
+      authorizedResume: { status: 'pass', protocol: [protocolRef('owner', 9)] },
+      foreignPrincipalExclusion: {
+        status: 'pass',
+        protocol: [protocolRef('foreign', 1), protocolRef('owner', 9)],
+      },
     },
   };
 };
@@ -448,6 +527,20 @@ try {
     /needs a sha256 digest/,
   );
   refuses(
+    'a receipt blob with no envelope format',
+    (m) => {
+      m.receipts.install.format = undefined;
+    },
+    /receipts\.install must declare format knowledge-crib-acceptance-receipt/,
+  );
+  refuses(
+    'a receipt in an unreadable envelope version',
+    (m) => {
+      m.receipts.install.formatVersion = 99;
+    },
+    /receipts\.install\.formatVersion 99 is not a readable acceptance-receipt version/,
+  );
+  refuses(
     'a gate with no measured value',
     (m) => {
       m.gates[0].measured = undefined;
@@ -501,6 +594,31 @@ assert.match(
     const loaded = collectReceipts(['--receipts', dir]);
     assert.deepEqual(Object.keys(loaded), ['freshness'], 'raw sample data is not a receipt');
     assert.equal(loaded['freshness.samples'], undefined);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+// Two files declaring the SAME receipt type is a structural refusal, not a merge: whichever one won
+// silently, the other half of the disagreement — the stale or failing one — would go on certifying
+// unseen. The throw names both the type and the file that lost.
+{
+  const dir = mkdtempSync(join(tmpdir(), 'crib-receipt-duplicate-'));
+  try {
+    const receipt = {
+      format: 'knowledge-crib-acceptance-receipt',
+      formatVersion: 2,
+      type: 'install',
+      status: 'pass',
+    };
+    writeFileSync(join(dir, 'a.json'), JSON.stringify(receipt));
+    writeFileSync(join(dir, 'b.json'), JSON.stringify(receipt));
+    assert.throws(
+      () => collectReceipts(['--receipts', dir]),
+      (error) =>
+        error instanceof ReleaseEvidenceError && /duplicate install receipt/i.test(error.message),
+      'two receipts declaring the same type must be a structural refusal',
+    );
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

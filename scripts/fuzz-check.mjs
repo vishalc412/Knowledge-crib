@@ -36,19 +36,33 @@ import { execFileSync } from 'node:child_process';
  *   node scripts/fuzz-check.mjs --iterations 1000000 --receipt out/fuzz-deep.json \
  *     --package dist/installers/knowledge-crib-0.1.0/knowledge-crib-0.1.0.tgz
  *
- * `--receipt` makes this a CANDIDATE-BOUND deep run: the transcript is archived beside the receipt,
- * the receipt binds to the commit, the package digest and the policy digest, and it carries the
- * seed, the iteration count, the extractor list and every failure. A deep receipt is REFUSED (exit
- * 2) when the requested sweep is smaller than the policy requires — a smoke run wearing the deep
- * receipt's name is worse than no receipt, because it reads as coverage.
+ * `--receipt` makes this a CANDIDATE-BOUND deep run — and that is not a label, it is a chain of
+ * enforced facts (see candidate-parser.mjs): the bundle is verified against its own manifest, it
+ * is installed into an ISOLATED prefix, `runFuzz`/the worker/the grammars are imported and spawned
+ * from that INSTALLATION (never the checkout's `packages/parsers/dist`), the worker and grammar
+ * bytes are hashed against the packed tarball members, and every runtime dependency must resolve
+ * inside the prefix — anything resolving back into the source checkout fails the run, because
+ * that is how a "candidate-bound" sweep quietly fuzzes the working tree instead. The transcript
+ * is archived beside the receipt, the receipt binds to the commit, the parsers package digest,
+ * the executed worker/grammar hashes and the policy digest, and it carries the seed, the
+ * iteration count, the per-extractor counts, the extractor list and the failing inputs with their
+ * full text — capped per extractor with the truncation RECORDED (details.failuresTruncated), so
+ * the printed "3 reproducers" is a display budget and the cap is a size budget, but neither can
+ * make the archive read cleaner than the run: the totals stay in perExtractor and the seed
+ * regenerates every truncated input from (extractor, idx).
+ * A deep receipt is REFUSED (exit 2) when the requested sweep is smaller than the policy requires
+ * — a smoke run wearing the deep receipt's name is worse than no receipt, because it reads as
+ * coverage.
  *
- * release:verify builds every package before any gate runs, so the dynamic import of the built
- * parsers dist resolves. A standalone `pnpm fuzz:check` is guarded: if dist/fuzz-worker.js is
- * missing, the parsers package is built first.
+ * The smoke gate (no --package) still fuzzes the checkout's built dist — `release:verify` builds
+ * every package before any gate runs, so that import resolves, and a standalone `pnpm fuzz:check`
+ * is guarded: if the built worker is missing, the parsers package is built first.
  */
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
+import { existsSync, mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { prepareCandidateParser } from './candidate-parser.mjs';
 import { loadLaunchPolicy, policyFuzzRequirements } from './launch-policy.mjs';
 import { buildReceipt } from './write-receipt.mjs';
 
@@ -86,7 +100,10 @@ const { policy, sha256: policySha256 } = loadLaunchPolicy();
 const requirements = policyFuzzRequirements(policy);
 
 // --- build guard (standalone `pnpm fuzz:check`) ------------------------------------------------
-if (!existsSync(PARSERS_DIST)) {
+// The SMOKE gate fuzzes the checkout's built dist, so that build must exist. A candidate-bound
+// run (--package) never touches the checkout's parsers — building them would produce bytes nobody
+// executes.
+if (!packagePath && !existsSync(PARSERS_DIST)) {
   process.stdout.write(
     '$ corepack pnpm@9.15.0 -F @knowledge-crib/parsers build (fuzz worker missing)\n',
   );
@@ -95,10 +112,6 @@ if (!existsSync(PARSERS_DIST)) {
     shell: process.platform === 'win32',
   });
 }
-
-const { runFuzz, runFakeselfTest, FUZZ_EXTRACTORS } = await import(
-  pathToFileURL(resolve(REPO, 'packages', 'parsers', 'dist', 'index.js')).href
-);
 
 let failed = 0;
 /** Every line the run emits, so the archived transcript is what the operator saw — not a summary. */
@@ -129,15 +142,30 @@ function fail(msg) {
 function finish(status, details) {
   const archived = archiveTranscript();
   if (!receiptPath) return;
+  // The transcript is recorded RELATIVE to the receipt's own directory, with --artifact-root telling
+  // the writer what to resolve it against. The decision resolves artifact paths against the
+  // receipts root it was handed, and resolve() honours an absolute path VERBATIM — so a
+  // machine-absolute transcript path (what resolve(logPath) is) only verifies on the machine and
+  // directory that produced it. The CI layout moves the receipts OUT of the checkout entirely, so
+  // an absolute path is a receipt whose own evidence can never check: every real release run NO-GOs
+  // on the transcript digest. Relative-to-the-receipt is how the collector's artifacts already work.
+  const receiptDir = dirname(resolve(receiptPath));
   const receipt = buildReceipt({
     type: 'fuzz-deep',
     now: new Date().toISOString(),
     argv: [
       '--command',
-      `node scripts/fuzz-check.mjs --iterations ${iterations}`,
+      // The command AS INVOKED, not a paraphrase: a candidate-bound deep run and a checkout smoke
+      // run must not write identical commandResults — the receipt's own archive has to name the
+      // invocation that produced it.
+      `node scripts/fuzz-check.mjs ${argv.join(' ')}`,
+      '--exit-code',
+      status === 'pass' ? '0' : '1',
       '--status',
       status,
-      ...(archived ? ['--artifact', archived] : []),
+      ...(archived
+        ? ['--artifact', relative(receiptDir, archived), '--artifact-root', receiptDir]
+        : []),
       ...(packagePath ? ['--package', packagePath] : []),
     ],
     details: {
@@ -179,6 +207,13 @@ if (receiptPath) {
       `--iterations ${iterations} is below the policy's required ${requirements.requiredIterations}`,
     );
   }
+  if (!packagePath) {
+    // v2 receipts carry a REQUIRED candidate package digest. A fuzz-deep receipt that describes no
+    // package certifies a sweep of bytes that are not the shipped product.
+    problems.push(
+      'a fuzz-deep receipt must describe a candidate package: pass --package <tarball>',
+    );
+  }
   if (packagePath && !existsSync(packagePath)) {
     problems.push(`--package ${packagePath} does not exist`);
   }
@@ -188,12 +223,77 @@ if (receiptPath) {
         .map((p) => `  - ${p}`)
         .join('\n')}
   A deep receipt for a smaller sweep is a smoke run wearing the deep receipt's name.
-  Fix: raise --iterations, or run without --receipt.
+  Fix: raise --iterations and pass --package, or run without --receipt.
 `,
     );
     process.exit(2);
   }
 }
+
+// --- candidate binding (--package: the bytes under test are the bundle's, not the checkout's) -----
+let provenance = null;
+if (packagePath) {
+  const candidatePrefix = mkdtempSync(join(tmpdir(), 'fuzz-candidate-'));
+  process.on('exit', () => rmSync(candidatePrefix, { recursive: true, force: true }));
+  try {
+    provenance = prepareCandidateParser({
+      packagePath,
+      repo: REPO,
+      prefix: candidatePrefix,
+    });
+    const candidate = provenance.candidate;
+    say(
+      `[fuzz:check] candidate bound — ${candidate.parsersPackage} ${candidate.parsersPackageSha256}`,
+    );
+    say(
+      `  worker ${candidate.worker.path} ${candidate.worker.sha256} (verified against the packed tarball)`,
+    );
+    for (const grammar of candidate.grammars) {
+      say(`  grammar ${grammar.path} ${grammar.sha256}`);
+    }
+    say(
+      `  runtime dependencies verified inside the isolated prefix: ${candidate.runtimeDependencies.join(', ')}`,
+    );
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    fail(`candidate binding failed: ${message}`);
+    process.stderr.write(
+      '\n[fuzz:check] candidate binding FAILED — aborting before any fuzz (a sweep of unverified bytes is not evidence)\n',
+    );
+    // The transcript above keeps the operator-facing message verbatim, machine paths included —
+    // it is read on the machine that produced it. The RECEIPT is the opposite: relocatable
+    // evidence (the Task 4 artifact-path lesson), so every producer-machine path the binding
+    // errors embed (the temp prefix, its realpath form, the checkout, the bundle directory) is
+    // replaced with a stable token. A blocked receipt must read identically on the machine that
+    // judges it. Longest first, so a /private/var realpath is replaced before its /var alias.
+    const prefixReal = realpathSync(candidatePrefix);
+    const receiptMessage = [
+      [prefixReal, '<candidate-prefix>'],
+      [candidatePrefix, '<candidate-prefix>'],
+      [REPO, '<repo>'],
+      [dirname(resolve(packagePath)), '<candidate-bundle>'],
+    ].reduce((msg, [path, token]) => msg.replaceAll(path, token), message);
+    finish('fail', {
+      extractors: [],
+      extractorCount: 0,
+      requiredExtractors: requirements.minimumExtractors,
+      totalCases: 0,
+      perCallBudgetMs: requirements.perCallBudgetMs,
+      failures: [],
+      blockedReason: `the candidate bundle could not be installed and verified: ${receiptMessage}`,
+    });
+    process.exit(1);
+  }
+}
+
+// The module the sweep executes: the INSTALLED candidate when one was bound, the checkout's built
+// dist for the smoke gate. The worker pool and the grammar wasm files resolve relative to THIS
+// module, so one import decides which parser bytes every case below runs through.
+const { runFuzz, runFakeselfTest, FUZZ_EXTRACTORS } = await import(
+  provenance
+    ? provenance.moduleUrl
+    : pathToFileURL(resolve(REPO, 'packages', 'parsers', 'dist', 'index.js')).href
+);
 
 // --- phase 1: detector self-test ----------------------------------------------------------------
 say('');
@@ -246,6 +346,7 @@ if (failed > 0) {
     totalCases: 0,
     perCallBudgetMs: requirements.perCallBudgetMs,
     failures: [],
+    ...(provenance ? { candidate: provenance.candidate } : {}),
     blockedReason: 'detector self-test failed — the deep sweep was never started',
   });
   process.exit(1);
@@ -266,6 +367,7 @@ if (FUZZ_EXTRACTORS.length < requirements.minimumExtractors) {
     totalCases: 0,
     perCallBudgetMs: requirements.perCallBudgetMs,
     failures: [],
+    ...(provenance ? { candidate: provenance.candidate } : {}),
     blockedReason: `only ${FUZZ_EXTRACTORS.length} extractors registered, below the policy floor of ${requirements.minimumExtractors}`,
   });
   process.exit(1);
@@ -277,7 +379,17 @@ say(
   `[fuzz:check] phase 2 — real fuzz: ${iterations} iters/extractor × ${FUZZ_EXTRACTORS.length} extractors (seed=${requirements.seed}, budget ${requirements.perCallBudgetMs}ms)`,
 );
 const perExtractor = [];
-const reproducers = [];
+// The receipt's full-text failure archive. EVERY failing input lands here up to a per-extractor
+// cap; beyond the cap the truncation is RECORDED (extractor, archived count, truncated count,
+// first truncated idx) so the archive can never read cleaner than the run it describes. An
+// uncapped archive was the trap: a fleet-scale throw regression fails on a large share of a
+// million cases per extractor, and a receipt materialized as one JSON.stringify of gigabytes of
+// full text throws RangeError BEFORE writeFileSync — the one run that most needs a receipt
+// produced none. The cap is lossless: the sweep is seeded, so (extractor, idx) deterministically
+// regenerates the exact input, and perExtractor carries the un-truncated totals.
+const FULL_TEXT_FAILURES_PER_EXTRACTOR = 1000;
+const archivedFailures = [];
+const failuresTruncated = [];
 for (const spec of FUZZ_EXTRACTORS) {
   const o = await runFuzz(spec.name, {
     iterations,
@@ -292,10 +404,43 @@ for (const spec of FUZZ_EXTRACTORS) {
     hang: o.hang,
     invalid: o.invalid,
   });
+  // Case accounting: every generated case must be tallied exactly once. A run that discards cases
+  // silently under-reports its own failure count — "ok+bad < iterations" is discarded evidence,
+  // and the receipt's ok/throw/hang/invalid totals are the archive a consumer trusts.
+  const accounted = o.ok + o.throw + o.hang + o.invalid;
+  if (accounted !== iterations) {
+    fail(
+      `${spec.name}: only ${accounted} of ${iterations} cases were accounted for (ok=${o.ok} throw=${o.throw} hang=${o.hang} invalid=${o.invalid}) — the sweep discarded cases`,
+    );
+  }
   if (bad > 0) {
     fail(
       `${spec.name}: ${bad} bad inputs (ok=${o.ok}/${iterations} throw=${o.throw} hang=${o.hang} invalid=${o.invalid})`,
     );
+    // The receipt archives failing inputs full text (capped per extractor, truncation recorded),
+    // for reproduction. The printed reproducers are capped at 3 because a transcript nobody can
+    // scroll is not more honest — the ARCHIVE is the evidence.
+    const archivedCount = Math.min(o.reproducers.length, FULL_TEXT_FAILURES_PER_EXTRACTOR);
+    for (const r of o.reproducers.slice(0, archivedCount)) {
+      archivedFailures.push({
+        extractor: r.extractor,
+        idx: r.idx,
+        outcome: r.outcome,
+        reason: r.reason ?? null,
+        text: r.text,
+      });
+    }
+    if (o.reproducers.length > archivedCount) {
+      failuresTruncated.push({
+        extractor: spec.name,
+        archived: archivedCount,
+        truncated: o.reproducers.length - archivedCount,
+        firstTruncatedIdx: o.reproducers[archivedCount].idx,
+      });
+      const line = `    (full-text archive capped at ${archivedCount} of ${o.reproducers.length} failures — details.failuresTruncated records the rest; seed=${requirements.seed} regenerates every input from (extractor, idx))`;
+      transcript.push(line);
+      process.stderr.write(`${line}\n`);
+    }
     for (const r of o.reproducers.slice(0, 3)) {
       const text =
         r.text.length > 120 ? `${r.text.slice(0, 120)}…(${r.text.length} chars)` : r.text;
@@ -304,13 +449,11 @@ for (const spec of FUZZ_EXTRACTORS) {
         `\n      text=${JSON.stringify(text)}`;
       transcript.push(line);
       process.stderr.write(`${line}\n`);
-      reproducers.push({
-        extractor: r.extractor,
-        idx: r.idx,
-        outcome: r.outcome,
-        reason: r.reason ?? null,
-        text: r.text.slice(0, 400),
-      });
+    }
+    if (o.reproducers.length > 3) {
+      const line = `    (printed the first 3 of ${o.reproducers.length} reproducers — the receipt archives all ${o.reproducers.length})`;
+      transcript.push(line);
+      process.stderr.write(`${line}\n`);
     }
   } else {
     say(`  ${spec.name.padEnd(22)} ok=${o.ok}/${iterations} ✓`);
@@ -337,8 +480,11 @@ finish(failed === 0 ? 'pass' : 'fail', {
   extractorCount: perExtractor.length,
   requiredExtractors: requirements.minimumExtractors,
   totalCases,
+  perExtractor,
   perCallBudgetMs: requirements.perCallBudgetMs,
-  failures: reproducers,
+  failures: archivedFailures,
+  ...(failuresTruncated.length > 0 ? { failuresTruncated } : {}),
+  ...(provenance ? { candidate: provenance.candidate } : {}),
   selfTest: 'detector self-test passed (hang/throw/invalid each detected, none misattributed)',
 });
 

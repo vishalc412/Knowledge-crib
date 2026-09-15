@@ -3,6 +3,7 @@ import { existsSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
+  CERTIFICATION_EVIDENCE_FORMAT_VERSION,
   CERTIFIED_CLIENTS,
   certificationStatus,
   certificationSummary,
@@ -10,7 +11,12 @@ import {
   loadClientCertificationReceipts,
   receiptLegs,
 } from './client-certification-evidence.mjs';
-import { POLICY_PLATFORMS } from './launch-policy.mjs';
+import { POLICY_PLATFORMS, loadLaunchPolicy } from './launch-policy.mjs';
+
+// The generated table is tied to the exact frozen contract it certifies under. Loading the policy
+// here (not accepting it as an argument) is what ties it: a receipt collected under any other hash
+// is demoted below, and the stamp printed in the header is the hash this module judged against.
+const { policy: POLICY, sha256: POLICY_SHA256 } = loadLaunchPolicy();
 
 const START = '<!-- client-certification:generated:start -->';
 const END = '<!-- client-certification:generated:end -->';
@@ -29,6 +35,8 @@ const DISPLAY_STATES = {
   'configuration-verified': 'configuration verified',
   'protocol-verified': 'protocol verified',
   'runtime-evidence-only': 'runtime evidence only (not a native runtime)',
+  'legacy-evidence-only': 'runtime evidence only (legacy receipt schema)',
+  'foreign-policy-evidence': 'runtime evidence only (collected under a different policy)',
   'runtime-verified': 'runtime verified',
 };
 
@@ -38,6 +46,8 @@ const STATE_ORDER = [
   'configuration-verified',
   'protocol-verified',
   'runtime-evidence-only',
+  'legacy-evidence-only',
+  'foreign-policy-evidence',
   'runtime-verified',
 ];
 
@@ -52,7 +62,18 @@ const STATE_ORDER = [
 function matrixState(receipt) {
   const status = certificationStatus(receipt);
   if (status !== 'runtime-verified') return status;
-  return certifyClientCell(receipt).ok ? 'runtime-verified' : 'runtime-evidence-only';
+  // A v1/v2 receipt is readable history from a schema that can no longer certify a cell — but it
+  // WAS a native run, and the "not a native runtime" label would claim the run happened somewhere
+  // it did not. The legacy schema is named instead, the same fact the launch decision reports.
+  if (receipt?.formatVersion !== CERTIFICATION_EVIDENCE_FORMAT_VERSION)
+    return 'legacy-evidence-only';
+  // A receipt collected under a different policy hash certifies nothing here, however strongly its
+  // legs passed: the boundary it was collected against is not the one named in the header above.
+  // The same judgement the launch decision makes, stated where the public can read it.
+  if (receipt.policySha256 && receipt.policySha256 !== POLICY_SHA256)
+    return 'foreign-policy-evidence';
+  if (certifyClientCell(receipt).ok) return 'runtime-verified';
+  return 'runtime-evidence-only';
 }
 
 function rank(receipt) {
@@ -65,20 +86,33 @@ function platformName(receipt) {
 }
 
 /**
- * Where a cell's receipt lives, as a link relative to `docs/capability-matrix.md`.
+ * The file a cell's receipt was published as, named — never linked.
  *
- * The filename is not guessed from the cell: `scripts/client-certify.mjs` writes exactly
+ * Receipts are release artifacts published OUTSIDE the candidate source tree, so a repo-relative
+ * link would point at a path the repository does not carry; the table names the file instead. The
+ * filename is not guessed from the cell: `scripts/client-certify.mjs` writes exactly
  * `client-<client>-<platform>-<arch>.json`, from the same values the receipt records, so for any
- * receipt the shipped certifier produced this resolves to the real file. A receipt placed under any
- * other name resolves to nothing, and the check below renders an em-dash rather than a link that
- * 404s — a public table may not point at a file it has not looked for.
+ * receipt the shipped certifier produced this resolves to the real file. A receipt placed under
+ * any other name resolves to nothing, and the check renders an em-dash rather than naming a file
+ * it has not looked for — a public table may not point at evidence it has not seen.
  */
-function receiptLink(client, os, arch, directory) {
+function receiptName(client, os, arch, directory) {
   if (!directory) return '—';
   const name = `client-${client}-${os}-${arch}.json`;
-  return existsSync(join(directory, name))
-    ? `[\`${name}\`](launch/client-certification-receipts/${name})`
-    : '—';
+  return existsSync(join(directory, name)) ? `\`${name}\`` : '—';
+}
+
+/**
+ * The candidate package digest, short enough for a table row and exact in the receipt it names.
+ *
+ * The commit alone does not identify the candidate bytes — the package is not byte-reproducible —
+ * so the row carries the digest the receipt binds. It is a CHECKSUM: without a provenance
+ * attestation it says "these bytes", never "these bytes built by whom, from what".
+ */
+function packageDigest(receipt) {
+  const sha = receipt.product?.packageSha256;
+  if (typeof sha !== 'string' || !sha.startsWith('sha256:')) return '—';
+  return `\`sha256:${sha.slice('sha256:'.length).slice(0, 12)}…\``;
 }
 
 /**
@@ -109,7 +143,7 @@ function renderCellGrid(receipts, directory) {
       const receipt = byCell.get(`${client}/${os}`);
       if (!receipt) {
         rows.push(
-          `| ${LABELS[client]} | ${PLATFORM_NAMES[os]} | ${DISPLAY_STATES['not-certified']} | — | — | — | — | — |`,
+          `| ${LABELS[client]} | ${PLATFORM_NAMES[os]} | ${DISPLAY_STATES['not-certified']} | — | — | — | — | — | — |`,
         );
         continue;
       }
@@ -126,7 +160,7 @@ function renderCellGrid(receipts, directory) {
       // so, and the host column names WSL outright.
       const host = `${receipt.platform.wsl ? 'WSL ' : ''}${receipt.platform.arch} / ${receipt.platform.node}`;
       rows.push(
-        `| ${LABELS[client]} | ${PLATFORM_NAMES[os]} | ${stateLabel} | ${receipt.client.version} | ${host} | \`${receipt.product.commit.slice(0, 12)}\` | ${receipt.generatedAt.slice(0, 10)} | ${receiptLink(client, os, receipt.platform.arch, directory)} |`,
+        `| ${LABELS[client]} | ${PLATFORM_NAMES[os]} | ${stateLabel} | ${receipt.client.version} | ${host} | \`${receipt.product.commit.slice(0, 12)}\` | ${packageDigest(receipt)} | ${receipt.generatedAt.slice(0, 10)} | ${receiptName(client, os, receipt.platform.arch, directory)} |`,
       );
     }
   }
@@ -135,8 +169,8 @@ function renderCellGrid(receipts, directory) {
     '',
     'One row per advertised cell. A cell is certified only by a vendor-client receipt for that exact client on that native platform; the summary above is per client and can read stronger than any single cell.',
     '',
-    '| Client | Platform | Runtime status | Client version | Host | Candidate commit | Certified | Receipt |',
-    '|---|---|---|---|---|---|---|---|',
+    '| Client | Platform | Runtime status | Client version | Host | Candidate commit | Package digest | Certified | Receipt |',
+    '|---|---|---|---|---|---|---|---|---|',
     ...rows,
     '',
   ];
@@ -174,7 +208,9 @@ export function renderClientCertificationMatrix(receipts, opts = {}) {
     START,
     '## Client certification evidence',
     '',
-    'Generated from validated receipts. A client is runtime verified only when a vendor-client receipt proves record → interruption/restart → authorized resume on the listed platform. Two labels say a row is evidence and not a runtime pass: "protocol evidence only (test client)" when the handshake came from a test client rather than the client under test, and "runtime evidence only (not a native runtime)" when the run happened somewhere other than the native platform — a WSL run satisfies every leg and still cannot certify native Linux or Windows. Neither label can promote a row.',
+    `Generated under launch policy version ${POLICY.policyVersion} (\`${POLICY_SHA256}\`). Every state below is judged against that exact frozen contract; a receipt naming any other hash is evidence about the run and never a certified cell.`,
+    '',
+    'Generated from validated receipts. A client is runtime verified only when a vendor-client receipt proves record → interruption/restart → authorized resume on the listed platform. Four labels say a row is evidence and not a runtime pass: "protocol evidence only (test client)" when the handshake came from a test client rather than the client under test, "runtime evidence only (not a native runtime)" when the run happened somewhere other than the native platform — a WSL run satisfies every leg and still cannot certify native Linux or Windows — "runtime evidence only (legacy receipt schema)" when the receipt predates the certifying schema and is kept as readable history, and "runtime evidence only (collected under a different policy)" when the receipt was collected under a policy hash other than the one named above. No label can promote a row.',
     '',
     '| Client | Highest verified evidence | Strongest certified cell |',
     '|---|---|---|',
@@ -196,18 +232,45 @@ export function replaceGeneratedClientMatrix(document, rendered) {
 
 async function main() {
   const argv = process.argv.slice(2);
+  const stdoutMode = argv.includes('--stdout');
+  if (stdoutMode && argv.includes('--check'))
+    throw new Error(
+      '--stdout prints the rendered matrix to stdout; --check compares the docs file against it — pick one',
+    );
   const docsIndex = argv.indexOf('--docs');
   const receiptIndex = argv.indexOf('--receipts');
   const docs = resolve(docsIndex >= 0 ? argv[docsIndex + 1] : 'docs/capability-matrix.md');
-  const receiptDirectory = resolve(
-    receiptIndex >= 0 ? argv[receiptIndex + 1] : 'docs/launch/client-certification-receipts',
-  );
-  const updated = replaceGeneratedClientMatrix(
-    readFileSync(docs, 'utf8'),
-    renderClientCertificationMatrix(loadClientCertificationReceipts(receiptDirectory), {
-      receiptDirectory,
-    }),
-  );
+  // Receipts are release artifacts published outside the candidate source tree, so there is no
+  // in-tree default to fall back to: without --receipts the generator claims NOTHING — every cell
+  // renders not certified — rather than reading a directory out of the tree it documents.
+  let receipts = [];
+  let receiptDirectory;
+  if (receiptIndex >= 0) {
+    const target = argv[receiptIndex + 1];
+    if (!target) throw new Error('--receipts requires a directory of published receipts');
+    receiptDirectory = resolve(target);
+    // Refused loudly, here: loadClientCertificationReceipts answers a missing directory with an
+    // empty list, and a typo in the path would otherwise publish a matrix that silently claims
+    // nothing is certified rather than failing the operator's command.
+    if (!existsSync(receiptDirectory))
+      throw new Error(`--receipts directory does not exist: ${receiptDirectory}`);
+    receipts = loadClientCertificationReceipts(receiptDirectory);
+  }
+  const rendered = renderClientCertificationMatrix(receipts, { receiptDirectory });
+  if (stdoutMode) {
+    // The receipt-backed matrix is PUBLISHED as a release artifact outside the candidate source
+    // tree (redirected to the evidence root), never committed into the docs: the committed block
+    // stays the zero-receipt contract view, so the release-verify gate — which regenerates it bare —
+    // remains valid in every era. The generated-block markers exist for splicing into the docs
+    // page and are stripped here so the published artifact is standalone markdown.
+    const withoutMarkers = rendered
+      .split('\n')
+      .filter((line) => line !== START && line !== END)
+      .join('\n');
+    process.stdout.write(`${withoutMarkers}\n`);
+    return;
+  }
+  const updated = replaceGeneratedClientMatrix(readFileSync(docs, 'utf8'), rendered);
   if (argv.includes('--check')) {
     if (updated !== readFileSync(docs, 'utf8')) {
       throw new Error(

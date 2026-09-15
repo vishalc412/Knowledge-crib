@@ -1,10 +1,18 @@
 /** Produce a deliberately small, auditable developer-launch decision from release evidence. */
 import { createHash } from 'node:crypto';
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
+  ACCEPTANCE_RECEIPT_FORMAT_VERSION,
+  SUPPORTED_ACCEPTANCE_FORMAT_VERSIONS,
+  acceptanceReceiptProblems,
+  nodeMajorOf,
+} from './acceptance-receipt.mjs';
+import {
+  CERTIFICATION_EVIDENCE_FORMAT_VERSION,
   CertificationEvidenceError,
+  SUPPORTED_CERTIFICATION_FORMAT_VERSIONS,
   bindingProblems,
   certifyClientCell,
   loadClientCertificationReceipts,
@@ -58,6 +66,43 @@ export function evaluateLaunchDecision(evidence, options = {}) {
 
   if (!evidence || typeof evidence !== 'object') {
     return { decision: 'NO-GO', blockers: ['evidence-missing'], certifying: false };
+  }
+
+  // ── the policy's receipt-schema contract agrees with the validators ──────────
+  // Version 4 names the receipt schemas that may certify a cell, and the validators this decision
+  // loads receipts through are the other half of that contract. A policy that disagrees with them
+  // has selected requirements to fit the evidence it can already read — the A02 shape — so the
+  // disagreement itself is a blocker, by kind, before any evidence is judged.
+  for (const [kind, declared, required] of [
+    [
+      'acceptance',
+      policy.receiptSchemas?.acceptance,
+      {
+        format: 'knowledge-crib-acceptance-receipt',
+        requiredFormatVersion: ACCEPTANCE_RECEIPT_FORMAT_VERSION,
+        readableFormatVersions: SUPPORTED_ACCEPTANCE_FORMAT_VERSIONS,
+      },
+    ],
+    [
+      'clientCertification',
+      policy.receiptSchemas?.clientCertification,
+      {
+        format: 'knowledge-crib-client-certification',
+        requiredFormatVersion: CERTIFICATION_EVIDENCE_FORMAT_VERSION,
+        readableFormatVersions: SUPPORTED_CERTIFICATION_FORMAT_VERSIONS,
+      },
+    ],
+  ]) {
+    // Field-by-field, not JSON.stringify of the whole object: the policy file is JSON hand-maintained
+    // under a frozen byte-hash, and a semantically identical policy whose keys were written in a
+    // different order must not read as a contract change. Only the three fields that define the
+    // contract are compared — anything else on the object is the policy's own prose.
+    const agrees =
+      declared?.format === required.format &&
+      declared?.requiredFormatVersion === required.requiredFormatVersion &&
+      JSON.stringify(declared?.readableFormatVersions) ===
+        JSON.stringify(required.readableFormatVersions);
+    if (!agrees) add(`policy-receipt-schema-mismatch:${kind}`);
   }
 
   // Schema 1 predates candidate identity, typed receipts and recorded measurements. It stays
@@ -122,30 +167,33 @@ export function evaluateLaunchDecision(evidence, options = {}) {
       add(`gate-contradiction:${policyGate.id}`);
   }
 
-  // ── typed receipts: a missing type is an actionable blocker, never an inference ──
+  // ── typed receipts: one shared validator, so every consumer checks every fact ──
+  //
+  // This loop used to check status, an artifacts array, and — only when present — the commit. It
+  // never checked the package identity, the policy digest, the run identity, the actual command
+  // exit codes, or the artifact BYTES, and it never checked that the receipt's platform matches the
+  // cell it is offered to. All of that now lives in one shared validator
+  // (scripts/acceptance-receipt.mjs) so the decision and the evidence reader cannot drift; this
+  // loop keeps only the fact the validator cannot know: whether the policy-required type exists.
   const receipts = evidence.receipts ?? {};
+  const cellPlatform = evidence.reproducibility?.platform;
+  const cell = { os: cellPlatform?.os, nodeMajor: nodeMajorOf(cellPlatform?.node) };
   for (const type of policy.receiptTypes) {
     const receipt = receipts[type];
     if (!receipt) {
       add(`receipt-missing:${type}`);
       continue;
     }
-    if (receipt.status !== 'pass')
-      add(`receipt-not-passing:${type}:${receipt.status ?? 'unknown'}`);
-    else if (!Array.isArray(receipt.artifacts) || receipt.artifacts.length === 0)
-      add(`receipt-artifact-missing:${type}`);
-    if (receipt.candidateCommit !== undefined && receipt.candidateCommit !== candidate.commit)
-      add(`receipt-candidate-mismatch:${type}`);
-  }
-
-  // ── freshness receipt must meet the PREREGISTERED target ────────────────────
-  const freshness = receipts.freshness;
-  if (freshness?.status === 'pass') {
-    const p95 = freshness.p95Ms;
-    if (typeof p95 !== 'number' || !Number.isFinite(p95)) add('freshness-p95-not-finite');
-    else if (p95 > policy.freshness.p95TargetMs) add(`freshness-p95-exceeded:${p95}`);
-    if (freshness.workload !== policy.freshness.workload)
-      add(`freshness-workload-mismatch:${freshness.workload ?? 'unknown'}`);
+    for (const problem of acceptanceReceiptProblems(receipt, {
+      type,
+      candidate,
+      policySha256,
+      policy,
+      cell,
+      evidenceRoot: options.receiptsEvidenceRoot,
+    })) {
+      add(problem);
+    }
   }
 
   // ── every advertised client/platform cell, bound to THIS candidate ──────────
@@ -280,7 +328,16 @@ export function judgeGlobalReceipts(receipts, { policy, policySha256, candidate,
   const required = policyGlobalReceiptTypes(policy);
   const byType = new Map();
   for (const receipt of receipts ?? []) {
-    if (typeof receipt?.type === 'string') byType.set(receipt.type, receipt);
+    if (typeof receipt?.type !== 'string') continue;
+    // Two receipts of one type used to be last-wins here, which let a stale fuzz-deep from a
+    // previous pass silently overwrite the fresh one. A duplicate is named as such and the FIRST
+    // one is still judged below — a blocker on the judged receipt is what the operator needs, not
+    // a fresh-looking verdict produced by an overwrite.
+    if (byType.has(receipt.type)) {
+      blockers.push(`global-receipt-duplicate:${receipt.type}`);
+      continue;
+    }
+    byType.set(receipt.type, receipt);
   }
   for (const type of required) {
     const receipt = byType.get(type);
@@ -364,6 +421,23 @@ function judgeFuzzWorkload(receipt, policy) {
   }
   const failures = Array.isArray(details.failures) ? details.failures : [];
   if (failures.length > 0) blockers.push(`fuzz-receipt-failures:${failures.length}`);
+  // The candidate binding (Task 9): a deep receipt must prove WHICH packaged parser bytes
+  // executed — details.candidate with the verified parsers package, worker and grammar hashes.
+  // Without this backstop, a receipt whose sweep actually ran the checkout build (the harness's
+  // binding block deleted or reordered behind the import) could still satisfy every floor above,
+  // because candidatePackageSha256 is the hash of the --package tarball bytes on disk regardless
+  // of what the sweep imported.
+  const candidate = details.candidate;
+  if (
+    !candidate ||
+    typeof candidate.parsersPackageSha256 !== 'string' ||
+    typeof candidate.worker?.sha256 !== 'string' ||
+    !Array.isArray(candidate.grammars) ||
+    candidate.grammars.length === 0 ||
+    candidate.isolatedPrefix !== true
+  ) {
+    blockers.push('fuzz-receipt-unbound-candidate');
+  }
   return blockers;
 }
 
@@ -462,6 +536,11 @@ export function aggregateLaunchDecisions(cells, options = {}) {
           // same 21 findings into all six manifests, which reads as six problems instead of one.
           certificationReceipts: null,
           globalReceipts: null,
+          // The directory the manifest's acceptance-receipt artifacts resolve against: the cell's
+          // OWN directory when the caller knows it (the workflow layout gives every cell its own
+          // receipts and logs), falling back to a single caller-declared root. Absent entirely
+          // means the bytes cannot be located, which the validator names per receipt.
+          receiptsEvidenceRoot: entry.evidenceRoot ?? options.receiptsEvidenceRoot,
         });
         row.decision = decision.decision;
         row.blockers = decision.blockers.map((blocker) => `${row.cell}:${blocker}`);
@@ -540,21 +619,25 @@ export function aggregateLaunchDecisions(cells, options = {}) {
   };
 }
 
-/** Collect one entry per *.json under the cells directory; the cell id is the path minus .json. */
-function collectCellFiles(directory) {
-  const files = [];
-  const walk = (dir, prefix) => {
-    if (!existsSync(dir)) return;
-    for (const entry of readdirSync(dir, { withFileTypes: true }).sort((a, b) =>
-      a.name.localeCompare(b.name),
-    )) {
-      if (entry.isDirectory()) walk(join(dir, entry.name), `${prefix}${entry.name}/`);
-      else if (entry.name.endsWith('.json'))
-        files.push({ path: join(dir, entry.name), cell: `${prefix}${entry.name.slice(0, -5)}` });
-    }
-  };
-  walk(directory, '');
-  return files;
+/**
+ * Collect the POLICY-DECLARED cell locations — and nothing else.
+ *
+ * The old discovery walked the --cells directory recursively and treated every *.json it met as a
+ * cell manifest, so any receipt the workflow downloaded into that directory became a bogus OS/Node
+ * cell: a green client certification receipt read as a seventh cell named after its file. Cell ids
+ * are policy facts, not filesystem facts: for each declared `<os>/<node>` id exactly one manifest
+ * is read, at `<cells>/<os>/<node>/manifest.json`, and every other file under the root is simply
+ * never interpreted. A cell whose manifest is absent yields a `null` manifest, which the aggregate
+ * reports as `missing-evidence:<cell>` — the same named refusal the re-run of a failed cell must
+ * produce. Each entry also carries its own `evidenceRoot` (the cell directory), so the manifest's
+ * typed-receipt artifacts resolve against the directory that actually contains them.
+ */
+function collectDeclaredCells(directory, extraCells, policy) {
+  const declared = [...new Set([...policyOsNodeCells(policy), ...(extraCells ?? [])])];
+  return declared.map((cell) => {
+    const cellDir = join(directory, ...cell.split('/'));
+    return { cell, manifestPath: join(cellDir, 'manifest.json'), evidenceRoot: cellDir };
+  });
 }
 
 /** Expected cell ids come from repeatable --expect name[,name...] flags. */
@@ -605,35 +688,72 @@ function globalReceiptsFromArgv(argv) {
   return { receipts, root: directory };
 }
 
+/** `--receipts-root <dir>` — the evidence root the typed receipts' artifacts resolve against. */
+function receiptsRootFromArgv(argv) {
+  const index = argv.indexOf('--receipts-root');
+  if (index < 0) return undefined;
+  return resolve(argv[index + 1] ?? '.');
+}
+
+/**
+ * `--json-out <file>` — the aggregate as PURE JSON, in its own file.
+ *
+ * Stdout is for the operator: per-cell rows and blocker lines come BEFORE the aggregate JSON, so a
+ * caller that scrapes stdout has to guess where the JSON starts — and a blocker line can itself
+ * carry a brace (an unreadable receipt reports the JSON.parse failure, which quotes the offending
+ * text), which makes "everything from the first `{`" a parser that works only until the first
+ * corrupt file. This file is the machine contract: exactly the aggregate, byte for byte, with no
+ * human output in front of it. Nothing is written on the --json-out-absent path — the stdout
+ * aggregate stays exactly what it always was.
+ */
+function writeJsonOut(argv, aggregate) {
+  const index = argv.indexOf('--json-out');
+  if (index < 0) return;
+  const path = resolve(argv[index + 1] ?? 'launch-decision.json');
+  mkdirSync(dirname(path), { recursive: true });
+  writeFileSync(path, `${JSON.stringify(aggregate, null, 2)}\n`);
+}
+
 function mainCells(argv, cellsIndex) {
   const directory = resolve(argv[cellsIndex + 1] ?? '.');
-  const found = collectCellFiles(directory);
-  const cells = found.map((entry) => {
-    let manifest;
-    try {
-      manifest = JSON.parse(readFileSync(entry.path, 'utf8'));
-    } catch {
-      // Unreadable JSON fails structural validation below -> invalid-evidence:<cell>.
-      manifest = {};
-    }
-    return { cell: entry.cell, manifest };
-  });
   // --expect NARROWS nothing: the policy's cell set is always required. Explicit flags may only
   // ADD cells a caller knows about beyond the policy.
   const declared = expectedCells(argv);
+  const policy = loadLaunchPolicy().policy;
+  const found = collectDeclaredCells(directory, declared, policy);
+  const cells = found.map((entry) => {
+    let manifest;
+    if (existsSync(entry.manifestPath)) {
+      try {
+        manifest = JSON.parse(readFileSync(entry.manifestPath, 'utf8'));
+      } catch (error) {
+        // Unreadable JSON fails structural validation below -> invalid-evidence:<cell>. The parse
+        // failure itself is kept as the format a reader sees: a manifest that failed to PARSE is
+        // residue from an interrupted pass, and `format: undefined` would hide that behind a
+        // message that reads like a version problem.
+        manifest = { format: `unreadable manifest JSON (${error.message})` };
+      }
+    }
+    // A missing manifest stays `undefined`: the aggregate reports it as missing-evidence:<cell>
+    // rather than validating an invented one.
+    return {
+      cell: entry.cell,
+      ...(manifest !== undefined ? { manifest } : {}),
+      evidenceRoot: entry.evidenceRoot,
+    };
+  });
   const certification = certificationReceiptsFromArgv(argv);
   const global = globalReceiptsFromArgv(argv);
   const aggregate = aggregateLaunchDecisions(cells, {
     ...(declared.length > 0
       ? {
-          expectedCells: [
-            ...new Set([...policyOsNodeCells(loadLaunchPolicy().policy), ...declared]),
-          ],
+          expectedCells: [...new Set([...policyOsNodeCells(policy), ...declared])],
         }
       : {}),
     ...(candidateFromArgv(argv) ? { candidate: candidateFromArgv(argv) } : {}),
     ...(certification ? { certificationReceipts: certification.receipts } : {}),
     ...(global ? { globalReceipts: global.receipts, globalReceiptsRoot: global.root } : {}),
+    ...(receiptsRootFromArgv(argv) ? { receiptsEvidenceRoot: receiptsRootFromArgv(argv) } : {}),
   });
   for (const row of aggregate.cells) {
     process.stdout.write(`${row.cell}  ${row.decision}\n`);
@@ -645,6 +765,7 @@ function mainCells(argv, cellsIndex) {
     aggregate.decision = 'NO-GO';
   }
   process.stdout.write(`${JSON.stringify(aggregate, null, 2)}\n`);
+  writeJsonOut(argv, aggregate);
   if (aggregate.decision !== 'GO') process.exitCode = 1;
 }
 
@@ -678,8 +799,10 @@ function main() {
       ...(candidateFromArgv(argv) ? { candidate: candidateFromArgv(argv) } : {}),
       ...(certification ? { certificationReceipts: certification.receipts } : {}),
       ...(global ? { globalReceipts: global.receipts, globalReceiptsRoot: global.root } : {}),
+      ...(receiptsRootFromArgv(argv) ? { receiptsEvidenceRoot: receiptsRootFromArgv(argv) } : {}),
     });
     process.stdout.write(`${JSON.stringify(decision, null, 2)}\n`);
+    writeJsonOut(argv, decision);
     if (decision.decision !== 'GO') process.exitCode = 1;
   } catch (error) {
     process.stderr.write(`${error.message}\n`);

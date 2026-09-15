@@ -9,6 +9,7 @@ const readLF = (p) => readFileSync(p, 'utf8').replace(/\r\n/g, '\n');
 const workflow = readLF('.github/workflows/beta-installers.yml');
 const releaseWorkflow = readLF('.github/workflows/ci.yml');
 const tagWorkflow = readLF('.github/workflows/release.yml');
+const verifyWorkflow = readLF('.github/workflows/release-verify.yml');
 const soulRefreshWorkflow = readLF('.github/workflows/crib-soul-refresh.yml');
 const nightlyWorkflow = readLF('.github/workflows/fuzz-nightly.yml');
 const occurrences = (text, pattern) => [...text.matchAll(pattern)].length;
@@ -232,6 +233,7 @@ for (const [name, source] of [
   ['release CI', releaseWorkflow],
   ['installer CI', workflow],
   ['tag release', tagWorkflow],
+  ['release verification', verifyWorkflow],
   ['fuzz nightly', nightlyWorkflow],
 ]) {
   const actionRefs = [...source.matchAll(/uses:\s+actions\/[\w-]+@([^\s]+)/g)];
@@ -242,32 +244,45 @@ for (const [name, source] of [
 }
 
 assert.match(tagWorkflow, /tags:\s*\n\s*- ['"]v\*['"]/, 'release workflow must run for v* tags');
+// Task 4 — the verification chain is a REUSABLE workflow the tag workflow invokes, so the exact
+// chain a tag runs is callable BEFORE publication (workflow_dispatch) instead of being
+// discoverable only by cutting a tag.
+assert.match(
+  tagWorkflow,
+  /uses:\s*\.\/\.github\/workflows\/release-verify\.yml/,
+  'the tag workflow must invoke the verification chain as a reusable workflow',
+);
+assert.match(
+  verifyWorkflow,
+  /workflow_call:\s*\n\s+outputs:\s*\n\s+package_sha256:/,
+  'the reusable verification workflow must export the attested digest to its caller',
+);
+assert.match(
+  verifyWorkflow,
+  /workflow_dispatch:/,
+  'the verification chain must be callable directly, before publication',
+);
 // Which platforms a TAG verifies on is the launch policy's decision, asserted from the policy
 // itself further down rather than from a list that drifts from it.
 assert.match(
-  tagWorkflow,
+  verifyWorkflow,
   /corepack pnpm@9\.15\.0 release:verify/,
-  'tag release must run the complete release gate',
+  'release verification must run the complete release gate',
 );
 assert.match(
-  tagWorkflow,
+  verifyWorkflow,
   /KCRIB_EMBED_HOME/,
-  'tag release must isolate the semantic model cache from the runner home',
+  'release verification must isolate the semantic model cache from the runner home',
 );
 assert.match(
-  tagWorkflow,
+  verifyWorkflow,
   /embed setup --model large --yes/,
-  'tag release must install the supported semantic tier before collecting release evidence',
+  'release verification must install the supported semantic tier before collecting release evidence',
 );
 assert.match(
-  tagWorkflow,
+  verifyWorkflow,
   /actions\/upload-artifact@/,
-  'tag release must upload the verified bundle',
-);
-assert.match(
-  tagWorkflow,
-  /release-evidence\.json/,
-  'tag release must archive the semantic release receipt',
+  'release verification must upload the verified bundle',
 );
 assert.match(
   tagWorkflow,
@@ -296,43 +311,76 @@ assert.match(
 // workflow that stopped halfway; a FAILED cell's diagnostics go to a separate artifact the
 // aggregation never reads.
 assert.match(
-  tagWorkflow,
+  verifyWorkflow,
   /name:\s*Collect release evidence/,
-  'the tag workflow must collect release evidence after the mandatory commands',
+  'every verification cell must collect release evidence after the collector ran',
 );
 assert.match(
-  tagWorkflow,
+  verifyWorkflow,
   /name:\s*Upload failure diagnostics\s*\n\s+if:\s*failure\(\)/,
   'failure diagnostics must upload separately from the evidence the decision consumes',
 );
 assert.doesNotMatch(
-  tagWorkflow,
+  verifyWorkflow,
   /name:\s*Upload release evidence\s*\n\s+if:\s*always\(\)/,
   'a half-finished run must not contribute a manifest to the launch decision',
 );
 
-// Browser acceptance and the install cycle are TAG requirements, not only PR CI, and each writes
-// its own typed receipt — a missing receipt type is an actionable blocker downstream.
+// Task 4 — the COMPLETE acceptance collector runs in every verification cell, in certifying mode:
+// it verifies the downloaded bundle against its own manifest checksums, installs it into an
+// isolated prefix, and runs all seven checks — each one exercising the INSTALLED candidate and
+// writing its own typed receipt, so a missing receipt type is an actionable blocker downstream.
+// The workflow's job is to hand it the right directory and the right bytes.
 assert.match(
-  tagWorkflow,
-  /pnpm@9\.15\.0 verify:browser/,
-  'tag verification must run the browser suite',
+  verifyWorkflow,
+  /node scripts\/collect-acceptance-receipts\.mjs\s*\n\s+--out "\$\{\{ runner\.temp \}\}\/evidence\/cells\/\$\{\{ matrix\.os \}\}\/\$\{\{ matrix\.node \}\}"\s*\n\s+--package "\$CANDIDATE_PACKAGE"\s*\n\s+--candidate-commit "\$\(git rev-parse HEAD\)"/,
+  'every verification cell must run the complete acceptance collector against the supplied candidate',
 );
 assert.match(
-  tagWorkflow,
-  /write-receipt\.mjs browser/,
-  'the browser leg must write its own receipt',
+  verifyWorkflow,
+  /--out "\$\{\{ runner\.temp \}\}\/evidence\/cells\/\$\{\{ matrix\.os \}\}\/\$\{\{ matrix\.node \}\}\/manifest\.json"/,
+  'the cell manifest must land inside the cell directory the collector filled — one evidence root per cell',
 );
 assert.match(
-  tagWorkflow,
-  /write-receipt\.mjs install/,
-  'the install cycle must write its own receipt',
+  verifyWorkflow,
+  /--receipts "\$\{\{ runner\.temp \}\}\/evidence\/cells\/\$\{\{ matrix\.os \}\}\/\$\{\{ matrix\.node \}\}\/receipts"/,
+  'release evidence must consume the typed receipts the collector wrote into the cell directory',
+);
+// Browser binaries on EVERY platform: browser acceptance is one of the checks the collector runs,
+// so a cell without Chromium fails the browser check and the cell goes red. The install step used
+// to run only on the macOS leg — it must not be conditional.
+assert.match(
+  verifyWorkflow,
+  /name:\s*Install browser binaries\s*\n\s+shell:\s*bash/,
+  'browser binaries must be installed on every platform, under bash',
+);
+assert.doesNotMatch(
+  verifyWorkflow,
+  /name:\s*Install browser binaries\s*\n\s+if:/,
+  'browser acceptance is a TAG requirement on all three operating systems — the install step must not be conditional',
 );
 assert.match(
-  tagWorkflow,
-  /--receipts receipts/,
-  'release evidence must consume the typed receipts the steps wrote',
+  verifyWorkflow,
+  /playwright install --with-deps chromium/,
+  'the Linux cells must install chromium with its system dependencies',
 );
+// The steps that expand environment variables pin `shell: bash`. The platform-default shell breaks
+// the receipt contract on the windows cells: pwsh expands "$CANDIDATE_PACKAGE" as a PowerShell
+// variable (empty), so the collector would be handed a missing package and the manifest written
+// from it would refuse — a receipt can never describe a check that never ran.
+for (const step of [
+  'Run the complete acceptance collector',
+  'Collect release evidence',
+  'Install browser binaries',
+  'Certify \\$\\{\\{ matrix\\.client \\}\\}',
+  'Execute deep fuzz \\(10\\^6 iters/extractor\\)',
+]) {
+  assert.match(
+    verifyWorkflow,
+    new RegExp(`name:\\s*${step}[\\s\\S]{0,600}?shell:\\s*bash`),
+    `${step} must pin shell: bash — the receipt contract dies on the windows default shell`,
+  );
+}
 
 // The verify matrix must be the policy's cell set — EXACTLY, in both directions. A matrix smaller
 // than the policy fails aggregation on a missing cell; a matrix larger than it uploads manifests
@@ -343,46 +391,48 @@ assert.match(
   const declared = new Set(policy.osNodeCells.map((cell) => cell.split('/')[0]));
   const nodes = [...new Set(policy.osNodeCells.map((cell) => cell.split('/')[1]))].sort();
   assert.match(
-    tagWorkflow,
+    verifyWorkflow,
     new RegExp(`node:\\s*\\[${nodes.map((n) => `'${n}'`).join(',\\s*')}\\]`),
     `the release verify matrix must cover exactly Node ${nodes.join(' and ')}`,
   );
   for (const os of declared) {
-    assert.ok(tagWorkflow.includes(`- ${os}`), `the release verify matrix must cover ${os}`);
+    assert.ok(verifyWorkflow.includes(`- ${os}`), `the release verify matrix must cover ${os}`);
   }
   for (const os of ['ubuntu-latest', 'macos-latest', 'windows-latest']) {
     if (declared.has(os)) continue;
     assert.ok(
-      !new RegExp(`^\\s+- ${os}$`, 'm').test(tagWorkflow),
+      !new RegExp(`^\\s+- ${os}$`, 'm').test(verifyWorkflow),
       `${os} is not in the launch policy, so the release matrix must not emit evidence for it`,
     );
   }
   // The certification platforms the tag demands must match the policy's too.
   assert.ok(
-    tagWorkflow.includes(`--certification-platforms ${policy.clientPlatforms.join(',')}`),
-    'the tag must require certification for exactly the policy platforms',
+    verifyWorkflow.includes(`--certification-platforms ${policy.clientPlatforms.join(',')}`),
+    'the verification chain must require certification for exactly the policy platforms',
   );
 }
 
 // The aggregate must see EVERY evidence source, and `needs` is the only thing that makes it wait.
 //
-// The defect this pins: with `needs: verify` alone, the aggregate could start as soon as the hosted
-// matrix finished — while the twenty-one certification jobs and the deep sweep were still running —
-// so the decision was computed from a directory the receipts had not been written into yet. Absent
-// evidence is a NO-GO, which means the race does not publish a bad release; it publishes a NO-GO on a
-// release that was actually clean, and a decision that is wrong in the safe direction is still wrong.
-// It must list all four: the candidate it is bound to, the cell matrix, the certification jobs and
-// the sweep.
+// The defect this pins: the decision must never be computed over a partially-written evidence
+// directory — e.g. while the twenty-one certification jobs and the deep sweep are still running.
+// The caller therefore needs the WHOLE reusable verification chain: a caller job that `uses` a
+// reusable workflow completes only when every job inside it has, so `needs: [verification]`
+// subsumes the candidate, the verify matrix, the certification jobs and the sweep. Absent evidence
+// is a NO-GO, which means a race does not publish a bad release; it publishes a NO-GO on a release
+// that was actually clean, and a decision that is wrong in the safe direction is still wrong.
 assert.match(
   tagWorkflow,
-  /launch-decision:\s*\n\s+name:\s*Aggregate launch decision\s*\n\s+needs:\s*\[candidate,\s*verify,\s*certify,\s*fuzz\]/,
-  'the launch-decision job must wait for the candidate, the verify matrix, the certification jobs ' +
-    'and the deep sweep — anything less computes the decision over a partially-written directory',
+  /launch-decision:\s*\n\s+name:\s*Aggregate launch decision\s*\n\s+needs:\s*\[verification\]/,
+  'the launch-decision job must wait for the whole verification chain — anything less computes ' +
+    'the decision over a partially-written directory',
 );
 assert.match(
   tagWorkflow,
-  /if:\s+\$\{\{\s*!cancelled\(\)\s*\}\}/,
-  'launch-decision must run even when a verify cell fails (if: !cancelled())',
+  /launch-decision:\s*\n\s+name:\s*Aggregate launch decision\s*\n\s+needs:\s*\[verification\]\s*\n\s+if:\s*\$\{\{\s*!cancelled\(\)\s*\}\}/,
+  'launch-decision must run even when a required verification job fails (if: !cancelled()), and the ' +
+    'guard belongs to the decision job itself — a bare if: anywhere in the file could sit on a job ' +
+    'that never runs on the failure path',
 );
 assert.match(
   tagWorkflow,
@@ -396,28 +446,43 @@ assert.match(
 );
 assert.match(
   tagWorkflow,
-  /--candidate-commit "\$GITHUB_SHA"/,
-  'the aggregate must be bound to the tagged commit, not to whatever the manifests claim',
+  /--candidate-commit "\$\(git rev-parse HEAD\)"/,
+  'the aggregate must be bound to the commit the checkout holds, not to $GITHUB_SHA (an annotated ' +
+    'tag puts the TAG OBJECT sha there) and not to whatever the manifests claim',
+);
+assert.match(
+  tagWorkflow,
+  /--json-out decision\.json/,
+  'the aggregate must write its pure JSON to decision.json — stdout carries the per-cell table and ' +
+    'blocker lines in front of the JSON, and a blocker line can itself contain a brace',
+);
+assert.match(
+  tagWorkflow,
+  /decision=NO-GO/,
+  'an unattested candidate must still produce a NO-GO verdict by name — a run that ends in a red ' +
+    'matrix with no decision is the silent NO-GO this job exists to prevent',
 );
 
 // ORDER matters as much as presence: the receipt is the LAST thing a cell writes, so a mandatory
 // command that fails after evidence generation cannot exist — there is nothing after it.
 {
-  const order = (needle) => tagWorkflow.indexOf(needle);
+  const order = (needle) => verifyWorkflow.indexOf(needle);
   const collect = order('name: Collect release evidence');
   for (const step of [
     'name: Run release gate',
-    'name: Run browser acceptance suite',
-    'name: Run install cycle',
-    'name: Write browser receipt',
-    'name: Write install receipt',
+    'name: Install browser binaries',
+    'name: Run the complete acceptance collector',
   ]) {
-    assert.ok(order(step) > 0, `the tag workflow must contain "${step}"`);
+    assert.ok(order(step) > 0, `the verification workflow must contain "${step}"`);
     assert.ok(
       order(step) < collect,
       `"${step}" must run BEFORE the final receipt is written, or the receipt could describe work that had not happened`,
     );
   }
+  assert.ok(
+    order('name: Upload release evidence') > collect,
+    'the cell evidence is uploaded only after the manifest for it exists',
+  );
   assert.ok(
     order('name: Upload verified bundle') > collect,
     'the bundle is uploaded only after the evidence for it exists',
@@ -427,8 +492,8 @@ assert.match(
 // THE gate: publication needs verification AND approval, and ships only the approved bytes.
 assert.match(
   tagWorkflow,
-  /needs:\s*\[verify,\s*launch-decision\]/,
-  'the release job must depend on BOTH the verify matrix and the aggregate launch decision',
+  /needs:\s*\[verification,\s*launch-decision\]/,
+  'the release job must depend on BOTH the verification chain and the aggregate launch decision',
 );
 assert.match(
   tagWorkflow,
@@ -460,30 +525,31 @@ assert.match(
 //   (c) A DEGRADED CERTIFICATION. A cell with no runner or a signed-out client must leave the cell
 //       uncertified and say so by name — never soften into a warning.
 {
-  const order = (needle) => tagWorkflow.indexOf(needle);
+  const order = (needle) => verifyWorkflow.indexOf(needle);
 
   // (a) exactly one attestation, and the two jobs that pack must not both exist. Counting the
   // digest-producing step is how "build once" is asserted: a second one is a second candidate.
   assert.equal(
-    occurrences(tagWorkflow, /name:\s*Attest the candidate package/g),
+    occurrences(verifyWorkflow, /name:\s*Attest the candidate package/g),
     1,
     'the package digest must be attested in exactly one job — a second attestation is a second ' +
       'candidate, and pnpm pack is not byte-reproducible, so the aggregate would refuse them',
   );
   assert.match(
-    tagWorkflow,
+    verifyWorkflow,
     /package_sha256:\s*\$\{\{\s*steps\.attest\.outputs\.package_sha256\s*\}\}/,
     'the candidate job must publish the attested digest as a job output',
   );
   assert.match(
     tagWorkflow,
-    /CANDIDATE_SHA256:\s*\$\{\{\s*needs\.candidate\.outputs\.package_sha256\s*\}\}/,
-    'the aggregate must be bound to the ATTESTED digest, never to a digest it computed itself',
+    /CANDIDATE_SHA256:\s*\$\{\{\s*needs\.verification\.outputs\.package_sha256\s*\}\}/,
+    'the aggregate must be bound to the ATTESTED digest the verification chain exported, never to ' +
+      'a digest it computed itself',
   );
   // Every later job downloads those bytes. The pattern is per-job rather than global: the point is
   // that no evidence-producing job is left building its own tarball.
   assert.ok(
-    occurrences(tagWorkflow, /name:\s*Download the candidate package/g) >= 3,
+    occurrences(verifyWorkflow, /name:\s*Download the candidate package/g) >= 3,
     'each evidence-producing job must download the attested candidate rather than pack its own',
   );
 
@@ -491,12 +557,12 @@ assert.match(
   // per-cell manifests, the twenty-one client receipts, and the global deep-fuzz receipt.
   assert.match(
     tagWorkflow,
-    /--certification-receipts launch-evidence\/client-certification-receipts/,
+    /--certification-receipts evidence\/clients/,
     'the aggregate must receive the raw certification receipts directory',
   );
   assert.match(
     tagWorkflow,
-    /--global-receipts launch-evidence\/global-receipts/,
+    /--global-receipts evidence\/global/,
     'the aggregate must receive the raw global (deep-fuzz) receipts directory',
   );
   assert.match(
@@ -505,57 +571,63 @@ assert.match(
     'the aggregate must judge the attested package digest, not a digest it derived',
   );
   assert.ok(
-    occurrences(tagWorkflow, /merge-multiple:\s*true/g) >= 3,
-    'the manifests, the client receipts and the global receipts must each merge by policy cell id',
+    occurrences(tagWorkflow, /merge-multiple:\s*true/g) +
+      occurrences(verifyWorkflow, /merge-multiple:\s*true/g) >=
+      3,
+    'the cell manifests, the client receipts and the global receipts must each merge into their own root',
   );
 
   // (c) the certification matrix is the policy's client set × platform set, read from the policy so
   // it widens and narrows with the launch promise instead of drifting from it.
   const policy = JSON.parse(readLF('scripts/launch-policy.json'));
   assert.match(
-    tagWorkflow,
+    verifyWorkflow,
     new RegExp(`client:\\s*\\[${policy.clients.join(',\\s*')}\\]`),
     `the certification matrix must cover exactly the policy clients: ${policy.clients.join(', ')}`,
   );
   assert.match(
-    tagWorkflow,
+    verifyWorkflow,
     new RegExp(`platform:\\s*\\[${policy.clientPlatforms.join(',\\s*')}\\]`),
     `the certification matrix must cover exactly the policy platforms: ${policy.clientPlatforms.join(', ')}`,
   );
   // A NATIVE host per platform — `self-hosted, certification, <os>` — and never a hosted runner,
   // because WSL satisfies neither linux nor win32 and a hosted runner satisfies neither.
   assert.match(
-    tagWorkflow,
+    verifyWorkflow,
     /runs-on:\s*\[self-hosted,\s*certification,\s*'\$\{\{\s*matrix\.platform\s*\}\}'\]/,
     'each certification cell must run on its own native self-hosted runner',
   );
   assert.match(
-    tagWorkflow,
+    verifyWorkflow,
     /node scripts\/client-certify\.mjs/,
     'the certification cells must drive the real vendor client through the certification harness',
   );
   assert.match(
-    tagWorkflow,
-    /--candidate-commit "\$GITHUB_SHA"/,
-    'each certification receipt must bind to the tagged commit',
+    verifyWorkflow,
+    /--candidate-commit "\$\(git rev-parse HEAD\)"/,
+    'each certification receipt must bind to the peeled commit the checkout holds — $GITHUB_SHA on an ' +
+      'annotated tag is the TAG OBJECT sha, which no receipt or manifest ever binds to',
   );
 
   // The deep sweep runs ONCE, against the attested candidate, at the policy's iteration floor.
   {
-    const declared = /--iterations (\d+)/.exec(tagWorkflow);
-    assert.ok(declared, 'the tag workflow must state the deep sweep iteration count explicitly');
+    const declared = /--iterations (\d+)/.exec(verifyWorkflow);
+    assert.ok(
+      declared,
+      'the verification workflow must state the deep sweep iteration count explicitly',
+    );
     assert.ok(
       Number(declared[1]) >= policy.fuzz.requiredIterations,
-      `the tag sweep runs ${declared[1]} iterations but the policy requires ` +
+      `the verification sweep runs ${declared[1]} iterations but the policy requires ` +
         `${policy.fuzz.requiredIterations}; a receipt for the smaller sweep would be refused`,
     );
     assert.match(
-      tagWorkflow,
-      /--receipt global-receipts\/fuzz-deep\.json/,
-      'the tag sweep must write the candidate-bound deep-fuzz receipt',
+      verifyWorkflow,
+      /--receipt "\$\{\{ runner\.temp \}\}\/evidence\/global\/fuzz-deep\.json"/,
+      'the verification sweep must write the candidate-bound deep-fuzz receipt outside the checkout',
     );
     assert.match(
-      tagWorkflow,
+      verifyWorkflow,
       /--package "\$CANDIDATE_PACKAGE"/,
       'the deep sweep must run against the attested candidate bytes',
     );
@@ -565,28 +637,263 @@ assert.match(
     );
   }
 
-  // NOTHING SECRET: credentials live in the platform keychain or the vendor profile, so the
-  // workflow may not reference repository secrets at all. `secrets.` anywhere in this file is a
+  // NOTHING SECRET: credentials live in the platform keychain or the vendor profile, so neither
+  // workflow may reference repository secrets at all. `secrets.` anywhere in either file is a
   // design regression — a runner that needs a secret to certify has not been provisioned for
-  // certification. The one token used is the automatic, per-run `github.token`, scoped to `contents:
-  // write` on the single publishing job.
+  // certification. The one token used is the automatic, per-run `github.token`, scoped to
+  // `contents: write` on the single publishing job.
+  for (const [name, source] of [
+    ['the tag workflow', tagWorkflow],
+    ['the verification workflow', verifyWorkflow],
+  ]) {
+    assert.doesNotMatch(
+      source,
+      /\$\{\{\s*secrets\./,
+      `credentials are an operational prerequisite held in the platform keychain — ${name} must not read repository secrets`,
+    );
+  }
+}
+
+// ─── Task 10: preflight the certification host, serialize the desktop per platform ──────────────
+//
+// The defect this section pins: a certification cell scheduled onto an unprovisioned host used to
+// burn its full budget discovering that — a five-minute run ending in "not signed in", or a launch
+// left queued forever. The host preflight (scripts/host-preflight.mjs) must run BEFORE any
+// expensive work and publish its report unconditionally, so missing infrastructure is a named
+// preflight failure with uploaded blockers, not a timeout.
+{
+  // The certify job block, sliced so the order assertions below judge THIS job's steps — the
+  // candidate and verify jobs carry identically named steps (Checkout, Setup Node).
+  const certifyStart = verifyWorkflow.indexOf('  certify:');
+  assert.ok(certifyStart >= 0, 'the verification workflow must have a certify job');
+  const certifyJob = verifyWorkflow.slice(certifyStart, verifyWorkflow.indexOf('  verify:'));
+  const certifyOrder = (needle) => certifyJob.indexOf(needle);
+
+  // Existence first: every order comparison below is an indexOf difference, and a DELETED step
+  // turns its indexOf into -1, making some pins pass vacuously — delete the preflight step and
+  // "preflight runs before install" reads "-1 < 40", true; delete Checkout and "preflight runs
+  // after checkout" reads "40 > -1", also true. A deleted step must fail HERE, named, never feed
+  // an order pin vacuous arithmetic.
+  for (const step of [
+    'name: Preflight the certification host',
+    'name: Checkout',
+    'uses: actions/setup-node@',
+    'name: Install dependencies',
+  ]) {
+    assert.ok(
+      certifyOrder(step) >= 0,
+      `the certify job must still have a step matching "${step}" — an order pin against a deleted step is vacuous`,
+    );
+  }
+
+  // The preflight runs after Checkout and Setup Node — it is a Node script, so a host without node
+  // on PATH must fail on a missing interpreter AFTER the runner image named it, never as an
+  // anonymous "command not found" in place of the blockers — and BEFORE any expensive work
+  // (dependency install, candidate download, the 120-minute certification).
+  assert.ok(
+    certifyOrder('name: Preflight the certification host') > certifyOrder('name: Checkout'),
+    'the host preflight must run after the checkout — it executes scripts/host-preflight.mjs',
+  );
+  assert.ok(
+    certifyOrder('name: Preflight the certification host') >
+      certifyOrder('uses: actions/setup-node@'),
+    'the host preflight must run after Node is set up — on a host without node on PATH it would die ' +
+      'on a missing interpreter instead of naming its blockers',
+  );
+  assert.ok(
+    certifyOrder('name: Preflight the certification host') <
+      certifyOrder('name: Install dependencies'),
+    'the preflight must run before the expensive work — a host missing infrastructure fails in ' +
+      'seconds with named blockers, never as a five-minute run ending in "not signed in"',
+  );
+  assert.match(
+    certifyJob,
+    /node scripts\/host-preflight\.mjs/,
+    'the preflight step must invoke the host preflight module',
+  );
+  assert.match(
+    certifyJob,
+    /--platform \$\{\{ matrix\.platform \}\}/,
+    'the preflight must be told which platform cell it is validating',
+  );
+  assert.match(
+    certifyJob,
+    /--json "\$\{\{ runner\.temp \}\}\/certify-preflight\/r\$\{\{ github\.run_id \}\}a\$\{\{ github\.run_attempt \}\}\/preflight\.json"/,
+    'the preflight report must go to a run-scoped directory outside the checkout — a self-hosted ' +
+      "runner's disk persists between runs, and a previous run's report must never sit in this " +
+      "pass's output",
+  );
+
+  // The report uploads UNCONDITIONALLY: a blocked preflight's named blockers are the diagnostic,
+  // and "the run was killed before the preflight wrote anything" must stay a distinct fact
+  // (if-no-files-found: warn) rather than a masked one. Pinned against the upload STEP's own block,
+  // not the whole job — any other upload in the job would otherwise satisfy a whole-job pin, and
+  // the per-cell name and the preflight path must belong to THIS step.
+  const uploadStep = certifyJob
+    .split('\n      - name:')
+    .find((block) => /Upload the host preflight report/.test(block));
+  assert.ok(uploadStep, 'the certify job must have a preflight report upload step');
+  assert.match(
+    uploadStep,
+    /Upload the host preflight report\s*\n\s*if:\s*always\(\)\s*\n\s*uses:\s*actions\/upload-artifact@/,
+    'the preflight report must upload even when the preflight blocked — the blockers are the diagnostic',
+  );
+  assert.match(
+    uploadStep,
+    /name:\s*certify-preflight-\$\{\{ matrix\.client \}\}-\$\{\{ matrix\.platform \}\}/,
+    'the preflight report artifact must be per-cell — the seven clients of one platform queue on ' +
+      'the same host, and each must publish its own report',
+  );
+  assert.match(
+    uploadStep,
+    /if-no-files-found:\s*warn/,
+    '"the preflight never wrote a report" must be its own signal, not a silent success',
+  );
+  assert.match(
+    uploadStep,
+    /path:\s*\$\{\{ runner\.temp \}\}\/certify-preflight\/r\$\{\{ github\.run_id \}\}a\$\{\{ github\.run_attempt \}\}\//,
+    'the upload must carry the preflight report DIRECTORY this run wrote — a wrong path uploads ' +
+      'nothing while if-no-files-found: warn reports the absence, which is the failure this pin names',
+  );
+
+  // GUI execution is serialized per platform WITHOUT a job-level concurrency group. A concurrency
+  // group admits one running and one pending job and CANCELS any further queued matrix cell to
+  // admit a newer arrival, so `concurrency: certification-${{ matrix.platform }}` would turn the
+  // seven-client queue into missing receipts — exactly the missing-evidence failure this workflow
+  // must not manufacture. Serialization comes from the ONE registered runner per platform (a
+  // self-hosted runner executes one job at a time; Actions queues every further cell indefinitely)
+  // plus the scenario harness's per-platform desktop lock. This negative pin keeps a future change
+  // from "fixing" serialization with a stanza that silently cancels cells. The pattern allows
+  // leading whitespace because a JOB-level stanza is INDENTED under the job key — anchoring at
+  // column 0 would miss exactly the regression this pin exists to catch — while the header comment
+  // explaining the design starts with `#` and never matches.
   assert.doesNotMatch(
-    tagWorkflow,
-    /\$\{\{\s*secrets\./,
-    'credentials are an operational prerequisite held in the platform keychain — the certification ' +
-      'workflow must not read repository secrets',
+    verifyWorkflow,
+    /^[ \t]*concurrency:/m,
+    'per-platform serialization must NOT use a concurrency group — it cancels the queued matrix ' +
+      'cells (one running + one pending, newest arrival wins), manufacturing missing receipts',
   );
 }
 
 // WP9.5 / WP9.3 — a tag is a launch decision: the release gate must demand client runtime
 // certification receipts for every advertised platform cell.
 assert.match(
-  tagWorkflow,
+  verifyWorkflow,
   /--require-runtime-certification/,
-  'tag release must require client runtime certification before shipping',
+  'release verification must require client runtime certification before shipping',
 );
 // (Which platforms must be certified is asserted from the policy above — it narrows and widens
 // with the promise, and hardcoding it here is how the two drift apart.)
+
+// ─── Task 4: explicit artifact roots, complete evidence, re-run-safe uploads ─────────────────────
+//
+// The defects this section pins:
+//
+//   (d) THREE SEPARATE EVIDENCE ROOTS. The old workflow downloaded the client and global receipts
+//       INTO the cells tree, where the cells discovery walked arbitrary JSON — valid receipts
+//       could be read as bogus OS/Node cells. The caller now reconstructs cells/, clients/ and
+//       global/ as siblings, and the decision reads cells ONLY from the six policy-declared
+//       manifest locations.
+//   (e) EVIDENCE OUTSIDE THE CHECKOUT. The collector refuses a dirty working tree and the launch
+//       decision refuses any manifest whose candidate is dirty, so a receipt written inside the
+//       checkout would fail the very checks it is evidence for.
+//   (f) REUSED OUTPUT DIRECTORIES. A certification runner is self-hosted: its disk persists between
+//       runs, so its receipts directory must be scoped by run id and attempt.
+//   (g) FLATTENED BUNDLES. upload-artifact treats a single-directory path as "upload the CONTENTS"
+//       (least-common-ancestor rule); a trailing slash on the bundle path strips the
+//       `knowledge-crib-<version>/` wrapper, and the collector takes the tarball's PARENT as the
+//       bundle directory — a flattened download has no manifest beside the tarball to verify against.
+//   (h) IMMUTABLE ARTIFACTS. Artifacts persist across re-run attempts of a run, so a re-executed
+//       job re-uploading the same name would 409 against its own previous attempt. Every upload
+//       carries `overwrite: true`: a re-executed job replaces ONLY its own output, and jobs that
+//       did not re-run keep their original artifacts.
+assert.match(
+  tagWorkflow,
+  /pattern:\s*release-evidence-\*\s*\n\s+path:\s*evidence\s*\n\s+merge-multiple:\s*true/,
+  'the per-cell evidence must merge into ONE cells root',
+);
+assert.match(
+  tagWorkflow,
+  /pattern:\s*client-certification-\*\s*\n\s+path:\s*evidence\/clients/,
+  'the vendor receipts must land in their OWN root, outside the cells tree',
+);
+assert.match(
+  tagWorkflow,
+  /name:\s*global-receipts\s*\n\s+path:\s*evidence\/global/,
+  'the global receipts must land in their OWN root, outside the cells tree',
+);
+assert.match(
+  verifyWorkflow,
+  /name:\s*global-receipts\s*\n\s+path:\s*\$\{\{ runner\.temp \}\}\/evidence\/global/,
+  'the global receipts must upload from their own root outside the checkout — a receipt or ' +
+    'transcript written inside the tree fails the dirty-tree checks it is evidence for',
+);
+assert.match(
+  tagWorkflow,
+  /--cells evidence\/cells/,
+  'the aggregate must read cells from the dedicated cells root',
+);
+assert.match(
+  verifyWorkflow,
+  /pattern:\s*client-certification-\*\s*\n\s+path:\s*\$\{\{ runner\.temp \}\}\/evidence\/cells\/\$\{\{ matrix\.os \}\}\/\$\{\{ matrix\.node \}\}\/receipts\s*\n\s+merge-multiple:\s*true/,
+  'each cell must see the raw vendor receipts in its own receipts directory, outside the checkout',
+);
+assert.match(
+  verifyWorkflow,
+  /--out "\$\{\{ runner\.temp \}\}\/certify-receipts\/r\$\{\{ github\.run_id \}\}a\$\{\{ github\.run_attempt \}\}"/,
+  "certification receipts must go to a run-scoped output directory — a self-hosted runner's disk " +
+    "persists between runs, and a previous run's receipt must never sit in this pass's --out",
+);
+assert.match(
+  verifyWorkflow,
+  /path:\s*\$\{\{ runner\.temp \}\}\/certify-receipts\/r\$\{\{ github\.run_id \}\}a\$\{\{ github\.run_attempt \}\}\/\s*\n\s+if-no-files-found:\s*warn/,
+  'the certification upload must read exactly the run-scoped directory the certify step wrote — a ' +
+    'run killed before it wrote anything must stay a different fact from a receipt that says blocked',
+);
+{
+  const outs = [...verifyWorkflow.matchAll(/--out "([^"]+)"/g)];
+  assert.ok(outs.length >= 2, 'the verification workflow must state its evidence output paths');
+  for (const [, out] of outs) {
+    assert.ok(
+      out.startsWith('${{ runner.temp }}/'),
+      `evidence output ${out} must live outside the checkout — the collector refuses a dirty tree and the decision refuses a dirty candidate`,
+    );
+  }
+}
+assert.ok(
+  occurrences(verifyWorkflow, /path:\s*dist\/installers\/knowledge-crib-\*\s*\n/g) >= 2,
+  'the candidate and verified-bundle uploads must keep the complete bundle directory layout',
+);
+assert.doesNotMatch(
+  verifyWorkflow,
+  /dist\/installers\/knowledge-crib-\*\/\s*\n/,
+  'a trailing slash on the bundle upload path flattens the artifact — the layout must be preserved',
+);
+assert.match(
+  verifyWorkflow,
+  /name:\s*release-evidence-\$\{\{ matrix\.os \}\}-node\$\{\{ matrix\.node \}\}[\s\S]{0,200}?path:\s*\$\{\{ runner\.temp \}\}\/evidence\/\s*\n/,
+  'the cell artifact must be rooted one level up, so a merge download reconstructs cells/<os>/<node>/…',
+);
+assert.match(
+  verifyWorkflow,
+  /name:\s*release-diagnostics-\$\{\{ matrix\.os \}\}-node\$\{\{ matrix\.node \}\}/,
+  'failure diagnostics must upload under a name no evidence download pattern matches',
+);
+for (const [name, source] of [
+  ['tag release', tagWorkflow],
+  ['release verification', verifyWorkflow],
+]) {
+  const uploads = occurrences(source, /uses:\s+actions\/upload-artifact@/g);
+  // The trailing newline keeps this a YAML key, not the phrase inside a comment that explains
+  // the rule — the comments say "overwrite: true" too, and must not count as pins.
+  const overwrites = occurrences(source, /\boverwrite:\s*true\s*\n/g);
+  assert.ok(uploads > 0, `${name} must upload artifacts`);
+  assert.equal(
+    overwrites,
+    uploads,
+    `every ${name} upload must carry overwrite: true — a re-executed job replaces only its own artifact`,
+  );
+}
 
 assert.match(dependabot, /package-ecosystem:\s*"npm"/, 'Dependabot must monitor npm dependencies');
 assert.match(

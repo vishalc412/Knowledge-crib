@@ -10,43 +10,154 @@ import {
   loadClientCertificationReceipts,
 } from './client-certification-evidence.mjs';
 import { renderClientCertificationMatrix } from './client-certification-matrix.mjs';
+import {
+  RECORDER_VERSION,
+  RECORDING_FORMAT,
+  RECORDING_FORMAT_VERSION,
+} from './client-protocol-recorder.mjs';
+import { loadLaunchPolicy } from './launch-policy.mjs';
 
-const SHA = `sha256:${'a'.repeat(64)}`;
+// The generated table is tied to the exact policy it certifies under: fixtures that expect a
+// runtime-verified row must carry the hash the generator loads, and a receipt that does not is the
+// foreign-policy probe below.
+const { sha256: POLICY_SHA, policy: POLICY } = loadLaunchPolicy();
+
+const SHA_A = `sha256:${'a'.repeat(64)}`;
+const SHA_B = `sha256:${'b'.repeat(64)}`;
 const COMMIT = 'a'.repeat(40);
 const CAPTURED_AT = '2026-09-08T00:00:00.000Z';
+const digestOf = (bytes) => `sha256:${createHash('sha256').update(bytes).digest('hex')}`;
 
-/** Every leg passing, which is what a genuine native vendor run records. */
+/** The isolated stores both principals share — the whole point is one journal, two identities. */
+const SHARED_STORES = {
+  journal: '/tmp/crib-certification-memory',
+  repository: '/tmp/crib-certification-registry',
+};
+
+/** A protocol reference: the archived recording, the completed operation, and its request id. */
+const protocolRef = (recording, operation) => ({
+  recording,
+  operation,
+  request: `fixture-${recording}-${operation}`,
+});
+
+/** Every leg passing, each protocol leg citing the completed operation it rests on. */
 const allPassLegs = (overrides = {}) => ({
   configuration: { status: 'pass' },
-  handshake: { status: 'pass', source: 'vendor-client' },
-  toolUse: { status: 'pass', source: 'vendor-client' },
-  record: { status: 'pass' },
+  handshake: { status: 'pass', source: 'vendor-client', protocol: [protocolRef('owner', 1)] },
+  toolUse: { status: 'pass', source: 'vendor-client', protocol: [protocolRef('owner', 3)] },
+  record: { status: 'pass', protocol: [protocolRef('owner', 3)] },
   interruption: { status: 'pass' },
-  restart: { status: 'pass' },
-  authorizedResume: { status: 'pass' },
-  foreignPrincipalExclusion: { status: 'pass' },
+  restart: { status: 'pass', protocol: [protocolRef('owner', 7)] },
+  authorizedResume: { status: 'pass', protocol: [protocolRef('owner', 9)] },
+  foreignPrincipalExclusion: {
+    status: 'pass',
+    protocol: [protocolRef('foreign', 1), protocolRef('owner', 9)],
+  },
   ...overrides,
 });
 
+/** The recorder transcript attributed to one side's principal, in the shape the recorder writes. */
+function fixtureRecordingBytes(name, side, principalSha256) {
+  return `${JSON.stringify({
+    format: RECORDING_FORMAT,
+    formatVersion: RECORDING_FORMAT_VERSION,
+    recorderVersion: RECORDER_VERSION,
+    recordedAt: CAPTURED_AT,
+    principalSha256,
+    serverCommandSha256: SHA_A,
+    sessions: [{ id: `session-${name}-${side}` }],
+    operations: Array.from({ length: 10 }, (_, index) => ({
+      id: `op-${name}-${side}-${index}`,
+      method: 'tools/call',
+      status: 'completed',
+      tool: 'memory',
+    })),
+  })}\n`;
+}
+
+/** The log and both recordings a certifying fixture rests on, hashed exactly as the receipt cites them. */
+function fixtureArtifacts(name) {
+  const logBytes = `record -> interrupt -> restart -> authorized resume (${name}.log)\n`;
+  return {
+    logBytes,
+    ownerBytes: fixtureRecordingBytes(name, 'owner', SHA_A),
+    foreignBytes: fixtureRecordingBytes(name, 'foreign', SHA_B),
+  };
+}
+
 /**
- * A version-2 certifying receipt. The matrix renderer is a pure leg-and-cell consumer, so these
- * in-memory fixtures need no artifacts on disk — the ones written out for the CLI path below do.
+ * A complete version-3 certifying receipt. The renderer is a pure leg-and-cell consumer, so these
+ * in-memory fixtures need no artifacts on disk — the ones written out for the CLI path below do,
+ * because there the loader re-hashes every artifact the receipt cites.
+ */
+const v3Receipt = (name = 'codex', overrides = {}) => {
+  const { logBytes, ownerBytes, foreignBytes } = fixtureArtifacts(name);
+  return {
+    format: 'knowledge-crib-client-certification',
+    formatVersion: 3,
+    generatedAt: CAPTURED_AT,
+    policySha256: POLICY_SHA,
+    product: { commit: COMMIT, packageSha256: SHA_A },
+    client: { id: 'codex', version: '0.42.0', driverVersion: '1.0.0', certificationMode: 'codex' },
+    platform: { os: 'darwin', arch: 'arm64', node: 'v22.23.1' },
+    runId: `run-matrix-${name}`,
+    capture: { hostname: 'fixture-host', operator: 'fixture-operator', capturedAt: CAPTURED_AT },
+    principalMarkers: { owner: SHA_A, foreign: SHA_B },
+    configurations: {
+      owner: {
+        sha256: SHA_A,
+        principalSha256: SHA_A,
+        stores: SHARED_STORES,
+        serverCommandSha256: SHA_A,
+      },
+      foreign: {
+        sha256: SHA_B,
+        principalSha256: SHA_B,
+        stores: SHARED_STORES,
+        serverCommandSha256: SHA_A,
+      },
+    },
+    protocol: {
+      ownerRecording: {
+        path: `recordings/${name}-owner-recording.json`,
+        sha256: digestOf(ownerBytes),
+      },
+      foreignRecording: {
+        path: `recordings/${name}-foreign-recording.json`,
+        sha256: digestOf(foreignBytes),
+      },
+    },
+    vendor: {
+      processIdentity: 'codex 0.42.0 (/usr/local/bin/codex, pid 4711)',
+      logPath: `logs/${name}.log`,
+      logSha256: digestOf(logBytes),
+    },
+    legs: allPassLegs(),
+    ...overrides,
+  };
+};
+
+/**
+ * The schema version three replaced: legs and a vendor transcript, but no protocol evidence. It
+ * stays LOADABLE as history and can never cover a cell — the migration story the renderer has to
+ * keep telling without pretending the run happened somewhere other than the native platform.
  */
 const v2Receipt = (overrides = {}) => ({
   format: 'knowledge-crib-client-certification',
   formatVersion: 2,
   generatedAt: CAPTURED_AT,
-  policySha256: SHA,
-  product: { commit: COMMIT, packageSha256: SHA },
+  policySha256: SHA_A,
+  product: { commit: COMMIT, packageSha256: SHA_A },
   client: { id: 'codex', version: '0.42.0', driverVersion: '1.0.0', certificationMode: 'codex' },
   platform: { os: 'darwin', arch: 'arm64', node: 'v22.23.1' },
-  runId: 'run-matrix-fixture',
+  runId: 'run-matrix-legacy',
   capture: { hostname: 'fixture-host', operator: 'fixture-operator', capturedAt: CAPTURED_AT },
-  principalMarkers: { owner: SHA, foreign: `sha256:${'b'.repeat(64)}` },
+  principalMarkers: { owner: SHA_A, foreign: SHA_B },
   vendor: {
     processIdentity: 'codex 0.42.0 (/usr/local/bin/codex, pid 4711)',
     logPath: 'logs/codex.log',
-    logSha256: SHA,
+    logSha256: SHA_A,
   },
   legs: allPassLegs(),
   ...overrides,
@@ -54,7 +165,7 @@ const v2Receipt = (overrides = {}) => ({
 
 /**
  * The grid rows of a rendered document, as cell arrays. The summary table above has three columns
- * and the grid header is a row too, so filtering on the eight-column shape and dropping the header
+ * and the grid header is a row too, so filtering on the nine-column shape and dropping the header
  * isolates the cells without depending on the grid's position.
  */
 const gridRows = (doc) =>
@@ -62,16 +173,21 @@ const gridRows = (doc) =>
     .split('\n')
     .filter((line) => line.startsWith('| ') && line.endsWith(' |'))
     .map((line) => line.slice(2, -2).split(' | '))
-    .filter((cells) => cells.length === 8 && cells[0] !== 'Client');
+    .filter((cells) => cells.length === 9 && cells[0] !== 'Client');
 
 const gridRow = (doc, client, platform) =>
   gridRows(doc).find((cells) => cells[0] === client && cells[1] === platform);
 
-const rendered = renderClientCertificationMatrix([
-  v2Receipt({
-    client: { id: 'codex', version: '0.42.0', driverVersion: '1', certificationMode: 'codex' },
-  }),
-]);
+const rendered = renderClientCertificationMatrix([v3Receipt()]);
+
+// The generated table is stamped with the exact policy it certifies under — version and hash — so a
+// reader can tell which frozen contract the states below speak for, and a receipt that names a
+// different hash is judged against the one printed here.
+assert.match(rendered, /launch policy version 4/);
+assert.ok(
+  rendered.includes(POLICY_SHA),
+  'the generated header must carry the policy hash it judges against',
+);
 
 assert.match(rendered, /\| Codex \| runtime verified \| macOS arm64 \(0\.42\.0\) \|/);
 assert.match(rendered, /\| Claude Code \| not certified \| — \|/);
@@ -97,6 +213,7 @@ assert.deepEqual(gridRow(rendered, 'Codex', 'macOS'), [
   '0.42.0',
   'arm64 / v22.23.1',
   `\`${COMMIT.slice(0, 12)}\``,
+  `\`sha256:${'a'.repeat(12)}…\``,
   CAPTURED_AT.slice(0, 10),
   '—',
 ]);
@@ -104,12 +221,14 @@ assert.deepEqual(gridRow(rendered, 'Codex', 'macOS'), [
 // An uncertified cell shows the state and nothing else. A plausible version, commit or date beside an
 // uncertified cell would be a fabricated record of a run that never happened.
 for (const cells of gridRows(rendered)) {
-  if (cells[2] === 'not certified') assert.deepEqual(cells.slice(3), ['—', '—', '—', '—', '—']);
+  if (cells[2] === 'not certified')
+    assert.deepEqual(cells.slice(3), ['—', '—', '—', '—', '—', '—']);
 }
 assert.deepEqual(gridRow(rendered, 'Claude Code', 'macOS'), [
   'Claude Code',
   'macOS',
   'not certified',
+  '—',
   '—',
   '—',
   '—',
@@ -121,7 +240,7 @@ assert.deepEqual(gridRow(rendered, 'Claude Code', 'macOS'), [
 // native runtime, so the row discloses the run and never presents it as a native Linux pass. This is
 // the same judgement the launch decision makes: the table must not contradict it.
 const wslRendered = renderClientCertificationMatrix([
-  v2Receipt({
+  v3Receipt('matrix-wsl', {
     client: { id: 'cursor', version: '1.0.0', driverVersion: '1', certificationMode: 'cursor' },
     platform: { os: 'linux', arch: 'x64', node: 'v22.23.1', wsl: true },
   }),
@@ -147,15 +266,13 @@ assert.equal(
 // A native linux pass beside the WSL run still certifies the cell, and the row shows the stronger
 // evidence — the disclosure is about the evidence displayed, not a permanent mark on the client.
 const nativeBesideWsl = renderClientCertificationMatrix([
-  v2Receipt({
+  v3Receipt('matrix-wsl', {
     client: { id: 'cursor', version: '1.0.0', driverVersion: '1', certificationMode: 'cursor' },
     platform: { os: 'linux', arch: 'x64', node: 'v22.23.1', wsl: true },
-    runId: 'run-matrix-wsl',
   }),
-  v2Receipt({
+  v3Receipt('matrix-native', {
     client: { id: 'cursor', version: '1.0.0', driverVersion: '1', certificationMode: 'cursor' },
     platform: { os: 'linux', arch: 'x64', node: 'v22.23.1' },
-    runId: 'run-matrix-native',
   }),
 ]);
 assert.match(nativeBesideWsl, /\| Cursor \| runtime verified \| Linux x64 \(1\.0\.0\) \|/);
@@ -173,7 +290,7 @@ const testClientRendered = renderClientCertificationMatrix([
   {
     client: { id: 'copilot', version: '1.0.0' },
     platform: { os: 'linux', arch: 'x64', node: 'v22.23.1' },
-    product: { commit: COMMIT, packageSha256: SHA },
+    product: { commit: COMMIT, packageSha256: SHA_A },
     generatedAt: CAPTURED_AT,
     evidence: {
       configuration: { status: 'pass' },
@@ -193,7 +310,7 @@ const vendorProtocolRendered = renderClientCertificationMatrix([
   {
     client: { id: 'copilot', version: '1.0.0' },
     platform: { os: 'linux', arch: 'x64', node: 'v22.23.1' },
-    product: { commit: COMMIT, packageSha256: SHA },
+    product: { commit: COMMIT, packageSha256: SHA_A },
     generatedAt: CAPTURED_AT,
     evidence: {
       configuration: { status: 'pass' },
@@ -206,6 +323,32 @@ assert.match(vendorProtocolRendered, /\| GitHub Copilot \| protocol verified \|/
 // The renderer's fixed legend paragraph always explains the "protocol evidence only" label, so
 // scope this check to the GitHub Copilot row rather than the whole document.
 assert.doesNotMatch(vendorProtocolRendered, /\| GitHub Copilot \| protocol evidence only/);
+
+// A version-2 receipt is readable history that can no longer cover a cell, and the row must say
+// WHAT it is: a legacy schema. The one fact it may not state is the WSL label's — that the run
+// happened somewhere other than the native platform — because a v2 receipt was a native run, and
+// the public table may not claim the run happened where it did not.
+const legacyRendered = renderClientCertificationMatrix([v2Receipt()]);
+assert.match(legacyRendered, /\| Codex \| runtime evidence only \(legacy receipt schema\) \|/);
+assert.doesNotMatch(legacyRendered, /\| Codex \| runtime verified/);
+assert.doesNotMatch(legacyRendered, /\| Codex \| runtime evidence only \(not a native runtime\)/);
+assert.equal(
+  gridRow(legacyRendered, 'Codex', 'macOS')[2],
+  'runtime evidence only (legacy receipt schema)',
+);
+
+// A receipt collected under a different policy hash is evidence about the run and never a certified
+// cell — the same judgement the launch decision makes, stated where the public can read it. The
+// legs all pass and the run was native; what it cannot do is certify a boundary it did not freeze.
+const foreignPolicyRendered = renderClientCertificationMatrix([
+  v3Receipt('matrix-foreign', { policySha256: SHA_A }),
+]);
+assert.match(foreignPolicyRendered, /runtime evidence only \(collected under a different policy\)/);
+assert.doesNotMatch(foreignPolicyRendered, /\| Codex \| runtime verified/);
+assert.equal(
+  gridRow(foreignPolicyRendered, 'Codex', 'macOS')[2],
+  'runtime evidence only (collected under a different policy)',
+);
 
 // The test-client relabel applies to the cell too, so a probe that merely speaks the protocol shape
 // cannot be counted as a cell pass; a vendor-client protocol probe keeps the plain label.
@@ -230,19 +373,20 @@ const runMatrix = (docs, receipts, args = []) =>
     encoding: 'utf8',
   });
 
-/** A certifying version-2 receipt backed by a real log file under `receiptsDir`. */
+/** A certifying version-3 receipt backed by a real log AND both recordings under `receiptsDir`. */
 function writeRuntimeReceipt(receiptsDir, name, runtime = {}) {
+  const { logBytes, ownerBytes, foreignBytes } = fixtureArtifacts(name);
   mkdirSync(join(receiptsDir, 'logs'), { recursive: true });
-  const logName = `${name}.log`;
-  const bytes = `record -> interrupt -> restart -> authorized resume (${logName})\n`;
-  writeFileSync(join(receiptsDir, 'logs', logName), bytes);
-  return v2Receipt({
-    runId: `run-${name}`,
+  writeFileSync(join(receiptsDir, 'logs', `${name}.log`), logBytes);
+  mkdirSync(join(receiptsDir, 'recordings'), { recursive: true });
+  writeFileSync(join(receiptsDir, 'recordings', `${name}-owner-recording.json`), ownerBytes);
+  writeFileSync(join(receiptsDir, 'recordings', `${name}-foreign-recording.json`), foreignBytes);
+  return v3Receipt(name, {
     client: { id: 'codex', version: '1.0.0', driverVersion: '1.0.0', certificationMode: 'codex' },
     vendor: {
       processIdentity: 'codex 1.0.0 (/usr/local/bin/codex, pid 4711)',
-      logPath: `logs/${logName}`,
-      logSha256: `sha256:${createHash('sha256').update(bytes).digest('hex')}`,
+      logPath: `logs/${name}.log`,
+      logSha256: digestOf(logBytes),
     },
     ...runtime,
   });
@@ -268,6 +412,10 @@ try {
   assert.equal(runMatrix(flipDocs, flipDir).status, 0);
   let flipDoc = readFileSync(flipDocs, 'utf8');
   assert.match(flipDoc, /\| Codex \| runtime verified \| macOS arm64 \(1\.0\.0\) \|/);
+  // The receipt column names the file and never links into the candidate tree: receipts are
+  // release artifacts published outside it, so a repo-relative link would point at a path the
+  // repository does not carry.
+  assert.doesNotMatch(flipDoc, /\]\(launch\/client-certification-receipts\//);
   assert.deepEqual(gridRow(flipDoc, 'Codex', 'macOS'), [
     'Codex',
     'macOS',
@@ -275,8 +423,9 @@ try {
     '1.0.0',
     'arm64 / v22.23.1',
     `\`${COMMIT.slice(0, 12)}\``,
+    `\`sha256:${'a'.repeat(12)}…\``,
     CAPTURED_AT.slice(0, 10),
-    `[\`${flipReceipt}\`](launch/client-certification-receipts/${flipReceipt})`,
+    `\`${flipReceipt}\``,
   ]);
   assert.equal(runMatrix(flipDocs, flipDir, ['--check']).status, 0);
 
@@ -296,12 +445,12 @@ try {
   // at a file it has not looked for and a 404 is not evidence.
   const strayDir = join(root, 'stray');
   mkdirSync(strayDir);
-  writeFileSync(join(strayDir, 'codex-darwin.json'), `${JSON.stringify(v2Receipt())}\n`);
-  const strayRendered = renderClientCertificationMatrix([v2Receipt()], {
+  writeFileSync(join(strayDir, 'codex-darwin.json'), `${JSON.stringify(v3Receipt())}\n`);
+  const strayRendered = renderClientCertificationMatrix([v3Receipt()], {
     receiptDirectory: strayDir,
   });
   assert.equal(gridRow(strayRendered, 'Codex', 'macOS')[2], 'runtime verified');
-  assert.equal(gridRow(strayRendered, 'Codex', 'macOS')[7], '—');
+  assert.equal(gridRow(strayRendered, 'Codex', 'macOS')[8], '—');
 
   // Validation coupling: generation loads receipts through the validator, so a malformed receipt
   // in the directory makes it refuse rather than render a runtime-verified row.
@@ -320,6 +469,104 @@ try {
   assert.notEqual(refused.status, 0);
   assert.match(refused.stderr, /vendor-client/);
   assert.doesNotMatch(readFileSync(refuseDocs, 'utf8'), /runtime verified/);
+
+  // Without --receipts the generator claims NOTHING: it reads no directory — least of all a default
+  // inside the candidate source tree — renders every cell not certified, and the result is stable
+  // under --check. An empty boundary must be printable, just never overstated.
+  const bareDocs = join(root, 'bare-capability-matrix.md');
+  writeFileSync(bareDocs, DOCS_TEMPLATE);
+  const bare = spawnSync(process.execPath, [SCRIPT, '--docs', bareDocs], { encoding: 'utf8' });
+  assert.equal(bare.status, 0);
+  const bareDoc = readFileSync(bareDocs, 'utf8');
+  assert.match(bareDoc, /\| Claude Code \| not certified \| — \|/);
+  // Row-scoped, because the legend paragraph always contains the words "runtime verified" while
+  // explaining what the label means; no ROW may carry the state.
+  assert.doesNotMatch(bareDoc, / \| runtime verified \| /);
+  assert.equal(
+    spawnSync(process.execPath, [SCRIPT, '--docs', bareDocs, '--check'], { encoding: 'utf8' })
+      .status,
+    0,
+  );
+
+  // ── the published support matrix: --stdout, and no in-tree receipt default ──────────────────
+
+  // A textual pin, not a behaviour probe: the bare run above would pass identically with an
+  // in-tree receipt default in place (a default renders the same not-certified table until a
+  // receipt lands under it), so the default is refused by pinning the source. Same approach as
+  // release-evidence.test.mjs takes for its own former default.
+  assert.ok(
+    !readFileSync(SCRIPT, 'utf8').includes('docs/launch/client-certification-receipts'),
+    'client-certification-matrix.mjs must not read receipts from inside the candidate source tree',
+  );
+
+  // --stdout prints the rendered block — markers stripped — and never touches a docs file.
+  const stdoutBare = spawnSync(process.execPath, [SCRIPT, '--stdout'], { encoding: 'utf8' });
+  assert.equal(stdoutBare.status, 0, stdoutBare.stderr);
+  assert.equal(
+    stdoutBare.stdout,
+    `${renderClientCertificationMatrix([], {})
+      .split('\n')
+      .filter(
+        (line) =>
+          line !== '<!-- client-certification:generated:start -->' &&
+          line !== '<!-- client-certification:generated:end -->',
+      )
+      .join('\n')}\n`,
+  );
+  assert.ok(
+    !stdoutBare.stdout.includes('client-certification:generated'),
+    'the published artifact is standalone markdown, not a splice into a docs page',
+  );
+
+  // With receipts, --stdout carries the certified rows — this is the receipt-backed support matrix
+  // published outside the tree — while the docs file it does NOT touch stays the bare contract
+  // view the release gate regenerates. That split is what keeps release-verify's bare --check
+  // valid in every era: the committed block can never go stale against out-of-tree receipts.
+  const pubDir = join(root, 'publish');
+  const pubReceipt = 'client-codex-darwin-arm64.json';
+  mkdirSync(pubDir);
+  writeFileSync(
+    join(pubDir, pubReceipt),
+    `${JSON.stringify(writeRuntimeReceipt(pubDir, 'client-codex-darwin-arm64'))}\n`,
+  );
+  const untouchedDocs = join(root, 'untouched-capability-matrix.md');
+  writeFileSync(untouchedDocs, DOCS_TEMPLATE);
+  const stdoutCertified = spawnSync(
+    process.execPath,
+    [SCRIPT, '--docs', untouchedDocs, '--receipts', pubDir, '--stdout'],
+    { encoding: 'utf8' },
+  );
+  assert.equal(stdoutCertified.status, 0, stdoutCertified.stderr);
+  assert.match(
+    stdoutCertified.stdout,
+    /\| Codex \| runtime verified \| macOS arm64 \(1\.0\.0\) \|/,
+  );
+  assert.ok(
+    stdoutCertified.stdout.includes(`\`${pubReceipt}\``),
+    'the published matrix must name the receipt file it was rendered from',
+  );
+  assert.equal(
+    readFileSync(untouchedDocs, 'utf8'),
+    DOCS_TEMPLATE,
+    '--stdout must not rewrite the committed docs block',
+  );
+
+  // --stdout and --check answer different questions and cannot be combined.
+  const combined = runMatrix(flipDocs, flipDir, ['--stdout', '--check']);
+  assert.notEqual(combined.status, 0);
+  assert.match(combined.stderr, /pick one/);
+
+  // --receipts with no value refuses with its own message.
+  const noValue = spawnSync(process.execPath, [SCRIPT, '--receipts'], { encoding: 'utf8' });
+  assert.notEqual(noValue.status, 0);
+  assert.match(noValue.stderr, /--receipts requires a directory/);
+
+  // A nonexistent --receipts directory refuses LOUDLY: loadClientCertificationReceipts answers a
+  // missing directory with an empty list, and a path typo would otherwise publish a matrix that
+  // silently claims nothing is certified instead of failing the operator's command.
+  const missing = runMatrix(flipDocs, join(root, 'no-such-dir'));
+  assert.notEqual(missing.status, 0);
+  assert.match(missing.stderr, /does not exist/);
 } finally {
   rmSync(root, { recursive: true, force: true });
 }
