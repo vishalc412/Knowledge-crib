@@ -66,6 +66,7 @@ export * from './graph.js';
 export * from './graph-backfill.js';
 export * from './graph-bridge.js';
 export * from './graph-index.js';
+export * from './graph-extraction.js';
 export * from './graph-projection.js';
 export * from './graph-corpus/corpus.js';
 export * from './sync/event.js';
