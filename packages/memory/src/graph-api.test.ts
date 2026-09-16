@@ -2,10 +2,12 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { createGraphAssertion, createGraphEntity } from './graph.js';
 import { MemoryApi } from './api.js';
+import { buildGraphExtractionJob } from './graph-extraction.js';
+import { createGraphAssertion, createGraphEntity } from './graph.js';
+import { memoryRecordId } from './ids.js';
 import { MemoryStore, __resetMemoryLockGuardForTest } from './store.js';
-import type { MemoryProvenance } from './types.js';
+import type { MemoryProvenance, MemoryRecord } from './types.js';
 
 const ALPHA = 'principal:alpha';
 const BETA = 'principal:beta';
@@ -47,6 +49,39 @@ function assertion(principalId: string, subject: string, object: string, support
   });
 }
 
+function record(): MemoryRecord {
+  const input = {
+    kind: 'fact' as const,
+    subject: 'topic:graph-lifecycle',
+    claim: 'Graph lifecycle evidence must remain current.',
+    scope: { boundary: 'global' as const },
+    appliesTo: ['topic:graph-lifecycle'],
+    evidence: [
+      {
+        kind: 'source-quote' as const,
+        verdict: 'valid' as const,
+        checkedAt: NOW,
+        soulId: 'topic:graph-lifecycle',
+        quote: 'Graph lifecycle evidence must remain current.',
+        targetHash: 'blake3:0123456789abcdef',
+      },
+    ],
+    authorship: { actor: 'vitest', kind: 'agent' as const, tool: 'vitest' },
+  };
+  return {
+    id: memoryRecordId(input),
+    schemaVersion: '1',
+    ...input,
+    verdicts: {
+      trust: 'local',
+      evidence: 'valid',
+      applicability: 'current',
+      lifecycle: 'active',
+    },
+    createdAt: NOW,
+  };
+}
+
 beforeEach(() => {
   home = mkdtempSync(join(tmpdir(), 'crib-graph-api-'));
   __resetMemoryLockGuardForTest();
@@ -80,5 +115,40 @@ describe('MemoryApi.graphProjection', () => {
     expect(graph.current.map((edge) => edge.id)).toEqual([mine.id]);
     expect(graph.diagnostics.excludedForeign).toBe(0);
     expect(JSON.stringify(graph)).not.toContain('topic:beta');
+  });
+
+  it('withdraws an assertion when its only supporting record is retracted', () => {
+    const support = record();
+    const edge = assertion(ALPHA, support.id, 'topic:retained-edge', support.id);
+    const job = buildGraphExtractionJob(
+      {
+        sourceId: support.id,
+        sourceHash: 'blake3:0123456789abcdef',
+        ontologyVersion: 'graph-ontology-v1',
+        principalId: ALPHA,
+        producer: { id: 'agent:retention', version: '1.0.0' },
+        idempotencyKey: 'retention:graph-api:1',
+      },
+      NOW,
+    );
+    local.upsertEntry('active', support);
+    local.submitGraphEntries([edge]);
+    local.upsertEntry('graph-jobs', job);
+    const api = new MemoryApi({
+      stores: { local },
+      env: { ...process.env, KCRIB_PRINCIPAL_ID: ALPHA },
+      now: () => NOW,
+    });
+
+    expect(api.graphProjection().current.map((item) => item.id)).toEqual([edge.id]);
+    expect(api.delete(support.id, { actor: 'agent:retention' }).ok).toBe(true);
+
+    const graph = api.graphProjection();
+    expect(graph.current).toEqual([]);
+    expect(graph.timeline).toEqual([]);
+    expect(graph.diagnostics.unsupported).toEqual([
+      { id: edge.id, missingSupporters: [support.id] },
+    ]);
+    expect(local.readCollection('graph-jobs').entries).toEqual([]);
   });
 });

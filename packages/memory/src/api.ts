@@ -84,8 +84,8 @@ import {
   entrySetFingerprint,
   evaluationCacheFor,
 } from './generation-cache.js';
-import { verifyQuote } from './grounding.js';
 import { type GraphProjection, projectGraph } from './graph-projection.js';
+import { verifyQuote } from './grounding.js';
 import {
   type HandoffAttemptEvent,
   type HandoffInput,
@@ -176,6 +176,7 @@ import type {
   CaptureOutboxEntry,
   GraphAssertion,
   GraphEntity,
+  GraphExtractionJob,
   GraphResolutionDecision,
   IntakeCheckpoint,
   IntakeRequirement,
@@ -1413,7 +1414,9 @@ export class MemoryApi {
     const boundary = opts.scope ?? 'global';
     const repoId = boundary === 'repo' ? this.resolveRepoId() : undefined;
     if (boundary === 'repo' && repoId === undefined) {
-      throw new Error('repository graph scope is unavailable because this server has no repository id');
+      throw new Error(
+        'repository graph scope is unavailable because this server has no repository id',
+      );
     }
 
     const assertions: GraphAssertion[] = [];
@@ -1427,19 +1430,34 @@ export class MemoryApi {
         else if (isGraphResolutionEntry(entry)) decisions.push(entry);
       }
     }
+    // A graph edge is trusted only while at least one of its support records remains visible to
+    // the same lifecycle projection as recall. The graph journal itself stays append-only for
+    // replay/audit, but retracted, superseded, or quarantined records must not keep an assertion
+    // traversable merely because their old shard line still exists.
+    const recordAliases = this.buildAliasIndex();
+    const recordDecisions = this.allDecisions();
+    const activeRecordIds = this.gatherAllRecords()
+      .filter(({ record, source }) => {
+        const { verdicts } = this.foldedVerdicts(record, source, recordAliases, recordDecisions);
+        return verdicts.lifecycle === 'active' && !verdicts.quarantined;
+      })
+      .map(({ record }) => ({ id: record.id }));
 
     return projectGraph(
       {
         assertions,
         entities,
         decisions,
-        records: this.gatherAllRecords().map(({ record }) => ({ id: record.id })),
+        records: activeRecordIds,
       },
       {
         principalId: this.callerPrincipal(),
         scope: boundary === 'repo' ? { boundary, repoId } : { boundary },
       },
-      { ...(opts.at !== undefined ? { at: opts.at } : {}), ...(opts.knownBy !== undefined ? { knownBy: opts.knownBy } : {}) },
+      {
+        ...(opts.at !== undefined ? { at: opts.at } : {}),
+        ...(opts.knownBy !== undefined ? { knownBy: opts.knownBy } : {}),
+      },
     );
   }
 
@@ -2788,6 +2806,7 @@ export class MemoryApi {
       store.upsertEntry('decisions', decision);
       this.stageWrite(store, 'decision.append', decision, opts.actor);
     });
+    this.removeGraphExtractionJobsForSources([id, resolvedId]);
     return {
       ok: true,
       id: resolvedId,
@@ -3298,6 +3317,7 @@ export class MemoryApi {
     {
       const twins: string[] = [];
       const queueTargets: { queue: 'outbox' | 'dead'; id: string }[] = [];
+      const graphJobTargets: string[] = [];
       // A `mem:` id's staging twin is the `cand:` id with the same claim-body hash suffix.
       const candTwins = [
         ...new Set(
@@ -3331,6 +3351,15 @@ export class MemoryApi {
           }
         }
       }
+      // Graph extraction is machine-local operational state keyed to its source record. Once
+      // that source is purged, a delayed worker must not be able to admit an edge derived from
+      // bytes the owner explicitly removed. Unlike graph assertions, jobs are not journal
+      // history and are therefore physically swept with the other local work queues.
+      if (store.collections.includes('graph-jobs')) {
+        for (const job of store.readCollection('graph-jobs').entries as GraphExtractionJob[]) {
+          if (recordIds.includes(job.sourceId)) graphJobTargets.push(job.id);
+        }
+      }
       // The physical twin removal never runs on the team store (removeEntry throws there — team is
       // append-only, D11); team still REPORTS the twins it would sweep.
       if (!dryRun && source !== 'team') {
@@ -3341,10 +3370,11 @@ export class MemoryApi {
           if (tw.startsWith('fb:')) store.removeEntry('feedback', tw);
         }
         for (const t of queueTargets) store.removeEntry(t.queue, t.id);
+        for (const jobId of graphJobTargets) store.removeEntry('graph-jobs', jobId);
       }
       // The queue targets are swept too — they are part of what the purge removes, so the report
       // carries them alongside the staging twin and the feedback rows (a dry-run must show them).
-      storeReport.twins.push(...twins, ...queueTargets.map((t) => t.id));
+      storeReport.twins.push(...twins, ...queueTargets.map((t) => t.id), ...graphJobTargets);
     }
     // (4) the remote side — terminal state first, bookkeeping last (D11). Team is never a sync
     // participant (D2), so `scope` is undefined there and the remote leg never runs. Each scope
@@ -3788,6 +3818,23 @@ export class MemoryApi {
       }
     }
     return [...byId.values()];
+  }
+
+  /**
+   * Drop machine-local extraction work when the source it names has been retired. This is
+   * operational cleanup, not a graph-journal rewrite: the asserted history stays auditable while
+   * `graphProjection` refuses to trust it without an active support record.
+   */
+  private removeGraphExtractionJobsForSources(sourceIds: readonly string[]): string[] {
+    const local = this.deps.stores.local;
+    if (local === undefined || !local.collections.includes('graph-jobs')) return [];
+    const wanted = new Set(sourceIds);
+    const jobIds = (local.readCollection('graph-jobs').entries as GraphExtractionJob[])
+      .filter((job) => wanted.has(job.sourceId))
+      .map((job) => job.id)
+      .sort();
+    for (const jobId of jobIds) local.removeEntry('graph-jobs', jobId);
+    return jobIds;
   }
 
   /**
