@@ -53,6 +53,7 @@ import { canonicalMemoryJson, serializeMemoryShard } from './serialization.js';
 import {
   type GraphAssertion,
   type GraphEntity,
+  type GraphExtractionJob,
   type GraphResolutionDecision,
   type MemoryAlias,
   type MemoryCounts,
@@ -79,7 +80,8 @@ export type MemoryCollection =
   | 'outbox'
   | 'dead'
   | 'intakes'
-  | 'graph';
+  | 'graph'
+  | 'graph-jobs';
 
 const TEAM_COLLECTIONS: readonly MemoryCollection[] = [
   'records',
@@ -98,6 +100,7 @@ const LOCAL_COLLECTIONS: readonly MemoryCollection[] = [
   'dead',
   'intakes',
   'graph',
+  'graph-jobs',
 ];
 const GLOBAL_COLLECTIONS: readonly MemoryCollection[] = [
   'records',
@@ -135,6 +138,7 @@ function collectionCountKey(c: MemoryCollection): keyof MemoryCounts | undefined
     case 'dead':
     case 'intakes':
     case 'graph':
+    case 'graph-jobs':
       return undefined;
   }
 }
@@ -1294,6 +1298,43 @@ export class MemoryStore {
   /** Upsert a single entry (convenience over {@link upsertEntries}). */
   upsertEntry(collection: MemoryCollection, entry: MemoryEntry): void {
     this.upsertEntries(collection, [entry]);
+  }
+
+  /**
+   * Atomically replace one existing local graph-extraction job when `transition` accepts its current value.
+   * Returning `undefined` declines the transition without writing or bumping the generation. This
+   * is the compare-and-update primitive for machine-local operational queues: a worker must never
+   * read a pending item and claim it through a second, independently locked upsert.
+   */
+  updateGraphExtractionJob(
+    id: string,
+    transition: (current: Readonly<GraphExtractionJob>) => GraphExtractionJob | undefined,
+  ): GraphExtractionJob | undefined {
+    const collection = 'graph-jobs' as const;
+    try {
+      this.assertCollection(collection);
+    } catch {
+      throw new Error('refusing graph-extraction job mutation outside the local store');
+    }
+    return this.withLock(() => {
+      const shard = memoryShard(id);
+      const entries = this.readShard(collection, shard).entries;
+      const index = entries.findIndex((entry) => entry.id === id);
+      if (index < 0) return undefined;
+      const current = entries[index]! as GraphExtractionJob;
+      const next = transition(current);
+      if (next === undefined) return undefined;
+      if (next.id !== id) {
+        throw new Error(`refusing to change entry identity from ${id} to ${next.id}`);
+      }
+      this.assertWritable(next);
+      if (canonicalMemoryJson(current) === canonicalMemoryJson(next)) return current;
+      entries[index] = next;
+      writeJsonAtomic(this.shardPath(collection, shard), serializeMemoryShard(entries));
+      this.bumpStoreGeneration();
+      if (isRecordCollection(collection)) this.afterRecordWrite(collection, [next], []);
+      return next;
+    });
   }
 
   /**

@@ -22,6 +22,23 @@ import type {
   Verdicts,
 } from './enums.js';
 
+/** A local-only, idempotent enrichment work item. Its output must still pass graph admission. */
+export interface GraphExtractionJob {
+  id: string;
+  schemaVersion: '1';
+  sourceId: string;
+  sourceHash: string;
+  ontologyVersion: string;
+  principalId: string;
+  producer: { id: string; version: string };
+  idempotencyKey: string;
+  createdAt: string;
+  status: 'pending' | 'leased' | 'retry' | 'completed';
+  retryCount: number;
+  lease?: { owner: string; expiresAt: string };
+  outcome?: { status: 'failed' | 'completed'; reason?: string };
+}
+
 /**
  * memory-1 + memory-2 + memory-3 schema + format version constants (see migrations.ts for the gate).
  *
@@ -686,4 +703,5 @@ export type MemoryEntry =
   | IntakeCheckpoint
   | GraphEntity
   | GraphAssertion
-  | GraphResolutionDecision;
+  | GraphResolutionDecision
+  | GraphExtractionJob;

@@ -1,4 +1,7 @@
 import { blake3Hex } from '@knowledge-crib/soul-schema';
+import type { GraphExtractionJob } from './types.js';
+
+export type { GraphExtractionJob } from './types.js';
 
 /** The bounded retry budget for optional graph enrichment. */
 export const GRAPH_EXTRACTION_MAX_ATTEMPTS = 3;
@@ -10,16 +13,6 @@ export interface GraphExtractionJobInput {
   principalId: string;
   producer: { id: string; version: string };
   idempotencyKey: string;
-}
-
-export interface GraphExtractionJob extends GraphExtractionJobInput {
-  id: string;
-  schemaVersion: '1';
-  createdAt: string;
-  status: 'pending' | 'leased' | 'retry' | 'completed';
-  retryCount: number;
-  lease?: { owner: string; expiresAt: string };
-  outcome?: { status: 'failed' | 'completed'; reason?: string };
 }
 
 function identity(input: GraphExtractionJobInput): string {

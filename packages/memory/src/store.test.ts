@@ -226,6 +226,7 @@ describe('MemoryStore factories + shape', () => {
       'dead',
       'intakes',
       'graph',
+      'graph-jobs',
     ]);
     expect(s.hasManifest).toBe(true);
     expect(s.manifestPath()).toBe(join(home, 'repos', REPO, 'manifest.json'));

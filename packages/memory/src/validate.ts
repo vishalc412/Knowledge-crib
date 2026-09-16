@@ -9,6 +9,7 @@ import {
   FEEDBACK_SCHEMA,
   GRAPH_ASSERTION_SCHEMA,
   GRAPH_ENTITY_SCHEMA,
+  GRAPH_EXTRACTION_JOB_SCHEMA,
   GRAPH_RESOLUTION_SCHEMA,
   GRAPH_RESOLUTION_V2_SCHEMA,
   INTAKE_CHECKPOINT_SCHEMA,
@@ -33,6 +34,7 @@ import type {
   GateReceipt,
   GraphAssertion,
   GraphEntity,
+  GraphExtractionJob,
   GraphResolutionDecision,
   GraphResolutionDecisionV2,
   IntakeCheckpoint,
@@ -64,6 +66,7 @@ const validateSyncEventFn: ValidateFunction = ajv.compile(SYNC_EVENT_SCHEMA);
 const validateIntakeFn: ValidateFunction = ajv.compile(INTAKE_SCHEMA);
 const validateIntakeCheckpointFn: ValidateFunction = ajv.compile(INTAKE_CHECKPOINT_SCHEMA);
 const validateGraphEntityFn: ValidateFunction = ajv.compile(GRAPH_ENTITY_SCHEMA);
+const validateGraphExtractionJobFn: ValidateFunction = ajv.compile(GRAPH_EXTRACTION_JOB_SCHEMA);
 const validateGraphAssertionFn: ValidateFunction = ajv.compile(GRAPH_ASSERTION_SCHEMA);
 const validateGraphResolutionFn: ValidateFunction = ajv.compile(GRAPH_RESOLUTION_SCHEMA);
 const validateGraphResolutionV2Fn: ValidateFunction = ajv.compile(GRAPH_RESOLUTION_V2_SCHEMA);
@@ -233,9 +236,14 @@ export function assertValidGraphResolutionDecision(decision: GraphResolutionDeci
   }
   if (
     decision.schemaVersion === '2' &&
-    decision.namespace.principalId !== (decision as GraphResolutionDecisionV2).provenance.principalId
+    decision.namespace.principalId !==
+      (decision as GraphResolutionDecisionV2).provenance.principalId
   ) {
-    throw new MemorySchemaError('graph-resolution', [{ namespacePrincipalMismatch: true }], decision.id);
+    throw new MemorySchemaError(
+      'graph-resolution',
+      [{ namespacePrincipalMismatch: true }],
+      decision.id,
+    );
   }
 }
 
@@ -309,6 +317,18 @@ export function assertValidMemoryEntry(entry: { id: string } & Record<string, un
   // throw a raw TypeError (or a misdiagnosed {unknownSchemaVersion}) instead of failing closed —
   // the loader runs this on every JSONL line, including lines pulled from sync peers.
   const owns = Object.prototype.hasOwnProperty;
+  if (prefix === 'gjob') {
+    const job = entry as unknown as GraphExtractionJob;
+    const ok: boolean = validateGraphExtractionJobFn(job);
+    if (!ok) {
+      throw new MemorySchemaError(
+        'graph-extraction-job',
+        validateGraphExtractionJobFn.errors,
+        job.id,
+      );
+    }
+    return;
+  }
   if (prefix === 'mem') {
     const version = entry.schemaVersion;
     const v =
