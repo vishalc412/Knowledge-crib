@@ -160,8 +160,8 @@ function hitsSymbol(result, probe) {
 /**
  * One transition's adoption latency: mutate, then poll the server's OWN verbs until every reader
  * agrees — graph query, FTS/brief search, symbol resolution through context, and health reporting
- * converged generations with no staleness. `present` says whether the probe symbol should appear or
- * disappear, so a delete is measured on the same clock as a save.
+ * converged graph/search/reader generations with no staleness. `present` says whether the probe
+ * symbol should appear or disappear, so a delete is measured on the same clock as a save.
  *
  * A partial agreement never stops the clock: a graph hit whose context still misses is a
  * half-adopted bundle, which is precisely the state this harness exists to catch.
@@ -182,9 +182,17 @@ async function measure(port, { mutate, probe, present, timeoutMs }) {
       call(port, 'status', { op: 'health' }),
     ]);
     const freshness = health?.readerFreshness ?? {};
+    const generations = {
+      published: freshness.publishedGeneration ?? null,
+      reader: freshness.readerGeneration ?? null,
+      graph: freshness.graphGeneration ?? null,
+      search: freshness.searchGeneration ?? null,
+    };
     const converged =
-      freshness.publishedGeneration == null ||
-      freshness.publishedGeneration === freshness.readerGeneration;
+      generations.published === null ||
+      (generations.published === generations.reader &&
+        generations.reader === generations.graph &&
+        generations.reader === generations.search);
     const readers = {
       query: hitsSymbol(query, probe),
       brief: hitsSymbol(brief, probe),
@@ -203,6 +211,7 @@ async function measure(port, { mutate, probe, present, timeoutMs }) {
         mutationMs,
         timedOut: true,
         readers,
+        generations,
         converged,
         stale: freshness.stale === true,
         staleReasons: freshness.staleReasons ?? [],
