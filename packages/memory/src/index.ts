@@ -64,6 +64,7 @@ export * from './bench/run.js';
 export * from './bench/retrieval-eval.js';
 export * from './graph.js';
 export * from './graph-backfill.js';
+export * from './graph-context.js';
 export * from './graph-bridge.js';
 export * from './graph-index.js';
 export * from './graph-extraction.js';
