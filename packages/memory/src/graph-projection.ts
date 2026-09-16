@@ -169,7 +169,9 @@ function visibleTo(assertion: GraphAssertion, viewer: GraphViewer): boolean {
 /** Legacy unscoped decisions may never alter a non-default principal's graph. */
 function visibleDecision(decision: GraphResolutionDecision, viewer: GraphViewer): boolean {
   if (!isGraphResolutionDecisionV2(decision)) {
-    return viewer.principalId === DEFAULT_MIGRATION_PRINCIPAL_ID && viewer.scope.boundary === 'global';
+    return (
+      viewer.principalId === DEFAULT_MIGRATION_PRINCIPAL_ID && viewer.scope.boundary === 'global'
+    );
   }
   return (
     decision.namespace.principalId === viewer.principalId && visibleScope(decision.scope, viewer)
@@ -244,9 +246,7 @@ function foldAliases(
   // Deterministic fold order: (ts instant, id) — array order must never matter.
   const ordered = [...(decisions ?? [])]
     .filter((decision) => visibleDecision(decision, viewer))
-    .sort(
-    (x, y) => compareGraphInstants(x.ts, y.ts) || (x.id < y.id ? -1 : x.id > y.id ? 1 : 0),
-  );
+    .sort((x, y) => compareGraphInstants(x.ts, y.ts) || (x.id < y.id ? -1 : x.id > y.id ? 1 : 0));
 
   for (const d of ordered) {
     if (knownBy !== undefined && compareGraphInstants(d.ts, knownBy) > 0) {

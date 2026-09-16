@@ -469,7 +469,9 @@ export function graphResolutionId(decision: {
   scope?: { boundary: string; repoId?: string };
 }): string {
   const scoped =
-    decision.schemaVersion === '2' && decision.namespace !== undefined && decision.scope !== undefined;
+    decision.schemaVersion === '2' &&
+    decision.namespace !== undefined &&
+    decision.scope !== undefined;
   return `gres:${blake3Hex(
     canonical({
       kind: decision.kind,
