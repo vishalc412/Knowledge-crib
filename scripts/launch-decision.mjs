@@ -24,6 +24,7 @@ import {
   policyFuzzRequirements,
   policyGateIds,
   policyGlobalReceiptTypes,
+  policyGraphRequirements,
   policyOsNodeCells,
 } from './launch-policy.mjs';
 import { ReleaseEvidenceError, validateReleaseEvidence } from './release-evidence.mjs';
@@ -386,6 +387,113 @@ export function judgeGlobalReceipts(receipts, { policy, policySha256, candidate,
       blockers.push(`global-receipt-artifact-unverifiable:${type}`);
     }
     if (type === 'fuzz-deep') blockers.push(...judgeFuzzWorkload(receipt, policy));
+    if (type === 'connected-memory-graph') {
+      blockers.push(...judgeGraphWorkload(receipt, policy, evidenceRoot));
+    }
+  }
+  return blockers;
+}
+
+/** The report fields a graph receipt restates; each must equal its report artifact exactly. */
+const GRAPH_MEASURED_FIELDS = [
+  'harnessVersion',
+  'corpusVersion',
+  'questions',
+  'multiHopQuestions',
+  'evidencePathRecall',
+  'unauthorizedPaths',
+  'forbiddenViolations',
+  'emptinessViolations',
+  'unavailableAnswers',
+];
+
+/**
+ * Re-judge a `connected-memory-graph` receipt against the frozen `graph` policy block.
+ *
+ * The REPORT ARTIFACT is the authority, not the receipt: the global judge above has already proven
+ * its bytes hash to what the receipt recorded, so its numbers are what actually ran. A receipt that
+ * restates different numbers is refused by field (`graph-receipt-report-mismatch`), and every
+ * threshold is then applied to the report's own values — a synthetic receipt carrying 0.95 over a
+ * report measuring 0.80 fails twice, never passes.
+ */
+export function judgeGraphWorkload(receipt, policy, evidenceRoot) {
+  const blockers = [];
+  const requirements = policyGraphRequirements(policy);
+  const details = receipt.details ?? {};
+  if (details.workload !== requirements.workload) {
+    blockers.push(`graph-receipt-workload-mismatch:${details.workload ?? 'unknown'}`);
+  }
+  if (details.heldOut !== true) blockers.push('graph-receipt-not-held-out');
+  if (details.retrievalEnabled !== true) blockers.push('graph-receipt-retrieval-disabled');
+  const suites = details.suites ?? {};
+  for (const suite of requirements.requiredSuites) {
+    if (suites[suite] !== 'pass') {
+      blockers.push(`graph-receipt-suite-not-passing:${suite}:${suites[suite] ?? 'missing'}`);
+    }
+  }
+  if (details.extraction?.exercised === true) {
+    const revision = details.extraction.modelRevision;
+    if (typeof revision !== 'string' || revision.trim() === '') {
+      blockers.push('graph-receipt-model-revision-missing');
+    }
+  }
+
+  const reportPath = details.reportPath;
+  const listed = (receipt.artifacts ?? []).some((artifact) => artifact?.path === reportPath);
+  if (typeof reportPath !== 'string' || !listed) {
+    blockers.push('graph-receipt-report-unlisted');
+    return blockers;
+  }
+  if (typeof evidenceRoot !== 'string' || !evidenceRoot.trim()) {
+    blockers.push('graph-receipt-report-unverifiable');
+    return blockers;
+  }
+  let report;
+  try {
+    report = JSON.parse(readFileSync(resolve(evidenceRoot, reportPath), 'utf8'));
+  } catch {
+    blockers.push('graph-receipt-report-unreadable');
+    return blockers;
+  }
+  const measured = details.measured ?? {};
+  for (const field of GRAPH_MEASURED_FIELDS) {
+    if (measured[field] !== report[field]) {
+      blockers.push(`graph-receipt-report-mismatch:${field}`);
+    }
+  }
+  if (report.harnessVersion !== requirements.harnessVersion) {
+    blockers.push(`graph-receipt-harness-mismatch:${report.harnessVersion ?? 'unknown'}`);
+  }
+  if (
+    !(
+      Number.isInteger(report.corpusVersion) &&
+      report.corpusVersion >= requirements.minimumCorpusVersion
+    )
+  ) {
+    blockers.push(`graph-receipt-corpus-below-floor:${report.corpusVersion ?? 'unknown'}`);
+  }
+  const finite = (value) => typeof value === 'number' && Number.isFinite(value);
+  if (
+    !finite(report.multiHopQuestions) ||
+    report.multiHopQuestions < requirements.minimumMultiHopQuestions
+  ) {
+    blockers.push(`graph-receipt-multihop-below-floor:${report.multiHopQuestions ?? 'unknown'}`);
+  }
+  if (
+    !finite(report.evidencePathRecall) ||
+    report.evidencePathRecall < requirements.evidencePathRecallMin - 1e-9
+  ) {
+    blockers.push(`graph-receipt-recall-below-floor:${report.evidencePathRecall ?? 'unknown'}`);
+  }
+  for (const [field, limit, name] of [
+    ['unauthorizedPaths', requirements.maxUnauthorizedPaths, 'unauthorized-paths'],
+    ['forbiddenViolations', requirements.maxForbiddenViolations, 'forbidden-violations'],
+    ['emptinessViolations', requirements.maxEmptinessViolations, 'emptiness-violations'],
+    ['unavailableAnswers', requirements.maxUnavailableAnswers, 'unavailable-answers'],
+  ]) {
+    if (!finite(report[field]) || report[field] > limit) {
+      blockers.push(`graph-receipt-${name}:${report[field] ?? 'unknown'}`);
+    }
   }
   return blockers;
 }
@@ -450,7 +558,7 @@ function judgeFuzzWorkload(receipt, policy) {
  * is the property that makes "altering a transcript after receipt generation invalidates the cell"
  * true rather than aspirational.
  */
-function artifactDigestMatches(root, artifact) {
+export function artifactDigestMatches(root, artifact) {
   if (typeof artifact?.path !== 'string' || typeof artifact?.sha256 !== 'string') return false;
   const path = resolve(root, artifact.path);
   if (!existsSync(path)) return false;

@@ -11,6 +11,7 @@ import {
   loadClientCertificationReceipts,
   receiptLegs,
 } from './client-certification-evidence.mjs';
+import { artifactDigestMatches, judgeGraphWorkload } from './launch-decision.mjs';
 import { POLICY_PLATFORMS, loadLaunchPolicy } from './launch-policy.mjs';
 
 // The generated table is tied to the exact frozen contract it certifies under. Loading the policy
@@ -221,6 +222,59 @@ export function renderClientCertificationMatrix(receipts, opts = {}) {
   ].join('\n');
 }
 
+const GRAPH_START = '<!-- connected-memory-graph:generated:start -->';
+const GRAPH_END = '<!-- connected-memory-graph:generated:end -->';
+
+/**
+ * WP-G8 — the connected memory graph capability line, generated from a validated receipt only.
+ *
+ * The claim is "verified" exactly when the receipt was collected under THIS policy hash, its report
+ * artifact hashes to what it recorded, and the decision's own graph judge returns no blocker over
+ * that report. Anything less renders "not certified" with the judge's blockers verbatim — the page
+ * can never state a stronger graph claim than the launch decision would accept.
+ */
+export function renderGraphCapability(receipt, opts = {}) {
+  const lines = [GRAPH_START, '## Connected memory graph', ''];
+  const stamp = `Judged under launch policy version ${POLICY.policyVersion} (\`${POLICY_SHA256}\`).`;
+  if (!receipt) {
+    lines.push(
+      `**Not certified.** No validated \`connected-memory-graph\` receipt was supplied. ${stamp}`,
+    );
+    return [...lines, GRAPH_END].join('\n');
+  }
+  const blockers = [];
+  if (receipt.status !== 'pass')
+    blockers.push(`receipt-not-passing:${receipt.status ?? 'unknown'}`);
+  if (receipt.policySha256 !== POLICY_SHA256) blockers.push('receipt-foreign-policy');
+  const root = opts.receiptDirectory;
+  for (const artifact of receipt.artifacts ?? []) {
+    if (!root || !artifactDigestMatches(root, artifact)) {
+      blockers.push(`artifact-digest:${artifact?.path ?? 'unknown'}`);
+    }
+  }
+  blockers.push(...judgeGraphWorkload(receipt, POLICY, root));
+  const measured = receipt.details?.measured ?? {};
+  const summary = `evidence-path recall ${measured.evidencePathRecall ?? 'n/a'} over ${measured.multiHopQuestions ?? 'n/a'} multi-hop questions (corpus v${measured.corpusVersion ?? '?'}), unauthorized paths ${measured.unauthorizedPaths ?? 'n/a'}, held out: ${receipt.details?.heldOut === true ? 'yes' : 'no'}`;
+  if (blockers.length === 0) {
+    lines.push(`**Verified** for candidate \`${receipt.candidateCommit}\` — ${summary}. ${stamp}`);
+  } else {
+    lines.push(`**Not certified** — ${summary}. ${stamp}`, '', 'Blockers:', '');
+    for (const blocker of [...new Set(blockers)]) lines.push(`- \`${blocker}\``);
+  }
+  return [...lines, GRAPH_END].join('\n');
+}
+
+export function replaceGeneratedGraphCapability(document, rendered) {
+  const start = document.indexOf(GRAPH_START);
+  const end = document.indexOf(GRAPH_END);
+  if (start < 0 || end < start) {
+    throw new Error(
+      'docs/capability-matrix.md is missing connected-memory-graph generated markers',
+    );
+  }
+  return `${document.slice(0, start)}${rendered}${document.slice(end + GRAPH_END.length)}`;
+}
+
 export function replaceGeneratedClientMatrix(document, rendered) {
   const start = document.indexOf(START);
   const end = document.indexOf(END);
@@ -257,6 +311,15 @@ async function main() {
     receipts = loadClientCertificationReceipts(receiptDirectory);
   }
   const rendered = renderClientCertificationMatrix(receipts, { receiptDirectory });
+  const globalIndex = argv.indexOf('--global-receipts');
+  let graphReceipt;
+  let globalDirectory;
+  if (globalIndex >= 0) {
+    globalDirectory = resolve(argv[globalIndex + 1] ?? '');
+    const path = join(globalDirectory, 'connected-memory-graph.json');
+    if (existsSync(path)) graphReceipt = JSON.parse(readFileSync(path, 'utf8'));
+  }
+  const graphRendered = renderGraphCapability(graphReceipt, { receiptDirectory: globalDirectory });
   if (stdoutMode) {
     // The receipt-backed matrix is PUBLISHED as a release artifact outside the candidate source
     // tree (redirected to the evidence root), never committed into the docs: the committed block
@@ -267,10 +330,17 @@ async function main() {
       .split('\n')
       .filter((line) => line !== START && line !== END)
       .join('\n');
-    process.stdout.write(`${withoutMarkers}\n`);
+    const graphWithoutMarkers = graphRendered
+      .split('\n')
+      .filter((line) => line !== GRAPH_START && line !== GRAPH_END)
+      .join('\n');
+    process.stdout.write(`${withoutMarkers}\n\n${graphWithoutMarkers}\n`);
     return;
   }
-  const updated = replaceGeneratedClientMatrix(readFileSync(docs, 'utf8'), rendered);
+  const updated = replaceGeneratedGraphCapability(
+    replaceGeneratedClientMatrix(readFileSync(docs, 'utf8'), rendered),
+    graphRendered,
+  );
   if (argv.includes('--check')) {
     if (updated !== readFileSync(docs, 'utf8')) {
       throw new Error(

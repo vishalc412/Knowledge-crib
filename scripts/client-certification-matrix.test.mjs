@@ -9,13 +9,16 @@ import {
   CertificationEvidenceError,
   loadClientCertificationReceipts,
 } from './client-certification-evidence.mjs';
-import { renderClientCertificationMatrix } from './client-certification-matrix.mjs';
+import {
+  renderClientCertificationMatrix,
+  renderGraphCapability,
+} from './client-certification-matrix.mjs';
 import {
   RECORDER_VERSION,
   RECORDING_FORMAT,
   RECORDING_FORMAT_VERSION,
 } from './client-protocol-recorder.mjs';
-import { loadLaunchPolicy } from './launch-policy.mjs';
+import { loadLaunchPolicy, policyGraphRequirements } from './launch-policy.mjs';
 
 // The generated table is tied to the exact policy it certifies under: fixtures that expect a
 // runtime-verified row must carry the hash the generator loads, and a receipt that does not is the
@@ -183,7 +186,7 @@ const rendered = renderClientCertificationMatrix([v3Receipt()]);
 // The generated table is stamped with the exact policy it certifies under — version and hash — so a
 // reader can tell which frozen contract the states below speak for, and a receipt that names a
 // different hash is judged against the one printed here.
-assert.match(rendered, /launch policy version 4/);
+assert.match(rendered, /launch policy version 5/);
 assert.ok(
   rendered.includes(POLICY_SHA),
   'the generated header must carry the policy hash it judges against',
@@ -366,6 +369,10 @@ const DOCS_TEMPLATE = [
   'stale placeholder',
   '<!-- client-certification:generated:end -->',
   '',
+  '<!-- connected-memory-graph:generated:start -->',
+  'stale placeholder',
+  '<!-- connected-memory-graph:generated:end -->',
+  '',
 ].join('\n');
 
 const runMatrix = (docs, receipts, args = []) =>
@@ -511,6 +518,13 @@ try {
           line !== '<!-- client-certification:generated:start -->' &&
           line !== '<!-- client-certification:generated:end -->',
       )
+      .join('\n')}\n\n${renderGraphCapability(undefined)
+      .split('\n')
+      .filter(
+        (line) =>
+          line !== '<!-- connected-memory-graph:generated:start -->' &&
+          line !== '<!-- connected-memory-graph:generated:end -->',
+      )
       .join('\n')}\n`,
   );
   assert.ok(
@@ -569,6 +583,79 @@ try {
   assert.match(missing.stderr, /does not exist/);
 } finally {
   rmSync(root, { recursive: true, force: true });
+}
+
+// ─── WP-G8: the graph capability line is generated from a validated receipt only ──────────────
+{
+  const { policy: graphPolicy, sha256: graphPolicySha } = loadLaunchPolicy();
+  const requirements = policyGraphRequirements(graphPolicy);
+  const graphRoot = mkdtempSync(join(tmpdir(), 'graph-capability-'));
+  try {
+    assert.match(renderGraphCapability(undefined), /\*\*Not certified\.\*\* No validated/);
+    const report = {
+      harnessVersion: requirements.harnessVersion,
+      corpusVersion: 2,
+      questions: 130,
+      multiHopQuestions: 120,
+      evidencePathRecall: 0.92,
+      unauthorizedPaths: 0,
+      forbiddenViolations: 0,
+      emptinessViolations: 0,
+      unavailableAnswers: 0,
+      results: [],
+    };
+    const bytes = `${JSON.stringify(report)}\n`;
+    mkdirSync(join(graphRoot, 'graph'), { recursive: true });
+    writeFileSync(join(graphRoot, 'graph', 'report.json'), bytes);
+    const { results: _results, ...measured } = report;
+    const receipt = (details = {}, envelope = {}) => ({
+      type: 'connected-memory-graph',
+      status: 'pass',
+      candidateCommit: 'c'.repeat(40),
+      policySha256: graphPolicySha,
+      artifacts: [
+        {
+          path: 'graph/report.json',
+          sha256: `sha256:${createHash('sha256').update(bytes).digest('hex')}`,
+        },
+      ],
+      details: {
+        workload: requirements.workload,
+        heldOut: true,
+        retrievalEnabled: true,
+        reportPath: 'graph/report.json',
+        measured,
+        suites: Object.fromEntries(requirements.requiredSuites.map((suite) => [suite, 'pass'])),
+        extraction: { exercised: false },
+        ...details,
+      },
+      ...envelope,
+    });
+    assert.match(
+      renderGraphCapability(receipt(), { receiptDirectory: graphRoot }),
+      /\*\*Verified\*\* for candidate `c{40}` — evidence-path recall 0\.92/,
+    );
+    // A receipt restating a better number than its report can never render as verified.
+    const synthetic = renderGraphCapability(
+      receipt({ measured: { ...measured, evidencePathRecall: 0.99 } }),
+      { receiptDirectory: graphRoot },
+    );
+    assert.match(synthetic, /\*\*Not certified\*\*/);
+    assert.match(synthetic, /graph-receipt-report-mismatch:evidencePathRecall/);
+    // Nor can one collected under another policy, or one not measured on a held-out suite.
+    assert.match(
+      renderGraphCapability(receipt({}, { policySha256: `sha256:${'0'.repeat(64)}` }), {
+        receiptDirectory: graphRoot,
+      }),
+      /receipt-foreign-policy/,
+    );
+    assert.match(
+      renderGraphCapability(receipt({ heldOut: false }), { receiptDirectory: graphRoot }),
+      /graph-receipt-not-held-out/,
+    );
+  } finally {
+    rmSync(graphRoot, { recursive: true, force: true });
+  }
 }
 
 console.log('client certification matrix tests ok');

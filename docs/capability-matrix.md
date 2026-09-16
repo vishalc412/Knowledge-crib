@@ -1,8 +1,8 @@
 # Knowledge Crib — capability matrix
 
-**Dated 15 September 2026.** Branch `debug/auditMaster`. The launch promise is policy version 4 —
-seven clients on three native platforms, twenty-one cells, no waivers — and **no cell is certified
-yet, so the release is NO-GO**; [Clients](#clients) below says what that does and does not mean. This
+**Dated 16 September 2026.** Branch `debug/auditMaster`. The launch promise is policy version 5 —
+seven clients on three native platforms, twenty-one cells, no waivers, plus the connected memory
+graph — and **no cell is certified yet and the graph gate fails, so the release is NO-GO**; [Clients](#clients) below says what that does and does not mean. This
 page states what has been MEASURED, on what, and what has not. It is the support boundary: if a
 capability is not listed as verified here, treat it as unverified regardless of what any other
 document claims.
@@ -64,7 +64,7 @@ and not the ranking.
 
 ## Clients
 
-**Launch scope (policy version 4, `scripts/launch-policy.json`, frozen 2026-09-15).** The promised
+**Launch scope (policy version 5, `scripts/launch-policy.json`, frozen 2026-09-16).** The promised
 boundary is **seven clients on three native platforms — twenty-one cells, no waivers**. A cell is
 Claude Code, GitHub Copilot, Cursor, VS Code, Codex, Windsurf or Gemini on macOS, native Linux or
 native Windows, and it is met only by a vendor-client runtime receipt for the exact candidate
@@ -105,7 +105,7 @@ committed grid below stays the promise, not the record.
 <!-- client-certification:generated:start -->
 ## Client certification evidence
 
-Generated under launch policy version 4 (`sha256:2761abf1a666ad4a1f0ccf16dfaa94272f65db0feabeed417aaaa634f26025b1`). Every state below is judged against that exact frozen contract; a receipt naming any other hash is evidence about the run and never a certified cell.
+Generated under launch policy version 5 (`sha256:aa6bbed0e486724966e100c2d0b9f27329827e3d52a779bb9dd4664df99f059a`). Every state below is judged against that exact frozen contract; a receipt naming any other hash is evidence about the run and never a certified cell.
 
 Generated from validated receipts. A client is runtime verified only when a vendor-client receipt proves record → interruption/restart → authorized resume on the listed platform. Four labels say a row is evidence and not a runtime pass: "protocol evidence only (test client)" when the handshake came from a test client rather than the client under test, "runtime evidence only (not a native runtime)" when the run happened somewhere other than the native platform — a WSL run satisfies every leg and still cannot certify native Linux or Windows — "runtime evidence only (legacy receipt schema)" when the receipt predates the certifying schema and is kept as readable history, and "runtime evidence only (collected under a different policy)" when the receipt was collected under a policy hash other than the one named above. No label can promote a row.
 
@@ -148,6 +148,12 @@ One row per advertised cell. A cell is certified only by a vendor-client receipt
 | VS Code | Windows | not certified | — | — | — | — | — | — |
 
 <!-- client-certification:generated:end -->
+
+<!-- connected-memory-graph:generated:start -->
+## Connected memory graph
+
+**Not certified.** No validated `connected-memory-graph` receipt was supplied. Judged under launch policy version 5 (`sha256:aa6bbed0e486724966e100c2d0b9f27329827e3d52a779bb9dd4664df99f059a`).
+<!-- connected-memory-graph:generated:end -->
 
 Each cell's receipt is produced by **one harness**, `scripts/client-certify.mjs`:
 
