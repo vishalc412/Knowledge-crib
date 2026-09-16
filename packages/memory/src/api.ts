@@ -85,7 +85,12 @@ import {
   evaluationCacheFor,
 } from './generation-cache.js';
 import { type GraphProjection, type GraphRecordRef, projectGraph } from './graph-projection.js';
-import { compareGraphInstants } from './graph.js';
+import {
+  compareGraphInstants,
+  createGraphAssertion,
+  isGraphRef,
+  isMemoryGraphPredicate,
+} from './graph.js';
 import { verifyQuote } from './grounding.js';
 import {
   type HandoffAttemptEvent,
@@ -187,6 +192,7 @@ import type {
   MemoryEntry,
   MemoryEvidence,
   MemoryFeedback,
+  MemoryProvenance,
   MemoryRecord,
   MemoryRecordV2,
   MemoryRecordV3,
@@ -1494,6 +1500,106 @@ export class MemoryApi {
         ...(opts.knownBy !== undefined ? { knownBy: opts.knownBy } : {}),
       },
     );
+  }
+
+  /**
+   * WP-G4 — an explicit agent graph proposal (`memory{op:'graph_propose'}`).
+   *
+   * The caller states ONLY the relationship and what supports it. Everything that decides trust is
+   * the server's: the principal is the authenticated caller, the placement is the server's own
+   * repository (or global), `knownAt` is now, and admission is checked HERE before anything is
+   * written — the predicate must be in the vocabulary, both endpoints must be graph refs, and every
+   * supporter must be a record, intake, or entity THIS caller is authorized to see and that is
+   * still active. A proposal failing any check writes nothing and says which check failed, so there
+   * is no path by which a producer marks its own edge trusted.
+   */
+  proposeGraphAssertion(input: {
+    predicate: string;
+    subject: string;
+    object: string;
+    supportedBy: readonly string[];
+    validAt?: string;
+    scope?: 'repo' | 'global';
+    provenance: Omit<MemoryProvenance, 'principalId'>;
+  }): { ok: true; id: string; idempotent: boolean } | { ok: false; problems: string[] } {
+    const problems: string[] = [];
+    if (!isMemoryGraphPredicate(input.predicate))
+      problems.push(`unknown-predicate:${input.predicate}`);
+    for (const [field, ref] of [
+      ['subject', input.subject],
+      ['object', input.object],
+    ] as const) {
+      if (typeof ref !== 'string' || !isGraphRef(ref)) problems.push(`not-a-graph-ref:${field}`);
+    }
+    if (input.subject === input.object) problems.push('self-edge');
+    const supporters = Array.isArray(input.supportedBy) ? [...new Set(input.supportedBy)] : [];
+    if (supporters.length === 0) problems.push('no-supporting-evidence');
+    if (input.validAt !== undefined && Number.isNaN(Date.parse(input.validAt))) {
+      problems.push('valid-at-not-an-instant');
+    }
+
+    const boundary = input.scope ?? (this.resolveRepoId() !== undefined ? 'repo' : 'global');
+    const repoId = boundary === 'repo' ? this.resolveRepoId() : undefined;
+    if (boundary === 'repo' && repoId === undefined) problems.push('repository-scope-unavailable');
+    const store = boundary === 'repo' ? this.deps.stores.local : this.deps.stores.global;
+    if (store === undefined || !store.collections.includes('graph')) {
+      problems.push(`graph-store-unavailable:${boundary}`);
+    }
+
+    // ref → when that supporter was recorded; used to default valid time without inventing it.
+    const authorized = new Map<string, string | undefined>();
+    if (supporters.length > 0) {
+      const aliases = this.buildAliasIndex();
+      const decisions = this.allDecisions();
+      for (const { record, source } of this.gatherAllRecords()) {
+        const { verdicts } = this.foldedVerdicts(record, source, aliases, decisions);
+        if (verdicts.lifecycle === 'active' && !verdicts.quarantined) {
+          authorized.set(record.id, recordKnownAt(record));
+        }
+      }
+      for (const requirement of this.intakeEntries().requirements) {
+        authorized.set(requirement.id, requirement.createdAt);
+      }
+      const principal = this.callerPrincipal();
+      for (const { store: s } of this.orderedStores()) {
+        if (!s.collections.includes('graph')) continue;
+        for (const entry of s.readCollection('graph').entries) {
+          if (isGraphEntityEntry(entry) && entry.namespace.principalId === principal) {
+            authorized.set(entry.ref, undefined);
+          }
+        }
+      }
+      for (const ref of supporters) {
+        if (!authorized.has(ref)) problems.push(`supporter-not-authorized:${ref}`);
+      }
+    }
+    // Valid time is never invented from ingestion: an explicit validAt, else the moment the most
+    // recent supporter was recorded (the proposal cannot have held before its evidence existed).
+    const supporterTimes = supporters
+      .map((ref) => authorized.get(ref))
+      .filter((t): t is string => typeof t === 'string')
+      .sort(compareGraphInstants);
+    const validAt = input.validAt ?? supporterTimes.at(-1);
+    if (validAt === undefined && problems.length === 0) problems.push('valid-at-required');
+    if (problems.length > 0 || store === undefined || validAt === undefined) {
+      return { ok: false, problems };
+    }
+
+    const principalId = this.callerPrincipal();
+    const assertion = createGraphAssertion({
+      predicate: input.predicate as Parameters<typeof createGraphAssertion>[0]['predicate'],
+      subject: input.subject,
+      object: input.object,
+      namespace: { principalId, ...(repoId !== undefined ? { projectId: repoId } : {}) },
+      scope: repoId !== undefined ? { boundary: 'repo', repoId } : { boundary: 'global' },
+      validAt,
+      knownAt: this.now(),
+      supportedBy: supporters,
+      provenance: { ...input.provenance, principalId },
+      meta: { origin: 'agent-proposal' },
+    });
+    const result = store.submitGraphEntries([assertion]);
+    return { ok: true, id: assertion.id, idempotent: !result.written.includes(assertion.id) };
   }
 
   /**

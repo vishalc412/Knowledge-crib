@@ -22,9 +22,10 @@
  */
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { SoulStore, SqliteIndexStore, newManifest } from '@knowledge-crib/core';
+import { type Embedder, SoulStore, SqliteIndexStore, newManifest } from '@knowledge-crib/core';
 import {
   GRAPH_CORPUS_VERSION,
+  GRAPH_SEED_SCORER_VERSION,
   type GraphAssertion,
   type GraphCorpus,
   type GraphEntity,
@@ -43,7 +44,7 @@ import {
 } from '@knowledge-crib/memory';
 import { Verbs } from './verbs.js';
 
-export const GRAPH_EVAL_HARNESS_VERSION = 1;
+export const GRAPH_EVAL_HARNESS_VERSION = 2;
 
 export interface GraphEvalQuestionResult {
   id: string;
@@ -62,6 +63,10 @@ export interface GraphEvalQuestionResult {
 export interface GraphEvalReport {
   harnessVersion: number;
   corpusVersion: number;
+  /** The seed scorer the served answers used — the frozen retrieval configuration measured. */
+  seedScorer: string;
+  /** The installed embedder the semantic seed channel ran on; null means the channel was absent. */
+  embedderId: string | null;
   questions: number;
   multiHopQuestions: number;
   /** Mean per-question expected-hop recall over the multi-hop questions (the ≥90% gate input). */
@@ -381,7 +386,13 @@ function scoreQuestion(
 }
 
 /** Run the frozen corpus through the shipped `memory_graph` context path and score it. */
-export function runGraphCorpusEvaluation(opts: { workDir: string }): GraphEvalReport {
+export function runGraphCorpusEvaluation(opts: {
+  workDir: string;
+  /** The installed launch embedder; absent runs the lexical channels only and says so. */
+  embedder?: Embedder;
+  /** A question set other than the frozen v1 questions (a held-out split over the same universe). */
+  questions?: (corpus: GraphCorpus) => { version: number; questions: GraphQuestion[] };
+}): GraphEvalReport {
   const corpus = buildGraphCorpus();
   const now = '2026-09-16T00:00:00.000Z';
   const env = {
@@ -414,12 +425,19 @@ export function runGraphCorpusEvaluation(opts: { workDir: string }): GraphEvalRe
           soul: s.soul,
           index: s.index,
           repoRoot: join(opts.workDir, 'repos', s.repoId),
-          memory: { local: s.local, global },
+          memory: {
+            local: s.local,
+            global,
+            ...(opts.embedder !== undefined ? { embedder: opts.embedder } : {}),
+          },
         }),
       ]),
     );
 
-    const results = corpus.questions.map((question) => {
+    const questionSet = opts.questions
+      ? opts.questions(corpus)
+      : { version: GRAPH_CORPUS_VERSION, questions: corpus.questions };
+    const results = questionSet.questions.map((question) => {
       process.env.KCRIB_PRINCIPAL_ID = question.principal;
       const views: ContextView[] = [];
       if (question.scope.global === true) {
@@ -437,7 +455,7 @@ export function runGraphCorpusEvaluation(opts: { workDir: string }): GraphEvalRe
         ownAssertions.get(question.principal) ?? new Set(),
       );
     });
-    return summarize(results);
+    return summarize(results, questionSet.version, opts.embedder?.id ?? null);
   } finally {
     if (previousPrincipal === undefined) Reflect.deleteProperty(process.env, 'KCRIB_PRINCIPAL_ID');
     else process.env.KCRIB_PRINCIPAL_ID = previousPrincipal;
@@ -447,7 +465,11 @@ export function runGraphCorpusEvaluation(opts: { workDir: string }): GraphEvalRe
   }
 }
 
-function summarize(results: GraphEvalQuestionResult[]): GraphEvalReport {
+function summarize(
+  results: GraphEvalQuestionResult[],
+  corpusVersion: number,
+  embedderId: string | null,
+): GraphEvalReport {
   const multiHop = results.filter((r) => r.expectedHops >= 2);
   const mean = (rs: GraphEvalQuestionResult[]): number =>
     rs.length === 0 ? 0 : rs.reduce((t, r) => t + r.recall, 0) / rs.length;
@@ -458,7 +480,9 @@ function summarize(results: GraphEvalQuestionResult[]): GraphEvalReport {
   }
   return {
     harnessVersion: GRAPH_EVAL_HARNESS_VERSION,
-    corpusVersion: GRAPH_CORPUS_VERSION,
+    corpusVersion,
+    seedScorer: GRAPH_SEED_SCORER_VERSION,
+    embedderId,
     questions: results.length,
     multiHopQuestions: multiHop.length,
     evidencePathRecall: mean(multiHop),

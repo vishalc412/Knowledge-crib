@@ -867,6 +867,9 @@ export class MemoryStore {
         for (const e of incoming) merged.set(e.id, e); // replace by id
         writeJsonAtomic(this.aliasShardForShard(shard), serializeMemoryShard([...merged.values()]));
       }
+      // An alias rebinds which record an id resolves to, so every generation-keyed reader (the
+      // graph projection cache included) must see it as a mutation of the store.
+      if (byShard.size > 0) this.bumpStoreGeneration();
     });
   }
 

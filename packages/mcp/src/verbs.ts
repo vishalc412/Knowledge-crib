@@ -80,6 +80,7 @@ import {
   contradictedForReview,
   effectiveVerdicts,
   expandFromSeeds,
+  fuseGraphSeeds,
   gatherRecall,
   graphRelationsAmong,
   isFeedbackSignal,
@@ -95,6 +96,7 @@ import {
   recallProjection,
   resolveServerIdentity,
   selectGraphSeeds,
+  selectSemanticGraphSeeds,
   soulTargetResolver,
   stageSyncableWrite,
 } from '@knowledge-crib/memory';
@@ -126,7 +128,6 @@ import {
   memoryGraphHistoryResult,
   memoryGraphPathResult,
   memoryGraphRequestError,
-  mergeGraphSeeds,
   recallSeeds,
   timeBoundRecallSeeds,
 } from './memory-graph.js';
@@ -523,6 +524,7 @@ const PUBLIC_VERBS = new Set<string>([
   'memoryFeedback',
   // Gate 1.3 — the portable MemoryApi op set wired through the memory dispatcher.
   'memorySearch',
+  'memoryGraphPropose',
   'memoryConnectedGraph',
   'memorySupersede',
   'memoryDelete',
@@ -545,6 +547,11 @@ export class Verbs {
   private readonly aliases: AliasMap;
   /** M3.3 — runtime observability counters (per-verb count/latency + ifHash cache hit rate). */
   private readonly stats = new Stats();
+  private _graphVectorCache: Map<string, Float32Array> | undefined;
+  private readonly _graphViewCache = new Map<
+    string,
+    { projection: GraphProjection; texts: () => Map<string, string> }
+  >();
   /** W3 — the optional trusted agent-memory ledger (absent ⇒ memory verbs report "not configured"). */
   private readonly memory?: MemoryDeps;
   /** Distinguishes this MCP process from the prior process a handoff should recover. */
@@ -3018,11 +3025,7 @@ export class Verbs {
 
     let graph: GraphProjection;
     try {
-      graph = api.graphProjection({
-        ...(args.scope !== undefined ? { scope: args.scope } : {}),
-        ...(args.at !== undefined ? { at: args.at } : {}),
-        ...(args.knownBy !== undefined ? { knownBy: args.knownBy } : {}),
-      });
+      graph = this.cachedGraphView(api, args).projection;
     } catch (err) {
       return this.applyIfHash(args, this.memoryGraphUnavailable(op, args, maxTokens, err));
     }
@@ -3059,7 +3062,15 @@ export class Verbs {
     api: MemoryApi,
     graph: GraphProjection,
     op: MemoryGraphOp,
-    args: { q?: string; refs?: string[]; hops?: number; predicates?: string[] },
+    args: {
+      q?: string;
+      refs?: string[];
+      hops?: number;
+      predicates?: string[];
+      scope?: 'global' | 'repo';
+      at?: string;
+      knownBy?: string;
+    },
     page: MemoryGraphPage,
   ): Record<string, unknown> {
     const explicit = authorizeExplicitSeeds(graph, args.refs ?? []);
@@ -3067,12 +3078,24 @@ export class Verbs {
     const recalled = useRecall
       ? this.memorySearch({ q: args.q ?? '', limit: 20, maxTokens: page.maxTokens })
       : undefined;
-    const seeds = useRecall
-      ? mergeGraphSeeds(
-          timeBoundRecallSeeds(graph, recallSeeds(recalled)),
-          selectGraphSeeds(graph, args.q ?? '', api.graphNodeTexts()),
-        )
-      : explicit.seeds;
+    const embedder = this.memory?.embedder;
+    let seeds = explicit.seeds;
+    if (useRecall) {
+      const query = args.q ?? '';
+      const texts = this.cachedGraphView(api, args).texts();
+      const channels = [
+        timeBoundRecallSeeds(graph, recallSeeds(recalled)),
+        selectGraphSeeds(graph, query, texts),
+        ...(embedder
+          ? [
+              selectSemanticGraphSeeds(graph, query, texts, (batch) =>
+                this.graphVectors(embedder, batch),
+              ),
+            ]
+          : []),
+      ];
+      seeds = fuseGraphSeeds(channels);
+    }
     const expanded = expandFromSeeds(graph, seeds, {
       ...(args.hops !== undefined ? { hops: args.hops } : {}),
       ...(args.predicates !== undefined ? { predicates: args.predicates } : {}),
@@ -3081,10 +3104,12 @@ export class Verbs {
       seeds,
       ...(useRecall ? { seedScorer: GRAPH_SEED_SCORER_VERSION } : {}),
       ...(explicit.unresolvedRefs.length > 0 ? { unresolvedRefs: explicit.unresolvedRefs } : {}),
-      degraded:
-        recalled !== undefined && recalled.memory === 'not configured'
+      degraded: [
+        ...(recalled !== undefined && recalled.memory === 'not configured'
           ? ['recall-unavailable']
-          : [],
+          : []),
+        ...(useRecall && !embedder ? ['semantic-seed-channel-unavailable'] : []),
+      ],
     };
     if (op === 'context') {
       return { ...shared, ...fitGraphContext(graph, expanded, page.maxTokens) };
@@ -3123,6 +3148,77 @@ export class Verbs {
         ? { recall: this.memorySearch({ q: args.q ?? '', limit: 20, maxTokens }) }
         : {};
     return { op, unavailable: true, graph: { state: 'unavailable', reason }, ...fallback };
+  }
+
+  /**
+   * The authorized projection (and its node texts, built lazily) for one read, cached per
+   * server. The key is everything the view depends on: the caller principal, the placement, the
+   * read point, and EVERY store's write generation (gen + nonce). Any record, decision, intake,
+   * alias, graph, retraction or purge write advances a generation, so the next read misses and
+   * recomputes — a retracted or purged supporter can never be served from the cache, which is the
+   * plan's "immediate tombstone check" held by construction rather than by a second check. A torn
+   * generation sidecar (gen < 0) is never cached.
+   */
+  private cachedGraphView(
+    api: MemoryApi,
+    args: { scope?: 'global' | 'repo'; at?: string; knownBy?: string },
+  ): { projection: GraphProjection; texts: () => Map<string, string> } {
+    const stores = this.recallStores() ?? {};
+    const generations = (['team', 'local', 'global'] as const).map((role) => {
+      const store = stores[role];
+      return store ? store.readStoreGeneration() : { gen: 0, nonce: 'absent' };
+    });
+    const read = () =>
+      api.graphProjection({
+        ...(args.scope !== undefined ? { scope: args.scope } : {}),
+        ...(args.at !== undefined ? { at: args.at } : {}),
+        ...(args.knownBy !== undefined ? { knownBy: args.knownBy } : {}),
+      });
+    if (generations.some((g) => g.gen < 0)) {
+      const projection = read();
+      return { projection, texts: () => api.graphNodeTexts() };
+    }
+    const key = JSON.stringify([
+      process.env.KCRIB_PRINCIPAL_ID ?? DEFAULT_MIGRATION_PRINCIPAL_ID,
+      args.scope ?? null,
+      args.at ?? null,
+      args.knownBy ?? null,
+      generations,
+    ]);
+    const hit = this._graphViewCache.get(key);
+    if (hit) return hit;
+    const projection = read();
+    let texts: Map<string, string> | undefined;
+    const entry = {
+      projection,
+      texts: () => {
+        if (texts === undefined) texts = api.graphNodeTexts();
+        return texts;
+      },
+    };
+    if (this._graphViewCache.size >= 32) this._graphViewCache.clear();
+    this._graphViewCache.set(key, entry);
+    return entry;
+  }
+
+  /**
+   * Embed graph node texts through a bounded per-server cache. Node texts repeat across requests
+   * (claims and refs change rarely), so re-embedding every node on every query is the cost this
+   * avoids; the cache is keyed by embedder id + text, so a model change can never serve stale
+   * vectors, and it is cleared wholesale when it grows past its bound.
+   */
+  private graphVectors(embedder: Embedder, texts: string[]): Float32Array[] {
+    if (this._graphVectorCache === undefined) this._graphVectorCache = new Map();
+    const cache = this._graphVectorCache;
+    const key = (text: string) => `${embedder.id}\u0000${text}`;
+    const missing = [...new Set(texts.filter((t) => !cache.has(key(t))))];
+    if (missing.length > 0) {
+      if (cache.size + missing.length > 50_000) cache.clear();
+      embedder.embedBatch(missing).forEach((vector, i) => {
+        cache.set(key(missing[i] as string), vector);
+      });
+    }
+    return texts.map((t) => cache.get(key(t)) as Float32Array);
   }
 
   /** Reader freshness, best-effort: a failing probe is reported, never allowed to fail the read. */
@@ -3289,6 +3385,52 @@ export class Verbs {
       now: new Date().toISOString(),
     });
     return this.applyIfHash(args, { ...handoff });
+  }
+
+  /**
+   * WP-G4 — `memory{op:'graph_propose'}`: an explicit agent graph proposal. The admission law lives
+   * in {@link MemoryApi.proposeGraphAssertion}; this verb only relays the caller's relationship
+   * and its own session provenance, and reports a refusal with the checks that failed.
+   */
+  memoryGraphPropose(args: {
+    predicate: string;
+    subject: string;
+    object: string;
+    supportedBy: string[];
+    actor: string;
+    validAt?: string;
+    scopeBoundary?: 'repo' | 'global';
+    tool?: string;
+    ifHash?: string;
+  }): Record<string, unknown> {
+    const api = this.memoryApi();
+    if (!api) return this.applyIfHash(args, { memory: 'not configured' });
+    const result = api.proposeGraphAssertion({
+      predicate: args.predicate,
+      subject: args.subject,
+      object: args.object,
+      supportedBy: args.supportedBy,
+      ...(args.validAt !== undefined ? { validAt: args.validAt } : {}),
+      ...(args.scopeBoundary !== undefined ? { scope: args.scopeBoundary } : {}),
+      provenance: {
+        deviceId: process.env.KCRIB_DEVICE_ID ?? 'mcp-host',
+        actorId: args.actor,
+        clientId: 'mcp',
+        ...(args.tool ? { agentId: args.actor, tool: args.tool } : {}),
+      },
+    });
+    if (!result.ok) {
+      return this.applyIfHash(args, {
+        ok: false,
+        error: { code: 'REJECTED', message: 'graph proposal refused', problems: result.problems },
+      });
+    }
+    return this.applyIfHash(args, {
+      ok: true,
+      admitted: true,
+      id: result.id,
+      idempotent: result.idempotent,
+    });
   }
 
   memoryIntakeCreate(args: {

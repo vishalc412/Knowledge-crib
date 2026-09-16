@@ -15,6 +15,7 @@ import {
   __resetMemoryLockGuardForTest,
   createGraphAssertion,
   createGraphEntity,
+  memoryRecordId,
 } from '@knowledge-crib/memory';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Verbs } from './verbs.js';
@@ -73,7 +74,11 @@ function as(principal: string): void {
 }
 
 function verbs(): Verbs {
-  return new Verbs({ soul, index, repoRoot: repo, memory: { local } });
+  const global = MemoryStore.global({
+    env: { ...process.env, KCRIB_MEMORY_DIR: home },
+    now: () => T1,
+  });
+  return new Verbs({ soul, index, repoRoot: repo, memory: { local, global } });
 }
 
 type Res = Record<string, unknown>;
@@ -205,7 +210,9 @@ describe('memory_graph op contracts', () => {
 
   it('search seeds from the caller’s own graph by text and cites relations between seeds', () => {
     const res = verbs().memoryConnectedGraph({ op: 'search', q: 'retry ledger settle' });
-    expect(res.seedScorer).toBe('graph-seed-v1:term-overlap');
+    expect(res.seedScorer).toBe('graph-seed-v2:stemmed-term-overlap+semantic-rrf60');
+    // No embedder is wired in this fixture: the missing channel is stated, never silent.
+    expect(res.degraded).toEqual(['semantic-seed-channel-unavailable']);
     const seeds = (res.seeds as { ref: string; channel: string }[]).map((s) => s.ref);
     expect(seeds).toEqual(expect.arrayContaining(['topic:retry', 'sym:ledger#settle']));
     expect(res.relations as { assertionId: string }[]).toEqual(
@@ -214,6 +221,26 @@ describe('memory_graph op contracts', () => {
     as(BETA);
     const foreign = verbs().memoryConnectedGraph({ op: 'search', q: 'retry ledger settle' });
     expect(foreign.seeds).toEqual([]);
+  });
+
+  it('fuses a semantic seed channel when an embedder is installed, over authorized nodes only', () => {
+    // A toy embedder: "settlement" means the same thing as "settle" on this one axis.
+    const embedder = {
+      id: 'toy-embedder',
+      dim: () => 2,
+      embed: (text: string) => embedder.embedBatch([text])[0] as Float32Array,
+      embedBatch: (texts: string[]) =>
+        texts.map((text) =>
+          /settle|settlement/i.test(text) ? Float32Array.of(1, 0) : Float32Array.of(0, 1),
+        ),
+    };
+    const v = new Verbs({ soul, index, repoRoot: repo, memory: { local, embedder } });
+    const res = v.memoryConnectedGraph({ op: 'search', q: 'settlement' });
+    expect(res.degraded).toEqual([]);
+    const seeds = res.seeds as { ref: string; channel: string }[];
+    expect(seeds[0]).toMatchObject({ ref: 'sym:ledger#settle' });
+    expect(seeds.some((s) => s.channel === 'semantic')).toBe(true);
+    expect(JSON.stringify(res)).not.toContain('beta');
   });
 
   it('beta sees none of alpha through any op, count, or diagnostic', () => {
@@ -316,5 +343,140 @@ describe('memory_graph unavailable fallback', () => {
     const path = verbs().memoryConnectedGraph({ op: 'path', refs: ['mem:d1', 'topic:retry'] });
     expect(path.unavailable).toBe(true);
     expect(path.recall).toBeUndefined();
+  });
+});
+
+describe('memory graph_propose (WP-G4 explicit proposals)', () => {
+  it('admits an authorized proposal, stamps the server principal, and serves it at once', () => {
+    const v = verbs();
+    const res = v.memoryGraphPropose({
+      predicate: 'affects',
+      subject: 'topic:retry',
+      object: 'sym:ledger#charge',
+      supportedBy: [alphaSupport.ref],
+      actor: 'agent:proposer',
+      scopeBoundary: 'global',
+      validAt: T2,
+    });
+    expect(res).toMatchObject({ ok: true, admitted: true, idempotent: false });
+    const again = v.memoryGraphPropose({
+      predicate: 'affects',
+      subject: 'topic:retry',
+      object: 'sym:ledger#charge',
+      supportedBy: [alphaSupport.ref],
+      actor: 'agent:proposer',
+      scopeBoundary: 'global',
+      validAt: T2,
+    });
+    expect(again).toMatchObject({ ok: true, id: res.id });
+
+    const neighbors = v.memoryConnectedGraph({ op: 'neighbors', refs: ['topic:retry'], hops: 1 });
+    expect(JSON.stringify(neighbors)).toContain('sym:ledger#charge');
+    const stored = MemoryStore.global({ env: { ...process.env, KCRIB_MEMORY_DIR: home } })
+      .readCollection('graph')
+      .entries.find((e) => e.id === res.id) as GraphAssertion | undefined;
+    expect(stored?.namespace.principalId).toBe(ALPHA);
+    expect(stored?.provenance.actorId).toBe('agent:proposer');
+
+    as(BETA);
+    expect(
+      JSON.stringify(verbs().memoryConnectedGraph({ op: 'neighbors', refs: ['topic:retry'] })),
+    ).not.toContain('sym:ledger#charge');
+  });
+
+  it('refuses unauthorized support, unknown predicates, non-refs and self-edges without writing', () => {
+    const before = local.readCollection('graph').entries.length;
+    const problems = (res: Record<string, unknown>) =>
+      (res.error as { problems: string[] } | undefined)?.problems ?? [];
+    as(BETA);
+    const foreign = verbs().memoryGraphPropose({
+      predicate: 'about',
+      subject: 'mem:d1',
+      object: 'topic:stolen',
+      supportedBy: [alphaSupport.ref],
+      actor: 'agent:beta',
+      scopeBoundary: 'global',
+    });
+    expect(foreign.ok).toBe(false);
+    expect(problems(foreign)).toContain(`supporter-not-authorized:${alphaSupport.ref}`);
+
+    as(ALPHA);
+    const bad = verbs().memoryGraphPropose({
+      predicate: 'likes',
+      subject: 'not a ref',
+      object: 'not a ref',
+      supportedBy: [],
+      actor: 'agent:alpha',
+      scopeBoundary: 'global',
+    });
+    expect(problems(bad)).toEqual(
+      expect.arrayContaining([
+        'unknown-predicate:likes',
+        'not-a-graph-ref:subject',
+        'not-a-graph-ref:object',
+        'self-edge',
+        'no-supporting-evidence',
+      ]),
+    );
+    // An entity carries no recorded time, so valid time must be stated — never invented.
+    const timeless = verbs().memoryGraphPropose({
+      predicate: 'about',
+      subject: 'mem:d1',
+      object: 'topic:timeless',
+      supportedBy: [alphaSupport.ref],
+      actor: 'agent:alpha',
+      scopeBoundary: 'global',
+    });
+    expect(problems(timeless)).toEqual(['valid-at-required']);
+    expect(local.readCollection('graph').entries.length).toBe(before);
+  });
+});
+
+describe('memory_graph view cache', () => {
+  it('never serves a retracted supporter from a warm cache', () => {
+    const input = {
+      kind: 'fact' as const,
+      subject: 'topic:cache',
+      claim: 'the cache must drop retracted support at once',
+      scope: { boundary: 'global' as const },
+      appliesTo: ['topic:cache'],
+      evidence: [
+        {
+          kind: 'committed-policy' as const,
+          verdict: 'valid' as const,
+          checkedAt: T1,
+          artifactId: 'artifact:docs/cache.md',
+          anchor: 'docs/cache.md',
+        },
+      ],
+      authorship: { actor: 'vitest', kind: 'agent' as const, tool: 'vitest' },
+    };
+    const supporter = {
+      id: memoryRecordId(input),
+      schemaVersion: '1' as const,
+      ...input,
+      verdicts: {
+        trust: 'local' as const,
+        evidence: 'valid' as const,
+        applicability: 'current' as const,
+        lifecycle: 'active' as const,
+      },
+      createdAt: T1,
+    };
+    local.upsertEntry('active', supporter);
+    local.submitGraphEntries([
+      edge(ALPHA, 'affects', 'topic:cache', 'sym:cached#fn', supporter.id),
+    ]);
+    const v = verbs();
+    const warm = v.memoryConnectedGraph({ op: 'neighbors', refs: ['topic:cache'] });
+    expect(JSON.stringify(warm)).toContain('sym:cached#fn');
+    expect(v.memoryConnectedGraph({ op: 'neighbors', refs: ['topic:cache'] }).generation).toBe(
+      warm.generation,
+    );
+
+    expect(v.memoryDelete({ id: supporter.id, actor: 'agent:vitest' }).ok).toBe(true);
+    const after = v.memoryConnectedGraph({ op: 'neighbors', refs: ['sym:cached#fn'] });
+    expect(JSON.stringify(after)).not.toContain('topic:cache');
+    expect(after.unresolvedRefs).toEqual(['sym:cached#fn']);
   });
 });

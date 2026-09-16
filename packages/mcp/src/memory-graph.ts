@@ -65,8 +65,21 @@ function sha256(text: string): string {
   return `sha256:${createHash('sha256').update(text).digest('hex')}`;
 }
 
+// Both derivations below are pure functions of an immutable projection and cost O(assertions), so
+// they are memoized per projection object: a cached view pays for them once, not per request.
+const generationMemo = new WeakMap<GraphProjection, string>();
+const nodesMemo = new WeakMap<GraphProjection, Set<string>>();
+
 /** The content generation of one authorized view (see the module law). */
 export function graphViewGeneration(projection: GraphProjection): string {
+  const memo = generationMemo.get(projection);
+  if (memo !== undefined) return memo;
+  const generation = computeGraphViewGeneration(projection);
+  generationMemo.set(projection, generation);
+  return generation;
+}
+
+function computeGraphViewGeneration(projection: GraphProjection): string {
   return sha256(
     JSON.stringify({
       viewer: projection.viewer,
@@ -144,6 +157,8 @@ export function decodeGraphCursor(
 
 /** Every canonical node of the authorized current view (alias members included). */
 export function authorizedGraphNodes(projection: GraphProjection): Set<string> {
+  const memo = nodesMemo.get(projection);
+  if (memo !== undefined) return memo;
   const nodes = new Set<string>();
   const canonical = (ref: string): string => projection.aliases.canonical[ref] ?? ref;
   for (const assertion of projection.current) {
@@ -155,6 +170,7 @@ export function authorizedGraphNodes(projection: GraphProjection): Set<string> {
   for (const [member, representative] of Object.entries(projection.aliases.canonical)) {
     if (nodes.has(representative)) nodes.add(member);
   }
+  nodesMemo.set(projection, nodes);
   return nodes;
 }
 
@@ -329,16 +345,4 @@ export function timeBoundRecallSeeds(graph: GraphProjection, seeds: GraphSeed[])
   if (graph.at === undefined && graph.knownBy === undefined) return seeds;
   const nodes = authorizedGraphNodes(graph);
   return seeds.filter((seed) => nodes.has(seed.ref));
-}
-
-/** Union seeds from several channels by ref, keeping each ref's best score (channel of the best). */
-export function mergeGraphSeeds(...channels: GraphSeed[][]): GraphSeed[] {
-  const best = new Map<string, GraphSeed>();
-  for (const seed of channels.flat()) {
-    const current = best.get(seed.ref);
-    if (current === undefined || seed.score > current.score) best.set(seed.ref, seed);
-  }
-  return [...best.values()].sort((a, b) =>
-    a.score !== b.score ? b.score - a.score : a.ref < b.ref ? -1 : 1,
-  );
 }

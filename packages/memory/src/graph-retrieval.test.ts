@@ -25,8 +25,11 @@ import {
   GRAPH_MAX_EXAMINED_EDGES,
   GRAPH_MAX_VISITED_NODES,
   expandFromSeeds,
+  fuseGraphSeeds,
+  graphStem,
   graphTerms,
   selectGraphSeeds,
+  selectSemanticGraphSeeds,
 } from './graph-retrieval.js';
 import type { GraphSeed } from './graph-retrieval.js';
 import { createGraphAssertion } from './graph.js';
@@ -373,16 +376,27 @@ describe('WP-G5 connected retrieval — relation filters narrow the walk', () =>
 // ─── graph-side seed selection ───────────────────────────────────────────────
 
 describe('WP-G5 graph seeds — lexical selection over the authorized view only', () => {
-  it('normalizes camelCase, separators, stopwords and plurals into shared terms', () => {
-    expect(graphTerms('Which settleOrder retries?')).toEqual(['settle', 'order', 'retrie']);
+  it('normalizes camelCase, separators, stopwords and inflections into shared terms', () => {
+    expect(graphTerms('Which settleOrder retries?')).toEqual(['settl', 'order', 'retry']);
     expect(graphTerms('sym:src/charge.ts#settle-order')).toEqual([
       'sym',
       'src',
-      'charge',
-      'settle',
+      'charg',
+      'settl',
       'order',
     ]);
     expect(graphTerms('the of and')).toEqual([]);
+  });
+
+  it('stems inflections and -ment onto one term without mangling short or -ss words', () => {
+    for (const word of ['settle', 'settles', 'settled', 'settling', 'settlement']) {
+      expect(graphStem(word)).toBe('settl');
+    }
+    expect(graphStem('retries')).toBe('retry');
+    expect(graphStem('classes')).toBe('class');
+    expect(graphStem('class')).toBe('class');
+    expect(graphStem('status')).toBe('status');
+    expect(graphStem('uses')).toBe(graphStem('use'));
   });
 
   it('scores by the share of query terms a node covers, deterministically, and caps the list', () => {
@@ -430,5 +444,51 @@ describe('WP-G5 graph seeds — lexical selection over the authorized view only'
       { knownBy: T0 },
     );
     expect(selectGraphSeeds(projection, 'late window', new Map())).toEqual([]);
+  });
+});
+
+describe('WP-G5 graph seeds — semantic channel and rank fusion', () => {
+  /** A deterministic toy embedder: one axis per known word, unit-normalized. */
+  const AXES = ['ledger', 'payment', 'cart', 'window'];
+  const embed = (texts: string[]) =>
+    texts.map((text) => {
+      const v = new Float32Array(AXES.length);
+      AXES.forEach((axis, i) => {
+        if (text.toLowerCase().includes(axis)) v[i] = 1;
+      });
+      const norm = Math.hypot(...v) || 1;
+      return v.map((x) => x / norm);
+    });
+
+  it('ranks authorized nodes by cosine and never proposes a foreign node', () => {
+    const projection = project([
+      assertion({ subject: 'mem:pay', object: 'topic:payment-window' }),
+      assertion({ subject: 'mem:cart', object: 'topic:cart' }),
+      assertion({ subject: 'mem:secret', object: 'topic:ledger-payment', principalId: P2 }),
+    ]);
+    const texts = new Map([
+      ['mem:pay', 'payment window'],
+      ['mem:secret', 'ledger payment'],
+    ]);
+    const seeds = selectSemanticGraphSeeds(projection, 'payment window', texts, embed, {
+      limit: 2,
+    });
+    expect(seeds.map((s) => s.ref)).toEqual(['mem:pay', 'topic:payment-window']);
+    expect(seeds.every((s) => s.channel === 'semantic')).toBe(true);
+    expect(JSON.stringify(seeds)).not.toContain('secret');
+    expect(selectSemanticGraphSeeds(projection, '  ', texts, embed)).toEqual([]);
+  });
+
+  it('fuses channels by rank only, normalizes the best to 1, and is order-independent', () => {
+    const lexical = [seed('topic:a', 0.9), seed('topic:b', 0.5)];
+    const semantic = [
+      { ref: 'topic:b', score: 0.83, channel: 'semantic' as const },
+      { ref: 'topic:c', score: 0.81, channel: 'semantic' as const },
+    ];
+    const fused = fuseGraphSeeds([lexical, semantic]);
+    expect(fused.map((s) => s.ref)).toEqual(['topic:b', 'topic:a', 'topic:c']);
+    expect(fused[0]?.score).toBe(1);
+    expect(fuseGraphSeeds([semantic, lexical]).map((s) => s.ref)).toEqual(fused.map((s) => s.ref));
+    expect(fuseGraphSeeds([lexical, semantic], { limit: 1 })).toHaveLength(1);
   });
 });
