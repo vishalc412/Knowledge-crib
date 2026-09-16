@@ -153,6 +153,7 @@ export function coldReaderFreshness(repoRoot: string, cribDir: string): ReaderFr
       : null,
     codeRevision: head,
     graphGeneration: null,
+    searchGeneration: null,
     refreshState: indexed ? 'idle' : 'unindexed',
     stale,
     staleReasons,
@@ -358,6 +359,11 @@ export class RefreshCoordinator {
         null,
       codeRevision: served?.capture.head ?? null,
       graphGeneration: served?.graph?.generation ?? served?.generation ?? null,
+      // The FTS projection is NOT optional on a bundle: it is built from the same overlay, in the
+      // same cycle, and disposed with it. So a served bundle's search generation IS its generation
+      // — reported explicitly rather than left to be inferred, because the WP-G3 exit is that a
+      // caller can SEE that the graph and search halves of its answer came from one generation.
+      searchGeneration: served?.generation ?? null,
       refreshState: this.refreshState(),
       stale,
       staleReasons,

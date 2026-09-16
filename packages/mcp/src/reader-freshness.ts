@@ -57,6 +57,8 @@ export interface ReaderFreshness {
   codeRevision: string | null;
   /** Graph projection generation; must equal the serving bundle generation until a graph-specific reader is added. */
   graphGeneration: string | null;
+  /** FTS/search projection generation; must equal the serving bundle generation. */
+  searchGeneration: string | null;
   refreshState: RefreshState;
   /** True only when the ACTIVE READER is behind the live source (see file comment). */
   stale: boolean;

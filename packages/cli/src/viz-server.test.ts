@@ -356,6 +356,7 @@ describe('memory home endpoint', () => {
           graphSourcePosition: null,
           codeRevision: null,
           graphGeneration: null,
+          searchGeneration: null,
           refreshState: 'idle',
           stale: false,
           staleReasons: [],

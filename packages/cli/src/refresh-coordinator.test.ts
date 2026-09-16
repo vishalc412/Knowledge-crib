@@ -272,6 +272,10 @@ describe('WP-G3 — graph, FTS, and source graph publish as one recoverable gene
     try {
       const first = coordinator.currentGraph as TestGraphReader | undefined;
       expect(first?.generation).toBe(coordinator.freshness().readerGeneration);
+      expect(coordinator.freshness()).toHaveProperty(
+        'searchGeneration',
+        coordinator.freshness().readerGeneration,
+      );
       expect(first?.sourcePosition).toBe('memory:1');
 
       graphSource = 'memory:2';
@@ -294,9 +298,63 @@ describe('WP-G3 — graph, FTS, and source graph publish as one recoverable gene
       expect(first?.closed).toBe(true);
       expect(coordinator.freshness().graphSourcePosition).toBe('memory:2');
       expect(coordinator.freshness().graphGeneration).toBe(second?.generation);
+      expect(coordinator.freshness()).toHaveProperty(
+        'searchGeneration',
+        coordinator.freshness().readerGeneration,
+      );
     } finally {
       coordinator.close();
       expect(built.every((reader) => reader.closed)).toBe(true);
+    }
+  });
+
+  it('refuses a graph reader whose generation disagrees with the bundle, so no reader can mix generations', async () => {
+    const soul = await indexedSoul();
+    // The builder returns a reader stamped with a DIFFERENT generation than the bundle it is being
+    // staged into. This is the WP-G3 failure the exit gate names: a request answered partly from a
+    // graph projection of one generation and partly from an FTS projection of another. The bundle
+    // must never form — not be published and then patched.
+    const built: TestGraphReader[] = [];
+    let mismatch = true;
+    const coordinator = new RefreshCoordinator(soul, repo, {
+      graphSourcePosition: () => 'memory:mismatch',
+      buildGraph: ({ generation, capture }) => {
+        const reader = graphReader(
+          mismatch ? `${generation}-other` : generation,
+          capture.graphSourcePosition,
+        );
+        built.push(reader);
+        return reader;
+      },
+    });
+    // Startup NEVER publishes: initialize() settles without a bundle and fails loudly rather than
+    // serving a mixed-generation reader.
+    await expect(coordinator.initialize()).rejects.toThrow(
+      /failed to publish an initial bundle|does not match reader generation/,
+    );
+    expect(coordinator.currentGraph).toBeUndefined();
+    expect(coordinator.freshness().readerGeneration).toBeNull();
+    expect(coordinator.freshness().graphGeneration).toBeNull();
+    expect(coordinator.freshness().searchGeneration).toBeNull();
+    expect(coordinator.freshness().lastRefreshError?.message).toContain(
+      'does not match reader generation',
+    );
+    // The rejected candidate's reader was closed on the way out — a refused projection leaks nothing.
+    expect(built.every((reader) => reader.closed)).toBe(true);
+
+    // And the refusal is not a permanent poison: once the builder agrees on the generation, the
+    // next cycle publishes all three read models together under ONE generation.
+    mismatch = false;
+    coordinator.requestRefresh('memory');
+    await coordinator.whenIdle();
+    try {
+      const fresh = coordinator.freshness();
+      expect(fresh.readerGeneration).not.toBeNull();
+      expect(fresh.graphGeneration).toBe(fresh.readerGeneration);
+      expect(fresh.searchGeneration).toBe(fresh.readerGeneration);
+      expect(fresh.lastRefreshError).toBeNull();
+    } finally {
+      coordinator.close();
     }
   });
 

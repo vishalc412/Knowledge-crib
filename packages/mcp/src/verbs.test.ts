@@ -4310,6 +4310,7 @@ describe('WP4.7 — status folds readerFreshness best-effort', () => {
       graphSourcePosition: 'canonical:1',
       codeRevision: 'abc123',
       graphGeneration: 'gen-1',
+      searchGeneration: 'gen-1',
       refreshState: 'idle',
       stale: false,
       staleReasons: [],
