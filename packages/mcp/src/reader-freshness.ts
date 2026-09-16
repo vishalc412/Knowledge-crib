@@ -51,6 +51,14 @@ export interface ReaderFreshness {
   publishedGeneration: string | null;
   /** Generation of the bundle the reader is actually answering from right now. */
   readerGeneration: string | null;
+  /** Canonical graph source position used to build the published graph/search bundle. */
+  graphSourcePosition: string | null;
+  /** Code revision captured with the graph source position; null when VCS is unavailable. */
+  codeRevision: string | null;
+  /** Graph projection generation; must equal the serving bundle generation until a graph-specific reader is added. */
+  graphGeneration: string | null;
+  /** FTS/search projection generation; must equal the serving bundle generation. */
+  searchGeneration: string | null;
   refreshState: RefreshState;
   /** True only when the ACTIVE READER is behind the live source (see file comment). */
   stale: boolean;

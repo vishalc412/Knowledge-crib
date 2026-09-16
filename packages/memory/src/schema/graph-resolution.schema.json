@@ -1,0 +1,26 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://knowledge-crib.dev/schema/memory-1/graph-resolution.schema.json",
+  "title": "GraphResolutionDecision",
+  "description": "Legacy v1 unscoped entity-alias resolution decision. It remains readable only for migration compatibility; new writes use graph-resolution-v2.schema.json.",
+  "type": "object",
+  "required": ["id", "schemaVersion", "kind", "entityA", "entityB", "actor", "ts"],
+  "properties": {
+    "id": { "type": "string", "pattern": "^gres:[0-9a-f]+$" },
+    "schemaVersion": { "type": "string", "const": "1" },
+    "kind": { "type": "string", "enum": ["establish", "reverse"] },
+    "entityA": {
+      "type": "string",
+      "pattern": "^entity:[A-Za-z0-9][A-Za-z0-9._-]*(/[A-Za-z0-9][A-Za-z0-9._-]*)*$"
+    },
+    "entityB": {
+      "type": "string",
+      "pattern": "^entity:[A-Za-z0-9][A-Za-z0-9._-]*(/[A-Za-z0-9][A-Za-z0-9._-]*)*$"
+    },
+    "actor": { "type": "string", "minLength": 1 },
+    "reason": { "type": "string" },
+    "ts": { "type": "string" },
+    "meta": { "type": "object" }
+  },
+  "additionalProperties": false
+}

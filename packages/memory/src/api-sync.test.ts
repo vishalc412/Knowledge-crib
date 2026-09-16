@@ -42,6 +42,7 @@ import {
   TeamPrivateVisibilityError,
   __resetMemoryLockGuardForTest,
   buildCaptureOutboxEntry,
+  buildGraphExtractionJob,
   deriveEventId,
   derivePropositionKey,
   feedbackId,
@@ -633,6 +634,28 @@ describe('purgeRecords (D11: tombstone first, store-mediated rewrite, honest lim
     expect(local.readCollection('outbox').entries.find((e) => e.id === cap.id)).toBeUndefined();
     // (4) alias lines are RETAINED — deliberate audit history
     expect(local.readAliases().length).toBeGreaterThan(0);
+  });
+
+  it('purges local extraction jobs correlated to the withdrawn source record', async () => {
+    const { local, api, record } = purgeFixture();
+    const job = buildGraphExtractionJob(
+      {
+        sourceId: record.id,
+        sourceHash: 'blake3:0123456789abcdef',
+        ontologyVersion: 'graph-ontology-v1',
+        principalId: 'principal:local',
+        producer: { id: 'agent:purge-test', version: '1.0.0' },
+        idempotencyKey: 'purge:graph-job:1',
+      },
+      T0,
+    );
+    local.upsertEntry('graph-jobs', job);
+
+    const res = await api.purgeRecords([record.id], { actor: ACTOR, confirmIds: [record.id] });
+
+    expect(res.ok).toBe(true);
+    expect(res.purged[0]?.stores[0]?.twins).toContain(job.id);
+    expect(local.readCollection('graph-jobs').entries).toEqual([]);
   });
 
   it('team is never touched unless explicitly listed, and never physically removed even then', async () => {

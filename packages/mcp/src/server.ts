@@ -766,6 +766,29 @@ export function buildServer(verbs: Verbs, version = '0.1.0', pins?: RequestPins)
     },
   );
 
+  server.registerTool(
+    'memory_graph',
+    {
+      description:
+        'Authorized connected-memory graph retrieval. search, neighbors, path, history, and context traverse only the caller-authorized temporal graph. refs are explicit graph seeds; every returned expansion carries its supporting assertion path and truncation report.',
+      inputSchema: {
+        op: z.enum(['search', 'neighbors', 'path', 'history', 'context']).optional(),
+        q: z.string().optional(),
+        refs: z.array(z.string()).optional(),
+        scope: z.enum(['global', 'repo']).optional(),
+        at: z.string().optional(),
+        knownBy: z.string().optional(),
+        hops: z.number().int().min(0).max(4).optional(),
+        maxTokens: z.number().int().positive().max(MAX_MAX_TOKENS).optional(),
+        ifHash: z.string().optional(),
+      },
+    },
+    async (a) => {
+      verbs.recordToolInvocation?.('memory_graph');
+      return TOOL_RESULT(verbs.memoryConnectedGraph(a));
+    },
+  );
+
   // ---------------------------------------------------------------------------------------------
   // Dispatchers. Each of these replaced a family of near-identical tools that differed only in
   // which verb they called. Every tool in the list costs name + description + JSON schema in the

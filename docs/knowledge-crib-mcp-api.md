@@ -6,12 +6,12 @@
 
 ---
 
-## Tool consolidation (current surface: 17 tools / 47 operations)
+## Tool consolidation (current surface: 18 tools / 48 operations)
 
 Fourteen tools that differed only in which verb they called were folded behind an `op` parameter.
 Every tool costs name + description + JSON schema in the tool list of **every** session whether or
 not it is used, so a family of five rarely-used tools was a permanent tax on every conversation.
-The consolidated surface is 17 tools / 47 operations — down from 31 tools / ~6,249 tokens, a 42%
+The consolidated surface is 18 tools / 48 operations — down from 31 tools / ~6,249 tokens, a 42%
 token cut with no capability removed.
 
 These counts are not prose: they are derived from the single capability manifest
@@ -67,6 +67,25 @@ at once. Their contracts are documented in the memory ledger section below, and 
 cycle after the portable memory op set lands under `memory({op})`.
 (`extract_rules` had no keep-standalone rationale and is now
 `dossier({op:'rules'})`; its name lives on in `RETIRED_ALIASES`.)
+
+### `memory_graph`
+
+Connected retrieval over the caller-authorized temporal memory graph. `search` and `context`
+derive seeds from the normal memory-search projection; `neighbors`, `path`, and `history` accept
+explicit graph `refs`. Traversal defaults to two hops and is capped at four hops, 200 visited
+nodes, and 500 examined edges. Every expansion returns its assertion path and `supportedBy`
+references. `report.truncated` or `budgetExhausted` means the response is a bounded page, never a
+claim that no further authorized connections exist.
+
+```jsonc
+// req: { "op?":"search|neighbors|path|history|context", "q?":"…",
+//        "refs?": ["mem:…","sym:…"], "scope?":"global|repo", "at?":"…",
+//        "knownBy?":"…", "hops?":2, "maxTokens?":2000, "ifHash?":"…" }
+// res: { "op":"context", "seeds":[…], "expansions":[ { "ref":"…","distance":1,
+//        "path":[ { "assertionId":"grel:…","supportedBy":["mem:…"] } ] } ],
+//        "report":{ "truncated":false,"budget":{…} }, "diagnostics":{…},
+//        "recall":{…}, "unavailable":false }
+```
 
 An under-specified `op` returns `{ error: { code: 'BAD_REQUEST' } }` rather than forwarding a
 partial call to a verb.

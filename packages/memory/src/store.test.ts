@@ -210,7 +210,7 @@ describe('MemoryStore factories + shape', () => {
     expect(s.manifestPath()).toBeUndefined();
   });
 
-  it('local: home/repos/<id> root, own lock, attempts/candidates/active/feedback/receipts/decisions/outbox/dead, manifest', () => {
+  it('local: home/repos/<id> root, own lock, attempts/candidates/active/feedback/receipts/decisions/outbox/dead/graph, manifest', () => {
     const s = MemoryStore.local(REPO, { env, now: () => NOW, repoRoot: '/r' });
     expect(s.role).toBe('local');
     expect(s.rootDir).toBe(join(home, 'repos', REPO));
@@ -225,17 +225,19 @@ describe('MemoryStore factories + shape', () => {
       'outbox',
       'dead',
       'intakes',
+      'graph',
+      'graph-jobs',
     ]);
     expect(s.hasManifest).toBe(true);
     expect(s.manifestPath()).toBe(join(home, 'repos', REPO, 'manifest.json'));
   });
 
-  it('global: home/global root, own lock, records/decisions/feedback, manifest', () => {
+  it('global: home/global root, own lock, records/decisions/feedback/graph, manifest', () => {
     const s = MemoryStore.global({ env, now: () => NOW });
     expect(s.role).toBe('global');
     expect(s.rootDir).toBe(join(home, 'global'));
     expect(s.lockFilePath).toBe(join(home, 'global', '.lock'));
-    expect(s.collections).toEqual(['records', 'decisions', 'feedback']);
+    expect(s.collections).toEqual(['records', 'decisions', 'feedback', 'graph']);
     expect(s.hasManifest).toBe(true);
   });
 

@@ -20,6 +20,7 @@ import type {
   MemoryDecision,
   MemoryEvidence,
   MemoryFeedback,
+  MemoryNamespace,
   MemoryRecord,
   MemoryRecordV2,
   MemoryRecordV3,
@@ -393,6 +394,95 @@ export function intakeCheckpointId(
   checkpoint: Omit<IntakeCheckpoint, 'id' | 'schemaVersion' | 'recordedAt'>,
 ): string {
   return `icp:${blake3Hex(canonical(checkpoint))}`;
+}
+
+// ─── connected memory graph (WP-G1) ──────────────────────────────────────────
+
+/**
+ * `gent:<blake3>` — a graph entity's storage identity. Seeds EXACTLY the identity tuple
+ * `{kind, name, namespace.principalId, scope}`: re-registering the same entity (same kind, in
+ * the same namespace and placement) re-derives the same id, so registration is an idempotent
+ * upsert. Editable metadata — `members`, `labels`, `meta` — is deliberately OUTSIDE the seed:
+ * growing an entity's membership must never re-address it. The canonical TRAVERSAL id is the
+ * separate `ref` field (see graph.ts `graphEntityRef`), pinned to the corpus convention.
+ */
+export function graphEntityId(
+  entity: {
+    kind: string;
+    name: string;
+    namespace: MemoryNamespace;
+    scope: MemoryScope;
+  } & Record<string, unknown>,
+): string {
+  return `gent:${blake3Hex(
+    canonical({
+      kind: entity.kind,
+      name: entity.name,
+      principalId: entity.namespace.principalId,
+      scope: scopeHash(entity.scope),
+    }),
+  )}`;
+}
+
+/**
+ * `grel:<blake3>` — a graph assertion's content id, seeded from its scoped content identity:
+ * `{predicate, subject, object, namespace.principalId, scope, validAt}`. `knownAt` (transaction
+ * time) and `supportedBy` are deliberately EXCLUDED — the same assertion learned at a different
+ * moment, or supported by a grown supporter list, is still the same assertion: a repeated
+ * backfill import re-derives the same id and the write is an idempotent merge (the WP-G1 exit
+ * criterion "repeated imports produce the same canonical assertions"). THE SEED IS FROZEN once
+ * shipped: changing it re-ids every stored assertion and breaks crash-recovery dedupe.
+ */
+export function graphAssertionId(
+  assertion: {
+    predicate: string;
+    subject: string;
+    object: string;
+    namespace: MemoryNamespace;
+    scope: MemoryScope;
+    validAt: string;
+  } & Record<string, unknown>,
+): string {
+  return `grel:${blake3Hex(
+    canonical({
+      predicate: assertion.predicate,
+      subject: assertion.subject,
+      object: assertion.object,
+      principalId: assertion.namespace.principalId,
+      scope: scopeHash(assertion.scope),
+      validAt: assertion.validAt,
+    }),
+  )}`;
+}
+
+/**
+ * `gres:<blake3>` — a resolution decision's content id. Seeds EXACTLY `{kind, entityA,
+ * entityB}`: the binding IS the decision's meaning, so re-recording the same alias decision is a
+ * byte-stable no-op, and reversing it appends a NEW id (kind differs) rather than rewriting.
+ */
+export function graphResolutionId(decision: {
+  kind: string;
+  entityA: string;
+  entityB: string;
+  schemaVersion?: string;
+  namespace?: { principalId: string };
+  scope?: { boundary: string; repoId?: string };
+}): string {
+  const scoped =
+    decision.schemaVersion === '2' && decision.namespace !== undefined && decision.scope !== undefined;
+  return `gres:${blake3Hex(
+    canonical({
+      kind: decision.kind,
+      entityA: decision.entityA,
+      entityB: decision.entityB,
+      ...(scoped
+        ? {
+            principalId: decision.namespace?.principalId,
+            scope: scopeHash(decision.scope as { boundary: 'repo' | 'global'; repoId?: string }),
+          }
+        : {}),
+    }),
+  )}`;
 }
 
 /** The id-prefix token for a memory entry (the run before `:`), or `undefined` for a non-string. */

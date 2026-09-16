@@ -77,6 +77,7 @@ import {
   conservativeVerdicts,
   contradictedForReview,
   effectiveVerdicts,
+  expandFromSeeds,
   gatherRecall,
   isFeedbackSignal,
   isMemoryRecordVersioned,
@@ -502,6 +503,7 @@ const PUBLIC_VERBS = new Set<string>([
   'memoryFeedback',
   // Gate 1.3 — the portable MemoryApi op set wired through the memory dispatcher.
   'memorySearch',
+  'memoryConnectedGraph',
   'memorySupersede',
   'memoryDelete',
   'memoryHistory',
@@ -2963,6 +2965,72 @@ export class Verbs {
       fts.close();
       vectors?.close();
     }
+  }
+
+  /** Connected memory retrieval over the caller-authorized temporal graph. */
+  memoryConnectedGraph(args: {
+    op?: 'search' | 'neighbors' | 'path' | 'history' | 'context';
+    q?: string;
+    refs?: string[];
+    scope?: 'global' | 'repo';
+    at?: string;
+    knownBy?: string;
+    hops?: number;
+    maxTokens?: number;
+    ifHash?: string;
+  }): Record<string, unknown> {
+    const api = this.memoryApi();
+    if (!api) return this.applyIfHash(args, { memory: 'not configured' });
+    const op = args.op ?? 'search';
+    const graph = api.graphProjection({
+      ...(args.scope !== undefined ? { scope: args.scope } : {}),
+      ...(args.at !== undefined ? { at: args.at } : {}),
+      ...(args.knownBy !== undefined ? { knownBy: args.knownBy } : {}),
+    });
+    const explicitSeeds = (args.refs ?? []).map((ref) => ({
+      ref,
+      score: 1,
+      channel: 'explicit' as const,
+    }));
+    const recalled =
+      (op === 'search' || op === 'context') && explicitSeeds.length === 0
+        ? this.memorySearch({
+            q: args.q ?? '',
+            limit: 20,
+            maxTokens: 2_000,
+          })
+        : undefined;
+    const recalledSeeds = Array.isArray(recalled?.hits)
+      ? recalled.hits.flatMap((hit) => {
+          const view = hit as { id?: unknown; score?: unknown };
+          return typeof view.id === 'string' && typeof view.score === 'number'
+            ? [{ ref: view.id, score: view.score, channel: 'semantic' as const }]
+            : [];
+        })
+      : [];
+    const seeds = explicitSeeds.length > 0 ? explicitSeeds : recalledSeeds;
+    const expanded = expandFromSeeds(graph, seeds, {
+      ...(args.hops !== undefined ? { hops: args.hops } : {}),
+    });
+    const maxTokens = args.maxTokens === undefined ? 2_000 : capMaxTokens(args.maxTokens);
+    const fitted = fitTokenBudget(expanded.expansions, maxTokens, (prefix) =>
+      JSON.stringify({ expansions: prefix, truncated: true, budgetExhausted: true }),
+    );
+    const payload = {
+      op,
+      seeds,
+      expansions: fitted.items,
+      report: {
+        ...expanded.report,
+        truncated: expanded.report.truncated || fitted.budgetExhausted,
+      },
+      ...(op === 'history' ? { timeline: graph.timeline } : {}),
+      diagnostics: graph.diagnostics,
+      ...(recalled !== undefined ? { recall: recalled } : {}),
+      ...(fitted.budgetExhausted ? { budgetExhausted: true } : {}),
+      unavailable: false,
+    };
+    return this.applyIfHash(args, payload);
   }
 
   /**

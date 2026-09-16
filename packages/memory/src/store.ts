@@ -37,7 +37,7 @@ import { join } from 'node:path';
  */
 import { CribLock, type CribLockOptions, LockBusyError } from '@knowledge-crib/core';
 import { writeJsonAtomic } from './atomic.js';
-import { memoryShard } from './ids.js';
+import { graphAssertionId, graphEntityId, graphResolutionId, memoryShard } from './ids.js';
 import { loadMemoryManifestJson, parseMemoryShard } from './loader.js';
 import { newMemoryManifest } from './manifest.js';
 import {
@@ -49,8 +49,12 @@ import {
 } from './migrations.js';
 import { globalStoreRoot, localStoreRoot, teamStoreRoot } from './paths.js';
 import { assertNoMemorySecrets } from './secrets.js';
-import { serializeMemoryShard } from './serialization.js';
+import { canonicalMemoryJson, serializeMemoryShard } from './serialization.js';
 import {
+  type GraphAssertion,
+  type GraphEntity,
+  type GraphExtractionJob,
+  type GraphResolutionDecision,
   type MemoryAlias,
   type MemoryCounts,
   type MemoryEntry,
@@ -62,7 +66,7 @@ import {
   isMemoryRecordV2,
   isMemoryRecordVersioned,
 } from './types.js';
-import { assertValidMemoryEntry } from './validate.js';
+import { MemorySchemaError, assertValidMemoryEntry } from './validate.js';
 
 /** The on-disk collection directories a store may hold. */
 export type MemoryCollection =
@@ -75,7 +79,9 @@ export type MemoryCollection =
   | 'feedback'
   | 'outbox'
   | 'dead'
-  | 'intakes';
+  | 'intakes'
+  | 'graph'
+  | 'graph-jobs';
 
 const TEAM_COLLECTIONS: readonly MemoryCollection[] = [
   'records',
@@ -93,8 +99,15 @@ const LOCAL_COLLECTIONS: readonly MemoryCollection[] = [
   'outbox',
   'dead',
   'intakes',
+  'graph',
+  'graph-jobs',
 ];
-const GLOBAL_COLLECTIONS: readonly MemoryCollection[] = ['records', 'decisions', 'feedback'];
+const GLOBAL_COLLECTIONS: readonly MemoryCollection[] = [
+  'records',
+  'decisions',
+  'feedback',
+  'graph',
+];
 
 /**
  * `active` local records count under `records` (the local equivalent of team/global's records
@@ -102,7 +115,9 @@ const GLOBAL_COLLECTIONS: readonly MemoryCollection[] = ['records', 'decisions',
  * key: the manifest's `counts` object is closed (`additionalProperties: false`, six fixed keys) and
  * those collections are durable queue state, not claim counts — inflating e.g. `candidates` with
  * outbox rows would lie to every manifest consumer. Queue visibility comes from
- * `pendingCaptures()`/`readCollection('outbox')`, never the manifest.
+ * `pendingCaptures()`/`readCollection('outbox')`, never the manifest. The WP-G1 `graph` collection
+ * joins the same branch for the same reason: graph entries are NOT claims, and the graph's size
+ * is surfaced by reading the collection, never the manifest counts.
  */
 function collectionCountKey(c: MemoryCollection): keyof MemoryCounts | undefined {
   switch (c) {
@@ -122,6 +137,8 @@ function collectionCountKey(c: MemoryCollection): keyof MemoryCounts | undefined
     case 'outbox':
     case 'dead':
     case 'intakes':
+    case 'graph':
+    case 'graph-jobs':
       return undefined;
   }
 }
@@ -280,6 +297,115 @@ function isRecordCollection(collection: MemoryCollection): boolean {
   return collection === 'records' || collection === 'active';
 }
 
+// ─── graph submission (WP-G1) ─────────────────────────────────────────────────
+
+/** What {@link MemoryStore.submitGraphEntries} did. Returned — i.e. ACKNOWLEDGED — only after
+ *  every affected shard write has completed its atomic persist (the ack-after-persist law: a
+ *  faulted rename throws, and no id is ever reported as written). */
+export interface GraphSubmitResult {
+  /** Ids durably written or merged (bytes on disk changed). */
+  written: string[];
+  /** Ids that needed no write: an identical re-submit, or a graph-resolution decision whose
+   *  first writer already owns the id (decisions are append-only — never re-authored). */
+  skipped: string[];
+}
+
+/** Sorted union of two string lists (the merge shape for `supportedBy`/`members`/`labels`). */
+function sortedUnion(a: readonly string[], b: readonly string[]): string[] {
+  return [...new Set([...a, ...b])].sort();
+}
+
+/**
+ * The chronologically LATER of two schema-valid ISO stamps. `Date.parse`, NOT a raw string
+ * compare: the graph schemas admit offset (`+05:00`) and optional-fraction forms, where
+ * lexicographic order is NOT instant order — a raw max lets an absolutely-earlier `+14:00`
+ * wall-clock string beat an already-stored `Z` stamp and REGRESS transaction time. Equal
+ * instants keep the PRIOR spelling, so a mixed-precision replay of the same instant is a
+ * byte-identical no-op rather than a rewrite. Falls back to the raw compare only if a stamp is
+ * unparseable (defensive — the schema gate already admitted both forms).
+ */
+function laterTimestamp(prior: string, incoming: string): string {
+  const p = Date.parse(prior);
+  const i = Date.parse(incoming);
+  if (!Number.isNaN(p) && !Number.isNaN(i)) return i > p ? incoming : prior;
+  return incoming > prior ? incoming : prior;
+}
+
+/**
+ * Merge one incoming graph entry against its same-id predecessor. The graph ids are seeded from
+ * the scoped CONTENT identity, so a same-id pair is the SAME claim seen twice — the merge is
+ * additive for the set-valued fields, never a replace of them:
+ *  - byte-identical → no-op (the idempotent re-submit; repeated imports write NOTHING);
+ *  - `grel:` → union the supporter lists (sorted), keep the chronologically LATER knownAt
+ *    (transaction time is monotonic — a replayed older import can never regress it), and
+ *    shallow-merge meta with the incoming value winning a shared key (same law as `gent:`);
+ *  - `gent:` → union members/labels (membership grows, never re-addresses) and shallow-merge
+ *    meta (incoming wins a shared key);
+ *  - `gres:` → first writer wins: a resolution decision is an authored record, and a second
+ *    submission of the same binding must not re-author it.
+ *
+ * Every OTHER field (provenance, namespace extras) comes from the incoming entry by design: the
+ * merge records the most recent observation of the same content identity, and content identity
+ * never depends on those fields (they are outside the id seed). Set-valued fields are the state
+ * that must survive re-imports; scalar provenance is the observation, and the latest one is the
+ * truthful one.
+ * Returns `undefined` when the merge produced no byte change (skip); the merged entry otherwise.
+ */
+function mergeGraphEntry(prior: MemoryEntry, incoming: MemoryEntry): MemoryEntry | undefined {
+  if (canonicalMemoryJson(prior) === canonicalMemoryJson(incoming)) return undefined;
+  if (incoming.id.startsWith('grel:')) {
+    const p = prior as GraphAssertion;
+    const i = incoming as GraphAssertion;
+    const merged: GraphAssertion = {
+      ...i,
+      knownAt: laterTimestamp(p.knownAt, i.knownAt),
+      supportedBy: sortedUnion(p.supportedBy, i.supportedBy),
+      ...(p.meta || i.meta ? { meta: { ...(p.meta ?? {}), ...(i.meta ?? {}) } } : {}),
+    };
+    // The union may already equal the prior (a replayed older import): no write, no ack.
+    return canonicalMemoryJson(merged) === canonicalMemoryJson(prior) ? undefined : merged;
+  }
+  if (incoming.id.startsWith('gent:')) {
+    const p = prior as GraphEntity;
+    const i = incoming as GraphEntity;
+    const merged: GraphEntity = {
+      ...i,
+      ...(p.members || i.members ? { members: sortedUnion(p.members ?? [], i.members ?? []) } : {}),
+      ...(p.labels || i.labels ? { labels: sortedUnion(p.labels ?? [], i.labels ?? []) } : {}),
+      ...(p.meta || i.meta ? { meta: { ...(p.meta ?? {}), ...(i.meta ?? {}) } } : {}),
+    };
+    return canonicalMemoryJson(merged) === canonicalMemoryJson(prior) ? undefined : merged;
+  }
+  return undefined; // gres — and anything else that shares an id — first writer wins
+}
+
+/**
+ * Canonicalize a graph entry's set-valued lists (sorted + deduped) BEFORE it is stored.
+ * `canonicalMemoryJson` sorts object keys but preserves array ORDER, so without this a fresh
+ * write would persist whatever order the producer happened to enumerate its supporters or
+ * members in — and the idempotence comparison is byte-wise: the same assertion imported with a
+ * different enumeration order would take the merge path instead of the no-op skip, and two
+ * devices importing the identical corpus would never converge on identical bytes. The merge
+ * paths already sort through `sortedUnion`; this extends the same law to first writes, so the
+ * WP-G1 exit criterion "repeated imports produce the same canonical assertions" holds regardless
+ * of producer enumeration order. (Purely a copy: the caller's entry object is never mutated.)
+ */
+function canonicalGraphEntry(entry: MemoryEntry): MemoryEntry {
+  if (entry.id.startsWith('grel:')) {
+    const a = entry as GraphAssertion;
+    return { ...a, supportedBy: [...new Set(a.supportedBy)].sort() };
+  }
+  if (entry.id.startsWith('gent:')) {
+    const e = entry as GraphEntity;
+    return {
+      ...e,
+      ...(e.members ? { members: [...new Set(e.members)].sort() } : {}),
+      ...(e.labels ? { labels: [...new Set(e.labels)].sort() } : {}),
+    };
+  }
+  return entry; // gres carries no set-valued lists
+}
+
 /** A store's derived-FTS generation: monotonic per store root + a nonce binding the file's life. */
 export interface MemoryFtsGeneration {
   /** Monotonic bump per record-collection mutation, persisted under the store's write lock. */
@@ -308,6 +434,16 @@ export interface MemoryFtsWriteNotice {
 }
 
 export type MemoryFtsWriteListener = (notice: MemoryFtsWriteNotice) => void;
+
+/** A durable mutation notice for any memory collection. Derived projections use this to queue a
+ * rebuild after graph assertions, decisions, admissions, retractions, or purge cleanup. */
+export interface MemoryStoreWriteNotice {
+  role: MemoryStoreRole;
+  /** The whole-store generation that was durably written before this listener runs. */
+  generation: MemoryFtsGeneration;
+}
+
+export type MemoryStoreWriteListener = (notice: MemoryStoreWriteNotice) => void;
 
 export interface StoreOpts {
   /** Env override (tests relocate `~/.crib/memory` via `KCRIB_MEMORY_DIR`). */
@@ -448,6 +584,7 @@ export class MemoryStore {
   // ─── G3.1 derived-FTS hooks (persistent index sync) ─────────────────────────
 
   private ftsListener: MemoryFtsWriteListener | undefined;
+  private storeListener: MemoryStoreWriteListener | undefined;
 
   /**
    * Install the single persistent-FTS write listener (the open snapshot's incremental upsert hook).
@@ -457,6 +594,12 @@ export class MemoryStore {
    */
   setFtsWriteListener(listener: MemoryFtsWriteListener | undefined): void {
     this.ftsListener = listener;
+  }
+
+  /** Install a single non-blocking whole-store mutation listener for derived read models. The
+   * listener runs only after the new `store.gen` sidecar has been atomically published. */
+  setStoreWriteListener(listener: MemoryStoreWriteListener | undefined): void {
+    this.storeListener = listener;
   }
 
   /** `<rootDir>/fts.gen` — the derived-FTS generation sidecar. Lives in the store ROOT (not the
@@ -578,7 +721,7 @@ export class MemoryStore {
   /** Bump the whole-store generation. Mirrors {@link bumpFtsGeneration}'s nonce discipline: the
    *  first bump mints the nonce, later bumps keep it, so the nonce changes exactly when the store
    *  root's life does (clear → delete → fresh file → fresh nonce). */
-  private bumpStoreGeneration(): void {
+  private bumpStoreGeneration(): MemoryFtsGeneration {
     this.pinnedGeneration = undefined; // a write invalidates any pinned read pass on this store
     const path = this.storeGenerationPath();
     const current = this.readStoreGeneration();
@@ -587,6 +730,13 @@ export class MemoryStore {
         ? { gen: current.gen + 1, nonce: current.nonce }
         : { gen: 1, nonce: randomUUID() };
     writeJsonAtomic(path, `${JSON.stringify(next)}\n`);
+    try {
+      this.storeListener?.({ role: this.init.role, generation: next });
+    } catch {
+      // A derived reader must never make the authoritative journal write fail. Its next health
+      // probe compares this durable generation and schedules a replacement if the notice was lost.
+    }
+    return next;
   }
 
   private bumpFtsGeneration(): MemoryFtsGeneration {
@@ -1034,7 +1184,7 @@ export class MemoryStore {
     // gen -1 = torn sidecar of unknown provenance.
     // Neither is a safe cache key: read through, and start caching once a write mints the sidecar.
     const cacheable = generation.gen >= 1;
-    const key = `${this.init.rootDir} ${collection}`;
+    const key = `${this.init.rootDir} ${collection}`;
     if (cacheable) {
       const hit = collectionReadCache.get(key);
       if (hit && hit.gen === generation.gen && hit.nonce === generation.nonce) {
@@ -1085,6 +1235,11 @@ export class MemoryStore {
    */
   writeShard(collection: MemoryCollection, shard: string, entries: MemoryEntry[]): void {
     this.assertCollection(collection);
+    if (collection === 'graph') {
+      throw new Error(
+        'refusing to writeShard the graph collection directly: graph entries enter through submitGraphEntries (its merge laws — idempotence, supporter union, first-writer-wins decisions — ARE the write path, and a full-shard replace would bypass every one of them)',
+      );
+    }
     for (const entry of entries) this.assertWritable(entry);
     const text = serializeMemoryShard(entries);
     this.withLock(() => {
@@ -1110,6 +1265,11 @@ export class MemoryStore {
    */
   upsertEntries(collection: MemoryCollection, entries: MemoryEntry[]): void {
     this.assertCollection(collection);
+    if (collection === 'graph') {
+      throw new Error(
+        'refusing to upsertEntries into the graph collection directly: graph entries enter through submitGraphEntries — an id-replace here would re-author a first-writer-wins decision and bypass every graph merge law',
+      );
+    }
     for (const entry of entries) this.assertWritable(entry);
     this.withLock(() => {
       const byShard = new Map<string, MemoryEntry[]>();
@@ -1141,6 +1301,150 @@ export class MemoryStore {
   }
 
   /**
+   * Atomically replace one existing local graph-extraction job when `transition` accepts its current value.
+   * Returning `undefined` declines the transition without writing or bumping the generation. This
+   * is the compare-and-update primitive for machine-local operational queues: a worker must never
+   * read a pending item and claim it through a second, independently locked upsert.
+   */
+  updateGraphExtractionJob(
+    id: string,
+    transition: (current: Readonly<GraphExtractionJob>) => GraphExtractionJob | undefined,
+  ): GraphExtractionJob | undefined {
+    const collection = 'graph-jobs' as const;
+    try {
+      this.assertCollection(collection);
+    } catch {
+      throw new Error('refusing graph-extraction job mutation outside the local store');
+    }
+    return this.withLock(() => {
+      const shard = memoryShard(id);
+      const entries = this.readShard(collection, shard).entries;
+      const index = entries.findIndex((entry) => entry.id === id);
+      if (index < 0) return undefined;
+      const current = entries[index]! as GraphExtractionJob;
+      const next = transition(current);
+      if (next === undefined) return undefined;
+      if (next.id !== id) {
+        throw new Error(`refusing to change entry identity from ${id} to ${next.id}`);
+      }
+      this.assertWritable(next);
+      if (canonicalMemoryJson(current) === canonicalMemoryJson(next)) return current;
+      entries[index] = next;
+      writeJsonAtomic(this.shardPath(collection, shard), serializeMemoryShard(entries));
+      this.bumpStoreGeneration();
+      if (isRecordCollection(collection)) this.afterRecordWrite(collection, [next], []);
+      return next;
+    });
+  }
+
+  /**
+   * Submit graph entries (WP-G1) to the `graph` collection: validate everything first, then
+   * read-merge-write every affected shard under ONE lock hold. The write is IDEMPOTENT — a
+   * repeated submission of identical entries writes nothing (byte-identical skip) — and additive
+   * for re-derived content: supporter lists and membership union, `knownAt` never regresses,
+   * resolution decisions are first-writer-wins. A shard where every entry skipped is not
+   * rewritten at all, so an idempotent re-submit never touches the disk or bumps the generation.
+   *
+   * The result is the durable acknowledgement: it is returned only after every `writeJsonAtomic`
+   * has completed, so a faulted persist throws and acknowledges NOTHING (the WP-G1 exit
+   * criterion "interrupted writes do not lose acknowledged work" — the next submission re-derives
+   * the same content-addressed ids and completes the merge).
+   *
+   * The TEAM store refuses outright (`'graph'` is absent from its collection list): graph
+   * proposals are machine-local state until a later work package defines their promotion path —
+   * nothing may silently append graph state to the committed shared ledger.
+   */
+  submitGraphEntries(entries: MemoryEntry[]): GraphSubmitResult {
+    this.assertCollection('graph');
+    for (const entry of entries) {
+      // Only graph entry kinds may enter the graph collection: a well-formed non-graph entry
+      // (a record, a receipt) would validate fine and silently pollute the projection's source.
+      const colon = entry.id.indexOf(':');
+      const prefix = colon > 0 ? entry.id.slice(0, colon) : '';
+      if (prefix !== 'gent' && prefix !== 'grel' && prefix !== 'gres') {
+        throw new Error(
+          `refusing to submit non-graph entry ${entry.id} to the graph collection (expected gent:/grel:/gres:)`,
+        );
+      }
+      // The id must be the one the entry's OWN content re-derives: the graph schemas constrain
+      // ids to a hex PATTERN (any hex string passes), so shape validation alone would admit a
+      // forged id — assertion B's body laundered under assertion A's id. The sync lane already
+      // enforces exactly this law at its admission gate (engine.ts verifyPayloadId); the graph
+      // store admits by the same rule: the id IS the content.
+      // Spread into a plain object literal: the id builders take `X & Record<string, unknown>`
+      // and the entry interfaces carry no index signature, so a bare interface-typed value
+      // does not satisfy the parameter — the spread copy does, without weakening the builder.
+      const derived =
+        prefix === 'gent'
+          ? graphEntityId({ ...(entry as GraphEntity) })
+          : prefix === 'grel'
+            ? graphAssertionId({ ...(entry as GraphAssertion) })
+            : graphResolutionId(entry as GraphResolutionDecision);
+      if (derived !== entry.id) {
+        throw new MemorySchemaError('graph id', { expected: derived, actual: entry.id }, entry.id);
+      }
+      this.assertWritable(entry); // schema + secrets; admission must be 'proposed' (schema const)
+    }
+    return this.withLock(() => {
+      const byShard = new Map<string, MemoryEntry[]>();
+      for (const entry of entries) {
+        // Set-valued lists are canonicalized before the byte-identity comparison, so producer
+        // enumeration order never leaks into stored bytes (see canonicalGraphEntry).
+        const canonical = canonicalGraphEntry(entry);
+        const shard = memoryShard(canonical.id);
+        const bucket = byShard.get(shard);
+        if (bucket) bucket.push(canonical);
+        else byShard.set(shard, [canonical]);
+      }
+      const writtenIds = new Set<string>();
+      const skippedIds = new Set<string>();
+      // Pass 1 — read + merge + validate EVERYTHING before the first byte is persisted. A shard
+      // holding unreadable lines is refused outright (mirroring the migration lanes): the merged
+      // map is seeded from the parsed entries only, so rewriting such a shard would silently
+      // ERASE every rejected line — corrupt state must block a rewrite, not be laundered by it.
+      const pending: { shard: string; text: string }[] = [];
+      for (const [shard, incoming] of byShard) {
+        const read = this.readShard('graph', shard);
+        if (read.errors.length > 0) {
+          throw new Error(
+            `refusing to submit to graph shard ${shard}: ${read.errors.length} unreadable line(s) would be erased by the rewrite`,
+          );
+        }
+        const merged = new Map<string, MemoryEntry>();
+        for (const e of read.entries) merged.set(e.id, e);
+        let shardChanged = false;
+        for (const entry of incoming) {
+          const prior = merged.get(entry.id);
+          const next = prior === undefined ? entry : mergeGraphEntry(prior, entry);
+          if (next === undefined) {
+            // identical — or a decision already owned by its first writer
+            if (!writtenIds.has(entry.id)) skippedIds.add(entry.id);
+            continue;
+          }
+          if (prior !== undefined) this.assertWritable(next); // a merged entry passes the same write gate
+          merged.set(entry.id, next);
+          writtenIds.add(entry.id); // a partition: an id is never acked in both lists
+          skippedIds.delete(entry.id);
+          shardChanged = true;
+        }
+        if (shardChanged) {
+          pending.push({ shard, text: serializeMemoryShard([...merged.values()]) });
+        } // else: an idempotent re-submit writes NOTHING, not even a no-op shard rewrite
+      }
+      // Pass 2 — persist. The generation is bumped after EACH durable shard write (not once at
+      // the end): a multi-shard batch that faults on a later shard leaves the earlier writes
+      // durable-but-unacknowledged, and those bytes must be visible to every memoized reader —
+      // the read caches key on the generation sidecar, so an un-bumped gen would serve the
+      // PRE-write shard indefinitely.
+      for (const p of pending) {
+        writeJsonAtomic(this.shardPath('graph', p.shard), p.text);
+        this.bumpStoreGeneration();
+      }
+      return { written: [...writtenIds], skipped: [...skippedIds] };
+    });
+  }
+
+  /**
    * Remove a single entry by id (locked + atomic). Used by promotion cleanup: a candidate is removed
    * from `candidates` AFTER its record + receipt have been durably written to `active`/`receipts`, so
    * a crash between the shared write and the cleanup leaves a candidate that the next run's
@@ -1151,6 +1455,11 @@ export class MemoryStore {
    */
   removeEntry(collection: MemoryCollection, id: string): boolean {
     this.assertCollection(collection);
+    if (collection === 'graph') {
+      throw new Error(
+        `refusing to removeEntry from the graph collection: graph state is append-only (retire a binding by appending a 'reverse' resolution decision, never by deleting)`,
+      );
+    }
     if (this.init.role === 'team') {
       throw new Error(
         'refusing to remove from the team store: .crib/memory/team is append-only (PRD — retire via a decision event, never a delete)',

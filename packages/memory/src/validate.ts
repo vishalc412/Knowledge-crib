@@ -7,6 +7,11 @@ import {
   CAPTURE_SCHEMA,
   DECISION_SCHEMA,
   FEEDBACK_SCHEMA,
+  GRAPH_ASSERTION_SCHEMA,
+  GRAPH_ENTITY_SCHEMA,
+  GRAPH_EXTRACTION_JOB_SCHEMA,
+  GRAPH_RESOLUTION_SCHEMA,
+  GRAPH_RESOLUTION_V2_SCHEMA,
   INTAKE_CHECKPOINT_SCHEMA,
   INTAKE_SCHEMA,
   MEMORY_MANIFEST_SCHEMA,
@@ -27,6 +32,11 @@ import type {
   AttemptEvent,
   CaptureOutboxEntry,
   GateReceipt,
+  GraphAssertion,
+  GraphEntity,
+  GraphExtractionJob,
+  GraphResolutionDecision,
+  GraphResolutionDecisionV2,
   IntakeCheckpoint,
   IntakeRequirement,
   MemoryAlias,
@@ -55,6 +65,11 @@ const validateAliasFn: ValidateFunction = ajv.compile(ALIAS_SCHEMA);
 const validateSyncEventFn: ValidateFunction = ajv.compile(SYNC_EVENT_SCHEMA);
 const validateIntakeFn: ValidateFunction = ajv.compile(INTAKE_SCHEMA);
 const validateIntakeCheckpointFn: ValidateFunction = ajv.compile(INTAKE_CHECKPOINT_SCHEMA);
+const validateGraphEntityFn: ValidateFunction = ajv.compile(GRAPH_ENTITY_SCHEMA);
+const validateGraphExtractionJobFn: ValidateFunction = ajv.compile(GRAPH_EXTRACTION_JOB_SCHEMA);
+const validateGraphAssertionFn: ValidateFunction = ajv.compile(GRAPH_ASSERTION_SCHEMA);
+const validateGraphResolutionFn: ValidateFunction = ajv.compile(GRAPH_RESOLUTION_SCHEMA);
+const validateGraphResolutionV2Fn: ValidateFunction = ajv.compile(GRAPH_RESOLUTION_V2_SCHEMA);
 
 /** Thrown when a memory record fails schema validation before a write. */
 export class MemorySchemaError extends Error {
@@ -178,6 +193,60 @@ export function assertValidIntakeCheckpoint(checkpoint: IntakeCheckpoint): void 
   }
 }
 
+// ─── connected memory graph (WP-G1) ──────────────────────────────────────────
+
+/**
+ * The graph entries' extra-semantic laws, enforced AFTER schema validation (the record-v3
+ * pattern): the namespace must own the provenance (a graph entry may never claim another
+ * principal's authorship — the isolation law starts at validation), and a resolution decision
+ * may never bind an entity to itself (an alias of itself is a no-op that would corrupt the
+ * WP-G2 projection; full cycle rejection lands with that projection).
+ */
+export function assertValidGraphEntity(entity: GraphEntity): void {
+  const ok: boolean = validateGraphEntityFn(entity);
+  if (!ok) throw new MemorySchemaError('graph-entity', validateGraphEntityFn.errors, entity.id);
+  if (entity.namespace.principalId !== entity.provenance.principalId) {
+    throw new MemorySchemaError('graph-entity', [{ namespacePrincipalMismatch: true }], entity.id);
+  }
+}
+
+export function assertValidGraphAssertion(assertion: GraphAssertion): void {
+  const ok: boolean = validateGraphAssertionFn(assertion);
+  if (!ok) {
+    throw new MemorySchemaError('graph-assertion', validateGraphAssertionFn.errors, assertion.id);
+  }
+  if (assertion.namespace.principalId !== assertion.provenance.principalId) {
+    throw new MemorySchemaError(
+      'graph-assertion',
+      [{ namespacePrincipalMismatch: true }],
+      assertion.id,
+    );
+  }
+}
+
+export function assertValidGraphResolutionDecision(decision: GraphResolutionDecision): void {
+  const validator =
+    decision.schemaVersion === '2' ? validateGraphResolutionV2Fn : validateGraphResolutionFn;
+  const ok: boolean = validator(decision);
+  if (!ok) {
+    throw new MemorySchemaError('graph-resolution', validator.errors, decision.id);
+  }
+  if (decision.entityA === decision.entityB) {
+    throw new MemorySchemaError('graph-resolution', [{ selfAlias: true }], decision.id);
+  }
+  if (
+    decision.schemaVersion === '2' &&
+    decision.namespace.principalId !==
+      (decision as GraphResolutionDecisionV2).provenance.principalId
+  ) {
+    throw new MemorySchemaError(
+      'graph-resolution',
+      [{ namespacePrincipalMismatch: true }],
+      decision.id,
+    );
+  }
+}
+
 /** ADR-003 (Gate 4) D1 — validate a sync envelope against `sync-event.schema.json`. The
  *  `schemaVersion` check mirrors the `mem:` posture: it lives OUTSIDE the compiled schema so an
  *  unknown envelope version fails closed with the same `{unknownSchemaVersion}` shape as records,
@@ -222,16 +291,48 @@ const RECORD_VALIDATORS: Record<string, { validate: ValidateFunction; label: str
   '3': { validate: validateRecordV3Fn, label: 'record-v3' },
 };
 
+/** schemaVersion → graph-entry validator, per id prefix. Each graph prefix dispatches on the
+ *  DECLARED version — a `gent:`/`grel:`/`gres:` id with an unknown or missing `schemaVersion`
+ *  fails closed here (never coerced to the latest version), mirroring RECORD_VALIDATORS. */
+const GRAPH_VALIDATORS: Record<
+  string,
+  Record<string, { validate: ValidateFunction; label: string }>
+> = {
+  gent: { '1': { validate: validateGraphEntityFn, label: 'graph-entity' } },
+  grel: { '1': { validate: validateGraphAssertionFn, label: 'graph-assertion' } },
+  gres: {
+    '1': { validate: validateGraphResolutionFn, label: 'graph-resolution' },
+    '2': { validate: validateGraphResolutionV2Fn, label: 'graph-resolution-v2' },
+  },
+};
+
 /** Validate any memory entry by its id prefix (records: by id prefix + declared schemaVersion).
  *  Throws `MemorySchemaError` on failure; throws a plain Error if the id prefix is unknown (an
  *  unrecognized record kind fails closed). */
 export function assertValidMemoryEntry(entry: { id: string } & Record<string, unknown>): void {
   const colon = entry.id.indexOf(':');
   const prefix = colon > 0 ? entry.id.slice(0, colon) : '';
+  // Own-property lookups only: these dispatch tables are plain object literals, and a crafted id
+  // prefix like `hasOwnProperty:` would otherwise walk Object.prototype into the wrong branch and
+  // throw a raw TypeError (or a misdiagnosed {unknownSchemaVersion}) instead of failing closed —
+  // the loader runs this on every JSONL line, including lines pulled from sync peers.
+  const owns = Object.prototype.hasOwnProperty;
+  if (prefix === 'gjob') {
+    const job = entry as unknown as GraphExtractionJob;
+    const ok: boolean = validateGraphExtractionJobFn(job);
+    if (!ok) {
+      throw new MemorySchemaError(
+        'graph-extraction-job',
+        validateGraphExtractionJobFn.errors,
+        job.id,
+      );
+    }
+    return;
+  }
   if (prefix === 'mem') {
     const version = entry.schemaVersion;
     const v =
-      typeof version === 'string'
+      typeof version === 'string' && owns.call(RECORD_VALIDATORS, version)
         ? RECORD_VALIDATORS[version] // undefined → fail closed below
         : undefined;
     if (!v) {
@@ -247,7 +348,30 @@ export function assertValidMemoryEntry(entry: { id: string } & Record<string, un
     if (version === '3') assertValidMemoryRecordV3(entry as unknown as MemoryRecordV3);
     return;
   }
-  const v = ENTRY_VALIDATORS[prefix];
+  // The WP-G1 graph entries: version-dispatched per prefix, then the extra-semantic laws
+  // (namespace ownership, self-alias refusal) re-checked through the full validators.
+  if (owns.call(GRAPH_VALIDATORS, prefix)) {
+    const versions = GRAPH_VALIDATORS[prefix]!;
+    const version = entry.schemaVersion;
+    const v =
+      typeof version === 'string' && owns.call(versions, version) ? versions[version] : undefined;
+    if (!v) {
+      throw new MemorySchemaError(
+        'graph-entry',
+        [{ unknownSchemaVersion: typeof version === 'string' ? version : null }],
+        entry.id,
+      );
+    }
+    const ok: boolean = v.validate(entry);
+    if (!ok) throw new MemorySchemaError(v.label, v.validate.errors, entry.id);
+    if (prefix === 'gent') assertValidGraphEntity(entry as unknown as GraphEntity);
+    if (prefix === 'grel') assertValidGraphAssertion(entry as unknown as GraphAssertion);
+    if (prefix === 'gres') {
+      assertValidGraphResolutionDecision(entry as unknown as GraphResolutionDecision);
+    }
+    return;
+  }
+  const v = owns.call(ENTRY_VALIDATORS, prefix) ? ENTRY_VALIDATORS[prefix] : undefined;
   if (!v) throw new MemorySchemaError('entry', [{ unknownIdPrefix: prefix }], entry.id);
   const ok: boolean = v.validate(entry);
   if (!ok) throw new MemorySchemaError(v.label, v.validate.errors, entry.id);
