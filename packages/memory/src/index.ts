@@ -72,6 +72,7 @@ export * from './graph-extraction-queue.js';
 export * from './graph-projection.js';
 export * from './graph-retrieval.js';
 export * from './graph-corpus/corpus.js';
+export * from './graph-corpus/heldout-v2.js';
 export * from './sync/event.js';
 export * from './sync/crypto.js';
 export * from './sync/adapter.js';
