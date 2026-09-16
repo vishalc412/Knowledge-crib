@@ -84,7 +84,8 @@ import {
   entrySetFingerprint,
   evaluationCacheFor,
 } from './generation-cache.js';
-import { type GraphProjection, projectGraph } from './graph-projection.js';
+import { type GraphProjection, type GraphRecordRef, projectGraph } from './graph-projection.js';
+import { compareGraphInstants } from './graph.js';
 import { verifyQuote } from './grounding.js';
 import {
   type HandoffAttemptEvent,
@@ -198,6 +199,11 @@ import { isMemoryRecordV2, isMemoryRecordVersioned } from './types.js';
 type ReadableMemoryRecord = MemoryRecord | MemoryRecordV2 | MemoryRecordV3;
 
 /** The only graph placement choices exposed to callers; repository identity is resolved server-side. */
+/** When a record was recorded: memory-2/3 transaction time, memory-1 creation time. */
+function recordKnownAt(record: ReadableMemoryRecord): string {
+  return isMemoryRecordVersioned(record) ? record.transactionTime.recordedAt : record.createdAt;
+}
+
 export interface GraphProjectionReadOpts {
   scope?: 'global' | 'repo';
   at?: string;
@@ -1434,14 +1440,42 @@ export class MemoryApi {
     // the same lifecycle projection as recall. The graph journal itself stays append-only for
     // replay/audit, but retracted, superseded, or quarantined records must not keep an assertion
     // traversable merely because their old shard line still exists.
+    //
+    // Supersession is the one lifecycle change that is time-relative: a record superseded AFTER the
+    // read point's `knownBy` was still current then, and a superseded record still supports its
+    // assertions as HISTORY. Retraction and quarantine are not time-relative — a historical read
+    // never bypasses them, so those decisions apply at every read point.
     const recordAliases = this.buildAliasIndex();
-    const recordDecisions = this.allDecisions();
-    const activeRecordIds = this.gatherAllRecords()
-      .filter(({ record, source }) => {
-        const { verdicts } = this.foldedVerdicts(record, source, recordAliases, recordDecisions);
-        return verdicts.lifecycle === 'active' && !verdicts.quarantined;
-      })
-      .map(({ record }) => ({ id: record.id }));
+    const recordDecisions = this.allDecisions().filter(
+      ({ decision }) =>
+        decision.kind !== 'supersede' ||
+        opts.knownBy === undefined ||
+        compareGraphInstants(decision.ts, opts.knownBy) <= 0,
+    );
+    const activeRecordIds: GraphRecordRef[] = [];
+    const historicalRecordIds: GraphRecordRef[] = [];
+    for (const { record, source } of this.gatherAllRecords()) {
+      const { verdicts } = this.foldedVerdicts(record, source, recordAliases, recordDecisions);
+      if (verdicts.quarantined) continue;
+      const ref = { id: record.id, knownAt: recordKnownAt(record) };
+      if (verdicts.lifecycle === 'active') activeRecordIds.push(ref);
+      else if (verdicts.lifecycle === 'superseded') historicalRecordIds.push(ref);
+    }
+    // Work references: an intake the caller is authorized to see supports graph edges the same way
+    // a record does. Finished work (completed or cancelled as of the read point) is history — it
+    // still explains what was done, but it never counts as current, resumable work.
+    const { requirements, checkpoints } = this.intakeEntries();
+    for (const requirement of requirements) {
+      const finished = checkpoints.some(
+        (c) =>
+          c.intakeId === requirement.id &&
+          (c.kind === 'completed' || c.kind === 'cancelled') &&
+          (opts.knownBy === undefined || compareGraphInstants(c.recordedAt, opts.knownBy) <= 0),
+      );
+      const ref = { id: requirement.id, knownAt: requirement.createdAt };
+      if (finished) historicalRecordIds.push(ref);
+      else activeRecordIds.push(ref);
+    }
 
     return projectGraph(
       {
@@ -1449,6 +1483,7 @@ export class MemoryApi {
         entities,
         decisions,
         records: activeRecordIds,
+        historicalRecords: historicalRecordIds,
       },
       {
         principalId: this.callerPrincipal(),
@@ -1459,6 +1494,31 @@ export class MemoryApi {
         ...(opts.knownBy !== undefined ? { knownBy: opts.knownBy } : {}),
       },
     );
+  }
+
+  /**
+   * Searchable text for the caller's graph nodes: each principal-visible record's claim and
+   * subject, and each of the caller's own entities' names. Seed selection runs over the
+   * authorized projection's nodes; this only says what those nodes are called.
+   */
+  graphNodeTexts(): Map<string, string> {
+    const texts = new Map<string, string>();
+    for (const { record } of this.gatherAllRecords()) {
+      texts.set(record.id, `${record.claim} ${record.subject}`);
+    }
+    for (const requirement of this.intakeEntries().requirements) {
+      texts.set(requirement.id, `${requirement.original} ${requirement.interpretation.outcome}`);
+    }
+    const principal = this.callerPrincipal();
+    for (const { store } of this.orderedStores()) {
+      if (!store.collections.includes('graph')) continue;
+      for (const entry of store.readCollection('graph').entries) {
+        if (isGraphEntityEntry(entry) && entry.namespace.principalId === principal) {
+          texts.set(entry.ref, entry.name);
+        }
+      }
+    }
+    return texts;
   }
 
   // ── capture ────────────────────────────────────────────────────────────────

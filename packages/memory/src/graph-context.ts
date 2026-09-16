@@ -11,12 +11,15 @@
  *
  * The laws:
  *
- *  - **Deduplication is by evidence, not by text (item 5).** Two expansions reached through
- *    different paths routinely rest on the SAME supporting record. The pack lists each supporting
- *    record once, in an `evidence` table keyed by ref, and items cite it by ref — so a caller
- *    paying for a claim pays for it once however many paths lead to it. Items themselves are
- *    already unique per canonical ref (the expansion's own law), and are never merged further:
- *    two refs that genuinely differ stay two entries even when they share every supporter.
+ *  - **Every assertion is listed once.** Items, relations, history and conflicts cite assertion
+ *    ids; the bodies live in one `assertions` table. A pack that repeated each assertion inside
+ *    every path that crossed it would spend its token budget on repetition and trim away answers.
+ *
+ *  - **Deduplication is by assertion, not by text (item 5).** Two expansions reached through
+ *    different paths routinely rest on the SAME assertions and supporters; each assertion (with
+ *    its supporter refs) and each producer is listed once, so a caller paying for a claim pays
+ *    for it once however many paths lead to it. Items themselves are already unique per canonical
+ *    ref (the expansion's own law), and are never merged further.
  *
  *  - **A disagreement is presented as a disagreement (item 6).** Conflicting assertions are
  *    carried in their own group, whole, with every member — never the most recent, never the
@@ -28,6 +31,15 @@
  *    supported timeline but NOT in its current view (superseded, or outside the time window) go in
  *    an explicitly `historical` group. They never appear among the current items, so a caller
  *    cannot mistake what WAS true for what IS.
+ *
+ *  - **Relationships among the answer are cited, not implied.** A path explains how ONE item was
+ *    reached; two items retrieved directly (both seeds) have no path between them even when an
+ *    assertion connects them. `relations` lists every current assertion whose endpoints are both
+ *    in the pack, so a connection the answer depends on is always stated with its supporters.
+ *
+ *  - **An item says whether it is current.** A superseded record reached through a `supersedes`
+ *    edge is part of the answer's history, and its item is labelled `historical` — never passed
+ *    off as a current claim.
  *
  *  - **Provenance travels with the claim (item 7).** Every item carries the path it was reached
  *    by — assertion ids, predicates, endpoints — and every cited supporter carries the provenance
@@ -49,53 +61,59 @@ export const GRAPH_DEFAULT_CONTEXT_TOKENS = 2000;
 export interface GraphContextItem {
   /** The canonical ref this item is about. */
   ref: string;
-  /** `seed` when retrieval found it directly, `connected` when the graph reached it. */
-  origin: 'seed' | 'connected';
+  /** `historical` when the ref is superseded work or a superseded record that only supports history. */
+  state: 'current' | 'historical';
+  /** Hops from the nearest seed; 0 means retrieval found it directly (a seed). */
   distance: number;
+  /** Deterministic ordering score, 4 decimal places. NOT a calibrated confidence. */
   rank: number;
   /** The retriever's own score for the seed this item was reached from — kept distinct from rank. */
   seedScore: number;
   seedChannel: GraphExpansion['seedChannel'];
-  evidenceEligible: boolean;
-  /** The graph explanation: how this ref was reached. Empty for a seed. */
-  path: GraphPathStep[];
-  /** Supporter refs cited by this item's path, deduplicated — look them up in `evidence`. */
-  evidenceRefs: string[];
+  /** Present (and `false`) only when some edge on the path lacks a recall-eligible supporter. */
+  evidenceEligible?: false;
+  /** How this ref was reached: assertion ids in traversal order (bodies in `assertions`). */
+  path: string[];
 }
 
-/** One supporting record, listed once however many items rest on it. */
-export interface GraphContextEvidence {
-  /** The supporter ref exactly as the assertions stated it. */
-  ref: string;
-  /** Ids of the assertions in this pack that rest on it. */
-  assertionIds: string[];
-  /** The distinct producers of those assertions — the provenance a caller needs to audit. */
-  producers: { principalId: string; actorId: string; clientId: string }[];
-}
-
-/** An assertion that was true but is not in the current view — always in its own group. */
-export interface GraphHistoricalItem {
-  assertionId: string;
+/** One assertion the pack cites, listed once. */
+export interface GraphContextAssertion {
+  id: string;
   predicate: string;
   subject: string;
   object: string;
+  supportedBy: string[];
   validAt: string;
   knownAt: string;
-  supportedBy: string[];
-  /** Why it is historical: superseded within the window, or outside it. */
-  reason: 'not-in-current-view';
+  /** `historical` when it is known at the read point but not in the current view. */
+  status: 'current' | 'historical';
+  /** Index into the pack's `producers` table — who asserted it. */
+  producer: number;
+}
+
+/** One producer of cited assertions, listed once — the provenance a caller needs to audit. */
+export interface GraphContextProducer {
+  principalId: string;
+  actorId: string;
+  clientId: string;
 }
 
 export interface GraphContextPack {
-  /** The current, trusted items, ordered by rank — the order a budget trim shortens. */
+  /** The items, ordered by rank — the order a budget trim shortens. */
   items: GraphContextItem[];
-  /** Supporting records cited by `items`, each listed once (item 5). */
-  evidence: GraphContextEvidence[];
+  /**
+   * Every cited assertion, once, sorted by id: item paths, relations among items, conflict
+   * members, and known history touching an item (`status: 'historical'`, item 8). Each carries
+   * its `supportedBy` evidence refs (item 5) and a `producer` index (item 7).
+   */
+  assertions: GraphContextAssertion[];
+  /** Ids of current assertions whose canonical endpoints are both items, sorted. */
+  relations: string[];
   /** Disagreements touching this pack, whole (item 6). */
   conflicts: GraphConflictGroup[];
-  /** Supported history of the visible slice that is NOT current (item 8). */
-  historical: GraphHistoricalItem[];
-  /** The traversal bounds that produced `items`, carried through unchanged. */
+  /** The distinct producers the assertions cite by index, in first-cited order. */
+  producers: GraphContextProducer[];
+  /** The traversal bounds that produced the candidate items, carried through unchanged. */
   traversal: GraphTraversalReport;
   /** Explicit degradation reasons. Empty means nothing was degraded — never inferred from silence. */
   degraded: string[];
@@ -112,11 +130,92 @@ export interface GraphContextOpts {
   degraded?: readonly string[];
 }
 
-function producerOf(a: GraphAssertion): GraphContextEvidence['producers'][number] {
+/**
+ * Build a pack from ranked expansions. Everything but the item list is DERIVED from the items and
+ * the projection, so a pack built from a budget-trimmed prefix is still coherent: it never cites a
+ * relation, history entry, conflict or supporter that no kept item touches.
+ */
+export function buildGraphContextPack(
+  projection: GraphProjection,
+  expansions: readonly GraphExpansion[],
+  traversal: GraphTraversalReport,
+  opts: GraphContextOpts = {},
+): GraphContextPack {
+  const canonicalOf = (ref: string): string => projection.aliases.canonical[ref] ?? ref;
+  const historicalRefs = new Set(projection.historicalRefs);
+  const round = (n: number): number => Math.round(n * 10_000) / 10_000;
+  const items: GraphContextItem[] = expansions.map((e) => ({
+    ref: e.ref,
+    state: historicalRefs.has(e.ref) ? 'historical' : 'current',
+    distance: e.distance,
+    rank: round(e.rank),
+    seedScore: round(e.seedScore),
+    seedChannel: e.seedChannel,
+    ...(e.evidenceEligible ? {} : { evidenceEligible: false as const }),
+    path: e.path.map((step) => step.assertionId),
+  }));
+  const itemRefs = new Set(items.map((i) => i.ref));
+  const touches = (a: GraphAssertion): boolean =>
+    itemRefs.has(canonicalOf(a.subject)) || itemRefs.has(canonicalOf(a.object));
+
+  const current = new Map(projection.current.map((a) => [a.id, a]));
+  const pathIds = new Set(items.flatMap((i) => i.path));
+  const relations = projection.current
+    .filter((a) => itemRefs.has(canonicalOf(a.subject)) && itemRefs.has(canonicalOf(a.object)))
+    .map((a) => a.id)
+    .sort();
+  const historicalAssertions =
+    opts.includeHistorical === false ? [] : projection.historical.filter(touches);
+  const conflicts = projection.conflicts.filter(
+    (group) =>
+      group.assertionIds.some((id) => pathIds.has(id)) ||
+      itemRefs.has(canonicalOf(group.subject)) ||
+      group.objects.some((object) => itemRefs.has(canonicalOf(object))),
+  );
+
+  const cited = new Map<string, { assertion: GraphAssertion; status: 'current' | 'historical' }>();
+  for (const id of [...pathIds, ...relations, ...conflicts.flatMap((g) => g.assertionIds)]) {
+    const assertion = current.get(id);
+    if (assertion !== undefined) cited.set(id, { assertion, status: 'current' });
+  }
+  for (const assertion of historicalAssertions) {
+    cited.set(assertion.id, { assertion, status: 'historical' });
+  }
+  const producers: GraphContextProducer[] = [];
+  const producerIndex = new Map<string, number>();
+  const assertions = [...cited.values()]
+    .sort((a, b) => (a.assertion.id < b.assertion.id ? -1 : 1))
+    .map(({ assertion: a, status }) => {
+      const { principalId, actorId, clientId } = a.provenance;
+      const key = `${principalId} ${actorId} ${clientId}`;
+      let producer = producerIndex.get(key);
+      if (producer === undefined) {
+        producer = producers.length;
+        producerIndex.set(key, producer);
+        producers.push({ principalId, actorId, clientId });
+      }
+      return {
+        id: a.id,
+        predicate: a.predicate,
+        subject: a.subject,
+        object: a.object,
+        supportedBy: [...a.supportedBy],
+        validAt: a.validAt,
+        knownAt: a.knownAt,
+        status,
+        producer,
+      };
+    });
+
   return {
-    principalId: a.provenance.principalId,
-    actorId: a.provenance.actorId,
-    clientId: a.provenance.clientId,
+    items,
+    assertions,
+    relations,
+    conflicts,
+    producers,
+    traversal,
+    degraded: [...(opts.degraded ?? [])],
+    budgetTokens: opts.budgetTokens ?? GRAPH_DEFAULT_CONTEXT_TOKENS,
   };
 }
 
@@ -124,125 +223,34 @@ function producerOf(a: GraphAssertion): GraphContextEvidence['producers'][number
  * Assemble the pack from a projection and the result of one expansion over it.
  *
  * The whole {@link GraphExpansionResult} is taken, not just its list, so the traversal report
- * travels WITH the items it bounded — a pack whose budget report could be supplied separately
- * could be assembled with someone else's report, and the truncation signal is exactly the thing
- * that must not be able to drift from the list it describes.
- *
- * The expansion layer's rank order is preserved verbatim; re-sorting here would make the pack's
- * order depend on two places instead of one. Everything else — evidence, conflicts, history — is
- * derived from the projection, so a pack can never cite an assertion the viewer was not
- * authorized to see.
+ * travels WITH the items it bounded — the truncation signal is exactly the thing that must not be
+ * able to drift from the list it describes. The expansion layer's rank order is preserved
+ * verbatim; everything else is derived from the projection, so a pack can never cite an assertion
+ * the viewer was not authorized to see.
  */
 export function assembleGraphContext(
   projection: GraphProjection,
   expansion: GraphExpansionResult,
   opts: GraphContextOpts = {},
 ): GraphContextPack {
-  const expansions: readonly GraphExpansion[] = expansion.expansions;
-  const byId = new Map(projection.current.map((a) => [a.id, a]));
+  return buildGraphContextPack(projection, expansion.expansions, expansion.report, opts);
+}
 
-  const items: GraphContextItem[] = [];
-  // ref → the evidence entry being accumulated. Insertion order is first-cited order, which follows
-  // the rank order of `items` — so a budget trim drops the LEAST relevant evidence last.
-  const evidence = new Map<
-    string,
-    { assertionIds: Set<string>; producers: Map<string, GraphContextEvidence['producers'][number]> }
-  >();
-  const citedAssertionIds = new Set<string>();
-
-  for (const expansion of expansions) {
-    const evidenceRefs: string[] = [];
-    const seen = new Set<string>();
-    for (const step of expansion.path) {
-      citedAssertionIds.add(step.assertionId);
-      const assertion = byId.get(step.assertionId);
-      for (const ref of step.supportedBy) {
-        if (!seen.has(ref)) {
-          seen.add(ref);
-          evidenceRefs.push(ref);
-        }
-        let entry = evidence.get(ref);
-        if (entry === undefined) {
-          entry = { assertionIds: new Set(), producers: new Map() };
-          evidence.set(ref, entry);
-        }
-        entry.assertionIds.add(step.assertionId);
-        if (assertion !== undefined) {
-          const producer = producerOf(assertion);
-          entry.producers.set(
-            `${producer.principalId} ${producer.actorId} ${producer.clientId}`,
-            producer,
-          );
-        }
-      }
-    }
-    items.push({
-      ref: expansion.ref,
-      origin: expansion.distance === 0 ? 'seed' : 'connected',
-      distance: expansion.distance,
-      rank: expansion.rank,
-      seedScore: expansion.seedScore,
-      seedChannel: expansion.seedChannel,
-      evidenceEligible: expansion.evidenceEligible,
-      path: expansion.path,
-      evidenceRefs,
-    });
-  }
-
-  // A conflict is included when the pack touches ANY of its members — by a cited assertion, or by
-  // an item standing on the subject the members disagree about. Showing one side of a disagreement
-  // without saying a disagreement exists would be worse than showing neither side.
-  const itemRefs = new Set(items.map((i) => i.ref));
+/** Current assertions whose canonical endpoints are both in `refs` — the relationships an answer
+ *  made of those refs rests on. Sorted by id; deterministic for the same projection. */
+export function graphRelationsAmong(
+  projection: GraphProjection,
+  refs: ReadonlySet<string>,
+): GraphPathStep[] {
   const canonicalOf = (ref: string): string => projection.aliases.canonical[ref] ?? ref;
-  const conflicts = projection.conflicts.filter(
-    (group) =>
-      group.assertionIds.some((id) => citedAssertionIds.has(id)) ||
-      itemRefs.has(canonicalOf(group.subject)) ||
-      group.objects.some((object) => itemRefs.has(canonicalOf(object))),
-  );
-
-  const historical: GraphHistoricalItem[] =
-    opts.includeHistorical === false
-      ? []
-      : projection.timeline
-          .filter((a) => !byId.has(a.id))
-          .filter(
-            (a) => itemRefs.has(canonicalOf(a.subject)) || itemRefs.has(canonicalOf(a.object)),
-          )
-          .map((a) => ({
-            assertionId: a.id,
-            predicate: a.predicate,
-            subject: a.subject,
-            object: a.object,
-            validAt: a.validAt,
-            knownAt: a.knownAt,
-            supportedBy: [...a.supportedBy],
-            reason: 'not-in-current-view' as const,
-          }));
-
-  return {
-    items,
-    evidence: [...evidence.entries()].map(([ref, entry]) => ({
-      ref,
-      assertionIds: [...entry.assertionIds].sort(),
-      producers: [...entry.producers.values()].sort((a, b) =>
-        a.principalId !== b.principalId
-          ? a.principalId < b.principalId
-            ? -1
-            : 1
-          : a.actorId !== b.actorId
-            ? a.actorId < b.actorId
-              ? -1
-              : 1
-            : a.clientId < b.clientId
-              ? -1
-              : 1,
-      ),
-    })),
-    conflicts,
-    historical,
-    traversal: expansion.report,
-    degraded: [...(opts.degraded ?? [])],
-    budgetTokens: opts.budgetTokens ?? GRAPH_DEFAULT_CONTEXT_TOKENS,
-  };
+  return projection.current
+    .filter((a) => refs.has(canonicalOf(a.subject)) && refs.has(canonicalOf(a.object)))
+    .sort((a, b) => (a.id < b.id ? -1 : 1))
+    .map((a) => ({
+      assertionId: a.id,
+      predicate: a.predicate,
+      subject: a.subject,
+      object: a.object,
+      supportedBy: [...a.supportedBy],
+    }));
 }

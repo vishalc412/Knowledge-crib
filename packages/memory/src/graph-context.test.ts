@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { GRAPH_DEFAULT_CONTEXT_TOKENS, assembleGraphContext } from './graph-context.js';
+import {
+  GRAPH_DEFAULT_CONTEXT_TOKENS,
+  assembleGraphContext,
+  buildGraphContextPack,
+} from './graph-context.js';
 import { projectGraph } from './graph-projection.js';
 import { expandFromSeeds } from './graph-retrieval.js';
 import { createGraphAssertion } from './graph.js';
@@ -39,84 +43,99 @@ function edge(
 
 const RECORDS = ['mem:d1', 'mem:d2', 'mem:shared', 'mem:late'].map((id) => ({ id }));
 const VIEWER = { principalId: ALPHA, scope: { boundary: 'global' as const } };
+const seed = (ref: string) => ({ ref, score: 1, channel: 'explicit' as const });
 
 describe('assembleGraphContext', () => {
-  it('lists a supporting record once however many paths rest on it', () => {
+  it('lists each cited assertion and producer once however many paths cross them', () => {
     const a = edge('about', 'mem:d1', 'topic:retry', ['mem:shared']);
     const b = edge('applies-to', 'mem:d1', 'sym:ledger#settle', ['mem:shared'], T1, 'agent:other');
-    const projection = projectGraph({ assertions: [a, b], records: RECORDS }, VIEWER);
-    const expansion = expandFromSeeds(projection, [
-      { ref: 'mem:d1', score: 1, channel: 'explicit' },
-    ]);
+    const c = edge('affects', 'topic:retry', 'sym:ledger#settle', ['mem:shared']);
+    const projection = projectGraph({ assertions: [a, b, c], records: RECORDS }, VIEWER);
+    const expansion = expandFromSeeds(projection, [seed('mem:d1')]);
 
     const pack = assembleGraphContext(projection, expansion);
 
     expect(pack.items.map((i) => i.ref)).toEqual(expansion.expansions.map((e) => e.ref));
-    expect(pack.items[0]).toMatchObject({ ref: 'mem:d1', origin: 'seed', path: [] });
-    expect(pack.items.slice(1).every((i) => i.origin === 'connected')).toBe(true);
-    expect(pack.evidence).toHaveLength(1);
-    expect(pack.evidence[0]?.ref).toBe('mem:shared');
-    expect(pack.evidence[0]?.assertionIds).toEqual([a.id, b.id].sort());
-    expect(pack.evidence[0]?.producers.map((p) => p.actorId)).toEqual([
-      'agent:context-test',
-      'agent:other',
-    ]);
+    expect(pack.items[0]).toMatchObject({ ref: 'mem:d1', distance: 0, path: [] });
+    expect(pack.assertions.map((x) => x.id)).toEqual([a.id, b.id, c.id].sort());
+    expect(new Set(pack.assertions.map((x) => x.id)).size).toBe(pack.assertions.length);
+    expect(pack.producers.map((p) => p.actorId)).toEqual(
+      expect.arrayContaining(['agent:context-test', 'agent:other']),
+    );
+    expect(pack.producers).toHaveLength(2);
     expect(pack.traversal).toEqual(expansion.report);
     expect(pack.budgetTokens).toBe(GRAPH_DEFAULT_CONTEXT_TOKENS);
     expect(pack.degraded).toEqual([]);
   });
 
-  it('carries every side of a disagreement the pack touches, and none it does not', () => {
-    const thirty = edge('about', 'mem:d1', 'topic:window-30s', ['mem:d1']);
-    const sixty = edge('about', 'mem:d1', 'topic:window-60s', ['mem:d2']);
-    const unrelatedA = edge('about', 'mem:late', 'topic:x', ['mem:late']);
-    const unrelatedB = edge('about', 'mem:late', 'topic:y', ['mem:late']);
-    const projection = projectGraph(
-      { assertions: [thirty, sixty, unrelatedA, unrelatedB], records: RECORDS },
-      VIEWER,
-    );
-    // Seed ONE side at zero hops: the pack still says a disagreement exists.
-    const expansion = expandFromSeeds(
-      projection,
-      [{ ref: 'topic:window-30s', score: 1, channel: 'explicit' }],
-      { hops: 0 },
-    );
+  it('cites the relation between two items that were both retrieved directly', () => {
+    const link = edge('about', 'mem:d1', 'topic:retry', ['mem:d1']);
+    const projection = projectGraph({ assertions: [link], records: RECORDS }, VIEWER);
+    const expansion = expandFromSeeds(projection, [seed('mem:d1'), seed('topic:retry')]);
 
     const pack = assembleGraphContext(projection, expansion);
 
-    expect(pack.conflicts).toHaveLength(1);
-    expect(pack.conflicts[0]?.assertionIds).toEqual([thirty.id, sixty.id].sort());
-    expect(pack.conflicts[0]?.objects).toEqual(['topic:window-30s', 'topic:window-60s']);
+    expect(pack.items.every((i) => i.path.length === 0)).toBe(true);
+    expect(pack.relations).toEqual([link.id]);
+    expect(pack.assertions.map((x) => x.id)).toEqual([link.id]);
   });
 
-  it('labels assertions outside the current window as historical, never as current items', () => {
+  it('carries every side of an explicit contradiction the pack touches', () => {
+    const thirty = edge('contradicts', 'mem:d1', 'mem:d2', ['mem:d1']);
+    const sixty = edge('contradicts', 'mem:d2', 'mem:d1', ['mem:d2']);
+    const projection = projectGraph({ assertions: [thirty, sixty], records: RECORDS }, VIEWER);
+    const expansion = expandFromSeeds(projection, [seed('mem:d1')], { hops: 0 });
+
+    const pack = assembleGraphContext(projection, expansion);
+
+    expect(pack.conflicts).toEqual([
+      {
+        subject: 'mem:d1',
+        predicate: 'contradicts',
+        objects: ['mem:d1', 'mem:d2'],
+        assertionIds: [thirty.id, sixty.id].sort(),
+      },
+    ]);
+    expect(pack.assertions.map((x) => x.id)).toEqual([thirty.id, sixty.id].sort());
+  });
+
+  it('labels history as historical — valid-later assertions and superseded supporters alike', () => {
     const before = edge('about', 'mem:d1', 'topic:retry', ['mem:d1'], T1);
     const after = edge('supersedes', 'mem:d2', 'mem:d1', ['mem:d2'], T3);
     const projection = projectGraph({ assertions: [before, after], records: RECORDS }, VIEWER, {
       at: T2,
     });
-    const expansion = expandFromSeeds(projection, [
-      { ref: 'mem:d1', score: 1, channel: 'explicit' },
-    ]);
+    const pack = assembleGraphContext(projection, expandFromSeeds(projection, [seed('mem:d1')]));
 
-    const pack = assembleGraphContext(projection, expansion);
-
-    expect(pack.items.flatMap((i) => i.path.map((s) => s.assertionId))).not.toContain(after.id);
-    expect(pack.historical).toEqual([
+    expect(pack.items.flatMap((i) => i.path)).not.toContain(after.id);
+    expect(pack.assertions.find((x) => x.id === after.id)?.status).toBe('historical');
+    expect(pack.assertions.find((x) => x.id === before.id)?.status).toBe('current');
+    const without = assembleGraphContext(
+      projection,
+      expandFromSeeds(projection, [seed('mem:d1')]),
       {
-        assertionId: after.id,
-        predicate: 'supersedes',
-        subject: 'mem:d2',
-        object: 'mem:d1',
-        validAt: T3,
-        knownAt: T3,
-        supportedBy: ['mem:d2'],
-        reason: 'not-in-current-view',
+        includeHistorical: false,
       },
+    );
+    expect(without.assertions.map((x) => x.id)).not.toContain(after.id);
+
+    const superseded = projectGraph(
+      {
+        assertions: [before],
+        records: RECORDS.filter((r) => r.id !== 'mem:d1'),
+        historicalRecords: [{ id: 'mem:d1' }],
+      },
+      VIEWER,
+    );
+    const history = buildGraphContextPack(
+      superseded,
+      expandFromSeeds(superseded, [seed('mem:d1')]).expansions,
+      expandFromSeeds(superseded, [seed('mem:d1')]).report,
+    );
+    expect(history.items[0]).toMatchObject({ ref: 'mem:d1', state: 'historical' });
+    expect(history.assertions).toEqual([
+      expect.objectContaining({ id: before.id, status: 'historical' }),
     ]);
-    expect(
-      assembleGraphContext(projection, expansion, { includeHistorical: false }).historical,
-    ).toEqual([]);
   });
 
   it('never cites an assertion the viewer cannot see', () => {
@@ -138,11 +157,7 @@ describe('assembleGraphContext', () => {
       },
     });
     const projection = projectGraph({ assertions: [mine, foreign], records: RECORDS }, VIEWER);
-    const expansion = expandFromSeeds(projection, [
-      { ref: 'mem:d1', score: 1, channel: 'explicit' },
-    ]);
-
-    const pack = assembleGraphContext(projection, expansion, {
+    const pack = assembleGraphContext(projection, expandFromSeeds(projection, [seed('mem:d1')]), {
       budgetTokens: 500,
       degraded: ['semantic-channel-unavailable'],
     });
@@ -150,6 +165,22 @@ describe('assembleGraphContext', () => {
     expect(JSON.stringify(pack)).not.toContain('beta');
     expect(pack.budgetTokens).toBe(500);
     expect(pack.degraded).toEqual(['semantic-channel-unavailable']);
+  });
+
+  it('derives everything from the kept items, so a trimmed prefix stays coherent', () => {
+    const a = edge('about', 'mem:d1', 'topic:retry', ['mem:shared']);
+    const b = edge('about', 'mem:d2', 'topic:window', ['mem:d2']);
+    const projection = projectGraph({ assertions: [a, b], records: RECORDS }, VIEWER);
+    const expansion = expandFromSeeds(projection, [
+      { ref: 'mem:d1', score: 0.9, channel: 'lexical' },
+      { ref: 'mem:d2', score: 0.1, channel: 'lexical' },
+    ]);
+    const prefix = expansion.expansions.filter((e) => e.seedRef === 'mem:d1');
+
+    const trimmed = buildGraphContextPack(projection, prefix, expansion.report);
+
+    expect(trimmed.assertions.map((x) => x.id)).toEqual([a.id]);
+    expect(JSON.stringify(trimmed)).not.toContain('topic:window');
   });
 
   it('is deterministic for the same projection and expansion', () => {

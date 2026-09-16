@@ -25,6 +25,8 @@ import {
   GRAPH_MAX_EXAMINED_EDGES,
   GRAPH_MAX_VISITED_NODES,
   expandFromSeeds,
+  graphTerms,
+  selectGraphSeeds,
 } from './graph-retrieval.js';
 import type { GraphSeed } from './graph-retrieval.js';
 import { createGraphAssertion } from './graph.js';
@@ -337,8 +339,8 @@ describe('WP-G5 connected retrieval — evidence eligibility is stated, never as
 describe('WP-G5 connected retrieval — a disagreement is expanded, not resolved', () => {
   it('reaches BOTH objects of a contradiction from the shared subject', () => {
     const projection = project([
-      assertion({ subject: 'topic:api', object: 'topic:rest', predicate: 'applies-to' }),
-      assertion({ subject: 'topic:api', object: 'topic:grpc', predicate: 'applies-to' }),
+      assertion({ subject: 'topic:api', object: 'topic:rest', predicate: 'about' }),
+      assertion({ subject: 'topic:api', object: 'topic:grpc', predicate: 'about' }),
     ]);
     expect(projection.conflicts).toHaveLength(1);
 
@@ -365,5 +367,68 @@ describe('WP-G5 connected retrieval — relation filters narrow the walk', () =>
     });
 
     expect(result.expansions.map((e) => e.ref)).toEqual(['topic:a', 'topic:b']);
+  });
+});
+
+// ─── graph-side seed selection ───────────────────────────────────────────────
+
+describe('WP-G5 graph seeds — lexical selection over the authorized view only', () => {
+  it('normalizes camelCase, separators, stopwords and plurals into shared terms', () => {
+    expect(graphTerms('Which settleOrder retries?')).toEqual(['settle', 'order', 'retrie']);
+    expect(graphTerms('sym:src/charge.ts#settle-order')).toEqual([
+      'sym',
+      'src',
+      'charge',
+      'settle',
+      'order',
+    ]);
+    expect(graphTerms('the of and')).toEqual([]);
+  });
+
+  it('scores by the share of query terms a node covers, deterministically, and caps the list', () => {
+    const projection = project([
+      assertion({ subject: 'mem:retry', object: 'topic:ledger-retry-window' }),
+      assertion({ subject: 'mem:other', object: 'topic:unrelated' }),
+    ]);
+    const texts = new Map([['mem:retry', 'The ledger retry window is 30 seconds']]);
+    const seeds = selectGraphSeeds(projection, 'ledger retry window', texts);
+    expect(seeds.map((s) => [s.ref, s.score])).toEqual([
+      ['mem:retry', 1],
+      ['topic:ledger-retry-window', 1],
+    ]);
+    expect(seeds.every((s) => s.channel === 'lexical')).toBe(true);
+    expect(selectGraphSeeds(projection, 'ledger retry window', texts, { limit: 1 })).toHaveLength(
+      1,
+    );
+    expect(selectGraphSeeds(projection, 'the and of', texts)).toEqual([]);
+  });
+
+  it('never proposes a node the viewer cannot see, even when the caller supplies its text', () => {
+    const projection = project([
+      assertion({ subject: 'mem:mine', object: 'topic:shared' }),
+      assertion({ subject: 'mem:theirs', object: 'topic:secret-ledger', principalId: P2 }),
+    ]);
+    const texts = new Map([['mem:theirs', 'secret ledger plan']]);
+    expect(selectGraphSeeds(projection, 'secret ledger plan', texts)).toEqual([]);
+  });
+
+  it('never proposes a node first known after the read point', () => {
+    const late = createGraphAssertion({
+      predicate: 'about',
+      subject: 'mem:late',
+      object: 'topic:late-window',
+      namespace: { principalId: P1 },
+      scope: GLOBAL,
+      validAt: T1,
+      knownAt: T1,
+      supportedBy: [SUPPORTER],
+      provenance: provenance(P1),
+    });
+    const projection = projectGraph(
+      { assertions: [late], records: [{ id: SUPPORTER }] },
+      { principalId: P1, scope: GLOBAL },
+      { knownBy: T0 },
+    );
+    expect(selectGraphSeeds(projection, 'late window', new Map())).toEqual([]);
   });
 });

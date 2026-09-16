@@ -331,3 +331,110 @@ export function expandFromSeeds(
     },
   };
 }
+
+// ─── graph-side seed selection ───────────────────────────────────────────────
+
+/**
+ * The seed scorer's identity, reported on every response that used it. Stated as a version so a
+ * change to tokenization or scoring is a visible change, never a silent re-tuning.
+ */
+export const GRAPH_SEED_SCORER_VERSION = 'graph-seed-v1:term-overlap';
+
+/** Seeds taken per query — the same page size plain recall defaults to. */
+export const GRAPH_DEFAULT_SEED_LIMIT = 5;
+
+/** Function words that carry no retrieval signal. A generic English list, not a corpus list. */
+const GRAPH_STOPWORDS = new Set([
+  'about',
+  'across',
+  'after',
+  'and',
+  'any',
+  'are',
+  'before',
+  'both',
+  'but',
+  'by',
+  'can',
+  'did',
+  'does',
+  'each',
+  'for',
+  'from',
+  'has',
+  'have',
+  'how',
+  'into',
+  'its',
+  'now',
+  'of',
+  'other',
+  'show',
+  'that',
+  'the',
+  'their',
+  'them',
+  'then',
+  'there',
+  'this',
+  'was',
+  'were',
+  'what',
+  'when',
+  'where',
+  'which',
+  'who',
+  'why',
+  'will',
+  'with',
+  'you',
+  'your',
+]);
+
+/**
+ * Normalized retrieval terms: camelCase and every non-alphanumeric run split, lower-cased, tokens
+ * shorter than three characters and stopwords dropped, and a trailing plural `s` folded — so
+ * `settleOrder`, `settle-order` and "settle orders" meet on the same terms.
+ */
+export function graphTerms(text: string): string[] {
+  const spaced = text.replace(/([a-z0-9])([A-Z])/g, '$1 $2');
+  const out = new Set<string>();
+  for (const raw of spaced.toLowerCase().split(/[^a-z0-9]+/)) {
+    if (raw.length < 3 || GRAPH_STOPWORDS.has(raw)) continue;
+    out.add(raw.length > 3 && raw.endsWith('s') && !raw.endsWith('ss') ? raw.slice(0, -1) : raw);
+  }
+  return [...out];
+}
+
+/**
+ * Lexical seeds over the AUTHORIZED graph: every candidate is a node of an assertion in the
+ * projection's current or historical view — both already bounded by the read point — so a seed can never name something
+ * the viewer cannot see or something not yet known at `knownBy`. `texts` supplies the searchable
+ * text for a node (a record's claim, an entity's name); a node without text is matched on its ref.
+ *
+ * Score = distinct query terms present in the node's terms ÷ distinct query terms — a proportion,
+ * not a calibrated confidence. Ties break by ref, so the selection is deterministic.
+ */
+export function selectGraphSeeds(
+  projection: GraphProjection,
+  query: string,
+  texts: ReadonlyMap<string, string>,
+  opts: { limit?: number } = {},
+): GraphSeed[] {
+  const queryTerms = graphTerms(query);
+  if (queryTerms.length === 0) return [];
+  const nodes = new Set<string>();
+  for (const assertion of [...projection.current, ...projection.historical]) {
+    nodes.add(assertion.subject);
+    nodes.add(assertion.object);
+  }
+  const scored: GraphSeed[] = [];
+  for (const ref of nodes) {
+    const terms = new Set([...graphTerms(ref), ...graphTerms(texts.get(ref) ?? '')]);
+    const matched = queryTerms.filter((term) => terms.has(term)).length;
+    if (matched === 0) continue;
+    scored.push({ ref, score: matched / queryTerms.length, channel: 'lexical' });
+  }
+  scored.sort((a, b) => (a.score !== b.score ? b.score - a.score : a.ref < b.ref ? -1 : 1));
+  return scored.slice(0, Math.max(0, opts.limit ?? GRAPH_DEFAULT_SEED_LIMIT));
+}
