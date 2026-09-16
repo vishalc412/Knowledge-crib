@@ -107,7 +107,7 @@ export interface RefreshCoordinatorOpts {
   onWarn?: (message: string) => void;
   /** TEST SEAM — invoked between candidate build and source re-check; write to the tree from here to
    *  reproduce "the source changed during refresh" deterministically (WP4.4 scenario). */
-  onCandidateBuilt?: (bundle: ReaderBundle) => void;
+  onCandidateBuilt?: (bundle: ReaderBundle) => void | Promise<void>;
   /** Durable graph-source position. It participates in candidate equality and generation IDs. */
   graphSourcePosition?: () => string | null;
   /** Builds a memory graph before a candidate can publish. A throw rejects the whole candidate. */
@@ -409,7 +409,14 @@ export class RefreshCoordinator {
     let published = false;
     try {
       candidate = await this.buildBundle(start);
-      this.opts.onCandidateBuilt?.(candidate);
+      await this.opts.onCandidateBuilt?.(candidate);
+      // Shutdown owns no new readers. A candidate that completed after close is still invisible,
+      // so discard it through the normal exactly-once cleanup path rather than resurrecting a
+      // bundle after the server has released its request pins and transport.
+      if (this.closed) {
+        discard = true;
+        return;
+      }
       // WP4.4 — the candidate is INVISIBLE until the source re-check agrees with the capture it was
       // built from. A save that landed mid-build means the bundle answers a question the tree has
       // already stopped asking: discard + reschedule, never publish-then-patch.

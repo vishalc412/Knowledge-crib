@@ -300,6 +300,99 @@ describe('WP-G3 — graph, FTS, and source graph publish as one recoverable gene
     }
   });
 
+  it('discards an interrupted startup candidate instead of resurrecting a reader after close', async () => {
+    const soul = await indexedSoul();
+    let releaseBuild!: () => void;
+    const buildPaused = new Promise<void>((resolve) => {
+      releaseBuild = resolve;
+    });
+    let entered = false;
+    const readers: TestGraphReader[] = [];
+    const coordinator = new RefreshCoordinator(soul, repo, {
+      graphSourcePosition: () => 'memory:interrupted',
+      buildGraph: ({ generation, capture }) => {
+        const reader = graphReader(generation, capture.graphSourcePosition);
+        readers.push(reader);
+        return reader;
+      },
+      onCandidateBuilt: async () => {
+        entered = true;
+        await buildPaused;
+      },
+    });
+
+    const initialize = coordinator.initialize();
+    while (!entered) await new Promise((resolve) => setTimeout(resolve, 1));
+    coordinator.close();
+    releaseBuild();
+
+    await expect(initialize).rejects.toThrow('failed to publish an initial bundle');
+    expect(coordinator.currentGraph).toBeUndefined();
+    expect(readers).toHaveLength(1);
+    expect(readers[0]?.closed).toBe(true);
+  });
+
+  it('disposes a post-build failure while the last-good graph and FTS bundle remains readable', async () => {
+    const soul = await indexedSoul();
+    let graphSource = 'memory:1';
+    let rejectCandidate = false;
+    const readers: TestGraphReader[] = [];
+    const coordinator = new RefreshCoordinator(soul, repo, {
+      graphSourcePosition: () => graphSource,
+      buildGraph: ({ generation, capture }) => {
+        const reader = graphReader(generation, capture.graphSourcePosition);
+        readers.push(reader);
+        return reader;
+      },
+      onCandidateBuilt: () => {
+        if (rejectCandidate) throw new Error('post-build validation failed');
+      },
+    });
+    await coordinator.initialize();
+    try {
+      const first = coordinator.currentGraph as TestGraphReader | undefined;
+      graphSource = 'memory:2';
+      rejectCandidate = true;
+      coordinator.requestRefresh('memory');
+      await coordinator.whenIdle();
+
+      expect(coordinator.currentGraph).toBe(first);
+      expect(first?.closed).toBe(false);
+      expect(readers).toHaveLength(2);
+      expect(readers[1]?.closed).toBe(true);
+      expect(coordinator.freshness().lastRefreshError?.message).toContain(
+        'post-build validation failed',
+      );
+    } finally {
+      coordinator.close();
+    }
+  });
+
+  it('rebuilds the same reader generation after restart when code and memory source positions match', async () => {
+    const soul = await indexedSoul();
+    const graphSource = 'memory:stable';
+    const first = new RefreshCoordinator(soul, repo, {
+      graphSourcePosition: () => graphSource,
+      buildGraph: ({ generation, capture }) => graphReader(generation, capture.graphSourcePosition),
+    });
+    await first.initialize();
+    const firstGeneration = first.freshness().readerGeneration;
+    first.close();
+
+    const restarted = new RefreshCoordinator(soul, repo, {
+      graphSourcePosition: () => graphSource,
+      buildGraph: ({ generation, capture }) => graphReader(generation, capture.graphSourcePosition),
+    });
+    try {
+      await restarted.initialize();
+      expect(restarted.freshness().readerGeneration).toBe(firstGeneration);
+      expect(restarted.freshness().graphGeneration).toBe(firstGeneration);
+      expect(restarted.freshness().graphSourcePosition).toBe(graphSource);
+    } finally {
+      restarted.close();
+    }
+  });
+
   it('pins the prior memory graph reader until the request drain adopts its matching FTS bundle', async () => {
     const soul = await indexedSoul();
     let graphSource = 'memory:1';
