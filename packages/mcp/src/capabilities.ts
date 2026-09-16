@@ -61,6 +61,7 @@ export const CAPABILITIES: readonly Capability[] = [
   { tool: 'brief', verb: 'brief' },
   { tool: 'memory_recall', verb: 'memoryRecall' },
   { tool: 'memory_observe', verb: 'memoryObserve' },
+  { tool: 'memory_graph', verb: 'memoryConnectedGraph' },
   // G5.2 — on-demand PDG/taint analysis for one callable (TypeScript/JavaScript). Opt-in by
   // design: nothing runs at index time, and the analyzer is injected (see verbs.ts PdgPort).
   { tool: 'explain', verb: 'explain' },
