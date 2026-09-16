@@ -342,6 +342,7 @@ import {
   parseMemoryLedgerQuery,
   parseMemoryPendingQuery,
   parseResumeBody,
+  readMemoryGraphDetail,
   readMemoryHome,
   readMemoryIntakeDetail,
   readMemoryLedger,
@@ -4100,6 +4101,16 @@ async function cmdViz(args: string[], ctx?: CmdCtx): Promise<number> {
           'cache-control': 'no-store',
         });
         res.end(JSON.stringify(home));
+        return;
+      }
+      if (requestUrl.pathname === '/memory/graph.json') {
+        const id = requestUrl.searchParams.get('id');
+        if (!id) throw new VizHttpError(400, 'missing id');
+        res.writeHead(200, {
+          'content-type': 'application/json; charset=utf-8',
+          'cache-control': 'no-store',
+        });
+        res.end(JSON.stringify(readMemoryGraphDetail(memoryApi, id)));
         return;
       }
       if (requestUrl.pathname === '/memory/record.json') {

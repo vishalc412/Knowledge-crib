@@ -33,6 +33,17 @@ describe('viz web asset: memory ledger panel (G5.4)', () => {
     expect(html).toContain('focus-visible');
   });
 
+  it('wires record Connections and History as keyboard-operable lists (WP-G7)', () => {
+    expect(html).toContain('/memory/graph.json');
+    expect(html).toContain('data-kc-mem-connections');
+    expect(html).toContain('data-kc-mem-history');
+    expect(html).toContain('data-kc-mem-detail-back');
+    expect(html).toContain('openLinkedWork');
+    expect(html).toContain('openLinkedClaim');
+    // Linked claims and work are <button>s — reachable and activatable without a pointer.
+    expect(html).toMatch(/<button data-kc-mem-connection="\{\{ cn\.ref \}\}"/);
+  });
+
   it('makes pending and resumable memory work actionable from the home tiles', () => {
     expect(html).toContain('data-kc-memory-home-action');
     expect(html).toContain('openMemoryHomeAction');

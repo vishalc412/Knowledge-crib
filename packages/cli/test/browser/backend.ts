@@ -36,6 +36,8 @@ const READY_CLAIM = 'normalizeInput trims and lowercases before hashing';
 const TERMINAL_CLAIM = 'the resume view closes the detail after a recorded resume';
 const BLOCKED_CLAIM = 'normalizeInput is pure';
 const CAPTURE_CLAIM = 'normalizeInput lowercased the token before the lookup';
+const GRAPH_CURRENT_CLAIM = 'normalizeInput hashes the trimmed lowercase token';
+const GRAPH_RETIRED_CLAIM = 'normalizeInput hashed the raw token';
 
 // The same gate policy shape memory-check.test.ts uses: a profile that runs
 // `node --version` (deterministic, offline, exit 0) with an exit-code assertion.
@@ -75,6 +77,7 @@ export class MemoryBackend {
   sym: SeededSymbol = { id: '', hash: '' };
   staged: SeededCandidates = { ready: '', terminal: '', blocked: '' };
   intakeId = '';
+  graph = { current: '', retired: '' };
   private server: ReturnType<typeof spawn> | null = null;
   private readonly env: NodeJS.ProcessEnv;
 
@@ -200,6 +203,10 @@ export class MemoryBackend {
       '--json',
     ]);
 
+    // 7b. WP-G7 — a small connected graph over two admitted claims: the current claim replaces
+    //     a retired one, touches code, and is linked from the saved work above.
+    await this.seedGraph();
+
     // 8. The real viz server, headless (`--no-open`), on an ephemeral port.
     await this.startServer();
   }
@@ -299,6 +306,87 @@ export class MemoryBackend {
       terminal: mem.memoryCandidateId(terminalSeed),
       blocked: mem.memoryCandidateId(blockedSeed),
     };
+  }
+
+  private async seedGraph(): Promise<void> {
+    const mem = (await import('@knowledge-crib/memory')) as {
+      MemoryStore: { local: (repoId: string, opts: unknown) => MemoryStorePort };
+      memoryRecordId: (input: unknown) => string;
+      decisionId: (input: unknown) => string;
+      createGraphAssertion: (input: unknown) => { id: string };
+    };
+    const store = mem.MemoryStore.local(this.repoId, { env: this.env, now: () => T0 });
+    const record = (claim: string) => {
+      const input = {
+        kind: 'fact',
+        subject: this.sym.id,
+        claim,
+        scope: { boundary: 'repo', repoId: this.repoId },
+        appliesTo: [this.sym.id],
+        evidence: [
+          {
+            kind: 'source-quote',
+            verdict: 'valid',
+            checkedAt: T0,
+            soulId: this.sym.id,
+            quote: 'Normalizes input before hashing.',
+            targetHash: this.sym.hash,
+          },
+        ],
+        authorship: { actor: 'claude-code', kind: 'agent', tool: 'claude-code' },
+      };
+      return {
+        id: mem.memoryRecordId(input),
+        schemaVersion: '1',
+        ...input,
+        verdicts: {
+          trust: 'local',
+          evidence: 'valid',
+          applicability: 'current',
+          lifecycle: 'active',
+        },
+        createdAt: T0,
+      };
+    };
+    const current = record(GRAPH_CURRENT_CLAIM);
+    const retired = record(GRAPH_RETIRED_CLAIM);
+    store.upsertEntries('active', [current, retired]);
+    const supersede = {
+      kind: 'supersede',
+      subject: retired.id,
+      successor: current.id,
+      actor: 'human:operator',
+    };
+    store.upsertEntry('decisions', {
+      id: mem.decisionId(supersede),
+      schemaVersion: '1',
+      ...supersede,
+      ts: T0,
+    });
+    const edge = (predicate: string, subject: string, object: string, supporter: string) =>
+      mem.createGraphAssertion({
+        predicate,
+        subject,
+        object,
+        namespace: { principalId: this.principal },
+        scope: { boundary: 'repo', repoId: this.repoId },
+        validAt: T0,
+        knownAt: T0,
+        supportedBy: [supporter],
+        provenance: {
+          principalId: this.principal,
+          deviceId: 'device:e2e',
+          actorId: 'agent:e2e',
+          clientId: 'playwright',
+        },
+      });
+    store.submitGraphEntries([
+      edge('about', current.id, this.sym.id, current.id),
+      edge('supersedes', current.id, retired.id, current.id),
+      edge('about', this.intakeId, current.id, current.id),
+      edge('applies-to', retired.id, 'sym:src/index.ts#legacyHash', retired.id),
+    ]);
+    this.graph = { current: current.id, retired: retired.id };
   }
 
   private startServer(): Promise<void> {
@@ -409,7 +497,13 @@ export class MemoryBackend {
 interface MemoryStorePort {
   upsertEntry(collection: string, entry: unknown): void;
   upsertEntries(collection: string, entries: unknown[]): void;
+  submitGraphEntries(entries: unknown[]): unknown;
 }
+
+export const SEEDED_GRAPH = {
+  currentClaim: GRAPH_CURRENT_CLAIM,
+  retiredClaim: GRAPH_RETIRED_CLAIM,
+} as const;
 
 export const SEEDED = {
   readyClaim: READY_CLAIM,

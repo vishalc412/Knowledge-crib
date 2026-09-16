@@ -8,6 +8,9 @@ import {
   DEFAULT_LEDGER_PAGE,
   DEFAULT_PENDING_PAGE,
   type GetResult,
+  type GraphAssertion,
+  type GraphConflictGroup,
+  type GraphProjection,
   type IntakeCheckpoint,
   type IntakeRequirement,
   LEDGER_GROUPS,
@@ -318,6 +321,124 @@ export function readMemoryLedgerDetail(api: MemoryApi, id: string): VizLedgerDet
   const got = api.get(id);
   if (!got.found) throw new VizHttpError(404, `unknown memory record: ${id}`);
   return { ...got, audit: api.audit(got.id ?? id) };
+}
+
+// ─── record connections + history (WP-G7) ─────────────────────────────────────
+//
+// The Connections and History views of a claim. Same law as the ledger: the server validates the
+// id and SHAPES the authorized projection for display; it owns no graph logic. Every row comes
+// from `MemoryApi.graphProjection`, which is principal-scoped and lifecycle-folded, so the browser
+// can only ever list what `memory_graph` would return to the same caller.
+
+/** What a connected ref is, from its id grammar — drives the label and whether it is openable. */
+export type VizGraphRefKind = 'claim' | 'work' | 'code' | 'entity' | 'evidence' | 'topic' | 'other';
+
+export interface VizGraphLink {
+  assertionId: string;
+  predicate: string;
+  /** `outgoing` when the record is the subject, `incoming` when it is the object. */
+  direction: 'outgoing' | 'incoming';
+  /** The ref at the OTHER end of the assertion. */
+  ref: string;
+  kind: VizGraphRefKind;
+  supportedBy: string[];
+  validAt: string;
+  knownAt: string;
+}
+
+export interface VizMemoryGraphResponse {
+  configured: true;
+  id: string;
+  /** `historical` when the record only supports history (superseded, or finished work). */
+  state: 'current' | 'historical';
+  connections: VizGraphLink[];
+  history: VizGraphLink[];
+  /** Records this one was replaced by, and records it replaces (`supersedes`, current or historical). */
+  replacedBy: string[];
+  replaces: string[];
+  conflicts: GraphConflictGroup[];
+  /** The caller's assertions (graph-wide) whose support no longer resolves — a repair signal. */
+  unresolvedLinks: number;
+  /** True when a list was capped at {@link MAX_GRAPH_LINKS}. */
+  truncated: boolean;
+}
+
+export type VizMemoryGraphBody = VizMemoryGraphResponse | { configured: false };
+
+/** Links per list — a detail view, not an export. The count beyond it is signalled, never hidden. */
+export const MAX_GRAPH_LINKS = 50;
+
+export function graphRefKind(ref: string): VizGraphRefKind {
+  if (ref.startsWith('mem:')) return 'claim';
+  if (ref.startsWith('intake:')) return 'work';
+  if (ref.startsWith('sym:') || ref.startsWith('file:')) return 'code';
+  if (ref.startsWith('entity:')) return 'entity';
+  if (ref.startsWith('artifact:') || ref.startsWith('attestation:') || ref.startsWith('rcpt:')) {
+    return 'evidence';
+  }
+  if (ref.startsWith('topic:')) return 'topic';
+  return 'other';
+}
+
+function linkFor(
+  assertion: GraphAssertion,
+  id: string,
+  canonicalOf: (ref: string) => string,
+): VizGraphLink {
+  const outgoing = canonicalOf(assertion.subject) === id;
+  const ref = outgoing ? assertion.object : assertion.subject;
+  return {
+    assertionId: assertion.id,
+    predicate: assertion.predicate,
+    direction: outgoing ? 'outgoing' : 'incoming',
+    ref,
+    kind: graphRefKind(ref),
+    supportedBy: [...assertion.supportedBy],
+    validAt: assertion.validAt,
+    knownAt: assertion.knownAt,
+  };
+}
+
+/** Repository placement when the server has a repository, global otherwise. */
+function viewerProjection(api: MemoryApi): GraphProjection {
+  try {
+    return api.graphProjection({ scope: 'repo' });
+  } catch {
+    return api.graphProjection({ scope: 'global' });
+  }
+}
+
+/** Shape one record's authorized connections and history for the record detail view. */
+export function readMemoryGraphDetail(api: MemoryApi | undefined, id: string): VizMemoryGraphBody {
+  if (!api) return { configured: false };
+  const graph = viewerProjection(api);
+  const canonicalOf = (ref: string): string => graph.aliases.canonical[ref] ?? ref;
+  const self = canonicalOf(id);
+  const touches = (a: GraphAssertion): boolean =>
+    canonicalOf(a.subject) === self || canonicalOf(a.object) === self;
+  const connectionsAll = graph.current.filter(touches).map((a) => linkFor(a, self, canonicalOf));
+  const historyAll = graph.historical.filter(touches).map((a) => linkFor(a, self, canonicalOf));
+  const replacedBy = new Set<string>();
+  const replaces = new Set<string>();
+  for (const a of [...graph.current, ...graph.historical]) {
+    if (a.predicate !== 'supersedes') continue;
+    if (canonicalOf(a.object) === self) replacedBy.add(a.subject);
+    if (canonicalOf(a.subject) === self) replaces.add(a.object);
+  }
+  return {
+    configured: true,
+    id: self,
+    state: graph.historicalRefs.includes(self) ? 'historical' : 'current',
+    connections: connectionsAll.slice(0, MAX_GRAPH_LINKS),
+    history: historyAll.slice(0, MAX_GRAPH_LINKS),
+    replacedBy: [...replacedBy].sort(),
+    replaces: [...replaces].sort(),
+    conflicts: graph.conflicts.filter(
+      (g) => canonicalOf(g.subject) === self || g.objects.some((o) => canonicalOf(o) === self),
+    ),
+    unresolvedLinks: graph.diagnostics.unsupported.length,
+    truncated: connectionsAll.length > MAX_GRAPH_LINKS || historyAll.length > MAX_GRAPH_LINKS,
+  };
 }
 
 // ─── pending queue + intake detail endpoints (WP6.1–WP6.4) ─────────────────────
