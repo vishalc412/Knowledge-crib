@@ -7,8 +7,10 @@ import {
   completeGraphExtractionJob,
   enqueueGraphExtractionJob,
   failLeasedGraphExtractionJob,
+  readGraphExtractionJob,
   requeueGraphExtractionJob,
   retryGraphExtractionJobs,
+  submitExtractedGraphProposal,
 } from './graph-extraction-queue.js';
 import {
   buildGraphExtractionJob,
@@ -16,6 +18,7 @@ import {
   failGraphExtractionJob,
   isGraphExtractionStale,
 } from './graph-extraction.js';
+import { createGraphAssertion } from './graph.js';
 import { MemoryStore, __resetMemoryLockGuardForTest } from './store.js';
 import { assertValidMemoryEntry } from './validate.js';
 
@@ -154,5 +157,47 @@ describe('graph extraction jobs', () => {
       }),
     ).toBeUndefined();
     expect(requeueGraphExtractionJob(store(), queued.id)).toMatchObject({ status: 'pending' });
+  });
+
+  it('only admits a leased extraction output for its current source and principal', () => {
+    const queued = enqueueGraphExtractionJob(store(), INPUT, '2026-01-01T00:00:00.000Z').job;
+    claimGraphExtractionJob(store(), queued.id, {
+      owner: 'worker',
+      now: '2026-01-01T00:00:00.000Z',
+      expiresAt: '2026-01-01T00:01:00.000Z',
+    });
+    const proposal = createGraphAssertion({
+      predicate: 'about',
+      subject: 'mem:graph-extraction-result',
+      object: 'topic:graph-extraction',
+      namespace: { principalId: queued.principalId },
+      scope: { boundary: 'global' },
+      validAt: '2026-01-01T00:00:00.000Z',
+      knownAt: '2026-01-01T00:00:00.000Z',
+      supportedBy: [queued.sourceId],
+      provenance: {
+        principalId: queued.principalId,
+        deviceId: 'device:test',
+        actorId: 'agent:test',
+        clientId: 'vitest',
+      },
+    });
+    expect(
+      submitExtractedGraphProposal(store(), {
+        jobId: queued.id,
+        owner: 'worker',
+        sourceHash: 'blake3:changed',
+        entries: [proposal],
+      }),
+    ).toBeUndefined();
+    expect(
+      submitExtractedGraphProposal(store(), {
+        jobId: queued.id,
+        owner: 'worker',
+        sourceHash: queued.sourceHash,
+        entries: [proposal],
+      }),
+    ).toMatchObject({ written: [proposal.id] });
+    expect(readGraphExtractionJob(store(), queued.id)).toMatchObject({ status: 'completed' });
   });
 });

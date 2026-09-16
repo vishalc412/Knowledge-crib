@@ -12,8 +12,10 @@ import {
   failGraphExtractionJob,
 } from './graph-extraction.js';
 import { memoryShard } from './ids.js';
-import type { MemoryStore } from './store.js';
-import type { GraphExtractionJob } from './types.js';
+import type { GraphSubmitResult, MemoryStore } from './store.js';
+import type { GraphAssertion, GraphEntity, GraphExtractionJob } from './types.js';
+
+type GraphExtractionProposalEntry = GraphEntity | GraphAssertion;
 
 /** Read one durable job by content-addressed id. */
 export function readGraphExtractionJob(
@@ -105,5 +107,54 @@ export function requeueGraphExtractionJob(
   return store.updateGraphExtractionJob(id, (current) => {
     if (current.status !== 'retry') return undefined;
     return { ...current, status: 'pending', outcome: undefined };
+  });
+}
+
+/**
+ * Persist extraction output as proposed graph candidates, then acknowledge the lease. The source
+ * hash is supplied from the live capture at drain time: a changed source cannot admit an output
+ * extracted from its old bytes. Alias decisions are intentionally excluded because they have a
+ * separate reversible, owner-reviewed lifecycle.
+ */
+export function submitExtractedGraphProposal(
+  store: MemoryStore,
+  input: {
+    jobId: string;
+    owner: string;
+    sourceHash: string;
+    entries: readonly GraphExtractionProposalEntry[];
+  },
+): GraphSubmitResult | undefined {
+  return store.withLock(() => {
+    const job = readGraphExtractionJob(store, input.jobId);
+    if (
+      job === undefined ||
+      job.status !== 'leased' ||
+      job.lease?.owner !== input.owner ||
+      job.sourceHash !== input.sourceHash
+    ) {
+      return undefined;
+    }
+    for (const entry of input.entries) {
+      if (
+        entry.namespace.principalId !== job.principalId ||
+        entry.provenance.principalId !== job.principalId
+      ) {
+        throw new Error('refusing graph extraction proposal outside the job principal');
+      }
+      if ('supportedBy' in entry && !entry.supportedBy.includes(job.sourceId)) {
+        throw new Error(
+          'refusing graph extraction assertion without its capture evidence reference',
+        );
+      }
+    }
+    const submitted = store.submitGraphEntries([...input.entries]);
+    const completed = completeGraphExtractionJob(store, input.jobId, input.owner);
+    if (completed === undefined) {
+      throw new Error(
+        'graph extraction proposal persisted but its owned lease could not be completed',
+      );
+    }
+    return submitted;
   });
 }
