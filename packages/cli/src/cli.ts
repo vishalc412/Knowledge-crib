@@ -412,6 +412,14 @@ const VALUE_FLAGS = new Set([
   '--reason',
   '--tool',
   '--as-of',
+  // WP-G5 `crib memory graph <op> <refs…>`: every value-taking flag is stripped with its value so
+  // only refs remain positional.
+  '--q',
+  '--at',
+  '--known-by',
+  '--hops',
+  '--predicate',
+  '--cursor',
   // Gate 4 sync/purge subcommands (`crib memory init-sync|sync|purge`): their positionals are
   // mem: ids and their flag values are env names / urls — never paths, so every value-taking
   // flag they add must be stripped alongside its value (the fixed subcommand-token pattern).
@@ -5950,6 +5958,8 @@ function findReceipt(local: MemoryStore, id: string): GateReceipt | undefined {
  *   - supersede <id>       Gate 1.3 — retire a record in favour of a successor (append-only)
  *   - delete <id>          Gate 1.3 — a tombstone (retract decision), never a removal
  *   - history <key>        Gate 1.3 — the bi-temporal belief timeline (optionally `--as-of`)
+ *   - graph <op> [refs…]   WP-G5 — connected retrieval over the authorized temporal graph (the
+ *                          `memory_graph` MCP tool, same verb, same JSON)
  *   - evaluate <id> -p X   run the gate → evaluate → activate (the happy path); crash-safe
  *   - activate <id>        crash-recovery: re-evaluate + activate against an existing receipt
  *   - propose <mem-id>     write a team record + accept decision (idempotent; CI derives trust)
@@ -6323,6 +6333,8 @@ async function cmdMemory(args: string[], ctx?: CmdCtx): Promise<number> {
       return cmdMemoryBackup(rest, ctx);
     case 'search':
       return cmdMemorySearch(rest, ctx);
+    case 'graph':
+      return cmdMemoryGraph(rest, ctx);
     case 'get':
       return cmdMemoryGet(rest, ctx);
     case 'supersede':
@@ -8294,6 +8306,69 @@ function memorySearchHitView(h: SearchHit, withEvidence?: boolean): Record<strin
   };
 }
 
+const MEMORY_GRAPH_USAGE =
+  'usage: crib memory graph <search|neighbors|path|history|context> [refs…] [--q "<query>"] [--scope global|repo] [--at <iso>] [--known-by <iso>] [--hops 0-4] [--predicate <p>]… [--max-tokens N] [--cursor <c>]\n';
+
+/**
+ * `crib memory graph <op> [refs…]` — the CLI twin of the `memory_graph` MCP tool. It calls the SAME
+ * verb over the same memory deps, so a terminal and an agent cannot receive different connected
+ * answers; output is always the verb's JSON (errors included) and a refused request exits BAD_ARGS.
+ */
+function cmdMemoryGraph(args: string[], ctx?: CmdCtx): number {
+  if (args.includes('--help')) {
+    process.stdout.write(MEMORY_GRAPH_USAGE);
+    return EXIT.OK;
+  }
+  const [op, ...refs] = positionalsOf(args);
+  if (op === undefined) {
+    process.stderr.write(MEMORY_GRAPH_USAGE);
+    return EXIT.BAD_ARGS;
+  }
+  const scope = stringFlag(args, '--scope');
+  if (scope !== undefined && scope !== 'global' && scope !== 'repo') {
+    process.stderr.write(`error: --scope must be global or repo\n${MEMORY_GRAPH_USAGE}`);
+    return EXIT.BAD_ARGS;
+  }
+  const resolved = resolveProjectRoot({ explicitRoot: ctx?.cwdOverride });
+  if (!isIndexedRoot(resolved)) {
+    process.stderr.write('not indexed — run `crib index` first\n');
+    return EXIT.NOT_INDEXED;
+  }
+  const rt = openSoul(resolved);
+  const memory = createMemoryDeps(rt.soul, resolved.repoRoot, resolved.cribDir);
+  if (!memory) {
+    process.stderr.write('could not resolve repoId for memory — run `crib index` first\n');
+    return EXIT.NOT_INDEXED;
+  }
+  const index = openIndexForRead(rt);
+  if (!index) return EXIT.NOT_INDEXED;
+  try {
+    const verbs = new Verbs({ soul: rt.soul, index, repoRoot: resolved.repoRoot, memory });
+    const hops = intFlag(args, '--hops');
+    const maxTokens = intFlag(args, '--max-tokens');
+    const predicates = repeatedFlag(args, '--predicate');
+    const optional = {
+      q: stringFlag(args, '--q'),
+      at: stringFlag(args, '--at'),
+      knownBy: stringFlag(args, '--known-by'),
+      cursor: stringFlag(args, '--cursor'),
+    };
+    const result = verbs.memoryConnectedGraph({
+      op: op as Parameters<Verbs['memoryConnectedGraph']>[0]['op'],
+      ...(refs.length > 0 ? { refs } : {}),
+      ...(scope !== undefined ? { scope } : {}),
+      ...(hops !== undefined ? { hops } : {}),
+      ...(maxTokens !== undefined ? { maxTokens } : {}),
+      ...(predicates.length > 0 ? { predicates } : {}),
+      ...Object.fromEntries(Object.entries(optional).filter(([, v]) => v !== undefined)),
+    });
+    process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+    return result.error !== undefined ? EXIT.BAD_ARGS : EXIT.OK;
+  } finally {
+    index.close();
+  }
+}
+
 /**
  * `crib memory search "<query>"` — the portable API's rich search. `--json` mirrors the MCP
  * `memory{op:'search'}` response byte-for-byte in shape (query + hits + conflicts + provenance +
@@ -10012,7 +10087,7 @@ function printHelp(): void {
       '  crib export [--format F] [--procedure P] [--extracted-only] [--redact|--no-redact] render graph: rules|mermaid|graph.json|report|llm',
       '  crib viz [path] [--port N]               serve the offline web UI (Claude Design DC graph) + open browser',
       '  crib enrich [path] [--budget-tokens N]    semantic work queue; --next (token-packed batch) | run --provider <name> [--max-tokens N --max-batches N --concurrency N] | --auto [--provider <name>] | --save <file> | --overview | --scopes | --prune-stale [--apply]',
-      '  crib memory <init|handoff|recall|backup|sync|evaluate|activate|propose|attest>   persistent memory, recovery, sync, and trusted promotion',
+      '  crib memory <init|handoff|recall|graph|backup|sync|evaluate|activate|propose|attest>   persistent memory, connected graph, recovery, sync, and trusted promotion',
       '  crib intake <create|checkpoint|list|show|complete|share>   durable intent and continuation checkpoints',
       '  crib session bootstrap [--json]       restore the deterministic resume brief for this project',
       '  crib audit-llm [path]                    re-verify every LLM artifact against the soul (grounding moat); exits non-zero on ungrounded/drift',

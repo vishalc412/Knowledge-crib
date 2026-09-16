@@ -40,6 +40,7 @@ import {
   EXACT_MATCH_BONUS,
   type EffectiveVerdicts,
   type FusionStrategy,
+  type GraphProjection,
   type IntelligenceEventJournal,
   MemoryApi,
   type MemoryCandidate,
@@ -110,6 +111,20 @@ import {
   llmPointer,
   llmProjection,
 } from './enrichment.js';
+import {
+  type MemoryGraphOp,
+  type MemoryGraphPage,
+  authorizeExplicitSeeds,
+  decodeGraphCursor,
+  encodeGraphCursor,
+  fitGraphContext,
+  graphQueryDigest,
+  graphViewGeneration,
+  memoryGraphHistoryResult,
+  memoryGraphPathResult,
+  memoryGraphRequestError,
+  recallSeeds,
+} from './memory-graph.js';
 import type { ReaderFreshness } from './reader-freshness.js';
 import {
   DEFAULT_BODY_MAX_CHARS,
@@ -2967,70 +2982,144 @@ export class Verbs {
     }
   }
 
-  /** Connected memory retrieval over the caller-authorized temporal graph. */
+  /**
+   * WP-G5 — connected retrieval over the caller-authorized temporal graph (`memory_graph`).
+   *
+   * The projection is gathered with the server-derived principal, so every op reads only that
+   * viewer's graph. Responses name the view `generation` they were computed from; paged ops return
+   * a `nextCursor` bound to that generation, the principal, and every query parameter (see
+   * memory-graph.ts). A projection failure is never dressed as a graph answer: `search`/`context`
+   * fall back to plain recall with `unavailable: true` and no generation.
+   */
   memoryConnectedGraph(args: {
-    op?: 'search' | 'neighbors' | 'path' | 'history' | 'context';
+    op?: MemoryGraphOp;
     q?: string;
     refs?: string[];
     scope?: 'global' | 'repo';
     at?: string;
     knownBy?: string;
     hops?: number;
+    predicates?: string[];
     maxTokens?: number;
+    cursor?: string;
     ifHash?: string;
   }): Record<string, unknown> {
     const api = this.memoryApi();
     if (!api) return this.applyIfHash(args, { memory: 'not configured' });
     const op = args.op ?? 'search';
-    const graph = api.graphProjection({
-      ...(args.scope !== undefined ? { scope: args.scope } : {}),
-      ...(args.at !== undefined ? { at: args.at } : {}),
-      ...(args.knownBy !== undefined ? { knownBy: args.knownBy } : {}),
-    });
-    const explicitSeeds = (args.refs ?? []).map((ref) => ({
-      ref,
-      score: 1,
-      channel: 'explicit' as const,
-    }));
-    const recalled =
-      (op === 'search' || op === 'context') && explicitSeeds.length === 0
-        ? this.memorySearch({
-            q: args.q ?? '',
-            limit: 20,
-            maxTokens: 2_000,
-          })
-        : undefined;
-    const recalledSeeds = Array.isArray(recalled?.hits)
-      ? recalled.hits.flatMap((hit) => {
-          const view = hit as { id?: unknown; score?: unknown };
-          return typeof view.id === 'string' && typeof view.score === 'number'
-            ? [{ ref: view.id, score: view.score, channel: 'semantic' as const }]
-            : [];
-        })
-      : [];
-    const seeds = explicitSeeds.length > 0 ? explicitSeeds : recalledSeeds;
+    const invalid = memoryGraphRequestError(op, args);
+    if (invalid !== undefined) return { error: { code: 'BAD_REQUEST', message: invalid } };
+    const maxTokens = args.maxTokens === undefined ? 2_000 : capMaxTokens(args.maxTokens);
+
+    let graph: GraphProjection;
+    try {
+      graph = api.graphProjection({
+        ...(args.scope !== undefined ? { scope: args.scope } : {}),
+        ...(args.at !== undefined ? { at: args.at } : {}),
+        ...(args.knownBy !== undefined ? { knownBy: args.knownBy } : {}),
+      });
+    } catch (err) {
+      return this.applyIfHash(args, this.memoryGraphUnavailable(op, args, maxTokens, err));
+    }
+
+    const generation = graphViewGeneration(graph);
+    const digest = graphQueryDigest({ principalId: graph.viewer.principalId, op, ...args });
+    const cursor = decodeGraphCursor(args.cursor, generation, digest);
+    if (!cursor.ok) {
+      return { error: { code: cursor.code, message: cursor.message }, generation };
+    }
+    const page = { generation, digest, offset: cursor.offset, maxTokens };
+    const base = {
+      op,
+      generation,
+      unavailable: false,
+      diagnostics: graph.diagnostics,
+      ...this.memoryGraphFreshness(),
+    };
+    switch (op) {
+      case 'path':
+        return this.applyIfHash(args, { ...base, ...memoryGraphPathResult(graph, args) });
+      case 'history':
+        return this.applyIfHash(args, { ...base, ...memoryGraphHistoryResult(graph, args, page) });
+      default:
+        return this.applyIfHash(args, {
+          ...base,
+          ...this.memoryGraphExpand(graph, op, args, page),
+        });
+    }
+  }
+
+  /** `search` / `neighbors` / `context`: authorized seeds, bounded expansion, budget-fitted output. */
+  private memoryGraphExpand(
+    graph: GraphProjection,
+    op: MemoryGraphOp,
+    args: { q?: string; refs?: string[]; hops?: number; predicates?: string[] },
+    page: MemoryGraphPage,
+  ): Record<string, unknown> {
+    const explicit = authorizeExplicitSeeds(graph, args.refs ?? []);
+    const useRecall = op !== 'neighbors' && (args.refs ?? []).length === 0;
+    const recalled = useRecall
+      ? this.memorySearch({ q: args.q ?? '', limit: 20, maxTokens: page.maxTokens })
+      : undefined;
+    const seeds = useRecall ? recallSeeds(recalled) : explicit.seeds;
     const expanded = expandFromSeeds(graph, seeds, {
       ...(args.hops !== undefined ? { hops: args.hops } : {}),
+      ...(args.predicates !== undefined ? { predicates: args.predicates } : {}),
     });
-    const maxTokens = args.maxTokens === undefined ? 2_000 : capMaxTokens(args.maxTokens);
-    const fitted = fitTokenBudget(expanded.expansions, maxTokens, (prefix) =>
+    const shared = {
+      seeds,
+      ...(explicit.unresolvedRefs.length > 0 ? { unresolvedRefs: explicit.unresolvedRefs } : {}),
+      degraded:
+        recalled !== undefined && recalled.memory === 'not configured'
+          ? ['recall-unavailable']
+          : [],
+    };
+    if (op === 'context') {
+      return { ...shared, ...fitGraphContext(graph, expanded, page.maxTokens) };
+    }
+    const remaining = expanded.expansions.slice(page.offset);
+    const fitted = fitTokenBudget(remaining, page.maxTokens, (prefix) =>
       JSON.stringify({ expansions: prefix, truncated: true, budgetExhausted: true }),
     );
-    const payload = {
-      op,
-      seeds,
+    // An item that alone overflows the budget is stepped over, so a continuation always advances.
+    const next = page.offset + Math.max(fitted.items.length, remaining.length > 0 ? 1 : 0);
+    return {
+      ...shared,
       expansions: fitted.items,
       report: {
         ...expanded.report,
         truncated: expanded.report.truncated || fitted.budgetExhausted,
       },
-      ...(op === 'history' ? { timeline: graph.timeline } : {}),
-      diagnostics: graph.diagnostics,
-      ...(recalled !== undefined ? { recall: recalled } : {}),
+      ...(next < expanded.expansions.length
+        ? { nextCursor: encodeGraphCursor(page.generation, page.digest, next) }
+        : {}),
       ...(fitted.budgetExhausted ? { budgetExhausted: true } : {}),
-      unavailable: false,
     };
-    return this.applyIfHash(args, payload);
+  }
+
+  /** The explicit unavailable shape: never a generation, never expansions, recall only as fallback. */
+  private memoryGraphUnavailable(
+    op: MemoryGraphOp,
+    args: { q?: string },
+    maxTokens: number,
+    err: unknown,
+  ): Record<string, unknown> {
+    const reason = err instanceof Error ? err.message : String(err);
+    const fallback =
+      op === 'search' || op === 'context'
+        ? { recall: this.memorySearch({ q: args.q ?? '', limit: 20, maxTokens }) }
+        : {};
+    return { op, unavailable: true, graph: { state: 'unavailable', reason }, ...fallback };
+  }
+
+  /** Reader freshness, best-effort: a failing probe is reported, never allowed to fail the read. */
+  private memoryGraphFreshness(): Record<string, unknown> {
+    if (!this.deps.readerFreshness) return {};
+    try {
+      return { freshness: this.deps.readerFreshness() };
+    } catch (err) {
+      return { freshness: { error: err instanceof Error ? err.message : String(err) } };
+    }
   }
 
   /**

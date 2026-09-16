@@ -770,7 +770,7 @@ export function buildServer(verbs: Verbs, version = '0.1.0', pins?: RequestPins)
     'memory_graph',
     {
       description:
-        'Authorized connected-memory graph retrieval. search, neighbors, path, history, and context traverse only the caller-authorized temporal graph. refs are explicit graph seeds; every returned expansion carries its supporting assertion path and truncation report.',
+        'Authorized connected-memory graph retrieval. search and context seed from memory search (or explicit refs); neighbors and history need refs; path needs exactly two refs [from, to]. Traversal is caller-authorized, two hops by default (max 4, 200 nodes, 500 edges). Every response names its view generation; nextCursor pages are bound to that generation and query. unavailable:true means the graph was not consulted.',
       inputSchema: {
         op: z.enum(['search', 'neighbors', 'path', 'history', 'context']).optional(),
         q: z.string().optional(),
@@ -779,7 +779,9 @@ export function buildServer(verbs: Verbs, version = '0.1.0', pins?: RequestPins)
         at: z.string().optional(),
         knownBy: z.string().optional(),
         hops: z.number().int().min(0).max(4).optional(),
+        predicates: z.array(z.string()).optional(),
         maxTokens: z.number().int().positive().max(MAX_MAX_TOKENS).optional(),
+        cursor: z.string().optional(),
         ifHash: z.string().optional(),
       },
     },

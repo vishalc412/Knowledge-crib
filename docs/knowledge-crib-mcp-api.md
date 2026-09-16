@@ -70,25 +70,47 @@ cycle after the portable memory op set lands under `memory({op})`.
 
 ### `memory_graph`
 
-Connected retrieval over the caller-authorized temporal memory graph. `search` and `context`
-derive seeds from the normal memory-search projection; `neighbors`, `path`, and `history` accept
-explicit graph `refs`. Traversal defaults to two hops and is capped at four hops, 200 visited
-nodes, and 500 examined edges. Every expansion returns its assertion path and `supportedBy`
-references. `report.truncated` or `budgetExhausted` means the response is a bounded page, never a
-claim that no further authorized connections exist.
+Connected retrieval over the caller-authorized temporal memory graph. The principal is always the
+server's; no request field can widen it. Traversal defaults to two hops and is capped at four
+hops, 200 visited nodes, and 500 examined edges; the default token budget is 2,000.
+
+| op | needs | returns |
+| --- | --- | --- |
+| `search` | `q` (seeds from memory search) or `refs` | ranked `expansions`, each with its assertion `path` and `supportedBy` |
+| `neighbors` | `refs` | the bounded neighbourhood of the refs |
+| `path` | exactly two `refs` `[from, to]` | the shortest authorized assertion chain, or `null` |
+| `history` | `refs` | the supported `timeline` touching the refs (`state: current|historical`), plus conflicts and aliases |
+| `context` | `q` or `refs` | a `context` pack: ranked `items`, deduplicated `evidence`, whole `conflicts`, labelled `historical` |
 
 ```jsonc
 // req: { "op?":"search|neighbors|path|history|context", "q?":"…",
-//        "refs?": ["mem:…","sym:…"], "scope?":"global|repo", "at?":"…",
-//        "knownBy?":"…", "hops?":2, "maxTokens?":2000, "ifHash?":"…" }
-// res: { "op":"context", "seeds":[…], "expansions":[ { "ref":"…","distance":1,
-//        "path":[ { "assertionId":"grel:…","supportedBy":["mem:…"] } ] } ],
-//        "report":{ "truncated":false,"budget":{…} }, "diagnostics":{…},
-//        "recall":{…}, "unavailable":false }
+//        "refs?": ["mem:…","sym:…"], "scope?":"global|repo", "at?":"…", "knownBy?":"…",
+//        "hops?":2, "predicates?":["about","supersedes"], "maxTokens?":2000,
+//        "cursor?":"…", "ifHash?":"…" }
+// res: { "op":"neighbors", "generation":"sha256:…", "seeds":[…],
+//        "expansions":[ { "ref":"…","distance":1,
+//          "path":[ { "assertionId":"grel:…","supportedBy":["mem:…"] } ] } ],
+//        "report":{ "truncated":false,"truncationReasons":[],"budget":{…} },
+//        "nextCursor?":"…", "unresolvedRefs?":["…"], "degraded":[], "diagnostics":{…},
+//        "freshness?":{…}, "unavailable":false }
 ```
 
-An under-specified `op` returns `{ error: { code: 'BAD_REQUEST' } }` rather than forwarding a
-partial call to a verb.
+- **Explicit refs** that are not nodes of the caller's authorized view come back in
+  `unresolvedRefs` and never become results — a foreign id cannot be laundered into an answer.
+- **`generation`** digests the exact authorized view (viewer, time window, current assertions,
+  aliases, conflicts). `nextCursor` is bound to that generation, the principal, and every query
+  parameter; replaying it after any of those change returns `{ error: { code: 'CURSOR_STALE' } }`
+  — start a fresh query. `context` is one token-bounded pack and takes no cursor.
+- **`report.truncated`** or `budgetExhausted` means the response is a bounded page, never a claim
+  that no further authorized connections exist.
+- **Unavailable:** if the graph cannot be read, the response is `{ unavailable: true,
+  graph: { state: 'unavailable', reason } }` with no `generation` and no expansions; `search` and
+  `context` add plain `recall` as the fallback. That fallback is never a graph answer.
+- An under-specified request (missing `refs`, a one-ref `path`, an unknown predicate or op)
+  returns `{ error: { code: 'BAD_REQUEST' } }` before any graph is read.
+
+The CLI twin is `crib memory graph <op> [refs…] [--q …] [--at …] [--known-by …] [--hops N]
+[--predicate P]… [--max-tokens N] [--cursor C]`; it calls the same verb and prints the same JSON.
 
 ---
 
