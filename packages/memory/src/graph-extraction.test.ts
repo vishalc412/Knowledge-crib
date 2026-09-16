@@ -30,8 +30,11 @@ describe('graph extraction jobs', () => {
   });
 
   it('reclaims an expired lease but refuses a still-live lease', () => {
-    const job = { ...buildGraphExtractionJob(INPUT, '2026-01-01T00:00:00.000Z'), status: 'leased' as const,
-      lease: { owner: 'worker:a', expiresAt: '2026-01-01T00:01:00.000Z' } };
+    const job = {
+      ...buildGraphExtractionJob(INPUT, '2026-01-01T00:00:00.000Z'),
+      status: 'leased' as const,
+      lease: { owner: 'worker:a', expiresAt: '2026-01-01T00:01:00.000Z' },
+    };
     expect(canLeaseGraphExtractionJob(job, '2026-01-01T00:00:30.000Z')).toBe(false);
     expect(canLeaseGraphExtractionJob(job, '2026-01-01T00:01:01.000Z')).toBe(true);
   });
@@ -43,5 +46,6 @@ describe('graph extraction jobs', () => {
     const terminal = failGraphExtractionJob(twice, 'timeout');
     expect(terminal.retryCount).toBe(3);
     expect(terminal.status).toBe('retry');
+    expect(canLeaseGraphExtractionJob(terminal, '2026-01-01T00:10:00.000Z')).toBe(false);
   });
 });

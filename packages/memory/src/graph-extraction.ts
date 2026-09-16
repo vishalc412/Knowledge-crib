@@ -53,15 +53,19 @@ export function isGraphExtractionStale(job: GraphExtractionJob, sourceHash: stri
   return job.sourceHash !== sourceHash;
 }
 
-/** Pending/retry jobs and expired leases are eligible for a new worker; live leases are not. */
+/** Pending jobs and expired leases are eligible for a new worker; visible retry-queue jobs require
+ * an explicit operator requeue so three automatic failures cannot churn indefinitely. */
 export function canLeaseGraphExtractionJob(job: GraphExtractionJob, now: string): boolean {
-  if (job.status === 'pending' || job.status === 'retry') return true;
+  if (job.status === 'pending') return true;
   if (job.status !== 'leased' || job.lease === undefined) return false;
   return Date.parse(job.lease.expiresAt) <= Date.parse(now);
 }
 
 /** Record one failed attempt; failure three is surfaced as a retry-queue item. */
-export function failGraphExtractionJob(job: GraphExtractionJob, reason: string): GraphExtractionJob {
+export function failGraphExtractionJob(
+  job: GraphExtractionJob,
+  reason: string,
+): GraphExtractionJob {
   const retryCount = job.retryCount + 1;
   return {
     ...job,
