@@ -19,7 +19,6 @@
 import { createHash } from 'node:crypto';
 import type {
   GraphAssertion,
-  GraphContextPack,
   GraphExpansionResult,
   GraphPathStep,
   GraphProjection,
@@ -28,7 +27,7 @@ import type {
 import {
   GRAPH_PATH_MAX_HOPS,
   MEMORY_GRAPH_PREDICATES,
-  assembleGraphContext,
+  buildGraphContextPack,
   exportGraphProjection,
   graphPath,
   isMemoryGraphPredicate,
@@ -298,27 +297,48 @@ export function memoryGraphHistoryResult(
 }
 
 /**
- * `context`: the assembled pack, trimmed by rank to the token budget. Evidence is re-derived from
- * the items that survive the trim, so a trimmed pack never cites a supporter no kept item uses.
+ * `context`: the pack for the largest rank-ordered prefix of expansions that fits the budget. The
+ * pack is REBUILT for each candidate prefix, so a trimmed pack never cites a relation, history
+ * entry, conflict or supporter that only a dropped item touched.
  */
 export function fitGraphContext(
   graph: GraphProjection,
   expanded: GraphExpansionResult,
   maxTokens: number,
 ): Record<string, unknown> {
-  const pack = assembleGraphContext(graph, expanded, { budgetTokens: maxTokens });
-  const shape = (items: GraphContextPack['items']): GraphContextPack => {
-    const cited = new Set(items.flatMap((i) => i.evidenceRefs));
-    return { ...pack, items, evidence: pack.evidence.filter((e) => cited.has(e.ref)) };
-  };
-  const fitted = fitTokenBudget(pack.items, maxTokens, (prefix) =>
-    JSON.stringify({ context: shape(prefix), budgetExhausted: true }),
+  const build = (prefix: GraphExpansionResult['expansions']) =>
+    buildGraphContextPack(graph, prefix, expanded.report, { budgetTokens: maxTokens });
+  const fitted = fitTokenBudget(expanded.expansions, maxTokens, (prefix) =>
+    JSON.stringify({ context: build(prefix), budgetExhausted: true }),
   );
-  const context = shape(fitted.items);
+  const context = build(fitted.items);
   return {
     context: fitted.budgetExhausted
       ? { ...context, traversal: { ...context.traversal, truncated: true } }
       : context,
     ...(fitted.budgetExhausted ? { budgetExhausted: true } : {}),
   };
+}
+
+/**
+ * Plain recall does not know the read point. When the projection is historical (`at`/`knownBy`),
+ * a recall seed survives only if it is a node of that windowed, authorized view — so a claim
+ * recorded after `knownBy` cannot re-enter a historical answer through the recall channel.
+ */
+export function timeBoundRecallSeeds(graph: GraphProjection, seeds: GraphSeed[]): GraphSeed[] {
+  if (graph.at === undefined && graph.knownBy === undefined) return seeds;
+  const nodes = authorizedGraphNodes(graph);
+  return seeds.filter((seed) => nodes.has(seed.ref));
+}
+
+/** Union seeds from several channels by ref, keeping each ref's best score (channel of the best). */
+export function mergeGraphSeeds(...channels: GraphSeed[][]): GraphSeed[] {
+  const best = new Map<string, GraphSeed>();
+  for (const seed of channels.flat()) {
+    const current = best.get(seed.ref);
+    if (current === undefined || seed.score > current.score) best.set(seed.ref, seed);
+  }
+  return [...best.values()].sort((a, b) =>
+    a.score !== b.score ? b.score - a.score : a.ref < b.ref ? -1 : 1,
+  );
 }

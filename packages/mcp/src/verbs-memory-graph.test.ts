@@ -186,17 +186,34 @@ describe('memory_graph op contracts', () => {
     expect(JSON.stringify(res)).not.toContain('beta');
   });
 
-  it('context returns an assembled pack with deduplicated evidence and no foreign content', () => {
+  it('context returns an assembled pack citing each assertion once and no foreign content', () => {
     const res = verbs().memoryConnectedGraph({ op: 'context', refs: ['mem:d1'] });
     const context = res.context as {
-      items: { ref: string }[];
-      evidence: { ref: string; assertionIds: string[] }[];
+      items: { ref: string; state: string }[];
+      assertions: { id: string; supportedBy: string[]; status: string }[];
+      relations: string[];
       budgetTokens: number;
     };
-    expect(context.items[0]?.ref).toBe('mem:d1');
-    expect(context.evidence).toEqual([expect.objectContaining({ ref: alphaSupport.ref })]);
+    expect(context.items[0]).toMatchObject({ ref: 'mem:d1', state: 'current' });
+    const ids = context.assertions.map((a) => a.id);
+    expect(ids).toEqual(expect.arrayContaining([about.id, appliesTo.id]));
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(context.assertions.every((a) => a.supportedBy.includes(alphaSupport.ref))).toBe(true);
     expect(context.budgetTokens).toBe(2000);
     expect(JSON.stringify(res)).not.toContain('beta');
+  });
+
+  it('search seeds from the caller’s own graph by text and cites relations between seeds', () => {
+    const res = verbs().memoryConnectedGraph({ op: 'search', q: 'retry ledger settle' });
+    expect(res.seedScorer).toBe('graph-seed-v1:term-overlap');
+    const seeds = (res.seeds as { ref: string; channel: string }[]).map((s) => s.ref);
+    expect(seeds).toEqual(expect.arrayContaining(['topic:retry', 'sym:ledger#settle']));
+    expect(res.relations as { assertionId: string }[]).toEqual(
+      expect.arrayContaining([expect.objectContaining({ assertionId: appliesTo.id })]),
+    );
+    as(BETA);
+    const foreign = verbs().memoryConnectedGraph({ op: 'search', q: 'retry ledger settle' });
+    expect(foreign.seeds).toEqual([]);
   });
 
   it('beta sees none of alpha through any op, count, or diagnostic', () => {

@@ -40,6 +40,7 @@ import {
   EXACT_MATCH_BONUS,
   type EffectiveVerdicts,
   type FusionStrategy,
+  GRAPH_SEED_SCORER_VERSION,
   type GraphProjection,
   type IntelligenceEventJournal,
   MemoryApi,
@@ -80,6 +81,7 @@ import {
   effectiveVerdicts,
   expandFromSeeds,
   gatherRecall,
+  graphRelationsAmong,
   isFeedbackSignal,
   isMemoryRecordVersioned,
   isRecallEligible,
@@ -92,6 +94,7 @@ import {
   readSyncConfig,
   recallProjection,
   resolveServerIdentity,
+  selectGraphSeeds,
   soulTargetResolver,
   stageSyncableWrite,
 } from '@knowledge-crib/memory';
@@ -123,7 +126,9 @@ import {
   memoryGraphHistoryResult,
   memoryGraphPathResult,
   memoryGraphRequestError,
+  mergeGraphSeeds,
   recallSeeds,
+  timeBoundRecallSeeds,
 } from './memory-graph.js';
 import type { ReaderFreshness } from './reader-freshness.js';
 import {
@@ -3044,13 +3049,14 @@ export class Verbs {
       default:
         return this.applyIfHash(args, {
           ...base,
-          ...this.memoryGraphExpand(graph, op, args, page),
+          ...this.memoryGraphExpand(api, graph, op, args, page),
         });
     }
   }
 
   /** `search` / `neighbors` / `context`: authorized seeds, bounded expansion, budget-fitted output. */
   private memoryGraphExpand(
+    api: MemoryApi,
     graph: GraphProjection,
     op: MemoryGraphOp,
     args: { q?: string; refs?: string[]; hops?: number; predicates?: string[] },
@@ -3061,13 +3067,19 @@ export class Verbs {
     const recalled = useRecall
       ? this.memorySearch({ q: args.q ?? '', limit: 20, maxTokens: page.maxTokens })
       : undefined;
-    const seeds = useRecall ? recallSeeds(recalled) : explicit.seeds;
+    const seeds = useRecall
+      ? mergeGraphSeeds(
+          timeBoundRecallSeeds(graph, recallSeeds(recalled)),
+          selectGraphSeeds(graph, args.q ?? '', api.graphNodeTexts()),
+        )
+      : explicit.seeds;
     const expanded = expandFromSeeds(graph, seeds, {
       ...(args.hops !== undefined ? { hops: args.hops } : {}),
       ...(args.predicates !== undefined ? { predicates: args.predicates } : {}),
     });
     const shared = {
       seeds,
+      ...(useRecall ? { seedScorer: GRAPH_SEED_SCORER_VERSION } : {}),
       ...(explicit.unresolvedRefs.length > 0 ? { unresolvedRefs: explicit.unresolvedRefs } : {}),
       degraded:
         recalled !== undefined && recalled.memory === 'not configured'
@@ -3086,6 +3098,7 @@ export class Verbs {
     return {
       ...shared,
       expansions: fitted.items,
+      relations: graphRelationsAmong(graph, new Set(fitted.items.map((e) => e.ref))),
       report: {
         ...expanded.report,
         truncated: expanded.report.truncated || fitted.budgetExhausted,

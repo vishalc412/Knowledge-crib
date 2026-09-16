@@ -80,7 +80,7 @@ hops, 200 visited nodes, and 500 examined edges; the default token budget is 2,0
 | `neighbors` | `refs` | the bounded neighbourhood of the refs |
 | `path` | exactly two `refs` `[from, to]` | the shortest authorized assertion chain, or `null` |
 | `history` | `refs` | the supported `timeline` touching the refs (`state: current|historical`), plus conflicts and aliases |
-| `context` | `q` or `refs` | a `context` pack: ranked `items`, deduplicated `evidence`, whole `conflicts`, labelled `historical` |
+| `context` | `q` or `refs` | a `context` pack: ranked `items` (`state: current|historical`, `path` as assertion ids), every cited assertion once in `assertions` (`supportedBy`, `validAt`, `knownAt`, `status`, `producer`), `relations` among items, whole `conflicts`, and a deduplicated `producers` table |
 
 ```jsonc
 // req: { "op?":"search|neighbors|path|history|context", "q?":"…",
@@ -95,6 +95,16 @@ hops, 200 visited nodes, and 500 examined edges; the default token budget is 2,0
 //        "freshness?":{…}, "unavailable":false }
 ```
 
+- **Seeds.** Without `refs`, `search`/`context` union plain recall hits with graph-side seeds
+  (`seedScorer: "graph-seed-v1:term-overlap"`): term overlap between `q` and the caller's own
+  graph nodes (record claims, intake requests, entity names, refs), inside the read point. On a
+  historical read (`at`/`knownBy`) a recall hit survives only if it is a node of that view.
+- **History.** A superseded record, or finished (completed/cancelled) work, still supports its
+  assertions as history — never as current. `knownBy` applies only supersessions and completions
+  recorded by then; retraction and quarantine apply at every read point. An edge is not known
+  before both of its record endpoints were recorded.
+- **Conflicts** are functional predicates (`about`, `part-of`) with distinct objects, and explicit
+  `contradicts` pairs. Several objects of a multi-valued predicate are several facts.
 - **Explicit refs** that are not nodes of the caller's authorized view come back in
   `unresolvedRefs` and never become results — a foreign id cannot be laundered into an answer.
 - **`generation`** digests the exact authorized view (viewer, time window, current assertions,

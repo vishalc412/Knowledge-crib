@@ -126,4 +126,70 @@ changes once any such number exists.
 
 ## RESULTS
 
-(none yet — the first graph evaluation has not run)
+### Run 1 — 2026-09-16, harness v1, corpus v1 (`scripts/graph-eval.mjs`)
+
+**Verdict: the connected-retrieval gate FAILS. NO-GO for the graph launch requirement.**
+
+| Gate | Measured | Threshold | Result |
+| --- | --- | --- | --- |
+| Connected retrieval (expected evidence-path recall, 117 multi-hop questions) | **80.14%** (81 fully recalled) | ≥ 90% | **FAIL** |
+| Isolation — foreign assertions in any answer | **0** unauthorized paths; isolation family 15/15 at 100% | 0 | PASS |
+| Emptiness probes stay empty | **3 violations** (all `q-decoy-window-emptiness-*`) | 0 | **FAIL** |
+| Forbidden ids as current items | **3** (the same probe) | 0 | **FAIL** |
+| Temporal correctness / conflict preservation (per-family recall) | historical 79.4%, rename 64.8%, conflict 88.9% | 100% | **FAIL** |
+| Semantic preservation (existing 8 gates) | not re-run by this harness | unchanged | not measured here |
+| Update latency | not measured by this harness | ≤ 2s p95 | not measured here |
+
+Per variant (multi-hop): exact 81.45%, paraphrase 77.52%, context 81.45%. Per family: current
+93.98%, decoy 100%, isolation 100%, conflict 88.89%, historical 79.44%, rename 64.81%, work 45.83%,
+cross-repo 50.00%. Missing expected hops by predicate: about 35, affects 15, part-of 6,
+contradicts 3, supersedes 3, supported-by 1, derived-from 1.
+
+What the harness measures: every fixture is written through real stores; the 35 backfill-scope
+edges come from `deriveAssertionsFromRecords`; the 9 capture-scope edges are admitted ONLY through
+leased extraction jobs (`submitExtractedGraphProposal`); each corpus record is admitted by an
+`activate` lifecycle decision at its `recordedAt` (a memory-3 record is otherwise never
+recall-eligible). Each question is asked through `memory_graph({op:'context'})` as its own
+principal, from its own repository placement, with `knownBy = knownAt`, at the default two hops
+and 2,000-token budget. An unplaced question (`scope: {}`) is asked from every repository and the
+answers are unioned. A hop counts as recalled when an assertion with that exact
+(predicate, subject, object) appears anywhere in the returned pack.
+
+**Disclosure — this run is NOT a clean held-out measurement.** The first executions of the harness
+exposed product defects, and they were repaired while looking at this corpus's failures:
+
+1. memory-3 records could never seed `search`/`context` (recall holds them at `candidate` trust),
+   so every answer was empty — fixed by graph-side seed selection over the caller's authorized
+   graph nodes (`graph-seed-v1:term-overlap`);
+2. an edge between two directly-retrieved items was never cited — fixed with `relations`;
+3. supersession deleted graph history instead of keeping it historical, and a `knownBy` read
+   applied supersessions recorded after it — fixed (retraction and quarantine still apply at every
+   read point);
+4. an assertion could be "known" before its endpoint record was recorded — fixed;
+5. intakes were not resolvable work references, and finished work was not history — fixed;
+6. multi-valued predicates (two `supported-by` anchors) were reported as conflicts — fixed:
+   conflicts are functional predicates (`about`, `part-of`) and explicit `contradicts` pairs;
+7. the context pack repeated assertion bodies in every path and fit ~3 items in 2,000 tokens —
+   fixed by listing each assertion and producer once.
+
+Each is a correctness or efficiency defect with its own regression test, not a parameter sweep —
+but they were found on this question set, so by this file's test-set-selection law **no GO claim
+may cite this number**. A GO claim needs an independently authored held-out split (≥100 multi-hop
+questions) measured once with the frozen configuration. No threshold, seed limit, hop count, or
+budget was changed.
+
+Known residual causes, stated rather than tuned away:
+
+- **Lexical seeds.** `graph-seed-v1` is term overlap with plural folding and no stemming or
+  semantic channel: "settlement" does not meet "settles", "repositories" meets nothing. Rename
+  (64.8%) and cross-repo (50%) questions lose their seeds this way.
+- **Budget.** At 2,000 tokens and ~70-character content-addressed ids the pack holds roughly
+  8–10 items; directly-retrieved seeds outrank connected nodes, so a two-hop target behind five
+  seeds is often trimmed (`affects` misses).
+- **Corpus construction (v1).** The corpus entity table is authored as alpha, so beta's expected
+  `part-of … → entity:graph-corpus-checkout/OrderService` hop is alpha-owned; isolation correctly
+  withholds it and those three questions cannot exceed 50%. A corrected corpus is a version bump.
+- **Emptiness probe.** `q-decoy-window-emptiness-*` asks alpha's global memory about the retry
+  window; alpha's own global decoy ("HTTP PUT makes retries idempotent") matches "retry" and is
+  returned. It is authorized content, not a leak, but the frozen probe requires emptiness and the
+  forbidden list names it, so it fails as specified.
