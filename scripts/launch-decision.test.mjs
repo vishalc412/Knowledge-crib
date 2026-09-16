@@ -297,6 +297,8 @@ writeFileSync(join(globalDir, 'fuzz-deep.json'), `${JSON.stringify(fuzzReceipt()
 const GRAPH_REPORT = {
   harnessVersion: GRAPH.harnessVersion,
   corpusVersion: GRAPH.minimumCorpusVersion + 1,
+  seedScorer: 'graph-seed-v2:stemmed-term-overlap+semantic-rrf60',
+  embedderId: 'multilingual-e5-large-1024-sym',
   questions: 140,
   multiHopQuestions: GRAPH.minimumMultiHopQuestions + 20,
   evidencePathRecall: 0.93,
@@ -1326,6 +1328,26 @@ refuses(
   },
   /^global-receipt-artifact-digest:connected-memory-graph:graph\/graph-eval-report\.json$/,
 );
+{
+  // A report measured without the launch semantic model is a different configuration.
+  const lexicalOnly = { ...GRAPH_REPORT, embedderId: null };
+  const bytes = `${JSON.stringify(lexicalOnly, null, 2)}\n`;
+  writeFileSync(join(globalDir, 'graph', 'lexical-only-report.json'), bytes);
+  const { results: _r, ...measured } = lexicalOnly;
+  const result = decide(completeEvidence(), {
+    globalReceipts: [
+      fuzzReceipt(),
+      graphReceipt(
+        { artifacts: [{ path: 'graph/lexical-only-report.json', sha256: digestOf(bytes) }] },
+        { reportPath: 'graph/lexical-only-report.json', measured },
+      ),
+    ],
+  });
+  assert.ok(
+    result.blockers.includes('graph-receipt-semantic-model-missing:none'),
+    JSON.stringify(result.blockers),
+  );
+}
 refuses(
   'a graph receipt whose report path is not one of its artifacts',
   (_e, options) => {

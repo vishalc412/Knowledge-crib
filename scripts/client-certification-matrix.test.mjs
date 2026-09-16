@@ -595,6 +595,8 @@ try {
     const report = {
       harnessVersion: requirements.harnessVersion,
       corpusVersion: 2,
+      seedScorer: 'graph-seed-v2:stemmed-term-overlap+semantic-rrf60',
+      embedderId: 'multilingual-e5-large-1024-sym',
       questions: 130,
       multiHopQuestions: 120,
       evidencePathRecall: 0.92,

@@ -398,6 +398,8 @@ export function judgeGlobalReceipts(receipts, { policy, policySha256, candidate,
 const GRAPH_MEASURED_FIELDS = [
   'harnessVersion',
   'corpusVersion',
+  'seedScorer',
+  'embedderId',
   'questions',
   'multiHopQuestions',
   'evidencePathRecall',
@@ -460,6 +462,16 @@ export function judgeGraphWorkload(receipt, policy, evidenceRoot) {
     if (measured[field] !== report[field]) {
       blockers.push(`graph-receipt-report-mismatch:${field}`);
     }
+  }
+  // The semantic channel must have run on the launch model the policy names — a measurement taken
+  // without it (or on another model) is a different configuration from the one that ships.
+  const embedderId = report.embedderId;
+  const supported = policy.semanticModel?.supportedScorers ?? [];
+  if (
+    typeof embedderId !== 'string' ||
+    !supported.some((scorer) => scorer.split(':').includes(embedderId))
+  ) {
+    blockers.push(`graph-receipt-semantic-model-missing:${embedderId ?? 'none'}`);
   }
   if (report.harnessVersion !== requirements.harnessVersion) {
     blockers.push(`graph-receipt-harness-mismatch:${report.harnessVersion ?? 'unknown'}`);

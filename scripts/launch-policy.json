@@ -108,7 +108,7 @@
   },
   "graph": {
     "workload": "connected-memory-graph-corpus-v1",
-    "harnessVersion": 1,
+    "harnessVersion": 2,
     "minimumCorpusVersion": 1,
     "minimumMultiHopQuestions": 100,
     "evidencePathRecallMin": 0.9,
@@ -119,7 +119,7 @@
     "requireHeldOut": true,
     "requireRetrievalEnabled": true,
     "requiredSuites": ["isolation", "temporal", "alias", "contradiction", "purge", "replay", "rebuild"],
-    "note": "A corpus the retrieval configuration was repaired or tuned against is not held out (docs/bench/graph-gates.md, test-set-selection law): `heldOut` must be true, and a receipt measured on corpus version 1 — which run 1 disclosed as not held out — must say so. When optional model extraction was exercised the receipt must name the model revision."
+    "note": "A corpus the retrieval configuration was repaired or tuned against is not held out (docs/bench/graph-gates.md, test-set-selection law): `heldOut` must be true, and a receipt measured on corpus version 1 — which run 1 disclosed as not held out — must say so. When optional model extraction was exercised the receipt must name the model revision. The report must name the installed semantic model its seed channel ran on (`embedderId`, one of semanticModel.supportedScorers), so a measurement without the launch model cannot certify."
   },
   "freshness": {
     "workload": "synthetic-ts-call-chain-transitions-v1",

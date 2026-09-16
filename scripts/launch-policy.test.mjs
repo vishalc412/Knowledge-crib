@@ -38,7 +38,7 @@ import {
 } from './launch-policy.mjs';
 
 const FROZEN_POLICY_SHA256 =
-  'sha256:aa6bbed0e486724966e100c2d0b9f27329827e3d52a779bb9dd4664df99f059a';
+  'sha256:79e3fb24f71cc431b61eeb0c5f10aa96f689162e4e029c8d76c8557ce27f81f6';
 
 /**
  * The version-4 policy hash, kept here as a HEADSTONE rather than deleted.
@@ -233,7 +233,7 @@ assert.match(policy.scope.graph, /report artifact/);
 // The graph thresholds are the plan's frozen floors, stated in the policy and nowhere else.
 assert.deepEqual(policyGraphRequirements(policy), {
   workload: 'connected-memory-graph-corpus-v1',
-  harnessVersion: 1,
+  harnessVersion: 2,
   minimumCorpusVersion: 1,
   minimumMultiHopQuestions: 100,
   evidencePathRecallMin: 0.9,
