@@ -68,13 +68,14 @@ and not the ranking.
 boundary is **seven clients on three native platforms — twenty-one cells, no waivers**. A cell is
 Claude Code, GitHub Copilot, Cursor, VS Code, Codex, Windsurf or Gemini on macOS, native Linux or
 native Windows, and it is met only by a vendor-client runtime receipt for the exact candidate
-package: record → interruption/restart → authorized resume, driven through the real client binary.
-Version 4 keeps that boundary unchanged and names the evidence contract it is certified under —
-client certification receipts at format version 3 (acceptance receipts at format version 2), with
-the correlated protocol and process evidence those schemas require. Receipts from older format
-versions stay readable as history but cannot certify a cell.
+package: record → connect and supersede in the memory graph → interruption/restart → authorized
+resume and connected-history retrieval, driven through the real client binary. Version 5 keeps that
+boundary and certifies it under client certification receipts at format version 4 — nine legs, the
+ninth (`connectedMemory`) proving `graph_propose` and `memory_graph` on the wire — with acceptance
+receipts at format version 2 and the correlated protocol and process evidence those schemas
+require. Receipts from older format versions stay readable as history but cannot certify a cell.
 
-There is **no preview tier** under version 4. Version 2 had narrowed the promise to Claude Code on
+There is **no preview tier** under version 5. Version 2 had narrowed the promise to Claude Code on
 macOS and named the other twenty cells preview; that narrowing and its `uncertified` escape hatch
 are gone, and version 3's removal of them stands. A cell that cannot be executed leaves the release
 **NO-GO** rather than becoming preview.
@@ -105,9 +106,9 @@ committed grid below stays the promise, not the record.
 <!-- client-certification:generated:start -->
 ## Client certification evidence
 
-Generated under launch policy version 5 (`sha256:79e3fb24f71cc431b61eeb0c5f10aa96f689162e4e029c8d76c8557ce27f81f6`). Every state below is judged against that exact frozen contract; a receipt naming any other hash is evidence about the run and never a certified cell.
+Generated under launch policy version 5 (`sha256:4fd72a8ca07db4115f8a40f3589eee22e2994ebe720047932f44652fface2a00`). Every state below is judged against that exact frozen contract; a receipt naming any other hash is evidence about the run and never a certified cell.
 
-Generated from validated receipts. A client is runtime verified only when a vendor-client receipt proves record → interruption/restart → authorized resume on the listed platform. Four labels say a row is evidence and not a runtime pass: "protocol evidence only (test client)" when the handshake came from a test client rather than the client under test, "runtime evidence only (not a native runtime)" when the run happened somewhere other than the native platform — a WSL run satisfies every leg and still cannot certify native Linux or Windows — "runtime evidence only (legacy receipt schema)" when the receipt predates the certifying schema and is kept as readable history, and "runtime evidence only (collected under a different policy)" when the receipt was collected under a policy hash other than the one named above. No label can promote a row.
+Generated from validated receipts. A client is runtime verified only when a vendor-client receipt proves record → connected memory → interruption/restart → authorized resume on the listed platform. Four labels say a row is evidence and not a runtime pass: "protocol evidence only (test client)" when the handshake came from a test client rather than the client under test, "runtime evidence only (not a native runtime)" when the run happened somewhere other than the native platform — a WSL run satisfies every leg and still cannot certify native Linux or Windows — "runtime evidence only (legacy receipt schema)" when the receipt predates the certifying schema and is kept as readable history, and "runtime evidence only (collected under a different policy)" when the receipt was collected under a policy hash other than the one named above. No label can promote a row.
 
 | Client | Highest verified evidence | Strongest certified cell |
 |---|---|---|
@@ -152,7 +153,7 @@ One row per advertised cell. A cell is certified only by a vendor-client receipt
 <!-- connected-memory-graph:generated:start -->
 ## Connected memory graph
 
-**Not certified.** No validated `connected-memory-graph` receipt was supplied. Judged under launch policy version 5 (`sha256:79e3fb24f71cc431b61eeb0c5f10aa96f689162e4e029c8d76c8557ce27f81f6`).
+**Not certified.** No validated `connected-memory-graph` receipt was supplied. Judged under launch policy version 5 (`sha256:4fd72a8ca07db4115f8a40f3589eee22e2994ebe720047932f44652fface2a00`).
 <!-- connected-memory-graph:generated:end -->
 
 Each cell's receipt is produced by **one harness**, `scripts/client-certify.mjs`:

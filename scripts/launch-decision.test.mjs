@@ -146,6 +146,7 @@ const allPassLegs = (overrides = {}) => ({
     status: 'pass',
     protocol: [protocolRef('foreign', 1), protocolRef('owner', 9)],
   },
+  connectedMemory: { status: 'pass', protocol: [protocolRef('owner', 5), protocolRef('owner', 8)] },
   ...overrides,
 });
 
@@ -195,7 +196,7 @@ function writeCertifyingReceipt(directory, cell, overrides = {}) {
   writeFileSync(join(directory, 'recordings', `${id}-${os}-foreign-recording.json`), foreignBytes);
   const receipt = {
     format: 'knowledge-crib-client-certification',
-    formatVersion: 3,
+    formatVersion: 4,
     generatedAt: CAPTURED_AT,
     policySha256: POLICY_SHA,
     product: { commit: COMMIT, packageSha256: PACKAGE },

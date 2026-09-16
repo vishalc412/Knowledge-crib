@@ -57,6 +57,7 @@ const allPassLegs = (overrides = {}) => ({
     status: 'pass',
     protocol: [protocolRef('foreign', 1), protocolRef('owner', 9)],
   },
+  connectedMemory: { status: 'pass', protocol: [protocolRef('owner', 5), protocolRef('owner', 8)] },
   ...overrides,
 });
 
@@ -98,7 +99,7 @@ const v3Receipt = (name = 'codex', overrides = {}) => {
   const { logBytes, ownerBytes, foreignBytes } = fixtureArtifacts(name);
   return {
     format: 'knowledge-crib-client-certification',
-    formatVersion: 3,
+    formatVersion: 4,
     generatedAt: CAPTURED_AT,
     policySha256: POLICY_SHA,
     product: { commit: COMMIT, packageSha256: SHA_A },

@@ -4,7 +4,7 @@
   "frozenAt": "2026-09-16",
   "note": "Frozen BEFORE candidate testing. The launch decision recomputes eligibility from this file plus validated measurements; nothing in an evidence manifest may select its own requirements. Changing any value here is a product decision that invalidates every receipt collected under the previous hash.",
   "scope": {
-    "graph": "Version 5 adds the connected memory graph to the developer launch as a hard requirement, certified by one candidate-wide `connected-memory-graph` receipt judged against the `graph` block below: zero foreign disclosure, the deterministic temporal/alias/contradiction/purge/replay/rebuild suites passing, at least 90% expected evidence-path recall on a HELD-OUT suite of at least 100 multi-hop questions with zero unauthorized paths, emptiness probes empty, and graph retrieval enabled in the candidate itself. The receipt's numbers are re-read from its digest-verified report artifact, so a receipt that restates better numbers than its report is refused. Everything version 4 froze is unchanged.",
+    "graph": "Version 5 adds the connected memory graph to the developer launch as a hard requirement, certified by one candidate-wide `connected-memory-graph` receipt judged against the `graph` block below: zero foreign disclosure, the deterministic temporal/alias/contradiction/purge/replay/rebuild suites passing, at least 90% expected evidence-path recall on a HELD-OUT suite of at least 100 multi-hop questions with zero unauthorized paths, emptiness probes empty, and graph retrieval enabled in the candidate itself. Client certification receipts move to format version 4, whose ninth leg (`connectedMemory`) proves the vendor client records a graph connection and its supersession through `graph_propose` and the restarted client retrieves that history through `memory_graph`; format 3 stays readable and can no longer certify a cell. The receipt's numbers are re-read from its digest-verified report artifact, so a receipt that restates better numbers than its report is refused. Everything version 4 froze is unchanged.",
     "decision": "Version 4 keeps the full boundary version 3 froze — seven vendor clients on three native operating systems, twenty-one cells, no waivers — and names the evidence contract that boundary is certified under: acceptance receipts must be `knowledge-crib-acceptance-receipt` format version 2 and client certification receipts `knowledge-crib-client-certification` format version 3, each carrying the correlated protocol and process evidence those schemas require. Receipts from older format versions stay readable as history — a historical failure is never unreadable — but only the required format versions may certify a cell, so the boundary a receipt may certify is stated by this policy and not left to whatever the validators happen to accept. Every one of the twenty-one cells is a hard requirement, and a cell that cannot be executed leaves the release NO-GO rather than becoming preview.",
     "certified": "All seven clients (Claude Code, GitHub Copilot, Cursor, VS Code, Codex, Windsurf, Gemini) on all three native platforms (darwin, linux, win32), each with a vendor runtime receipt for the exact candidate package.",
     "preview": "Nothing. There is no preview tier for clients or platforms under version 4. Cross-device sync remains the only preview-scoped feature, and it is a feature, not a client cell.",
@@ -84,8 +84,8 @@
     },
     "clientCertification": {
       "format": "knowledge-crib-client-certification",
-      "requiredFormatVersion": 3,
-      "readableFormatVersions": [1, 2, 3]
+      "requiredFormatVersion": 4,
+      "readableFormatVersions": [1, 2, 3, 4]
     }
   },
   "receiptTypes": [

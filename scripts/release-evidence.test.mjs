@@ -199,7 +199,7 @@ const certifyingReceipt = (cell) => {
   });
   return {
     format: 'knowledge-crib-client-certification',
-    formatVersion: 3,
+    formatVersion: 4,
     generatedAt: '2026-09-05T00:00:00.000Z',
     policySha256: `sha256:${'2'.repeat(64)}`,
     product: { commit: 'a'.repeat(40), packageSha256: `sha256:${'3'.repeat(64)}` },
@@ -248,6 +248,10 @@ const certifyingReceipt = (cell) => {
       foreignPrincipalExclusion: {
         status: 'pass',
         protocol: [protocolRef('foreign', 1), protocolRef('owner', 9)],
+      },
+      connectedMemory: {
+        status: 'pass',
+        protocol: [protocolRef('owner', 5), protocolRef('owner', 8)],
       },
     },
   };

@@ -115,8 +115,8 @@ export const POLICY_RECEIPT_SCHEMAS = {
   },
   clientCertification: {
     format: 'knowledge-crib-client-certification',
-    requiredFormatVersion: 3,
-    readableFormatVersions: [1, 2, 3],
+    requiredFormatVersion: 4,
+    readableFormatVersions: [1, 2, 3, 4],
   },
 };
 

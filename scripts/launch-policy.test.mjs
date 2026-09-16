@@ -38,7 +38,7 @@ import {
 } from './launch-policy.mjs';
 
 const FROZEN_POLICY_SHA256 =
-  'sha256:79e3fb24f71cc431b61eeb0c5f10aa96f689162e4e029c8d76c8557ce27f81f6';
+  'sha256:4fd72a8ca07db4115f8a40f3589eee22e2994ebe720047932f44652fface2a00';
 
 /**
  * The version-4 policy hash, kept here as a HEADSTONE rather than deleted.
@@ -146,7 +146,7 @@ assert.deepEqual(policy.receiptSchemas.clientCertification, {
   requiredFormatVersion: CERTIFICATION_EVIDENCE_FORMAT_VERSION,
   readableFormatVersions: SUPPORTED_CERTIFICATION_FORMAT_VERSIONS,
 });
-assert.equal(CERTIFICATION_EVIDENCE_FORMAT_VERSION, 3);
+assert.equal(CERTIFICATION_EVIDENCE_FORMAT_VERSION, 4);
 // The same boundary from the validators' side: the required version is the newest readable one and
 // every older schema stays readable, so a historical failure is never unreadable — but only the
 // required version can certify, and the policy says so in the same words the decision uses.
@@ -157,6 +157,9 @@ assert.equal(
 );
 assert.match(policy.scope.decision, /format version 2/i);
 assert.match(policy.scope.decision, /format version 3/i);
+// Version 5 moves client certification to format 4 (the connectedMemory leg).
+assert.match(policy.scope.graph, /format version 4/i);
+assert.match(policy.scope.graph, /connectedMemory/);
 assert.match(policy.scope.decision, /readable/i);
 // Exactly 21 cells: seven clients, three native platforms, and no waiver anywhere.
 assert.deepEqual(policy.clients, POLICY_CLIENTS);

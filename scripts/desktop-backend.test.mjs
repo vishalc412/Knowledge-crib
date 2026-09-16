@@ -44,8 +44,10 @@ import {
   DESKTOP_TIMEOUTS,
   SCENARIO_STEPS,
   certifyDesktopCell,
+  connectInstruction,
   desktopCells,
   desktopScenario,
+  historyInstruction,
 } from './client-desktop-certify.mjs';
 import {
   AUTOMATION_CONTRACT,
@@ -96,6 +98,24 @@ async function checkAsync(label, fn) {
     report(label, false, error.message);
   }
 }
+
+// ─── 0. connected memory in the scenario (receipt format 4) ────────────────────────────────────
+check(
+  'the owner scenario records and later retrieves connected memory; the shared prompt does not',
+  () => {
+    const tag = 'certify-0123456789abcdef';
+    const connect = connectInstruction(tag);
+    assert.match(connect, /op="graph_propose"/);
+    assert.ok(connect.includes(`topic:${tag}-v2`) && connect.includes('predicate="supersedes"'));
+    const history = historyInstruction(tag);
+    assert.match(history, /memory_graph tool with op="history"/);
+    assert.ok(history.includes(`topic:${tag}-v1`));
+    // The foreign plant reuses scenarioPrompt, so graph instructions must never live in it.
+    for (const scenario of DESKTOP_SCENARIOS) {
+      assert.ok(!scenario.scenarioPrompt.includes('graph_propose'));
+    }
+  },
+);
 
 // ─── 1. the automation contract ──────────────────────────────────────────────────────────────────
 
@@ -604,7 +624,7 @@ await checkAsync(
 // receipt that still validates, carries both principals' digests, and lands under the same cell
 // name the headless harness uses, so the matrix consumes GUI evidence with no special casing.
 await checkAsync(
-  'the engine emits a blocked v3 receipt that validates and feeds the launch matrix',
+  'the engine emits a blocked v4 receipt that validates and feeds the launch matrix',
   async () => {
     const workspace = mkdtempSync(join(tmpdir(), 'crib-desktop-blocked-'));
     const fixtureRepo = join(workspace, 'fixture');
@@ -635,7 +655,7 @@ await checkAsync(
 
       // the receipt contract
       assert.equal(receipt.format, 'knowledge-crib-client-certification');
-      assert.equal(receipt.formatVersion, 3);
+      assert.equal(receipt.formatVersion, 4);
       assert.equal(receipt.client.id, 'copilot');
       assert.equal(receipt.client.driverVersion, DESKTOP_DRIVER_VERSION);
       assert.equal(receipt.client.certificationMode, 'copilot');
@@ -789,7 +809,7 @@ await checkAsync(
       const { run, outDir } = scenarioCellFactory(workspace, stubHelper);
       const { receipt, legs, behaviours } = await run();
 
-      assert.equal(receipt.formatVersion, 3);
+      assert.equal(receipt.formatVersion, 4);
       assert.equal(behaviours.vendorBinaryResolved.status, 'pass');
       assert.equal(behaviours.vendorAuthenticated.status, 'blocked');
       assert.match(
