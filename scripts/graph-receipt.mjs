@@ -29,8 +29,12 @@ import { buildReceipt } from './write-receipt.mjs';
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
-/** Independently authored held-out corpus versions. Empty until one exists. */
-export const HELD_OUT_CORPUS_VERSIONS = [];
+/**
+ * Independently authored held-out corpus versions. v2 (packages/memory/src/graph-corpus/
+ * heldout-v2.ts, commit 13cc9244) was written by an author isolated from run-1 results, retrieval
+ * code and the harness, and committed after the retrieval configuration froze (18fc98c3).
+ */
+export const HELD_OUT_CORPUS_VERSIONS = [2];
 
 /** Which suites pin which graph law — the files a suite's receipt entry actually ran. */
 export const GRAPH_SUITE_FILES = {
@@ -96,12 +100,18 @@ async function main() {
   mkdirSync(join(outDir, 'graph'), { recursive: true });
   const evalRun = spawnSync(
     process.execPath,
-    [join(REPO, 'scripts/graph-eval.mjs'), '--out', join(outDir, reportRel)],
+    [
+      join(REPO, 'scripts/graph-eval.mjs'),
+      '--corpus',
+      'heldout-v2',
+      '--out',
+      join(outDir, reportRel),
+    ],
     { cwd: REPO, stdio: 'inherit' },
   );
   const evalExit = typeof evalRun.status === 'number' ? evalRun.status : 1;
   commandResults.push({
-    command: `node scripts/graph-eval.mjs --out ${reportRel}`,
+    command: `node scripts/graph-eval.mjs --corpus heldout-v2 --out ${reportRel}`,
     exitCode: evalExit,
   });
 

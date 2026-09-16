@@ -193,3 +193,38 @@ Known residual causes, stated rather than tuned away:
   window; alpha's own global decoy ("HTTP PUT makes retries idempotent") matches "retry" and is
   returned. It is authorized content, not a leak, but the frozen probe requires emptiness and the
   forbidden list names it, so it fails as specified.
+
+### Run 2 — 2026-09-17, harness v2, HELD-OUT corpus v2 (`scripts/graph-eval.mjs --corpus heldout-v2`)
+
+**Verdict: the connected-retrieval gate FAILS on held-out data. NO-GO for the graph launch requirement.**
+
+Held-out discipline, in commit order: the retrieval configuration froze in `18fc98c3`
+(graph-seed-v2 — stemmed term overlap, cosine similarity on the installed
+`multilingual-e5-large-1024-sym` model, and recall hits fused by reciprocal rank, k = 60, five
+seeds, two hops, 2,000 tokens). The held-out questions landed in `13cc9244`, written by an author
+who did not see run 1, the retrieval code, or the harness. This run is the ONLY measurement taken
+on them. Nothing below was tuned against them, and nothing may be: a configuration change informed
+by these failures needs a new independently authored split (v3) before a GO claim.
+
+| Gate | Measured | Threshold | Result |
+| --- | --- | --- | --- |
+| Connected retrieval (expected evidence-path recall, 116 multi-hop questions) | **86.94%** (88 fully recalled) | ≥ 90% | **FAIL** |
+| Isolation — foreign assertions in any answer | **0** unauthorized paths; isolation family 13/13 at 100% | 0 | PASS |
+| Emptiness probes stay empty | **3 violations** | 0 | **FAIL** |
+| Forbidden ids as current items | **8** | 0 | **FAIL** |
+| Held out | yes (corpus v2) | required | PASS |
+
+Per variant (multi-hop): exact 88.44%, paraphrase 87.75%, context 83.89%. Per family: historical
+94.79%, current 94.36%, decoy 92.59%, rename 85.00%, cross-repo 82.50%, conflict 75.83%, work 60.71%,
+isolation 100%. Missing expected hops by predicate: about 22, affects 10, supersedes 4,
+supported-by 4, applies-to 4, contradicts 3, part-of 2.
+
+Every one of the eleven violations is the same shape: alpha's own global decoy claim ("HTTP PUT
+makes retries idempotent") surfaces as a current item on a decoy or global probe
+(`h2-cur-pnpm-global`, `h2-xr-idem-and-tooling`, `h2-decoy-*`). It is authorized content, never a
+foreign disclosure, but the pre-registered probes forbid confusable global content, and they fail
+as specified.
+
+Performance at 100,000 assertions over 5,000 records (Apple M4 Max, `scripts/graph-bench.mjs`,
+same configuration): warm bounded read p95 **78 ms** (≤ 500 ms, PASS), context assembly p95
+**420 ms** (≤ 1 s, PASS), single-assertion update visible p95 **1.26 s** (≤ 2 s, PASS).
