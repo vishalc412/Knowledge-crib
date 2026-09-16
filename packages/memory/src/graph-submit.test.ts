@@ -533,6 +533,22 @@ describe('graph submission — fail-closed against corrupted and forged input', 
   });
 });
 
+describe('graph submission — derived-reader trigger', () => {
+  it('notifies a graph reader only after a durable graph mutation, never for an idempotent replay', () => {
+    const store = localStore();
+    const notices: number[] = [];
+    store.setStoreWriteListener((notice) => notices.push(notice.generation.gen));
+    const entry = assertion({});
+
+    store.submitGraphEntries([entry]);
+    expect(notices).toHaveLength(1);
+    expect(notices[0]).toBe(store.readStoreGeneration().gen);
+
+    store.submitGraphEntries([entry]);
+    expect(notices).toHaveLength(1);
+  });
+});
+
 describe('graph submission — a multi-shard fault keeps earlier shard writes visible', () => {
   it('bumps the generation per shard write, so the unfaulted shard is durable and readable', () => {
     const store = localStore();

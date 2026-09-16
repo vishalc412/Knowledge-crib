@@ -96,6 +96,7 @@ import {
   type MemoryEvidence,
   type MemoryFeedback,
   MemoryFtsIndex,
+  MemoryGraphIndex,
   type MemoryPolicy,
   type MemoryRecord,
   type MemoryRecordKind,
@@ -2052,7 +2053,39 @@ async function cmdServe(args: string[], ctx?: CmdCtx): Promise<number> {
   const persistedMode = getFreshnessMode(resolved.repoRoot);
   const watchRequested = shouldServeWatch(args, persistedMode);
   if (watchRequested) {
+    let graphPublication = 0;
     coordinator = new RefreshCoordinator(rt.soul, resolved.repoRoot, {
+      ...(memory
+        ? {
+            graphSourcePosition: () => memoryGraphSourcePosition(memory),
+            buildGraph: ({ generation, capture }) => {
+              const graph = new MemoryGraphIndex(':memory:');
+              try {
+                graph.replace(
+                  createMemoryApi(
+                    rt.soul,
+                    resolved.repoRoot,
+                    resolved.cribDir,
+                    memory,
+                  ).graphProjection(),
+                  {
+                    sourcePosition: capture.graphSourcePosition ?? 'unavailable',
+                    codeRevision: capture.head ?? 'unavailable',
+                    generation: ++graphPublication,
+                  },
+                );
+                return {
+                  generation,
+                  sourcePosition: capture.graphSourcePosition,
+                  close: () => graph.close(),
+                };
+              } catch (error) {
+                graph.close();
+                throw error;
+              }
+            },
+          }
+        : {}),
       onPublish: (bundle, reason) => {
         const r = bundle.refresh;
         const overlayNote =
@@ -2068,6 +2101,13 @@ async function cmdServe(args: string[], ctx?: CmdCtx): Promise<number> {
     // The first bundle is built BEFORE any watcher exists: a file event landing during startup
     // coalesces into the coordinator's pending slot like any other trigger.
     await coordinator.initialize();
+    // Every durable memory mutation advances `store.gen`; it enters the same serialized candidate
+    // path as a file event. Coalescing prevents an admission or purge batch exposing a partial graph.
+    if (memory) {
+      for (const store of [memory.team, memory.local, memory.global]) {
+        store.setStoreWriteListener(() => coordinator?.requestRefresh('memory'));
+      }
+    }
     const dirtyCount = coordinator.currentDirtyPaths.length;
     process.stderr.write(
       `watch mode active (${args.includes('--watch') ? '--watch' : `freshness mode ${persistedMode}`}) — ` +
@@ -2119,6 +2159,12 @@ async function cmdServe(args: string[], ctx?: CmdCtx): Promise<number> {
     });
     await watch.start();
   }
+  const detachMemoryRefreshListeners = (): void => {
+    if (!memory) return;
+    for (const store of [memory.team, memory.local, memory.global]) {
+      store.setStoreWriteListener(undefined);
+    }
+  };
   // stdout is the MCP transport; logs go to stderr only.
   const stats = rt.soul.getManifest().stats;
 
@@ -2150,6 +2196,7 @@ async function cmdServe(args: string[], ctx?: CmdCtx): Promise<number> {
     } finally {
       await daemon.close();
       watch?.stop();
+      detachMemoryRefreshListeners();
       coordinator?.close();
       index.close();
     }
@@ -2170,6 +2217,7 @@ async function cmdServe(args: string[], ctx?: CmdCtx): Promise<number> {
     );
   } finally {
     watch?.stop();
+    detachMemoryRefreshListeners();
     coordinator?.close();
     index.close();
   }
@@ -5426,6 +5474,18 @@ function createMemoryDeps(soul: SoulStore, repoRoot: string, cribDir: string) {
     // present ⇒ recall ranks with `semantic-only` (R2's selected strategy); absent ⇒ lexical-only
     ...(installedEmbedder ? { embedder: installedEmbedder } : {}),
   };
+}
+
+/** One durable source position across the three ledgers. `store.gen` advances for graph assertions,
+ * candidate admission, decisions, retractions and purge cleanup, so a graph reader cannot remain
+ * current simply because the code tree is unchanged. */
+function memoryGraphSourcePosition(deps: NonNullable<ReturnType<typeof createMemoryDeps>>): string {
+  return [deps.team, deps.local, deps.global]
+    .map((store) => {
+      const generation = store.readStoreGeneration();
+      return `${store.role}:${generation.gen}:${generation.nonce}`;
+    })
+    .join('|');
 }
 
 /** The memory layer `crib viz` folds into the graph — the same projection the MCP graph verbs use

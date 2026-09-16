@@ -88,6 +88,24 @@ function poisonableExtractors(): ReturnType<typeof defaultExtractors> {
   }));
 }
 
+interface TestGraphReader {
+  readonly generation: string;
+  readonly sourcePosition: string | null;
+  closed: boolean;
+  close(): void;
+}
+
+function graphReader(generation: string, sourcePosition: string | null): TestGraphReader {
+  return {
+    generation,
+    sourcePosition,
+    closed: false,
+    close() {
+      this.closed = true;
+    },
+  };
+}
+
 // ─── WP4.1: serialization + coalescing ────────────────────────────────────────
 
 describe('WP4.1 — one serialized slot, concurrent triggers coalesce', () => {
@@ -229,6 +247,91 @@ describe('WP4.6 — a failing cycle preserves the last-good bundle', () => {
       expect(symbolIn(coordinator, 'src/healed.ts', 'healed')).toBe(true);
     } finally {
       coordinator.close();
+    }
+  });
+});
+
+// ─── WP-G3: graph publication joins the same recoverable reader bundle ───────
+
+describe('WP-G3 — graph, FTS, and source graph publish as one recoverable generation', () => {
+  it('keeps the last-good bundle when the staged graph reader fails, then publishes all read models together', async () => {
+    const soul = await indexedSoul();
+    let graphSource = 'memory:1';
+    let fail = false;
+    const built: TestGraphReader[] = [];
+    const coordinator = new RefreshCoordinator(soul, repo, {
+      graphSourcePosition: () => graphSource,
+      buildGraph: ({ generation, capture }) => {
+        if (fail) throw new Error('graph projection failed');
+        const reader = graphReader(generation, capture.graphSourcePosition);
+        built.push(reader);
+        return reader;
+      },
+    });
+    await coordinator.initialize();
+    try {
+      const first = coordinator.currentGraph as TestGraphReader | undefined;
+      expect(first?.generation).toBe(coordinator.freshness().readerGeneration);
+      expect(first?.sourcePosition).toBe('memory:1');
+
+      graphSource = 'memory:2';
+      fail = true;
+      coordinator.requestRefresh('memory');
+      await coordinator.whenIdle();
+      const failed = coordinator.freshness();
+      expect(failed.refreshState).toBe('error');
+      expect(failed.lastRefreshError?.message).toContain('graph projection failed');
+      expect(coordinator.currentGraph).toBe(first);
+      expect(first?.closed).toBe(false);
+
+      fail = false;
+      coordinator.requestRefresh('memory');
+      await coordinator.whenIdle();
+      const second = coordinator.currentGraph as TestGraphReader | undefined;
+      expect(second).not.toBe(first);
+      expect(second?.generation).toBe(coordinator.freshness().readerGeneration);
+      expect(second?.sourcePosition).toBe('memory:2');
+      expect(first?.closed).toBe(true);
+      expect(coordinator.freshness().graphSourcePosition).toBe('memory:2');
+      expect(coordinator.freshness().graphGeneration).toBe(second?.generation);
+    } finally {
+      coordinator.close();
+      expect(built.every((reader) => reader.closed)).toBe(true);
+    }
+  });
+
+  it('pins the prior memory graph reader until the request drain adopts its matching FTS bundle', async () => {
+    const soul = await indexedSoul();
+    let graphSource = 'memory:1';
+    const readers: TestGraphReader[] = [];
+    const coordinator = new RefreshCoordinator(soul, repo, {
+      graphSourcePosition: () => graphSource,
+      buildGraph: ({ generation, capture }) => {
+        const reader = graphReader(generation, capture.graphSourcePosition);
+        readers.push(reader);
+        return reader;
+      },
+    });
+    await coordinator.initialize();
+    try {
+      const first = coordinator.currentGraph as TestGraphReader | undefined;
+      coordinator.retain();
+      graphSource = 'memory:2';
+      coordinator.requestRefresh('memory');
+      await coordinator.whenIdle();
+
+      expect(coordinator.currentGraph).toBe(first);
+      expect(first?.closed).toBe(false);
+      expect(coordinator.freshness().staleReasons).toContain(STALE_REASONS.ADOPTION_PENDING);
+
+      coordinator.release();
+      const second = coordinator.currentGraph as TestGraphReader | undefined;
+      expect(second).not.toBe(first);
+      expect(second?.generation).toBe(coordinator.freshness().readerGeneration);
+      expect(first?.closed).toBe(true);
+    } finally {
+      coordinator.close();
+      expect(readers.every((reader) => reader.closed)).toBe(true);
     }
   });
 });

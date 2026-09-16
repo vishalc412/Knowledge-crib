@@ -28,7 +28,7 @@ import { join, relative, sep } from 'node:path';
 import { langForPath } from '@knowledge-crib/pipeline';
 
 /** Why a refresh was requested. The coordinator treats every reason uniformly except `initial`. */
-export type RefreshReason = 'initial' | 'watcher' | 'fallback' | 'drift' | 'transition';
+export type RefreshReason = 'initial' | 'watcher' | 'fallback' | 'drift' | 'transition' | 'memory';
 
 /** Dirs whose churn must NOT schedule a refresh (build output, deps, the soul itself). */
 const IGNORE_PREFIXES = [

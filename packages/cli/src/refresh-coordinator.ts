@@ -58,6 +58,24 @@ export interface SourceCapture {
   dirtyPaths: string[];
   /** 'unavailable' when `changedFilesSince(indexedHead)` could not resolve (history rewritten). */
   anchor: 'available' | 'unavailable';
+  /** Durable memory-graph source position. A change requires a new reader generation even when
+   * the code source is unchanged. Null means memory graph publication is not configured. */
+  graphSourcePosition: string | null;
+}
+
+/** A disposable memory-graph read model staged with code graph and FTS before publication. */
+export interface DerivedGraphReader {
+  /** Must be the same identity as the containing reader bundle. */
+  readonly generation: string;
+  /** Durable memory-journal position represented by this graph projection. */
+  readonly sourcePosition: string | null;
+  close(): void;
+}
+
+export interface GraphBuildInput {
+  readonly generation: string;
+  readonly capture: SourceCapture;
+  readonly overlay: WorkingOverlay;
 }
 
 /** One published graph+FTS pair. Immutable from publication until retired. */
@@ -70,6 +88,8 @@ export interface ReaderBundle {
   readonly capture: SourceCapture;
   readonly overlay: WorkingOverlay;
   readonly index: SqliteIndexStore;
+  /** Authorized graph projection built from the candidate's memory source position. */
+  readonly graph: DerivedGraphReader | undefined;
   /** Refresh stats for logging; undefined when the cycle had nothing dirty to re-parse. */
   readonly refresh: OverlayRefreshResult | undefined;
   /** ISO timestamp of the moment this bundle became the published one. */
@@ -88,6 +108,10 @@ export interface RefreshCoordinatorOpts {
   /** TEST SEAM — invoked between candidate build and source re-check; write to the tree from here to
    *  reproduce "the source changed during refresh" deterministically (WP4.4 scenario). */
   onCandidateBuilt?: (bundle: ReaderBundle) => void;
+  /** Durable graph-source position. It participates in candidate equality and generation IDs. */
+  graphSourcePosition?: () => string | null;
+  /** Builds a memory graph before a candidate can publish. A throw rejects the whole candidate. */
+  buildGraph?: (input: GraphBuildInput) => Promise<DerivedGraphReader> | DerivedGraphReader;
 }
 
 /**
@@ -143,15 +167,20 @@ function captureEquals(a: SourceCapture, b: SourceCapture): boolean {
     a.indexedHead === b.indexedHead &&
     a.canonicalFp === b.canonicalFp &&
     a.dirtyFp === b.dirtyFp &&
-    a.anchor === b.anchor
+    a.anchor === b.anchor &&
+    a.graphSourcePosition === b.graphSourcePosition
   );
 }
 
 function bundleGeneration(capture: SourceCapture): string {
   return `reader:${blake3Hex(
-    [capture.canonicalFp ?? 'none', capture.head ?? 'none', capture.dirtyFp, capture.anchor].join(
-      '\\0',
-    ),
+    [
+      capture.canonicalFp ?? 'none',
+      capture.head ?? 'none',
+      capture.dirtyFp,
+      capture.anchor,
+      capture.graphSourcePosition ?? 'none',
+    ].join('\\0'),
   )}`;
 }
 
@@ -246,6 +275,11 @@ export class RefreshCoordinator {
     return this.current?.index;
   }
 
+  /** The serving bundle's authorized memory graph, when the caller configured one. */
+  get currentGraph(): DerivedGraphReader | undefined {
+    return this.current?.graph;
+  }
+
   /** The serving bundle's dirty scope — surfaced for the serve startup banner. */
   get currentDirtyPaths(): readonly string[] {
     return this.current?.capture.dirtyPaths ?? [];
@@ -317,9 +351,13 @@ export class RefreshCoordinator {
       currentHead: live.head,
       publishedGeneration: this.published?.generation ?? null,
       readerGeneration: served?.generation ?? null,
-      graphSourcePosition: served?.capture.canonicalFp ?? null,
+      graphSourcePosition:
+        served?.graph?.sourcePosition ??
+        served?.capture.graphSourcePosition ??
+        served?.capture.canonicalFp ??
+        null,
       codeRevision: served?.capture.head ?? null,
-      graphGeneration: served?.generation ?? null,
+      graphGeneration: served?.graph?.generation ?? served?.generation ?? null,
       refreshState: this.refreshState(),
       stale,
       staleReasons,
@@ -351,6 +389,7 @@ export class RefreshCoordinator {
     if (bundle === undefined || this.disposed.has(bundle)) return;
     this.disposed.add(bundle);
     bundle.index.close();
+    bundle.graph?.close();
   }
 
   private refreshState(): RefreshState {
@@ -367,6 +406,7 @@ export class RefreshCoordinator {
     this.busy = true;
     let candidate: ReaderBundle | undefined;
     let discard = false;
+    let published = false;
     try {
       candidate = await this.buildBundle(start);
       this.opts.onCandidateBuilt?.(candidate);
@@ -382,6 +422,9 @@ export class RefreshCoordinator {
         );
         return;
       }
+      // From this point the publication register owns candidate disposal, including an observer
+      // that throws after the reader has become current.
+      published = true;
       this.publish(candidate, reason);
       this.lastCapture = start;
       this.lastSuccessfulRefreshAt = new Date().toISOString();
@@ -396,7 +439,7 @@ export class RefreshCoordinator {
       };
       this.opts.onWarn?.(`refresh failed: ${this.lastRefreshError.message}`);
     } finally {
-      if (discard && candidate) this.dispose(candidate);
+      if (candidate && !published) this.dispose(candidate);
       this.busy = false;
       // Coalesced replay: exactly one queued trigger, newest reason wins. Routed through
       // requestRefresh so the capture guard applies — an unchanged source ENDS the chain here
@@ -414,7 +457,7 @@ export class RefreshCoordinator {
   }
 
   /** Build the invisible candidate: fresh overlay seeded from the on-disk canonical + the full
-   *  watchable dirty scope + a fresh in-memory FTS projection over that SAME overlay store. */
+   *  watchable dirty scope + FTS and memory-graph projections over the same captured inputs. */
   private async buildBundle(capture: SourceCapture): Promise<ReaderBundle> {
     // Pick up an external `crib update` before seeding: both the in-memory semantic layer (Verbs
     // reads `soul`) and the overlay's canonical seed must describe the same on-disk graph.
@@ -428,15 +471,30 @@ export class RefreshCoordinator {
       });
     }
     const index = new SqliteIndexStore();
-    index.buildFromSoul(overlay.store, this.repoRoot);
-    return {
-      generation: bundleGeneration(capture),
-      capture,
-      overlay,
-      index,
-      refresh,
-      publishedAt: new Date().toISOString(),
-    };
+    let graph: DerivedGraphReader | undefined;
+    try {
+      index.buildFromSoul(overlay.store, this.repoRoot);
+      const generation = bundleGeneration(capture);
+      graph = await this.opts.buildGraph?.({ generation, capture, overlay });
+      if (graph !== undefined && graph.generation !== generation) {
+        throw new Error(
+          `derived graph generation ${graph.generation} does not match reader generation ${generation}`,
+        );
+      }
+      return {
+        generation,
+        capture,
+        overlay,
+        index,
+        graph,
+        refresh,
+        publishedAt: new Date().toISOString(),
+      };
+    } catch (error) {
+      graph?.close();
+      index.close();
+      throw error;
+    }
   }
 
   /** Publish, then swap if no request is in flight. The published bundle is visible to
@@ -547,6 +605,15 @@ export class RefreshCoordinator {
       }
     }
     const watchable = [...dirty].filter(isWatchable).sort();
+    let graphSourcePosition: string | null = null;
+    try {
+      graphSourcePosition = this.opts.graphSourcePosition?.() ?? null;
+    } catch {
+      // A source-position probe is advisory at capture time. A changed/unreadable source cannot be
+      // treated as equal to the prior non-null position, and graph construction itself still fails
+      // visibly if the ledger is unreadable.
+      graphSourcePosition = null;
+    }
     return {
       head,
       indexedHead,
@@ -556,6 +623,7 @@ export class RefreshCoordinator {
       dirtyFp: contentDigestForPaths(this.repoRoot, watchable),
       dirtyPaths: watchable,
       anchor,
+      graphSourcePosition,
     };
   }
 }

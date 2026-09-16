@@ -431,6 +431,16 @@ export interface MemoryFtsWriteNotice {
 
 export type MemoryFtsWriteListener = (notice: MemoryFtsWriteNotice) => void;
 
+/** A durable mutation notice for any memory collection. Derived projections use this to queue a
+ * rebuild after graph assertions, decisions, admissions, retractions, or purge cleanup. */
+export interface MemoryStoreWriteNotice {
+  role: MemoryStoreRole;
+  /** The whole-store generation that was durably written before this listener runs. */
+  generation: MemoryFtsGeneration;
+}
+
+export type MemoryStoreWriteListener = (notice: MemoryStoreWriteNotice) => void;
+
 export interface StoreOpts {
   /** Env override (tests relocate `~/.crib/memory` via `KCRIB_MEMORY_DIR`). */
   env?: NodeJS.ProcessEnv;
@@ -570,6 +580,7 @@ export class MemoryStore {
   // ─── G3.1 derived-FTS hooks (persistent index sync) ─────────────────────────
 
   private ftsListener: MemoryFtsWriteListener | undefined;
+  private storeListener: MemoryStoreWriteListener | undefined;
 
   /**
    * Install the single persistent-FTS write listener (the open snapshot's incremental upsert hook).
@@ -579,6 +590,12 @@ export class MemoryStore {
    */
   setFtsWriteListener(listener: MemoryFtsWriteListener | undefined): void {
     this.ftsListener = listener;
+  }
+
+  /** Install a single non-blocking whole-store mutation listener for derived read models. The
+   * listener runs only after the new `store.gen` sidecar has been atomically published. */
+  setStoreWriteListener(listener: MemoryStoreWriteListener | undefined): void {
+    this.storeListener = listener;
   }
 
   /** `<rootDir>/fts.gen` — the derived-FTS generation sidecar. Lives in the store ROOT (not the
@@ -700,7 +717,7 @@ export class MemoryStore {
   /** Bump the whole-store generation. Mirrors {@link bumpFtsGeneration}'s nonce discipline: the
    *  first bump mints the nonce, later bumps keep it, so the nonce changes exactly when the store
    *  root's life does (clear → delete → fresh file → fresh nonce). */
-  private bumpStoreGeneration(): void {
+  private bumpStoreGeneration(): MemoryFtsGeneration {
     this.pinnedGeneration = undefined; // a write invalidates any pinned read pass on this store
     const path = this.storeGenerationPath();
     const current = this.readStoreGeneration();
@@ -709,6 +726,13 @@ export class MemoryStore {
         ? { gen: current.gen + 1, nonce: current.nonce }
         : { gen: 1, nonce: randomUUID() };
     writeJsonAtomic(path, `${JSON.stringify(next)}\n`);
+    try {
+      this.storeListener?.({ role: this.init.role, generation: next });
+    } catch {
+      // A derived reader must never make the authoritative journal write fail. Its next health
+      // probe compares this durable generation and schedules a replacement if the notice was lost.
+    }
+    return next;
   }
 
   private bumpFtsGeneration(): MemoryFtsGeneration {
