@@ -1,0 +1,9 @@
+#if($event.type.isFll())
+  <p>FLL</p>
+#elseif($event.isFllGradeBandK2Only())
+  ## isFllGradeBandK2Only() in a comment must not count as a caller
+  <p>K-2</p>
+#end
+#if($event.fllGradeBandK2Only)
+  <p>K-2 property form</p>
+#end

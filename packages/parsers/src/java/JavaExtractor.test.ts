@@ -86,13 +86,13 @@ describe('JavaExtractor — golden (Spring Boot gate)', () => {
     expect(byQ('UserService').meta?.annotations).toEqual(['Service']);
     expect(byQ('UserService').meta?.implements).toEqual(['Greeter']);
     expect(byQ('UserService.greet').meta?.annotations).toEqual(['Override']);
-    expect(byQ('UserService.greet').signature).toBe('greet(user)');
+    expect(byQ('UserService.greet').signature).toBe('greet(String user)');
 
     expect(byQ('Token').type).toBe('record');
     expect(byQ('Token').signature).toBe('record Token(req)');
     expect(byQ('Role').type).toBe('enum');
     expect(byQ('Greeter').type).toBe('interface');
-    expect(byQ('Greeter.greet').signature).toBe('greet(user)');
+    expect(byQ('Greeter.greet').signature).toBe('greet(String user)');
     expect(byQ('AuthController.log').meta?.modifiers).toEqual(['static']);
   });
 

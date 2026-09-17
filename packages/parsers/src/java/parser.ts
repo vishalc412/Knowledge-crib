@@ -76,6 +76,8 @@ export interface JavaDef {
   implements: string[];
   /** parameter names (methods / constructors / records). */
   params: string[];
+  /** the last parameter is `T...` — the method accepts `params.length - 1` or more arguments. */
+  varargs?: boolean;
   /** nested TYPE declarations only (methods/fields are not recursed). */
   body: JavaDef[];
   /**
@@ -168,6 +170,45 @@ export interface JavaCallSite {
   name: string;
   /** 1-based line of the call's opening `(`. */
   line: number;
+  /** top-level argument expressions; absent for a method reference (arity unknown). */
+  args?: JavaArg[];
+  /** `Type::m` / `this::m` / `var::m` method reference. */
+  ref?: boolean;
+  /** `new Type(...)`. */
+  ctor?: boolean;
+  /** the chain is applied to the result of `calls[receiverCall]` (`a.getType().isFll()`). */
+  receiverCall?: number;
+  /** the chain is applied to an expression crib does not type (`arr[0].m()`, `(x).m()`). */
+  receiverExpr?: boolean;
+}
+
+/** What an argument (or `var` initializer) expression's static type can be read from. */
+export interface JavaArg {
+  /** source text, space-joined tokens (truncated). */
+  text: string;
+  /** a literal or an operator-determined type (`a == b` → boolean, `"x" + y` → String). */
+  literal?: 'String' | 'char' | 'int' | 'long' | 'float' | 'double' | 'boolean' | 'null';
+  /** a bare identifier `x`, or `this.x` when `thisField`. */
+  ident?: string;
+  thisField?: boolean;
+  /** `new T(...)` → last segment of T. */
+  newType?: string;
+  /** `(T) expr` → last segment of T. */
+  castType?: string;
+  /** the whole expression is a call chain whose outermost call is `calls[call]`. */
+  call?: number;
+}
+
+/** A local variable declaration (fields match too — scope by the enclosing method's lines). */
+export interface JavaLocal {
+  name: string;
+  /** declared type's last segment; `var` when inferred (see `init`); "" for an untyped lambda param. */
+  type: string;
+  /** the last generic argument (`List<Event> es` → "Event"). */
+  elementType?: string;
+  /** the initializer, for `var x = <expr>`. */
+  init?: JavaArg;
+  line: number;
 }
 
 export interface JavaImport {
@@ -188,6 +229,8 @@ export interface JavaModule {
   imports: JavaImport[];
   /** dotted package path (`package a.b;`), or "" if absent. */
   pkg: string;
+  /** local variable declarations in source order. */
+  locals: JavaLocal[];
 }
 
 /** Parse Java source into a declaration tree + call sites + imports + package (never throws). */
@@ -196,11 +239,13 @@ export function parseJava(src: string): JavaModule {
     const tokens = tokenize(src);
     const p = new Parser(tokens, src);
     const { defs, excluded } = p.parseProgram();
-    const calls = collectCallSites(tokens, excluded);
+    const scanned = scanCalls(tokens, excluded);
+    const calls = scanned.map(({ closeTok: _c, rootStart: _r, ...site }) => site);
+    const locals = scanLocals(tokens, scanned);
     const { pkg, imports } = collectImports(tokens);
-    return { defs, calls, imports, pkg };
+    return { defs, calls, imports, pkg, locals };
   } catch {
-    return { defs: [], calls: [], imports: [], pkg: '' };
+    return { defs: [], calls: [], imports: [], pkg: '', locals: [] };
   }
 }
 
@@ -486,6 +531,7 @@ class Parser {
     const params = typedParams.map((p) => p.name);
     const paramTypes = typedParams.map((p) => p.type ?? '');
     const paramAnnos = typedParams.map((p) => p.annotations ?? []);
+    const varargs = typedParams.some((p) => p.varargs);
     // optional `throws X, Y` — skip a dotted-name list until `{` or `;`.
     if (this.isName('throws')) {
       this.next();
@@ -514,6 +560,7 @@ class Parser {
       params,
       paramTypes,
       paramAnnos,
+      ...(varargs ? { varargs: true } : {}),
       // 1.3: for a method, `prevLastName` is the return-type head (the name before the method name)
       // and `elementType` is its generic arg (`List<Payment> all()` → "List" / "Payment"). A @Bean
       // producer method PRODUCES its return type — captured here so the @Bean pass can emit `produces`.
@@ -539,27 +586,32 @@ class Parser {
     name: string;
     type?: string;
     annotations?: string[];
+    varargs?: boolean;
   }> {
     if (!this.isOp('(')) return [];
     this.next(); // (
-    const out: Array<{ name: string; type?: string; annotations?: string[] }> = [];
+    const out: Array<{ name: string; type?: string; annotations?: string[]; varargs?: boolean }> =
+      [];
     let pdepth = 1;
-    let firstName: string | undefined;
-    let lastName: string | undefined;
+    // generic nesting: a `,` inside `Map<K, V>` separates type args, not parameters.
+    let angle = 0;
+    // NAMEs at generic depth 0: the last is the param name, the one before it the type's last segment
+    // (`org.acme.Event e` → type "Event"; `List<String> xs` → "List").
+    let names: string[] = [];
+    let varargs = false;
     let paramAnnos: string[] = [];
     const flush = (): void => {
-      if (lastName)
-        out.push(
-          firstName && firstName !== lastName
-            ? {
-                name: lastName,
-                type: firstName,
-                ...(paramAnnos.length ? { annotations: paramAnnos } : {}),
-              }
-            : { name: lastName, ...(paramAnnos.length ? { annotations: paramAnnos } : {}) },
-        );
-      firstName = undefined;
-      lastName = undefined;
+      const name = names[names.length - 1];
+      const type = names.length >= 2 ? names[names.length - 2] : undefined;
+      if (name)
+        out.push({
+          name,
+          ...(type ? { type } : {}),
+          ...(paramAnnos.length ? { annotations: paramAnnos } : {}),
+          ...(varargs ? { varargs: true } : {}),
+        });
+      names = [];
+      varargs = false;
       paramAnnos = [];
     };
     while (!this.atEnd() && pdepth > 0) {
@@ -575,7 +627,14 @@ class Parser {
         if (pdepth === 0) flush();
         continue;
       }
-      if (pdepth === 1 && tk.type === 'OP' && tk.value === ',') {
+      if (pdepth === 1 && tk.type === 'OP') {
+        if (tk.value === '<') angle++;
+        else if (tk.value === '>') angle = Math.max(0, angle - 1);
+        else if (tk.value === '>>') angle = Math.max(0, angle - 2);
+        else if (tk.value === '>>>') angle = Math.max(0, angle - 3);
+        else if (tk.value === '...') varargs = true;
+      }
+      if (pdepth === 1 && angle === 0 && tk.type === 'OP' && tk.value === ',') {
         flush();
         this.next();
         continue;
@@ -601,13 +660,11 @@ class Parser {
         }
         if (this.isOp('(')) this.skipBalancedParens(); // annotation args
         if (annoName) paramAnnos.push(annoName);
-        firstName = undefined;
-        lastName = undefined;
+        names = [];
         continue;
       }
-      if (pdepth === 1 && tk.type === 'NAME' && !isModifier(tk.value)) {
-        if (firstName === undefined) firstName = tk.value;
-        lastName = tk.value;
+      if (pdepth === 1 && angle === 0 && tk.type === 'NAME' && !isModifier(tk.value)) {
+        names.push(tk.value);
         this.next();
         continue;
       }
@@ -993,14 +1050,47 @@ const HARD_KEYWORDS = new Set<string>([
   'goto',
 ]);
 
+/** Keywords that precede a `(` without being a call (`if (`, `catch (`, `synchronized (` …). */
+const NON_CALL_KEYWORDS = new Set([
+  'if',
+  'for',
+  'while',
+  'switch',
+  'catch',
+  'synchronized',
+  'return',
+  'throw',
+  'assert',
+  'try',
+  'do',
+  'else',
+  'case',
+  'yield',
+  'instanceof',
+]);
+
+interface ScannedCall extends JavaCallSite {
+  closeTok: number;
+  rootStart: number;
+}
+
 /**
  * Scan the token stream for call expressions `NAME (.NAME)* (` whose `(` is NOT a definition or
- * annotation arg-list (excluded set). `new Foo()` falls out naturally: `new` (no `(` after it) is
- * skipped, then `Foo` + `(` records a constructor call. Method references (`::`) and array-creation
- * brackets never produce a `(` directly after the chain, so they are ignored.
+ * annotation arg-list (excluded set), plus method references `NAME (.NAME)* :: NAME`.
+ *
+ * Each call records its argument expressions (for overload selection) and how its receiver is known:
+ * a dotted chain (`Type.m` / `var.m` / `this.f.m`), the RESULT of an earlier call
+ * (`a.getType().isFll()` → `receiverCall`), or an untypeable expression (`receiverExpr`). A chained
+ * call is never reported as a bare `m()` — that would match an unrelated same-file method.
  */
 export function collectCallSites(tokens: Token[], excluded: Set<number>): JavaCallSite[] {
-  const calls: JavaCallSite[] = [];
+  return scanCalls(tokens, excluded).map(({ closeTok: _c, rootStart: _r, ...site }) => site);
+}
+
+function scanCalls(tokens: Token[], excluded: Set<number>): ScannedCall[] {
+  const calls: ScannedCall[] = [];
+  const closeToCall = new Map<number, number>();
+  const argRanges: Array<{ call: number; ranges: Array<[number, number]> }> = [];
   let i = 0;
   while (i < tokens.length) {
     const tk = tokens[i]!;
@@ -1008,8 +1098,8 @@ export function collectCallSites(tokens: Token[], excluded: Set<number>): JavaCa
       i++;
       continue;
     }
+    const start = i;
     const chain: string[] = [tk.value];
-    const line = tk.line;
     let j = i + 1;
     while (
       j < tokens.length &&
@@ -1021,22 +1111,326 @@ export function collectCallSites(tokens: Token[], excluded: Set<number>): JavaCa
       chain.push(tokens[j + 1]!.value);
       j += 2;
     }
+
+    const prev = tokens[start - 1];
+    const isNew = prev?.type === 'NAME' && prev.value === 'new';
+    let receiverCall: number | undefined;
+    let receiverExpr = false;
+    if (prev?.type === 'OP' && prev.value === '.') {
+      const call = closeToCall.get(start - 2);
+      if (call !== undefined) receiverCall = call;
+      else receiverExpr = true;
+    }
+    const rootStart =
+      receiverCall !== undefined ? calls[receiverCall]!.rootStart : isNew ? start - 1 : start;
+    const receiver = {
+      ...(receiverCall !== undefined ? { receiverCall } : {}),
+      ...(receiverExpr ? { receiverExpr: true } : {}),
+    };
+
+    // method reference: `Type::m`, `this::m`, `var::m` (`Type::new` is a constructor ref — skipped)
+    if (isOp(tokens, j, '::') && tokens[j + 1]?.type === 'NAME') {
+      const member = tokens[j + 1]!.value;
+      if (member !== 'new') {
+        calls.push({
+          head: chain[0]!,
+          tail: [...chain.slice(1), member],
+          name: member,
+          line: tokens[j + 1]!.line,
+          ref: true,
+          ...receiver,
+          closeTok: -1,
+          rootStart,
+        });
+      }
+      i = j + 2;
+      continue;
+    }
+
     // a `(` immediately after the chain (and not an excluded def/annotation paren) ⇒ a call
-    if (j < tokens.length && tokens[j]!.type === 'OP' && tokens[j]!.value === '(') {
-      if (!excluded.has(j)) {
+    if (isOp(tokens, j, '(')) {
+      const keyword = chain.length === 1 && NON_CALL_KEYWORDS.has(chain[0]!);
+      if (!excluded.has(j) && !keyword) {
+        const close = matchParen(tokens, j);
+        const idx = calls.length;
         calls.push({
           head: chain[0]!,
           tail: chain.slice(1),
           name: chain[chain.length - 1]!,
-          line,
+          line: tk.line,
+          args: [],
+          ...(isNew ? { ctor: true } : {}),
+          ...receiver,
+          closeTok: close,
+          rootStart,
         });
+        if (close >= 0) {
+          closeToCall.set(close, idx);
+          argRanges.push({ call: idx, ranges: splitArgs(tokens, j, close) });
+        }
       }
       i = j + 1;
       continue;
     }
-    i++;
+    // not a call: skip the whole chain so `a.b.c` is not re-scanned as a receiver-less `b.c`.
+    i = j;
+  }
+
+  for (const { call, ranges } of argRanges) {
+    calls[call]!.args = ranges.map(([s, e]) => describeExpr(tokens, s, e, calls));
   }
   return calls;
+}
+
+function isOp(tokens: Token[], k: number, v: string): boolean {
+  return tokens[k]?.type === 'OP' && tokens[k]?.value === v;
+}
+
+/** Index of the `)` matching the `(` at `open`, or -1. */
+function matchParen(tokens: Token[], open: number): number {
+  let depth = 0;
+  for (let k = open; k < tokens.length; k++) {
+    const t = tokens[k]!;
+    if (t.type !== 'OP') continue;
+    if (t.value === '(') depth++;
+    else if (t.value === ')') {
+      depth--;
+      if (depth === 0) return k;
+    }
+  }
+  return -1;
+}
+
+/** Token ranges `[first, last]` of the top-level comma-separated arguments between `open`/`close`. */
+function splitArgs(tokens: Token[], open: number, close: number): Array<[number, number]> {
+  const out: Array<[number, number]> = [];
+  if (close <= open + 1) return out;
+  let depth = 0;
+  let from = open + 1;
+  for (let k = open + 1; k < close; k++) {
+    const t = tokens[k]!;
+    if (t.type !== 'OP') continue;
+    if (t.value === '(' || t.value === '[' || t.value === '{') depth++;
+    else if (t.value === ')' || t.value === ']' || t.value === '}') depth--;
+    else if (t.value === ',' && depth === 0) {
+      if (k > from) out.push([from, k - 1]);
+      from = k + 1;
+    }
+  }
+  if (close > from) out.push([from, close - 1]);
+  return out;
+}
+
+const COMPARISON_OPS = new Set(['==', '!=', '<', '>', '<=', '>=', '&&', '||']);
+
+/**
+ * Describe an expression spanning tokens `[s, e]` by what its static type can be read from without
+ * type-checking: a literal, an identifier (`x` / `this.x`), `new T(...)`, a cast `(T) x`, a boolean
+ * comparison, a string concatenation, or a call expression (index into `calls`).
+ */
+function describeExpr(tokens: Token[], s: number, e: number, calls: ScannedCall[]): JavaArg {
+  const text = tokens
+    .slice(s, e + 1)
+    .map((t) => t.value)
+    .join(' ')
+    .slice(0, 120);
+  const first = tokens[s]!;
+  if (s === e) {
+    if (first.type === 'STRING') return { text, literal: 'String' };
+    if (first.type === 'CHAR') return { text, literal: 'char' };
+    if (first.type === 'NUMBER') return { text, literal: numberLiteralType(first.value) };
+    if (first.type === 'NAME') {
+      if (first.value === 'true' || first.value === 'false') return { text, literal: 'boolean' };
+      if (first.value === 'null') return { text, literal: 'null' };
+      return { text, ident: first.value };
+    }
+  }
+  if (
+    e === s + 2 &&
+    first.value === 'this' &&
+    isOp(tokens, s + 1, '.') &&
+    tokens[e]!.type === 'NAME'
+  ) {
+    return { text, ident: tokens[e]!.value, thisField: true };
+  }
+  // top-level operators decide boolean / String before anything else
+  let depth = 0;
+  let hasString = false;
+  let hasPlus = false;
+  let comparison = false;
+  for (let k = s; k <= e; k++) {
+    const t = tokens[k]!;
+    if (t.type === 'OP') {
+      if (t.value === '(' || t.value === '[' || t.value === '{') depth++;
+      else if (t.value === ')' || t.value === ']' || t.value === '}') depth--;
+      else if (depth === 0 && t.value === '+') hasPlus = true;
+      else if (depth === 0 && (COMPARISON_OPS.has(t.value) || (k === s && t.value === '!')))
+        comparison = true;
+    } else if (depth === 0 && t.type === 'STRING') hasString = true;
+    else if (depth === 0 && t.type === 'NAME' && t.value === 'instanceof') comparison = true;
+  }
+  if (comparison) return { text, literal: 'boolean' };
+  if (hasString && hasPlus) return { text, literal: 'String' };
+  if (first.type === 'NAME' && first.value === 'new') {
+    let k = s + 1;
+    let type: string | undefined;
+    while (tokens[k]?.type === 'NAME') {
+      type = tokens[k]!.value;
+      if (isOp(tokens, k + 1, '.')) k += 2;
+      else break;
+    }
+    if (type) return { text, newType: type };
+  }
+  if (isOp(tokens, s, '(')) {
+    const close = matchParen(tokens, s);
+    let k = s + 1;
+    let type: string | undefined;
+    while (tokens[k]?.type === 'NAME') {
+      type = tokens[k]!.value;
+      if (isOp(tokens, k + 1, '.')) k += 2;
+      else break;
+    }
+    const castLike = type !== undefined && k + 1 === close && close < e && /^[A-Z]/.test(type);
+    if (castLike) return { text, castType: type };
+  }
+  const call = calls.findIndex((c) => c.closeTok === e && c.rootStart === s);
+  if (call >= 0) return { text, call };
+  return { text };
+}
+
+function numberLiteralType(v: string): NonNullable<JavaArg['literal']> {
+  if (/^0[xXbB]/.test(v)) return /[lL]$/.test(v) ? 'long' : 'int';
+  if (/[lL]$/.test(v)) return 'long';
+  if (/[fF]$/.test(v)) return 'float';
+  if (/[dD]$/.test(v) || /[.eE]/.test(v)) return 'double';
+  return 'int';
+}
+
+/** Keywords that can precede a `Type name` pair without it being a local declaration. */
+const NON_DECL_HEADS = new Set([
+  'return',
+  'throw',
+  'new',
+  'else',
+  'case',
+  'yield',
+  'assert',
+  'break',
+  'continue',
+  'package',
+  'import',
+  'instanceof',
+  'this',
+  'super',
+  'default',
+]);
+
+/**
+ * Scan for local variable declarations: `Type x =` / `Type x;` / `for (Type x :` / `catch (Type e)` /
+ * `try (Type r =` / `x instanceof Type t`. `var x = <expr>` records the initializer so a resolver can
+ * type it. Fields match too; callers scope locals to the enclosing method's line range.
+ */
+export function collectLocals(tokens: Token[], excluded: Set<number> = new Set()): JavaLocal[] {
+  return scanLocals(tokens, scanCalls(tokens, excluded));
+}
+
+function scanLocals(tokens: Token[], calls: ScannedCall[]): JavaLocal[] {
+  const out: JavaLocal[] = [];
+  for (let i = 0; i < tokens.length; i++) {
+    const tk = tokens[i]!;
+    // untyped lambda parameters (`e -> …`, `(a, b) -> …`) shadow fields of the same name: record
+    // them with an empty type so a resolver knows the name is bound but its type is unknown.
+    if (tk.type === 'OP' && tk.value === '->') {
+      const prev = tokens[i - 1];
+      if (prev?.type === 'NAME') {
+        out.push({ name: prev.value, type: '', line: prev.line });
+      } else if (prev?.type === 'OP' && prev.value === ')') {
+        const names: Token[] = [];
+        let k = i - 2;
+        let untyped = true;
+        while (k >= 0 && !isOp(tokens, k, '(')) {
+          const t = tokens[k]!;
+          if (t.type === 'NAME') {
+            if (!(isOp(tokens, k - 1, '(') || isOp(tokens, k - 1, ','))) untyped = false;
+            names.push(t);
+          } else if (!(t.type === 'OP' && t.value === ',')) untyped = false;
+          k--;
+        }
+        if (untyped)
+          for (const n of names.reverse()) out.push({ name: n.value, type: '', line: n.line });
+      }
+      continue;
+    }
+    if (tk.type !== 'NAME' || NON_DECL_HEADS.has(tk.value) || isModifierOrFinal(tk.value)) continue;
+    const prev = tokens[i - 1];
+    const afterInstanceof = prev?.type === 'NAME' && prev.value === 'instanceof';
+    const declPosition =
+      !prev ||
+      afterInstanceof ||
+      (prev.type === 'OP' &&
+        (prev.value === ';' || prev.value === '{' || prev.value === '}' || prev.value === '(')) ||
+      (prev.type === 'NAME' && isModifierOrFinal(prev.value));
+    if (!declPosition) continue;
+    // Type: NAME (. NAME)* [<...>] ([])*
+    let k = i;
+    let type = tk.value;
+    while (isOp(tokens, k + 1, '.') && tokens[k + 2]?.type === 'NAME') {
+      k += 2;
+      type = tokens[k]!.value;
+    }
+    let elementType: string | undefined;
+    if (isOp(tokens, k + 1, '<')) {
+      let angle = 0;
+      let m = k + 1;
+      for (; m < tokens.length; m++) {
+        const t = tokens[m]!;
+        if (t.type === 'NAME' && angle >= 1) elementType = t.value;
+        if (t.type !== 'OP') continue;
+        if (t.value === '<') angle++;
+        else if (t.value === '>') angle--;
+        else if (t.value === '>>') angle -= 2;
+        else if (t.value === '>>>') angle -= 3;
+        else if (t.value === ';' || t.value === '{' || t.value === '(' || t.value === '=') break;
+        if (angle <= 0) break;
+      }
+      if (angle !== 0) continue;
+      k = m;
+    }
+    while (isOp(tokens, k + 1, '[') && isOp(tokens, k + 2, ']')) k += 2;
+    const nameTok = tokens[k + 1];
+    if (nameTok?.type !== 'NAME' || NON_DECL_HEADS.has(nameTok.value)) continue;
+    const term = tokens[k + 2];
+    const termOk =
+      afterInstanceof ||
+      (term?.type === 'OP' &&
+        (term.value === '=' ||
+          term.value === ';' ||
+          term.value === ':' ||
+          (term.value === ')' &&
+            tokens[i - 2]?.type === 'NAME' &&
+            tokens[i - 2]!.value === 'catch')));
+    if (!termOk) continue;
+    const local: JavaLocal = { name: nameTok.value, type, line: nameTok.line };
+    if (elementType && elementType !== type) local.elementType = elementType;
+    if (type === 'var' && isOp(tokens, k + 2, '=')) {
+      let end = k + 3;
+      let depth = 0;
+      for (; end < tokens.length; end++) {
+        const t = tokens[end]!;
+        if (t.type !== 'OP') continue;
+        if (t.value === '(' || t.value === '[' || t.value === '{') depth++;
+        else if (t.value === ')' || t.value === ']' || t.value === '}') depth--;
+        else if (t.value === ';' && depth === 0) break;
+      }
+      if (end - 1 >= k + 3) local.init = describeExpr(tokens, k + 3, end - 1, calls);
+    }
+    out.push(local);
+  }
+  return out;
+}
+
+function isModifierOrFinal(v: string): boolean {
+  return v === 'final' || isModifier(v);
 }
 
 /** Scan the token stream for `package a.b;` and `import [static] a.b.C [. *];` statements. */

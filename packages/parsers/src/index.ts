@@ -42,11 +42,14 @@ export {
   parseJava,
   collectCallSites as collectJavaCalls,
   collectImports as collectJavaImports,
+  collectLocals as collectJavaLocals,
 } from './java/parser.js';
 export type {
   JavaDef,
+  JavaArg,
   JavaCallSite,
   JavaImport,
+  JavaLocal,
   JavaModule,
   JavaKind,
 } from './java/parser.js';

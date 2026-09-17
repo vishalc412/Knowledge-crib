@@ -6,7 +6,8 @@
  *   imports     file → imported top-level TYPE (`import a.b.C;` resolves C to a/b/C.java-ish file)
  *   inherits    class/record → `extends` base (imported binding, same-package, or same-file top-level)
  *   implements  class/enum/record → `implements` interface
- *   calls       caller symbol → an imported type used as a constructor (`new C()` / bare `C()`)
+ *   calls       caller → callee method / constructed type, resolved with receiver + argument types
+ *               (see java-calls.ts); unprovable targets are INFERRED with confidence < 1
  *   injects     consumer class → injected dependency type (1.3 DI: a Spring bean's `meta.injects` —
  *               the constructor-param / @Autowired-field types that did NOT resolve intra-file —
  *               resolved here via imports / same-package, the cross-file DI graph)
@@ -16,24 +17,26 @@
  *
  * Deterministic only: a reference that does not resolve to an indexed symbol is DROPPED, never
  * guessed. Star imports (`import a.b.*;`) and static imports (`import static a.b.C.m;`) bind no
- * discrete type here → counted as dropped (parity with the Python resolver's star handling; there
- * is no enumeration of a package's members without a global scan). Static method calls (`C.m()`)
- * are NOT resolved to a method across files — Java methods are not top-level symbols — so they are
- * left to inference / dropped rather than pointed at the wrong node. ZERO type edges (no Java type
- * pass). Intra-file `this.m()` / bare `m()` / `new SameFileCls()` are the extractor's job (Phase 2).
+ * discrete type for the `imports` edge → counted as dropped. Call resolution consults star and static
+ * imports separately (java-calls.ts).
  */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import type { SoulStore } from '@knowledge-crib/core';
 import { parseJava } from '@knowledge-crib/parsers';
 import type { JavaDef, JavaModule } from '@knowledge-crib/parsers';
 import type { FileMeta } from '@knowledge-crib/parsers';
 import { edgeId } from '@knowledge-crib/soul-schema';
 import type { Edge, Rel } from '@knowledge-crib/soul-schema';
+import { ProjectIndex, resolveJavaCalls, resolveTemplateCalls } from './java-calls.js';
+import type { TemplateFile } from './java-calls.js';
 import type { ResolveContext, Resolver } from './resolver-registry.js';
 import type { SymbolTable } from './symbol-table.js';
 import type { ResolveStats } from './ts-resolver.js';
 
 const JAVA_EXTS = ['.java'];
+/** Velocity view templates — resolved against the Java project's types (INFERRED only). */
+const TEMPLATE_EXTS = ['.vm', '.vtl'];
 
 /** Type symbol kinds — used to recognize an intra-file-satisfied injection (skip; extractor edge). */
 const TYPE_KINDS = new Set(['class', 'interface', 'enum', 'record']);
@@ -54,6 +57,7 @@ export function resolveJava(
   table: SymbolTable,
   root: string,
   files: FileMeta[],
+  soul?: SoulStore,
 ): { edges: Edge[]; stats: ResolveStats } {
   const edges: Edge[] = [];
   const stats: ResolveStats = {
@@ -219,20 +223,34 @@ export function resolveJava(
       for (const child of d.body) visitDef(child);
     };
     for (const d of mod.defs) visitDef(d);
+  }
 
-    // --- cross-file calls: constructor call to an imported type (`new C()` / bare `C()`) ---
-    for (const c of mod.calls) {
-      if (c.head === 'this' || c.head === 'super') continue; // intra / parent — not here
-      if (c.tail.length > 0) continue; // `C.m()` static / `obj.m()` — method resolution is inference's job
-      const b = nameBindings.get(c.head);
-      if (!b) continue; // local / builtin / unknown — not this resolver's concern
-      const targetId = table.topLevelSymbol(b.file, b.name)?.id;
-      if (!targetId) continue;
-      const caller = table.enclosingSymbolId(path, c.line);
-      if (!caller || caller === targetId) continue; // self-recursion
-      push(caller, targetId, 'calls', c.head);
-      stats.calls++;
+  // --- calls: static / method-reference / typed-receiver / chained / inherited / constructor ---
+  const index = new ProjectIndex(parsed, table);
+  const calls = resolveJavaCalls(parsed, table, soul, index);
+  for (const e of calls.edges) {
+    if (seen.has(e.id)) continue;
+    seen.add(e.id);
+    edges.push(e);
+  }
+  stats.calls += calls.stats.calls;
+  stats.inferredCalls = (stats.inferredCalls ?? 0) + calls.stats.inferred;
+
+  // --- view templates: `$event.isFllGradeBandK2Only()` → Event.isFllGradeBandK2Only (INFERRED) ---
+  const templates: TemplateFile[] = [];
+  for (const file of files) {
+    if (!TEMPLATE_EXTS.some((e) => file.path.endsWith(e))) continue;
+    const text = safeRead(join(root, file.path));
+    if (text !== undefined) templates.push({ path: file.path, text });
+  }
+  if (templates.length > 0 && parsed.length > 0) {
+    const tpl = resolveTemplateCalls(templates, index, table);
+    for (const e of tpl.edges) {
+      if (seen.has(e.id)) continue;
+      seen.add(e.id);
+      edges.push(e);
     }
+    stats.inferredCalls = (stats.inferredCalls ?? 0) + tpl.inferred;
   }
 
   return { edges, stats };
@@ -301,9 +319,9 @@ function safeRead(abs: string): string | undefined {
 export class JavaResolver implements Resolver {
   name = 'java-resolver';
   supports(file: FileMeta): boolean {
-    return JAVA_EXTS.some((e) => file.path.endsWith(e));
+    return [...JAVA_EXTS, ...TEMPLATE_EXTS].some((e) => file.path.endsWith(e));
   }
   resolve(ctx: ResolveContext): { edges: Edge[]; stats: ResolveStats } {
-    return resolveJava(ctx.table, ctx.root, ctx.files);
+    return resolveJava(ctx.table, ctx.root, ctx.files, ctx.soul);
   }
 }

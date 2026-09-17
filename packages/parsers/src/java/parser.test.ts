@@ -646,3 +646,91 @@ describe('Java parser — exported helpers in isolation', () => {
     ]);
   });
 });
+
+describe('Java call sites — receivers, arguments, method references', () => {
+  const calls = (src: string) => parseJava(src).calls;
+
+  it('records arguments and types what it can read without type-checking', () => {
+    const [c] = calls(
+      'class A { void m() { f(x, this.y, "s", 3L, true, new Foo(1), (Bar) z, a == b, "n" + k, g()); } }',
+    );
+    expect(c!.name).toBe('f');
+    expect(c!.args!.map((a) => a.literal ?? a.ident ?? a.newType ?? a.castType ?? a.call)).toEqual([
+      'x',
+      'y',
+      'String',
+      'long',
+      'boolean',
+      'Foo',
+      'Bar',
+      'boolean',
+      'String',
+      2,
+    ]);
+    expect(c!.args![1]!.thisField).toBe(true);
+    expect(calls('class A { void m() { f(); } }')[0]!.args).toEqual([]);
+  });
+
+  it('chains a call onto the call whose result it applies to, never a bare call', () => {
+    const cs = calls('class A { void m() { if (event.getType().isFll()) {} } }');
+    expect(cs.map((c) => [c.head, c.tail.join('.'), c.receiverCall])).toEqual([
+      ['event', 'getType', undefined],
+      ['isFll', '', 0],
+    ]);
+  });
+
+  it('records method references with their receiver chain', () => {
+    const cs = calls(
+      'class A { void m() { xs.stream().filter(Event::isK2).map(this::fmt).map(Foo::new); } }',
+    );
+    const refs = cs.filter((c) => c.ref);
+    expect(refs.map((c) => `${c.head}::${c.name}`)).toEqual(['Event::isK2', 'this::fmt']);
+    expect(refs[0]!.args).toBeUndefined();
+  });
+
+  it('marks constructors, untypeable receivers, and skips control keywords', () => {
+    const cs = calls(
+      'class A { void m() { new Foo().run(); arr[0].go(); if (x) { while (y) {} } } }',
+    );
+    expect(
+      cs.map(
+        (c) =>
+          `${c.name}${c.ctor ? ':ctor' : ''}${c.receiverCall !== undefined ? ':rc' : ''}${c.receiverExpr ? ':expr' : ''}`,
+      ),
+    ).toEqual(['Foo:ctor', 'run:rc', 'go:expr']);
+  });
+
+  it('collects typed locals, for-each, catch, instanceof and var initializers', () => {
+    const { locals } = parseJava(`class A {
+      void m(List<Event> events) {
+        Event probe = new Event();
+        for (FllEvent e : events) {}
+        try { run(); } catch (IllegalStateException ex) {}
+        if (o instanceof Profile p) {}
+        var store = new Store();
+        List<Event> all = load();
+        return probe;
+      }
+    }`);
+    expect(
+      locals.map((l) => `${l.name}:${l.type}${l.elementType ? `<${l.elementType}>` : ''}`),
+    ).toEqual([
+      'probe:Event',
+      'e:FllEvent',
+      'ex:IllegalStateException',
+      'p:Profile',
+      'store:var',
+      'all:List<Event>',
+    ]);
+    expect(locals.find((l) => l.name === 'store')!.init!.newType).toBe('Store');
+  });
+
+  it('parses generic params without splitting on type-argument commas; types by last segment', () => {
+    const m = parseJava(
+      'class A { void m(Map<String, Foo> byId, org.acme.Event e, String... rest) {} }',
+    ).defs[0]!.body[0]!;
+    expect(m.params).toEqual(['byId', 'e', 'rest']);
+    expect(m.paramTypes).toEqual(['Map', 'Event', 'String']);
+    expect(m.varargs).toBe(true);
+  });
+});

@@ -41,6 +41,17 @@ interface LocalSymbol {
   simpleName: string;
   /** enclosing type qualified name ("" at file level) — used for `this.m()` / bare `m()` resolution. */
   parentQualifier: string;
+  /** declared parameter count (methods / constructors). */
+  arity: number;
+  /** last parameter is `T...`. */
+  varargs: boolean;
+}
+
+/** A call site the intra-file pass resolved to exactly one same-file symbol. */
+interface ResolvedSite {
+  line: number;
+  name: string;
+  id: string;
 }
 
 const TYPE_KINDS = new Set<JavaDef['kind']>(['class', 'interface', 'enum', 'record']);
@@ -129,6 +140,9 @@ export class JavaExtractor implements Extractor {
             ...(d.bases.length ? { bases: d.bases } : {}),
             ...(d.implements.length ? { implements: d.implements } : {}),
             ...(d.params.length ? { params: d.params } : {}),
+            ...(d.paramTypes?.some((t) => t) ? { paramTypes: d.paramTypes } : {}),
+            ...(d.varargs ? { varargs: true } : {}),
+            ...(d.returnType ? { returnType: d.returnType } : {}),
           },
         };
         symbols.push({
@@ -136,6 +150,8 @@ export class JavaExtractor implements Extractor {
           keys: [qualifiedName, d.name],
           simpleName: d.name,
           parentQualifier: parentQ,
+          arity: d.params.length,
+          varargs: d.varargs === true,
         });
         for (const k of [qualifiedName, d.name]) if (!byKey.has(k)) byKey.set(k, id);
         if (d.kind === 'method' || d.kind === 'constructor') procDefs.push({ def: d, procId: id });
@@ -163,7 +179,8 @@ export class JavaExtractor implements Extractor {
     // Tracked in a map so the Track-3 body-walk can annotate each calls edge with its guard chain
     // (best-effort, last-wins) without emitting a duplicate.
     const callsEdgeById = new Map<string, Edge>();
-    this.collectCalls(mod.calls, symbols, byKey, edges, callsEdgeById);
+    const resolvedSites: ResolvedSite[] = [];
+    this.collectCalls(mod.calls, symbols, edges, callsEdgeById, resolvedSites);
 
     // --- pass 3 (Track 3): per-method body-walk — emit condition/statement/executes/guarded-by and
     // annotate calls edges with the guard chain + record call sites on the proc node meta.calls. ---
@@ -173,8 +190,7 @@ export class JavaExtractor implements Extractor {
       const walker = new BodyWalker(
         path,
         ctx,
-        symbols,
-        byKey,
+        resolvedSites,
         callSites,
         nodes,
         edges,
@@ -215,8 +231,14 @@ export class JavaExtractor implements Extractor {
       case 'record':
         return `record ${d.name}(${d.params.join(', ')})`;
       case 'method':
-      case 'constructor':
-        return `${d.name}(${d.params.join(', ')})`;
+      case 'constructor': {
+        const params = d.params.map((p, i) => {
+          const t = d.paramTypes?.[i];
+          const last = i === d.params.length - 1 && d.varargs;
+          return t ? `${t}${last ? '...' : ''} ${p}` : p;
+        });
+        return `${d.name}(${params.join(', ')})`;
+      }
       case 'field':
         return `${d.fieldType ?? ''} ${d.name}`.trim();
     }
@@ -288,30 +310,35 @@ export class JavaExtractor implements Extractor {
     }
   }
 
-  /** Emit `calls` edges for call sites whose callee resolves to a same-file symbol. */
+  /**
+   * Emit `calls` edges for call sites that resolve to exactly ONE same-file symbol without type
+   * information: `new SameFileCls(...)`, and `m(...)` / `this.m(...)` where the nearest enclosing
+   * class declaring `m` has a single overload accepting that many arguments. Everything else —
+   * receivers (`Type.m`, `var.m`), method references, chained calls, and arity ties — needs argument
+   * and receiver types, so the Java resolver owns it.
+   */
   private collectCalls(
     calls: JavaCallSite[],
     symbols: LocalSymbol[],
-    byKey: Map<string, string>,
     edges: Edge[],
     callsEdgeById: Map<string, Edge>,
+    resolvedSites: ResolvedSite[],
   ): void {
     for (const c of calls) {
+      if (c.ref || c.receiverCall !== undefined || c.receiverExpr || c.head === 'super') continue;
       let dstId: string | undefined;
-      if (c.head === 'super') {
-        continue; // parent-class member — resolver's job
-      }
-      if (c.head === 'this') {
-        // `this.m()` → a method of the enclosing class by simple name.
-        dstId = methodInEnclosingClass(c.line, c.name, symbols);
-      } else if (c.tail.length === 0) {
-        // bare `m()` or `new Cls()` → same-file symbol by simple / qualified name.
-        dstId = byKey.get(c.name) ?? byKey.get(c.head);
-      } else {
-        // `obj.m()` / `Type.m()` — needs inference / cross-file; leave to the resolver.
-        continue;
+      if (c.ctor) {
+        if (c.tail.length > 0) continue;
+        dstId = symbols.find(
+          (s) => s.simpleName === c.name && TYPE_KINDS.has(s.node.type as JavaDef['kind']),
+        )?.node.id;
+      } else if (c.head === 'this' && c.tail.length === 1) {
+        dstId = uniqueMethodByArity(c.line, c.name, c.args?.length, symbols);
+      } else if (c.tail.length === 0 && c.head !== 'this') {
+        dstId = uniqueMethodByArity(c.line, c.name, c.args?.length, symbols);
       }
       if (!dstId) continue;
+      resolvedSites.push({ line: c.line, name: c.name, id: dstId });
       const caller = enclosingSymbolId(c.line, symbols);
       if (!caller || caller === dstId) continue; // skip self-recursion
       const calleeText = c.tail.length ? `${c.head}.${c.tail.join('.')}` : c.head;
@@ -420,21 +447,37 @@ function enclosingTypeId(line: number, symbols: LocalSymbol[]): LocalSymbol | un
  * contains the call line, then a method of that class with simple name `name`. Avoids cross-class
  * simple-name collisions that a global byKey lookup would hit.
  */
-function methodInEnclosingClass(
+function uniqueMethodByArity(
   line: number,
   name: string,
+  argCount: number | undefined,
   symbols: LocalSymbol[],
 ): string | undefined {
-  const cls = enclosingTypeId(line, symbols);
-  if (!cls) return undefined;
-  const enclosingQ = cls.node.qualifiedName;
-  const match = symbols.find(
-    (s) =>
-      s.simpleName === name &&
-      s.parentQualifier === enclosingQ &&
-      (s.node.type === 'method' || s.node.type === 'constructor'),
-  );
-  return match?.node.id;
+  if (argCount === undefined) return undefined;
+  // Java looks a simple method name up in the innermost lexically enclosing class that declares a
+  // method of that name, then outward.
+  let cls = enclosingTypeId(line, symbols);
+  while (cls) {
+    const q = cls.node.qualifiedName;
+    const declared = symbols.filter(
+      (s) => s.simpleName === name && s.parentQualifier === q && s.node.type === 'method',
+    );
+    if (declared.length > 0) {
+      const applicable = declared.filter((s) => acceptsArity(s, argCount));
+      return applicable.length === 1 ? applicable[0]!.node.id : undefined;
+    }
+    const outer = cls.parentQualifier;
+    cls = outer
+      ? symbols.find(
+          (s) => s.node.qualifiedName === outer && TYPE_KINDS.has(s.node.type as JavaDef['kind']),
+        )
+      : undefined;
+  }
+  return undefined;
+}
+
+function acceptsArity(s: LocalSymbol, argCount: number): boolean {
+  return s.varargs ? argCount >= s.arity - 1 : argCount === s.arity;
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -457,8 +500,7 @@ class BodyWalker {
   constructor(
     private readonly path: string,
     private readonly ctx: ExtractCtx,
-    private readonly symbols: LocalSymbol[],
-    private readonly byKey: Map<string, string>,
+    private readonly resolvedSites: ResolvedSite[],
     private readonly callSites: { callee: string; line: number }[],
     private readonly nodes: Node[],
     private readonly edges: Edge[],
@@ -792,7 +834,7 @@ class BodyWalker {
     if (s.callChain) {
       const callee = s.callChain[s.callChain.length - 1]!;
       this.callSites.push({ callee, line: s.startLine });
-      const calleeId = this.resolveCallee(s.callChain, s.startLine);
+      const calleeId = this.resolveCallee(callee, s.startLine, s.endLine);
       if (calleeId && calleeId !== procId) {
         this.annotateCallsEdge(
           procId,
@@ -865,12 +907,13 @@ class BodyWalker {
   }
 
   /** Resolve a call chain to an intra-file symbol id (mirrors collectCalls resolution). */
-  private resolveCallee(chain: string[], line: number): string | undefined {
-    const head = chain[0]!;
-    const name = chain[chain.length - 1]!;
-    if (head === 'super') return undefined; // parent-class member — resolver's job
-    if (head === 'this') return methodInEnclosingClass(line, name, this.symbols);
-    if (chain.length === 1) return this.byKey.get(name) ?? this.byKey.get(head);
-    return undefined; // dotted `obj.m()` / `Type.m()` — needs inference / cross-file
+  /** The same-file callee the call-site pass resolved for `name` within the statement's lines. */
+  private resolveCallee(name: string, startLine: number, endLine: number): string | undefined {
+    const ids = new Set(
+      this.resolvedSites
+        .filter((r) => r.name === name && r.line >= startLine && r.line <= endLine)
+        .map((r) => r.id),
+    );
+    return ids.size === 1 ? [...ids][0] : undefined;
   }
 }
