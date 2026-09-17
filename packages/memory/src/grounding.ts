@@ -89,3 +89,130 @@ export function verifyQuote(
   if (needle && hay.includes(needle)) return { verdict: 'grounded' };
   return { verdict: 'ungrounded', reason: 'quote not found in anchor span' };
 }
+
+// ─── hints: what the code says now, and which line is worth quoting ─────────────
+
+/** Minimum Dice similarity for a live line to be offered as "did you mean" for a refused quote. */
+const CLOSEST_MIN_SIMILARITY = 0.3;
+
+/** Lower-cased identifier sub-words: `isFllGradeBandK2Only` → is, fll, grade, band, k2, only. */
+function subwords(text: string): Set<string> {
+  const out = new Set<string>();
+  for (const ident of text.match(/[A-Za-z_][A-Za-z0-9_]*|\d+/g) ?? []) {
+    for (const part of ident
+      .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+      .replace(/([A-Z]+)([A-Z][a-z])/g, '$1 $2')
+      .split(/[\s_]+/)) {
+      if (part) out.add(part.toLowerCase());
+    }
+  }
+  return out;
+}
+
+function dice(a: Set<string>, b: Set<string>): number {
+  if (a.size === 0 || b.size === 0) return 0;
+  let shared = 0;
+  for (const t of a) if (b.has(t)) shared++;
+  return (2 * shared) / (a.size + b.size);
+}
+
+/**
+ * The current text most similar to a quote that did NOT verify — so a refusal can say what the code
+ * says now instead of only "not found". Compares windows as tall as the quote (in non-blank lines)
+ * by identifier sub-word overlap; ties go to the window nearest the cited line. Returns undefined
+ * when nothing is meaningfully similar. A hint only: it never grounds anything.
+ */
+export function closestLiveText(
+  port: RehydratePort,
+  fileNode: Node,
+  quote: string,
+  near?: number,
+): { line: number; text: string } | undefined {
+  if (!fileNode.file || !quote.trim()) return undefined;
+  const anchor = fileNode.span
+    ? fileNode
+    : { ...fileNode, span: { start: 1, end: Number.MAX_SAFE_INTEGER } };
+  const body = port.rehydrate(anchor, { maxChars: VERIFY_MAX_CHARS });
+  if (!body.text) return undefined;
+  const lines = body.text.split('\n');
+  const first = body.startLine > 0 ? body.startLine : 1;
+  const height = Math.max(1, quote.split('\n').filter((l) => l.trim()).length);
+  const want = subwords(quote);
+  let best: { line: number; text: string; score: number } | undefined;
+  for (let i = 0; i + height <= lines.length; i++) {
+    if (!lines[i]!.trim()) continue;
+    const window = lines.slice(i, i + height);
+    const score = dice(want, subwords(window.join(' ')));
+    if (score < CLOSEST_MIN_SIMILARITY) continue;
+    const line = first + i;
+    const closer =
+      best !== undefined &&
+      score === best.score &&
+      near !== undefined &&
+      Math.abs(line - near) < Math.abs(best.line - near);
+    if (!best || score > best.score || closer) {
+      best = { line, text: window.map((l) => l.trim()).join('\n'), score };
+    }
+  }
+  return best ? { line: best.line, text: best.text } : undefined;
+}
+
+/** Words too generic to decide which line an observation is about. */
+const HINT_STOPWORDS = new Set([
+  'this',
+  'that',
+  'with',
+  'from',
+  'must',
+  'should',
+  'when',
+  'only',
+  'never',
+  'always',
+  'true',
+  'false',
+  'return',
+  'public',
+  'private',
+  'static',
+  'void',
+  'final',
+  'class',
+  'const',
+  'function',
+  'there',
+  'which',
+  'because',
+  'into',
+  'have',
+  'does',
+  'will',
+  'can',
+  'not',
+]);
+
+/**
+ * The line of `body` most worth quoting for an observation: the one naming the identifiers the
+ * observation mentions (longer, more specific names weigh more). A declaration's signature is its
+ * most volatile text, so quoting the relevant line keeps evidence valid across unrelated edits.
+ * Falls back to the head of the span when the observation names nothing that appears in it.
+ */
+export function liftRelevantQuote(body: string, hint: string, maxChars: number): string {
+  const wanted = new Set(
+    (hint.match(/[A-Za-z_][A-Za-z0-9_]*/g) ?? [])
+      .map((w) => w.toLowerCase())
+      .filter((w) => w.length >= 4 && !HINT_STOPWORDS.has(w)),
+  );
+  let best: { text: string; score: number } | undefined;
+  for (const raw of body.split('\n')) {
+    const text = raw.trim();
+    if (!text) continue;
+    const idents = new Set(
+      (text.match(/[A-Za-z_][A-Za-z0-9_]*/g) ?? []).map((w) => w.toLowerCase()),
+    );
+    let score = 0;
+    for (const w of wanted) if (idents.has(w)) score += w.length;
+    if (score > 0 && (!best || score > best.score)) best = { text, score };
+  }
+  return best ? best.text.slice(0, maxChars) : body.trim().slice(0, maxChars);
+}

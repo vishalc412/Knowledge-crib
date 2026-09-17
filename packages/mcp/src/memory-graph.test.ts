@@ -199,6 +199,23 @@ describe('memory write → graph, same process, no reindex', () => {
     expect(String(ack.error)).toMatch(/not in the index/);
   });
 
+  it('refuses a stale quote but says what the code says now', () => {
+    // the line as the agent remembered it before an edit renamed the field
+    const ack = verbs.memoryObserve({
+      kind: 'fact',
+      subject: SYMBOL.id,
+      claim: 'Team.displayNumber returns the cached value',
+      evidence: [{ kind: 'source-quote', path: FILE, line: 3, quote: 'return this.cachedNumber;' }],
+      actor: 'claude-code',
+      tool: 'test',
+    });
+    expect(ack.ok).toBe(false);
+    expect(String(ack.error)).toMatch(/not found in the indexed code/);
+    expect(String(ack.error)).toContain(
+      `closest current text is at ${FILE}:3: "return this.cached;"`,
+    );
+  });
+
   it('remembers a preference the user stated, relayed by the agent — recallable, labelled unconfirmed', () => {
     const ack = verbs.memoryObserve({
       kind: 'convention',

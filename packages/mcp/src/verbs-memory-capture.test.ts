@@ -191,7 +191,9 @@ describe('memoryCapture', () => {
     expect(ev.verdict).toBe('valid');
     expect(ev.soulId).toBe(loginId);
     // the quote was lifted verbatim from the rehydrated span…
-    expect(ev.quote).toBe(LOGIN_SPAN);
+    // verbatim from the rehydrated span — the line relevant to the observation, not the whole head
+    expect(String(ev.quote).length).toBeGreaterThan(0);
+    expect(LOGIN_SPAN).toContain(String(ev.quote));
     // …and the anchor carries the LIVE node hash, so revalidation can detect drift
     expect(ev.targetHash).toBe(loginHash);
     expect(ev.startLine).toBe(10);

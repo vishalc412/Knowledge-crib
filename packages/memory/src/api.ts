@@ -91,7 +91,7 @@ import {
   isGraphRef,
   isMemoryGraphPredicate,
 } from './graph.js';
-import { verifyQuote } from './grounding.js';
+import { closestLiveText, liftRelevantQuote, verifyQuote } from './grounding.js';
 import {
   type HandoffAttemptEvent,
   type HandoffInput,
@@ -1699,7 +1699,11 @@ export class MemoryApi {
       const node = anchors.spanNodes[0];
       if (node) {
         const body = port.rehydrate(node);
-        const quote = body.text.trim().slice(0, CAPTURE_QUOTE_MAX_CHARS);
+        const quote = liftRelevantQuote(
+          body.text,
+          `${input.subject} ${input.observation}`,
+          CAPTURE_QUOTE_MAX_CHARS,
+        );
         if (quote.length > 0 && verifyQuote(port, node, quote).verdict === 'grounded') {
           evidence.push({
             kind: 'source-quote',
@@ -1976,11 +1980,28 @@ export class MemoryApi {
       // Two different fixes, so two different messages: a file the index has never seen needs a
       // re-index; a quote missing from an indexed file needs a correct quote.
       const notIndexed = this.deps.soul !== undefined && !isIndexedFile(this.deps.soul, path);
+      // Say what the code says NOW — usually the quote was read before an edit, and "not found"
+      // alone leaves the agent to guess. A hint only: the retry still has to verify.
+      const fileNode = notIndexed
+        ? undefined
+        : this.deps.soul?.allNodes().find((n) => n.kind === 'file' && n.file === path);
+      const hint =
+        fileNode && this.deps.soul && typeof cite?.quote === 'string'
+          ? closestLiveText(
+              this.deps.soul,
+              fileNode,
+              cite.quote,
+              typeof cite.line === 'number' ? cite.line : undefined,
+            )
+          : undefined;
+      const closest = hint
+        ? ` The closest current text is at ${path}:${hint.line}: ${JSON.stringify(hint.text)} — quote that exactly if it is what you meant.`
+        : '';
       return {
         ok: false,
         error: notIndexed
           ? `evidence[${unverified}] cites ${where}, but ${path} is not in the index (a new file, an ignored path, or an index older than the file) — run \`crib update\` so crib can verify the quote, then observe again.`
-          : `evidence[${unverified}] quotes ${where}, but that text was not found in the indexed code there — re-read the file and quote it exactly (re-index first if the file changed since the last \`crib index\`).`,
+          : `evidence[${unverified}] quotes ${where}, but that text was not found in the indexed code there — re-read the file and quote it exactly (re-index first if the file changed since the last \`crib index\`).${closest}`,
       };
     }
     if (evidence.length > 0) {

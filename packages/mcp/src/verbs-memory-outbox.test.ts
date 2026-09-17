@@ -306,7 +306,9 @@ describe('memoryObserve funnels through the same outbox', () => {
     const entry = readCaptureOutboxEntry(local, res.outboxId as string) as CaptureOutboxEntry;
     const ev = entry?.evidence[0] as Record<string, unknown>;
     expect(ev.kind).toBe('source-quote');
-    expect(ev.quote).toBe(LOGIN_SPAN);
+    // verbatim from the rehydrated span — the line relevant to the observation, not the whole head
+    expect(String(ev.quote).length).toBeGreaterThan(0);
+    expect(LOGIN_SPAN).toContain(String(ev.quote));
     expect(ev.targetHash).toBe(loginHash);
     expect(entry?.appliesTo).toContain(loginId);
   });
