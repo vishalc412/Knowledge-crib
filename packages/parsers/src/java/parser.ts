@@ -491,8 +491,9 @@ class Parser {
     }
 
     if (kind === 'field') {
-      const fieldLine = this.peek().line;
-      this.consumeField();
+      // the field spans through its initializer's terminating `;` — a `Handler h = ctx -> { … };`
+      // lambda body belongs to the field, so calls inside it can be attributed to it.
+      const fieldLine = this.consumeField();
       // 1.3: emit the field as a def (type + name + annotations) so the framework-semantics layer can
       // model entity columns (@Column/@Id), injected fields (@Autowired), and component props. A
       // multi-declarator field (`int a, b;`) yields only the first name (tolerant, documented).
@@ -674,15 +675,18 @@ class Parser {
   }
 
   /** Consume a field initializer up to the terminating `;` at depth 0 (handles lambdas/array inits). */
-  private consumeField(): void {
+  /** Consume a field initializer; returns the line of its terminating `;` (or where it stopped). */
+  private consumeField(): number {
     let pdepth = 0;
     let bdepth = 0;
     let brace = 0;
+    let line = this.peek().line;
     while (!this.atEnd()) {
       const tk = this.peek();
+      line = tk.line;
       if (pdepth === 0 && bdepth === 0 && brace === 0 && this.isOp(';')) {
         this.next();
-        return;
+        return line;
       }
       if (tk.type === 'OP') {
         if (tk.value === '(') pdepth++;
@@ -697,6 +701,7 @@ class Parser {
       }
       this.next();
     }
+    return line;
   }
 
   /**

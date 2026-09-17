@@ -27,7 +27,7 @@ import type {
   JavaLocal,
   JavaModule,
 } from '@knowledge-crib/parsers';
-import { edgeId } from '@knowledge-crib/soul-schema';
+import { edgeId, idFor } from '@knowledge-crib/soul-schema';
 import type { Edge } from '@knowledge-crib/soul-schema';
 import type { SymbolTable } from './symbol-table.js';
 
@@ -222,7 +222,7 @@ export function resolveJavaCalls(
     for (let i = 0; i < file.mod.calls.length; i++) {
       const c = file.mod.calls[i]!;
       const res = scope.resolveCall(i);
-      const caller = table.enclosingSymbolId(file.path, c.line);
+      const caller = scope.callerId(c.line, table);
       if (!caller) continue;
       const snippet = callText(c);
       if (res.ctorType) {
@@ -482,10 +482,25 @@ class FileScope {
     this.types = index.typesByFile.get(file.path) ?? [];
     for (const t of this.types) {
       for (const m of t.def.body) {
-        if (m.kind === 'method' || m.kind === 'constructor')
+        // a field initializer (`Handler h = ctx -> { … };`) is a callable scope for its lambda body
+        if (m.kind === 'method' || m.kind === 'constructor' || m.kind === 'field')
           this.methods.push({ def: m, owner: t });
       }
     }
+  }
+
+  /** The graph node a call at `line` belongs to: the innermost method, constructor, or field. */
+  callerId(line: number, table: SymbolTable): string | undefined {
+    const scope = this.enclosingMethod(line);
+    if (scope?.def.kind === 'field') {
+      return idFor({
+        kind: 'field',
+        path: this.file.path,
+        qualifiedName: `${scope.owner.qualified}.${scope.def.name}`,
+        startLine: scope.def.startLine,
+      });
+    }
+    return table.enclosingSymbolId(this.file.path, line);
   }
 
   private enclosingType(line: number): TypeInfo | undefined {

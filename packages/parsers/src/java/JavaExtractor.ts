@@ -180,7 +180,7 @@ export class JavaExtractor implements Extractor {
     // (best-effort, last-wins) without emitting a duplicate.
     const callsEdgeById = new Map<string, Edge>();
     const resolvedSites: ResolvedSite[] = [];
-    this.collectCalls(mod.calls, symbols, edges, callsEdgeById, resolvedSites);
+    this.collectCalls(mod.calls, symbols, fieldNodes, edges, callsEdgeById, resolvedSites);
 
     // --- pass 3 (Track 3): per-method body-walk — emit condition/statement/executes/guarded-by and
     // annotate calls edges with the guard chain + record call sites on the proc node meta.calls. ---
@@ -320,6 +320,7 @@ export class JavaExtractor implements Extractor {
   private collectCalls(
     calls: JavaCallSite[],
     symbols: LocalSymbol[],
+    fieldNodes: Node[],
     edges: Edge[],
     callsEdgeById: Map<string, Edge>,
     resolvedSites: ResolvedSite[],
@@ -339,7 +340,7 @@ export class JavaExtractor implements Extractor {
       }
       if (!dstId) continue;
       resolvedSites.push({ line: c.line, name: c.name, id: dstId });
-      const caller = enclosingSymbolId(c.line, symbols);
+      const caller = enclosingCallerId(c.line, symbols, fieldNodes);
       if (!caller || caller === dstId) continue; // skip self-recursion
       const calleeText = c.tail.length ? `${c.head}.${c.tail.join('.')}` : c.head;
       const id = edgeId(caller, dstId, 'calls');
@@ -424,6 +425,23 @@ function enclosingSymbolId(line: number, symbols: LocalSymbol[]): string | undef
       best = s;
   }
   return best?.node.id;
+}
+
+/** Innermost symbol or field (a lambda-valued field initializer is a caller) containing `line`. */
+function enclosingCallerId(
+  line: number,
+  symbols: LocalSymbol[],
+  fields: Node[],
+): string | undefined {
+  const symbolId = enclosingSymbolId(line, symbols);
+  const symbolStart = symbols.find((s) => s.node.id === symbolId)?.node.span?.start ?? 0;
+  let field: Node | undefined;
+  for (const f of fields) {
+    const span = f.span;
+    if (!span || line < span.start || line > span.end || span.start < symbolStart) continue;
+    if (!field || span.start >= (field.span?.start ?? 0)) field = f;
+  }
+  return field?.id ?? symbolId;
 }
 
 /** Innermost TYPE symbol (class / interface / enum / record) whose span contains `line`. */

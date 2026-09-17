@@ -6,6 +6,10 @@ public class Event {
     private List<String> gradeBands;
     private EventType type;
 
+    public static Event load(Object ctx) {
+        return new Event();
+    }
+
     public EventType getType() {
         return type;
     }

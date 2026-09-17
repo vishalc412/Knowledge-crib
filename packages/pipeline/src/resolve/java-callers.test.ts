@@ -102,6 +102,7 @@ describe('Java caller recall (gate)', () => {
       'FllMatchRoutesLogic.useK2Rules [EXTRACTED]',
       'FllUIRoutesLogic.rubric [EXTRACTED]',
       'FllUIRoutesLogic.scoreSheet [EXTRACTED]',
+      'FllUIRoutesLogic.serveScoringViewPage [EXTRACTED]',
       'file:eventConfig.vm [INFERRED]',
       'file:eventHome.vm [INFERRED]',
     ]);

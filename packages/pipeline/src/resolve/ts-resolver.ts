@@ -120,6 +120,25 @@ export function resolveTypeScript(
           }
         }
       }
+      // cross-file JSX: `<Child/>` where Child is an imported component → renders
+      if (
+        (ts.isJsxSelfClosingElement(node) || ts.isJsxOpeningElement(node)) &&
+        ts.isIdentifier(node.tagName) &&
+        /^[A-Z]/.test(node.tagName.text)
+      ) {
+        const tag = node.tagName.text;
+        const binding = imports.get(tag);
+        if (binding && !isLocallyBound(node, tag)) {
+          const target = table.topLevelSymbol(binding.file, binding.name);
+          const caller = table.enclosingSymbolId(file.path, lineOf(node.getStart()));
+          if (target && caller && caller !== target.id) {
+            push(caller, target.id, 'renders', `<${tag}/>`);
+            stats.renders = (stats.renders ?? 0) + 1;
+          } else if (!target) {
+            stats.dropped++;
+          }
+        }
+      }
       // inheritance / implements
       if (ts.isClassDeclaration(node) && node.name && node.heritageClauses) {
         const classSym = table.topLevelSymbol(file.path, node.name.text);
