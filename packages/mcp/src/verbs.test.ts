@@ -297,6 +297,86 @@ describe('M5 wedge — impact returns blast radius + describing docs', () => {
   });
 });
 
+describe('impact / context — dependency relations only, provenance stated', () => {
+  const authClass = sym('src/auth.ts', 'AuthService', 9, {
+    type: 'class',
+    span: { start: 9, end: 13 },
+  });
+  const panel = sym('src/panel.tsx', 'LoginPanel', 3, { type: 'component' });
+  const template = fileNode('views/login.vm');
+  const note: Node = {
+    id: idFor({ kind: 'explanation', path: 'src/auth.ts', startLine: 8 }),
+    kind: 'explanation',
+    file: 'src/auth.ts',
+    span: { start: 8, end: 8 },
+    hash: contentHash('login note'),
+  };
+
+  beforeEach(() => {
+    soul.putNodes([authClass, panel, template, note, fileNode('src/panel.tsx')]);
+    soul.putEdges([
+      edge(login.id, authClass.id, 'member-of'),
+      edge(note.id, login.id, 'describes'),
+      edge(panel.id, login.id, 'renders'),
+      edge(template.id, login.id, 'calls', {
+        method: 'inferred',
+        provenance: 'INFERRED',
+        confidence: 0.6,
+      }),
+    ]);
+    soul.commit('2026-01-01T00:00:00.000Z');
+    index.close();
+    index = new SqliteIndexStore();
+    index.buildFromSoul(soul, repo);
+    verbs = new Verbs({ soul, index, repoRoot: repo });
+  });
+
+  it('impact up lists dependents, not members or doc comments, each with provenance', () => {
+    const res = verbs.impact({ id: login.id, dir: 'up', depth: 1 }) as unknown as {
+      affected: Array<{ id: string; rel: string; provenance: string; confidence: number }>;
+    };
+    expect(
+      res.affected
+        .map(
+          (a) =>
+            `${a.id === handle.id ? 'handle' : a.id === panel.id ? 'panel' : a.id === template.id ? 'template' : a.id}:${a.rel}:${a.provenance}`,
+        )
+        .sort(),
+    ).toEqual(['handle:calls:EXTRACTED', 'panel:renders:EXTRACTED', 'template:calls:INFERRED']);
+    const classUp = verbs.impact({ id: authClass.id, dir: 'up' }) as unknown as ImpactResult;
+    expect(classUp.affected.map((a) => a.id)).not.toContain(login.id);
+  });
+
+  it('impact honours an explicit rels override', () => {
+    const res = verbs.impact({
+      id: authClass.id,
+      dir: 'up',
+      rels: ['member-of'],
+    }) as unknown as ImpactResult;
+    expect(res.affected.map((a) => a.id)).toEqual([login.id]);
+  });
+
+  it('context callers include render sites and state provenance; empty callers carry a note', () => {
+    const ctx = verbs.context({ id: login.id }) as unknown as {
+      callers: Array<{ id: string; provenance: string; rel?: string }>;
+    };
+    expect(
+      ctx.callers
+        .map(
+          (c) =>
+            `${c.id === handle.id ? 'handle' : c.id === panel.id ? 'panel' : 'template'}:${c.rel ?? 'calls'}:${c.provenance}`,
+        )
+        .sort(),
+    ).toEqual(['handle:calls:EXTRACTED', 'panel:renders:EXTRACTED', 'template:calls:INFERRED']);
+    const top = verbs.context({ id: handle.id }) as unknown as {
+      callers: unknown[];
+      callersNote?: string;
+    };
+    expect(top.callers).toEqual([]);
+    expect(top.callersNote).toMatch(/NOT evidence the symbol is unused/);
+  });
+});
+
 describe('verbs', () => {
   it('searches the refreshed working overlay rather than the stale committed index', () => {
     // The canonical index is deliberately built before this uncommitted edit, mirroring `crib

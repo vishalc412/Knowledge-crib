@@ -877,7 +877,7 @@ export function buildServer(verbs: Verbs, version = '0.1.0', pins?: RequestPins)
     'impact',
     {
       description:
-        'Blast radius and reachability, selected by `op`. blast (default): what breaks if `id` changes — `dir` up = dependents, down = dependencies; carries the docs that describe the changed symbol. federated: the same walk across MULTIPLE repos (`roots`), following an outbound HTTP call to the route that serves it; each node carries `soul` and `crossRepo`. path: the shortest dependency path between `from` and `to`. owners: which files/modules own `id`. Run blast BEFORE editing any symbol.',
+        'Blast radius and reachability, selected by `op`. blast (default): what breaks if `id` changes — `dir` up = dependents, down = dependencies; walks dependency relations only (calls, imports, inherits, implements, injects, renders, produces, reads, writes, requires, invokes, governs — override with `rels`); each affected node carries `provenance` (INFERRED = not proven) and the docs that describe the changed symbol. federated: the same walk across MULTIPLE repos (`roots`), following an outbound HTTP call to the route that serves it; each node carries `soul` and `crossRepo`. path: the shortest dependency path between `from` and `to`. owners: which files/modules own `id`. Run blast BEFORE editing any symbol.',
       inputSchema: {
         op: opSchema('impact'),
         id: z.string().optional(),
@@ -891,6 +891,7 @@ export function buildServer(verbs: Verbs, version = '0.1.0', pins?: RequestPins)
         limit: z.number().int().positive().max(MAX_LIMIT).optional(),
         extractedOnly: z.boolean().optional(),
         includeLlm: z.boolean().optional(),
+        rels: z.array(z.string()).max(32).optional(),
       },
     },
     async (a) => {

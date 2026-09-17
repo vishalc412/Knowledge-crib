@@ -393,6 +393,30 @@ export interface DocLink {
 
 const DOC_RELS = new Set(['describes', 'references']);
 
+/**
+ * Relations a change propagates along (src depends on dst) — the default for `impact`. Structure
+ * (`member-of`, statement/CFG edges), documentation (`describes`, `references`, returned separately
+ * as docs) and ownership are not dependencies: walking them lists a class's members or a symbol's
+ * doc comment as if they would break.
+ */
+const DEPENDENCY_RELS: ReadonlySet<string> = new Set([
+  'calls',
+  'imports',
+  'inherits',
+  'implements',
+  'injects',
+  'renders',
+  'produces',
+  'reads',
+  'writes',
+  'requires',
+  'invokes',
+  'governs',
+]);
+
+/** Relations that make the source a CALLER of the target — `context` callers/callees. */
+const CALLER_RELS: ReadonlySet<string> = new Set(['calls', 'renders', 'invokes']);
+
 type GapCategory = 'project' | 'tests' | 'fixtures' | 'builtin' | 'external';
 type GapCategoryCounts = Record<GapCategory, number>;
 
@@ -727,12 +751,18 @@ export class Verbs {
     if (!id) return notFound(args.id);
     const node = soul.getNode(id);
     if (!node) return notFound(args.id);
-    const callers = this.callEdges(id, 'up', args.extractedOnly).map((e) =>
-      this.nodeBrief(e.src, e.confidence),
-    );
-    const callees = this.callEdges(id, 'down', args.extractedOnly).map((e) =>
-      this.nodeBrief(e.dst, e.confidence),
-    );
+    const edgeFacts = (e: Edge): Record<string, unknown> => ({
+      provenance: e.provenance,
+      ...(e.rel !== 'calls' ? { rel: e.rel } : {}),
+    });
+    const callers = this.callEdges(id, 'up', args.extractedOnly).map((e) => ({
+      ...this.nodeBrief(e.src, e.confidence),
+      ...edgeFacts(e),
+    }));
+    const callees = this.callEdges(id, 'down', args.extractedOnly).map((e) => ({
+      ...this.nodeBrief(e.dst, e.confidence),
+      ...edgeFacts(e),
+    }));
     const docs = bound(
       this.docsFor(id, 0, args.extractedOnly),
       capInt(args.docLimit, DEFAULT_DOC_LIMIT, MAX_DOC_LIMIT),
@@ -744,6 +774,10 @@ export class Verbs {
       docs: docs.items,
       truncated: docs.truncated,
     };
+    if (callers.length === 0 && node.type && CALLABLE_SYMBOL_TYPES.has(node.type)) {
+      result.callersNote =
+        'no caller edge resolved — this is NOT evidence the symbol is unused; confirm with a text search before treating it as dead';
+    }
     // The memories written about this code — including ones staged a moment ago (labelled pending).
     const memories = this.memoriesAt(id);
     if (memories.length > 0) result.memories = memories;
@@ -1275,14 +1309,19 @@ export class Verbs {
     limit?: number;
     extractedOnly?: boolean;
     includeLlm?: boolean;
+    /** relations to walk; defaults to the dependency relations (see DEPENDENCY_RELS). */
+    rels?: string[];
   }): Record<string, unknown> {
     const id = this.resolveNodeId(args.id);
     if (!id || !this.deps.soul.getNode(id)) return notFound(args.id);
     const depth = capInt(args.depth, 2, MAX_DEPTH);
+    const rels: ReadonlySet<string> = args.rels?.length ? new Set(args.rels) : DEPENDENCY_RELS;
     const visited = new Set<string>([id]);
     const affected: Array<{
       id: string;
       rel: string;
+      provenance: string;
+      confidence: number;
       distance: number;
       risk: string;
       docs: DocLink[];
@@ -1292,6 +1331,9 @@ export class Verbs {
       const next: string[] = [];
       for (const cur of frontier) {
         for (const e of this.traversalAdjacency(cur, args.dir, args)) {
+          // LLM / memory layer edges carry their own vocabulary; only the extracted graph is filtered.
+          const origin = (e as { origin?: string }).origin;
+          if ((origin === undefined || origin === 'extracted') && !rels.has(e.rel)) continue;
           const nb = args.dir === 'up' ? e.src : e.dst;
           if (visited.has(nb)) continue;
           visited.add(nb);
@@ -1299,6 +1341,8 @@ export class Verbs {
           affected.push({
             id: nb,
             rel: e.rel,
+            provenance: e.provenance,
+            confidence: e.confidence,
             distance: d,
             risk: d === 1 ? 'high' : d === 2 ? 'medium' : 'low',
             docs: bound(
@@ -2546,8 +2590,8 @@ export class Verbs {
 
   private callEdges(id: string, dir: Dir, extractedOnly?: boolean): Edge[] {
     return this.deps.index
-      .neighbors(id, 'calls', dir)
-      .filter((e) => !extractedOnly || e.provenance === 'EXTRACTED');
+      .neighbors(id, undefined, dir)
+      .filter((e) => CALLER_RELS.has(e.rel) && (!extractedOnly || e.provenance === 'EXTRACTED'));
   }
 
   /** Doc links pointing at `id` (incoming describes/references), filtered + sorted by confidence. */
