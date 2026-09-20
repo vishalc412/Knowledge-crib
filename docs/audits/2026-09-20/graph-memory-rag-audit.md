@@ -632,8 +632,54 @@ advertising a quality improvement. The next honest step is not more plumbing —
 labelled code corpus (P1), in that order, because without the corpus there is no way to tell whether
 body embedding helped.
 
+### F18 (found during remediation) — `crib serve` EXITS on a damaged/absent manifest, so every fresh worktree of this repository starts with a dead MCP server
+
+This audit opened with `knowledge-crib` reporting `CONNECTION_CLOSED`, which reads like a client or
+config fault. It is not. Reproduced directly:
+
+```
+$ mkdir -p mcptest/.crib/memory && cd mcptest && git init -q .
+$ crib serve .
+not indexed: …/mcptest/.crib exists but crib.json is missing — the index is damaged;
+refusing to serve an ancestor project. Repair with `crib index …/mcptest`
+not indexed — run `crib index` first
+$ echo $?
+3
+```
+
+`crib serve` exits `EXIT.NOT_INDEXED` before the stdio transport is established. To any MCP client
+that is indistinguishable from a crash: `MCP error -32000: Connection closed`.
+
+**Why this is structural rather than an edge case.** `.gitignore` excludes `.crib/*` and re-includes
+only `.crib/memory/` (deliberately — the memory ledger is the committed part, the index is build
+output). So a fresh clone or a **fresh git worktree** of this repository materialises `.crib/memory/`
+with **no `crib.json`** — which is exactly the state the wrong-project guard refuses. Every new
+worktree therefore starts with a non-functional MCP server, and the error surfaced to the IDE names
+neither the cause nor the one-command fix.
+
+**Why the existing guard does not cover it.** `openIndexForServe` was written for precisely this
+failure mode, and its docstring says so: *"The MCP stdio server must NEVER drop the transport on a
+stale/missing derived index — that surfaces to the IDE as `MCP error -32000: Connection closed`,
+because the serve process exits and the stdio pipe dies."* But it self-heals a missing **derived
+index** only. A missing **manifest** is refused earlier, in `resolveProjectRoot`'s damaged-index
+branch, which returns before any of that self-healing runs. The guard is one layer too late.
+
+The refusal itself is correct — serving an ancestor project's soul silently is the worse outcome, and
+that reasoning is sound. The defect is the *delivery*: a hard exit converts an actionable diagnosis
+into an opaque transport failure. Two non-exclusive fixes, neither implemented here:
+
+1. Complete the handshake, then fail every verb with the diagnosis as its error payload. The user
+   reads "`.crib/crib.json` missing — run `crib index .`" in the IDE instead of "Connection closed".
+2. Have `crib setup`/`crib init` (or a worktree-aware check) index on first serve in a worktree whose
+   `.crib/memory/` exists without a manifest — the one case where "damaged" actually means "freshly
+   checked out".
+
+**Consequence for this audit, worth stating:** F16 was caused by F18. The claim ledger was
+unreachable all session because the server never started, and the server never started because a
+fresh worktree has no manifest.
+
 ### Unchanged
 
-F4–F17 are untouched by this round. F16 in particular still holds: these findings could not be
+F4–F15 and F17 are untouched by this round. F16 in particular still holds: these findings could not be
 distilled into the claim ledger, because `memory_observe` is MCP-only and the MCP server was down.
 Work is recorded on `intake:d186b40d…`.
