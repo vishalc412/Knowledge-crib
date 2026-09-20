@@ -1934,3 +1934,60 @@ describe('G5.3 multimodal — opt-in phase with production adapters', () => {
     expect(r.status ?? 1).not.toBe(0);
   });
 });
+
+/**
+ * F15 — a command's own argument must never be resolved as a project root.
+ *
+ * `crib ask "<question>"`, `crib context <id>`, `crib rules <proc>` and every other id-taking verb
+ * fed their first positional to root resolution, so each one resolved a root named after its own
+ * argument. The upward walk then recovered the real project, which is exactly why this survived: it
+ * looked like a cosmetic warning. It was not — the warning's remedy line told the user to run
+ * `crib index <symbol-id>`, and a path-shaped argument naming a directory with a `.crib` but no
+ * `crib.json` would hit the hard damaged-index refusal and fail the command outright.
+ *
+ * These use spawnSync rather than `runCliResult` ON PURPOSE. `runCliResult` returns `stderr: ''`
+ * whenever the command exits 0, so a stderr assertion on a succeeding command passes no matter what
+ * the command actually printed — these very tests passed against the unfixed code until that was
+ * found. Any future test that asserts on the stderr of a SUCCESSFUL command needs this shape.
+ */
+describe('F15 — positionals that are not paths are not resolved as roots', () => {
+  const ANCESTOR = /is not indexed — serving the ancestor project/;
+
+  /** Run the built CLI capturing stdout AND stderr regardless of exit status. */
+  function run(args: string[]): { status: number; stdout: string; stderr: string } {
+    const r = spawnSync(process.execPath, [CLI, ...args], {
+      cwd: repo,
+      encoding: 'utf8',
+      maxBuffer: 32 * 1024 * 1024,
+    });
+    return { status: r.status ?? 1, stdout: r.stdout ?? '', stderr: r.stderr ?? '' };
+  }
+
+  it('`ask` does not treat the question as a path', () => {
+    const r = run(['ask', 'how is staleness decided']);
+    expect(r.stderr).not.toMatch(ANCESTOR);
+    expect(r.stderr).not.toMatch(/crib index .*how is staleness/);
+  });
+
+  it('`context` does not treat a symbol id as a path', () => {
+    expect(run(['context', 'sym:db/loan_pkg_spec.sql#NOPE@L1']).stderr).not.toMatch(ANCESTOR);
+  });
+
+  it('`rules` does not treat a procedure name as a path', () => {
+    expect(run(['rules', 'some_procedure_name']).stderr).not.toMatch(ANCESTOR);
+  });
+
+  it('`impact` does not treat a node id as a path', () => {
+    expect(run(['impact', 'sym:nope@L1', '--dir', 'up']).stderr).not.toMatch(ANCESTOR);
+  });
+
+  it('`gaps` DOES still accept a path positional — the one command that legitimately takes one', () => {
+    const here = run(['gaps', '.']);
+    expect(here.status, here.stderr).toBe(0);
+    expect(here.stdout).toMatch(/analysisReadiness|unresolvedCallSites|unimplemented/);
+    // an unindexed path must still be refused rather than answered from the cwd project
+    const elsewhere = run(['gaps', tmpdir()]);
+    expect(elsewhere.status).not.toBe(0);
+    expect(elsewhere.stderr).toMatch(/not indexed/);
+  });
+});

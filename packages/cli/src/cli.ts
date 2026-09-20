@@ -655,6 +655,26 @@ function resolveRoot(args: string[], ctx?: CmdCtx): ResolvedRoot {
   return { ...resolved, cribDir: resolveCribDir(args, resolved) };
 }
 
+/**
+ * Resolve the project root for a command whose POSITIONALS ARE NOT PATHS — a question (`ask`), a
+ * symbol id (`context`, `dossier`, `impact`, `path`, `neighbors`, `explain`), or a procedure/package
+ * name (`rules`, `reconstruct`). The root then comes only from `--cwd` / env / the upward walk,
+ * exactly as {@link cmdQuery} already did for search text.
+ *
+ * Feeding those positionals to {@link resolveRoot} made every one of those commands resolve a root
+ * named after its own argument. Three consequences, in ascending severity: a warning printed on
+ * essentially every invocation of the most-used verbs (which trains people to ignore warnings); a
+ * remedy line instructing the user to `crib index <symbol-id>`, which is wrong advice; and — because
+ * `resolveProjectRoot` HARD-REFUSES a candidate directory that has a `.crib` without a `crib.json` —
+ * a path-shaped argument that happens to name such a directory would make the command refuse
+ * outright rather than answer. The walk-up recovered the right project in the common case, which is
+ * exactly why this survived: it looked cosmetic.
+ */
+function resolveRootNonPath(args: string[], ctx?: CmdCtx): ResolvedRoot {
+  const resolved = resolveProjectRoot({ explicitRoot: ctx?.cwdOverride });
+  return { ...resolved, cribDir: resolveCribDir(args, resolved) };
+}
+
 async function main(argvRaw: string[]): Promise<number> {
   const { argv, cwdOverride } = extractCwdFlag(argvRaw);
   const ctx: CmdCtx = { cwdOverride };
@@ -1488,8 +1508,15 @@ async function openServeIndex(
 function openVerbs(
   args: string[],
   ctx?: CmdCtx,
+  opts: { positionalIsPath?: boolean } = {},
 ): { verbs: Verbs; index: IndexStore; soul: ReturnType<typeof openSoul>['soul'] } | null {
-  const resolved = resolveRoot(args, ctx);
+  // Default OFF: of the fourteen commands on this funnel, thirteen take an id, a name or a question
+  // as their first positional and only `gaps` takes a path. The safe reading is therefore the
+  // default, and the one exception opts in — the inverse default is what produced the bug in
+  // `resolveRootNonPath`'s docstring.
+  const resolved = opts.positionalIsPath
+    ? resolveRoot(args, ctx)
+    : resolveRootNonPath(args, ctx);
   if (!isIndexedRoot(resolved)) {
     process.stderr.write('not indexed — run `crib index` first\n');
     return null;
@@ -1519,7 +1546,8 @@ async function openVerbsForSearch(
   args: string[],
   ctx?: CmdCtx,
 ): Promise<{ verbs: Verbs; index: IndexStore; soul: ReturnType<typeof openSoul>['soul'] } | null> {
-  const resolved = resolveRoot(args, ctx);
+  // The question is the positional here, so the root must come from --cwd / env / the walk only.
+  const resolved = resolveRootNonPath(args, ctx);
   if (!isIndexedRoot(resolved)) {
     process.stderr.write('not indexed — run `crib index` first\n');
     return null;
@@ -1540,7 +1568,8 @@ async function openVerbsForSearch(
 
 /** `crib gaps` — analysis readiness, missing bodies (spec-only callables), unresolved call sites. */
 async function cmdGaps(args: string[], ctx?: CmdCtx): Promise<number> {
-  const opened = openVerbs(args, ctx);
+  // `crib gaps [path]` — the one command on this funnel whose positional really is a path.
+  const opened = openVerbs(args, ctx, { positionalIsPath: true });
   if (!opened) return EXIT.NOT_INDEXED;
   const { verbs, index } = opened;
   process.stdout.write(
