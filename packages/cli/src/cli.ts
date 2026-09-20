@@ -1514,9 +1514,7 @@ function openVerbs(
   // as their first positional and only `gaps` takes a path. The safe reading is therefore the
   // default, and the one exception opts in — the inverse default is what produced the bug in
   // `resolveRootNonPath`'s docstring.
-  const resolved = opts.positionalIsPath
-    ? resolveRoot(args, ctx)
-    : resolveRootNonPath(args, ctx);
+  const resolved = opts.positionalIsPath ? resolveRoot(args, ctx) : resolveRootNonPath(args, ctx);
   if (!isIndexedRoot(resolved)) {
     process.stderr.write('not indexed — run `crib index` first\n');
     return null;
