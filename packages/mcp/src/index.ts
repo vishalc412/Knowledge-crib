@@ -11,7 +11,14 @@ export {
   DEFAULT_BODY_MAX_LINES,
   type RehydratedBody,
 } from './snippet.js';
-export { buildServer, serveHttp, serveStdio, type RequestPins } from './server.js';
+export {
+  buildServer,
+  buildUnavailableServer,
+  serveHttp,
+  serveStdio,
+  serveUnavailableStdio,
+  type RequestPins,
+} from './server.js';
 export {
   STALE_REASONS,
   type ReaderFreshness,

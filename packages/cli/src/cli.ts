@@ -62,6 +62,7 @@ import {
   fitTokenBudget,
   serveHttp,
   serveStdio,
+  serveUnavailableStdio,
 } from '@knowledge-crib/mcp';
 import type {
   EnrichLayer,
@@ -2123,8 +2124,20 @@ async function cmdOwnership(args: string[], ctx?: CmdCtx): Promise<number> {
 async function cmdServe(args: string[], ctx?: CmdCtx): Promise<number> {
   const resolved = resolveRoot(args, ctx);
   if (!isIndexedRoot(resolved)) {
-    process.stderr.write('not indexed — run `crib index` first\n');
-    return EXIT.NOT_INDEXED;
+    // Do NOT exit here. Exiting before the transport exists is delivered to the IDE as
+    // `MCP error -32000: Connection closed`, which names neither this cause nor its fix — and this
+    // is a ROUTINE state, not a rare one: `.gitignore` keeps `.crib/memory/` but not `crib.json`,
+    // so every fresh clone and every new git worktree lands here. Serve the refusal instead, so the
+    // handshake completes and the first tool call carries the diagnosis into the client. Still no
+    // graph is opened, so the wrong-project guard's decision is unchanged.
+    const reason = `${resolved.repoRoot} is not indexed (no .crib/crib.json), so there is no graph to serve`;
+    const remedy = `Run \`crib index ${resolved.repoRoot}\` and restart this MCP server.`;
+    process.stderr.write(`${reason} — ${remedy}\n`);
+    // stdio only: the HTTP daemon has a real status code to answer with, and `crib serve --http`
+    // callers are scripts that should see a non-zero exit rather than a server that refuses forever.
+    if (args.includes('--http')) return EXIT.NOT_INDEXED;
+    await serveUnavailableStdio(reason, remedy);
+    return EXIT.OK;
   }
   // `--watch` observes a live work tree for edits; an archive input has nothing to watch.
   if (resolved.sourceArchive !== undefined && args.includes('--watch')) {

@@ -1228,3 +1228,73 @@ export async function serveStdio(
     process.stdin.on('close', resolve);
   });
 }
+
+/**
+ * Why a process-level refusal must not be delivered by exiting.
+ *
+ * `crib serve` refuses to serve an ancestor project's soul when the target has a `.crib/` directory
+ * but no `crib.json` — correct, because silently answering from an unrelated repository's graph is
+ * the worse outcome (runtime.ts documents the incident that motivated the guard). But the refusal
+ * used to be delivered by `process.exit`, BEFORE the stdio transport existed, and to an MCP client
+ * that is indistinguishable from a crash: `MCP error -32000: Connection closed`. The diagnosis and
+ * its one-command fix were written to stderr, where no IDE surfaces them.
+ *
+ * That made a routine state into an opaque failure. `.gitignore` excludes `.crib/*` and re-includes
+ * only `.crib/memory/`, so every fresh clone and every new git worktree of a crib-using repository
+ * materialises the committed memory ledger with NO manifest — precisely the refused state. The
+ * server was therefore dead on arrival in every new worktree, reporting only "Connection closed".
+ *
+ * So the refusal is kept and its DELIVERY is changed: complete the handshake, advertise the real
+ * tool names, and fail every call with the diagnosis as a structured payload. The client shows the
+ * server as connected, `tools/list` looks normal, and the first call answers "why" in the IDE. No
+ * graph is served, no ancestor soul is opened, and nothing about the guard's decision is relaxed —
+ * `openIndexForServe`'s rule ("never drop the transport") now also covers the layer above it.
+ */
+export function buildUnavailableServer(
+  reason: string,
+  remedy: string,
+  version = '0.1.0',
+): McpServer {
+  const server = new McpServer({ name: 'knowledge-crib', version });
+  const payload = {
+    error: {
+      code: 'CRIB_UNAVAILABLE',
+      message: reason,
+      remedy,
+      // Named so an agent reading this does not treat an empty graph as a true answer: every verb
+      // is refusing, which is a different thing from a query that legitimately found nothing.
+      serving: 'nothing — no graph is loaded',
+    },
+  };
+  for (const tool of TOOL_NAMES) {
+    server.registerTool(
+      tool,
+      {
+        description: `UNAVAILABLE — ${reason}. ${remedy}`,
+        // Deliberately permissive: this server exists to explain itself, so a call must reach the
+        // handler and receive the diagnosis rather than being rejected by schema validation with a
+        // message about the wrong problem.
+        inputSchema: {},
+      },
+      async () => TOOL_RESULT(payload),
+    );
+  }
+  return server;
+}
+
+/**
+ * Serve the refusal over stdio. Same lifetime as {@link serveStdio} — it stays up until stdin
+ * closes, because a server that exits immediately is the failure mode this exists to remove.
+ */
+export async function serveUnavailableStdio(
+  reason: string,
+  remedy: string,
+  version = '0.0.0',
+): Promise<void> {
+  const server = buildUnavailableServer(reason, remedy, version);
+  await server.connect(new StdioServerTransport());
+  await new Promise<void>((resolve) => {
+    process.stdin.on('end', resolve);
+    process.stdin.on('close', resolve);
+  });
+}
