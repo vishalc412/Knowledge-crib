@@ -6542,6 +6542,8 @@ async function cmdMemory(args: string[], ctx?: CmdCtx): Promise<number> {
       return cmdMemoryActivate(rest, ctx);
     case 'remember':
       return cmdMemoryRemember(rest, ctx);
+    case 'observe':
+      return cmdMemoryObserve(rest, ctx);
     case 'admit':
       return cmdMemoryAdmit(rest, ctx);
     case 'propose':
@@ -6576,7 +6578,7 @@ async function cmdMemory(args: string[], ctx?: CmdCtx): Promise<number> {
     case '-h':
     case '--help':
       process.stderr.write(
-        'crib memory init | remember "<claim>" [--subject <id>] [--kind convention|decision] [--global] (record + admit a human-attested claim from a terminal — recallable immediately) | admit <candidate-id> (admit an agent-staged human-attested claim, from a terminal) | handoff [--limit N] [--json] (where was I? — in-flight work, undistilled captures, what went stale) | events [--include-expired] [--limit N] [--json] | profiles list [--json] | profiles register --key <profile-key> --alias <client-id>/<agent-id> [--alias ...] [--json] | recall "<query>" [--limit N] [--sources team,local,global] [--target <id>] [--with-evidence] [--include-pending] [--max-tokens N] [--json] | search "<query>" [--limit N] [--sources team,local,global] [--target <id>] [--max-tokens N] [--json] | get <id> [--with-evidence] [--json] | supersede <id> --actor <id> (--successor <id> | --claim <text>) [--reason <text>] [--json] | delete <id> --actor <id> [--reason <text>] [--json] | history <key> [--as-of <iso-ts>] [--with-evidence] [--json] | evaluate <candidate> --profile <name> | activate <candidate>|--all | propose <memory-id> | attest <candidate> | check | audit [--repair-local] | feedback <mem-id> --signal <useful|unhelpful|contradicted> [--actor <id>] [--context <text>] [--counter-evidence <json-file>] | gc [--max-age-days N] [--dry-run] | migrate | bench [--fast] [--json] [--out <path>] | distill --provider <name> [--providers-file F] [--max-batches N] [--concurrency N] [--timeout-ms N] | recheck [--limit N] [--json] (re-run the admission gate over pending captures) | dismiss <cap-id> [--reason <text>] [--json] (retire one pending capture) | capture-hook --event <session-start|turn-end|tool-use> (hooks invoke this; always exits 0 — best-effort capture, never blocks a session) | init-sync --scope repo|global --backend file|http --url <target> [--key-env <NAME>|--keyfile <path>|--gen-key] [--secret-env <NAME>] [--sync-id <id>] [--backfill] [--json] | sync [push|pull|status] [--dry-run] [--backfill] [--max-events N] [--skip] [--json] | sync rotate-key (--gen-key | --key-env <NAME> | --keyfile <path>) [--dry-run] | sync purge-sync --stale-epoch [--dry-run] | purge <mem-id>... --confirm <mem-id>... [--stores local,global] [--history-scan] [--dry-run] [--actor <id>] [--json] | conflicts [--json] | resolve <record-id> (--successor <id> | --retract) --actor <id> [--reason <text>] [--json] (see docs/memory-sync.md)\n',
+        'crib memory init | observe --kind <k> --subject <id> --claim "<text>" --evidence <file.json|-> (the AGENT write path: staged, re-grounded and gated exactly as the memory_observe MCP tool — works without MCP) | remember "<claim>" [--subject <id>] [--kind convention|decision] [--global] (record + admit a human-attested claim from a terminal — recallable immediately) | admit <candidate-id> (admit an agent-staged human-attested claim, from a terminal) | handoff [--limit N] [--json] (where was I? — in-flight work, undistilled captures, what went stale) | events [--include-expired] [--limit N] [--json] | profiles list [--json] | profiles register --key <profile-key> --alias <client-id>/<agent-id> [--alias ...] [--json] | recall "<query>" [--limit N] [--sources team,local,global] [--target <id>] [--with-evidence] [--include-pending] [--max-tokens N] [--json] | search "<query>" [--limit N] [--sources team,local,global] [--target <id>] [--max-tokens N] [--json] | get <id> [--with-evidence] [--json] | supersede <id> --actor <id> (--successor <id> | --claim <text>) [--reason <text>] [--json] | delete <id> --actor <id> [--reason <text>] [--json] | history <key> [--as-of <iso-ts>] [--with-evidence] [--json] | evaluate <candidate> --profile <name> | activate <candidate>|--all | propose <memory-id> | attest <candidate> | check | audit [--repair-local] | feedback <mem-id> --signal <useful|unhelpful|contradicted> [--actor <id>] [--context <text>] [--counter-evidence <json-file>] | gc [--max-age-days N] [--dry-run] | migrate | bench [--fast] [--json] [--out <path>] | distill --provider <name> [--providers-file F] [--max-batches N] [--concurrency N] [--timeout-ms N] | recheck [--limit N] [--json] (re-run the admission gate over pending captures) | dismiss <cap-id> [--reason <text>] [--json] (retire one pending capture) | capture-hook --event <session-start|turn-end|tool-use> (hooks invoke this; always exits 0 — best-effort capture, never blocks a session) | init-sync --scope repo|global --backend file|http --url <target> [--key-env <NAME>|--keyfile <path>|--gen-key] [--secret-env <NAME>] [--sync-id <id>] [--backfill] [--json] | sync [push|pull|status] [--dry-run] [--backfill] [--max-events N] [--skip] [--json] | sync rotate-key (--gen-key | --key-env <NAME> | --keyfile <path>) [--dry-run] | sync purge-sync --stale-epoch [--dry-run] | purge <mem-id>... --confirm <mem-id>... [--stores local,global] [--history-scan] [--dry-run] [--actor <id>] [--json] | conflicts [--json] | resolve <record-id> (--successor <id> | --retract) --actor <id> [--reason <text>] [--json] (see docs/memory-sync.md)\n',
       );
       process.stderr.write(
         'additional operations: backup create|verify|restore; sync compact [--dry-run] [--json]\n',
@@ -10364,6 +10366,136 @@ async function cmdMemoryRemember(args: string[], ctx?: CmdCtx): Promise<number> 
       2,
     )}\n`,
   );
+  return EXIT.OK;
+}
+
+/**
+ * `crib memory observe` — the AGENT write path, without MCP.
+ *
+ * Why this exists. The protocol requires every reusable learning to be recorded with admissible
+ * evidence, and the agent-appropriate write is an observation that crib itself re-grounds
+ * (`auto-admit.ts`). That write was reachable ONLY through the `memory_observe` MCP tool. When the
+ * MCP server is down — which, before the F18 fix, was the default state of every fresh worktree —
+ * a correct agent had no way to record anything: the CLI's only immediate-admit verb is
+ * `crib memory remember`, which records that a HUMAN asserted the claim. An agent reaching for it
+ * would mint an attestation it does not hold, and the admissibility matrix would reject it anyway
+ * ("human evidence cannot establish implementation facts"). So the ledger was unreachable and the
+ * only alternative was a forged attestation. This closes that.
+ *
+ * It is NOT a privileged path. It takes exactly the route `memory_observe` takes — `api.observe`
+ * with `authorKind: 'agent'` — so the capture policy, the secret/PII scan, quote re-grounding and
+ * the admission gate all run identically. `authorKind` is hard-coded rather than exposed as a flag,
+ * and a `human-attestation` evidence item is REFUSED here: the one call site allowed to present a
+ * human attestation is `crib memory remember`, because it is the one that checks `stdin.isTTY`.
+ */
+async function cmdMemoryObserve(args: string[], ctx?: CmdCtx): Promise<number> {
+  const claim = stringFlag(args, '--claim');
+  const kind = stringFlag(args, '--kind');
+  const subject = stringFlag(args, '--subject');
+  const evidencePath = stringFlag(args, '--evidence');
+  const json = args.includes('--json');
+  if (!claim || !kind || !subject || !evidencePath) {
+    process.stderr.write(
+      'usage: crib memory observe --kind <kind> --subject <id> --claim "<text>" --evidence <file.json|-> ' +
+        '[--applies-to <id>] [--actor <id>] [--tool <name>] [--global] [--idempotency-key <k>] [--json]\n' +
+        '  --evidence takes a JSON ARRAY of evidence items, or `-` to read one from stdin.\n' +
+        '  A source-quote item is { "kind": "source-quote", "soulId": "<node id>", "quote": "<exact text>" }.\n' +
+        "  The quote must appear INSIDE that node's span — a docstring above a function is outside it —\n" +
+        '  and is re-grounded against the live code, so a stale quote is held, never admitted.\n' +
+        '  Claim kinds admit different evidence: a `fact` accepts a source-quote, a `convention` needs a\n' +
+        '  human-attestation or committed-policy, a `pitfall` needs a failing+passing receipt pair.\n',
+    );
+    return EXIT.BAD_ARGS;
+  }
+  let evidenceRaw: string;
+  try {
+    evidenceRaw =
+      evidencePath === '-' ? readFileSync(0, 'utf8') : readFileSync(evidencePath, 'utf8');
+  } catch (e) {
+    process.stderr.write(`cannot read --evidence ${evidencePath}: ${(e as Error).message}\n`);
+    return EXIT.BAD_ARGS;
+  }
+  let evidence: unknown;
+  try {
+    evidence = JSON.parse(evidenceRaw);
+  } catch (e) {
+    process.stderr.write(`--evidence is not valid JSON: ${(e as Error).message}\n`);
+    return EXIT.BAD_ARGS;
+  }
+  if (!Array.isArray(evidence) || evidence.length === 0) {
+    process.stderr.write(
+      '--evidence must be a non-empty JSON array of evidence items. An observation with no evidence\n' +
+        'cannot be admitted, and staging one would only grow the pending queue.\n',
+    );
+    return EXIT.BAD_ARGS;
+  }
+  // The refusal that keeps this verb honest: an agent may cite the repository, never itself, and
+  // never a human. `crib memory remember` owns the attested path because it checks for a terminal.
+  const attestation = evidence.find(
+    (e) =>
+      typeof e === 'object' && e !== null && (e as { kind?: string }).kind === 'human-attestation',
+  );
+  if (attestation !== undefined) {
+    process.stderr.write(
+      'refusing: `crib memory observe` is the AGENT path and cannot present a human-attestation.\n' +
+        'A human asserting a claim uses `crib memory remember "<claim>"` from a terminal, which checks\n' +
+        'that a human is actually present. Cite the repository instead (source-quote / execution-assertion).\n',
+    );
+    return EXIT.BAD_ARGS;
+  }
+  // The positional-free resolve: every value here is a flag, so nothing can be mistaken for a root.
+  const resolved = resolveRoot([], ctx);
+  if (!isIndexedRoot(resolved)) {
+    process.stderr.write('not indexed — run `crib index` first\n');
+    return EXIT.NOT_INDEXED;
+  }
+  const rt = openSoul(resolved);
+  const deps = createMemoryDeps(rt.soul, resolved.repoRoot, resolved.cribDir);
+  if (!deps) {
+    process.stderr.write('could not resolve repoId for memory — run `crib index` first\n');
+    return EXIT.NOT_INDEXED;
+  }
+  const actor = stringFlag(args, '--actor') ?? `agent:${process.env.KCRIB_AGENT_ID ?? 'unknown'}`;
+  // No `attestationSource`: that parameter exists to permit a `tty` human attestation and is for
+  // call sites that have checked `process.stdin.isTTY`. The agent path must never be able to present
+  // one, so it is omitted rather than passed — the type only admits 'terminal' for that reason.
+  const api = createMemoryApi(rt.soul, resolved.repoRoot, resolved.cribDir, deps);
+  const appliesTo = repeatedFlag(args, '--applies-to');
+  const idempotencyKey = stringFlag(args, '--idempotency-key');
+  const result = api.observe({
+    kind,
+    subject,
+    claim,
+    ...(appliesTo.length > 0 ? { appliesTo } : {}),
+    evidence: evidence as never,
+    actor,
+    authorKind: 'agent',
+    tool: stringFlag(args, '--tool') ?? 'crib memory observe',
+    scopeBoundary: args.includes('--global') ? 'global' : 'repo',
+    ...(idempotencyKey !== undefined ? { idempotencyKey } : {}),
+  });
+  if (!result.ok) {
+    if (json) process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+    else process.stderr.write(`error: ${result.error}\n`);
+    return EXIT.ERROR;
+  }
+  const admitted = result.status === 'active';
+  const ack = {
+    ok: true,
+    id: result.id,
+    status: result.status,
+    ...(result.recordId !== undefined ? { recordId: result.recordId } : {}),
+    ...(result.admission !== undefined ? { admission: result.admission } : {}),
+    scope: result.scope,
+    // The same honesty the MCP ack carries: a write is not a recall. Reporting "recorded" for a
+    // staged-but-unadmitted candidate is technically true and practically misleading, because the
+    // next `crib memory recall` returns nothing.
+    recallable: admitted,
+    nextAction: admitted
+      ? 'admitted to local trust — recallable now via `crib memory recall`.'
+      : 'staged as an untrusted candidate; normal recall withholds it. Inspect with `crib memory recall --include-pending`, or supply stronger evidence.',
+  };
+  process.stdout.write(`${JSON.stringify(ack, null, 2)}\n`);
   return EXIT.OK;
 }
 

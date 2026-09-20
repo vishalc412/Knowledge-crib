@@ -1,4 +1,4 @@
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -404,5 +404,149 @@ describe('crib memory recall — the protocol-named CLI fallback exists', () => 
     const r = runRecall(['loan', '--sources', 'bogus']);
     expect(r.status).toBe(2);
     expect(r.stderr).toContain('--sources accepts team, local, global');
+  });
+});
+
+/**
+ * F16 — `crib memory observe`: the AGENT write path without MCP.
+ *
+ * Before this verb, staging an agent observation required the `memory_observe` MCP TOOL. With the
+ * MCP server down (which, before the F18 fix, was the default state of every fresh worktree) a
+ * correct agent could not record anything: the only immediate-admit CLI verb is
+ * `crib memory remember`, which records that a HUMAN asserted the claim, so reaching for it would
+ * mint an attestation the agent does not hold. The ledger was unreachable and the only alternative
+ * was a forged attestation.
+ *
+ * These tests use spawnSync, not the local `runMemory` helper: that helper returns `stderr: ''`
+ * whenever the command exits 0, so any stderr assertion on a succeeding command passes regardless.
+ */
+describe('crib memory observe — the agent write path, without MCP', () => {
+  function observe(args: string[]): { status: number; stdout: string; stderr: string } {
+    const r = spawnSync(process.execPath, [CLI, 'memory', 'observe', ...args], {
+      cwd: repo,
+      encoding: 'utf8',
+      maxBuffer: 32 * 1024 * 1024,
+      env: env(),
+    });
+    return {
+      status: r.status ?? 1,
+      stdout: (r.stdout ?? '').trim(),
+      stderr: (r.stderr ?? '').trim(),
+    };
+  }
+
+  /** Write an evidence array to a temp file and return its path. */
+  function evidenceFile(items: unknown): string {
+    const path = join(repo, `ev-${Math.random().toString(36).slice(2)}.json`);
+    writeFileSync(path, JSON.stringify(items));
+    return path;
+  }
+
+  const GROUNDED = [
+    { kind: 'source-quote', soulId: NODE_ID, quote: 'C_THRESHOLD CONSTANT NUMBER := 30' },
+  ];
+
+  it('admits a grounded fact and makes it recallable — the whole point', () => {
+    const r = observe([
+      '--kind',
+      'fact',
+      '--subject',
+      NODE_ID,
+      '--claim',
+      'The loan package pins its threshold constant at 30.',
+      '--evidence',
+      evidenceFile(GROUNDED),
+    ]);
+    expect(r.status, r.stderr).toBe(0);
+    const ack = JSON.parse(r.stdout) as { status: string; recallable: boolean };
+    expect(ack.status).toBe('active');
+    expect(ack.recallable).toBe(true);
+
+    // it is genuinely retrievable, not merely written
+    const recalled = runRecall(['threshold constant', '--json']);
+    expect(recalled.status, recalled.stderr).toBe(0);
+    expect(recalled.stdout).toContain('threshold constant at 30');
+  });
+
+  it('reports an UNGROUNDED quote honestly instead of admitting it', () => {
+    const r = observe([
+      '--kind',
+      'fact',
+      '--subject',
+      NODE_ID,
+      '--claim',
+      'This claim cites text that is not in the code.',
+      '--evidence',
+      evidenceFile([{ kind: 'source-quote', soulId: NODE_ID, quote: 'NO_SUCH_TEXT_ANYWHERE' }]),
+    ]);
+    expect(r.status, r.stderr).toBe(0);
+    const ack = JSON.parse(r.stdout) as { status: string; recallable: boolean; nextAction: string };
+    expect(ack.status).toBe('pending');
+    // An ack that said "recorded" here would be true and misleading: recall returns nothing.
+    expect(ack.recallable).toBe(false);
+    expect(ack.nextAction).toMatch(/withholds it/);
+  });
+
+  it('REFUSES a human-attestation — only the TTY-checked `remember` path may present one', () => {
+    const r = observe([
+      '--kind',
+      'convention',
+      '--subject',
+      NODE_ID,
+      '--claim',
+      'We always do it this way.',
+      '--evidence',
+      evidenceFile([{ kind: 'human-attestation', actor: 'someone', quote: 'we always do it' }]),
+    ]);
+    expect(r.status).toBe(2);
+    expect(r.stderr).toMatch(/cannot present a human-attestation/);
+    expect(r.stderr).toMatch(/crib memory remember/);
+  });
+
+  it('refuses empty or non-array evidence rather than growing the pending queue', () => {
+    for (const bad of [[], { kind: 'source-quote' }]) {
+      const r = observe([
+        '--kind',
+        'fact',
+        '--subject',
+        NODE_ID,
+        '--claim',
+        'x',
+        '--evidence',
+        evidenceFile(bad),
+      ]);
+      expect(r.status).toBe(2);
+      expect(r.stderr).toMatch(/non-empty JSON array/);
+    }
+  });
+
+  it('prints usage when a required flag is missing', () => {
+    const r = observe(['--kind', 'fact', '--subject', NODE_ID]);
+    expect(r.status).toBe(2);
+    expect(r.stderr).toMatch(/usage: crib memory observe/);
+    // the usage must name the real evidence shape — `soulId`, not a path/line pair
+    expect(r.stderr).toMatch(/soulId/);
+  });
+
+  it('reads evidence from stdin with `-`', () => {
+    const r = spawnSync(
+      process.execPath,
+      [
+        CLI,
+        'memory',
+        'observe',
+        '--kind',
+        'fact',
+        '--subject',
+        NODE_ID,
+        '--claim',
+        'Threshold is pinned, cited via stdin.',
+        '--evidence',
+        '-',
+      ],
+      { cwd: repo, encoding: 'utf8', input: JSON.stringify(GROUNDED), env: env() },
+    );
+    expect(r.status ?? 1, r.stderr ?? '').toBe(0);
+    expect(JSON.parse((r.stdout ?? '').trim()).recallable).toBe(true);
   });
 });
