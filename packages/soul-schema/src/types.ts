@@ -186,6 +186,14 @@ export interface ManifestStats {
 }
 
 export interface ManifestCapabilities {
+  /**
+   * Reserved. NOT the code-graph vector channel — that is a property of the gitignored derived
+   * index and is reported by `IndexCapabilities.vector` (with `vectorNote` when it is off for a
+   * reason). It deliberately does not live here: the manifest is COMMITTED, and recording a
+   * rebuildable derived artifact's state in it would make the soul differ between two machines that
+   * ran `crib index` with and without `--vectors` — breaking the byte-identical `--extracted-only`
+   * contract for a fact neither machine needs to share.
+   */
   embeddings: boolean;
   multimodal: boolean;
   /**

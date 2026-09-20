@@ -656,3 +656,166 @@ describe('query stopword handling', () => {
     s.close();
   });
 });
+
+/**
+ * The vector channel across a REOPEN — the gap that made the whole hybrid path unreachable.
+ *
+ * Every pre-existing embedder test in this file uses `':memory:'`, which never reopens, so a
+ * store that forgot its vectors on reopen passed all of them. Production only ever reopens: the
+ * atomic build renames a temp db and opens the result, and `openIndexOnly`/`openIndexForServe`
+ * open an existing file. These tests are therefore FILE-BACKED on purpose — a `':memory:'`
+ * rewrite of them would silently stop testing the thing they exist for.
+ */
+describe('vector channel survives a reopen (vector_meta)', () => {
+  let idxDir: string;
+  let dbPath: string;
+  beforeEach(() => {
+    idxDir = mkdtempSync(join(tmpdir(), 'crib-vec-'));
+    dbPath = join(idxDir, 'crib.sqlite');
+  });
+  afterEach(() => {
+    rmSync(idxDir, { recursive: true, force: true });
+  });
+
+  it('a file-backed index built with an embedder still reports vector=true when reopened', () => {
+    const built = new SqliteIndexStore(dbPath, { embedder: new CharNgramEmbedder() });
+    built.buildFromSoul(store, dir);
+    expect(built.capabilities().vector).toBe(true);
+    built.close();
+
+    const reopened = new SqliteIndexStore(dbPath, { embedder: new CharNgramEmbedder() });
+    expect(reopened.capabilities().vector).toBe(true);
+    expect(reopened.capabilities().vectorNote).toBeUndefined();
+    // and the hybrid path actually runs rather than silently answering from BM25 alone
+    expect(reopened.query({ text: 'login', kinds: ['symbol'] })[0]?.id).toBe(login.id);
+    reopened.close();
+  });
+
+  it('reopened WITHOUT an embedder: vector off, and the note names the missing model', () => {
+    const built = new SqliteIndexStore(dbPath, { embedder: new CharNgramEmbedder() });
+    built.buildFromSoul(store, dir);
+    built.close();
+
+    const reopened = new SqliteIndexStore(dbPath);
+    const caps = reopened.capabilities();
+    expect(caps.vector).toBe(false);
+    expect(caps.vectorNote).toMatch(/no embedder/);
+    // lexical retrieval is unaffected — the index is still fully usable
+    expect(reopened.query({ text: 'login', kinds: ['symbol'] })[0]?.id).toBe(login.id);
+    reopened.close();
+  });
+
+  it('reopened with a DIFFERENT embedder refuses the vectors instead of ranking across spaces', () => {
+    const built = new SqliteIndexStore(dbPath, { embedder: new CharNgramEmbedder() });
+    built.buildFromSoul(store, dir);
+    const builtId = new CharNgramEmbedder().id;
+    built.close();
+
+    // different dim ⇒ different id ⇒ a different vector space entirely
+    const other = new CharNgramEmbedder({ dim: 256 });
+    expect(other.id).not.toBe(builtId);
+    const reopened = new SqliteIndexStore(dbPath, { embedder: other });
+    const caps = reopened.capabilities();
+    expect(caps.vector).toBe(false);
+    expect(caps.vectorNote).toContain(builtId);
+    expect(caps.vectorNote).toContain(other.id);
+    expect(reopened.query({ text: 'login', kinds: ['symbol'] })[0]?.id).toBe(login.id);
+    reopened.close();
+  });
+
+  it('rebuilding without an embedder clears the metadata — no stale authorization, nothing to explain', () => {
+    const built = new SqliteIndexStore(dbPath, { embedder: new CharNgramEmbedder() });
+    built.buildFromSoul(store, dir);
+    built.close();
+
+    const lexicalRebuild = new SqliteIndexStore(dbPath);
+    lexicalRebuild.buildFromSoul(store, dir);
+    expect(lexicalRebuild.capabilities().vector).toBe(false);
+    // no note: the index genuinely has no vectors now, which is not a refusal to explain
+    expect(lexicalRebuild.capabilities().vectorNote).toBeUndefined();
+    lexicalRebuild.close();
+
+    const reopened = new SqliteIndexStore(dbPath, { embedder: new CharNgramEmbedder() });
+    expect(reopened.capabilities().vector).toBe(false);
+    expect(reopened.capabilities().vectorNote).toBeUndefined();
+    reopened.close();
+  });
+
+  it('openIndex forwards the embedder, so the factory is not a place vectors get dropped', () => {
+    const viaFactory = openIndex('sqlite', { path: dbPath, embedder: new CharNgramEmbedder() });
+    viaFactory.buildFromSoul(store, dir);
+    expect(viaFactory.capabilities().vector).toBe(true);
+    viaFactory.close();
+    expect(openIndex('sqlite', { path: dbPath }).capabilities().vector).toBe(false);
+  });
+});
+
+describe('applyDelta never leaves a stale or partial vector table', () => {
+  let idxDir: string;
+  let dbPath: string;
+  beforeEach(() => {
+    idxDir = mkdtempSync(join(tmpdir(), 'crib-vecdelta-'));
+    dbPath = join(idxDir, 'crib.sqlite');
+  });
+  afterEach(() => {
+    rmSync(idxDir, { recursive: true, force: true });
+  });
+
+  /** Count vector rows directly — the channel's coverage is not observable through `query`. */
+  function vectorRowCount(path: string): number {
+    const probe = new SqliteIndexStore(path);
+    // biome-ignore lint/suspicious/noExplicitAny: test-only reach into the derived db
+    const db = (probe as any).db as { prepare: (s: string) => { get: () => { n: number } } };
+    const n = db.prepare('SELECT COUNT(*) AS n FROM vectors').get().n;
+    probe.close();
+    return n;
+  }
+
+  it('a delta applied without a matching embedder DELETES the changed vectors rather than keeping stale ones', () => {
+    const built = new SqliteIndexStore(dbPath, { embedder: new CharNgramEmbedder() });
+    built.buildFromSoul(store, dir);
+    built.close();
+    const before = vectorRowCount(dbPath);
+    expect(before).toBeGreaterThan(0);
+
+    // `crib update` on a machine whose embed tier is gone: the store cannot recompute `login`'s
+    // vector, and `login` has been renamed, so the old vector now describes text it no longer has.
+    const renamed: Node = { ...login, name: 'signIn', qualifiedName: 'AuthService.signIn' };
+    const lexical = new SqliteIndexStore(dbPath);
+    lexical.applyDelta({ nodes: [renamed], edges: [], removed: [] }, dir);
+    lexical.close();
+
+    expect(vectorRowCount(dbPath)).toBe(before - 1);
+  });
+
+  it('a delta on a LEXICAL index does not start a partially-vectorized table', () => {
+    const lexicalBuild = new SqliteIndexStore(dbPath);
+    lexicalBuild.buildFromSoul(store, dir);
+    lexicalBuild.close();
+    expect(vectorRowCount(dbPath)).toBe(0);
+
+    // An embedder is present, but this index has no vectors: vectorizing only the delta would
+    // leave `vectorQuery` ranking a handful of nodes as if they were the whole corpus.
+    const withEmbedder = new SqliteIndexStore(dbPath, { embedder: new CharNgramEmbedder() });
+    withEmbedder.applyDelta({ nodes: [login], edges: [], removed: [] }, dir);
+    expect(withEmbedder.capabilities().vector).toBe(false);
+    withEmbedder.close();
+
+    expect(vectorRowCount(dbPath)).toBe(0);
+  });
+
+  it('a delta WITH the matching embedder keeps the channel complete', () => {
+    const built = new SqliteIndexStore(dbPath, { embedder: new CharNgramEmbedder() });
+    built.buildFromSoul(store, dir);
+    const before = vectorRowCount(dbPath);
+    built.close();
+
+    const reopened = new SqliteIndexStore(dbPath, { embedder: new CharNgramEmbedder() });
+    const renamed: Node = { ...login, name: 'signIn', qualifiedName: 'AuthService.signIn' };
+    reopened.applyDelta({ nodes: [renamed], edges: [], removed: [] }, dir);
+    expect(reopened.capabilities().vector).toBe(true);
+    reopened.close();
+
+    expect(vectorRowCount(dbPath)).toBe(before);
+  });
+});

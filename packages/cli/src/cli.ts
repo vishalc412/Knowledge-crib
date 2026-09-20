@@ -1132,6 +1132,13 @@ async function cmdIndex(args: string[], ctx?: CmdCtx): Promise<number> {
   const cribDir = prepared.cribDir;
   const projectKey = resolved.projectKey;
   const semantic = args.includes('--semantic');
+  // `--vectors` opts INTO the code-graph vector channel: `buildFromSoul` embeds every node and
+  // `query` fuses BM25 with cosine before the deterministic structural rerank. OFF by default, and
+  // that default is a measurement decision, not caution: no labelled code-retrieval corpus or
+  // pre-registered gate exists yet, so making hybrid the default would change every user's ranking
+  // on an unmeasured promise. Resolution happens BEFORE the lock and before parsing, so a machine
+  // with no embed tier is told immediately instead of after a full index.
+  const wantVectors = args.includes('--vectors');
   const json = args.includes('--json');
   // G5.3 — `--multimodal` opts INTO the media phase (default OFF: the default index path never
   // touches media or spawns a subprocess). With real (non-fake) adapters the default backend is
@@ -1147,6 +1154,17 @@ async function cmdIndex(args: string[], ctx?: CmdCtx): Promise<number> {
   const ignores = parseExcludes(args);
   const scope = resolvePackageScope(repoRoot, args);
   if (scope.status !== EXIT.OK) return scope.status;
+  let vectorEmbedder: Embedder | undefined;
+  if (wantVectors) {
+    const resolvedEmbedder = await resolveCodeVectorEmbedder();
+    if (!resolvedEmbedder.ok) {
+      process.stderr.write(
+        `--vectors requires an installed on-device embed tier, but ${resolvedEmbedder.reason}. Run \`crib embed setup\` first, or drop --vectors for a lexical index. Refusing rather than building char-n-gram vectors, which measured WORSE than lexical-only (R1).\n`,
+      );
+      return EXIT.BAD_ARGS;
+    }
+    vectorEmbedder = resolvedEmbedder.embedder;
+  }
   return runLocked(cribDir, async () => {
     // Full rebuild: fresh manifest stamped with the current SCHEMA_VERSION (never inherit a stale
     // one), repo.id preserved across rebuilds (stable committed soul + ~/.crib/registry mapping),
@@ -1161,7 +1179,7 @@ async function cmdIndex(args: string[], ctx?: CmdCtx): Promise<number> {
       packageRoots: scope.packageRoots,
       ...(multimodal ? { multimodal } : {}),
     });
-    const index = buildIndex({ repoRoot, cribDir, soul });
+    const index = buildIndex({ repoRoot, cribDir, soul }, vectorEmbedder);
     registerIndexed(projectKey, cribDir, soul, source);
     const stats = soul.getManifest().stats;
     const scopeSuffix = scope.packageRoots ? ` [scoped: ${scope.indexedPackages.join(', ')}]` : '';
@@ -1288,8 +1306,11 @@ async function cmdQuery(args: string[], ctx?: CmdCtx): Promise<number> {
     return EXIT.NOT_INDEXED;
   }
   const rt = openSoul(resolved);
-  const index = openIndexForRead(rt);
-  if (!index) return EXIT.NOT_INDEXED;
+  const lexical = openIndexForRead(rt);
+  if (!lexical) return EXIT.NOT_INDEXED;
+  // `query` is a TEXT retrieval verb, so it is one of the two commands that may pay for the vector
+  // channel when the index has one.
+  const index = await upgradeIndexToVectors(rt, lexical);
   const verbs = new Verbs({ soul: rt.soul, index, repoRoot: resolved.repoRoot });
   process.stdout.write(
     `${JSON.stringify(
@@ -1313,15 +1334,83 @@ async function cmdQuery(args: string[], ctx?: CmdCtx): Promise<number> {
 /**
  * Open the derived index for read commands. Missing/stale derived indexes are repaired only by an
  * explicit `crib index`/`crib reindex`, which keeps concurrent read commands out of SQLite rebuilds.
+ *
+ * `embedder` is supplied ONLY by the text-retrieval commands (see {@link upgradeIndexToVectors}).
+ * Structural commands (`gaps`, `impact`, `path`, `neighbors`, `context`, `dossier`, `rules`) look up
+ * nodes by id or walk edges, so a vector channel could not change their answer — and the installed
+ * tier is a ~2 GB on-device model. Loading it for `crib gaps` would be pure latency, so it is not.
  */
-function openIndexForRead(rt: ReturnType<typeof openSoul>): IndexStore | null {
+function openIndexForRead(
+  rt: ReturnType<typeof openSoul>,
+  embedder?: Embedder | null,
+): IndexStore | null {
   try {
-    return openIndexOnly(rt);
+    return openIndexOnly(rt, embedder);
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     process.stderr.write(`${msg}\n`);
     return null;
   }
+}
+
+/**
+ * Resolve the embedder for the CODE-graph vector channel, or say why there is none.
+ *
+ * REFUSES rather than substituting the char-n-gram fallback. R1 measured fusion LOSING to pure
+ * lexical on that fallback, so quietly building char-n-gram vectors under a flag called `--vectors`
+ * would ship a measured regression while looking like a feature. A machine without the installed
+ * tier gets a named remedy and keeps the lexical index, which is strictly better and honest.
+ */
+async function resolveCodeVectorEmbedder(): Promise<
+  { ok: true; embedder: Embedder } | { ok: false; reason: string }
+> {
+  const embedder = await ensureInstalledEmbedder();
+  if (embedder) return { ok: true, embedder };
+  return {
+    ok: false,
+    reason:
+      installedEmbedderProblem !== undefined
+        ? `the installed embed tier failed to load: ${installedEmbedderProblem}`
+        : 'no on-device embed tier is installed',
+  };
+}
+
+/**
+ * Upgrade an already-open LEXICAL index to the vector channel, but only when that index actually
+ * carries vectors.
+ *
+ * The order matters and is the whole point. Opening lexically first costs one cheap sqlite open and
+ * answers "does this index have vectors at all?" from `vectorNote`; only then is the on-device model
+ * loaded. The inverse order (resolve the model, then open) would pay a multi-second, multi-GB model
+ * load on every `crib query` against every lexical index — which is most of them, since `--vectors`
+ * is opt-in.
+ *
+ * Returns the store to use. On a vectorized index with no loadable tier it returns the ORIGINAL
+ * lexical store and warns: degraded retrieval is reported, never hidden.
+ */
+async function upgradeIndexToVectors(
+  rt: ReturnType<typeof openSoul>,
+  index: IndexStore,
+): Promise<IndexStore> {
+  const note = index.capabilities().vectorNote;
+  // Absent note ⇒ either the channel is already live or the index has no vectors: nothing to do.
+  if (note === undefined) return index;
+  const resolved = await resolveCodeVectorEmbedder();
+  if (!resolved.ok) {
+    process.stderr.write(
+      `warning: this index carries code vectors but they cannot be queried — ${resolved.reason}. Serving lexical-only code search. Run \`crib embed setup\` then \`crib index --vectors\`.\n`,
+    );
+    return index;
+  }
+  const upgraded = openIndexForRead(rt, resolved.embedder);
+  if (!upgraded) return index;
+  index.close();
+  const caps = upgraded.capabilities();
+  if (!caps.vector) {
+    // The tier loaded but is not the one that built the vectors — `vectorNote` names both ids.
+    process.stderr.write(`warning: ${caps.vectorNote ?? 'code vectors unavailable'}\n`);
+  }
+  return upgraded;
 }
 
 /**
@@ -1419,6 +1508,35 @@ function openVerbs(
   return { verbs, index, soul: rt.soul };
 }
 
+/**
+ * {@link openVerbs} for the TEXT-retrieval commands — identical wiring plus the vector-channel
+ * upgrade. Kept separate rather than folded into `openVerbs` so that the structural commands (which
+ * share that funnel) can never accidentally trigger a multi-GB model load; see
+ * {@link openIndexForRead}.
+ */
+async function openVerbsForSearch(
+  args: string[],
+  ctx?: CmdCtx,
+): Promise<{ verbs: Verbs; index: IndexStore; soul: ReturnType<typeof openSoul>['soul'] } | null> {
+  const resolved = resolveRoot(args, ctx);
+  if (!isIndexedRoot(resolved)) {
+    process.stderr.write('not indexed — run `crib index` first\n');
+    return null;
+  }
+  const rt = openSoul(resolved);
+  const lexical = openIndexForRead(rt);
+  if (!lexical) return null;
+  const index = await upgradeIndexToVectors(rt, lexical);
+  const verbs = new Verbs({
+    soul: rt.soul,
+    index,
+    repoRoot: resolved.repoRoot,
+    vcs: new CliVcsAdapter(),
+    pdg: pipelinePdg,
+  });
+  return { verbs, index, soul: rt.soul };
+}
+
 /** `crib gaps` — analysis readiness, missing bodies (spec-only callables), unresolved call sites. */
 async function cmdGaps(args: string[], ctx?: CmdCtx): Promise<number> {
   const opened = openVerbs(args, ctx);
@@ -1510,7 +1628,8 @@ async function cmdAsk(args: string[], ctx?: CmdCtx): Promise<number> {
     );
     return EXIT.BAD_ARGS;
   }
-  const opened = openVerbs(args, ctx);
+  // `ask` is the other TEXT retrieval verb, so it takes the vector-aware funnel.
+  const opened = await openVerbsForSearch(args, ctx);
   if (!opened) return EXIT.NOT_INDEXED;
   const { verbs, index } = opened;
 
@@ -2032,8 +2151,12 @@ async function cmdServe(args: string[], ctx?: CmdCtx): Promise<number> {
   // dies. Stale-but-present → serve it with a warning (openIndexForServe). Missing → self-heal by
   // rebuilding from the committed soul under the writer lock (so two concurrent serves don't race
   // the rebuild); re-check inside the lock in case another serve just rebuilt it.
-  const index = await openServeIndex(resolved, rt);
-  if (!index) return EXIT.NOT_INDEXED;
+  const servedIndex = await openServeIndex(resolved, rt);
+  if (!servedIndex) return EXIT.NOT_INDEXED;
+  // A long-lived server decides its retrieval channel ONCE, at startup, for the same reason it
+  // resolves the memory embed tier once below: a per-request decision would make two identical
+  // queries rankable differently. On a lexical index this is a no-op and costs no model load.
+  const index = await upgradeIndexToVectors(rt, servedIndex);
   const memory = createMemoryDeps(rt.soul, resolved.repoRoot, resolved.cribDir);
   // W6/WP4 — `crib serve --watch` serves through the refresh coordinator: every trigger (startup,
   // file events, fallback scans, clean transitions, external `crib update`) runs one serialized
@@ -2284,12 +2407,36 @@ async function cmdUpdate(args: string[], ctx?: CmdCtx): Promise<number> {
     }
     // Apply the delta to the existing derived index; if none exists yet, build it fresh from the
     // (already-committed) updated soul — a delta applied to an empty index would be meaningless.
+    // An incremental update must keep the vector channel COMPLETE, not just the BM25 one, and it
+    // must do so on BOTH branches below — a delta-apply and the fallback full rebuild. So the
+    // embedder is resolved ONCE up front, from a cheap throwaway open whose `vectorNote` says
+    // whether this index carries vectors at all. The on-device model is therefore loaded for
+    // `crib update` only on repositories that opted into `--vectors`, and never on the common
+    // lexical one. Without it `applyDelta` deletes the changed nodes' vectors rather than leaving
+    // them describing the previous revision of each symbol — correct, but a silent recall loss,
+    // which is why a failed upgrade warns instead of proceeding quietly.
+    let vectorEmbedder: Embedder | undefined;
+    try {
+      const probe = openIndexOnly(rt);
+      const caps = probe.capabilities();
+      probe.close();
+      if (caps.vector || caps.vectorNote !== undefined) {
+        const resolvedEmbedder = await resolveCodeVectorEmbedder();
+        if (resolvedEmbedder.ok) vectorEmbedder = resolvedEmbedder.embedder;
+        else
+          process.stderr.write(
+            `warning: this index carries code vectors but ${resolvedEmbedder.reason} — updated symbols will drop out of vector search until \`crib index --vectors\` is re-run.\n`,
+          );
+      }
+    } catch {
+      // No index yet: the rebuild below creates a lexical one, which is the pre-existing behaviour.
+    }
     let index: IndexStore;
     try {
-      index = openIndexOnly(rt);
+      index = openIndexOnly(rt, vectorEmbedder);
       index.applyDelta(result.delta, resolved.repoRoot);
     } catch {
-      index = buildIndex(rt); // full buildFromSoul from the just-updated soul
+      index = buildIndex(rt, vectorEmbedder); // full buildFromSoul from the just-updated soul
     }
     index.close();
     registerIndexed(resolved.projectKey, resolved.cribDir, rt.soul);
@@ -2321,12 +2468,30 @@ async function cmdReindex(args: string[], ctx?: CmdCtx): Promise<number> {
   const cribDir = prepared.cribDir;
   const projectKey = resolved.projectKey;
   const semantic = args.includes('--semantic');
+  // `--vectors` opts INTO the code-graph vector channel: `buildFromSoul` embeds every node and
+  // `query` fuses BM25 with cosine before the deterministic structural rerank. OFF by default, and
+  // that default is a measurement decision, not caution: no labelled code-retrieval corpus or
+  // pre-registered gate exists yet, so making hybrid the default would change every user's ranking
+  // on an unmeasured promise. Resolution happens BEFORE the lock and before parsing, so a machine
+  // with no embed tier is told immediately instead of after a full index.
+  const wantVectors = args.includes('--vectors');
   // G5.3 — same opt-in multimodal flags as `crib index` (reindex is a full rebuild too).
   const multimodal = parseMultimodalOpts(args);
   if (multimodal === null) return EXIT.BAD_ARGS;
   const ignores = parseExcludes(args);
   const scope = resolvePackageScope(repoRoot, args);
   if (scope.status !== EXIT.OK) return scope.status;
+  let vectorEmbedder: Embedder | undefined;
+  if (wantVectors) {
+    const resolvedEmbedder = await resolveCodeVectorEmbedder();
+    if (!resolvedEmbedder.ok) {
+      process.stderr.write(
+        `--vectors requires an installed on-device embed tier, but ${resolvedEmbedder.reason}. Run \`crib embed setup\` first, or drop --vectors for a lexical index. Refusing rather than building char-n-gram vectors, which measured WORSE than lexical-only (R1).\n`,
+      );
+      return EXIT.BAD_ARGS;
+    }
+    vectorEmbedder = resolvedEmbedder.embedder;
+  }
   return runLocked(cribDir, async () => {
     const soul = freshSoulForRebuild(cribDir);
     stampPackageMeta(soul, scope);
@@ -2337,7 +2502,7 @@ async function cmdReindex(args: string[], ctx?: CmdCtx): Promise<number> {
       packageRoots: scope.packageRoots,
       ...(multimodal ? { multimodal } : {}),
     });
-    const index = buildIndex({ repoRoot, cribDir, soul });
+    const index = buildIndex({ repoRoot, cribDir, soul }, vectorEmbedder);
     index.close();
     registerIndexed(projectKey, cribDir, soul, source);
     const stats = soul.getManifest().stats;
@@ -9987,7 +10152,7 @@ function printHelp(): void {
       'crib — Knowledge-crib CLI',
       '',
       'Usage:',
-      '  crib index [path] [--crib-dir <absolute-path>] [--semantic] [--exclude a,b,...] [--package <name|all>...] [--multimodal [--multimodal-backend auto|fake] [--multimodal-model-path <dir>]]     full index → .crib soul + derived index (+ INFERRED embedding-cosine semantic links); --package scopes to one monorepo package (list detected with no --package); --multimodal opts into media extraction (TS-native PDF text layer by default; tesseract OCR / whisper transcription when on PATH)',
+      '  crib index [path] [--crib-dir <absolute-path>] [--semantic] [--vectors] [--exclude a,b,...] [--package <name|all>...] [--multimodal [--multimodal-backend auto|fake] [--multimodal-model-path <dir>]]     full index → .crib soul + derived index; --semantic adds INFERRED doc→symbol links to the GRAPH (it does not enable semantic search); --vectors builds the code-vector channel so `query`/`ask` fuse BM25 with cosine (needs `crib embed setup`; off by default, unmeasured on a labelled code corpus); --package scopes to one monorepo package (list detected with no --package); --multimodal opts into media extraction (TS-native PDF text layer by default; tesseract OCR / whisper transcription when on PATH)',
       '  crib status [path] [--dirty]             health + stats; --dirty previews files that would be re-indexed',
       '  crib query <text>                        BM25 search over code + docs (incl. bodies); --with-source --with-rules fold body + decision table into each hit',
       '  crib gaps [path] [--extracted-only] [--include-builtins]   analysis readiness + missing bodies + unresolved call sites',

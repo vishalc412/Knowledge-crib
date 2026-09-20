@@ -42,7 +42,14 @@ Nothing below has been exercised on Linux or Windows. That is not a hedge — no
 | Team memory over Git | implemented; not multi-user tested | opt-in | — |
 | Authenticated multi-tenancy | **not implemented** | — | [`SECURITY.md`](../SECURITY.md) |
 
-## Semantic retrieval — the numbers, and what they cost
+## Semantic retrieval — the numbers, what they cost, and WHAT THEY MEASURE
+
+**Scope, stated first because it is the easiest row on this page to misread.** Every number in this
+section measures **memory-ledger recall** — the ranking of `MemoryRecord`s by `MemoryScorer`
+(`packages/memory/src/fusion.ts`), reached through `crib memory recall` / the `brief` and `memory`
+verbs. The corpus is 500 labelled queries over **307 memory records**. **None of it measures code
+search.** Code retrieval is a different index (`SqliteIndexStore` over the code graph), a different
+corpus, and a different default — see the two rows below the ladder.
 
 Measured through the launch gate on the frozen 500-query corpus
 ([`bench/onnx-model-ladder.md`](bench/onnx-model-ladder.md)). **No Python.**
@@ -57,6 +64,21 @@ Measured through the launch gate on the frozen 500-query corpus
 The advertised semantic tier is `large` and nothing else clears every gate. **A machine that has not
 run `crib embed setup` serves the char-ngram fallback** and is at the top row — `crib doctor` and
 `crib embed status` both say so rather than implying otherwise.
+
+### Code retrieval — a separate index, a separate default, and no measured number yet
+
+| Capability | State | Default? | Evidence |
+|---|---|---|---|
+| Lexical code search (FTS5 BM25 over names/signatures/headings/files/bodies + static synonym table) | verified | **on** | full suite green; `crib query` |
+| Vector code search (RRF hybrid BM25 ∪ cosine + deterministic structural rerank) | **implemented, opt-in, UNMEASURED on a labelled code corpus** | **off** — `crib index --vectors` | — |
+
+The second row is the honest state and the reason it is stated separately. The hybrid path exists in
+`SqliteIndexStore.query` and `index/rerank.ts`, and `crib index --vectors` builds the vectors it
+needs; what does **not** exist is a labelled code-retrieval corpus, a pre-registered gate, or a
+measured recall figure. Until one exists, `--vectors` is an opt-in capability and **not** a quality
+claim, and the ladder above must not be read as covering it. A machine that has not run
+`crib embed setup` cannot build vectors at all: `crib index --vectors` refuses rather than silently
+embedding with the char-ngram fallback, which R1 measured as worse than pure lexical.
 
 The ONNX path reproduces the previous Python configuration on all three models measured both ways
 (81.0/81.05, 69.9/69.93, 66.0/66.01), which is the evidence the toolchain swap changed the install
