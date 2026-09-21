@@ -105,8 +105,8 @@ function stripAnswers(message, truthFiles) {
 // ── the base snapshot ────────────────────────────────────────────────────────
 const head = git('rev-parse', 'HEAD').trim();
 /**
- * The base is the DEPTH-th commit back along the first-parent chain, chosen from the actual chain
- * rather than by `HEAD~DEPTH`.
+ * The base is the DEPTH-th commit back along the FULL ancestor list, clamped to its length, rather
+ * than `HEAD~DEPTH` or a first-parent walk.
  *
  * Two ways the obvious implementations fail, both hit while building this:
  *
