@@ -15,6 +15,7 @@
  *   - watch: 300ms debounce + serialization (concurrent triggers → ONE refresh), and the 5s
  *     queryable-update p95 target MEASURED on a real fixture and reported honestly.
  */
+import { EventEmitter } from 'node:events';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -44,7 +45,7 @@ import {
 } from './freshness.js';
 import { type ReaderBundle, RefreshCoordinator } from './refresh-coordinator.js';
 import { registerProject } from './registry.js';
-import { WatchMode } from './watch.js';
+import { WatchMode, type WatchOpts } from './watch.js';
 
 // compiled CLI for the dispatch-seam regression (cli.test.ts pattern; import must be the dist build)
 const CLI = join(__dirname, '..', 'dist', 'cli.js');
@@ -534,28 +535,51 @@ describe('watch mode — G3.4 freshness contract', () => {
       onPublish: (b) => void bundles.push(b),
     });
     await coordinator.initialize();
-    // Watcher-driven (fallback effectively disabled): the burst is delivered by fs.watch events,
-    // and the 300ms debounce must coalesce the five near-simultaneous triggers into ONE coordinator
-    // cycle — one published bundle whose dirty set (VCS scan, source of truth) contains ALL five
-    // files. The capture guard makes any late event a no-op: the source hash already matches.
-    const watch = new WatchMode(coordinator, repo, { debounceMs: 300, fallbackMs: 60_000 });
+    // Watcher-driven (fallback effectively disabled): the 300ms debounce must coalesce five
+    // near-simultaneous triggers into ONE coordinator cycle — one published bundle whose dirty set
+    // (VCS scan, source of truth) contains ALL five files.
+    //
+    // The files are written for real, because the dirty set is the point. The TRIGGER, however, is
+    // injected through `watchFactory` rather than left to fs.watch, and that is what makes this test
+    // deterministic. Delivery is the nondeterministic part: macOS FSEvents coalesces on its own
+    // latency, so under CPU contention a five-write burst can arrive as several batches, a straggler
+    // lands after any fixed settle window, and a SECOND bundle publishes — failing the coalescing
+    // assertion for a reason that has nothing to do with the debounce. (Observed while a 24-minute
+    // embedding build saturated the cores; the previous fix widened the waits, which only moves the
+    // threshold.) Firing the captured callback directly keeps every assertion below intact.
+    let fire: ((event: string, filename: string) => void) | undefined;
+    const watch = new WatchMode(coordinator, repo, {
+      debounceMs: 300,
+      fallbackMs: 60_000,
+      watchFactory: ((
+        _dir: string,
+        _opts: unknown,
+        cb: (event: string, filename: string) => void,
+      ) => {
+        fire = cb;
+        const emitter = new EventEmitter() as EventEmitter & { close(): void };
+        emitter.close = () => {};
+        return emitter;
+      }) as unknown as WatchOpts['watchFactory'],
+    });
     await watch.start();
     try {
       bundles.length = 0; // ignore the startup bundle
+      expect(fire, 'watchFactory was not given a change callback').toBeDefined();
       // five concurrent triggers (a commit-shaped burst), all inside one debounce window
       for (let i = 0; i < 5; i++) {
         writeFileSync(
           join(repo, 'src', `f${i}.ts`),
           `export const n${i} = ${i};\nexport function u${i}(): number { return n${i}; }\n`,
         );
+        fire?.('change', `src/f${i}.ts`);
       }
-      // Generous patience for the FIRST refresh only. The coalescing assertion below is unchanged
-      // — this waits longer for the debounce to fire, it does not accept more than one refresh. The
-      // headroom exists because the suite now runs process-forking concurrency tests
-      // (lock-concurrency, freshness-concurrency) in parallel, and a real parse under that CPU
-      // contention can exceed the 4s default that was tuned before those existed.
+      // Generous patience for the FIRST refresh only — a real parse under parallel process-forking
+      // concurrency tests can exceed the old 4s default. The coalescing assertion is unchanged: this
+      // waits longer for the debounce to fire, it does not accept more than one refresh.
       await until(() => bundles.length > 0, 'coalesced burst refresh', 20_000);
-      // give the (disabled) fallback + any late watcher event time — no further refresh may start
+      // No further refresh may start. With the trigger injected, nothing can deliver a late event,
+      // so this window is a guard against the COORDINATOR re-entering, not against the OS.
       await new Promise((r) => setTimeout(r, 900));
       expect(bundles).toHaveLength(1);
       const [burst] = bundles;

@@ -804,7 +804,7 @@ across 660 files.
 | F17 | Bus factor 1, gate unreachable | **open — not a code change** | — |
 | F18 | `crib serve` exits on damaged manifest | **closed** | verified over stdio JSON-RPC + 4 tests |
 | F19 | `supersede --claim` leaves nothing recallable | **closed** (§11) | 3 tests; the `--evidence` flag was written and reverted as unsafe |
-| F20 | CLI suite flaky under parallel load | **open** (§11) | 3 named tests, all untouched by this work |
+| F20 | CLI suite flaky under parallel load | **2 of 3 closed** (§13) | debounce triggers injected, verified under full core saturation; the rename subprocess flake is unreproduced and stays open |
 | F21 | Staged candidates unretirable; `purge` misreported why | **closed** (§12) | 4 tests; found by a user running the command §11 suggested |
 
 **Why the open ones are open**, so the list is a plan rather than an excuse:
@@ -966,3 +966,33 @@ Verified by using it: the three stale candidates this session had accumulated �
 fix, one duplicating an admitted record, one a first attempt that cited the wrong doc-section span — were
 retired, and the pending queue is empty. Four tests, including one pinning that `purge` still refuses
 rather than quietly retiring a candidate, and one that plain `usage` still appears when no id is given.
+
+---
+
+## 13. F20 — two of three flakes fixed at the cause, the third left honestly open
+
+The two debounce failures were **not** timer problems, which is why widening the waits had already been
+tried and had already failed. The nondeterminism was event **delivery**: both tests wrote real files and
+waited for `fs.watch`, and macOS FSEvents coalesces on its own latency, so under CPU contention a
+five-write burst arrives as several batches and a straggler lands after any fixed settle window. In
+`watch.test.ts` that shows up as a count above 1; in `freshness.test.ts` as a second published bundle.
+Neither is the debounce being wrong.
+
+`WatchOpts.watchFactory` was already injectable and already used by the degradation tests in the same
+file, so the fix was to take the OS out of the trigger path:
+
+- **`watch.test.ts`** — the factory captures `watch()`'s third-argument change callback and the test
+  fires it directly. No filesystem, no waiting. It now also asserts the window is *per burst* (a second
+  burst fires a second refresh), which the OS-driven version could not do reliably.
+- **`freshness.test.ts`** — the files are still written for real, because the dirty set from the VCS
+  scan is what the test asserts; only the trigger is injected. Every assertion is unchanged.
+
+**Verified under the condition that caused the failures**, not just on a quiet machine: both files pass
+with all cores saturated (41/41). Previously they failed while a 24-minute embedding build was running.
+
+**The third flake is not fixed and is not claimed to be.** `rename.test.ts` spawns the built CLI twice —
+a full index, then a rename-apply that chains a reindex — against the global 30 s `testTimeout`. It did
+**not** reproduce under synthetic CPU saturation; the original failure happened under a memory-hungry
+4.8 GB build, which is a different kind of pressure. Raising its timeout would be a guess dressed as a
+fix, and "widen the window" is exactly the move that failed twice above. It stays open, with its shape
+recorded: subprocess-timeout-bound, two real index runs, unreproduced.
