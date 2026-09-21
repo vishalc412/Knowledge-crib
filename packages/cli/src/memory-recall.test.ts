@@ -567,7 +567,17 @@ describe('crib memory observe — the agent write path, without MCP', () => {
     expect(ack.nextAction).toMatch(/withholds it/);
   });
 
-  it('REFUSES a human-attestation — only the TTY-checked `remember` path may present one', () => {
+  /**
+   * The refusal is on `tty: true`, NOT on the human-attestation KIND — and that distinction was got
+   * wrong once, which is why it is pinned here.
+   *
+   * A blanket refusal of the kind looked safe and was not: `MemoryApi.observe` guards exactly one
+   * field, and it has a DESIGNED relay path for an agent recording what a user said — a `tty`-less
+   * attestation from a non-terminal caller is stamped `relayedBy: <actor>` and capped at `degraded`,
+   * recallable on this device but refused by every path that needs a person. Refusing the whole kind
+   * blocked that, and diverged from the MCP `memory_observe` path, which uses the same API.
+   */
+  it('refuses `tty: true` — the flag crib stamps for a real terminal, never accepted from a caller', () => {
     const r = observe([
       '--kind',
       'convention',
@@ -576,11 +586,41 @@ describe('crib memory observe — the agent write path, without MCP', () => {
       '--claim',
       'We always do it this way.',
       '--evidence',
-      evidenceFile([{ kind: 'human-attestation', actor: 'someone', quote: 'we always do it' }]),
+      evidenceFile([
+        { kind: 'human-attestation', actor: 'someone', tty: true, quote: 'we always do it' },
+      ]),
     ]);
     expect(r.status).toBe(2);
-    expect(r.stderr).toMatch(/cannot present a human-attestation/);
+    expect(r.stderr).toMatch(/tty: true/);
     expect(r.stderr).toMatch(/crib memory remember/);
+    // and it names the legitimate alternative rather than just saying no
+    expect(r.stderr).toMatch(/OMIT tty/);
+  });
+
+  it('ACCEPTS a tty-less human-attestation as a relayed statement, capped at degraded', () => {
+    const r = observe([
+      '--kind',
+      'decision',
+      '--subject',
+      'topic:test-relayed-decision',
+      '--claim',
+      'The maintainer chose the opt-in path for this feature.',
+      '--evidence',
+      evidenceFile([
+        { kind: 'human-attestation', actor: 'human:someone', quote: 'go with the opt-in path' },
+      ]),
+    ]);
+    expect(r.status, r.stderr).toBe(0);
+    const ack = JSON.parse(r.stdout) as {
+      status: string;
+      recallable: boolean;
+      admission?: { reason?: string };
+    };
+    // recallable, because a recorded decision nobody can retrieve is useless …
+    expect(ack.status).toBe('active');
+    expect(ack.recallable).toBe(true);
+    // … but explicitly second-hand, not promoted to a verified attestation
+    expect(ack.admission?.reason).toMatch(/relayed|unconfirmed/);
   });
 
   it('refuses empty or non-array evidence rather than growing the pending queue', () => {

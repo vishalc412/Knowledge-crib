@@ -800,7 +800,7 @@ across 660 files.
 | F13 | No authenticated multi-tenancy | **open — product decision** | needs a positioning call, not a patch |
 | F14 | Fragments outranked symbols | **closed** | 6 tests (3 fail without the fix) |
 | F15 | Positional parsed as a path | **closed, wider than recorded** | 5 tests via `spawnSync` |
-| F16 | Agent memory write was MCP-only | **closed** | `crib memory observe` + 6 tests |
+| F16 | Agent memory write was MCP-only | **closed**; its attestation refusal CORRECTED (§14) | `crib memory observe` + tests pinning the `tty` boundary |
 | F17 | Bus factor 1, gate unreachable | **open — not a code change** | — |
 | F18 | `crib serve` exits on damaged manifest | **closed** | verified over stdio JSON-RPC + 4 tests |
 | F19 | `supersede --claim` leaves nothing recallable | **closed** (§11) | 3 tests; the `--evidence` flag was written and reverted as unsafe |
@@ -996,3 +996,52 @@ a full index, then a rename-apply that chains a reindex — against the global 3
 4.8 GB build, which is a different kind of pressure. Raising its timeout would be a guess dressed as a
 fix, and "widen the window" is exactly the move that failed twice above. It stays open, with its shape
 recorded: subprocess-timeout-bound, two real index runs, unreproduced.
+
+---
+
+## 14. Correction: F16's human-attestation refusal was too broad
+
+**I over-refused, and it blocked a deliberate feature.** `crib memory observe` (F16, §8) rejected *any*
+evidence item of kind `human-attestation`, on the reasoning that only the TTY-checked
+`crib memory remember` may present one. That reasoning is half right and the implementation drew the
+line in the wrong place.
+
+`MemoryApi.observe` guards exactly one field, and its own error message says what to do instead:
+
+> `tty: true` … is stamped by crib when it observes a real terminal, never accepted from a caller. …
+> to stage an agent observation, omit `tty`.
+
+And there is a designed relay path behind it: a `tty`-less attestation from a non-terminal caller is
+stamped `relayedBy: <actor>` and can then only ever earn `degraded` — recallable on this device, refused
+by every path that needs a person. That is exactly how an agent *should* record "the user decided X":
+attributable, weaker than a real attestation, and not a forgery. My blanket refusal blocked it, and
+diverged from the MCP `memory_observe` path, which goes through the same API.
+
+Narrowed to refuse `tty: true` only, with a message that names the relay alternative instead of just
+saying no. Verified by using it: the four maintainer decisions recorded below landed
+`evidence=degraded`, `relayedBy=agent:unknown`, with the admission reason *"relayed: kept as the user's
+stated decision (unconfirmed) — recallable on this device; the user can confirm it with
+`crib memory remember` to make it verified and team-shareable."* Two tests now pin both halves of the
+boundary.
+
+**How this was caught.** The stop hook asked for the user's decisions as `human-attestation` evidence —
+and the verb I had just built refused the hook's own instruction. A tool that cannot obey the protocol it
+ships with is a good signal that the tool is wrong, not the protocol.
+
+**Second self-correction of this audit**, after F6. Both share a shape: a conclusion drawn from a
+plausible reading rather than from the thing itself — a stale document in F6, an inferred rule in F14's
+sibling here. The findings that held up were read off source or off a command's output.
+
+### Recorded maintainer decisions (2026-09-21)
+
+| # | Decision |
+|---|---|
+| F5 | Implement the cross-encoder and measure it; ship **opt-in**, no default change until a pre-registered floor exists |
+| F7 | **Both** SCIP import and export; import first, for language breadth |
+| F13 | **Local-only, permanently** — a product boundary, enforced by refusing non-loopback binds |
+| F17 | **Split "certified" from "released"** — keep the 21-cell bar as certification; a release ships a per-cell support table |
+
+Still needing input, per §9: **F8** (agent-over-MCP vs human-at-CLI consumer; defaulting to a bounded
+filter-and-traverse verb rather than read-only SQL, which would couple callers to a rebuildable schema),
+**F9** (which cross-repo coupling actually matters, and real repositories to test against), **F11**
+(approval for the labelled refactor corpus that any grounding improvement has to be measured against).

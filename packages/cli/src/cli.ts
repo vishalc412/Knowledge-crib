@@ -10487,15 +10487,26 @@ function loadEvidenceArg(
         '--evidence must be a non-empty JSON array of evidence items. An observation with no evidence\ncannot be admitted, and staging one would only grow the pending queue.',
     };
   }
-  const attested = parsed.find(
-    (e) =>
-      typeof e === 'object' && e !== null && (e as { kind?: string }).kind === 'human-attestation',
+  // Refuse `tty: true`, NOT the human-attestation KIND.
+  //
+  // This started as a blanket refusal of any `human-attestation` item, which was wrong and defeated a
+  // deliberate feature. `MemoryApi.observe` guards exactly one field — its own error says "to stage an
+  // agent observation, omit `tty`" — and it has a designed relay path: a `tty`-less attestation from a
+  // non-terminal caller is stamped `relayedBy: <actor>` and can then only ever earn `degraded`,
+  // meaning recallable locally but refused by every path that needs a person. That is precisely how an
+  // agent should record "the user decided X": attributable, weaker than a real attestation, and not a
+  // forgery. Refusing the whole kind blocked it and diverged from the MCP `memory_observe` path, which
+  // goes through the same API.
+  //
+  // `tty: true` remains refused here rather than deferred to the API, so the message names the right
+  // remedy before a store is even opened.
+  const forgedTty = parsed.findIndex(
+    (e) => typeof e === 'object' && e !== null && (e as { tty?: unknown }).tty === true,
   );
-  if (attested !== undefined) {
+  if (forgedTty !== -1) {
     return {
       ok: false,
-      message:
-        'refusing: this is the AGENT path and cannot present a human-attestation.\nA human asserting a claim uses `crib memory remember "<claim>"` from a terminal, which checks\nthat a human is actually present. Cite the repository instead (source-quote / execution-assertion).',
+      message: `refusing: evidence[${forgedTty}] sets \`tty: true\`, which asserts a human attested this AT A TERMINAL.\nThat flag is stamped by crib when it observes a real terminal, never accepted from a caller.\nA human asserting a claim uses \`crib memory remember "<claim>"\` from a terminal. To relay what a\nuser told you, keep kind "human-attestation" and OMIT tty — crib stamps relayedBy and caps the\nrecord at degraded, which is the honest weight for a second-hand statement.`,
     };
   }
   return { ok: true, evidence: parsed };
