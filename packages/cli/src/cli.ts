@@ -355,6 +355,7 @@ import {
   validateMutationOrigin,
 } from './viz-server.js';
 import { WatchMode } from './watch.js';
+import { renderMemoryMarkdown } from './memory-export.js';
 import { cmdRerank } from './rerank-setup.js';
 
 const EXIT = { OK: 0, ERROR: 1, BAD_ARGS: 2, NOT_INDEXED: 3, LOCKED: 4 } as const;
@@ -6549,6 +6550,8 @@ async function cmdMemory(args: string[], ctx?: CmdCtx): Promise<number> {
       return cmdMemoryRemember(rest, ctx);
     case 'observe':
       return cmdMemoryObserve(rest, ctx);
+    case 'export':
+      return cmdMemoryExport(rest, ctx);
     case 'admit':
       return cmdMemoryAdmit(rest, ctx);
     case 'propose':
@@ -6583,7 +6586,7 @@ async function cmdMemory(args: string[], ctx?: CmdCtx): Promise<number> {
     case '-h':
     case '--help':
       process.stderr.write(
-        'crib memory init | observe --kind <k> --subject <id> --claim "<text>" --evidence <file.json|-> (the AGENT write path: staged, re-grounded and gated exactly as the memory_observe MCP tool — works without MCP) | remember "<claim>" [--subject <id>] [--kind convention|decision] [--global] (record + admit a human-attested claim from a terminal — recallable immediately) | admit <candidate-id> (admit an agent-staged human-attested claim, from a terminal) | handoff [--limit N] [--json] (where was I? — in-flight work, undistilled captures, what went stale) | events [--include-expired] [--limit N] [--json] | profiles list [--json] | profiles register --key <profile-key> --alias <client-id>/<agent-id> [--alias ...] [--json] | recall "<query>" [--limit N] [--sources team,local,global] [--target <id>] [--with-evidence] [--include-pending] [--max-tokens N] [--json] | search "<query>" [--limit N] [--sources team,local,global] [--target <id>] [--max-tokens N] [--json] | get <id> [--with-evidence] [--json] | supersede <id> --actor <id> (--successor <id> | --claim <text>) [--reason <text>] [--json] | delete <id> --actor <id> [--reason <text>] [--json] | history <key> [--as-of <iso-ts>] [--with-evidence] [--json] | evaluate <candidate> --profile <name> | activate <candidate>|--all | propose <memory-id> | attest <candidate> | check | audit [--repair-local] | feedback <mem-id> --signal <useful|unhelpful|contradicted> [--actor <id>] [--context <text>] [--counter-evidence <json-file>] | gc [--max-age-days N] [--dry-run] | migrate | bench [--fast] [--json] [--out <path>] | distill --provider <name> [--providers-file F] [--max-batches N] [--concurrency N] [--timeout-ms N] | recheck [--limit N] [--json] (re-run the admission gate over pending captures) | dismiss <cap-id|cand-id> [--reason <text>] [--json] (retire one queued capture or staged candidate) | capture-hook --event <session-start|turn-end|tool-use> (hooks invoke this; always exits 0 — best-effort capture, never blocks a session) | init-sync --scope repo|global --backend file|http --url <target> [--key-env <NAME>|--keyfile <path>|--gen-key] [--secret-env <NAME>] [--sync-id <id>] [--backfill] [--json] | sync [push|pull|status] [--dry-run] [--backfill] [--max-events N] [--skip] [--json] | sync rotate-key (--gen-key | --key-env <NAME> | --keyfile <path>) [--dry-run] | sync purge-sync --stale-epoch [--dry-run] | purge <mem-id>... --confirm <mem-id>... [--stores local,global] [--history-scan] [--dry-run] [--actor <id>] [--json] | conflicts [--json] | resolve <record-id> (--successor <id> | --retract) --actor <id> [--reason <text>] [--json] (see docs/memory-sync.md)\n',
+        'crib memory init | export [--format markdown] [--out MEMORY.md] [--include-pending] (a human-readable digest GENERATED from the ledger — one-way: editing it changes nothing, because every agent reads the ledger) | observe --kind <k> --subject <id> --claim "<text>" --evidence <file.json|-> (the AGENT write path: staged, re-grounded and gated exactly as the memory_observe MCP tool — works without MCP) | remember "<claim>" [--subject <id>] [--kind convention|decision] [--global] (record + admit a human-attested claim from a terminal — recallable immediately) | admit <candidate-id> (admit an agent-staged human-attested claim, from a terminal) | handoff [--limit N] [--json] (where was I? — in-flight work, undistilled captures, what went stale) | events [--include-expired] [--limit N] [--json] | profiles list [--json] | profiles register --key <profile-key> --alias <client-id>/<agent-id> [--alias ...] [--json] | recall "<query>" [--limit N] [--sources team,local,global] [--target <id>] [--with-evidence] [--include-pending] [--max-tokens N] [--json] | search "<query>" [--limit N] [--sources team,local,global] [--target <id>] [--max-tokens N] [--json] | get <id> [--with-evidence] [--json] | supersede <id> --actor <id> (--successor <id> | --claim <text>) [--reason <text>] [--json] | delete <id> --actor <id> [--reason <text>] [--json] | history <key> [--as-of <iso-ts>] [--with-evidence] [--json] | evaluate <candidate> --profile <name> | activate <candidate>|--all | propose <memory-id> | attest <candidate> | check | audit [--repair-local] | feedback <mem-id> --signal <useful|unhelpful|contradicted> [--actor <id>] [--context <text>] [--counter-evidence <json-file>] | gc [--max-age-days N] [--dry-run] | migrate | bench [--fast] [--json] [--out <path>] | distill --provider <name> [--providers-file F] [--max-batches N] [--concurrency N] [--timeout-ms N] | recheck [--limit N] [--json] (re-run the admission gate over pending captures) | dismiss <cap-id|cand-id> [--reason <text>] [--json] (retire one queued capture or staged candidate) | capture-hook --event <session-start|turn-end|tool-use> (hooks invoke this; always exits 0 — best-effort capture, never blocks a session) | init-sync --scope repo|global --backend file|http --url <target> [--key-env <NAME>|--keyfile <path>|--gen-key] [--secret-env <NAME>] [--sync-id <id>] [--backfill] [--json] | sync [push|pull|status] [--dry-run] [--backfill] [--max-events N] [--skip] [--json] | sync rotate-key (--gen-key | --key-env <NAME> | --keyfile <path>) [--dry-run] | sync purge-sync --stale-epoch [--dry-run] | purge <mem-id>... --confirm <mem-id>... [--stores local,global] [--history-scan] [--dry-run] [--actor <id>] [--json] | conflicts [--json] | resolve <record-id> (--successor <id> | --retract) --actor <id> [--reason <text>] [--json] (see docs/memory-sync.md)\n',
       );
       process.stderr.write(
         'additional operations: backup create|verify|restore; sync compact [--dry-run] [--json]\n',
@@ -10324,7 +10327,7 @@ function printHelp(): void {
       '  crib init [path] [--ide <id|all|detected>]   5-minute onboarding: index + install-hooks + mcp install + adapters + the semantic model + next-steps hero (defaults to every client; --ide detected wires only what is in use; --no-embed skips the model download)',
       '  crib doctor [path]                       setup health check: node/corepack/index-freshness/hooks/IDE-wiring/memory-loop/stale-builds/embed-tier/freshness/post-commit-hook/multimodal-adapters (✓/✗ + fix hints)',
       "  crib rerank <setup [--model <id>] [--yes] [--list] | status>   second-stage cross-encoder: reorders the top candidates by scoring (query, text) PAIRS, which a bi-encoder structurally cannot do. Reuses the embed tier's ONNX runtime. OFF by default and measured before trusted (node scripts/eval/code-vector-eval.mjs --rerank)",
-      '  crib embed setup [--model small|base|large] [--yes]   ONE command to the semantic tier: generates + pins an adapter, then proves it ranks. --list shows the measured size/quality ladder; --yes allows the one-time runtime install and model download; --from <dir> adopts a pre-fetched bundle (air-gapped)\',',
+      "  crib embed setup [--model small|base|large] [--yes]   ONE command to the semantic tier: generates + pins an adapter, then proves it ranks. --list shows the measured size/quality ladder; --yes allows the one-time runtime install and model download; --from <dir> adopts a pre-fetched bundle (air-gapped)',",
       '  crib embed <install <model-dir>|status>   on-device embedder tier: install --model-id <id> --model-version <ver> [--entry <file>] | status (tier report; --accept-remote-policy opts into the remote tier)',
       '  crib freshness [<mode>|worker|service|hook|convert-hook]   index freshness: manual|watch|auto | supervised worker install/status/uninstall | durable queue',
       '',
@@ -10514,6 +10517,60 @@ function loadEvidenceArg(
     };
   }
   return { ok: true, evidence: parsed };
+}
+
+/**
+ * `crib memory export [--format markdown] [--out <path>] [--include-pending]`
+ *
+ * Writes a human-readable digest of the ledger. One-way by design — see `memory-export.ts` for why a
+ * writable `memory.md` would be a side-store rather than a convenience.
+ */
+async function cmdMemoryExport(args: string[], ctx?: CmdCtx): Promise<number> {
+  const format = stringFlag(args, '--format') ?? 'markdown';
+  if (format !== 'markdown') {
+    process.stderr.write(`unknown --format: ${format} (markdown)\n`);
+    return EXIT.BAD_ARGS;
+  }
+  // No positional is read as a path here: like `observe` and `recall`, every value is a flag, so
+  // nothing the caller types can be mistaken for a project root (F15).
+  const resolved = resolveRoot([], ctx);
+  if (!isIndexedRoot(resolved)) {
+    process.stderr.write('not indexed — run `crib index` first\n');
+    return EXIT.NOT_INDEXED;
+  }
+  const rt = openSoul(resolved);
+  const deps = createMemoryDeps(rt.soul, resolved.repoRoot, resolved.cribDir);
+  if (!deps) {
+    process.stderr.write('could not resolve repoId for memory — run `crib memory init` first\n');
+    return EXIT.NOT_INDEXED;
+  }
+  const api = createMemoryApi(rt.soul, resolved.repoRoot, resolved.cribDir, deps);
+  const anchor = currentRepositoryAnchor(resolved.repoRoot);
+  const handoff = api.handoff({
+    repository: anchor,
+    limits: { openWork: 20, pending: 20, attention: 20, recent: 40 },
+    now: new Date().toISOString(),
+  });
+  const markdown = renderMemoryMarkdown({
+    handoff,
+    repo: {
+      root: resolved.repoRoot,
+      ...(anchor.branch ? { branch: anchor.branch } : {}),
+      ...(anchor.head ? { head: anchor.head } : {}),
+    },
+    generatedAt: new Date().toISOString(),
+    includePending: args.includes('--include-pending'),
+    command: `crib memory export${args.includes('--include-pending') ? ' --include-pending' : ''}`,
+  });
+  const out = stringFlag(args, '--out');
+  if (out === undefined) {
+    process.stdout.write(markdown);
+    return EXIT.OK;
+  }
+  const target = isAbsolute(out) ? out : join(resolved.repoRoot, out);
+  writeFileSync(target, markdown);
+  process.stdout.write(`wrote ${target}\n`);
+  return EXIT.OK;
 }
 
 /**

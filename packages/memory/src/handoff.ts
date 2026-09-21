@@ -32,6 +32,7 @@ import {
 import { DEFAULT_MIGRATION_PRINCIPAL_ID } from './migrations.js';
 import type {
   IntakeCheckpoint,
+  IntakePhase,
   IntakeRequirement,
   MemoryRecord,
   MemoryRecordVersioned,
@@ -108,6 +109,27 @@ export interface HandoffLastSession {
    * inventory that is actually a sample (WP3.7).
    */
   changedPathsTruncated?: true;
+  /**
+   * A short, human-readable answer to "what was that session about" — the progress note that was
+   * CURRENT when the session ended, i.e. the newest intake checkpoint recorded at or before
+   * {@link lastActivity}.
+   *
+   * Deliberately NOT claimed to be authored by that session. Checkpoints carry `recordedAt` but no
+   * session id, so a link cannot be proven, and inventing one would put a confident wrong label on
+   * the most-read line in the memory home. "The note that was current when this session ended" is
+   * exactly true whichever session wrote it, and is the thing an operator actually wants.
+   *
+   * Absent when no checkpoint predates the session — a repository whose work was never checkpointed
+   * has nothing to summarize, and an empty string would read like a missing value rather than an
+   * absent one.
+   */
+  summary?: string;
+  /** Which intake that summary came from, so a reader can open the full work item. */
+  summaryIntakeId?: string;
+  /** The phase that note was recorded at (`executing`, `blocked`, `verifying`, …). */
+  summaryPhase?: IntakePhase;
+  /** ISO timestamp of that note, so a stale summary is visibly stale rather than silently old. */
+  summaryRecordedAt?: string;
 }
 
 export interface HandoffResponse {
@@ -210,6 +232,31 @@ export interface HandoffInput {
  * `lastSession` whichever order events were appended in.
  */
 const LAST_SESSION_PATHS_MAX = 20;
+
+/**
+ * The progress note that was current when `lastActivity` happened.
+ *
+ * Newest checkpoint with `recordedAt <= lastActivity`. Ties break on the checkpoint id so the choice
+ * is deterministic — two notes at the same instant must not produce a different summary per call,
+ * because the memory home is compared across reloads.
+ */
+function progressNoteAt(
+  checkpoints: readonly IntakeCheckpoint[] | undefined,
+  lastActivity: string,
+): IntakeCheckpoint | undefined {
+  if (!checkpoints || checkpoints.length === 0) return undefined;
+  let best: IntakeCheckpoint | undefined;
+  for (const cp of checkpoints) {
+    if (typeof cp?.recordedAt !== 'string' || cp.recordedAt > lastActivity) continue;
+    if (best === undefined) {
+      best = cp;
+      continue;
+    }
+    if (cp.recordedAt > best.recordedAt) best = cp;
+    else if (cp.recordedAt === best.recordedAt && (cp.id ?? '') > (best.id ?? '')) best = cp;
+  }
+  return best;
+}
 
 function lastSessionOf(
   lifecycle: HandoffInput['lifecycle'],
@@ -425,6 +472,18 @@ export function buildHandoff(input: HandoffInput): HandoffResponse {
     input.callerPrincipal,
     input.currentSessionId,
   );
+  // Attach the progress note that was current when that session ended. Done HERE rather than inside
+  // `lastSessionOf` so that function keeps its single job — reconstructing coordinates from the
+  // lifecycle journal — and the checkpoint correlation stays visibly separate from it.
+  if (lastSession !== undefined) {
+    const note = progressNoteAt(input.intakeCheckpoints, lastSession.lastActivity);
+    if (note?.summary) {
+      lastSession.summary = note.summary;
+      lastSession.summaryIntakeId = note.intakeId;
+      lastSession.summaryPhase = note.phase;
+      lastSession.summaryRecordedAt = note.recordedAt;
+    }
+  }
 
   return {
     openWork,
