@@ -803,6 +803,8 @@ across 660 files.
 | F16 | Agent memory write was MCP-only | **closed** | `crib memory observe` + 6 tests |
 | F17 | Bus factor 1, gate unreachable | **open — not a code change** | — |
 | F18 | `crib serve` exits on damaged manifest | **closed** | verified over stdio JSON-RPC + 4 tests |
+| F19 | `supersede --claim` leaves nothing recallable | **closed** (§11) | 3 tests; the `--evidence` flag was written and reverted as unsafe |
+| F20 | CLI suite flaky under parallel load | **open** (§11) | 3 named tests, all untouched by this work |
 
 **Why the open ones are open**, so the list is a plan rather than an excuse:
 
@@ -878,3 +880,49 @@ touches the harness, but a gate would be better than a sentence.
 **How this reflects on the audit.** F6 is the one finding where I reported a repository document as
 evidence without re-running the measurement behind it, and it is the one finding that turned out to be
 wrong. The findings that held up are the ones anchored to source I read or a command I ran.
+
+---
+
+## 11. Two more findings, both found by using the system
+
+### F19 — `crib memory supersede --claim` retired a claim and left nothing recallable
+
+Superseding a record with a new `--claim` mints a successor carrying **zero evidence**. For an
+evidence-requiring kind — which `fact` is — that successor is `trust: candidate, evidence: invalid`
+and excluded from normal recall, while the superseded record leaves recall immediately. Observed on
+the real ledger: `considered 4, eligible 2`, with the successor in neither group. The command printed
+success. **Net effect: the knowledge disappeared.**
+
+Fixed by disclosure, not by a flag — and the flag is the interesting part. `SupersedePayload.evidence`
+already exists on the API, so exposing `--evidence` looked like a one-line win. It is a hole:
+supersede carries evidence **verbatim**, so the caller would supply each item's `verdict`, and an
+agent stamping its own evidence verdict is exactly what §4 forbids. Only the observe/auto-admit path
+may stamp one, because only it re-grounds the quote against live source first. The flag was written
+and then reverted; the one-step supersede stays evidence-free and now says that the successor is
+unrecallable, naming observe-then-supersede-by-id as the route that works.
+
+Also fixed: `api.supersede` throws a `MemorySchemaError` on an invalid successor rather than returning
+`{ok:false}`, so a raw stack trace reached the terminal. A CLI answers a bad argument with a message.
+
+### F20 — the CLI test suite has flaky tests that fail only under parallel load
+
+Three distinct failures appeared during this session, each in a file this work never touched, each
+passing in isolation and on a clean re-run:
+
+| test | file |
+|---|---|
+| "300ms debounce: concurrent triggers collapse into ONE serialized refresh" | `freshness.test.ts` |
+| "debounces a burst of watcher events into ONE requestRefresh(watcher)" | `watch.test.ts` |
+| "apply rewrites both files atomically and chains the post-apply reindex" | `rename.test.ts` |
+
+All three are wall-clock sensitive — two are debounce-window assertions, the third drives the built
+CLI as a subprocess and chains a reindex. They fail when the machine is busy, which during this
+session meant "while a 24-minute embedding build was running".
+
+Why it matters more here than in most repositories: `pnpm verify` is the gate this project's release
+decision leans on, and a gate that fails ~1 run in 3 under load trains its owner to re-run rather than
+read. The fix is to make the timing assertions inject a clock rather than wait on one — not to widen
+the windows, which only moves the threshold.
+
+*(Unrelated to the flakes: `biome check` was failing outright on HEAD for three unformatted files, so
+`pnpm verify` was red before this branch began. Fixed in `f140a423`.)*
