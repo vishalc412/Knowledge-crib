@@ -630,3 +630,102 @@ describe('crib memory observe — the agent write path, without MCP', () => {
     expect(JSON.parse((r.stdout ?? '').trim()).recallable).toBe(true);
   });
 });
+
+/**
+ * `crib memory supersede --claim` must not retire a claim in silence.
+ *
+ * Found by using it: superseding a record with a new `--claim` mints a successor carrying ZERO
+ * evidence, which for an evidence-requiring kind (`fact`) is `trust: candidate, evidence: invalid` and
+ * therefore NOT recall-eligible. The superseded record leaves recall immediately, so the net effect
+ * was that the knowledge disappeared while the command printed success.
+ *
+ * There is deliberately no `--evidence` flag: `SupersedePayload.evidence` is carried VERBATIM, so the
+ * caller would supply each item's `verdict` — an agent stamping its own evidence verdict is exactly
+ * what the admissibility rule forbids. Only the observe path may stamp one, because only it re-grounds
+ * the quote first. So the one-step supersede stays evidence-free and says so, and the recallable route
+ * is observe-then-supersede-by-id.
+ */
+describe('crib memory supersede — an unrecallable successor is disclosed, not implied', () => {
+  function run(args: string[]): { status: number; stdout: string; stderr: string } {
+    const r = spawnSync(process.execPath, [CLI, 'memory', ...args], {
+      cwd: repo,
+      encoding: 'utf8',
+      maxBuffer: 32 * 1024 * 1024,
+      env: env(),
+    });
+    return {
+      status: r.status ?? 1,
+      stdout: (r.stdout ?? '').trim(),
+      stderr: (r.stderr ?? '').trim(),
+    };
+  }
+
+  const GROUNDED = [
+    { kind: 'source-quote', soulId: NODE_ID, quote: 'C_THRESHOLD CONSTANT NUMBER := 30' },
+  ];
+
+  function observeGrounded(claim: string): string {
+    const evPath = join(repo, `sup-ev-${Math.random().toString(36).slice(2)}.json`);
+    writeFileSync(evPath, JSON.stringify(GROUNDED));
+    const r = run([
+      'observe',
+      '--kind',
+      'fact',
+      '--subject',
+      NODE_ID,
+      '--claim',
+      claim,
+      '--evidence',
+      evPath,
+    ]);
+    expect(r.status, r.stderr).toBe(0);
+    const ack = JSON.parse(r.stdout) as { recordId?: string; id: string; recallable: boolean };
+    expect(ack.recallable).toBe(true);
+    return ack.recordId ?? ack.id;
+  }
+
+  it('warns that a --claim successor is NOT recallable', () => {
+    const id = observeGrounded('The threshold constant is 30.');
+    const r = run([
+      'supersede',
+      id,
+      '--actor',
+      'agent:test',
+      '--claim',
+      'The threshold constant is now 45.',
+    ]);
+    expect(r.status, r.stderr).toBe(0);
+    expect(r.stdout).toMatch(/superseded/);
+    expect(r.stdout).toMatch(/carries NO evidence/);
+    expect(r.stdout).toMatch(/normal recall will NOT/);
+    // and it names the route that DOES land a recallable replacement
+    expect(r.stdout).toMatch(/crib memory observe/);
+    expect(r.stdout).toMatch(/--successor/);
+  });
+
+  it('does NOT warn when superseding by --successor, where the replacement was already admitted', () => {
+    const oldId = observeGrounded('The threshold constant is 30, stated once.');
+    const newId = observeGrounded('The threshold constant is 30, stated with a second phrasing.');
+    const r = run(['supersede', oldId, '--actor', 'agent:test', '--successor', newId]);
+    expect(r.status, r.stderr).toBe(0);
+    expect(r.stdout).not.toMatch(/carries NO evidence/);
+  });
+
+  it('reports a schema violation as a message, never as a stack trace', () => {
+    const id = observeGrounded('The threshold constant is 30, third phrasing.');
+    // an unknown --kind builds an invalid successor; api.supersede THROWS rather than returning !ok
+    const r = run([
+      'supersede',
+      id,
+      '--actor',
+      'agent:test',
+      '--claim',
+      'x',
+      '--kind',
+      'not-a-real-kind',
+    ]);
+    expect(r.status).not.toBe(0);
+    expect(r.stderr).not.toMatch(/ {4}at .*\.js:\d+/); // no stack frames
+    expect(r.stderr).toMatch(/^(error|usage|unknown)/m);
+  });
+});

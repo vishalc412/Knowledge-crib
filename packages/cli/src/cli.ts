@@ -8810,6 +8810,19 @@ function cmdMemorySupersede(args: string[], ctx?: CmdCtx): number {
     return EXIT.NOT_INDEXED;
   }
   const api = createMemoryApi(rt.soul, resolved.repoRoot, resolved.cribDir, deps);
+  // A `--claim` supersede mints a successor with ZERO evidence, and for an evidence-requiring kind —
+  // which `fact` is — that successor is `trust: candidate, evidence: invalid` and therefore NOT
+  // recall-eligible. The superseded record leaves recall immediately, so the net effect is that the
+  // knowledge disappears while the command reports success. That is what the warning below exists to
+  // stop being silent about.
+  //
+  // There is deliberately NO `--evidence` flag here. `SupersedePayload.evidence` is carried VERBATIM
+  // by the API, which means the caller would supply each item's `verdict` — and an agent stamping its
+  // own evidence verdict is precisely what the admissibility rule forbids ("an agent NEVER
+  // self-asserts a pass"). Only the observe/auto-admit path may stamp a verdict, because only it
+  // re-grounds the quote against live source first. So the honest one-step supersede is a claim with
+  // no evidence, clearly labelled, and the way to land a RECALLABLE replacement is the two-step flow
+  // the warning names.
   const by: string | SupersedePayload =
     successor !== undefined
       ? successor
@@ -8823,11 +8836,21 @@ function cmdMemorySupersede(args: string[], ctx?: CmdCtx): number {
           ...(visibility !== undefined ? { visibility } : { visibility: 'workspace' as const }),
           ...(propositionKey !== undefined ? { propositionKey } : {}),
         };
-  const result = api.supersede(id, by, {
-    actor,
-    ...(reason !== undefined ? { reason } : {}),
-    ...(tool !== undefined ? { tool } : {}),
-  });
+  // `api.supersede` VALIDATES the successor against the record schema and THROWS on a violation
+  // rather than returning `{ok:false}` — a raw `MemorySchemaError` stack reached the terminal when a
+  // malformed successor was built. A CLI must not answer a bad argument with a stack trace: the
+  // message is the actionable part, and the exit code carries the failure.
+  let result: ReturnType<typeof api.supersede>;
+  try {
+    result = api.supersede(id, by, {
+      actor,
+      ...(reason !== undefined ? { reason } : {}),
+      ...(tool !== undefined ? { tool } : {}),
+    });
+  } catch (e) {
+    process.stderr.write(`error: ${e instanceof Error ? e.message : String(e)}\n`);
+    return EXIT.ERROR;
+  }
   if (!result.ok) {
     process.stderr.write(`error: ${result.error}\n`);
     return EXIT.ERROR;
@@ -8837,6 +8860,18 @@ function cmdMemorySupersede(args: string[], ctx?: CmdCtx): number {
     process.stdout.write(
       `superseded ${result.supersededId} -> successor ${result.successorId} (decision ${result.decisionId}, store ${result.decisionSource}${result.successorCreated ? '' : ', successor already existed'})\n`,
     );
+    // Say whether the swap actually left a recallable claim behind. A superseded record is gone from
+    // recall immediately; if the successor is inadmissible, the net effect is that the knowledge
+    // disappeared, and reporting only "superseded" would hide that.
+    if (result.successorCreated === true && claim !== undefined) {
+      process.stdout.write(
+        'warning: the successor carries NO evidence, so it is a candidate and normal recall will NOT\n' +
+          '  return it — this supersede retired a claim without leaving a recallable replacement.\n' +
+          '  To land one: `crib memory observe --kind <k> --subject <id> --claim "<text>" --evidence <f>`\n' +
+          '  (which re-grounds the citations and stamps the verdicts itself), then re-run this command\n' +
+          '  with --successor <that id> instead of --claim.\n',
+      );
+    }
   }
   return EXIT.OK;
 }
@@ -10401,6 +10436,50 @@ async function cmdMemoryRemember(args: string[], ctx?: CmdCtx): Promise<number> 
 }
 
 /**
+ * Load and sanity-check an `--evidence` argument for the two commands that write a claim.
+ *
+ * Shared by `observe` and `supersede` so the refusals are identical: an evidence array that is
+ * malformed, empty, or carries a `human-attestation` must be rejected the same way whichever verb the
+ * caller reached for. Returns a typed failure rather than throwing, so each command keeps its own
+ * exit-code and usage text.
+ */
+function loadEvidenceArg(
+  path: string,
+): { ok: true; evidence: unknown[] } | { ok: false; message: string } {
+  let raw: string;
+  try {
+    raw = path === '-' ? readFileSync(0, 'utf8') : readFileSync(path, 'utf8');
+  } catch (e) {
+    return { ok: false, message: `cannot read --evidence ${path}: ${(e as Error).message}` };
+  }
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (e) {
+    return { ok: false, message: `--evidence is not valid JSON: ${(e as Error).message}` };
+  }
+  if (!Array.isArray(parsed) || parsed.length === 0) {
+    return {
+      ok: false,
+      message:
+        '--evidence must be a non-empty JSON array of evidence items. An observation with no evidence\ncannot be admitted, and staging one would only grow the pending queue.',
+    };
+  }
+  const attested = parsed.find(
+    (e) =>
+      typeof e === 'object' && e !== null && (e as { kind?: string }).kind === 'human-attestation',
+  );
+  if (attested !== undefined) {
+    return {
+      ok: false,
+      message:
+        'refusing: this is the AGENT path and cannot present a human-attestation.\nA human asserting a claim uses `crib memory remember "<claim>"` from a terminal, which checks\nthat a human is actually present. Cite the repository instead (source-quote / execution-assertion).',
+    };
+  }
+  return { ok: true, evidence: parsed };
+}
+
+/**
  * `crib memory observe` — the AGENT write path, without MCP.
  *
  * Why this exists. The protocol requires every reusable learning to be recorded with admissible
@@ -10438,42 +10517,12 @@ async function cmdMemoryObserve(args: string[], ctx?: CmdCtx): Promise<number> {
     );
     return EXIT.BAD_ARGS;
   }
-  let evidenceRaw: string;
-  try {
-    evidenceRaw =
-      evidencePath === '-' ? readFileSync(0, 'utf8') : readFileSync(evidencePath, 'utf8');
-  } catch (e) {
-    process.stderr.write(`cannot read --evidence ${evidencePath}: ${(e as Error).message}\n`);
+  const loaded = loadEvidenceArg(evidencePath);
+  if (!loaded.ok) {
+    process.stderr.write(`${loaded.message}\n`);
     return EXIT.BAD_ARGS;
   }
-  let evidence: unknown;
-  try {
-    evidence = JSON.parse(evidenceRaw);
-  } catch (e) {
-    process.stderr.write(`--evidence is not valid JSON: ${(e as Error).message}\n`);
-    return EXIT.BAD_ARGS;
-  }
-  if (!Array.isArray(evidence) || evidence.length === 0) {
-    process.stderr.write(
-      '--evidence must be a non-empty JSON array of evidence items. An observation with no evidence\n' +
-        'cannot be admitted, and staging one would only grow the pending queue.\n',
-    );
-    return EXIT.BAD_ARGS;
-  }
-  // The refusal that keeps this verb honest: an agent may cite the repository, never itself, and
-  // never a human. `crib memory remember` owns the attested path because it checks for a terminal.
-  const attestation = evidence.find(
-    (e) =>
-      typeof e === 'object' && e !== null && (e as { kind?: string }).kind === 'human-attestation',
-  );
-  if (attestation !== undefined) {
-    process.stderr.write(
-      'refusing: `crib memory observe` is the AGENT path and cannot present a human-attestation.\n' +
-        'A human asserting a claim uses `crib memory remember "<claim>"` from a terminal, which checks\n' +
-        'that a human is actually present. Cite the repository instead (source-quote / execution-assertion).\n',
-    );
-    return EXIT.BAD_ARGS;
-  }
+  const evidence = loaded.evidence;
   // The positional-free resolve: every value here is a flag, so nothing can be mistaken for a root.
   const resolved = resolveRoot([], ctx);
   if (!isIndexedRoot(resolved)) {

@@ -778,3 +778,103 @@ across 660 files.
 - **A `':memory:'` sqlite store never reopens**, so the entire pre-existing embedder test set passed
   while production lost the vector channel on every reopen. State restored in a constructor needs a
   file-backed test.
+
+---
+
+## 9. Where every finding stands
+
+| # | Finding | State | Evidence |
+|---|---|---|---|
+| F1 | Code-vector path unreachable | **closed** | `vector_meta` + 8 file-backed tests (5 fail without the fix) |
+| F2 | Recall claim scoped to the memory ledger | **closed** | README + capability matrix rewritten |
+| F3 | Surface-only embeddings | **closed, measured** | MRR 0.057 → 0.286; recipe versioned |
+| F4 | Semantic layer empty, no provider | **closed** | `examples/providers/anthropic/` |
+| F5 | No cross-encoder reranker | **open** | port + `DEFAULT_RERANK_DEPTH` exist; no implementation |
+| F6 | Scale curve stops at 50K, super-linear | **half WITHDRAWN (§10), half open** | curve re-measured to 200K: linear, flat throughput. 1M point still unmeasured; no ANN |
+| F7 | 11 extractors, 7-label fixture, no SCIP | **open** | — |
+| F8 | No graph query language | **open** | — |
+| F9 | Cross-repo is an HTTP-route bridge | **open** | — |
+| F10 | Withheld candidates invisible | **closed** | `pendingNotice` in the CLI + 4 tests |
+| F11 | Grounding is substring overlap | **open** | demonstrated live during round 2 (below) |
+| F12 | Taint intra-procedural, TS/JS only | **no action — correctly disclosed** | already honest in code and matrix |
+| F13 | No authenticated multi-tenancy | **open — product decision** | needs a positioning call, not a patch |
+| F14 | Fragments outranked symbols | **closed** | 6 tests (3 fail without the fix) |
+| F15 | Positional parsed as a path | **closed, wider than recorded** | 5 tests via `spawnSync` |
+| F16 | Agent memory write was MCP-only | **closed** | `crib memory observe` + 6 tests |
+| F17 | Bus factor 1, gate unreachable | **open — not a code change** | — |
+| F18 | `crib serve` exits on damaged manifest | **closed** | verified over stdio JSON-RPC + 4 tests |
+
+**Why the open ones are open**, so the list is a plan rather than an excuse:
+
+- **F5** (cross-encoder) is the biggest remaining quality lever and is now *measurable* — the harness
+  from §8 would score it directly. It needs an ONNX cross-encoder provisioned like `crib embed setup`
+  does (a ~1 GB download, an integrity pin, a tier report) plus a gate. That is its own change, and
+  shipping it hastily is how an unmeasured claim gets made — the failure mode this whole audit exists
+  to prevent.
+- **F7** (SCIP) is the highest-return breadth investment and a genuine project: a protobuf reader, an
+  id-mapping layer onto crib's node ids, and a fixture corpus per language.
+- **F8** (query surface) is a language-design decision, not an implementation gap. A bounded
+  read-only pattern verb over the existing SQLite schema is the shape; picking its grammar deserves
+  more care than the end of a session.
+- **F9**, **F11** are research-shaped. F11 in particular has no market alternative to copy — nobody
+  else verifies memories against source at all.
+- **F13**, **F17** are decisions the maintainer owns. F13 needs a stated position ("local-only
+  forever" is a legitimate answer); F17 needs a policy that can go green, or an explicit split
+  between "certified" and "released".
+
+### F11 demonstrated live, unprompted
+
+Round 2 edited `sqlite-index.ts`. Two of the three memories recorded through `crib memory observe` in
+round 1 were admitted `evidence=valid` against `vectorText@L72` and `restoreVectorMeta@L187`; after
+the edit they read `evidence=degraded`, because the anchors moved and the quoted spans shifted. The
+freshness engine caught it with no prompting — which is the moat working — **and** it is F11's
+brittleness in one observation: one of those claims is still perfectly true, and it degraded only
+because a line number changed. The other is now genuinely false (it asserts surface-only embedding,
+which round 2 removed) and deserves supersession rather than a downgrade. A verdict engine that
+cannot tell those two cases apart is doing less than it appears to.
+
+---
+
+## 10. Correction: F6's super-linearity claim does not reproduce
+
+**F6 said the index curve was roughly O(n^1.8) with collapsing throughput. Re-measured, it is not.**
+The finding was read off [`docs/bench/scale-curve.md`](../../bench/scale-curve.md), which was stale.
+
+Fresh run, 2026-09-21, same harness and same replicated fixture, extended to 200K LOC — 4× past the
+point the published curve stopped at:
+
+| LOC | Wall (s) | Nodes/s | MB / kLOC |
+|---:|---:|---:|---:|
+| 10,524 | 4.67 | 1,253 | 23.1 |
+| 50,866 | 28.28 | 998 | 7.2 |
+| 100,855 | 56.98 | 981 | 6.6 |
+| 200,833 | 116.82 | 953 | 5.6 |
+
+50K→100K is 2.00× the corpus for **2.01×** the time; 100K→200K is 2.00× for **2.05×**. That is linear.
+Throughput moves 998 → 981 → 953 across a 4× corpus — a 4.5% decline, not the 3.6× collapse the
+published table showed. MB/kLOC *falls*, so peak RSS grows sub-linearly.
+
+**This is not noise.** The 10K slice reproduces at 4.67 s and 4.62 s across two runs (~1%), against a
+published 10.63 s; the 50K slice is 28.28 s against a published 184.97 s. The published document was
+generated 2026-07-13, `scripts/scale-bench.mjs` was modified 2026-08-26 (`1ac2e2ba`, which changed how
+wall time is measured among other things), and the document was never regenerated.
+
+**What F6 got right, and what replaces the wrong half:**
+
+- ✅ **The 1M-LOC point was never measured.** Still true — this run reaches 200K.
+- ✅ **Vector search is an unindexed full-table cosine scan.** Unchanged; no ANN ships.
+- ❌ **"Super-linear, ~O(n^1.8), GC pressure or an O(N²) link/cluster phase."** Withdrawn. The data it
+  rested on is superseded, and the fresh data shows a linear curve with flat throughput.
+- ➕ **Replaced by a sharper version of the same concern:** the cost that actually explodes is the
+  **vector** build, measured in §8 at 1,444 s vs 86 s on this repository (16.8×). The lexical curve
+  says nothing about it, and extrapolating one to the other is invalid.
+
+**A process finding, which is the more durable lesson.** A generated benchmark document went stale for
+two months while its harness changed underneath it, and it was the one place a reader — including this
+audit — would look for scale behaviour. Nothing flagged the drift: `docs:stats` has a freshness gate,
+`scale-curve.md` did not. The regenerated file now says to regenerate it in the same change that
+touches the harness, but a gate would be better than a sentence.
+
+**How this reflects on the audit.** F6 is the one finding where I reported a repository document as
+evidence without re-running the measurement behind it, and it is the one finding that turned out to be
+wrong. The findings that held up are the ones anchored to source I read or a command I ran.

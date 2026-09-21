@@ -280,7 +280,15 @@ These are open, disclosed rather than fixed. None is a surprise waiting to be fo
    indexed commit until `crib update`; status reports `aheadOfVcsHead: true` rather than hiding it.
 7. **Cross-device sync is synthetic.** A two-device file-backend soak over v1 records, with no
    power-loss or fsync claim. Not a cross-platform network trial.
-8. **Graph coverage is partial and says so.** 5,419 unresolved call sites on this repository;
+8. **The lexical index curve is linear to 200K LOC; the VECTOR build is 16.8× the lexical cost.**
+   Re-measured 2026-09-21 ([`bench/scale-curve.md`](bench/scale-curve.md)): 50K→100K→200K LOC costs
+   2.01× then 2.05× the time for 2× the corpus, with throughput flat within 4.5% and MB/kLOC falling.
+   An earlier published curve showed a throughput collapse; it was stale and is superseded. Still
+   unmeasured: the 1M-LOC point, and any scale point at all for `--vectors`, whose build cost is a
+   different curve (1,444 s vs 86 s on this repository). Vector search is also a full-table cosine
+   scan — no ANN ships, so query cost grows linearly with the vector count.
+
+9. **Graph coverage is partial and says so.** 5,419 unresolved call sites on this repository;
    `status({op:'gaps'})` reports `analysisReadiness: incomplete`. An empty `impact` result is not
    evidence a symbol is unused.
 
