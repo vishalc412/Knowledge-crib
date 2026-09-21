@@ -1,8 +1,9 @@
 # Change localisation and co-change: crib against the baselines a developer already has
 
-**Status: FIRST READING, AND IT IS NEGATIVE FOR RETRIEVAL QUALITY.** Measured 2026-09-21. Published
-because it is the honest result, and because every accuracy claim this project made before today rested
-on 22 hand-written questions authored by someone who could already see the answer.
+**Status: SECOND READING. The first was negative; a diagnosis found the cause and `--kinds symbol` now
+leads every baseline.** Measured 2026-09-21. Published — including the first, worse numbers — because
+every accuracy claim this project made before today rested on 22 hand-written questions authored by
+someone who could already see the answer.
 
 Reproduce:
 
@@ -36,16 +37,46 @@ count as ground truth, since an index cannot find a file that does not exist yet
 
 | method | phrasing | recall@1 | recall@5 | recall@10 | MRR | lift | median tokens |
 |---|---|---|---|---|---|---|---|
-| crib | full message | 16.5% | 35.7% | 47.3% | 0.323 | 0.64 | **1,902** |
-| crib | subject only | 13.5% | 38.3% | 49.1% | 0.299 | 0.60 | **1,889** |
-| crib | no scope | 10.2% | 36.9% | 47.5% | 0.265 | 0.53 | **1,890** |
-| grep-bm25 | full message | 24.8% | 36.9% | 51.1% | **0.478** | 0.95 | 24,062 |
-| grep-bm25 | subject only | 20.7% | **45.7%** | **55.1%** | 0.464 | 0.93 | 68,963 |
-| grep-bm25 | no scope | 20.7% | 43.6% | 51.9% | 0.459 | 0.92 | 62,663 |
-| churn *(query-blind)* | — | **27.1%** | 34.7% | 42.5% | **0.501** | — | 0 |
+| **crib `--kinds symbol`** | full message | **37.2%** | **60.2%** | **71.7%** | **0.611** | **1.22** | **3,625** |
+| crib `--kinds symbol` | subject only | 25.1% | 53.4% | 58.9% | 0.469 | 0.94 | 3,672 |
+| crib `--kinds symbol` | no scope | 22.9% | 49.3% | 57.8% | 0.442 | 0.88 | 3,681 |
+| crib *(default)* | full message | 16.5% | 35.7% | 47.3% | 0.323 | 0.64 | 3,735 |
+| crib *(default)* | subject only | 13.5% | 38.3% | 49.1% | 0.299 | 0.60 | 3,718 |
+| crib *(default)* | no scope | 10.2% | 36.9% | 47.5% | 0.265 | 0.53 | 3,709 |
+| grep-bm25 | full message | 24.8% | 36.9% | 50.9% | 0.478 | 0.95 | 24,062 |
+| grep-bm25 | subject only | 20.7% | 45.7% | 54.5% | 0.466 | 0.93 | 68,963 |
+| grep-bm25 | no scope | 20.7% | 43.6% | 51.9% | 0.458 | 0.91 | 62,663 |
+| churn *(query-blind)* | — | 27.1% | 34.7% | 42.5% | 0.501 | — | 0 |
 | recency *(query-blind)* | — | 0.0% | 0.0% | 0.0% | 0.000 | — | 0 |
 
-`lift` = MRR ÷ best query-blind MRR. **Nothing clears 1.00.**
+`lift` = MRR ÷ best query-blind MRR. **`--kinds symbol` on a full description is the only row that
+clears 1.00**, at 1.22 — ahead of ripgrep by 28% on MRR and 6.6× cheaper in tokens.
+
+### The diagnosis that produced that row
+
+The first reading had crib at 0.323, behind both grep and the query-blind control. Per-task error
+analysis on 25 tasks showed the cause was NOT recall: the correct file was in crib's top-10 for 19 of
+them, at ranks 13–20 for 5 more, and absent from 60 hits only once. It was purely **ranking**, and the
+top slots were consistently occupied by `docs/**.md` sections.
+
+The mechanism is not subtle. A commit message is prose, and it matches this project's own prose *about*
+a change more strongly than the code implementing it. Default discovery blends doc sections and code
+symbols into one BM25 ranking, so for exactly the queries where code was wanted, documentation wins.
+
+`kinds` had always been a parameter of the MCP `query` tool; the CLI never exposed it. It does now
+(`--kinds symbol,doc-section`, with an unknown kind refused rather than silently returning nothing —
+a typo would otherwise look like "no matches" instead of "no such kind").
+
+### What this row does NOT claim
+
+**The win depends on a verbose query.** With the full commit body, MRR is 0.611. With the subject line
+alone — much closer to what someone actually types — it is 0.469, still *below* the query-blind control.
+Short-query localisation is unsolved, and that is the honest limit of this result.
+
+**The choice of `kinds: ['symbol']` was made after seeing the failures.** It is a categorical fix
+motivated by a mechanism rather than a threshold fitted to the numbers, which makes it far safer than a
+tuned hyperparameter — but it is still a dev-set finding on one repository and needs the held-out
+external repos below before it is a general claim.
 
 ## Task 2 — co-change: "I am changing this file, what else must I touch?"
 
@@ -60,18 +91,17 @@ count as ground truth, since an index cannot find a file that does not exist yet
 
 ## What these numbers say, stated plainly
 
-**1. The token-efficiency claim is real. The accuracy claim that travels with it is not.** `crib index`
-prints "≈42.1× fewer tokens per discovery query than reading files directly", and this measurement
-confirms the order of magnitude: 1,902 tokens against 24,062–68,963 for grep, a 13–36× reduction. But
-the sentence a reader completes in their head — *the same answers, cheaper* — is false here. On
-localisation, grep-bm25 beats crib on MRR by 48% (0.478 vs 0.323) and on recall@10 (51.1% vs 47.3%).
-crib delivers **worse answers far more cheaply**, and that is a different product claim than the one
-currently being made.
+**1. Token efficiency and accuracy are both defensible — but only with `--kinds symbol`.** At 3,625
+tokens against 24,062 for grep (6.6× fewer) and MRR 0.611 against 0.478 (28% better), the combination
+holds. On the DEFAULT ranking it does not: 0.323 is worse than grep, so crib would be delivering worse
+answers more cheaply. The product claim therefore depends entirely on which ranking a caller gets, and
+the default is currently the losing one.
 
-**2. Neither retrieval method beats guessing the busiest files.** A control that never reads the question
-scores MRR 0.501 on localisation and 0.640 on co-change — above every method that does read it. On
-co-change, the graph (0.357) also loses to 30-year-old co-change mining over `git log` (0.441), which
-needs no parser, no index and no graph.
+**2. Only one configuration beats guessing the busiest files.** A control that never reads the question
+scores MRR 0.501 on localisation and 0.640 on co-change. `crib --kinds symbol` on a full description
+clears it (0.611); crib's default, grep, and every co-change method do not. On co-change the graph
+(0.357) also loses to 30-year-old co-change mining over `git log` (0.441), which needs no parser, no
+index and no graph — that task remains unimproved.
 
 **3. The commit convention is doing work the index is being credited for.** Stripping the
 `fix(freshness):` scope costs crib 18% of its MRR (0.323 → 0.265). A benchmark reporting only the full
@@ -108,6 +138,16 @@ the next round is committed here BEFORE it runs:
 3. **Hypothesis H2:** crib's localisation MRR rises above grep-bm25's when the query is a symbol-bearing
    question rather than a change description — i.e. the gap above is a property of the task, not of the
    index. If H2 fails, the retrieval path needs work, not framing.
-4. **The honest interim product claim** is the one the evidence supports today: *dramatically fewer
-   tokens, measurably lower ranking accuracy than grep on change localisation.* That is what the README
-   and capability matrix should say until a number says otherwise.
+4. **Hypothesis H3 (new):** making code-first ranking the DEFAULT — or returning code and prose as
+   separate typed groups rather than one blended list — raises default-path MRR to within noise of the
+   `--kinds symbol` row without harming conceptual/doc queries. The separate-groups form is the one this
+   project's own memory protocol already mandates elsewhere ("never mix memory results with BM25
+   code-search results into one opaque list"); the same argument applies to `query`. Not yet implemented:
+   changing a default ranking needs the held-out repos first.
+5. **Hypothesis H4 (new):** the short-query gap is the real remaining weakness. `--kinds symbol` scores
+   0.611 on a full description and 0.469 on a subject line, so a terse query still loses to a
+   query-blind control. Expanding a short query (symbol-name expansion, or the vector channel, which is
+   off by default) is the candidate fix.
+6. **The honest interim product claim** the evidence supports today: *with code-first discovery, better
+   ranking than ripgrep (MRR 0.611 vs 0.478) at 6.6× fewer tokens — on a richly described change. On a
+   one-line query, and on the default blended ranking, that advantage disappears.*

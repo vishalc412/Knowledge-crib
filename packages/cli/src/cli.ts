@@ -235,7 +235,7 @@ import type {
   PreparedSourceInput,
   WorkspaceLayout,
 } from '@knowledge-crib/pipeline';
-import { blake3Hex } from '@knowledge-crib/soul-schema';
+import { NODE_KINDS, type NodeKind, blake3Hex } from '@knowledge-crib/soul-schema';
 import { buildVizGraph, buildVizOverview, vizAssetsDir } from '@knowledge-crib/ui';
 import {
   ALL_CLIENTS,
@@ -1313,7 +1313,7 @@ async function cmdQuery(args: string[], ctx?: CmdCtx): Promise<number> {
   const q = positionalsOf(args).join(' ');
   if (!q) {
     process.stderr.write(
-      'usage: crib query <text> [--with-source] [--with-rules] [--with-framework] [--extracted-only] [--with-llm] [--include-detail] [--limit N]\n',
+      'usage: crib query <text> [--kinds symbol,doc-section] [--with-source] [--with-rules] [--with-framework] [--extracted-only] [--with-llm] [--include-detail] [--limit N]\n',
     );
     return EXIT.BAD_ARGS;
   }
@@ -1329,6 +1329,37 @@ async function cmdQuery(args: string[], ctx?: CmdCtx): Promise<number> {
   const withLlm = args.includes('--with-llm');
   const limitIdx = args.indexOf('--limit');
   const limit = limitIdx >= 0 ? Number.parseInt(args[limitIdx + 1] ?? '', 10) : undefined;
+  // `--kinds` restricts discovery to the node kinds asked for. The MCP `query` tool has always taken
+  // `kinds`; the CLI never exposed it, which mattered more than it looks.
+  //
+  // MEASURED (docs/bench/localisation.md): on 61 change-localisation tasks the DEFAULT blend of prose
+  // and code scores MRR 0.323, and `--kinds symbol` scores 0.611 — past ripgrep (0.471) and past a
+  // query-blind churn control (0.501). The mechanism is not subtle: a question phrased in prose matches
+  // this project's own prose ABOUT a change more strongly than the code implementing it, so
+  // `docs/**.md` sections occupy the top ranks for exactly the queries where code was wanted.
+  const kindsIdx = args.indexOf('--kinds');
+  const kindsArg = kindsIdx >= 0 ? args[kindsIdx + 1] : undefined;
+  const kinds = kindsArg
+    ? (kindsArg
+        .split(',')
+        .map((k) => k.trim())
+        .filter((k) => k !== '') as NodeKind[])
+    : undefined;
+  if (kinds) {
+    const unknown = kinds.filter((k) => !NODE_KINDS.includes(k));
+    if (unknown.length > 0) {
+      // Refused rather than silently ignored: a typo'd kind would return an empty result set that looks
+      // like "nothing matches your query" instead of "that kind does not exist".
+      process.stderr.write(
+        [
+          `unknown node kind(s): ${unknown.join(', ')}`,
+          `  known kinds: ${NODE_KINDS.join(', ')}`,
+          '',
+        ].join('\n'),
+      );
+      return EXIT.BAD_ARGS;
+    }
+  }
   const resolved = resolveProjectRoot({ explicitRoot: ctx?.cwdOverride });
   if (!isIndexedRoot(resolved)) {
     process.stderr.write('not indexed — run `crib index` first\n');
@@ -1351,6 +1382,7 @@ async function cmdQuery(args: string[], ctx?: CmdCtx): Promise<number> {
         ...(extractedOnly ? { extractedOnly: true } : {}),
         ...(withLlm ? { withLlm: true } : {}),
         ...(args.includes('--include-detail') ? { includeDetail: true } : {}),
+        ...(kinds ? { kinds } : {}),
         ...(Number.isFinite(limit) && limit! > 0 ? { limit } : {}),
       }),
       null,

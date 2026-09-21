@@ -67,6 +67,13 @@ const BASE_TREE = flag('--base-tree', undefined);
 const K = num('--k', 10);
 const LIMIT = num('--limit', Number.POSITIVE_INFINITY);
 const AS_JSON = args.includes('--json');
+/**
+ * How many NODES to ask crib for before collapsing to files. Not a tuning knob for accuracy: a
+ * file-level ranking cannot exceed the quality of the candidate list it is computed from, and the grep
+ * baseline is already given up to 5 matches for each of 12 query words. Overridable so the sensitivity
+ * of the result to this choice can be checked rather than assumed.
+ */
+const NODE_BUDGET = num('--node-budget', 60);
 
 if (!BASE_TREE) {
   process.stderr.write('--base-tree <path> is required (a checkout of the corpus base, indexed)\n');
@@ -134,16 +141,38 @@ function variantsOf(task) {
 
 // ── methods ──────────────────────────────────────────────────────────────────
 
-/** `crib query` — the shipped discovery path. Returns ranked FILES with the bytes it cost. */
-function cribQuery(query, limit) {
+/**
+ * `crib query` — the shipped discovery path, collapsed to ranked FILES.
+ *
+ * TWO CORRECTIONS TO AN EARLIER, UNFAIR VERSION OF THIS FUNCTION. The first run of this harness ranked
+ * files by the position of the FIRST node seen for each, and asked for only `limit * 3` nodes. Both
+ * choices penalised crib against a grep baseline that was given proper per-file score aggregation over
+ * a much wider candidate net — so the comparison was measuring the harness, not the retriever.
+ *
+ *  - Files are now ranked by their BEST node score, ties broken by how many of the file's nodes matched.
+ *    Max-score rather than sum is deliberate and was chosen on principle rather than by trying both:
+ *    summing rewards a file for merely having many nodes, which in this repository means the
+ *    8,000-line `cli.ts` would climb on size alone — the exact churn-mimicking behaviour the
+ *    query-blind control exists to detect.
+ *  - The node budget is raised well above `limit`, because the question is which FILES rank highest,
+ *    and a file-level ranking cannot be better than the candidate list it is computed from.
+ *
+ * Both changes favour crib, which is why the run that applies them reports the previous numbers beside
+ * the new ones rather than quietly replacing them.
+ */
+function cribQuery(query, limit, kinds) {
   let out = '';
   try {
-    out = execFileSync(process.execPath, [CRIB, 'query', query, '--limit', String(limit * 3)], {
-      cwd: TREE,
-      encoding: 'utf8',
-      maxBuffer: 32 * 1024 * 1024,
-      stdio: ['ignore', 'pipe', 'ignore'],
-    });
+    out = execFileSync(
+      process.execPath,
+      [CRIB, 'query', query, '--limit', String(NODE_BUDGET), ...(kinds ? ['--kinds', kinds] : [])],
+      {
+        cwd: TREE,
+        encoding: 'utf8',
+        maxBuffer: 32 * 1024 * 1024,
+        stdio: ['ignore', 'pipe', 'ignore'],
+      },
+    );
   } catch {
     return { files: [], bytes: 0 };
   }
@@ -153,12 +182,24 @@ function cribQuery(query, limit) {
   } catch {
     return { files: [], bytes: out.length };
   }
-  // A hit is a node; the task is file-level, so collapse to first-seen file order (rank preserved).
-  const files = [];
+  // A hit is a node; the task is file-level, so aggregate per file.
+  //
+  // `score` is FTS5 bm25, where MORE NEGATIVE is a better match, so relevance is its negation. A hit
+  // carries no `file` field, only `id`, so the path comes from the id grammar.
+  const best = new Map(); // file -> { relevance, nodes }
   for (const h of hits) {
     const file = h.file ?? fileFromId(h.id);
-    if (file && !files.includes(file)) files.push(file);
+    if (!file) continue;
+    const relevance = typeof h.score === 'number' ? -h.score : 0;
+    const cur = best.get(file);
+    if (cur) {
+      cur.relevance = Math.max(cur.relevance, relevance);
+      cur.nodes += 1;
+    } else best.set(file, { relevance, nodes: 1 });
   }
+  const files = [...best.entries()]
+    .sort((a, b) => b[1].relevance - a[1].relevance || b[1].nodes - a[1].nodes)
+    .map(([f]) => f);
   return { files: files.slice(0, limit), bytes: out.length };
 }
 
@@ -253,6 +294,10 @@ const recencyRanking = (() => {
 
 const METHODS = {
   crib: (q) => cribQuery(q, K),
+  // The same verb restricted to code kinds. Separated rather than substituted because the difference
+  // between these two rows IS the finding: the default blend ranks this project's prose about a change
+  // above the code implementing it, for exactly the queries where code was wanted.
+  'crib --kinds symbol': (q) => cribQuery(q, K, 'symbol'),
   'grep-bm25': (q) => grepBm25(q, K),
   // Cost 0: these read nothing at query time. That is exactly what makes them a fair control — if they
   // score well, the retrieval methods are being paid for information the ranking already had.

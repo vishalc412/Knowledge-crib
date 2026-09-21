@@ -141,6 +141,57 @@ describe('crib context --package (WS-4 bulk dossierByScope) — CLI dispatch', (
   });
 });
 
+describe('crib query --kinds (localisation ranking, docs/bench/localisation.md)', () => {
+  /**
+   * WHY THIS FLAG IS TESTED AT THE CLI BOUNDARY. `kinds` was always a parameter of the MCP `query`
+   * tool and the CLI never passed it through, which measured as a large accuracy loss rather than a
+   * cosmetic gap: on 61 change-localisation tasks the blended default scores MRR 0.323 while
+   * `--kinds symbol` scores 0.611, because a prose query matches this project's prose ABOUT a change
+   * above the code implementing it. These tests pin the pass-through and the refusal.
+   */
+  it('restricts hits to the kinds asked for', () => {
+    const symbolOnly = JSON.parse(runCli(['query', 'loan_pkg', '--kinds', 'symbol'])) as {
+      hits: Array<{ kind: string }>;
+    };
+    expect(symbolOnly.hits.length).toBeGreaterThan(0);
+    expect([...new Set(symbolOnly.hits.map((h) => h.kind))]).toEqual(['symbol']);
+  });
+
+  it('discriminates — a different kind returns a different hit set', () => {
+    // Proves the flag FILTERS rather than being accepted and ignored: the same query restricted to
+    // `file` must return file nodes, never the symbol nodes the previous assertion saw.
+    const fileOnly = JSON.parse(runCli(['query', 'loan_pkg', '--kinds', 'file'])) as {
+      hits: Array<{ kind: string }>;
+    };
+    expect(fileOnly.hits.length).toBeGreaterThan(0);
+    expect([...new Set(fileOnly.hits.map((h) => h.kind))]).toEqual(['file']);
+  });
+
+  it('accepts a comma-separated list', () => {
+    const both = JSON.parse(runCli(['query', 'loan_pkg', '--kinds', 'symbol,file'])) as {
+      hits: Array<{ kind: string }>;
+    };
+    const kinds = new Set(both.hits.map((h) => h.kind));
+    expect(both.hits.length).toBeGreaterThan(0);
+    for (const kind of kinds) expect(['symbol', 'file']).toContain(kind);
+  });
+
+  it('REFUSES an unknown kind instead of returning an empty result', () => {
+    // A typo'd kind that filtered to nothing would read as "your query matched nothing", sending the
+    // caller to rewrite a query that was never the problem.
+    const r = runCliResult(['query', 'loan_pkg', '--kinds', 'symbl']);
+    expect(r.status).toBe(2);
+    expect(r.stderr).toMatch(/unknown node kind\(s\): symbl/);
+    expect(r.stderr).toMatch(/known kinds:/);
+    expect(r.stderr).toContain('symbol');
+  });
+
+  it('is absent by default, so the blended ranking is unchanged for existing callers', () => {
+    const dflt = JSON.parse(runCli(['query', 'loan_pkg'])) as { hits: Array<{ kind: string }> };
+    expect(dflt.hits.length).toBeGreaterThan(0);
+  });
+});
+
 describe('read commands use an existing derived index instead of rebuilding it', () => {
   it('reports a clear reindex instruction when the derived sqlite index is missing', async () => {
     const missingRepo = mkdtempSync(join(tmpdir(), 'crib-cli-missing-index-'));
