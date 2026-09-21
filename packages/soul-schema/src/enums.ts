@@ -167,6 +167,40 @@ export function isDetailNodeKind(kind: NodeKind): boolean {
   return DETAIL_NODE_KINDS.includes(kind);
 }
 
+/**
+ * PROSE discovery kinds — the nodes whose text is written for a human to read rather than for a
+ * machine to execute.
+ *
+ * WHY THIS PARTITION EXISTS, measured rather than assumed. Blending prose and code into one BM25
+ * ranking loses to prose for exactly the queries where code was wanted: a question phrased in English
+ * matches a project's own documentation ABOUT a change more strongly than the code implementing it.
+ * On 61 change-localisation tasks the blended ranking scored MRR 0.323 while code-only scored 0.611
+ * (docs/bench/localisation.md). Documentation was not ranking badly — it was ranking correctly, for a
+ * relevance judgement nobody asked for.
+ *
+ * `agent-artifact` belongs here: a skill, rule or instruction file is prose about the code, not code.
+ * `media-seg` is a transcript segment, which is prose that was spoken.
+ *
+ * ENUMERATED, unlike {@link DISCOVERY_NODE_KINDS}, and deliberately so: a newly added kind must
+ * default to being treated as CODE, because the failure mode of a wrong guess is asymmetric. A code
+ * kind misfiled as prose disappears from the primary ranking and looks like a corpus that contains
+ * none of it; a prose kind misfiled as code merely ranks alongside code, which is where it used to be.
+ */
+export const PROSE_NODE_KINDS: readonly NodeKind[] = ['doc-section', 'media-seg', 'agent-artifact'];
+
+/**
+ * CODE discovery kinds — every discoverable kind that is not prose. Derived by subtraction so the two
+ * partitions cannot drift apart or overlap as kinds are added.
+ */
+export const CODE_NODE_KINDS: readonly NodeKind[] = DISCOVERY_NODE_KINDS.filter(
+  (k) => !PROSE_NODE_KINDS.includes(k),
+);
+
+/** True when `kind` is prose written for a human rather than code (see {@link PROSE_NODE_KINDS}). */
+export function isProseNodeKind(kind: NodeKind): boolean {
+  return PROSE_NODE_KINDS.includes(kind);
+}
+
 export const RELS: readonly Rel[] = [
   'calls',
   'imports',

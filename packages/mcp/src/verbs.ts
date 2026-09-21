@@ -101,7 +101,12 @@ import {
  * touch the network or the enricher.
  */
 import type { Edge, Node, NodeKind } from '@knowledge-crib/soul-schema';
-import { DISCOVERY_NODE_KINDS, blake3Hex } from '@knowledge-crib/soul-schema';
+import {
+  CODE_NODE_KINDS,
+  DISCOVERY_NODE_KINDS,
+  PROSE_NODE_KINDS,
+  blake3Hex,
+} from '@knowledge-crib/soul-schema';
 import {
   type EnrichNextArgs,
   type EnrichStatusArgs,
@@ -517,6 +522,15 @@ const PUBLIC_VERBS = new Set<string>([
   'memoryIntakeGet',
   'memoryIntakeShare',
 ]);
+
+/**
+ * How many PROSE hits `query` returns in its `docHits` group by default.
+ *
+ * Small on purpose. Prose is supplementary context for a code answer here, and the whole point of
+ * separating the groups is to stop documentation consuming the ranking AND the token budget. A caller
+ * who wants prose as the primary result passes `kinds: ['doc-section']` instead.
+ */
+const PROSE_HIT_LIMIT = 5;
 
 export class Verbs {
   private readonly llm: EnrichmentStore;
@@ -1416,8 +1430,18 @@ export class Verbs {
     const limit = capInt(args.limit, DEFAULT_LIMIT, MAX_LIMIT);
     // An explicit `kinds` is the caller's business and is never widened or narrowed. Otherwise
     // discovery defaults to answer-shaped kinds, and `includeDetail` opts back into fragments.
+    // H3 (docs/bench/localisation.md) — the DEFAULT primary ranking is CODE, with prose returned as
+    // its own group below. Blending the two lost to prose for exactly the queries where code was
+    // wanted: measured MRR 0.323 blended against 0.611 code-only on 61 change-localisation tasks,
+    // because an English question matches this project's documentation ABOUT a change more strongly
+    // than the code implementing it. This is the same argument `llmHits` already won — a separate
+    // field so one ranking cannot drown another.
+    //
+    // An explicit `kinds` still wins outright, in both directions, exactly as before.
     const kinds: NodeKind[] | undefined =
-      args.kinds ?? (args.includeDetail ? undefined : [...DISCOVERY_NODE_KINDS]);
+      args.kinds ?? (args.includeDetail ? undefined : [...CODE_NODE_KINDS]);
+    /** Group prose separately only on the DEFAULT path: an explicit `kinds` means the caller chose. */
+    const groupProse = args.kinds === undefined && !args.includeDetail;
     // cursor → offset into the BM25-ranked set (FTS5 OFFSET). Floor at 0; non-numeric → 0.
     const offset = Math.max(0, Number.parseInt(args.cursor ?? '', 10) || 0);
     // M2.4 — rewrite the query with the per-repo alias dictionary before it reaches the index.
@@ -1483,6 +1507,35 @@ export class Verbs {
       this.attachLlm(hit, h.id, args.withLlm);
       return hit;
     });
+
+    // The PROSE group: doc sections, transcripts and agent artifacts, ranked by the same BM25
+    // projection but kept out of `hits` so they cannot outrank code.
+    //
+    // Deliberately a LIGHTER shape than a code hit — id, kind, score, snippet — and capped well below
+    // `limit`. A prose hit is context for a code answer, and paying `withSource`/`withRules`
+    // enrichment for it would spend the token budget this grouping exists to protect. Nothing is
+    // lost: a caller that genuinely wants prose ranked as the primary result asks for it with
+    // `kinds: ['doc-section']`, which takes the unchanged single-ranking path.
+    const docHits: Array<Record<string, unknown>> = [];
+    let docHitsTruncated = false;
+    if (groupProse) {
+      const rawProse = this.codeIndex().query({
+        text: q,
+        kinds: [...PROSE_NODE_KINDS],
+        limit: PROSE_HIT_LIMIT + 1,
+        offset: 0,
+      });
+      docHitsTruncated = rawProse.length > PROSE_HIT_LIMIT;
+      for (const h of rawProse.slice(0, PROSE_HIT_LIMIT)) {
+        const node = soul.getNode(h.id);
+        docHits.push({
+          id: h.id,
+          kind: h.kind,
+          score: h.score,
+          snippet: rehydrate(this.deps.repoRoot, node),
+        });
+      }
+    }
 
     // Semantic discoveries from the authored-meaning layer that BM25 did NOT surface, ranked by the
     // SAME semantic_fts BM25 projection `brief` uses ({@link Verbs.semanticHits}) — the measured
@@ -1559,6 +1612,9 @@ export class Verbs {
       // it is noise that crowds out the fields a caller needs to page.
       ...(llmSource !== undefined && llmHits.length > 0 ? { llmSource } : {}),
       ...(coverage !== undefined ? { coverage, ...lowCoverageHint(coverage) } : {}),
+      // Present only when there is something to describe, like `llmSource` above.
+      ...(docHits.length > 0 ? { docHits } : {}),
+      ...(docHitsTruncated ? { docHitsTruncated: true } : {}),
     };
     // M1.2 response-wide token budget (opt-in). When maxTokens is set, fit the hits list to the
     // largest leading prefix whose serialized response fits (chars/4); llmHits + the fixed tail
@@ -1588,11 +1644,16 @@ export class Verbs {
     };
     // `maxTokens` is a ceiling, not a suggestion — the fitter can only trim `hits`, so on a budget
     // too small for even an empty-hits response the ADVISORY tail must yield. `coverage` and its
-    // `hint` describe a payload that has just been trimmed to nothing, so they are the first things
-    // worth dropping; `truncated`, `budgetExhausted` and `cursor` stay, because without them the
-    // caller cannot tell a small answer from a truncated one, or page to get the rest.
+    // `hint` describe a payload that has just been trimmed to nothing, and `docHits` is supplementary
+    // prose context for a code answer that no longer exists, so those are the first things worth
+    // dropping; `truncated`, `budgetExhausted` and `cursor` stay, because without them the caller
+    // cannot tell a small answer from a truncated one, or page to get the rest.
+    //
+    // `docHits` MUST be in this list. It is a fixed-size group the hits fitter cannot trim, so a
+    // response whose hits were cut to nothing could still exceed a tight ceiling on prose alone —
+    // which is exactly how it broke the budget test when this grouping was introduced.
     if (estimateTokens(JSON.stringify(result)) > maxTokens) {
-      const { coverage: _c, hint: _h, ...rest } = result;
+      const { coverage: _c, hint: _h, docHits: _d, docHitsTruncated: _dt, ...rest } = result;
       return rest;
     }
     return result;

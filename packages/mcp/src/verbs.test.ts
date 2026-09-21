@@ -472,9 +472,45 @@ describe('verbs', () => {
     // Over-fetch by one to detect overflow. "login" matches the login symbol AND the auth.md doc
     // section (whose body mentions "AuthService.login"), so a limit of 1 must report truncated,
     // not the old hardcoded `truncated: false`.
-    const res = verbs.query({ q: 'login', limit: 1 }) as unknown as QueryResult;
+    //
+    // `kinds` is now EXPLICIT here. The default path ranks code only and returns prose in `docHits`
+    // (H3, docs/bench/localisation.md), so a symbol and a doc section no longer compete for one slot
+    // and this fixture would not overflow on code alone. Naming both kinds restores the blended set
+    // this test is about, and the blended set is now opt-in rather than the default.
+    const res = verbs.query({
+      q: 'login',
+      kinds: ['symbol', 'doc-section'],
+      limit: 1,
+    }) as unknown as QueryResult;
     expect(res.truncated).toBe(true);
     expect(res.hits.length).toBe(1);
+  });
+
+  it('query DEFAULT ranks code in hits and returns prose in its own docHits group (H3)', () => {
+    // The measured reason (docs/bench/localisation.md): blending prose with code scored MRR 0.323 on
+    // 61 change-localisation tasks against 0.611 code-only, because an English question matches a
+    // project's documentation ABOUT a change above the code implementing it.
+    const res = verbs.query({ q: 'login', limit: 10 }) as unknown as {
+      hits: Array<{ id: string; kind: string }>;
+      docHits?: Array<{ id: string; kind: string }>;
+    };
+    // No prose in the primary ranking...
+    expect(res.hits.length).toBeGreaterThan(0);
+    expect(res.hits.some((h) => h.kind === 'doc-section')).toBe(false);
+    expect(res.hits[0]!.id).toBe(login.id);
+    // ...and none of it lost: the auth.md section that mentions AuthService.login is still returned.
+    expect(res.docHits?.some((h) => h.kind === 'doc-section')).toBe(true);
+  });
+
+  it('an explicit kinds still wins, so prose can be the primary ranking when asked for', () => {
+    const res = verbs.query({ q: 'login', kinds: ['doc-section'], limit: 5 }) as unknown as {
+      hits: Array<{ id: string; kind: string }>;
+      docHits?: unknown[];
+    };
+    expect(res.hits.length).toBeGreaterThan(0);
+    expect(res.hits.every((h) => h.kind === 'doc-section')).toBe(true);
+    // Grouping is a DEFAULT-path behaviour; an explicit request takes the single-ranking path.
+    expect(res.docHits).toBeUndefined();
   });
 
   it('query withLlm:false attaches NO llm pointer to hits and emits no llmHits', () => {

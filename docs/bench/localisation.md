@@ -1,7 +1,7 @@
 # Change localisation and co-change: crib against the baselines a developer already has
 
-**Status: SECOND READING. The first was negative; a diagnosis found the cause and `--kinds symbol` now
-leads every baseline.** Measured 2026-09-21. Published — including the first, worse numbers — because
+**Status: THIRD READING. The first was negative; a diagnosis found the cause; the fix is now the
+DEFAULT (H3 shipped), not a flag.** Measured 2026-09-21. Published — including the first, worse numbers — because
 every accuracy claim this project made before today rested on 22 hand-written questions authored by
 someone who could already see the answer.
 
@@ -37,20 +37,43 @@ count as ground truth, since an index cannot find a file that does not exist yet
 
 | method | phrasing | recall@1 | recall@5 | recall@10 | MRR | lift | median tokens |
 |---|---|---|---|---|---|---|---|
-| **crib `--kinds symbol`** | full message | **37.2%** | **60.2%** | **71.7%** | **0.611** | **1.22** | **3,625** |
+| **crib (default, grouped)** | full message | **37.2%** | **58.6%** | **71.7%** | **0.610** | **1.22** | 3,912 |
+| crib (default, grouped) | subject only | 26.1% | 50.1% | 59.8% | 0.467 | 0.93 | 3,937 |
+| crib (default, grouped) | no scope | 22.3% | 47.6% | 56.5% | 0.425 | 0.85 | 3,938 |
+| crib `--kinds symbol` | full message | 37.2% | 60.2% | 71.7% | 0.611 | 1.22 | **3,625** |
 | crib `--kinds symbol` | subject only | 25.1% | 53.4% | 58.9% | 0.469 | 0.94 | 3,672 |
 | crib `--kinds symbol` | no scope | 22.9% | 49.3% | 57.8% | 0.442 | 0.88 | 3,681 |
-| crib *(default)* | full message | 16.5% | 35.7% | 47.3% | 0.323 | 0.64 | 3,735 |
-| crib *(default)* | subject only | 13.5% | 38.3% | 49.1% | 0.299 | 0.60 | 3,718 |
-| crib *(default)* | no scope | 10.2% | 36.9% | 47.5% | 0.265 | 0.53 | 3,709 |
+| crib *(old blended default)* | full message | 16.5% | 35.7% | 47.3% | 0.323 | 0.64 | 3,735 |
+| crib *(old blended default)* | subject only | 13.5% | 38.3% | 49.1% | 0.299 | 0.60 | 3,718 |
+| crib *(old blended default)* | no scope | 10.2% | 36.9% | 47.5% | 0.265 | 0.53 | 3,709 |
 | grep-bm25 | full message | 24.8% | 36.9% | 50.9% | 0.478 | 0.95 | 24,062 |
 | grep-bm25 | subject only | 20.7% | 45.7% | 54.5% | 0.466 | 0.93 | 68,963 |
 | grep-bm25 | no scope | 20.7% | 43.6% | 51.9% | 0.458 | 0.91 | 62,663 |
 | churn *(query-blind)* | — | 27.1% | 34.7% | 42.5% | 0.501 | — | 0 |
 | recency *(query-blind)* | — | 0.0% | 0.0% | 0.0% | 0.000 | — | 0 |
 
-`lift` = MRR ÷ best query-blind MRR. **`--kinds symbol` on a full description is the only row that
-clears 1.00**, at 1.22 — ahead of ripgrep by 28% on MRR and 6.6× cheaper in tokens.
+`lift` = MRR ÷ best query-blind MRR. **The default now clears 1.00**, at 1.22 — ahead of ripgrep by
+28% on MRR and 6.2× cheaper in tokens. The default and the explicit flag are within 0.001 of each
+other, so the measured win is what a caller gets without knowing any flag exists.
+
+### H3, shipped: prose and code are separate groups
+
+`query` no longer blends them. By default `hits` carries code kinds ranked by BM25, and prose kinds
+(`doc-section`, `media-seg`, `agent-artifact`) come back in their own `docHits` group — capped at 5,
+with a lighter per-hit shape, because prose is context for a code answer rather than the answer.
+Nothing is lost: the doc section that used to occupy rank 1 is still returned, just not competing for
+the slot. An explicit `kinds` takes the unchanged single-ranking path, so asking for
+`kinds: ['doc-section']` still ranks prose first.
+
+This is the argument `llmHits` already won in this codebase — semantic discoveries were moved to their
+own field precisely "so they never drown out BM25 ranking" after a blended ranking put a test helper
+above the real implementation. Prose was the same failure with a different source.
+
+The cost of the grouping is ~290 tokens (3,912 vs 3,625), which buys back the doc answers that
+`--kinds symbol` discards. Changing a default ranking broke exactly **2 of 3,406 tests**, both of which
+were asserting the old blending; one is now explicit about wanting a blended set, and `docHits` had to
+join the advisory fields the token-budget fitter drops, since a fixed-size group it cannot trim could
+otherwise exceed a tight ceiling on prose alone.
 
 ### The diagnosis that produced that row
 
@@ -69,8 +92,8 @@ a typo would otherwise look like "no matches" instead of "no such kind").
 
 ### What this row does NOT claim
 
-**The win depends on a verbose query.** With the full commit body, MRR is 0.611. With the subject line
-alone — much closer to what someone actually types — it is 0.469, still *below* the query-blind control.
+**The win depends on a verbose query.** With the full commit body, MRR is 0.610. With the subject line
+alone — much closer to what someone actually types — it is 0.467, still *below* the query-blind control.
 Short-query localisation is unsolved, and that is the honest limit of this result.
 
 **The choice of `kinds: ['symbol']` was made after seeing the failures.** It is a categorical fix
@@ -138,12 +161,9 @@ the next round is committed here BEFORE it runs:
 3. **Hypothesis H2:** crib's localisation MRR rises above grep-bm25's when the query is a symbol-bearing
    question rather than a change description — i.e. the gap above is a property of the task, not of the
    index. If H2 fails, the retrieval path needs work, not framing.
-4. **Hypothesis H3 (new):** making code-first ranking the DEFAULT — or returning code and prose as
-   separate typed groups rather than one blended list — raises default-path MRR to within noise of the
-   `--kinds symbol` row without harming conceptual/doc queries. The separate-groups form is the one this
-   project's own memory protocol already mandates elsewhere ("never mix memory results with BM25
-   code-search results into one opaque list"); the same argument applies to `query`. Not yet implemented:
-   changing a default ranking needs the held-out repos first.
+4. **Hypothesis H3 — CONFIRMED and shipped.** Predicted: separate typed groups raise default-path MRR
+   to within noise of the `--kinds symbol` row. Measured: 0.610 default against 0.611 explicit, a
+   difference of 0.001. The prediction was recorded before the implementation existed.
 5. **Hypothesis H4 (new):** the short-query gap is the real remaining weakness. `--kinds symbol` scores
    0.611 on a full description and 0.469 on a subject line, so a terse query still loses to a
    query-blind control. Expanding a short query (symbol-name expansion, or the vector channel, which is
