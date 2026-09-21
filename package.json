@@ -42,6 +42,7 @@
     "eval:semantic": "node scripts/eval/semantic-retrieval-eval.mjs",
     "eval:code-vector": "node scripts/eval/code-vector-eval.mjs",
     "eval:memory-rerank": "node scripts/eval/memory-rerank-eval.mjs",
+    "e2e:journey": "bash scripts/e2e-journey.sh",
     "graph:accuracy": "corepack pnpm@9.15.0 --filter @knowledge-crib/core build && corepack pnpm@9.15.0 --filter @knowledge-crib/parsers build && corepack pnpm@9.15.0 --filter @knowledge-crib/pipeline build && node scripts/graph-accuracy.mjs",
     "sync:soak": "corepack pnpm@9.15.0 --filter @knowledge-crib/memory build && node scripts/sync-soak.mjs",
     "cost:gate": "node scripts/cost-gate.mjs",

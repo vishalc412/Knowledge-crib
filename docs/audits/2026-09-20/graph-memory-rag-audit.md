@@ -1165,3 +1165,41 @@ each vector by content hash under `~/.cache/crib-embed-vec/<id>`, so a rebuild o
 the same build repeated took **202 s** — 7.1× faster, with 20,611 cached vectors on disk. §8 quoted only
 the cold number, which overstates steady-state cost by 7×. Both are now published, since quoting either
 alone misleads in one direction.
+
+---
+
+## 18. End-to-end verification, and what writing it exposed
+
+`bash scripts/e2e-journey.sh` (`pnpm e2e:journey`) walks the real journey on a repository it creates
+from scratch: an unindexed repo, an index, discovery, memory, the digest, the vector channel, the
+memory home. **25 checks, all passing** from a clean checkout.
+
+It exists because several defects in this audit were only visible from OUTSIDE. `crib serve` exiting on
+a fresh worktree (F18) looked correct in every unit test. `readMemoryHome` dropping `lastSession` was a
+field that simply never reached the browser — both sides were fine and the seam was not.
+
+### Three ways the test itself was wrong first
+
+Worth recording, because each is a way a green suite can mean nothing:
+
+1. **Absence checks pass when the command never ran.** The first version reported four green F15
+   checks (`no "serving the ancestor project" warning`) against a repo it had *failed to index*. Every
+   assertion now requires exit 0 as well as content — `assert_absent` refuses to pass on a non-zero
+   exit at all. Same class as the `runCliResult` stderr trap in §11.
+2. **`$B index .` runs nothing under zsh.** `B="node …/bin.js"; $B index .` word-splits under bash and
+   is one unsplit command name under zsh. The script declares `#!/usr/bin/env bash` and the header says
+   so; the earlier inline attempts silently executed nothing while printing plausible output.
+3. **Passing a JSON payload through `argv` misreported a present field as missing.** The
+   memory-home check read `NO_LAST_SESSION` from a payload that contained it. It now reads the
+   response from a file and prints the reason it failed — which is how the real cause was found.
+
+### The real cause the diagnostic found
+
+`crib memory capture-hook` reads its payload from **stdin** (`readFileSync(0, …)`), the way an IDE
+invokes it. Called with no stdin it records a lifecycle event *without session provenance* — the
+degraded path — and `lastSession` is then honestly absent. The test now pipes a realistic
+`{session_id, client_id, cwd}` payload, which both fixes the check and exercises the contract a real
+client uses rather than the fallback.
+
+The `[diag]` line that separates "the hook never recorded" from "the seam dropped it" is kept in the
+script. It is the line that turned three wrong guesses into one measurement.
