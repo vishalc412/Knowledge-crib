@@ -14,12 +14,13 @@
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   AnchorUnavailableError,
   NotARepoError,
   changedFilesSince,
+  coChangedWith,
   contentDigestForPaths,
   dirtyTreeFingerprint,
   uncommittedChanges,
@@ -44,6 +45,60 @@ function git(args: string[]): string {
     stdio: ['ignore', 'pipe', 'pipe'],
   }).trim();
 }
+
+describe('coChangedWith — the historical signal impact offers beside the graph', () => {
+  /** Commit a set of files together, so a co-change relationship exists to mine. */
+  function commitTogether(files: string[], message: string, n: number): void {
+    for (let i = 0; i < n; i++) {
+      for (const f of files) {
+        mkdirSync(join(repo, dirname(f)), { recursive: true });
+        writeFileSync(join(repo, f), `export const v = ${i};\n`);
+      }
+      git(['add', '.']);
+      git(['-c', 'user.email=t@t', '-c', 'user.name=t', 'commit', '-q', '-m', `${message} ${i}`]);
+    }
+  }
+
+  it('ranks by how many commits two files shared', () => {
+    commitTogether(['src/b.ts', 'src/b.test.ts'], 'b and its test', 4);
+    commitTogether(['src/b.ts', 'src/unrelated.ts'], 'b and a stranger', 1);
+    const out = coChangedWith(repo, 'src/b.ts');
+    expect(out[0]).toEqual({ path: 'src/b.test.ts', commits: 4 });
+    expect(out.find((c) => c.path === 'src/unrelated.ts')?.commits).toBe(1);
+  });
+
+  it('IGNORES a bulk commit, which would otherwise make everything co-change with everything', () => {
+    // A formatting sweep or mass rename touching every file is the classic way this technique
+    // produces confident nonsense: without the cap, one such commit relates all N files pairwise.
+    const many = Array.from({ length: 25 }, (_, i) => `src/bulk${i}.ts`);
+    commitTogether(many, 'reformat everything', 1);
+    expect(coChangedWith(repo, 'src/bulk0.ts', { maxFilesPerCommit: 20 })).toEqual([]);
+  });
+
+  it('never returns the seed as its own co-change', () => {
+    commitTogether(['src/c.ts', 'src/d.ts'], 'c and d', 2);
+    expect(coChangedWith(repo, 'src/c.ts').some((x) => x.path === 'src/c.ts')).toBe(false);
+  });
+
+  it('respects the result limit', () => {
+    commitTogether(['src/e.ts', 'src/f.ts', 'src/g.ts', 'src/h.ts'], 'four together', 2);
+    expect(coChangedWith(repo, 'src/e.ts', { limit: 2 })).toHaveLength(2);
+  });
+
+  it('DEGRADES to empty outside a git work tree rather than throwing', () => {
+    // A read verb must never raise because the project is not a repo.
+    const notRepo = mkdtempSync(join(tmpdir(), 'crib-cochange-norepo-'));
+    try {
+      expect(coChangedWith(notRepo, 'anything.ts')).toEqual([]);
+    } finally {
+      rmSync(notRepo, { recursive: true, force: true });
+    }
+  });
+
+  it('returns empty for a path with no shared history', () => {
+    expect(coChangedWith(repo, 'src/never-committed-with-anything.ts')).toEqual([]);
+  });
+});
 
 describe('changedFilesSince — anchor availability is not repo-ness (WP4.4)', () => {
   it('throws AnchorUnavailableError when the anchor was rebased away, NOT NotARepoError', () => {

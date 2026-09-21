@@ -208,6 +208,7 @@ import { writeJsonAtomic } from '@knowledge-crib/memory';
 import {
   adapterStatuses,
   changedFilesSince,
+  coChangedWith,
   contentDigestForPaths,
   currentHead,
   detectWorkspace,
@@ -830,6 +831,13 @@ class CliVcsAdapter implements VcsAdapter {
   // list its `uncommittedChanges` returned, so CLI and MCP compute one contract, not two.
   contentDigestFor(root: string, paths: string[]): string {
     return contentDigestForPaths(root, paths);
+  }
+  coChangedWith(
+    root: string,
+    path: string,
+    opts?: { limit?: number },
+  ): Array<{ path: string; commits: number }> {
+    return coChangedWith(root, path, opts ?? {});
   }
   currentBranch(root: string): string | undefined {
     try {
@@ -1894,6 +1902,10 @@ async function cmdImpact(args: string[], ctx?: CmdCtx): Promise<number> {
   const depth = depthIdx >= 0 ? Number.parseInt(args[depthIdx + 1] ?? '', 10) : undefined;
   const limitIdx = args.indexOf('--limit');
   const limit = limitIdx >= 0 ? Number.parseInt(args[limitIdx + 1] ?? '', 10) : undefined;
+  // How many historically co-changed files to suggest alongside the graph walk. `0` disables the
+  // signal for a caller who wants structure only.
+  const ccIdx = args.indexOf('--co-change-limit');
+  const coChangeLimit = ccIdx >= 0 ? Number.parseInt(args[ccIdx + 1] ?? '', 10) : undefined;
   process.stdout.write(
     `${JSON.stringify(
       verbs.impact({
@@ -1901,6 +1913,7 @@ async function cmdImpact(args: string[], ctx?: CmdCtx): Promise<number> {
         dir,
         ...(Number.isFinite(depth) && depth! > 0 ? { depth } : {}),
         ...(Number.isFinite(limit) && limit! > 0 ? { limit } : {}),
+        ...(Number.isFinite(coChangeLimit) && coChangeLimit! >= 0 ? { coChangeLimit } : {}),
         ...(args.includes('--extracted-only') ? { extractedOnly: true } : {}),
         ...(args.includes('--include-llm') ? { includeLlm: true } : {}),
       }),

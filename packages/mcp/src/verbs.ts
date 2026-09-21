@@ -174,6 +174,22 @@ export interface VcsAdapter {
    * blind to a second edit inside an already-dirty file.
    */
   contentDigestFor?(root: string, paths: string[]): string;
+  /**
+   * Files that historically changed in the same commit as `path`, most frequent first.
+   *
+   * OPTIONAL, like the two above, so existing implementors and test stubs keep compiling — an adapter
+   * without it simply yields no co-change suggestions, which is a degraded answer rather than a broken
+   * one. Measured against `impact`'s graph walk this signal is 1.6-3x stronger on the question "what
+   * else must I touch" (docs/bench/localisation.md), which is why a graph tool asks git for it.
+   */
+  coChangedWith?(
+    root: string,
+    path: string,
+    opts?: { limit?: number },
+  ): Array<{
+    path: string;
+    commits: number;
+  }>;
 }
 
 /**
@@ -1262,6 +1278,8 @@ export class Verbs {
     limit?: number;
     extractedOnly?: boolean;
     includeLlm?: boolean;
+    /** How many historically co-changed files to suggest (default 5, 0 disables). */
+    coChangeLimit?: number;
   }): Record<string, unknown> {
     const id = this.resolveNodeId(args.id);
     if (!id || !this.deps.soul.getNode(id)) return notFound(args.id);
@@ -1303,15 +1321,56 @@ export class Verbs {
       id,
       page.items.map((a) => a.id),
     );
+    // HISTORICAL co-change, in its OWN field and never folded into `affected`.
+    //
+    // Measured on three external repositories, this signal answers "what else must I touch" 1.6-3x
+    // better than the graph walk above (express 0.335 vs 0.042 MRR, click 0.338 vs 0.113, gin 0.633 vs
+    // 0.209). It is separate rather than merged because the two are different kinds of evidence: an
+    // edge means these symbols reference each other, a co-change means people have historically edited
+    // these files together. Blending them would produce one list in which a caller cannot tell a
+    // structural dependency from a social habit, and those support different decisions.
+    const coChanged = this.coChangedFor(id, args.coChangeLimit);
     return {
       root: id,
       dir: args.dir,
       affected: page.items,
       relatedDocs: this.docsFor(id, 0, args.extractedOnly),
       ...(memories.length > 0 ? { memories } : {}),
+      ...(coChanged.length > 0 ? { coChanged } : {}),
       truncated: page.truncated,
       ...(page.cursor ? { cursor: page.cursor } : {}),
     };
+  }
+
+  /**
+   * The co-change suggestions for a node's file, or an empty list when unavailable.
+   *
+   * Returns nothing rather than guessing when: the adapter does not implement mining, the node has no
+   * file (a cluster, an owner), or the repository has no usable history. Each suggestion carries the
+   * COMMIT COUNT that produced it, so a caller can tell "changed together 40 times" from "changed
+   * together once" — a bare ranked list would present both as equally worth acting on.
+   */
+  private coChangedFor(id: string, limit?: number): Array<Record<string, unknown>> {
+    const cap = limit ?? 5;
+    if (cap <= 0) return [];
+    const vcs = this.deps.vcs;
+    if (!vcs?.coChangedWith) return [];
+    const file = this.deps.soul.getNode(id)?.file;
+    if (!file) return [];
+    try {
+      return vcs
+        .coChangedWith(this.deps.repoRoot, file, { limit: cap })
+        .filter((c) => c.path !== file)
+        .map((c) => ({
+          file: c.path,
+          commits: c.commits,
+          // Named so the provenance is unmissable in the response itself, not only in the docs: this
+          // is history, not structure, and the two are not interchangeable.
+          via: 'git-history-cochange',
+        }));
+    } catch {
+      return [];
+    }
   }
 
   /**

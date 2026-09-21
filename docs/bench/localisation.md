@@ -170,14 +170,70 @@ missing. No amount of ranking work on this repo would have found it.
 
 ## Task 2 — co-change: "I am changing this file, what else must I touch?"
 
-75 tasks from 25 commits. This is the question `impact` claims to answer.
+This is the question `impact` claims to answer, measured on all four repositories. **The graph loses,
+decisively and on every one.** That result changed the product rather than the framing.
 
-| method | recall@1 | recall@5 | recall@10 | MRR | lift | median tokens |
-|---|---|---|---|---|---|---|
-| crib-impact | 15.0% | 20.3% | 24.1% | 0.357 | 0.56 | 64,225 |
-| cochange *(git log only)* | 11.2% | 33.1% | 34.3% | 0.441 | 0.69 | 0 |
-| same-dir *(query-blind)* | 0.0% | 1.4% | 1.4% | 0.010 | — | 0 |
-| churn *(query-blind)* | **25.3%** | **42.7%** | **45.3%** | **0.640** | — | 0 |
+| repository | `impact.affected` *(graph walk)* | `impact.coChanged` *(shipped)* | churn *(blind)* | graph lift | signal lift | graph tokens | signal tokens |
+|---|---|---|---|---|---|---|---|
+| expressjs/express | 0.042 | **0.352** | 0.125 | 0.34 | 2.83 | 3,391 | **549** |
+| pallets/click | 0.113 | **0.332** | 0.120 | 0.94 | 2.76 | 9,502 | **807** |
+| gin-gonic/gin | 0.209 | **0.631** | 0.182 | 1.15 | 3.47 | 13,138 | **846** |
+| knowledge-crib | 0.351 | 0.447 | **0.640** | 0.55 | 0.70 | 89,776 | **1,412** |
+
+The graph walk clears the query-blind control on exactly one repository, and is beaten 1.6–8.4× by
+mining `git log` — at up to 100× the tokens.
+
+### Why this is not a ranking bug to tune away
+
+Files change together for reasons a dependency graph **cannot observe in principle**: a changelog bump
+that rides along with every release, a test conventionally edited beside its implementation, two modules
+one maintainer always touches at once. Co-change mining sees all of it because it models the outcome
+directly; the graph models dependency, which only partly overlaps. There is also a structural advantage
+worth naming plainly — the ground truth here is derived from commits, and co-change mining is *trained
+on commits*, so it has access to the label-generating process. It is a very strong baseline by
+construction.
+
+The honest response to a free signal that beats your own by 3× is to ship it, clearly labelled.
+
+### What shipped
+
+`impact` now returns a `coChanged` group alongside `affected`:
+
+```json
+{ "affected": [ { "id": "sym:…", "rel": "calls", "distance": 1, "risk": "high" } ],
+  "coChanged": [ { "file": "packages/mcp/src/server.ts", "commits": 21, "via": "git-history-cochange" } ] }
+```
+
+Four decisions in that shape, each load-bearing:
+
+- **Separate, never blended.** A structural edge and a historical correlation support different actions.
+  A single list would make them indistinguishable, and a test asserts `affected` is byte-for-byte
+  unchanged when the signal is present.
+- **The commit count travels with each suggestion.** "Changed together 21 times" and "…once" are not
+  equally worth acting on; a bare ranked list would present them as though they were.
+- **`via` names the provenance in the payload**, not only in this document. This is history, not
+  structure.
+- **`coChangeLimit: 0` disables it** for a caller who wants structure only, and the adapter method is
+  optional, so an implementor without it degrades to no suggestions rather than a broken verb.
+
+Bulk commits (more than 20 files) are excluded from mining: a formatting sweep would otherwise relate
+every file to every other, which is the classic way this technique produces confident nonsense.
+
+### The commit cap, and what measuring it cost
+
+The first shipped default read 1,000 commits of history. Express scored **0.178** with it against 0.335
+for the harness's full-history mining — the cap was throwing away more than half the signal, because
+express's base tree has ~5,900 commits behind it. Raising it to 5,000 took express to **0.352** (now
+slightly *ahead* of full history, which reads more noise) and cost click and gin 0.014 each, inside
+noise. Mining 116 tasks with cold CLI starts took 60s total; inside a serving process the index is
+memoised per repository.
+
+### What this still does not fix
+
+On **this** repository the signal (0.447) remains below the query-blind churn control (0.640). That is
+the degenerate-corpus case: changes here concentrate so heavily in a few hot files that naming the
+busiest files is genuinely hard to beat. It is the clearest argument yet that a benchmark on one
+churn-concentrated repository cannot be trusted in either direction.
 
 ## What these numbers say, stated plainly
 

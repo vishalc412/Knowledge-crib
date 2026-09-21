@@ -286,3 +286,126 @@ export function showFileAtRef(root: string, ref: string, path: string): string |
 function toPosix(p: string): string {
   return sep === '/' ? p : p.split(sep).join('/');
 }
+
+// ─── co-change mining ────────────────────────────────────────────────────────
+
+/** One historically co-changing file and how many commits it shared with the seed. */
+export interface CoChange {
+  path: string;
+  commits: number;
+}
+
+/**
+ * Files that historically changed in the same commit as `path`, most frequent first.
+ *
+ * WHY A GRAPH TOOL MINES GIT HISTORY. "I am changing this file — what else must I touch?" is the
+ * question `impact` exists for, and measured against this signal the graph loses badly
+ * (docs/bench/localisation.md):
+ *
+ *   repository   crib-impact MRR   co-change MRR
+ *   express                 0.042           0.335
+ *   click                   0.113           0.338
+ *   gin                     0.209           0.633
+ *
+ * That is not a ranking bug to tune away. Files change together for reasons a dependency graph cannot
+ * observe IN PRINCIPLE — a changelog bump riding along with every release, a test conventionally edited
+ * beside its implementation, two modules one maintainer always touches at once. Co-change mining sees
+ * all of it because it models the outcome directly. The honest response to a free signal that beats
+ * your own by 3x is to ship it, clearly labelled, not to out-engineer it.
+ *
+ * It is offered ALONGSIDE the graph walk and never blended into it: a structural edge and a historical
+ * correlation are different kinds of evidence, and a caller deciding what to edit deserves to know
+ * which it is looking at. "These files import each other" and "these files usually change together"
+ * support different actions.
+ *
+ * TWO BOUNDS, both deliberate:
+ *  - `maxCommits` caps how much history is read (default 5000). MEASURED: a 1000-commit cap cost
+ *    express more than half its accuracy (MRR 0.178 against 0.335 with full history) because its
+ *    base tree has ~5,900 commits behind it and the co-change signal is spread across them. Click and
+ *    gin, with shorter histories, were unaffected. The cap exists so a very long history cannot make
+ *    `impact` pathologically slow, not as an accuracy trade — so it sits above the point where it was
+ *    measured to cost accuracy.
+ *  - A commit touching more than `maxFilesPerCommit` files (default 20) is IGNORED. A bulk rename or a
+ *    formatting sweep would otherwise make every file co-change with every other file, which is the
+ *    classic way this technique produces confident nonsense.
+ */
+export function coChangedWith(
+  root: string,
+  path: string,
+  opts: { limit?: number; maxCommits?: number; maxFilesPerCommit?: number } = {},
+): CoChange[] {
+  const index = coChangeIndex(root, opts);
+  const row = index.get(path);
+  if (!row) return [];
+  return [...row.entries()]
+    .sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1))
+    .slice(0, opts.limit ?? 10)
+    .map(([p, commits]) => ({ path: p, commits }));
+}
+
+/** Memoized per (root, bounds): mining is a whole-history scan and `impact` is an interactive verb. */
+const coChangeCache = new Map<string, Map<string, Map<string, number>>>();
+
+/**
+ * Build (or reuse) the co-occurrence index: file -> (co-changed file -> shared commit count).
+ *
+ * Keyed by root AND the bounds, so a caller that widens `maxCommits` is not served a narrower cached
+ * answer. Cleared only at process exit, which is right for a CLI invocation and acceptable for a
+ * serving process: new commits arrive far more slowly than the cost of re-mining, and a stale
+ * co-change ranking degrades a suggestion rather than corrupting a result.
+ */
+function coChangeIndex(
+  root: string,
+  opts: { maxCommits?: number; maxFilesPerCommit?: number },
+): Map<string, Map<string, number>> {
+  const maxCommits = opts.maxCommits ?? 5000;
+  const maxFiles = opts.maxFilesPerCommit ?? 20;
+  const key = [root, maxCommits, maxFiles].join('\x1f');
+  const cached = coChangeCache.get(key);
+  if (cached) return cached;
+
+  const index = new Map<string, Map<string, number>>();
+  const SEP = '\x00';
+  let log = '';
+  try {
+    log = execFileSync(
+      'git',
+      [
+        '-C',
+        root,
+        'log',
+        '--no-merges',
+        '--format=%x00',
+        '--name-only',
+        '-n',
+        String(maxCommits),
+        'HEAD',
+        '--',
+      ],
+      { encoding: 'utf8', maxBuffer: 256 * 1024 * 1024, stdio: ['ignore', 'pipe', 'ignore'] },
+    );
+  } catch {
+    // Not a git repo, no commits, or git unavailable. An empty index yields no suggestions, which is
+    // the correct degraded answer — never an exception out of a read verb.
+    coChangeCache.set(key, index);
+    return index;
+  }
+
+  for (const block of log.split(SEP)) {
+    const files = block
+      .split('\n')
+      .map((l) => l.trim())
+      .filter(Boolean);
+    if (files.length < 2 || files.length > maxFiles) continue;
+    for (const a of files) {
+      let row = index.get(a);
+      if (!row) {
+        row = new Map<string, number>();
+        index.set(a, row);
+      }
+      for (const b of files) if (b !== a) row.set(b, (row.get(b) ?? 0) + 1);
+    }
+  }
+  coChangeCache.set(key, index);
+  return index;
+}

@@ -57,6 +57,8 @@ if (!BASE_TREE) {
 }
 const TREE = resolve(BASE_TREE);
 const corpus = JSON.parse(readFileSync(resolve(CORPUS), 'utf8'));
+/** Absolute, because the harness sets `cwd` to the base tree, where no build exists. */
+const CRIB = resolve('packages/cli/dist/bin.js');
 const treeHead = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: TREE, encoding: 'utf8' }).trim();
 if (treeHead !== corpus.base) {
   process.stderr.write(
@@ -195,8 +197,38 @@ function sameDirectory(seedFile, k) {
   return { files: files.slice(0, k), bytes: 0 };
 }
 
+/**
+ * The SHIPPED verb, through the CLI — `impact` reading its own `coChanged` group.
+ *
+ * Separate from the `cochange` row below, which is this harness's own mining. Measuring both proves the
+ * feature actually delivers the signal the harness measured, rather than the harness proving something
+ * the product does not do. A gap between these two rows is a bug in the shipped path.
+ */
+function cribImpactVerb(seedFile, k) {
+  let out = '';
+  try {
+    out = execFileSync(
+      process.execPath,
+      [CRIB, 'impact', `file:${seedFile}`, '--dir', 'up', '--co-change-limit', String(k)],
+      { cwd: TREE, encoding: 'utf8', maxBuffer: 3.2e7, stdio: ['ignore', 'pipe', 'ignore'] },
+    );
+  } catch {
+    return { files: [], bytes: 0 };
+  }
+  let parsed;
+  try {
+    parsed = JSON.parse(out);
+  } catch {
+    return { files: [], bytes: out.length };
+  }
+  const files = [];
+  for (const c of parsed.coChanged ?? []) if (c.file && !files.includes(c.file)) files.push(c.file);
+  return { files: files.slice(0, k), bytes: out.length };
+}
+
 const METHODS = {
   'crib-impact': (seed) => cribImpact(seed, K),
+  'impact.coChanged': (seed) => cribImpactVerb(seed, K),
   cochange: (seed) => cochangePredict(seed, K),
   'same-dir': (seed) => sameDirectory(seed, K),
   churn: () => ({ files: churn.slice(0, K), bytes: 0 }),
