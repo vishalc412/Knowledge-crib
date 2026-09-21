@@ -15,8 +15,8 @@
  *   - watch: 300ms debounce + serialization (concurrent triggers → ONE refresh), and the 5s
  *     queryable-update p95 target MEASURED on a real fixture and reported honestly.
  */
-import { EventEmitter } from 'node:events';
 import { execFileSync, spawnSync } from 'node:child_process';
+import { EventEmitter } from 'node:events';
 import { mkdirSync, mkdtempSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';

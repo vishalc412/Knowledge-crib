@@ -829,10 +829,14 @@ function mainCells(argv, cellsIndex) {
   if (aggregate.decision !== 'GO') process.exitCode = 1;
   if (aggregate.decision !== 'GO' && aggregate.release === 'RELEASABLE') {
     process.stdout.write(
-      `\nNOT CERTIFIED, but RELEASABLE: every gate, receipt, model and tree check passed and the only outstanding items are ${aggregate.uncertifiedCells.length} client cell(s) with no vendor receipt.\n` +
-        'A release on this basis MUST publish the per-cell support table\n' +
-        '(`node scripts/client-certification-matrix.mjs --receipts <dir> --stdout`), which reads\n' +
-        '"not certified" for exactly those cells. Certification itself is unchanged and still NO-GO.\n',
+      [
+        '',
+        `NOT CERTIFIED, but RELEASABLE: every gate, receipt, model and tree check passed and the only outstanding items are ${aggregate.uncertifiedCells.length} client cell(s) with no vendor receipt.`,
+        'A release on this basis MUST publish the per-cell support table',
+        '(`node scripts/client-certification-matrix.mjs --receipts <dir> --stdout`), which reads',
+        '"not certified" for exactly those cells. Certification itself is unchanged and still NO-GO.',
+        '',
+      ].join('\n'),
     );
   }
 }

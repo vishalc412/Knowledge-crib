@@ -114,12 +114,16 @@ export function cmdRerankSetup(args: string[]): number {
   }
   if (!args.includes('--yes')) {
     process.stdout.write(
-      `crib rerank setup would:\n` +
-        `  1. download ${modelId} into ${join(embedHomeDir(), 'models')} (one time; ~1.1 GB for the default)\n` +
-        `  2. generate an integrity-pinned adapter under ${rerankHomeDir()}\n` +
-        `  3. reuse the ONNX runtime already installed by \`crib embed setup\` — no second copy\n\n` +
-        `Re-run with --yes to proceed. Queries are offline afterwards: the generated adapter sets\n` +
-        `allowRemoteModels=false, so a ranking can never fetch different weights than the pinned ones.\n`,
+      [
+        'crib rerank setup would:',
+        `  1. download ${modelId} into ${join(embedHomeDir(), 'models')} (one time; ~1.1 GB for the default)`,
+        `  2. generate an integrity-pinned adapter under ${rerankHomeDir()}`,
+        '  3. reuse the ONNX runtime already installed by `crib embed setup` — no second copy',
+        '',
+        'Re-run with --yes to proceed. Queries are offline afterwards: the generated adapter sets',
+        'allowRemoteModels=false, so a ranking can never fetch different weights than the pinned ones.',
+        '',
+      ].join('\n'),
     );
     return 0;
   }
@@ -132,12 +136,16 @@ export function cmdRerankSetup(args: string[]): number {
   try {
     const manifest = installReranker({ modelId });
     process.stdout.write(
-      `installed reranker ${manifest.rerankerId}\n` +
-        `  adapter: ${manifest.modelDir} (${manifest.files.length} pinned file(s))\n` +
-        `  weights: ${manifest.weights.files.length} pinned file(s) under ${manifest.weights.dir}\n` +
-        `  runtime: ${manifest.runtimeDir} (reused)\n\n` +
-        'Nothing uses it yet by default. Measure it before trusting it:\n' +
-        '  node scripts/eval/code-vector-eval.mjs --rerank\n',
+      [
+        `installed reranker ${manifest.rerankerId}`,
+        `  adapter: ${manifest.modelDir} (${manifest.files.length} pinned file(s))`,
+        `  weights: ${manifest.weights.files.length} pinned file(s) under ${manifest.weights.dir}`,
+        `  runtime: ${manifest.runtimeDir} (reused)`,
+        '',
+        'Nothing uses it yet by default. Measure it before trusting it:',
+        '  node scripts/eval/code-vector-eval.mjs --rerank',
+        '',
+      ].join('\n'),
     );
     return 0;
   } catch (e) {

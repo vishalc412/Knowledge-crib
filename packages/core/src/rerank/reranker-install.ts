@@ -36,7 +36,11 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { type EmbedModelFileEntry, embedHomeDir, hashDirFiles } from '../embeddings/embed-install.js';
+import {
+  type EmbedModelFileEntry,
+  embedHomeDir,
+  hashDirFiles,
+} from '../embeddings/embed-install.js';
 
 /** Bumped when the manifest shape changes; an older manifest is refused, never guessed at. */
 export const RERANK_MANIFEST_FORMAT_VERSION = 1;
@@ -282,7 +286,10 @@ export function installReranker(opts: InstallRerankerOptions): RerankManifest {
     modelDir,
     entry: 'reranker.mjs',
     runtimeDir,
-    weights: { dir: cacheDir, files: hashDirFiles(weightsDir).map((f) => ({ ...f, path: `${opts.modelId}/${f.path}` })) },
+    weights: {
+      dir: cacheDir,
+      files: hashDirFiles(weightsDir).map((f) => ({ ...f, path: `${opts.modelId}/${f.path}` })),
+    },
     files: hashDirFiles(modelDir),
   };
   mkdirSync(dirname(rerankManifestPath(home)), { recursive: true });
@@ -294,7 +301,9 @@ export function installReranker(opts: InstallRerankerOptions): RerankManifest {
 export function readRerankManifest(home: string = rerankHomeDir()): RerankManifest {
   const path = rerankManifestPath(home);
   if (!existsSync(path)) {
-    throw new RerankNotInstalledError(`no reranker manifest at ${path} — run \`crib rerank setup\``);
+    throw new RerankNotInstalledError(
+      `no reranker manifest at ${path} — run \`crib rerank setup\``,
+    );
   }
   let parsed: unknown;
   try {
@@ -356,11 +365,7 @@ export async function loadInstalledReranker(home: string = rerankHomeDir()): Pro
   const entry = join(manifest.modelDir, manifest.entry);
   const mod = (await import(pathToFileURL(entry).href)) as { default?: Reranker };
   const instance = mod.default;
-  if (
-    !instance ||
-    typeof instance.id !== 'string' ||
-    typeof instance.rerankBatch !== 'function'
-  ) {
+  if (!instance || typeof instance.id !== 'string' || typeof instance.rerankBatch !== 'function') {
     throw new RerankManifestError(`module "${entry}" has no default Reranker export`);
   }
   return instance;

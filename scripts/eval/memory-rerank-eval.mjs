@@ -80,12 +80,11 @@ const [, base] = rows[0];
 const [, withRr] = rows[1];
 if (base.G3 && withRr.G3) {
   const delta = withRr.G3.value - base.G3.value;
-  console.log(
-    `\nMRR delta: ${delta >= 0 ? '+' : ''}${delta.toFixed(3)} — ` +
-      (delta > 0.005
-        ? 'the second stage earns its cost on this corpus.'
-        : delta < -0.005
-          ? 'the second stage COSTS accuracy here; do not enable it for memory recall.'
-          : 'no meaningful difference; the cost is not justified.'),
-  );
+  const reading =
+    delta > 0.005
+      ? 'the second stage earns its cost on this corpus.'
+      : delta < -0.005
+        ? 'the second stage COSTS accuracy here; do not enable it for memory recall.'
+        : 'no meaningful difference; the cost is not justified.';
+  console.log(`\nMRR delta: ${delta >= 0 ? '+' : ''}${delta.toFixed(3)} — ${reading}`);
 }

@@ -1686,21 +1686,19 @@ const decideCli = (args) =>
     'an unsupported certification CLAIM must block a release',
   );
 }
-{
-  // Everything that is not a client-cell absence still blocks: gates, model, tree, global receipts,
-  // and the acceptance contradiction.
-  for (const blocker of [
-    'gate-failed:G2',
-    'retrieval-model-missing',
-    'git-dirty',
-    'global-receipt-missing:fuzz-deep',
-    'acceptance-contradiction',
-    'certification-receipts-not-loaded',
-  ]) {
-    const { release, certificationOnly } = partitionBlockers([blocker]);
-    assert.deepEqual(release, [blocker], `${blocker} must block a release`);
-    assert.deepEqual(certificationOnly, [], `${blocker} is not a mere certification gap`);
-  }
+// Everything that is not a client-cell absence still blocks: gates, model, tree, global receipts,
+// and the acceptance contradiction.
+for (const blocker of [
+  'gate-failed:G2',
+  'retrieval-model-missing',
+  'git-dirty',
+  'global-receipt-missing:fuzz-deep',
+  'acceptance-contradiction',
+  'certification-receipts-not-loaded',
+]) {
+  const { release, certificationOnly } = partitionBlockers([blocker]);
+  assert.deepEqual(release, [blocker], `${blocker} must block a release`);
+  assert.deepEqual(certificationOnly, [], `${blocker} is not a mere certification gap`);
 }
 {
   // The aggregate exposes both verdicts, and they must never disagree in the direction that matters:

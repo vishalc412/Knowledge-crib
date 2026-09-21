@@ -50,20 +50,20 @@ afterEach(() => {
 
 describe('reranker provisioning', () => {
   it('refuses when the reused ONNX runtime is absent, and names the prerequisite', () => {
-    expect(() =>
-      installReranker({ modelId: 'Xenova/bge-reranker-base', home, embedHome }),
-    ).toThrow(RerankNotInstalledError);
-    expect(() =>
-      installReranker({ modelId: 'Xenova/bge-reranker-base', home, embedHome }),
-    ).toThrow(/crib embed setup/);
+    expect(() => installReranker({ modelId: 'Xenova/bge-reranker-base', home, embedHome })).toThrow(
+      RerankNotInstalledError,
+    );
+    expect(() => installReranker({ modelId: 'Xenova/bge-reranker-base', home, embedHome })).toThrow(
+      /crib embed setup/,
+    );
   });
 
   it('refuses when the weights were never downloaded', () => {
     mkdirSync(join(embedHome, 'runtime'), { recursive: true });
     writeFileSync(join(embedHome, 'runtime', 'package.json'), '{}\n');
-    expect(() =>
-      installReranker({ modelId: 'Xenova/bge-reranker-base', home, embedHome }),
-    ).toThrow(/no downloaded weights/);
+    expect(() => installReranker({ modelId: 'Xenova/bge-reranker-base', home, embedHome })).toThrow(
+      /no downloaded weights/,
+    );
   });
 
   it('pins the adapter AND the weights — swapped weights change the ranking with no code change', () => {
@@ -134,7 +134,7 @@ describe('the generated adapter', () => {
   it('is valid JS and exports a Reranker-shaped default', () => {
     expect(rendered).toContain('export default {');
     expect(rendered).toContain('rerankBatch(query, texts)');
-    expect(rendered).toContain("id: ID");
+    expect(rendered).toContain('id: ID');
   });
 
   it('guards a score/candidate length mismatch — misaligned scores look considered and are not', () => {
@@ -142,7 +142,7 @@ describe('the generated adapter', () => {
   });
 
   it('returns [] for an empty candidate set rather than calling the model', () => {
-    expect(rendered).toContain("if (!Array.isArray(texts) || texts.length === 0) return [];");
+    expect(rendered).toContain('if (!Array.isArray(texts) || texts.length === 0) return [];');
   });
 
   it('the worker forbids remote fetching, so a query cannot pick up different weights', () => {

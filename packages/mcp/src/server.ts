@@ -1145,13 +1145,15 @@ function isLoopbackBind(host: string): boolean {
 export function assertLoopbackBind(host: string): void {
   if (isLoopbackBind(host)) return;
   throw new Error(
-    `refusing to bind the crib HTTP daemon to ${host}: only loopback is permitted. ` +
-      'Knowledge-crib has no authenticated multi-tenancy — no identity, membership, revocation or ' +
-      'per-artifact authorization — and its Host/Origin check is a DNS-rebinding guard, not an ' +
-      'authorization layer, so a non-loopback bind would make that check approve remote callers with ' +
-      "the local user's full rights. This is a product boundary, not a missing feature: to reach the " +
-      'graph from another machine, put an authenticating proxy in front of a loopback bind, or use ' +
+    [
+      `refusing to bind the crib HTTP daemon to ${host}: only loopback is permitted.`,
+      'Knowledge-crib has no authenticated multi-tenancy — no identity, membership, revocation or',
+      'per-artifact authorization — and its Host/Origin check is a DNS-rebinding guard, not an',
+      'authorization layer, so a non-loopback bind would make that check approve remote callers with',
+      "the local user's full rights. This is a product boundary, not a missing feature: to reach the",
+      'graph from another machine, put an authenticating proxy in front of a loopback bind, or use',
       '`crib serve` over stdio.',
+    ].join(' '),
   );
 }
 
