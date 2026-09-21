@@ -797,7 +797,7 @@ across 660 files.
 | F10 | Withheld candidates invisible | **closed** | `pendingNotice` in the CLI + 4 tests |
 | F11 | Grounding is substring overlap | **open** | demonstrated live during round 2 (below) |
 | F12 | Taint intra-procedural, TS/JS only | **no action — correctly disclosed** | already honest in code and matrix |
-| F13 | No authenticated multi-tenancy | **open — product decision** | needs a positioning call, not a patch |
+| F13 | No authenticated multi-tenancy | **closed as OUT OF SCOPE** (§15) | decided permanently local-only; enforced by `assertLoopbackBind`, 5 tests |
 | F14 | Fragments outranked symbols | **closed** | 6 tests (3 fail without the fix) |
 | F15 | Positional parsed as a path | **closed, wider than recorded** | 5 tests via `spawnSync` |
 | F16 | Agent memory write was MCP-only | **closed**; its attestation refusal CORRECTED (§14) | `crib memory observe` + tests pinning the `tty` boundary |
@@ -1045,3 +1045,31 @@ Still needing input, per §9: **F8** (agent-over-MCP vs human-at-CLI consumer; d
 filter-and-traverse verb rather than read-only SQL, which would couple callers to a rebuildable schema),
 **F9** (which cross-repo coupling actually matters, and real repositories to test against), **F11**
 (approval for the labelled refactor corpus that any grounding improvement has to be measured against).
+
+---
+
+## 15. F13 closed — local-only, enforced rather than requested
+
+Decided 2026-09-21: knowledge-crib is **permanently single-trust-domain**. That turns F13 from an open
+gap into a stated boundary, and a boundary the code holds rather than the documentation asks for.
+
+**Why enforcement and not just wording.** `isAllowedHttpCaller` validates the `Host` header against
+whatever the daemon *bound to*. So a `0.0.0.0` bind does not merely widen the surface — it flips that
+check from a DNS-rebinding guard into one that **approves** remote callers, each arriving with the local
+user's full rights, because no identity, membership, revocation or per-artifact authorization exists to
+stop them. The control that looks like a defence becomes the thing that lets them in. Documentation
+saying "don't do that" is the wrong instrument for a failure mode that inverts a security check.
+
+`serveHttp` now calls `assertLoopbackBind`, which permits `127.0.0.0/8` (the whole block — refusing
+`127.0.0.2` would be theatre, the kernel routes all of it locally), `::1`, `localhost`, and the
+IPv4-mapped `::ffff:127.0.0.1`, and **throws** on anything else.
+
+**It throws rather than narrowing to loopback**, which is the part worth arguing for: an operator who
+asked for `0.0.0.0` wanted something this server cannot safely do, and silently binding loopback instead
+would leave them believing the exposure worked. The message names the cause, says the boundary is
+deliberate so nobody waits for a flag that will never come, and gives the two routes that do work — an
+authenticating proxy in front of a loopback bind, or stdio.
+
+`SECURITY.md` and the capability matrix now say "out of scope, permanently — a decided product boundary"
+instead of "not implemented", which was true but read as an oversight. Five tests, including one pinning
+that the refusal explains itself rather than just refusing.

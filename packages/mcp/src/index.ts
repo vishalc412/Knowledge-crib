@@ -12,6 +12,7 @@ export {
   type RehydratedBody,
 } from './snippet.js';
 export {
+  assertLoopbackBind,
   buildServer,
   buildUnavailableServer,
   serveHttp,

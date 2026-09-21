@@ -40,7 +40,7 @@ Nothing below has been exercised on Linux or Windows. That is not a hedge — no
 | Memory home (web UI) | verified | opt-in (`crib viz`) | [audit §R08](audits/2026-09-05/post-merge-reaudit.md) |
 | Encrypted cross-device sync | synthetic soak only | opt-in | [sync soak](audits/2026-09-05/evidence/reaudit/sync-soak.json) |
 | Team memory over Git | implemented; not multi-user tested | opt-in | — |
-| Authenticated multi-tenancy | **not implemented** | — | [`SECURITY.md`](../SECURITY.md) |
+| Authenticated multi-tenancy | **out of scope, permanently** — a decided product boundary, enforced by refusing any non-loopback bind | — | [`SECURITY.md`](../SECURITY.md), `http-boundary.test.ts` |
 
 ## Semantic retrieval — the numbers, what they cost, and WHAT THEY MEASURE
 
@@ -265,9 +265,12 @@ These are open, disclosed rather than fixed. None is a surprise waiting to be fo
    Windows Task Scheduler definitions that have never been installed or started on those platforms.
    The Windows task declares UTF-16 while the writer emits UTF-8, and the Linux unit does not quote
    a CLI path containing spaces. Both are known-wrong and unfixed.
-2. **No authenticated multi-tenancy.** The HTTP boundary is local Host/Origin validation plus a body
-   cap. Identity, membership, revocation and scoped audit export do not exist. Do not expose the
-   server beyond the local trust model.
+2. **No authenticated multi-tenancy — by decision, not by omission.** The HTTP boundary is local
+   Host/Origin validation plus a body cap; identity, membership, revocation and scoped audit export do
+   not exist and are not planned. As of 2026-09-21 this is enforced rather than advised:
+   `serveHttp` refuses to bind anywhere but loopback, because the Host check validates against the
+   bound address and would otherwise start approving remote callers. Reaching the graph from another
+   machine means an authenticating proxy in front of a loopback bind, or stdio.
 3. **CI semantic evidence is expensive.** CI and tagged release jobs provision the supported model
    on macOS, Linux and Windows and cache it by the pinned setup inputs. A cold cache downloads the
    model independently on each platform before `release:evidence --require-pass` can pass.

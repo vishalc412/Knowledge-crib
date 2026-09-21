@@ -1102,12 +1102,66 @@ export function isAllowedHttpCaller(
  */
 export const MAX_HTTP_REQUEST_BYTES = 4 * 1024 * 1024;
 
+/**
+ * Loopback addresses the HTTP daemon may bind to. Everything else is refused — see
+ * {@link assertLoopbackBind}.
+ *
+ * IPv4 loopback is the whole `127.0.0.0/8` block, not just `127.0.0.1`: the kernel routes all of it
+ * to the local host, so refusing `127.0.0.2` would be theatre rather than a boundary.
+ */
+function isLoopbackBind(host: string): boolean {
+  const h = host
+    .trim()
+    .toLowerCase()
+    .replace(/^\[|\]$/g, '');
+  if (h === 'localhost' || h === '::1' || h === '0:0:0:0:0:0:0:1') return true;
+  // `::ffff:127.0.0.1` — an IPv4 loopback expressed as an IPv4-mapped IPv6 address.
+  const mapped = h.startsWith('::ffff:') ? h.slice('::ffff:'.length) : h;
+  const m = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(mapped);
+  if (!m) return false;
+  const octets = m.slice(1).map((o) => Number.parseInt(o, 10));
+  if (octets.some((o) => o > 255)) return false;
+  return octets[0] === 127;
+}
+
+/**
+ * Refuse to bind the HTTP daemon anywhere but loopback.
+ *
+ * Knowledge-crib has NO authenticated multi-tenancy: there is no identity, no membership, no
+ * revocation, and no per-artifact authorization. `isAllowedHttpCaller` is a LOCALITY check against
+ * DNS rebinding, not an authorization layer, and it validates the Host header against whatever the
+ * daemon bound to — so a `0.0.0.0` bind does not merely widen the surface, it makes that check start
+ * *approving* remote callers whose Host matches. Every request would then arrive with the full rights
+ * of the local user.
+ *
+ * Local-only is therefore a PRODUCT BOUNDARY, decided deliberately and not a gap awaiting a patch, so
+ * the code enforces it instead of the documentation asking for it. A caller that wants a remote
+ * endpoint needs an authorization contract first; there is no flag that substitutes for one.
+ *
+ * Throws rather than silently narrowing to loopback: an operator who asked for `0.0.0.0` wanted
+ * something this server cannot safely do, and quietly doing something else would leave them believing
+ * the exposure worked.
+ */
+export function assertLoopbackBind(host: string): void {
+  if (isLoopbackBind(host)) return;
+  throw new Error(
+    `refusing to bind the crib HTTP daemon to ${host}: only loopback is permitted. ` +
+      'Knowledge-crib has no authenticated multi-tenancy — no identity, membership, revocation or ' +
+      'per-artifact authorization — and its Host/Origin check is a DNS-rebinding guard, not an ' +
+      'authorization layer, so a non-loopback bind would make that check approve remote callers with ' +
+      "the local user's full rights. This is a product boundary, not a missing feature: to reach the " +
+      'graph from another machine, put an authenticating proxy in front of a loopback bind, or use ' +
+      '`crib serve` over stdio.',
+  );
+}
+
 export async function serveHttp(
   verbs: Verbs,
   opts: { port?: number; host?: string; version?: string; pins?: RequestPins } = {},
 ): Promise<{ port: number; close: () => Promise<void> }> {
   const version = opts.version ?? '0.0.0';
   const host = opts.host ?? '127.0.0.1';
+  assertLoopbackBind(host);
   const httpServer = createServer((req, res) => {
     // The boundary check runs BEFORE routing, so /health cannot be used to probe the daemon's
     // presence and version from a rebound origin either.
