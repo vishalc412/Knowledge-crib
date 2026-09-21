@@ -101,7 +101,7 @@ import {
  * touch the network or the enricher.
  */
 import type { Edge, Node, NodeKind } from '@knowledge-crib/soul-schema';
-import { NODE_KINDS, blake3Hex } from '@knowledge-crib/soul-schema';
+import { DISCOVERY_NODE_KINDS, blake3Hex } from '@knowledge-crib/soul-schema';
 import {
   type EnrichNextArgs,
   type EnrichStatusArgs,
@@ -293,50 +293,6 @@ const SESSION_ANCHOR_BUCKET_MS = 5 * 60 * 1000;
 const VCS_FACT_TTL_MS = 2000;
 
 const DEFAULT_OVERVIEW_ANALYSES = 40;
-
-/**
- * Node kinds that are DETAIL of an enclosing symbol rather than answers in their own right.
- *
- * Discovery (`query` / `ask`) used to rank these against symbols, and they win on BM25 far more
- * often than they should: a short statement whose few tokens include the query term scores better
- * than the function that contains it. Measured on this repository, "how does the system prevent
- * stale memories from being recalled" answered with
- * `stmt:…/verbs.ts@L3003 → const recalledSeeds = Array.isArray(recalled?.hits)` and
- * `stmt:…/enrichment.ts@L2224 → const result: Record<string, unknown> = {` — fragments that contain
- * a matching token and no answer, while the module that implements the behaviour never appeared.
- *
- * Excluding them from discovery loses no CONTENT, which is what makes this safe rather than a
- * trade-off: `composeSearchableBody` puts a symbol's whole rehydrated span into its own FTS `body`
- * column, so the text of every statement inside a function is already searchable through that
- * function. The hit becomes the enclosing symbol instead of the fragment — which is the answer the
- * caller wanted. The one bounded exception is a span longer than the 8 KiB body cap, whose tail is
- * reachable only through its own detail nodes; `includeDetail: true` exists for that and for
- * deliberate fragment-level searches.
- *
- * These kinds remain first-class everywhere they are the point: `context`, `dossier`, `rules`,
- * `explain` and `neighbors` all still return them, and an explicit `kinds` filter is always obeyed.
- */
-const DETAIL_NODE_KINDS: readonly NodeKind[] = [
-  'statement',
-  'condition',
-  'assignment',
-  'case-branch',
-  'raise',
-  'cursor',
-  'exception-handler',
-  'explanation',
-];
-
-/**
- * The kinds discovery ranks by default: the canonical enum MINUS {@link DETAIL_NODE_KINDS}.
- *
- * Derived by subtraction, never enumerated. An added NodeKind must default to being DISCOVERABLE —
- * a hand-written allowlist would silently exclude every future kind from `query` and `ask`, and that
- * failure is invisible (a kind that is simply never returned looks like a corpus with none of it).
- */
-const DISCOVERY_NODE_KINDS: readonly NodeKind[] = NODE_KINDS.filter(
-  (k) => !DETAIL_NODE_KINDS.includes(k),
-);
 
 /**
  * G3.1/G3.2 — the lexical channel for one memory read call: the FTS index + the versioned scorer

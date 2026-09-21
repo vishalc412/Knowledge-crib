@@ -819,3 +819,106 @@ describe('applyDelta never leaves a stale or partial vector table', () => {
     expect(vectorRowCount(dbPath)).toBe(before);
   });
 });
+
+/**
+ * The embedded TEXT RECIPE is part of the vector space's identity (F3).
+ *
+ * v1 embedded surface fields only; v2 appends the capped rehydrated body. A v1 vector and a v2 query
+ * vector are not comparable — that is not degraded ranking, it is nonsense — and the model id alone
+ * cannot express the difference, because the same model produced both. So the recipe is versioned in
+ * `vector_meta` and a mismatch refuses the channel exactly as a different model does.
+ */
+describe('vector text recipe is versioned (F3)', () => {
+  let idxDir: string;
+  let dbPath: string;
+  beforeEach(() => {
+    idxDir = mkdtempSync(join(tmpdir(), 'crib-vectext-'));
+    dbPath = join(idxDir, 'crib.sqlite');
+  });
+  afterEach(() => rmSync(idxDir, { recursive: true, force: true }));
+
+  it('records the recipe version alongside the embedder identity', () => {
+    const built = new SqliteIndexStore(dbPath, { embedder: new CharNgramEmbedder() });
+    built.buildFromSoul(store, dir);
+    built.close();
+    const probe = new SqliteIndexStore(dbPath);
+    // biome-ignore lint/suspicious/noExplicitAny: test-only reach into the derived db
+    const db = (probe as any).db as {
+      prepare: (s: string) => { all: () => Array<{ k: string; v: string }> };
+    };
+    const meta = new Map(
+      db
+        .prepare('SELECT k, v FROM vector_meta')
+        .all()
+        .map((r) => [r.k, r.v]),
+    );
+    expect(meta.get('textVersion')).toBe('2');
+    probe.close();
+  });
+
+  it('REFUSES vectors built from an older recipe rather than ranking across spaces', () => {
+    const built = new SqliteIndexStore(dbPath, { embedder: new CharNgramEmbedder() });
+    built.buildFromSoul(store, dir);
+    built.close();
+    // Simulate an index written by the v1 build: same model, same dim, older text recipe.
+    const rewrite = new SqliteIndexStore(dbPath);
+    // biome-ignore lint/suspicious/noExplicitAny: test-only reach into the derived db
+    const db = (rewrite as any).db as {
+      prepare: (s: string) => { run: (...a: unknown[]) => void };
+    };
+    db.prepare('INSERT OR REPLACE INTO vector_meta (k, v) VALUES (?, ?)').run('textVersion', '1');
+    rewrite.close();
+
+    const reopened = new SqliteIndexStore(dbPath, { embedder: new CharNgramEmbedder() });
+    const caps = reopened.capabilities();
+    expect(caps.vector).toBe(false);
+    expect(caps.vectorNote).toMatch(/recipe v1/);
+    expect(caps.vectorNote).toMatch(/--vectors/);
+    // lexical retrieval is untouched
+    expect(reopened.query({ text: 'login', kinds: ['symbol'] })[0]?.id).toBe(login.id);
+    reopened.close();
+  });
+
+  it('an index with NO textVersion key is treated as v1, not as current', () => {
+    const built = new SqliteIndexStore(dbPath, { embedder: new CharNgramEmbedder() });
+    built.buildFromSoul(store, dir);
+    built.close();
+    const rewrite = new SqliteIndexStore(dbPath);
+    // biome-ignore lint/suspicious/noExplicitAny: test-only reach into the derived db
+    const db = (rewrite as any).db as {
+      prepare: (s: string) => { run: (...a: unknown[]) => void };
+    };
+    db.prepare('DELETE FROM vector_meta WHERE k = ?').run('textVersion');
+    rewrite.close();
+    const reopened = new SqliteIndexStore(dbPath, { embedder: new CharNgramEmbedder() });
+    expect(reopened.capabilities().vector).toBe(false);
+    expect(reopened.capabilities().vectorNote).toMatch(/recipe v1/);
+    reopened.close();
+  });
+
+  it('does not embed sub-symbol detail kinds — discovery never ranks them', () => {
+    // a statement node inside the same file as `login`
+    const stmtNode: Node = {
+      id: idFor({ kind: 'statement', file: 'src/auth/AuthService.ts', line: 43 }),
+      kind: 'statement',
+      file: 'src/auth/AuthService.ts',
+      span: { start: 43, end: 43 },
+      lang: 'typescript',
+      hash: contentHash('stmt-43'),
+    };
+    store.putNodes([stmtNode]);
+    store.commit('2026-01-02T00:00:00.000Z');
+
+    const built = new SqliteIndexStore(dbPath, { embedder: new CharNgramEmbedder() });
+    built.buildFromSoul(store, dir);
+    // biome-ignore lint/suspicious/noExplicitAny: test-only reach into the derived db
+    const db = (built as any).db as {
+      prepare: (s: string) => { get: (...a: unknown[]) => { n: number } };
+    };
+    const has = db.prepare('SELECT COUNT(*) AS n FROM vectors WHERE id = ?').get(stmtNode.id).n;
+    expect(has).toBe(0);
+    // …while the symbol in the same file IS embedded
+    expect(db.prepare('SELECT COUNT(*) AS n FROM vectors WHERE id = ?').get(login.id).n).toBe(1);
+    built.close();
+  });
+});

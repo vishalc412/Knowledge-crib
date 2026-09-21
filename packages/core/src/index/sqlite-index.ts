@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { DatabaseSync, type StatementSync } from 'node:sqlite';
 import type { Edge, Node, NodeKind, Rel } from '@knowledge-crib/soul-schema';
+import { isDetailNodeKind } from '@knowledge-crib/soul-schema';
 import { cosine, decodeVec, encodeVec } from '../embeddings/char-ngram.js';
 import type { Embedder } from '../embeddings/types.js';
 /**
@@ -68,11 +69,63 @@ import { expandToken } from './synonyms.js';
 /** Columns we feed into FTS5 for free-text search over symbols + doc sections + bodies. */
 const FTS_COLUMNS = 'name, qualifiedName, signature, heading, file, body';
 
-/** The text embedded per node for the vector retriever (M2.1). Surface fields only — no body. */
-function vectorText(node: Node): string {
-  return [node.name, node.qualifiedName, node.signature, node.heading, node.file]
+/**
+ * How much rehydrated body text joins a node's embedded representation.
+ *
+ * Bounded by the MODEL, not by taste: the shipped tier (`multilingual-e5-large`) truncates at 512
+ * tokens, so text past roughly 1,500 characters is embedded by nobody and paid for by everybody.
+ * The cap is deliberately below that ceiling so the surface fields — which carry the identifier a
+ * lexical query would match — are never the part that gets truncated away.
+ */
+const VECTOR_BODY_CAP = 1200;
+
+/**
+ * The recipe version for {@link vectorText}. Part of the identity recorded in `vector_meta`.
+ *
+ * Changing WHAT is embedded changes the vector space just as surely as changing the model does, and
+ * a mismatch is not degraded ranking but nonsense — a v1 surface-only vector and a v2 surface+body
+ * query vector are not comparable. The model id alone cannot express that, so the recipe is versioned
+ * alongside it and a reopen with a different recipe refuses the vectors exactly as a different model
+ * does. (`packages/memory` versions its own embedded text for the same reason.)
+ */
+const VECTOR_TEXT_VERSION = 2;
+
+/**
+ * The text embedded per node for the vector retriever.
+ *
+ * v1 was surface fields only (name + qualifiedName + signature + heading + file), which capped
+ * retrieval at identifier matching: a query describing what code DOES could only match a symbol
+ * whose NAME already said so. v2 appends the rehydrated span, capped at {@link VECTOR_BODY_CAP}, so
+ * "stop two machines writing the same record" has the body of a locking function to match against
+ * and not just the token `withLock`.
+ *
+ * The source policy is applied BEFORE the text is embedded, for the same reason it is applied before
+ * the FTS body: a `deny` file's contents must not reach a derived artifact, and a redacted secret
+ * must not be recoverable from a vector. Surface fields come FIRST so the cap never truncates them.
+ */
+function vectorText(node: Node, repoRoot?: string, fileCache?: FileLineCache): string {
+  const surface = [node.name, node.qualifiedName, node.signature, node.heading, node.file]
     .filter((s): s is string => typeof s === 'string' && s.length > 0)
     .join(' ');
+  if (repoRoot === undefined || fileCache === undefined) return surface;
+  const body = rehydrateForVector(node, repoRoot, fileCache);
+  return body.length > 0 ? `${surface}\n${body}` : surface;
+}
+
+/** The capped, policy-filtered span text for {@link vectorText}. Empty when there is nothing safe to read. */
+function rehydrateForVector(node: Node, repoRoot: string, fileCache: FileLineCache): string {
+  if (!node.file || !node.span) return '';
+  const policy = sourcePolicy(node);
+  if (policy === 'deny') return '';
+  const lines = readCachedLines(repoRoot, node.file, fileCache);
+  if (!lines || lines.length === 0) return '';
+  const start = Math.max(node.span.start - 1, 0);
+  const end = Math.min(node.span.end, lines.length);
+  if (end <= start) return '';
+  let text = lines.slice(start, end).join('\n');
+  if (policy === 'redact-properties') text = redactPropertyText(text);
+  else if (policy === 'redact-mule-secrets') text = redactMuleSecretAttributes(text);
+  return text.length > VECTOR_BODY_CAP ? text.slice(0, VECTOR_BODY_CAP) : text;
 }
 
 /** Reciprocal-rank fusion (RRF) of two retriever rankings. k=60 is the standard constant. */
@@ -187,6 +240,10 @@ export class SqliteIndexStore implements IndexStore {
   private restoreVectorMeta(): void {
     let id: string | null = null;
     let dim = 0;
+    // Absent in a v1 index: those recorded no recipe, and a missing key therefore MEANS version 1
+    // rather than "unknown". Defaulting it to the current version would adopt v1 surface-only
+    // vectors into a v2 space, which is the silent-nonsense case this field exists to prevent.
+    let textVersion = 1;
     try {
       const rows = this.db.prepare('SELECT k, v FROM vector_meta').all() as Array<{
         k: string;
@@ -195,12 +252,17 @@ export class SqliteIndexStore implements IndexStore {
       for (const r of rows) {
         if (r.k === 'embedderId') id = r.v;
         else if (r.k === 'dim') dim = Number.parseInt(r.v, 10);
+        else if (r.k === 'textVersion') textVersion = Number.parseInt(r.v, 10);
       }
     } catch {
       return; // no table (pre-existing index) — lexical, and not an error.
     }
     if (id === null || !Number.isFinite(dim) || dim <= 0) return;
     this.indexHasVectors = true;
+    if (textVersion !== VECTOR_TEXT_VERSION) {
+      this.vectorUnavailable = `index vectors were built from text recipe v${textVersion} but this build embeds v${VECTOR_TEXT_VERSION} — re-run \`crib index --vectors\``;
+      return;
+    }
     if (!this.embedder) {
       // Deliberately states the FACT and prescribes nothing. This store cannot tell a machine with
       // no installed tier from a caller that simply chose not to load one — `crib status` and the
@@ -223,6 +285,7 @@ export class SqliteIndexStore implements IndexStore {
     const upsert = this.db.prepare('INSERT OR REPLACE INTO vector_meta (k, v) VALUES (?, ?)');
     upsert.run('embedderId', embedder.id);
     upsert.run('dim', String(embedder.dim()));
+    upsert.run('textVersion', String(VECTOR_TEXT_VERSION));
   }
 
   buildFromSoul(soul: SoulStore, repoRoot: string): void {
@@ -233,7 +296,7 @@ export class SqliteIndexStore implements IndexStore {
       for (const edge of soul.iterateEdges()) this.insertEdge(edge);
     });
     insertMany();
-    if (this.embedder) this.buildVectors(soul);
+    if (this.embedder) this.buildVectors(soul, repoRoot);
   }
 
   applyDelta(changed: IndexDelta, repoRoot: string): void {
@@ -258,8 +321,12 @@ export class SqliteIndexStore implements IndexStore {
         const upsertVec = this.db.prepare(
           'INSERT OR REPLACE INTO vectors (id, vec, dim) VALUES (?, ?, ?)',
         );
+        // Same two rules as the full build, for the same reasons: detail kinds are not embedded
+        // (discovery never ranks them), and `repoRoot`/`fileCache` are passed so a delta writes a
+        // v2 surface+body vector. Embedding v1 text here would poison a v2 index one delta at a time.
         for (const node of changed.nodes) {
-          const v = this.embedder.embed(vectorText(node));
+          if (isDetailNodeKind(node.kind)) continue;
+          const v = this.embedder.embed(vectorText(node, repoRoot, fileCache));
           upsertVec.run(node.id, Buffer.from(encodeVec(v)), v.length);
         }
       } else if (this.indexHasVectors) {
@@ -412,18 +479,25 @@ export class SqliteIndexStore implements IndexStore {
    * deterministic, and aligned with the conceptual-query mechanism (paraphrases match the *name*
    * surface). The body is already in FTS5 for exact-content matches.
    */
-  private buildVectors(soul: SoulStore): void {
+  private buildVectors(soul: SoulStore, repoRoot: string): void {
     if (!this.embedder) return;
     const e = this.embedder;
     const upsert = this.db.prepare(
       'INSERT OR REPLACE INTO vectors (id, vec, dim) VALUES (?, ?, ?)',
     );
+    // One line cache for the whole pass, so each source file is read ONCE rather than once per node
+    // in it — a symbol-dense file would otherwise be re-read hundreds of times.
+    const fileCache: FileLineCache = new Map();
     // The vectors and the metadata that authorizes reading them are written in ONE transaction, so
     // an interrupted build can never leave `vector_meta` claiming a channel the `vectors` table does
     // not fully back. Setting the in-memory fields afterwards keeps the same rule for this process.
     const insertMany = this.transaction(() => {
       for (const node of soul.iterate()) {
-        const v = e.embed(vectorText(node));
+        // Detail kinds are never ranked by discovery (soul-schema DETAIL_NODE_KINDS), so embedding
+        // them buys nothing and costs most of the build: on the crib's own index they are 38,286 of
+        // 48,459 nodes — 79%. Skipping them is what makes body text affordable.
+        if (isDetailNodeKind(node.kind)) continue;
+        const v = e.embed(vectorText(node, repoRoot, fileCache));
         upsert.run(node.id, Buffer.from(encodeVec(v)), v.length);
       }
       this.writeVectorMeta(e);

@@ -8206,6 +8206,23 @@ function cmdMemoryRecall(args: string[], ctx?: CmdCtx): number {
   };
   // Opt-in, kept in its own group: `memories` stays trusted-only whatever this flag returns.
   if (includePending) result.pending = pendingMemoryCandidates(deps.local, q, limit);
+  else {
+    // F10 — the DEFAULT view must not be silent about what it withheld. Normal recall correctly
+    // excludes untrusted candidates, and the MCP verb already says so (`pendingNotice`, added
+    // because "silence was the bug"); this command assembles its own response shape and so had to
+    // repeat it or lose it. The COUNT and the next step only — never the content, so the trust gate
+    // is untouched. Withholding a claim is defensible; withholding it invisibly is not.
+    const staged = pendingMemoryCandidates(deps.local, q, limit).length;
+    if (staged > 0) {
+      result.pendingNotice = {
+        count: staged,
+        reason:
+          'staged but NOT yet admitted, so they are not recall-eligible — this is the trust gate working, not an empty memory',
+        nextAction:
+          'read them as untrusted with --include-pending, or admit with `crib memory activate`',
+      };
+    }
+  }
   if (fitted.budgetExhausted) result.budgetExhausted = true;
   if (json) process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
   else process.stdout.write(renderMemoryRecall(q, result));
@@ -8441,6 +8458,18 @@ function renderMemoryRecall(query: string, result: Record<string, unknown>): str
     for (const p of pending) {
       lines.push(`  - ${String(p.id)} [${String(p.actor ?? 'unknown')}] ${String(p.claim)}`);
     }
+  }
+  // F10 — without this, the DEFAULT recall is silent about candidates it withheld. The verb already
+  // reports them (`pendingNotice`, added because "silence was the bug"), but this renderer dropped
+  // the field, so a terminal user saw `eligible 3` and no sign that two more claims were staged and
+  // gated. Print the COUNT and the next step, never the content: the trust gate is unchanged, and
+  // withholding an untrusted claim is only defensible if the withholding itself is visible.
+  const notice = result.pendingNotice as
+    | { count?: number; reason?: string; nextAction?: string }
+    | undefined;
+  if (notice?.count !== undefined && notice.count > 0) {
+    lines.push(`pending (withheld): ${notice.count} — ${String(notice.reason ?? '')}`);
+    if (notice.nextAction) lines.push(`  next: ${notice.nextAction}`);
   }
   if (result.truncated === true) {
     lines.push(

@@ -420,6 +420,86 @@ describe('crib memory recall — the protocol-named CLI fallback exists', () => 
  * These tests use spawnSync, not the local `runMemory` helper: that helper returns `stderr: ''`
  * whenever the command exits 0, so any stderr assertion on a succeeding command passes regardless.
  */
+/**
+ * F10 — the DEFAULT recall view must disclose what it withheld.
+ *
+ * Normal recall correctly excludes untrusted candidates, and that exclusion is a red line. But
+ * `crib memory recall` assembles its own response shape rather than going through the MCP verb, so it
+ * printed `eligible N` with no sign that further claims were staged and gated — a user saw what
+ * looked like an empty or partial memory and had no way to know a next step existed. The count and
+ * the next action are disclosed; the CONTENT still is not, so the gate is unchanged.
+ */
+describe('F10 — default recall discloses withheld candidates', () => {
+  function run(args: string[]): { status: number; stdout: string; stderr: string } {
+    const r = spawnSync(process.execPath, [CLI, 'memory', ...args], {
+      cwd: repo,
+      encoding: 'utf8',
+      maxBuffer: 32 * 1024 * 1024,
+      env: env(),
+    });
+    return {
+      status: r.status ?? 1,
+      stdout: (r.stdout ?? '').trim(),
+      stderr: (r.stderr ?? '').trim(),
+    };
+  }
+
+  /** Stage an UNGROUNDED observation, which the admission gate holds as a pending candidate. */
+  function stagePending(claim: string): void {
+    const evPath = join(repo, `pending-ev-${Math.random().toString(36).slice(2)}.json`);
+    writeFileSync(
+      evPath,
+      JSON.stringify([{ kind: 'source-quote', soulId: NODE_ID, quote: 'TEXT_NOT_IN_THE_SOURCE' }]),
+    );
+    const r = run([
+      'observe',
+      '--kind',
+      'fact',
+      '--subject',
+      NODE_ID,
+      '--claim',
+      claim,
+      '--evidence',
+      evPath,
+    ]);
+    expect(r.status, r.stderr).toBe(0);
+    expect(JSON.parse(r.stdout).status).toBe('pending');
+  }
+
+  it('reports the count and a next action in the default (non-pending) view', () => {
+    stagePending('A staged loan_pkg claim awaiting admission.');
+    const r = run(['recall', 'loan_pkg']);
+    expect(r.status, r.stderr).toBe(0);
+    expect(r.stdout).toMatch(/pending \(withheld\): 1/);
+    expect(r.stdout).toMatch(/trust gate working, not an empty memory/);
+    expect(r.stdout).toMatch(/--include-pending/);
+  });
+
+  it('discloses the count WITHOUT leaking the claim text — the gate is unchanged', () => {
+    stagePending('SECRET_STAGED_CLAIM_MARKER for loan_pkg.');
+    const def = run(['recall', 'loan_pkg']);
+    expect(def.stdout).toMatch(/pending \(withheld\)/);
+    expect(def.stdout).not.toContain('SECRET_STAGED_CLAIM_MARKER');
+    // …and the opt-in view does show it, so the notice is a pointer and not a dead end
+    expect(run(['recall', 'loan_pkg', '--include-pending']).stdout).toContain(
+      'SECRET_STAGED_CLAIM_MARKER',
+    );
+  });
+
+  it('says nothing when there is nothing withheld — no noise on a clean store', () => {
+    expect(run(['recall', 'loan_pkg']).stdout).not.toMatch(/pending \(withheld\)/);
+  });
+
+  it('--json carries the notice as structured data, not only as prose', () => {
+    stagePending('A staged loan_pkg claim for the json path.');
+    const parsed = JSON.parse(run(['recall', 'loan_pkg', '--json']).stdout) as {
+      pendingNotice?: { count: number; nextAction: string };
+    };
+    expect(parsed.pendingNotice?.count).toBe(1);
+    expect(parsed.pendingNotice?.nextAction).toMatch(/include-pending/);
+  });
+});
+
 describe('crib memory observe — the agent write path, without MCP', () => {
   function observe(args: string[]): { status: number; stdout: string; stderr: string } {
     const r = spawnSync(process.execPath, [CLI, 'memory', 'observe', ...args], {

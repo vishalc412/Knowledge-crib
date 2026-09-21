@@ -65,20 +65,31 @@ The advertised semantic tier is `large` and nothing else clears every gate. **A 
 run `crib embed setup` serves the char-ngram fallback** and is at the top row — `crib doctor` and
 `crib embed status` both say so rather than implying otherwise.
 
-### Code retrieval — a separate index, a separate default, and no measured number yet
+### Code retrieval — a separate index, a separate default, a separate measurement
 
 | Capability | State | Default? | Evidence |
 |---|---|---|---|
 | Lexical code search (FTS5 BM25 over names/signatures/headings/files/bodies + static synonym table) | verified | **on** | full suite green; `crib query` |
-| Vector code search (RRF hybrid BM25 ∪ cosine + deterministic structural rerank) | **implemented, opt-in, UNMEASURED on a labelled code corpus** | **off** — `crib index --vectors` | — |
+| Vector code search (RRF hybrid BM25 ∪ cosine + deterministic structural rerank) | implemented, opt-in, **measured on a 22-question labelled corpus — no pre-registered gate** | **off** — `crib index --vectors` | [`scripts/eval/code-vector-eval.mjs`](../scripts/eval/code-vector-eval.mjs) |
+| Discovery excludes sub-symbol fragments (statements/conditions/assignments) | verified | on (`includeDetail` opts back in) | `verbs.test.ts` "F14 — discovery excludes sub-symbol detail by default" |
 
 The second row is the honest state and the reason it is stated separately. The hybrid path exists in
 `SqliteIndexStore.query` and `index/rerank.ts`, and `crib index --vectors` builds the vectors it
-needs; what does **not** exist is a labelled code-retrieval corpus, a pre-registered gate, or a
-measured recall figure. Until one exists, `--vectors` is an opt-in capability and **not** a quality
-claim, and the ladder above must not be read as covering it. A machine that has not run
-`crib embed setup` cannot build vectors at all: `crib index --vectors` refuses rather than silently
-embedding with the char-ngram fallback, which R1 measured as worse than pure lexical.
+needs. What exists now is a **comparison harness** (`node scripts/eval/code-vector-eval.mjs`) that
+scores the same labelled corpus through a lexical and a hybrid store over the same sqlite file. What
+still does **not** exist is a *pre-registered* gate with a frozen floor, so `--vectors` remains an
+opt-in capability rather than a quality claim, and the ONNX ladder above still does not cover it.
+Two further limits the harness states itself: it cannot isolate the contribution of body text from
+the contribution of having vectors at all (that would need a second embedding recipe kept alive in
+production for the harness's benefit), and 22 questions on one repository authored by someone who
+knows it is a regression gate, not an external benchmark.
+
+A machine that has not run `crib embed setup` cannot build vectors at all: `crib index --vectors`
+refuses rather than silently embedding with the char-ngram fallback, which R1 measured as worse than
+pure lexical. Building vectors is also not free — see the cost note in
+[`audits/2026-09-20`](audits/2026-09-20/graph-memory-rag-audit.md) — and the embedded text recipe is
+versioned, so an index built by an older recipe is refused on reopen rather than ranked across two
+different vector spaces.
 
 The ONNX path reproduces the previous Python configuration on all three models measured both ways
 (81.0/81.05, 69.9/69.93, 66.0/66.01), which is the evidence the toolchain swap changed the install
