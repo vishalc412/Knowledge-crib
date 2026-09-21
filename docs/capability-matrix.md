@@ -144,7 +144,21 @@ are gone, and version 3's removal of them stands. A cell that cannot be executed
 **NO-GO** rather than becoming preview.
 
 **No cell is certified today, so the launch decision is NO-GO**, with a named
-`client-cell-uncertified:*` blocker for every cell. That is the correct output and not a defect of
+`client-cell-uncertified:*` blocker for every cell. **As of 2026-09-21 that no longer holds a release**
+(F17): `scripts/launch-decision.mjs` reports certification and release as two verdicts. `decision`
+keeps its exact meaning — `GO` only when every advertised cell is certified — and a second verdict,
+`release`, reads `RELEASABLE` when every gate, receipt, model and tree check passed and the *only*
+outstanding items are client cells with no vendor receipt. A release on that basis must publish the
+per-cell support table below, which reads `not certified` for exactly those cells.
+
+The split is narrow on purpose, and the line is between an absence and a falsehood: a missing receipt
+(`client-cell-uncertified:*`) is release-permissible, while a manifest CLAIMING a runtime pass its
+receipts do not support (`certification-summary-unsupported:*`) still blocks — a release may ship with a
+cell uncertified, never with a manifest that lies about one. Every gate failure, stale or foreign
+receipt, dirty tree, missing model and absent global receipt still blocks too. The exit status of the
+script continues to track certification, so no existing caller silently inherits the weaker verdict.
+
+That is the correct output and not a defect of
 this page: the twenty-one real cells need a signed-in vendor client on a native host of each
 platform, and where that combination is unavailable the policy requires the release to stay NO-GO
 until it becomes executable — or until the promise itself is changed by a new policy hash.

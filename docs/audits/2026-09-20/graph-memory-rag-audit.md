@@ -801,7 +801,7 @@ across 660 files.
 | F14 | Fragments outranked symbols | **closed** | 6 tests (3 fail without the fix) |
 | F15 | Positional parsed as a path | **closed, wider than recorded** | 5 tests via `spawnSync` |
 | F16 | Agent memory write was MCP-only | **closed**; its attestation refusal CORRECTED (§14) | `crib memory observe` + tests pinning the `tty` boundary |
-| F17 | Bus factor 1, gate unreachable | **open — not a code change** | — |
+| F17 | Bus factor 1, gate unreachable | **gate split CLOSED** (§16); bus factor still open | `partitionBlockers` + 4 probes; certification unchanged |
 | F18 | `crib serve` exits on damaged manifest | **closed** | verified over stdio JSON-RPC + 4 tests |
 | F19 | `supersede --claim` leaves nothing recallable | **closed** (§11) | 3 tests; the `--evidence` flag was written and reverted as unsafe |
 | F20 | CLI suite flaky under parallel load | **2 of 3 closed** (§13) | debounce triggers injected, verified under full core saturation; the rename subprocess flake is unreproduced and stays open |
@@ -1073,3 +1073,44 @@ authenticating proxy in front of a loopback bind, or stdio.
 `SECURITY.md` and the capability matrix now say "out of scope, permanently — a decided product boundary"
 instead of "not implemented", which was true but read as an oversight. Five tests, including one pinning
 that the refusal explains itself rather than just refusing.
+
+---
+
+## 16. F17 — certification and release are now two verdicts
+
+Decided 2026-09-21: **split "certified" from "released".** The twenty-one-cell bar is unchanged and
+still defines certified — nothing here weakens it. What it stops doing is holding the release, because
+as frozen it cannot ever go green: a cell needs a signed-in vendor client on a native host of each
+platform, and a policy satisfiable only by hardware the project does not have is an indefinite hold
+rather than a quality instrument.
+
+`scripts/launch-decision.mjs` now reports both:
+
+- **`decision`** — unchanged. `GO` only when every advertised cell is certified and no blocker remains.
+- **`release`** — `RELEASABLE` when every gate, receipt, model and tree check passed and the *only*
+  outstanding items are client cells with no vendor receipt. Plus `releaseBlockers` and
+  `uncertifiedCells`, the latter being the support table's content.
+
+**The partition is where the care went.** The line is between an *absence* and a *falsehood*:
+
+| blocker | release | why |
+|---|---|---|
+| `client-cell-uncertified:<cell>` | permitted | no receipt exists — an honest gap a support table can state |
+| `certification-summary-unsupported:<cell>` | **blocks** | the manifest CLAIMED a pass its receipts do not support |
+| gate failures, stale/foreign receipts, dirty tree, missing model, absent global receipt, acceptance contradiction | **block** | unchanged |
+
+Those first two read adjacent and are categorically different. A release may ship with a cell
+uncertified; it may never ship with a manifest that lies about one.
+
+**Two deliberate conservatisms.** The script's **exit status still tracks certification**, so every
+existing caller keeps its contract and nothing inherits the weaker verdict by accident — a release
+process that wants it must read `release` explicitly. And a cell row's own `NO-GO` still blocks the
+release, because it carries gate/model/tree failures rather than a missing client receipt; only the
+candidate-wide client-cell absences are set aside.
+
+Four probes pin the partition, including one asserting that an unsupported certification *claim*
+blocks while an absent receipt does not.
+
+**What is NOT closed:** the bus factor. 359 of ~389 commits are one person. No policy change addresses
+that, and it remains the strategic argument behind F7's SCIP recommendation — an ecosystem's language
+coverage is the only kind a single maintainer can absorb.

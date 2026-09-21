@@ -490,6 +490,41 @@ export function loadReleaseEvidence(path) {
  * (null) or fails structural validation blocks the aggregate under a cell-tagged blocker; one
  * green cell never carries a red one. An empty cell set is NO-GO, not a vacuous GO.
  */
+/**
+ * Partition blockers into the ones that stop a RELEASE and the ones that only stop CERTIFICATION.
+ *
+ * F17 (decided 2026-09-21): the twenty-one-cell bar stays exactly as frozen, and stays the definition
+ * of "certified" — nothing here weakens it. What it stops doing is gating the release, because as
+ * written it cannot ever go green: a cell needs a signed-in vendor client on a native host of each
+ * platform, and a policy that can only be satisfied by hardware the project does not have is not a
+ * quality instrument, it is an indefinite hold. So `GO`/`NO-GO` keeps its exact meaning (fully
+ * certified) and a second, weaker verdict is added beside it, rather than redefining the first.
+ *
+ * The partition is deliberately narrow, and the line is between an ABSENCE and a FALSEHOOD:
+ *
+ *   • `client-cell-uncertified:<cell>` is release-permissible. It means no receipt exists for that
+ *     cell — an honest gap, and one a per-cell support table can state plainly.
+ *   • EVERYTHING else still blocks, including `certification-summary-unsupported:<cell>`. That one
+ *     looks adjacent and is categorically different: the manifest CLAIMED a runtime pass the receipts
+ *     do not support. A release may ship with a cell uncertified; it may never ship with a manifest
+ *     that lies about one.
+ *
+ * Every gate failure, stale or foreign receipt, dirty tree, missing model, absent global receipt and
+ * acceptance contradiction therefore still blocks a release, unchanged.
+ */
+export function partitionBlockers(blockers) {
+  const certificationOnly = [];
+  const release = [];
+  for (const blocker of blockers) {
+    if (typeof blocker === 'string' && blocker.startsWith('client-cell-uncertified:')) {
+      certificationOnly.push(blocker);
+    } else {
+      release.push(blocker);
+    }
+  }
+  return { release, certificationOnly };
+}
+
 export function aggregateLaunchDecisions(cells, options = {}) {
   const loaded = options.policy
     ? { policy: options.policy, sha256: options.policySha256 }
@@ -609,11 +644,28 @@ export function aggregateLaunchDecisions(cells, options = {}) {
     );
   }
 
+  const unique = [...new Set(blockers)];
+  const cellsGo = rows.every((row) => row.decision === 'GO');
+  const { release: releaseBlockers, certificationOnly } = partitionBlockers(unique);
+  // A cell row's own NO-GO is a release blocker too: it carries gate/model/tree failures, not merely
+  // an absent client receipt. Only the candidate-wide client-cell absences are set aside.
+  const releasable = cellsGo && releaseBlockers.length === 0;
+
   return {
-    decision: rows.every((row) => row.decision === 'GO') && blockers.length === 0 ? 'GO' : 'NO-GO',
-    blockers: [...new Set(blockers)],
+    // UNCHANGED MEANING: GO iff the candidate is fully certified across all advertised cells.
+    decision: cellsGo && unique.length === 0 ? 'GO' : 'NO-GO',
+    blockers: unique,
     cells: rows,
-    // The digest a publication step is allowed to ship — and only on a GO.
+    // F17 — the release verdict, separate from certification. RELEASABLE means every gate, receipt,
+    // model and tree check passed and the ONLY outstanding items are client cells with no receipt.
+    // Such a release must publish the per-cell support table; `client-certification-matrix.mjs`
+    // generates it, and it reads `not certified` for exactly the cells named below.
+    release: releasable ? 'RELEASABLE' : 'BLOCKED',
+    releaseBlockers,
+    // The cells that are uncertified but do not block a release — the support table's content.
+    uncertifiedCells: certificationOnly,
+    // The digest a publication step is allowed to ship — on a GO, or on a RELEASABLE that ships the
+    // support table stating what is not certified.
     candidate: resolvedCandidate,
     policySha256,
   };
@@ -763,10 +815,26 @@ function mainCells(argv, cellsIndex) {
     process.stdout.write(`  - ${blocker}\n`);
     aggregate.blockers.push(blocker);
     aggregate.decision = 'NO-GO';
+    // A loader blocker is never a mere client-cell absence, so it downgrades the RELEASE verdict too.
+    // Re-deriving both from the mutated list keeps the two verdicts from disagreeing after this loop.
+    aggregate.releaseBlockers.push(blocker);
+    aggregate.release = 'BLOCKED';
   }
   process.stdout.write(`${JSON.stringify(aggregate, null, 2)}\n`);
   writeJsonOut(argv, aggregate);
+  // Exit status still tracks CERTIFICATION, so every existing caller of this script keeps its
+  // contract. F17's split is expressed in the payload (`release` / `releaseBlockers` /
+  // `uncertifiedCells`), not by loosening the exit code — a release process that wants the weaker
+  // verdict reads it explicitly, which is harder to do by accident than inheriting a 0.
   if (aggregate.decision !== 'GO') process.exitCode = 1;
+  if (aggregate.decision !== 'GO' && aggregate.release === 'RELEASABLE') {
+    process.stdout.write(
+      `\nNOT CERTIFIED, but RELEASABLE: every gate, receipt, model and tree check passed and the only outstanding items are ${aggregate.uncertifiedCells.length} client cell(s) with no vendor receipt.\n` +
+        'A release on this basis MUST publish the per-cell support table\n' +
+        '(`node scripts/client-certification-matrix.mjs --receipts <dir> --stdout`), which reads\n' +
+        '"not certified" for exactly those cells. Certification itself is unchanged and still NO-GO.\n',
+    );
+  }
 }
 
 /** `--candidate-commit <sha> --candidate-package sha256:<hex>` — what a tag build is publishing. */
