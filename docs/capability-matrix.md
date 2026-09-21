@@ -284,6 +284,45 @@ authenticate, and an unauthenticated client certifies nothing.
 A Copilot-shaped test client is protocol evidence only; it is never a vendor-runtime certification,
 and neither is a config file that parses.
 
+## SCIP interop — what crosses the boundary, and what does not
+
+Knowledge-crib reads and writes the [SCIP Code Intelligence Protocol](https://github.com/sourcegraph/scip),
+the format compiler-backed indexers emit (scip-typescript, scip-java, scip-go, scip-python,
+rust-analyzer). `crib scip import <index.scip>` folds one into the extracted graph;
+`crib scip export --out index.scip` emits the graph for tools that read the standard. No protobuf
+runtime is added — the wire subset SCIP uses is decoded in `packages/core/src/scip/wire.ts`, which
+keeps the packaged CLI inside its dependency budget.
+
+**Importing MERGES with the native graph; it does not shadow it.** Imported symbols are given ids in
+crib's own grammar (`sym:<path>#<qualifiedName>@L<line>`), reconstructed from SCIP descriptors, so a
+symbol crib already parses lands on the SAME node. Measured on this repository, re-importing crib's
+own export matched 6,949 of 6,952 ids (100.0%); the three misses are nodes two extractors emit with a
+zero start line, which the 1-based id grammar does not permit.
+
+| direction | carried | not carried |
+|---|---|---|
+| import | definitions (as `symbol` nodes), file membership, references (as `references`), `is_implementation` (as `implements`), `enclosing_symbol` (as `member-of`), the indexer's `Kind` and `display_name` | `calls` (SCIP does not distinguish invoking a symbol from naming it), cross-package targets (counted, not minted), `local` symbols, `signature_documentation`, diagnostics |
+| export | definitions with `SymbolRole.Definition`, declaration extents via `enclosing_range`, `Kind`, display names, `implements`/`inherits` as relationships | **references** (see below), doc sections, clusters, tables, owners, sub-symbol detail |
+
+**Two model gaps, both structural.**
+
+1. **Crib spans are lines; SCIP ranges are characters.** The extractors never retain column offsets, so
+   an exported occurrence starts at character 0. Go-to-definition lands on the right line; a
+   name-width highlight cannot be produced.
+2. **A crib edge has no call site.** `Edge` records `src`, `dst`, `rel`, `method`, `confidence` and
+   `evidence` — no line. A SCIP reference *is* a position, and the only position available for a
+   `references` edge is the referencing symbol's own declaration line, which would put demonstrably
+   wrong positions into a file other tools read. The export therefore omits references entirely:
+   go-to-definition and type hierarchy work over a crib-exported index, find-references does not.
+
+Both commands print these qualifications on every run; they are not behind a verbose flag.
+
+**Not yet established.** No live indexer has been executed against a fixture and imported end to end.
+The decoder is tested against hand-assembled wire bytes (including the deprecated packed `range` field
+that every deployed indexer still writes) and against descriptor runs taken verbatim from the SCIP
+project's committed snapshot outputs. Run a first import from an unfamiliar indexer with `--dry-run`
+and read the counts it reports before committing it.
+
 ## Known limits — read this before adopting
 
 These are open, disclosed rather than fixed. None is a surprise waiting to be found.

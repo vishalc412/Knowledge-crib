@@ -252,6 +252,27 @@ fi
 echo "── rerank tier ─────────────────────────────────────────────"
 assert_ok "rerank status verifies integrity" "integrity: ok" $B rerank status
 
+echo "── F7: SCIP interop ────────────────────────────────────────"
+assert_ok "export writes an index"        "document(s)"   $B scip export --out out.scip
+# The honesty signals are part of the deliverable: an export that silently implied full fidelity
+# would be the failure this note exists to prevent.
+assert_ok "export states the range limit" "character-coarse" $B scip export --out out.scip
+assert_ok "export states what it omits"   "find-references does not" $B scip export --out out.scip
+# Round-trip: crib's own export must re-import onto the SAME ids it came from, which is the whole
+# claim behind minting ids in crib's grammar rather than carrying SCIP's.
+assert_ok "re-import is a dry-run no-op"  "would import" $B scip import out.scip --dry-run
+assert_fails "a non-SCIP file is named as such" "does not decode as a SCIP index" \
+  $B scip import MEMORY.md
+MERGED=$($B scip import out.scip --dry-run --json 2>/dev/null | python3 -c "
+import sys,json
+d=json.load(sys.stdin)
+print(d['counts']['definitions'])" 2>/dev/null)
+if [ -n "$MERGED" ] && [ "$MERGED" -gt 0 ]; then
+  ok "round-trip recovers $MERGED definition(s)"
+else
+  bad "round-trip recovers definitions" "got '$MERGED'"
+fi
+
 echo
 printf 'passed %d, failed %d\n' "$PASS" "$FAIL"
 [ "$FAIL" -eq 0 ]

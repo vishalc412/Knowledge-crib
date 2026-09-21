@@ -308,9 +308,12 @@ import {
   listMcp,
   removeMcp,
 } from './mcp-install.js';
+import { renderMemoryMarkdown } from './memory-export.js';
 import { RefreshCoordinator, coldReaderFreshness } from './refresh-coordinator.js';
 import { registerProject, registryDir } from './registry.js';
+import { cmdRerank } from './rerank-setup.js';
 import {
+  EXIT,
   type ResolvedRoot,
   buildIndex,
   isIndexedRoot,
@@ -320,6 +323,7 @@ import {
   resolveProjectRoot,
   startupHeadMismatch,
 } from './runtime.js';
+import { cmdScip } from './scip-cmd.js';
 import { installSkill, listBundledSkills } from './skill-install.js';
 import {
   decideStopNudge,
@@ -355,10 +359,6 @@ import {
   validateMutationOrigin,
 } from './viz-server.js';
 import { WatchMode } from './watch.js';
-import { renderMemoryMarkdown } from './memory-export.js';
-import { cmdRerank } from './rerank-setup.js';
-
-const EXIT = { OK: 0, ERROR: 1, BAD_ARGS: 2, NOT_INDEXED: 3, LOCKED: 4 } as const;
 
 class CliUsageError extends Error {}
 
@@ -747,6 +747,10 @@ async function main(argvRaw: string[]): Promise<number> {
       return cmdEmbed(rest, ctx);
     case 'rerank':
       return cmdRerank(rest);
+    // F15: the positional here is an index FILE, so the root comes from --cwd/the cwd alone and is
+    // never inferred from the argument.
+    case 'scip':
+      return cmdScip(rest, resolveRoot([], ctx));
     case 'freshness':
       return cmdFreshness(rest, ctx);
     case 'audit-llm':
@@ -7958,10 +7962,13 @@ async function cmdMemoryPurge(args: string[], ctx?: CmdCtx): Promise<number> {
   );
   if (ids.length === 0 && wrongKind.length > 0) {
     process.stderr.write(
-      `crib memory purge operates on memory RECORD ids (mem:…); ${wrongKind[0]} is not one.\n` +
-        '  A staged candidate (cand:…) or a queued capture (cap:…) is retired with\n' +
-        '  `crib memory dismiss <id> [--reason <text>]` — no --confirm echo, because neither is\n' +
-        '  trusted or recall-eligible. `crib memory gc` clears old candidates in bulk by age.\n',
+      [
+        `crib memory purge operates on memory RECORD ids (mem:…); ${wrongKind[0]} is not one.`,
+        '  A staged candidate (cand:…) or a queued capture (cap:…) is retired with',
+        '  `crib memory dismiss <id> [--reason <text>]` — no --confirm echo, because neither is',
+        '  trusted or recall-eligible. `crib memory gc` clears old candidates in bulk by age.',
+        '',
+      ].join('\n'),
     );
     return EXIT.BAD_ARGS;
   }

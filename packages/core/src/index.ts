@@ -59,3 +59,42 @@ export {
   type RerankManifest,
   type Reranker,
 } from './rerank/reranker-install.js';
+
+// SCIP interop (F7) — consume and emit the SCIP Code Intelligence Protocol, so the graph can absorb
+// the language coverage of compiler-backed indexers and be read by tools that speak the standard.
+export {
+  ROLE as SCIP_ROLE,
+  SYMBOL_KIND_NAME as SCIP_SYMBOL_KIND_NAME,
+  looksLikeScip,
+  rangeFromPacked,
+  readDocuments,
+  readExternalSymbols,
+  readMetadata,
+  type ScipDocument,
+  type ScipMetadata,
+  type ScipOccurrence,
+  type ScipRange,
+  type ScipRelationship,
+  type ScipSymbolInformation,
+} from './scip/decode.js';
+export {
+  formatDescriptor,
+  formatScipSymbol,
+  parseDescriptors,
+  parseScipSymbol,
+  qualifiedNameOf,
+  terminalSuffix,
+  type ScipDescriptor,
+  type ScipSuffix,
+  type ScipSymbol,
+} from './scip/symbol.js';
+export { scipToSoul, type ScipImportResult } from './scip/to-soul.js';
+export {
+  CRIB_SCHEME,
+  scipExportNotes,
+  scipSymbolFor,
+  soulToScip,
+  type ScipExportOptions,
+  type ScipExportResult,
+} from './scip/from-soul.js';
+export { WireError, Writer as ScipWriter } from './scip/wire.js';

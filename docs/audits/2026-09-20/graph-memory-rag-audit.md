@@ -791,7 +791,7 @@ across 660 files.
 | F4 | Semantic layer empty, no provider | **closed** | `examples/providers/anthropic/` |
 | F5 | No cross-encoder reranker | **implemented, MEASURED AS A LOSS, shipped off** (§17) | 15 tests; two eval harnesses; the port's motivation was superseded |
 | F6 | Scale curve stops at 50K, super-linear | **half WITHDRAWN (§10), half open** | curve re-measured to 200K: linear, flat throughput. 1M point still unmeasured; no ANN |
-| F7 | 11 extractors, 7-label fixture, no SCIP | **open** | — |
+| F7 | 11 extractors, 7-label fixture, no SCIP | **SCIP interop closed both ways (§19); accuracy evidence still open** | 45 tests; import merges at 6,949/6,952 ids (100.0%); export verified by an independent decoder. The 7-label accuracy fixture is untouched — breadth was the actionable half |
 | F8 | No graph query language | **open** | — |
 | F9 | Cross-repo is an HTTP-route bridge | **open** | — |
 | F10 | Withheld candidates invisible | **closed** | `pendingNotice` in the CLI + 4 tests |
@@ -1203,3 +1203,84 @@ client uses rather than the fallback.
 
 The `[diag]` line that separates "the hook never recorded" from "the seam dropped it" is kept in the
 script. It is the line that turned three wrong guesses into one measurement.
+
+## 19. F7 — SCIP interop, both directions, and the two places the models disagree
+
+F7 named the structural disadvantage plainly: 11 hand-written extractors, one of which
+(TypeScript) uses a real type-checker, against an ecosystem of compiler-backed indexers; and
+knowledge-crib could neither consume nor emit SCIP, so it could not absorb that coverage. Both
+directions now exist — `crib scip import`, `crib scip export` — and the interesting part of the work
+was not the codec but the two places the data models genuinely disagree.
+
+**The design decision that makes an import worth doing: ids are minted in crib's grammar.** An
+importer could carry SCIP symbol strings as node ids. Then every imported symbol would be a *new*
+node, and a repository crib already parses would end up with two nodes per function — one from the
+native extractor, one from the indexer — with edges split across them. Instead the mapping
+reconstructs crib's own `sym:<path>#<qualifiedName>@L<line>` from SCIP descriptors, so an import
+MERGES: the node is whichever source saw it first, and the edges union.
+
+Measured on this repository, exporting its graph and re-importing the result:
+
+| | |
+|---|---|
+| imported symbol nodes | 6,952 |
+| ids already present in the native graph | **6,949 (100.0%)** |
+| would-be new nodes | 3 |
+
+The three are not a mapping failure. They are nodes two extractors emit with `span.start = 0` —
+`sym:…/app.properties#db.password@L0` — where the id grammar and every other extractor treat lines
+as 1-based. SCIP is 0-based, so crib line 1 maps to SCIP line 0 and back to 1; a crib line *0* has
+nowhere to go and normalises to 1. The round trip surfaced a pre-existing contract violation, which
+is filed separately rather than papered over here.
+
+**The first disagreement: SCIP has positions, crib has lines.** A SCIP `Occurrence` range is
+`[line, startCharacter, endCharacter]`. A crib `span` is `{start, end}` in lines — the extractors
+never retain columns. So an exported occurrence is line-accurate and character-coarse (character 0),
+which `crib scip export` states on every run.
+
+**The second disagreement, and the reason the export is a deliberate subset: a crib edge has no call
+site.** `Edge` carries `src`, `dst`, `rel`, `method`, `confidence`, `evidence` — and no line. SCIP
+expresses a reference *as a position*. The only position available when exporting a `references` edge
+is the referencing symbol's own declaration line, so a find-references over such an index would point
+at line 42 while the call sits at line 57, and a consumer cannot tell an approximation from an exact
+answer. The export therefore carries **definitions and subtype relationships only**: go-to-definition
+and type hierarchy work, find-references is not offered. That is a real information loss in crib's
+edge model, stated here because it is the kind of gap that otherwise gets discovered by whoever
+consumes the file.
+
+**On the import side, four limits, each counted and printed rather than implied:** a reference is
+mapped as `references` and never as `calls` (SCIP records that a symbol occurs at a position, not
+that it is invoked); cross-package targets are counted, not minted, so importing does not drag in the
+dependency closure; `local` symbols are skipped by specification; and a definition's span is the
+declaration extent only when the indexer supplied `enclosing_range`.
+
+**Two correctness findings came out of reading the spec against practice rather than from memory.**
+
+1. `Occurrence.range` (field 1) is marked `[deprecated = true]` in `scip.proto`, and it is what every
+   deployed indexer still writes — scip-typescript, scip-java, scip-go, rust-analyzer. A decoder that
+   read only the typed `oneof` added later (fields 8/9) would decode real indexes as having no ranges,
+   and therefore import nothing. Both encodings are handled; the packed one is what the fixture pins.
+2. The grammar says `.` is not an identifier character, so a path segment like `main.ts` must be
+   backtick-escaped — and no indexer escapes it. Parsed strictly, `src/main.ts/main().` yields a term
+   `main` plus a namespace `ts`, and the qualified name comes out `src.main.ts.main` instead of `main`
+   — a wrong node id for every symbol in the index. The parser accepts the bare form, and the test
+   that pins it uses descriptor runs taken verbatim from the SCIP project's own committed snapshot
+   outputs (`animal.repro/animal#`, `cycle1.repro/hello().`), not strings written for this test.
+
+**A language-name bug the verification caught.** An unknown `lang` tag was being capitalised as a
+fallback, which emitted `Plsql` and `Json` for documents whose SCIP enum members are `PLSQL` and
+`JSON` — values no consumer recognises for languages every consumer supports. The mapping is now
+taken from the enum, and a tag SCIP genuinely does not name (`mule`, `properties` here) leaves the
+field unset and is reported, rather than getting an invented member.
+
+**How the export was verified.** The 2.1 MB index this repository produces (661 documents, 6,952
+definitions, 60 relationships) was decoded by an independently written protobuf reader in Python —
+different language, written from `scip.proto` alone, sharing no code with the TypeScript codec — which
+confirmed the metadata, the document and occurrence counts, that every occurrence carries
+`SymbolRole.Definition`, that all language tags are real enum members, and that zero ranges are
+malformed. A codec cannot validate itself, so it did not.
+
+**What is still not addressed.** No real indexer was *executed* against a fixture project — the
+import path is tested against hand-assembled wire bytes plus real symbol strings, not against a live
+`scip-typescript` run. The codec handles what the spec and those snapshots show; a first import of an
+unfamiliar indexer's output should be run with `--dry-run` and its counts read.

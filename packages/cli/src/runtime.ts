@@ -53,6 +53,15 @@ export interface Runtime {
   soul: SoulStore;
 }
 
+/**
+ * Process exit codes, shared by every command module.
+ *
+ * Lives here rather than in `cli.ts` because sibling command modules (`scip-cmd.ts`, and any later
+ * one) need the same numbers, and importing them from the CLI entry point would be circular. The
+ * values are a contract with callers' scripts, so they are append-only.
+ */
+export const EXIT = { OK: 0, ERROR: 1, BAD_ARGS: 2, NOT_INDEXED: 3, LOCKED: 4 } as const;
+
 export interface ResolvedRoot {
   /**
    * The canonical registry key for this input: the absolute path the user pointed at (a directory OR
