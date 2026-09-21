@@ -6580,7 +6580,7 @@ async function cmdMemory(args: string[], ctx?: CmdCtx): Promise<number> {
     case '-h':
     case '--help':
       process.stderr.write(
-        'crib memory init | observe --kind <k> --subject <id> --claim "<text>" --evidence <file.json|-> (the AGENT write path: staged, re-grounded and gated exactly as the memory_observe MCP tool — works without MCP) | remember "<claim>" [--subject <id>] [--kind convention|decision] [--global] (record + admit a human-attested claim from a terminal — recallable immediately) | admit <candidate-id> (admit an agent-staged human-attested claim, from a terminal) | handoff [--limit N] [--json] (where was I? — in-flight work, undistilled captures, what went stale) | events [--include-expired] [--limit N] [--json] | profiles list [--json] | profiles register --key <profile-key> --alias <client-id>/<agent-id> [--alias ...] [--json] | recall "<query>" [--limit N] [--sources team,local,global] [--target <id>] [--with-evidence] [--include-pending] [--max-tokens N] [--json] | search "<query>" [--limit N] [--sources team,local,global] [--target <id>] [--max-tokens N] [--json] | get <id> [--with-evidence] [--json] | supersede <id> --actor <id> (--successor <id> | --claim <text>) [--reason <text>] [--json] | delete <id> --actor <id> [--reason <text>] [--json] | history <key> [--as-of <iso-ts>] [--with-evidence] [--json] | evaluate <candidate> --profile <name> | activate <candidate>|--all | propose <memory-id> | attest <candidate> | check | audit [--repair-local] | feedback <mem-id> --signal <useful|unhelpful|contradicted> [--actor <id>] [--context <text>] [--counter-evidence <json-file>] | gc [--max-age-days N] [--dry-run] | migrate | bench [--fast] [--json] [--out <path>] | distill --provider <name> [--providers-file F] [--max-batches N] [--concurrency N] [--timeout-ms N] | recheck [--limit N] [--json] (re-run the admission gate over pending captures) | dismiss <cap-id> [--reason <text>] [--json] (retire one pending capture) | capture-hook --event <session-start|turn-end|tool-use> (hooks invoke this; always exits 0 — best-effort capture, never blocks a session) | init-sync --scope repo|global --backend file|http --url <target> [--key-env <NAME>|--keyfile <path>|--gen-key] [--secret-env <NAME>] [--sync-id <id>] [--backfill] [--json] | sync [push|pull|status] [--dry-run] [--backfill] [--max-events N] [--skip] [--json] | sync rotate-key (--gen-key | --key-env <NAME> | --keyfile <path>) [--dry-run] | sync purge-sync --stale-epoch [--dry-run] | purge <mem-id>... --confirm <mem-id>... [--stores local,global] [--history-scan] [--dry-run] [--actor <id>] [--json] | conflicts [--json] | resolve <record-id> (--successor <id> | --retract) --actor <id> [--reason <text>] [--json] (see docs/memory-sync.md)\n',
+        'crib memory init | observe --kind <k> --subject <id> --claim "<text>" --evidence <file.json|-> (the AGENT write path: staged, re-grounded and gated exactly as the memory_observe MCP tool — works without MCP) | remember "<claim>" [--subject <id>] [--kind convention|decision] [--global] (record + admit a human-attested claim from a terminal — recallable immediately) | admit <candidate-id> (admit an agent-staged human-attested claim, from a terminal) | handoff [--limit N] [--json] (where was I? — in-flight work, undistilled captures, what went stale) | events [--include-expired] [--limit N] [--json] | profiles list [--json] | profiles register --key <profile-key> --alias <client-id>/<agent-id> [--alias ...] [--json] | recall "<query>" [--limit N] [--sources team,local,global] [--target <id>] [--with-evidence] [--include-pending] [--max-tokens N] [--json] | search "<query>" [--limit N] [--sources team,local,global] [--target <id>] [--max-tokens N] [--json] | get <id> [--with-evidence] [--json] | supersede <id> --actor <id> (--successor <id> | --claim <text>) [--reason <text>] [--json] | delete <id> --actor <id> [--reason <text>] [--json] | history <key> [--as-of <iso-ts>] [--with-evidence] [--json] | evaluate <candidate> --profile <name> | activate <candidate>|--all | propose <memory-id> | attest <candidate> | check | audit [--repair-local] | feedback <mem-id> --signal <useful|unhelpful|contradicted> [--actor <id>] [--context <text>] [--counter-evidence <json-file>] | gc [--max-age-days N] [--dry-run] | migrate | bench [--fast] [--json] [--out <path>] | distill --provider <name> [--providers-file F] [--max-batches N] [--concurrency N] [--timeout-ms N] | recheck [--limit N] [--json] (re-run the admission gate over pending captures) | dismiss <cap-id|cand-id> [--reason <text>] [--json] (retire one queued capture or staged candidate) | capture-hook --event <session-start|turn-end|tool-use> (hooks invoke this; always exits 0 — best-effort capture, never blocks a session) | init-sync --scope repo|global --backend file|http --url <target> [--key-env <NAME>|--keyfile <path>|--gen-key] [--secret-env <NAME>] [--sync-id <id>] [--backfill] [--json] | sync [push|pull|status] [--dry-run] [--backfill] [--max-events N] [--skip] [--json] | sync rotate-key (--gen-key | --key-env <NAME> | --keyfile <path>) [--dry-run] | sync purge-sync --stale-epoch [--dry-run] | purge <mem-id>... --confirm <mem-id>... [--stores local,global] [--history-scan] [--dry-run] [--actor <id>] [--json] | conflicts [--json] | resolve <record-id> (--successor <id> | --retract) --actor <id> [--reason <text>] [--json] (see docs/memory-sync.md)\n',
       );
       process.stderr.write(
         'additional operations: backup create|verify|restore; sync compact [--dry-run] [--json]\n',
@@ -6951,12 +6951,16 @@ function cmdMemoryRecheck(args: string[], ctx?: CmdCtx): number {
 /** `crib memory dismiss <cap-id> [--reason <text>] [--json]` — retire one pending capture (dead-letter, never a delete). */
 function cmdMemoryDismiss(args: string[], ctx?: CmdCtx): number {
   if (args.includes('--help')) {
-    process.stdout.write('usage: crib memory dismiss <cap-id> [--reason <text>] [--json]\n');
+    process.stdout.write(
+      'usage: crib memory dismiss <cap-id|cand-id> [--reason <text>] [--json]\n  retires a queued capture or a staged candidate; neither is trusted, so no --confirm echo is needed\n',
+    );
     return EXIT.OK;
   }
   const id = positionalsOf(args)[0];
   if (!id) {
-    process.stderr.write('usage: crib memory dismiss <cap-id> [--reason <text>] [--json]\n');
+    process.stderr.write(
+      'usage: crib memory dismiss <cap-id|cand-id> [--reason <text>] [--json]\n  retires a queued capture or a staged candidate; neither is trusted, so no --confirm echo is needed\n',
+    );
     return EXIT.BAD_ARGS;
   }
   const api = openMaintenanceApi(ctx);
@@ -7934,9 +7938,27 @@ async function cmdMemoryPurge(args: string[], ctx?: CmdCtx): Promise<number> {
   const dryRun = args.includes('--dry-run');
   const historyScan = args.includes('--history-scan');
   // Positionals here are mem: ids; --confirm repeats the exact list (no wildcards, D11).
-  const ids = positionalsOf(args).filter((t) => t.startsWith('mem:'));
+  const positionals = positionalsOf(args);
+  const ids = positionals.filter((t) => t.startsWith('mem:'));
   const confirmIds = repeatedFlag(args, '--confirm');
   const storesFlag = stringFlag(args, '--stores');
+  // The filter above silently DROPPED any non-`mem:` positional and then fell through to a usage
+  // message, so passing a `cand:` or `cap:` id — in exactly the documented shape — produced a usage
+  // dump that never mentioned the id prefix, which is the actual problem. Name it, and name the verb
+  // that does handle it: purge is for trusted RECORDS, which is why it demands a --confirm echo,
+  // while a staged candidate or a queued capture is retired by `dismiss`.
+  const wrongKind = positionals.filter(
+    (t) => t.startsWith('cand:') || t.startsWith('cap:') || t.startsWith('icp:'),
+  );
+  if (ids.length === 0 && wrongKind.length > 0) {
+    process.stderr.write(
+      `crib memory purge operates on memory RECORD ids (mem:…); ${wrongKind[0]} is not one.\n` +
+        '  A staged candidate (cand:…) or a queued capture (cap:…) is retired with\n' +
+        '  `crib memory dismiss <id> [--reason <text>]` — no --confirm echo, because neither is\n' +
+        '  trusted or recall-eligible. `crib memory gc` clears old candidates in bulk by age.\n',
+    );
+    return EXIT.BAD_ARGS;
+  }
   if (ids.length === 0 || confirmIds.length === 0) {
     process.stderr.write(
       'usage: crib memory purge <mem-id>... --confirm <mem-id>... [--stores local,global] [--history-scan] [--dry-run] [--actor <id>] [--json]\n  the exact id list must be repeated in --confirm (no wildcards)\n',

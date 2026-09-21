@@ -729,3 +729,91 @@ describe('crib memory supersede — an unrecallable successor is disclosed, not 
     expect(r.stderr).toMatch(/^(error|usage|unknown)/m);
   });
 });
+
+/**
+ * F21 — a staged candidate had no targeted retirement path, and `purge` misreported why.
+ *
+ * Found by a user running the command this session's own summary suggested. `crib memory purge`
+ * filters its positionals to `mem:` ids and then falls through to a USAGE dump, so passing a `cand:`
+ * id — in exactly the documented shape — produced a message that never mentioned the id prefix, which
+ * was the actual problem. And no other verb covered it: `dismissPending` searched only the capture
+ * outbox (so a candidate staged by `observe`, which writes no capture, was invisible to it), and `gc`
+ * is age-based at 30 days. A candidate an operator KNEW was wrong sat in the queue for a month.
+ */
+describe('F21 — retiring a staged candidate', () => {
+  function run(args: string[]): { status: number; stdout: string; stderr: string } {
+    const r = spawnSync(process.execPath, [CLI, 'memory', ...args], {
+      cwd: repo,
+      encoding: 'utf8',
+      maxBuffer: 32 * 1024 * 1024,
+      env: env(),
+    });
+    return {
+      status: r.status ?? 1,
+      stdout: (r.stdout ?? '').trim(),
+      stderr: (r.stderr ?? '').trim(),
+    };
+  }
+
+  /** Stage an UNGROUNDED observation — the admission gate holds it as a pending candidate. */
+  function stageCandidate(claim: string): string {
+    const evPath = join(repo, `f21-ev-${Math.random().toString(36).slice(2)}.json`);
+    writeFileSync(
+      evPath,
+      JSON.stringify([{ kind: 'source-quote', soulId: NODE_ID, quote: 'NOT_IN_THE_SOURCE' }]),
+    );
+    const r = run([
+      'observe',
+      '--kind',
+      'fact',
+      '--subject',
+      NODE_ID,
+      '--claim',
+      claim,
+      '--evidence',
+      evPath,
+    ]);
+    expect(r.status, r.stderr).toBe(0);
+    const ack = JSON.parse(r.stdout) as { id: string; status: string };
+    expect(ack.status).toBe('pending');
+    return ack.id;
+  }
+
+  it('dismiss retires a candidate staged by observe (which has no capture behind it)', () => {
+    const id = stageCandidate('A staged loan_pkg claim to retire.');
+    expect(run(['recall', 'loan_pkg']).stdout).toMatch(/pending \(withheld\): 1/);
+
+    const d = run(['dismiss', id, '--reason', 'known wrong']);
+    expect(d.status, d.stderr).toBe(0);
+    expect(d.stdout).toMatch(/^dismissed /);
+
+    // gone from the queue, and the default view stops reporting a withheld item
+    expect(run(['recall', 'loan_pkg']).stdout).not.toMatch(/pending \(withheld\)/);
+  });
+
+  it('dismiss is idempotent — a second call reports nothing to do, not an error', () => {
+    const id = stageCandidate('A staged loan_pkg claim, dismissed twice.');
+    expect(run(['dismiss', id]).stdout).toMatch(/^dismissed /);
+    const again = run(['dismiss', id]);
+    expect(again.status).toBe(0);
+    expect(again.stdout).toMatch(/nothing to dismiss/);
+  });
+
+  it('purge NAMES the id-kind problem instead of dumping usage', () => {
+    const id = stageCandidate('A staged loan_pkg claim aimed at purge.');
+    const r = run(['purge', id, '--confirm', id]);
+    expect(r.status).not.toBe(0);
+    // the old behaviour: a usage block that never mentioned why the id was rejected
+    expect(r.stderr).not.toMatch(/^usage: crib memory purge/m);
+    expect(r.stderr).toMatch(/operates on memory RECORD ids/);
+    expect(r.stderr).toMatch(/crib memory dismiss/);
+    // and it stays a refusal — purge must not quietly retire a candidate
+    expect(run(['recall', 'loan_pkg']).stdout).toMatch(/pending \(withheld\): 1/);
+  });
+
+  it('purge still shows plain usage when NO id is given at all', () => {
+    const r = run(['purge']);
+    expect(r.status).not.toBe(0);
+    expect(r.stderr).toMatch(/^usage: crib memory purge/m);
+  });
+});

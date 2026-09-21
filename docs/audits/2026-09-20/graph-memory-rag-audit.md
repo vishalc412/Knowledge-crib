@@ -805,6 +805,7 @@ across 660 files.
 | F18 | `crib serve` exits on damaged manifest | **closed** | verified over stdio JSON-RPC + 4 tests |
 | F19 | `supersede --claim` leaves nothing recallable | **closed** (§11) | 3 tests; the `--evidence` flag was written and reverted as unsafe |
 | F20 | CLI suite flaky under parallel load | **open** (§11) | 3 named tests, all untouched by this work |
+| F21 | Staged candidates unretirable; `purge` misreported why | **closed** (§12) | 4 tests; found by a user running the command §11 suggested |
 
 **Why the open ones are open**, so the list is a plan rather than an excuse:
 
@@ -926,3 +927,42 @@ the windows, which only moves the threshold.
 
 *(Unrelated to the flakes: `biome check` was failing outright on HEAD for three unformatted files, so
 `pnpm verify` was red before this branch began. Fixed in `f140a423`.)*
+
+---
+
+## 12. F21 — a staged candidate had no retirement path, and `purge` misreported why
+
+Found the way the best findings in this audit were found: by someone running a command. The summary of
+§11 suggested `crib memory purge <cand-id> --confirm <cand-id>` to clear a stale candidate. That
+command cannot work, and the failure said nothing useful.
+
+**Two defects, one symptom.**
+
+`cmdMemoryPurge` filters its positionals with `.filter((t) => t.startsWith('mem:'))` and then falls
+through to a usage dump when the list is empty. A `cand:` id — passed in exactly the documented shape,
+with the `--confirm` echo — was silently dropped and answered with a usage block that never mentioned
+the id *prefix*, which was the whole problem. Same class as F18 and the `--vectors` refusal: a correct
+decision delivered so that the reader cannot act on it.
+
+And no verb covered candidates at all:
+
+| verb | operates on | why it missed |
+|---|---|---|
+| `purge` | `mem:` records | filters `cand:` out, then reports usage |
+| `dismiss` | capture-outbox entries | `dismissPending` searched only `pendingCaptures`; `observe` writes a candidate with **no** capture, so it was invisible |
+| `gc` | candidates, **by age** | 30 days by default — no targeted removal |
+
+So a candidate an operator *knew* was wrong — contradicted by a later change, as one of mine was by the
+F3 fix — stayed in the pending queue as an untrusted lead for a month.
+
+**Fixed both ways.** `dismissPending` gained a `cand:` branch that removes the candidate directly, and
+`purge` now names the id-kind mismatch and points at `dismiss` (and at `gc` for bulk-by-age). Deliberately
+no `--confirm` echo on the candidate path, and this is the reasoning rather than convenience: a candidate
+is untrusted by construction and was never recall-eligible, so nothing downstream ever relied on it. The
+non-destructive rule in §5 of the protocol exists to protect *trusted, shared* memory; a staged lead is
+neither. `purge` keeps its echo because records are both.
+
+Verified by using it: the three stale candidates this session had accumulated — one made false by the F3
+fix, one duplicating an admitted record, one a first attempt that cited the wrong doc-section span — were
+retired, and the pending queue is empty. Four tests, including one pinning that `purge` still refuses
+rather than quietly retiring a candidate, and one that plain `usage` still appears when no id is given.
