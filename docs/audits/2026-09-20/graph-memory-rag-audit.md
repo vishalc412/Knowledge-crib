@@ -789,7 +789,7 @@ across 660 files.
 | F2 | Recall claim scoped to the memory ledger | **closed** | README + capability matrix rewritten |
 | F3 | Surface-only embeddings | **closed, measured** | MRR 0.057 → 0.286; recipe versioned |
 | F4 | Semantic layer empty, no provider | **closed** | `examples/providers/anthropic/` |
-| F5 | No cross-encoder reranker | **open** | port + `DEFAULT_RERANK_DEPTH` exist; no implementation |
+| F5 | No cross-encoder reranker | **implemented, MEASURED AS A LOSS, shipped off** (§17) | 15 tests; two eval harnesses; the port's motivation was superseded |
 | F6 | Scale curve stops at 50K, super-linear | **half WITHDRAWN (§10), half open** | curve re-measured to 200K: linear, flat throughput. 1M point still unmeasured; no ANN |
 | F7 | 11 extractors, 7-label fixture, no SCIP | **open** | — |
 | F8 | No graph query language | **open** | — |
@@ -1114,3 +1114,54 @@ blocks while an absent receipt does not.
 **What is NOT closed:** the bus factor. 359 of ~389 commits are one person. No policy change addresses
 that, and it remains the strategic argument behind F7's SCIP recommendation — an ecosystem's language
 coverage is the only kind a single maintainer can absorb.
+
+---
+
+## 17. F5 — the reranker was built, measured, and must not be enabled
+
+Decision was "implement and measure, ship opt-in". Implemented (`packages/core/src/rerank/`,
+`crib rerank setup`, 15 tests) and measured on both corpora. **It loses on both.**
+
+| surface | first stage | + cross-encoder |
+|---|---|---|
+| memory — frozen 500-query gate | gates 8/8, G2 81.0%, MRR 0.881, **0.4 s** | gates 7/8, **G2 44.4%**, **MRR 0.762**, **207 s** |
+| code — 20-question corpus | MRR 0.287, top-3 7/20, found@10 9/20 | MRR 0.267, top-3 5/20, found@10 **10/20** |
+
+It halves paraphrase recall on memory and costs ~500× the time. On code it pulls one more answer into
+the window (9→10, because it reranks depth 50) and still reorders the top worse than RRF plus the
+structural prior.
+
+### Why — and the finding is about the port, not the model
+
+The 43.8%-top-5 gap `fusion.ts` cites as the reason a second stage exists **was measured with
+`multilingual-e5-base`**, and `docs/bench/launch-gates.md` records that the gap was closed *without* a
+reranker: the larger bi-encoder took G2 from 43.8% to 71.9%, and embedding the claim alone took it to
+81.0%. The shipped tier is the large model. **The precision problem the port was declared for no longer
+exists**, and a second stage helps a weak first stage while damaging a strong one.
+
+So the port's docstring was citing a superseded configuration as live justification — the same species
+of drift as F6's stale bench doc, and the second time in this audit that a plausible in-repo number
+turned out to describe a system that no longer ships. `fusion.ts` now carries the correction above its
+historical paragraph.
+
+### What was kept, and why it is not waste
+
+- The tier ships and is **off**. Nothing wires a reranker in by default. A future first-stage
+  regression, or a corpus unlike these two, is the only condition that changes the arithmetic — and
+  `pnpm eval:memory-rerank` is now the one command that re-answers the question.
+- Two model probes are recorded because they were not obvious. `ms-marco-MiniLM-L-6-v2` (~90 MB, the
+  standard small choice) **cannot separate relevant code from irrelevant code**: it scored an unrelated
+  `renderMarkdown` (-11.421) *above* the relevant `withLock` (-11.467). `bge-reranker-base` (~1.1 GB)
+  ordered the same probe correctly. Anyone revisiting this should not start from the small model.
+- Two implementation traps are pinned by tests, because both fail silently. `pipeline('text-classification')`
+  softmaxes a single output label and returns **1.0 for every pair** — a reranker that reorders nothing;
+  the adapter reads raw logits instead. And resolving the reused runtime by path lands on the package's
+  **CJS** build, whose namespace puts the API under `.default`.
+
+### An unrelated correction this work produced
+
+The published `--vectors` build cost of **1,444 s** is the **cold** figure. The generated embedder caches
+each vector by content hash under `~/.cache/crib-embed-vec/<id>`, so a rebuild only embeds what changed:
+the same build repeated took **202 s** — 7.1× faster, with 20,611 cached vectors on disk. §8 quoted only
+the cold number, which overstates steady-state cost by 7×. Both are now published, since quoting either
+alone misleads in one direction.

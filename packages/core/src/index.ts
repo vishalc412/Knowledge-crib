@@ -39,3 +39,23 @@ export * from './embeddings/remote.js';
 export * from './embeddings/tier.js';
 export * from './rules/index.js';
 export * from './llm-prune.js';
+
+// The reranker tier (F5) — a second-stage cross-encoder for the `Reranker` port that
+// `packages/memory/src/fusion.ts` has declared since it measured the 43.8% top-5 gap.
+export {
+  DEFAULT_RERANK_DEPTH,
+  RERANK_MANIFEST_FORMAT_VERSION,
+  RerankIntegrityError,
+  RerankManifestError,
+  RerankNotInstalledError,
+  installReranker,
+  loadInstalledReranker,
+  readRerankManifest,
+  rerankHomeDir,
+  rerankManifestPath,
+  renderRerankWorkerMjs,
+  renderRerankerMjs,
+  verifyInstalledReranker,
+  type RerankManifest,
+  type Reranker,
+} from './rerank/reranker-install.js';

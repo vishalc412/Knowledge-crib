@@ -72,6 +72,7 @@ run `crib embed setup` serves the char-ngram fallback** and is at the top row �
 | Lexical code search (FTS5 BM25 over names/signatures/headings/files/bodies + static synonym table) | verified | **on** | full suite green; `crib query` |
 | Vector code search (RRF hybrid BM25 ∪ cosine + deterministic structural rerank) | **measured: MRR 0.057 → 0.286 vs lexical** on a 20-question labelled corpus; opt-in, no pre-registered gate | **off** — `crib index --vectors` | [`scripts/eval/code-vector-eval.mjs`](../scripts/eval/code-vector-eval.mjs) |
 | Discovery excludes sub-symbol fragments (statements/conditions/assignments) | verified | on (`includeDetail` opts back in) | `verbs.test.ts` "F14 — discovery excludes sub-symbol detail by default" |
+| Second-stage cross-encoder reranker | **implemented and MEASURED AS A LOSS on both surfaces** — do not enable | **off**, `crib rerank setup` | [`scripts/eval/memory-rerank-eval.mjs`](../scripts/eval/memory-rerank-eval.mjs), `code-vector-eval.mjs --rerank` |
 
 The second row is the honest state and the reason it is stated separately. The hybrid path exists in
 `SqliteIndexStore.query` and `index/rerank.ts`, and `crib index --vectors` builds the vectors it
@@ -108,12 +109,41 @@ authored by someone who knows it cannot carry one.
 |---|---:|---:|---:|
 | `crib index` (lexical) | 86 s | 0.81 GB | — |
 | `crib index --vectors` (surface only, v1 recipe, all node kinds) | 421 s | 4.87 GB | 48,459 |
-| `crib index --vectors` (surface + body, v2 recipe, discovery kinds only) | **1,444 s** | **4.83 GB** | **10,185** |
+| `crib index --vectors` (surface + body, v2 recipe, discovery kinds only) — COLD cache | **1,444 s** | 4.83 GB | 10,185 |
+| the same build with a WARM embedding cache | **202 s** | — | 10,185 |
 
 v2 embeds 4.8× FEWER nodes than v1 and still takes 3.4× longer, because each embedding carries ~15×
-more tokens — 24 minutes for a 185K-LOC repository, and 16.8× the lexical build. That is the honest
-reason `--vectors` is opt-in and the reason the scale limit in the known-limits list matters more for
-the vector path than for the lexical one.
+more tokens — 24 minutes for a 185K-LOC repository on a COLD cache, and 16.8× the lexical build.
+
+**The warm number is the one most users will see, and it is much better.** The generated embedder
+caches each vector by content hash under `~/.cache/crib-embed-vec/<embedder-id>`, so a re-index only
+embeds what changed: the same build repeated took **202 s** (7.1× faster) with 20,611 cached vectors on
+disk. The cold figure is the honest first-run cost and the warm figure the honest steady-state one;
+quoting only one of them misleads in one direction or the other.
+
+### The reranker: implemented, measured, and NOT enabled
+
+A cross-encoder second stage exists (`crib rerank setup`, `packages/core/src/rerank/`) because
+`packages/memory/src/fusion.ts` had declared a `Reranker` port on the back of a measured precision
+gap. Measured against both corpora on 2026-09-21, it is a **loss on both**:
+
+| surface | first stage | + cross-encoder |
+|---|---|---|
+| memory (frozen 500-query gate) | gates 8/8, G2 81.0%, MRR 0.881, 0.4 s | gates 7/8, **G2 44.4%**, **MRR 0.762**, 207 s |
+| code (20-question corpus) | MRR 0.287, top-3 7/20 | MRR 0.267, top-3 5/20 (found@10 rose 9→10) |
+
+**Why, and it is not a bug in the reranker.** The 43.8%-top-5 gap that motivated the port was measured
+with `multilingual-e5-base`, and [`bench/launch-gates.md`](bench/launch-gates.md) records that it was
+closed *without* a second stage — the larger bi-encoder took G2 to 71.9% and embedding the claim alone
+took it to 81.0%. A second stage helps a weak first stage and damages a strong one, and the first stage
+is now strong. `fusion.ts` carried the superseded motivation as if it were current; it is now annotated.
+
+So the tier ships **off**, nothing wires a reranker in by default, and the model choice is still
+recorded because it mattered: `ms-marco-MiniLM` (~90 MB) could not separate relevant code from
+irrelevant code at all (it scored an unrelated `renderMarkdown` above the relevant `withLock`), while
+`bge-reranker-base` (~1.1 GB) ordered the same probe correctly — and even that one loses on the corpora.
+Re-measure with `node scripts/eval/memory-rerank-eval.mjs` before enabling it; a future first-stage
+regression is the only condition under which the arithmetic changes.
 
 A machine that has not run `crib embed setup` cannot build vectors at all: `crib index --vectors`
 refuses rather than silently embedding with the char-ngram fallback, which R1 measured as worse than

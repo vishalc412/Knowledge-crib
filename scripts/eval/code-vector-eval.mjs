@@ -39,6 +39,7 @@ import {
   SoulStore,
   SqliteIndexStore,
   loadInstalledEmbedder,
+  loadInstalledReranker,
 } from '../../packages/core/dist/index.js';
 
 const R = process.cwd();
@@ -48,6 +49,8 @@ const flag = (name, fallback) => {
   return i >= 0 && args[i + 1] !== undefined ? Number(args[i + 1]) : fallback;
 };
 const LIMIT = flag('--limit', 10);
+/** How deep the hybrid stage is reranked. 50 is `DEFAULT_RERANK_DEPTH`. */
+const RERANK_DEPTH = flag('--rerank-depth', 50);
 const MIN_MRR = args.includes('--min-mrr') ? flag('--min-mrr', 0) : undefined;
 const AS_JSON = args.includes('--json');
 
@@ -186,6 +189,80 @@ function score(store) {
 const soul = new SoulStore(`${R}/.crib`);
 soul.load();
 
+/**
+ * The text a reranker sees for one hit: the same surface + capped body the vector channel embeds
+ * (`vectorText` v2), so the second stage judges the same content the first stage ranked. Reading a
+ * DIFFERENT projection here would measure the projection, not the reranker.
+ */
+const fileLines = new Map();
+function textForHit(hit) {
+  const node = soul.getNode?.(hit.id);
+  const surface = [node?.name, node?.qualifiedName, node?.signature, node?.heading, node?.file]
+    .filter((v) => typeof v === 'string' && v.length > 0)
+    .join(' ');
+  if (!node?.file || !node?.span) return surface || hit.id;
+  let lines = fileLines.get(node.file);
+  if (lines === undefined) {
+    try {
+      lines = readFileSync(join(R, node.file), 'utf8').split('\n');
+    } catch {
+      lines = null;
+    }
+    fileLines.set(node.file, lines);
+  }
+  if (!lines) return surface || hit.id;
+  const body = lines.slice(Math.max(node.span.start - 1, 0), node.span.end).join('\n');
+  const capped = body.length > 1200 ? body.slice(0, 1200) : body;
+  return capped ? `${surface}\n${capped}` : surface || hit.id;
+}
+
+/** Score the corpus through a store, reranking the top `RERANK_DEPTH` hits with a cross-encoder. */
+function scoreReranked(store, reranker) {
+  let top1 = 0;
+  let top3 = 0;
+  let found = 0;
+  let mrr = 0;
+  const ranks = [];
+  for (const [q, want] of CASES) {
+    const pool = store.query({ text: q, limit: RERANK_DEPTH });
+    let ordered = pool;
+    if (pool.length > 1) {
+      const scores = reranker.rerankBatch(q, pool.map(textForHit));
+      ordered = pool
+        .map((hit, i) => ({ hit, score: scores[i] }))
+        .sort((a, b) => b.score - a.score)
+        .map((e) => e.hit);
+    }
+    const window = ordered.slice(0, LIMIT);
+    let rank = 0;
+    for (let i = 0; i < window.length; i++) {
+      if (want.some((w) => window[i].id.includes(w))) {
+        rank = i + 1;
+        break;
+      }
+    }
+    ranks.push({ q, rank });
+    if (rank === 1) top1++;
+    if (rank >= 1 && rank <= 3) top3++;
+    if (rank >= 1) {
+      found++;
+      mrr += 1 / rank;
+    }
+  }
+  const n = CASES.length;
+  return {
+    n,
+    top1,
+    top3,
+    found,
+    mrr: mrr / n,
+    top1Pct: Math.round((100 * top1) / n),
+    top3Pct: Math.round((100 * top3) / n),
+    foundPct: Math.round((100 * found) / n),
+    ranks,
+  };
+}
+
 const embedder = await loadInstalledEmbedder().catch(() => undefined);
 
 const lexical = new SqliteIndexStore(DB);
@@ -202,8 +279,38 @@ if (embedder) {
   hybrid.close();
 }
 
+/**
+ * The third column: hybrid retrieval, then a cross-encoder over the top RERANK_DEPTH.
+ *
+ * Opt-in via `--rerank`, because it loads a ~1.1 GB model and costs a forward pass per candidate —
+ * a gate that silently did that on every run would be a gate nobody runs.
+ */
+let rerankedScore;
+let rerankerId = null;
+let rerankedOver = null;
+if (args.includes('--rerank')) {
+  const reranker = await loadInstalledReranker().catch((e) => {
+    process.stderr.write(`reranker unavailable: ${e.message}\n`);
+    return undefined;
+  });
+  if (reranker) {
+    rerankerId = reranker.id;
+    // Rerank over whichever first stage is actually available. Measuring rerank-over-LEXICAL is not a
+    // fallback, it is the more practically interesting question: it says whether a second stage can
+    // rescue a cheap index, versus paying for the 24-minute vector build first.
+    const live = hybridCaps?.vector === true && embedder;
+    rerankedOver = live ? 'hybrid' : 'lexical';
+    const store = live ? new SqliteIndexStore(DB, { embedder }) : new SqliteIndexStore(DB);
+    rerankedScore = scoreReranked(store, reranker);
+    store.close();
+  }
+}
+
 const report = {
   db: DB,
+  reranker: rerankerId,
+  rerankedOver,
+  rerankDepth: rerankerId ? RERANK_DEPTH : null,
   cases: CASES.length,
   limit: LIMIT,
   embedder: embedder ? { id: embedder.id, dim: embedder.dim() } : null,
@@ -216,6 +323,7 @@ const report = {
     hybridCaps?.vector === true ? null : (hybridCaps?.vectorNote ?? lexicalCaps.vectorNote ?? null),
   lexical: lexicalScore,
   hybrid: hybridScore ?? null,
+  reranked: rerankedScore ?? null,
 };
 
 if (AS_JSON) {
@@ -237,6 +345,7 @@ if (AS_JSON) {
   console.log('');
   console.log(row('lexical', lexicalScore));
   console.log(row('hybrid', hybridScore));
+  if (rerankerId) console.log(row(`rerank/${rerankedOver}`, rerankedScore));
   if (hybridScore) {
     console.log('');
     const better = [];

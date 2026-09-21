@@ -355,6 +355,7 @@ import {
   validateMutationOrigin,
 } from './viz-server.js';
 import { WatchMode } from './watch.js';
+import { cmdRerank } from './rerank-setup.js';
 
 const EXIT = { OK: 0, ERROR: 1, BAD_ARGS: 2, NOT_INDEXED: 3, LOCKED: 4 } as const;
 
@@ -743,6 +744,8 @@ async function main(argvRaw: string[]): Promise<number> {
       return cmdSession(rest, ctx);
     case 'embed':
       return cmdEmbed(rest, ctx);
+    case 'rerank':
+      return cmdRerank(rest);
     case 'freshness':
       return cmdFreshness(rest, ctx);
     case 'audit-llm':
@@ -10320,7 +10323,8 @@ function printHelp(): void {
       '  crib setup [path] [--no-embed]           THE one command: index + hooks + MCP for every client + the mandatory protocol in every instruction file + the on-device model + memory stores + doctor. Nothing to run afterwards.',
       '  crib init [path] [--ide <id|all|detected>]   5-minute onboarding: index + install-hooks + mcp install + adapters + the semantic model + next-steps hero (defaults to every client; --ide detected wires only what is in use; --no-embed skips the model download)',
       '  crib doctor [path]                       setup health check: node/corepack/index-freshness/hooks/IDE-wiring/memory-loop/stale-builds/embed-tier/freshness/post-commit-hook/multimodal-adapters (✓/✗ + fix hints)',
-      '  crib embed setup [--model small|base|large] [--yes]   ONE command to the semantic tier: generates + pins an adapter, then proves it ranks. --list shows the measured size/quality ladder; --yes allows the one-time runtime install and model download; --from <dir> adopts a pre-fetched bundle (air-gapped)',
+      "  crib rerank <setup [--model <id>] [--yes] [--list] | status>   second-stage cross-encoder: reorders the top candidates by scoring (query, text) PAIRS, which a bi-encoder structurally cannot do. Reuses the embed tier's ONNX runtime. OFF by default and measured before trusted (node scripts/eval/code-vector-eval.mjs --rerank)",
+      '  crib embed setup [--model small|base|large] [--yes]   ONE command to the semantic tier: generates + pins an adapter, then proves it ranks. --list shows the measured size/quality ladder; --yes allows the one-time runtime install and model download; --from <dir> adopts a pre-fetched bundle (air-gapped)\',',
       '  crib embed <install <model-dir>|status>   on-device embedder tier: install --model-id <id> --model-version <ver> [--entry <file>] | status (tier report; --accept-remote-policy opts into the remote tier)',
       '  crib freshness [<mode>|worker|service|hook|convert-hook]   index freshness: manual|watch|auto | supervised worker install/status/uninstall | durable queue',
       '',
