@@ -1124,7 +1124,91 @@ function symbolInfo(node: ts.Node): SymInfo | null {
       return { name: d.name.text, type: 'function', signature: `${d.name.text}(…)` };
     }
   }
+  // `res.send = function send(body) {}` / `exports.foo = () => {}` / `Foo.prototype.bar = function(){}`
+  const assigned = assignedMethodInfo(node);
+  if (assigned) return assigned;
+  // `{ foo: function () {} }` inside an object literal — the pre-shorthand method form. (Shorthand
+  // `{ foo() {} }` is already a MethodDeclaration and matched above.)
+  if (
+    ts.isPropertyAssignment(node) &&
+    ts.isIdentifier(node.name) &&
+    isFunctionLike(node.initializer)
+  ) {
+    return {
+      name: node.name.text,
+      type: 'method',
+      signature: `${node.name.text}(${paramList(node.initializer)})`,
+    };
+  }
   return null;
+}
+
+/**
+ * A function assigned to a property of a named receiver — the dominant way CommonJS JavaScript
+ * declares an API, and until now completely invisible to this extractor.
+ *
+ * MEASURED COST OF THE OMISSION. Indexing `expressjs/express` produced 146 symbol nodes across 231
+ * files (0.63 per file, against 10.5 per file on a TypeScript repository). `lib/response.js` declares
+ * 21 public methods as `res.status = function status(code)`, `res.send = function send(body)` and so
+ * on; the extractor captured 9 symbols from it, every one a module-private helper, and NOT ONE of the
+ * public methods. Express's entire response API — `res.send`, `res.json`, `res.status`, `res.redirect`
+ * — was absent from the graph. The inner `function send(...)` is a FunctionExpression rather than a
+ * FunctionDeclaration, so nothing in the chain ExpressionStatement → BinaryExpression →
+ * FunctionExpression matched, and the whole statement was walked past.
+ *
+ * WHAT COUNTS, and why the receiver is restricted. The receiver must be a plain identifier
+ * (`res`, `exports`, `app`), a `.prototype` chain (`Foo.prototype`), or `module.exports` — a function
+ * assigned to a property of a NAMED thing is a method of that thing. An arbitrary deep chain
+ * (`a.b.c.d = () => {}`) is excluded: those are overwhelmingly local wiring rather than declarations,
+ * and admitting them would trade this repository's discovery precision for noise.
+ *
+ * `name` is the PROPERTY name (`send`), because that is what a developer searches for and what call
+ * resolution looks up for `res.send(...)`. The receiver is preserved in the signature (`res.send(body)`)
+ * so it is visible in a hit and searchable in FTS, without changing the id grammar.
+ */
+function assignedMethodInfo(node: ts.Node): SymInfo | null {
+  if (!ts.isExpressionStatement(node)) return null;
+  const expr = node.expression;
+  if (!ts.isBinaryExpression(expr) || expr.operatorToken.kind !== ts.SyntaxKind.EqualsToken) {
+    return null;
+  }
+  if (!ts.isPropertyAccessExpression(expr.left) || !ts.isIdentifier(expr.left.name)) return null;
+  if (!isFunctionLike(expr.right) && !ts.isFunctionExpression(expr.right)) return null;
+  const receiver = receiverLabel(expr.left.expression);
+  if (receiver === undefined) return null;
+  const name = expr.left.name.text;
+  return {
+    name,
+    type: 'method',
+    signature: `${receiver}.${name}(${paramList(expr.right)})`,
+  };
+}
+
+/**
+ * A printable label for an assignment receiver, or undefined when the receiver is not a named thing.
+ *
+ * Accepts `res`, `Foo.prototype`, `module.exports`, and `Foo.prototype.inner` shapes; rejects anything
+ * deeper or computed, per the precision argument on {@link assignedMethodInfo}.
+ */
+function receiverLabel(expr: ts.Expression): string | undefined {
+  if (ts.isIdentifier(expr)) return expr.text;
+  if (expr.kind === ts.SyntaxKind.ThisKeyword) return 'this';
+  if (ts.isPropertyAccessExpression(expr) && ts.isIdentifier(expr.name)) {
+    const inner = expr.expression;
+    // Exactly one level of nesting, and only for the two idioms that denote a namespace.
+    if (ts.isIdentifier(inner) && (expr.name.text === 'prototype' || inner.text === 'module')) {
+      return `${inner.text}.${expr.name.text}`;
+    }
+  }
+  return undefined;
+}
+
+/** Parameter list text for a function-like expression, for the signature field. */
+function paramList(fn: ts.Expression): string {
+  if (ts.isArrowFunction(fn) || ts.isFunctionExpression(fn)) {
+    return fn.parameters.map((p) => p.getText()).join(', ');
+  }
+  return '…';
 }
 
 function isFunctionLike(node: ts.Node): node is ts.ArrowFunction | ts.FunctionExpression {

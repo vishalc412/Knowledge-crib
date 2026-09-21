@@ -1,7 +1,8 @@
 # Change localisation and co-change: crib against the baselines a developer already has
 
-**Status: THIRD READING. The first was negative; a diagnosis found the cause; the fix is now the
-DEFAULT (H3 shipped), not a flag.** Measured 2026-09-21. Published — including the first, worse numbers — because
+**Status: FOURTH READING — now EXTERNALLY VALIDATED on three foreign repositories in three
+languages. crib beats ripgrep on all four repositories tested. Getting there required fixing a
+coverage bug the external run exposed: CommonJS JavaScript was losing half its symbols.** Measured 2026-09-21. Published — including the first, worse numbers — because
 every accuracy claim this project made before today rested on 22 hand-written questions authored by
 someone who could already see the answer.
 
@@ -100,6 +101,72 @@ Short-query localisation is unsolved, and that is the honest limit of this resul
 motivated by a mechanism rather than a threshold fitted to the numbers, which makes it far safer than a
 tuned hyperparameter — but it is still a dev-set finding on one repository and needs the held-out
 external repos below before it is a general claim.
+
+## External validation — three foreign repositories, three languages
+
+A corpus from this repository alone has one dominant author and a churn-concentrated tree, which raises
+the query-blind floor and makes the measurement a weak discriminator. These three were chosen for the
+opposite profile — hundreds of contributors, flat churn — and run with the same harness
+(`scripts/bench/external-repo.sh`), the same leakage controls, and an index built from each repo's own
+base commit.
+
+| repository | language | tasks | authors *(in tasks)* | crib default | crib `--kinds symbol` | grep-bm25 | churn *(blind)* | crib lift |
+|---|---|---|---|---|---|---|---|---|
+| knowledge-crib | TypeScript | 61 | 1 | **0.610** | 0.611 | 0.478 | 0.501 | 1.22 |
+| expressjs/express | JavaScript | 86 | 42 | **0.499** | 0.498 | 0.320 | 0.152 | 3.29 |
+| pallets/click | Python | 93 | 22 | 0.402 | **0.441** | 0.380 | 0.119 | 3.38 |
+| gin-gonic/gin | Go | 161 | 96 | 0.527 | **0.584** | 0.331 | 0.202 | 2.61 |
+
+**crib beats ripgrep on every repository tested**, by 28% (this repo), 56% (express), 6% (click) and
+59% (gin) on MRR, at 1.6–6.2× fewer tokens. Lift over the query-blind control is 2.6–3.4× on the
+external repos against 1.22 here — precisely because their churn is flat, which makes them the stronger
+test and not the weaker one.
+
+**Three corrections to what the single-repo reading claimed.**
+
+1. **The short-query weakness was an artefact of this repository.** Here, subject-only MRR drops from
+   0.610 to 0.467. On express it is 0.497 against 0.499, on click 0.396 against 0.402, on gin 0.543
+   against 0.527 — *above* the full-message figure. H4 was over-generalised from one corpus, whose
+   commit subjects are unusually stylised. It is withdrawn as a general weakness.
+2. **`--kinds symbol` is not uniformly better than the grouped default.** It wins on click (+0.039) and
+   gin (+0.057), ties here (+0.001) and loses marginally on express (−0.001). The grouping keeps doc
+   answers that symbol-only discards, so the default stays grouped; a caller optimising purely for
+   code-localisation ranking can pass the flag.
+3. **The 0.5 bar is met on three of four repositories**, with the best configuration: 0.610 here, 0.584
+   on gin, 0.499 on express, and 0.441 on click. Click is the laggard and is the honest next target.
+
+### The coverage bug this run exposed, and why it mattered more than the ranking
+
+The first express run had crib at **0.238**, well behind grep's 0.316 — which read as a ranking failure
+and was not one. Express's graph held **146 symbol nodes across 231 files**: 0.63 per file, against 10.5
+per file on a TypeScript repository. `lib/response.js` declares 21 public methods in the form
+
+```js
+res.send = function send(body) { … }
+```
+
+and the extractor had captured **9 symbols from that file, every one a module-private helper, and not a
+single public method**. `res.send`, `res.json`, `res.status`, `res.redirect` — Express's entire response
+API — were absent from the graph. The cause: the inner `function send(…)` is a FunctionExpression rather
+than a declaration, so nothing along `ExpressionStatement → BinaryExpression → FunctionExpression`
+matched `symbolInfo`, and the whole statement was walked past. CommonJS property assignment is one of
+the most common declaration idioms in the npm ecosystem, and it was invisible.
+
+Recognising it (plus `exports.x = …`, `module.exports.x = …`, `Foo.prototype.x = …`, and the
+pre-shorthand `{ x: function(){} }` object-literal form) took express from 146 to **301 symbols**, and
+`lib/response.js` from 9 to 31. The measurement moved with it:
+
+| express | symbols | MRR | vs grep |
+|---|---|---|---|
+| before the fix | 146 | 0.238 | loses by 25% |
+| after the fix | 301 | **0.499** | **wins by 56%** |
+
+A deep receiver chain (`a.b.c.d = () => {}`) is deliberately still refused: those are local wiring
+rather than declarations, and admitting them would trade discovery precision for noise.
+
+**This is what external validation is for.** Run only on its own repository — TypeScript, where
+declarations are declarations — the project could not see that half of a major language's symbols were
+missing. No amount of ranking work on this repo would have found it.
 
 ## Task 2 — co-change: "I am changing this file, what else must I touch?"
 

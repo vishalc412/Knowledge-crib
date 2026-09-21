@@ -120,6 +120,75 @@ async function runRules(
   return new TypeScriptExtractor().extract(meta, ctxFor(text));
 }
 
+describe('TypeScriptExtractor — CommonJS assigned methods (the express coverage gap)', () => {
+  /**
+   * WHY THESE EXIST, measured rather than supposed. Indexing `expressjs/express` produced 146 symbol
+   * nodes across 231 files — 0.63 per file, against 10.5 per file on a TypeScript repository. Its
+   * `lib/response.js` declares 21 public methods as `res.send = function send(body)`; the extractor
+   * captured 9 symbols from that file, all module-private helpers, and none of the public API. The
+   * inner `function send(...)` is a FunctionExpression, not a declaration, so nothing along
+   * ExpressionStatement → BinaryExpression → FunctionExpression matched and the statement was skipped.
+   */
+  it('captures `res.send = function send(body) {}` with the receiver in the signature', async () => {
+    const { nodes } = await run(
+      ['var res = {};', 'res.send = function send(body) {', '  return body;', '};', ''].join('\n'),
+    );
+    const send = nodes.find((n) => n.name === 'send');
+    expect(send, 'res.send must be a symbol').toBeDefined();
+    expect(send?.type).toBe('method');
+    // The property name is what a developer searches for; the receiver stays visible in the signature.
+    expect(send?.signature).toBe('res.send(body)');
+  });
+
+  it('captures an anonymous function assigned to a property, named by the property', async () => {
+    const { nodes } = await run(['var res = {};', 'res.links = function(links){};', ''].join('\n'));
+    expect(nodes.find((n) => n.name === 'links')?.type).toBe('method');
+  });
+
+  it('captures the CommonJS export idioms', async () => {
+    const { nodes } = await run(
+      [
+        'exports.parseUrl = function (req) { return req.url; };',
+        'module.exports.compile = (src) => src;',
+        '',
+      ].join('\n'),
+    );
+    const names = nodes.filter((n) => n.kind === 'symbol').map((n) => n.name);
+    expect(names).toContain('parseUrl');
+    expect(names).toContain('compile');
+    expect(nodes.find((n) => n.name === 'compile')?.signature).toBe('module.exports.compile(src)');
+  });
+
+  it('captures prototype methods', async () => {
+    const { nodes } = await run(
+      ['function Router() {}', 'Router.prototype.handle = function handle(req) {};', ''].join('\n'),
+    );
+    expect(nodes.find((n) => n.name === 'handle')?.signature).toBe('Router.prototype.handle(req)');
+  });
+
+  it('captures the pre-shorthand object-literal method form', async () => {
+    const { nodes } = await run(
+      ['module.exports = { render: function (str) { return str; } };', ''].join('\n'),
+    );
+    expect(nodes.find((n) => n.name === 'render')?.type).toBe('method');
+  });
+
+  it('does NOT invent a symbol for a non-function assignment', async () => {
+    const { nodes } = await run(['var res = {};', 'res.statusCode = 200;', ''].join('\n'));
+    expect(nodes.some((n) => n.name === 'statusCode')).toBe(false);
+  });
+
+  it('REFUSES a deep receiver chain, which is wiring rather than declaration', async () => {
+    // `a.b.c.d = () => {}` is overwhelmingly local plumbing. Admitting it would trade discovery
+    // precision for noise, so the receiver must be a plain identifier, a `.prototype` chain, or
+    // `module.exports` — see assignedMethodInfo.
+    const { nodes } = await run(
+      ['var a = { b: { c: {} } };', 'a.b.c.d = () => {};', ''].join('\n'),
+    );
+    expect(nodes.some((n) => n.name === 'd')).toBe(false);
+  });
+});
+
 describe('TypeScriptExtractor — Track 3 statement/condition/CFG', () => {
   it('emits ONE condition node per IF (keyed by IF line) with THEN/ELSE polarity on the edges', async () => {
     const { nodes, edges } = await runRules();
