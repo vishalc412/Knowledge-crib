@@ -17,9 +17,19 @@ export type Dir = 'up' | 'down';
  * text) is fully determined by the soul + the work-tree root — `buildFromSoul(soul, repoRoot)`
  * rehydrates each node's span from disk to populate the body FTS column (capped; the soul stays
  * lean). `repoRoot` is required so the body-search projection is built from real source, not a
- * stale copy. The INFERRED TF-IDF semantic pass is a pipeline-level concern
- * (`IndexOpts.semantic` / CLI `--semantic`), not an index-build option, so there is no
- * `withEmbeddings`/vector field anywhere.
+ * stale copy.
+ *
+ * Two things that both get called "semantic" and are NOT the same, kept apart here because
+ * conflating them is how the vector path stayed unreachable for so long:
+ *
+ *   - the INFERRED doc→symbol linker pass is a pipeline concern (`IndexOpts.semantic` / CLI
+ *     `--semantic`). It adds capped `references` EDGES to the graph. It does not build vectors and
+ *     does not change how `query` ranks.
+ *   - VECTOR retrieval is an index-build option (`OpenIndexOpts.embedder` / CLI
+ *     `crib index --vectors`). It populates a derived vector table that only `query` reads.
+ *
+ * Vectors live exclusively in the gitignored derived index, so `--extracted-only` output and the
+ * committed soul are byte-identical whether or not they were built.
  */
 
 /** An incremental change set applied to the index after the soul is updated. */
@@ -84,8 +94,18 @@ export interface PathResult {
 export interface IndexCapabilities {
   /** Cypher pass-through (Kùzu only; false for sqlite — reconciliation #9). */
   cypher: boolean;
-  /** vector / ANN search available (requires a loaded vector extension; no vector path ships today, so always false). */
+  /**
+   * Vector retrieval is live for THIS store over THIS index: the index was built with an embedder
+   * and the store holds one whose `id`/`dim` match. False is the default and is not a defect.
+   */
   vector: boolean;
+  /**
+   * Present only when `vector` is false *and there is something to explain* — the index carries
+   * vectors this store may not query (no embedder loaded, or a different embedder than built them).
+   * Absent when no vectors were ever built. Lets `status`/`doctor` name the remedy instead of
+   * reporting a bare `false` that reads as "never implemented".
+   */
+  vectorNote?: string;
 }
 
 export interface IndexStore {

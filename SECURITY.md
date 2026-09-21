@@ -113,6 +113,22 @@ deterministic path has none.
    object — the graph, the index, the caches — is shared by every request. Do not expose this
    transport as a multi-tenant or remote endpoint on the strength of this control.
 
+   **A non-loopback bind is refused, and that is a product boundary — not a gap awaiting a patch.**
+   Decided 2026-09-21: knowledge-crib is permanently single-trust-domain. `serveHttp` calls
+   `assertLoopbackBind` and THROWS on anything outside `127.0.0.0/8`, `::1` or `localhost`
+   (`packages/mcp/src/server.ts`, pinned by `http-boundary.test.ts`). The reason is specific rather
+   than precautionary: `isAllowedHttpCaller` validates the `Host` header against whatever the daemon
+   bound to, so a `0.0.0.0` bind does not merely widen the surface — it flips that check from a
+   DNS-rebinding guard into one that *approves* remote callers, each arriving with the local user's
+   full rights, because no identity, membership, revocation or per-artifact authorization exists to
+   stop them.
+
+   The refusal throws rather than quietly narrowing to loopback: an operator who asked for `0.0.0.0`
+   wanted something this server cannot safely do, and silently doing something else would leave them
+   believing the exposure worked. To reach the graph from another machine, put an authenticating proxy
+   in front of a loopback bind, or use `crib serve` over stdio. **There is no flag that substitutes
+   for an authorization contract, and none is planned.**
+
 3. **`crib viz` HTTP server — loopback only, Host-allowlisted (M0.3).** This is the **only** HTTP
    listener in the repo (`http.createServer` + `.listen(port, '127.0.0.1', …)` in
    `packages/cli/src/cli.ts:1339,1389`). It binds to `127.0.0.1` and enforces a Host-header

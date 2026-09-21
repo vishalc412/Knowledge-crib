@@ -2076,6 +2076,26 @@ export class MemoryApi {
     if (typeof input.actor !== 'string' || input.actor.trim().length === 0) {
       return { ok: false, error: 'actor is required' };
     }
+    // A `cand:` id has no capture behind it, and before this branch existed it had no retirement
+    // path AT ALL: `dismissPending` searched only the capture outbox, `purgeRecords` accepts only
+    // `mem:` ids, and `gc` is age-based (30 days by default). So a candidate an operator KNEW was
+    // wrong — one contradicted by a later change, say — sat in the pending queue as a lead for a
+    // month. Candidates staged by `memory_observe` are exactly that case, because observe writes a
+    // candidate without a capture.
+    //
+    // Removing one is a far smaller act than `purgeRecords`: a candidate is untrusted by
+    // construction and was never recall-eligible, so nothing downstream ever relied on it. That is
+    // why this needs no `--confirm` echo and no dead-letter entry (there is no capture to
+    // dead-letter) — the non-destructive rule exists to protect TRUSTED, shared memory, which this
+    // is not.
+    if (captureId.startsWith('cand:')) {
+      const present = local
+        .readCollection('candidates')
+        .entries.some((e) => (e as { id?: string }).id === captureId);
+      if (!present) return { ok: true, dismissed: false };
+      local.withLock(() => local.removeEntry('candidates', captureId));
+      return { ok: true, dismissed: true };
+    }
     const entry = pendingCaptures(local).find((e) => e.id === captureId);
     if (!entry) return { ok: true, dismissed: false };
     const reason = `dismissed by ${input.actor.trim()}${input.reason ? `: ${input.reason}` : ''}`;

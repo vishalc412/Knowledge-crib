@@ -44,6 +44,7 @@ import {
   aggregateLaunchDecisions,
   evaluateLaunchDecision,
   loadReleaseEvidence,
+  partitionBlockers,
   uncertifiedClientCells,
 } from './launch-decision.mjs';
 import {
@@ -1659,6 +1660,54 @@ const decideCli = (args) =>
   tampered.reproducibility.git.dirtyDigest = 'sha256:short';
   writeFileSync(tamperedPath, `${JSON.stringify(tampered, null, 2)}\n`);
   assert.throws(() => loadReleaseEvidence(tamperedPath), /dirtyDigest/);
+}
+
+// ── F17: certification and release are separate verdicts ────────────────────────
+//
+// The twenty-one-cell bar is unchanged and still defines "certified". What changed is that it no
+// longer gates the RELEASE, because as frozen it cannot ever go green — a cell needs a signed-in
+// vendor client on a native host of each platform. The line the partition draws is between an
+// ABSENCE and a FALSEHOOD, and these probes pin exactly that line.
+{
+  const { release, certificationOnly } = partitionBlockers([
+    'client-cell-uncertified:claude-code/linux',
+    'client-cell-uncertified:cursor/windows',
+  ]);
+  assert.deepEqual(release, [], 'absent client receipts must not block a release');
+  assert.equal(certificationOnly.length, 2);
+}
+{
+  // A manifest CLAIMING a runtime pass the receipts do not support is a lie, not a gap. It must block
+  // a release even though its reason names a client cell and reads adjacent to the permissible one.
+  const { release } = partitionBlockers(['certification-summary-unsupported:cursor/macos']);
+  assert.deepEqual(
+    release,
+    ['certification-summary-unsupported:cursor/macos'],
+    'an unsupported certification CLAIM must block a release',
+  );
+}
+// Everything that is not a client-cell absence still blocks: gates, model, tree, global receipts,
+// and the acceptance contradiction.
+for (const blocker of [
+  'gate-failed:G2',
+  'retrieval-model-missing',
+  'git-dirty',
+  'global-receipt-missing:fuzz-deep',
+  'acceptance-contradiction',
+  'certification-receipts-not-loaded',
+]) {
+  const { release, certificationOnly } = partitionBlockers([blocker]);
+  assert.deepEqual(release, [blocker], `${blocker} must block a release`);
+  assert.deepEqual(certificationOnly, [], `${blocker} is not a mere certification gap`);
+}
+{
+  // The aggregate exposes both verdicts, and they must never disagree in the direction that matters:
+  // RELEASABLE is only ever reached with an empty releaseBlockers list.
+  const empty = aggregateLaunchDecisions([]);
+  assert.equal(empty.decision, 'NO-GO');
+  assert.equal(empty.release, 'BLOCKED', 'no evidence is not releasable');
+  assert.ok(Array.isArray(empty.releaseBlockers));
+  assert.ok(Array.isArray(empty.uncertifiedCells));
 }
 
 console.log('launch decision tests ok');

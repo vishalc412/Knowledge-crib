@@ -23,7 +23,7 @@ import type { Embedder } from '@knowledge-crib/core';
  */
 import { MemoryEvaluator, effectiveVerdicts, isRecallEligible } from '../evaluator.js';
 import { MemoryFtsIndex } from '../fts-index.js';
-import { type FusionStrategy, VersionedLexicalScorer } from '../fusion.js';
+import { type FusionStrategy, type Reranker, VersionedLexicalScorer } from '../fusion.js';
 import {
   type GatheredRecall,
   type RecallStores,
@@ -155,6 +155,8 @@ function rankerFor(
       ...(scorerCfg.alpha !== undefined ? { alpha: scorerCfg.alpha } : {}),
       ...(scorerCfg.rrfK !== undefined ? { rrfK: scorerCfg.rrfK } : {}),
       ...(scorerCfg.embedTextOf ? { embedTextOf: scorerCfg.embedTextOf } : {}),
+      ...(scorerCfg.reranker ? { reranker: scorerCfg.reranker } : {}),
+      ...(scorerCfg.rerankDepth !== undefined ? { rerankDepth: scorerCfg.rerankDepth } : {}),
     });
   // ONE scorer for every query in this scope. `VersionedLexicalScorer` memoizes its fused ranking
   // per distinct QUERY STRING and embeds the record vectors once per scorer lifetime, so reuse is
@@ -273,6 +275,16 @@ export interface LaunchScorerConfig {
   rrfK?: number;
   /** what the cosine channel embeds per record (see VersionedScorerOptions.embedTextOf) */
   embedTextOf?: (record: MemoryRecord | MemoryRecordVersioned) => string;
+  /**
+   * Second-stage cross-encoder over the top {@link rerankDepth} candidates.
+   *
+   * The gate exists to answer whether a ranker earns its cost, and the reranker is the one component
+   * whose motivating number came from THIS corpus: the bi-encoder retrieves the correct record for
+   * every word-disjoint query yet ranks it top-5 for only 43.8% of them. Until this slot existed the
+   * gate could not measure the fix for the gap it had itself found.
+   */
+  reranker?: Reranker;
+  rerankDepth?: number;
 }
 
 export function runLaunchGate(

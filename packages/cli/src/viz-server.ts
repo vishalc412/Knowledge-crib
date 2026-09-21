@@ -262,6 +262,11 @@ export function readMemoryHome(
       },
     },
     health,
+    // The previous session, which `api.handoff` has always produced and this view used to drop on
+    // the floor. The memory home showed a session id with no indication of what that session was
+    // ABOUT, so the one question an operator opens this page to ask — "where was I?" — had no answer
+    // in the UI even though the projection behind it had one.
+    ...(handoff.lastSession ? { lastSession: handoff.lastSession } : {}),
     // WP3.8 — an unreadable journal must not read as "no previous work existed". The home view
     // reports the marker so the operator sees the read failed, rather than trusting an empty page.
     degraded: handoff.degraded,

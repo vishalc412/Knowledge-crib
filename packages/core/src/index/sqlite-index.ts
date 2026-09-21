@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { DatabaseSync, type StatementSync } from 'node:sqlite';
 import type { Edge, Node, NodeKind, Rel } from '@knowledge-crib/soul-schema';
+import { isDetailNodeKind } from '@knowledge-crib/soul-schema';
 import { cosine, decodeVec, encodeVec } from '../embeddings/char-ngram.js';
 import type { Embedder } from '../embeddings/types.js';
 /**
@@ -9,11 +10,29 @@ import type { Embedder } from '../embeddings/types.js';
  *
  * Built-in `node:sqlite` + FTS5 (BM25 ranking) + materialized adjacency, so
  * `impact`/`neighbors`/`shortestPath` are O(degree) graph walks over indexed
- * `edges(src)` / `edges(dst)`. No vector index ships — `capabilities().vector=false`
- * unconditionally. The INFERRED "semantic" layer is the M7 pure-JS TF-IDF linker
- * (pipeline `runSemanticLink`, gated by `IndexOpts.semantic` / CLI `--semantic`),
- * which emits capped `references` edges — it is not a vector ANN path and stays off
- * the deterministic query hot path.
+ * `edges(src)` / `edges(dst)`.
+ *
+ * Two retrieval paths, and which one is active is a property of the INDEX, not of this class:
+ *
+ *   - **lexical (the default)** — pure FTS5 BM25. Active whenever the index carries no vectors, or
+ *     this process holds no matching embedder. Deterministic, offline, zero model cost.
+ *   - **hybrid (opt-in)** — BM25 ∪ brute-force cosine fused by RRF, then multiplied by the
+ *     deterministic structural prior in `rerank.ts`. Active only when `buildFromSoul` ran with an
+ *     embedder (CLI `crib index --vectors`) AND a store reopening that index is handed an embedder
+ *     whose `id`/`dim` MATCH the ones recorded at build time.
+ *
+ * That last clause is why `vector_meta` exists. `builtEmbedderId`/`builtDim` used to be in-memory
+ * only, so every reopen of a vectorized index (`openIndexOnly`, `openIndexForServe`, and the second
+ * `openIndex` after the atomic build's rename) silently fell back to BM25 with a fully populated
+ * `vectors` table sitting unused — the vector path was unreachable in every shipped code path. The
+ * metadata is now persisted beside the vectors and restored in the constructor, and a mismatch
+ * REFUSES the vector channel rather than embedding a query in one space and comparing it against
+ * another. See {@link SqliteIndexStore.capabilities} for how that refusal is reported.
+ *
+ * The INFERRED "semantic" layer is a different thing again: the M7 pure-JS TF-IDF/char-n-gram linker
+ * (pipeline `runSemanticLink`, gated by `IndexOpts.semantic` / CLI `--semantic`), which emits capped
+ * `references` edges between doc sections and symbols. It is not a vector ANN path, it does not
+ * enable vector search, and it stays off the deterministic query hot path.
  *
  * Using Node's built-in `node:sqlite` removes the native `better-sqlite3` build
  * dependency, so `pnpm install` works on a fresh machine without Xcode / CLT /
@@ -50,11 +69,63 @@ import { expandToken } from './synonyms.js';
 /** Columns we feed into FTS5 for free-text search over symbols + doc sections + bodies. */
 const FTS_COLUMNS = 'name, qualifiedName, signature, heading, file, body';
 
-/** The text embedded per node for the vector retriever (M2.1). Surface fields only — no body. */
-function vectorText(node: Node): string {
-  return [node.name, node.qualifiedName, node.signature, node.heading, node.file]
+/**
+ * How much rehydrated body text joins a node's embedded representation.
+ *
+ * Bounded by the MODEL, not by taste: the shipped tier (`multilingual-e5-large`) truncates at 512
+ * tokens, so text past roughly 1,500 characters is embedded by nobody and paid for by everybody.
+ * The cap is deliberately below that ceiling so the surface fields — which carry the identifier a
+ * lexical query would match — are never the part that gets truncated away.
+ */
+const VECTOR_BODY_CAP = 1200;
+
+/**
+ * The recipe version for {@link vectorText}. Part of the identity recorded in `vector_meta`.
+ *
+ * Changing WHAT is embedded changes the vector space just as surely as changing the model does, and
+ * a mismatch is not degraded ranking but nonsense — a v1 surface-only vector and a v2 surface+body
+ * query vector are not comparable. The model id alone cannot express that, so the recipe is versioned
+ * alongside it and a reopen with a different recipe refuses the vectors exactly as a different model
+ * does. (`packages/memory` versions its own embedded text for the same reason.)
+ */
+const VECTOR_TEXT_VERSION = 2;
+
+/**
+ * The text embedded per node for the vector retriever.
+ *
+ * v1 was surface fields only (name + qualifiedName + signature + heading + file), which capped
+ * retrieval at identifier matching: a query describing what code DOES could only match a symbol
+ * whose NAME already said so. v2 appends the rehydrated span, capped at {@link VECTOR_BODY_CAP}, so
+ * "stop two machines writing the same record" has the body of a locking function to match against
+ * and not just the token `withLock`.
+ *
+ * The source policy is applied BEFORE the text is embedded, for the same reason it is applied before
+ * the FTS body: a `deny` file's contents must not reach a derived artifact, and a redacted secret
+ * must not be recoverable from a vector. Surface fields come FIRST so the cap never truncates them.
+ */
+function vectorText(node: Node, repoRoot?: string, fileCache?: FileLineCache): string {
+  const surface = [node.name, node.qualifiedName, node.signature, node.heading, node.file]
     .filter((s): s is string => typeof s === 'string' && s.length > 0)
     .join(' ');
+  if (repoRoot === undefined || fileCache === undefined) return surface;
+  const body = rehydrateForVector(node, repoRoot, fileCache);
+  return body.length > 0 ? `${surface}\n${body}` : surface;
+}
+
+/** The capped, policy-filtered span text for {@link vectorText}. Empty when there is nothing safe to read. */
+function rehydrateForVector(node: Node, repoRoot: string, fileCache: FileLineCache): string {
+  if (!node.file || !node.span) return '';
+  const policy = sourcePolicy(node);
+  if (policy === 'deny') return '';
+  const lines = readCachedLines(repoRoot, node.file, fileCache);
+  if (!lines || lines.length === 0) return '';
+  const start = Math.max(node.span.start - 1, 0);
+  const end = Math.min(node.span.end, lines.length);
+  if (end <= start) return '';
+  let text = lines.slice(start, end).join('\n');
+  if (policy === 'redact-properties') text = redactPropertyText(text);
+  else if (policy === 'redact-mule-secrets') text = redactMuleSecretAttributes(text);
+  return text.length > VECTOR_BODY_CAP ? text.slice(0, VECTOR_BODY_CAP) : text;
 }
 
 /** Reciprocal-rank fusion (RRF) of two retriever rankings. k=60 is the standard constant. */
@@ -98,9 +169,32 @@ export class SqliteIndexStore implements IndexStore {
   private readonly db: DatabaseSync;
   /** When set, `buildFromSoul` embeds every node and `query` fuses BM25 ∪ vector via RRF. */
   private readonly embedder: Embedder | null;
-  /** The embedder id used for the last build, or null if no vectors were built. */
+  /**
+   * The embedder id whose vectors this store may query, or null when the vector channel is off.
+   *
+   * Set by {@link buildVectors} on a build, and RESTORED from `vector_meta` on a reopen — but only
+   * when the supplied embedder matches what built them. Null therefore means exactly one thing to
+   * `query`: do not touch the `vectors` table.
+   */
   private builtEmbedderId: string | null = null;
   private builtDim = 0;
+  /**
+   * Why the vector channel is off despite the index carrying vectors — `null` when there is nothing
+   * to explain (no vectors were ever built, or the channel is active).
+   *
+   * This exists because the two ways to lose vector search are operationally different and a single
+   * `vector: false` cannot tell them apart: a machine that never ran `crib embed setup` needs to
+   * install a model, whereas an index built by a DIFFERENT model needs a re-index. Reported through
+   * {@link capabilities} so `crib status` / `crib doctor` can state the remedy instead of implying
+   * the capability was never built.
+   */
+  private vectorUnavailable: string | null = null;
+  /**
+   * The index on disk carries a `vectors` table with rows — independent of whether THIS store may
+   * query them. `applyDelta` needs this to distinguish "no vectors to maintain" from "vectors exist
+   * that I cannot recompute", which have opposite correct behaviours.
+   */
+  private indexHasVectors = false;
   /**
    * Prepared-statement cache keyed by SQL text. `node:sqlite` recompiles nothing for us, so
    * re-preparing the same INSERT once per row costs a full parse+codegen each time. Cleared by
@@ -122,6 +216,76 @@ export class SqliteIndexStore implements IndexStore {
     this.db.exec('PRAGMA foreign_keys = OFF');
     this.embedder = opts.embedder ?? null;
     this.createSchema();
+    this.restoreVectorMeta();
+  }
+
+  /**
+   * Adopt the vector channel of an ALREADY-BUILT index, or state why it cannot be adopted.
+   *
+   * Runs in the constructor, so every reopen path (`openIndexOnly`, `openIndexForServe`, the
+   * post-rename `openIndex`) gets the same decision without each caller re-deriving it. Four cases,
+   * and only the first turns the channel on:
+   *
+   *   1. vectors present + embedder supplied + `id`/`dim` both match → adopt.
+   *   2. vectors present + no embedder → off, `reason: no embedder`. Nothing is broken; this process
+   *      simply cannot embed a query.
+   *   3. vectors present + a DIFFERENT embedder → off, `reason: built by <id>`. Querying would embed
+   *      into one space and compare against another, which is not degraded ranking but nonsense.
+   *      Refusing is the only honest option, and the remedy (`crib index --vectors`) is nameable.
+   *   4. no vectors → off, nothing to explain.
+   *
+   * Never throws: a missing or unreadable `vector_meta` is case 4. An index predating this table is
+   * exactly that case, so an old index opens as lexical rather than failing.
+   */
+  private restoreVectorMeta(): void {
+    let id: string | null = null;
+    let dim = 0;
+    // Absent in a v1 index: those recorded no recipe, and a missing key therefore MEANS version 1
+    // rather than "unknown". Defaulting it to the current version would adopt v1 surface-only
+    // vectors into a v2 space, which is the silent-nonsense case this field exists to prevent.
+    let textVersion = 1;
+    try {
+      const rows = this.db.prepare('SELECT k, v FROM vector_meta').all() as Array<{
+        k: string;
+        v: string;
+      }>;
+      for (const r of rows) {
+        if (r.k === 'embedderId') id = r.v;
+        else if (r.k === 'dim') dim = Number.parseInt(r.v, 10);
+        else if (r.k === 'textVersion') textVersion = Number.parseInt(r.v, 10);
+      }
+    } catch {
+      return; // no table (pre-existing index) — lexical, and not an error.
+    }
+    if (id === null || !Number.isFinite(dim) || dim <= 0) return;
+    this.indexHasVectors = true;
+    if (textVersion !== VECTOR_TEXT_VERSION) {
+      this.vectorUnavailable = `index vectors were built from text recipe v${textVersion} but this build embeds v${VECTOR_TEXT_VERSION} — re-run \`crib index --vectors\``;
+      return;
+    }
+    if (!this.embedder) {
+      // Deliberately states the FACT and prescribes nothing. This store cannot tell a machine with
+      // no installed tier from a caller that simply chose not to load one — `crib status` and the
+      // structural verbs skip the multi-GB model load on purpose — and a note reading "run
+      // `crib embed setup`" on a machine where setup already succeeded is a wrong instruction. The
+      // CLI layer, which knows the tier state, is where a remedy belongs.
+      this.vectorUnavailable = `index carries ${id} vectors; this reader loaded no embedder, so code search is lexical here`;
+      return;
+    }
+    if (this.embedder.id !== id || this.embedder.dim() !== dim) {
+      this.vectorUnavailable = `index vectors were built by ${id} (dim ${dim}) but the active embedder is ${this.embedder.id} (dim ${this.embedder.dim()}) — re-run \`crib index --vectors\``;
+      return;
+    }
+    this.builtEmbedderId = id;
+    this.builtDim = dim;
+  }
+
+  /** Record which embedder built the vectors, so a reopen can decide whether it may query them. */
+  private writeVectorMeta(embedder: Embedder): void {
+    const upsert = this.db.prepare('INSERT OR REPLACE INTO vector_meta (k, v) VALUES (?, ?)');
+    upsert.run('embedderId', embedder.id);
+    upsert.run('dim', String(embedder.dim()));
+    upsert.run('textVersion', String(VECTOR_TEXT_VERSION));
   }
 
   buildFromSoul(soul: SoulStore, repoRoot: string): void {
@@ -132,7 +296,7 @@ export class SqliteIndexStore implements IndexStore {
       for (const edge of soul.iterateEdges()) this.insertEdge(edge);
     });
     insertMany();
-    if (this.embedder) this.buildVectors(soul);
+    if (this.embedder) this.buildVectors(soul, repoRoot);
   }
 
   applyDelta(changed: IndexDelta, repoRoot: string): void {
@@ -147,14 +311,34 @@ export class SqliteIndexStore implements IndexStore {
       }
       for (const node of changed.nodes) this.insertNode(node, repoRoot, fileCache, false);
       for (const edge of changed.edges) this.insertEdge(edge);
-      if (this.embedder) {
+      // Keep vectors current ONLY for an index whose vector channel is already live
+      // (`builtEmbedderId !== null` — i.e. vectors exist AND this embedder is the one that built
+      // them). Gating on `this.embedder` alone would vectorize just the changed nodes of a LEXICAL
+      // index, producing a `vectors` table covering a few hundred of N nodes; `vectorQuery` would
+      // then rank that arbitrary subset as if it were the corpus. A partially-vectorized index is
+      // worse than an unvectorized one, because it looks like it works.
+      if (this.builtEmbedderId !== null && this.embedder) {
         const upsertVec = this.db.prepare(
           'INSERT OR REPLACE INTO vectors (id, vec, dim) VALUES (?, ?, ?)',
         );
+        // Same two rules as the full build, for the same reasons: detail kinds are not embedded
+        // (discovery never ranks them), and `repoRoot`/`fileCache` are passed so a delta writes a
+        // v2 surface+body vector. Embedding v1 text here would poison a v2 index one delta at a time.
         for (const node of changed.nodes) {
-          const v = this.embedder.embed(vectorText(node));
+          if (isDetailNodeKind(node.kind)) continue;
+          const v = this.embedder.embed(vectorText(node, repoRoot, fileCache));
           upsertVec.run(node.id, Buffer.from(encodeVec(v)), v.length);
         }
+      } else if (this.indexHasVectors) {
+        // The index HAS vectors but this store cannot recompute them (no embedder, or a different
+        // one). The changed nodes' existing vectors now describe the PREVIOUS version of each
+        // symbol, so leaving them would let a later query rank a renamed or re-signatured symbol by
+        // text it no longer has. Delete them instead: absent from the vector channel is a recall
+        // loss the next `crib index --vectors` repairs, whereas a stale vector is a wrong answer
+        // that looks right. The BM25 channel is updated above either way, so these nodes stay
+        // findable.
+        const dropVec = this.stmt('DELETE FROM vectors WHERE id = ?');
+        for (const node of changed.nodes) dropVec.run(node.id);
       }
     });
     apply();
@@ -295,21 +479,34 @@ export class SqliteIndexStore implements IndexStore {
    * deterministic, and aligned with the conceptual-query mechanism (paraphrases match the *name*
    * surface). The body is already in FTS5 for exact-content matches.
    */
-  private buildVectors(soul: SoulStore): void {
+  private buildVectors(soul: SoulStore, repoRoot: string): void {
     if (!this.embedder) return;
     const e = this.embedder;
-    this.builtDim = e.dim();
-    this.builtEmbedderId = e.id;
     const upsert = this.db.prepare(
       'INSERT OR REPLACE INTO vectors (id, vec, dim) VALUES (?, ?, ?)',
     );
+    // One line cache for the whole pass, so each source file is read ONCE rather than once per node
+    // in it — a symbol-dense file would otherwise be re-read hundreds of times.
+    const fileCache: FileLineCache = new Map();
+    // The vectors and the metadata that authorizes reading them are written in ONE transaction, so
+    // an interrupted build can never leave `vector_meta` claiming a channel the `vectors` table does
+    // not fully back. Setting the in-memory fields afterwards keeps the same rule for this process.
     const insertMany = this.transaction(() => {
       for (const node of soul.iterate()) {
-        const v = e.embed(vectorText(node));
+        // Detail kinds are never ranked by discovery (soul-schema DETAIL_NODE_KINDS), so embedding
+        // them buys nothing and costs most of the build: on the crib's own index they are 38,286 of
+        // 48,459 nodes — 79%. Skipping them is what makes body text affordable.
+        if (isDetailNodeKind(node.kind)) continue;
+        const v = e.embed(vectorText(node, repoRoot, fileCache));
         upsert.run(node.id, Buffer.from(encodeVec(v)), v.length);
       }
+      this.writeVectorMeta(e);
     });
     insertMany();
+    this.builtDim = e.dim();
+    this.builtEmbedderId = e.id;
+    this.indexHasVectors = true;
+    this.vectorUnavailable = null;
   }
 
   impact(id: string, dir: Dir, depth = Number.POSITIVE_INFINITY): ImpactResult {
@@ -378,7 +575,11 @@ export class SqliteIndexStore implements IndexStore {
   }
 
   capabilities(): IndexCapabilities {
-    return { cypher: false, vector: this.builtEmbedderId !== null };
+    return {
+      cypher: false,
+      vector: this.builtEmbedderId !== null,
+      ...(this.vectorUnavailable !== null ? { vectorNote: this.vectorUnavailable } : {}),
+    };
   }
 
   close(): void {
@@ -538,6 +739,10 @@ export class SqliteIndexStore implements IndexStore {
         vec BLOB NOT NULL,
         dim INTEGER NOT NULL
       );
+      -- Which embedder produced the vectors table, so a REOPEN can decide whether it is allowed to
+      -- query it. Dropped alongside vectors in reset(): a rebuild without an embedder must not leave
+      -- metadata authorizing a table that no longer has rows.
+      CREATE TABLE IF NOT EXISTS vector_meta (k TEXT PRIMARY KEY, v TEXT NOT NULL);
       CREATE TABLE IF NOT EXISTS fts_map (
         id TEXT PRIMARY KEY,
         rid INTEGER NOT NULL
@@ -623,6 +828,7 @@ export class SqliteIndexStore implements IndexStore {
     this.db.exec(`
       DROP TABLE IF EXISTS nodes_fts;
       DROP TABLE IF EXISTS vectors;
+      DROP TABLE IF EXISTS vector_meta;
       DROP TABLE IF EXISTS edges;
       DROP TABLE IF EXISTS nodes;
       DROP TABLE IF EXISTS fts_map;
@@ -631,6 +837,10 @@ export class SqliteIndexStore implements IndexStore {
     this.stmtCache.clear();
     this.builtEmbedderId = null;
     this.builtDim = 0;
+    this.indexHasVectors = false;
+    // A rebuild re-decides the vector channel from scratch: buildVectors either turns it on or the
+    // index stays lexical. Carrying a stale refusal reason across a rebuild would misreport why.
+    this.vectorUnavailable = null;
     this.createSchema();
   }
 }

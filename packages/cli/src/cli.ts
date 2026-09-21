@@ -62,6 +62,7 @@ import {
   fitTokenBudget,
   serveHttp,
   serveStdio,
+  serveUnavailableStdio,
 } from '@knowledge-crib/mcp';
 import type {
   EnrichLayer,
@@ -307,9 +308,12 @@ import {
   listMcp,
   removeMcp,
 } from './mcp-install.js';
+import { renderMemoryMarkdown } from './memory-export.js';
 import { RefreshCoordinator, coldReaderFreshness } from './refresh-coordinator.js';
 import { registerProject, registryDir } from './registry.js';
+import { cmdRerank } from './rerank-setup.js';
 import {
+  EXIT,
   type ResolvedRoot,
   buildIndex,
   isIndexedRoot,
@@ -319,6 +323,7 @@ import {
   resolveProjectRoot,
   startupHeadMismatch,
 } from './runtime.js';
+import { cmdScip } from './scip-cmd.js';
 import { installSkill, listBundledSkills } from './skill-install.js';
 import {
   decideStopNudge,
@@ -354,8 +359,6 @@ import {
   validateMutationOrigin,
 } from './viz-server.js';
 import { WatchMode } from './watch.js';
-
-const EXIT = { OK: 0, ERROR: 1, BAD_ARGS: 2, NOT_INDEXED: 3, LOCKED: 4 } as const;
 
 class CliUsageError extends Error {}
 
@@ -654,6 +657,26 @@ function resolveRoot(args: string[], ctx?: CmdCtx): ResolvedRoot {
   return { ...resolved, cribDir: resolveCribDir(args, resolved) };
 }
 
+/**
+ * Resolve the project root for a command whose POSITIONALS ARE NOT PATHS — a question (`ask`), a
+ * symbol id (`context`, `dossier`, `impact`, `path`, `neighbors`, `explain`), or a procedure/package
+ * name (`rules`, `reconstruct`). The root then comes only from `--cwd` / env / the upward walk,
+ * exactly as {@link cmdQuery} already did for search text.
+ *
+ * Feeding those positionals to {@link resolveRoot} made every one of those commands resolve a root
+ * named after its own argument. Three consequences, in ascending severity: a warning printed on
+ * essentially every invocation of the most-used verbs (which trains people to ignore warnings); a
+ * remedy line instructing the user to `crib index <symbol-id>`, which is wrong advice; and — because
+ * `resolveProjectRoot` HARD-REFUSES a candidate directory that has a `.crib` without a `crib.json` —
+ * a path-shaped argument that happens to name such a directory would make the command refuse
+ * outright rather than answer. The walk-up recovered the right project in the common case, which is
+ * exactly why this survived: it looked cosmetic.
+ */
+function resolveRootNonPath(args: string[], ctx?: CmdCtx): ResolvedRoot {
+  const resolved = resolveProjectRoot({ explicitRoot: ctx?.cwdOverride });
+  return { ...resolved, cribDir: resolveCribDir(args, resolved) };
+}
+
 async function main(argvRaw: string[]): Promise<number> {
   const { argv, cwdOverride } = extractCwdFlag(argvRaw);
   const ctx: CmdCtx = { cwdOverride };
@@ -722,6 +745,12 @@ async function main(argvRaw: string[]): Promise<number> {
       return cmdSession(rest, ctx);
     case 'embed':
       return cmdEmbed(rest, ctx);
+    case 'rerank':
+      return cmdRerank(rest);
+    // F15: the positional here is an index FILE, so the root comes from --cwd/the cwd alone and is
+    // never inferred from the argument.
+    case 'scip':
+      return cmdScip(rest, resolveRoot([], ctx));
     case 'freshness':
       return cmdFreshness(rest, ctx);
     case 'audit-llm':
@@ -1132,6 +1161,13 @@ async function cmdIndex(args: string[], ctx?: CmdCtx): Promise<number> {
   const cribDir = prepared.cribDir;
   const projectKey = resolved.projectKey;
   const semantic = args.includes('--semantic');
+  // `--vectors` opts INTO the code-graph vector channel: `buildFromSoul` embeds every node and
+  // `query` fuses BM25 with cosine before the deterministic structural rerank. OFF by default, and
+  // that default is a measurement decision, not caution: no labelled code-retrieval corpus or
+  // pre-registered gate exists yet, so making hybrid the default would change every user's ranking
+  // on an unmeasured promise. Resolution happens BEFORE the lock and before parsing, so a machine
+  // with no embed tier is told immediately instead of after a full index.
+  const wantVectors = args.includes('--vectors');
   const json = args.includes('--json');
   // G5.3 — `--multimodal` opts INTO the media phase (default OFF: the default index path never
   // touches media or spawns a subprocess). With real (non-fake) adapters the default backend is
@@ -1147,6 +1183,17 @@ async function cmdIndex(args: string[], ctx?: CmdCtx): Promise<number> {
   const ignores = parseExcludes(args);
   const scope = resolvePackageScope(repoRoot, args);
   if (scope.status !== EXIT.OK) return scope.status;
+  let vectorEmbedder: Embedder | undefined;
+  if (wantVectors) {
+    const resolvedEmbedder = await resolveCodeVectorEmbedder();
+    if (!resolvedEmbedder.ok) {
+      process.stderr.write(
+        `--vectors requires an installed on-device embed tier, but ${resolvedEmbedder.reason}. Run \`crib embed setup\` first, or drop --vectors for a lexical index. Refusing rather than building char-n-gram vectors, which measured WORSE than lexical-only (R1).\n`,
+      );
+      return EXIT.BAD_ARGS;
+    }
+    vectorEmbedder = resolvedEmbedder.embedder;
+  }
   return runLocked(cribDir, async () => {
     // Full rebuild: fresh manifest stamped with the current SCHEMA_VERSION (never inherit a stale
     // one), repo.id preserved across rebuilds (stable committed soul + ~/.crib/registry mapping),
@@ -1161,7 +1208,7 @@ async function cmdIndex(args: string[], ctx?: CmdCtx): Promise<number> {
       packageRoots: scope.packageRoots,
       ...(multimodal ? { multimodal } : {}),
     });
-    const index = buildIndex({ repoRoot, cribDir, soul });
+    const index = buildIndex({ repoRoot, cribDir, soul }, vectorEmbedder);
     registerIndexed(projectKey, cribDir, soul, source);
     const stats = soul.getManifest().stats;
     const scopeSuffix = scope.packageRoots ? ` [scoped: ${scope.indexedPackages.join(', ')}]` : '';
@@ -1266,7 +1313,7 @@ async function cmdQuery(args: string[], ctx?: CmdCtx): Promise<number> {
   const q = positionalsOf(args).join(' ');
   if (!q) {
     process.stderr.write(
-      'usage: crib query <text> [--with-source] [--with-rules] [--with-framework] [--extracted-only] [--with-llm] [--limit N]\n',
+      'usage: crib query <text> [--with-source] [--with-rules] [--with-framework] [--extracted-only] [--with-llm] [--include-detail] [--limit N]\n',
     );
     return EXIT.BAD_ARGS;
   }
@@ -1288,8 +1335,11 @@ async function cmdQuery(args: string[], ctx?: CmdCtx): Promise<number> {
     return EXIT.NOT_INDEXED;
   }
   const rt = openSoul(resolved);
-  const index = openIndexForRead(rt);
-  if (!index) return EXIT.NOT_INDEXED;
+  const lexical = openIndexForRead(rt);
+  if (!lexical) return EXIT.NOT_INDEXED;
+  // `query` is a TEXT retrieval verb, so it is one of the two commands that may pay for the vector
+  // channel when the index has one.
+  const index = await upgradeIndexToVectors(rt, lexical);
   const verbs = new Verbs({ soul: rt.soul, index, repoRoot: resolved.repoRoot });
   process.stdout.write(
     `${JSON.stringify(
@@ -1300,6 +1350,7 @@ async function cmdQuery(args: string[], ctx?: CmdCtx): Promise<number> {
         ...(withFramework ? { withFramework: true } : {}),
         ...(extractedOnly ? { extractedOnly: true } : {}),
         ...(withLlm ? { withLlm: true } : {}),
+        ...(args.includes('--include-detail') ? { includeDetail: true } : {}),
         ...(Number.isFinite(limit) && limit! > 0 ? { limit } : {}),
       }),
       null,
@@ -1313,15 +1364,83 @@ async function cmdQuery(args: string[], ctx?: CmdCtx): Promise<number> {
 /**
  * Open the derived index for read commands. Missing/stale derived indexes are repaired only by an
  * explicit `crib index`/`crib reindex`, which keeps concurrent read commands out of SQLite rebuilds.
+ *
+ * `embedder` is supplied ONLY by the text-retrieval commands (see {@link upgradeIndexToVectors}).
+ * Structural commands (`gaps`, `impact`, `path`, `neighbors`, `context`, `dossier`, `rules`) look up
+ * nodes by id or walk edges, so a vector channel could not change their answer — and the installed
+ * tier is a ~2 GB on-device model. Loading it for `crib gaps` would be pure latency, so it is not.
  */
-function openIndexForRead(rt: ReturnType<typeof openSoul>): IndexStore | null {
+function openIndexForRead(
+  rt: ReturnType<typeof openSoul>,
+  embedder?: Embedder | null,
+): IndexStore | null {
   try {
-    return openIndexOnly(rt);
+    return openIndexOnly(rt, embedder);
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     process.stderr.write(`${msg}\n`);
     return null;
   }
+}
+
+/**
+ * Resolve the embedder for the CODE-graph vector channel, or say why there is none.
+ *
+ * REFUSES rather than substituting the char-n-gram fallback. R1 measured fusion LOSING to pure
+ * lexical on that fallback, so quietly building char-n-gram vectors under a flag called `--vectors`
+ * would ship a measured regression while looking like a feature. A machine without the installed
+ * tier gets a named remedy and keeps the lexical index, which is strictly better and honest.
+ */
+async function resolveCodeVectorEmbedder(): Promise<
+  { ok: true; embedder: Embedder } | { ok: false; reason: string }
+> {
+  const embedder = await ensureInstalledEmbedder();
+  if (embedder) return { ok: true, embedder };
+  return {
+    ok: false,
+    reason:
+      installedEmbedderProblem !== undefined
+        ? `the installed embed tier failed to load: ${installedEmbedderProblem}`
+        : 'no on-device embed tier is installed',
+  };
+}
+
+/**
+ * Upgrade an already-open LEXICAL index to the vector channel, but only when that index actually
+ * carries vectors.
+ *
+ * The order matters and is the whole point. Opening lexically first costs one cheap sqlite open and
+ * answers "does this index have vectors at all?" from `vectorNote`; only then is the on-device model
+ * loaded. The inverse order (resolve the model, then open) would pay a multi-second, multi-GB model
+ * load on every `crib query` against every lexical index — which is most of them, since `--vectors`
+ * is opt-in.
+ *
+ * Returns the store to use. On a vectorized index with no loadable tier it returns the ORIGINAL
+ * lexical store and warns: degraded retrieval is reported, never hidden.
+ */
+async function upgradeIndexToVectors(
+  rt: ReturnType<typeof openSoul>,
+  index: IndexStore,
+): Promise<IndexStore> {
+  const note = index.capabilities().vectorNote;
+  // Absent note ⇒ either the channel is already live or the index has no vectors: nothing to do.
+  if (note === undefined) return index;
+  const resolved = await resolveCodeVectorEmbedder();
+  if (!resolved.ok) {
+    process.stderr.write(
+      `warning: this index carries code vectors but they cannot be queried — ${resolved.reason}. Serving lexical-only code search. Run \`crib embed setup\` then \`crib index --vectors\`.\n`,
+    );
+    return index;
+  }
+  const upgraded = openIndexForRead(rt, resolved.embedder);
+  if (!upgraded) return index;
+  index.close();
+  const caps = upgraded.capabilities();
+  if (!caps.vector) {
+    // The tier loaded but is not the one that built the vectors — `vectorNote` names both ids.
+    process.stderr.write(`warning: ${caps.vectorNote ?? 'code vectors unavailable'}\n`);
+  }
+  return upgraded;
 }
 
 /**
@@ -1398,8 +1517,13 @@ async function openServeIndex(
 function openVerbs(
   args: string[],
   ctx?: CmdCtx,
+  opts: { positionalIsPath?: boolean } = {},
 ): { verbs: Verbs; index: IndexStore; soul: ReturnType<typeof openSoul>['soul'] } | null {
-  const resolved = resolveRoot(args, ctx);
+  // Default OFF: of the fourteen commands on this funnel, thirteen take an id, a name or a question
+  // as their first positional and only `gaps` takes a path. The safe reading is therefore the
+  // default, and the one exception opts in — the inverse default is what produced the bug in
+  // `resolveRootNonPath`'s docstring.
+  const resolved = opts.positionalIsPath ? resolveRoot(args, ctx) : resolveRootNonPath(args, ctx);
   if (!isIndexedRoot(resolved)) {
     process.stderr.write('not indexed — run `crib index` first\n');
     return null;
@@ -1419,9 +1543,40 @@ function openVerbs(
   return { verbs, index, soul: rt.soul };
 }
 
+/**
+ * {@link openVerbs} for the TEXT-retrieval commands — identical wiring plus the vector-channel
+ * upgrade. Kept separate rather than folded into `openVerbs` so that the structural commands (which
+ * share that funnel) can never accidentally trigger a multi-GB model load; see
+ * {@link openIndexForRead}.
+ */
+async function openVerbsForSearch(
+  args: string[],
+  ctx?: CmdCtx,
+): Promise<{ verbs: Verbs; index: IndexStore; soul: ReturnType<typeof openSoul>['soul'] } | null> {
+  // The question is the positional here, so the root must come from --cwd / env / the walk only.
+  const resolved = resolveRootNonPath(args, ctx);
+  if (!isIndexedRoot(resolved)) {
+    process.stderr.write('not indexed — run `crib index` first\n');
+    return null;
+  }
+  const rt = openSoul(resolved);
+  const lexical = openIndexForRead(rt);
+  if (!lexical) return null;
+  const index = await upgradeIndexToVectors(rt, lexical);
+  const verbs = new Verbs({
+    soul: rt.soul,
+    index,
+    repoRoot: resolved.repoRoot,
+    vcs: new CliVcsAdapter(),
+    pdg: pipelinePdg,
+  });
+  return { verbs, index, soul: rt.soul };
+}
+
 /** `crib gaps` — analysis readiness, missing bodies (spec-only callables), unresolved call sites. */
 async function cmdGaps(args: string[], ctx?: CmdCtx): Promise<number> {
-  const opened = openVerbs(args, ctx);
+  // `crib gaps [path]` — the one command on this funnel whose positional really is a path.
+  const opened = openVerbs(args, ctx, { positionalIsPath: true });
   if (!opened) return EXIT.NOT_INDEXED;
   const { verbs, index } = opened;
   process.stdout.write(
@@ -1506,11 +1661,12 @@ async function cmdAsk(args: string[], ctx?: CmdCtx): Promise<number> {
   const q = positionalsOf(args).join(' ').trim();
   if (!q) {
     process.stderr.write(
-      'usage: crib ask "<question>" [--format markdown] [--limit N] [--with-source] [--with-rules] [--with-framework] [--extracted-only]\n',
+      'usage: crib ask "<question>" [--format markdown] [--limit N] [--with-source] [--with-rules] [--with-framework] [--extracted-only] [--include-detail]\n',
     );
     return EXIT.BAD_ARGS;
   }
-  const opened = openVerbs(args, ctx);
+  // `ask` is the other TEXT retrieval verb, so it takes the vector-aware funnel.
+  const opened = await openVerbsForSearch(args, ctx);
   if (!opened) return EXIT.NOT_INDEXED;
   const { verbs, index } = opened;
 
@@ -1527,6 +1683,7 @@ async function cmdAsk(args: string[], ctx?: CmdCtx): Promise<number> {
     ...(args.includes('--with-rules') ? { withRules: true } : {}),
     ...(args.includes('--with-framework') ? { withFramework: true } : {}),
     ...(args.includes('--extracted-only') ? { extractedOnly: true } : {}),
+    ...(args.includes('--include-detail') ? { includeDetail: true } : {}),
   });
 
   if (format === 'markdown') {
@@ -2004,8 +2161,20 @@ async function cmdOwnership(args: string[], ctx?: CmdCtx): Promise<number> {
 async function cmdServe(args: string[], ctx?: CmdCtx): Promise<number> {
   const resolved = resolveRoot(args, ctx);
   if (!isIndexedRoot(resolved)) {
-    process.stderr.write('not indexed — run `crib index` first\n');
-    return EXIT.NOT_INDEXED;
+    // Do NOT exit here. Exiting before the transport exists is delivered to the IDE as
+    // `MCP error -32000: Connection closed`, which names neither this cause nor its fix — and this
+    // is a ROUTINE state, not a rare one: `.gitignore` keeps `.crib/memory/` but not `crib.json`,
+    // so every fresh clone and every new git worktree lands here. Serve the refusal instead, so the
+    // handshake completes and the first tool call carries the diagnosis into the client. Still no
+    // graph is opened, so the wrong-project guard's decision is unchanged.
+    const reason = `${resolved.repoRoot} is not indexed (no .crib/crib.json), so there is no graph to serve`;
+    const remedy = `Run \`crib index ${resolved.repoRoot}\` and restart this MCP server.`;
+    process.stderr.write(`${reason} — ${remedy}\n`);
+    // stdio only: the HTTP daemon has a real status code to answer with, and `crib serve --http`
+    // callers are scripts that should see a non-zero exit rather than a server that refuses forever.
+    if (args.includes('--http')) return EXIT.NOT_INDEXED;
+    await serveUnavailableStdio(reason, remedy);
+    return EXIT.OK;
   }
   // `--watch` observes a live work tree for edits; an archive input has nothing to watch.
   if (resolved.sourceArchive !== undefined && args.includes('--watch')) {
@@ -2032,8 +2201,12 @@ async function cmdServe(args: string[], ctx?: CmdCtx): Promise<number> {
   // dies. Stale-but-present → serve it with a warning (openIndexForServe). Missing → self-heal by
   // rebuilding from the committed soul under the writer lock (so two concurrent serves don't race
   // the rebuild); re-check inside the lock in case another serve just rebuilt it.
-  const index = await openServeIndex(resolved, rt);
-  if (!index) return EXIT.NOT_INDEXED;
+  const servedIndex = await openServeIndex(resolved, rt);
+  if (!servedIndex) return EXIT.NOT_INDEXED;
+  // A long-lived server decides its retrieval channel ONCE, at startup, for the same reason it
+  // resolves the memory embed tier once below: a per-request decision would make two identical
+  // queries rankable differently. On a lexical index this is a no-op and costs no model load.
+  const index = await upgradeIndexToVectors(rt, servedIndex);
   const memory = createMemoryDeps(rt.soul, resolved.repoRoot, resolved.cribDir);
   // W6/WP4 — `crib serve --watch` serves through the refresh coordinator: every trigger (startup,
   // file events, fallback scans, clean transitions, external `crib update`) runs one serialized
@@ -2284,12 +2457,36 @@ async function cmdUpdate(args: string[], ctx?: CmdCtx): Promise<number> {
     }
     // Apply the delta to the existing derived index; if none exists yet, build it fresh from the
     // (already-committed) updated soul — a delta applied to an empty index would be meaningless.
+    // An incremental update must keep the vector channel COMPLETE, not just the BM25 one, and it
+    // must do so on BOTH branches below — a delta-apply and the fallback full rebuild. So the
+    // embedder is resolved ONCE up front, from a cheap throwaway open whose `vectorNote` says
+    // whether this index carries vectors at all. The on-device model is therefore loaded for
+    // `crib update` only on repositories that opted into `--vectors`, and never on the common
+    // lexical one. Without it `applyDelta` deletes the changed nodes' vectors rather than leaving
+    // them describing the previous revision of each symbol — correct, but a silent recall loss,
+    // which is why a failed upgrade warns instead of proceeding quietly.
+    let vectorEmbedder: Embedder | undefined;
+    try {
+      const probe = openIndexOnly(rt);
+      const caps = probe.capabilities();
+      probe.close();
+      if (caps.vector || caps.vectorNote !== undefined) {
+        const resolvedEmbedder = await resolveCodeVectorEmbedder();
+        if (resolvedEmbedder.ok) vectorEmbedder = resolvedEmbedder.embedder;
+        else
+          process.stderr.write(
+            `warning: this index carries code vectors but ${resolvedEmbedder.reason} — updated symbols will drop out of vector search until \`crib index --vectors\` is re-run.\n`,
+          );
+      }
+    } catch {
+      // No index yet: the rebuild below creates a lexical one, which is the pre-existing behaviour.
+    }
     let index: IndexStore;
     try {
-      index = openIndexOnly(rt);
+      index = openIndexOnly(rt, vectorEmbedder);
       index.applyDelta(result.delta, resolved.repoRoot);
     } catch {
-      index = buildIndex(rt); // full buildFromSoul from the just-updated soul
+      index = buildIndex(rt, vectorEmbedder); // full buildFromSoul from the just-updated soul
     }
     index.close();
     registerIndexed(resolved.projectKey, resolved.cribDir, rt.soul);
@@ -2321,12 +2518,30 @@ async function cmdReindex(args: string[], ctx?: CmdCtx): Promise<number> {
   const cribDir = prepared.cribDir;
   const projectKey = resolved.projectKey;
   const semantic = args.includes('--semantic');
+  // `--vectors` opts INTO the code-graph vector channel: `buildFromSoul` embeds every node and
+  // `query` fuses BM25 with cosine before the deterministic structural rerank. OFF by default, and
+  // that default is a measurement decision, not caution: no labelled code-retrieval corpus or
+  // pre-registered gate exists yet, so making hybrid the default would change every user's ranking
+  // on an unmeasured promise. Resolution happens BEFORE the lock and before parsing, so a machine
+  // with no embed tier is told immediately instead of after a full index.
+  const wantVectors = args.includes('--vectors');
   // G5.3 — same opt-in multimodal flags as `crib index` (reindex is a full rebuild too).
   const multimodal = parseMultimodalOpts(args);
   if (multimodal === null) return EXIT.BAD_ARGS;
   const ignores = parseExcludes(args);
   const scope = resolvePackageScope(repoRoot, args);
   if (scope.status !== EXIT.OK) return scope.status;
+  let vectorEmbedder: Embedder | undefined;
+  if (wantVectors) {
+    const resolvedEmbedder = await resolveCodeVectorEmbedder();
+    if (!resolvedEmbedder.ok) {
+      process.stderr.write(
+        `--vectors requires an installed on-device embed tier, but ${resolvedEmbedder.reason}. Run \`crib embed setup\` first, or drop --vectors for a lexical index. Refusing rather than building char-n-gram vectors, which measured WORSE than lexical-only (R1).\n`,
+      );
+      return EXIT.BAD_ARGS;
+    }
+    vectorEmbedder = resolvedEmbedder.embedder;
+  }
   return runLocked(cribDir, async () => {
     const soul = freshSoulForRebuild(cribDir);
     stampPackageMeta(soul, scope);
@@ -2337,7 +2552,7 @@ async function cmdReindex(args: string[], ctx?: CmdCtx): Promise<number> {
       packageRoots: scope.packageRoots,
       ...(multimodal ? { multimodal } : {}),
     });
-    const index = buildIndex({ repoRoot, cribDir, soul });
+    const index = buildIndex({ repoRoot, cribDir, soul }, vectorEmbedder);
     index.close();
     registerIndexed(projectKey, cribDir, soul, source);
     const stats = soul.getManifest().stats;
@@ -6337,6 +6552,10 @@ async function cmdMemory(args: string[], ctx?: CmdCtx): Promise<number> {
       return cmdMemoryActivate(rest, ctx);
     case 'remember':
       return cmdMemoryRemember(rest, ctx);
+    case 'observe':
+      return cmdMemoryObserve(rest, ctx);
+    case 'export':
+      return cmdMemoryExport(rest, ctx);
     case 'admit':
       return cmdMemoryAdmit(rest, ctx);
     case 'propose':
@@ -6371,7 +6590,7 @@ async function cmdMemory(args: string[], ctx?: CmdCtx): Promise<number> {
     case '-h':
     case '--help':
       process.stderr.write(
-        'crib memory init | remember "<claim>" [--subject <id>] [--kind convention|decision] [--global] (record + admit a human-attested claim from a terminal — recallable immediately) | admit <candidate-id> (admit an agent-staged human-attested claim, from a terminal) | handoff [--limit N] [--json] (where was I? — in-flight work, undistilled captures, what went stale) | events [--include-expired] [--limit N] [--json] | profiles list [--json] | profiles register --key <profile-key> --alias <client-id>/<agent-id> [--alias ...] [--json] | recall "<query>" [--limit N] [--sources team,local,global] [--target <id>] [--with-evidence] [--include-pending] [--max-tokens N] [--json] | search "<query>" [--limit N] [--sources team,local,global] [--target <id>] [--max-tokens N] [--json] | get <id> [--with-evidence] [--json] | supersede <id> --actor <id> (--successor <id> | --claim <text>) [--reason <text>] [--json] | delete <id> --actor <id> [--reason <text>] [--json] | history <key> [--as-of <iso-ts>] [--with-evidence] [--json] | evaluate <candidate> --profile <name> | activate <candidate>|--all | propose <memory-id> | attest <candidate> | check | audit [--repair-local] | feedback <mem-id> --signal <useful|unhelpful|contradicted> [--actor <id>] [--context <text>] [--counter-evidence <json-file>] | gc [--max-age-days N] [--dry-run] | migrate | bench [--fast] [--json] [--out <path>] | distill --provider <name> [--providers-file F] [--max-batches N] [--concurrency N] [--timeout-ms N] | recheck [--limit N] [--json] (re-run the admission gate over pending captures) | dismiss <cap-id> [--reason <text>] [--json] (retire one pending capture) | capture-hook --event <session-start|turn-end|tool-use> (hooks invoke this; always exits 0 — best-effort capture, never blocks a session) | init-sync --scope repo|global --backend file|http --url <target> [--key-env <NAME>|--keyfile <path>|--gen-key] [--secret-env <NAME>] [--sync-id <id>] [--backfill] [--json] | sync [push|pull|status] [--dry-run] [--backfill] [--max-events N] [--skip] [--json] | sync rotate-key (--gen-key | --key-env <NAME> | --keyfile <path>) [--dry-run] | sync purge-sync --stale-epoch [--dry-run] | purge <mem-id>... --confirm <mem-id>... [--stores local,global] [--history-scan] [--dry-run] [--actor <id>] [--json] | conflicts [--json] | resolve <record-id> (--successor <id> | --retract) --actor <id> [--reason <text>] [--json] (see docs/memory-sync.md)\n',
+        'crib memory init | export [--format markdown] [--out MEMORY.md] [--include-pending] (a human-readable digest GENERATED from the ledger — one-way: editing it changes nothing, because every agent reads the ledger) | observe --kind <k> --subject <id> --claim "<text>" --evidence <file.json|-> (the AGENT write path: staged, re-grounded and gated exactly as the memory_observe MCP tool — works without MCP) | remember "<claim>" [--subject <id>] [--kind convention|decision] [--global] (record + admit a human-attested claim from a terminal — recallable immediately) | admit <candidate-id> (admit an agent-staged human-attested claim, from a terminal) | handoff [--limit N] [--json] (where was I? — in-flight work, undistilled captures, what went stale) | events [--include-expired] [--limit N] [--json] | profiles list [--json] | profiles register --key <profile-key> --alias <client-id>/<agent-id> [--alias ...] [--json] | recall "<query>" [--limit N] [--sources team,local,global] [--target <id>] [--with-evidence] [--include-pending] [--max-tokens N] [--json] | search "<query>" [--limit N] [--sources team,local,global] [--target <id>] [--max-tokens N] [--json] | get <id> [--with-evidence] [--json] | supersede <id> --actor <id> (--successor <id> | --claim <text>) [--reason <text>] [--json] | delete <id> --actor <id> [--reason <text>] [--json] | history <key> [--as-of <iso-ts>] [--with-evidence] [--json] | evaluate <candidate> --profile <name> | activate <candidate>|--all | propose <memory-id> | attest <candidate> | check | audit [--repair-local] | feedback <mem-id> --signal <useful|unhelpful|contradicted> [--actor <id>] [--context <text>] [--counter-evidence <json-file>] | gc [--max-age-days N] [--dry-run] | migrate | bench [--fast] [--json] [--out <path>] | distill --provider <name> [--providers-file F] [--max-batches N] [--concurrency N] [--timeout-ms N] | recheck [--limit N] [--json] (re-run the admission gate over pending captures) | dismiss <cap-id|cand-id> [--reason <text>] [--json] (retire one queued capture or staged candidate) | capture-hook --event <session-start|turn-end|tool-use> (hooks invoke this; always exits 0 — best-effort capture, never blocks a session) | init-sync --scope repo|global --backend file|http --url <target> [--key-env <NAME>|--keyfile <path>|--gen-key] [--secret-env <NAME>] [--sync-id <id>] [--backfill] [--json] | sync [push|pull|status] [--dry-run] [--backfill] [--max-events N] [--skip] [--json] | sync rotate-key (--gen-key | --key-env <NAME> | --keyfile <path>) [--dry-run] | sync purge-sync --stale-epoch [--dry-run] | purge <mem-id>... --confirm <mem-id>... [--stores local,global] [--history-scan] [--dry-run] [--actor <id>] [--json] | conflicts [--json] | resolve <record-id> (--successor <id> | --retract) --actor <id> [--reason <text>] [--json] (see docs/memory-sync.md)\n',
       );
       process.stderr.write(
         'additional operations: backup create|verify|restore; sync compact [--dry-run] [--json]\n',
@@ -6742,12 +6961,16 @@ function cmdMemoryRecheck(args: string[], ctx?: CmdCtx): number {
 /** `crib memory dismiss <cap-id> [--reason <text>] [--json]` — retire one pending capture (dead-letter, never a delete). */
 function cmdMemoryDismiss(args: string[], ctx?: CmdCtx): number {
   if (args.includes('--help')) {
-    process.stdout.write('usage: crib memory dismiss <cap-id> [--reason <text>] [--json]\n');
+    process.stdout.write(
+      'usage: crib memory dismiss <cap-id|cand-id> [--reason <text>] [--json]\n  retires a queued capture or a staged candidate; neither is trusted, so no --confirm echo is needed\n',
+    );
     return EXIT.OK;
   }
   const id = positionalsOf(args)[0];
   if (!id) {
-    process.stderr.write('usage: crib memory dismiss <cap-id> [--reason <text>] [--json]\n');
+    process.stderr.write(
+      'usage: crib memory dismiss <cap-id|cand-id> [--reason <text>] [--json]\n  retires a queued capture or a staged candidate; neither is trusted, so no --confirm echo is needed\n',
+    );
     return EXIT.BAD_ARGS;
   }
   const api = openMaintenanceApi(ctx);
@@ -7725,9 +7948,30 @@ async function cmdMemoryPurge(args: string[], ctx?: CmdCtx): Promise<number> {
   const dryRun = args.includes('--dry-run');
   const historyScan = args.includes('--history-scan');
   // Positionals here are mem: ids; --confirm repeats the exact list (no wildcards, D11).
-  const ids = positionalsOf(args).filter((t) => t.startsWith('mem:'));
+  const positionals = positionalsOf(args);
+  const ids = positionals.filter((t) => t.startsWith('mem:'));
   const confirmIds = repeatedFlag(args, '--confirm');
   const storesFlag = stringFlag(args, '--stores');
+  // The filter above silently DROPPED any non-`mem:` positional and then fell through to a usage
+  // message, so passing a `cand:` or `cap:` id — in exactly the documented shape — produced a usage
+  // dump that never mentioned the id prefix, which is the actual problem. Name it, and name the verb
+  // that does handle it: purge is for trusted RECORDS, which is why it demands a --confirm echo,
+  // while a staged candidate or a queued capture is retired by `dismiss`.
+  const wrongKind = positionals.filter(
+    (t) => t.startsWith('cand:') || t.startsWith('cap:') || t.startsWith('icp:'),
+  );
+  if (ids.length === 0 && wrongKind.length > 0) {
+    process.stderr.write(
+      [
+        `crib memory purge operates on memory RECORD ids (mem:…); ${wrongKind[0]} is not one.`,
+        '  A staged candidate (cand:…) or a queued capture (cap:…) is retired with',
+        '  `crib memory dismiss <id> [--reason <text>]` — no --confirm echo, because neither is',
+        '  trusted or recall-eligible. `crib memory gc` clears old candidates in bulk by age.',
+        '',
+      ].join('\n'),
+    );
+    return EXIT.BAD_ARGS;
+  }
   if (ids.length === 0 || confirmIds.length === 0) {
     process.stderr.write(
       'usage: crib memory purge <mem-id>... --confirm <mem-id>... [--stores local,global] [--history-scan] [--dry-run] [--actor <id>] [--json]\n  the exact id list must be repeated in --confirm (no wildcards)\n',
@@ -7997,6 +8241,23 @@ function cmdMemoryRecall(args: string[], ctx?: CmdCtx): number {
   };
   // Opt-in, kept in its own group: `memories` stays trusted-only whatever this flag returns.
   if (includePending) result.pending = pendingMemoryCandidates(deps.local, q, limit);
+  else {
+    // F10 — the DEFAULT view must not be silent about what it withheld. Normal recall correctly
+    // excludes untrusted candidates, and the MCP verb already says so (`pendingNotice`, added
+    // because "silence was the bug"); this command assembles its own response shape and so had to
+    // repeat it or lose it. The COUNT and the next step only — never the content, so the trust gate
+    // is untouched. Withholding a claim is defensible; withholding it invisibly is not.
+    const staged = pendingMemoryCandidates(deps.local, q, limit).length;
+    if (staged > 0) {
+      result.pendingNotice = {
+        count: staged,
+        reason:
+          'staged but NOT yet admitted, so they are not recall-eligible — this is the trust gate working, not an empty memory',
+        nextAction:
+          'read them as untrusted with --include-pending, or admit with `crib memory activate`',
+      };
+    }
+  }
   if (fitted.budgetExhausted) result.budgetExhausted = true;
   if (json) process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
   else process.stdout.write(renderMemoryRecall(q, result));
@@ -8232,6 +8493,18 @@ function renderMemoryRecall(query: string, result: Record<string, unknown>): str
     for (const p of pending) {
       lines.push(`  - ${String(p.id)} [${String(p.actor ?? 'unknown')}] ${String(p.claim)}`);
     }
+  }
+  // F10 — without this, the DEFAULT recall is silent about candidates it withheld. The verb already
+  // reports them (`pendingNotice`, added because "silence was the bug"), but this renderer dropped
+  // the field, so a terminal user saw `eligible 3` and no sign that two more claims were staged and
+  // gated. Print the COUNT and the next step, never the content: the trust gate is unchanged, and
+  // withholding an untrusted claim is only defensible if the withholding itself is visible.
+  const notice = result.pendingNotice as
+    | { count?: number; reason?: string; nextAction?: string }
+    | undefined;
+  if (notice?.count !== undefined && notice.count > 0) {
+    lines.push(`pending (withheld): ${notice.count} — ${String(notice.reason ?? '')}`);
+    if (notice.nextAction) lines.push(`  next: ${notice.nextAction}`);
   }
   if (result.truncated === true) {
     lines.push(
@@ -8572,6 +8845,19 @@ function cmdMemorySupersede(args: string[], ctx?: CmdCtx): number {
     return EXIT.NOT_INDEXED;
   }
   const api = createMemoryApi(rt.soul, resolved.repoRoot, resolved.cribDir, deps);
+  // A `--claim` supersede mints a successor with ZERO evidence, and for an evidence-requiring kind —
+  // which `fact` is — that successor is `trust: candidate, evidence: invalid` and therefore NOT
+  // recall-eligible. The superseded record leaves recall immediately, so the net effect is that the
+  // knowledge disappears while the command reports success. That is what the warning below exists to
+  // stop being silent about.
+  //
+  // There is deliberately NO `--evidence` flag here. `SupersedePayload.evidence` is carried VERBATIM
+  // by the API, which means the caller would supply each item's `verdict` — and an agent stamping its
+  // own evidence verdict is precisely what the admissibility rule forbids ("an agent NEVER
+  // self-asserts a pass"). Only the observe/auto-admit path may stamp a verdict, because only it
+  // re-grounds the quote against live source first. So the honest one-step supersede is a claim with
+  // no evidence, clearly labelled, and the way to land a RECALLABLE replacement is the two-step flow
+  // the warning names.
   const by: string | SupersedePayload =
     successor !== undefined
       ? successor
@@ -8585,11 +8871,21 @@ function cmdMemorySupersede(args: string[], ctx?: CmdCtx): number {
           ...(visibility !== undefined ? { visibility } : { visibility: 'workspace' as const }),
           ...(propositionKey !== undefined ? { propositionKey } : {}),
         };
-  const result = api.supersede(id, by, {
-    actor,
-    ...(reason !== undefined ? { reason } : {}),
-    ...(tool !== undefined ? { tool } : {}),
-  });
+  // `api.supersede` VALIDATES the successor against the record schema and THROWS on a violation
+  // rather than returning `{ok:false}` — a raw `MemorySchemaError` stack reached the terminal when a
+  // malformed successor was built. A CLI must not answer a bad argument with a stack trace: the
+  // message is the actionable part, and the exit code carries the failure.
+  let result: ReturnType<typeof api.supersede>;
+  try {
+    result = api.supersede(id, by, {
+      actor,
+      ...(reason !== undefined ? { reason } : {}),
+      ...(tool !== undefined ? { tool } : {}),
+    });
+  } catch (e) {
+    process.stderr.write(`error: ${e instanceof Error ? e.message : String(e)}\n`);
+    return EXIT.ERROR;
+  }
   if (!result.ok) {
     process.stderr.write(`error: ${result.error}\n`);
     return EXIT.ERROR;
@@ -8599,6 +8895,18 @@ function cmdMemorySupersede(args: string[], ctx?: CmdCtx): number {
     process.stdout.write(
       `superseded ${result.supersededId} -> successor ${result.successorId} (decision ${result.decisionId}, store ${result.decisionSource}${result.successorCreated ? '' : ', successor already existed'})\n`,
     );
+    // Say whether the swap actually left a recallable claim behind. A superseded record is gone from
+    // recall immediately; if the successor is inadmissible, the net effect is that the knowledge
+    // disappeared, and reporting only "superseded" would hide that.
+    if (result.successorCreated === true && claim !== undefined) {
+      process.stdout.write(
+        'warning: the successor carries NO evidence, so it is a candidate and normal recall will NOT\n' +
+          '  return it — this supersede retired a claim without leaving a recallable replacement.\n' +
+          '  To land one: `crib memory observe --kind <k> --subject <id> --claim "<text>" --evidence <f>`\n' +
+          '  (which re-grounds the citations and stamps the verdicts itself), then re-run this command\n' +
+          '  with --successor <that id> instead of --claim.\n',
+      );
+    }
   }
   return EXIT.OK;
 }
@@ -9987,9 +10295,9 @@ function printHelp(): void {
       'crib — Knowledge-crib CLI',
       '',
       'Usage:',
-      '  crib index [path] [--crib-dir <absolute-path>] [--semantic] [--exclude a,b,...] [--package <name|all>...] [--multimodal [--multimodal-backend auto|fake] [--multimodal-model-path <dir>]]     full index → .crib soul + derived index (+ INFERRED embedding-cosine semantic links); --package scopes to one monorepo package (list detected with no --package); --multimodal opts into media extraction (TS-native PDF text layer by default; tesseract OCR / whisper transcription when on PATH)',
+      '  crib index [path] [--crib-dir <absolute-path>] [--semantic] [--vectors] [--exclude a,b,...] [--package <name|all>...] [--multimodal [--multimodal-backend auto|fake] [--multimodal-model-path <dir>]]     full index → .crib soul + derived index; --semantic adds INFERRED doc→symbol links to the GRAPH (it does not enable semantic search); --vectors builds the code-vector channel so `query`/`ask` fuse BM25 with cosine (needs `crib embed setup`; off by default, unmeasured on a labelled code corpus); --package scopes to one monorepo package (list detected with no --package); --multimodal opts into media extraction (TS-native PDF text layer by default; tesseract OCR / whisper transcription when on PATH)',
       '  crib status [path] [--dirty]             health + stats; --dirty previews files that would be re-indexed',
-      '  crib query <text>                        BM25 search over code + docs (incl. bodies); --with-source --with-rules fold body + decision table into each hit',
+      '  crib query <text> [--include-detail]      BM25 search over code + docs (incl. bodies); sub-symbol fragments (statements/conditions/assignments) are excluded by default so a matching line cannot outrank the function containing it — --include-detail opts them back in; --with-source --with-rules fold body + decision table into each hit',
       '  crib gaps [path] [--extracted-only] [--include-builtins]   analysis readiness + missing bodies + unresolved call sites',
       '  crib rules <proc> [--include-tables]      decision table + coverage readiness for a callable',
       '  crib context <id> [--with-source] [--with-rules] [--with-framework]   deep per-symbol context',
@@ -10025,7 +10333,8 @@ function printHelp(): void {
       '  crib setup [path] [--no-embed]           THE one command: index + hooks + MCP for every client + the mandatory protocol in every instruction file + the on-device model + memory stores + doctor. Nothing to run afterwards.',
       '  crib init [path] [--ide <id|all|detected>]   5-minute onboarding: index + install-hooks + mcp install + adapters + the semantic model + next-steps hero (defaults to every client; --ide detected wires only what is in use; --no-embed skips the model download)',
       '  crib doctor [path]                       setup health check: node/corepack/index-freshness/hooks/IDE-wiring/memory-loop/stale-builds/embed-tier/freshness/post-commit-hook/multimodal-adapters (✓/✗ + fix hints)',
-      '  crib embed setup [--model small|base|large] [--yes]   ONE command to the semantic tier: generates + pins an adapter, then proves it ranks. --list shows the measured size/quality ladder; --yes allows the one-time runtime install and model download; --from <dir> adopts a pre-fetched bundle (air-gapped)',
+      "  crib rerank <setup [--model <id>] [--yes] [--list] | status>   second-stage cross-encoder: reorders the top candidates by scoring (query, text) PAIRS, which a bi-encoder structurally cannot do. Reuses the embed tier's ONNX runtime. OFF by default and measured before trusted (node scripts/eval/code-vector-eval.mjs --rerank)",
+      "  crib embed setup [--model small|base|large] [--yes]   ONE command to the semantic tier: generates + pins an adapter, then proves it ranks. --list shows the measured size/quality ladder; --yes allows the one-time runtime install and model download; --from <dir> adopts a pre-fetched bundle (air-gapped)',",
       '  crib embed <install <model-dir>|status>   on-device embedder tier: install --model-id <id> --model-version <ver> [--entry <file>] | status (tier report; --accept-remote-policy opts into the remote tier)',
       '  crib freshness [<mode>|worker|service|hook|convert-hook]   index freshness: manual|watch|auto | supervised worker install/status/uninstall | durable queue',
       '',
@@ -10159,6 +10468,215 @@ async function cmdMemoryRemember(args: string[], ctx?: CmdCtx): Promise<number> 
       2,
     )}\n`,
   );
+  return EXIT.OK;
+}
+
+/**
+ * Load and sanity-check an `--evidence` argument for the two commands that write a claim.
+ *
+ * Shared by `observe` and `supersede` so the refusals are identical: an evidence array that is
+ * malformed, empty, or carries a `human-attestation` must be rejected the same way whichever verb the
+ * caller reached for. Returns a typed failure rather than throwing, so each command keeps its own
+ * exit-code and usage text.
+ */
+function loadEvidenceArg(
+  path: string,
+): { ok: true; evidence: unknown[] } | { ok: false; message: string } {
+  let raw: string;
+  try {
+    raw = path === '-' ? readFileSync(0, 'utf8') : readFileSync(path, 'utf8');
+  } catch (e) {
+    return { ok: false, message: `cannot read --evidence ${path}: ${(e as Error).message}` };
+  }
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (e) {
+    return { ok: false, message: `--evidence is not valid JSON: ${(e as Error).message}` };
+  }
+  if (!Array.isArray(parsed) || parsed.length === 0) {
+    return {
+      ok: false,
+      message:
+        '--evidence must be a non-empty JSON array of evidence items. An observation with no evidence\ncannot be admitted, and staging one would only grow the pending queue.',
+    };
+  }
+  // Refuse `tty: true`, NOT the human-attestation KIND.
+  //
+  // This started as a blanket refusal of any `human-attestation` item, which was wrong and defeated a
+  // deliberate feature. `MemoryApi.observe` guards exactly one field — its own error says "to stage an
+  // agent observation, omit `tty`" — and it has a designed relay path: a `tty`-less attestation from a
+  // non-terminal caller is stamped `relayedBy: <actor>` and can then only ever earn `degraded`,
+  // meaning recallable locally but refused by every path that needs a person. That is precisely how an
+  // agent should record "the user decided X": attributable, weaker than a real attestation, and not a
+  // forgery. Refusing the whole kind blocked it and diverged from the MCP `memory_observe` path, which
+  // goes through the same API.
+  //
+  // `tty: true` remains refused here rather than deferred to the API, so the message names the right
+  // remedy before a store is even opened.
+  const forgedTty = parsed.findIndex(
+    (e) => typeof e === 'object' && e !== null && (e as { tty?: unknown }).tty === true,
+  );
+  if (forgedTty !== -1) {
+    return {
+      ok: false,
+      message: `refusing: evidence[${forgedTty}] sets \`tty: true\`, which asserts a human attested this AT A TERMINAL.\nThat flag is stamped by crib when it observes a real terminal, never accepted from a caller.\nA human asserting a claim uses \`crib memory remember "<claim>"\` from a terminal. To relay what a\nuser told you, keep kind "human-attestation" and OMIT tty — crib stamps relayedBy and caps the\nrecord at degraded, which is the honest weight for a second-hand statement.`,
+    };
+  }
+  return { ok: true, evidence: parsed };
+}
+
+/**
+ * `crib memory export [--format markdown] [--out <path>] [--include-pending]`
+ *
+ * Writes a human-readable digest of the ledger. One-way by design — see `memory-export.ts` for why a
+ * writable `memory.md` would be a side-store rather than a convenience.
+ */
+async function cmdMemoryExport(args: string[], ctx?: CmdCtx): Promise<number> {
+  const format = stringFlag(args, '--format') ?? 'markdown';
+  if (format !== 'markdown') {
+    process.stderr.write(`unknown --format: ${format} (markdown)\n`);
+    return EXIT.BAD_ARGS;
+  }
+  // No positional is read as a path here: like `observe` and `recall`, every value is a flag, so
+  // nothing the caller types can be mistaken for a project root (F15).
+  const resolved = resolveRoot([], ctx);
+  if (!isIndexedRoot(resolved)) {
+    process.stderr.write('not indexed — run `crib index` first\n');
+    return EXIT.NOT_INDEXED;
+  }
+  const rt = openSoul(resolved);
+  const deps = createMemoryDeps(rt.soul, resolved.repoRoot, resolved.cribDir);
+  if (!deps) {
+    process.stderr.write('could not resolve repoId for memory — run `crib memory init` first\n');
+    return EXIT.NOT_INDEXED;
+  }
+  const api = createMemoryApi(rt.soul, resolved.repoRoot, resolved.cribDir, deps);
+  const anchor = currentRepositoryAnchor(resolved.repoRoot);
+  const handoff = api.handoff({
+    repository: anchor,
+    limits: { openWork: 20, pending: 20, attention: 20, recent: 40 },
+    now: new Date().toISOString(),
+  });
+  const markdown = renderMemoryMarkdown({
+    handoff,
+    repo: {
+      root: resolved.repoRoot,
+      ...(anchor.branch ? { branch: anchor.branch } : {}),
+      ...(anchor.head ? { head: anchor.head } : {}),
+    },
+    generatedAt: new Date().toISOString(),
+    includePending: args.includes('--include-pending'),
+    command: `crib memory export${args.includes('--include-pending') ? ' --include-pending' : ''}`,
+  });
+  const out = stringFlag(args, '--out');
+  if (out === undefined) {
+    process.stdout.write(markdown);
+    return EXIT.OK;
+  }
+  const target = isAbsolute(out) ? out : join(resolved.repoRoot, out);
+  writeFileSync(target, markdown);
+  process.stdout.write(`wrote ${target}\n`);
+  return EXIT.OK;
+}
+
+/**
+ * `crib memory observe` — the AGENT write path, without MCP.
+ *
+ * Why this exists. The protocol requires every reusable learning to be recorded with admissible
+ * evidence, and the agent-appropriate write is an observation that crib itself re-grounds
+ * (`auto-admit.ts`). That write was reachable ONLY through the `memory_observe` MCP tool. When the
+ * MCP server is down — which, before the F18 fix, was the default state of every fresh worktree —
+ * a correct agent had no way to record anything: the CLI's only immediate-admit verb is
+ * `crib memory remember`, which records that a HUMAN asserted the claim. An agent reaching for it
+ * would mint an attestation it does not hold, and the admissibility matrix would reject it anyway
+ * ("human evidence cannot establish implementation facts"). So the ledger was unreachable and the
+ * only alternative was a forged attestation. This closes that.
+ *
+ * It is NOT a privileged path. It takes exactly the route `memory_observe` takes — `api.observe`
+ * with `authorKind: 'agent'` — so the capture policy, the secret/PII scan, quote re-grounding and
+ * the admission gate all run identically. `authorKind` is hard-coded rather than exposed as a flag,
+ * and a `human-attestation` evidence item is REFUSED here: the one call site allowed to present a
+ * human attestation is `crib memory remember`, because it is the one that checks `stdin.isTTY`.
+ */
+async function cmdMemoryObserve(args: string[], ctx?: CmdCtx): Promise<number> {
+  const claim = stringFlag(args, '--claim');
+  const kind = stringFlag(args, '--kind');
+  const subject = stringFlag(args, '--subject');
+  const evidencePath = stringFlag(args, '--evidence');
+  const json = args.includes('--json');
+  if (!claim || !kind || !subject || !evidencePath) {
+    process.stderr.write(
+      'usage: crib memory observe --kind <kind> --subject <id> --claim "<text>" --evidence <file.json|-> ' +
+        '[--applies-to <id>] [--actor <id>] [--tool <name>] [--global] [--idempotency-key <k>] [--json]\n' +
+        '  --evidence takes a JSON ARRAY of evidence items, or `-` to read one from stdin.\n' +
+        '  A source-quote item is { "kind": "source-quote", "soulId": "<node id>", "quote": "<exact text>" }.\n' +
+        "  The quote must appear INSIDE that node's span — a docstring above a function is outside it —\n" +
+        '  and is re-grounded against the live code, so a stale quote is held, never admitted.\n' +
+        '  Claim kinds admit different evidence: a `fact` accepts a source-quote, a `convention` needs a\n' +
+        '  human-attestation or committed-policy, a `pitfall` needs a failing+passing receipt pair.\n',
+    );
+    return EXIT.BAD_ARGS;
+  }
+  const loaded = loadEvidenceArg(evidencePath);
+  if (!loaded.ok) {
+    process.stderr.write(`${loaded.message}\n`);
+    return EXIT.BAD_ARGS;
+  }
+  const evidence = loaded.evidence;
+  // The positional-free resolve: every value here is a flag, so nothing can be mistaken for a root.
+  const resolved = resolveRoot([], ctx);
+  if (!isIndexedRoot(resolved)) {
+    process.stderr.write('not indexed — run `crib index` first\n');
+    return EXIT.NOT_INDEXED;
+  }
+  const rt = openSoul(resolved);
+  const deps = createMemoryDeps(rt.soul, resolved.repoRoot, resolved.cribDir);
+  if (!deps) {
+    process.stderr.write('could not resolve repoId for memory — run `crib index` first\n');
+    return EXIT.NOT_INDEXED;
+  }
+  const actor = stringFlag(args, '--actor') ?? `agent:${process.env.KCRIB_AGENT_ID ?? 'unknown'}`;
+  // No `attestationSource`: that parameter exists to permit a `tty` human attestation and is for
+  // call sites that have checked `process.stdin.isTTY`. The agent path must never be able to present
+  // one, so it is omitted rather than passed — the type only admits 'terminal' for that reason.
+  const api = createMemoryApi(rt.soul, resolved.repoRoot, resolved.cribDir, deps);
+  const appliesTo = repeatedFlag(args, '--applies-to');
+  const idempotencyKey = stringFlag(args, '--idempotency-key');
+  const result = api.observe({
+    kind,
+    subject,
+    claim,
+    ...(appliesTo.length > 0 ? { appliesTo } : {}),
+    evidence: evidence as never,
+    actor,
+    authorKind: 'agent',
+    tool: stringFlag(args, '--tool') ?? 'crib memory observe',
+    scopeBoundary: args.includes('--global') ? 'global' : 'repo',
+    ...(idempotencyKey !== undefined ? { idempotencyKey } : {}),
+  });
+  if (!result.ok) {
+    if (json) process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+    else process.stderr.write(`error: ${result.error}\n`);
+    return EXIT.ERROR;
+  }
+  const admitted = result.status === 'active';
+  const ack = {
+    ok: true,
+    id: result.id,
+    status: result.status,
+    ...(result.recordId !== undefined ? { recordId: result.recordId } : {}),
+    ...(result.admission !== undefined ? { admission: result.admission } : {}),
+    scope: result.scope,
+    // The same honesty the MCP ack carries: a write is not a recall. Reporting "recorded" for a
+    // staged-but-unadmitted candidate is technically true and practically misleading, because the
+    // next `crib memory recall` returns nothing.
+    recallable: admitted,
+    nextAction: admitted
+      ? 'admitted to local trust — recallable now via `crib memory recall`.'
+      : 'staged as an untrusted candidate; normal recall withholds it. Inspect with `crib memory recall --include-pending`, or supply stronger evidence.',
+  };
+  process.stdout.write(`${JSON.stringify(ack, null, 2)}\n`);
   return EXIT.OK;
 }
 

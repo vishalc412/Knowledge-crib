@@ -55,6 +55,29 @@ export type FusionStrategy = 'lexical-only' | 'rrf' | 'weighted' | 'semantic-onl
  * A second-stage reranker: scores (query, text) PAIRS jointly, rather than comparing two vectors
  * that were embedded independently.
  *
+ * THE MOTIVATION BELOW IS SUPERSEDED. READ THIS FIRST (measured 2026-09-21).
+ *
+ * The 43.8% figure was measured with `multilingual-e5-base`. That gap was then closed WITHOUT a
+ * second stage, by two changes `docs/bench/launch-gates.md` records: the larger bi-encoder took G2
+ * from 43.8% to 71.9%, and embedding the CLAIM ALONE took it to 81.0%. The shipped tier is the large
+ * model, so the precision problem this port was declared for no longer exists on this corpus.
+ *
+ * A cross-encoder was then implemented (`packages/core/src/rerank/`, `crib rerank setup`) and
+ * measured against the frozen gate. It is a LOSS on both surfaces:
+ *
+ *   memory corpus  semantic-only  gates 8/8   G2 81.0%   MRR 0.881   0.4 s
+ *                  + bge-reranker gates 7/8   G2 44.4%   MRR 0.762   207 s
+ *   code corpus    hybrid         MRR 0.287 (top-3 7/20)
+ *                  + bge-reranker MRR 0.267 (top-3 5/20, though found@10 rose 9 -> 10)
+ *
+ * It halves paraphrase recall on memory and costs ~500x the time. The reason is headroom: a second
+ * stage helps a WEAK first stage and damages a strong one, and the first stage here is now strong.
+ * So the port stays (a future first-stage regression, or a different corpus, could change the
+ * arithmetic) and nothing wires a reranker in by default. Re-measure with
+ * `node scripts/eval/memory-rerank-eval.mjs` before enabling one; do not reason from the paragraph
+ * below, which describes a configuration that no longer ships.
+ *
+ * ── the original, now-historical motivation ──────────────────────────────────
  * Why a second stage exists at all — measured, not assumed. On the launch corpus the bi-encoder
  * retrieves the correct record for EVERY word-disjoint query (zero misses at any depth), but only
  * ranks it top-5 for 43.8% of them; recall@25 is 74.5% and recall@50 ~87%. The information needed

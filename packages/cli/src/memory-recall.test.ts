@@ -1,4 +1,4 @@
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -404,5 +404,456 @@ describe('crib memory recall — the protocol-named CLI fallback exists', () => 
     const r = runRecall(['loan', '--sources', 'bogus']);
     expect(r.status).toBe(2);
     expect(r.stderr).toContain('--sources accepts team, local, global');
+  });
+});
+
+/**
+ * F16 — `crib memory observe`: the AGENT write path without MCP.
+ *
+ * Before this verb, staging an agent observation required the `memory_observe` MCP TOOL. With the
+ * MCP server down (which, before the F18 fix, was the default state of every fresh worktree) a
+ * correct agent could not record anything: the only immediate-admit CLI verb is
+ * `crib memory remember`, which records that a HUMAN asserted the claim, so reaching for it would
+ * mint an attestation the agent does not hold. The ledger was unreachable and the only alternative
+ * was a forged attestation.
+ *
+ * These tests use spawnSync, not the local `runMemory` helper: that helper returns `stderr: ''`
+ * whenever the command exits 0, so any stderr assertion on a succeeding command passes regardless.
+ */
+/**
+ * F10 — the DEFAULT recall view must disclose what it withheld.
+ *
+ * Normal recall correctly excludes untrusted candidates, and that exclusion is a red line. But
+ * `crib memory recall` assembles its own response shape rather than going through the MCP verb, so it
+ * printed `eligible N` with no sign that further claims were staged and gated — a user saw what
+ * looked like an empty or partial memory and had no way to know a next step existed. The count and
+ * the next action are disclosed; the CONTENT still is not, so the gate is unchanged.
+ */
+describe('F10 — default recall discloses withheld candidates', () => {
+  function run(args: string[]): { status: number; stdout: string; stderr: string } {
+    const r = spawnSync(process.execPath, [CLI, 'memory', ...args], {
+      cwd: repo,
+      encoding: 'utf8',
+      maxBuffer: 32 * 1024 * 1024,
+      env: env(),
+    });
+    return {
+      status: r.status ?? 1,
+      stdout: (r.stdout ?? '').trim(),
+      stderr: (r.stderr ?? '').trim(),
+    };
+  }
+
+  /** Stage an UNGROUNDED observation, which the admission gate holds as a pending candidate. */
+  function stagePending(claim: string): void {
+    const evPath = join(repo, `pending-ev-${Math.random().toString(36).slice(2)}.json`);
+    writeFileSync(
+      evPath,
+      JSON.stringify([{ kind: 'source-quote', soulId: NODE_ID, quote: 'TEXT_NOT_IN_THE_SOURCE' }]),
+    );
+    const r = run([
+      'observe',
+      '--kind',
+      'fact',
+      '--subject',
+      NODE_ID,
+      '--claim',
+      claim,
+      '--evidence',
+      evPath,
+    ]);
+    expect(r.status, r.stderr).toBe(0);
+    expect(JSON.parse(r.stdout).status).toBe('pending');
+  }
+
+  it('reports the count and a next action in the default (non-pending) view', () => {
+    stagePending('A staged loan_pkg claim awaiting admission.');
+    const r = run(['recall', 'loan_pkg']);
+    expect(r.status, r.stderr).toBe(0);
+    expect(r.stdout).toMatch(/pending \(withheld\): 1/);
+    expect(r.stdout).toMatch(/trust gate working, not an empty memory/);
+    expect(r.stdout).toMatch(/--include-pending/);
+  });
+
+  it('discloses the count WITHOUT leaking the claim text — the gate is unchanged', () => {
+    stagePending('SECRET_STAGED_CLAIM_MARKER for loan_pkg.');
+    const def = run(['recall', 'loan_pkg']);
+    expect(def.stdout).toMatch(/pending \(withheld\)/);
+    expect(def.stdout).not.toContain('SECRET_STAGED_CLAIM_MARKER');
+    // …and the opt-in view does show it, so the notice is a pointer and not a dead end
+    expect(run(['recall', 'loan_pkg', '--include-pending']).stdout).toContain(
+      'SECRET_STAGED_CLAIM_MARKER',
+    );
+  });
+
+  it('says nothing when there is nothing withheld — no noise on a clean store', () => {
+    expect(run(['recall', 'loan_pkg']).stdout).not.toMatch(/pending \(withheld\)/);
+  });
+
+  it('--json carries the notice as structured data, not only as prose', () => {
+    stagePending('A staged loan_pkg claim for the json path.');
+    const parsed = JSON.parse(run(['recall', 'loan_pkg', '--json']).stdout) as {
+      pendingNotice?: { count: number; nextAction: string };
+    };
+    expect(parsed.pendingNotice?.count).toBe(1);
+    expect(parsed.pendingNotice?.nextAction).toMatch(/include-pending/);
+  });
+});
+
+describe('crib memory observe — the agent write path, without MCP', () => {
+  function observe(args: string[]): { status: number; stdout: string; stderr: string } {
+    const r = spawnSync(process.execPath, [CLI, 'memory', 'observe', ...args], {
+      cwd: repo,
+      encoding: 'utf8',
+      maxBuffer: 32 * 1024 * 1024,
+      env: env(),
+    });
+    return {
+      status: r.status ?? 1,
+      stdout: (r.stdout ?? '').trim(),
+      stderr: (r.stderr ?? '').trim(),
+    };
+  }
+
+  /** Write an evidence array to a temp file and return its path. */
+  function evidenceFile(items: unknown): string {
+    const path = join(repo, `ev-${Math.random().toString(36).slice(2)}.json`);
+    writeFileSync(path, JSON.stringify(items));
+    return path;
+  }
+
+  const GROUNDED = [
+    { kind: 'source-quote', soulId: NODE_ID, quote: 'C_THRESHOLD CONSTANT NUMBER := 30' },
+  ];
+
+  it('admits a grounded fact and makes it recallable — the whole point', () => {
+    const r = observe([
+      '--kind',
+      'fact',
+      '--subject',
+      NODE_ID,
+      '--claim',
+      'The loan package pins its threshold constant at 30.',
+      '--evidence',
+      evidenceFile(GROUNDED),
+    ]);
+    expect(r.status, r.stderr).toBe(0);
+    const ack = JSON.parse(r.stdout) as { status: string; recallable: boolean };
+    expect(ack.status).toBe('active');
+    expect(ack.recallable).toBe(true);
+
+    // it is genuinely retrievable, not merely written
+    const recalled = runRecall(['threshold constant', '--json']);
+    expect(recalled.status, recalled.stderr).toBe(0);
+    expect(recalled.stdout).toContain('threshold constant at 30');
+  });
+
+  it('reports an UNGROUNDED quote honestly instead of admitting it', () => {
+    const r = observe([
+      '--kind',
+      'fact',
+      '--subject',
+      NODE_ID,
+      '--claim',
+      'This claim cites text that is not in the code.',
+      '--evidence',
+      evidenceFile([{ kind: 'source-quote', soulId: NODE_ID, quote: 'NO_SUCH_TEXT_ANYWHERE' }]),
+    ]);
+    expect(r.status, r.stderr).toBe(0);
+    const ack = JSON.parse(r.stdout) as { status: string; recallable: boolean; nextAction: string };
+    expect(ack.status).toBe('pending');
+    // An ack that said "recorded" here would be true and misleading: recall returns nothing.
+    expect(ack.recallable).toBe(false);
+    expect(ack.nextAction).toMatch(/withholds it/);
+  });
+
+  /**
+   * The refusal is on `tty: true`, NOT on the human-attestation KIND — and that distinction was got
+   * wrong once, which is why it is pinned here.
+   *
+   * A blanket refusal of the kind looked safe and was not: `MemoryApi.observe` guards exactly one
+   * field, and it has a DESIGNED relay path for an agent recording what a user said — a `tty`-less
+   * attestation from a non-terminal caller is stamped `relayedBy: <actor>` and capped at `degraded`,
+   * recallable on this device but refused by every path that needs a person. Refusing the whole kind
+   * blocked that, and diverged from the MCP `memory_observe` path, which uses the same API.
+   */
+  it('refuses `tty: true` — the flag crib stamps for a real terminal, never accepted from a caller', () => {
+    const r = observe([
+      '--kind',
+      'convention',
+      '--subject',
+      NODE_ID,
+      '--claim',
+      'We always do it this way.',
+      '--evidence',
+      evidenceFile([
+        { kind: 'human-attestation', actor: 'someone', tty: true, quote: 'we always do it' },
+      ]),
+    ]);
+    expect(r.status).toBe(2);
+    expect(r.stderr).toMatch(/tty: true/);
+    expect(r.stderr).toMatch(/crib memory remember/);
+    // and it names the legitimate alternative rather than just saying no
+    expect(r.stderr).toMatch(/OMIT tty/);
+  });
+
+  it('ACCEPTS a tty-less human-attestation as a relayed statement, capped at degraded', () => {
+    const r = observe([
+      '--kind',
+      'decision',
+      '--subject',
+      'topic:test-relayed-decision',
+      '--claim',
+      'The maintainer chose the opt-in path for this feature.',
+      '--evidence',
+      evidenceFile([
+        { kind: 'human-attestation', actor: 'human:someone', quote: 'go with the opt-in path' },
+      ]),
+    ]);
+    expect(r.status, r.stderr).toBe(0);
+    const ack = JSON.parse(r.stdout) as {
+      status: string;
+      recallable: boolean;
+      admission?: { reason?: string };
+    };
+    // recallable, because a recorded decision nobody can retrieve is useless …
+    expect(ack.status).toBe('active');
+    expect(ack.recallable).toBe(true);
+    // … but explicitly second-hand, not promoted to a verified attestation
+    expect(ack.admission?.reason).toMatch(/relayed|unconfirmed/);
+  });
+
+  it('refuses empty or non-array evidence rather than growing the pending queue', () => {
+    for (const bad of [[], { kind: 'source-quote' }]) {
+      const r = observe([
+        '--kind',
+        'fact',
+        '--subject',
+        NODE_ID,
+        '--claim',
+        'x',
+        '--evidence',
+        evidenceFile(bad),
+      ]);
+      expect(r.status).toBe(2);
+      expect(r.stderr).toMatch(/non-empty JSON array/);
+    }
+  });
+
+  it('prints usage when a required flag is missing', () => {
+    const r = observe(['--kind', 'fact', '--subject', NODE_ID]);
+    expect(r.status).toBe(2);
+    expect(r.stderr).toMatch(/usage: crib memory observe/);
+    // the usage must name the real evidence shape — `soulId`, not a path/line pair
+    expect(r.stderr).toMatch(/soulId/);
+  });
+
+  it('reads evidence from stdin with `-`', () => {
+    const r = spawnSync(
+      process.execPath,
+      [
+        CLI,
+        'memory',
+        'observe',
+        '--kind',
+        'fact',
+        '--subject',
+        NODE_ID,
+        '--claim',
+        'Threshold is pinned, cited via stdin.',
+        '--evidence',
+        '-',
+      ],
+      { cwd: repo, encoding: 'utf8', input: JSON.stringify(GROUNDED), env: env() },
+    );
+    expect(r.status ?? 1, r.stderr ?? '').toBe(0);
+    expect(JSON.parse((r.stdout ?? '').trim()).recallable).toBe(true);
+  });
+});
+
+/**
+ * `crib memory supersede --claim` must not retire a claim in silence.
+ *
+ * Found by using it: superseding a record with a new `--claim` mints a successor carrying ZERO
+ * evidence, which for an evidence-requiring kind (`fact`) is `trust: candidate, evidence: invalid` and
+ * therefore NOT recall-eligible. The superseded record leaves recall immediately, so the net effect
+ * was that the knowledge disappeared while the command printed success.
+ *
+ * There is deliberately no `--evidence` flag: `SupersedePayload.evidence` is carried VERBATIM, so the
+ * caller would supply each item's `verdict` — an agent stamping its own evidence verdict is exactly
+ * what the admissibility rule forbids. Only the observe path may stamp one, because only it re-grounds
+ * the quote first. So the one-step supersede stays evidence-free and says so, and the recallable route
+ * is observe-then-supersede-by-id.
+ */
+describe('crib memory supersede — an unrecallable successor is disclosed, not implied', () => {
+  function run(args: string[]): { status: number; stdout: string; stderr: string } {
+    const r = spawnSync(process.execPath, [CLI, 'memory', ...args], {
+      cwd: repo,
+      encoding: 'utf8',
+      maxBuffer: 32 * 1024 * 1024,
+      env: env(),
+    });
+    return {
+      status: r.status ?? 1,
+      stdout: (r.stdout ?? '').trim(),
+      stderr: (r.stderr ?? '').trim(),
+    };
+  }
+
+  const GROUNDED = [
+    { kind: 'source-quote', soulId: NODE_ID, quote: 'C_THRESHOLD CONSTANT NUMBER := 30' },
+  ];
+
+  function observeGrounded(claim: string): string {
+    const evPath = join(repo, `sup-ev-${Math.random().toString(36).slice(2)}.json`);
+    writeFileSync(evPath, JSON.stringify(GROUNDED));
+    const r = run([
+      'observe',
+      '--kind',
+      'fact',
+      '--subject',
+      NODE_ID,
+      '--claim',
+      claim,
+      '--evidence',
+      evPath,
+    ]);
+    expect(r.status, r.stderr).toBe(0);
+    const ack = JSON.parse(r.stdout) as { recordId?: string; id: string; recallable: boolean };
+    expect(ack.recallable).toBe(true);
+    return ack.recordId ?? ack.id;
+  }
+
+  it('warns that a --claim successor is NOT recallable', () => {
+    const id = observeGrounded('The threshold constant is 30.');
+    const r = run([
+      'supersede',
+      id,
+      '--actor',
+      'agent:test',
+      '--claim',
+      'The threshold constant is now 45.',
+    ]);
+    expect(r.status, r.stderr).toBe(0);
+    expect(r.stdout).toMatch(/superseded/);
+    expect(r.stdout).toMatch(/carries NO evidence/);
+    expect(r.stdout).toMatch(/normal recall will NOT/);
+    // and it names the route that DOES land a recallable replacement
+    expect(r.stdout).toMatch(/crib memory observe/);
+    expect(r.stdout).toMatch(/--successor/);
+  });
+
+  it('does NOT warn when superseding by --successor, where the replacement was already admitted', () => {
+    const oldId = observeGrounded('The threshold constant is 30, stated once.');
+    const newId = observeGrounded('The threshold constant is 30, stated with a second phrasing.');
+    const r = run(['supersede', oldId, '--actor', 'agent:test', '--successor', newId]);
+    expect(r.status, r.stderr).toBe(0);
+    expect(r.stdout).not.toMatch(/carries NO evidence/);
+  });
+
+  it('reports a schema violation as a message, never as a stack trace', () => {
+    const id = observeGrounded('The threshold constant is 30, third phrasing.');
+    // an unknown --kind builds an invalid successor; api.supersede THROWS rather than returning !ok
+    const r = run([
+      'supersede',
+      id,
+      '--actor',
+      'agent:test',
+      '--claim',
+      'x',
+      '--kind',
+      'not-a-real-kind',
+    ]);
+    expect(r.status).not.toBe(0);
+    expect(r.stderr).not.toMatch(/ {4}at .*\.js:\d+/); // no stack frames
+    expect(r.stderr).toMatch(/^(error|usage|unknown)/m);
+  });
+});
+
+/**
+ * F21 — a staged candidate had no targeted retirement path, and `purge` misreported why.
+ *
+ * Found by a user running the command this session's own summary suggested. `crib memory purge`
+ * filters its positionals to `mem:` ids and then falls through to a USAGE dump, so passing a `cand:`
+ * id — in exactly the documented shape — produced a message that never mentioned the id prefix, which
+ * was the actual problem. And no other verb covered it: `dismissPending` searched only the capture
+ * outbox (so a candidate staged by `observe`, which writes no capture, was invisible to it), and `gc`
+ * is age-based at 30 days. A candidate an operator KNEW was wrong sat in the queue for a month.
+ */
+describe('F21 — retiring a staged candidate', () => {
+  function run(args: string[]): { status: number; stdout: string; stderr: string } {
+    const r = spawnSync(process.execPath, [CLI, 'memory', ...args], {
+      cwd: repo,
+      encoding: 'utf8',
+      maxBuffer: 32 * 1024 * 1024,
+      env: env(),
+    });
+    return {
+      status: r.status ?? 1,
+      stdout: (r.stdout ?? '').trim(),
+      stderr: (r.stderr ?? '').trim(),
+    };
+  }
+
+  /** Stage an UNGROUNDED observation — the admission gate holds it as a pending candidate. */
+  function stageCandidate(claim: string): string {
+    const evPath = join(repo, `f21-ev-${Math.random().toString(36).slice(2)}.json`);
+    writeFileSync(
+      evPath,
+      JSON.stringify([{ kind: 'source-quote', soulId: NODE_ID, quote: 'NOT_IN_THE_SOURCE' }]),
+    );
+    const r = run([
+      'observe',
+      '--kind',
+      'fact',
+      '--subject',
+      NODE_ID,
+      '--claim',
+      claim,
+      '--evidence',
+      evPath,
+    ]);
+    expect(r.status, r.stderr).toBe(0);
+    const ack = JSON.parse(r.stdout) as { id: string; status: string };
+    expect(ack.status).toBe('pending');
+    return ack.id;
+  }
+
+  it('dismiss retires a candidate staged by observe (which has no capture behind it)', () => {
+    const id = stageCandidate('A staged loan_pkg claim to retire.');
+    expect(run(['recall', 'loan_pkg']).stdout).toMatch(/pending \(withheld\): 1/);
+
+    const d = run(['dismiss', id, '--reason', 'known wrong']);
+    expect(d.status, d.stderr).toBe(0);
+    expect(d.stdout).toMatch(/^dismissed /);
+
+    // gone from the queue, and the default view stops reporting a withheld item
+    expect(run(['recall', 'loan_pkg']).stdout).not.toMatch(/pending \(withheld\)/);
+  });
+
+  it('dismiss is idempotent — a second call reports nothing to do, not an error', () => {
+    const id = stageCandidate('A staged loan_pkg claim, dismissed twice.');
+    expect(run(['dismiss', id]).stdout).toMatch(/^dismissed /);
+    const again = run(['dismiss', id]);
+    expect(again.status).toBe(0);
+    expect(again.stdout).toMatch(/nothing to dismiss/);
+  });
+
+  it('purge NAMES the id-kind problem instead of dumping usage', () => {
+    const id = stageCandidate('A staged loan_pkg claim aimed at purge.');
+    const r = run(['purge', id, '--confirm', id]);
+    expect(r.status).not.toBe(0);
+    // the old behaviour: a usage block that never mentioned why the id was rejected
+    expect(r.stderr).not.toMatch(/^usage: crib memory purge/m);
+    expect(r.stderr).toMatch(/operates on memory RECORD ids/);
+    expect(r.stderr).toMatch(/crib memory dismiss/);
+    // and it stays a refusal — purge must not quietly retire a candidate
+    expect(run(['recall', 'loan_pkg']).stdout).toMatch(/pending \(withheld\): 1/);
+  });
+
+  it('purge still shows plain usage when NO id is given at all', () => {
+    const r = run(['purge']);
+    expect(r.status).not.toBe(0);
+    expect(r.stderr).toMatch(/^usage: crib memory purge/m);
   });
 });

@@ -40,6 +40,9 @@
     "clean": "corepack pnpm@9.15.0 -r exec rm -rf dist coverage .crib",
     "eval:check": "node scripts/eval-check.mjs",
     "eval:semantic": "node scripts/eval/semantic-retrieval-eval.mjs",
+    "eval:code-vector": "node scripts/eval/code-vector-eval.mjs",
+    "eval:memory-rerank": "node scripts/eval/memory-rerank-eval.mjs",
+    "e2e:journey": "bash scripts/e2e-journey.sh",
     "graph:accuracy": "corepack pnpm@9.15.0 --filter @knowledge-crib/core build && corepack pnpm@9.15.0 --filter @knowledge-crib/parsers build && corepack pnpm@9.15.0 --filter @knowledge-crib/pipeline build && node scripts/graph-accuracy.mjs",
     "sync:soak": "corepack pnpm@9.15.0 --filter @knowledge-crib/memory build && node scripts/sync-soak.mjs",
     "cost:gate": "node scripts/cost-gate.mjs",
@@ -67,7 +70,10 @@
     "docs:build": "node scripts/docs-site-build.mjs",
     "docs-site:check": "node scripts/docs-site-check.mjs",
     "capabilities:check": "node scripts/capabilities-check.mjs",
-    "self-hosted:check": "corepack pnpm@9.15.0 build && node scripts/crib-self-hosted-e2e.mjs"
+    "self-hosted:check": "corepack pnpm@9.15.0 build && node scripts/crib-self-hosted-e2e.mjs",
+    "bench:locate-corpus": "node scripts/bench/locate-corpus.mjs",
+    "bench:locate": "node scripts/bench/locate-eval.mjs",
+    "bench:cochange": "node scripts/bench/cochange-eval.mjs"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",

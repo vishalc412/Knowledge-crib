@@ -16,7 +16,12 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { SoulStore, SqliteIndexStore, newManifest } from '@knowledge-crib/core';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { MAX_HTTP_REQUEST_BYTES, isAllowedHttpCaller, serveHttp } from './server.js';
+import {
+  MAX_HTTP_REQUEST_BYTES,
+  assertLoopbackBind,
+  isAllowedHttpCaller,
+  serveHttp,
+} from './server.js';
 import { Verbs } from './verbs.js';
 
 const BOUND = '127.0.0.1';
@@ -152,4 +157,84 @@ describe('serveHttp request boundary (end to end)', () => {
     });
     expect(status).toBe(413);
   }, 30_000);
+});
+
+/**
+ * F13 — local-only is a PRODUCT BOUNDARY, enforced by the code rather than requested by the docs.
+ *
+ * The decision (2026-09-21) is that knowledge-crib stays single-trust-domain permanently. That makes a
+ * non-loopback bind not merely wider but actively unsafe: `isAllowedHttpCaller` validates the Host
+ * header against whatever the daemon BOUND to, so binding `0.0.0.0` flips it from a DNS-rebinding guard
+ * into something that *approves* remote callers — each arriving with the local user's full rights,
+ * because there is no identity, membership, revocation or per-artifact authorization to stop them.
+ */
+describe('assertLoopbackBind (F13: local-only, enforced)', () => {
+  let bindDir: string;
+  beforeEach(() => {
+    bindDir = mkdtempSync(join(tmpdir(), 'crib-bind-'));
+  });
+  afterEach(() => rmSync(bindDir, { recursive: true, force: true }));
+
+  it('permits every loopback spelling, including the whole 127/8 block', () => {
+    for (const host of [
+      '127.0.0.1',
+      '127.0.0.2',
+      '127.255.255.254',
+      'localhost',
+      'LOCALHOST',
+      '::1',
+      '[::1]',
+      '0:0:0:0:0:0:0:1',
+      '::ffff:127.0.0.1',
+      '  127.0.0.1  ',
+    ]) {
+      expect(() => assertLoopbackBind(host), host).not.toThrow();
+    }
+  });
+
+  it('refuses a wildcard or routable bind', () => {
+    for (const host of ['0.0.0.0', '::', '192.168.1.10', '10.0.0.5', '8.8.8.8', 'example.com']) {
+      expect(() => assertLoopbackBind(host), host).toThrow(/only loopback is permitted/);
+    }
+  });
+
+  it('the refusal explains WHY and offers the supported alternative', () => {
+    let message = '';
+    try {
+      assertLoopbackBind('0.0.0.0');
+    } catch (e) {
+      message = (e as Error).message;
+    }
+    // names the cause, not just the rule
+    expect(message).toMatch(/no authenticated multi-tenancy/);
+    expect(message).toMatch(/DNS-rebinding guard, not an authorization layer/);
+    // states this is deliberate, so a reader does not wait for a flag that will never come
+    expect(message).toMatch(/product boundary, not a missing feature/);
+    // and gives a route that works
+    expect(message).toMatch(/authenticating proxy/);
+    expect(message).toMatch(/stdio/);
+  });
+
+  it('rejects a malformed octet rather than treating it as loopback', () => {
+    expect(() => assertLoopbackBind('127.0.0.999')).toThrow(/only loopback is permitted/);
+  });
+
+  it('serveHttp refuses the bind instead of silently narrowing it', async () => {
+    // Silently binding loopback when `0.0.0.0` was asked for would leave the operator believing the
+    // exposure worked, which is the more dangerous failure.
+    const soul = new SoulStore(join(bindDir, '.crib'), {
+      manifest: newManifest({ now: '2026-01-01T00:00:00.000Z' }),
+    });
+    soul.load();
+    soul.commit('2026-01-01T00:00:00.000Z');
+    const index = new SqliteIndexStore();
+    index.buildFromSoul(soul, bindDir);
+    try {
+      await expect(
+        serveHttp(new Verbs({ soul, index, repoRoot: bindDir }), { host: '0.0.0.0', port: 0 }),
+      ).rejects.toThrow(/only loopback is permitted/);
+    } finally {
+      index.close();
+    }
+  });
 });

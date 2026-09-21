@@ -277,6 +277,24 @@
                 </div>
               </sc-for>
             </div>
+            <!-- "Where was I?" — the previous session. The payload always carried a session id and
+                 nothing about what the session was DOING, which is the one question this page is
+                 opened to answer. `summary` is the progress note that was current when that session
+                 ended; `movedSince` warns when the repository has since changed branch or HEAD, so a
+                 resumed plan is not applied to a tree it was not written against. -->
+            <sc-if value="{{ mem.lastSession }}" hint-placeholder-val="{{ true }}">
+              <div style="margin-top:8px; padding:9px 10px; border-radius:8px; background: {{ t.chip }}; border:1px solid {{ t.border }}; color: {{ t.text }}; font-size:11px; line-height:1.45;">
+                <div style="font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color: {{ t.sub }};">Last session</div>
+                <div style="margin-top:3px; font-weight:600;">{{ mem.lastSession.summary }}</div>
+                <div style="margin-top:4px; color: {{ t.sub }};">{{ mem.lastSession.meta }}</div>
+                <sc-if value="{{ mem.lastSession.moved }}" hint-placeholder-val="{{ true }}">
+                  <div style="margin-top:4px; color:#f59e0b;">{{ mem.lastSession.moved }}</div>
+                </sc-if>
+                <sc-if value="{{ mem.lastSession.files }}" hint-placeholder-val="{{ true }}">
+                  <div style="margin-top:4px; color: {{ t.sub }}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ mem.lastSession.files }}</div>
+                </sc-if>
+              </div>
+            </sc-if>
             <div style="margin-top:8px; padding:9px 10px; border-radius:8px; background:rgba(67,216,201,0.10); border:1px solid rgba(67,216,201,0.35); color: {{ t.text }}; font-size:11px; line-height:1.45;">
               <b style="color:#43d8c9;">Next safe action</b><br>{{ mem.homeView.nextAction }}
             </div>
@@ -1935,6 +1953,25 @@ class Component extends DCLogic {
           {label:'Code index',value:hh.codeIndex&&hh.codeIndex.behindHead?'behind HEAD':((hh.codeIndex&&hh.codeIndex.lastSuccessfulAt)||'not indexed'),color:hh.codeIndex&&hh.codeIndex.behindHead?'#f87171':'#34d399'},
           {label:'Sync',value:hh.sync&&hh.sync.configured?((hh.sync.lastSuccessfulAt)||'configured; no run yet'):'local only',color:hh.sync&&hh.sync.configured?'#34d399':'#8b97a8'}],
         nextAction:mh.nextAction||'Capture a reusable outcome.'}:null;
+      // The last-session card's view model. Every field degrades to a plain statement rather than a
+      // blank: a session with no checkpoint still says WHEN and WHERE it was, which beats an id alone.
+      const ls=(mh&&mh.lastSession)||null;
+      const lastSession=ls?(()=>{
+        const when=ls.lastActivity?new Date(ls.lastActivity).toLocaleString():'unknown time';
+        const who=ls.clientId||'an agent';
+        const where=ls.branch?(' on '+ls.branch):'';
+        const phase=ls.summaryPhase?(' ['+ls.summaryPhase+']'):'';
+        const files=(ls.changedPaths&&ls.changedPaths.length)
+          ? ('Uncommitted then: '+ls.changedPaths.slice(0,4).join(', ')
+             +(ls.changedPathsTruncated||ls.changedPaths.length>4?' …':''))
+          : '';
+        return {
+          // No checkpoint is a real state, not an empty one — say so instead of rendering a gap.
+          summary: ls.summary || 'No progress note was saved for this session — only its coordinates were recorded.',
+          meta: who+where+' · '+when+phase,
+          moved: ls.movedSince?'The repository has moved to a different branch or commit since then — re-check any plan against the tree as it is now.':'',
+          files
+        };})():null;
       const actionKind=this.state.memHomeAction;
       // WP6.1–WP6.3 — the pending queue view. /memory/pending.json is already display-shaped (two
       // honest sections, classified rows, exact commands, honest not-wired shape); this layer adds
@@ -2041,7 +2078,7 @@ class Component extends DCLogic {
             transitions:((d.audit&&d.audit.records)||[]).flatMap((rv)=>(rv.transitions||[]).map((tr)=>this.memAxis(tr.kind)+': '+this.memAxis(tr.from)+' → '+this.memAxis(tr.to)+' · '+tr.at.slice(0,10)+' · '+tr.actor+(tr.reason?' · '+tr.reason:''))) };
         }
       }
-      mem={ notConfigured:!!(md&&!md.configured), homeView, homeAction, pendingView, resumeView, announce:this.state.memAnnounce||null,
+      mem={ notConfigured:!!(md&&!md.configured), homeView, lastSession, homeAction, pendingView, resumeView, announce:this.state.memAnnounce||null,
         conflicts, conflictsPlural:conflicts.length===1?'':'s', policy,
         detail, list:configured&&!detail,
         loading:!!(this.state.memLoading&&!detail), error:this.state.memError, empty:configured&&rows.length===0,

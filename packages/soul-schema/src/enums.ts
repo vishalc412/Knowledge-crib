@@ -127,6 +127,46 @@ export const NODE_KINDS: readonly NodeKind[] = [
   'agent-artifact',
 ];
 
+/**
+ * Node kinds that are DETAIL of an enclosing symbol rather than answers in their own right.
+ *
+ * Two consumers, which is why this lives in the schema package rather than in either of them:
+ * discovery ranking (`query` / `ask` / `brief` exclude these by default, because a short fragment
+ * containing a query token outscores the function containing it under BM25) and vector building
+ * (there is no reason to embed a node kind discovery never ranks — on the crib's own index these are
+ * 38,286 of 48,459 nodes, or 79%, so embedding them was 79% of the cost of the vector build).
+ *
+ * Excluding them from discovery costs no CONTENT: a symbol's FTS body column holds its whole
+ * rehydrated span, so a fragment's text is searchable through its enclosing symbol.
+ */
+export const DETAIL_NODE_KINDS: readonly NodeKind[] = [
+  'statement',
+  'condition',
+  'assignment',
+  'case-branch',
+  'raise',
+  'cursor',
+  'exception-handler',
+  'explanation',
+];
+
+/**
+ * The kinds discovery ranks and the vector builder embeds: {@link NODE_KINDS} MINUS
+ * {@link DETAIL_NODE_KINDS}.
+ *
+ * Derived by subtraction, never enumerated. A newly added NodeKind must default to being
+ * DISCOVERABLE — a hand-written allowlist would silently exclude every future kind, and that failure
+ * is invisible, because a kind that is never returned looks exactly like a corpus containing none.
+ */
+export const DISCOVERY_NODE_KINDS: readonly NodeKind[] = NODE_KINDS.filter(
+  (k) => !DETAIL_NODE_KINDS.includes(k),
+);
+
+/** True when `kind` is sub-symbol detail (see {@link DETAIL_NODE_KINDS}). */
+export function isDetailNodeKind(kind: NodeKind): boolean {
+  return DETAIL_NODE_KINDS.includes(kind);
+}
+
 export const RELS: readonly Rel[] = [
   'calls',
   'imports',

@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { SoulStore, SqliteIndexStore, newManifest } from '@knowledge-crib/core';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { TOOL_NAMES } from './capabilities.js';
-import { RETIRED_ALIASES, buildServer } from './server.js';
+import { RETIRED_ALIASES, buildServer, buildUnavailableServer } from './server.js';
 import { Verbs } from './verbs.js';
 
 let dir: string;
@@ -543,5 +543,62 @@ describe('WP4.5 pin router', () => {
     };
     await pinnedCall(spy, pins, 'stats'); // retired alias → status op=stats → getStats().snapshot()
     expect(events).toEqual(['retain', 'getStats', 'release']);
+  });
+});
+
+/**
+ * F18 — an unindexed root must not be delivered by exiting.
+ *
+ * `crib serve` on a `.crib/` with no `crib.json` used to exit before the transport existed, which
+ * every MCP client reports as `MCP error -32000: Connection closed`. That state is ROUTINE — a fresh
+ * clone or git worktree has the committed `.crib/memory/` and no manifest — so the most common
+ * first-run experience was an opaque transport failure. The refusal stays; its delivery changes.
+ */
+describe('buildUnavailableServer (F18: refuse over MCP, never by exiting)', () => {
+  const REASON = '/repo is not indexed (no .crib/crib.json), so there is no graph to serve';
+  const REMEDY = 'Run `crib index /repo` and restart this MCP server.';
+
+  function registered(
+    server: ReturnType<typeof buildUnavailableServer>,
+  ): Record<string, { handler: (a: unknown) => Promise<{ content: Array<{ text: string }> }> }> {
+    return (
+      server as unknown as {
+        _registeredTools: Record<
+          string,
+          { handler: (a: unknown) => Promise<{ content: Array<{ text: string }> }> }
+        >;
+      }
+    )._registeredTools;
+  }
+
+  it('advertises the SAME tool surface, so tools/list does not look broken either', () => {
+    const names = Object.keys(registered(buildUnavailableServer(REASON, REMEDY)));
+    expect(names.sort()).toEqual([...TOOL_NAMES].sort());
+  });
+
+  it('every tool answers with the diagnosis and its remedy rather than a plausible empty result', async () => {
+    const tools = registered(buildUnavailableServer(REASON, REMEDY));
+    for (const name of TOOL_NAMES) {
+      const res = await tools[name]!.handler({});
+      const body = JSON.parse(res.content[0]!.text) as {
+        error?: { code?: string; message?: string; remedy?: string; serving?: string };
+      };
+      expect(body.error?.code, name).toBe('CRIB_UNAVAILABLE');
+      expect(body.error?.message, name).toBe(REASON);
+      expect(body.error?.remedy, name).toBe(REMEDY);
+      // An agent must not read this as "the graph is empty" — that would be a true-looking answer.
+      expect(body.error?.serving, name).toMatch(/nothing/);
+    }
+  });
+
+  it('accepts arbitrary arguments — a schema rejection would report the wrong problem', async () => {
+    const tools = registered(buildUnavailableServer(REASON, REMEDY));
+    const res = await tools.query!.handler({ q: 'anything', limit: 5, nonsense: true });
+    expect(JSON.parse(res.content[0]!.text).error.code).toBe('CRIB_UNAVAILABLE');
+  });
+
+  it('is connectable, i.e. the handshake can complete', () => {
+    const server = buildUnavailableServer(REASON, REMEDY, '1.2.3');
+    expect(typeof server.connect).toBe('function');
   });
 });

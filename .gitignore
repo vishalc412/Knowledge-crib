@@ -76,3 +76,9 @@ playwright-report/
 # (release.yml overrides --out per-cell before uploading it as an artifact). Running the gate
 # locally must not dirty the checkout it certifies (WP0's evidence-outside-tracked-source rule).
 release-evidence.json
+
+# `crib memory export` output — a generated VIEW of the ledger, never a source of it.
+# Committing it would create exactly the second source of truth the one-way design avoids: the file
+# would age against `.crib/memory/` and a reader could not tell which was current. Regenerate with
+# `crib memory export --out MEMORY.md` whenever you want a readable snapshot.
+MEMORY.md

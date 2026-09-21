@@ -111,42 +111,58 @@ function committedBytes(): string {
 // ─── trigger layer: WatchMode → coordinator ───────────────────────────────────
 
 describe('WatchMode — trigger layer (WP4.1)', () => {
+  /**
+   * The debounce is a FIXED WINDOW: the first event opens it, later events are absorbed, it fires
+   * once on expiry.
+   *
+   * This drives a SYNTHETIC watcher through the injectable `watchFactory` rather than writing real
+   * files and waiting for the OS. The earlier version did the latter and was flaky under load — not
+   * because the debounce is wrong, but because the nondeterminism lives in event DELIVERY: macOS
+   * FSEvents coalesces on its own latency, and on a loaded machine a five-write burst arrives in
+   * several batches spread past any fixed window. It had already been hardened once (a quiescence
+   * loop with an 8s deadline, per the comment this replaces) and still failed while a 24-minute
+   * embedding build saturated the cores.
+   *
+   * Widening the window only moves the threshold. Removing the OS from the test removes the whole
+   * class: the burst is emitted synchronously, so what is under test — that N events inside one
+   * window produce exactly ONE refresh — is asserted directly. The same `watchFactory` seam the
+   * degradation tests below already use.
+   */
   it('debounces a burst of watcher events into ONE requestRefresh(watcher)', async () => {
     const requests: string[] = [];
-    // The debounce is a FIXED WINDOW: the first event opens it, later events are absorbed, it
-    // fires once on expiry. Five writes microseconds apart can still arrive in two OS batches
-    // (macOS FSEvents coalesces with its own latency, and under a loaded test runner the gap
-    // exceeds a 40ms window) — so the window here must be wide enough to absorb real delivery
-    // jitter, and the assertion must wait for QUIESCENCE (the count stable for a full window)
-    // rather than a fixed sleep, so a straggler batch is observed, not missed.
-    const DEBOUNCE_MS = 400;
+    const emitter = new EventEmitter() as EventEmitter & { close(): void };
+    emitter.close = () => {};
+    // `watch()` takes its change callback as the THIRD argument, so the factory captures it and the
+    // test invokes it directly. That is the seam: no filesystem, no OS event delivery, no waiting.
+    let fire: ((event: string, filename: string) => void) | undefined;
+    const DEBOUNCE_MS = 40;
     const watch = new WatchMode({ requestRefresh: (reason) => void requests.push(reason) }, repo, {
       debounceMs: DEBOUNCE_MS,
       fallbackMs: 60_000,
+      watchFactory: ((
+        _dir: string,
+        _opts: unknown,
+        cb: (event: string, filename: string) => void,
+      ) => {
+        fire = cb;
+        return emitter;
+      }) as unknown as WatchOpts['watchFactory'],
     });
     await watch.start();
     try {
-      for (let i = 0; i < 5; i++) {
-        writeFileSync(join(repo, 'src', `x${i}.ts`), `export const n${i} = ${i};\n`);
-      }
-      const watcherCount = (): number => requests.filter((r) => r === 'watcher').length;
-      const deadline = Date.now() + 8000;
-      while (watcherCount() < 1 && Date.now() < deadline) {
-        await new Promise((r) => setTimeout(r, 25));
-      }
-      // Quiescence: the watcher count must stop moving for one full window (+margin). A late
-      // straggler batch would bump the count and restart the settle — and then fail the assert.
-      let stableSince = Date.now();
-      let lastCount = -1;
-      while (Date.now() - stableSince < DEBOUNCE_MS + 150) {
-        await new Promise((r) => setTimeout(r, 50));
-        const n = watcherCount();
-        if (n !== lastCount) {
-          lastCount = n;
-          stableSince = Date.now();
-        }
-      }
-      expect(lastCount).toBe(1);
+      expect(fire, 'watchFactory was not given a change callback').toBeDefined();
+      // Five events inside one window, delivered with no OS and no scheduling gap between them.
+      for (let i = 0; i < 5; i++) fire?.('change', `src/x${i}.ts`);
+      expect(requests.filter((r) => r === 'watcher')).toHaveLength(0); // still inside the window
+
+      await new Promise((r) => setTimeout(r, DEBOUNCE_MS + 60));
+      expect(requests.filter((r) => r === 'watcher')).toHaveLength(1);
+
+      // A later burst opens a NEW window and fires once more — the window is per-burst, not global.
+      for (let i = 0; i < 3; i++) fire?.('change', `src/y${i}.ts`);
+      await new Promise((r) => setTimeout(r, DEBOUNCE_MS + 60));
+      expect(requests.filter((r) => r === 'watcher')).toHaveLength(2);
+
       expect(requests.filter((r) => r === 'fallback')).toHaveLength(0);
     } finally {
       watch.stop();

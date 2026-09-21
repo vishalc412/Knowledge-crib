@@ -448,3 +448,16 @@ describe('rerank stage', () => {
     }
   });
 });
+
+/**
+ * The reranker port now HAS an implementation (`packages/core/src/rerank/`), and `core` cannot import
+ * `memory`, so `DEFAULT_RERANK_DEPTH` exists in both. Pinned equal from this side too: a scorer
+ * version id that names a depth the loader does not use would be a traceability lie.
+ */
+describe('DEFAULT_RERANK_DEPTH is mirrored in core', () => {
+  it('matches the value core\u2019s reranker tier duplicates', async () => {
+    const core = await import('@knowledge-crib/core');
+    const { DEFAULT_RERANK_DEPTH } = await import('./fusion.js');
+    expect(core.DEFAULT_RERANK_DEPTH).toBe(DEFAULT_RERANK_DEPTH);
+  });
+});

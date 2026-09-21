@@ -44,7 +44,7 @@ import {
 } from 'node:fs';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { MANIFEST_FILE, SoulStore, graphPaths, openIndex } from '@knowledge-crib/core';
-import type { IndexStore } from '@knowledge-crib/core';
+import type { Embedder, IndexStore } from '@knowledge-crib/core';
 import { type Registry, lookupProject, readRegistry } from './registry.js';
 
 export interface Runtime {
@@ -52,6 +52,15 @@ export interface Runtime {
   cribDir: string;
   soul: SoulStore;
 }
+
+/**
+ * Process exit codes, shared by every command module.
+ *
+ * Lives here rather than in `cli.ts` because sibling command modules (`scip-cmd.ts`, and any later
+ * one) need the same numbers, and importing them from the CLI entry point would be circular. The
+ * values are a contract with callers' scripts, so they are append-only.
+ */
+export const EXIT = { OK: 0, ERROR: 1, BAD_ARGS: 2, NOT_INDEXED: 3, LOCKED: 4 } as const;
 
 export interface ResolvedRoot {
   /**
@@ -249,7 +258,7 @@ export function isIndexed(repoRoot: string): boolean {
  * `cribDir` (it's a derived artifact of the soul, so it travels with it) — the leading `.crib/` is
  * stripped so the path lands at `<cribDir>/index/crib.sqlite`. Absolute manifest paths are honored.
  */
-export function buildIndex(rt: Runtime): IndexStore {
+export function buildIndex(rt: Runtime, embedder?: Embedder | null): IndexStore {
   const manifest = rt.soul.getManifest();
   const rel = manifest.stores.index.path; // e.g. .crib/index/crib.sqlite
   const path = resolveIndexPath(rel, rt.repoRoot, rt.cribDir);
@@ -286,13 +295,16 @@ export function buildIndex(rt: Runtime): IndexStore {
     // introduced into this window — at which point an uncaughtException handler (and
     // `unhandledRejection`) becomes mandatory alongside the signals.
     try {
-      const index = openIndex(manifest.stores.index.backend, { path: tmp });
+      const index = openIndex(manifest.stores.index.backend, { path: tmp, embedder });
       index.buildFromSoul(rt.soul, rt.repoRoot);
       index.close();
       rmSync(`${path}-wal`, { force: true });
       rmSync(`${path}-shm`, { force: true });
       renameSync(tmp, path);
-      return openIndex(manifest.stores.index.backend, { path });
+      // The returned store must carry the same embedder, or it reopens the index it just built and
+      // refuses its own vectors (`vector_meta` matches nothing without one) — the exact reopen bug
+      // the persisted metadata exists to fix.
+      return openIndex(manifest.stores.index.backend, { path, embedder });
     } catch (e) {
       cleanup();
       throw e;
@@ -301,10 +313,10 @@ export function buildIndex(rt: Runtime): IndexStore {
       process.removeListener('SIGTERM', onSigterm);
     }
   }
-  const index = openIndex(manifest.stores.index.backend, { path });
+  const index = openIndex(manifest.stores.index.backend, { path, embedder });
   // The derived index is fully determined by the soul + repoRoot (FTS5 + adjacency + rehydrated
-  // body text); no vector/embedding build options exist today. `manifest.capabilities.embeddings`
-  // is a capability record (always false until a vector backend ships) and does not drive the build.
+  // body text) plus, when `embedder` is supplied, a derived vector table. Vectors are gitignored and
+  // rebuildable, so supplying one changes retrieval and never the committed soul.
   index.buildFromSoul(rt.soul, rt.repoRoot);
   return index;
 }
@@ -353,7 +365,7 @@ export function sweepStaleBuilds(indexDir: string, now = Date.now()): number {
  * `crib update`, which mutates the soul then applies an `IndexDelta` to the existing index. Throws if
  * no index exists yet (run `crib index` first).
  */
-export function openIndexOnly(rt: Runtime): IndexStore {
+export function openIndexOnly(rt: Runtime, embedder?: Embedder | null): IndexStore {
   const manifest = rt.soul.getManifest();
   const rel = manifest.stores.index.path;
   const path = resolveIndexPath(rel, rt.repoRoot, rt.cribDir);
@@ -367,7 +379,7 @@ export function openIndexOnly(rt: Runtime): IndexStore {
   if (existsSync(manifestPath) && statSync(path).mtimeMs + 1 < statSync(manifestPath).mtimeMs) {
     throw new Error('derived index missing or stale — run `crib index .`');
   }
-  return openIndex(manifest.stores.index.backend, { path });
+  return openIndex(manifest.stores.index.backend, { path, embedder });
 }
 
 /**
@@ -387,7 +399,7 @@ export function openIndexOnly(rt: Runtime): IndexStore {
  *
  * Never returns null for a present index. Throws only on a truly missing (or unreadable) sqlite.
  */
-export function openIndexForServe(rt: Runtime): IndexStore {
+export function openIndexForServe(rt: Runtime, embedder?: Embedder | null): IndexStore {
   const manifest = rt.soul.getManifest();
   const rel = manifest.stores.index.path;
   const path = resolveIndexPath(rel, rt.repoRoot, rt.cribDir);
@@ -403,7 +415,7 @@ export function openIndexForServe(rt: Runtime): IndexStore {
       'warning: derived index stale (soul advanced) — serving existing index; run `crib index .` to refresh\n',
     );
   }
-  return openIndex(manifest.stores.index.backend, { path });
+  return openIndex(manifest.stores.index.backend, { path, embedder });
 }
 
 /**

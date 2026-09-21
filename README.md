@@ -77,10 +77,17 @@ Two existing tools each prove half and serve as **design inspiration only (no co
   and opt-in encrypted cross-device sync. Sessions can resume after an IDE timeout via intake
   checkpoints.
 - **IndexStore** — derived SQLite + FTS5 query layer; gitignored and rebuildable from GraphStore.
-- **Semantic recall** — on-device ONNX embeddings behind `crib embed setup` (opt-in): the default
-  `large` model reaches 81.1% paraphrase recall / 0.881 MRR with no Python and no network after
-  download; a machine without it serves the char-ngram fallback (~2.6% paraphrase recall). The
-  measured ladder is in [docs/bench/onnx-model-ladder.md](docs/bench/onnx-model-ladder.md).
+  **Code search is lexical by default** (BM25 over names, signatures, headings, files and rehydrated
+  bodies, plus a static synonym table). Vector retrieval over the code graph is opt-in per index
+  (`crib index --vectors`) and is **not yet measured on a labelled code corpus** — see the
+  [capability matrix](docs/capability-matrix.md).
+- **Semantic recall — of the MEMORY LEDGER, not of code.** On-device ONNX embeddings behind
+  `crib embed setup` (opt-in) rank *memory records*: the default `large` model reaches 81.1%
+  paraphrase recall / 0.881 MRR **on a frozen corpus of 500 labelled queries over 307 memory
+  records**, with no Python and no network after download; a machine without it serves the
+  char-ngram fallback (~2.6% paraphrase recall). Those numbers describe `memory recall` and say
+  nothing about code search. The measured ladder — including the corpus it was measured on — is in
+  [docs/bench/onnx-model-ladder.md](docs/bench/onnx-model-ladder.md).
 - **Freshness** — `crib serve --watch` re-indexes on save (verified at 805-file scale) and a
   background `--auto` worker keeps the soul fresh while you work.
 

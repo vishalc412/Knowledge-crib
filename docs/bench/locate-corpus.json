@@ -1,0 +1,1094 @@
+{
+  "generatedAt": "2026-09-21T14:34:29.210Z",
+  "repo": "/Users/vishalchawla/Documents/personal/Knowledge-crib/.claude/worktrees/graph-memory-rag-audit-600923",
+  "base": "d872789840b47e2a2b2b9a5f0751288b6ad0a050",
+  "head": "3e17bb012470d60c5240016b1e58eabce3d2742a",
+  "depth": 150,
+  "maxFiles": 5,
+  "counts": {
+    "filesAtBase": 772,
+    "tasks": 61,
+    "dropped": {
+      "tooManyFiles": 25,
+      "noSourceFiles": 22,
+      "noReachableTruth": 30,
+      "messageTooThin": 1
+    },
+    "truthFilesPerTask": "1.82",
+    "distinctAuthors": 1
+  },
+  "limits": [
+    "One repository. Absolute scores are not comparable to any external benchmark; the method-to-method comparison is what this corpus supports.",
+    "Author concentration: a corpus dominated by one author inherits that author’s commit-message style, which biases absolute recall for every method equally.",
+    "A commit message is a POST-HOC description of a change, not a bug report written before the fix. It is a better proxy for \"an agent is told what to change\" than for \"an agent is told what is broken\".",
+    "Ground truth is file-level. A method that finds the right file but the wrong symbol inside it scores as a hit."
+  ],
+  "tasks": [
+    {
+      "id": "9f4c6f5c4a3c",
+      "author": "Vishalc412",
+      "date": "2026-09-05T05:49:30+05:30",
+      "question": "feat(embed): one-command semantic tier, and the measured model ladder behind it Closes the gap that decided the first five minutes against Mem0: a fresh crib answered paraphrased questions at 2.6%, and the documented fix was three commands whose last step named ` ` — a directory the published package does not contain. ` ` ships [\"dist\",\"skills\",\"LICENSE\",\"NOTICE\"], so for anyone who installed from npm the instructions could not be followed at all. The tier was git-checkout-only. `crib embed setup` replaces it. One command: it resolves a Python, checks for sentence-transformers, confirms the weights are cached, GENERATES the adapter into the embed home, pins it through the same integrity path a hand-installed model takes, and then proves it ranks before reporting success. Verified end to end, not asserted: crib embed setup --model large → gates, G2 0.8104575163398693 which reproduces the published 81.0% to every digit. The generated adapter also reproduces the hand-written one exactly (G2 0.6601307189542484 for `small`), so the convenience path costs nothing in quality. THE MODEL LADDER ( ) Five models, each run through the frozen launch gate with only the embedder changed. Nothing here is estimated: large multilingual-e5-large 2.1 GB 81.0% PASS base multilingual-e5-base 1.1 GB 69.9% small all-MiniLM-L6-v2 87 MB 66.0% — para-multi-mpnet-base 1.0 GB 59.5% — para-multi-MiniLM-L12 458 MB 47.1% — (no tier) char-ngram 0 B 2.6% Two findings worth the run. First, ONLY `large` clears the 80% threshold, so there is no honest \"ship a small model as the semantic tier\" option — `large` stays the default and the rest are labelled as not passing. Second, SIZE DOES NOT PREDICT QUALITY: the 87 MB English model beats a 458 MB and a 1.0 GB multilingual one. Reasoning from parameter count would have shipped a worse default at 5-11x the download. `small` still earns a place: 66.0% is 25x the fallback for 4% of the download. A test asserts the table can never claim for a model below the threshold. ALSO - The adapter path sanitiser let `..` survive into a path segment. Not exploitable — separators are replaced, so the result stays under the embed home — but the segment is now defended on its own terms rather than by an argument about its caller. Found by a test written against the invariant. - `crib init` now names the tier in its next steps with both numbers, because a user who stops after `crib memory init` gets 2.6% recall and no signal that a better tier exists. - `crib doctor`'s fix hint and the tier report's install hint both point at the one command instead of the unfollowable repo path. - had no memory matrix at all — it compared only code-graph tools while the positioning claims to replace Mem0. Adds one, with crib's cells measured and every competitor cell explicitly labelled as a capability claim read from their docs, not a benchmark run here. The row crib loses (semantic recall out of the box) is in the table, not a footnote. Verified: 2,613 tests pass, biome clean over 555 files, `pnpm budget:check` ok (the adapter is generated at setup time, so no model or dependency enters the 5 MB package). Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>",
+      "type": "feat",
+      "scope": "embed",
+      "expectedFiles": [
+        "packages/cli/src/cli.ts",
+        "packages/core/src/embeddings/tier.ts"
+      ],
+      "unreachableFiles": [
+        "packages/cli/src/embed-setup.ts"
+      ],
+      "strippedTokens": [
+        "examples/embedders/minilm-e5",
+        "packages/cli/package.json",
+        "8/8",
+        "docs/bench/embed-model-ladder.md",
+        "7/8",
+        "6/8",
+        "docs/launch/comparison.md"
+      ]
+    },
+    {
+      "id": "119afad74c81",
+      "author": "Vishalc412",
+      "date": "2026-09-06T00:06:04+05:30",
+      "question": "fix(freshness): elect exactly one worker and fence a superseded owner (R01) `start()` read the lease, checked liveness, then wrote its own state with no lock spanning the decision, so N processes starting together each concluded they owned a single-owner service: twelve trials of eight contenders admitted 5-8 owners. Because every claimant then overwrote the same `activeTask` field, killing them recovered ONE of eight acknowledged tasks; the other seven were absent from both the recovery state and the pending queue. Election is now one critical section under a lease lock, and the state carries a monotonic epoch. A lock alone would not be enough: a worker that stalls past its TTL and is replaced can still wake up holding no lock at all, so every owned write re-reads the epoch and refuses when it no longer matches. A superseded worker stands down instead of publishing, dequeuing, re-enqueueing or deleting its successor's lease. Measured with the audit's own probes: trials now elect 1 of 8, and acknowledged tasks survive a hard kill. Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>",
+      "type": "fix",
+      "scope": "freshness",
+      "expectedFiles": [
+        "packages/cli/src/freshness.ts"
+      ],
+      "unreachableFiles": [],
+      "strippedTokens": [
+        "12/12",
+        "8/8"
+      ]
+    },
+    {
+      "id": "5b506644950f",
+      "author": "Vishalc412",
+      "date": "2026-09-06T00:09:26+05:30",
+      "question": "fix(memory): revalidate every schema, and report freshness per record (R02) A trusted v1 record whose source symbol had been deleted was correctly excluded from fresh recall. After the supported `migrateToV2()` the same record came back `evidence: valid`, `applicability: current`, `freshness.state: fresh` — migration laundered stale evidence into fresh advice. Two independent causes. `recallProjection` guarded live evaluation with `!isMemoryRecordVersioned`, so a migrated record kept the verdict snapshotted in its alias at migration time; the evaluator only ever needed , which every schema carries, so the guard bought nothing. And the response stamped ONE freshness object on every hit, derived from \"an evaluator was bound for this pass\" rather than from whether that record went through it. Evidence validity is a property of the world now, never of the schema a claim happens to be stored in. `ScoredRecord.evaluated` makes the second point structural: a record the projection skipped can no longer be advertised as freshly validated, whatever the pass as a whole did. Both regression tests fail against the original guard. Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>",
+      "type": "fix",
+      "scope": "memory",
+      "expectedFiles": [
+        "packages/cli/src/cli.ts",
+        "packages/mcp/src/verbs.ts",
+        "packages/memory/src/api.ts",
+        "packages/memory/src/recall.ts"
+      ],
+      "unreachableFiles": [],
+      "strippedTokens": [
+        "id/kind/claim/evidence"
+      ]
+    },
+    {
+      "id": "fdfc40bb4692",
+      "author": "Vishalc412",
+      "date": "2026-09-06T00:09:26+05:30",
+      "question": "fix(memory): apply the principal boundary to durable intakes (R03) An earlier repair gave versioned records a principal guard at the gather point. Intakes were left out: `intakeEntries()` merged every entry from every store with no principal or audience policy, and `getIntake`, `listIntakes`, `handoff` and — through `getIntake` — `checkpointIntake` all funnel through that one merge. So principal A could read principal B's `private` intake, see it in a listing, receive it in handoff, and APPEND a checkpoint to it. The guard belongs at the gather point for the same reason `acceptsRecord` does: a future intake-returning verb must inherit the boundary rather than re-derive it. Checkpoints carry no principal of their own, so one is visible exactly when its requirement is — their summaries describe the private work as directly as the requirement does. Isolation is only half the contract. A first version denied every team-shared intake too, because the entry map is last-wins and local is read second, so the surviving copy's store was the wrong thing to judge by. Team presence is now tracked separately, and the deliberate `shareIntake` promotion still reaches colleagues. Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>",
+      "type": "fix",
+      "scope": "memory",
+      "expectedFiles": [
+        "packages/memory/src/api.ts"
+      ],
+      "unreachableFiles": [],
+      "strippedTokens": []
+    },
+    {
+      "id": "9830a259b8bb",
+      "author": "Vishalc412",
+      "date": "2026-09-06T00:09:27+05:30",
+      "question": "fix(watch): let a connected reader adopt a canonical advance (R04) `refresh()` returned early whenever the dirty set was empty — which is exactly the shape of an external `crib update` that committed everything, or a clean branch switch. Consumers rebuild their read projections in `onRefresh`, and `crib serve` rebuilds the overlay FTS index there and nowhere else, so the server logged \"canonical soul advanced — overlay resynced\", reported the NEW head through `status`, and kept answering queries from the projection built against the OLD graph. A connected reader returned no match for a symbol a freshly started reader found immediately. A drift with nothing dirty is still a change the reader must adopt. No refresh runs — there is nothing to re-parse — so the callback carries a zero result whose only job is to say the canonical graph moved. Confirmed on an isolated copy of this repository (805 files): the connected reader now matches after an external update, saves stay at p95 2068ms. The existing drift test asserted `onDrift` fired but never that `onRefresh` did, which is why it passed throughout; the new test fails against the early return. Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>",
+      "type": "fix",
+      "scope": "watch",
+      "expectedFiles": [
+        "packages/cli/src/watch.ts"
+      ],
+      "unreachableFiles": [],
+      "strippedTokens": [
+        "50/50"
+      ]
+    },
+    {
+      "id": "3cca0473541f",
+      "author": "Vishalc412",
+      "date": "2026-09-06T00:09:49+05:30",
+      "question": "fix(memory): make \"remember this\" actually reach recall, and ground the trust signal Reported from real use: a developer told their agent to remember a working convention, the agent called `memory_observe`, got `ok: true`, and every later `brief` and `memory_recall` returned an empty `memories` list. They concluded crib's memory does not work. Three separate defects produced that. 1. THE EVIDENCE WAS STRUCTURALLY IMPOSSIBLE, AND THE WRITE SAID OK. The payload was `[{ type: 'human-attestation', quote: '…' }]` — `type` where `kind` belongs, and a human attestation additionally needs . `observe` validated kind, subject, claim and actor and never looked at the evidence, so it staged a record that could never be activated, never recalled, and never explained. `admissibilityProblems` now decides this at write time, off the same admissibility matrix the evaluator uses so the two cannot drift. Structural admissibility is decidable the moment a claim is written, and that is the only moment its author can still fix it. 2. RECALL WAS SILENT ABOUT STAGED WORK. `memory_observe` stages an UNTRUSTED candidate and normal recall excludes untrusted claims — that gate is correct and unchanged. But recall reported the exclusion as an absence: no count, no reason, no next step. A trust gate the user cannot see is indistinguishable from a broken store. `brief` and `memory_recall` now carry a `pendingNotice` (count and next action only, never content), and the observe acknowledgement says `recallable: false` rather than implying the claim is retrievable. 3. ADMISSION DEMANDED PROOF OF SOMETHING THE CLAIM NEVER ASSERTED. Reaching local trust required `crib memory evaluate --profile <name>` to produce a gate receipt bound to HEAD and a worktree digest, then `crib memory activate`. A `convention` or `decision` admits only human-attestation and committed-policy: there is no execution to gate and no code anchor to drift. `admitAttested` is receipt-free for exactly those claims, and `crib memory remember` / `crib memory admit` make it one command. What keeps (3) from being a trust hole is that crib now MINTS the attestation instead of accepting one. `tty` was read verbatim from caller-supplied evidence, so any agent could stamp it and self-grant the trust it represents. It is now refused over MCP — an agent speaking over stdio has witnessed no terminal — and stamped by crib itself at admission, from a `process.stdin.isTTY` it checked. An agent relaying \"the user told me to do X\" can still propose the claim: the attestation fields are not required at STAGING, only at admission. Trust never exceeds `local`; team promotion still requires CI and a trusted ref. Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>",
+      "type": "fix",
+      "scope": "memory",
+      "expectedFiles": [
+        "packages/cli/src/cli.ts",
+        "packages/mcp/src/verbs.ts",
+        "packages/memory/src/api.ts",
+        "packages/memory/src/evaluator.ts",
+        "packages/memory/src/promotion.ts"
+      ],
+      "unreachableFiles": [],
+      "strippedTokens": [
+        "tty/actor/attestedAt"
+      ]
+    },
+    {
+      "id": "528dcfaa9111",
+      "author": "Vishalc412",
+      "date": "2026-09-06T00:10:07+05:30",
+      "question": "feat(onboarding): wire only the IDE in use, and ship a Python-free semantic tier TWO DEFECTS THAT MADE FIRST-RUN HOSTILE. `crib init` defaulted `--ide` to `all`, and its instruction-adapter step was hardcoded to `all` regardless — so even `crib init --ide claude` wrote GEMINI.md. A developer working in GitHub Copilot got CLAUDE.md, GEMINI.md, .windsurfrules, . , AGENTS.md and six MCP configs dropped into their repository, with the one file their agent reads buried among them. `copilot` was not even an accepted `--ide` value. Files nobody asked for are not a harmless default: they get committed, reviewed, and inherited by everyone who clones. `detectClients` identifies the running client from what the client itself sets, falling back to repository configuration. It deliberately ignores files crib generated: after one over-broad install every repo contains GEMINI.md, and counting that as proof of a Gemini user would make the mistake self-justifying. When nothing is identified, the vendor-neutral AGENTS.md is written and NO MCP config — a config file's location IS the client identity, and guessing one is how the spray started. `--ide all` remains, as something an operator asks for. THE SEMANTIC TIER NO LONGER NEEDS PYTHON. Reaching it required `pip install sentence-transformers` (and PyTorch) from a Node CLI, which is where installs actually died: doctor reported the degraded char-ngram fallback and the tier stayed git-checkout-only. Setup now provisions an ONNX runtime — npm packages installed into crib's embed home on demand, never into the user's project and never into crib's own dependencies, which are capped. Measured against the frozen launch gates before shipping it ( ): multilingual-e5-large scores G2 81.05% / G3 0.8814 through the ONNX path, reproducing the 81.0% / 88.1% already on record for the Python configuration. Same model, same weights, same ranking — one less toolchain. Every ladder row now carries a measured number rather than a label, including the rows that FAIL a gate: printing `small`'s real 42.5% against an 80% threshold is more honest than hiding it behind \"unverified\". `large` stays the default because it is the only row clearing all eight gates. `crib init` ASKS which to install and never downloads unattended; a non-interactive run says what to run instead. `--from <dir>` adopts a pre-fetched bundle for air-gapped hosts, copying rather than linking so unmounting the bundle cannot silently degrade a working tier back to lexical. Two bugs found by running it rather than reading it: the synchronous adapter deadlocked waiting for a worker `message` event while `Atomics.wait` held the event loop (readiness now travels over the same Atomics channel), and the generated worker was only written inside the install branch, so an upgraded crib kept running the previous release's worker — which hangs rather than errors when the handshake changes. Also: `crib doctor` called a working `KCRIB_EMBEDDER` override a \"degraded char-ngram fallback\". There is now an `external` tier that loads the provider to prove it works and says plainly that crib neither pins nor measures it. Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>",
+      "type": "feat",
+      "scope": "onboarding",
+      "expectedFiles": [
+        "packages/cli/src/adapters.ts",
+        "packages/cli/src/cli.ts",
+        "packages/core/src/embeddings/tier.ts"
+      ],
+      "unreachableFiles": [
+        "packages/cli/src/embed-onnx.ts",
+        "packages/cli/src/embed-setup.ts"
+      ],
+      "strippedTokens": [
+        "cursor/rules/crib.mdc",
+        "docs/bench/onnx-model-ladder.md"
+      ]
+    },
+    {
+      "id": "33dd25aa3625",
+      "author": "Vishalc412",
+      "date": "2026-09-06T02:22:04+05:30",
+      "question": "fix(memory): bind strictPrincipal so the gather actually compiles `gatherRecall` referenced `strictPrincipal` in its accept predicate, but nothing ever bound it from `opts` — the option was declared on the interface, documented, covered by a test, and read as a free variable. `tsc` rejects the file, so the memory package did not build at all on this branch. The behaviour was already right and already tested; only the binding was missing. Defaults to `false`, matching the option's documented contract: in the normal single-principal deployment an unstamped memory-1 record found in your own store IS yours, and excluding it would silently empty the ledger of anyone who has not migrated. Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>",
+      "type": "fix",
+      "scope": "memory",
+      "expectedFiles": [
+        "packages/memory/src/recall.ts"
+      ],
+      "unreachableFiles": [],
+      "strippedTokens": []
+    },
+    {
+      "id": "efbcfdc071e9",
+      "author": "Vishalc412",
+      "date": "2026-09-06T02:27:23+05:30",
+      "question": "fix(embed): reconcile the two setup implementations after the rebase The rebase auto-merged ` ` without a conflict and kept BOTH `cmdEmbedSetup` implementations — the Python one from this branch and the ONNX one from mine. `tsc` caught it as a duplicate function; the package did not build. Resolved by deleting the Python implementation and keeping its `--list` ladder, which is genuinely useful and was the better half of that commit. `formatEmbedLadder` now reads `evidence` (where the figures moved) instead of fields that no longer exist on the spec, and the top-level help no longer promises a pip install the tier does not perform. THE SMALL ROW CHANGES, ON EVIDENCE. This branch's ladder had already measured `all-MiniLM-L6-v2` at G2 66.0% / 6-of-8 in 87 MB. That beats the `multilingual-e5-small` I had chosen on BOTH axes — 5x smaller and 23 points better — because a 250k-token vocabulary spends most of a small model's parameters on an embedding matrix rather than an encoder. Re-measured through ONNX before adopting it rather than assuming the Python number transferred: G2 66.01%, G3 0.6722, 6-of-8. The ladder is therefore the best measured model at each footprint, not one family at three sizes. That re-measurement is also the third corroboration of the runtime swap. Every model measured both ways agrees to within rounding — large , base , MiniLM — across two independently written runtimes. `embed-model-ladder.md` is marked superseded rather than deleted: its numbers are real and now independently reproduced; only the install it describes is gone. Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>",
+      "type": "fix",
+      "scope": "embed",
+      "expectedFiles": [
+        "packages/cli/src/cli.ts"
+      ],
+      "unreachableFiles": [
+        "packages/cli/src/embed-setup.ts"
+      ],
+      "strippedTokens": [
+        "g2/gates",
+        "81.0/81.05",
+        "69.9/69.93",
+        "66.0/66.01",
+        "cli.ts"
+      ]
+    },
+    {
+      "id": "403b17e42e86",
+      "author": "Vishalc412",
+      "date": "2026-09-06T02:36:47+05:30",
+      "question": "feat(memory): survive an IDE session timeout, on every client Reported from real use: a Copilot or Cursor session times out and the context is gone — there is nothing to resume from. Handoff had plenty to say about intakes, checkpoints and pending captures, and every one of those requires the agent to have WRITTEN something before it stopped. An agent whose session was killed had no chance to. The lifecycle hook returned `status: checkpoint-requested`, which is a REQUEST to the agent to write a checkpoint: the design depended on precisely the thing that had just died. A timed-out session left one event saying a turn had ended, carrying no branch, no HEAD and no files — durable, and useless. Two changes, because the first alone would have helped the wrong people. 1. The lifecycle hook now records the repository anchor on every event — branch, HEAD, and the files being worked on. That is the part a hook can observe by itself, so it survives a timeout, a crash or a closed laptop with no agent cooperation at all. 2. The MCP server records the same anchor on every tool call. Of the seven client adapters exactly ONE exposes a lifecycle hook surface; Copilot, Cursor, Codex, Windsurf and Gemini are instruction-only, so a hook-based resume would have helped precisely the users who did not report the problem. Every client reaches crib through the server, which makes this the client-agnostic version of the same idea. Coalesced to one event per five minutes per distinct working set, optional at the call site, and it never throws: a resume breadcrumb is not worth a failed tool call. `handoff` surfaces it as `lastSession`, with `movedSince` set when the repository has since changed branch or HEAD — resuming against a branch you have left is worse than not resuming. It takes the newest event that HAS an anchor rather than simply the newest, so a hook predating this field degrades to older-but-useful instead of newer-but-empty, and it is absent entirely when nothing was recorded so \"no hook\" stays distinguishable from \"no prior work\". Coordinates only. Contents, prompts, transcripts and tool IO remain excluded; file NAMES were already within the capture policy that intake checkpoints use. Verified end to end against a Copilot-shaped client with no hook installed: one ordinary `query`, SIGKILL, and a new session recovers branch, HEAD and the changed file. Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>",
+      "type": "feat",
+      "scope": "memory",
+      "expectedFiles": [
+        "packages/cli/src/cli.ts",
+        "packages/mcp/src/server.ts",
+        "packages/mcp/src/verbs.ts",
+        "packages/memory/src/api.ts",
+        "packages/memory/src/handoff.ts"
+      ],
+      "unreachableFiles": [],
+      "strippedTokens": []
+    },
+    {
+      "id": "b4062c174a18",
+      "author": "Vishalc412",
+      "date": "2026-09-06T03:04:22+05:30",
+      "question": "fix(freshness): a busy worker is not a dead one Observed live while diagnosing this repository: `crib status` reported `workerRunning: false` for a worker that was healthily reindexing. Its heartbeat had aged past 190 seconds and returned to 1 second the moment the work finished. Revalidation runs `crib update`, whose parsing is synchronous, so a large repository blocks the event loop for as long as it takes — and a blocked event loop cannot fire the heartbeat timer. The lease therefore describes a working worker as dead, which sent an operator (me) hunting a hung process that was in fact doing their work. A live pid still holding a leased task is BUSY, and is now reported as running with `workerBusy: true`. A live pid with NO task and no heartbeat stays reported as not running: unexplained silence is not the same as visible work, and that case must remain a red flag. This does not fix the underlying property — a long synchronous revalidation still cannot beat its own heart, so a second worker starting in that window still sees a stale lease and can take the lease over. The epoch fencing added earlier makes that safe rather than corrupting (the original stands down instead of clobbering), but the takeover is spurious and wastes a full reindex. Fixing it properly means either a liveness signal that does not share the blocked thread, or an election that treats \"alive and holding a task\" as busy — deliberately left for its own change rather than bolted on here. Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>",
+      "type": "fix",
+      "scope": "freshness",
+      "expectedFiles": [
+        "packages/cli/src/freshness.ts"
+      ],
+      "unreachableFiles": [],
+      "strippedTokens": []
+    },
+    {
+      "id": "94c2cfe46e7b",
+      "author": "Vishalc412",
+      "date": "2026-09-06T03:17:16+05:30",
+      "question": "feat(mcp): add `review` — the one call a code review needs Reported from real use: \"I gave something to review, and my model read ten lines and predicted what was happening.\" That reads like laziness and is actually arithmetic. A reviewer needs more than the diff — who calls the changed code, and what was already decided about it — and the obvious way to get that is to read the files. Measured on this repository, reading every file a commit touched costs ~212,000 tokens. That does not fit alongside the conversation that asked for the review, so the model truncates, and truncating is what gets reported as skimming. The budget was impossible. `review` composes the answer from the graph instead: what changed, each changed DECLARATION with its signature, its code callers, and prior trusted memory about it — one bounded call, ~2,000 tokens ( ). It is NOT cheaper than a raw diff, and the docs say so. It answers what a diff structurally cannot: a diff shows changed lines, never their callers, and never the argument the team already settled. The useful pairing is diff + review, ~7k against 212k for reading files. Three defects found by running it rather than reasoning about it, each now pinned by a test: • it reported 5,156 \"changed symbols\" for a six-file change, because every assignment and statement in a touched file is a node. It now expands declarations only, and reports both counts so neither question is hidden. • it ranked a trivial local helper called `flag` first, because documentation sections that merely mention a word are incoming edges too. Callers are code; doc edges are excluded from the ranking and the output. • an empty caller list read as \"unused\". Dynamic dispatch, property access and cross-language calls all produce that same emptiness, so every such symbol now carries the label explicitly — that inference is how a reviewer talks themselves into deleting live code. Available as the `review` MCP tool and `crib review`, and named in the agent protocol every client receives, because a capability agents do not reach for is not a capability. Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>",
+      "type": "feat",
+      "scope": "mcp",
+      "expectedFiles": [
+        "packages/cli/src/adapters.ts",
+        "packages/cli/src/cli.ts",
+        "packages/mcp/src/capabilities.ts",
+        "packages/mcp/src/server.ts",
+        "packages/mcp/src/verbs.ts"
+      ],
+      "unreachableFiles": [],
+      "strippedTokens": [
+        "docs/bench/review-cost.md"
+      ]
+    },
+    {
+      "id": "0930a52c5b1b",
+      "author": "Vishalc412",
+      "date": "2026-09-06T03:37:19+05:30",
+      "question": "fix(ui): make the memory home reachable, readable and keyboard-usable (R08) Four defects the audit measured in the memory home, each re-measured in a real browser before and after. CONTRAST 1.03:1 → 13.2:1. The lifecycle filter tabs rendered dark-theme text on the browser's default button face, i.e. effectively invisible. The cause is a template limitation worth naming: a `{{ ternary }}` inside an inline style VALUE is dropped, because the `:` of `? :` ends the CSS declaration. `background: {{ on ? a : b }}` produced no background at all and `border: 1px solid {{ … }}` lost its colour. Conditionals for those two declarations are resolved in the view model now, so the template only interpolates finished values. UNREACHABLE BELOW 900px. The Memory button carried `kc-hide-compact` and simply vanished — the same class as Tour and Blast radius, which are conveniences; memory is the product's primary surface, and the panel itself fits a 375px viewport, so the feature was unreachable rather than unusable. It now collapses to its icon. That alone was not enough: the toolbar needs 651px of controls in a 375px window, so the button existed but was laid out past the right edge. Measured, then fixed by letting the bar wrap rather than deleting controls. ESCAPE DID NOT CLOSE IT. The key handler fell through to `closePanel()` — the NODE panel — so the memory overlay could only be dismissed with the mouse. FOCUS WENT NOWHERE. Opening left focus on the toolbar button; closing left it on a button whose panel was gone. Both now managed, and the implementation is deliberately `setTimeout` rather than `requestAnimationFrame`: rAF is paused in a background tab, so an rAF version scheduled exactly one callback and silently did nothing. Focus management that only works while the tab is frontmost cannot be tested, and was not — the first two attempts here passed review and failed measurement. Also a wrong number: \"Work to resume\" summed `intakes.count`, which is every intake including completed and cancelled ones. `resumableCount` is now exposed separately and used, because a tile offering work to resume must not count work that is finished — that is the kind of wrong number that teaches an operator to distrust every other number on the page. NOT fixed here: pending captures and resumable intakes are still counts without per-tile actions. The panel names the next command, and the CLI performs it (`crib memory recall --include-pending`, `crib memory admit`), so this is a usability gap rather than a dead end. Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>",
+      "type": "fix",
+      "scope": "ui",
+      "expectedFiles": [
+        "packages/cli/src/viz-server.ts",
+        "packages/memory/src/intake-projection.ts"
+      ],
+      "unreachableFiles": [],
+      "strippedTokens": []
+    },
+    {
+      "id": "15e678c312b4",
+      "author": "Vishalc412",
+      "date": "2026-09-07T22:33:43+05:30",
+      "question": "feat(onboarding): make crib mandatory everywhere and installable in one command Knowledge-crib was optional by construction. The protocol block described how to use memory; nothing said an agent had to. `crib init` wired only the client it happened to detect, so any other IDE opened the repository with no protocol at all. And the semantic tier — the difference between 2.6% and 81% paraphrase recall — prompted on a TTY and silently skipped everywhere else, so every scripted onboarding finished on the degraded lexical fallback without saying so. Three changes, in the order they matter: 1. The protocol now opens with \"Knowledge-crib is MANDATORY in this repository\": every agent, in every IDE, on every task; recall before planning or reading files; graph verbs before grep; no substitute store and no private side-store. It deliberately ends by saying that mandatory is not infallible — the honesty signals still govern, and an empty or `note`-qualified result is a limit of the index, never an all-clear. Stated vendor-neutrally, so the block still names no third-party tool. 2. `crib init` and `crib adapters install` default to EVERY client. This reverses a deliberate earlier fix (a Copilot user got five instruction files they had not asked for), and the reversal is the point: a client that merely failed to be detected is the one most likely to run without the rule. The narrow behaviour survives as `--ide detected` / `--client detected`, so nothing that was possible became impossible. 3. New `crib setup` — index, hooks, MCP for every client, the protocol in every instruction file, the on-device model, the memory stores, then `doctor`. The model now installs by default rather than only when a human is at a TTY; `--no-embed`, `KCRIB_NO_EMBED=1`, `--embed-model small` and `--embed-from <dir>` are the escape hatches, and the step stays last and non-fatal so a refused download degrades recall without breaking onboarding. Also: ` ` (`pnpm bootstrap`) takes a fresh checkout to a wired repo in one command, and the generated now run `crib setup` when launched inside a git work tree (`KCRIB_NO_SETUP=1` to install the binary only). Two incidental fixes found on the way: `crib init --ide claude` resolved the project root to `./claude` (`--ide` was missing from VALUE_FLAGS), and `biome check .` was already red on this branch over an `any` in a pipeline fixture — ignored now, matching the existing ` /**` precedent rather than editing what the fixture tests. Model weights are not committed: ~2.1 GB of third-party artifacts under their own licences. `crib setup` fetches and integrity-pins them on first run; every query after that is offline. Gates: 2,748 tests green across 8 packages, biome clean, onboarding:check, capabilities:check, installer:test, security:check and docs-site:check all passing. Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>",
+      "type": "feat",
+      "scope": "onboarding",
+      "expectedFiles": [
+        "packages/cli/src/adapters.ts",
+        "packages/cli/src/cli.ts",
+        "scripts/build-installers.mjs",
+        "scripts/onboarding-check.mjs"
+      ],
+      "unreachableFiles": [
+        "scripts/bootstrap.mjs"
+      ],
+      "strippedTokens": [
+        "scripts/bootstrap.mjs",
+        "install.sh/install.ps1",
+        "packages/parsers/fixtures"
+      ]
+    },
+    {
+      "id": "ea997a8f9874",
+      "author": "Vishalc412",
+      "date": "2026-09-08T10:40:59+05:30",
+      "question": "fix(adapters): emit the nested hook shape Claude Code actually accepts The lane-2 capture-hook writer pushed a bare {type,command} entry straight into the settings.json event bucket. Claude Code's schema nests two levels there — hooks.<Event> holds MATCHER objects, each carrying its own `hooks` array of command entries — and rejects a bare entry with \"Hook matcher \\\"hooks\\\" must be an array of hook entries\". The rejection is silent. No error surfaces in the session; the configured command simply never runs. So every crib-installed lifecycle hook was inert, and SessionStart never injected the `crib session bootstrap` continuation block. To the user that reads as \"no memory saved for this session\" — memory was intact the whole time, only the delivery was. Wrap each managed entry as {hooks:[{type,command}]}, and teach the writer to recognise the legacy flat shape as crib-owned so an existing broken settings file is repaired in place on the next install rather than gaining a duplicate beside the entry that never fired. Removal now strips crib commands out of a matcher it shares with a user hook instead of dropping the matcher whole, so uninstalling crib can never take a sibling hook with it. The existing test asserted the flat shape, which is why this shipped green; it now asserts the nested one, alongside migration and shared-matcher regressions. Also close the protocol gap the incident exposed: §2 now states that recall and handoff read different stores and that an empty recall is evidence about the claim ledger alone, never evidence that no unfinished work exists. Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>",
+      "type": "fix",
+      "scope": "adapters",
+      "expectedFiles": [
+        "packages/cli/src/adapters.ts"
+      ],
+      "unreachableFiles": [],
+      "strippedTokens": []
+    },
+    {
+      "id": "4c641930c0a9",
+      "author": "Vishalc412",
+      "date": "2026-09-08T11:00:38+05:30",
+      "question": "feat(adapters): make crib the default at user scope, and drain the backlog automatically Crib could only ever be a per-repository choice: every client returned null for `scope: 'global'`, so instruction files and capture hooks existed solely in repositories `crib init` had been run in. Opening any other project meant an agent with no idea crib was there. Add the user-scope lane. Four clients have a user-home instruction file and now get one — Claude (~/. ), Codex (~/. ), Gemini (~/. ) and Windsurf (global_rules.md). Three honestly cannot and say so instead: Cursor has no user-home rules file at all, and Copilot's user-level instructions are a VS Code settings key rather than a file this writer owns. Claude also gains the global hook surface, so capture and the session-bootstrap continuation fire in every repository, not only wired ones. A user-level block is loaded for repositories crib has never indexed, so it carries its own applicability gate: mandatory when `.crib/` is present, explicitly ignorable when it is not. Without that, the default would tell agents to call in repos where those verbs have nothing to answer from — a memory default that manufactures failed calls. The protocol body is identical at both scopes; the gate is a prefix, not a second copy of the rules. `instructionTargets` and `settingsPath` now take the home directory from the caller, for the same reason `skillDest` already did — this module resolves home via homedir()/getpwuid, which `process.env.HOME` does not isolate, so a test that forgot to pass one would rewrite the developer's own settings. Every global-scope assertion passes an explicit temp home. Also add `crib memory activate --all` and run it from the turn-end hook, so candidates stop accumulating unread. It deliberately does NOT run a gate or invent a receipt: admission has two doors, and both require something a hook cannot fabricate — `activate` needs a receipt from a gate that really ran against this head and worktree, `admit` needs a TTY because it records that a human accepted the claim. Manufacturing either precondition is the agent self-asserting a pass, which §4 forbids. So the drain runs only when a real receipt already covers the worktree, and is a reported no-op otherwise. Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>",
+      "type": "feat",
+      "scope": "adapters",
+      "expectedFiles": [
+        "packages/cli/src/adapters.ts",
+        "packages/cli/src/cli.ts"
+      ],
+      "unreachableFiles": [],
+      "strippedTokens": [
+        "claude/CLAUDE.md",
+        "codex/AGENTS.md",
+        "gemini/GEMINI.md",
+        "query/handoff/impact"
+      ]
+    },
+    {
+      "id": "5e9e9a33e050",
+      "author": "Vishalc412",
+      "date": "2026-09-08T11:11:02+05:30",
+      "question": "fix(session): degrade cleanly in repositories that have no crib index Wiring the capture hook at user scope turned an unreachable path into the common one: `crib session bootstrap` and `crib memory capture-hook` now fire in EVERY repository the user opens, and most of them have no `.crib`. Both reached readRepoId with an undefined crib dir and died on a raw ERR_INVALID_ARG_TYPE. bootstrap threw the stack trace outright; capture-hook caught it but printed the internal \"paths[0] must be of type string\" through its fail-open note. Since the client injects SessionStart stdout into the new session's context, that made a Node stack trace the first thing an agent read in every non-crib repository. Check indexedness before touching the stores, and say one plain sentence instead. Verified end to end: in an unindexed repo both commands write a single note to stderr and leave stdout EMPTY, so nothing reaches the model's context; in an indexed one the continuation block still arrives intact. The existing unindexed-repo test pinned the old message text; it now pins the durable contract instead — exit 0, a note on stderr, no leaked internal error, and an empty stdout. Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>",
+      "type": "fix",
+      "scope": "session",
+      "expectedFiles": [
+        "packages/cli/src/cli.ts"
+      ],
+      "unreachableFiles": [],
+      "strippedTokens": []
+    },
+    {
+      "id": "260654a39890",
+      "author": "Vishalc412",
+      "date": "2026-09-08T12:13:29+05:30",
+      "question": "fix(embed): staged download + platform pin + offline bundle gate ( ) WP1.9 — downloads never half-replace a working tier: weights are fetched into a throwaway .download-staging- dir under the embed home, dim-probed and completeness-checked (all files non-empty, >=1 .onnx, config.json + tokenizer.json) BEFORE a single-rename publish; the old model is moved aside and restored if the swap fails, and staging is deleted in a finally either way. The WP1.8 runtime pin now records `${platform}-${arch}` and verifyInstalledEmbed refuses a copied embed home up front (\"runtime platform drift ... re-run crib embed setup\") instead of dying later inside a dlopen of wrong-arch onnxruntime. WP1.10 — the air-gapped path passes the SAME gate: adoptOfflineBundle stages the --from bundle, runs it through the same stagedModelProblem checklist, and publishes via the same atomic swap; an incomplete bundle is refused with the previous cache untouched. cli vitest config allow-lists realpath(tmpdir) for the generated-embedder imports (same shape as core's). Tests: 6 staged-download cli tests + 1 core platform-drift test + 2 adoptOfflineBundle tests; full suites cli, core. Co-Authored-By: Claude Code <noreply@anthropic.com>",
+      "type": "fix",
+      "scope": "embed",
+      "expectedFiles": [
+        "packages/cli/vitest.config.ts",
+        "packages/core/src/embeddings/embed-install.ts"
+      ],
+      "unreachableFiles": [
+        "packages/cli/src/embed-onnx.ts",
+        "packages/cli/src/embed-setup.ts"
+      ],
+      "strippedTokens": [
+        "WP1.9/WP1.10",
+        "439/439",
+        "339/339"
+      ]
+    },
+    {
+      "id": "b4240ae7c085",
+      "author": "Vishalc412",
+      "date": "2026-09-08T12:13:33+05:30",
+      "question": "feat(embed): four distinct installation states, machine-readable (WP1.11) EmbedTierReport.status is derived ONCE in core embedTierReport — semantic-ready / lexical-only / installation-incomplete / invalid-model — so crib embed status and crib doctor render it and never re-derive it. The new embedHomeFootprint check splits the two states a manifest-less home previously collapsed: a partial footprint means a setup ran partway and died before the pin, and its remediation (\"re-run crib embed setup\") differs from a fresh machine's (\"run it\") — which is the whole reason the split exists. crib embed status prints a `state:` line; doctor's embedder-tier check gives state-specific fix hints. 6 new core tests cover every state plus the empty-dir-vs-footprint edge; 1 CLI e2e drives lexical-only and installation-incomplete through the real dist binary. Co-Authored-By: Claude Code <noreply@anthropic.com>",
+      "type": "feat",
+      "scope": "embed",
+      "expectedFiles": [
+        "packages/cli/src/cli.ts",
+        "packages/core/src/embeddings/tier.ts"
+      ],
+      "unreachableFiles": [],
+      "strippedTokens": [
+        "runtime/models/adapters"
+      ]
+    },
+    {
+      "id": "92b2f5f9f201",
+      "author": "Vishalc412",
+      "date": "2026-09-08T12:13:39+05:30",
+      "question": "feat(installers): npm launcher, Windows fixes, user-dir smoke (WP1.1-1.6) pkg-manager (WP1.1-1.3): the shared launcher never resolves npm through a .cmd shim — it finds npm-cli.js and runs it with the same node binary, argument-array only, shell never set (the CVE-2024-27980 shape), with a machine-readable failure taxonomy ( ). Installer bundle fixes ( ) and the launch requirements register (WP0) land with this unit. WP1.6 — installer:smoke-userdir: relocates HOME + USERPROFILE + npm prefix to ` öhn doe` (space AND non-ASCII) and runs the full install -> bin-via-spaced-path -> index -> crib mcp install (embedded command must carry the spaced bin path verbatim) -> reinstall (client config byte-identical) -> uninstall (no crib files left, client config PRESERVED) cycle under it. Unit assertions pin that every scenario path carries a space + non-ASCII byte and the env relocates both homedir sources; wired into beta-installers.yml for macOS + Windows runners. Verified locally on darwin; Windows leg rides the next CI run. Co-Authored-By: Claude Code <noreply@anthropic.com>",
+      "type": "feat",
+      "scope": "installers",
+      "expectedFiles": [
+        "scripts/build-installers.mjs",
+        "scripts/install-smoke.mjs"
+      ],
+      "unreachableFiles": [
+        "packages/cli/src/pkg-manager.ts"
+      ],
+      "strippedTokens": [
+        "spaces/non-ASCII",
+        "discovery/network/install/post-install",
+        "WP1.4/1.5",
+        "Users/j"
+      ]
+    },
+    {
+      "id": "f6904fd8fe75",
+      "author": "Vishalc412",
+      "date": "2026-09-08T12:23:01+05:30",
+      "question": "feat(adapters): locate malformed crib-owned entries, never overwrite (WP2.3+WP2.4) WP2.3 acceptance e2e: a repeated full setup pass (adapters install + hooks install + mcp install) leaves every file byte-identical, reports \"up to date\", and holds exactly one managed block per instruction file, one capture-hook entry per event bucket, and one server table per MCP config. WP2.4: every refusal now names WHERE the defect is. - hooksRefusal scans EVERY event bucket (not just crib's three) for a marker-carrying entry it cannot parse, and names hooks.<Event>[<index>]; install and remove both refuse and leave the file byte-unchanged. - The instruction lane's orphan begin marker (previously a silent no-op indistinguishable from \"already up to date\") now reports the marker's line number via the new orphanBeginMarkerLine helper, in both installInstructions and removeInstructions. 3 new unit tests reproduce each defect shape first and assert file bytes are untouched; adapters , full cli suite . Co-Authored-By: Claude Code <noreply@anthropic.com>",
+      "type": "feat",
+      "scope": "adapters",
+      "expectedFiles": [
+        "packages/cli/src/adapters.ts"
+      ],
+      "unreachableFiles": [],
+      "strippedTokens": [
+        "47/47",
+        "70/70"
+      ]
+    },
+    {
+      "id": "b45d00c4296a",
+      "author": "Vishalc412",
+      "date": "2026-09-08T12:58:09+05:30",
+      "question": "feat(doctor): five failure conditions, five independent diagnoses (WP2.6) `crib doctor` now identifies the five conditions the launch plan names, each with its own row, its own evidence, and its own remediation — never a generic failure: - new auditMcp ( ) + doctor check 6b \"MCP config usable (parses, binary exists)\": wiring PRESENT (check 6) is not config USABLE. config-unparseable (corrupt JSON, truncated TOML managed block, managed entry without a command — crib refuses to overwrite a config it cannot parse) is distinct from binary-missing (the entry's pinned absolute crib path is gone on this machine, which otherwise reads downstream as \"the client never connects\"). - freshness check detail now names `dead N`, so an inactive service's ✗ carries its own evidence instead of an unsourced verdict. 7 fixture-per-condition tests (cli.test.ts): each plants exactly ONE defect under an isolated so the dev machine's real six-client install cannot leak in, plus a clean-machine control proving no false ✗. cli suite . Distinct-diagnosis matrix + built-CLI evidence: ~/ - independent-diagnoses.log. Register row WP2.6 → done. Co-Authored-By: Claude Code <noreply@anthropic.com>",
+      "type": "feat",
+      "scope": "doctor",
+      "expectedFiles": [
+        "packages/cli/src/cli.ts",
+        "packages/cli/src/mcp-install.ts"
+      ],
+      "unreachableFiles": [],
+      "strippedTokens": [
+        "HOME/registry/embed-home",
+        "468/468",
+        "crib-launch-evidence/2026-09-08/wp2-6-doctor",
+        "mcp-install.ts"
+      ]
+    },
+    {
+      "id": "9229957b3932",
+      "author": "Vishalc412",
+      "date": "2026-09-08T13:11:42+05:30",
+      "question": "feat(handoff): principal-scoped projection + degraded journals (WP3) Principal identity is resolved at the trusted server boundary (KCRIB_PRINCIPAL_ID, else the default migration principal) and never from a request; one server session id per process, client names stay provenance. buildHandoff now REQUIRES a server-resolved callerPrincipal and fails closed rather than falling back to every lifecycle event. Unscoped legacy belong to the default migration principal only, filtered BEFORE counts and previews. lastSession excludes the current server session, selects via a total order (occurredAt -> content-addressed event id -> journal position) so the result is caller-order-independent, and bounds changed paths to 20 with an explicit changedPathsTruncated marker. An EXISTING journal that cannot be read surfaces as degraded: ['lifecycle-journal-unreadable'] instead of silent absence — reported through crib session bootstrap (! DEGRADED block, empty-state no longer swallows it) and Memory Home. WP3.1-WP3.8 register rows closed. memory , mcp , cli ; shared-journal acceptance fixture: principal A's handoff carries none of B's identifiers, coordinates, counts or artifacts. Co-Authored-By: Claude Code <noreply@anthropic.com>",
+      "type": "feat",
+      "scope": "handoff",
+      "expectedFiles": [
+        "packages/cli/src/cli.ts",
+        "packages/cli/src/viz-server.ts",
+        "packages/memory/src/api.ts",
+        "packages/memory/src/handoff.ts"
+      ],
+      "unreachableFiles": [],
+      "strippedTokens": [
+        "CLI/MCP",
+        "attempts/pending-captures/lifecycle-events",
+        "800/800",
+        "415/415",
+        "468/468"
+      ]
+    },
+    {
+      "id": "b62a17c917cc",
+      "author": "Vishalc412",
+      "date": "2026-09-08T16:20:25+05:30",
+      "question": "feat(service): actions + per-OS service receipts pinned (WP5.6) `crib freshness service` gains start|restart: both install the definition first when it is absent, then restart IN PLACE without rewriting it (launchd kickstart -k, systemctl --user restart, schtasks /End->/Run) — install is idempotent but enable --now will not restart a running unit, and a restart must not disturb a definition the user is mid-fixing. The per-OS receipt hazards the register row names are now pinned by 7 new tests: launchd plist XML-escapes registry paths carrying &, < and spaces (the only ampersands in the plist are entity starts), task-scheduler <Command> XML escaping, systemd Environment= escaping, and the exact manager-call sequences for install and restart on each OS (bootout-tolerated -> bootstrap -> kickstart; daemon-reload -> enable --now; /Create /F -> /Run). Docs updated for the full action set. WP5.6 register row closed; WP5.1-5.5 closed in bbaf7c8d — the WP5 block is complete. Freshness suites green, root `pnpm verify` EXIT 0. Evidence: ~/ -{service,verify}.log Co-Authored-By: Claude Code <noreply@anthropic.com>",
+      "type": "feat",
+      "scope": "service",
+      "expectedFiles": [
+        "packages/cli/src/cli.ts"
+      ],
+      "unreachableFiles": [
+        "packages/cli/src/freshness-service.ts"
+      ],
+      "strippedTokens": [
+        "start/restart",
+        "backslash/quote",
+        "65/65",
+        "crib-launch-evidence/2026-09-08/wp5-sliceD"
+      ]
+    },
+    {
+      "id": "a7e7b7063b5f",
+      "author": "Vishalc412",
+      "date": "2026-09-08T16:52:27+05:30",
+      "question": "feat(memory): pending-queue projection + intake detail read endpoints (WP6 slice A) The pending-captures admission queue ( ) and the intake detail read side (WP6.4), as pure projections over the local store — the browser surface (slices B–D) will sit on these, never on admission logic of its own. - pending-queue.ts: two honest sections — captures (outbox entries awaiting distillation, each row carrying the exact `crib memory distill --provider <name>` command; consent stays the operator's, structurally) vs staged (the admission queue, classified by REUSING the evaluator's own admissibilityPre-flight, so browser-ready cannot drift from `crib memory evaluate`). An unstamped human-attestation classifies `terminal` with the admit command — the tty trio is minted only by a CLI call site that checked process.stdin.isTTY, and nothing here suggests a browser path around it. Inadmissible-kind evidence is a note, never a blocker; the pitfall cross-item combo is encoded in the projection. Vocabulary law pinned by test: serialized output fails /candidate| ; commands are exactly what the CLI parses (positional ids). - : MemoryApi.pending() op, honest {configured:false} when unwired; the result's configured is a `true` literal so the union discriminates. - + cmdViz: / (400 on bad values, never silent clamp; hard page cap) and / (requirement + checkpoint history + the projection's own folded brief; resumable=false for terminal intakes while History stays readable; loud 500 if the projection ever misses an existing requirement). Server owns ONLY — every classification comes from the API's own ops. - 16 projection tests + 5 endpoint tests; register rows partial. Verify: EXIT 0 (2931 passed; memory 816, cli 520; biome clean). Evidence: ~/ Co-Authored-By: Claude Code <noreply@anthropic.com>",
+      "type": "feat",
+      "scope": "memory",
+      "expectedFiles": [
+        "packages/cli/src/cli.ts",
+        "packages/cli/src/viz-server.ts",
+        "packages/memory/src/api.ts",
+        "packages/memory/src/index.ts"
+      ],
+      "unreachableFiles": [
+        "packages/memory/src/pending-queue.ts"
+      ],
+      "strippedTokens": [
+        "WP6.1/WP6.2",
+        "ready/terminal/blocked",
+        "trust/i",
+        "memory/pending.json",
+        "memory/intake.json",
+        "validation/capping",
+        "WP6.1/2/4",
+        "crib-launch-evidence/2026-09-08/wp6-sliceA-pending-read.log",
+        "viz-server.ts",
+        "api.ts"
+      ]
+    },
+    {
+      "id": "ce7cdebe777b",
+      "author": "Vishalc412",
+      "date": "2026-09-08T17:09:52+05:30",
+      "question": "feat(viz): WP6 slice B — local mutation boundary (admit + resume via the CLI's own domain flow) WP6.3: extract the CLI's local admission orchestration as -local runLocalAdmission and call it from BOTH cmdMemoryEvaluate and the new viz POST / route — a browser admission can never drift from the CLI's gate. The route re-runs the read projection's own classifyStaged (now exported from pending-queue.ts): only 'ready' completes, 'terminal' returns 422 terminal-only with the crib memory admit command, 'blocked' returns 422 invalid-evidence with blockers — tty:true stays minted only by the CLI call site that checked process.stdin.isTTY. Already-active mem: records are idempotent 200 alreadyAdmitted. WP6.4 (mutation half): POST / appends the same 'resumed' checkpoint the CLI resume path writes (api.handoff → resume option → recorded-or-explicit nextSafeAction, 422 missing-next-action rather than inventing), gated by an expectedCheckpointId revision precondition (409 stale) with idempotent 200 alreadyResumed duplicates. No shell execution. WP6.5: per-server CSRF token (x-crib-csrf header only — never in , constant-shape failures), strict same-origin validation before the body is read, 64KB body cap (413), 2048-char field caps, structured {error:{code,message}} envelopes for every failure, vocabulary law pinned by test on both wire shapes. Root verify EXIT 0: 2938 tests (soul-schema 18, core 345, ui 17, parsers 506, memory 816, mcp 424, pipeline 285, cli 527), biome clean 580 files. Evidence: ~/ Co-Authored-By: Claude Code <noreply@anthropic.com>",
+      "type": "feat",
+      "scope": "viz",
+      "expectedFiles": [
+        "packages/cli/src/cli.ts",
+        "packages/cli/src/viz-server.ts"
+      ],
+      "unreachableFiles": [
+        "packages/memory/src/pending-queue.ts"
+      ],
+      "strippedTokens": [
+        "memory/admit",
+        "memory/resume",
+        "URLs/logs",
+        "crib-launch-evidence/2026-09-08/wp6-sliceB-mutation-boundary.log",
+        "cli.ts"
+      ]
+    },
+    {
+      "id": "f606f3e1ed4d",
+      "author": "Vishalc412",
+      "date": "2026-09-08T19:50:24+05:30",
+      "question": "fix(mcp): pin this process (node + cli.js) when crib is not on PATH The ubuntu release gate failed onboarding:check because resolveBin falls back to a bare 'crib' when 'which crib' fails (fresh checkout, CI runner, any machine without a global install) — an entry that spawns a bare word no shell resolves is broken the moment init writes it, and doctor then correctly reports it as unusable. When no explicit bin is set and no crib is on PATH, install this process's own entry point instead: absolute node + the absolute cli.js beside mcp-install.js in dist/. node loads the file itself, so the entry is spawnable with no PATH dependency and no exec bit. Clean-machine simulation (PATH stripped): doctor reports the MCP config usable; onboarding:check EXIT=0. mcp-install tests. Co-Authored-By: Claude Code <noreply@anthropic.com>",
+      "type": "fix",
+      "scope": "mcp",
+      "expectedFiles": [
+        "packages/cli/src/mcp-install.ts"
+      ],
+      "unreachableFiles": [],
+      "strippedTokens": [
+        "19/19"
+      ]
+    },
+    {
+      "id": "9da78653a3b2",
+      "author": "Vishalc412",
+      "date": "2026-09-09T03:22:08+05:30",
+      "question": "fix(installer): isolate smoke tests' cwd — stop clobbering the real checkout's adapter configs /*/install-macos.sh runs `crib setup .` as a post-install convenience, gated on being inside a git work tree. smokeInstall() and smokeUserDirInstall() invoked that script via execFileSync without an explicit cwd, so it inherited process.cwd() — the developer's REAL repo checkout when the smoke runs locally (`pnpm installer:smoke[-userdir]` from the repo root). Empirically confirmed before this fix: running `pnpm installer:smoke-userdir` alone rewrote .mcp.json, . , and . in THIS repo with the throwaway temp-prefix bin path, every single run. This is exactly the plan's own WP0 rule (\"an evidence run must not make its own source checkout dirty\") — invisible in CI only because CI runners are ephemeral checkouts that get discarded, not because the bug wasn't there. Fix: pass each installer-script invocation an isolated, non-git cwd (`prefix` in smokeInstall, `paths.home` in smokeUserDirInstall), so the installer's auto-setup step takes its own documented \"Not inside a git repository\" no-op branch instead of running for real. Verified: `pnpm installer:smoke-userdir` and `pnpm installer:smoke` both re-run clean — `git status --short` shows zero changes to . afterward. Evidence: ~/ Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>",
+      "type": "fix",
+      "scope": "installer",
+      "expectedFiles": [
+        "scripts/install-smoke.mjs"
+      ],
+      "unreachableFiles": [],
+      "strippedTokens": [
+        "dist/installers",
+        "codex/config.toml",
+        "gemini/settings.json",
+        "mcp.json/.codex/.gemini",
+        "crib-launch-evidence/2026-09-08/wp7-persistence-recovery.log"
+      ]
+    },
+    {
+      "id": "b8e9372b9cd4",
+      "author": "Vishalc412",
+      "date": "2026-09-09T07:25:53+05:30",
+      "question": "fix(mcp): preserve malformed configs and validate generated launchers A04: readJson collapsed both 'absent' and 'unparseable' to {}, so a config crib could not parse was merged into an empty object and written back as a crib-only file — the user's sibling servers gone. Reading now returns three distinct states: missing (create), ok (merge), malformed (REFUSE, structured location + repair, bytes untouched). VS Code documents JSONC for mcp.json, so that one format is parsed with comments masked and edited textually, preserving comments and layout; every other client reads strict JSON, where a comment is a broken file we refuse rather than a dialect we support. A09: the clean-machine fallback pins '<node> <abs>/cli.js', and doctor checked only the interpreter — a moved checkout left node pointing at nothing and the entry was reported usable. The generated launcher shape is now validated on both halves and reported as separate problems. Client-owned are never inspected for existence and never executed. Tests: 6 new failing-then-passing cases in mcp-install.test.ts (byte-for-byte refusal on JSON, JSONC preservation, JSONC idempotency) plus entrypoint fixtures for auditMcp and a doctor row in cli.test.ts. 550 CLI tests green, typecheck and biome clean. Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>",
+      "type": "fix",
+      "scope": "mcp",
+      "expectedFiles": [
+        "packages/cli/src/mcp-install.ts"
+      ],
+      "unreachableFiles": [],
+      "strippedTokens": [
+        "command/args",
+        "unparseable/truncated/non-object"
+      ]
+    },
+    {
+      "id": "2e3089c1540d",
+      "author": "Vishalc412",
+      "date": "2026-09-09T07:37:12+05:30",
+      "question": "fix(memory): validate derived snapshot metadata before reuse A07: snapshotUsable() parsed the FTS snapshot header and then read Object.keys(meta.stores) without checking that it had one. A header that is syntactically JSON but structurally wrong — an interrupted write, a hand-edit, a rolled-back format — threw 'Cannot convert undefined or null to object' out of a search() call, turning disposable derived state into an unclassified crash. The header is now validated as a whole before any field of it is compared: object shape, finite formatVersion, an object stores map, only known roles, and a complete {root, gen, nonce} binding per role. Anything that fails takes the same route an absent header already took — rebuild from the canonical journal and shards, which were never at risk. Tests: 11 corruption fixtures (null document, empty object, stores, malformed and unknown role entries, non-numeric formatVersion, string document) each asserting one rebuild, the seeded memory searchable again, the canonical shards byte-identical, and convergence to a zero-rebuild next open; plus an interrupted-rebuild fixture. 3 of them reproduced the reported TypeError before the fix. 851 memory tests green. Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>",
+      "type": "fix",
+      "scope": "memory",
+      "expectedFiles": [
+        "packages/memory/src/persistent-fts.ts"
+      ],
+      "unreachableFiles": [],
+      "strippedTokens": [
+        "missing/null/array"
+      ]
+    },
+    {
+      "id": "741fe0525f2a",
+      "author": "Vishalc412",
+      "date": "2026-09-09T07:40:33+05:30",
+      "question": "fix(installer): normalize portable memory evidence paths A06: fileDigests keyed the memory-survival baseline with native path.relative, so on a Windows runner the seeded shard appears as records\\ab.jsonl while the harness (and the workflow's own checks) match /^records\\/.*\\.jsonl$/. The Windows leg of the survival proof could therefore never pass. Keys are now normalized to '/' at serialization through a digestKey helper with an injectable path implementation, so the win32 behavior is testable from any host. File CONTENT hashing is unchanged, and POSIX keys are byte-identical. The installer matrix now runs both advertised platforms on BOTH advertised Node majors (22 and 24) rather than Node 22 only — the install → configure → uninstall → reinstall → authorized-recall cycle under a home has to execute in every cell it is claimed for. Tests: a deterministic win32 case pinning the defect (the raw native relative path does NOT satisfy the contract) alongside the repair, segments, and POSIX invariance. Locally executed the real macOS cycle: install → reinstall → uninstall → reinstall → authorized recall under ' öhn doe', client config and memory bytes preserved, exit 0. Windows and Node 24 cells remain UNEXECUTED here — they need the actual runners. Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>",
+      "type": "fix",
+      "scope": "installer",
+      "expectedFiles": [
+        "scripts/install-smoke.mjs"
+      ],
+      "unreachableFiles": [],
+      "strippedTokens": [
+        "uninstall/reinstall",
+        "spaces/non-ASCII",
+        "nested/non-ASCII",
+        "Users/j"
+      ]
+    },
+    {
+      "id": "8df308a66b0e",
+      "author": "Vishalc412",
+      "date": "2026-09-09T08:24:43+05:30",
+      "question": "feat(acceptance): measure real freshness adoption and ship a redacted support bundle Task 7 — freshness. The existing p95 test overrode the production 2000ms fallback to 250ms and measured dirty-path CAPTURE, not adoption. - adoption-check.mjs instead launches the built server as a user runs it (serve --http --watch, nothing overridden), drives all eight preregistered transitions through real filesystem and Git operations, and polls the server's own verbs — graph query, , context resolution, health generation convergence — until every reader agrees. A partial agreement never stops the clock. MEASURED, and the honest verdict is FAIL: p95 6093ms against the preregistered 5000ms target over 80 samples, 0 incorrect transitions. The target was frozen before measuring and has NOT been retuned. The decomposition (reported, never subtracted from the verdict) shows where it goes: external-update p95 6256ms is 4650ms of the external indexed 888 files → 43589 nodes, 110997 edges (3360 describes, 46365 references) · mule: 1 project, (mule4: 4), 1 flows, 1 subflows, 5 routes, 3 flow-refs, 1 transforms, 0 munit tests, 1 unresolved in 91228ms ≈2.5x fewer tokens per discovery query than reading files directly (sample query \"crib\": 5854 tokens raw → 2370 tokens via crib query) 3131 target(s) pending LLM graph generation (next: symbol) — run `/crib-enrich` or `crib enrich --next` to drive the loop. process plus 1840ms of adoption; restart is 1532ms of server boot plus 379ms. Every other transition adopts in ~0.7-1.1s. Resolving this is a real choice — optimize the external-update adoption path and boot, or deliberately revise the clock definition in the policy (new hash, recollect) — not a number to quietly adjust. Task 9 — support bundle. A bounded module rather than more : diagnostics keep ABSENT and UNAVAILABLE distinct (a worker that is not running and a worker we could not read need different repairs), and the bundle is an allowlist so a new upstream field is excluded by default. Two leaks were found by testing rather than by reasoning: the sentinel sweep caught arbitrary user text inside a refresh error message (the message is now withheld behind a digest, and enum-shaped fields are constrained to known values), and running the real command on this machine caught a home directory with a space keeping its owner's name, because the generic path rule stops at whitespace. Home roots are now matched structurally. Verified against the live installation: no home path, no username, no repo path in the emitted bundle. Task 11 — claims. The categorical 'only tool' framing becomes a dated claim about a surveyed set with per-vendor citations; GitNexus is added as the closest neighbour on shape; Mem0's documented open-source and local paths correct the 'hosted platform' cell, since presenting Mem0 as categorically cloud-only is wrong; and the page states plainly that no head-to-head benchmark was run. Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>",
+      "type": "feat",
+      "scope": "acceptance",
+      "expectedFiles": [
+        "packages/cli/src/cli.ts"
+      ],
+      "unreachableFiles": [
+        "packages/cli/src/support-bundle.ts",
+        "scripts/freshness-adoption-check.mjs"
+      ],
+      "strippedTokens": [
+        "scripts/freshness",
+        "brief/FTS",
+        "cli.ts"
+      ]
+    },
+    {
+      "id": "c1606cf7061c",
+      "author": "Vishalc412",
+      "date": "2026-09-09T18:17:12+05:30",
+      "question": "style: clear the lint regressions this branch introduced Six of them, all mine, all in code added over the last few commits: a parameter reassignment in the support-bundle narrowing, and five string concatenations where the repo's style is one template. Biome marks those fixes unsafe, so --write skipped them silently and the per-file checks I had been running never covered the whole tree — a full `biome check .` did. Behaviour is unchanged: typecheck clean, support-bundle suite and the policy pin still green. Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>",
+      "type": "style",
+      "scope": null,
+      "expectedFiles": [
+        "packages/cli/src/cli.ts"
+      ],
+      "unreachableFiles": [
+        "packages/cli/src/support-bundle.ts",
+        "scripts/freshness-adoption-check.mjs"
+      ],
+      "strippedTokens": []
+    },
+    {
+      "id": "84e331f35e09",
+      "author": "Vishalc412",
+      "date": "2026-09-09T18:25:31+05:30",
+      "question": "fix(installer): stop the Windows installer dying outside a git repository Found by an actual windows-latest runner, which is the only place it could be found. The installer probed for a work tree with git rev-parse --is-inside-work-tree 2>$null and `2>$null` does not suppress a native command's stderr in PowerShell the way it does in a POSIX shell. Outside a repository git prints \"fatal: not a git repository\", PowerShell turns that into a NativeCommandError, and under the script's own `$ErrorActionPreference = \"Stop\"` the record terminates the run — after npm has already installed the package. A completed install reported itself as a failure, and the smoke leg failed with it. The macOS installer takes the same no-op branch silently, so every local run and every macOS cell looked clean. The two behaved differently precisely where no one was looking. The probe now merges git's stderr into the output stream under a local Continue preference and judges by $LASTEXITCODE, so asking the question no longer depends on the answer being yes. Four assertions pin the shape, including that the setup branch is gated on the computed answer rather than the raw expression. Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>",
+      "type": "fix",
+      "scope": "installer",
+      "expectedFiles": [
+        "scripts/build-installers.mjs"
+      ],
+      "unreachableFiles": [],
+      "strippedTokens": []
+    },
+    {
+      "id": "30006f6e84e7",
+      "author": "Vishalc412",
+      "date": "2026-09-09T20:50:00+05:30",
+      "question": "fix(installer): spawn npm the way Windows can actually spawn it Second Windows-only defect, surfaced once the first was out of the way: the uninstall leg called execFileSync('npm', ['rm', '-g', '--prefix', ...]) and npm on Windows is npm.cmd. Since Node's 2024 argument-injection fix, spawning a .cmd without a shell is refused outright, so this failed with `spawnSync npm ENOENT` — a message that reads like a missing npm rather than an unspawnable one, on a runner where npm had just installed the package successfully. The install legs never hit it because they shell out through the generated installer; only the uninstall talks to npm directly, which is why the cycle was the leg that broke. npmCommand() now routes through ComSpec on win32 with the arguments kept separate, exactly as the crib.cmd launcher already does, so a spaced prefix is quoted once and not twice. Pinned with deterministic cases for both platforms, including the ComSpec fallback, and the POSIX cycle re-run end to end (exit 0). Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>",
+      "type": "fix",
+      "scope": "installer",
+      "expectedFiles": [
+        "scripts/install-smoke.mjs"
+      ],
+      "unreachableFiles": [],
+      "strippedTokens": [
+        "spaces/non-ASCII"
+      ]
+    },
+    {
+      "id": "d8edfb815ebb",
+      "author": "Vishalc412",
+      "date": "2026-09-09T21:47:17+05:30",
+      "question": "fix(watch): degrade when the watcher fails asynchronously, not only when it throws Surfaced by the Node 24 coverage this branch added: on Linux + Node 24 the watcher-degradation test failed, and the reason was not the test. `start()` assumed an unwatchable directory always makes `watch()` throw. It does not — Node reports some failures (an unwatchable or vanished directory, an exhausted inotify budget) as an asynchronous 'error' event instead, and which of the two happens varies by platform and Node version. That left two bad outcomes on the async route: an unhandled 'error' event, which throws, and — if something else had handled it — a dead watcher while start() reported success and freshness quietly stopped seeing saves. Both routes now end in the same degradation: warn once, drop the watcher, let the fallback interval keep converging. The test no longer depends on how a given OS chooses to report the failure. Both routes are driven explicitly through a watchFactory seam, asserting the warning fires exactly once (a persistent error must not flood the log) and that the backstop keeps running. The real ENOENT path keeps its own case, asserting the property that must hold everywhere — convergence continues and nothing escapes as an unhandled error — rather than a specific platform's error mechanics. Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>",
+      "type": "fix",
+      "scope": "watch",
+      "expectedFiles": [
+        "packages/cli/src/watch.ts"
+      ],
+      "unreachableFiles": [],
+      "strippedTokens": []
+    },
+    {
+      "id": "19fa1e3c024c",
+      "author": "Vishalc412",
+      "date": "2026-09-09T22:35:17+05:30",
+      "question": "fix(budget): make the leak gate measure retention, and catch the leak it was built for The launch cell went red on heap growth of 58.7 MB. Two defects were behind it, and neither was the code under test. 1. The samples were never collected first. `global.gc?.()` looked like a GC, but `budget:check` runs as plain `node`, so `global.gc` was always undefined and the call was always a no-op — the comment beside it said an unavailable collector was fine because \"the classifier's bound is generous enough to absorb it\". It was not fine. Every sample carried uncollected garbage, so the gate measured when GC happened to run. Two consecutive CI runs of the same work reported -63 MB and +59 MB, and the passing one passed only because its number came out negative. The collector is now obtained through v8 setFlagsFromString even without the CLI flag (which the script also passes), and a run that still cannot get one is reported as DEGRADED instead of silently trusted. Measured effect on this machine: samples went from ~240 MB swinging by 63 MB to ~38 MB varying by 0.4 MB across ten cycles. 2. The rule could not detect a steady leak. It required growth to exceed ten times the FIRST-CYCLE delta — but if that delta is the leak's rate d, linear growth over N samples is exactly (N-1)*d, so with ten cycles 9d could never clear the 10d bar. A textbook 10 leak retaining 90 MB scored 90 against 100 and passed, at any rate. The tolerance is now a fixed 10x the noise floor (40 MB, unchanged in practice) plus a trend test: growth counts only when it is sustained across at least 70% of cycles. That separates the three shapes which all produce a large last-minus-first — a leak rises every cycle, a one-time retention steps once and stays flat, and GC noise rises about half the time. The failing CI series was the third. now exists. The module's docstring already claimed it did (\"Pure — unit-tested over synthetic series in leak-check.test.mjs\"), which is how an untested classifier ended up unable to catch its own subject. Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>",
+      "type": "fix",
+      "scope": "budget",
+      "expectedFiles": [
+        "scripts/budget-check.mjs"
+      ],
+      "unreachableFiles": [
+        "scripts/leak-check.mjs"
+      ],
+      "strippedTokens": [
+        "macOS/Node-24",
+        "MB/cycle",
+        "scripts/leak-check.test.mjs"
+      ]
+    },
+    {
+      "id": "bd18eb3fd658",
+      "author": "Vishalc412",
+      "date": "2026-09-10T16:52:15+05:30",
+      "question": "fix(pipeline): skip .claude worktrees in discovery walk DEFAULT_IGNORES covered . but not .claude, so Claude Code worktrees under . / — full source copies, not gitignored by default in user repos — were walked as new source. On a real 8k-file repo this indexed 423k nodes, ~80% duplicates, >30-min init. The artifacts glob walk uses its own ignore set, so / commands files under .claude/ are still indexed. Co-Authored-By: Claude Code <noreply@anthropic.com>",
+      "type": "fix",
+      "scope": "pipeline",
+      "expectedFiles": [
+        "packages/pipeline/src/structure.ts"
+      ],
+      "unreachableFiles": [],
+      "strippedTokens": [
+        "cursor/.idea/.vscode",
+        "claude/worktrees",
+        "skills/agents"
+      ]
+    },
+    {
+      "id": "8b4f9b6b6aa3",
+      "author": "Vishalc412",
+      "date": "2026-09-15T09:18:42+05:30",
+      "question": "fix(fuzz): execute the installed candidate parser The fuzz-deep receipt named a candidate tarball, but the harness imported from the CHECKOUT's — a receipt describing bytes that never executed. candidate-parser.mjs now binds the candidate end to end: verify the bundle against its manifest, install it into an isolated prefix, import the parser from the installation, verify the bytes against the packed tarball members, and refuse any runtime dependency resolving outside the prefix (in particular back into the source checkout). The runtime-dep guard resolves package DIRECTORIES via a node_modules walk-up, not entry-level CJS resolution: the real @ - schema is ESM-only (type:module, exports with no \"require\" condition), so createRequire threw ERR_PACKAGE_PATH_NOT_EXPORTED and refused every real candidate bundle at binding. (import.meta.resolve's parent argument is ignored by Node 22.23.1 and could not substitute.) The failure archive is capped per extractor (1000) with the truncation RECORDED in details.failuresTruncated — an uncapped archive at fleet-scale throw regressions blew past V8's string limit inside JSON.stringify before writeFileSync, so the one run that most needed a receipt produced none. Totals stay in perExtractor; the seed regenerates every truncated input from (extractor, idx). The binding is enforced by execution, not source pins alone: an e2e spawn test runs the real --package against a planted 10-extractor bundle and asserts the receipt hashes the planted worker and names the planted extractor fleet (a mutation of the binding block — which the source pins survived — would import the checkout dist and fail). launch-decision backs it: judgeFuzzWorkload refuses a fuzz-deep receipt without details.candidate (fuzz-receipt-unbound-candidate). Also: blockedReason sanitizes producer-machine paths into stable tokens (relocatable evidence), --command records the invocation as invoked, and the nightly's candidate glob no longer excludes prerelease root tarballs. Co-Authored-By: Claude Code <noreply@anthropic.com>",
+      "type": "fix",
+      "scope": "fuzz",
+      "expectedFiles": [
+        "scripts/fuzz-check.mjs"
+      ],
+      "unreachableFiles": [
+        "scripts/candidate-parser.mjs",
+        "scripts/launch-decision.mjs"
+      ],
+      "strippedTokens": [
+        "runFuzz/FUZZ_EXTRACTORS",
+        "packages/parsers/dist",
+        "module/worker/grammar",
+        "knowledge-crib/soul",
+        "reorder/delete",
+        "fuzz-check.mjs"
+      ]
+    },
+    {
+      "id": "96ba5cced22f",
+      "author": "Vishalc412",
+      "date": "2026-09-15T11:19:03+05:30",
+      "question": "feat(certification): preflight certification hosts with named blockers The twenty-one native vendor cells are scheduled onto three physical machines the workflow cannot satisfy by itself. Task 10 adds the host preflight ( ) so a certification runner validates itself BEFORE any expensive work: a host missing infrastructure fails in seconds with named, actionable blockers and an uploaded report — never a five-minute run ending in \"not signed in\", and never a launch queued forever. Probed mechanically: native identity (WSL and GitHub-hosted runners refused by name), the launch promise's architectures, Node 22, an interactive desktop, disabled (tolerating real-host output shapes: pmset's powerd assertion annotations, ScreenSaveActive's REG_SZ data), a resolvable automation backend, and every advertised client binary with its resolved version. Attested facts a program cannot probe (dedicated accounts, signed-in clients, accessibility permission, secure storage, no unrelated projects) come from an operator attestation and are never silently satisfied. GUI execution is serialized per platform with NO job-level concurrency group — a concurrency group would cancel the queued matrix cells. Serialization is the one registered runner per platform plus a per-platform desktop lock (O_EXCL, holder named by pid) that client-desktop-certify takes before launch: a manual invocation or second runner pointed at the same desktop REFUSES to start instead of racing the active session. A fresh unparseable lock payload blocks as mid-acquisition (grace window) rather than being stolen from a live run mid-write; an uncreatable lock is a named refusal, not a crash. The certify job runs the preflight after Checkout and Setup Node, before dependency install, and uploads its report unconditionally (if-no-files-found: warn keeps \"never wrote a report\" its own signal). ci-workflow.test.mjs pins the step order, the per-cell artifact, and the absence of a concurrency stanza; runs the preflight's own suite. Adversarially reviewed (21 agents): all 8 confirmed findings fixed with regression tests, including the dead $KCRIB_CERTIFICATION_ATTESTATION fallback in the CLI path, the attestation loadError that echoed file bytes into reports, and the vacuous released-lock assertion. Co-Authored-By: Claude Code <noreply@anthropic.com>",
+      "type": "feat",
+      "scope": "certification",
+      "expectedFiles": [
+        "scripts/release-verify.mjs"
+      ],
+      "unreachableFiles": [
+        "scripts/client-desktop-certify.mjs",
+        "scripts/host-preflight.mjs"
+      ],
+      "strippedTokens": [
+        "scripts/host-preflight.mjs",
+        "sleep/screen-lock",
+        "release-verify.mjs"
+      ]
+    },
+    {
+      "id": "5e88a6df055c",
+      "author": "Vishalc412",
+      "date": "2026-09-15T19:06:30+05:30",
+      "question": "feat(memory): freeze the WP-G0 graph acceptance corpus Add the connected-memory-graph acceptance corpus as a versioned TypeScript builder (GRAPH_CORPUS_VERSION=1): a deterministic fixture universe — 2 principals, 2 repos, 15 memory-3 records, 3 intakes with 4 checkpoints, 5 entities, 7 anchors, 44 expected relationships over the 8 bounded predicates — and 43 hand-authored seed questions x 3 variants = 129 questions (117 multi-hop, 12 zero-hop emptiness probes). Every fixture is built through the real builders with fixed literal clocks; two builds are byte-identical (asserted). pre-registers the WP-G5 gates before any measurement exists: the WP-G0 baseline, the edge-scope split ( ), the fixture-universe table, the question-set table, and RESULTS appended only after the deciding run. The 24-test pin suite freezes determinism, real-id validation, referential integrity, per-id-kind isolation (claims, intakes, and visible only through principal-owned edges), disjointness, hop traversal of every expected , the exact question-set totals ( ), and the edge-scope split. human-attestation evidence gains an optional attestationId anchor field so the supported-by attestation edges are derivable from record structure, like source-quote's soulId and committed-policy's artifactId. Repairs from the pre-freeze adversarial review (24 agents, 8 confirmed findings): the beta seed q-cur-guest-connect no longer expects the alpha-only Cart symbol; q-iso-beta-own-view text matches its expected set and traverses both records; q-hist-idem-sweep- thirteen now reaches CHARGE_ORDER; doc zero-hop attribution corrected (9 beta isolation + 3 alpha decoy-resistance); the emptiness pin uses the doc's zero-hop definition instead of an 18-question floor. Co-Authored-By: Claude Code <noreply@anthropic.com>",
+      "type": "feat",
+      "scope": "memory",
+      "expectedFiles": [
+        "packages/memory/src/index.ts",
+        "packages/memory/src/types.ts"
+      ],
+      "unreachableFiles": [
+        "packages/memory/src/graph-corpus/corpus.ts"
+      ],
+      "strippedTokens": [
+        "docs/bench/graph-gates.md",
+        "backfill/capture",
+        "35/9",
+        "symbols/entities",
+        "expected/forbidden",
+        "symbol/entity",
+        "129/117/12"
+      ]
+    },
+    {
+      "id": "12f15df4d38c",
+      "author": "Vishalc412",
+      "date": "2026-09-15T21:58:49+05:30",
+      "question": "feat(memory): add the WP-G1 graph collection and idempotent submission The durable half of Milestone 1: the `graph` collection (local + global stores; the team store refuses it — graph proposals are machine-local until a later work package defines promotion) and `MemoryStore.submitGraphEntries`, the ONLY write path into it. Submission laws (pinned by 23 tests in graph-submit.test.ts): - admission: id re-derivation from the entry's own content (a forged or laundered id is refused with MemorySchemaError, mirroring the sync lane's verifyPayloadId), strict schema + secret scan, and the 'proposed' admission const — a caller can never mint trust; - idempotence: a byte-identical re-submit writes nothing — not even a no-op shard rewrite — and never bumps the generation; - additive merge: union, knownAt advances only chronologically (Date.parse, not string compare — offset-form replays cannot regress it), meta merges without erasing omitted keys, and resolution decisions are first-writer-wins, never re-authored; - canonical bytes: set-valued lists are sorted + deduped before the first write, so producer enumeration order never reaches the disk and repeated imports converge on identical bytes; - durability: validate-everything-first, then one atomic persist per changed shard with a generation bump after EACH — the ack ({written, skipped}, a strict partition) returns only after every rename, and a multi-shard fault leaves earlier writes durable and visible to memoized readers; - fail-closed: a shard holding unreadable lines blocks the rewrite (corruption must not be laundered), and writeShard / upsertEntries / removeEntry all refuse the graph collection — the merge laws ARE the write path, and graph state is append-only. All eight defects the adversarial review confirmed in the first cut are fixed and regression-pinned (the review's verify agents died on provider 429s, so the findings were adjudicated inline against the code; the tests are the durable adjudication). Co-Authored-By: Claude Code <noreply@anthropic.com>",
+      "type": "feat",
+      "scope": "memory",
+      "expectedFiles": [
+        "packages/memory/src/store.ts"
+      ],
+      "unreachableFiles": [],
+      "strippedTokens": [
+        "supporter/members/labels"
+      ]
+    },
+    {
+      "id": "63fba0ec7e67",
+      "author": "Vishalc412",
+      "date": "2026-09-15T22:25:35+05:30",
+      "question": "feat(memory): add the WP-G1 structured-field backfill derivation deriveAssertionsFromRecords — pure derivation of graph assertions from existing structured record fields only (the plan's WP-G1 items 6-7): - about: record -> subject when the subject is a graph ref; unresolvable subjects are REPORTED, never linked - supported-by: record -> each valid-verdict evidence anchor; self-anchors omitted, non-ref anchors and valid items naming no anchor REPORTED - derived-from / supersedes / contradicts: record -> lineage refs present in the input set; dangling refs REPORTED, self-lineage omitted - part-of: entity member -> entity.ref at the fixed GRAPH_BACKFILL_EPOCH; malformed members REPORTED, member-equals-ref self-loops omitted - per-entry principal stamping: the graph law pins namespace.principalId === provenance.principalId, and one backfill spans records from multiple principals, so the principal rides per-entry from each entry's own namespace while caller session metadata is kept - unplacedScopes: a projectId that is not a legal graph repoId segment is reported and skipped — one bad record never aborts the whole run (new isGraphSegment predicate in graph.ts, the schemas' SEGMENT grammar) - output unique by id: repeated lineage refs / evidence anchors / shared members mint the same grel id twice; collapsed before return so the report's uniqueness contract and per-law stats hold - timestamps never from the clock: record edges carry validTime.from / recordedAt; the derivation is deterministic, pure, and never rewrites ids The corpus pin: deriving over the acceptance corpus reproduces exactly the 35 pre-registered backfill-scope edges + the 2 gd1 decoys, never a capture-scope edge. 20 tests including 6 regression tests from a 4-lens adversarial review (duplicate grel ids, lineage and part-of self-edges, anchorless valid evidence, unplaceable scopes — all confirmed and fixed). memory suite, tsc clean, biome clean. Co-Authored-By: Claude Code <noreply@anthropic.com>",
+      "type": "feat",
+      "scope": "memory",
+      "expectedFiles": [
+        "packages/memory/src/index.ts"
+      ],
+      "unreachableFiles": [
+        "packages/memory/src/graph-backfill.ts",
+        "packages/memory/src/graph.ts"
+      ],
+      "strippedTokens": [
+        "1010/1010"
+      ]
+    },
+    {
+      "id": "26fcc1145a6c",
+      "author": "Vishalc412",
+      "date": "2026-09-16T04:50:02+05:30",
+      "question": "feat(memory): add authorized temporal graph projections Co-Authored-By: Claude Code <noreply@anthropic.com>",
+      "type": "feat",
+      "scope": "memory",
+      "expectedFiles": [
+        "packages/memory/src/index.ts"
+      ],
+      "unreachableFiles": [
+        "packages/memory/src/graph-bridge.ts",
+        "packages/memory/src/graph-index.ts",
+        "packages/memory/src/graph-projection.ts",
+        "packages/memory/src/graph.ts"
+      ],
+      "strippedTokens": []
+    },
+    {
+      "id": "25d379f67071",
+      "author": "Vishalc412",
+      "date": "2026-09-16T05:06:02+05:30",
+      "question": "feat(memory): add graph extraction job model Co-Authored-By: Codex <noreply@openai.com>",
+      "type": "feat",
+      "scope": "memory",
+      "expectedFiles": [
+        "packages/memory/src/index.ts"
+      ],
+      "unreachableFiles": [
+        "packages/memory/src/graph-extraction.ts"
+      ],
+      "strippedTokens": []
+    },
+    {
+      "id": "2f05182b778e",
+      "author": "Vishalc412",
+      "date": "2026-09-16T05:37:01+05:30",
+      "question": "feat(memory): publish recoverable graph generations",
+      "type": "feat",
+      "scope": "memory",
+      "expectedFiles": [
+        "packages/cli/src/cli.ts",
+        "packages/cli/src/watch.ts",
+        "packages/memory/src/store.ts"
+      ],
+      "unreachableFiles": [
+        "packages/cli/src/refresh-coordinator.ts"
+      ],
+      "strippedTokens": []
+    },
+    {
+      "id": "b8230ae88357",
+      "author": "Vishalc412",
+      "date": "2026-09-16T09:30:01+05:30",
+      "question": "feat(memory): add bounded connected retrieval over the graph projection WP-G5 items 1-4: the pure expansion layer that turns seeds found by the existing recall into a ranked neighbourhood of the authorized projection. It is additive by construction. It takes seeds rather than finding them, so plain recall keeps its behaviour and its frozen gates, and it reads only `projection.current` — everything it can traverse has already passed WP-G2's principal, scope and support gates, which is what makes \"a connected answer can never widen the authorized set\" structural instead of a checklist item. The traversal budget is the plan's: two hops by default, four maximum, 200 nodes and 500 edges. Every bound that BITES is named in truncationReasons, so a short list with truncated:false is the only statement that the neighbourhood was exhausted. Ranking is seedScore x decay^distance x evidence eligibility, ordered (rank desc, distance asc, ref asc). Order-independence comes from the seed sort and the level-by-level BFS, not from a tie-break: an earlier draft carried seed-score and shortest-distance comparisons that mutation testing showed were unreachable, so they are gone rather than left reading as the law. The retriever's own score and channel travel through untouched beside the graph rank — the two are different kinds of number and neither is calibrated confidence. Evidence eligibility is the caller's to state: being in `current` means supported, but whether a supporter is recall-eligible is a trust question this pure layer cannot answer. An ineligible path is demoted and labelled, never hidden. Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>",
+      "type": "feat",
+      "scope": "memory",
+      "expectedFiles": [
+        "packages/memory/src/index.ts"
+      ],
+      "unreachableFiles": [
+        "packages/memory/src/graph-retrieval.ts"
+      ],
+      "strippedTokens": []
+    },
+    {
+      "id": "27d101e14796",
+      "author": "Vishalc412",
+      "date": "2026-09-16T10:27:01+05:30",
+      "question": "feat(mcp): add connected memory graph retrieval",
+      "type": "feat",
+      "scope": "mcp",
+      "expectedFiles": [
+        "packages/mcp/src/capabilities.ts",
+        "packages/mcp/src/server.ts",
+        "packages/mcp/src/verbs.ts"
+      ],
+      "unreachableFiles": [],
+      "strippedTokens": []
+    },
+    {
+      "id": "f1937a5fbc30",
+      "author": "Vishalc412",
+      "date": "2026-09-16T10:34:53+05:30",
+      "question": "feat(memory): retain graph lifecycle integrity",
+      "type": "feat",
+      "scope": "memory",
+      "expectedFiles": [
+        "packages/memory/src/api.ts"
+      ],
+      "unreachableFiles": [],
+      "strippedTokens": []
+    },
+    {
+      "id": "f2317666c83f",
+      "author": "Vishalc412",
+      "date": "2026-09-21T00:39:57+05:30",
+      "question": "fix(serve): deliver an unindexed-root refusal over MCP instead of by exiting (F18) `crib serve` on a root whose `.crib/` has no `crib.json` exited EXIT.NOT_INDEXED before the stdio transport existed. Every MCP client reports that as `MCP error -32000: Connection closed` — a message naming neither the cause nor the fix, while the actual diagnosis went to stderr where no IDE shows it. That turned a ROUTINE state into an opaque failure. `.gitignore` excludes `.crib/*` and re-includes only `. /`, so every fresh clone and every new git worktree of a crib-using repository materialises the committed memory ledger with no manifest — exactly the refused state. The server was dead on arrival in every new worktree. `openIndexForServe` already existed for this failure mode and its docstring names it, but it self-heals a missing DERIVED INDEX only; a missing manifest is refused earlier in resolveProjectRoot and returns before that runs. This closes the layer above it. The refusal is unchanged — silently serving an ancestor project's soul is the worse outcome, and no graph is opened here. Only the delivery changes: - buildUnavailableServer / serveUnavailableStdio register the SAME tool names (so does not look broken either) and answer every call with { code: CRIB_UNAVAILABLE, message, remedy, serving: 'nothing' }. The `serving` field exists so an agent cannot read the refusal as \"the graph is empty\", which would be a true-looking answer. - schemas are deliberately permissive: a schema rejection would report the wrong problem. - `--http` still exits non-zero — its callers are scripts that want a status code, not a server that refuses forever. Verified over real stdio JSON-RPC against an unindexed root: initialize succeeds, then returns the diagnosis and its one-command remedy. Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>",
+      "type": "fix",
+      "scope": "serve",
+      "expectedFiles": [
+        "packages/cli/src/cli.ts",
+        "packages/mcp/src/index.ts",
+        "packages/mcp/src/server.ts"
+      ],
+      "unreachableFiles": [],
+      "strippedTokens": [
+        "crib/memory",
+        "tools/list",
+        "tools/call"
+      ]
+    },
+    {
+      "id": "1d2f4262fee2",
+      "author": "Vishalc412",
+      "date": "2026-09-21T01:34:48+05:30",
+      "question": "fix(cli): stop resolving a command's own argument as a project root (F15) `crib ask \"<question>\"` warned that `<cwd>/how does this work` was \"not indexed\" and advised `crib index <cwd>/how does this work`. The cause was general, not specific to `ask`: `openVerbs` fed the first positional to root resolution, and thirteen of the fourteen commands on that funnel take an id, a name or a question there — `context`, `rules`, `impact`, `path`, `neighbors`, `explain`, `dossier`, `reconstruct`, `review`, `rename`, `ownership`, and the two scope variants. Only `gaps` takes a real path. The upward walk recovered the right project, which is why this read as cosmetic. It was not: - a warning on essentially every invocation of the most-used verbs, which teaches people to ignore warnings; - a remedy line that is wrong advice (`crib index <symbol-id>`); - and, because resolveProjectRoot HARD-REFUSES a candidate directory holding a `.crib` without a `crib.json`, a path-shaped argument naming such a directory would make the command refuse outright instead of answering. `resolveRootNonPath` resolves from --cwd / env / the walk only, exactly as cmdQuery already did for search text. `openVerbs` now defaults to it and `gaps` opts back in with `{ positionalIsPath: true }` — the safe reading is the default because it is also the majority. The regression tests use spawnSync rather than the local `runCliResult` helper: that helper returns `stderr: ''` whenever a command exits 0, so a stderr assertion on a succeeding command passes regardless of what was printed. These tests passed against the unfixed code until that was found, and the comment records it for the next person. Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>",
+      "type": "fix",
+      "scope": "cli",
+      "expectedFiles": [
+        "packages/cli/src/cli.ts"
+      ],
+      "unreachableFiles": [],
+      "strippedTokens": []
+    },
+    {
+      "id": "e63f4be85829",
+      "author": "Vishalc412",
+      "date": "2026-09-21T01:36:06+05:30",
+      "question": "style(cli): biome format after the F15 change Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>",
+      "type": "style",
+      "scope": "cli",
+      "expectedFiles": [
+        "packages/cli/src/cli.ts"
+      ],
+      "unreachableFiles": [],
+      "strippedTokens": []
+    },
+    {
+      "id": "4ee9a2bee321",
+      "author": "Vishalc412",
+      "date": "2026-09-21T02:07:01+05:30",
+      "question": "feat(memory): add `crib memory observe` — the agent write path without MCP (F16) Staging an agent observation required the `memory_observe` MCP TOOL. With the MCP server down — which, before the F18 fix, was the default state of every fresh worktree — a correct agent could record nothing at all: the only immediate-admit CLI verb is `crib memory remember`, which records that a HUMAN asserted the claim, so an agent reaching for it would mint an attestation it does not hold (and the admissibility matrix would reject it anyway, since human evidence cannot establish an implementation fact). The ledger was unreachable and the only alternative was a forged attestation. This takes exactly the route `memory_observe` takes — `api.observe` with `authorKind: 'agent'` — so the capture policy, scan, quote re-grounding and the admission gate all run identically. It is not a privileged path: - `authorKind` is hard-coded, not a flag; - a `human-attestation` evidence item is REFUSED, because the one call site allowed to present one is `crib memory remember`, which checks stdin.isTTY; - `createMemoryApi` is called WITHOUT `attestationSource` — that parameter exists to permit a tty attestation and its type only admits 'terminal'; - empty or non-array evidence is refused rather than growing the pending queue with something that can never be admitted. The ack mirrors the MCP one, including `recallable` and `nextAction`: a staged candidate reports `recallable: false`, because telling a caller \"recorded\" when the next recall returns nothing is true and misleading. Verified by recording this session's three learnings through it — all three admitted with `grounded: 1 exact citation(s)` and retrievable via `crib memory recall`. Along the way the gate correctly rejected a `pitfall` (needs a failing+passing receipt pair), a `convention` backed by a source-quote (needs human-attestation or committed-policy), and a quote taken from a docstring ABOVE a function rather than inside its span. The usage text now states the real evidence shape and those per-kind rules, since all three are easy to get wrong. Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>",
+      "type": "feat",
+      "scope": "memory",
+      "expectedFiles": [
+        "packages/cli/src/cli.ts"
+      ],
+      "unreachableFiles": [],
+      "strippedTokens": [
+        "secret/PII"
+      ]
+    },
+    {
+      "id": "1358339ab591",
+      "author": "Vishalc412",
+      "date": "2026-09-21T06:16:05+05:30",
+      "question": "fix(retrieval): stop ranking sub-symbol fragments against symbols in discovery (F14) Measured on this repository, `ask(\"how does the system prevent stale memories from being recalled\")` answered with: cond:…/enrichment.ts@L2070 stmt:…/ @L3003 → const recalledSeeds = Array.isArray(recalled?.hits) stmt:…/enrichment.ts@L2224 → const result: Record<string, unknown> = { …fragments that contain a matching token and no answer, while the modules that implement the behaviour never appeared. A short statement whose few tokens include the query term outscores the function containing it under BM25. `query`, `ask` and `brief` now rank DISCOVERY_NODE_KINDS by default — the canonical NodeKind enum minus / . Derived by SUBTRACTION, never enumerated, so a future NodeKind defaults to discoverable; an allowlist would silently exclude it and that failure is invisible. This costs no CONTENT, which is what makes it safe rather than a trade-off: composeSearchableBody puts a symbol's whole rehydrated span into its own FTS `body` column, so a fragment's text is already searchable through its enclosing symbol — the hit becomes the function instead of the line, which is the answer the caller wanted. The bounded exception is a span past the 8 KiB body cap, whose tail is reachable only via its own detail nodes; `includeDetail: true` (CLI `--include-detail`) exists for that and for deliberate fragment searches. An explicit `kinds` filter always wins, in both directions, and detail kinds stay first-class in `context`, `dossier`, `rules`, `explain` and `neighbors`. Same question, after: doc: #3-2-3-staleness-detection-how-the-syst sym: #freshness@L299 sym: #EnrichmentStore.read@L2043 Two pre-existing tests asserted `brief` returns statement nodes; they are about grounding INHERITANCE (a statement inheriting authored meaning from its symbol), not about the kind policy, so they now pass `includeDetail: true` with a comment saying why that flag is load-bearing there. This does NOT fix paraphrase retrieval — the three F1 probes still miss, because that is F3 (surface-only embeddings, no body, no chunking). Noise removal and semantic understanding are different problems. Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>",
+      "type": "fix",
+      "scope": "retrieval",
+      "expectedFiles": [
+        "packages/cli/src/cli.ts",
+        "packages/mcp/src/server.ts",
+        "packages/mcp/src/verbs.ts"
+      ],
+      "unreachableFiles": [],
+      "strippedTokens": [
+        "statement/condition/assignment/case-branch/raise",
+        "cursor/exception-handler/explanation",
+        "docs/llm-integration-deep-dive.md",
+        "packages/core/src/graph-store.ts",
+        "packages/mcp/src/enrichment.ts",
+        "verbs.ts"
+      ]
+    },
+    {
+      "id": "f35838dfbf4b",
+      "author": "Vishalc412",
+      "date": "2026-09-21T06:27:15+05:30",
+      "question": "feat(retrieval): embed node bodies, skip detail kinds, and measure it (F3, F10) F3 — the vector channel embedded surface fields only (name, qualifiedName, signature, heading, file), so a query describing what code DOES could only match a symbol whose NAME already said so. That was the binding constraint behind the negative result in round 1: with vectors confirmed live, three paraphrase probes were no better. - vectorText v2 appends the rehydrated span, capped at 1200 chars — below the shipped model's 512-token truncation, with surface fields FIRST so the cap never eats the identifier a lexical query would match. The source policy is applied before embedding, so a `deny` file's contents never reach a vector and a redacted secret is not recoverable from one. - the text RECIPE is versioned in vector_meta and a mismatch refuses the channel. Changing what is embedded changes the space as surely as changing the model does, and the model id cannot express it: the same model produced v1 and v2. A missing textVersion key MEANS v1, not \"assume current\". - detail kinds are no longer embedded. Discovery never ranks them (F14), and on this index they are 38,286 of 48,459 nodes — 79%. Skipping them is what makes body text affordable rather than a 5x cost increase. - DETAIL_NODE_KINDS / DISCOVERY_NODE_KINDS move to soul-schema so the index and the verbs share one definition instead of drifting apart. Still derived by subtraction from NODE_KINDS. Measurement, because otherwise this is an assertion: / code-vector-eval.mjs scores the SAME labelled corpus semantic-retrieval-eval uses through a lexical and a hybrid store over the same sqlite file, so nothing but the retrieval path varies. Its header states what it cannot do — it does not isolate body text from having vectors at all, because producing v1 vectors would mean keeping a second recipe alive in production for the harness's benefit. `pnpm eval:code-vector`. F10 — default recall was silent about candidates it withheld. The exclusion is correct and is a red line; the invisibility was not. The MCP verb already reported it (`pendingNotice`, added because \"silence was the bug\"), but `crib memory recall` assembles its own response shape and so dropped it: a user saw `eligible 3` with no sign that two more claims were staged and gated. Now the COUNT and the next action are printed and carried in --json, never the content — the gate is untouched. Verified by a test that the withheld claim text does NOT appear in the default view and DOES under --include-pending. Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>",
+      "type": "feat",
+      "scope": "retrieval",
+      "expectedFiles": [
+        "packages/cli/src/cli.ts",
+        "packages/core/src/index/sqlite-index.ts",
+        "packages/mcp/src/verbs.ts",
+        "packages/soul-schema/src/enums.ts"
+      ],
+      "unreachableFiles": [
+        "scripts/eval/code-vector-eval.mjs"
+      ],
+      "strippedTokens": [
+        "scripts/eval"
+      ]
+    },
+    {
+      "id": "f140a423feb9",
+      "author": "Vishalc412",
+      "date": "2026-09-21T07:33:26+05:30",
+      "question": "style(memory): apply biome format to three files, making `pnpm verify` green `biome check .` failed on HEAD — graph-projection.ts, , and graph-resolution-v2.schema.json were committed unformatted in 1f589801, so `pnpm verify` (build && test && biome check) was red before any of this branch's work started. Kept as its own commit so it does not mix unrelated reflow into a behavioural change. Pure reflow: line wrapping and one parenthesised return. No token changed; memory builds and all 1,071 of its tests pass unchanged. `biome check .` is now clean across all 660 files. Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>",
+      "type": "style",
+      "scope": "memory",
+      "expectedFiles": [
+        "packages/memory/src/ids.ts"
+      ],
+      "unreachableFiles": [
+        "packages/memory/src/graph-projection.ts"
+      ],
+      "strippedTokens": [
+        "ids.ts"
+      ]
+    },
+    {
+      "id": "65fe10296773",
+      "author": "Vishalc412",
+      "date": "2026-09-21T08:31:40+05:30",
+      "question": "fix(memory): disclose an unrecallable supersede successor; withdraw F6's super-linearity claim Two findings, both found by USING the system rather than reading it. `crib memory supersede --claim` retired a claim and left nothing recallable. The successor it mints carries ZERO evidence, and for an evidence-requiring kind (`fact`) that is `trust: candidate, evidence: invalid` — excluded from normal recall. The superseded record leaves recall immediately, so the net effect was that the knowledge disappeared while the command printed success. Verified against the real ledger: `considered 4, eligible 2`, with the successor in neither group. It now says so, and names the route that works (observe with evidence, then supersede by --successor). There is deliberately NO --evidence flag: I started to add one and reverted it. `SupersedePayload.evidence` is carried VERBATIM, so the caller would supply each item's `verdict` — an agent stamping its own evidence verdict is precisely what the admissibility rule forbids, and only the observe path may stamp one because only it re-grounds the quote against live source first. Exposing the flag would have been a hole, not a feature. `api.supersede` also THROWS a MemorySchemaError on an invalid successor rather than returning {ok:false}, so a raw stack trace reached the terminal. Caught: a CLI answers a bad argument with a message, not a stack. `loadEvidenceArg` is now shared by observe and supersede so the refusals cannot drift apart. F6 — WITHDRAWN IN HALF. The audit read ~O(n^1.8) with collapsing throughput off . Re-measured today and extended to 200K LOC (4× past where the published curve stopped): 10,524 LOC 4.67s 1,253 23.1 50,866 LOC 28.28s 998 7.2 100,855 LOC 56.98s 981 6.6 200,833 LOC 116.82s 953 5.6 50K→100K is 2.00× the corpus for 2.01× the time; 100K→200K, 2.05×. Linear. Throughput declines 4.5% across a 4× corpus, not the 3.6× collapse published. falls, so peak RSS is sub-linear. Not noise: the 10K slice reproduces at 4.67s and 4.62s against a published 10.63s, and 50K is 28.28s against 184.97s. The published doc was generated 2026-07-13, the harness changed 2026-08-26 (1ac2e2ba, including how wall time is measured), and the doc was never regenerated — stale for two months in the one place a reader looks for scale behaviour. Regenerated here, with a line telling the next person to regenerate it alongside the harness. What survives of F6: the 1M point is still unmeasured, no ANN ships, and the cost that actually explodes is the VECTOR build (1,444s vs 86s, §8) — a different curve the lexical one says nothing about. F6 is the one finding I sourced from a repository document without re-running the measurement behind it, and the one that turned out to be wrong. Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>",
+      "type": "fix",
+      "scope": "memory",
+      "expectedFiles": [
+        "packages/cli/src/cli.ts"
+      ],
+      "unreachableFiles": [],
+      "strippedTokens": [
+        "docs/bench/scale-curve.md",
+        "nodes/s",
+        "MB/kLOC"
+      ]
+    },
+    {
+      "id": "ae26718c71ab",
+      "author": "Vishalc412",
+      "date": "2026-09-21T09:20:30+05:30",
+      "question": "fix(memory): give staged candidates a retirement path, and make purge say why it refused (F21) Found by running the command this branch's own summary suggested: crib memory purge cand:f2ce… --confirm cand:f2ce… That cannot work, and the failure said nothing useful. `cmdMemoryPurge` filters positionals with `.startsWith('mem:')` and then falls through to a usage dump, so a `cand:` id passed in exactly the documented shape — with the --confirm echo — was silently dropped and answered with a usage block that never mentioned the id PREFIX, which was the whole problem. Same class as F18 and the --vectors refusal: a correct decision delivered so the reader cannot act on it. Worse, no verb covered candidates at all: purge → mem: records only; filters cand: out, then reports usage dismiss → capture-outbox entries; dismissPending searched only pendingCaptures, and `observe` writes a candidate with NO capture, so observe-staged candidates were invisible to it gc → candidates, but BY AGE (30 days default) — no targeted removal So a candidate an operator KNEW was wrong — contradicted by a later change, as one of mine was by the F3 fix — sat in the queue as an untrusted lead for a month. Both fixed. `dismissPending` gained a `cand:` branch that removes the candidate directly; `purge` names the id-kind mismatch and points at `dismiss` (and `gc` for bulk-by-age). No --confirm echo on the candidate path, and the reasoning is not convenience: a candidate is untrusted by construction and was never recall-eligible, so nothing downstream relied on it. The non-destructive rule protects TRUSTED, SHARED memory; a staged lead is neither. purge keeps its echo because records are both. Verified by use: the three stale candidates this session accumulated — one made false by the F3 fix, one duplicating an admitted record, one a first attempt that cited the wrong doc-section span — are retired and the queue is empty. Four tests, including one pinning that purge still REFUSES rather than quietly retiring a candidate, and one that plain usage still appears with no id. Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>",
+      "type": "fix",
+      "scope": "memory",
+      "expectedFiles": [
+        "packages/cli/src/cli.ts",
+        "packages/memory/src/api.ts"
+      ],
+      "unreachableFiles": [],
+      "strippedTokens": []
+    },
+    {
+      "id": "96bf6b0c90eb",
+      "author": "Vishalc412",
+      "date": "2026-09-21T11:58:36+05:30",
+      "question": "fix(memory): narrow observe's attestation refusal to `tty` only — the blanket ban was wrong Caught by the stop hook asking for the user's decisions as `human-attestation` evidence, which the verb I had just built refused. A tool that cannot obey the protocol it ships with is a signal the tool is wrong, not the protocol. `crib memory observe` rejected ANY item of kind `human-attestation`, reasoning that only the TTY-checked `crib memory remember` may present one. Half right, line in the wrong place. `MemoryApi.observe` guards exactly one field and its own error says what to do instead — \"to stage an agent observation, omit `tty`\" — and there is a designed relay path behind it: a tty-less attestation from a non-terminal caller is stamped `relayedBy: <actor>` and capped at `degraded`, recallable on this device but refused by every path that needs a person. That is precisely how an agent should record \"the user decided X\": attributable, weaker than a real attestation, not a forgery. The blanket ban blocked it and diverged from the MCP memory_observe path, which uses the same API. Now refuses `tty: true` only, and the message names the relay alternative rather than just saying no. Two tests pin both halves: the forged-tty refusal, and that a tty-less attestation is ACCEPTED and comes back `recallable: true` with a admission reason. Verified by use — the four maintainer decisions from this session recorded evidence=degraded, relayedBy=agent:unknown, reason \"relayed: kept as the user's stated decision (unconfirmed) … the user can confirm it with `crib memory remember` to make it verified and team-shareable\". Second self-correction of this audit after F6, and they share a shape: a conclusion drawn from a plausible reading rather than from the thing itself. Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>",
+      "type": "fix",
+      "scope": "memory",
+      "expectedFiles": [
+        "packages/cli/src/cli.ts"
+      ],
+      "unreachableFiles": [],
+      "strippedTokens": [
+        "relayed/unconfirmed"
+      ]
+    },
+    {
+      "id": "1bef2d93cf85",
+      "author": "Vishalc412",
+      "date": "2026-09-21T12:05:51+05:30",
+      "question": "feat(security): refuse any non-loopback bind — local-only is a product boundary (F13) Decided 2026-09-21: knowledge-crib is permanently single-trust-domain. That turns F13 from an open gap into a stated boundary, enforced by the code instead of requested by the docs. Enforcement rather than wording, for a specific reason: isAllowedHttpCaller validates the Host header against whatever the daemon BOUND to. A `0.0.0.0` bind therefore does not merely widen the surface — it flips that check from a DNS-rebinding guard into one that APPROVES remote callers, each with the local user's full rights, since no identity, membership, revocation or per-artifact authorization exists. The control that looks like a defence becomes the thing that lets them in, and \"don't do that\" in a doc is the wrong instrument for a failure mode that inverts a security check. `serveHttp` now calls `assertLoopbackBind`: permits (the whole block — refusing 127.0.0.2 would be theatre, the kernel routes all of it locally), ::1, localhost, and IPv4-mapped ::ffff:127.0.0.1; throws on everything else. It THROWS rather than narrowing to loopback. An operator who asked for 0.0.0.0 wanted something this server cannot safely do, and silently binding loopback would leave them believing the exposure worked. The message names the cause, says the boundary is deliberate so nobody waits for a flag that will never come, and gives the two routes that work: an authenticating proxy in front of a loopback bind, or stdio. SECURITY.md and the capability matrix now read \"out of scope, permanently — a decided product boundary\" rather than \"not implemented\", which was true but read as an oversight. Five tests, including one pinning that the refusal explains itself rather than just refusing. Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>",
+      "type": "feat",
+      "scope": "security",
+      "expectedFiles": [
+        "packages/mcp/src/index.ts",
+        "packages/mcp/src/server.ts"
+      ],
+      "unreachableFiles": [],
+      "strippedTokens": [
+        "127.0.0.0/8"
+      ]
+    },
+    {
+      "id": "4bce731bbfe9",
+      "author": "Vishalc412",
+      "date": "2026-09-21T15:13:59+05:30",
+      "question": "feat(memory): add a generated MEMORY.md digest, and surface the last session in the UI Two requests, one root cause: the ledger held the answers and nothing rendered them in a form a person could read quickly. `crib memory export [--format markdown] [--out MEMORY.md] [--include-pending]` renders a digest FROM the ledger: where I left off, unfinished work with its next safe action, what is known, what stopped holding, what is withheld. It is ONE-WAY, and that is the design rather than a shortcut. A writable memory.md would be a second source of truth — the thing the protocol forbids — and the divergence would be silent: edit the file, and every agent and IDE still reads the ledger. It is also lossy by nature, because the ledger is append-only and bi-temporal (records superseded, not edited; evidence and freshness verdicts re-derived against today's code) and markdown has nowhere to put that. The header says all of this, so a reader learns WHY editing is futile rather than being told not to. MEMORY.md is gitignored for the same reason. Withheld candidates are COUNTED, not quoted, exactly as the default recall view does — a digest printing staged claims beside admitted ones would make verified and unverified text indistinguishable, which is what the admission gate exists to prevent. `--include-pending` opts into the text under its own labelled heading. A test pins that the unadmitted text is absent by default and present with it. UI: the memory popup showed a session ID and nothing about what the session was DOING — the one question the page is opened to answer. `api.handoff` had always produced `lastSession`; `readMemoryHome` dropped it on the floor. It now flows through / and renders as a card with the progress note, /when, the changed files, and a warning when the repository has moved since. The note is the newest intake checkpoint recorded at or before the session's last activity. Checkpoints carry `recordedAt` but no session id, so authorship cannot be proven and is NOT claimed: \"the note that was current when this session ended\" is exactly true whichever session wrote it, and is what an operator wants. A session with no checkpoint says so rather than rendering a blank. Verified end to end against the live viz server: the endpoint now returns summary, summaryPhase, summaryIntakeId and movedSince alongside the id. Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>",
+      "type": "feat",
+      "scope": "memory",
+      "expectedFiles": [
+        "packages/cli/src/cli.ts",
+        "packages/cli/src/viz-server.ts",
+        "packages/memory/src/handoff.ts"
+      ],
+      "unreachableFiles": [
+        "packages/cli/src/memory-export.ts"
+      ],
+      "strippedTokens": [
+        "memory/home.json",
+        "who/where"
+      ]
+    }
+  ]
+}
