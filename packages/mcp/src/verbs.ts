@@ -101,7 +101,7 @@ import {
  * touch the network or the enricher.
  */
 import type { Edge, Node, NodeKind } from '@knowledge-crib/soul-schema';
-import { blake3Hex } from '@knowledge-crib/soul-schema';
+import { NODE_KINDS, blake3Hex } from '@knowledge-crib/soul-schema';
 import {
   type EnrichNextArgs,
   type EnrichStatusArgs,
@@ -293,6 +293,50 @@ const SESSION_ANCHOR_BUCKET_MS = 5 * 60 * 1000;
 const VCS_FACT_TTL_MS = 2000;
 
 const DEFAULT_OVERVIEW_ANALYSES = 40;
+
+/**
+ * Node kinds that are DETAIL of an enclosing symbol rather than answers in their own right.
+ *
+ * Discovery (`query` / `ask`) used to rank these against symbols, and they win on BM25 far more
+ * often than they should: a short statement whose few tokens include the query term scores better
+ * than the function that contains it. Measured on this repository, "how does the system prevent
+ * stale memories from being recalled" answered with
+ * `stmt:…/verbs.ts@L3003 → const recalledSeeds = Array.isArray(recalled?.hits)` and
+ * `stmt:…/enrichment.ts@L2224 → const result: Record<string, unknown> = {` — fragments that contain
+ * a matching token and no answer, while the module that implements the behaviour never appeared.
+ *
+ * Excluding them from discovery loses no CONTENT, which is what makes this safe rather than a
+ * trade-off: `composeSearchableBody` puts a symbol's whole rehydrated span into its own FTS `body`
+ * column, so the text of every statement inside a function is already searchable through that
+ * function. The hit becomes the enclosing symbol instead of the fragment — which is the answer the
+ * caller wanted. The one bounded exception is a span longer than the 8 KiB body cap, whose tail is
+ * reachable only through its own detail nodes; `includeDetail: true` exists for that and for
+ * deliberate fragment-level searches.
+ *
+ * These kinds remain first-class everywhere they are the point: `context`, `dossier`, `rules`,
+ * `explain` and `neighbors` all still return them, and an explicit `kinds` filter is always obeyed.
+ */
+const DETAIL_NODE_KINDS: readonly NodeKind[] = [
+  'statement',
+  'condition',
+  'assignment',
+  'case-branch',
+  'raise',
+  'cursor',
+  'exception-handler',
+  'explanation',
+];
+
+/**
+ * The kinds discovery ranks by default: the canonical enum MINUS {@link DETAIL_NODE_KINDS}.
+ *
+ * Derived by subtraction, never enumerated. An added NodeKind must default to being DISCOVERABLE —
+ * a hand-written allowlist would silently exclude every future kind from `query` and `ask`, and that
+ * failure is invisible (a kind that is simply never returned looks like a corpus with none of it).
+ */
+const DISCOVERY_NODE_KINDS: readonly NodeKind[] = NODE_KINDS.filter(
+  (k) => !DETAIL_NODE_KINDS.includes(k),
+);
 
 /**
  * G3.1/G3.2 — the lexical channel for one memory read call: the FTS index + the versioned scorer
@@ -1404,9 +1448,20 @@ export class Verbs {
      *  leading prefix that fits and `budgetExhausted:true` + a `cursor` resume point are returned.
      *  (M1.2) */
     maxTokens?: number;
+    /**
+     * Rank sub-symbol DETAIL nodes (statements, conditions, assignments, …) alongside symbols.
+     * Default false — see {@link DETAIL_NODE_KINDS} for why, and note that it costs no content:
+     * a symbol's own FTS body already contains the text of every statement inside it. An explicit
+     * `kinds` filter always wins over this flag, in both directions.
+     */
+    includeDetail?: boolean;
   }): Record<string, unknown> {
     const soul = this.deps.soul;
     const limit = capInt(args.limit, DEFAULT_LIMIT, MAX_LIMIT);
+    // An explicit `kinds` is the caller's business and is never widened or narrowed. Otherwise
+    // discovery defaults to answer-shaped kinds, and `includeDetail` opts back into fragments.
+    const kinds: NodeKind[] | undefined =
+      args.kinds ?? (args.includeDetail ? undefined : [...DISCOVERY_NODE_KINDS]);
     // cursor → offset into the BM25-ranked set (FTS5 OFFSET). Floor at 0; non-numeric → 0.
     const offset = Math.max(0, Number.parseInt(args.cursor ?? '', 10) || 0);
     // M2.4 — rewrite the query with the per-repo alias dictionary before it reaches the index.
@@ -1416,7 +1471,7 @@ export class Verbs {
     // without an extra count query; we slice back to `limit` after the overflow check.
     const rawHits = this.codeIndex().query({
       text: q,
-      ...(args.kinds ? { kinds: args.kinds } : {}),
+      ...(kinds ? { kinds } : {}),
       limit: limit + 1,
       offset,
     });
@@ -1603,6 +1658,8 @@ export class Verbs {
     withRules?: boolean;
     withFramework?: boolean;
     extractedOnly?: boolean;
+    /** Rank sub-symbol detail nodes too. Default false — see {@link DETAIL_NODE_KINDS}. */
+    includeDetail?: boolean;
   }): Record<string, unknown> {
     const q = args.q.trim();
     if (!q) {
@@ -1651,9 +1708,14 @@ export class Verbs {
     // M2.4 — rewrite the discovery query with the alias dict (no-op when empty); `q` (original) is
     // still used above for node-id resolution + overview detection and echoed as the question.
     const liveSoul = this.codeSoul();
+    // A natural-language question is the case where fragment hits are least useful and were most
+    // visible: `ask` is the verb that answered "how does the system prevent stale memories from
+    // being recalled" with `const result: Record<string, unknown> = {`. Same policy as `query`,
+    // same escape hatch.
     const hits = this.codeIndex().query({
       text: rewriteQuery(q, this.aliases),
       limit: capInt(args.limit, DEFAULT_LIMIT, MAX_LIMIT),
+      ...(args.includeDetail ? {} : { kinds: [...DISCOVERY_NODE_KINDS] }),
     });
     const needEdges = args.withRules || args.withFramework;
     let outgoing: Map<string, Edge[]> | undefined;
@@ -2630,11 +2692,25 @@ export class Verbs {
     maxTokens?: number;
     cursor?: string;
     ifHash?: string;
+    /** Rank sub-symbol detail nodes too. Default false — see {@link DETAIL_NODE_KINDS}. */
+    includeDetail?: boolean;
   }): Record<string, unknown> {
     const limit = DEFAULT_LIMIT;
     const offset = Math.max(0, Number.parseInt(args.cursor ?? '', 10) || 0);
     const q = rewriteQuery(args.q, this.aliases);
-    const rawHits = this.codeIndex().query({ text: q, limit: limit + 1, offset });
+    // `brief` is the entry-point verb the protocol tells every agent to call first, so it is the
+    // worst place to surface fragments: the first thing an agent ever sees of a repository should be
+    // its symbols, files and docs, not three statements that happened to contain a query token.
+    // Same policy and same escape hatch as `query`/`ask` (see {@link DETAIL_NODE_KINDS}) — the flag
+    // is kept here rather than hard-coding the filter because fragment-level grounding inheritance
+    // (a statement inheriting authored meaning from its enclosing symbol) is a real thing to inspect
+    // through this verb, and a default is not a prohibition.
+    const rawHits = this.codeIndex().query({
+      text: q,
+      limit: limit + 1,
+      offset,
+      ...(args.includeDetail ? {} : { kinds: [...DISCOVERY_NODE_KINDS] }),
+    });
     const moreCode = rawHits.length > limit;
     const keywordHits = moreCode ? rawHits.slice(0, limit) : rawHits;
     // Fuse keyword hits with hits ranked over AUTHORED MEANING. Keyword search alone answers

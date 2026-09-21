@@ -250,7 +250,7 @@ export function buildServer(verbs: Verbs, version = '0.1.0', pins?: RequestPins)
     'query',
     {
       description:
-        'Keyword search over code + docs, including source bodies, so rule CONTENT matches and not just names. Prefer brief for questions; use query when you want raw ranked hits or the opt-in folds. Returns { hits, llmHits, truncated }; each hit has a one-line snippet plus a lightweight LLM pointer when analysis exists. llmHits are semantic finds BM25 missed. Opt in with withSource (full body), withRules (decision table), withFramework (routes/DI), withLlm (full analysis). Defaults stay small.',
+        'Keyword search over code + docs, including source bodies, so rule CONTENT matches and not just names. Prefer brief for questions; use query when you want raw ranked hits or the opt-in folds. Returns { hits, llmHits, truncated }; each hit has a one-line snippet plus a lightweight LLM pointer when analysis exists. llmHits are semantic finds BM25 missed. Opt in with withSource (full body), withRules (decision table), withFramework (routes/DI), withLlm (full analysis). Defaults stay small. Sub-symbol fragments (statements/conditions/assignments) are excluded by default so a matching line inside a function does not outrank the function; pass includeDetail:true for fragment-level hits, or an explicit kinds filter.',
       inputSchema: {
         q: z.string(),
         kinds: z.array(z.string()).optional(),
@@ -264,6 +264,7 @@ export function buildServer(verbs: Verbs, version = '0.1.0', pins?: RequestPins)
         withLlm: z.boolean().optional(),
         cursor: z.string().optional(),
         maxTokens: z.number().int().positive().max(MAX_MAX_TOKENS).optional(),
+        includeDetail: z.boolean().optional(),
       },
     },
     async (a) => {
@@ -282,6 +283,7 @@ export function buildServer(verbs: Verbs, version = '0.1.0', pins?: RequestPins)
           ...(a.withLlm !== undefined ? { withLlm: a.withLlm } : {}),
           ...(a.cursor !== undefined ? { cursor: a.cursor } : {}),
           ...(a.maxTokens !== undefined ? { maxTokens: a.maxTokens } : {}),
+          ...(a.includeDetail !== undefined ? { includeDetail: a.includeDetail } : {}),
         }),
       );
     },

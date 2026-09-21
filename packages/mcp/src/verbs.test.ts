@@ -3568,6 +3568,13 @@ describe('enrich queue — generated files are deprioritized', () => {
 // expressions. They are not symbols, so a symbol-only inheritance chain left them permanently
 // ungrounded: `brief` coverage sat at 13% even with 42 files authored, and rose to 70% once they
 // could inherit. Each is reached from its enclosing symbol by an explicit edge.
+/**
+ * `includeDetail: true` below is load-bearing, not decoration. `brief` excludes sub-symbol fragments
+ * by default so an agent's first look at a repository is symbols/files/docs rather than statements
+ * that merely contain a query token (see DETAIL_NODE_KINDS in verbs.ts). These tests are about
+ * something else — that a statement INHERITS authored grounding from the symbol executing it — so
+ * they opt fragments back in rather than asserting against the default view.
+ */
 describe('semantic inheritance reaches behaviour nodes, not just symbols', () => {
   interface BriefResult {
     codeHits: Array<{
@@ -3659,14 +3666,17 @@ describe('semantic inheritance reaches behaviour nodes, not just symbols', () =>
     index.buildFromSoul(soul, repo);
     const fresh = new Verbs({ soul, index, repoRoot: repo });
 
-    const before = fresh.brief({ q: 'issueSession' }) as unknown as BriefResult;
+    const before = fresh.brief({
+      q: 'issueSession',
+      includeDetail: true,
+    }) as unknown as BriefResult;
     expect(before.codeHits.find((h) => h.id === stmt.id)?.grounding).toBe('code');
 
     // ONLY the enclosing symbol is authored — no file artifact — so if the symbol step of the
     // chain is missing, this statement stays ungrounded.
     authorSymbol(login.id, 'Authenticates a user and issues a session.');
 
-    const after = fresh.brief({ q: 'issueSession' }) as unknown as BriefResult;
+    const after = fresh.brief({ q: 'issueSession', includeDetail: true }) as unknown as BriefResult;
     const hit = after.codeHits.find((h) => h.id === stmt.id);
     expect(hit?.grounding).toBe('semantic');
     expect(hit?.llm?.purpose).toBe('Authenticates a user and issues a session.');
@@ -3687,7 +3697,7 @@ describe('semantic inheritance reaches behaviour nodes, not just symbols', () =>
     soul.commit('2026-01-05T00:00:00.000Z');
     index.buildFromSoul(soul, repo);
     const fresh = new Verbs({ soul, index, repoRoot: repo });
-    const r = fresh.brief({ q: 'orphanStatement' }) as unknown as BriefResult;
+    const r = fresh.brief({ q: 'orphanStatement', includeDetail: true }) as unknown as BriefResult;
     const hit = r.codeHits.find((h) => h.id === orphan.id);
     expect(hit?.grounding).toBe('code');
     expect(hit?.llm).toBeUndefined();
@@ -4344,5 +4354,122 @@ describe('WP4.7 — status folds readerFreshness best-effort', () => {
   it('omits the key entirely when no reporter is wired — existing consumers see no shape change', () => {
     const res = verbs.status() as Record<string, unknown>;
     expect('readerFreshness' in res).toBe(false);
+  });
+});
+
+/**
+ * F14 — discovery must not rank sub-symbol fragments against symbols.
+ *
+ * Measured on the crib's own repository, `ask("how does the system prevent stale memories from
+ * being recalled")` answered with `const result: Record<string, unknown> = {` and
+ * `const recalledSeeds = Array.isArray(recalled?.hits)` — statements that contain a matching token
+ * and no answer — while the modules implementing the behaviour never appeared. A short fragment
+ * whose few tokens include the query term simply outscores the function containing it under BM25.
+ *
+ * The fix costs no CONTENT, which is the point: `composeSearchableBody` puts a symbol's whole
+ * rehydrated span into its own FTS `body` column, so a fragment's text is already searchable
+ * through its enclosing symbol. These tests pin both halves — the fragment is excluded by default,
+ * and the symbol containing the same text is still found by the same query.
+ */
+describe('F14 — discovery excludes sub-symbol detail by default', () => {
+  let detailRepo: string;
+  let detailSoul: SoulStore;
+  let detailIndex: SqliteIndexStore;
+  let detailVerbs: Verbs;
+  let owner: Node;
+  let fragment: Node;
+
+  beforeEach(() => {
+    index.close(); // release the index the outer beforeEach built
+    detailRepo = mkdtempSync(join(tmpdir(), 'crib-detail-'));
+    mkdirSync(join(detailRepo, 'src'), { recursive: true });
+    // The distinctive token `quarantineThreshold` appears in BOTH the function body on disk (so it
+    // reaches the symbol's FTS body column) and in the fragment node's own span.
+    writeFileSync(
+      join(detailRepo, 'src', 'gate.ts'),
+      `function applyGate(record) {
+  const quarantineThreshold = 3;
+  return record.failures > quarantineThreshold;
+}
+`,
+    );
+    owner = {
+      id: idFor({ kind: 'symbol', path: 'src/gate.ts', qualifiedName: 'applyGate', startLine: 1 }),
+      kind: 'symbol',
+      type: 'function',
+      name: 'applyGate',
+      qualifiedName: 'applyGate',
+      file: 'src/gate.ts',
+      span: { start: 1, end: 4 },
+      lang: 'typescript',
+      hash: contentHash('applyGate'),
+    };
+    fragment = {
+      id: idFor({ kind: 'statement', file: 'src/gate.ts', line: 2 }),
+      kind: 'statement',
+      file: 'src/gate.ts',
+      span: { start: 2, end: 2 },
+      lang: 'typescript',
+      hash: contentHash('gate-stmt'),
+    };
+    detailSoul = new SoulStore(join(detailRepo, '.crib'), {
+      manifest: newManifest({ now: '2026-01-01T00:00:00.000Z' }),
+    });
+    detailSoul.load();
+    detailSoul.putNodes([owner, fragment]);
+    detailSoul.commit('2026-01-01T00:00:00.000Z');
+    detailIndex = new SqliteIndexStore();
+    detailIndex.buildFromSoul(detailSoul, detailRepo);
+    detailVerbs = new Verbs({ soul: detailSoul, index: detailIndex, repoRoot: detailRepo });
+  });
+  afterEach(() => {
+    detailIndex.close();
+    rmSync(detailRepo, { recursive: true, force: true });
+    // the outer afterEach closes `index`, which this block already closed — reopen a trivial one so
+    // that close() is a no-op rather than a double-close on a released handle.
+    index = new SqliteIndexStore();
+  });
+
+  function ids(res: Record<string, unknown>): string[] {
+    return (res.hits as Array<{ id: string }>).map((h) => h.id);
+  }
+
+  it('query: the fragment is excluded and the enclosing symbol is still found by the same token', () => {
+    const got = ids(detailVerbs.query({ q: 'quarantineThreshold' }));
+    expect(got).toContain(owner.id);
+    expect(got).not.toContain(fragment.id);
+  });
+
+  it('query: includeDetail opts fragments back in', () => {
+    expect(ids(detailVerbs.query({ q: 'quarantineThreshold', includeDetail: true }))).toContain(
+      fragment.id,
+    );
+  });
+
+  it('query: an EXPLICIT kinds filter always wins over the default', () => {
+    const got = ids(detailVerbs.query({ q: 'quarantineThreshold', kinds: ['statement'] }));
+    expect(got).toEqual([fragment.id]);
+  });
+
+  it('ask: same policy, same escape hatch', () => {
+    const asked = ids(detailVerbs.ask({ q: 'what is the quarantineThreshold' }));
+    expect(asked).toContain(owner.id);
+    expect(asked).not.toContain(fragment.id);
+    expect(
+      ids(detailVerbs.ask({ q: 'what is the quarantineThreshold', includeDetail: true })),
+    ).toContain(fragment.id);
+  });
+
+  it('brief: the entry-point verb orients on symbols, not fragments', () => {
+    const brief = detailVerbs.brief({ q: 'quarantineThreshold' });
+    const codeIds = (brief.codeHits as Array<{ id: string }>).map((h) => h.id);
+    expect(codeIds).toContain(owner.id);
+    expect(codeIds).not.toContain(fragment.id);
+  });
+
+  it('detail kinds stay first-class where they are the point (context by id)', () => {
+    // Excluding a kind from DISCOVERY must not make it unreachable: an id lookup still resolves.
+    const ctx = detailVerbs.context({ id: fragment.id }) as unknown as { node: { file?: string } };
+    expect(ctx.node.file).toBe('src/gate.ts');
   });
 });

@@ -1305,7 +1305,7 @@ async function cmdQuery(args: string[], ctx?: CmdCtx): Promise<number> {
   const q = positionalsOf(args).join(' ');
   if (!q) {
     process.stderr.write(
-      'usage: crib query <text> [--with-source] [--with-rules] [--with-framework] [--extracted-only] [--with-llm] [--limit N]\n',
+      'usage: crib query <text> [--with-source] [--with-rules] [--with-framework] [--extracted-only] [--with-llm] [--include-detail] [--limit N]\n',
     );
     return EXIT.BAD_ARGS;
   }
@@ -1342,6 +1342,7 @@ async function cmdQuery(args: string[], ctx?: CmdCtx): Promise<number> {
         ...(withFramework ? { withFramework: true } : {}),
         ...(extractedOnly ? { extractedOnly: true } : {}),
         ...(withLlm ? { withLlm: true } : {}),
+        ...(args.includes('--include-detail') ? { includeDetail: true } : {}),
         ...(Number.isFinite(limit) && limit! > 0 ? { limit } : {}),
       }),
       null,
@@ -1652,7 +1653,7 @@ async function cmdAsk(args: string[], ctx?: CmdCtx): Promise<number> {
   const q = positionalsOf(args).join(' ').trim();
   if (!q) {
     process.stderr.write(
-      'usage: crib ask "<question>" [--format markdown] [--limit N] [--with-source] [--with-rules] [--with-framework] [--extracted-only]\n',
+      'usage: crib ask "<question>" [--format markdown] [--limit N] [--with-source] [--with-rules] [--with-framework] [--extracted-only] [--include-detail]\n',
     );
     return EXIT.BAD_ARGS;
   }
@@ -1674,6 +1675,7 @@ async function cmdAsk(args: string[], ctx?: CmdCtx): Promise<number> {
     ...(args.includes('--with-rules') ? { withRules: true } : {}),
     ...(args.includes('--with-framework') ? { withFramework: true } : {}),
     ...(args.includes('--extracted-only') ? { extractedOnly: true } : {}),
+    ...(args.includes('--include-detail') ? { includeDetail: true } : {}),
   });
 
   if (format === 'markdown') {
@@ -10196,7 +10198,7 @@ function printHelp(): void {
       'Usage:',
       '  crib index [path] [--crib-dir <absolute-path>] [--semantic] [--vectors] [--exclude a,b,...] [--package <name|all>...] [--multimodal [--multimodal-backend auto|fake] [--multimodal-model-path <dir>]]     full index → .crib soul + derived index; --semantic adds INFERRED doc→symbol links to the GRAPH (it does not enable semantic search); --vectors builds the code-vector channel so `query`/`ask` fuse BM25 with cosine (needs `crib embed setup`; off by default, unmeasured on a labelled code corpus); --package scopes to one monorepo package (list detected with no --package); --multimodal opts into media extraction (TS-native PDF text layer by default; tesseract OCR / whisper transcription when on PATH)',
       '  crib status [path] [--dirty]             health + stats; --dirty previews files that would be re-indexed',
-      '  crib query <text>                        BM25 search over code + docs (incl. bodies); --with-source --with-rules fold body + decision table into each hit',
+      '  crib query <text> [--include-detail]      BM25 search over code + docs (incl. bodies); sub-symbol fragments (statements/conditions/assignments) are excluded by default so a matching line cannot outrank the function containing it — --include-detail opts them back in; --with-source --with-rules fold body + decision table into each hit',
       '  crib gaps [path] [--extracted-only] [--include-builtins]   analysis readiness + missing bodies + unresolved call sites',
       '  crib rules <proc> [--include-tables]      decision table + coverage readiness for a callable',
       '  crib context <id> [--with-source] [--with-rules] [--with-framework]   deep per-symbol context',
