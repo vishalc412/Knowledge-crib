@@ -36,9 +36,9 @@
  * run reports and never fails a build on a number that has no pre-registered floor yet.
  */
 import {
-  loadInstalledEmbedder,
   SoulStore,
   SqliteIndexStore,
+  loadInstalledEmbedder,
 } from '../../packages/core/dist/index.js';
 
 const R = process.cwd();
