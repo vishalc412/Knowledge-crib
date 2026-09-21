@@ -70,7 +70,7 @@ run `crib embed setup` serves the char-ngram fallback** and is at the top row �
 | Capability | State | Default? | Evidence |
 |---|---|---|---|
 | Lexical code search (FTS5 BM25 over names/signatures/headings/files/bodies + static synonym table) | verified | **on** | full suite green; `crib query` |
-| Vector code search (RRF hybrid BM25 ∪ cosine + deterministic structural rerank) | implemented, opt-in, **measured on a 22-question labelled corpus — no pre-registered gate** | **off** — `crib index --vectors` | [`scripts/eval/code-vector-eval.mjs`](../scripts/eval/code-vector-eval.mjs) |
+| Vector code search (RRF hybrid BM25 ∪ cosine + deterministic structural rerank) | **measured: MRR 0.057 → 0.286 vs lexical** on a 20-question labelled corpus; opt-in, no pre-registered gate | **off** — `crib index --vectors` | [`scripts/eval/code-vector-eval.mjs`](../scripts/eval/code-vector-eval.mjs) |
 | Discovery excludes sub-symbol fragments (statements/conditions/assignments) | verified | on (`includeDetail` opts back in) | `verbs.test.ts` "F14 — discovery excludes sub-symbol detail by default" |
 
 The second row is the honest state and the reason it is stated separately. The hybrid path exists in
@@ -81,8 +81,39 @@ still does **not** exist is a *pre-registered* gate with a frozen floor, so `--v
 opt-in capability rather than a quality claim, and the ONNX ladder above still does not cover it.
 Two further limits the harness states itself: it cannot isolate the contribution of body text from
 the contribution of having vectors at all (that would need a second embedding recipe kept alive in
-production for the harness's benefit), and 22 questions on one repository authored by someone who
+production for the harness's benefit), and 20 questions on one repository authored by someone who
 knows it is a regression gate, not an external benchmark.
+
+### The measured code-retrieval numbers
+
+`node scripts/eval/code-vector-eval.mjs` on this repository, 2026-09-21, same 20-question labelled
+corpus as `semantic-retrieval-eval.mjs`, both columns reading the SAME sqlite file so only the
+retrieval path varies:
+
+| path | top-1 | top-3 | found@10 | MRR |
+|---|---:|---:|---:|---:|
+| lexical (BM25, the default) | 0/20 (0%) | 1/20 (5%) | 6/20 (30%) | 0.057 |
+| hybrid (`--vectors`, e5-large) | **4/20 (20%)** | **7/20 (35%)** | **9/20 (45%)** | **0.286** |
+
+**Read the absolute numbers, not only the ratio.** MRR improves 5×, and 9 of 20 questions rank
+better — but 3 REGRESS (secret indexing, cross-repo blast radius, response bounding each fall out of
+the top 10), and top-1 at 20% means the right file is usually still not first. This is a real
+improvement over a weak baseline, not a solved problem, and it is why the row above says "no
+pre-registered gate": there is no frozen floor yet, and a corpus of 20 questions on one repository
+authored by someone who knows it cannot carry one.
+
+**What it costs**, measured on the same tree (`/usr/bin/time -l`):
+
+| index | wall | peak RSS | vectors written |
+|---|---:|---:|---:|
+| `crib index` (lexical) | 86 s | 0.81 GB | — |
+| `crib index --vectors` (surface only, v1 recipe, all node kinds) | 421 s | 4.87 GB | 48,459 |
+| `crib index --vectors` (surface + body, v2 recipe, discovery kinds only) | **1,444 s** | **4.83 GB** | **10,185** |
+
+v2 embeds 4.8× FEWER nodes than v1 and still takes 3.4× longer, because each embedding carries ~15×
+more tokens — 24 minutes for a 185K-LOC repository, and 16.8× the lexical build. That is the honest
+reason `--vectors` is opt-in and the reason the scale limit in the known-limits list matters more for
+the vector path than for the lexical one.
 
 A machine that has not run `crib embed setup` cannot build vectors at all: `crib index --vectors`
 refuses rather than silently embedding with the char-ngram fallback, which R1 measured as worse than

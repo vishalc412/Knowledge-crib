@@ -27,7 +27,7 @@
  * would need a second embedding recipe kept alive in production code purely for this harness, which is
  * a worse trade than reporting the ceiling honestly. The v1 evidence is the three probes in the audit,
  * all of which missed. It also inherits the corpus's limits — 22 questions, one repository, authored by
- * someone who knows the codebase — so it is a regression gate, not an external benchmark.
+ * someone who knows the codebase (20 questions) — so it is a regression gate, not an external benchmark.
  *
  * Usage:
  *   node scripts/eval/code-vector-eval.mjs [--min-mrr 0] [--json] [--limit 10]
@@ -208,10 +208,12 @@ const report = {
   limit: LIMIT,
   embedder: embedder ? { id: embedder.id, dim: embedder.dim() } : null,
   vectorChannel: hybridCaps?.vector === true,
-  // Carried verbatim: an unusable vector channel has a REASON, and a gate that hides it reports a tie
-  // as a result. `vectorNote` names whether the index lacks vectors, lacks a matching model, or was
-  // built from an older text recipe.
-  vectorNote: hybridCaps?.vectorNote ?? lexicalCaps.vectorNote ?? null,
+  // Only meaningful when the channel is OFF: an unusable vector channel has a REASON, and a gate that
+  // hides it reports a tie as a result. When the channel is LIVE, the lexical store's own note ("this
+  // reader loaded no embedder") is true of that store and says nothing about the run — printing it
+  // beside "LIVE" read as a contradiction, so it is suppressed rather than carried.
+  vectorNote:
+    hybridCaps?.vector === true ? null : (hybridCaps?.vectorNote ?? lexicalCaps.vectorNote ?? null),
   lexical: lexicalScore,
   hybrid: hybridScore ?? null,
 };

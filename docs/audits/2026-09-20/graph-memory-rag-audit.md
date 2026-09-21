@@ -683,3 +683,98 @@ fresh worktree has no manifest.
 F4–F15 and F17 are untouched by this round. F16 in particular still holds: these findings could not be
 distilled into the claim ledger, because `memory_observe` is MCP-only and the MCP server was down.
 Work is recorded on `intake:d186b40d…`.
+
+---
+
+## 8. Remediation round 2 — the negative result is overturned, with numbers
+
+Appended 2026-09-21. Round 1 (§7) closed F1 and F2 and reported a NEGATIVE result: the vector channel
+was live and retrieval had not improved. Round 2 identifies why, fixes it, and **measures the
+difference instead of asserting it**.
+
+### F3 closed — body text in the vector channel, funded by F14
+
+`vectorText` v2 appends the rehydrated span (capped at 1,200 chars — below the shipped model's
+512-token truncation, surface fields first so the cap never eats the identifier). Two things made
+that affordable and safe:
+
+- **Detail kinds are no longer embedded.** Discovery stopped ranking them in F14, and on this index
+  they are **38,286 of 48,459 nodes — 79%**. Four fifths of the v1 embedding run was spent on nodes
+  no query would ever return.
+- **The text recipe is versioned.** Changing *what* is embedded changes the vector space as surely as
+  changing the model does, and the model id cannot express it — the same e5-large produced v1 and v2.
+  `vector_meta.textVersion` records it and a reopen with a different recipe **refuses** the channel. A
+  missing key means v1, not "assume current".
+
+### The measurement
+
+`node scripts/eval/code-vector-eval.mjs` — the same 20-question labelled corpus
+`semantic-retrieval-eval.mjs` uses, scored through a lexical and a hybrid store over the **same
+sqlite file**, so only the retrieval path varies:
+
+| path | top-1 | top-3 | found@10 | MRR |
+|---|---:|---:|---:|---:|
+| lexical (BM25, the default) | 0/20 (0%) | 1/20 (5%) | 6/20 (30%) | 0.057 |
+| hybrid (`--vectors`, e5-large, v2 recipe) | 4/20 (20%) | 7/20 (35%) | 9/20 (45%) | **0.286** |
+
+**MRR improves 5×.** Nine questions rank better — "how is a claim proven against real code" and
+"what decides which memory the team trusts" go from a miss to rank 1; "how do I add a new language"
+from 3 to 1. **Three regress**, and they are named rather than buried: "what stops a secret being
+indexed" (5 → miss), "how does blast radius cross repositories" (9 → miss), "why is a response never
+unbounded" (4 → miss).
+
+**What this does and does not establish.** It overturns §7's negative result — body embedding was the
+binding constraint, and closing it produced a measured gain on an independently authored corpus. It
+does **not** make code retrieval good: top-1 at 20% means the right file is usually still not first,
+and a 20-question corpus on one repository, authored by someone who knows it, cannot carry a
+pre-registered gate. The harness also cannot isolate body text from having vectors at all — that
+would need a second embedding recipe kept alive in production for the harness's benefit, which is a
+worse trade than saying so.
+
+### The cost, which is the real argument for keeping `--vectors` opt-in
+
+| index | wall | peak RSS | vectors |
+|---|---:|---:|---:|
+| `crib index` | 86 s | 0.81 GB | — |
+| `--vectors`, v1 (surface only, all kinds) | 421 s | 4.87 GB | 48,459 |
+| `--vectors`, v2 (surface + body, discovery kinds) | **1,444 s** | 4.83 GB | 10,185 |
+
+v2 embeds **4.8× fewer nodes and takes 3.4× longer**, because each embedding carries ~15× more
+tokens: 24 minutes for 185K LOC, 16.8× the lexical build. F6 therefore binds harder on the vector
+path than on the lexical one, and the 1M-LOC point is still unmeasured on either.
+
+### Also closed in round 2
+
+- **F14** — `query`/`ask`/`brief` no longer rank sub-symbol fragments against symbols. The same
+  question that used to answer `const result: Record<string, unknown> = {` now returns the doc section
+  titled "staleness detection" and `graph-store.ts#freshness`. Costs no content: a symbol's FTS body
+  already holds its statements' text.
+- **F15** — was wider than recorded. Thirteen of the fourteen commands on the `openVerbs` funnel take
+  an id, name or question as their first positional and all of them resolved a project root named
+  after their own argument, printing `crib index <symbol-id>` as the remedy. Only `gaps` takes a path.
+- **F16** — `crib memory observe` gives an agent a write path that does not require MCP and does not
+  require minting a human attestation it does not hold. Verified by recording this session's three
+  learnings through it; all three admitted `grounded: 1 exact citation(s)` and recallable.
+- **F18** — `crib serve` no longer exits on a damaged/absent manifest; it completes the handshake and
+  answers every verb with the diagnosis and its remedy. Verified over real stdio JSON-RPC.
+- **F10** — narrower than recorded, and the audit was wrong about where: the MCP verb *already*
+  disclosed withheld candidates (`pendingNotice`, added because "silence was the bug"). The CLI
+  assembles its own response shape and dropped it. Now printed as a count plus next action, never the
+  content.
+- **F4** — a reference enrichment provider (`examples/providers/anthropic/`) so the semantic layer is
+  reachable without writing an LLM integration first. The server still makes no model calls.
+
+### An unrelated defect found on the way
+
+`pnpm verify` was **red on HEAD** before this branch started: three files committed unformatted in
+`1f589801` failed `biome check`. Fixed as an isolated reflow-only commit. `biome check .` is now clean
+across 660 files.
+
+### Two traps worth recording for the next person
+
+- **`runCliResult` in `cli.test.ts` returns `stderr: ''` whenever a command exits 0.** Four F15
+  regression tests passed against the unfixed code because of it. Any test asserting on the stderr of
+  a *successful* command must use `spawnSync` directly.
+- **A `':memory:'` sqlite store never reopens**, so the entire pre-existing embedder test set passed
+  while production lost the vector channel on every reopen. State restored in a constructor needs a
+  file-backed test.
