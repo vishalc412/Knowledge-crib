@@ -42,10 +42,16 @@ test.describe
       await expect(page.getByText('terminal 1')).toBeVisible();
       await expect(page.getByText('blocked 1')).toBeVisible();
 
-      // The raw capture names the exact distill command — consent for a provider is
-      // never a browser action.
+      // The raw capture is listed under the re-check path (3ccbc06e replaced the distill
+      // command with re-checking against today's code). Consent for an external model is
+      // still never a browser action: no distill command or action is offered.
       await expect(page.getByText(SEEDED.captureClaim)).toBeVisible();
-      await expect(page.getByText('crib memory distill --provider <name>')).toBeVisible();
+      await expect(
+        page.getByText(
+          'Admits every capture whose evidence verifies against the code today. Nothing is deleted.',
+        ),
+      ).toBeVisible();
+      await expect(page.getByText('crib memory distill --provider <name>')).toHaveCount(0);
 
       // Three staged rows; the Admit action exists exactly once — on the ready row.
       await expect(page.getByText(SEEDED.readyClaim)).toBeVisible();
@@ -124,12 +130,13 @@ test.describe
     test('resuming the saved intake records the decision and closes the detail', async ({
       page,
     }) => {
-      await openMemoryView(page, 'Resume saved work');
+      await openMemoryView(page, 'Continue, finish or cancel saved work');
 
       // The choice card shows the intake and its next safe action.
       const choice = page.locator(`[data-kc-mem-choice="${backend.intakeId}"]`);
       await expect(choice).toBeVisible();
-      await expect(choice).toContainText(backend.intakeId);
+      // 3ccbc06e titles work by its outcome; the id stays on the data attribute.
+      await expect(choice).toContainText('The memory home works end to end from a real browser');
       await expect(choice).toContainText('Re-run the browser suite against the real backend');
 
       // The detail: saved request, checkpoint history, focus moved into it.
@@ -159,7 +166,7 @@ test.describe
     });
 
     test('a duplicate resume is idempotent, never a second event', async ({ page }) => {
-      await openMemoryView(page, 'Resume saved work');
+      await openMemoryView(page, 'Continue, finish or cancel saved work');
 
       // Re-open the detail — its latest checkpoint is now the recorded resume.
       const choice = page.locator(`[data-kc-mem-choice="${backend.intakeId}"]`);
@@ -177,7 +184,7 @@ test.describe
     test('a resume against a moved intake answers 409, re-bases, then succeeds', async ({
       page,
     }) => {
-      await openMemoryView(page, 'Resume saved work');
+      await openMemoryView(page, 'Continue, finish or cancel saved work');
 
       const choice = page.locator(`[data-kc-mem-choice="${backend.intakeId}"]`);
       await choice.click();
@@ -204,7 +211,7 @@ test.describe
     });
 
     test('Escape closes the panel and restores focus to the trigger', async ({ page }) => {
-      await openMemoryView(page, 'Resume saved work');
+      await openMemoryView(page, 'Continue, finish or cancel saved work');
       await expect(page.locator('[data-kc-mem-resume-list]')).toBeVisible();
 
       await page.keyboard.press('Escape');

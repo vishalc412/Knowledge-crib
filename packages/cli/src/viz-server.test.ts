@@ -170,6 +170,7 @@ describe('isAllowedHost (DNS-rebinding guard)', () => {
 
 import {
   type CaptureOutboxEntry,
+  DEFAULT_MIGRATION_PRINCIPAL_ID,
   type MemoryAnchorPort,
   MemoryApi,
   type MemoryCandidate,
@@ -179,13 +180,17 @@ import {
   MemoryStore,
   __resetMemoryLockGuardForTest,
   buildCaptureOutboxEntry,
+  createGraphAssertion,
+  decisionId,
   memoryCandidateId,
   memoryRecordId,
 } from '@knowledge-crib/memory';
 import {
+  graphRefKind,
   parseMemoryLedgerQuery,
   parseMemoryPendingQuery,
   parseResumeBody,
+  readMemoryGraphDetail,
   readMemoryHome,
   readMemoryIntakeDetail,
   readMemoryLedger,
@@ -334,6 +339,102 @@ describe('memory ledger endpoints', () => {
     } catch (err) {
       expect((err as VizHttpError).status).toBe(404);
     }
+  });
+});
+
+describe('record connections endpoint (WP-G7)', () => {
+  let home = '';
+
+  beforeEach(() => {
+    home = mkdtempSync(join(tmpdir(), 'crib-viz-graph-'));
+    __resetMemoryLockGuardForTest();
+  });
+
+  afterEach(() => {
+    __resetMemoryLockGuardForTest();
+    rmSync(home, { recursive: true, force: true });
+  });
+
+  function edge(
+    predicate: 'about' | 'supersedes' | 'applies-to',
+    subject: string,
+    object: string,
+    supporter: string,
+    principalId = DEFAULT_MIGRATION_PRINCIPAL_ID,
+  ) {
+    return createGraphAssertion({
+      predicate,
+      subject,
+      object,
+      namespace: { principalId },
+      scope: { boundary: 'global' },
+      validAt: MEM_T0,
+      knownAt: MEM_T0,
+      supportedBy: [supporter],
+      provenance: { principalId, deviceId: 'device:viz', actorId: 'agent:viz', clientId: 'vitest' },
+    });
+  }
+
+  it('answers configured:false without a memory api', () => {
+    expect(readMemoryGraphDetail(undefined, 'mem:x')).toEqual({ configured: false });
+  });
+
+  it('lists authorized connections, history, replacements and linked work — never foreign edges', () => {
+    const env = { ...process.env, KCRIB_MEMORY_DIR: home, KCRIB_REGISTRY_DIR: home };
+    const api = memApi(home);
+    const record = memRecord();
+    const retired = memRecord({ claim: 'demo.run used to retry forever' });
+    const local = MemoryStore.local(MEM_REPO, { env, now: () => MEM_T0 });
+    local.upsertEntries('active', [retired]);
+    const supersede = {
+      kind: 'supersede' as const,
+      subject: retired.id,
+      successor: record.id,
+      actor: 'human:op',
+    };
+    local.upsertEntry('decisions', {
+      id: decisionId(supersede),
+      schemaVersion: '1',
+      ...supersede,
+      ts: MEM_T0,
+    });
+    const about = edge('about', record.id, MEM_LIVE, record.id);
+    const work = edge('about', 'intake:abc', record.id, record.id);
+    const replaced = edge('supersedes', record.id, retired.id, record.id);
+    const old = edge('applies-to', record.id, 'sym:src/demo.ts#demo.legacy', retired.id);
+    const foreign = edge('about', record.id, 'topic:beta-secret', record.id, 'principal:beta');
+    local.submitGraphEntries([about, work, replaced, old, foreign]);
+
+    const body = readMemoryGraphDetail(api, record.id);
+    expect(body.configured).toBe(true);
+    if (!body.configured) return;
+    expect(body.state).toBe('current');
+    expect(body.connections.map((c) => [c.predicate, c.direction, c.ref, c.kind]).sort()).toEqual(
+      [
+        ['about', 'incoming', 'intake:abc', 'work'],
+        ['about', 'outgoing', MEM_LIVE, 'code'],
+        ['supersedes', 'outgoing', retired.id, 'claim'],
+      ].sort(),
+    );
+    expect(body.history.map((h) => h.assertionId)).toEqual([old.id]);
+    expect(body.replaces).toEqual([retired.id]);
+    expect(body.replacedBy).toEqual([]);
+    expect(JSON.stringify(body)).not.toContain('beta');
+
+    const retiredBody = readMemoryGraphDetail(api, retired.id);
+    if (!retiredBody.configured) throw new Error('expected configured');
+    expect(retiredBody.state).toBe('historical');
+    expect(retiredBody.replacedBy).toEqual([record.id]);
+  });
+
+  it('names ref kinds from the id grammar', () => {
+    expect(graphRefKind('mem:a')).toBe('claim');
+    expect(graphRefKind('intake:a')).toBe('work');
+    expect(graphRefKind('sym:a')).toBe('code');
+    expect(graphRefKind('entity:a')).toBe('entity');
+    expect(graphRefKind('rcpt:a')).toBe('evidence');
+    expect(graphRefKind('topic:a')).toBe('topic');
+    expect(graphRefKind('x:a')).toBe('other');
   });
 });
 

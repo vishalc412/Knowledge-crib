@@ -491,7 +491,7 @@
         <!-- detail view (lazy per-record fetch) -->
         <sc-if value="{{ mem.detail }}" hint-placeholder-val="{{ true }}">
           <div>
-            <button onClick="{{ mem.detail.onBack }}" style="height:26px; padding:0 10px; border-radius:7px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.sub }}; cursor:pointer; font:600 10.5px 'IBM Plex Sans'; margin-bottom:12px;">← Back to ledger</button>
+            <button data-kc-mem-detail-back onClick="{{ mem.detail.onBack }}" style="height:26px; padding:0 10px; border-radius:7px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.sub }}; cursor:pointer; font:600 10.5px 'IBM Plex Sans'; margin-bottom:12px;">{{ mem.detail.backLabel }}</button>
             <sc-if value="{{ mem.detail.loading }}" hint-placeholder-val="{{ true }}"><div style="font-size:12px; color: {{ t.sub }};">Loading record…</div></sc-if>
             <sc-if value="{{ mem.detail.error }}" hint-placeholder-val="{{ true }}">
               <div style="font-size:12px; color:#f87171;">{{ mem.detail.error }}</div>
@@ -538,6 +538,57 @@
                     </div>
                   </div>
                 </sc-if>
+                <sc-if value="{{ mem.detail.graph }}" hint-placeholder-val="{{ true }}">
+                  <section data-kc-mem-graph aria-label="Connections and history" style="margin-top:12px;">
+                    <sc-if value="{{ mem.detail.graph.loading }}" hint-placeholder-val="{{ true }}"><div style="font-size:11px; color: {{ t.sub }};">Loading connections…</div></sc-if>
+                    <sc-if value="{{ mem.detail.graph.error }}" hint-placeholder-val="{{ true }}"><div role="status" style="font-size:11px; color:#f87171;">Connections unavailable: {{ mem.detail.graph.error }}</div></sc-if>
+                    <sc-if value="{{ mem.detail.graph.ready }}" hint-placeholder-val="{{ true }}">
+                      <div>
+                        <sc-if value="{{ mem.detail.graph.historicalNote }}" hint-placeholder-val="{{ true }}"><div data-kc-mem-graph-state style="margin-bottom:8px; padding:7px 9px; border-radius:8px; border:1px solid rgba(245,158,11,0.45); background:rgba(245,158,11,0.10); font-size:11px; color: {{ t.text }};">{{ mem.detail.graph.historicalNote }}</div></sc-if>
+                        <sc-if value="{{ mem.detail.graph.replacedBy.length }}" hint-placeholder-val="{{ true }}">
+                          <div style="font-size:10.5px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color: {{ t.sub }}; margin-bottom:6px;">Replaced by</div>
+                          <ul style="list-style:none; margin:0 0 10px; padding:0; display:flex; flex-direction:column; gap:4px;">
+                            <sc-for list="{{ mem.detail.graph.replacedBy }}" as="rb" hint-placeholder-count="1">
+                              <li><button data-kc-mem-replaced-by="{{ rb.ref }}" onClick="{{ rb.onOpen }}" style="display:block; width:100%; text-align:left; padding:7px 9px; border-radius:8px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.text }}; cursor:pointer; font-family:'IBM Plex Mono',monospace; font-size:10.5px; word-break:break-all;">{{ rb.ref }}</button></li>
+                            </sc-for>
+                          </ul>
+                        </sc-if>
+                        <h3 data-kc-mem-connections-head style="font-size:10.5px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color: {{ t.sub }}; margin:0 0 6px;">{{ mem.detail.graph.connectionsLabel }}</h3>
+                        <sc-if value="{{ mem.detail.graph.connectionsEmpty }}" hint-placeholder-val="{{ true }}"><div style="font-size:11px; color: {{ t.sub }}; margin-bottom:8px;">No authorized connections recorded for this claim.</div></sc-if>
+                        <ul data-kc-mem-connections style="list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:4px;">
+                          <sc-for list="{{ mem.detail.graph.connections }}" as="cn" hint-placeholder-count="3">
+                            <li>
+                              <sc-if value="{{ cn.onOpen }}" hint-placeholder-val="{{ true }}">
+                                <button data-kc-mem-connection="{{ cn.ref }}" onClick="{{ cn.onOpen }}" aria-label="{{ cn.ariaLabel }}" style="display:block; width:100%; text-align:left; padding:7px 9px; border-radius:8px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.text }}; cursor:pointer; font-family:'IBM Plex Sans';">
+                                  <span style="display:block; font-size:10px; font-weight:600; color: {{ t.sub }};">{{ cn.relation }} · {{ cn.kindLabel }} · open</span>
+                                  <span style="display:block; font-family:'IBM Plex Mono',monospace; font-size:10.5px; word-break:break-all; margin-top:2px;">{{ cn.ref }}</span>
+                                </button>
+                              </sc-if>
+                              <sc-if value="{{ cn.static }}" hint-placeholder-val="{{ true }}">
+                                <div data-kc-mem-connection="{{ cn.ref }}" style="padding:7px 9px; border-radius:8px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.text }};">
+                                  <span style="display:block; font-size:10px; font-weight:600; color: {{ t.sub }};">{{ cn.relation }} · {{ cn.kindLabel }}</span>
+                                  <span style="display:block; font-family:'IBM Plex Mono',monospace; font-size:10.5px; word-break:break-all; margin-top:2px;">{{ cn.ref }}</span>
+                                </div>
+                              </sc-if>
+                              <span style="display:block; font-size:10px; color: {{ t.sub }}; padding:2px 9px 0; word-break:break-all;">{{ cn.support }}</span>
+                            </li>
+                          </sc-for>
+                        </ul>
+                        <sc-if value="{{ mem.detail.graph.history.length }}" hint-placeholder-val="{{ true }}">
+                          <div>
+                            <h3 data-kc-mem-history-head style="font-size:10.5px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color: {{ t.sub }}; margin:12px 0 6px;">History — no longer current</h3>
+                            <ul data-kc-mem-history style="list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:4px;">
+                              <sc-for list="{{ mem.detail.graph.history }}" as="hi" hint-placeholder-count="2">
+                                <li data-kc-mem-history-entry="{{ hi.assertionId }}" style="padding:7px 9px; border-radius:8px; border:1px dashed {{ t.border }}; font-size:10.5px; color: {{ t.sub }}; line-height:1.5; word-break:break-all;">{{ hi.label }}</li>
+                              </sc-for>
+                            </ul>
+                          </div>
+                        </sc-if>
+                        <sc-if value="{{ mem.detail.graph.note }}" hint-placeholder-val="{{ true }}"><div style="margin-top:8px; font-size:10.5px; color: {{ t.sub }};">{{ mem.detail.graph.note }}</div></sc-if>
+                      </div>
+                    </sc-if>
+                  </section>
+                </sc-if>
                 <sc-if value="{{ mem.detail.transitions.length }}" hint-placeholder-val="{{ true }}">
                   <div style="margin-top:12px;">
                     <div style="font-size:10.5px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color: {{ t.sub }}; margin-bottom:6px;">Decision history</div>
@@ -568,7 +619,7 @@
             <!-- rows -->
             <div style="display:flex; flex-direction:column; gap:5px;">
               <sc-for list="{{ mem.rows }}" as="r" hint-placeholder-count="4">
-                <button onClick="{{ r.onOpen }}" style="display:flex; align-items:flex-start; gap:9px; width:100%; text-align:left; padding:9px 10px; border-radius:9px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.text }}; cursor:pointer; font-family:'IBM Plex Sans';" style-hover="background: rgba(127,127,127,0.12);">
+                <button data-kc-mem-row="{{ r.id }}" onClick="{{ r.onOpen }}" style="display:flex; align-items:flex-start; gap:9px; width:100%; text-align:left; padding:9px 10px; border-radius:9px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.text }}; cursor:pointer; font-family:'IBM Plex Sans';" style-hover="background: rgba(127,127,127,0.12);">
                   <span style="width:9px; height:9px; border-radius:50%; flex:none; margin-top:4px; background: {{ r.color }}; box-shadow:0 0 0 3px {{ r.glow }};"></span>
                   <span style="flex:1; min-width:0;">
                     <span style="display:flex; align-items:center; gap:6px; min-width:0;">
@@ -1542,14 +1593,65 @@ class Component extends DCLogic {
       const [data,home]=await Promise.all([res.json(),homeRes.json()]); if(seq!==this._memSeq)return;
       this.setState({memLoading:false, memData:data, memHome:home});
     }catch(err){ if(controller.signal.aborted||seq!==this._memSeq)return; this.setState({memLoading:false, memError:String(err&&err.message||err)}); } }
-  async loadMemoryDetail(id,row){ const seq=++this._memSeq; if(this._memAbort)this._memAbort.abort(); const controller=new AbortController(); this._memAbort=controller;
-    this.setState({memDetail:{id,status:'loading',row}});
+  async loadMemoryDetail(id,row,fromTrail){ const seq=++this._memSeq; if(this._memAbort)this._memAbort.abort(); const controller=new AbortController(); this._memAbort=controller;
+    // WP-G7 — the trail is the list/detail navigation stack: opening a linked claim pushes the
+    // current one, Back pops it, and an empty trail returns to the ledger row that opened it.
+    if(!fromTrail&&!this.state.memDetail) this._memTrail=[];
+    this.setState({memDetail:{id,status:'loading',row,graph:{status:'loading'}}});
+    this.keepFocus('[data-kc-mem-detail-back]');
+    const graphReq=fetch('/memory/graph.json?id='+encodeURIComponent(id),{signal:controller.signal,cache:'no-store'})
+      .then(async (res)=>{ if(!res.ok)throw new Error(await res.text()); return res.json(); })
+      .then((g)=>({status:'ready',data:g}),(err)=>({status:'error',message:String(err&&err.message||err)}));
     try{ const res=await fetch('/memory/record.json?id='+encodeURIComponent(id),{signal:controller.signal,cache:'no-store'});
       if(!res.ok)throw new Error(await res.text());
       const data=await res.json(); if(seq!==this._memSeq)return;
-      this.setState({memDetail:{id,status:'ready',row,data}});
+      this.setState({memDetail:{id,status:'ready',row,data,graph:{status:'loading'}}});
+      const graph=await graphReq; if(controller.signal.aborted||seq!==this._memSeq)return;
+      this.setState({memDetail:{id,status:'ready',row,data,graph}});
     }catch(err){ if(controller.signal.aborted||seq!==this._memSeq)return; this.setState({memDetail:{id,status:'error',message:String(err&&err.message||err)}}); } }
-  backToLedger(){ this.setState({memDetail:null}); }
+  /** Open a claim linked from the current record's connections; Back returns to this record. */
+  openLinkedClaim(ref){ const cur=this.state.memDetail; if(!this._memTrail)this._memTrail=[];
+    if(cur)this._memTrail.push({id:cur.id,row:cur.row}); this.loadMemoryDetail(ref,null,true); }
+  /**
+   * WP-G7 — shape `/memory/graph.json` for the template (paths/equalities/literals only). Every
+   * graph detail is a LIST: there is no canvas-only view, so the same content is reachable by
+   * keyboard and screen reader at every width.
+   */
+  memGraphView(g){
+    if(!g) return null;
+    if(g.status==='loading') return {loading:true};
+    if(g.status==='error') return {error:g.message};
+    const data=g.data||{};
+    if(!data.configured) return null;
+    const kindLabels={claim:'claim',work:'work',code:'code',entity:'entity',evidence:'evidence',topic:'topic',other:'reference'};
+    const relation=(l)=>l.direction==='outgoing'?l.predicate:('← '+l.predicate);
+    const connections=(data.connections||[]).map((l)=>{
+      const onOpen=l.kind==='claim'?()=>this.openLinkedClaim(l.ref):(l.kind==='work'?()=>this.openLinkedWork(l.ref):null);
+      return { ref:l.ref, relation:relation(l), kindLabel:kindLabels[l.kind]||'reference', onOpen, static:!onOpen,
+        ariaLabel:'Open linked '+(kindLabels[l.kind]||'reference')+' '+l.ref,
+        support:'supported by '+(l.supportedBy||[]).join(', ') };
+    });
+    const history=(data.history||[]).map((l)=>({ assertionId:l.assertionId,
+      label:relation(l)+' '+l.ref+' · valid '+String(l.validAt||'').slice(0,10)+' · recorded '+String(l.knownAt||'').slice(0,10) }));
+    const notes=[];
+    if(data.truncated) notes.push('Showing the first 50 connections — use memory_graph for the full neighbourhood.');
+    if(data.unresolvedLinks) notes.push(data.unresolvedLinks+' graph link'+(data.unresolvedLinks===1?'':'s')+' in your memory lost their supporting record and are hidden until re-supported.');
+    return { ready:true, connections, history,
+      connectionsLabel:'Connections ('+connections.length+')', connectionsEmpty:connections.length===0,
+      replacedBy:(data.replacedBy||[]).map((ref)=>({ref,onOpen:()=>this.openLinkedClaim(ref)})),
+      historicalNote:data.state==='historical'?'This claim is history: it has been replaced and no longer counts as current.':null,
+      note:notes.join(' ')||null };
+  }
+  /** Open linked work through the authorized intake detail (the server re-checks authorization). */
+  openLinkedWork(intakeId){ this._memTrail=[]; const origin=this.state.memDetail&&this.state.memDetail.id;
+    this._memWorkOrigin=origin||null;
+    this.setState({memDetail:null, memHomeAction:'resume', memMutationError:null, memResumeNotice:null});
+    this.loadIntakeDetail(intakeId); }
+  backToLedger(){ const trail=this._memTrail||[]; const prev=trail.pop();
+    if(prev){ this.loadMemoryDetail(prev.id,prev.row,true); return; }
+    const origin=this.state.memDetail&&this.state.memDetail.row&&this.state.memDetail.row.id;
+    this.setState({memDetail:null});
+    if(origin) this.keepFocus('[data-kc-mem-row="'+String(origin).replace(/["\\]/g,'')+'"]'); }
   // ── WP6.3–WP6.6 — pending queue, browser admission, intake resume ──────────
   // The read endpoints (/memory/pending.json, /memory/intake.json) are already display-shaped, so
   // these methods own only transport (the same AbortController + sequence discipline as
@@ -1934,7 +2036,7 @@ class Component extends DCLogic {
         if(r.anchorStatus==='stale') chips.push(this.memChip('anchors stale','bad'));
         else if(r.anchorStatus==='moved') chips.push(this.memChip('anchors moved','warn'));
         if((r.supersededBy||[]).length) chips.push(this.memChip('superseded','dim'));
-        return { color, glow:this.hex(color,0.18), groupLabel:groupLabel(r.group), subject:r.subject, claim:r.claim, chips,
+        return { id:r.id, color, glow:this.hex(color,0.18), groupLabel:groupLabel(r.group), subject:r.subject, claim:r.claim, chips,
           time:r.recordedAt?('recorded '+r.recordedAt):(r.createdAt?('created '+r.createdAt):''), onOpen:()=>this.loadMemoryDetail(r.id,r) }; });
       const conflicts=((md&&md.conflicts)||[]).map((c)=>({subject:c.subject||c.propositionKey||c.key,count:(c.recordIds||[]).length}));
       const policy=md&&md.capturePolicy?('ref '+md.capturePolicy.trustedRef+' · profiles '+md.capturePolicy.profiles.join(', ')):null;
@@ -2060,12 +2162,13 @@ class Component extends DCLogic {
       let detail=null;
       if(memDetailState){
         const onBack=()=>this.backToLedger();
-        if(memDetailState.status==='loading') detail={loading:true,ready:false,error:null,onBack};
-        else if(memDetailState.status==='error') detail={loading:false,ready:false,error:memDetailState.message,onBack};
+        const backLabel=(this._memTrail&&this._memTrail.length)?'← Back to the previous claim':'← Back to ledger';
+        if(memDetailState.status==='loading') detail={loading:true,ready:false,error:null,onBack,backLabel};
+        else if(memDetailState.status==='error') detail={loading:false,ready:false,error:memDetailState.message,onBack,backLabel};
         else { const d=memDetailState.data||{}; const rec=d.record||{}; const row=memDetailState.row;
           const chips=this.memVerdictChips(d.verdicts||{standing:'staged',evidence:'unverified',applicability:'current',lifecycle:'active',quarantined:false});
           const lin=[]; for(const key of ['derivedFrom','supersedes','contradicts']) if((rec.lineage&&rec.lineage[key]||[]).length) lin.push(key+': '+(rec.lineage[key]||[]).join(', '));
-          detail={loading:false,ready:true,error:null,onBack,
+          detail={loading:false,ready:true,error:null,onBack,backLabel,
             id:d.id||memDetailState.id, claim:rec.claim||'', chips,
             groupColor:groupColor(row&&row.group),
             times:(()=>{ const v=d.validity||{}; const vt=v.validTime||{}; const tt=v.transactionTime||{};
@@ -2075,7 +2178,8 @@ class Component extends DCLogic {
             lineage:lin.join(' · ')||null,
             anchors:((row&&row.anchors)||[]).map((an)=>({ref:an.ref,state:this.memAxis(an.state),color:an.state==='current'?'#34d399':(an.state==='moved'?'#f59e0b':(an.state==='gone'||an.state==='ambiguous'?'#f87171':'#8b97a8'))})),
             evidence:(d.evidence||[]).map((ev)=>({label:(ev.kind+' · '+ev.verdict)+(ev.soulId?' · '+ev.soulId:'')+(ev.reason?' · '+ev.reason:'')})),
-            transitions:((d.audit&&d.audit.records)||[]).flatMap((rv)=>(rv.transitions||[]).map((tr)=>this.memAxis(tr.kind)+': '+this.memAxis(tr.from)+' → '+this.memAxis(tr.to)+' · '+tr.at.slice(0,10)+' · '+tr.actor+(tr.reason?' · '+tr.reason:''))) };
+            transitions:((d.audit&&d.audit.records)||[]).flatMap((rv)=>(rv.transitions||[]).map((tr)=>this.memAxis(tr.kind)+': '+this.memAxis(tr.from)+' → '+this.memAxis(tr.to)+' · '+tr.at.slice(0,10)+' · '+tr.actor+(tr.reason?' · '+tr.reason:''))),
+            graph:this.memGraphView(memDetailState.graph) };
         }
       }
       mem={ notConfigured:!!(md&&!md.configured), homeView, lastSession, homeAction, pendingView, resumeView, announce:this.state.memAnnounce||null,

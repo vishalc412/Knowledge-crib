@@ -24,6 +24,10 @@
  * boundary a receipt may certify was whatever the validators happened to accept. Naming it here
  * puts the contract in the hashed policy, where a receipt can cite it and the decision can check
  * the validators agree.
+ *
+ * Version 5 makes the connected memory graph a launch requirement: a candidate-wide
+ * `connected-memory-graph` receipt, judged against the frozen `graph` block (held-out evidence-path
+ * recall, zero foreign disclosure, the deterministic suites, retrieval enabled in the candidate).
  */
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
@@ -72,10 +76,21 @@ export const POLICY_ACCEPTANCE_RECEIPT_TYPES = [
   'freshness',
   'adapter',
 ];
-export const POLICY_GLOBAL_RECEIPT_TYPES = ['fuzz-deep'];
+export const POLICY_GLOBAL_RECEIPT_TYPES = ['fuzz-deep', 'connected-memory-graph'];
 const RUNNER_OSES = ['macos-latest', 'ubuntu-latest', 'windows-latest'];
 const NODE_MAJORS = ['22', '24'];
-export const EXPECTED_POLICY_VERSION = 4;
+export const EXPECTED_POLICY_VERSION = 5;
+
+/** The deterministic graph suites a `connected-memory-graph` receipt must report as passing. */
+export const POLICY_GRAPH_SUITES = [
+  'isolation',
+  'temporal',
+  'alias',
+  'contradiction',
+  'purge',
+  'replay',
+  'rebuild',
+];
 
 /**
  * The receipt-format contract this policy freezes: the format string and format version each kind
@@ -100,8 +115,8 @@ export const POLICY_RECEIPT_SCHEMAS = {
   },
   clientCertification: {
     format: 'knowledge-crib-client-certification',
-    requiredFormatVersion: 3,
-    readableFormatVersions: [1, 2, 3],
+    requiredFormatVersion: 4,
+    readableFormatVersions: [1, 2, 3, 4],
   },
 };
 
@@ -352,6 +367,49 @@ export function validateLaunchPolicy(policy) {
     'launch policy fuzz.workload must name the workload the deep receipt describes',
   );
 
+  // graph ──────────────────────────────────────────────────────────────────────────────────────
+  // The same law as fuzz: every number a graph receipt is judged against lives here, so a run can
+  // never certify itself against thresholds it reported. Zero-tolerance limits must be exactly 0 —
+  // a policy that quietly allowed one foreign disclosure would not be the promise the plan froze.
+  const graph = policy.graph;
+  assertPolicy(graph && typeof graph === 'object', 'launch policy graph workload is required');
+  assertPolicy(
+    typeof graph.workload === 'string' && graph.workload.trim().length > 0,
+    'launch policy graph.workload must name the workload the graph receipt describes',
+  );
+  for (const field of ['harnessVersion', 'minimumCorpusVersion', 'minimumMultiHopQuestions']) {
+    assertPolicy(
+      Number.isInteger(graph[field]) && graph[field] > 0,
+      `launch policy graph.${field} must be a positive integer`,
+    );
+  }
+  assertPolicy(
+    graph.minimumMultiHopQuestions >= 100,
+    'launch policy graph.minimumMultiHopQuestions must be at least 100 — the frozen plan floor',
+  );
+  assertPolicy(
+    typeof graph.evidencePathRecallMin === 'number' &&
+      graph.evidencePathRecallMin >= 0.9 &&
+      graph.evidencePathRecallMin <= 1,
+    'launch policy graph.evidencePathRecallMin must be in [0.9, 1] — the frozen plan floor',
+  );
+  for (const field of [
+    'maxUnauthorizedPaths',
+    'maxForbiddenViolations',
+    'maxEmptinessViolations',
+    'maxUnavailableAnswers',
+  ]) {
+    assertPolicy(graph[field] === 0, `launch policy graph.${field} must be exactly 0`);
+  }
+  for (const field of ['requireHeldOut', 'requireRetrievalEnabled']) {
+    assertPolicy(graph[field] === true, `launch policy graph.${field} must be true`);
+  }
+  assertPolicy(
+    Array.isArray(graph.requiredSuites),
+    'launch policy graph.requiredSuites must be an array',
+  );
+  assertSameSet(graph.requiredSuites, POLICY_GRAPH_SUITES, 'graph suite');
+
   // freshness ──────────────────────────────────────────────────────────────────────────────────
   assertPolicy(
     policy.freshness && typeof policy.freshness === 'object',
@@ -460,6 +518,24 @@ export function policyFuzzRequirements(policy) {
     requiredIterations: policy.fuzz.requiredIterations,
     minimumExtractors: policy.fuzz.minimumExtractors,
     perCallBudgetMs: policy.fuzz.perCallBudgetMs,
+  };
+}
+
+/** The frozen thresholds a `connected-memory-graph` receipt is judged against. */
+export function policyGraphRequirements(policy) {
+  return {
+    workload: policy.graph.workload,
+    harnessVersion: policy.graph.harnessVersion,
+    minimumCorpusVersion: policy.graph.minimumCorpusVersion,
+    minimumMultiHopQuestions: policy.graph.minimumMultiHopQuestions,
+    evidencePathRecallMin: policy.graph.evidencePathRecallMin,
+    maxUnauthorizedPaths: policy.graph.maxUnauthorizedPaths,
+    maxForbiddenViolations: policy.graph.maxForbiddenViolations,
+    maxEmptinessViolations: policy.graph.maxEmptinessViolations,
+    maxUnavailableAnswers: policy.graph.maxUnavailableAnswers,
+    requireHeldOut: policy.graph.requireHeldOut,
+    requireRetrievalEnabled: policy.graph.requireRetrievalEnabled,
+    requiredSuites: [...policy.graph.requiredSuites],
   };
 }
 

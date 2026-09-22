@@ -591,3 +591,86 @@ describe('WP-G2 projection — traversal, counts, and export', () => {
     expect(JSON.parse(JSON.stringify(input))).toEqual(snapshot);
   });
 });
+
+describe('WP-G5 projection — supersession is history, and conflicts are real disagreements', () => {
+  it('keeps an assertion supported only by a superseded record in history, never current', () => {
+    const edge = assertion({ predicate: 'about', subject: 'mem:old', object: 'topic:t' });
+    const p = projectGraph(
+      { assertions: [edge], records: [], historicalRecords: [{ id: SUPPORTER }] },
+      { principalId: P1, scope: GLOBAL },
+    );
+    expect(p.current).toEqual([]);
+    expect(p.timeline.map((a) => a.id)).toEqual([edge.id]);
+    expect(p.historical.map((a) => a.id)).toEqual([edge.id]);
+    expect(p.historicalRefs).toEqual([SUPPORTER]);
+    expect(p.diagnostics.unsupported).toEqual([]);
+  });
+
+  it('an active supporter keeps the assertion current even when another supporter is superseded', () => {
+    const edge = assertion({
+      predicate: 'about',
+      subject: 'mem:a',
+      object: 'topic:t',
+      supportedBy: [SUPPORTER, 'mem:retired'],
+    });
+    const p = projectGraph(
+      { assertions: [edge], records: RECORDS, historicalRecords: [{ id: 'mem:retired' }] },
+      { principalId: P1, scope: GLOBAL },
+    );
+    expect(p.current.map((a) => a.id)).toEqual([edge.id]);
+    expect(p.historical).toEqual([]);
+  });
+
+  it('never knows an edge before both of its record endpoints were recorded', () => {
+    const early = assertion({
+      predicate: 'contradicts',
+      subject: 'mem:a',
+      object: 'mem:b',
+      knownAt: T0,
+      validAt: T0,
+    });
+    const input = {
+      assertions: [early],
+      records: [{ id: SUPPORTER }, { id: 'mem:a', knownAt: T0 }, { id: 'mem:b', knownAt: T2 }],
+    };
+    const viewer = { principalId: P1, scope: GLOBAL };
+    expect(projectGraph(input, viewer, { knownBy: T1 }).current).toEqual([]);
+    expect(projectGraph(input, viewer, { knownBy: T1 }).historical).toEqual([]);
+    expect(projectGraph(input, viewer, { knownBy: T3 }).current.map((a) => a.id)).toEqual([
+      early.id,
+    ]);
+  });
+
+  it('does not call several objects of a multi-valued predicate a conflict', () => {
+    const p = projectGraph(
+      {
+        assertions: [
+          assertion({ predicate: 'supported-by', subject: 'mem:a', object: 'artifact:x' }),
+          assertion({ predicate: 'supported-by', subject: 'mem:a', object: 'artifact:y' }),
+          assertion({ predicate: 'affects', subject: 'topic:t', object: 'sym:f' }),
+          assertion({ predicate: 'affects', subject: 'topic:t', object: 'sym:g' }),
+        ],
+        records: RECORDS,
+      },
+      { principalId: P1, scope: GLOBAL },
+    );
+    expect(p.conflicts).toEqual([]);
+  });
+
+  it('groups an explicit contradiction in both directions as one disagreement', () => {
+    const ab = assertion({ predicate: 'contradicts', subject: 'mem:b', object: 'mem:a' });
+    const ba = assertion({ predicate: 'contradicts', subject: 'mem:a', object: 'mem:b' });
+    const p = projectGraph(
+      { assertions: [ab, ba], records: RECORDS },
+      { principalId: P1, scope: GLOBAL },
+    );
+    expect(p.conflicts).toEqual([
+      {
+        subject: 'mem:a',
+        predicate: 'contradicts',
+        objects: ['mem:a', 'mem:b'],
+        assertionIds: [ab.id, ba.id].sort(),
+      },
+    ]);
+  });
+});

@@ -51,6 +51,7 @@ import {
   loadLaunchPolicy,
   policyClientCells,
   policyFuzzRequirements,
+  policyGraphRequirements,
   policyOsNodeCells,
 } from './launch-policy.mjs';
 
@@ -67,6 +68,7 @@ const CAPTURED_AT = '2026-09-09T00:00:00.000Z';
 // never certifies a cell by accident of a floor this file failed to check.
 const CLIENT_VERSION = '9999.12.31';
 const FUZZ = policyFuzzRequirements(policy);
+const GRAPH = policyGraphRequirements(policy);
 const CLIENT_CELLS = policyClientCells(policy);
 const OS_CELLS = policyOsNodeCells(policy);
 
@@ -145,6 +147,7 @@ const allPassLegs = (overrides = {}) => ({
     status: 'pass',
     protocol: [protocolRef('foreign', 1), protocolRef('owner', 9)],
   },
+  connectedMemory: { status: 'pass', protocol: [protocolRef('owner', 5), protocolRef('owner', 8)] },
   ...overrides,
 });
 
@@ -194,7 +197,7 @@ function writeCertifyingReceipt(directory, cell, overrides = {}) {
   writeFileSync(join(directory, 'recordings', `${id}-${os}-foreign-recording.json`), foreignBytes);
   const receipt = {
     format: 'knowledge-crib-client-certification',
-    formatVersion: 3,
+    formatVersion: 4,
     generatedAt: CAPTURED_AT,
     policySha256: POLICY_SHA,
     product: { commit: COMMIT, packageSha256: PACKAGE },
@@ -289,6 +292,55 @@ function fuzzReceipt(overrides = {}) {
 // sweep log it names — the same pair a real run produces.
 writeFileSync(join(globalDir, 'fuzz-deep.json'), `${JSON.stringify(fuzzReceipt())}\n`);
 
+// ─── the candidate-wide receipt (the connected memory graph, policy v5) ─────────────────────────
+// A report at the policy's own floors plus a margin, written where the receipt's artifact names it.
+// The report sits in a subdirectory so the non-recursive global-receipt loader never reads it as a
+// receipt — exactly the layout scripts/graph-receipt.mjs produces.
+const GRAPH_REPORT = {
+  harnessVersion: GRAPH.harnessVersion,
+  corpusVersion: GRAPH.minimumCorpusVersion + 1,
+  seedScorer: 'graph-seed-v2:stemmed-term-overlap+semantic-rrf60',
+  embedderId: 'multilingual-e5-large-1024-sym',
+  questions: 140,
+  multiHopQuestions: GRAPH.minimumMultiHopQuestions + 20,
+  evidencePathRecall: 0.93,
+  unauthorizedPaths: 0,
+  forbiddenViolations: 0,
+  emptinessViolations: 0,
+  unavailableAnswers: 0,
+  results: [],
+};
+const GRAPH_REPORT_BYTES = `${JSON.stringify(GRAPH_REPORT, null, 2)}\n`;
+mkdirSync(join(globalDir, 'graph'), { recursive: true });
+writeFileSync(join(globalDir, 'graph', 'graph-eval-report.json'), GRAPH_REPORT_BYTES);
+
+function graphReceipt(overrides = {}, detailOverrides = {}) {
+  const { results: _results, ...measured } = GRAPH_REPORT;
+  return {
+    type: 'connected-memory-graph',
+    status: 'pass',
+    candidateCommit: COMMIT,
+    candidatePackageSha256: PACKAGE,
+    policySha256: POLICY_SHA,
+    artifacts: [{ path: 'graph/graph-eval-report.json', sha256: digestOf(GRAPH_REPORT_BYTES) }],
+    details: {
+      workload: GRAPH.workload,
+      heldOut: true,
+      retrievalEnabled: true,
+      reportPath: 'graph/graph-eval-report.json',
+      measured,
+      suites: Object.fromEntries(GRAPH.requiredSuites.map((suite) => [suite, 'pass'])),
+      extraction: { exercised: false },
+      ...detailOverrides,
+    },
+    ...overrides,
+  };
+}
+writeFileSync(
+  join(globalDir, 'connected-memory-graph.json'),
+  `${JSON.stringify(graphReceipt())}\n`,
+);
+
 /**
  * The summary a MANIFEST restates about its own coverage. The decision compares it against the raw
  * receipts and names every cell where the two disagree — so this is a claim to be CHECKED, never the
@@ -374,7 +426,7 @@ function fixtureOptions(overrides = {}) {
   return {
     candidate: CANDIDATE,
     certificationReceipts: certificationReceipts(),
-    globalReceipts: [fuzzReceipt()],
+    globalReceipts: [fuzzReceipt(), graphReceipt()],
     globalReceiptsRoot: globalDir,
     // The typed receipts' artifacts resolve against this real directory on disk.
     receiptsEvidenceRoot: acceptanceDir,
@@ -1218,6 +1270,142 @@ refuses(
   },
   /^global-receipt-artifact-unverifiable:fuzz-deep$/,
 );
+// ─── candidate-wide receipts: the connected memory graph (policy v5) ───────────────────────────
+refuses(
+  'an absent connected-memory-graph receipt',
+  (_e, options) => {
+    options.globalReceipts = [fuzzReceipt()];
+  },
+  /^global-receipt-missing:connected-memory-graph$/,
+);
+refuses(
+  'a graph receipt for another package',
+  (_e, options) => {
+    options.globalReceipts = [
+      fuzzReceipt(),
+      graphReceipt({ candidatePackageSha256: `sha256:${'7'.repeat(64)}` }),
+    ];
+  },
+  /^global-receipt-foreign-package:connected-memory-graph$/,
+);
+refuses(
+  'a graph receipt measured on a suite that is not held out',
+  (_e, options) => {
+    options.globalReceipts = [fuzzReceipt(), graphReceipt({}, { heldOut: false })];
+  },
+  /^graph-receipt-not-held-out$/,
+);
+refuses(
+  'a graph receipt from a candidate with graph retrieval disabled',
+  (_e, options) => {
+    options.globalReceipts = [fuzzReceipt(), graphReceipt({}, { retrievalEnabled: false })];
+  },
+  /^graph-receipt-retrieval-disabled$/,
+);
+refuses(
+  'a graph receipt whose deterministic purge suite did not pass',
+  (_e, options) => {
+    const suites = { ...graphReceipt().details.suites, purge: 'fail' };
+    options.globalReceipts = [fuzzReceipt(), graphReceipt({}, { suites })];
+  },
+  /^graph-receipt-suite-not-passing:purge:fail$/,
+);
+refuses(
+  'a SYNTHETIC graph receipt restating better recall than its report measured',
+  (_e, options) => {
+    const measured = { ...graphReceipt().details.measured, evidencePathRecall: 0.99 };
+    options.globalReceipts = [fuzzReceipt(), graphReceipt({}, { measured })];
+  },
+  /^graph-receipt-report-mismatch:evidencePathRecall$/,
+);
+refuses(
+  'a graph receipt whose report was edited after the digest was taken',
+  (_e, options) => {
+    options.globalReceipts = [
+      fuzzReceipt(),
+      graphReceipt({
+        artifacts: [{ path: 'graph/graph-eval-report.json', sha256: `sha256:${'5'.repeat(64)}` }],
+      }),
+    ];
+  },
+  /^global-receipt-artifact-digest:connected-memory-graph:graph\/graph-eval-report\.json$/,
+);
+{
+  // A report measured without the launch semantic model is a different configuration.
+  const lexicalOnly = { ...GRAPH_REPORT, embedderId: null };
+  const bytes = `${JSON.stringify(lexicalOnly, null, 2)}\n`;
+  writeFileSync(join(globalDir, 'graph', 'lexical-only-report.json'), bytes);
+  const { results: _r, ...measured } = lexicalOnly;
+  const result = decide(completeEvidence(), {
+    globalReceipts: [
+      fuzzReceipt(),
+      graphReceipt(
+        { artifacts: [{ path: 'graph/lexical-only-report.json', sha256: digestOf(bytes) }] },
+        { reportPath: 'graph/lexical-only-report.json', measured },
+      ),
+    ],
+  });
+  assert.ok(
+    result.blockers.includes('graph-receipt-semantic-model-missing:none'),
+    JSON.stringify(result.blockers),
+  );
+}
+refuses(
+  'a graph receipt whose report path is not one of its artifacts',
+  (_e, options) => {
+    options.globalReceipts = [
+      fuzzReceipt(),
+      graphReceipt({}, { reportPath: 'graph/elsewhere.json' }),
+    ];
+  },
+  /^graph-receipt-report-unlisted$/,
+);
+refuses(
+  'a graph receipt that exercised model extraction without naming the model revision',
+  (_e, options) => {
+    options.globalReceipts = [fuzzReceipt(), graphReceipt({}, { extraction: { exercised: true } })];
+  },
+  /^graph-receipt-model-revision-missing$/,
+);
+{
+  // The floors are applied to the REPORT: an honest report below them is refused by name, even when
+  // the receipt restates it faithfully. Run 1 of the frozen corpus (docs/bench/graph-gates.md) is
+  // exactly this shape — 80.14% recall, three emptiness violations, not held out.
+  const run1 = {
+    ...GRAPH_REPORT,
+    corpusVersion: 1,
+    multiHopQuestions: 117,
+    questions: 129,
+    evidencePathRecall: 0.8014245014245014,
+    forbiddenViolations: 3,
+    emptinessViolations: 3,
+  };
+  const bytes = `${JSON.stringify(run1, null, 2)}\n`;
+  writeFileSync(join(globalDir, 'graph', 'run-1-report.json'), bytes);
+  const { results: _r, ...measured } = run1;
+  const result = decide(completeEvidence(), {
+    globalReceipts: [
+      fuzzReceipt(),
+      graphReceipt(
+        { artifacts: [{ path: 'graph/run-1-report.json', sha256: digestOf(bytes) }] },
+        { reportPath: 'graph/run-1-report.json', measured, heldOut: false },
+      ),
+    ],
+  });
+  assert.equal(result.decision, 'NO-GO');
+  for (const blocker of [
+    'graph-receipt-not-held-out',
+    'graph-receipt-recall-below-floor:0.8014245014245014',
+    'graph-receipt-forbidden-violations:3',
+    'graph-receipt-emptiness-violations:3',
+  ]) {
+    assert.ok(
+      result.blockers.includes(blocker),
+      `${blocker} missing from ${JSON.stringify(result.blockers)}`,
+    );
+  }
+}
+
 // Two receipts claiming the one global type: the first is still judged, but the duplicate is named —
 // a type that appears twice is two runs disagreeing about who speaks for it, not extra assurance.
 refuses(
@@ -1249,7 +1437,7 @@ const greenCells = () => OS_CELLS.map((cell) => ({ cell, manifest: completeEvide
 const aggregateOptions = (overrides = {}) => ({
   candidate: CANDIDATE,
   certificationReceipts: certificationReceipts(),
-  globalReceipts: [fuzzReceipt()],
+  globalReceipts: [fuzzReceipt(), graphReceipt()],
   globalReceiptsRoot: globalDir,
   // Per-cell decisions verify typed-receipt artifacts against this real root on disk.
   receiptsEvidenceRoot: acceptanceDir,

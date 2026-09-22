@@ -29,8 +29,8 @@ import { RECORDING_FORMAT, recordingProblems } from './client-protocol-recorder.
 import { POLICY_CLIENTS, POLICY_PLATFORMS, policyClientVersionFloor } from './launch-policy.mjs';
 
 /** Version 3 certifies. Versions 1 and 2 are readable so an honest historical failure stays legible. */
-export const CERTIFICATION_EVIDENCE_FORMAT_VERSION = 3;
-export const SUPPORTED_CERTIFICATION_FORMAT_VERSIONS = [1, 2, 3];
+export const CERTIFICATION_EVIDENCE_FORMAT_VERSION = 4;
+export const SUPPORTED_CERTIFICATION_FORMAT_VERSIONS = [1, 2, 3, 4];
 
 export const CERTIFIED_CLIENTS = [...POLICY_CLIENTS];
 const PLATFORM_IDS = new Set(POLICY_PLATFORMS);
@@ -43,7 +43,7 @@ const COMMIT = /^[a-f0-9]{40}$/;
  * driver invent its own vocabulary — is what makes "missing legs" a structural refusal instead of a
  * gap a reader has to notice.
  */
-export const CERTIFICATION_LEGS = [
+export const LEGACY_CERTIFICATION_LEGS = [
   'configuration',
   'handshake',
   'toolUse',
@@ -53,6 +53,19 @@ export const CERTIFICATION_LEGS = [
   'authorizedResume',
   'foreignPrincipalExclusion',
 ];
+
+/**
+ * The nine legs a format-4 receipt must prove: the eight legacy legs plus `connectedMemory` — the
+ * vendor client records a graph connection and its supersession through `graph_propose`, and the
+ * restarted client retrieves that history through `memory_graph`. Format 3 receipts stay readable
+ * against the eight legs they were collected under, but cannot certify.
+ */
+export const CERTIFICATION_LEGS = [...LEGACY_CERTIFICATION_LEGS, 'connectedMemory'];
+
+/** The leg set a receipt of this format version was collected against. */
+export function certificationLegsFor(receipt) {
+  return receipt?.formatVersion >= 4 ? CERTIFICATION_LEGS : LEGACY_CERTIFICATION_LEGS;
+}
 const LEG_STATUSES = ['pass', 'fail', 'blocked', 'not-run'];
 
 /**
@@ -76,6 +89,7 @@ const PROTOCOL_DEPENDENT_LEGS = [
   'restart',
   'authorizedResume',
   'foreignPrincipalExclusion',
+  'connectedMemory',
 ];
 
 export class CertificationEvidenceError extends Error {
@@ -251,7 +265,7 @@ export function certifyClientCell(receipt, options = {}) {
     return fail('client-cell-uncertified', 'a WSL run is not a native runtime');
   }
   const legs = receiptLegs(receipt);
-  const notPassed = CERTIFICATION_LEGS.filter((leg) => legs[leg].status !== 'pass');
+  const notPassed = certificationLegsFor(receipt).filter((leg) => legs[leg].status !== 'pass');
   if (notPassed.length > 0) {
     return fail('client-cell-uncertified', `legs not passed: ${notPassed.join(', ')}`);
   }
@@ -454,7 +468,7 @@ function validateVersion2(receipt, options) {
   );
 
   assert(receipt.legs && typeof receipt.legs === 'object', 'legs is required');
-  for (const leg of CERTIFICATION_LEGS) {
+  for (const leg of certificationLegsFor(receipt)) {
     const value = receipt.legs[leg];
     assert(value && typeof value === 'object', `legs.${leg} is required`);
     assert(
@@ -473,7 +487,9 @@ function validateVersion2(receipt, options) {
     );
   }
 
-  const notPassed = CERTIFICATION_LEGS.filter((leg) => receipt.legs[leg].status !== 'pass');
+  const notPassed = certificationLegsFor(receipt).filter(
+    (leg) => receipt.legs[leg].status !== 'pass',
+  );
   if (notPassed.length > 0) {
     // A receipt that could not complete a leg must SAY what stopped it. Silence here reads as
     // "not attempted", which is a different fact from "the account was not signed in".
@@ -747,7 +763,7 @@ export function validateClientCertificationReceipt(receipt, options = {}) {
     'platform.node must be a Node release starting with v, for example v22.23.1',
   );
 
-  if (receipt.formatVersion === 3) validateVersion3(receipt, options);
+  if (receipt.formatVersion >= 3) validateVersion3(receipt, options);
   else if (receipt.formatVersion === 2) validateVersion2(receipt, options);
   else validateVersion1(receipt, options);
 
@@ -836,7 +852,9 @@ export function certificationSummary(receipts) {
  */
 export function certificationStatus(receipt) {
   const legs = receiptLegs(receipt);
-  if (CERTIFICATION_LEGS.every((leg) => legs[leg].status === 'pass')) return 'runtime-verified';
+  if (certificationLegsFor(receipt).every((leg) => legs[leg].status === 'pass')) {
+    return 'runtime-verified';
+  }
   if (VENDOR_ASSERTING_LEGS.every((leg) => legs[leg].status === 'pass')) return 'protocol-verified';
   return legs.configuration.status === 'pass' ? 'configuration-verified' : 'not-certified';
 }

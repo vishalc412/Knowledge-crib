@@ -885,7 +885,17 @@ describe('MemoryStore.migrateToV2 (team + global)', () => {
     expect(result.aliases).toHaveLength(1);
 
     const after = snapshotDir(dirname(team.aliasesDir()));
-    for (const [path, bytes] of before) expect(after.get(path)).toBe(bytes);
+    // Every pre-existing CONTENT byte is unchanged. The store-generation sidecar is the one file
+    // that must move: an alias rebinds what an id resolves to, so generation-keyed readers (recall
+    // caches, the graph view cache) have to observe the migration as a mutation.
+    const generationPath = team.storeGenerationPath();
+    for (const [path, bytes] of before) {
+      if (path === generationPath) continue;
+      expect(after.get(path)).toBe(bytes);
+    }
+    if (before.has(generationPath)) {
+      expect(after.get(generationPath)).not.toBe(before.get(generationPath));
+    }
 
     // the alias resolves, and the direct hit still wins (the v1 line is live, not a stale address)
     expect(team.resolveId(v1.id)).toBe(twinId(v1));

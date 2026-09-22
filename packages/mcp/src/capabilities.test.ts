@@ -61,6 +61,13 @@ const MINIMAL_ARGS: Record<string, Record<string, unknown>> = {
   'memory:delete': { id: 'mem:1', actor: 'a' },
   'memory:history': { key: 'mem:1' },
   'memory:sync': {},
+  'memory:graph_propose': {
+    predicate: 'about',
+    subject: 'mem:1',
+    object: 'topic:t',
+    supportedBy: ['mem:1'],
+    actor: 'a',
+  },
   'memory:intake_create': { original: 'o', outcome: 'x', actor: 'a' },
   'memory:intake_checkpoint': {
     id: 'intake:1',

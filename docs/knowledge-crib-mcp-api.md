@@ -6,12 +6,12 @@
 
 ---
 
-## Tool consolidation (current surface: 18 tools / 48 operations)
+## Tool consolidation (current surface: 18 tools / 49 operations)
 
 Fourteen tools that differed only in which verb they called were folded behind an `op` parameter.
 Every tool costs name + description + JSON schema in the tool list of **every** session whether or
 not it is used, so a family of five rarely-used tools was a permanent tax on every conversation.
-The consolidated surface is 18 tools / 48 operations — down from 31 tools / ~6,249 tokens, a 42%
+The consolidated surface is 18 tools / 49 operations — down from 31 tools / ~6,249 tokens, a 42%
 token cut with no capability removed.
 
 These counts are not prose: they are derived from the single capability manifest
@@ -70,25 +70,69 @@ cycle after the portable memory op set lands under `memory({op})`.
 
 ### `memory_graph`
 
-Connected retrieval over the caller-authorized temporal memory graph. `search` and `context`
-derive seeds from the normal memory-search projection; `neighbors`, `path`, and `history` accept
-explicit graph `refs`. Traversal defaults to two hops and is capped at four hops, 200 visited
-nodes, and 500 examined edges. Every expansion returns its assertion path and `supportedBy`
-references. `report.truncated` or `budgetExhausted` means the response is a bounded page, never a
-claim that no further authorized connections exist.
+Connected retrieval over the caller-authorized temporal memory graph. The principal is always the
+server's; no request field can widen it. Traversal defaults to two hops and is capped at four
+hops, 200 visited nodes, and 500 examined edges; the default token budget is 2,000.
+
+| op | needs | returns |
+| --- | --- | --- |
+| `search` | `q` (seeds from memory search) or `refs` | ranked `expansions`, each with its assertion `path` and `supportedBy` |
+| `neighbors` | `refs` | the bounded neighbourhood of the refs |
+| `path` | exactly two `refs` `[from, to]` | the shortest authorized assertion chain, or `null` |
+| `history` | `refs` | the supported `timeline` touching the refs (`state: current|historical`), plus conflicts and aliases |
+| `context` | `q` or `refs` | a `context` pack: ranked `items` (`state: current|historical`, `path` as assertion ids), every cited assertion once in `assertions` (`supportedBy`, `validAt`, `knownAt`, `status`, `producer`), `relations` among items, whole `conflicts`, and a deduplicated `producers` table |
 
 ```jsonc
 // req: { "op?":"search|neighbors|path|history|context", "q?":"…",
-//        "refs?": ["mem:…","sym:…"], "scope?":"global|repo", "at?":"…",
-//        "knownBy?":"…", "hops?":2, "maxTokens?":2000, "ifHash?":"…" }
-// res: { "op":"context", "seeds":[…], "expansions":[ { "ref":"…","distance":1,
-//        "path":[ { "assertionId":"grel:…","supportedBy":["mem:…"] } ] } ],
-//        "report":{ "truncated":false,"budget":{…} }, "diagnostics":{…},
-//        "recall":{…}, "unavailable":false }
+//        "refs?": ["mem:…","sym:…"], "scope?":"global|repo", "at?":"…", "knownBy?":"…",
+//        "hops?":2, "predicates?":["about","supersedes"], "maxTokens?":2000,
+//        "cursor?":"…", "ifHash?":"…" }
+// res: { "op":"neighbors", "generation":"sha256:…", "seeds":[…],
+//        "expansions":[ { "ref":"…","distance":1,
+//          "path":[ { "assertionId":"grel:…","supportedBy":["mem:…"] } ] } ],
+//        "report":{ "truncated":false,"truncationReasons":[],"budget":{…} },
+//        "nextCursor?":"…", "unresolvedRefs?":["…"], "degraded":[], "diagnostics":{…},
+//        "freshness?":{…}, "unavailable":false }
 ```
 
-An under-specified `op` returns `{ error: { code: 'BAD_REQUEST' } }` rather than forwarding a
-partial call to a verb.
+- **Seeds.** Without `refs`, `search`/`context` fuse three ranked channels by reciprocal rank
+  (k = 60) into at most five seeds (`seedScorer:
+  "graph-seed-v2:stemmed-term-overlap+semantic-rrf60"`): plain recall hits, stemmed term overlap
+  between `q` and the caller's own graph nodes (record claims, intake requests, entity names,
+  refs), and cosine similarity on the installed semantic model. Every candidate is a node of the
+  caller's authorized view inside the read point; on a historical read (`at`/`knownBy`) a recall
+  hit survives only if it is such a node. Without an installed model the response carries
+  `degraded: ["semantic-seed-channel-unavailable"]`.
+- **Recording connections.** `memory({ op: "graph_propose", predicate, subject, object,
+  supportedBy: [...], actor, validAt?, scopeBoundary? })` proposes one relationship. The server
+  stamps the principal, placement and `knownAt`; the predicate must be in the vocabulary, both
+  endpoints must be graph refs, and every supporter must be a record, intake or entity the caller
+  is authorized to see and that is still active. Valid time is never invented: without `validAt`
+  it is when the most recent supporter was recorded, and a timeless supporter set requires it.
+  A refusal writes nothing and returns `{ ok: false, error: { code: "REJECTED", problems } }`;
+  an admission returns `{ ok: true, admitted: true, id, idempotent }` and is served at once.
+- **History.** A superseded record, or finished (completed/cancelled) work, still supports its
+  assertions as history — never as current. `knownBy` applies only supersessions and completions
+  recorded by then; retraction and quarantine apply at every read point. An edge is not known
+  before both of its record endpoints were recorded.
+- **Conflicts** are functional predicates (`about`, `part-of`) with distinct objects, and explicit
+  `contradicts` pairs. Several objects of a multi-valued predicate are several facts.
+- **Explicit refs** that are not nodes of the caller's authorized view come back in
+  `unresolvedRefs` and never become results — a foreign id cannot be laundered into an answer.
+- **`generation`** digests the exact authorized view (viewer, time window, current assertions,
+  aliases, conflicts). `nextCursor` is bound to that generation, the principal, and every query
+  parameter; replaying it after any of those change returns `{ error: { code: 'CURSOR_STALE' } }`
+  — start a fresh query. `context` is one token-bounded pack and takes no cursor.
+- **`report.truncated`** or `budgetExhausted` means the response is a bounded page, never a claim
+  that no further authorized connections exist.
+- **Unavailable:** if the graph cannot be read, the response is `{ unavailable: true,
+  graph: { state: 'unavailable', reason } }` with no `generation` and no expansions; `search` and
+  `context` add plain `recall` as the fallback. That fallback is never a graph answer.
+- An under-specified request (missing `refs`, a one-ref `path`, an unknown predicate or op)
+  returns `{ error: { code: 'BAD_REQUEST' } }` before any graph is read.
+
+The CLI twin is `crib memory graph <op> [refs…] [--q …] [--at …] [--known-by …] [--hops N]
+[--predicate P]… [--max-tokens N] [--cursor C]`; it calls the same verb and prints the same JSON.
 
 ---
 

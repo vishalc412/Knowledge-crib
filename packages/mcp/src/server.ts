@@ -520,6 +520,11 @@ export function buildServer(verbs: Verbs, version = '0.1.0', pins?: RequestPins)
         // ── durable intake continuation ──
         original: z.string().optional(),
         outcome: z.string().optional(),
+        // graph_propose (WP-G4): the relationship and what supports it — trust is the server's.
+        predicate: z.string().optional(),
+        object: z.string().optional(),
+        supportedBy: z.array(z.string()).optional(),
+        validAt: z.string().optional(),
         scope: z.array(z.string()).optional(),
         constraints: z.array(z.string()).optional(),
         acceptanceCriteria: z.array(z.string()).optional(),
@@ -630,6 +635,28 @@ export function buildServer(verbs: Verbs, version = '0.1.0', pins?: RequestPins)
           return TOOL_RESULT(
             verbs.memoryHandoff({
               ...(a.limit !== undefined ? { limit: a.limit } : {}),
+              ...(a.ifHash !== undefined ? { ifHash: a.ifHash } : {}),
+            }),
+          );
+        case 'graph_propose':
+          if (!a.predicate || !a.subject || !a.object || !a.supportedBy || !a.actor)
+            return TOOL_RESULT({
+              error: {
+                code: 'BAD_REQUEST',
+                message:
+                  'op=graph_propose requires predicate, subject, object, supportedBy, and actor',
+              },
+            });
+          return TOOL_RESULT(
+            verbs.memoryGraphPropose({
+              predicate: a.predicate,
+              subject: a.subject,
+              object: a.object,
+              supportedBy: a.supportedBy,
+              actor: a.actor,
+              ...(a.validAt !== undefined ? { validAt: a.validAt } : {}),
+              ...(a.scopeBoundary !== undefined ? { scopeBoundary: a.scopeBoundary } : {}),
+              ...(a.tool !== undefined ? { tool: a.tool } : {}),
               ...(a.ifHash !== undefined ? { ifHash: a.ifHash } : {}),
             }),
           );
@@ -772,7 +799,7 @@ export function buildServer(verbs: Verbs, version = '0.1.0', pins?: RequestPins)
     'memory_graph',
     {
       description:
-        'Authorized connected-memory graph retrieval. search, neighbors, path, history, and context traverse only the caller-authorized temporal graph. refs are explicit graph seeds; every returned expansion carries its supporting assertion path and truncation report.',
+        'Authorized connected-memory graph retrieval. search and context seed from memory search (or explicit refs); neighbors and history need refs; path needs exactly two refs [from, to]. Traversal is caller-authorized, two hops by default (max 4, 200 nodes, 500 edges). Every response names its view generation; nextCursor pages are bound to that generation and query. unavailable:true means the graph was not consulted.',
       inputSchema: {
         op: z.enum(['search', 'neighbors', 'path', 'history', 'context']).optional(),
         q: z.string().optional(),
@@ -781,7 +808,9 @@ export function buildServer(verbs: Verbs, version = '0.1.0', pins?: RequestPins)
         at: z.string().optional(),
         knownBy: z.string().optional(),
         hops: z.number().int().min(0).max(4).optional(),
+        predicates: z.array(z.string()).optional(),
         maxTokens: z.number().int().positive().max(MAX_MAX_TOKENS).optional(),
+        cursor: z.string().optional(),
         ifHash: z.string().optional(),
       },
     },

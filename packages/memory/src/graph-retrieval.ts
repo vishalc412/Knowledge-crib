@@ -331,3 +331,218 @@ export function expandFromSeeds(
     },
   };
 }
+
+// ─── graph-side seed selection ───────────────────────────────────────────────
+
+/**
+ * The seed scorer's identity, reported on every response that used it. Stated as a version so a
+ * change to tokenization or scoring is a visible change, never a silent re-tuning.
+ */
+export const GRAPH_SEED_SCORER_VERSION = 'graph-seed-v2:stemmed-term-overlap+semantic-rrf60';
+
+/** The reciprocal-rank-fusion constant — the standard k from Cormack et al., not a tuned value. */
+export const GRAPH_SEED_RRF_K = 60;
+
+/** Seeds taken per query — the same page size plain recall defaults to. */
+export const GRAPH_DEFAULT_SEED_LIMIT = 5;
+
+/** Function words that carry no retrieval signal. A generic English list, not a corpus list. */
+const GRAPH_STOPWORDS = new Set([
+  'about',
+  'across',
+  'after',
+  'and',
+  'any',
+  'are',
+  'before',
+  'both',
+  'but',
+  'by',
+  'can',
+  'did',
+  'does',
+  'each',
+  'for',
+  'from',
+  'has',
+  'have',
+  'how',
+  'into',
+  'its',
+  'now',
+  'of',
+  'other',
+  'show',
+  'that',
+  'the',
+  'their',
+  'them',
+  'then',
+  'there',
+  'this',
+  'was',
+  'were',
+  'what',
+  'when',
+  'where',
+  'which',
+  'who',
+  'why',
+  'will',
+  'with',
+  'you',
+  'your',
+]);
+
+/**
+ * A light suffix stemmer: inflectional endings (`-ies`, `-es` after a sibilant, `-s`, `-ing`,
+ * `-ed`) and the derivational `-ment` are removed only when at least three letters remain, then a
+ * trailing `e` is dropped — so `settles`, `settled`, `settling`, `settlement` and `settle` all meet
+ * on `settl`, and `retries` meets `retry`. Deliberately small and generic; not a tuned list.
+ */
+export function graphStem(term: string): string {
+  let t = term;
+  const strip = (suffix: string, replacement = ''): boolean => {
+    if (t.endsWith(suffix) && t.length - suffix.length >= 3) {
+      t = t.slice(0, -suffix.length) + replacement;
+      return true;
+    }
+    return false;
+  };
+  if (!strip('ies', 'y')) {
+    if (/(?:ss|x|z|ch|sh)es$/.test(t)) strip('es');
+    else if (!t.endsWith('ss') && !t.endsWith('us') && !t.endsWith('is')) strip('s');
+  }
+  strip('ment') || strip('ing') || strip('ed');
+  if (t.length > 3 && t.endsWith('e')) t = t.slice(0, -1);
+  return t;
+}
+
+/**
+ * Normalized retrieval terms: camelCase and every non-alphanumeric run split, lower-cased, tokens
+ * shorter than three characters and stopwords dropped, then {@link graphStem} applied — so
+ * `settleOrder`, `settle-order` and "settled orders" meet on the same terms.
+ */
+export function graphTerms(text: string): string[] {
+  const spaced = text.replace(/([a-z0-9])([A-Z])/g, '$1 $2');
+  const out = new Set<string>();
+  for (const raw of spaced.toLowerCase().split(/[^a-z0-9]+/)) {
+    if (raw.length < 3 || GRAPH_STOPWORDS.has(raw)) continue;
+    out.add(graphStem(raw));
+  }
+  return [...out];
+}
+
+/**
+ * Lexical seeds over the AUTHORIZED graph: every candidate is a node of an assertion in the
+ * projection's current or historical view — both already bounded by the read point — so a seed can never name something
+ * the viewer cannot see or something not yet known at `knownBy`. `texts` supplies the searchable
+ * text for a node (a record's claim, an entity's name); a node without text is matched on its ref.
+ *
+ * Score = distinct query terms present in the node's terms ÷ distinct query terms — a proportion,
+ * not a calibrated confidence. Ties break by ref, so the selection is deterministic.
+ */
+export function selectGraphSeeds(
+  projection: GraphProjection,
+  query: string,
+  texts: ReadonlyMap<string, string>,
+  opts: { limit?: number } = {},
+): GraphSeed[] {
+  const queryTerms = graphTerms(query);
+  if (queryTerms.length === 0) return [];
+  const nodes = graphCandidateNodes(projection);
+  const scored: GraphSeed[] = [];
+  for (const ref of nodes) {
+    const terms = new Set([...graphTerms(ref), ...graphTerms(texts.get(ref) ?? '')]);
+    const matched = queryTerms.filter((term) => terms.has(term)).length;
+    if (matched === 0) continue;
+    scored.push({ ref, score: matched / queryTerms.length, channel: 'lexical' });
+  }
+  scored.sort((a, b) => (a.score !== b.score ? b.score - a.score : a.ref < b.ref ? -1 : 1));
+  return scored.slice(0, Math.max(0, opts.limit ?? GRAPH_DEFAULT_SEED_LIMIT));
+}
+
+/** The embedder shape the semantic seed channel needs (structurally the core `Embedder`). */
+export interface GraphSeedEmbedder {
+  id: string;
+  embedBatch(texts: string[]): Float32Array[];
+}
+
+function graphCandidateNodes(projection: GraphProjection): string[] {
+  const nodes = new Set<string>();
+  for (const assertion of [...projection.current, ...projection.historical]) {
+    nodes.add(assertion.subject);
+    nodes.add(assertion.object);
+  }
+  return [...nodes].sort();
+}
+
+/** A node's searchable text: its supplied text, else its ref with separators spaced out. */
+function nodeText(ref: string, texts: ReadonlyMap<string, string>): string {
+  return texts.get(ref) ?? ref.replace(/[:#/._-]+/g, ' ').replace(/([a-z0-9])([A-Z])/g, '$1 $2');
+}
+
+/**
+ * Semantic seeds over the SAME authorized candidate set as {@link selectGraphSeeds}: cosine
+ * similarity (dot product of unit vectors) between the query and each node's text. `vectorOf` may
+ * serve cached vectors; it must return one vector per text in order.
+ */
+export function selectSemanticGraphSeeds(
+  projection: GraphProjection,
+  query: string,
+  texts: ReadonlyMap<string, string>,
+  embed: (texts: string[]) => Float32Array[],
+  opts: { limit?: number } = {},
+): GraphSeed[] {
+  if (query.trim() === '') return [];
+  const nodes = graphCandidateNodes(projection);
+  if (nodes.length === 0) return [];
+  const vectors = embed([query, ...nodes.map((ref) => nodeText(ref, texts))]);
+  const q = vectors[0] as Float32Array;
+  const scored = nodes.map((ref, i) => {
+    const v = vectors[i + 1] as Float32Array;
+    let dot = 0;
+    for (let k = 0; k < q.length; k += 1) dot += (q[k] as number) * (v[k] as number);
+    return { ref, score: dot, channel: 'semantic' as const };
+  });
+  scored.sort((a, b) => (a.score !== b.score ? b.score - a.score : a.ref < b.ref ? -1 : 1));
+  return scored.slice(0, Math.max(0, opts.limit ?? GRAPH_DEFAULT_SEED_LIMIT));
+}
+
+/**
+ * Fuse ranked seed lists by reciprocal rank (k = {@link GRAPH_SEED_RRF_K}). Channel scores live on
+ * different scales — a term-overlap share and a cosine are not comparable — so only RANKS are
+ * fused. The fused score is normalized so the best seed is 1; the channel recorded is the one that
+ * ranked the seed highest. Deterministic: ties break by ref.
+ */
+export function fuseGraphSeeds(
+  channels: readonly GraphSeed[][],
+  opts: { limit?: number } = {},
+): GraphSeed[] {
+  const fused = new Map<
+    string,
+    { score: number; bestRank: number; channel: GraphSeed['channel'] }
+  >();
+  for (const channel of channels) {
+    channel.forEach((seed, rank) => {
+      const entry = fused.get(seed.ref) ?? {
+        score: 0,
+        bestRank: Number.POSITIVE_INFINITY,
+        channel: seed.channel,
+      };
+      entry.score += 1 / (GRAPH_SEED_RRF_K + rank + 1);
+      if (rank < entry.bestRank) {
+        entry.bestRank = rank;
+        entry.channel = seed.channel;
+      }
+      fused.set(seed.ref, entry);
+    });
+  }
+  const ordered = [...fused.entries()].sort(([ra, a], [rb, b]) =>
+    a.score !== b.score ? b.score - a.score : ra < rb ? -1 : 1,
+  );
+  const top = ordered[0]?.[1].score ?? 1;
+  return ordered
+    .slice(0, Math.max(0, opts.limit ?? GRAPH_DEFAULT_SEED_LIMIT))
+    .map(([ref, entry]) => ({ ref, score: entry.score / top, channel: entry.channel }));
+}

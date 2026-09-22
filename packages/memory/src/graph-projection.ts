@@ -76,12 +76,29 @@ export interface GraphProjectionInput {
   assertions: readonly GraphAssertion[];
   /** Alias resolution decisions, folded in (ts, id) order. */
   decisions?: readonly GraphResolutionDecision[];
-  /** Records the caller gathered — supporters naming a present record id resolve. */
-  records?: readonly { id: string }[];
+  /**
+   * Records the caller gathered — supporters naming a present record id resolve. `knownAt` is when
+   * the record itself was recorded: an assertion cannot be known before BOTH of its record
+   * endpoints are, so a `knownBy` read excludes an edge toward a record not yet recorded.
+   */
+  records?: readonly GraphRecordRef[];
+  /**
+   * Retained records that are no longer current (superseded as of the read point). An assertion
+   * supported ONLY by these stays in the supported `timeline` as history and never enters
+   * `current` — supersession changes what IS true, not what WAS. Retracted, quarantined, or
+   * purged records must never be passed here: they support nothing, not even history.
+   */
+  historicalRecords?: readonly GraphRecordRef[];
   /** Entities the caller gathered — supporters naming a present entity ref or id resolve. */
   entities?: readonly GraphEntity[];
   /** Refs the caller knows are addressable but which live outside the memory store (receipts). */
   knownRefs?: readonly string[];
+}
+
+/** A gathered record as the projection needs it: its id, and when it was recorded if known. */
+export interface GraphRecordRef {
+  id: string;
+  knownAt?: string;
 }
 
 /** The time window: `at` bounds valid time, `knownBy` bounds transaction time (and the alias fold). */
@@ -145,6 +162,14 @@ export interface GraphProjection {
   current: GraphAssertion[];
   /** The full supported history of the visible slice, ordered by (validAt instant, id). */
   timeline: GraphAssertion[];
+  /** Record ids that are no longer current (superseded) but still support history, sorted. */
+  historicalRefs: string[];
+  /**
+   * Supported assertions KNOWN at the read point that are not current: supported only by
+   * historical records, or valid only after `at`. Ordered like `timeline`. Nothing recorded after
+   * `knownBy` (or pointing at a record recorded after it) is ever here — history is what was known.
+   */
+  historical: GraphAssertion[];
   aliases: GraphAliasView;
   conflicts: GraphConflictGroup[];
   counts: GraphProjectionCounts;
@@ -328,18 +353,27 @@ export function projectGraph(
     resolvable.add(entity.id);
   }
 
+  const historicalSupport = new Set<string>();
+  for (const record of input.historicalRecords ?? []) {
+    if (!resolvable.has(record.id)) historicalSupport.add(record.id);
+  }
+
   const unsupported: GraphUnsupportedAssertion[] = [];
   const supported: GraphAssertion[] = [];
+  const historicalOnly = new Set<string>();
 
   for (const assertion of input.assertions) {
     if (!visibleTo(assertion, viewer)) {
       continue;
     }
-    const missing = assertion.supportedBy.filter((ref) => !resolvable.has(ref));
+    const missing = assertion.supportedBy.filter(
+      (ref) => !resolvable.has(ref) && !historicalSupport.has(ref),
+    );
     if (missing.length === assertion.supportedBy.length) {
       unsupported.push({ id: assertion.id, missingSupporters: missing });
       continue; // excluded from every trusted surface; the owner still sees it in diagnostics
     }
+    if (!assertion.supportedBy.some((ref) => resolvable.has(ref))) historicalOnly.add(assertion.id);
     supported.push(assertion);
   }
 
@@ -349,35 +383,74 @@ export function projectGraph(
     deferred: deferredDecisions,
   } = foldAliases(input.decisions, viewer, opts.knownBy);
 
-  const inWindow = (a: GraphAssertion): boolean =>
-    (opts.at === undefined || compareGraphInstants(a.validAt, opts.at) <= 0) &&
-    (opts.knownBy === undefined || compareGraphInstants(a.knownAt, opts.knownBy) <= 0);
+  const recordKnownAt = new Map<string, string>();
+  for (const record of [...(input.records ?? []), ...(input.historicalRecords ?? [])]) {
+    if (record.knownAt !== undefined) recordKnownAt.set(record.id, record.knownAt);
+  }
+  const endpointKnown = (ref: string, knownBy: string): boolean => {
+    const at = recordKnownAt.get(ref);
+    return at === undefined || compareGraphInstants(at, knownBy) <= 0;
+  };
+  const validOk = (a: GraphAssertion): boolean =>
+    opts.at === undefined || compareGraphInstants(a.validAt, opts.at) <= 0;
+  const knownOk = (a: GraphAssertion): boolean =>
+    opts.knownBy === undefined ||
+    (compareGraphInstants(a.knownAt, opts.knownBy) <= 0 &&
+      endpointKnown(a.subject, opts.knownBy) &&
+      endpointKnown(a.object, opts.knownBy));
+  const inWindow = (a: GraphAssertion): boolean => validOk(a) && knownOk(a);
 
   const timeline = [...supported].sort(byInstantThenId);
-  const current = supported.filter(inWindow).sort((a, b) => (a.id < b.id ? -1 : 1));
+  const historical = timeline.filter(
+    (a) => knownOk(a) && (historicalOnly.has(a.id) || !validOk(a)),
+  );
+  const current = supported
+    .filter((a) => inWindow(a) && !historicalOnly.has(a.id))
+    .sort((a, b) => (a.id < b.id ? -1 : 1));
 
-  // Conflicts: same canonical subject + predicate, distinct canonical objects — grouped, NEVER
-  // resolved. Every member of the group stays in `current` and stays traversable.
+  // Conflicts, grouped and NEVER resolved — every member stays in `current` and traversable:
+  //  - a FUNCTIONAL predicate (a record is about one subject; a symbol is part of one entity) with
+  //    distinct canonical objects for one canonical subject is a disagreement;
+  //  - an explicit `contradicts` assertion is a disagreement between its two endpoints, grouped
+  //    with every `contradicts` assertion between the same pair in either direction.
+  // Multi-valued predicates (supported-by, applies-to, affects, derived-from, supersedes) naming
+  // several objects are simply several facts, not a disagreement.
   const canonicalOf = (ref: string): string => aliases.canonical[ref] ?? ref;
-  const groups = new Map<string, { objects: Set<string>; ids: string[] }>();
-  for (const a of current) {
-    const key = `${canonicalOf(a.subject)} ${a.predicate}`;
+  const groups = new Map<
+    string,
+    { subject: string; predicate: string; objects: Set<string>; ids: string[] }
+  >();
+  const addToGroup = (
+    key: string,
+    subject: string,
+    predicate: string,
+    objects: string[],
+    id: string,
+  ) => {
     let group = groups.get(key);
     if (!group) {
-      group = { objects: new Set<string>(), ids: [] };
+      group = { subject, predicate, objects: new Set<string>(), ids: [] };
       groups.set(key, group);
     }
-    group.objects.add(canonicalOf(a.object));
-    group.ids.push(a.id);
+    for (const object of objects) group.objects.add(object);
+    group.ids.push(id);
+  };
+  for (const a of current) {
+    const subject = canonicalOf(a.subject);
+    const object = canonicalOf(a.object);
+    if (GRAPH_FUNCTIONAL_PREDICATES.has(a.predicate)) {
+      addToGroup(`${subject} ${a.predicate}`, subject, a.predicate, [object], a.id);
+    } else if (a.predicate === 'contradicts' && subject !== object) {
+      const [low, high] = subject < object ? [subject, object] : [object, subject];
+      addToGroup(`${low} ${high} contradicts`, low, 'contradicts', [low, high], a.id);
+    }
   }
   const conflicts: GraphConflictGroup[] = [];
-  for (const [key, group] of groups) {
+  for (const group of groups.values()) {
     if (group.objects.size < 2) continue; // one object is a fact, not a disagreement
-    const subject = key.slice(0, key.indexOf(' '));
-    const predicate = key.slice(key.indexOf(' ') + 1);
     conflicts.push({
-      subject,
-      predicate,
+      subject: group.subject,
+      predicate: group.predicate,
       objects: [...group.objects].sort(),
       assertionIds: group.ids.sort(),
     });
@@ -400,6 +473,8 @@ export function projectGraph(
     ...(opts.knownBy !== undefined ? { knownBy: opts.knownBy } : {}),
     current,
     timeline,
+    historicalRefs: [...historicalSupport].sort(),
+    historical,
     aliases,
     conflicts,
     counts,
@@ -431,6 +506,9 @@ export function graphNeighbors(
   );
   return edges.sort((a, b) => (a.id < b.id ? -1 : 1));
 }
+
+/** Predicates with at most one object per subject — distinct objects are a disagreement. */
+export const GRAPH_FUNCTIONAL_PREDICATES: ReadonlySet<string> = new Set(['about', 'part-of']);
 
 /** The default hop bound — the plan's traversal law (two-hop default, max 4). */
 export const GRAPH_PATH_MAX_HOPS = 4;
