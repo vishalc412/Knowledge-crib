@@ -73,7 +73,58 @@ their prior evidence.
 | G-R2 | Connected retrieval 86.94% < 90% on held-out v2; 3 emptiness + 8 forbidden violations (all: alpha's global decoy surfacing as current on decoy/global probes) | **verified fixed on the merged tree** — WP2 S1–S5: heldout-v2 **95.42%** (≥ 90% target), forbidden 8→**0**, unauthorized 0, unavailable 0; emptiness 3 = enumerated corpus-authoring residue (GO gated on corpus v3); v1 85.66%→**95.33%**, forbidden 6→3 (g1-only residue) | `docs/program/eval/graph-eval-*-postwp2.json`; verifier reproduction (workflow `wf_a1e7cd2f-d1a`); this §3 |
 | G-perf | Graph perf at 100k assertions: read p95 78ms, context p95 420ms, update p95 1.26s | PASS (as recorded; needs merged-tree rerun) | Run 2 record |
 
-## 2. WP1 — Freshness, durability, trust boundaries (PENDING)
+## 2. WP1 — Freshness, durability, trust boundaries (SPEC COMPLETE 2026-09-22; implementation NOT started)
+
+Spec: `docs/program/wp1-implementation-spec.md` — §1–§14 complete. Provenance is marked per claim: **[V]**
+verified in-session against the tree, **[R]** audit-reported and not re-verified. Baseline `a283b104`.
+
+### Discovery outcome
+
+Three parallel read-only audits (durability / generations+cache / ownership+authorization) ran at
+`a283b104`, then every claim that decides a change was re-read at its call site. Findings that became spec
+defects: **D1-a** acknowledgement is a page cache, not stable storage (`atomic.ts:16-21`); **D1-b** the two
+append-only lanes make no flush claim; **D1-c** no directory durability anywhere; **D1-d** the vector store
+returns success after `ROLLBACK`; **D1-e** ENOSPC/EIO/EACCES untyped; **D2-a/D2-b** the code-reader and
+memory-ledger generations are collapsed, and `graphGeneration`/`searchGeneration` are equal to
+`readerGeneration` *by construction* so they cannot evidence a disagreement; **D2-c** the evaluation cache
+key has no `reader` slot and no `ledger` slot — a constructed 6-step sequence reproduces a memoized
+`valid/current` surviving a working-tree edit; **D2-d** evidence resolves against the canonical soul + disk,
+not the request's pinned snapshot (span/identity from the committed graph, text from the live file — a torn
+read); **D3-a** the unowned-record guard `strictPrincipal` exists and **no production caller passes it**, so
+the two-store leak the source documents (`recall.ts:336-343`) is open by default; **D3-b**
+`cmdMemoryMigrate` never calls `migrateToV2` while the doctor tells users to run it.
+
+### Rows
+
+| # | Item | Status | Evidence |
+| --- | --- | --- | --- |
+| WP1-D1 | Discovery: three read-only audits + call-site re-verification of every decision-changing claim | **DONE 2026-09-22** | spec §6–§8, with **[V]**/**[R]** per claim |
+| WP1-D2 | One audit claim **withdrawn**: durable intakes bypassing principal enforcement (audit R03) is **fixed**, not open — commit `fdfc40bb`, guard at the gather (`api.ts:2574`, `:2623`, `:2631`), `intake-isolation.test.ts` covers denials *and* the access that must still work | **RESOLVED 2026-09-22** | spec §5.1. The audit had read `acceptsIntake` — the *guard* — as a widening site. Recorded because the same misreading could recur: guard-at-gather-point functions resemble identity reads. |
+| WP1-D3 | **Pre-implementation durability baseline** (§12.2 step 1): per-write cost, writes per mutation, platform guarantee | **DONE 2026-09-22** | `docs/program/logs/wp1-durability-baseline-2026-09-22.log` |
+| WP1-D3a | Per-write flush cost on APFS: baseline p95 0.1933 ms → durable p95 11.0917 ms (**+10.90 ms, 58×**) | measured | same log §1 |
+| WP1-D3b | Writes per real admitted mutation: `{"renameSync":12,"fsyncSync":0,"appendFileSync":1,"writeFileSync":13}`, identical cold and warm. Over `crib init`: 22 renames, `fsyncSync: 0` — an **independent** confirmation of the tree-wide "no fsync anywhere" claim | measured | same log §2 |
+| WP1-D3c | Cost conclusion: ~12 × 10.90 ms ≈ **130 ms p95 added per mutation ≈ 6.5% of the 2000 ms budget** — affordable. **The spec's drafted alarm ("can fail a gate already 43 ms from failing") was NOT borne out and is withdrawn**; it was inference from an unmeasured cost × an assumed write count | **withdrawn 2026-09-22** | spec §6.3 |
+| WP1-D3d | **New defect D1-g:** on darwin `fsync` is a host-to-device flush, **not** a platter flush — `man 2 fsync` verbatim: *"the drive itself may not physically write the data to the platters… if the drive loses power or the OS crashes, the application may find that only some or none of their data was written"*; `F_FULLFSYNC` is the real flush and is unreachable from Node core without a native dependency. Capability must be **three-valued** (`fileFlush`, `dirFlush`, `powerLossDurable`); the honest claim is "survives a **process** crash and is device-ordered", strictly stronger than today's page-cache ack and strictly weaker than power-loss durability | **recorded 2026-09-22** | spec §6.3, §9 item 2, §14 D-1 |
+| WP1-D3e | Directory flush **is** supported here; the first probe's `ENOENT` was that probe's own bug (it probed the directory before creating it), re-run rather than reported | corrected | same log, last section |
+
+### Open decisions gating implementation (spec §14)
+
+D-1 which durability guarantee is promised (**now a product-statement decision, not a perf trade** — the
+cost is measured and affordable); D-2 whether flipping `strictPrincipal` ships with the migration verb or
+behind an opt-in, since it retroactively hides unstamped records from their current users; D-3 whether the
+persistent FTS corpus becomes principal-scoped (the corpus is built by `gatherRecall(this.stores)` with **no
+principal** — verified — while the scored pool is the caller's, so BM25 term statistics of a co-tenant
+influence a caller's scores; **a weak cross-principal channel, not a record disclosure**, since
+`VersionedLexicalScorer.score()` only ever sees records already in the authorized pool); D-4 drop vs repoint
+`graphGeneration`/`searchGeneration`; D-5 whether the un-audited `scripts/client-certify.mjs` and
+`packages/ui`, plus the non-memory `writeFileSync` config lanes, are in or out of scope; D-6 whether
+`countUnstampedRecords` may keep publishing a count of unattributed records.
+
+### Still to come (nothing below this line is started)
+
+Implementation per spec §9 items 1–15; tests per §11.2; re-measurement per §12.2 steps 2–5 (notably the
+update-visibility p95 **with the change in place** — 1956.6 ms / 2000 ms is tight and is a different code
+path from the mutation path measured above).
 
 ## 3. WP2 — Evidence-led connected answers (IMPLEMENTED 2026-09-23; pre-freeze items pending — see WP2 result notes)
 
