@@ -40,6 +40,7 @@ import {
   EXACT_MATCH_BONUS,
   type EffectiveVerdicts,
   type FusionStrategy,
+  GRAPH_DEFAULT_SEED_LIMIT,
   GRAPH_SEED_SCORER_VERSION,
   type GraphProjection,
   type IntelligenceEventJournal,
@@ -86,6 +87,7 @@ import {
   isFeedbackSignal,
   isMemoryRecordVersioned,
   isRecallEligible,
+  itemEligibleNodes,
   memoryComposite,
   openMemoryFts,
   openMemoryVectors,
@@ -95,6 +97,7 @@ import {
   readSyncConfig,
   recallProjection,
   resolveServerIdentity,
+  seedEligibleNodes,
   selectGraphSeeds,
   selectSemanticGraphSeeds,
   soulTargetResolver,
@@ -3111,10 +3114,20 @@ export class Verbs {
       ? this.memorySearch({ q: args.q ?? '', limit: 20, maxTokens: page.maxTokens })
       : undefined;
     const embedder = this.memory?.embedder;
+    // WP2 S2/S3 — the viewer's own placement drives both eligibility laws: seeds must be placed
+    // at this scope AND content-bearing; pack items must be carried into this scope by an
+    // authorized relationship. A repo view without a repo id never happens — the projection
+    // refuses repo scope before this point — so the narrowing is total.
+    const viewerScope =
+      graph.viewer.scope.boundary === 'repo'
+        ? { boundary: 'repo' as const, repoId: graph.viewer.scope.repoId ?? '' }
+        : { boundary: 'global' as const };
+    const itemEligible = itemEligibleNodes(graph, viewerScope);
     let seeds = explicit.seeds;
     if (useRecall) {
       const query = args.q ?? '';
       const texts = this.cachedGraphView(api, args).texts();
+      const eligible = seedEligibleNodes(graph, texts, viewerScope);
       const channels = [
         timeBoundRecallSeeds(graph, recallSeeds(recalled)),
         selectGraphSeeds(graph, query, texts),
@@ -3126,11 +3139,43 @@ export class Verbs {
             ]
           : []),
       ];
-      seeds = fuseGraphSeeds(channels);
+      // The fuse choke point: every search-derived channel drops out-of-scope and content-free
+      // refs HERE, so no channel can admit an ineligible seed into the expansion.
+      seeds = fuseGraphSeeds(channels, { eligible });
+      // Round-2 S2 proposal relief: when the funnel received nothing eligible, the miss is in
+      // the channels' PROPOSAL slice, not in the law — five ineligible refs can outrank every
+      // lawful one, the eligible content never reaches the funnel, and the view then expands
+      // from nothing: a whole-repo miss for records that rank just below the cut. Re-propose
+      // each channel's top ELIGIBLE candidates — same per-channel width, same fuse, same laws —
+      // so a lawful record competes against lawful records instead of against out-of-scope
+      // decoys it was never going to be admitted over.
+      if (useRecall && seeds.length === 0 && eligible.size > 0 && query.trim() !== '') {
+        const reliefLimit = 50;
+        const relief = [
+          selectGraphSeeds(graph, query, texts, { limit: reliefLimit })
+            .filter((seed) => eligible.has(seed.ref))
+            .slice(0, GRAPH_DEFAULT_SEED_LIMIT),
+          ...(embedder
+            ? [
+                selectSemanticGraphSeeds(
+                  graph,
+                  query,
+                  texts,
+                  (batch) => this.graphVectors(embedder, batch),
+                  { limit: reliefLimit },
+                )
+                  .filter((seed) => eligible.has(seed.ref))
+                  .slice(0, GRAPH_DEFAULT_SEED_LIMIT),
+              ]
+            : []),
+        ];
+        seeds = fuseGraphSeeds(relief, { eligible });
+      }
     }
     const expanded = expandFromSeeds(graph, seeds, {
       ...(args.hops !== undefined ? { hops: args.hops } : {}),
       ...(args.predicates !== undefined ? { predicates: args.predicates } : {}),
+      itemEligible,
     });
     const shared = {
       seeds,
@@ -3144,7 +3189,11 @@ export class Verbs {
       ],
     };
     if (op === 'context') {
-      return { ...shared, ...fitGraphContext(graph, expanded, page.maxTokens) };
+      // The pack's own item filter is the S3 defense-in-depth layer over the expansion filter.
+      return {
+        ...shared,
+        ...fitGraphContext(graph, expanded, page.maxTokens, { itemEligible }),
+      };
     }
     const remaining = expanded.expansions.slice(page.offset);
     const fitted = fitTokenBudget(remaining, page.maxTokens, (prefix) =>

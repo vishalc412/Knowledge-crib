@@ -183,6 +183,30 @@ describe('assembleGraphContext', () => {
     expect(JSON.stringify(trimmed)).not.toContain('topic:window');
   });
 
+  it('S3 defense-in-depth: itemEligible drops an expansion before the pack is derived', () => {
+    // The expansion layer already filters arrivals by the same set; this test pins the pack
+    // builder's own guarantee — even handed UNFILTERED expansions, it never cites a relation,
+    // history entry or conflict that touches an ineligible item.
+    const a = edge('about', 'mem:d1', 'topic:retry', ['mem:shared']);
+    const b = edge('about', 'mem:d2', 'topic:window', ['mem:d2']);
+    const projection = projectGraph({ assertions: [a, b], records: RECORDS }, VIEWER);
+    const expansion = expandFromSeeds(projection, [
+      { ref: 'mem:d1', score: 0.9, channel: 'lexical' },
+      { ref: 'mem:d2', score: 0.1, channel: 'lexical' },
+    ]);
+    expect(expansion.expansions).toHaveLength(4);
+
+    const filtered = buildGraphContextPack(projection, expansion.expansions, expansion.report, {
+      itemEligible: new Set(['mem:d1', 'topic:retry']),
+    });
+    const total = buildGraphContextPack(projection, expansion.expansions, expansion.report);
+
+    expect(filtered.items.map((i) => i.ref)).toEqual(['mem:d1', 'topic:retry']);
+    expect(filtered.assertions.map((x) => x.id)).toEqual([a.id]);
+    expect(JSON.stringify(filtered)).not.toContain('topic:window');
+    expect(total.items).toHaveLength(4);
+  });
+
   it('is deterministic for the same projection and expansion', () => {
     const a = edge('about', 'mem:d1', 'topic:retry', ['mem:shared']);
     const b = edge('about', 'mem:d2', 'topic:retry', ['mem:d2']);
@@ -197,5 +221,79 @@ describe('assembleGraphContext', () => {
       expandFromSeeds(projection, [...seeds].reverse()),
     );
     expect(JSON.stringify(second)).toBe(JSON.stringify(first));
+  });
+});
+
+describe('buildGraphContextPack citedAssertionIds (S5 completion citations)', () => {
+  it("states a trimmed partner's connection with its supporters and producer, without adding the item", () => {
+    const link = edge('about', 'mem:d1', 'topic:retry', ['mem:shared']);
+    const applies = edge(
+      'applies-to',
+      'mem:d1',
+      'sym:ledger#settle',
+      ['mem:shared'],
+      T1,
+      'agent:other',
+    );
+    const projection = projectGraph({ assertions: [link, applies], records: RECORDS }, VIEWER);
+    const expansion = expandFromSeeds(projection, [seed('mem:d1')]);
+    // The budget fit kept only the seeded record; both connection endpoints were trimmed.
+    const prefix = expansion.expansions.filter((e) => e.ref === 'mem:d1');
+
+    const pack = buildGraphContextPack(projection, prefix, expansion.report, {
+      citedAssertionIds: [link.id, applies.id],
+    });
+
+    expect(pack.items.map((i) => i.ref)).toEqual(['mem:d1']);
+    expect(pack.relations).toEqual([]);
+    expect(pack.assertions.map((x) => x.id)).toEqual([link.id, applies.id].sort());
+    for (const assertion of pack.assertions) {
+      expect(assertion.status).toBe('current');
+      expect(assertion.supportedBy).toEqual(['mem:shared']);
+    }
+    expect(pack.producers).toHaveLength(2);
+    expect(new Set(pack.producers.map((p) => p.actorId))).toEqual(
+      new Set(['agent:context-test', 'agent:other']),
+    );
+  });
+
+  it('never duplicates an id another channel already cited, and ignores ids the view cannot resolve', () => {
+    const link = edge('about', 'mem:d1', 'topic:retry', ['mem:d1']);
+    const projection = projectGraph({ assertions: [link], records: RECORDS }, VIEWER);
+    const expansion = expandFromSeeds(projection, [seed('mem:d1'), seed('topic:retry')]);
+    // Both endpoints are kept, so the relation channel already cites the link once.
+
+    const pack = buildGraphContextPack(projection, expansion.expansions, expansion.report, {
+      citedAssertionIds: [link.id, 'assertion:unknown-in-this-view'],
+    });
+
+    expect(pack.relations).toEqual([link.id]);
+    expect(pack.assertions).toHaveLength(1);
+    expect(pack.assertions[0]?.id).toBe(link.id);
+    expect(pack.producers).toHaveLength(1);
+    expect(JSON.stringify(pack)).not.toContain('unknown-in-this-view');
+  });
+
+  it('cites an assertion the view only holds as history, labelling it historical', () => {
+    const before = edge('about', 'mem:d1', 'topic:retry', ['mem:d1'], T1);
+    const superseded = projectGraph(
+      {
+        assertions: [before],
+        records: RECORDS.filter((r) => r.id !== 'mem:d1'),
+        historicalRecords: [{ id: 'mem:d1' }],
+      },
+      VIEWER,
+    );
+    const report = expandFromSeeds(superseded, [seed('mem:d1')]).report;
+
+    const pack = buildGraphContextPack(superseded, [], report, {
+      citedAssertionIds: [before.id],
+    });
+
+    expect(pack.items).toEqual([]);
+    expect(pack.assertions).toEqual([
+      expect.objectContaining({ id: before.id, status: 'historical', supportedBy: ['mem:d1'] }),
+    ]);
+    expect(pack.producers.map((p) => p.actorId)).toEqual(['agent:context-test']);
   });
 });

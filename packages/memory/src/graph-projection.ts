@@ -139,15 +139,44 @@ export interface GraphAliasView {
   canonical: Record<string, string>;
 }
 
+/** One evidence anchor of a supporter, with the scopes the universe places it in. */
+export interface GraphAnchorPlacement {
+  /** The anchor ref the supporter cites as evidence. */
+  ref: string;
+  /**
+   * Scope keys ('global' or `repo:<id>`) of the NON-citation assertions this anchor is an endpoint
+   * of, sorted. Empty means the anchor is placed nowhere the universe can name — unknown.
+   */
+  placements: string[];
+}
+
+/**
+ * A resolvable-or-historical supporter whose evidence anchors do not all live at the assertion's
+ * scope (S1 evidence-placement containment): the supporter still resolves, but its citations
+ * point outside the scope the relationship claims, so it does not count toward the assertion.
+ */
+export interface GraphPlacementInvalidSupporter {
+  assertionId: string;
+  supporter: string;
+  /** The supporter's evidence anchors and where the universe places each one. */
+  anchors: GraphAnchorPlacement[];
+}
+
 export interface GraphProjectionDiagnostics {
   /** Always zero to avoid disclosing the presence of foreign assertions through diagnostics. */
   excludedForeign: number;
-  /** Assertions no supporter of which resolves in the gathered universe. */
+  /** Assertions no supporter of which counts — none resolves, or none is placement-admissible. */
   unsupported: GraphUnsupportedAssertion[];
   /** Resolution decisions the fold refused (cycle / unmatched reverse). */
   rejectedDecisions: GraphRejectedDecision[];
   /** Decisions recorded after the `knownBy` bound — not applied to this (historical) view. */
   deferredDecisions: number;
+  /**
+   * Supporters that resolve (or survive as history) but whose evidence anchors are placed only
+   * outside the assertion's scope, sorted by (assertionId, supporter). Unresolvable supporters
+   * stay in `unsupported` only — this list is the placement lens, not a resolution repeat.
+   */
+  placementInvalidSupporters: GraphPlacementInvalidSupporter[];
 }
 
 export interface GraphProjectionCounts extends Record<MemoryGraphPredicate, number> {
@@ -183,6 +212,11 @@ function visibleScope(scope: MemoryScope, viewer: GraphViewer): boolean {
   if (viewer.scope.boundary === 'global') return scope.boundary === 'global';
   if (scope.boundary === 'global') return true;
   return scope.repoId === viewer.scope.repoId;
+}
+
+/** The scope key a placement is recorded under: 'global' or `repo:<repoId>`. */
+function scopeKeyOf(scope: MemoryScope): string {
+  return scope.boundary === 'global' ? 'global' : `repo:${scope.repoId}`;
 }
 
 function visibleTo(assertion: GraphAssertion, viewer: GraphViewer): boolean {
@@ -358,24 +392,86 @@ export function projectGraph(
     if (!resolvable.has(record.id)) historicalSupport.add(record.id);
   }
 
+  // S1 — evidence-placement containment, measured on the PRE-visibility input: placement is a
+  // property of the gathered universe, not of what this viewer happens to see. A supporter's
+  // evidence anchors are the objects of its derived `supported-by` citations; an anchor is
+  // PLACED at the scope of every non-citation assertion it is an endpoint of (citations never
+  // place content — they only carry it). A supporter counts toward an assertion only when every
+  // anchor is admissible at that assertion's scope: an anchor placed nowhere the universe can
+  // name is unknown and admissible; so are the assertion's own scope and the global scope.
+  // Strict ∀: ONE inadmissible anchor makes the whole supporter not count — evidence that points
+  // partly outside the claimed scope is not evidence inside it.
+  const anchorPlacements = new Map<string, Set<string>>();
+  const citeAnchors = new Map<string, string[]>();
+  for (const a of input.assertions) {
+    if (a.predicate === 'supported-by') {
+      const anchors = citeAnchors.get(a.subject);
+      if (anchors === undefined) citeAnchors.set(a.subject, [a.object]);
+      else anchors.push(a.object);
+      continue;
+    }
+    for (const endpoint of [a.subject, a.object]) {
+      let places = anchorPlacements.get(endpoint);
+      if (places === undefined) {
+        places = new Set<string>();
+        anchorPlacements.set(endpoint, places);
+      }
+      places.add(scopeKeyOf(a.scope));
+    }
+  }
+  const admissibleAt = (supporter: string, key: string): boolean => {
+    const anchors = citeAnchors.get(supporter);
+    if (anchors === undefined) return true; // no derived citations — nothing to contain
+    for (const anchor of anchors) {
+      const places = anchorPlacements.get(anchor);
+      if (places === undefined || places.size === 0) continue; // unknown placement is admissible
+      if (places.has(key) || places.has('global')) continue;
+      return false;
+    }
+    return true;
+  };
+
   const unsupported: GraphUnsupportedAssertion[] = [];
   const supported: GraphAssertion[] = [];
   const historicalOnly = new Set<string>();
+  const placementInvalidSupporters: GraphPlacementInvalidSupporter[] = [];
 
   for (const assertion of input.assertions) {
     if (!visibleTo(assertion, viewer)) {
       continue;
     }
+    const key = scopeKeyOf(assertion.scope);
+    // A supporter is missing when it does not resolve OR its evidence is not placement-admissible
+    // at this assertion's scope — the S1 extension of the WP-G2 missing-supporter predicate.
     const missing = assertion.supportedBy.filter(
-      (ref) => !resolvable.has(ref) && !historicalSupport.has(ref),
+      (ref) => (!resolvable.has(ref) && !historicalSupport.has(ref)) || !admissibleAt(ref, key),
     );
+    // The owner sees WHY a placement-invalid supporter did not count — on assertions another
+    // supporter carried AND on assertions that went unsupported for exactly this reason.
+    for (const ref of assertion.supportedBy) {
+      if ((resolvable.has(ref) || historicalSupport.has(ref)) && !admissibleAt(ref, key)) {
+        placementInvalidSupporters.push({
+          assertionId: assertion.id,
+          supporter: ref,
+          anchors: (citeAnchors.get(ref) ?? []).map((anchor) => ({
+            ref: anchor,
+            placements: [...(anchorPlacements.get(anchor) ?? [])].sort(),
+          })),
+        });
+      }
+    }
     if (missing.length === assertion.supportedBy.length) {
       unsupported.push({ id: assertion.id, missingSupporters: missing });
       continue; // excluded from every trusted surface; the owner still sees it in diagnostics
     }
-    if (!assertion.supportedBy.some((ref) => resolvable.has(ref))) historicalOnly.add(assertion.id);
+    if (!assertion.supportedBy.some((ref) => resolvable.has(ref) && admissibleAt(ref, key))) {
+      historicalOnly.add(assertion.id);
+    }
     supported.push(assertion);
   }
+  placementInvalidSupporters.sort(
+    (x, y) => x.assertionId.localeCompare(y.assertionId) || x.supporter.localeCompare(y.supporter),
+  );
 
   const {
     view: aliases,
@@ -478,7 +574,13 @@ export function projectGraph(
     aliases,
     conflicts,
     counts,
-    diagnostics: { excludedForeign: 0, unsupported, rejectedDecisions, deferredDecisions },
+    diagnostics: {
+      excludedForeign: 0,
+      unsupported,
+      rejectedDecisions,
+      deferredDecisions,
+      placementInvalidSupporters,
+    },
   };
 }
 

@@ -103,8 +103,10 @@ export interface GraphContextPack {
   items: GraphContextItem[];
   /**
    * Every cited assertion, once, sorted by id: item paths, relations among items, conflict
-   * members, and known history touching an item (`status: 'historical'`, item 8). Each carries
-   * its `supportedBy` evidence refs (item 5) and a `producer` index (item 7).
+   * members, known history touching an item (`status: 'historical'`, item 8), and the serving
+   * layer's S5 completion citations (`citedAssertionIds` — a stated connection whose partner was
+   * trimmed). Each carries its `supportedBy` evidence refs (item 5) and a `producer` index
+   * (item 7).
    */
   assertions: GraphContextAssertion[];
   /** Ids of current assertions whose canonical endpoints are both items, sorted. */
@@ -128,6 +130,23 @@ export interface GraphContextOpts {
   includeHistorical?: boolean;
   /** Degradation reasons the caller already knows about (a stale index, an unavailable channel). */
   degraded?: readonly string[];
+  /**
+   * S3 defense-in-depth: canonical refs that may be pack ITEMS in this view. When passed, an
+   * expansion outside the set is dropped before the pack is derived, so no relation, history
+   * entry or conflict can cite an ineligible node even if a future channel bypasses the expansion
+   * filter. Absent = no item rule; the builder stays total over whatever expansions it is given.
+   */
+  itemEligible?: ReadonlySet<string>;
+  /**
+   * S5 completion citations — assertion ids the pack states even though no kept item's path, no
+   * relation among kept items, no conflict member and no kept history entry would cite them on its
+   * own. The serving layer uses this for a CURRENT relation whose kept endpoint made the pack but
+   * whose other endpoint was reached and then trimmed by the budget (fitGraphContext): the
+   * connection the answer depends on is still stated, with its supporters and producer, exactly
+   * as it would have been had the partner fit. Ids that resolve to nothing in this view are
+   * ignored — the pack never cites what it cannot show.
+   */
+  citedAssertionIds?: readonly string[];
 }
 
 /**
@@ -144,7 +163,12 @@ export function buildGraphContextPack(
   const canonicalOf = (ref: string): string => projection.aliases.canonical[ref] ?? ref;
   const historicalRefs = new Set(projection.historicalRefs);
   const round = (n: number): number => Math.round(n * 10_000) / 10_000;
-  const items: GraphContextItem[] = expansions.map((e) => ({
+  // S3 defense-in-depth: an expansion that may not be an item in this view is dropped BEFORE the
+  // pack is derived, so relations, history and conflicts below can never cite it.
+  const itemEligible = opts.itemEligible;
+  const selected =
+    itemEligible === undefined ? expansions : expansions.filter((e) => itemEligible.has(e.ref));
+  const items: GraphContextItem[] = selected.map((e) => ({
     ref: e.ref,
     state: historicalRefs.has(e.ref) ? 'historical' : 'current',
     distance: e.distance,
@@ -159,6 +183,7 @@ export function buildGraphContextPack(
     itemRefs.has(canonicalOf(a.subject)) || itemRefs.has(canonicalOf(a.object));
 
   const current = new Map(projection.current.map((a) => [a.id, a]));
+  const historicalById = new Map(projection.historical.map((a) => [a.id, a]));
   const pathIds = new Set(items.flatMap((i) => i.path));
   const relations = projection.current
     .filter((a) => itemRefs.has(canonicalOf(a.subject)) && itemRefs.has(canonicalOf(a.object)))
@@ -180,6 +205,15 @@ export function buildGraphContextPack(
   }
   for (const assertion of historicalAssertions) {
     cited.set(assertion.id, { assertion, status: 'historical' });
+  }
+  for (const id of opts.citedAssertionIds ?? []) {
+    if (cited.has(id)) continue;
+    const assertion = current.get(id);
+    if (assertion !== undefined) cited.set(id, { assertion, status: 'current' });
+    else {
+      const historical = historicalById.get(id);
+      if (historical !== undefined) cited.set(id, { assertion: historical, status: 'historical' });
+    }
   }
   const producers: GraphContextProducer[] = [];
   const producerIndex = new Map<string, number>();

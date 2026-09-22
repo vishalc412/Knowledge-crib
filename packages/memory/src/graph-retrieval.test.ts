@@ -24,10 +24,12 @@ import {
   GRAPH_INELIGIBLE_EVIDENCE_FACTOR,
   GRAPH_MAX_EXAMINED_EDGES,
   GRAPH_MAX_VISITED_NODES,
+  GRAPH_SEED_SCORER_VERSION,
   expandFromSeeds,
   fuseGraphSeeds,
   graphStem,
   graphTerms,
+  seedEligibleNodes,
   selectGraphSeeds,
   selectSemanticGraphSeeds,
 } from './graph-retrieval.js';
@@ -57,6 +59,8 @@ function assertion(input: {
   object: string;
   predicate?: MemoryGraphPredicate;
   principalId?: string;
+  scope?: MemoryScope;
+  at?: string;
   supportedBy?: string[];
 }): GraphAssertion {
   const principalId = input.principalId ?? P1;
@@ -65,8 +69,8 @@ function assertion(input: {
     subject: input.subject,
     object: input.object,
     namespace: { principalId },
-    scope: GLOBAL,
-    validAt: T0,
+    scope: input.scope ?? GLOBAL,
+    validAt: input.at ?? T0,
     knownAt: T1,
     supportedBy: input.supportedBy ?? [SUPPORTER],
     provenance: provenance(principalId),
@@ -402,18 +406,21 @@ describe('WP-G5 graph seeds — lexical selection over the authorized view only'
   it('scores by the share of query terms a node covers, deterministically, and caps the list', () => {
     const projection = project([
       assertion({ subject: 'mem:retry', object: 'topic:ledger-retry-window' }),
-      assertion({ subject: 'mem:other', object: 'topic:unrelated' }),
+      assertion({ subject: 'mem:other', object: 'attestation:operator:alpha#retry-key' }),
+      assertion({ subject: 'mem:unrelated', object: 'topic:unrelated' }),
     ]);
     const texts = new Map([['mem:retry', 'The ledger retry window is 30 seconds']]);
     const seeds = selectGraphSeeds(projection, 'ledger retry window', texts);
-    expect(seeds.map((s) => [s.ref, s.score])).toEqual([
-      ['mem:retry', 1],
-      ['topic:ledger-retry-window', 1],
-    ]);
+    // S2 — only CONTENT scores: topic:ledger-retry-window and the attestation anchor match the
+    // query purely through their ref fragments, and an identifier is not content, so neither is
+    // proposed however strongly its stems match.
+    expect(seeds.map((s) => [s.ref, s.score])).toEqual([['mem:retry', 1]]);
     expect(seeds.every((s) => s.channel === 'lexical')).toBe(true);
     expect(selectGraphSeeds(projection, 'ledger retry window', texts, { limit: 1 })).toHaveLength(
       1,
     );
+    // No node text at all → no seed, however well any ref's fragments match.
+    expect(selectGraphSeeds(projection, 'ledger retry window', new Map())).toEqual([]);
     expect(selectGraphSeeds(projection, 'the and of', texts)).toEqual([]);
   });
 
@@ -490,5 +497,138 @@ describe('WP-G5 graph seeds — semantic channel and rank fusion', () => {
     expect(fused[0]?.score).toBe(1);
     expect(fuseGraphSeeds([semantic, lexical]).map((s) => s.ref)).toEqual(fused.map((s) => s.ref));
     expect(fuseGraphSeeds([lexical, semantic], { limit: 1 })).toHaveLength(1);
+  });
+});
+
+// ─── WP2 S2 — seed admission is scope-placed and content-bearing ───────────────
+
+describe('WP2 S2 — seeds are admitted by scope placement and content, never by similarity', () => {
+  const REPO_A: MemoryScope = { boundary: 'repo', repoId: 'repoa' };
+  const REPO_VIEW = { principalId: P1, scope: REPO_A };
+  const GLOBAL_VIEW = { principalId: P1, scope: GLOBAL };
+
+  function universe(assertions: GraphAssertion[]) {
+    const supporters = new Set<string>();
+    for (const a of assertions) for (const ref of a.supportedBy) supporters.add(ref);
+    return { assertions, records: [...supporters].map((id) => ({ id })) };
+  }
+
+  /** Repo-placed record, repo-scoped content-free symbol/topic, repo-connected entity, global record. */
+  const SCOPED = [
+    assertion({ subject: 'mem:repo-record', object: 'topic:repo-work', scope: REPO_A }),
+    assertion({
+      subject: 'sym:repo-fn',
+      object: 'topic:repo-work',
+      scope: REPO_A,
+      predicate: 'affects',
+    }),
+    assertion({
+      subject: 'sym:repo-fn',
+      object: 'entity:repoa/Svc',
+      scope: REPO_A,
+      predicate: 'part-of',
+    }),
+    assertion({ subject: 'mem:global-record', object: 'topic:global-work' }),
+  ];
+  const TEXTS = new Map([
+    ['mem:repo-record', 'the repo record about idempotent retries'],
+    ['mem:global-record', 'the global record about idempotent retries'],
+    ['entity:repoa/Svc', 'OrderService'],
+  ]);
+
+  it('admits only content-bearing endpoints of assertions at the viewer’s own scope', () => {
+    const repoView = projectGraph(universe(SCOPED), REPO_VIEW);
+
+    const repoSeeds = seedEligibleNodes(repoView, TEXTS, { boundary: 'repo', repoId: 'repoa' });
+    expect([...repoSeeds]).toEqual(['mem:repo-record', 'entity:repoa/Svc']); // repo-placed + repo-connected; not the symbol, not the topic, not the global record
+
+    const globalView = projectGraph(universe(SCOPED), GLOBAL_VIEW);
+    const globalSeeds = seedEligibleNodes(globalView, TEXTS, { boundary: 'global' });
+    expect([...globalSeeds]).toEqual(['mem:global-record']); // the repo record is invisible at global scope
+  });
+
+  it('funnels every fused channel through the eligibility set, whatever the channel order', () => {
+    const repoView = projectGraph(universe(SCOPED), REPO_VIEW);
+    const eligible = seedEligibleNodes(repoView, TEXTS, { boundary: 'repo', repoId: 'repoa' });
+    const lexical = [seed('sym:repo-fn', 0.9), seed('mem:repo-record', 0.5)];
+    const recall = [seed('topic:repo-work', 0.8)];
+
+    expect(fuseGraphSeeds([lexical, recall], { eligible }).map((s) => s.ref)).toEqual([
+      'mem:repo-record',
+    ]);
+    expect(fuseGraphSeeds([recall, lexical], { eligible }).map((s) => s.ref)).toEqual([
+      'mem:repo-record',
+    ]);
+  });
+
+  it('reports the v3 scorer identity', () => {
+    expect(GRAPH_SEED_SCORER_VERSION).toBe(
+      'graph-seed-v3:placement-eligible+content-bearing+historical-traversal+pack-completion',
+    );
+  });
+});
+
+// ─── WP2 S3 — item-level scope eligibility on arrivals ────────────────────────
+
+describe('WP2 S3 — arrivals the scope law excludes are dropped, seeds are exempt', () => {
+  it('drops an ineligible arrival without calling it truncation, and it cannot pass through', () => {
+    const itemEligible = new Set(['topic:a', 'topic:c']);
+    const result = expandFromSeeds(project(CHAIN), [seed('topic:a')], { hops: 2, itemEligible });
+
+    // topic:b is out of scope for this view: dropped silently (a scope rule is not a budget), and
+    // topic:c behind it is unreachable — b was never a lawful pass-through.
+    expect(result.expansions.map((e) => e.ref)).toEqual(['topic:a']);
+    expect(result.report.truncated).toBe(false);
+    expect(result.report.truncationReasons).toEqual([]);
+  });
+
+  it('never filters a distance-0 seed, explicit or fused', () => {
+    const itemEligible = new Set(['topic:c']);
+    const result = expandFromSeeds(project(CHAIN), [seed('topic:b')], { hops: 1, itemEligible });
+
+    expect(result.expansions.map((e) => e.ref)).toEqual(['topic:b', 'topic:c']);
+  });
+});
+
+// ─── WP2 S4 — historical traversal under the read point ───────────────────────
+
+describe('WP2 S4 — history carries the walk, bounded by the read point', () => {
+  const T2 = '2026-03-01T00:00:00.000Z';
+
+  it('traverses an edge only history supports (superseded supporter) and cites its path', () => {
+    const past = assertion({
+      subject: 'mem:past',
+      object: 'sym:ledger#settle',
+      supportedBy: ['mem:past'],
+    });
+    const projection = projectGraph(
+      { assertions: [past], historicalRecords: [{ id: 'mem:past' }] },
+      { principalId: P1, scope: GLOBAL },
+    );
+    expect(projection.current).toEqual([]);
+    expect(projection.historical.map((a) => a.id)).toEqual([past.id]);
+    expect(projection.historicalRefs).toEqual(['mem:past']); // the label downstream state is drawn from
+
+    const result = expandFromSeeds(projection, [seed('mem:past')], { hops: 1 });
+
+    expect(result.expansions.map((e) => e.ref)).toEqual(['mem:past', 'sym:ledger#settle']);
+    const settle = result.expansions.find((e) => e.ref === 'sym:ledger#settle');
+    expect(settle?.path.map((s) => s.assertionId)).toEqual([past.id]);
+  });
+
+  it('does NOT traverse an assertion that is not yet valid at the read point, though history holds it', () => {
+    const present = assertion({ subject: 'topic:now', object: 'topic:present' }); // validAt T0
+    const future = assertion({ subject: 'topic:now', object: 'topic:future', at: T2 }); // validAt T2
+    const projection = projectGraph(
+      { assertions: [present, future], records: [{ id: SUPPORTER }] },
+      { principalId: P1, scope: GLOBAL },
+      { at: T1 },
+    );
+    expect(projection.historical.map((a) => a.id)).toEqual([future.id]); // history holds it...
+
+    const result = expandFromSeeds(projection, [seed('topic:now')], { hops: 1 });
+
+    expect(result.expansions.map((e) => e.ref)).toEqual(['topic:now', 'topic:present']); // ...but T1 never walks it
+    expect(JSON.stringify(result)).not.toContain('topic:future');
   });
 });

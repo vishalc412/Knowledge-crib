@@ -55,18 +55,52 @@ function edge(
   object: string,
   supporter: string,
   at = T1,
+  scope: { boundary: 'global' } | { boundary: 'repo'; repoId: string } = { boundary: 'global' },
 ): GraphAssertion {
   return createGraphAssertion({
     predicate,
     subject,
     object,
     namespace: { principalId },
-    scope: { boundary: 'global' },
+    scope,
     validAt: at,
     knownAt: at,
     supportedBy: [supporter],
     provenance: provenance(principalId),
   });
+}
+
+/** A minimal content-bearing record (claim + subject) the graph can seed from. */
+function graphRecord(input: { subject: string; claim: string }) {
+  const base = {
+    kind: 'fact' as const,
+    subject: input.subject,
+    claim: input.claim,
+    scope: { boundary: 'global' as const },
+    appliesTo: [input.subject],
+    evidence: [
+      {
+        kind: 'committed-policy' as const,
+        verdict: 'valid' as const,
+        checkedAt: T1,
+        artifactId: 'artifact:docs/graph-seeds.md',
+        anchor: 'docs/graph-seeds.md',
+      },
+    ],
+    authorship: { actor: 'vitest', kind: 'agent' as const, tool: 'vitest' },
+  };
+  return {
+    id: memoryRecordId(base),
+    schemaVersion: '1' as const,
+    ...base,
+    verdicts: {
+      trust: 'local' as const,
+      evidence: 'valid' as const,
+      applicability: 'current' as const,
+      lifecycle: 'active' as const,
+    },
+    createdAt: T1,
+  };
 }
 
 function as(principal: string): void {
@@ -87,6 +121,9 @@ let alphaSupport: ReturnType<typeof support>;
 let about: GraphAssertion;
 let appliesTo: GraphAssertion;
 let supersedes: GraphAssertion;
+let r1: ReturnType<typeof graphRecord>;
+let r2: ReturnType<typeof graphRecord>;
+let derived: GraphAssertion;
 
 beforeEach(() => {
   previousPrincipal = process.env.KCRIB_PRINCIPAL_ID;
@@ -95,7 +132,8 @@ beforeEach(() => {
   writeFileSync(join(repo, 'src', 'a.ts'), 'export const a = 1;\n');
   home = mkdtempSync(join(tmpdir(), 'mem-home-graph-'));
   __resetMemoryLockGuardForTest();
-  soul = new SoulStore(join(repo, '.crib'), { manifest: newManifest({ now: T1 }) });
+  // A FIXED repo id so repo-scope fixtures can name their placement deterministically.
+  soul = new SoulStore(join(repo, '.crib'), { manifest: newManifest({ now: T1, repoId: REPO }) });
   soul.load();
   soul.commit(T1);
   index = new SqliteIndexStore();
@@ -112,7 +150,24 @@ beforeEach(() => {
   appliesTo = edge(ALPHA, 'applies-to', 'topic:retry', 'sym:ledger#settle', alphaSupport.ref);
   supersedes = edge(ALPHA, 'supersedes', 'mem:d2', 'mem:d1', alphaSupport.ref, T3);
   const foreign = edge(BETA, 'about', 'mem:d1', 'topic:beta-secret', betaSupport.ref);
-  local.submitGraphEntries([alphaSupport, betaSupport, about, appliesTo, supersedes, foreign]);
+  // Two content-bearing records joined by an edge — the graph's only seedable content.
+  r1 = graphRecord({
+    subject: 'topic:retry',
+    claim: 'Ledger retries must settle through the idempotent journal',
+  });
+  r2 = graphRecord({ subject: 'sym:ledger#charge', claim: 'Ledger charges must be idempotent' });
+  local.upsertEntry('active', r1);
+  local.upsertEntry('active', r2);
+  derived = edge(ALPHA, 'affects', r1.id, r2.id, alphaSupport.ref);
+  local.submitGraphEntries([
+    alphaSupport,
+    betaSupport,
+    about,
+    appliesTo,
+    supersedes,
+    foreign,
+    derived,
+  ]);
   as(ALPHA);
 });
 
@@ -208,15 +263,21 @@ describe('memory_graph op contracts', () => {
     expect(JSON.stringify(res)).not.toContain('beta');
   });
 
-  it('search seeds from the caller’s own graph by text and cites relations between seeds', () => {
+  it('search seeds only from content-bearing placed records and cites relations between seeds', () => {
     const res = verbs().memoryConnectedGraph({ op: 'search', q: 'retry ledger settle' });
-    expect(res.seedScorer).toBe('graph-seed-v2:stemmed-term-overlap+semantic-rrf60');
+    expect(res.seedScorer).toBe(
+      'graph-seed-v3:placement-eligible+content-bearing+historical-traversal+pack-completion',
+    );
     // No embedder is wired in this fixture: the missing channel is stated, never silent.
     expect(res.degraded).toEqual(['semantic-seed-channel-unavailable']);
     const seeds = (res.seeds as { ref: string; channel: string }[]).map((s) => s.ref);
-    expect(seeds).toEqual(expect.arrayContaining(['topic:retry', 'sym:ledger#settle']));
+    // WP2 S2 — the content-bearing records seed. The bare refs topic:retry and sym:ledger#settle
+    // match this query only through ref fragments, and an identifier is not content.
+    expect(seeds).toEqual(expect.arrayContaining([r1.id, r2.id]));
+    expect(seeds).not.toContain('topic:retry');
+    expect(seeds).not.toContain('sym:ledger#settle');
     expect(res.relations as { assertionId: string }[]).toEqual(
-      expect.arrayContaining([expect.objectContaining({ assertionId: appliesTo.id })]),
+      expect.arrayContaining([expect.objectContaining({ assertionId: derived.id })]),
     );
     as(BETA);
     const foreign = verbs().memoryConnectedGraph({ op: 'search', q: 'retry ledger settle' });
@@ -224,21 +285,23 @@ describe('memory_graph op contracts', () => {
   });
 
   it('fuses a semantic seed channel when an embedder is installed, over authorized nodes only', () => {
-    // A toy embedder: "settlement" means the same thing as "settle" on this one axis.
+    // A toy embedder whose one axis treats "finality" as "settle". The query 'finality' matches
+    // no node text lexically and no FTS token, so the semantic channel is the ONLY channel that
+    // can rank the record — the fuse label below is therefore deterministic.
     const embedder = {
       id: 'toy-embedder',
       dim: () => 2,
       embed: (text: string) => embedder.embedBatch([text])[0] as Float32Array,
       embedBatch: (texts: string[]) =>
         texts.map((text) =>
-          /settle|settlement/i.test(text) ? Float32Array.of(1, 0) : Float32Array.of(0, 1),
+          /settle|finality/i.test(text) ? Float32Array.of(1, 0) : Float32Array.of(0, 1),
         ),
     };
     const v = new Verbs({ soul, index, repoRoot: repo, memory: { local, embedder } });
-    const res = v.memoryConnectedGraph({ op: 'search', q: 'settlement' });
+    const res = v.memoryConnectedGraph({ op: 'search', q: 'finality' });
     expect(res.degraded).toEqual([]);
     const seeds = res.seeds as { ref: string; channel: string }[];
-    expect(seeds[0]).toMatchObject({ ref: 'sym:ledger#settle' });
+    expect(seeds[0]).toMatchObject({ ref: r1.id, channel: 'semantic' });
     expect(seeds.some((s) => s.channel === 'semantic')).toBe(true);
     expect(JSON.stringify(res)).not.toContain('beta');
   });
@@ -478,5 +541,118 @@ describe('memory_graph view cache', () => {
     const after = v.memoryConnectedGraph({ op: 'neighbors', refs: ['sym:cached#fn'] });
     expect(JSON.stringify(after)).not.toContain('topic:cache');
     expect(after.unresolvedRefs).toEqual(['sym:cached#fn']);
+  });
+});
+
+describe('memory_graph WP2 placement laws (S2/S3)', () => {
+  it('repo-scope context excludes a visible-but-unconnected global decoy; plain search keeps it', () => {
+    // The decoy is a global record joined to its topic by a global edge: VISIBLE at repo scope,
+    // but nothing repo-scoped places it there. The repo record is placed by a repo-scoped edge.
+    const decoy = graphRecord({ subject: 'topic:decoy', claim: 'The decoy settlement journal' });
+    const repoWork = graphRecord({
+      subject: 'topic:repo-work',
+      claim: 'Repo work retries the ledger',
+    });
+    const decoyEdge = edge(ALPHA, 'about', decoy.id, 'topic:decoy', alphaSupport.ref);
+    const repoEdge = edge(
+      ALPHA,
+      'applies-to',
+      'topic:repo-work',
+      repoWork.id,
+      alphaSupport.ref,
+      T1,
+      {
+        boundary: 'repo',
+        repoId: REPO,
+      },
+    );
+    local.upsertEntry('active', decoy);
+    local.upsertEntry('active', repoWork);
+    local.submitGraphEntries([decoyEdge, repoEdge]);
+
+    const v = verbs();
+    const res = v.memoryConnectedGraph({
+      op: 'context',
+      q: 'decoy settlement retries ledger',
+      scope: 'repo',
+    });
+    const seeds = (res.seeds as { ref: string }[]).map((s) => s.ref);
+    const context = res.context as { items: { ref: string }[]; assertions: { id: string }[] };
+    expect(seeds).toEqual([repoWork.id]);
+    expect(context.items.map((i) => i.ref)).toEqual([repoWork.id, 'topic:repo-work']);
+    expect(context.assertions.map((a) => a.id)).toEqual([repoEdge.id]);
+    expect(JSON.stringify(res)).not.toContain(decoy.id);
+
+    // The law bounds the GRAPH channel, not recall: plain memorySearch still returns the decoy.
+    const search = v.memorySearch({ q: 'decoy settlement' });
+    const hits = (search.hits as { id: string }[]).map((h) => h.id);
+    expect(hits).toContain(decoy.id);
+  });
+
+  it('an explicit authorized global ref still seeds neighbors and path at repo scope', () => {
+    // The documented S2/S3 bypass: explicit refs name what the caller wants, so the seed itself is
+    // exempt — but the repo view still refuses to CARRY arrivals no repo-scoped edge places there.
+    const decoy = graphRecord({ subject: 'topic:decoy', claim: 'The decoy settlement journal' });
+    const decoyEdge = edge(ALPHA, 'about', decoy.id, 'topic:decoy', alphaSupport.ref);
+    local.upsertEntry('active', decoy);
+    local.submitGraphEntries([decoyEdge]);
+
+    const v = verbs();
+    const neighbors = v.memoryConnectedGraph({ op: 'neighbors', refs: [decoy.id], scope: 'repo' });
+    const refs = (neighbors.expansions as { ref: string }[]).map((e) => e.ref);
+    expect(refs).toEqual([decoy.id]);
+    expect(neighbors.unavailable).toBe(false);
+
+    // path answers over the whole authorized projection — it is not item-filtered.
+    const path = v.memoryConnectedGraph({
+      op: 'path',
+      refs: [decoy.id, 'topic:decoy'],
+      scope: 'repo',
+    });
+    expect((path.path as { assertionId: string }[]).map((s) => s.assertionId)).toEqual([
+      decoyEdge.id,
+    ]);
+  });
+
+  it('a shared topic resolves to the record placed in the caller scope, not its global twin', () => {
+    // applies-to is not functional (two assertions may target the same subject), so the repo-placed
+    // and globally-placed twins coexist without a conflict — placement alone separates them.
+    const repoShared = graphRecord({
+      subject: 'topic:shared',
+      claim: 'The repo record about shared settlement',
+    });
+    const globalShared = graphRecord({
+      subject: 'topic:shared',
+      claim: 'The global record about shared settlement',
+    });
+    local.upsertEntry('active', repoShared);
+    local.upsertEntry('active', globalShared);
+    local.submitGraphEntries([
+      edge(ALPHA, 'applies-to', 'topic:shared', repoShared.id, alphaSupport.ref, T1, {
+        boundary: 'repo',
+        repoId: REPO,
+      }),
+      edge(ALPHA, 'applies-to', 'topic:shared', globalShared.id, alphaSupport.ref),
+    ]);
+
+    const v = verbs();
+    const repoView = v.memoryConnectedGraph({
+      op: 'context',
+      q: 'shared settlement',
+      scope: 'repo',
+    });
+    const repoItems = ((repoView.context as { items: { ref: string }[] }).items ?? []).map(
+      (i) => i.ref,
+    );
+    expect(repoItems).toContain(repoShared.id);
+    expect(JSON.stringify(repoView)).not.toContain(globalShared.id);
+
+    // The mirror at global scope: only the GLOBAL twin is seed-eligible — the repo twin's only
+    // edge is repo-scoped, invisible here, so the global view never carries it at all (S2 Law A).
+    const globalView = v.memoryConnectedGraph({ op: 'context', q: 'shared settlement' });
+    const globalSeeds = (globalView.seeds as { ref: string }[]).map((s) => s.ref);
+    expect(globalSeeds).toContain(globalShared.id);
+    expect(globalSeeds).not.toContain(repoShared.id);
+    expect(JSON.stringify(globalView)).not.toContain(repoShared.id);
   });
 });

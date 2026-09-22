@@ -1,5 +1,6 @@
 import type { GraphProjection } from './graph-projection.js';
 import { GRAPH_PATH_MAX_HOPS } from './graph-projection.js';
+import { compareGraphInstants } from './graph.js';
 /**
  * WP-G5 — connected retrieval: the PURE expansion + ranking layer that turns a set of seed refs
  * (found by the existing lexical/semantic recall, which this module never replaces) into a bounded,
@@ -152,16 +153,26 @@ function step(assertion: GraphAssertion): GraphPathStep {
 }
 
 /**
- * Build the canonical adjacency of the trusted current view, once per request. Edges are sorted by
- * id inside each bucket so the BFS expands in a stable order regardless of the projection's array
+ * Build the canonical adjacency of the trusted view, once per request. Edges are sorted by id
+ * inside each bucket so the BFS expands in a stable order regardless of the projection's array
  * order — the determinism the ranking's tie-break depends on.
+ *
+ * S4 — historical traversal: the walk runs over the CURRENT view union the HISTORICAL one, so an
+ * edge that no longer holds (superseded record, finished intake) still carries a reader toward
+ * what its era connected; arrivals keep their lifecycle labels downstream (item state from
+ * `historicalRefs`, historical relations served from `historicalAssertions`). The same `at` bound
+ * that windows the current view guards history here — an assertion NOT YET VALID at the read
+ * point is never traversed, whatever list it came from — so a historical read at T reconstructs
+ * exactly the graph an authorized viewer could have walked at T.
  */
 function adjacency(
   projection: GraphProjection,
   predicates: ReadonlySet<string> | undefined,
 ): Map<string, GraphAssertion[]> {
   const byNode = new Map<string, GraphAssertion[]>();
-  for (const assertion of projection.current) {
+  const held = (assertion: GraphAssertion): boolean =>
+    projection.at === undefined || compareGraphInstants(assertion.validAt, projection.at) <= 0;
+  for (const assertion of [...projection.current, ...projection.historical.filter(held)]) {
     if (predicates !== undefined && !predicates.has(assertion.predicate)) continue;
     const subject = canonical(projection, assertion.subject);
     const object = canonical(projection, assertion.object);
@@ -193,6 +204,13 @@ export interface GraphExpansionOpts extends GraphTraversalBudget {
   predicates?: readonly string[];
   /** Supporter refs the CALLER considers recall-eligible. Absent = the caller does not distinguish. */
   eligibleSupporters?: ReadonlySet<string>;
+  /**
+   * S3 — item-level scope eligibility: the canonical refs that may appear as pack ITEMS (arrivals at
+   * hop ≥ 1). Absent = no item rule (the caller does not restrict). Distance-0 seeds are NEVER
+   * filtered by it: explicit seeds are their own authorization basis, and found seeds were already
+   * gated by `seedEligibleNodes` before fusion.
+   */
+  itemEligible?: ReadonlySet<string>;
 }
 
 /**
@@ -272,6 +290,10 @@ export function expandFromSeeds(
         const subject = canonical(projection, edge.subject);
         const other = subject === from.ref ? canonical(projection, edge.object) : subject;
         if (other === from.ref) continue; // a self-edge reaches nothing new
+        // S3 — an arrival that may not be a pack item in this view is dropped here (never reported
+        // as a truncation — a scope rule is not a budget), and it cannot act as a pass-through: its
+        // subtree is reachable only through another, lawful route.
+        if (opts.itemEligible !== undefined && !opts.itemEligible.has(other)) continue;
         const path = [...from.path, step(edge)];
         const evidenceEligible = pathEligible(path, opts.eligibleSupporters);
         const candidate: GraphExpansion = {
@@ -338,7 +360,8 @@ export function expandFromSeeds(
  * The seed scorer's identity, reported on every response that used it. Stated as a version so a
  * change to tokenization or scoring is a visible change, never a silent re-tuning.
  */
-export const GRAPH_SEED_SCORER_VERSION = 'graph-seed-v2:stemmed-term-overlap+semantic-rrf60';
+export const GRAPH_SEED_SCORER_VERSION =
+  'graph-seed-v3:placement-eligible+content-bearing+historical-traversal+pack-completion';
 
 /** The reciprocal-rank-fusion constant — the standard k from Cormack et al., not a tuned value. */
 export const GRAPH_SEED_RRF_K = 60;
@@ -437,7 +460,9 @@ export function graphTerms(text: string): string[] {
  * Lexical seeds over the AUTHORIZED graph: every candidate is a node of an assertion in the
  * projection's current or historical view — both already bounded by the read point — so a seed can never name something
  * the viewer cannot see or something not yet known at `knownBy`. `texts` supplies the searchable
- * text for a node (a record's claim, an entity's name); a node without text is matched on its ref.
+ * text for a node (a record's claim, an entity's name); a node without text cannot seed — its ref
+ * is an identifier, not content (WP2 S2-B2), however well the identifier's fragments happen to
+ * match the query.
  *
  * Score = distinct query terms present in the node's terms ÷ distinct query terms — a proportion,
  * not a calibrated confidence. Ties break by ref, so the selection is deterministic.
@@ -453,7 +478,7 @@ export function selectGraphSeeds(
   const nodes = graphCandidateNodes(projection);
   const scored: GraphSeed[] = [];
   for (const ref of nodes) {
-    const terms = new Set([...graphTerms(ref), ...graphTerms(texts.get(ref) ?? '')]);
+    const terms = new Set(graphTerms(texts.get(ref) ?? ''));
     const matched = queryTerms.filter((term) => terms.has(term)).length;
     if (matched === 0) continue;
     scored.push({ ref, score: matched / queryTerms.length, channel: 'lexical' });
@@ -475,6 +500,83 @@ function graphCandidateNodes(projection: GraphProjection): string[] {
     nodes.add(assertion.object);
   }
   return [...nodes].sort();
+}
+
+/** The viewer's placement narrowed to what the eligibility laws need: a repo states its id. */
+export type GraphSeedScope = { boundary: 'repo'; repoId: string } | { boundary: 'global' };
+
+/** The scope key an assertion's placement is recorded under: 'global' or `repo:<repoId>`. */
+function scopeKeyOf(scope: { boundary: 'repo' | 'global'; repoId?: string }): string {
+  return scope.boundary === 'global' ? 'global' : `repo:${scope.repoId}`;
+}
+
+/**
+ * S2 Law A + Law B2 — the refs that may SEED expansion for this viewer: endpoints of
+ * current-or-historical assertions AT THE VIEWER'S OWN SCOPE (a repo's view seeds only repo-placed
+ * or repo-connected content; a global view seeds only global content), intersected with
+ * content-bearing nodes (`texts.has(ref)` — records, intakes, own-principal entities; anchors,
+ * topics and symbols never seed, however well their ref fragments match a query). Similarity and
+ * broad-topic membership confer no eligibility. RAW refs — the form seed channels produce — not
+ * canonicalized.
+ */
+export function seedEligibleNodes(
+  projection: GraphProjection,
+  texts: ReadonlyMap<string, string>,
+  viewerScope: GraphSeedScope,
+): Set<string> {
+  const key = scopeKeyOf(viewerScope);
+  const eligible = new Set<string>();
+  for (const assertion of [...projection.current, ...projection.historical]) {
+    if (scopeKeyOf(assertion.scope) !== key) continue;
+    for (const endpoint of [assertion.subject, assertion.object]) {
+      if (texts.has(endpoint)) eligible.add(endpoint);
+    }
+  }
+  return eligible;
+}
+
+/**
+ * S3 — the CANONICAL refs that may appear as pack ITEMS in this viewer's view. Global scope has no
+ * extra item rule (every visible node is legal). Repo scope R admits a node only via:
+ *   (a) an endpoint of an R-scoped CURRENT assertion;
+ *   (b) an endpoint of a CURRENT assertion carried by ≥1 supporter placed in R (the legal
+ *       cross-scope inclusion path);
+ *   (c) a ref whose own placement is R — the read-path proxy is the SUBJECT side of an R-scoped
+ *       current-or-historical assertion (a record's own derived edges, an intake's about edge),
+ *       which keeps superseded records and finished intakes item-eligible so their historical
+ *       relations remain citable.
+ */
+export function itemEligibleNodes(
+  projection: GraphProjection,
+  viewerScope: GraphSeedScope,
+): Set<string> {
+  const canonicalOf = (ref: string): string => projection.aliases.canonical[ref] ?? ref;
+  const eligible = new Set<string>();
+  if (viewerScope.boundary === 'global') {
+    for (const assertion of [...projection.current, ...projection.historical]) {
+      eligible.add(canonicalOf(assertion.subject));
+      eligible.add(canonicalOf(assertion.object));
+    }
+    return eligible;
+  }
+  const key = scopeKeyOf(viewerScope);
+  for (const assertion of projection.current) {
+    if (scopeKeyOf(assertion.scope) !== key) continue;
+    eligible.add(canonicalOf(assertion.subject)); // (a)
+    eligible.add(canonicalOf(assertion.object));
+  }
+  const placedInR = new Set<string>();
+  for (const assertion of [...projection.current, ...projection.historical]) {
+    if (scopeKeyOf(assertion.scope) !== key) continue;
+    placedInR.add(assertion.subject); // (c)'s placement proxy
+  }
+  for (const assertion of projection.current) {
+    if (!assertion.supportedBy.some((ref) => placedInR.has(ref))) continue;
+    eligible.add(canonicalOf(assertion.subject)); // (b)
+    eligible.add(canonicalOf(assertion.object));
+  }
+  for (const ref of placedInR) eligible.add(canonicalOf(ref)); // (c)
+  return eligible;
 }
 
 /** A node's searchable text: its supplied text, else its ref with separators spaced out. */
@@ -514,10 +616,15 @@ export function selectSemanticGraphSeeds(
  * different scales — a term-overlap share and a cosine are not comparable — so only RANKS are
  * fused. The fused score is normalized so the best seed is 1; the channel recorded is the one that
  * ranked the seed highest. Deterministic: ties break by ref.
+ *
+ * S2 choke point: `opts.eligible` is the funnel EVERY search-derived channel passes through. Refs
+ * outside it are dropped from each channel BEFORE fusion — an ineligible ref (out-of-scope or
+ * content-free) never competes for RRF mass, and no current or future channel added by a caller can
+ * bypass the law.
  */
 export function fuseGraphSeeds(
   channels: readonly GraphSeed[][],
-  opts: { limit?: number } = {},
+  opts: { limit?: number; eligible?: ReadonlySet<string> } = {},
 ): GraphSeed[] {
   const fused = new Map<
     string,
@@ -525,6 +632,7 @@ export function fuseGraphSeeds(
   >();
   for (const channel of channels) {
     channel.forEach((seed, rank) => {
+      if (opts.eligible !== undefined && !opts.eligible.has(seed.ref)) return;
       const entry = fused.get(seed.ref) ?? {
         score: 0,
         bestRank: Number.POSITIVE_INFINITY,
