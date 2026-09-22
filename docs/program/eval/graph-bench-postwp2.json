@@ -1,0 +1,44 @@
+{
+  "format": "knowledge-crib-graph-bench",
+  "formatVersion": 1,
+  "recordedAt": "2026-09-22T15:19:36.206Z",
+  "host": {
+    "platform": "darwin",
+    "cpus": "Apple M4 Max",
+    "cpuCount": 16,
+    "memoryBytes": 51539607552,
+    "node": "v22.23.1"
+  },
+  "scale": {
+    "assertions": 100000,
+    "records": 5000
+  },
+  "setupMs": 9081.24475,
+  "warmRead": {
+    "samples": 30,
+    "p50Ms": 197.01429199999984,
+    "p95Ms": 213.64616599999863,
+    "maxMs": 214.93974999999955,
+    "targetP95Ms": 500,
+    "op": "neighbors (2 hops, explicit ref)"
+  },
+  "contextAssembly": {
+    "samples": 30,
+    "p50Ms": 508.4785840000004,
+    "p95Ms": 525.4239579999994,
+    "maxMs": 532.3717919999981,
+    "targetP95Ms": 1000,
+    "op": "context (lexical seeds, no model)"
+  },
+  "updateLatency": {
+    "samples": 10,
+    "p50Ms": 1456.8712500000038,
+    "p95Ms": 1688.4127499999959,
+    "maxMs": 1688.4127499999959,
+    "targetP95Ms": 2000,
+    "op": "submit one assertion → visible via neighbors"
+  },
+  "sanity": {
+    "readReturnedExpansions": 15
+  }
+}

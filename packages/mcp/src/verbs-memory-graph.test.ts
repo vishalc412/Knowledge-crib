@@ -545,6 +545,64 @@ describe('memory_graph view cache', () => {
 });
 
 describe('memory_graph WP2 placement laws (S2/S3)', () => {
+  it('the recall channel cannot seed a foreign-placed record at repo scope (S2 fuse is not vacuous)', () => {
+    // This is the gate the frozen corpora cannot exercise. There, every fixture is a memory-3
+    // record and the only thing that makes one recall-eligible is a bound legacy alias, so the
+    // recall channel's seed set is redundant with the lexical channel's — a regression that broke
+    // ONLY this gate would move no measured number. So the gate is proven here instead.
+    //
+    // The recall channel is a THIRD channel into the seed funnel, and its hits are the least
+    // trustworthy: they come from plain recall, which answers by PLACEMENT (a repo query lawfully
+    // returns global records). Pre-fix, every recall hit became a distance-0 seed with no scope or
+    // content check, so a global decoy reached repo answers directly.
+    const foreign = graphRecord({
+      subject: 'topic:foreign',
+      claim: 'Foreign settlement idempotency lore',
+    });
+    const repoWork = graphRecord({
+      subject: 'topic:repo-2',
+      claim: 'Repo two settlement retries the ledger',
+    });
+    local.upsertEntry('active', foreign);
+    local.upsertEntry('active', repoWork);
+    local.submitGraphEntries([
+      // Global placement only — nothing repo-scoped names it.
+      edge(ALPHA, 'about', foreign.id, 'topic:foreign', alphaSupport.ref),
+      edge(ALPHA, 'applies-to', 'topic:repo-2', repoWork.id, alphaSupport.ref, T1, {
+        boundary: 'repo',
+        repoId: REPO,
+      }),
+    ]);
+
+    const v = verbs();
+    const real = v.memorySearch.bind(v);
+    // Inject the foreign record at RANK 1 of the recall channel — above any threshold, so no
+    // floor can be what excludes it. Real behavior is preserved for every other hit.
+    vi.spyOn(v, 'memorySearch').mockImplementation((args) => {
+      const response = real(args) as { hits?: unknown[] };
+      return { ...response, hits: [{ id: foreign.id, score: 99 }, ...(response.hits ?? [])] };
+    });
+
+    const res = v.memoryConnectedGraph({
+      op: 'context',
+      q: 'settlement retries idempotency ledger',
+      scope: 'repo',
+    });
+    const seeds = (res.seeds as { ref: string }[]).map((s) => s.ref);
+    // The lawful repo seed survives; the foreign record is dropped AT THE FUSE, before expansion.
+    expect(seeds).toContain(repoWork.id);
+    expect(seeds).not.toContain(foreign.id);
+    expect(JSON.stringify(res)).not.toContain(foreign.id);
+
+    // Same record, same recall hit, GLOBAL scope: now it IS placed here, so the channel admits it.
+    // (Proof the drop is the placement law and not a blanket refusal of recall seeds.)
+    const globalSeeds = (
+      v.memoryConnectedGraph({ op: 'context', q: 'settlement retries idempotency ledger' })
+        .seeds as { ref: string }[]
+    ).map((s) => s.ref);
+    expect(globalSeeds).toContain(foreign.id);
+  });
+
   it('repo-scope context excludes a visible-but-unconnected global decoy; plain search keeps it', () => {
     // The decoy is a global record joined to its topic by a global edge: VISIBLE at repo scope,
     // but nothing repo-scoped places it there. The repo record is placed by a repo-scoped edge.

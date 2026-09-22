@@ -160,7 +160,11 @@ exposed product defects, and they were repaired while looking at this corpus's f
 
 1. memory-3 records could never seed `search`/`context` (recall holds them at `candidate` trust),
    so every answer was empty — fixed by graph-side seed selection over the caller's authorized
-   graph nodes (`graph-seed-v1:term-overlap`);
+   graph nodes (`graph-seed-v1:term-overlap`). Note this fix is the reason runs 1 and 2 measure
+   the lexical + semantic channels only: the seed selection that replaced the dead recall channel
+   is what produces the seeds, and `activate` (which every fixture receives) moves the lifecycle
+   axis only — it never confers trust, so the recall channel stays empty on these fixtures until
+   harness v3 stamps them with bound legacy aliases (see Run 3);
 2. an edge between two directly-retrieved items was never cited — fixed with `relations`;
 3. supersession deleted graph history instead of keeping it historical, and a `knownBy` read
    applied supersessions recorded after it — fixed (retraction and quarantine still apply at every
@@ -206,6 +210,15 @@ who did not see run 1, the retrieval code, or the harness. This run is the ONLY 
 on them. Nothing below was tuned against them, and nothing may be: a configuration change informed
 by these failures needs a new independently authored split (v3) before a GO claim.
 
+**Correction (2026-09-22, harness v3).** The configuration above fuses three channels, but this
+run exercised only two of them. Every corpus fixture is a memory-3 record, a v3 record projects
+trust `'candidate'` unless a legacy alias binds it, and recall eligibility requires
+`trust ∈ {local, team}` — so the recall channel returned an empty seed set on every question and
+the fused-by-reciprocal-rank step had nothing to fuse. Read the 86.94% below as the lexical +
+semantic measurement; the recall channel contributed no seed. The configuration text is
+unchanged and still correct as a description of the frozen config; only the claim that this run
+*measured* it as written was wrong. Run 3 re-baselines both corpora with the channel live.
+
 | Gate | Measured | Threshold | Result |
 | --- | --- | --- | --- |
 | Connected retrieval (expected evidence-path recall, 116 multi-hop questions) | **86.94%** (88 fully recalled) | ≥ 90% | **FAIL** |
@@ -228,3 +241,59 @@ as specified.
 Performance at 100,000 assertions over 5,000 records (Apple M4 Max, `scripts/graph-bench.mjs`,
 same configuration): warm bounded read p95 **78 ms** (≤ 500 ms, PASS), context assembly p95
 **420 ms** (≤ 1 s, PASS), single-assertion update visible p95 **1.26 s** (≤ 2 s, PASS).
+
+### Run 3 — 2026-09-22, harness v3, RE-BASELINE of both corpora (post-WP2)
+
+**Verdict: the harness now measures all three configured channels; every gate value is unchanged.**
+
+This is not a new held-out round and it produces no new claim. It re-runs the two frozen corpora
+with the harness fix, to establish that the WP2 post-fix numbers were taken under a harness that
+actually exercised the configuration the gates above describe.
+
+Why a harness change was needed. Runs 1 and 2 measured two of the three fused channels (see the
+correction under Run 2): the fixtures were trust-`candidate` memory-3 records, so the recall
+channel's seed set was empty and its eligibility gate — the fuse that WP2's law governs — had
+nothing to reject. `GRAPH_EVAL_HARNESS_VERSION` 2 → 3 stamps each fixture at seed time with a
+synthetic legacy alias carrying `local`/`valid`/`current`/`active` verdicts — the same mechanism
+by which a real memory-3 record inherits trust from a migrated v1 record
+(`conservativeVerdicts`, `packages/memory/src/aliases.ts`) — written through the real
+`AliasIndex.upsertAliases` into the fixture's own store. The frozen corpora are untouched
+(`GRAPH_CORPUS_VERSION = 1`, `GRAPH_HELDOUT_CORPUS_VERSION = 2`); no retrieval constant, scorer,
+seed limit, hop count, budget or threshold changed. The alias stamp is a measurement-fidelity
+change to the harness, not a product behavior change.
+
+| Corpus | Harness v2 (post-WP2) | Harness v3 | Δ |
+| --- | --- | --- | --- |
+| v1 evidence-path recall (117 multi-hop) | 95.33% (103) | **95.33%** (103) | none |
+| v1 forbidden / emptiness / unauthorized | 3 / 3 / 0 | **3 / 3 / 0** | none |
+| heldout-v2 evidence-path recall (116 multi-hop) | 95.42% (103) | **95.42%** (103) | none |
+| heldout-v2 forbidden / emptiness / unauthorized | 0 / 3 / 0 | **0 / 3 / 0** | none |
+
+Every gate value is identical to the harness-v2 reports — the two report files differ only in the
+`harnessVersion` field. That identity IS the finding, and it is a measured one:
+
+- Liveness was proven separately, with a temporary instrumented probe at the context entry point
+  (since removed): the recall channel returns 5–6 hits per question with non-zero lexical scores
+  and `evidenceQuality` 2, i.e. a genuinely eligible seed set.
+- Identity therefore means the recall channel's seed set on these corpora is REDUNDANT with the
+  lexical channel's — it re-proposes the same nodes in the same order, so fusing it changes no
+  ranking and no pack. `gd1` (the alpha-owned global decoy) remains excluded, but by the
+  placement/eligibility gate at the lexical and semantic channels, not by the recall fuse.
+
+Consequence, stated rather than tuned away: the recall channel adds no discriminating power *on
+the frozen corpora*, so a regression that broke only its eligibility gate would move no number
+here. That gate is therefore proven by unit test instead —
+`packages/mcp/src/verbs-memory-graph.test.ts` → "the recall channel cannot seed a foreign-placed
+record at repo scope (S2 fuse is not vacuous)" injects a foreign-placed record at rank 1 of the
+recall channel and asserts a repo-scoped context drops it. Discrimination was measured, not
+asserted: with the pre-fix hole reproduced at the fuse call site the test fails
+(`expected [ …(2) ] to not include 'mem:c373bb…'`). An end-to-end discriminating fixture belongs
+in corpus v3 (the WP2 spec's §9 gaps list).
+
+Residue is unchanged and enumerated: v1's 3 forbidden violations are `g1` only, on the three
+`q-decoy-window-emptiness-{c,e,p}` probes; the 3 emptiness violations per corpus are the
+corpus-authoring rows. The residue, not the harness, is what still gates GO on corpus v3.
+
+Reports: `docs/program/eval/graph-eval-v1-harnessv3.json`,
+`docs/program/eval/graph-eval-heldout-v2-harnessv3.json`.
+Log: `docs/program/logs/wp2-prefreeze-harness-v3-2026-09-22.log`.

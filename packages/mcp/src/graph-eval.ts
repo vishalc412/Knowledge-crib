@@ -30,6 +30,7 @@ import {
   type GraphCorpus,
   type GraphEntity,
   type GraphQuestion,
+  type MemoryAlias,
   type MemoryDecision,
   type MemoryProvenance,
   MemoryStore,
@@ -40,11 +41,16 @@ import {
   decisionId,
   deriveAssertionsFromRecords,
   enqueueGraphExtractionJob,
+  memoryAliasId,
   submitExtractedGraphProposal,
 } from '@knowledge-crib/memory';
+import { blake3Hex } from '@knowledge-crib/soul-schema';
 import { Verbs } from './verbs.js';
 
-export const GRAPH_EVAL_HARNESS_VERSION = 2;
+/** v3 — the recall channel is LIVE: fixtures carry a trust stamp (bound legacy alias verdicts), so
+ *  `memorySearch` admits them and `recallSeeds` fuses real recall hits. v2 and earlier measured the
+ *  lexical + semantic channels only, while the gates doc described three. */
+export const GRAPH_EVAL_HARNESS_VERSION = 3;
 
 export interface GraphEvalQuestionResult {
   id: string;
@@ -242,9 +248,40 @@ function seedUniverse(
   const recordRepo = new Map(
     [...corpus.records, ...corpus.globalDecoys].map((r) => [r.id, r.namespace.projectId]),
   );
-  // A memory-3 record carries no trust stamp: it is recall-eligible only once an `activate`
-  // lifecycle decision admits it. Every corpus fixture is an admitted record (decoys included —
-  // a decoy that could not be recalled would test nothing), admitted when it was recorded.
+  // A memory-3 record carries no trust stamp, and an `activate` lifecycle decision admits it to
+  // the LIFECYCLE axis only — it can never confer trust (evaluator.ts:919-921, :923). Recall
+  // eligibility additionally requires `trust ∈ {local, team}` (evaluator.ts:954-962), and a v2
+  // record inherits its trust EXCLUSIVELY from the verdict snapshot of a bound legacy alias
+  // (`conservativeVerdicts`, aliases.ts:122). Without the aliases below, `memorySearch` returns
+  // `eligible: 0` on every question and the corpus's RECALL channel is inert: the harness would
+  // silently measure two of the three channels the serving path fuses (`recallSeeds`, lexical,
+  // semantic) while the gates doc describes all three. Every fixture is therefore also admitted
+  // as a TRUSTED (local-trust, valid, current, active) migrated record — decoys included, since a
+  // decoy that could not be recalled would test nothing.
+  const fixtureAliases: MemoryAlias[] = [...corpus.records, ...corpus.globalDecoys].map(
+    (record) => {
+      const legacyId = `mem:${blake3Hex(`graph-eval:legacy:${record.id}`)}`;
+      return {
+        id: memoryAliasId({ legacyId, resolvedId: record.id }),
+        schemaVersion: '1' as const,
+        legacyId,
+        resolvedId: record.id,
+        verdicts: {
+          trust: 'local' as const,
+          evidence: 'valid' as const,
+          applicability: 'current' as const,
+          lifecycle: 'active' as const,
+        },
+      };
+    },
+  );
+  for (const alias of fixtureAliases) {
+    const repoId = recordRepo.get(alias.resolvedId);
+    if (repoId === undefined) global.upsertAliases([alias]);
+    else locals.get(repoId)?.upsertAliases([alias]);
+  }
+  // The `activate` decisions still run: they are what an admitted record's history looks like, and
+  // the lifecycle axis they carry is independent of the trust axis the aliases supply.
   const admissions: MemoryDecision[] = [...corpus.records, ...corpus.globalDecoys].map((record) => {
     const decision = {
       kind: 'activate' as const,
