@@ -17,6 +17,7 @@ import { vizAssetsDir } from './viz.js';
  */
 
 const html = readFileSync(`${vizAssetsDir()}/index.html`, 'utf8');
+const tokens = readFileSync(`${vizAssetsDir()}/tokens.css`, 'utf8');
 
 /** The asset with JS comments removed (string literals and markup stay). */
 const code = html.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '');
@@ -82,7 +83,8 @@ describe('viz web asset: memory ledger panel (G5.4)', () => {
     expect(html).toContain('data-kc-graph-stage');
     expect(html).toContain('data-kc-inspector');
     expect(html).toContain('data-kc-statusline');
-    expect(html).toContain('--kc-accent-code');
+    expect(html).toContain('<link rel="stylesheet" href="./tokens.css">');
+    expect(tokens).toContain('--kc-accent-code');
     expect(html).toContain('@media (prefers-reduced-motion: reduce)');
     expect(html).toContain('grid-template-rows:52px minmax(0,1fr) 26px');
     expect(html).toContain(
@@ -91,6 +93,33 @@ describe('viz web asset: memory ledger panel (G5.4)', () => {
     expect(html).toContain('grid-area:2 / 2');
     expect(html).toContain('grid-area:2 / 1 / 3 / 4');
     expect(html).toContain('z-index:40 !important');
+  });
+
+  it('ships a local token sheet whose light and dark themes define the same tokens', () => {
+    // Offline: no remote stylesheet, import or font request.
+    expect(tokens).not.toMatch(/@import|url\(/);
+    const block = (theme: string) => {
+      const start = tokens.indexOf(`[data-kc-theme="${theme}"]`);
+      expect(start).toBeGreaterThan(-1);
+      return tokens.slice(start, tokens.indexOf('}', start));
+    };
+    const names = (css: string) => [...css.matchAll(/(--kc-[\w-]+)\s*:/g)].map((m) => m[1]).sort();
+    expect(names(block('dark'))).toEqual(names(block('light')));
+    for (const token of [
+      '--kc-surface-floating',
+      '--kc-text-primary',
+      '--kc-text-secondary',
+      '--kc-text-interactive',
+      '--kc-focus',
+      '--kc-border-control',
+      '--kc-canvas-label',
+    ]) {
+      expect(names(block('dark'))).toContain(token);
+    }
+    // Theme choice: system preference first, then the one documented, validated storage key.
+    expect(html).toContain("THEME_KEY='knowledge-crib:theme'");
+    expect(html).toContain("v==='light'||v==='dark'?v:null");
+    expect(html).toContain('(prefers-color-scheme: light)');
   });
 
   it('turns structural module IDs into readable navigation labels', () => {
