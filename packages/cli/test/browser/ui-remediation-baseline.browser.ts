@@ -14,12 +14,10 @@ test.afterAll(async () => {
 
 for (const width of [320, 375]) {
   test(`mobile navigation opens its module and type controls at ${width}px`, async ({ page }) => {
-    test.fail(true, 'Phase 1: the mobile media rule hides the rail body after it opens');
     await page.setViewportSize({ width, height: 800 });
     await page.goto(backend.url);
     const rail = page.locator('[data-kc-navigation-rail]');
-    await rail.locator('button[title="Collapse navigation"]').click();
-    await rail.locator('button[title="Expand navigation"]').click();
+    await rail.locator('[data-kc-rail-toggle]').click();
     await expect(rail.locator('.kc-rail-body')).toBeVisible();
     await expect(rail.getByText('Modules', { exact: true })).toBeVisible();
     await expect(rail.getByText('Node types', { exact: true })).toBeVisible();
@@ -27,9 +25,9 @@ for (const width of [320, 375]) {
 }
 
 test('light theme stage controls have readable text contrast', async ({ page }) => {
-  test.fail(true, 'Phase 1: translucent stage controls leave light-theme text below 4.5:1');
+  await page.emulateMedia({ colorScheme: 'light' });
   await page.goto(backend.url);
-  await page.getByTitle('Toggle theme').click();
+  await expect(page.locator('[data-kc-shell]')).toHaveAttribute('data-kc-theme', 'light');
   const ratio = await page.locator('[data-kc-stage-breadcrumbs]').evaluate((element) => {
     const channels = (value: string) =>
       [...value.matchAll(/[\d.]+/g)].map((match) => Number(match[0]));
@@ -73,7 +71,6 @@ test('a keyboard user can enter the textual symbol explorer', async ({ page }) =
 });
 
 test('the document declares its language and descriptive title', async ({ page }) => {
-  test.fail(true, 'Phase 1: the document omits its language and title');
   await page.goto(backend.url);
   await expect(page.locator('html')).toHaveAttribute('lang', 'en');
   await expect(page).toHaveTitle(/Knowledge Crib.*graph/i);

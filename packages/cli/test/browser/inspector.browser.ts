@@ -17,7 +17,7 @@ test('the empty inspector can be opened and closed without reserving unused grap
 }) => {
   await page.goto(backend.url);
   const stage = page.locator('[data-kc-graph-stage]');
-  const placeholder = page.getByLabel('Inspector placeholder');
+  const placeholder = page.locator('[data-kc-inspector-placeholder]');
   const toggle = page.locator('[data-kc-inspector-toggle]');
 
   await expect(stage).toBeVisible();
