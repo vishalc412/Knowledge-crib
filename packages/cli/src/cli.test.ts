@@ -1633,7 +1633,13 @@ describe('crib doctor (WP2.6) — one fixture per condition, one DISTINCT diagno
 
     const out = runDoctor();
     expect(out).toMatch(/✗ principal boundary enforceable — 1\/1 record\(s\) are memory-1/);
+    // This fixture plants the record in the TEAM ledger, which is the half `crib memory migrate`
+    // cannot repair. The doctor still names the command — an operator told "run migrate" would run
+    // it, see no change, and run it again — but it must name the LIMIT in the same breath (WP1 item
+    // 14). The private half, where migrate IS the remedy, is asserted in memory-migrate.test.ts.
     expect(out).toMatch(/crib memory migrate/);
+    expect(out).toContain('aliases those but cannot stamp them');
+    expect(out).toContain('committed TEAM ledger');
   });
 
   it('reports NONE of the five conditions when the machine is clean', () => {

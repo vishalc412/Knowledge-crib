@@ -26,15 +26,29 @@
  * of BODY text (vectorText v2) from the contribution of having vectors at all: producing v1 vectors
  * would need a second embedding recipe kept alive in production code purely for this harness, which is
  * a worse trade than reporting the ceiling honestly. The v1 evidence is the three probes in the audit,
- * all of which missed. It also inherits the corpus's limits — 22 questions, one repository, authored by
- * someone who knows the codebase (20 questions) — so it is a regression gate, not an external benchmark.
+ * all of which missed. It also inherits the corpus's limits — 20 questions, one repository, authored by
+ * someone who knows the codebase — so it is a regression gate, not an external benchmark.
  *
  * Usage:
- *   node scripts/eval/code-vector-eval.mjs [--min-mrr 0] [--json] [--limit 10]
+ *   node scripts/eval/code-vector-eval.mjs [--min-mrr 0] [--json] [--limit 10] [--require-hybrid]
  *
- * Exits non-zero only when `--min-mrr` is supplied and the hybrid MRR falls below it, so the default
- * run reports and never fails a build on a number that has no pre-registered floor yet.
+ * Three outcomes, following `docs/bench/perf-gates.md`:
+ *
+ *   PASS (0)         — the run happened and measured what it says it measured; `--min-mrr`, if given,
+ *                      was met.
+ *   FAIL (1)         — the graded arm's MRR fell below `--min-mrr`.
+ *   UNAVAILABLE (2)  — the arm you asked to be graded COULD NOT BE MEASURED: an embedder is installed
+ *                      and the index refused the vector channel, or `--require-hybrid` was passed and
+ *                      no hybrid arm ran. The report names which case withheld it.
+ *
+ * `--min-mrr` grades whichever arm ran, and now SAYS which — see the `graded` field. Before this the
+ * fallback was silent: with the vector channel off, `--min-mrr` was applied to the LEXICAL MRR while
+ * the run looked like a hybrid gate, which is a passing verdict on a number the vector channel never
+ * produced. A `--min-mrr` PASS on the lexical arm is still meaningful — but only in the run that
+ * states it is lexical-only, where no embedder is installed at all.
  */
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import {
   SoulStore,
   SqliteIndexStore,
@@ -52,7 +66,17 @@ const LIMIT = flag('--limit', 10);
 /** How deep the hybrid stage is reranked. 50 is `DEFAULT_RERANK_DEPTH`. */
 const RERANK_DEPTH = flag('--rerank-depth', 50);
 const MIN_MRR = args.includes('--min-mrr') ? flag('--min-mrr', 0) : undefined;
+const REQUIRE_HYBRID = args.includes('--require-hybrid');
 const AS_JSON = args.includes('--json');
+
+/**
+ * Exit codes, following the three-outcome gate model in `docs/bench/perf-gates.md`.
+ *
+ * UNAVAILABLE is deliberately distinct from FAIL: "the vector channel was withheld, so nothing was
+ * measured" and "the vector channel was measured and is worse" are different facts, and collapsing
+ * them would let an unusable index read as a failing one — or, worse, as a passing one.
+ */
+const EXIT = { PASS: 0, FAIL: 1, UNAVAILABLE: 2 };
 
 /**
  * The labelled corpus. Kept IDENTICAL to `semantic-retrieval-eval.mjs`'s cases on purpose: two gates
@@ -263,6 +287,29 @@ function scoreReranked(store, reranker) {
   };
 }
 
+/**
+ * WHICH of the degradation cases withheld the vector channel — the §5.3 cases of
+ * `docs/program/wp4-implementation-spec.md`, named by the state this script can observe.
+ *
+ * Classified from facts this script already holds rather than by matching prose out of the note: a
+ * regex over the store's message would silently mislabel the moment that message is reworded, and a
+ * mislabelled reason is worse than no reason. The note is still carried and printed verbatim, so the
+ * SPECIFICS (which recipe version, which dims, which embedder id) survive without being guessed at
+ * here. The coarse label carries only the distinction that changes what the operator does next.
+ *
+ *   not-built        — no `vector_meta` at all. Nothing refused anything; the index was simply never
+ *                      built with `--vectors`. Distinguished from a refusal because a bare
+ *                      `vector: false` otherwise reads as "never implemented" (the F1 defect), and
+ *                      because the fix is a rebuild rather than an investigation.
+ *   refused-by-index — the index CARRIES vectors and this reader would not use them (a §5.3
+ *                      text-recipe, dim or embedder-id mismatch). The verbatim note names which.
+ *   no-embedder      — nothing on this machine could embed, so no arm was attempted.
+ */
+function classifyDegradation(caps, hasEmbedder) {
+  if (caps.vectorNote === undefined || caps.vectorNote === null) return 'not-built';
+  return hasEmbedder ? 'refused-by-index' : 'no-embedder';
+}
+
 const embedder = await loadInstalledEmbedder().catch(() => undefined);
 
 const lexical = new SqliteIndexStore(DB);
@@ -306,6 +353,14 @@ if (args.includes('--rerank')) {
   }
 }
 
+/**
+ * Which arm `--min-mrr` grades, decided ONCE and printed. The old fallback (`hybridScore?.mrr ??
+ * lexicalScore.mrr`) silently substituted the lexical number whenever the hybrid arm was absent, so a
+ * run with the vector channel off printed a green verdict for a channel that never ran. Naming the arm
+ * is what makes the verdict falsifiable: the reader can see which column the number came from.
+ */
+const gradedArm = hybridScore ? 'hybrid' : 'lexical';
+
 const report = {
   db: DB,
   reranker: rerankerId,
@@ -321,9 +376,15 @@ const report = {
   // beside "LIVE" read as a contradiction, so it is suppressed rather than carried.
   vectorNote:
     hybridCaps?.vector === true ? null : (hybridCaps?.vectorNote ?? lexicalCaps.vectorNote ?? null),
+  vectorUnavailable:
+    hybridCaps?.vector === true
+      ? null
+      : classifyDegradation(hybridCaps ?? lexicalCaps, Boolean(embedder)),
   lexical: lexicalScore,
   hybrid: hybridScore ?? null,
   reranked: rerankedScore ?? null,
+  /** Which arm `--min-mrr` grades. Stated in the report, never left for the caller to infer. */
+  graded: gradedArm,
 };
 
 if (AS_JSON) {
@@ -342,10 +403,22 @@ if (AS_JSON) {
   console.log(
     `vector channel   : ${report.vectorChannel ? 'LIVE' : 'off'}${report.vectorNote ? ` — ${report.vectorNote}` : ''}`,
   );
+  if (report.vectorUnavailable && embedder) {
+    // H-6: a measurement that did not run is reported as NOT HAVING RUN. Without this line the lexical
+    // column reads as a result and the absent hybrid column reads as an omission.
+    //
+    // Suppressed when no embedder is installed: there the reason the hybrid arm did not run is the
+    // missing model, which rule 2 states below far more precisely than this field can. Printing both
+    // would put two different axes of explanation side by side and read as a contradiction.
+    console.log(`withheld because : ${report.vectorUnavailable}`);
+  }
   console.log('');
   console.log(row('lexical', lexicalScore));
-  console.log(row('hybrid', hybridScore));
+  // §8.6: with no embedder installed there is no hybrid column to print, and printing an empty one
+  // would invite the reader to wait for a number instead of reading the lexical-only statement.
+  if (embedder) console.log(row('hybrid', hybridScore));
   if (rerankerId) console.log(row(`rerank/${rerankedOver}`, rerankedScore));
+  console.log(`graded by --min-mrr: ${gradedArm}`);
   if (hybridScore) {
     console.log('');
     const better = [];
@@ -368,10 +441,73 @@ if (AS_JSON) {
   }
 }
 
+/**
+ * The verdict, applying §8.6 as written — three rules, and `docs/bench/perf-gates.md`'s three-outcome
+ * model is what keeps "not measured" from being read as either of the two outcomes it is not.
+ *
+ *   1. An embedder IS resolvable and `capabilities().vector` is false → non-zero. The operator has the
+ *      model and did not get the channel, so the run is not the measurement they think it is. This is
+ *      the rule the pre-fix harness broke most badly: with the embedder installed and the channel
+ *      refused, it exited 0 and printed a lexical number under a heading that promised a comparison.
+ *   2. No embedder is installed at all → the report states it is lexical-only, prints no hybrid
+ *      column, and exits on `--min-mrr` alone. A lexical run that SAYS it is lexical is a legitimate
+ *      regression gate for the shipped default path.
+ *   3. `--require-hybrid` makes "hybrid ran" a hard precondition for exit 0, so CI can assert it
+ *      without depending on which embedder happens to be installed on the runner.
+ *
+ * UNAVAILABLE (2), never FAIL (1), when the channel was withheld: "the vector channel could not be
+ * measured" and "the vector channel was measured and is worse" are different facts, and collapsing
+ * them would let an unusable index read as a failing one — or, worse, as a passing one.
+ *
+ * No floor is baked in: WP4 §10.5 preregisters the decision rule, and a threshold invented here would
+ * be exactly the unfounded claim the pre-registration discipline exists to prevent.
+ */
+let exitCode = EXIT.PASS;
+
+/** Rule 1 — the embedder is here and the channel is not. Actionable, so it is never a silent pass. */
+if (embedder && !report.vectorChannel) {
+  console.error(
+    `UNAVAILABLE: an embedder is installed (${embedder.id}) but the index withheld the vector channel (${report.vectorUnavailable}).`,
+  );
+  console.error(
+    `  ${report.vectorNote ?? 'The index carries no vector_meta — it was not built with --vectors.'}`,
+  );
+  console.error('  Nothing about the vector channel was measured by this run.');
+  exitCode = EXIT.UNAVAILABLE;
+}
+
+/** Rule 2 — no embedder at all: a stated lexical-only run, reported above, and not an error here. */
+if (!embedder) {
+  console.log(
+    'lexical-only run : true — no embedder is installed, so the hybrid arm was not attempted',
+  );
+}
+
+/** Rule 3 — CI asserts the hybrid arm ran without depending on the runner's installed models. */
+if (REQUIRE_HYBRID && !hybridScore) {
+  console.error(
+    `UNAVAILABLE: --require-hybrid was passed but the hybrid arm was not measured (${report.vectorUnavailable}).`,
+  );
+  console.error(
+    `  The vector channel is ${report.vectorChannel ? 'LIVE' : 'off'}${report.vectorNote ? ` — ${report.vectorNote}` : ''}`,
+  );
+  console.error(
+    '  Nothing about the vector channel was measured, so this is NOT a passing verdict on it.',
+  );
+  exitCode = EXIT.UNAVAILABLE;
+}
+
 if (MIN_MRR !== undefined) {
-  const got = hybridScore?.mrr ?? lexicalScore.mrr;
+  // `gradedArm === 'hybrid'` iff `hybridScore` exists — that is how it was derived above — so this
+  // reads the exact column the report prints under `graded`. No `??` fallback: the substitution IS
+  // the defect this block replaced.
+  const got = gradedArm === 'hybrid' ? hybridScore.mrr : lexicalScore.mrr;
   if (got < MIN_MRR) {
-    console.error(`FAIL: MRR ${got.toFixed(3)} < --min-mrr ${MIN_MRR}`);
-    process.exit(1);
+    console.error(`FAIL: MRR ${got.toFixed(3)} < --min-mrr ${MIN_MRR} (graded arm: ${gradedArm})`);
+    if (exitCode === EXIT.PASS) exitCode = EXIT.FAIL;
+  } else {
+    console.log(`PASS: MRR ${got.toFixed(3)} >= --min-mrr ${MIN_MRR} (graded arm: ${gradedArm})`);
   }
 }
+
+process.exit(exitCode);

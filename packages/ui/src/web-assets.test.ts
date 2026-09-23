@@ -14,12 +14,39 @@ import { vizAssetsDir } from './viz.js';
  *     check strips JS comments first (a code comment is not user-facing text) and matches on word
  *     boundaries, so the backend field identifier `trustedRef` (an API field ACCESS, rendered as
  *     "ref <value>") does not count as a hit.
+ *
+ * WP3-H4 — the law is scoped to every asset the viz server SERVES, not to one filename. Extraction
+ * moves logic between these files, and a law that covers only `index.html` is a law code can be
+ * walked out of: a banned word in `graph-model.js` reaches the user exactly as one in the markup
+ * would. The assertions themselves are unchanged; only the set of files they run over is.
  */
+
+/** Every asset `viz-server` serves to the browser. `support.js` is the generated DC runtime. */
+const SERVED_ASSETS = ['index.html', 'graph-model.js', 'support.js'] as const;
+
+/**
+ * One served asset with JS comments removed. String literals and markup are deliberately NOT
+ * stripped — those are exactly what reaches the user — while comments are, because a code comment
+ * is not user-facing text.
+ *
+ * The line-based `//` rule has a measured limit: a `//` inside a string literal eats the rest of
+ * that line, so a banned word later on the same line goes unseen. Verified directly — the source
+ * `var u = "https://x"; var t = "trust";` yields no hit, while the same text without the `//`
+ * yields one. The error is therefore always UNDER-reporting, never a false alarm, and it is
+ * dormant today: no served asset has a line carrying both an inline `//` and a banned word, so the
+ * guarantee holds for this tree even though the rule cannot be trusted to hold for a future one.
+ * Stated here because it bounds the guarantee below.
+ */
+function strippedSource(name: (typeof SERVED_ASSETS)[number]): string {
+  return readFileSync(`${vizAssetsDir()}/${name}`, 'utf8')
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/\/\/[^\n]*/g, '');
+}
 
 const html = readFileSync(`${vizAssetsDir()}/index.html`, 'utf8');
 
 /** The asset with JS comments removed (string literals and markup stay). */
-const code = html.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '');
+const code = strippedSource('index.html');
 
 describe('viz web asset: memory ledger panel (G5.4)', () => {
   it('ships the memory panel wired to both ledger endpoints', () => {
@@ -127,8 +154,93 @@ describe('viz web asset: memory ledger panel (G5.4)', () => {
     }
   });
 
-  it('carries no banned user-facing vocabulary (comments excluded)', () => {
-    expect(code).not.toMatch(/\bcandidate\b/i);
-    expect(code).not.toMatch(/\btrust\b/i);
+  it('carries no banned user-facing vocabulary in any served asset (comments excluded)', () => {
+    // Scope is SERVED_ASSETS, not index.html: this is the same law, applied to everything the
+    // browser receives. See the header note — narrowing it back to one file would let extraction
+    // move a banned word out of the check's sight without changing what the user sees.
+    for (const name of SERVED_ASSETS) {
+      const src = strippedSource(name);
+      expect(src, `${name}: banned word "candidate"`).not.toMatch(/\bcandidate\b/i);
+      expect(src, `${name}: banned word "trust"`).not.toMatch(/\btrust\b/i);
+    }
+  });
+
+  it('keeps the extracted render helpers in the module, never re-inlined (WP3-H4)', () => {
+    // `hex`, `esc`, `ellipsize` and `rr` were methods on the component class in this asset, where
+    // the only thing able to assert them was a string match — the logic of the ellipsize search or
+    // the channel extraction could regress unobserved. They now live in graph-model.js, covered
+    // behaviourally by graph-model.test.ts. This pins the direction: re-inlining one would quietly
+    // move it back outside test reach, and every call site would still work.
+    for (const helper of ['hex', 'esc', 'ellipsize', 'rr']) {
+      expect(html, `${helper} re-defined on the component`).not.toMatch(
+        new RegExp(`this\\.${helper}\\(`),
+      );
+      expect(html, `${helper} not called through the module`).toMatch(
+        new RegExp(`KCGraphModel\\.${helper}\\(`),
+      );
+    }
+  });
+});
+
+/**
+ * WP5 T15 — the exclusion-reason vocabulary is COMPLETE in both directions.
+ *
+ * WP5 §7.4 renders a row's `ItemReason` codes as words; §10 freezes the evaluator's union as the
+ * exclusion vocabulary and forbids inventing a second one. Both halves of that are unenforced by
+ * types, because the union is declared in `@knowledge-crib/memory` and the map that renders it is
+ * in a served asset — no compiler spans that boundary, and no runtime path makes an unrendered code
+ * fail. It just... shows the raw code to the user, or nothing at all.
+ *
+ * So this test spans the boundary deliberately, and it reads the union out of its DECLARATION
+ * instead of re-typing it: a re-typed list is a second copy that passes while the real union grows,
+ * which is exactly the failure being guarded. Direction matters both ways — a union member with no
+ * rendering is an invisible reason, and a rendering for a code the evaluator cannot emit is a
+ * second vocabulary growing quietly in the UI.
+ */
+describe('viz web asset: the exclusion-reason vocabulary (WP5 T15)', () => {
+  /** The `ItemReason` union, parsed from its declaration in the evaluator source. */
+  function evaluatorReasons(): string[] {
+    const src = readFileSync(new URL('../../memory/src/evaluator.ts', import.meta.url), 'utf8');
+    const body = /export type ItemReason =([\s\S]*?);/.exec(src)?.[1];
+    if (body === undefined) {
+      throw new Error('ItemReason declaration not found in memory/src/evaluator.ts');
+    }
+    return [...body.matchAll(/'([^']+)'/g)].map((m) => m[1] as string);
+  }
+
+  /** The codes `memReason` maps, parsed from the served asset (one entry per line). */
+  function renderedReasons(): string[] {
+    const region = /memReason\(code\)\{[\s\S]*?const M=\{([\s\S]*?)\};/.exec(html)?.[1];
+    if (region === undefined) throw new Error('memReason map not found in the served asset');
+    return [...region.matchAll(/^\s*'([a-z-]+)':/gm)].map((m) => m[1] as string);
+  }
+
+  it('parses both vocabularies (a guard against the extraction silently returning nothing)', () => {
+    // Without this, a rename in either file would make both lists empty and every cross-check below
+    // would pass vacuously. The floors are deliberately well under the real counts.
+    expect(evaluatorReasons().length).toBeGreaterThanOrEqual(10);
+    expect(renderedReasons().length).toBeGreaterThanOrEqual(10);
+    expect(evaluatorReasons()).toContain('hash-drift');
+    expect(renderedReasons()).toContain('hash-drift');
+  });
+
+  it('renders every reason the evaluator can emit — no reason is silently invisible', () => {
+    const missing = evaluatorReasons().filter((code) => !renderedReasons().includes(code));
+    expect(missing, `ItemReason members with no rendering: ${missing.join(', ')}`).toEqual([]);
+  });
+
+  it('invents no reason the evaluator cannot emit — the vocabulary is not forked', () => {
+    const union = evaluatorReasons();
+    const invented = renderedReasons().filter((code) => !union.includes(code));
+    expect(invented, `rendered codes absent from ItemReason: ${invented.join(', ')}`).toEqual([]);
+  });
+
+  it('keeps the evaluator code in the DOM and falls back to it rather than to prose', () => {
+    // G-U1: the reason a row was excluded must be the EVALUATOR's verdict, not UI copy. The code
+    // rides on the element, so a test asserts the evaluator's word and not our sentence.
+    expect(html).toContain('data-kc-mem-reason="{{ why.code }}"');
+    // An unrecognised code renders as itself. Smoothing it into a reassuring phrase is how a new
+    // evaluator reason would become invisible while the cross-checks above still passed.
+    expect(html).toContain('return M[code]||String(code);');
   });
 });

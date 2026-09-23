@@ -85,6 +85,16 @@ the contribution of having vectors at all (that would need a second embedding re
 production for the harness's benefit), and 20 questions on one repository authored by someone who
 knows it is a regression gate, not an external benchmark.
 
+**Its exit code is a three-outcome gate, and it names the arm it graded** (H-6, 2026-09-23). Before
+this the harness could report a lexical number under a hybrid framing: with the vector channel
+refused, `--min-mrr` silently graded the LEXICAL MRR and printed nothing about which arm it used.
+Now: `PASS (0)` when the run measured what it claims and any `--min-mrr` floor was met; `FAIL (1)`
+when the graded arm fell below it; **`UNAVAILABLE (2)`** when the channel could not be measured at
+all — the case where an embedder is installed but the index withheld the vectors, which is
+actionable and so is never a silent pass. With no embedder installed the run states it is
+lexical-only and prints no hybrid column. A CI gate that means "the hybrid arm must have run" passes
+`--require-hybrid` and gets UNAVAILABLE rather than a green light from the wrong arm.
+
 ### The measured code-retrieval numbers
 
 `node scripts/eval/code-vector-eval.mjs` on this repository, 2026-09-21, same 20-question labelled

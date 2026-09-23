@@ -10,7 +10,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { Node } from '@knowledge-crib/soul-schema';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { MemoryEvaluator } from './evaluator.js';
+import { MemoryEvaluator, isRecallEligible, recallExclusionClause } from './evaluator.js';
 import { MemoryStore, __resetMemoryLockGuardForTest, decisionId, memoryRecordId } from './index.js';
 import type {
   MemoryDecision,
@@ -31,6 +31,7 @@ import {
   exactLexicalScorer,
   gatherRecall,
   recallProjection,
+  resolveStrictPrincipal,
 } from './recall.js';
 
 const NOW = '2026-01-01T00:00:00.000Z';
@@ -236,6 +237,91 @@ describe('recallProjection eligibility (exit-gate invariant #1)', () => {
       ]),
     );
     expect(idsOf(p)).toEqual([valid.id, degraded.id]);
+  });
+});
+
+// ─── WP5 §7.2 — the excluded set ─────────────────────────────────────────────
+
+describe('WP5 T14 — recallProjection names WHY each record was dropped', () => {
+  it('reports one row per dropped record, with the clause that dropped it', () => {
+    // One record per clause, each failing ONLY that axis, so the expected label is unambiguous. The
+    // fixture deliberately reuses the set the eligibility test above proves is dropped — the point
+    // here is not that they are dropped (that test owns it) but that the drop is now NAMED.
+    const candidate = record({ claim: 'c-cand', trust: 'candidate' });
+    const invalid = record({ claim: 'c-invalid', verdicts: { evidence: 'invalid' } });
+    const orphaned = record({ claim: 'c-orphan', verdicts: { applicability: 'orphaned' } });
+    const superseded = record({ claim: 'c-super', verdicts: { lifecycle: 'superseded' } });
+    const quarantined = record({ claim: 'c-quar' });
+    const ok = record({ claim: 'c-ok' });
+    const p = recallProjection(
+      gathered(
+        [
+          { record: candidate, source: 'team' },
+          { record: invalid, source: 'local' },
+          { record: orphaned, source: 'local' },
+          { record: superseded, source: 'local' },
+          { record: quarantined, source: 'local' },
+          { record: ok, source: 'local' },
+        ],
+        [decision({ kind: 'quarantine', subject: quarantined.id })],
+      ),
+    );
+
+    // Nothing eligible changed: the incumbent assertion, restated here so a regression in the filter
+    // cannot hide behind this new field.
+    expect(idsOf(p)).toEqual([ok.id]);
+
+    const byId = new Map(p.excluded.map((e) => [e.id, e]));
+    expect(p.excluded).toHaveLength(5);
+    expect(byId.get(candidate.id)?.excludedBy).toBe('trust');
+    expect(byId.get(invalid.id)?.excludedBy).toBe('evidence');
+    expect(byId.get(orphaned.id)?.excludedBy).toBe('applicability');
+    expect(byId.get(superseded.id)?.excludedBy).toBe('lifecycle');
+    expect(byId.get(quarantined.id)?.excludedBy).toBe('quarantined');
+
+    // The row carries enough to be read by a human without a second lookup: which claim, from which
+    // store. A bare id list would be an index, not an answer.
+    expect(byId.get(invalid.id)?.claim).toBe('c-invalid');
+    expect(byId.get(candidate.id)?.source).toBe('team');
+
+    // THE INVARIANT, asserted rather than assumed: the two lists PARTITION `considered`. This is what
+    // makes `counts.considered: 8` beside `counts.eligible: 3` an honest pair — every record the
+    // gatherer produced is accounted for by exactly one of them, so there is no third, silent fate.
+    expect(p.memories.length + p.excluded.length).toBe(p.provenance.counts.considered);
+  });
+
+  it('never disagrees with isRecallEligible — the label is the decision', () => {
+    // The failure this guards is a re-implemented `excludedBy` that drifts from the filter it claims
+    // to explain, which is the whole of U1. Both are now one clause walk, so this test asserts the
+    // property directly instead of trusting the shape: for EVERY record here, "is in `excluded`" and
+    // "`isRecallEligible` said no" must be the same statement, and the label must be reproducible
+    // from the verdicts alone.
+    const records = [
+      record({ claim: 'c-cand', trust: 'candidate' }),
+      record({ claim: 'c-invalid', verdicts: { evidence: 'invalid' } }),
+      record({ claim: 'c-orphan', verdicts: { applicability: 'orphaned' } }),
+      record({ claim: 'c-review', verdicts: { applicability: 'needs-review' } }),
+      record({ claim: 'c-super', verdicts: { lifecycle: 'superseded' } }),
+      record({ claim: 'c-retract', verdicts: { lifecycle: 'retracted' } }),
+      record({ claim: 'c-deg', verdicts: { evidence: 'degraded' } }),
+      record({ claim: 'c-ok' }),
+    ];
+    const p = recallProjection(
+      gathered(records.map((r) => ({ record: r, source: 'local' as const }))),
+    );
+
+    const excludedIds = new Set(p.excluded.map((e) => e.id));
+    const eligibleIds = new Set(p.memories.map((m) => m.record.id));
+    for (const e of p.excluded) {
+      const verdicts = e.verdicts;
+      expect(isRecallEligible(verdicts)).toBe(false);
+      expect(recallExclusionClause(verdicts)).toBe(e.excludedBy);
+      // …and a record cannot be reported both ways.
+      expect(eligibleIds.has(e.id)).toBe(false);
+    }
+    for (const r of records) {
+      expect(excludedIds.has(r.id) || eligibleIds.has(r.id)).toBe(true);
+    }
   });
 });
 
@@ -568,9 +654,12 @@ describe('gatherRecall — strictPrincipal closes the unstamped-record hole', ()
    * no such field, so the comparison cannot exclude them: measured, gathering principal A's team
    * store together with principal B's local store returned ALL of B's memory-1 records to A.
    *
-   * `strictPrincipal` is the fix for callers that can see more than one principal's stores. It is
-   * OFF by default on purpose — in a normal single-principal deployment an unstamped record in your
-   * own store is yours, and excluding it would silently empty an unmigrated ledger.
+   * `strictPrincipal` is the fix for callers that can see more than one principal's stores. IT IS
+   * NOT THE DEFAULT: a production gather resolves it through `resolveStrictPrincipal` — the
+   * `KCRIB_STRICT_PRINCIPAL` opt-in, off unless set. That function carries the measurement that made
+   * an on-by-default impossible rather than merely costly (local admission writes memory-1, so a
+   * strict gather refuses every record this device writes, and no migration can catch up). The
+   * end-to-end consequence is asserted through a production surface in api.test.ts, D3-a.
    */
   const v1 = (subject: string): MemoryRecord =>
     ({
@@ -614,5 +703,41 @@ describe('gatherRecall — strictPrincipal closes the unstamped-record hole', ()
     // the exclusion is COUNTED, so a caller can tell "empty because filtered" from "empty because
     // there is nothing" — silence here would look identical to an unmigrated store
     expect(g.principalExcluded ?? 2).toBeGreaterThan(0);
+  });
+
+  it('resolves strictness from the gather’s own env when no option is passed', () => {
+    // The mechanism every production gather now relies on: the option is omitted, the env decides.
+    // An explicit option still wins (the two tests above), so tests and a serving layer that resolve
+    // identity itself are unaffected.
+    const stores = { local: storeOf([v1('a')]) } as never;
+    const off = gatherRecall(stores, { principal: 'principal-a', env: {} });
+    expect(off.records).toHaveLength(1);
+    const on = gatherRecall(stores, {
+      principal: 'principal-a',
+      env: { KCRIB_STRICT_PRINCIPAL: '1' },
+    });
+    expect(on.records).toHaveLength(0);
+    // …and the SAME gather, told explicitly, is not overridden by the env either way — the option is
+    // the override, so `strictPrincipal: false` is a real opt-OUT for a caller who holds one store.
+    const optedOut = gatherRecall(stores, {
+      principal: 'principal-a',
+      strictPrincipal: false,
+      env: { KCRIB_STRICT_PRINCIPAL: '1' },
+    });
+    expect(optedOut.records).toHaveLength(1);
+  });
+
+  it('reads the opt-in as a truthy switch, not as "the variable is set"', () => {
+    // A guard against the classic footgun: `KCRIB_STRICT_PRINCIPAL=0` (or `false`, or an empty
+    // string exported by a wrapper) must NOT engage a boundary that refuses the caller's own
+    // records. Only an explicit affirmative turns it on.
+    for (const raw of ['1', 'true', 'TRUE', ' yes ', 'Yes']) {
+      expect(resolveStrictPrincipal({ KCRIB_STRICT_PRINCIPAL: raw })).toBe(true);
+    }
+    for (const raw of ['0', 'false', '', ' ', 'no', 'off', 'strict']) {
+      expect(resolveStrictPrincipal({ KCRIB_STRICT_PRINCIPAL: raw })).toBe(false);
+    }
+    expect(resolveStrictPrincipal({})).toBe(false);
+    expect(resolveStrictPrincipal({ KCRIB_STRICT_PRINCIPAL: undefined })).toBe(false);
   });
 });

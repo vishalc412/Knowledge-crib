@@ -10,16 +10,8 @@
  * Memory model: the store hydrates the full graph into Maps on `load()`. At the C4 default scale
  * (100k LOC / 10k files) this is comfortably in-memory; `iterate()` streams from the Maps.
  */
-import {
-  existsSync,
-  mkdirSync,
-  readFileSync,
-  readdirSync,
-  renameSync,
-  rmSync,
-  writeFileSync,
-} from 'node:fs';
-import { dirname, join } from 'node:path';
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync } from 'node:fs';
+import { join } from 'node:path';
 import { SUPPORTED_SCHEMA_VERSIONS, VENDORED_SCHEMAS } from '@knowledge-crib/soul-schema';
 import type {
   Edge,
@@ -29,6 +21,7 @@ import type {
   NodeKind,
   Rel,
 } from '@knowledge-crib/soul-schema';
+import { writeJsonAtomic } from './atomic-write.js';
 import { resolveEdgeConflict } from './conflict-rule.js';
 import { graphPaths, hasCanonicalGraph } from './graph-layout.js';
 import { newManifest } from './manifest.js';
@@ -604,7 +597,7 @@ export class SoulStore {
       if (existsSync(path)) rmSync(path);
       return;
     }
-    this.atomicWrite(path, `${records.map((r) => JSON.stringify(r)).join('\n')}\n`);
+    writeJsonAtomic(path, `${records.map((r) => JSON.stringify(r)).join('\n')}\n`);
   }
 
   /** Rewrite a shard directory into chunk files rolling at maxChunkLines; remove stale chunks. */
@@ -620,7 +613,7 @@ export class SoulStore {
     for (let i = 0; i < records.length; i += this.maxChunkLines) {
       const slice = records.slice(i, i + this.maxChunkLines);
       const name = `${String(chunkIndex).padStart(4, '0')}.jsonl`;
-      this.atomicWrite(join(shardDir, name), `${slice.map((r) => JSON.stringify(r)).join('\n')}\n`);
+      writeJsonAtomic(join(shardDir, name), `${slice.map((r) => JSON.stringify(r)).join('\n')}\n`);
       written.add(name);
       chunkIndex++;
     }
@@ -634,14 +627,14 @@ export class SoulStore {
     const dir = join(this.cribDirPrivate, 'schema');
     mkdirSync(dir, { recursive: true });
     for (const [name, schema] of Object.entries(VENDORED_SCHEMAS)) {
-      this.atomicWrite(join(dir, name), `${JSON.stringify(schema, null, 2)}\n`);
+      writeJsonAtomic(join(dir, name), `${JSON.stringify(schema, null, 2)}\n`);
     }
   }
 
   private writeGitignore(): void {
     const path = join(this.cribDirPrivate, '.gitignore');
     if (!existsSync(path)) {
-      this.atomicWrite(path, 'index/\nembeddings/\n');
+      writeJsonAtomic(path, 'index/\nembeddings/\n');
     }
   }
 
@@ -652,10 +645,10 @@ export class SoulStore {
     stores.graph = { path: '.crib/graph', format: 'layered-jsonl' };
     assertValidManifest(this.manifest);
     const content = `${JSON.stringify(this.manifest, null, 2)}\n`;
-    this.atomicWrite(this.manifestPath, content);
+    writeJsonAtomic(this.manifestPath, content);
     // Bootstrap/registry locator only. Graph state/stats exist solely in graph/manifest.json.
     if (this.canonicalLayout) {
-      this.atomicWrite(
+      writeJsonAtomic(
         join(this.cribDirPrivate, MANIFEST_FILE),
         `${JSON.stringify(
           {
@@ -668,13 +661,5 @@ export class SoulStore {
         )}\n`,
       );
     }
-  }
-
-  /** Write-temp → rename, so a reader never sees a half-written file. */
-  private atomicWrite(path: string, content: string): void {
-    mkdirSync(dirname(path), { recursive: true });
-    const tmp = `${path}.tmp`;
-    writeFileSync(tmp, content, 'utf8');
-    renameSync(tmp, path);
   }
 }

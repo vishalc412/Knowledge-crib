@@ -975,8 +975,15 @@ export class MemoryStore {
 
   // ─── internals ──────────────────────────────────────────────────────────────
 
-  /** The record collections this store role holds (the collections the migration walks). */
-  private recordCollections(): readonly MemoryCollection[] {
+  /**
+   * The record collections this store role holds (the collections the migration walks).
+   *
+   * PUBLIC (WP1 item 12) so a caller reporting what a migration WOULD stamp reads the same rule the
+   * migration itself uses. `crib memory migrate --preview` needs exactly this mapping, and a
+   * `role === 'local' ? 'active' : 'records'` re-derived in the CLI would be a second copy that
+   * silently undercounts the day this gains a collection.
+   */
+  recordCollections(): readonly MemoryCollection[] {
     return this.init.role === 'local' ? ['active'] : ['records'];
   }
 
@@ -1348,10 +1355,19 @@ export class MemoryStore {
    * resolution decisions are first-writer-wins. A shard where every entry skipped is not
    * rewritten at all, so an idempotent re-submit never touches the disk or bumps the generation.
    *
-   * The result is the durable acknowledgement: it is returned only after every `writeJsonAtomic`
-   * has completed, so a faulted persist throws and acknowledges NOTHING (the WP-G1 exit
+   * The result acknowledges a COMPLETED persist: it is returned only after every `writeJsonAtomic`
+   * has returned, so a faulted persist throws and acknowledges NOTHING (the WP-G1 exit
    * criterion "interrupted writes do not lose acknowledged work" — the next submission re-derives
    * the same content-addressed ids and completes the merge).
+   *
+   * WHAT "COMPLETED" SURVIVES IS THE PLATFORM'S TO SAY, NOT THIS METHOD'S (WP1 item 2). The shard
+   * writes flush the file before the rename and the parent directory after it, so an acknowledged
+   * submission survives a PROCESS CRASH and is device-ordered. Power-loss durability holds only
+   * where the platform's `fsync` reaches the media rather than stopping at the drive's write cache
+   * — `atomicWriteDurability()` reports which of the three guarantees this build has, and
+   * `crib doctor`'s "durability model" check is the operator-facing statement of it. The word
+   * "durable" above is therefore a claim about persistence, not about power loss, and it is
+   * deliberately not stronger than the capability behind it.
    *
    * The TEAM store refuses outright (`'graph'` is absent from its collection list): graph
    * proposals are machine-local state until a later work package defines their promotion path —

@@ -174,9 +174,11 @@ import {
   type MemoryAnchorPort,
   MemoryApi,
   type MemoryCandidate,
+  MemoryEvaluator,
   type MemoryEvidence,
   type MemoryRecord,
   type MemoryScope,
+  type MemorySoulPort,
   MemoryStore,
   __resetMemoryLockGuardForTest,
   buildCaptureOutboxEntry,
@@ -186,6 +188,7 @@ import {
   memoryRecordId,
 } from '@knowledge-crib/memory';
 import {
+  type VizMemoryHomeOperations,
   graphRefKind,
   parseMemoryLedgerQuery,
   parseMemoryPendingQuery,
@@ -273,7 +276,11 @@ function memApi(home: string): MemoryApi {
 
 describe('parseMemoryLedgerQuery', () => {
   it('defaults the page and caps the limit', () => {
-    expect(parseMemoryLedgerQuery(new URLSearchParams(''))).toEqual({ offset: 0, limit: 100 });
+    expect(parseMemoryLedgerQuery(new URLSearchParams(''))).toEqual({
+      offset: 0,
+      limit: 100,
+      revalidate: true,
+    });
     expect(parseMemoryLedgerQuery(new URLSearchParams('limit=5000')).limit).toBe(200);
   });
 
@@ -282,10 +289,29 @@ describe('parseMemoryLedgerQuery', () => {
       offset: 4,
       limit: 2,
       group: 'stale',
+      revalidate: true,
     });
     expect(() => parseMemoryLedgerQuery(new URLSearchParams('group=nope'))).toThrow(VizHttpError);
     expect(() => parseMemoryLedgerQuery(new URLSearchParams('offset=-1'))).toThrow(VizHttpError);
     expect(() => parseMemoryLedgerQuery(new URLSearchParams('limit=1.5'))).toThrow(VizHttpError);
+  });
+
+  // WP5 §7.1 Step B — the re-check is ON unless a caller explicitly turns it off. Asserted as a
+  // DEFAULT and not merely as a flag, because the default is the entire fix: an absent param that
+  // read the stamp would leave `/memory.json` reporting verdicts nobody checked, which is the silent
+  // transition U1 is about. The opt-out stays available, and stays the minority case.
+  it('re-checks evidence by default and only the literal "0" turns it off', () => {
+    expect(parseMemoryLedgerQuery(new URLSearchParams('')).revalidate).toBe(true);
+    expect(parseMemoryLedgerQuery(new URLSearchParams('revalidate=1')).revalidate).toBe(true);
+    expect(parseMemoryLedgerQuery(new URLSearchParams('revalidate=0')).revalidate).toBe(false);
+    // Not a falsy-string test: `revalidate=false` must NOT quietly mean "off", because a caller who
+    // wrote that believes the opposite of what they would get.
+    expect(() => parseMemoryLedgerQuery(new URLSearchParams('revalidate=false'))).toThrow(
+      VizHttpError,
+    );
+    expect(() => parseMemoryLedgerQuery(new URLSearchParams('revalidate=maybe'))).toThrow(
+      VizHttpError,
+    );
   });
 });
 
@@ -340,7 +366,131 @@ describe('memory ledger endpoints', () => {
       expect((err as VizHttpError).status).toBe(404);
     }
   });
+
+  // ─── WP5 §7.1 Step B — the route re-checks by default, and the route's default is the fix ────────
+  //
+  // `memApi` above wires NO evaluator, so the opt-in is inert there (T13's second case: both ports or
+  // neither). This fixture wires the pair, against a node that EXISTS but no longer contains the
+  // quoted text — so a read that actually re-checks overturns the stamp and one that does not reports
+  // it as healthy. That asymmetry is the whole test.
+  //
+  // The point is not that `api.ledger({revalidate:true})` works — T13b pins that in the memory
+  // package. It is that `/memory.json` gets it WITHOUT the caller asking, because the surface a person
+  // opens to ask "why is my memory not answering" must not be the one surface that answers from a
+  // stamp nobody checked. §7.4's exclusion panel renders `reasons`; this is what puts them there.
+
+  it('re-checks the code by default, so an excluded row carries the evaluator’s reason', () => {
+    const api = driftedApi(home);
+
+    const served = readMemoryLedger(api, parseMemoryLedgerQuery(new URLSearchParams('')));
+    expect(served.configured).toBe(true);
+    if (!served.configured) return;
+    const row = served.rows[0];
+    if (!row) throw new Error('expected one row');
+
+    // The stamp said healthy. The route did not take its word for it.
+    expect(row.evidenceVerdict).toBe('invalid');
+    expect(row.eligible).toBe(false);
+    // The clause and the reason are the evaluator's own, not the server's copy of them.
+    expect(row.excludedBy).toBe('evidence');
+    expect(row.reasons).toContain('hash-drift');
+    // §7.1's asymmetry, at the route: the row still reads `current` while being excluded from recall.
+    // So the ONLY thing that tells an operator it is out is the panel built from these fields.
+    expect(row.group).toBe('current');
+    expect(served.counts.current).toBe(1);
+
+    // The deliberate opt-out still exists and still reports the stamp — the cheap read is available,
+    // it is simply not the default.
+    const stamped = readMemoryLedger(
+      api,
+      parseMemoryLedgerQuery(new URLSearchParams('revalidate=0')),
+    );
+    expect(stamped.configured).toBe(true);
+    if (!stamped.configured) return;
+    expect(stamped.rows[0]?.evidenceVerdict).toBe('valid');
+    expect(stamped.rows[0]?.eligible).toBe(true);
+    expect(stamped.rows[0]?.excludedBy).toBeUndefined();
+    expect(stamped.rows[0]?.reasons).toEqual([]);
+  });
 });
+
+/** A node that exists but no longer contains the quoted text, and a record that cites it. */
+function driftedApi(home: string): MemoryApi {
+  const env = {
+    ...process.env,
+    KCRIB_MEMORY_DIR: home,
+    KCRIB_REGISTRY_DIR: home,
+    KCRIB_SYNC_KEY: undefined,
+  };
+  const evidence: MemoryEvidence[] = [
+    {
+      kind: 'source-quote',
+      verdict: 'valid',
+      checkedAt: MEM_T0,
+      soulId: MEM_LIVE,
+      quote: 'the text that used to be here',
+      // A well-formed hash that cannot equal the live node's — the schema pins the `blake3:<hex>`
+      // shape, so the fixture has to be a real digest and not the word "stale".
+      targetHash: `blake3:${'a'.repeat(64)}`,
+    },
+  ];
+  const input = {
+    kind: 'fact' as const,
+    subject: MEM_LIVE,
+    claim: 'demo.run handles the request',
+    scope: { boundary: 'repo' as const, repoId: MEM_REPO },
+    appliesTo: [MEM_LIVE],
+    evidence,
+    authorship: { actor: 'claude-code', kind: 'agent' as const, tool: 'claude-code' },
+  };
+  const local = MemoryStore.local(MEM_REPO, { env, now: () => MEM_T0 });
+  local.upsertEntries('active', [
+    {
+      id: memoryRecordId(input),
+      schemaVersion: '1' as const,
+      ...input,
+      // Stamped healthy — the claim a fresh evaluation is allowed to overturn.
+      verdicts: {
+        trust: 'local' as const,
+        evidence: 'valid' as const,
+        applicability: 'current' as const,
+        lifecycle: 'active' as const,
+      },
+      createdAt: MEM_T0,
+    },
+  ]);
+  const live = {
+    id: MEM_LIVE,
+    kind: 'symbol',
+    name: 'run',
+    qualifiedName: 'demo.run',
+    file: 'src/demo.ts',
+    span: { start: 2, end: 3 },
+    lang: 'typescript',
+    // Differs from the evidence's `targetHash` → drift, never a clean grounding.
+    hash: 'blake3:live',
+  };
+  const soul = {
+    getNode: (id: string) => (live.id === id ? live : undefined),
+    allNodes: () => [live],
+    // The rehydrated span does NOT contain the cited quote, so source-quote revalidation fails.
+    rehydrate: () => ({
+      text: 'return value;',
+      truncated: false,
+      totalLines: 1,
+      startLine: 2,
+    }),
+    findByLocator: () => [],
+  } as unknown as MemoryAnchorPort;
+  return new MemoryApi({
+    stores: { local },
+    env,
+    now: () => MEM_T0,
+    soul,
+    evaluator: new MemoryEvaluator(),
+    evalCtx: { soul: soul as unknown as MemorySoulPort },
+  });
+}
 
 describe('record connections endpoint (WP-G7)', () => {
   let home = '';
@@ -481,6 +631,159 @@ describe('memory home endpoint', () => {
         },
       });
       expect(result.nextAction.toLowerCase()).toContain('capture');
+    } finally {
+      rmSync(home, { recursive: true, force: true });
+    }
+  });
+
+  // ─── WP5 §7.3 / T12 — the recovery ladder reaches every state U3 names ──────────
+  //
+  // U3 names states a person is meant to be able to REPAIR: a stale index, an unavailable model,
+  // blocked extraction, failed persistence. The endpoint received `health` and never read it, so
+  // each one was DISPLAYED in a tile while the one line that says what to do about it ignored them
+  // — a dashboard that reports a fault and cannot name a step. §7.3 made the ladder consult
+  // `health`; T12 pins that it still does.
+  //
+  // The assertions are about the COMMAND named, not the sentence around it: the wording may
+  // improve, the reachable-without-extra-setup property may not (§4.3 — the old pending hint named
+  // `crib memory distill --provider <name>`, an LLM provider nobody had configured).
+
+  it('gives a repairable step for each U3 state, and never calls a broken state "nothing needs you"', () => {
+    const home = mkdtempSync(join(tmpdir(), 'crib-viz-home-ladder-'));
+    try {
+      const api = memApi(home);
+      // One active claim, one history entry, no captures: the ONLY thing that can give the ladder a
+      // reason to speak is the health state under test.
+      const healthy: VizMemoryHomeOperations = {
+        retrieval: { mode: 'on-device-semantic', modelId: 'intfloat/multilingual-e5-large' },
+        capture: { lastSuccessfulAt: MEM_T0 },
+        codeIndex: { lastSuccessfulAt: MEM_T0, behindHead: false },
+        sync: { configured: false },
+      };
+      const stepFor = (health: VizMemoryHomeOperations) => readMemoryHome(api, health).nextAction;
+
+      // The control. Without it the test could pass by making EVERY state emit a step, which would
+      // be a different defect (an operator nagged on a healthy repository) rather than a fix.
+      expect(stepFor(healthy)).toContain('Nothing needs you');
+
+      const deadLetter: VizMemoryHomeOperations = {
+        ...healthy,
+        capture: { lastSuccessfulAt: MEM_T0, pending: 0, dead: 2 },
+      };
+      const staleIndex: VizMemoryHomeOperations = {
+        ...healthy,
+        codeIndex: { lastSuccessfulAt: MEM_T0, behindHead: true },
+      };
+      const noModel: VizMemoryHomeOperations = {
+        ...healthy,
+        retrieval: { mode: 'lexical-fallback', reason: 'installed tier is missing' },
+      };
+
+      const cases: Array<[string, VizMemoryHomeOperations, string]> = [
+        ['blocked extraction / failed persistence', deadLetter, 'memory_observe'],
+        ['a stale code index', staleIndex, 'crib update'],
+        ['an unavailable on-device model', noModel, 'crib embed status'],
+      ];
+      for (const [state, health, named] of cases) {
+        const step = stepFor(health);
+        expect(step, state).toBeTruthy();
+        expect(step, state).toContain(named);
+        // §4.2 — a condition that needs repair must never be dressed as an all-clear.
+        expect(step, state).not.toContain('Nothing needs you');
+      }
+
+      // §4.2 again, from the other side: the step must carry the REASON the tile shows, or the
+      // operator is told to repair something with no account of what actually broke.
+      expect(stepFor(noModel)).toContain('installed tier is missing');
+
+      // The tile the ladder reads is the tile the operator sees — one `health` object, passed
+      // through verbatim, so a count can never steer a step the page does not display.
+      expect(readMemoryHome(api, deadLetter)).toMatchObject({
+        health: { capture: { lastSuccessfulAt: MEM_T0, pending: 0, dead: 2 } },
+      });
+    } finally {
+      rmSync(home, { recursive: true, force: true });
+    }
+  });
+
+  it('binds a repair line to each health tile, and only where the tile reports a fault', () => {
+    const home = mkdtempSync(join(tmpdir(), 'crib-viz-home-recovery-'));
+    try {
+      const api = memApi(home);
+      const base: VizMemoryHomeOperations = {
+        retrieval: { mode: 'on-device-semantic', modelId: 'intfloat/multilingual-e5-large' },
+        capture: { lastSuccessfulAt: MEM_T0, pending: 0, dead: 0 },
+        codeIndex: { lastSuccessfulAt: MEM_T0, behindHead: false },
+        sync: { configured: false },
+      };
+      // A healthy home carries NO lines at all. This is the half that keeps the feature honest: a
+      // tile that always has something to say trains the operator to ignore all of them, and a
+      // reassurance the server did not measure is exactly the fabrication §4.2 forbids.
+      expect(readMemoryHome(api, base)).toMatchObject({ recovery: {} });
+
+      const broken: VizMemoryHomeOperations = {
+        ...base,
+        retrieval: { mode: 'lexical-fallback', reason: 'installed tier is missing' },
+        capture: { lastSuccessfulAt: MEM_T0, pending: 0, dead: 3 },
+        codeIndex: { lastSuccessfulAt: MEM_T0, behindHead: true },
+      };
+      // One line per faulted tile, each naming a real step — not "healthy"/"ok" filler, and not a
+      // single general line copied across tiles (which would leave "what do I do about THIS?" open).
+      expect(readMemoryHome(api, broken)).toMatchObject({
+        recovery: {
+          capture: expect.stringContaining('memory_observe'),
+          codeIndex: expect.stringContaining('crib update'),
+          retrieval: expect.stringContaining('crib embed status'),
+        },
+      });
+
+      // Dead letters outrank waiting ones in the capture tile for the same reason they outrank the
+      // pending branch in the ladder: a waiting capture still has an automatic path.
+      const deadAndWaiting: VizMemoryHomeOperations = {
+        ...base,
+        capture: { lastSuccessfulAt: MEM_T0, pending: 4, dead: 1 },
+      };
+      const recovery = readMemoryHome(api, deadAndWaiting);
+      if (!recovery.configured) throw new Error('expected configured');
+      expect(recovery.recovery.capture).toContain('dead letters');
+      expect(recovery.recovery.capture).not.toContain('Re-check');
+
+      // A waiting capture with nothing dead still gets its line — the tile is not silent just
+      // because the worst case is absent.
+      const waitingOnly: VizMemoryHomeOperations = {
+        ...base,
+        capture: { lastSuccessfulAt: MEM_T0, pending: 4, dead: 0 },
+      };
+      const waiting = readMemoryHome(api, waitingOnly);
+      if (!waiting.configured) throw new Error('expected configured');
+      expect(waiting.recovery.capture).toContain('Re-check');
+
+      // `sync` has no line and cannot have one: nothing populates its pending/dead counts, so its
+      // only reachable states are `local only` and `configured; no run yet`, neither a fault.
+      // Pinned so a future repair line for it has to arrive with a real signal behind it.
+      expect(Object.keys(recovery.recovery)).not.toContain('sync');
+    } finally {
+      rmSync(home, { recursive: true, force: true });
+    }
+  });
+
+  it('ranks a repair state above routine work when both are present', () => {
+    // The priority order the ladder's comment claims: a state that means "the material you are
+    // about to act on may be wrong or missing" speaks BEFORE work that is merely waiting. Pinned
+    // here so a future reorder is a deliberate change with a failing test, not a silent shuffle.
+    const home = mkdtempSync(join(tmpdir(), 'crib-viz-home-priority-'));
+    try {
+      // This API genuinely holds one pending capture, so the routine branch is live and losing.
+      const api = pendingApi(home);
+      const step = readMemoryHome(api, {
+        capture: { lastSuccessfulAt: MEM_T0, pending: 1, dead: 1 },
+        codeIndex: { lastSuccessfulAt: MEM_T0, behindHead: true },
+      }).nextAction;
+      // Dead letters outrank a stale index: the index can be caught up automatically, a dead
+      // capture cannot, and only a person can decide whether the learning is still worth keeping.
+      expect(step).toContain('memory_observe');
+      expect(step).not.toContain('crib update');
+      expect(step).not.toContain('Nothing needs you');
     } finally {
       rmSync(home, { recursive: true, force: true });
     }

@@ -442,7 +442,7 @@ if (problems.length > 0) return { ok: false, problems };  // nothing written
 | Supporter retracted | lifecycle fold | edges drop from current and timeline at once; extraction jobs for that source are removed |
 | Torn store-generation sidecar | `gen: -1, nonce: 'torn:<path>'` | readers never cache against it |
 | Crash between shard write and generation bump | generation not advanced | a cached reader can serve the pre-write view until the next write; the shard bytes themselves are complete |
-| Power loss | `writeJsonAtomic` does not `fsync` | rename atomicity holds against process crash, not against a kernel crash before flush — a known limit |
+| Power loss | `crib doctor` "durability model" check; `atomicWriteDurability()` in `packages/core/src/atomic-write.ts` | `writeJsonAtomic` flushes the temp file before the rename and the parent directory after it, so a completed write survives a **process crash** and is **device-ordered**; it is power-loss durable only where the platform's `fsync` reaches the media (`false` on darwin, where `F_FULLFSYNC` is unreachable from Node core) — the check reports which of the three guarantees holds here rather than asserting one |
 | Two principals' memory-1 records gathered together | `crib doctor` "principal boundary" check | unstamped v1 records are visible to both; fix with `crib memory migrate` or `strictPrincipal` |
 
 ## 6.9 Configuration

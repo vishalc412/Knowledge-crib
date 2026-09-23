@@ -258,6 +258,21 @@
         </sc-if>
       </div>
 
+      <!-- WP5 §7.4 / U4 — the read failure, OUTSIDE every list block, so it renders on the FIRST
+           failed read and not only once a payload exists. `data-kc-mem-error` names which of the two
+           failures this was: the server unreachable, or the server answering with a failure. The
+           colour rides on the left rule and the text stays on the panel's own high-contrast colour —
+           the accents are below WCAG AA as text on the light panel (measured, recorded), and a
+           recovery notice nobody can read is not a recovery notice. -->
+      <sc-if value="{{ mem.error }}" hint-placeholder-val="{{ true }}">
+        <div data-kc-mem-error="{{ mem.errorKind }}" style="margin:11px 14px 0; padding:9px 11px; border-radius:9px; border-left:3px solid #f87171; background: {{ t.chip }}; min-width:0;">
+          <div style="font-size:10.5px; font-weight:700; letter-spacing:0.04em; text-transform:uppercase; color: {{ t.text }};">{{ mem.errorHeader }}</div>
+          <div style="font-size:11.5px; line-height:1.5; color: {{ t.text }}; margin-top:3px;">{{ mem.errorLine }}</div>
+          <div style="font-size:11px; line-height:1.5; color: {{ t.text }}; margin-top:5px; font-weight:600;">{{ mem.errorFix }}</div>
+          <div style="font-family:'IBM Plex Mono',monospace; font-size:10px; line-height:1.45; color: {{ t.sub }}; margin-top:5px; word-break:break-word;">{{ mem.error }}</div>
+        </div>
+      </sc-if>
+
       <div style="flex:1; overflow-y:auto; padding:13px 14px 16px;">
         <sc-if value="{{ mem.homeView }}" hint-placeholder-val="{{ true }}">
           <div style="margin-bottom:14px;">
@@ -274,6 +289,14 @@
                 <div style="padding:8px 9px; border-radius:8px; border-left:3px solid {{ signal.color }}; background: {{ t.chip }}; min-width:0;">
                   <div style="font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color: {{ t.sub }};">{{ signal.label }}</div>
                   <div style="font-size:11px; font-weight:600; color: {{ t.text }}; margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ signal.value }}</div>
+                  <!-- WP5 §7.4 — what to DO about this tile, in the server's words. Rendered only
+                       when the signal is actually faulted; a tile with nothing wrong stays short.
+                       The signal colour stays on the tile's left rule and the text uses the panel's
+                       own high-contrast colour: as TEXT the accents are ~2:1 on the light panel
+                       (measured), and an unreadable repair instruction is not a repair. -->
+                  <sc-if value="{{ signal.fix }}" hint-placeholder-val="{{ true }}">
+                    <div data-kc-mem-recovery="{{ signal.label }}" style="font-size:10px; font-weight:600; line-height:1.4; color: {{ t.text }}; margin-top:4px;">{{ signal.fix }}</div>
+                  </sc-if>
                 </div>
               </sc-for>
             </div>
@@ -505,6 +528,17 @@
                     <span style="display:inline-flex; align-items:center; gap:4px; padding:3px 8px; border-radius:6px; font-size:10.5px; font-weight:600; background: {{ chip.bg }}; color: {{ chip.fg }};">{{ chip.label }}</span>
                   </sc-for>
                 </div>
+                <sc-if value="{{ mem.detail.exclusion.label }}" hint-placeholder-val="{{ true }}">
+                  <div data-kc-mem-detail-excluded="{{ mem.detail.exclusion.clause }}" style="margin-top:12px; padding:9px 11px; border-radius:9px; background: {{ t.chip }}; border:1px solid {{ t.border }}; border-left:3px solid #f87171;">
+                    <span style="display:block; font-size:9.5px; font-weight:700; letter-spacing:0.04em; text-transform:uppercase; color: {{ t.text }};">{{ mem.detail.exclusion.label }}</span>
+                    <span style="display:block; font-size:11px; line-height:1.5; color: {{ t.text }}; margin-top:3px;">{{ mem.detail.exclusion.line }}</span>
+                    <div style="display:flex; flex-direction:column; gap:3px; margin-top:6px;">
+                      <sc-for list="{{ mem.detail.exclusion.reasons }}" as="why" hint-placeholder-count="2">
+                        <span data-kc-mem-detail-reason="{{ why.code }}" style="font-family:'IBM Plex Mono',monospace; font-size:9.5px; line-height:1.5; color: {{ t.text }};">{{ why.code }} · {{ why.text }}</span>
+                      </sc-for>
+                    </div>
+                  </div>
+                </sc-if>
                 <sc-if value="{{ mem.detail.times }}" hint-placeholder-val="{{ true }}">
                   <div style="margin-top:10px; font-size:11px; line-height:1.6; color: {{ t.sub }};">{{ mem.detail.times }}</div>
                 </sc-if>
@@ -610,7 +644,7 @@
             <!-- group tabs -->
             <div style="display:flex; flex-wrap:wrap; gap:5px; margin-bottom:11px;">
               <sc-for list="{{ mem.tabs }}" as="tab" hint-placeholder-count="5">
-                <button onClick="{{ tab.onGo }}" style="display:inline-flex; align-items:center; gap:5px; padding:4px 9px; border-radius:7px; border:1px solid {{ tab.borderColor }}; background: {{ tab.bg }}; color: {{ t.text }}; font:600 11px 'IBM Plex Sans'; cursor:pointer;">
+                <button data-kc-mem-tab="{{ tab.label }}" onClick="{{ tab.onGo }}" style="display:inline-flex; align-items:center; gap:5px; padding:4px 9px; border-radius:7px; border:1px solid {{ tab.borderColor }}; background: {{ tab.bg }}; color: {{ t.text }}; font:600 11px 'IBM Plex Sans'; cursor:pointer;">
                   <span style="width:8px; height:8px; border-radius:50%; background: {{ tab.color }};"></span>{{ tab.label }}
                   <span style="color: {{ t.sub }}; font-weight:500;">{{ tab.count }}</span>
                 </button>
@@ -633,14 +667,23 @@
                       </sc-for>
                     </span>
                     <span style="display:block; font-size:10px; color: {{ t.sub }}; margin-top:5px;">{{ r.time }}</span>
+                    <!-- WP5 §7.4 — WHY this claim is not answering, when the recall gate keeps it out.
+                         Rendered as the evaluator's own reasons in words (T18), so the state is
+                         inspectable from the list instead of requiring a terminal. -->
+                    <sc-if value="{{ r.notRecalled }}" hint-placeholder-val="{{ true }}">
+                      <span data-kc-mem-excluded="{{ r.notRecalledClause }}" style="display:block; margin-top:6px; padding:6px 8px; border-radius:7px; background: {{ t.chip }}; border:1px solid {{ t.border }}; border-left:3px solid #f87171;">
+                        <span style="display:block; font-size:9.5px; font-weight:700; letter-spacing:0.04em; text-transform:uppercase; color: {{ t.text }};">{{ r.notRecalled }}</span>
+                        <span style="display:block; font-size:11px; line-height:1.5; color: {{ t.text }}; margin-top:2px;">{{ r.notRecalledLine }}</span>
+                        <sc-for list="{{ r.notRecalledReasons }}" as="why" hint-placeholder-count="2">
+                          <span data-kc-mem-reason="{{ why.code }}" style="display:block; font-family:'IBM Plex Mono',monospace; font-size:9.5px; color: {{ t.text }}; margin-top:2px;">{{ why.code }} · {{ why.text }}</span>
+                        </sc-for>
+                      </span>
+                    </sc-if>
                   </span>
                 </button>
               </sc-for>
               <sc-if value="{{ mem.empty }}" hint-placeholder-val="{{ true }}">
-                <div style="font-size:12px; color: {{ t.sub }}; padding:8px 2px; line-height:1.5;">{{ mem.emptyMessage }}</div>
-              </sc-if>
-              <sc-if value="{{ mem.error }}" hint-placeholder-val="{{ true }}">
-                <div style="font-size:12px; color:#f87171;">{{ mem.error }}</div>
+                <div data-kc-mem-empty style="font-size:12px; color: {{ t.sub }}; padding:8px 2px; line-height:1.5;">{{ mem.emptyMessage }}</div>
               </sc-if>
               <sc-if value="{{ mem.loading }}" hint-placeholder-val="{{ true }}">
                 <div style="font-size:12px; color: {{ t.sub }};">Loading ledger…</div>
@@ -1265,9 +1308,9 @@ class Component extends DCLogic {
     const clusterContextIds=new Set(clusterProjection?clusterProjection.contextIds:[]);
     // cluster blobs
     for(const c of this.clusters){ const mem=visible.filter(n=>n.cluster===c.id&&!hid[n.kind]); if(mem.length<1)continue; let cx=0,cy=0; mem.forEach(n=>{cx+=n.x;cy+=n.y;}); cx/=mem.length; cy/=mem.length; let rad=0; mem.forEach(n=>{rad=Math.max(rad,Math.hypot(n.x-cx,n.y-cy)+n.r);}); rad+=26;
-      const [sx,sy]=this.w2s(cx,cy); const sr=rad*k; const grd=ctx.createRadialGradient(sx,sy,sr*0.2,sx,sy,sr); const a=th.name==='dark'?0.16:0.13; grd.addColorStop(0,this.hex(c.color,a)); grd.addColorStop(1,this.hex(c.color,0)); ctx.fillStyle=grd; ctx.beginPath(); ctx.arc(sx,sy,sr,0,7); ctx.fill();
+      const [sx,sy]=this.w2s(cx,cy); const sr=rad*k; const grd=ctx.createRadialGradient(sx,sy,sr*0.2,sx,sy,sr); const a=th.name==='dark'?0.16:0.13; grd.addColorStop(0,KCGraphModel.hex(c.color,a)); grd.addColorStop(1,KCGraphModel.hex(c.color,0)); ctx.fillStyle=grd; ctx.beginPath(); ctx.arc(sx,sy,sr,0,7); ctx.fill();
       // label
-      ctx.font='600 '+Math.max(10,11*Math.min(k,1.3))+"px 'IBM Plex Sans', system-ui, sans-serif"; ctx.fillStyle=this.hex(c.color,0.92); ctx.textAlign='center'; ctx.textBaseline='middle'; const dim=sel&&hl&&!mem.some(n=>hl.set.has(n.id)); ctx.globalAlpha=dim?0.25:1; ctx.fillText(c.label.toUpperCase(),sx,sy-sr-2); ctx.globalAlpha=1; }
+      ctx.font='600 '+Math.max(10,11*Math.min(k,1.3))+"px 'IBM Plex Sans', system-ui, sans-serif"; ctx.fillStyle=KCGraphModel.hex(c.color,0.92); ctx.textAlign='center'; ctx.textBaseline='middle'; const dim=sel&&hl&&!mem.some(n=>hl.set.has(n.id)); ctx.globalAlpha=dim?0.25:1; ctx.fillText(c.label.toUpperCase(),sx,sy-sr-2); ctx.globalAlpha=1; }
     // edges
     ctx.lineCap='round';
     for(const e of activeEdges){ const a=this.byId[e.src], b=this.byId[e.dst]; if(hid[a.kind]||hid[b.kind])continue;
@@ -1280,15 +1323,15 @@ class Component extends DCLogic {
       if(this.state.blast && active) col='#f87171';
       else if(sel && inHorizon) col=direct?this.DEPTH_COLORS[1]:this.DEPTH_COLORS[2];
       if(sel){ alpha = active?(direct?0.86:0.32):0.045; } else if(clusterProjection){ alpha=(clusterContextIds.has(e.src)||clusterContextIds.has(e.dst))?0.12:0.62; } else { alpha = 0.22; }
-      ctx.strokeStyle=this.hex(col,alpha); ctx.lineWidth=active?(direct?2.2:1.35):1;
+      ctx.strokeStyle=KCGraphModel.hex(col,alpha); ctx.lineWidth=active?(direct?2.2:1.35):1;
       if(e.rel==='member-of'||e.rel==='references'){ ctx.setLineDash([3,4]); } else ctx.setLineDash([]);
       // slight curve
       const mx=(ax+bx)/2, my=(ay+by)/2; const dx=bx-ax, dy=by-ay; const nlen=Math.hypot(dx,dy)||1; const cxp=mx-dy/nlen*nlen*0.06, cyp=my+dx/nlen*nlen*0.06;
       ctx.beginPath(); ctx.moveTo(ax,ay); ctx.quadraticCurveTo(cxp,cyp,bx,by); ctx.stroke(); ctx.setLineDash([]);
       // arrowhead for directed (not member-of) when active or no-sel
-      if(e.rel!=='member-of' && (active|| (!sel))){ const t=0.82; const qx=(1-t)*(1-t)*ax+2*(1-t)*t*cxp+t*t*bx; const qy=(1-t)*(1-t)*ay+2*(1-t)*t*cyp+t*t*by; const ang=Math.atan2(by-cyp,bx-cxp); const sz=active?7:5; const ex=bx-Math.cos(ang)*(b.r*k+2), ey=by-Math.sin(ang)*(b.r*k+2); ctx.fillStyle=this.hex(col,alpha); ctx.beginPath(); ctx.moveTo(ex,ey); ctx.lineTo(ex-Math.cos(ang-0.4)*sz,ey-Math.sin(ang-0.4)*sz); ctx.lineTo(ex-Math.cos(ang+0.4)*sz,ey-Math.sin(ang+0.4)*sz); ctx.closePath(); ctx.fill(); }
+      if(e.rel!=='member-of' && (active|| (!sel))){ const t=0.82; const qx=(1-t)*(1-t)*ax+2*(1-t)*t*cxp+t*t*bx; const qy=(1-t)*(1-t)*ay+2*(1-t)*t*cyp+t*t*by; const ang=Math.atan2(by-cyp,bx-cxp); const sz=active?7:5; const ex=bx-Math.cos(ang)*(b.r*k+2), ey=by-Math.sin(ang)*(b.r*k+2); ctx.fillStyle=KCGraphModel.hex(col,alpha); ctx.beginPath(); ctx.moveTo(ex,ey); ctx.lineTo(ex-Math.cos(ang-0.4)*sz,ey-Math.sin(ang-0.4)*sz); ctx.lineTo(ex-Math.cos(ang+0.4)*sz,ey-Math.sin(ang+0.4)*sz); ctx.closePath(); ctx.fill(); }
       // edge label (plain english) when active
-      if(active&&direct){ const lab=this.state.blast?'breaks if changed':(this.PHRASE[e.rel]||e.rel); ctx.font="500 10.5px 'IBM Plex Sans', system-ui, sans-serif"; const tw=ctx.measureText(lab).width; ctx.save(); ctx.translate(cxp,cyp); let ar=Math.atan2(by-ay,bx-ax); if(ar>Math.PI/2)ar-=Math.PI; if(ar<-Math.PI/2)ar+=Math.PI; ctx.rotate(ar); ctx.fillStyle=th.labelPill; ctx.strokeStyle=this.hex(col,0.5); ctx.lineWidth=1; this.rr(ctx,-tw/2-6,-9,tw+12,18,5); ctx.fill(); ctx.stroke(); ctx.fillStyle=this.state.blast?'#f87171':th.label; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(lab,0,0); ctx.restore(); }
+      if(active&&direct){ const lab=this.state.blast?'breaks if changed':(this.PHRASE[e.rel]||e.rel); ctx.font="500 10.5px 'IBM Plex Sans', system-ui, sans-serif"; const tw=ctx.measureText(lab).width; ctx.save(); ctx.translate(cxp,cyp); let ar=Math.atan2(by-ay,bx-ax); if(ar>Math.PI/2)ar-=Math.PI; if(ar<-Math.PI/2)ar+=Math.PI; ctx.rotate(ar); ctx.fillStyle=th.labelPill; ctx.strokeStyle=KCGraphModel.hex(col,0.5); ctx.lineWidth=1; KCGraphModel.rr(ctx,-tw/2-6,-9,tw+12,18,5); ctx.fill(); ctx.stroke(); ctx.fillStyle=this.state.blast?'#f87171':th.label; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(lab,0,0); ctx.restore(); }
     }
     // nodes
     for(const n of visible){ if(hid[n.kind])continue; const [x,y]=this.w2s(n.x,n.y);
@@ -1309,12 +1352,12 @@ class Component extends DCLogic {
       const contextFade=clusterContextIds.has(n.id)&&!isHover;
       ctx.globalAlpha = dim?0.16:(contextFade?0.28:(noiseFade?0.4:1));
       // glow for selected / hover / search match
-      if(isSel||isHover||match||ringCol){ ctx.beginPath(); ctx.arc(x,y,r+ (isSel?8:(depth===1?6:4)),0,7); ctx.fillStyle=this.hex(ringCol||col,isSel?0.28:(depth===1?0.18:0.1)); ctx.fill(); }
+      if(isSel||isHover||match||ringCol){ ctx.beginPath(); ctx.arc(x,y,r+ (isSel?8:(depth===1?6:4)),0,7); ctx.fillStyle=KCGraphModel.hex(ringCol||col,isSel?0.28:(depth===1?0.18:0.1)); ctx.fill(); }
       ctx.beginPath(); ctx.arc(x,y,r,0,7); ctx.fillStyle=col; ctx.fill();
-      ctx.lineWidth=isSel?3.2:(depth===1?2.2:1.5); ctx.strokeStyle=ringCol?this.hex(ringCol,0.96):th.nodeStroke; ctx.stroke();
+      ctx.lineWidth=isSel?3.2:(depth===1?2.2:1.5); ctx.strokeStyle=ringCol?KCGraphModel.hex(ringCol,0.96):th.nodeStroke; ctx.stroke();
       if(n.id===this._cand && !isSel){ ctx.save(); ctx.setLineDash([3,3]); ctx.lineWidth=2; ctx.strokeStyle=th.label; ctx.beginPath(); ctx.arc(x,y,r+5,0,7); ctx.stroke(); ctx.restore(); }
       // doc/table icon hints via inner mark
-      if(n.kind==='table'||n.kind==='column'){ ctx.strokeStyle=this.hex('#000',0.25); ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(x-r*0.5,y); ctx.lineTo(x+r*0.5,y); ctx.stroke(); }
+      if(n.kind==='table'||n.kind==='column'){ ctx.strokeStyle=KCGraphModel.hex('#000',0.25); ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(x-r*0.5,y); ctx.lineTo(x+r*0.5,y); ctx.stroke(); }
       ctx.globalAlpha=1;
     }
     // labels: priority draw with overlap culling for cleaner zoomed-in view
@@ -1350,7 +1393,7 @@ class Component extends DCLogic {
       if(overlap) continue;
       labelRects.push({x:lx,y:ly,w:lw,h:lh});
       ctx.globalAlpha=dim?0.3:1;
-      ctx.fillStyle=th.labelPill; this.rr(ctx,lx,ly-9,lw,lh,5); ctx.fill();
+      ctx.fillStyle=th.labelPill; KCGraphModel.rr(ctx,lx,ly-9,lw,lh,5); ctx.fill();
       ctx.fillStyle=isSel?th.label:th.label; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(lab,x,ly); ctx.globalAlpha=1;
     }
     // On-canvas "expand to 2-hop" chip — additive to the Horizon panel row (buildDetail()), so the
@@ -1364,8 +1407,8 @@ class Component extends DCLogic {
         ctx.font="600 12px 'IBM Plex Sans', system-ui, sans-serif";
         const tw=ctx.measureText(lab).width; const pw=tw+30, ph=34;
         const px=this.W/2-pw/2, py=this.H-ph-20;
-        ctx.fillStyle=th.labelPill; ctx.strokeStyle=this.hex(this.DEPTH_COLORS[2],0.6); ctx.lineWidth=1.4;
-        this.rr(ctx,px,py,pw,ph,17); ctx.fill(); ctx.stroke();
+        ctx.fillStyle=th.labelPill; ctx.strokeStyle=KCGraphModel.hex(this.DEPTH_COLORS[2],0.6); ctx.lineWidth=1.4;
+        KCGraphModel.rr(ctx,px,py,pw,ph,17); ctx.fill(); ctx.stroke();
         ctx.fillStyle=this.DEPTH_COLORS[2]; ctx.beginPath(); ctx.arc(px+18,py+ph/2,4,0,7); ctx.fill();
         ctx.fillStyle=th.label; ctx.textAlign='center'; ctx.textBaseline='middle';
         ctx.fillText(lab,px+pw/2+7,py+ph/2+0.5);
@@ -1389,7 +1432,7 @@ class Component extends DCLogic {
       if(!a||!b)continue;
       const ax=a.x+a.w/2, ay=a.y+a.h/2, bx=b.x+b.w/2, by=b.y+b.h/2;
       const col=this.REL[e.rel]||'#64748b';
-      ctx.strokeStyle=this.hex(col,Math.min(0.38,0.08+e.count/35));
+      ctx.strokeStyle=KCGraphModel.hex(col,Math.min(0.38,0.08+e.count/35));
       ctx.lineWidth=Math.min(4,1+Math.log2(e.count+1)*0.45);
       ctx.beginPath(); ctx.moveTo(ax,ay); ctx.lineTo(bx,by); ctx.stroke();
     }
@@ -1397,31 +1440,31 @@ class Component extends DCLogic {
       const selected=b.id===this.state.selectedClusterId;
       const col=b.muted?'#64748b':(b.color||this.KIND[b.topKind]||'#5b8cff');
       ctx.save();
-      ctx.fillStyle=this.hex(col,b.muted?0.07:(selected?0.22:0.12));
-      ctx.strokeStyle=this.hex(col,b.muted?0.24:(selected?0.95:0.42));
+      ctx.fillStyle=KCGraphModel.hex(col,b.muted?0.07:(selected?0.22:0.12));
+      ctx.strokeStyle=KCGraphModel.hex(col,b.muted?0.24:(selected?0.95:0.42));
       ctx.lineWidth=selected?2.5:1.2;
-      this.rr(ctx,b.x,b.y,b.w,b.h,10); ctx.fill(); ctx.stroke();
-      this.rr(ctx,b.x+7,b.y+7,b.w-14,b.h-14,7); ctx.clip();
-      ctx.fillStyle=this.hex(col,0.95);
+      KCGraphModel.rr(ctx,b.x,b.y,b.w,b.h,10); ctx.fill(); ctx.stroke();
+      KCGraphModel.rr(ctx,b.x+7,b.y+7,b.w-14,b.h-14,7); ctx.clip();
+      ctx.fillStyle=KCGraphModel.hex(col,0.95);
       ctx.beginPath(); ctx.arc(b.x+18,b.y+20,6,0,7); ctx.fill();
       ctx.fillStyle=th.label;
       ctx.font="700 13px 'IBM Plex Sans', system-ui, sans-serif";
       ctx.textAlign='left'; ctx.textBaseline='middle';
-      const label=this.ellipsize(ctx,String(b.label||b.id).replace(/^cluster:/,''),b.w-48);
+      const label=KCGraphModel.ellipsize(ctx,String(b.label||b.id).replace(/^cluster:/,''),b.w-48);
       ctx.fillText(label,b.x+32,b.y+20);
       ctx.fillStyle=th.sub||'#8b97a8';
       ctx.font="500 11px 'IBM Plex Sans', system-ui, sans-serif";
       const line1=b.isModule?(b.count+' symbols · '+(b.clusterIds?b.clusterIds.length:0)+' clusters'):b.isBack?'back to the module list':b.isNode?(Math.round(b.degree)+' caller'+(Math.round(b.degree)===1?'':'s')):(b.count+' nodes · '+(b.muted?'summary':Math.round(b.degree)+' links'));
-      ctx.fillText(this.ellipsize(ctx,line1,b.w-28),b.x+14,b.y+50);
+      ctx.fillText(KCGraphModel.ellipsize(ctx,line1,b.w-28),b.x+14,b.y+50);
       b.memberHits = [];
       if(b.isModule){
         // purpose text (~60 chars) — the module-segmented overview's reason for existing.
-        ctx.fillText(this.ellipsize(ctx,b.purpose||'no purpose yet',b.w-28),b.x+14,b.y+72);
+        ctx.fillText(KCGraphModel.ellipsize(ctx,b.purpose||'no purpose yet',b.w-28),b.x+14,b.y+72);
       } else if(b.isBack){
-        ctx.fillText(this.ellipsize(ctx,'',b.w-28),b.x+14,b.y+72);
+        ctx.fillText(KCGraphModel.ellipsize(ctx,'',b.w-28),b.x+14,b.y+72);
       } else if(b.isNode || b.muted || !b.topMembers || !b.topMembers.length){
         const line2=b.isNode?(this.KLABEL[b.topKind]||b.topKind):(b.muted?'Hidden from overview links':(this.KLABEL[b.topKind]||b.topKind)+' heavy');
-        ctx.fillText(this.ellipsize(ctx,line2,b.w-28),b.x+14,b.y+72);
+        ctx.fillText(KCGraphModel.ellipsize(ctx,line2,b.w-28),b.x+14,b.y+72);
       } else {
         ctx.font="500 10.5px 'IBM Plex Sans', system-ui, sans-serif";
         b.topMembers.forEach((m,i)=>{
@@ -1430,17 +1473,17 @@ class Component extends DCLogic {
           ctx.fillStyle=mcol;
           ctx.beginPath(); ctx.arc(mx+5,my,4,0,7); ctx.fill();
           ctx.fillStyle=th.label;
-          const lab=this.ellipsize(ctx,m.label,b.w-38);
+          const lab=KCGraphModel.ellipsize(ctx,m.label,b.w-38);
           ctx.fillText(lab,mx+14,my+1);
           b.memberHits.push({id:m.id, x:mx-b.x, y:my-7-b.y, w:b.w-28, h:14});
         });
       }
-      ctx.fillStyle=this.hex(col,0.18);
+      ctx.fillStyle=KCGraphModel.hex(col,0.18);
       // Bar reflects importance relative to the top-ranked block, not raw count — so a single
       // high-importance orphan card and a 40-member module read on the same meaningful scale.
       const topImportance=blocks[0].importance||1;
       const bar=Math.min(b.w-28,Math.max(18,((b.importance||0)/topImportance)*(b.w-28)));
-      this.rr(ctx,b.x+14,b.y+b.h-22,bar,6,4); ctx.fill();
+      KCGraphModel.rr(ctx,b.x+14,b.y+b.h-22,bar,6,4); ctx.fill();
       ctx.restore();
     }
     ctx.restore();
@@ -1450,15 +1493,8 @@ class Component extends DCLogic {
     ctx.fillText('Architecture overview',this.W/2,102);
     ctx.fillStyle=th.sub||'#8b97a8';
     ctx.font="500 12px 'IBM Plex Sans', system-ui, sans-serif";
-    ctx.fillText(this.ellipsize(ctx,'Click a block to focus. Search narrows to matching neighborhoods. Showing top '+blocks.length+' modules from '+this.nodes.length+' nodes.',this.W-80),this.W/2,124);
+    ctx.fillText(KCGraphModel.ellipsize(ctx,'Click a block to focus. Search narrows to matching neighborhoods. Showing top '+blocks.length+' modules from '+this.nodes.length+' nodes.',this.W-80),this.W/2,124);
   }
-  ellipsize(ctx,text,maxWidth){ text=String(text||''); if(ctx.measureText(text).width<=maxWidth) return text; const ell='…'; let lo=0, hi=text.length; while(lo<hi){ const mid=Math.ceil((lo+hi)/2); if(ctx.measureText(text.slice(0,mid)+ell).width<=maxWidth) lo=mid; else hi=mid-1; } return text.slice(0,Math.max(0,lo))+ell; }
-  rr(ctx,x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
-  hex(c,a){ if(c[0]!=='#') return c; const n=parseInt(c.slice(1),16); const r=(n>>16)&255,g=(n>>8)&255,b=n&255; return 'rgba('+r+','+g+','+b+','+a+')'; }
-  // Escape dynamic node text before splicing into the tooltip's innerHTML. qualified/label/summary
-  // flow from extracted source text (signatures carry <T> generics, docstrings can carry HTML chars) —
-  // unescaped, they corrupt the tooltip DOM or inject markup.
-  esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
   // ---------- interaction ----------
   bind(){ const c=this.canvas;
@@ -1503,7 +1539,7 @@ class Component extends DCLogic {
     return null;
   }
   tip(n,x,y){ const el=this.tipRef.current; if(!el)return; if(!n){ el.style.display='none'; return; } const col=this.KIND[n.kind]||'#888'; el.style.display='block'; el.style.left=Math.min(x+16,this.W-270)+'px'; el.style.top=(y+16)+'px';
-    el.innerHTML='<div style="display:flex;align-items:center;gap:7px;margin-bottom:5px"><span style="width:8px;height:8px;border-radius:50%;background:'+col+'"></span><span style="font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:'+col+'">'+this.esc(this.KLABEL[n.kind]||n.kind)+'</span></div><div style="font-size:13px;font-weight:600;margin-bottom:3px">'+this.esc(n.qualified||n.label)+'</div><div style="font-size:11.5px;line-height:1.45;opacity:.75">'+this.esc(n.summary)+'</div>'; }
+    el.innerHTML='<div style="display:flex;align-items:center;gap:7px;margin-bottom:5px"><span style="width:8px;height:8px;border-radius:50%;background:'+col+'"></span><span style="font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:'+col+'">'+KCGraphModel.esc(this.KLABEL[n.kind]||n.kind)+'</span></div><div style="font-size:13px;font-weight:600;margin-bottom:3px">'+KCGraphModel.esc(n.qualified||n.label)+'</div><div style="font-size:11.5px;line-height:1.45;opacity:.75">'+KCGraphModel.esc(n.summary)+'</div>'; }
 
   // A fresh selection always starts at 1-hop (focusDepth:1) — lean by default — regardless of
   // whether the previous node had been expanded to 2-hop; expansion is a per-node choice, not a
@@ -1546,10 +1582,10 @@ class Component extends DCLogic {
   // Same fetch discipline as loadSource: AbortController + sequence guard, so a slow ledger
   // response can never overwrite a newer view, and closing the panel cancels the in-flight read.
   toggleMemory(){ if(this.state.memOpen){ this.closeMemory(); return; }
-    this.setState({memOpen:true, memData:null, memHome:null, memDetail:null, memGroup:null, memHomeAction:null, memError:null, memPending:null, memPendingLoading:false, memPendingError:null, memPendingOffset:0, memIntake:null, memMutationError:null, memAdmitting:null, memAnnounce:null, memProfile:null, memResumeNext:null, memResuming:false, memAdmittedNotice:null, memResumeNotice:null, selectedId:null, selectedClusterId:null, selectedClusterKind:null, clusterContext:false, clusterReturnId:null, selectedTrail:[], sourcePreview:null});
+    this.setState({memOpen:true, memData:null, memHome:null, memDetail:null, memGroup:null, memHomeAction:null, memError:null, memErrorOffline:false, memPending:null, memPendingLoading:false, memPendingError:null, memPendingOffset:0, memIntake:null, memMutationError:null, memAdmitting:null, memAnnounce:null, memProfile:null, memResumeNext:null, memResuming:false, memAdmittedNotice:null, memResumeNotice:null, selectedId:null, selectedClusterId:null, selectedClusterKind:null, clusterContext:false, clusterReturnId:null, selectedTrail:[], sourcePreview:null});
     this.loadMemory(null); this.focusMemoryPanel(); }
   closeMemory(){ if(this._memAbort)this._memAbort.abort(); if(this._memPendAbort)this._memPendAbort.abort(); if(this._memIntakeAbort)this._memIntakeAbort.abort();
-    this.setState({memOpen:false, memData:null, memHome:null, memDetail:null, memGroup:null, memHomeAction:null, memError:null, memPending:null, memPendingLoading:false, memPendingError:null, memPendingOffset:0, memIntake:null, memMutationError:null, memAdmitting:null, memAnnounce:null, memProfile:null, memResumeNext:null, memResuming:false, memAdmittedNotice:null, memResumeNotice:null});
+    this.setState({memOpen:false, memData:null, memHome:null, memDetail:null, memGroup:null, memHomeAction:null, memError:null, memErrorOffline:false, memPending:null, memPendingLoading:false, memPendingError:null, memPendingOffset:0, memIntake:null, memMutationError:null, memAdmitting:null, memAnnounce:null, memProfile:null, memResumeNext:null, memResuming:false, memAdmittedNotice:null, memResumeNotice:null});
     // Return focus to what opened the panel. Without this the focus ring is left on a button whose
     // panel is gone, and a keyboard user has to tab from the top of the page to get back.
     this.keepFocus('[data-kc-memory-trigger]'); }
@@ -1585,14 +1621,21 @@ class Component extends DCLogic {
     this.setState({memHomeAction:kind});
   }
   async loadMemory(group){ const seq=++this._memSeq; if(this._memAbort)this._memAbort.abort(); const controller=new AbortController(); this._memAbort=controller;
-    this.setState({memLoading:true, memError:null, memGroup:group||null, memDetail:null});
+    this.setState({memLoading:true, memError:null, memErrorOffline:false, memGroup:group||null, memDetail:null});
+    // `answered` is assigned on the line the read RESOLVES, so it is true only when BOTH requests
+    // got a response from the server. It is set BEFORE the status checks on purpose: a 500 is the
+    // server telling us something, and reporting it as "unreachable" would send the operator to
+    // repair the wrong thing. The message text cannot carry this distinction — a rejected fetch
+    // and an HTTP error body are both just strings — so it has to be recorded where it is known.
+    let answered=false;
     try{ const [res,homeRes]=await Promise.all([
         fetch('/memory.json'+(group?('?group='+encodeURIComponent(group)):''),{signal:controller.signal,cache:'no-store'}),
         fetch('/memory/home.json',{signal:controller.signal,cache:'no-store'})]);
+      answered=true;
       if(!res.ok)throw new Error(await res.text()); if(!homeRes.ok)throw new Error(await homeRes.text());
       const [data,home]=await Promise.all([res.json(),homeRes.json()]); if(seq!==this._memSeq)return;
       this.setState({memLoading:false, memData:data, memHome:home});
-    }catch(err){ if(controller.signal.aborted||seq!==this._memSeq)return; this.setState({memLoading:false, memError:String(err&&err.message||err)}); } }
+    }catch(err){ if(controller.signal.aborted||seq!==this._memSeq)return; this.setState({memLoading:false, memError:String(err&&err.message||err), memErrorOffline:!answered}); } }
   async loadMemoryDetail(id,row,fromTrail){ const seq=++this._memSeq; if(this._memAbort)this._memAbort.abort(); const controller=new AbortController(); this._memAbort=controller;
     // WP-G7 — the trail is the list/detail navigation stack: opening a linked claim pushes the
     // current one, Back pops it, and an empty trail returns to the ledger row that opened it.
@@ -1813,6 +1856,29 @@ class Component extends DCLogic {
     if(raw===String.fromCharCode(116,114,117,115,116)) return 'standing';
     return raw; }
   memChip(label,tone){ const T={good:['rgba(52,211,153,0.16)','#34d399'],warn:['rgba(245,158,11,0.16)','#f59e0b'],bad:['rgba(248,113,113,0.16)','#f87171'],dim:['rgba(139,151,168,0.18)','#8b97a8'],info:['rgba(91,140,255,0.16)','#5b8cff']}; const pair=T[tone]||T.dim; return {label,bg:pair[0],fg:pair[1]}; }
+  // WP5 §7.4 / T15 — the evaluator's `ItemReason` codes, as WORDS. The code is the contract (G-U1:
+  // the reason a row was excluded is the evaluator's own verdict, never UI copy invented to explain
+  // it), so this map is a rendering, not a second vocabulary: an unknown code falls through as
+  // itself rather than being smoothed into a reassuring phrase, which is what keeps a NEW evaluator
+  // reason visible here instead of silently unrendered. The codes stay attached in the DOM
+  // (`data-kc-mem-reason`) so the browser test can assert on the evaluator's word, not our prose.
+  memReason(code){ const M={
+    'no-quote':'the record declares no evidence at all',
+    'anchor-gone':'the anchored code no longer exists',
+    'hash-drift':'the anchored code changed under the quote',
+    'reattached':'the anchor moved and was re-matched',
+    'ambiguous-reattach':'the anchor moved and more than one match was possible',
+    'quote-not-found':'the quoted text was not found at the anchor',
+    'receipt-missing':'the execution receipt it cites is missing',
+    'assertion-failed':'the assertion it cites failed',
+    'policy-drift':'the policy it was admitted under has changed',
+    'not-attested':'it is a team claim that no one has attested',
+    'relayed-unconfirmed':'a person said it, and it has not been confirmed here',
+    'inadmissible-kind':'that kind of evidence cannot support this kind of claim',
+    'not-applicable':'the code it describes is no longer there',
+    'ok':'evidence verified against the code',
+    'ignored':'this evidence kind does not count for this claim kind' };
+    return M[code]||String(code); }
   // A ledger ROW carries its verdict as `evidenceVerdict` and the per-item evidence views as the
   // `evidence` array; a record DETAIL passes `verdicts.evidence` as the string. Reading `evidence`
   // blindly rendered "evidence: [object Object]" on every ledger row.
@@ -1923,7 +1989,7 @@ class Component extends DCLogic {
      const preview=this.state.sourcePreview&&this.state.sourcePreview.nodeId===sel?this.state.sourcePreview:null;
      const source=preview?{...preview,loading:preview.status==='loading',ready:preview.status==='ready',unavailable:preview.status==='unavailable',failed:preview.status==='error',onCopy:()=>this.copyLocation(preview.location)}:null;
      const fileDisplay=n.file?(n.file+(n.span?':'+n.span.start+(n.span.end!==n.span.start?'-'+n.span.end:''):'')):null;
-     return { id:sel, name:n.label, qualified:n.qualified, kindLabel:this.KLABEL[n.kind]||n.kind, color:col, glow:this.hex(col,0.22), summary:n.summary, signature:n.signature, file:n.file, fileDisplay, span:n.span, lang:n.lang, sections, evidence, source, backLabel:this.state.clusterReturnId?'Back to functionality':null, backAction:this.state.clusterReturnId?()=>this.returnToCluster():null, blastOn:this.state.blast, blastCount };
+     return { id:sel, name:n.label, qualified:n.qualified, kindLabel:this.KLABEL[n.kind]||n.kind, color:col, glow:KCGraphModel.hex(col,0.22), summary:n.summary, signature:n.signature, file:n.file, fileDisplay, span:n.span, lang:n.lang, sections, evidence, source, backLabel:this.state.clusterReturnId?'Back to functionality':null, backAction:this.state.clusterReturnId?()=>this.returnToCluster():null, blastOn:this.state.blast, blastCount };
    }
 
   buildClusterDetail(){
@@ -1973,7 +2039,7 @@ class Component extends DCLogic {
       qualified:null,
       kindLabel:'Functionality',
       color:c.color||'#5b8cff',
-      glow:this.hex(c.color||'#5b8cff',0.22),
+      glow:KCGraphModel.hex(c.color||'#5b8cff',0.22),
       summary:`${shown} of ${members.length} ${selectedKind?(this.KLABEL[selectedKind]||selectedKind).toLowerCase()+' nodes':'members'} shown on canvas. Exact functionality members are isolated${this.state.clusterContext?'; connected context is enabled':'.'}${hidden>0?' '+hidden+' more remain available in member list.':''}`,
       signature:null,
       file:null,
@@ -2031,16 +2097,80 @@ class Component extends DCLogic {
       const tabChrome=(on,color)=>({bg:on?'rgba(127,127,127,0.14)':t.chip, borderColor:on?color:t.border});
       const tabs=[{key:null,label:'All',color:'#8b97a8',count:configured?totalRows:0,on:!this.state.memGroup,onGo:()=>this.loadMemory(null),...tabChrome(!this.state.memGroup,'#8b97a8')}]
         .concat(this.MEM_GROUPS.map((g)=>({key:g[0],label:g[1],color:g[2],count:(configured&&counts[g[0]])||0,on:this.state.memGroup===g[0],onGo:()=>this.loadMemory(g[0]),...tabChrome(this.state.memGroup===g[0],g[2])})));
+      // WP5 §7.4 — the clause names as words. Same rule as `memReason`: these are the evaluator's
+      // five axes (`RecallExclusionClause`, already mapped to display vocabulary server-side — the
+      // browser never re-derives which clause applies, the spec's P-9), rendered, not re-invented.
+      const exclusionWord=(clause)=>({standing:'its standing has not been admitted',
+        evidence:'its evidence no longer grounds against the code',
+        applicability:'the code it describes is no longer there',
+        lifecycle:'it was superseded or retracted',
+        quarantined:'it was quarantined'})[clause]||String(clause);
+      // WP5 §7.4 — ONE fold for the exclusion panel, called by the ledger row AND by the record's own
+      // detail. Both answer the same question about the same record, and a second copy would be free
+      // to disagree with the first — the failure P-11 warns about, reproduced one layer up. The
+      // `revalidated` argument is each surface's OWN flag: the row passes the page's, the detail
+      // passes the detail read's, so the sentence below is always a claim about the read that
+      // produced the verdicts beside it. `reasonCodes` is empty in TWO opposite states — the read
+      // re-checked and nothing failed, or the read never looked — and only the flag tells them apart.
+      const memExclusion=(eligible,clause,reasonCodes,revalidated)=>{
+        if(eligible!==false) return {label:'',clause:'',line:'',reasons:[]};
+        const reasons=(reasonCodes||[]).map((code)=>({code,text:this.memReason(code)}));
+        const detail=reasons.length?reasons.map((x)=>x.text).join(' · ')
+          :(revalidated
+            ?'This read re-checked the claim against the code and found nothing wrong with its evidence, so the ground above is the whole account.'
+            :'This read did not re-check the claim against the code, so no item-level reason was computed.');
+        return { label:'Not recalled'+(clause?(' · '+clause):''),
+          clause:clause||'unknown',
+          line:(clause?('Held out of recall because '+exclusionWord(clause)+'. '):'Held out of recall. ')+detail,
+          reasons }; };
+      // Conflict membership is a join the server cannot do for us: `/memory.json` reports conflict
+      // GROUPS (ids), and each group's rows are ordinary ledger rows. Without this join a row that is
+      // actively contradicted rendered identically to one that is not, so the single most important
+      // thing to know about a claim — another claim says the opposite — was invisible on the list.
+      const conflicted=new Set();
+      for(const c of (md&&md.conflicts)||[]) for(const id of c.recordIds||[]) conflicted.add(id);
       const rows=((md&&md.rows)||[]).map((r)=>{ const color=groupColor(r.group);
         const chips=this.memVerdictChips(r);
         if(r.anchorStatus==='stale') chips.push(this.memChip('anchors stale','bad'));
         else if(r.anchorStatus==='moved') chips.push(this.memChip('anchors moved','warn'));
         if((r.supersededBy||[]).length) chips.push(this.memChip('superseded','dim'));
-        return { id:r.id, color, glow:this.hex(color,0.18), groupLabel:groupLabel(r.group), subject:r.subject, claim:r.claim, chips,
+        if(conflicted.has(r.id)) chips.push(this.memChip('conflicted','bad'));
+        // Scope, through `memAxis` like every other axis the row renders. A v1 record carries its
+        // boundary in `scope`; a v2 record carries placement in `source` and NO scope, and the two are
+        // never conflated (the ledger's own rule) — so an absent scope renders no chip rather than
+        // borrowing the placement word and calling it a scope.
+        if(r.scope&&r.scope.boundary) chips.push(this.memChip('scope: '+this.memAxis(r.scope.boundary),'dim'));
+        // WP5 §7.2/§7.4 — the exclusion panel. Shown whenever the recall gate keeps this row out,
+        // because that is precisely the case a person cannot otherwise see: `group` is anchor-derived
+        // and does NOT move when evidence stops grounding, so an excluded row reads as `current` in a
+        // healthy-looking list. The clause is the server's; the reasons are the evaluator's, and both
+        // cross to words through the ONE `memExclusion` fold the detail view calls too.
+        //
+        // Flattened onto the row rather than nested under `excluded`: every other optional field in
+        // this view model is flattened (`title:(c.interpretation&&…)||…`), because the template
+        // resolves `{{ a.b }}` by walking the path, and a nested object that is sometimes null would
+        // make every read of it a guarded read. Empty strings then drive the `sc-if`.
+        //
+        // The reason CODES render in `t.text`, not `t.sub`, in both panels (T20, measured): the panel
+        // is backed by `t.chip` over `t.panel`, which measures ≈4.34:1 for `t.sub` on the light theme
+        // — under WCAG AA and under the ≈4.73:1 the same token earns on the panel itself. These two
+        // spans are new in this work package, so §10's pre-existing-text carve-out does not cover
+        // them; `t.text` measures ≈13:1 in both themes and matches the convention §10 set (the
+        // colour rides the left rule, the text stays on the panel's own colour).
+        const ex=memExclusion(r.eligible,r.excludedBy,r.reasons,!!(md&&md.revalidated));
+        const notRecalled=ex.label, notRecalledClause=ex.clause, notRecalledLine=ex.line,
+          notRecalledReasons=ex.reasons;
+        return { id:r.id, color, glow:KCGraphModel.hex(color,0.18), groupLabel:groupLabel(r.group), subject:r.subject, claim:r.claim, chips,
+          notRecalled, notRecalledClause, notRecalledLine, notRecalledReasons,
           time:r.recordedAt?('recorded '+r.recordedAt):(r.createdAt?('created '+r.createdAt):''), onOpen:()=>this.loadMemoryDetail(r.id,r) }; });
       const conflicts=((md&&md.conflicts)||[]).map((c)=>({subject:c.subject||c.propositionKey||c.key,count:(c.recordIds||[]).length}));
       const policy=md&&md.capturePolicy?('ref '+md.capturePolicy.trustedRef+' · profiles '+md.capturePolicy.profiles.join(', ')):null;
       const hs=(mh&&mh.sections)||{}; const hh=(mh&&mh.health)||{};
+      // WP5 §7.4 — one repair line per tile, chosen by the SERVER (`recoveryFor`), never invented
+      // here: the browser cannot know whether `crib update` is the right step, and a tile that
+      // guesses is worse than a tile that says nothing. Absent means "no fault to report for this
+      // signal" — not "healthy" — so the line is rendered only when the server sent one.
+      const rec=(mh&&mh.recovery)||{};
       const openHomeAction=(kind)=>()=>this.openMemoryHomeAction(kind);
       const homeView=mh&&mh.configured?{
         sections:[
@@ -2050,10 +2180,10 @@ class Component extends DCLogic {
           {label:'History',count:(hs.history&&hs.history.count)||0,color:'#8b97a8',help:'Open the full append-only ledger',onGo:openHomeAction('history')},
           {label:'Work in progress',count:(hs.resume&&hs.resume.count)||0,color:'#5b8cff',help:'Continue, finish or cancel saved work',onGo:openHomeAction('resume')}],
         health:[
-          {label:'Retrieval mode',value:(hh.retrieval&&hh.retrieval.mode)||'unknown',color:hh.retrieval&&hh.retrieval.mode==='on-device-semantic'?'#34d399':'#f59e0b'},
-          {label:'Last capture',value:(hh.capture&&hh.capture.lastSuccessfulAt)||'none yet',color:hh.capture&&hh.capture.lastSuccessfulAt?'#34d399':'#8b97a8'},
-          {label:'Code index',value:hh.codeIndex&&hh.codeIndex.behindHead?'behind HEAD':((hh.codeIndex&&hh.codeIndex.lastSuccessfulAt)||'not indexed'),color:hh.codeIndex&&hh.codeIndex.behindHead?'#f87171':'#34d399'},
-          {label:'Sync',value:hh.sync&&hh.sync.configured?((hh.sync.lastSuccessfulAt)||'configured; no run yet'):'local only',color:hh.sync&&hh.sync.configured?'#34d399':'#8b97a8'}],
+          {label:'Retrieval mode',value:(hh.retrieval&&hh.retrieval.mode)||'unknown',color:hh.retrieval&&hh.retrieval.mode==='on-device-semantic'?'#34d399':'#f59e0b',fix:rec.retrieval||''},
+          {label:'Last capture',value:(hh.capture&&hh.capture.lastSuccessfulAt)||'none yet',color:hh.capture&&hh.capture.lastSuccessfulAt?'#34d399':'#8b97a8',fix:rec.capture||''},
+          {label:'Code index',value:hh.codeIndex&&hh.codeIndex.behindHead?'behind HEAD':((hh.codeIndex&&hh.codeIndex.lastSuccessfulAt)||'not indexed'),color:hh.codeIndex&&hh.codeIndex.behindHead?'#f87171':'#34d399',fix:rec.codeIndex||''},
+          {label:'Sync',value:hh.sync&&hh.sync.configured?((hh.sync.lastSuccessfulAt)||'configured; no run yet'):'local only',color:hh.sync&&hh.sync.configured?'#34d399':'#8b97a8',fix:rec.sync||''}],
         nextAction:mh.nextAction||'Capture a reusable outcome.'}:null;
       // The last-session card's view model. Every field degrades to a plain statement rather than a
       // blank: a session with no checkpoint still says WHEN and WHERE it was, which beats an id alone.
@@ -2170,6 +2300,12 @@ class Component extends DCLogic {
           const lin=[]; for(const key of ['derivedFrom','supersedes','contradicts']) if((rec.lineage&&rec.lineage[key]||[]).length) lin.push(key+': '+(rec.lineage[key]||[]).join(', '));
           detail={loading:false,ready:true,error:null,onBack,backLabel,
             id:d.id||memDetailState.id, claim:rec.claim||'', chips,
+            // The record's OWN gate decision, from the same walk the row that opened it used — and
+            // its own `revalidated`, not the ledger page's: the detail route re-checks by default,
+            // so a panel borrowing the page's flag would caption a re-checked verdict with the
+            // provenance of a read that never happened. Without this the detail was the one surface
+            // that could report a record the ledger had just excluded as healthy.
+            exclusion:memExclusion(d.eligible,d.excludedBy,d.verdicts&&d.verdicts.reasons,!!d.revalidated),
             groupColor:groupColor(row&&row.group),
             times:(()=>{ const v=d.validity||{}; const vt=v.validTime||{}; const tt=v.transactionTime||{};
               const parts=[]; if(vt.from)parts.push('valid '+vt.from+(vt.to?' → '+vt.to:' → now'));
@@ -2182,10 +2318,32 @@ class Component extends DCLogic {
             graph:this.memGraphView(memDetailState.graph) };
         }
       }
+      // WP5 §7.4 / U4 — the read failure as a property of the WHOLE panel, not of the list.
+      // `list` is `configured && !detail`, and `configured` is false until a payload has arrived,
+      // so an error rendered inside that block was rendered exactly when it could not exist: the
+      // FIRST read of a dead server drew an empty panel and said nothing (§6.4's blank-panel
+      // defect). It now renders above the scroll area, unconditionally.
+      const memError=this.state.memError||null;
+      const errOffline=!!this.state.memErrorOffline;
+      // Said only when there is something to keep. `memData` is replaced by a successful read and
+      // never cleared by a failed one, so the rows on screen survive the failure — which is the
+      // point of a recovery surface, and is only true if we say what the rows are.
+      const keptRows=rows.length?' The rows below are the last read that succeeded.':'';
+      const errorBlock=memError?{
+        kind:errOffline?'offline':'server',
+        header:errOffline?'Cannot reach the crib server':'The memory ledger read failed',
+        line:(errOffline?'The viz server behind this panel is not answering, so nothing here was re-read.':'The server answered, and this read did not complete.')+keptRows,
+        fix:errOffline?'Start it with crib viz in the repository, then reopen this panel.':'Re-run crib viz, then reopen this panel.',
+      }:null;
       mem={ notConfigured:!!(md&&!md.configured), homeView, lastSession, homeAction, pendingView, resumeView, announce:this.state.memAnnounce||null,
         conflicts, conflictsPlural:conflicts.length===1?'':'s', policy,
         detail, list:configured&&!detail,
-        loading:!!(this.state.memLoading&&!detail), error:this.state.memError, empty:configured&&rows.length===0,
+        loading:!!(this.state.memLoading&&!detail),
+        // Exactly ONE error surface. The raw message rides along for the operator who needs it;
+        // the sentence above it is what a person can act on.
+        error:memError, errorKind:(errorBlock&&errorBlock.kind)||'', errorHeader:(errorBlock&&errorBlock.header)||'',
+        errorLine:(errorBlock&&errorBlock.line)||'', errorFix:(errorBlock&&errorBlock.fix)||'',
+        empty:configured&&rows.length===0,
         emptyMessage:this.state.memGroup?'No records match this lifecycle view. Return to All or inspect Needs review above.':'No memories yet. Agents record what they learn with memory_observe while they work, and every new session re-checks anything still pending.',
         tabs, rows };
     }

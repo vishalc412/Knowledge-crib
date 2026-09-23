@@ -1,0 +1,374 @@
+# knowledge-crib CLI — end-to-end acceptance round (developer-trust program)
+
+Date: 2026-09-23 (local wall clock 02:05–02:15)
+Operator: automated agent, single round, read-only on the crib tree (one write: this file)
+
+## Target project
+
+| field | value |
+|---|---|
+| repo | `https://github.com/sindresorhus/slugify` (option (a) in the brief) |
+| how obtained | `git clone --depth 1 https://github.com/sindresorhus/slugify /tmp/crib-e2e-20260923-020538/proj` — network available, exit 0 |
+| commit | `3b17b2e84b97624a683aafaa38184bf2746fab22` — "Meta tweaks", Sat Sep 19 02:15:26 2026 +0700 |
+| size | 208K, 7 tracked source/doc files (`index.js`, `index.d.ts`, `test.js`, `overridable-replacements.js`, `package.json`, `readme.md`, `license`) |
+| note | small by design (fast round). It is a real, published JS/TS package, but its graph is correspondingly thin — see "WHAT THIS ROUND DID NOT COVER". |
+
+## Environment
+
+| field | value |
+|---|---|
+| node | v22.23.1 |
+| OS | macOS 26.6.2 (Darwin 25.6.0), 4 days uptime |
+| machine load | load averages 5.67 / 3.99 (3–6) during the round — the box was busy; timings below are therefore upper bounds, and I did not repeat them enough to separate load from cost |
+| HOME | `/tmp/crib-e2e-20260923-020538/home` (every `crib` invocation; no user state touched) |
+| CRIB invocation | `node /Users/vishalchawla/Documents/personal/Knowledge-crib/packages/cli/dist/cli.js <args>` |
+| build | **not rebuilt** — `packages/cli/dist/cli.js` mtime 23 Sep 02:01 is newer than `packages/cli/src/cli.ts` 01:57, so the build step was skipped per the brief |
+| crib tree | never used as cwd for any command; no `git` write commands; only `docs/program/logs/` created + this file written |
+
+## Step table
+
+`secs` is external wall clock (whole shell command incl. node startup). Where a command was piped to
+another process the exit code is the pipe's, so those are marked.
+
+| # | step | command | exit | secs | result |
+|---|---|---|---|---|---|
+| 1 | init | `CRIB init . --help` | n/m (piped) | ~4 | **ran init, did not show help only** — see finding F1. Index built: "indexed 13 files → 109 nodes, 140 edges (15 describes, 10 references) in 392ms" |
+| 1 | index | `CRIB index .` | 0 | 0 (internal 517ms) | "indexed 21 files → 165 nodes, 188 edges … in 517ms" — see finding F2 for why 21 ≠ 13 |
+| 1 | status | `CRIB status` | 0 | 0 | `indexed:true`, `nodes:109→165`, `edges:140→188`, `clusters:2`, `vcsHead` = clone HEAD |
+| 2 | query | `CRIB query "slugify"` | 0 | 1 | 9+ ranked hits; `sym:index.d.ts#slugify@L223`, `sym:index.js#slugifyWithCounter@L126` |
+| 2 | context | `CRIB context sym:index.js#removeCounterSuffix@L24 --with-source` | 0 | 0 | file `index.js`, span 24–32; served body matched disk byte-for-byte; `hash: blake3:b8a998fc…` |
+| 2 | context × disk | `context sym:index.js#buildPatternSlug@L34 --with-source` vs disk | 0 | 0 | **MATCHES DISK EXACTLY: True** (byte-for-byte, 22 lines from line 34) |
+| 3 | torn read (a) | `context sym:index.js#removeCounterSuffix@L24 --with-source` | 0 | 0 | quote captured: body `return parts.join('-');`, doc snippet "…which is quadratic on input…", `hash blake3:b8a998fc81dfcfbc624e6d1b8157b81b95854d0238ce2e8b6e5b10623e9d5c89` |
+| 3 | torn read (b) | `sed -i '' "31s/parts.join('-')/parts.join('_')/" index.js` (in /tmp) | 0 | 0 | one-word edit inside the indexed body span |
+| 3 | torn read (c) | re-ask same context, **no re-index** | 0 | 0 | **no drift verdict.** `source.text` served the NEW disk text (`join('_')`), `hash` silently moved to `blake3:e4ea3bd906a43fb3202630071cc013613ff2ddf68cafa2d3e638802a28ece151`, `grounding` still `"code"` |
+| 3 | torn read (d) | `sed -i '' '23s/is quadratic on input/is REALLY_SLOW on input/' index.js` then re-ask | 0 | 0 | `docs[0].snippet` served the **stale, pre-edit** comment text from the graph; `source.text` served live disk; `hash` unchanged (`e4ea3bd9…`) |
+| 3 | hash coverage | `sed -i '' '38s/When transliteration is disabled/…turned off/' index.js` (comment INSIDE span 34–55) then re-ask | 0 | 0 | `hash` **did** change: `b2988235…` → `1ad74b40…` — confirms the hash covers the symbol span, not the doc-section above it |
+| 4 | memory write | `CRIB memory observe --kind convention …` | 1 (unpiped) | 1 | **refused**: "evidence[0] kind 'source-quote' is not admissible for a 'convention' claim (admissible: human-attestation, committed-policy)" |
+| 4 | memory write | `CRIB memory observe --kind fact --subject slugify/overridable-replacements --evidence /tmp/ev1.json` | 0 | 2 | admitted; **id `mem:e1f39762836e44a6365bf5d5db421acd453709e39681101fa529a6225721286d`**; `admission.verdict: "admit"`, `reason: "grounded: 1 exact citation(s)"`, `recallable: true` |
+| 4 | memory recall (new process) | `CRIB memory recall "overridable replacements ampersand" --with-evidence` | 0 | 2 | 1 memory returned, `trust=local evidence=valid applicability=current lifecycle=active`, `fresh=true`, with the citation and `score lex=0.8374…` |
+| 4 | negative control | `observe --kind fact` with a fabricated quote | 1 | 1 | **refused**: "evidence[0] quotes overridable-replacements.js:2, but that text was not found in the indexed code there — re-read the file and quote it exactly" |
+| 5 | doctor | `CRIB doctor` | 0 | 2 | **14/14 checks passed**; durability line quoted verbatim below |
+| 5 | freshness | `CRIB freshness` | 0 | 0 | "mode manual / worker: not running / pending: 0 / in-flight: none / **last-known-good: never published** / behind HEAD: no" |
+| 5 | status freshness | `CRIB status` → `readerFreshness` | 0 | 0 | all four generation fields `null`; `stale: false`, `staleReasons: []` even with 2 uncommitted files |
+| 6 | cost | index 0.52s internal; warm `query` 0.439s external | 0 | — | see timings section |
+| — | audit-llm | `CRIB audit-llm .` | 0 | 0 | "no LLM artifacts on disk — run `crib enrich --next` then `--save` first." (vacuous here) |
+| — | embed status | `CRIB embed status` | 0 | 0 | tier installed `multilingual-e5-large-1024-sym`, state `semantic-ready`, remote disabled |
+
+## Raw evidence per step
+
+### 1 — init / index / status
+
+`CRIB init . --help` printed the help header **and then executed init**:
+
+```
+crib init — 5-minute onboarding
+  clients: all — crib is mandatory for this repository, so every client gets the protocol.
+  step 1/5: indexing the repo (deterministic, LLM-free)…
+indexed 13 files → 109 nodes, 140 edges (15 describes, 10 references) in 392ms
+  step 2/5: wiring git hooks …
+installed kcrib hooks at /private/tmp/crib-e2e-20260923-020538/proj/.git
+  step 3/5: wiring the MCP server into IDE config (claude, cursor, vscode, codex, windsurf, gemini)…
+claude/project: wrote /private/tmp/crib-e2e-20260923-020538/proj/.mcp.json
+  command: /Users/vishalchawla/Library/pnpm/crib serve .
+```
+
+`CRIB status` (abridged; unchanged fields elided):
+
+```json
+{ "indexed": true, "schemaVersion": "1.6",
+  "stats": { "nodes": 109, "edges": 140, "clusters": 2 },
+  "vcsHead": "3b17b2e84b97624a683aafaa38184bf2746fab22",
+  "capabilities": { "embeddings": false, "multimodal": false, "pdg": false,
+                    "cypher": false, "vector": false, "llmGraph": false } }
+```
+
+`CRIB index .` (run after the torn-read edits — see caveat in step 3):
+
+```
+indexed 21 files → 165 nodes, 188 edges (15 describes, 10 references) in 517ms
+≈3.6x fewer tokens per discovery query than reading files directly (sample query "slugify": 1388 tokens raw → 385 tokens via crib query)
+35 target(s) pending LLM graph generation (next: symbol)
+```
+
+### 2 — code context retrieval
+
+`CRIB context sym:index.js#buildPatternSlug@L34 --with-source`, compared to disk programmatically:
+
+```
+symbol: buildPatternSlug index.js {'start': 34, 'end': 55}
+MATCHES DISK EXACTLY: True
+truncated: False startLine: 34 totalLines: 22
+hash: blake3:b29882353f08f4a3f5b39e6441d27e691a6ec657d0d6e1a5cea86cc251f62c34 grounding: code
+```
+
+`removeCounterSuffix` context, before any edit (baseline):
+
+```
+"docs": [{ "sectionId": "expl:index.js@L23",
+  "snippet": "// Strip the trailing counter groups from a slug, so `foo-1-2` becomes `foo`. This is done with a split rather than a `(?:-\\d+)+$` regex, as that pattern is una",
+  "edgeType": "describes", "provenance": "EXTRACTED", "confidence": 1 }],
+"source": { "text": "const removeCounterSuffix = string => {\n\tconst parts = string.split('-');\n\n\twhile (parts.length > 1 && /^\\d+$/.test(parts.at(-1))) {\n\t\tparts.pop();\n\t}\n\n\treturn parts.join('-');\n};", "truncated": false, "totalLines": 9, "startLine": 24 },
+"grounding": "code",
+"hash": "blake3:b8a998fc81dfcfbc624e6d1b8157b81b95854d0238ce2e8b6e5b10623e9d5c89"
+```
+
+Disk line 23 read back verbatim and matched the snippet prefix exactly.
+
+### 3 — torn-read check (the WP1 interest)
+
+**(b)** after `sed` on line 31, disk line 31 = `\treturn parts.join('_');`, file md5 `4f9149e5…` → `c1e18287…`.
+
+**(c)** re-asked with **no re-index**. Raw fields served:
+
+```
+"source": { "text": "…\n\n\treturn parts.join('_');\n};" },     <- NEW disk text
+"grounding": "code",
+"hash": "blake3:e4ea3bd906a43fb3202630071cc013613ff2ddf68cafa2d3e638802a28ece151"
+```
+
+**Verdict: silently serves the new text.** There is no `hash-drift`, no `needs-review`, no
+`stale`, no warning of any kind in the `context` payload. `grounding` stays `"code"`. The only
+signal is that the `hash` field changed value (`b8a998fc…` → `e4ea3bd9…`) — visible only to a
+consumer that cached the old hash and diffs it itself. `docs[0].provenance` stays `EXTRACTED`.
+
+**(d)** second one-word edit, this time in the comment at line 23 (the region the `docs` snippet
+quotes). Disk line 23 now ends `…which is REALLY_SLOW on input such as \`-1-1-1…-1a\`.` Re-asked,
+still no re-index:
+
+```
+"docs": [{ "sectionId": "expl:index.js@L23",
+  "snippet": "// Strip the trailing counter groups from a slug, so `foo-1-2` becomes `foo`. This is done with a split rather than a `(?:-\\d+)+$` regex, as that pattern is una",   <- OLD text, served from the graph
+  "edgeType": "describes", "provenance": "EXTRACTED", "confidence": 1 }],
+"source": { "text": "…\treturn parts.join('_');\n};" },   <- LIVE disk
+"hash": "blake3:e4ea3bd906a43fb3202630071cc013613ff2ddf68cafa2d3e638802a28ece151"   <- unchanged by the comment edit
+```
+
+So **two surfaces inside one response disagree**: `source` is disk-rehydrated and current; `docs`
+is graph-served and stale; and the `hash` did not move, because the doc-section sits *above* the
+symbol span (24–32) and is not covered by it. The follow-up test confirms the boundary of the
+hash: a comment edit *inside* span 34–55 (`buildPatternSlug`) **did** move that hash
+(`b2988235…` → `1ad74b40…`).
+
+### 4 — memory write → recall
+
+Refusals first (both are the tool declining, not a crash):
+
+```
+$ CRIB memory observe --kind convention --subject "slugify/overridable-replacements" --evidence /tmp/ev1.json
+EXIT=1
+error: evidence cannot support a 'convention' claim, so this memory could never be recalled: evidence[0] kind 'source-quote' is not admissible for a 'convention' claim (admissible: human-attestation, committed-policy)
+
+$ CRIB memory observe --kind fact … --evidence /tmp/ev2.json   # quote is fabricated, line 2 rewritten
+EXIT=1
+error: evidence[0] quotes overridable-replacements.js:2, but that text was not found in the indexed code there — re-read the file and quote it exactly (re-index first if the file changed since the last `crib index`).
+```
+
+Accepted write — evidence `/tmp/ev1.json` = `[{"kind":"source-quote","path":"overridable-replacements.js","line":2,"quote":"\t['&', ' and '],"}]`, and disk line 2 of that file is exactly `\t['&', ' and '],`:
+
+```json
+{ "ok": true,
+  "id": "cand:e1f39762836e44a6365bf5d5db421acd453709e39681101fa529a6225721286d",
+  "status": "active",
+  "recordId": "mem:e1f39762836e44a6365bf5d5db421acd453709e39681101fa529a6225721286d",
+  "admission": { "verdict": "admit", "reason": "grounded: 1 exact citation(s)" },
+  "scope": { "boundary": "repo", "repoId": "a3ea3500-0384-44c9-a2ac-c4c05de70a55" },
+  "recallable": true,
+  "nextAction": "admitted to local trust — recallable now via `crib memory recall`." }
+```
+
+Recall in a **new process** (separate `node` invocation, ~2s later):
+
+```
+memory recall "overridable replacements ampersand" — 1 memories (considered 1, eligible 1, conflicts 0, team=0 local=1 global=0, fresh=true)
+  1. mem:e1f39762836e44a6365bf5d5db421acd453709e39681101fa529a6225721286d [local] trust=local evidence=valid applicability=current lifecycle=active
+     The slugify repo ships a builtin overridableReplacements list whose first entry maps '&' to ' and ', so an ampersand becomes the word 'and' rather than being dropped.
+     subject=slugify/overridable-replacements score lex=0.8374414324580554 source=2 evidence=2 feedback=0
+```
+
+Citation survives the process boundary; the claim returned verbatim. Memory id:
+`mem:e1f39762836e44a6365bf5d5db421acd453709e39681101fa529a6225721286d`.
+
+### 5 — freshness / durability
+
+`CRIB doctor` — 14/14 passed. Fields quoted verbatim:
+
+```
+  ✓ index fresh (soul vcsHead == HEAD) — up to date
+  ✓ embedder tier — state semantic-ready (tier installed, multilingual-e5-large-1024-sym); remote disabled — pinned on-device model intfloat/multilingual-e5-large@1 loaded from the integrity-verified manifest (offline; no network at query time)
+  ✓ freshness — mode manual; worker not running; pending 0; dead 0; in-flight none; behind HEAD no
+  ✓ durability model — write: flush file → rename → flush directory; darwin fsync is a host-to-device flush and the full barrier is unreachable without a native dependency, so an acknowledgement survives a PROCESS crash and is device-ordered — power-loss durability is NOT claimed
+
+crib doctor: 14/14 checks passed
+```
+
+`CRIB freshness`:
+
+```
+freshness mode: manual
+  worker: not running
+  pending: 0
+  in-flight: none
+  last-known-good: never published
+  behind HEAD: no
+```
+
+`CRIB status` → `readerFreshness` (after the re-index, with `index.js` still uncommitted):
+
+```json
+{ "indexedHead": "3b17b2e84b97624a683aafaa38184bf2746fab22",
+  "currentHead": "3b17b2e84b97624a683aafaa38184bf2746fab22",
+  "publishedGeneration": null, "readerGeneration": null,
+  "graphSourcePosition": "3b17b2e84b97624a683aafaa38184bf2746fab22|1|165|188|2026-09-22T20:44:11.552Z",
+  "codeRevision": "3b17b2e84b97624a683aafaa38184bf2746fab22",
+  "graphGeneration": null, "searchGeneration": null,
+  "refreshState": "idle", "stale": false, "staleReasons": [],
+  "lastSuccessfulRefreshAt": "2026-09-22T20:44:11.552Z", "lastRefreshError": null }
+```
+
+`dirty` block, same call: `{ "isDirty": true, "uncommittedCount": 2, "uncommitted": [".gitattributes", "index.js"] }`
+and `dirtyPreview.wouldUpdate: [".gitattributes", "index.js"]`. **Note:** `stale` is `false` and
+`staleReasons` is empty even though two working-tree files differ from what the graph was built
+from at the moment of the earlier queries. Drift is reported only through the `dirty` /
+`dirtyPreview` fields, never through the freshness verdict fields. (After the re-index, the graph
+does incorporate the edits, so `stale:false` is correct *at this point* — but there was an interval
+where it was also `false` and the graph was behind the file.)
+
+`graphSourcePosition` is a compact position tuple `<head>|<schema-version-ish>|<nodes>|<edges>|<utc-ts>`;
+it moved `…|1|109|140|20:36:11Z` → `…|1|165|188|20:44:11Z` across the re-index, which is a usable
+monotonic freshness token.
+
+### 6 — cost
+
+| item | wall clock |
+|---|---|
+| full `CRIB index .` (21 files, 165 nodes, 188 edges) | internal report 517ms; external shell round-trip ~0s (sub-second) |
+| `CRIB init .` (index + hooks + 6 IDE wirings + adapter files) | ~4s |
+| warm `CRIB query` | 0.439s (single shot; the 3 warm-up runs were not individually timed) |
+| `CRIB context --with-source` | sub-second (reported 0s at second granularity) |
+| `CRIB status` / `doctor` | 0s / 2s |
+
+Timings were taken with load averages 3.99–6.03 on a 4-day-uptime box, so they are upper bounds on
+an idle machine. The index cost is dominated by per-process node startup, not by extraction
+(517ms internal vs a ~0.4s bare startup for any command), so on this project size the two are
+indistinguishable and I did not attempt to separate them.
+
+## Findings
+
+**F1 — `CRIB init --help` does not show help; it performs init.** The command printed the help
+header block and then immediately ran the full 5-step init (index, git hooks, `.gitattributes`
+merge driver, 6 IDE MCP wirings, instruction-file adapters). Exit code was not captured (output
+was piped to `head`), but the effects are visible on disk. Every other subcommand inspected
+(`index`, `status`, `memory`) does gate help properly; `init` is the outlier. Someone typing
+`crib init --help` to preview what it would do gets the mutation instead.
+
+**F2 — init is not idempotent in the index, and it inflates its own input.** Post-init the tree
+gains `.claude/`, `.codex/`, `.cursor/`, `.vscode/`, `.gemini/`, `.mcp.json`, `CLAUDE.md`,
+`AGENTS.md`, `GEMINI.md`, `.windsurfrules`, `.github/copilot-instructions.md` and a modified
+`.gitattributes`. Indexing then grows from "13 files → 109 nodes / 140 edges" to "21 files → 165
+nodes / 188 edges". Those instruction files are now indexed *docs* in the graph, so the graph
+contains crib's own adapter prose — which will also be returned by `query`/`brief` on this repo.
+That is a plausible design choice, but it means a node/edge count is not reproducible before and
+after init, and the "13 files" figure in init's own output is a pre-mutation number.
+
+**F3 — torn-read behaviour is split-surface, and there is no drift verdict anywhere.** After a
+one-word body edit with no re-index, `context --with-source` served the *new* disk text with
+`grounding: "code"` and no drift/stale/needs-review field; the only change was the `hash` value
+itself. After a comment edit in the doc-section above the symbol, the same response served the
+*stale graph* comment in `docs[0].snippet` while serving live disk text in `source.text` — two
+contradictory answers in one payload, neither flagged. A consumer that does not cache and diff the
+`hash` cannot tell. The hash covers the symbol span only (proved: a comment edit inside the span
+moved it, the doc-section above it did not), so the stale surface is exactly the one the hash
+cannot see. This is the WP1 interest and on this evidence the protection is *detectable by a
+careful consumer*, not *reported by the tool*.
+
+**F4 — init wires the MCP server to a different binary than the one under test.** The emitted
+config is `command: /Users/vishalchawla/Library/pnpm/crib serve .` — a global shim path. The CLI
+under evaluation is `packages/cli/dist/cli.js`. So an IDE wired by this round's init would talk to
+whatever `crib` the global shim resolves to, not to the build being validated. I did not compare
+the two binaries (out of scope, and the shim may well point at the same build) but the round's
+MCP surface is therefore untested here.
+
+**F5 — the memory admission gate is real and behaves correctly in both directions.** A
+`source-quote` cannot support a `convention` claim (refused, exit 1, with the admissible list
+printed); a fabricated quote is refused with a message that tells the agent exactly what to do
+(re-read and quote exactly). An honest quote is admitted as `grounded: 1 exact citation(s)`,
+written as `active`/`recallable`, and comes back in a new process with `evidence=valid`,
+`applicability=current`, `fresh=true`. This is the strongest, least ambiguous result of the round.
+
+**F6 — generation fields are all null on a fresh repo.** `publishedGeneration`,
+`readerGeneration`, `graphGeneration`, `searchGeneration` are `null`; `freshness` says
+"last-known-good: never published". This is honest for a repo that has never published a
+generation, but it means none of the generation-based staleness machinery is exercised by this
+round and a reader cannot yet tell "no generation published" from "generation bookkeeping not
+wired". `graphSourcePosition` is populated and did move across a re-index, so it is the field that
+actually carries freshness information here.
+
+**F7 — two similarly-named surfaces answer different questions.** `status.capabilities` reports
+`embeddings: false` and `vector: false`, while `doctor` and `embed status` report the embedder tier
+`installed / semantic-ready / multilingual-e5-large-1024-sym`. Reading them as a contradiction is
+easy; the more likely reading is that `capabilities` describes *this index* (no vector channel
+built) and the tier report describes *what is installed*. I did not resolve whether the naming is
+intended, so I am reporting it as an ambiguity rather than a defect.
+
+## WHAT THIS ROUND DID NOT COVER
+
+Skipped, not run, or ambiguous — stated plainly:
+
+1. **`gaps`, `rules`, `dossier`, `reconstruct`, `impact`, `path`, `neighbors`, `explain`, `rename`,
+   `serve`, `viz`, `materialize`, `merge-driver`, `export`, `migrate-graph`, `enrich`, `rerank`,
+   `sync`, `backup`, `intake`, `session bootstrap`, `handoff`, `propose`/`attest`/`audit`,
+   `feedback`, `conflicts` were never invoked.** The round covered only `init`, `index`, `status`,
+   `doctor`, `query`, `context`, `freshness`, `embed status`, `audit-llm`, and four `memory`
+   subcommands. Most of the CLI is untested by this log.
+2. **The MCP server (`crib serve`) was not exercised at all.** Every result here comes from the CLI;
+   the MCP verb surface that agents actually use (`brief`, `memory_recall`, `source`, `impact`,
+   `explain`, `review`, `detect_changes`) was not called. No MCP client was started.
+3. **`--vectors` / `--semantic` indexing was never enabled.** Embeddings, code-vector search, the
+   reranker, and any fusion of BM25 with cosine are untested. Every query result above is BM25-only.
+4. **No LLM semantic layer exists on this repo** (`llmGraph: false`, 35 targets pending), so
+   `audit-llm` was vacuous ("no LLM artifacts on disk"), `enrich` was not run, and no
+   `hash-drift`/`needs-review` verdict on an *LLM artifact* was ever observed. The WP1 artifact
+   re-verification path is therefore **not covered by this round** — I only observed the
+   extracted-graph path (F3).
+5. **`--dirty` / `crib update` reconciliation was not tested as a repair.** I observed the drift
+   (F3) and then ran a full `crib index .`, which reconciled it; I never tested whether
+   `crib update --dirty` closes the gap, nor whether the post-commit freshness hook fires (no
+   commit was made in the target repo — committing was out of scope for the round).
+6. **Freshness worker/service modes, the durable queue, and the generation publish path were not
+   exercised** — mode stayed `manual`, worker never ran, queue was empty, nothing was ever
+   published (F6).
+7. **Multimodal extraction was not exercised** even though adapters reported available
+   (pdf ✓, image-ocr ✓ via tesseract 5.5.2, transcribe ✗ whisper absent). No `--multimodal` run.
+8. **Failure and crash paths were not deliberately induced.** No torn write, no process kill
+   mid-`index`, no disk-full, no corrupted `.crib` chunk, no interrupted atomic write. The doctor's
+   durability claim ("survives a PROCESS crash … power-loss durability is NOT claimed") is quoted
+   from the tool's self-report and was **not independently verified** by me.
+9. **`crib init --help`'s exit code was not measured** (piped to `head`), so F1's exit status is
+   unknown. Every other step's exit code was captured unpiped.
+10. **The target project is small (7 tracked files).** 165 nodes / 188 edges is thin: the graph is
+    dominated by crib's own adapter files after init (F2). Nothing here exercises multi-package
+    monorepo scoping (`--package`), clustering at scale, large blast radii, or query ranking over
+    thousands of symbols. Express was listed as fallback (b) and was not needed.
+11. **Only three edits were made to the target file**, all in the `/tmp` copy, all single-word
+    (`index.js` L31 `'-'`→`'_'`, L23 `quadratic on input`→`REALLY_SLOW on input`, L38
+    `transliteration is disabled`→`transliteration is turned off`). The round therefore does not
+    cover insertions/deletions that change line numbers, whole-file rewrites, renames, or
+    deletions — the cases where a span-based hash is most likely to misbehave.
+12. **Timings are single-shot on a loaded machine** (load average up to 6). No repetitions, no
+    variance, no cold-vs-warm separation beyond the one `query` measurement (0.439s).
+13. **Ambiguous result left unresolved:** F7 (`capabilities.embeddings:false` vs `embed status:
+    semantic-ready`) — I did not determine which surface a developer is meant to trust, so it is
+    recorded as an ambiguity, not as a pass or a defect.
+
+## Round metadata
+
+- Every `crib` invocation used `HOME=/tmp/crib-e2e-20260923-020538/home`; all state (including the
+  memory ledger and the embed tier manifest) lives under that temp HOME. No user state was read or
+  written.
+- The crib working tree was never a `crib` cwd. No `git commit`, `checkout`, `stash`, or
+  `pnpm install` was run anywhere. The only path created inside the crib tree is
+  `docs/program/logs/` + this file.
+- Build step was skipped because the artifact was already newer than its source (see Environment).
+- Temp artifacts for reproduction: `/tmp/crib-e2e-20260923-020538/` (project copy,
+  `home/`, `ev1.json`, `ev2.json`, captured outputs `*.out`). Not cleaned up, so the round can be
+  re-inspected.

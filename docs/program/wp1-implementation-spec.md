@@ -256,6 +256,35 @@ reported `ENOENT`, which was that probe's own bug (it probed the directory befor
 re-run rather than reported. The platform-gated fallback in D-1 is therefore for other filesystems
 (network mounts, some FUSE), not for this one.
 
+### 6.4 Defects found during implementation (D1-h, D1-i) and the writers left alone
+
+The discovery audits classified defects from the *shape* of the code (`writeFileSync` with no flush, a
+silent `catch`). Implementing item 3 — collapsing the two copies of the temp→rename primitive into one
+shared one — made two further defects visible that the audits could not have seen, because they are only
+visible once you know which call sites go through a shared helper and which do not.
+
+**D1-h — `writeAliases` truncates in place while documenting that it does not.** Covered by its kill-table
+row. The lesson worth keeping is about the *test*: the first version of this test asserted that the target
+was never opened with write flags, and it **passed against the pre-fix code** — because
+`writeFileSync(path, …)` performs its truncating open inside the binding and never routes through the JS
+`openSync` export. The instrumented wrapper had to record path-form `writeFileSync` calls as well. A test
+that cannot see the operation it is testing is not evidence, and it will be green.
+
+**D1-i — the vector cache's silence was on four paths, not one.** Also covered by its kill-table row. The
+first fault injection for `pruneOrphans` targeted the statement's `get`, which the method does not use — it
+scans with `all` — and the test failed by returning 2, having genuinely pruned. The injection was wrong, not
+the code, and the run that exposed it was kept as the record. A related ambiguity surfaced in the same pass:
+`pruneOrphans` opened its `try` with phase `'begin'`, so by the time the catch ran, an unopened handle, a
+failed scan and a failed `BEGIN` were all `'begin'`. The phase is now derived from an explicit
+`inTransaction` flag set only after `BEGIN` returns.
+
+**Writers deliberately left outside this work package.** Item 3 gave ONE writer a durability contract. The
+tree has other temp→rename writers, and this spec does not claim they are covered; their inventory is
+recorded in the evidence register (row WP1-D7) so the boundary is explicit rather than implied. Three of
+them are *named* `writeJsonAtomic`/`writeAtomic` (`cli/src/freshness-child.ts:87`,
+`cli/src/freshness-service.ts:119`, `mcp/src/enrichment.ts:2590`) while implementing a weaker variant — a
+name that reads as a guarantee is the D1-a defect restated in a function signature.
+
 ---
 
 ## 7. D2 — Generations, pinned snapshots, cache invalidation
@@ -322,7 +351,9 @@ All **[R]**; this is the obligation the plan names first, and it is the largest 
 5. The canonical soul did not move, so the `code` slot is unchanged; the memory evaluation context still
    points at the canonical soul; the fingerprint has **no reader slot and no ledger slot**.
    `GenerationCache.bind` finds `next === this.fingerprint` and serves the cached entry
-   (`packages/core/src/generation-cache.ts:132-139`).
+   (`packages/memory/src/generation-cache.ts` — the path in this spec's first draft,
+   `packages/core/src/generation-cache.ts:132-139`, was **stale**: the module lives in `memory`, and
+   `GenerationCache.bind` now sits at `:178`).
 6. `E` is reported **`valid/current`** while its anchored span has changed.
 
 **[R]**, and this is the exact shape §4 requires: a constructed event sequence that reproduces the stale
@@ -533,9 +564,12 @@ its lock, changes the temp→rename shape, or re-keys a memory identity** (§3).
 
 ### Freshness and generations
 
-7. `packages/core/src/generation-cache.ts:39-54` — add `reader` and `ledger` to `DependencyGenerations`; set
+7. `packages/memory/src/generation-cache.ts:68-85` — add `reader` and `ledger` to `DependencyGenerations`; set
    them in `bindEvaluationPass` (`packages/memory/src/api.ts:1372-1388`) from the pinned bundle generation
-   and the pinned store generations.
+   and the pinned store generations. *(Path corrected 2026-09-23: this spec originally wrote
+   `packages/core/src/generation-cache.ts:39-54`, which does not exist — the module is in `memory`, and
+   `DependencyGenerations` is at `:68-85`, `reader` `:75`, `ledger` `:80`. The stale path was carried
+   un-noticed through the WP1 implementation and is recorded here rather than silently repaired.)*
 8. `packages/mcp/src/verbs.ts:4552`, `packages/cli/src/cli.ts:8360` — pass the adopted snapshot generation
    into `bindEvaluationPass`, defaulting to `UNVERSIONED` so an unsupplied pin reproduces today's
    fresh-eval behaviour.
@@ -571,11 +605,13 @@ its lock, changes the temp→rename shape, or re-keys a memory identity** (§3).
 | --- | --- | --- | --- | --- | --- |
 | D1-a | acknowledgement = page cache, not stable storage | 6.1, 6.2 | 1, 2 | flush-order test asserting a flush on the temp fd **and** the directory fd precedes the ack | persistence failures do not produce successful acknowledgements |
 | D1-b | append-only lanes make no flush claim | 6.2 | 4 | a flush is recorded per appended line; torn-line recovery still passes | same |
-| D1-c | no directory durability anywhere | 6.2 | 1, 3 | directory-flush-failure case asserts the previous file survives | same |
-| D1-d | vector store returns success after rollback | 6.2 | 5 | injected insert failure is observable to the caller; transaction rolled back | same |
+| D1-c | no directory durability anywhere | 6.2 | 1, 3 | the directory flush is performed **after** the rename and its failure throws. **Corrected during implementation:** which file survives depends on WHICH barrier failed — a **file**-flush failure preserves the previous file (the fault lands before the rename), but a **directory**-flush failure leaves the NEW bytes in place and still throws. The row as first drafted ("the previous file survives") was true of only one of the two | same |
+| D1-d | vector store returns success after rollback | 6.2 | 5 | injected COMMIT, ROLLBACK and INSERT failures are each reported with the step that failed, and the caller's read stays fail-open. **Refined during implementation:** the fix reports, it does not throw — throwing would break the documented fail-open contract of a derived read model | same |
 | D1-e | ENOSPC/EIO/EACCES untyped | 6.2 | 1, 6 | fault injection on a shard write asserts throw-not-ack with an operator-facing reason | same |
 | D1-f | guarantees are docs-only | 6.2 | 6 | diagnostic output carries the durability line, and is `false/false` where the fsync path is unsupported | persistence failures do not produce successful acknowledgements |
 | D1-g | on macOS `fsync` is host-to-device, not a platter flush; `F_FULLFSYNC` is unreachable from Node core | 6.3 | 2, 6 | the reported `powerLossDurable` is `false` on darwin where `fsync` is not a full flush, and the acknowledgement's documented claim matches it | persistence failures do not produce successful acknowledgements |
+| D1-h | **found during implementation.** `writeAliases` (`packages/core/src/aliases.ts`) documents "Overwrites any existing file atomically (single write)" and did `writeFileSync(path, …)` — a single write that opens the target with `O_TRUNC`, so the dictionary is truncated to zero bytes before the replacement lands. The reader cannot even report it: `loadAliases` swallows a parse failure and returns an EMPTY map, so the damage surfaces as silently missing query expansions | 6.4 | 3 | the target is never written by name and is reached only by a rename from a staged temp (`aliases-atomic.test.ts`) | persistence failures do not produce successful acknowledgements |
+| D1-i | **found during implementation.** Every failure path of the vector cache was silent: the read catch, the write-back catch (whose inner catch hid even the failure of the ROLLBACK it claimed to attempt), and the `return 0` of `size()` and `pruneOrphans()` — which read as "the cache is empty"/"nothing to prune" when the truth was "the cache is unreadable". A cache that has silently died re-pays the measured 4,896 ms full-ledger embed on EVERY recall while still answering correctly, so no other assertion in the suite could go red | 6.4 | 5 | each step (open / read / begin / write / commit / rollback) is reported separately, the caller's read stays fail-open, and the two zero-returning paths report too (`vector-store-cache-failure.test.ts`) | persistence failures do not produce successful acknowledgements |
 | D2-a | memory-only change prices a code rebuild | 7.2 | 11 | a memory-only mutation does not bump the code-reader generation | source changes become visible consistently |
 | D2-b | `graphGeneration`/`searchGeneration` cannot disagree | 7.2 | 11 | the two fields diverge when only the graph reader is replaced | same |
 | D2-c | no `reader`/`ledger` slot in the evaluation cache key | 7.4, 7.6 | 7, 8 | bind at reader gen A, evaluate, bump to B → second bind misses; a working-tree-only edit invalidates a memoized verdict in serve mode | invalidated evidence cannot remain current through a stale cache |
@@ -609,10 +645,12 @@ covering nothing.
 
 | test file | covers | rows |
 | --- | --- | --- |
-| `packages/memory/src/atomic.test.ts` (new) | flush order (temp fd, then directory fd) before the ack; directory-flush failure preserves the previous file; ENOSPC/EIO/EACCES throw-not-ack | D1-a, D1-c, D1-e |
-| `packages/memory/src/ack-after-persist.test.ts` (extend) | the vector store's rollback is observable; append lanes flush per line | D1-b, D1-d |
+| `packages/core/src/atomic-write.test.ts` (new) | flush order (temp fd, then directory fd) before the ack; a file-flush failure preserves the previous file; a directory-flush failure throws with the new bytes already in place; ENOSPC/EIO/EACCES throw-not-ack | D1-a, D1-c, D1-e |
+| `packages/core/src/aliases-atomic.test.ts` (new) | the alias dictionary is never written by name; it is reached only by a rename from a staged temp; a replacement leaves no temp behind | D1-h |
+| `packages/memory/src/vector-store-cache-failure.test.ts` (new) | injected open / read / begin / write / commit / rollback failures are each reported with their phase while the read stays fail-open; a healthy cache reports nothing; an observer that throws cannot break the read | D1-d, D1-i |
+| `packages/memory/src/ack-after-persist.test.ts` (extend) | the append lanes flush per line | D1-b |
 | `packages/cli/src/doctor-durability.test.ts` (new) | the reported durability model matches the write performed; `powerLossDurable: false` where `fsync` is not a full flush; `false/false` where unsupported | D1-f, D1-g |
-| `packages/core/src/generation-cache.test.ts` (extend) | bind at reader gen A → bump to B → miss; ledger-only change → miss | D2-c |
+| `packages/memory/src/generation-cache.test.ts` (extend) | bind at reader gen A → bump to B → miss; ledger-only change → miss | D2-c |
 | `packages/cli/src/refresh-coordinator.test.ts` (extend) | memory-only mutation does not bump the code-reader generation; `graphGeneration` diverges when only the reader is replaced | D2-a, D2-b |
 | `packages/memory/src/evaluator-pinned.test.ts` (new) | a working-tree-only quote change grades `hash-drift`/`needs-review` with no `crib update` | D2-d |
 | `packages/memory/src/persistent-fts-scope.test.ts` (new) | a record's score is invariant to a foreign co-tenant | D2-e |
@@ -717,3 +755,30 @@ Ordered by how much they change the implementation, not by severity.
   Confirm the boundary excludes them, or widen WP1 before implementation rather than after.
 - **D-6 — `countUnstampedRecords` discloses the count of unattributed records** (§8.5). Low severity, and
   arguably necessary for the doctor to be useful. Keep, or report only a boolean?
+- **D-7 — what item 14's check means by a red ✗** (raised 2026-09-23, from WP1 item 14's hand-off; **this is
+  not D-6**, which is the `countUnstampedRecords` question above — an earlier register line referred to
+  item 14's hand-off as "D-6", and that cross-reference was ambiguous, so the decision is filed here under
+  its own number). Item 14's remediation *text* is closed and credited (two tests in
+  `memory-migrate.test.ts`); what is undecided is the **semantics of the mark it accompanies**.
+
+  The check is **`agent-memory loop`** (`packages/cli/src/cli.ts:3290-3340`), which reports
+  `memOk = teamOk && adapterCount > 0`. So when a user has run `crib memory init` but the team store is
+  absent or no instruction adapter is present, the doctor prints **✗**. The question: is that state a
+  failure, or a degraded-but-valid one?
+
+  The reason this is genuinely open is that **this same check already sets the opposite precedent two
+  branches up.** When `policy.json` is absent the check reports `ok: true` with a hint —
+  `detail: 'not initialized (optional)'`, `fix: 'run \`crib memory init\` …'` — and the in-source comment
+  states the rule explicitly: *"NOT initialized is a valid, non-failing state (memory is opt-in) → reported
+  as ✓ with a hint, not ✗."* A partially-initialized memory loop is *closer* to working than an
+  uninitialized one, yet it is the branch that gets the red mark. That asymmetry is not obviously wrong —
+  opt-in-not-started and opted-in-but-broken are different claims — but it is the thing to decide.
+
+  **Options:** **(A)** keep ✗ — an opted-in memory loop that is not wired is a genuine failure worth
+  alarming on. **(B)** report ✓ with a hint, matching the not-initialized branch, on the grounds that a
+  missing adapter is a wiring step, not a fault. (A third option — mark the two causes differently — is
+  **not** available: `detail` at `cli.ts:3341` already separates them (`team store ✓/✗, N instruction
+  adapters`), so the causes are distinguishable to a reader today and the *mark* is the only thing
+  shared. That removes "be more specific in the detail" as an answer and leaves the real choice above.)
+  This spec takes no position; it records that the mark's meaning is the decision, because a check whose
+  red ✗ means "unfinished setup" in one branch and "broken" in another teaches users to ignore it.

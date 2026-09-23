@@ -1,0 +1,51 @@
+=== WP4 R3 step 6 — scale arms (clauses 4-5) ===
+started : 2026-09-23T16:06:50Z
+HEAD    : b4615721e6a352aa9f89edc0f9f4094d28e113a6
+branch  : program/developer-trust
+embed cache: /var/folders/v9/y1jy41kj5mq8ly6fxbzwjxzc0000gn/T/tmp.Gt4mvmHjz6
+slices  : 10000,50000,100000,200000,500000  (union of the frozen 10k/100k/500k and this
+          file's existing 10k/50k/100k/200k, so the regeneration is ADDITIVE — see §10 RESULTS)
+out     : docs/bench/scale-curve.md  (written once, at the end — :1000 writeFileSync)
+NOTE    : this step MUST run alone (it measures wall time and peak RSS).
+
+
+[scale:bench] fixture base = 877 LOC across 21 files; slices = [10000, 50000, 100000, 200000, 500000] LOC
+  slice target=10,000 LOC → 12 batches … staging…
+    staged 252 files, 10,524 LOC → indexing…
+    ✓ 10,524 LOC | 252 files | 5,854 nodes | 8.26s | peak RSS 249 MB | 23.7 MB/kLOC | 709 nodes/s
+    vector arm: cold (fresh cache) → warm-cache → incremental → query…
+    ✓ vector | 2,603 vectors | cold 633.4s (76.7× lexical) | warm 14.9s | cache 8.8 MB | disk +5.12 KB/node
+      incremental 1 file(s): 88.60s | nodes 32 → non-detail 18, vectorized 18 (exact)
+      incremental 9 file(s): 57.94s | nodes 243 → non-detail 89, vectorized 89 (exact)
+  slice target=50,000 LOC → 58 batches … staging…
+    staged 1,218 files, 50,866 LOC → indexing…
+    ✓ 50,866 LOC | 1,218 files | 28,210 nodes | 35.45s | peak RSS 339 MB | 6.7 MB/kLOC | 796 nodes/s
+    vector arm: cold (fresh cache) → warm-cache → incremental → query…
+    ⊘ vector arm UNAVAILABLE — projected 51 min for ~12,492 embeddable nodes at the measured 243 ms/node, over the 45 min ceiling
+  slice target=1,00,000 LOC → 115 batches … staging…
+    staged 2,415 files, 1,00,855 LOC → indexing…
+    ✓ 1,00,855 LOC | 2,415 files | 55,912 nodes | 67.38s | peak RSS 742 MB | 7.4 MB/kLOC | 830 nodes/s
+    vector arm: cold (fresh cache) → warm-cache → incremental → query…
+    ⊘ vector arm UNAVAILABLE — projected 100 min for ~24,747 embeddable nodes at the measured 243 ms/node, over the 45 min ceiling
+  slice target=2,00,000 LOC → 229 batches … staging…
+    staged 4,809 files, 2,00,833 LOC → indexing…
+    ✓ 2,00,833 LOC | 4,809 files | 1,11,316 nodes | 134.42s | peak RSS 930 MB | 4.6 MB/kLOC | 828 nodes/s
+    vector arm: cold (fresh cache) → warm-cache → incremental → query…
+    ⊘ vector arm UNAVAILABLE — projected 200 min for ~49,257 embeddable nodes at the measured 243 ms/node, over the 45 min ceiling
+  slice target=5,00,000 LOC → 571 batches … staging…
+    staged 11,991 files, 5,00,767 LOC → indexing…
+    ✓ 5,00,767 LOC | 11,991 files | 2,77,528 nodes | 354.84s | peak RSS 1992 MB | 4.0 MB/kLOC | 782 nodes/s
+    vector arm: cold (fresh cache) → warm-cache → incremental → query…
+    ⊘ vector arm UNAVAILABLE — projected 498 min for ~1,22,787 embeddable nodes at the measured 243 ms/node, over the 45 min ceiling
+
+[scale:bench] wrote /Users/vishalchawla/Documents/personal/Knowledge-crib/docs/bench/scale-curve.md (5 slice(s))
+  scale:bench §10.5 BREACH — 10,524 LOC: cold vector 633.4s is 76.7× the lexical 8.3s, over the 20× budget
+  scale:bench §10.5 UNPROVEN — 10,524 LOC: clause 5b (peak RSS) — embedder split unavailable (embedder probe exited 1), so the whole-process 5680 MB cannot be attributed to the index
+  scale:bench §10.5 UNPROVEN — 50,866 LOC vector arm not measured: projected 51 min for ~12,492 embeddable nodes at the measured 243 ms/node, over the 45 min ceiling
+  scale:bench §10.5 UNPROVEN — 1,00,855 LOC vector arm not measured: projected 100 min for ~24,747 embeddable nodes at the measured 243 ms/node, over the 45 min ceiling
+  scale:bench §10.5 UNPROVEN — 2,00,833 LOC vector arm not measured: projected 200 min for ~49,257 embeddable nodes at the measured 243 ms/node, over the 45 min ceiling
+  scale:bench §10.5 UNPROVEN — 5,00,767 LOC vector arm not measured: projected 498 min for ~1,22,787 embeddable nodes at the measured 243 ms/node, over the 45 min ceiling
+
+[scale:bench] 1 bound breach(es) — see above
+[scale:bench] plus 5 clause(s) UNPROVEN (not measurable here)
+[exit 1] 2026-09-23T16:40:26Z

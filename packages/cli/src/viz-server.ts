@@ -151,6 +151,34 @@ export interface VizLedgerQuery {
   offset: number;
   limit: number;
   group?: LedgerGroup;
+  /**
+   * WP5 §7.1 Step B — re-check each record's evidence against the code as it is TODAY, so the row can
+   * carry the evaluator's own per-item reasons and the clause that keeps it out of recall.
+   *
+   * ON by default, because the default is the whole point of this surface: `/memory.json` is where a
+   * person goes to ask "why is my memory not answering", and a row that reports a verdict without
+   * having checked it is exactly the silent transition U1 is about — `group` is anchor-derived and
+   * does NOT move when evidence stops grounding, so an unmarked row reads as healthy while the record
+   * has already dropped out of recall. `?revalidate=0` is the deliberate opt-out for a caller that
+   * wants the cheap stamp-only read; it is never the default, because the cheap read is the one that
+   * hides the fault.
+   */
+  revalidate: boolean;
+}
+
+/**
+ * Parse the ONE spelling of the re-check flag both memory read routes accept. Shared rather than
+ * re-written per route because the two surfaces must not be able to disagree about what "the read
+ * re-checked" means, and because only the two literals are accepted: `revalidate=maybe` must fail
+ * loudly rather than fall back to a default — "the page silently read a stamp instead of re-checking
+ * the code" is the one confusion this param exists to remove.
+ */
+export function parseRevalidateFlag(params: URLSearchParams): boolean {
+  const raw = params.get('revalidate');
+  if (raw !== null && raw !== '0' && raw !== '1') {
+    throw new VizHttpError(400, `invalid revalidate: ${raw}`);
+  }
+  return raw !== '0';
 }
 
 /**
@@ -177,6 +205,7 @@ export function parseMemoryLedgerQuery(params: URLSearchParams): VizLedgerQuery 
     offset: parseCount('offset', params.get('offset')),
     limit: Math.min(MAX_LEDGER_PAGE, parseCount('limit', params.get('limit'))),
     ...(group !== undefined ? { group } : {}),
+    revalidate: parseRevalidateFlag(params),
   };
 }
 
@@ -205,6 +234,55 @@ export interface VizMemoryHomeOperations {
   readerFreshness?: ReaderFreshness;
 }
 
+/** The repair sentences, defined once so the ladder and the health tiles cannot disagree (§7.4). */
+interface MemoryStepText {
+  deadCaptures: (n: number) => string;
+  staleIndex: () => string;
+  pending: (n: number) => string;
+  noModel: (reason?: string) => string;
+}
+
+/** A repair line per health tile — present ONLY where that tile is reporting a fault. */
+export interface VizMemoryHomeRecovery {
+  retrieval?: string;
+  capture?: string;
+  codeIndex?: string;
+}
+
+/**
+ * WP5 §7.4 — what to do about THIS tile, as opposed to the one most urgent thing overall.
+ *
+ * The tile used to show a bare state ("behind HEAD", "lexical-fallback") with no account of what a
+ * person should do about it, so the panel reported a fault and left the repair to be inferred. The
+ * absence of a key here is meaningful and is NOT a claim that the signal is healthy: it means this
+ * server has no fault to report for that tile, and the UI renders no line rather than inventing a
+ * reassurance (§4.2 — "not measured" is not "zero").
+ *
+ * `sync` is absent by construction: nothing populates `health.sync.pending`/`dead`, so the only two
+ * states it reaches are `local only` and `configured; no run yet` — neither is a fault, and a
+ * plausible-sounding command for them would be fabricated advice.
+ *
+ * On the capture count: this reads `health.capture`, while the ladder's pending branch reads the
+ * handoff count. Both come from `pendingCaptures` over the same local store in every production
+ * call path, so they agree; they are kept separate because each is the number its own surface
+ * displays (the tile shows health, the Pending section shows handoff).
+ */
+export function recoveryFor(
+  health: VizMemoryHomeOperations,
+  step: MemoryStepText,
+): VizMemoryHomeRecovery {
+  const out: VizMemoryHomeRecovery = {};
+  const dead = health.capture?.dead ?? 0;
+  const waiting = health.capture?.pending ?? 0;
+  if (dead > 0) out.capture = step.deadCaptures(dead);
+  else if (waiting > 0) out.capture = step.pending(waiting);
+  if (health.codeIndex?.behindHead) out.codeIndex = step.staleIndex();
+  if (health.retrieval?.mode === 'lexical-fallback') {
+    out.retrieval = step.noModel(health.retrieval.reason);
+  }
+  return out;
+}
+
 /**
  * The memory home is the session-facing projection over the same API that powers the ledger.
  * It intentionally returns counts plus small preview lists; full history and record detail stay on
@@ -223,11 +301,27 @@ export function readMemoryHome(
       nextAction: 'Run `crib memory init` to configure memory for this repository.',
     };
   }
+  // WP5 §7.1 Step B — the Home view is the second of the two surfaces U1 names, and here the opt-in
+  // is the whole difference between an honest tile and a lying one: `needsAttention` is folded from
+  // the effective verdicts, so a Home read that does not re-check reports a record whose evidence has
+  // stopped grounding as healthy — and the ledger rows beside it, which DO re-check by default, report
+  // it as excluded. That is precisely the silent transition U1 is about, one layer up from the row.
+  //
+  // The cost is real and is the reason this is a written decision, not a default: handoff folds every
+  // gathered record, so this evaluates all of them. `evaluate()` is memoized per content at a
+  // dependency generation, so the price is paid once per code generation rather than per read, and the
+  // E2E round measures it (WP5 §9 G-U5). The alternative — a Home tile that says "nothing needs you"
+  // while a saved claim has dropped out of recall — is the defect, not the price.
   const handoff = api.handoff({
     repository,
     limits: { openWork: 10, pending: 10, attention: 10, recent: 10 },
     now: new Date().toISOString(),
+    revalidate: true,
   });
+  // Deliberately NOT re-checked, and the asymmetry is the §7.1 correction: `counts` is the ledger's
+  // GROUP counts, which are anchor-derived and do not move when evidence stops grounding, so a
+  // re-check here would buy nothing and cost a second full fold. The one field on this read that can
+  // go stale — whether a record NEEDS ATTENTION — comes from `handoff` above, which does re-check.
   const ledger = api.ledger({ offset: 0, limit: 1 });
   // Resumable only: `count` is the full history including completed and cancelled intakes, and a
   // "work to resume" tile that counts finished work is simply lying to the operator. Stale work
@@ -235,20 +329,59 @@ export function readMemoryHome(
   const resumeCount = handoff.counts.openWork + handoff.intakes.resumableCount;
   const staleCount = handoff.intakes.staleCount ?? 0;
   const pending = handoff.counts.pendingCaptures;
+  // WP5 §7.4 — the repair text lives HERE, once, so the ladder and the health tiles cannot drift
+  // into telling an operator two different things about one signal. The ladder picks the single
+  // most urgent line; `healthRecovery` below gives each tile its own. Same strings, two choosers.
+  //
+  // Every line names a command that exists and needs no unconfigured prerequisite (`crib update`,
+  // `crib embed status`, the memory outbox report + re-observe) — the scar-tissue rule at §4.3. The
+  // pending hint used to name `crib memory distill --provider <name>`, an LLM provider nobody had.
+  const step = {
+    deadCaptures: (n: number) =>
+      `${n} captured learning(s) exhausted their retries and are parked as dead letters, so they will never be distilled automatically — inspect them (the memory outbox report) and re-capture with memory_observe anything still worth keeping.`,
+    staleIndex: () =>
+      'The code index is behind HEAD, so evidence is being re-checked against a graph that no longer matches your working tree — run `crib update` to catch it up.',
+    pending: (n: number) =>
+      `${n} captured learning(s) are waiting — open Pending and press Re-check to admit the ones that verify against the code; dismiss the rest.`,
+    noModel: (reason?: string) =>
+      `On-device semantic retrieval is unavailable, so recall is running lexical-only — run \`crib embed status\` to repair the installed tier, or continue lexical-only.${reason ? ` Reason: ${reason}` : ''}`,
+  };
   // One action a PERSON can take right now, most urgent first. Every line says where to click —
-  // never a command that needs configuration the operator has not done (the old pending hint
-  // named `crib memory distill --provider <name>`, which needs an LLM provider nobody set up).
+  // never a command that needs configuration the operator has not done (see `step` above).
+  //
+  // WP5 §7.3 — the ladder now consults `health`, which it previously received and never read: the
+  // four recovery states U3 names were DISPLAYED and could not produce a step at all. Placement is
+  // deliberate, not incidental:
+  //   - dead captures and a stale index sit ABOVE the pending/review branches, because both mean the
+  //     material the operator is about to act on may be missing or checked against the wrong graph;
+  //   - the unavailable model sits BELOW them, immediately before the terminal line, because it is
+  //     the mildest of the four: recall still answers (lexically), the fallback is documented, and an
+  //     operator may be running that way on purpose. It is not a reason to hide real work;
+  //   - every health branch sits ABOVE the terminal "Nothing needs you" line, because a condition
+  //     that needs repair must never be reported as "all clear".
+  // The ORDER deliberately inverts the proposal in the spec's open decision P-8 (which offered
+  // placing all four below pending): a dead letter has no automatic path left — only a person can
+  // decide whether the learning is still worth keeping — and a stale index invalidates every
+  // evidence check the operator is about to read on this page. P-8 is recorded as answered, not
+  // silently overridden.
+  const deadCaptures = health.capture?.dead ?? 0;
   const nextAction = handoff.intakes.primary?.nextSafeAction
     ? handoff.intakes.primary.nextSafeAction
     : resumeCount > 1
       ? `${resumeCount} pieces of work are in progress — open Work to resume, continue one, and mark the finished ones done.`
-      : pending > 0
-        ? `${pending} captured learning(s) are waiting — open Pending and press Re-check to admit the ones that verify against the code; dismiss the rest.`
-        : staleCount > 0
-          ? `${staleCount} piece(s) of work went idle for two weeks or more — open Work to resume and mark each one done or cancel it.`
-          : handoff.counts.needsAttention > 0
-            ? 'Open Needs review and inspect the evidence or supersede the stale claim.'
-            : 'Nothing needs you. Agents capture memories with memory_observe as they work, and each session re-checks what is pending.';
+      : deadCaptures > 0
+        ? step.deadCaptures(deadCaptures)
+        : health.codeIndex?.behindHead
+          ? step.staleIndex()
+          : pending > 0
+            ? step.pending(pending)
+            : staleCount > 0
+              ? `${staleCount} piece(s) of work went idle for two weeks or more — open Work to resume and mark each one done or cancel it.`
+              : handoff.counts.needsAttention > 0
+                ? 'Open Needs review and inspect the evidence or supersede the stale claim.'
+                : health.retrieval?.mode === 'lexical-fallback'
+                  ? step.noModel(health.retrieval.reason)
+                  : 'Nothing needs you. Agents capture memories with memory_observe as they work, and each session re-checks what is pending.';
   return {
     configured: true as const,
     sections: {
@@ -265,6 +398,13 @@ export function readMemoryHome(
       },
     },
     health,
+    // WP5 §7.4 — a repair line bound to each health tile, and ONLY where the tile is actually
+    // reporting a fault. The `sync` tile carries none, deliberately: the only two states it can be
+    // in today are `local only` (a valid configuration, not a fault) and `configured; no run yet`
+    // (benign), because nothing populates `health.sync.pending`/`dead` — so a repair line there
+    // would be the fabricated reassurance §4.2 forbids. Recorded as a finding rather than filled in
+    // with a plausible-sounding command.
+    recovery: recoveryFor(health, step),
     // The previous session, which `api.handoff` has always produced and this view used to drop on
     // the floor. The memory home showed a session id with no indication of what that session was
     // ABOUT, so the one question an operator opens this page to ask — "where was I?" — had no answer
@@ -321,11 +461,27 @@ export type VizLedgerDetailResponse = GetResult & { audit: AuditResult };
  * Lazy per-record detail: the full claim, validity window, lineage, evidence and decision
  * transitions — composed from the API's own `get` + `audit` ops. Unknown id → 404, mirroring
  * `/source`'s unknown-node behavior.
+ *
+ * WP5 §7.4 — `revalidate` defaults ON, the same rule and the same reasoning as `/memory.json`: a
+ * record's own view is where a person goes to ask "why is this missing", so it must not be the one
+ * view that answers from a stamp nobody checked. It was, and the contradiction was visible: a row
+ * excluded with `hash-drift` opened onto evidence reading `source-quote · valid · <soul>`. `get()`
+ * now returns the gate's own `eligible`/`excludedBy` for exactly this surface. The cost is one
+ * record's evidence re-grounded against the graph (memoized per content at a dependency generation),
+ * and `?revalidate=0` stays available for the cheap stamp-only read.
  */
-export function readMemoryLedgerDetail(api: MemoryApi, id: string): VizLedgerDetailResponse {
-  const got = api.get(id);
+export function readMemoryLedgerDetail(
+  api: MemoryApi,
+  id: string,
+  opts: { revalidate?: boolean } = {},
+): VizLedgerDetailResponse {
+  const revalidate = opts.revalidate !== false;
+  const got = api.get(id, { revalidate });
   if (!got.found) throw new VizHttpError(404, `unknown memory record: ${id}`);
-  return { ...got, audit: api.audit(got.id ?? id) };
+  // The audit trail reads the SAME way as the detail it accompanies: a decision history fetched with
+  // the stamp while the record above it was re-checked would reintroduce the disagreement one layer
+  // down (audit carries its own verdict fold — see P-11).
+  return { ...got, audit: api.audit(got.id ?? id, { revalidate }) };
 }
 
 // ─── record connections + history (WP-G7) ─────────────────────────────────────

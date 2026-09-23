@@ -20,8 +20,9 @@
  * Determinism: `rewriteQuery` is a pure function of (text, aliases); `loadAliases` reads a committed
  * JSON file with no clock/network. Identical input → identical output across runs.
  */
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { writeJsonAtomic } from './atomic-write.js';
 import { graphPaths } from './graph-layout.js';
 
 /** A readonly alias→expansion map (e.g. "DTI" → "debt to income"). */
@@ -114,17 +115,25 @@ export function rewriteQuery(text: string, aliases: AliasMap): string {
 /**
  * Persist alias dictionary to `.crib/graph/semantic/aliases.json` in committed {@link AliasFile}
  * shape. The authoring primitive the enrichment layer (system-layer glossary) calls to write the
- * domain acronym map. Overwrites any existing file atomically (single write).
+ * domain acronym map. Overwrites any existing file atomically (temp→rename, and durably — see
+ * {@link writeJsonAtomic}).
+ *
+ * WP1 defect D1-h: this function previously documented "Overwrites any existing file atomically
+ * (single write)" and did `writeFileSync(path, …)`. That is a SINGLE write, but it is not atomic:
+ * `writeFileSync` opens the target with `O_TRUNC`, so the file on disk is truncated to zero bytes
+ * before the new bytes land, and a crash between the two leaves the alias dictionary empty or
+ * half-written. The reader cannot even report that: {@link loadAliases} swallows a parse failure and
+ * returns an EMPTY map, so the damage surfaces as silently missing query expansions rather than as an
+ * error. A rename is the only way to replace a file without ever exposing that state, and it is what
+ * {@link writeJsonAtomic} does.
  */
 export function writeAliases(
   cribDir: string,
   aliases: Array<{ alias: string; expand: string }>,
 ): void {
-  const dir = graphPaths(cribDir).semantic;
-  const path = join(dir, ALIAS_FILE);
-  mkdirSync(dir, { recursive: true });
+  const path = join(graphPaths(cribDir).semantic, ALIAS_FILE);
   const file: AliasFile = { version: 1, aliases };
-  writeFileSync(path, `${JSON.stringify(file, null, 2)}\n`, 'utf8');
+  writeJsonAtomic(path, `${JSON.stringify(file, null, 2)}\n`);
 }
 
 /** The schema tag the loader expects; exported for assertions/tests. */

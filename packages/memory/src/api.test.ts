@@ -752,6 +752,97 @@ describe('handoff — principal scoping over a shared journal (WP3 acceptance)',
   });
 });
 
+// ─── WP1 item 13 / D3-a: the boundary through the PRODUCTION search surface ───
+
+/**
+ * The kill table's D3-a reads "the fix exists and is dead code": `strictPrincipal` was implemented
+ * and no production caller passed it, so two principals' stores gathered together leaked. Item 13's
+ * exit criterion is that the closure is asserted THROUGH a production gather path, not by handing
+ * the flag to `gatherRecall` in the test itself.
+ *
+ * So this drives `MemoryApi.search` — the surface the CLI/MCP search adapters call onto — with the
+ * boundary engaged by its own env (`KCRIB_STRICT_PRINCIPAL`). `resolveStrictPrincipal` carries the
+ * measured reason the shipped default is OFF: local admission writes memory-1, which has no
+ * ownership column, so strict-by-default refuses every record this device writes. The default state
+ * is therefore asserted here rather than described: the residual leak is a pinned fact, not a claim.
+ */
+describe('search — the principal boundary through the production surface (WP1 item 13 / D3-a)', () => {
+  const CLAIM = 'Deployment requires a signed artifact';
+  const SUBJECT_A = 'sym:src/deploy.ts#deployA';
+  const SUBJECT_B = 'sym:src/deploy.ts#deployB';
+  const SUBJECT_B_LEGACY = 'sym:src/deploy.ts#deployBLegacy';
+
+  /**
+   * One shared local store holding THREE records, in the order a shared box produces them:
+   * A's, migrated under A; B's, migrated under B; and B's second record, deliberately left on the
+   * memory-1 envelope — the shape every unstamped private record has, and the only shape
+   * `strictPrincipal` can act on (a STAMPED foreign record is refused with or without the opt-in).
+   *
+   * Each call builds its own store directory. The fixture is NOT idempotent over a populated store,
+   * and that is a property of migration rather than of this test: a second upsert of a memory-1
+   * record whose v2 twin already exists re-adds a `mem:` line on the v1 envelope (the twin has a
+   * different id), and the next migration pass then stamps it under whatever principal is current.
+   * Building it twice in one directory would therefore not be the same two-principal world.
+   */
+  function boundaryApi(optIn: boolean) {
+    const dir = join(home, optIn ? 'engaged' : 'open');
+    const principalEnv: NodeJS.ProcessEnv = {
+      ...env,
+      KCRIB_MEMORY_DIR: dir,
+      KCRIB_REGISTRY_DIR: dir,
+      KCRIB_PRINCIPAL_ID: 'principal:A',
+      // Pinned, NOT inherited: a developer shell that exported the opt-in would make the "shipped
+      // default" half below assert the engaged behaviour, and the test would pass for the wrong
+      // reason. The resolver treats a non-string (undefined) as OFF — the same discipline this
+      // file already applies to KCRIB_SYNC_KEY.
+      KCRIB_STRICT_PRINCIPAL: optIn ? '1' : undefined,
+    };
+    const local = MemoryStore.local(REPO, { env: principalEnv, now: () => T0 });
+    local.upsertEntry('active', v1Record({ subject: SUBJECT_A, claim: CLAIM }));
+    // A migration stamps what is on the envelope at the time it runs, so the fixture stamps one
+    // principal per pass. A second pass skips the twin the first one wrote (store.ts: only a
+    // memory-1 entry is a migration input), which is what keeps A's stamp intact under B's pass.
+    local.migrateToV2({ provenance: { principalId: 'principal:A' } });
+    local.upsertEntry('active', v1Record({ subject: SUBJECT_B, claim: CLAIM }));
+    local.migrateToV2({ provenance: { principalId: 'principal:B' } });
+    local.upsertEntry('active', v1Record({ subject: SUBJECT_B_LEGACY, claim: CLAIM }));
+    return new MemoryApi({ stores: { local }, env: principalEnv, now: () => T0 });
+  }
+
+  it('engaged: A gets its own record back and NONE of B’s — stamped or unstamped', () => {
+    const found = boundaryApi(true)
+      .search('Deployment')
+      .hits.map((h) => h.subject);
+    // Non-vacuous: an EMPTY response also contains none of B's, so pin that the record stamped with
+    // the caller's own principal survived the very same boundary. That is the difference between
+    // "scoped" and "blackholed".
+    expect(found).toEqual([SUBJECT_A]);
+  });
+
+  it('not engaged — the shipped default — still hands A B’s unstamped record (the open D3-a hole)', () => {
+    const found = boundaryApi(false)
+      .search('Deployment')
+      .hits.map((h) => h.subject);
+    expect(found).toHaveLength(2);
+    expect(found).toContain(SUBJECT_A);
+    // The leak, asserted rather than described.
+    expect(found).toContain(SUBJECT_B_LEGACY);
+    // …and the part that was never open: a record STAMPED with another principal is refused by the
+    // ownership comparison itself, which is why the fix's absence showed up only on unstamped data.
+    expect(found).not.toContain(SUBJECT_B);
+  });
+
+  it('the opt-in is read from the API’s OWN env, so a test/serving layer can scope without exporting', () => {
+    // Same store, same principal, same query — only the env differs. If the boundary resolved from
+    // `process.env` instead of `this.env`, both calls would return the same thing and the production
+    // surfaces (which each hold their own env) could not be scoped independently.
+    const engaged = boundaryApi(true).search('Deployment').hits;
+    const open = boundaryApi(false).search('Deployment').hits;
+    expect(engaged).toHaveLength(1);
+    expect(open).toHaveLength(2);
+  });
+});
+
 /** A minimal soul port for the fresh evaluator: every lookup misses (nothing is fabricated). */
 function evalSoulPort(): {
   getNode: (id: string) => undefined;
@@ -1000,10 +1091,49 @@ describe('capture', () => {
 // ─── search ───────────────────────────────────────────────────────────────────
 
 describe('search', () => {
-  it('returns the rich hit contract on every result', () => {
+  /**
+   * WP1 item 13 made every production gather STRICT: an unstamped (memory-1) record from a PRIVATE
+   * store is refused, because an unknown owner is not the caller — that is the two-store leak the
+   * item closes, and hiding those records from their current users is the cost the spec recorded as
+   * D-2 and mitigated with `crib memory migrate` + the doctor check.
+   *
+   * So a search fixture has exactly two honest shapes, and the tests below pick per intent:
+   *
+   *   - **the team store** (this helper) — an unstamped record IS admitted there, because that ledger
+   *     is committed to the repo (readable by anyone who can read the repo, so excluding it protects
+   *     no secret) and append-only (so it can never be stamped — excluding it would hide it forever).
+   *     This is the only place a memory-1 record still reaches a production gather; tests that pin the
+   *     **memory-1 read model** therefore live here, and their store-derived assertions move with it.
+   *   - **a migrated private store** ({@link migratedLocal}) — `migrateToV2` stamps the principal AND
+   *     writes the alias snapshot that carries the memory-1 verdicts forward. Both halves are needed:
+   *     the stamp is what the boundary checks, and the snapshot is what keeps the twin recall-eligible
+   *     (a bare memory-2 record has no `verdicts` field, so it projects as `candidate` trust and never
+   *     ranks). Tests that need PRIVATE-store semantics — local-first locate, a local decision, a local
+   *     shard on disk — use this, and it is exactly the shape a real user's store has after migrate.
+   */
+  /** The id a MIGRATED store holds for `claim`: `migrateToV2` retires the memory-1 line and the twin
+   *  carries a different (v2) id, so a verb must be driven with this id, not the fixture's. */
+  function twinIdIn(local: MemoryStore, claim: string): string {
+    const found = (local.readCollection('active').entries as MemoryRecord[]).find(
+      (e) => e.claim === claim,
+    );
+    if (!found) throw new Error(`no migrated twin for claim '${claim}'`);
+    return found.id;
+  }
+
+  function migratedLocal(records: MemoryRecord[]): { local: MemoryStore; api: MemoryApi } {
     const { local, api } = setup();
+    local.upsertEntries('active', records);
+    local.migrateToV2({ provenance: { principalId: 'principal:local' } });
+    return { local, api };
+  }
+
+  it('returns the rich hit contract on every result', () => {
+    // …in the TEAM store: this is the memory-1 read-model pin, and a memory-1 record is only
+    // reachable from there once the gather is strict (see the suite comment above).
+    const { team, api } = setupMulti();
     const rec = v1Record({ claim: 'A.b does the thing' });
-    local.upsertEntry('active', rec);
+    team.upsertEntry('records', rec);
     const res = api.search(SUBJECT, { codeHead: 'abcd1234' });
     expect(res.query).toBe(SUBJECT);
     expect(res.hits).toHaveLength(1);
@@ -1015,7 +1145,7 @@ describe('search', () => {
     expect(hit.record).toEqual(rec);
     expect(hit.visibility).toBe('workspace'); // derived through the documented v1 mapping
     expect(hit.scope).toEqual({ boundary: 'repo', repoId: REPO }); // SEMANTIC scope
-    expect(hit.placement).toEqual(['local']); // STORAGE placement — separate axis
+    expect(hit.placement).toEqual(['team']); // STORAGE placement — separate axis
     expect(hit.verdicts.trust).toBe('local');
     expect(hit.verdicts.quarantined).toBe(false);
     expect(hit.evidence[0]).toMatchObject({ kind: 'source-quote', verdict: 'valid' });
@@ -1029,7 +1159,7 @@ describe('search', () => {
       transactionTime: { observedAt: T0, recordedAt: T0 },
     });
     expect(hit.lineage).toEqual({});
-    expect(hit.score).toMatchObject({ lexical: expect.any(Number) as unknown, sourceTier: 2 });
+    expect(hit.score).toMatchObject({ lexical: expect.any(Number) as unknown, sourceTier: 3 });
     expect(hit.rankingVersion).toBe(RANKING_VERSION);
     expect(hit.conflicts).toEqual([]);
     expect(hit.supersededBy).toEqual([]);
@@ -1039,7 +1169,9 @@ describe('search', () => {
   });
 
   it('reuses the recall projection ranking (valid evidence outranks degraded)', () => {
-    const { local, api } = setup();
+    // team store: the ranking criterion under test is evidence quality, and the fixtures are
+    // memory-1 — see the suite comment on why these can only ride the team carve-out now.
+    const { team, api } = setupMulti();
     const good = v1Record({ claim: 'A.b does the thing' });
     const bad = v1Record({
       claim: 'A.b does another thing',
@@ -1050,7 +1182,7 @@ describe('search', () => {
         lifecycle: 'active',
       },
     });
-    local.upsertEntries('active', [good, bad]);
+    team.upsertEntries('records', [good, bad]);
     const res = api.search(SUBJECT);
     expect(res.hits.map((h) => h.id)).toEqual([good.id, bad.id]);
     expect(res.hits[0]?.score.evidenceQuality).toBe(2);
@@ -1058,11 +1190,14 @@ describe('search', () => {
   });
 
   it('excludes a tombstoned record', () => {
-    const { local, api } = setup();
+    // A MIGRATED private store: the tombstone is a local decision, so this needs local-store delete
+    // semantics. The first assertion is what keeps the test honest — under a strict gather an
+    // unmigrated fixture would read zero both before and after the delete, and the test would pass
+    // for a reason that has nothing to do with tombstoning.
     const rec = v1Record();
-    local.upsertEntry('active', rec);
+    const { local, api } = migratedLocal([rec]);
     expect(api.search(SUBJECT).hits).toHaveLength(1);
-    const del = api.delete(rec.id, { actor: 'ci', reason: 'stale' });
+    const del = api.delete(twinIdIn(local, rec.claim), { actor: 'ci', reason: 'stale' });
     expect(del.ok).toBe(true);
     expect(api.search(SUBJECT).hits).toHaveLength(0);
   });
@@ -1091,16 +1226,19 @@ describe('search', () => {
   });
 
   it('surfaces a v2 successor that declares it retires a hit (via lineage)', () => {
-    const { local, api } = setup();
+    // team store: the RETIRED hit is a memory-1 record (it cannot carry lineage itself, which is
+    // exactly why the declaration has to come from the v2 successor), and memory-1 is only reachable
+    // through the team carve-out under a strict gather.
+    const { team, api } = setupMulti();
     const old = v1Record({ claim: 'A.b returns 42' });
-    local.upsertEntry('active', old);
+    team.upsertEntry('records', old);
     const successor = v2Record({
       claim: 'A.b returns 43',
       lineage: { supersedes: [old.id] },
       validTime: { from: T2 },
       transactionTime: { observedAt: T2, recordedAt: T2 },
     });
-    local.upsertEntry('active', successor);
+    team.upsertEntry('records', successor);
     const res = api.search(SUBJECT);
     // the OLD record still ranks (no decision event), but the retirement declaration is surfaced
     const hit = res.hits.find((h) => h.id === old.id);
@@ -1128,9 +1266,15 @@ describe('search', () => {
     local.upsertEntry('active', rec);
     const successor = v1Record({ claim: 'A.b returns 43', createdAt: T1 });
     local.upsertEntry('active', successor);
+    // The local copies have to be STAMPED to enter a strict gather (WP1 item 13); `migrateToV2` also
+    // writes the alias snapshot that keeps a twin recall-eligible. The decision below stays keyed on
+    // the LEGACY id deliberately — the alias bridge re-subjects a legacy-keyed event to the twin, and
+    // that bridge is part of what this test exercises.
+    local.migrateToV2({ provenance: { principalId: 'principal:local' } });
+    const successorTwin = twinIdIn(local, successor.claim);
     local.upsertEntry(
       'decisions',
-      decisionOn(rec.id, 'supersede', { successor: successor.id, ts: T1 }),
+      decisionOn(rec.id, 'supersede', { successor: successorTwin, ts: T1 }),
     );
 
     const hits = api.search(SUBJECT).hits;
@@ -1139,20 +1283,30 @@ describe('search', () => {
     expect(teamHit?.verdicts.lifecycle).toBe('active'); // the projection holds no-poison…
     expect(teamHit?.supersededBy).toEqual([]); // …and the successor list must not poison either
     // the local successor itself still ranks (local-sourced, nothing retires it)
-    const successorHit = hits.find((h) => h.id === successor.id);
+    const successorHit = hits.find((h) => h.id === successorTwin);
     expect(successorHit?.source).toBe('local');
     expect(successorHit?.supersededBy).toEqual([]);
     // the LOCAL view keeps the successor link — the same pool a local-sourced fold uses
     const got = api.get(rec.id);
     expect(got.source).toBe('local');
     expect(got.supersededBy).toEqual([
-      { id: successor.id, via: 'decision', found: true, subject: SUBJECT, claim: 'A.b returns 43' },
+      {
+        id: successorTwin,
+        via: 'decision',
+        found: true,
+        subject: SUBJECT,
+        claim: 'A.b returns 43',
+      },
     ]);
   });
 
   it('honours the sources filter', () => {
-    const { local, api } = setup();
-    local.upsertEntry('active', v1Record());
+    // The positive assertion is load-bearing: a strict gather makes "filtered out" and "excluded by
+    // the principal boundary" (WP1 item 13) both read as zero hits, so the test must first show the
+    // record IS recallable when its store is in scope, or the zero below proves nothing.
+    const rec = v1Record();
+    const { api } = migratedLocal([rec]);
+    expect(api.search(SUBJECT).hits).toHaveLength(1);
     const res = api.search(SUBJECT, { sources: ['global'] });
     expect(res.hits).toHaveLength(0);
     expect(res.provenance.sources).toEqual([]);
@@ -1162,10 +1316,20 @@ describe('search', () => {
     // the same record id physically held by team AND local: the projection yields one entry per
     // source, and each hit must report the store its governing verdicts came from — the same
     // `source` field memoryRecall reports — never the raw placement list (which is local-first).
+    //
+    // Both copies are the MIGRATED twin, not the memory-1 line (WP1 item 13): a strict gather admits
+    // a memory-1 record from the TEAM store only, so the private copy must be stamped — and it is the
+    // alias snapshot `migrateToV2` writes that keeps the twin recall-eligible in EITHER store, since
+    // the alias index is built from the union of the gathered stores' aliases. The id is identical on
+    // both sides, which is the whole point of the test.
     const { team, local, api } = setupMulti();
     const rec = v1Record();
-    team.upsertEntry('records', rec);
     local.upsertEntry('active', rec);
+    local.migrateToV2({ provenance: { principalId: 'principal:local' } });
+    const twin = local
+      .readCollection('active')
+      .entries.find((e) => (e as MemoryRecord).claim === rec.claim) as MemoryRecord;
+    team.upsertEntry('records', twin);
     const hits = api.search(SUBJECT).hits;
     expect(hits).toHaveLength(2);
     expect(hits.map((h) => h.source).sort()).toEqual(['local', 'team']);
@@ -1191,16 +1355,27 @@ describe('search', () => {
   });
 
   it('a corrupt interior line keeps good records ranking and surfaces the error in provenance', () => {
-    const { local, api } = setup();
     const good = v1Record({ claim: 'A.b does the thing' });
     const other = v1Record({ claim: 'A.b does another thing' });
-    local.upsertEntry('active', good);
-    // out-of-band rewrite of the good record's shard: a corrupt line wedged BETWEEN two valid
-    // lines, exactly the torn-ledger shape a crash mid-write or a bad merge can leave behind
-    const shard = memoryShard(good.id);
+    // a MIGRATED private store: the torn shard is a private-ledger accident, and a strict gather
+    // (WP1 item 13) only reaches a private record once it is stamped.
+    const { local, api } = migratedLocal([good, other]);
+    const goodTwin = twinIdIn(local, good.claim);
+    const otherTwin = twinIdIn(local, other.claim);
+    const twinOf = (id: string): MemoryRecord =>
+      local.readCollection('active').entries.find((e) => e.id === id) as MemoryRecord;
+    const goodRec = twinOf(goodTwin);
+    const otherRec = twinOf(otherTwin);
+    // A torn file holds BOTH records' lines with the corrupt one wedged between them, exactly the
+    // shape a crash mid-write or a bad merge can leave behind. The twins' content ids can shard
+    // differently, so the other twin's own shard is emptied first — without that the reader would see
+    // the same id twice (once per shard) and the count below would be measuring a duplicate rather
+    // than a ranking result.
+    local.writeShard('active', memoryShard(otherTwin), []);
+    const shard = memoryShard(goodTwin);
     writeFileSync(
       local.shardPath('active', shard),
-      `${canonicalMemoryJson(good)}\nTHIS LINE IS NOT JSON\n${canonicalMemoryJson(other)}\n`,
+      `${canonicalMemoryJson(goodRec)}\nTHIS LINE IS NOT JSON\n${canonicalMemoryJson(otherRec)}\n`,
       'utf8',
     );
     clearMemoryCollectionCache(); // out-of-band writes bump no generation — the memo must not serve the pre-fault read
@@ -1208,7 +1383,7 @@ describe('search', () => {
     const res = api.search(SUBJECT);
     // the good records on either side of the corrupt line still rank
     expect(res.hits).toHaveLength(2);
-    expect(new Set(res.hits.map((h) => h.id))).toEqual(new Set([good.id, other.id]));
+    expect(new Set(res.hits.map((h) => h.id))).toEqual(new Set([goodTwin, otherTwin]));
     // and the rejected line is EXPLICIT, never silently skipped: the operator sees
     // `<role>/active/<shard>.jsonl:2` in provenance errors
     expect(res.provenance.errors.some((e) => e.startsWith(`local/active/${shard}.jsonl:2:`))).toBe(

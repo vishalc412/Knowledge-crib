@@ -125,6 +125,35 @@ export interface MemoryEvalContext {
   pass?: EvaluationPassContext;
   /** G3.3 — the generation-keyed evaluation cache port bound for this pass. */
   cache?: EvaluationCachePort;
+  /**
+   * WP1 item 8 — the SNAPSHOT this serving process's reads resolve against, as the dependency slots
+   * `reader` (the adopted code reader) and `ledger` (the memory-ledger position). Both are RESOLVED
+   * AT BIND TIME rather than captured as values, because the adopted reader changes on every refresh
+   * cycle: a string frozen at construction would either never bust (the §7.4 stale verdict) or bust
+   * on the wrong trigger.
+   *
+   * A serving layer that has such a snapshot sets this once, on the long-lived eval context, and
+   * EVERY projection surface picks it up — `MemoryApi.search` and both recall adapters share
+   * {@link bindEvaluationPass}, which reads the pin from the context it is already given. Putting it
+   * here rather than in per-call arguments is what makes a third call site unable to forget it.
+   *
+   * Absent ⇒ no pin, and each slot keeps {@link NO_DEPENDENCY} ("this pass has no such dependency").
+   * That is the honest reading for a one-shot CLI command that reads the canonical soul from disk and
+   * serves a single answer: there is no snapshot in the process to be stale against.
+   */
+  pin?: EvaluationDependencyPin;
+}
+
+/**
+ * The bind-time accessors for the two snapshot slots. Each returns a generation string, or
+ * {@link UNVERSIONED} when the dependency exists but cannot be named (adoption pending), or
+ * {@link NO_DEPENDENCY} when this process has no such dependency at all.
+ */
+export interface EvaluationDependencyPin {
+  /** the code reader this process currently SERVES (`RefreshCoordinator.currentReaderGeneration`). */
+  reader?: () => string;
+  /** the memory-ledger position (`store.readStoreGeneration()` across the three stores). */
+  ledger?: () => string;
 }
 
 /**
@@ -946,19 +975,59 @@ export function effectiveVerdicts(
 }
 
 /**
+ * WP5 §7.2 — WHICH eligibility clause excluded a record. The five names are the five axes of
+ * {@link isRecallEligible}, so a caller can say "dropped for `evidence`" instead of showing an
+ * operator two counts (`considered: 8`, `eligible: 3`) with five missing rows and no account of them.
+ */
+export type RecallExclusionClause =
+  | 'trust'
+  | 'evidence'
+  | 'applicability'
+  | 'lifecycle'
+  | 'quarantined';
+
+/**
+ * The FIRST eligibility clause a set of verdicts fails, or `undefined` when it passes every one —
+ * evaluated in the order {@link isRecallEligible} states them, so a record failing several axes is
+ * attributed to the one the predicate would have stopped at.
+ *
+ * This exists because {@link isRecallEligible} is now defined IN TERMS OF IT: the decision and the
+ * label are one walk of one list, not two parallel transcriptions that can drift apart. A version
+ * that reported `excludedBy` from a separate re-implementation would be free to disagree with the
+ * filter it claims to explain — the failure mode WP5's U1 is entirely about — and this shape makes
+ * that impossible by construction rather than by review.
+ *
+ * `ignoreTrust` SKIPS the trust clause rather than merely discounting its result. The distinction is
+ * the whole reason it is an option and not a post-filter: this walk short-circuits, so a record that
+ * fails trust AND evidence answers `'trust'`, and treating that as "conflict-visible" would let a
+ * superseded `candidate` record surface as an active conflict. Skipping the clause evaluates the
+ * remaining axes on their own terms, which is what "eligibility minus the trust axis" has always
+ * meant ({@link isV2ConflictVisible}).
+ */
+export function recallExclusionClause(
+  v: EffectiveVerdicts,
+  opts?: { ignoreTrust?: boolean },
+): RecallExclusionClause | undefined {
+  if (!opts?.ignoreTrust && v.trust !== 'local' && v.trust !== 'team') return 'trust';
+  if (v.evidence !== 'valid' && v.evidence !== 'degraded') return 'evidence';
+  if (v.applicability !== 'current') return 'applicability';
+  if (v.lifecycle !== 'active') return 'lifecycle';
+  if (v.quarantined) return 'quarantined';
+  return undefined;
+}
+
+/**
  * Normal-recall eligibility (PRD line 142): `local|team + valid|degraded + current + active` and NOT
  * quarantined. `candidate`-trust, `invalid`/`orphaned`/`needs-review`, `superseded`/`retracted`, and
  * quarantined records are all excluded. Degraded records ARE eligible but rank below valid
  * ({@link rankRecall}).
+ *
+ * Defined as "fails no clause" rather than as its own conjunction so the exclusion label
+ * ({@link recallExclusionClause}) and this decision cannot drift apart: there is exactly one place
+ * the clauses are written down.
  */
 export function isRecallEligible(v: EffectiveVerdicts): boolean {
-  return (
-    (v.trust === 'local' || v.trust === 'team') &&
-    (v.evidence === 'valid' || v.evidence === 'degraded') &&
-    v.applicability === 'current' &&
-    v.lifecycle === 'active' &&
-    !v.quarantined
-  );
+  return recallExclusionClause(v) === undefined;
 }
 
 /**
@@ -968,14 +1037,14 @@ export function isRecallEligible(v: EffectiveVerdicts): boolean {
  * surface). Every other eligibility exclusion applies unchanged: a quarantined, superseded or
  * retracted record (or one with invalid evidence / non-current applicability) never surfaces as an
  * ACTIVE conflict — its resolution is already recorded.
+ *
+ * Expressed over the SAME clause walk, with the trust clause SKIPPED (`ignoreTrust`) — the walk
+ * short-circuits, so "minus the trust axis" is not "the clause it reports is `trust`"; see
+ * {@link recallExclusionClause}. Sharing the list keeps this true the day a sixth axis is added to
+ * eligibility and this predicate would otherwise have to be remembered.
  */
 export function isV2ConflictVisible(v: EffectiveVerdicts): boolean {
-  return (
-    (v.evidence === 'valid' || v.evidence === 'degraded') &&
-    v.applicability === 'current' &&
-    v.lifecycle === 'active' &&
-    !v.quarantined
-  );
+  return recallExclusionClause(v, { ignoreTrust: true }) === undefined;
 }
 
 /**

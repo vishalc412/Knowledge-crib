@@ -7,8 +7,9 @@ import { createHash } from 'node:crypto';
  * can replay this journal into claims, freshness state, code indexes, or an operational UI without
  * changing the content address or history of existing memory-1/2 records.
  */
-import { appendFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { appendLineDurable } from './atomic.js';
 import type { MemoryNamespace, MemorySensitivity } from './types.js';
 
 /** The event families shared by memory, code intelligence, sync, and client integrations. The two
@@ -163,8 +164,7 @@ export class IntelligenceEventJournal {
       occurredAt: input.occurredAt,
       recordedAt: this.nowFn(),
     };
-    mkdirSync(this.rootDir, { recursive: true });
-    appendFileSync(this.path(), `${JSON.stringify(event)}\n`, 'utf8');
+    appendLineDurable(this.path(), `${JSON.stringify(event)}\n`);
     return { event, duplicate: false };
   }
 

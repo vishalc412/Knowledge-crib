@@ -23,6 +23,7 @@
  * feeds an `ifHash` projection, so two handoffs over identical state must be byte-identical.
  */
 import type { AttemptPhase, Verdicts } from './enums.js';
+import type { ItemReason } from './evaluator.js';
 import {
   type ContinuationChoice,
   type IntakeProjection,
@@ -66,9 +67,35 @@ export interface HandoffAttention {
   /** why it needs attention: the non-current axis, in verdict terms. */
   evidence: Verdicts['evidence'];
   applicability: Verdicts['applicability'];
+  /**
+   * WP5 §7.1 — WHY it stopped holding, in the evaluator's own vocabulary ({@link ItemReason}):
+   * which evidence item failed, how, and with what consequence. `evidence`/`applicability` say
+   * THAT the claim is no longer current; this says what moved.
+   *
+   * Empty is a real state, not a missing one: it means the handoff was read WITHOUT revalidating
+   * (`HandoffOpts.revalidate`), so the axes are the verdicts stamped on the record rather than
+   * recomputed against the tree. A caller that renders this must render the distinction — an empty
+   * reason list beside a degraded axis is "not revalidated", never "no reason to be degraded".
+   *
+   * This is the field the Home view needs and the axes alone could not supply: `needsAttention` is
+   * where an operator asks "why is this here", and before this landed the answer was a verdict with
+   * no account of itself.
+   */
+  reasons: readonly ItemReason[];
 }
 
-/** A still-good claim worth carrying across the gap. */
+/**
+ * A still-good claim worth carrying across the gap.
+ *
+ * Deliberately carries NO `reasons`, and that is a proof rather than an omission. A record reaches
+ * this list only when `degraded` is false — `evidence === 'valid'` AND `applicability === 'current'`.
+ * `aggregateEvidence` returns `valid` only when every counted item is `valid` (a single `degraded`
+ * or `invalid` item forces the aggregate down), and every return site that yields
+ * `evidence: 'valid'` yields `reason: 'ok'` — so {@link ItemReason} collection, which skips `ok` and
+ * `ignored`, is empty by construction. A `reasons` field here would be permanently `[]`: not a
+ * missing explanation but a structurally impossible one, and an always-empty field reads as a bug
+ * to every future maintainer. The `needsAttention` row is the one that has something to explain.
+ */
 export interface HandoffRecent {
   id: string;
   kind: string;
@@ -179,8 +206,20 @@ export interface HandoffInput {
   /** Durable-outbox rows. The captured text lives on `claim` — the field a CaptureOutboxEntry
    *  actually carries; `observation` is accepted too so either shape may be passed. */
   pending: readonly { id: string; subject?: string; claim?: string; observation?: string }[];
-  /** every gathered record paired with its EFFECTIVE verdicts (post decision + freshness overlay). */
-  records: readonly { record: MemoryRecord | MemoryRecordVersioned; verdicts: Verdicts }[];
+  /**
+   * every gathered record paired with its EFFECTIVE verdicts (post decision + freshness overlay).
+   *
+   * `reasons` is optional HERE and required on {@link HandoffAttention} because the two answer
+   * different questions. Most callers hold a plain `Verdicts` and have not revalidated anything, so
+   * demanding `reasons` would force every one of them to invent an empty list; a caller that DID
+   * revalidate (`MemoryApi.handoff` with `revalidate`) has an `EffectiveVerdicts` and carries the
+   * reasons through untouched. Absent on the way in therefore means "not revalidated", which the
+   * row reports as `[]` rather than guessing.
+   */
+  records: readonly {
+    record: MemoryRecord | MemoryRecordVersioned;
+    verdicts: Verdicts & { reasons?: readonly ItemReason[] };
+  }[];
   intakeRequirements?: readonly IntakeRequirement[];
   intakeCheckpoints?: readonly IntakeCheckpoint[];
   repository?: IntakeCheckpoint['repository'];
@@ -436,6 +475,9 @@ export function buildHandoff(input: HandoffInput): HandoffResponse {
         claim: record.claim,
         evidence: verdicts.evidence,
         applicability: verdicts.applicability,
+        // Absent ⇒ this handoff was read without revalidating. `[]` is the honest report of that:
+        // the axes above are the record's STAMP, and a stale stamp has no reason to show for itself.
+        reasons: verdicts.reasons ?? [],
         ts: createdAt,
       });
       continue;

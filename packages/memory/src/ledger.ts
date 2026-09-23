@@ -17,7 +17,7 @@
  */
 import type { Node } from '@knowledge-crib/soul-schema';
 import type { EvidenceKind, EvidenceVerdict } from './enums.js';
-import type { EffectiveVerdicts } from './evaluator.js';
+import type { EffectiveVerdicts, ItemReason, RecallExclusionClause } from './evaluator.js';
 import { bestLocatorMatches, buildLocatorFromEvidence, parseSoulId } from './locator.js';
 import type { MemorySource } from './recall.js';
 import {
@@ -68,6 +68,43 @@ export type LedgerStanding = 'staged' | 'local' | 'team';
 /** Map the evaluator's admission verdict onto the display vocabulary (see module doc). */
 export function standingOf(trust: EffectiveVerdicts['trust']): LedgerStanding {
   return trust === 'team' ? 'team' : trust === 'local' ? 'local' : 'staged';
+}
+
+/**
+ * The display name for an exclusion clause. Identical to {@link RecallExclusionClause} on four of the
+ * five axes and different on exactly one: the backend says `trust`, the surface says `standing`.
+ *
+ * This is the SAME mapping {@link standingOf} already performs for the admission axis, applied to the
+ * exclusion clause, and it exists for the same reason: `trust` is the word Gate-0 forbids on any
+ * surface a person reads, and the ledger is serialized in full. A clause name is a backend axis name,
+ * not a label, and the two must not be allowed to become the same string by accident.
+ */
+export type LedgerExclusion =
+  | 'standing'
+  | 'evidence'
+  | 'applicability'
+  | 'lifecycle'
+  | 'quarantined';
+
+/**
+ * Map an exclusion clause onto the display vocabulary, exhaustively.
+ *
+ * The `Record<RecallExclusionClause, …>` is the point of this function: adding a sixth clause to the
+ * evaluator breaks THIS file's build rather than silently reaching a serialized surface as a raw
+ * backend word (which is exactly how `trust` got out the first time — a new field, an unmapped type).
+ * A `switch` with a `default` would compile and leak; this cannot.
+ */
+const EXCLUSION_DISPLAY: Record<RecallExclusionClause, LedgerExclusion> = {
+  trust: 'standing',
+  evidence: 'evidence',
+  applicability: 'applicability',
+  lifecycle: 'lifecycle',
+  quarantined: 'quarantined',
+};
+
+/** Map an exclusion clause onto the display vocabulary (see {@link EXCLUSION_DISPLAY}). */
+export function ledgerExclusionOf(clause: RecallExclusionClause): LedgerExclusion {
+  return EXCLUSION_DISPLAY[clause];
 }
 
 function anchorKindOf(prefix: string | undefined, hasPath: boolean): LedgerAnchorKind {
@@ -250,8 +287,41 @@ export interface LedgerRow {
   applicability: EffectiveVerdicts['applicability'];
   lifecycle: EffectiveVerdicts['lifecycle'];
   quarantined: boolean;
+  /**
+   * WP5 §7.1 — WHY this row reads the way it does, in the evaluator's own vocabulary
+   * ({@link ItemReason}): which evidence item failed, how, and with what consequence.
+   *
+   * Empty on every default read, and that is not a missing value — it means the row was **not
+   * revalidated**, so its verdicts are the stamp the record carries. Populated only when the caller
+   * asks (`LedgerOpts.revalidate`), because supplying an evaluation also RE-DECIDES
+   * `evidenceVerdict`/`applicability`. Absent-and-asked-for and absent-by-default are different
+   * states, so a caller that renders this must render the distinction rather than an empty panel.
+   *
+   * This is what makes an evidence re-decision VISIBLE at all. `group` is derived from the ANCHOR
+   * correlation (see `ledgerGroupOf`), so a record whose quote stopped grounding moves
+   * `evidenceVerdict` `valid` → `invalid` and `eligible` `true` → `false` while its group stays
+   * `current` — it silently drops out of recall under a row that still reads as healthy. Without
+   * `reasons` that transition is unobservable from the ledger, which is precisely the U1 gap this
+   * field exists to close.
+   */
+  reasons: readonly ItemReason[];
   /** normal-recall eligibility under the CURRENT effective verdicts (the recall gate's own rule). */
   eligible: boolean;
+  /**
+   * WP5 §7.2/§7.4 — WHICH eligibility clause kept this row out of recall; absent exactly when
+   * {@link eligible} is true, and derived from the same walk in the same place, so a row can never
+   * be labelled `not recalled · evidence` while the gate admits it.
+   *
+   * This is the field that lets a ledger row say "this still reads as `current` and is NOT being
+   * recalled, because its evidence no longer grounds" without the browser re-implementing the
+   * clause list (the spec's P-9). A row's `group` is anchor-derived and does NOT move on an
+   * evidence-only re-decision, so without this an operator sees a healthy-looking row and has no
+   * account of why their memory is not answering.
+   *
+   * Carries {@link LedgerExclusion} — the display vocabulary, not the evaluator's clause name — because
+   * this row is serialized in full and one of the clause names is a word Gate-0 bans on surfaces.
+   */
+  excludedBy?: LedgerExclusion;
   evidence: readonly LedgerEvidenceView[];
   /** the validTime window (`validityOf().validTime` — v1 derives it from createdAt). The
    *  transaction-time axis rides on createdAt/observedAt/recordedAt above. */
@@ -283,6 +353,20 @@ export interface LedgerResult {
   conflicts: readonly LedgerConflictView[];
   /** the capture policy actually in force (absent when no policy.json exists). */
   capturePolicy?: { trustedRef: string; profiles: readonly string[] };
+  /**
+   * WP5 §7.1/§7.4 — whether the rows on this page were actually re-checked against the live tree.
+   *
+   * This field exists to remove an ambiguity that has no other resolution: {@link LedgerRow.reasons}
+   * is empty **both** when a row was revalidated and nothing failed **and** when the row was never
+   * revalidated at all. Those are opposite meanings carried by one identical value, and a surface
+   * that renders "no item-level reason" without this flag is asserting something it does not know.
+   *
+   * True only when the caller asked (`LedgerOpts.revalidate`) AND both ports are wired — a lone
+   * evaluator cannot revalidate anything, so a request that could not be honoured reports `false`
+   * rather than a `true` that describes an intention. Additive: no persisted bytes, no cache key,
+   * no `ifHash`-pinned shape (WP5 §10, dated note).
+   */
+  revalidated: boolean;
   errors: readonly string[];
   rows: readonly LedgerRow[];
 }
@@ -302,6 +386,28 @@ export interface LedgerOpts {
   limit?: number;
   /** return only this group's rows (counts always cover the WHOLE ledger). */
   group?: LedgerGroup;
+  /**
+   * WP5 §7.1 — re-validate each row's evidence against the live tree and carry the resulting
+   * `ItemReason`s on `reasons` (default **false**, which leaves `reasons` empty on every row exactly
+   * as today).
+   *
+   * This is NOT a display-only switch. A supplied evaluation is consulted FIRST for
+   * `evidence`/`applicability`, so it can replace a stamped verdict with a recomputed one — a record
+   * whose quote no longer grounds moves `evidenceVerdict` `valid` → `invalid` and `eligible`
+   * `true` → `false`.
+   *
+   * What it does NOT do, stated here because an earlier draft of this spec claimed the opposite and
+   * the claim was wrong: it does not move the row's **group**. `ledgerGroupOf` derives the group from
+   * the ANCHOR correlation and consults verdicts only for lifecycle and quarantine, so a row can be
+   * `current` while its evidence is `invalid` — and, by `isRecallEligible`, while it is excluded from
+   * recall. That asymmetry is the reason `reasons` has to exist: it is the only place the re-decision
+   * shows. Callers that switch this on are asking for the current truth at the cost of a row-by-row
+   * revalidation pass.
+   *
+   * Ignored without both an evaluator and an evaluation context wired into the API — a lone
+   * evaluator cannot revalidate anything.
+   */
+  revalidate?: boolean;
 }
 
 /** Cap a claim for list display, deterministically (same input → same output, no ellipsis guess). */

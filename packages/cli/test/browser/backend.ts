@@ -10,6 +10,11 @@
 // in user-visible strings (server payloads are pinned banned-word-free by
 // viz-server.test.ts); the in-repo identifier `candidates` is a store-collection name,
 // not a shipped string, and never reaches the page.
+//
+// WP5 additions (T16–T20): `new MemoryBackend({ seed: false })` boots the same real stack with
+// no memory records written at all, so the empty state is reachable without faking a payload;
+// `seedExclusions()` writes a claim whose evidence has stopped grounding; `observe()` saves a
+// claim through the REAL CLI so a change to the code on disk can be watched from the browser.
 
 import { spawn, spawnSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
@@ -23,10 +28,16 @@ const CLI = resolve(HERE, '../../dist/cli.js');
 // A fixed clock keeps the seeded records deterministic and sortable.
 const T0 = '2026-01-01T00:00:00.000Z';
 
+// The body line inside `normalizeInput` — the LIVE text a saved claim's quote has to ground
+// against. Declared once and interpolated into SOURCE, so the file the fixture writes and the
+// line a claim quotes cannot drift apart: `editSourceBodyLine` changes the file, and the quote
+// recorded beforehand is what stops grounding.
+const SOURCE_BODY_LINE = '  return value.trim().toLowerCase();';
+
 const SOURCE = [
   '/** Normalizes input before hashing. */',
   'export function normalizeInput(value: string): string {',
-  '  return value.trim().toLowerCase();',
+  SOURCE_BODY_LINE,
   '}',
   'export const value = 1;',
   '',
@@ -38,6 +49,20 @@ const BLOCKED_CLAIM = 'normalizeInput is pure';
 const CAPTURE_CLAIM = 'normalizeInput lowercased the token before the lookup';
 const GRAPH_CURRENT_CLAIM = 'normalizeInput hashes the trimmed lowercase token';
 const GRAPH_RETIRED_CLAIM = 'normalizeInput hashed the raw token';
+
+// WP5 T18 — a claim whose quote no longer grounds AND whose recorded hash no longer matches the
+// node it names. BOTH halves are load-bearing: a hash that only drifted evaluates `degraded`, and
+// `degraded` evidence is still recall-ELIGIBLE, so the row would carry no exclusion to inspect at
+// all. Drift + an ungroundable quote is what yields `invalid` / `needs-review` / `hash-drift`.
+const DRIFTED_CLAIM = 'normalizeInput upper-cases the token before hashing';
+const DRIFTED_QUOTE = '  return value.trim().toUpperCase();';
+/** A well-formed blake3 digest (the pin is /^blake3:[0-9a-f]{64}$/), deliberately not this node's. */
+const DRIFTED_TARGET_HASH = `blake3:${'0'.repeat(64)}`;
+
+// WP5 T19 — the claim saved through the real CLI, quoting the fixture's live body line, and the
+// rewrite that makes that quote stop grounding.
+const OBSERVED_CLAIM = 'the lookup token is lower-cased before the hash is computed';
+const EDITED_BODY_LINE = '  return value.trim();';
 
 // The same gate policy shape memory-check.test.ts uses: a profile that runs
 // `node --version` (deterministic, offline, exit 0) with an exit-code assertion.
@@ -68,6 +93,18 @@ export interface SeededCandidates {
   blocked: string;
 }
 
+/** What `start()` must do beyond booting the stack. */
+export interface MemoryBackendOptions {
+  /**
+   * Write the memory records (policy, staged queue, intake, connected graph). `false` leaves the
+   * repo indexed and the viz server running with NOTHING recorded — the only reachable shape of
+   * "a repository with no memory in it" (see the T16 note in memory-home.browser.ts: the
+   * `configured: false` branch is unreachable through `crib viz`, because the server refuses to
+   * start on a repo without `.crib/crib.json`, which is the same file the memory API keys on).
+   */
+  seed?: boolean;
+}
+
 export class MemoryBackend {
   readonly repo: string;
   readonly home: string;
@@ -78,10 +115,16 @@ export class MemoryBackend {
   staged: SeededCandidates = { ready: '', terminal: '', blocked: '' };
   intakeId = '';
   graph = { current: '', retired: '' };
+  /** WP5 T18 — the claim whose evidence stopped grounding (written by `seedExclusions`). */
+  driftedId = '';
+  /** WP5 T19 — the record id `observe()` had admitted for the claim it saved. */
+  observedId = '';
+  private readonly seed: boolean;
   private server: ReturnType<typeof spawn> | null = null;
   private readonly env: NodeJS.ProcessEnv;
 
-  constructor() {
+  constructor(opts: MemoryBackendOptions = {}) {
+    this.seed = opts.seed !== false;
     this.repo = mkdtempSync(join(tmpdir(), 'crib-browser-repo-'));
     this.home = mkdtempSync(join(tmpdir(), 'crib-browser-home-'));
     this.env = {
@@ -141,6 +184,10 @@ export class MemoryBackend {
    * (admission snapshots the repo head), the graph must exist (source-quote evidence
    * grounds against a real symbol), and the policy must exist before the stores are
    * seeded so the very first pending read classifies every row.
+   *
+   * Steps 1–4 and 8 always run. Steps 5–7b are the SEED — with `{ seed: false }` they are
+   * skipped, leaving a real indexed repo with a real viz server and no memory records, which
+   * is the only way the empty state can be reached through this stack (T16).
    */
   async start(): Promise<void> {
     // 1. A real git repo with one real source file.
@@ -166,49 +213,185 @@ export class MemoryBackend {
     //    graph's own hash — never a fabricated one.
     this.sym = this.findSymbol();
 
-    // 5. A real gate policy so admission can actually run its profile.
-    mkdirSync(join(this.repo, '.crib', 'memory'), { recursive: true });
-    writeFileSync(
-      join(this.repo, '.crib', 'memory', 'policy.json'),
-      `${JSON.stringify(POLICY, null, 2)}\n`,
-    );
+    if (this.seed) {
+      // 5. A real gate policy so admission can actually run its profile.
+      mkdirSync(join(this.repo, '.crib', 'memory'), { recursive: true });
+      writeFileSync(
+        join(this.repo, '.crib', 'memory', 'policy.json'),
+        `${JSON.stringify(POLICY, null, 2)}\n`,
+      );
 
-    // 6. Seed the local memory store through the real memory package — the same
-    //    stores the viz server opens, in the same home, keyed by the same repoId.
-    await this.seedStores();
+      // 6. Seed the local memory store through the real memory package — the same
+      //    stores the viz server opens, in the same home, keyed by the same repoId.
+      await this.seedStores();
 
-    // 7. A resumable intake recorded by the REAL CLI, checkpointed once.
+      // 7. A resumable intake recorded by the REAL CLI, checkpointed once.
+      this.intakeId = this.newIntake({
+        from: 'Ship the browser admission and resume flows',
+        outcome: 'The memory home works end to end from a real browser',
+        accept: 'A new session sees the same next action',
+        next: 'Re-run the browser suite against the real backend',
+      });
+
+      // 7b. WP-G7 — a small connected graph over two admitted claims: the current claim replaces
+      //     a retired one, touches code, and is linked from the saved work above.
+      await this.seedGraph();
+
+      // 7c. WP5 T18 — one admitted claim whose evidence has stopped grounding.
+      await this.seedExclusions();
+    }
+
+    // 8. The real viz server, headless (`--no-open`), on an ephemeral port.
+    await this.startServer();
+  }
+
+  /**
+   * WP5 T19 — records a fresh intake through the REAL CLI and checkpoints it once, returning its
+   * id. Extracted from `start()` (which used to inline both commands) so a test can start work of
+   * its own to continue, without a second copy of the flag list drifting from this one.
+   */
+  newIntake(input: { from: string; outcome: string; accept: string; next: string }): string {
     const created = this.cli([
       'intake',
       'create',
       '--from',
-      'Ship the browser admission and resume flows',
+      input.from,
       '--outcome',
-      'The memory home works end to end from a real browser',
+      input.outcome,
       '--accept',
-      'A new session sees the same next action',
+      input.accept,
       '--json',
     ]);
-    this.intakeId = (JSON.parse(created.stdout) as { id: string }).id;
+    const id = (JSON.parse(created.stdout) as { id: string }).id;
     this.cli([
       'intake',
       'checkpoint',
-      this.intakeId,
+      id,
       '--phase',
       'executing',
       '--next',
-      'Re-run the browser suite against the real backend',
+      input.next,
       '--summary',
       'Started the work',
       '--json',
     ]);
+    return id;
+  }
 
-    // 7b. WP-G7 — a small connected graph over two admitted claims: the current claim replaces
-    //     a retired one, touches code, and is linked from the saved work above.
-    await this.seedGraph();
+  /**
+   * WP5 T18 — an ADMITTED (active) claim whose evidence stops grounding from two directions at
+   * once: a quote that is not in the file, and a recorded hash that is not the node's.
+   *
+   * Recorded as `active` rather than staged on purpose: the ledger gathers the `active`
+   * collection, so a staged observation is not a ledger row at all and would test nothing.
+   *
+   * The STAMPED verdicts deliberately claim the opposite of what the evaluator now finds
+   * (`evidence: 'valid'`). That is the state the surface exists to expose: the stamp is what a
+   * cheap read reports, the fresh evaluation disagrees, and the ledger's group — which is
+   * anchor-derived — does not move either way (§7.1's 2026-09-23 correction).
+   */
+  private async seedExclusions(): Promise<void> {
+    const mem = (await import('@knowledge-crib/memory')) as {
+      MemoryStore: { local: (repoId: string, opts: unknown) => MemoryStorePort };
+      memoryRecordId: (input: unknown) => string;
+    };
+    const store = mem.MemoryStore.local(this.repoId, { env: this.env, now: () => T0 });
+    if (this.sym.hash === DRIFTED_TARGET_HASH) {
+      throw new Error('the drifted seed needs a hash that differs from the node it names');
+    }
+    const driftedSeed = {
+      kind: 'fact',
+      subject: this.sym.id,
+      claim: DRIFTED_CLAIM,
+      scope: { boundary: 'repo', repoId: this.repoId },
+      appliesTo: [this.sym.id],
+      evidence: [
+        {
+          kind: 'source-quote',
+          verdict: 'valid',
+          checkedAt: T0,
+          soulId: this.sym.id,
+          quote: DRIFTED_QUOTE,
+          targetHash: DRIFTED_TARGET_HASH,
+        },
+      ],
+      authorship: { actor: 'claude-code', kind: 'agent', tool: 'claude-code' },
+    };
+    this.driftedId = mem.memoryRecordId(driftedSeed);
+    store.upsertEntries('active', [
+      {
+        id: this.driftedId,
+        schemaVersion: '1',
+        ...driftedSeed,
+        verdicts: {
+          trust: 'local',
+          evidence: 'valid',
+          applicability: 'current',
+          lifecycle: 'active',
+        },
+        createdAt: T0,
+      },
+    ]);
+  }
 
-    // 8. The real viz server, headless (`--no-open`), on an ephemeral port.
-    await this.startServer();
+  /**
+   * WP5 T19 — saves a claim the way an agent does: through the REAL CLI, with a source-quote the
+   * admission gate itself verifies. Returns the id of the record it wrote.
+   *
+   * THROWS unless the CLI reports the record `active`. A staged observation never reaches the
+   * ledger, so a test that accepted one would pass while asserting nothing at all — the failure
+   * would look like a UI regression rather than a fixture mistake.
+   */
+  observe(claim: string, quote: string): string {
+    // Written under .crib/, which is already untracked and never re-read after boot: the evidence
+    // must not be a file that appears mid-test inside the working tree the page is describing.
+    const evidencePath = join(this.repo, '.crib', 'e2e-evidence.json');
+    writeFileSync(
+      evidencePath,
+      JSON.stringify([{ kind: 'source-quote', soulId: this.sym.id, quote }]),
+    );
+    const result = this.cli([
+      'memory',
+      'observe',
+      '--kind',
+      'fact',
+      '--subject',
+      this.sym.id,
+      '--applies-to',
+      this.sym.id,
+      '--claim',
+      claim,
+      '--evidence',
+      evidencePath,
+      '--json',
+    ]);
+    const ack = parseAck(result.stdout);
+    if (ack.ok !== true || ack.status !== 'active') {
+      throw new Error(
+        `crib memory observe did not admit the claim (status: ${String(ack.status)})\n${result.stdout}`,
+      );
+    }
+    const id = ack.recordId ?? ack.id;
+    if (!id) throw new Error(`crib memory observe returned no record id\n${result.stdout}`);
+    this.observedId = id;
+    return id;
+  }
+
+  /**
+   * WP5 T19 — rewrites the body line on disk, so the quote a saved claim recorded stops grounding.
+   *
+   * No re-index is needed and none is done: the evaluator rehydrates the span from the FILE on
+   * every read (`rehydrateBody` reads `join(repoRoot, node.file)` at request time), while anchor
+   * correlation resolves against the persisted node list. The evidence therefore moves and the
+   * ledger group does not — which is exactly the distinction §7.1's correction turns on.
+   */
+  editSourceBodyLine(to: string): void {
+    const file = join(this.repo, 'src', 'index.ts');
+    const text = readFileSync(file, 'utf8');
+    if (!text.includes(SOURCE_BODY_LINE)) {
+      throw new Error(`the fixture source no longer contains ${JSON.stringify(SOURCE_BODY_LINE)}`);
+    }
+    writeFileSync(file, text.replace(SOURCE_BODY_LINE, to));
   }
 
   private async seedStores(): Promise<void> {
@@ -500,6 +683,38 @@ interface MemoryStorePort {
   submitGraphEntries(entries: unknown[]): unknown;
 }
 
+/** The acknowledgement shape `crib … --json` writes to stdout. */
+interface CliAck {
+  ok?: boolean;
+  id?: string;
+  recordId?: string;
+  status?: string;
+}
+
+/**
+ * Read a `--json` acknowledgement out of a CLI run. Tolerant of any banner the CLI prints first
+ * (the whole stdout is tried as JSON, then the outermost `{…}`), and loud when neither parses —
+ * a fixture that silently read `undefined` out of a changed ack would mis-attribute a failure to
+ * the UI.
+ */
+function parseAck(stdout: string): CliAck {
+  const trimmed = stdout.trim();
+  try {
+    return JSON.parse(trimmed) as CliAck;
+  } catch {
+    const start = trimmed.indexOf('{');
+    const end = trimmed.lastIndexOf('}');
+    if (start !== -1 && end > start) {
+      try {
+        return JSON.parse(trimmed.slice(start, end + 1)) as CliAck;
+      } catch {
+        /* fall through to the throw below */
+      }
+    }
+    throw new Error(`could not parse a JSON acknowledgement from:\n${stdout}`);
+  }
+}
+
 export const SEEDED_GRAPH = {
   currentClaim: GRAPH_CURRENT_CLAIM,
   retiredClaim: GRAPH_RETIRED_CLAIM,
@@ -510,5 +725,16 @@ export const SEEDED = {
   terminalClaim: TERMINAL_CLAIM,
   blockedClaim: BLOCKED_CLAIM,
   captureClaim: CAPTURE_CLAIM,
+  /** WP5 T18 — the claim whose evidence has stopped grounding. */
+  driftedClaim: DRIFTED_CLAIM,
+  /** WP5 T18 — the evaluator reason (and its rendered sentence) that row must show. */
+  driftedReason: 'hash-drift',
+  driftedReasonText: 'the anchored code changed under the quote',
+  /** WP5 T19 — the claim saved through the CLI, the line it quotes, and the rewrite to apply. */
+  observedClaim: OBSERVED_CLAIM,
+  sourceBodyLine: SOURCE_BODY_LINE,
+  editedBodyLine: EDITED_BODY_LINE,
+  observedReason: 'quote-not-found',
+  observedReasonText: 'the quoted text was not found at the anchor',
   t0: T0,
 } as const;

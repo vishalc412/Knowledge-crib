@@ -97,6 +97,7 @@ import {
   readSyncConfig,
   recallProjection,
   resolveServerIdentity,
+  resolveStrictPrincipal,
   seedEligibleNodes,
   selectGraphSeeds,
   selectSemanticGraphSeeds,
@@ -2987,6 +2988,12 @@ export class Verbs {
     // scorer names its configuration on the response provenance (red line #6).
     const gathered = gatherRecall(stores, {
       ...(args.sources ? { sources: args.sources } : {}),
+      // WP1 item 13: this is the search surface a user actually reaches, and the store set it is
+      // given can hold another principal's pulled records. An unstamped PRIVATE record therefore has
+      // an unknown owner and must not be returned as this caller's own. Resolved from the operator's
+      // env rather than hardcoded — `resolveStrictPrincipal` records why strict-by-default would
+      // blackhole the live write path (admission writes memory-1, which has no ownership column).
+      strictPrincipal: resolveStrictPrincipal(),
     });
     const { fts, vectors, scorer } = lexicalChannel(
       stores,
@@ -4399,7 +4406,12 @@ export class Verbs {
   private memoryGraph(): MemoryComposite | undefined {
     const stores = this.recallStores();
     if (!stores) return undefined;
-    const projection = recallProjection(gatherRecall(stores));
+    // WP1 item 13: the graph's memory layer is a production read of the same pool, so it resolves
+    // the same boundary — the spec's five-site list named the search/recall gathers and missed this
+    // one, which feeds `supported-by`/`applies-to` links off the identical store set.
+    const projection = recallProjection(
+      gatherRecall(stores, { strictPrincipal: resolveStrictPrincipal() }),
+    );
     const pending = (this.memory?.local?.readCollection('candidates').entries ??
       []) as unknown as MemoryCandidate[];
     const soul = this.deps.soul;
@@ -4532,7 +4544,10 @@ export class Verbs {
     const mem = this.memory;
     const stores = this.recallStores();
     if (!mem || !stores) return undefined;
-    const gathered = gatherRecall(stores, { sources: opts.sources });
+    const gathered = gatherRecall(stores, {
+      sources: opts.sources,
+      strictPrincipal: resolveStrictPrincipal(),
+    });
     // G3.1 — persistent snapshot on the all-sources path, ephemeral rebuild under a sources filter
     // (subset corpora rank differently — see {@link lexicalChannel}). G3.2 — the versioned scorer
     // carries its configuration id on the projection provenance (red line #6).
@@ -4608,7 +4623,7 @@ export class Verbs {
       stamped?: Verdicts;
     }> = [];
     if (!mem || !stores) return { entries, errors: [], fresh: false };
-    const gathered = gatherRecall(stores);
+    const gathered = gatherRecall(stores, { strictPrincipal: resolveStrictPrincipal() });
     const aliasIndex = buildAliasIndex(gathered.aliases ?? []);
     const evalFn =
       fresh && mem.evaluator && mem.evalCtx
