@@ -325,7 +325,7 @@
             <sc-if value="{{ sec.open }}" hint-placeholder-val="{{ true }}">
             <div style="display:flex; flex-direction:column; gap:3px;">
               <sc-for list="{{ sec.items }}" as="it" hint-placeholder-count="2">
-                <button onClick="{{ it.onGo }}" style="display:flex; align-items:center; gap:9px; width:100%; text-align:left; padding:8px 9px; border-radius:9px; border:1px solid transparent; background:transparent; color: {{ t.text }}; cursor:pointer; font-family:'IBM Plex Sans';" style-hover="background: rgba(127,127,127,0.12); border-color: rgba(127,127,127,0.25);">
+                <button onClick="{{ it.onGo }}" disabled="{{ it.disabled }}" style="display:flex; align-items:center; gap:9px; width:100%; text-align:left; padding:8px 9px; border-radius:9px; border:1px solid transparent; background:transparent; color: {{ t.text }}; cursor:{{ it.disabled?'default':'pointer' }}; opacity:{{ it.disabled?0.75:1 }}; font-family:'IBM Plex Sans';" style-hover="background: rgba(127,127,127,0.12); border-color: rgba(127,127,127,0.25);">
                   <span style="width:9px; height:9px; border-radius:50%; flex:none; background: {{ it.color }};"></span>
                   <span style="flex:1; min-width:0;">
                     <span style="display:block; font-size:13px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ it.label }}</span>
@@ -984,8 +984,9 @@ class Component extends DCLogic {
   step(){
     if(this.alpha<0.025) return;
     if(this.state.mode === 'overview') return;
-    // Selected neighborhoods have an intentional topology. Running the general force simulation
-    // after arranging them pulls the rings into the dense knot that Focus is meant to clarify.
+    // Search and selected neighborhoods have intentional layouts. The general force simulation
+    // would move an exact search hit away from its fitted position and knot Focus rings together.
+    if((this.state.query||'').trim()) return;
     if(this.state.selectedId && this.state.mode==='focus' && !(this.state.query||'').trim()) return;
     const ns=this.visibleNodes(), hid=this.state.hidden;
     if(!ns || !ns.length) return;
@@ -1557,9 +1558,9 @@ class Component extends DCLogic {
     const nextDepth=(this.state.focusDepth||1)+1;
     if(sel && !this.state.blast && nextDepth<=4){
       const projection=this.focusRingIds(sel,nextDepth);
-      const nextCount=projection.countsByDepth[nextDepth]||0;
+      const nextCount=(projection.rings[nextDepth-1]||[]).length;
       if(nextCount>0){
-        const lab='+'+nextCount+(projection.truncated?'+':'')+' · show '+nextDepth+' hops';
+        const lab='+'+nextCount+' · show '+nextDepth+' hops';
         ctx.font="600 12px 'IBM Plex Sans', system-ui, sans-serif";
         const tw=ctx.measureText(lab).width; const pw=tw+30, ph=34;
         const px=this.W/2-pw/2, py=this.H-ph-20;
@@ -2081,28 +2082,6 @@ class Component extends DCLogic {
   }
   toggleKind(k){ this.setState(s=>({hidden:{...s.hidden,[k]:!s.hidden[k]}})); this.reheat(0.3); }
 
-  computeDepthMap(root,maxDepth=2){
-    const depthMap=new Map();
-    if(!root || !this.byId[root]) return depthMap;
-    depthMap.set(root,0);
-    const queue=[root];
-    while(queue.length){
-      const cur=queue.shift();
-      const d=depthMap.get(cur);
-      if(d>=maxDepth) continue;
-      // Walk only the architectural adjacency map so focus rings and Horizon counts reflect
-      // real code references (calls/imports/inherits/implements/exposes/injects/renders/produces)
-      // rather than structural or statement-level edges like `member-of` or `executes`.
-      for(const nb of this.archAdj[cur]||[]){
-        if(depthMap.has(nb)) continue;
-        depthMap.set(nb,d+1);
-        queue.push(nb);
-        if(depthMap.size>=900) return depthMap;
-      }
-    }
-    return depthMap;
-  }
-
   // Depth counts describe discovered real hops; highlights describe only the capped nodes on the
   // canvas. Keeping these distinct makes both the layout and omission disclosure honest.
   computeHL(){ const sel=this.state.selectedId; if(!sel) return null; const set=new Set([sel]); const blast=new Map(); const rings=this.focusRingIds(sel,this.state.focusDepth||1); const depthMap=rings.depthMap;
@@ -2126,7 +2105,7 @@ class Component extends DCLogic {
     const sections=[]; const add=(title,color,items)=>{ if(items.length) sections.push({title,color,count:items.length,items}); };
     const hl=this.computeHL();
     if(hl&&hl.depthMap){
-      const projection=this.focusRingIds(sel,this.state.focusDepth||1);
+      const projection=this.focusRingIds(sel,4);
       const currentDepth=this.state.focusDepth||1;
       const trail=(this.state.selectedTrail||[]).map((t,i)=>({
         id:t.id,
@@ -2140,14 +2119,17 @@ class Component extends DCLogic {
       }));
       const horizon=[
         { id:'depth-0', label:'Selected node', color:this.DEPTH_COLORS[0], relColor:this.DEPTH_COLORS[0], phrase:'1', tail:' in focus', onGo:()=>this.select(sel), badge:null },
-        ...[1,2,3,4].filter(hop=>hop<=currentDepth+1 && (projection.countsByDepth[hop]||0)>0).map(hop=>{
+        ...[1,2,3,4].filter(hop=>hop<=currentDepth+1 && ((projection.countsByDepth[hop]||0)>0 || (projection.truncatedAtDepth!=null && hop>=projection.truncatedAtDepth))).map(hop=>{
           const shown=hop<=currentDepth;
           const count=projection.countsByDepth[hop]||0;
+          const revealable=(projection.rings[hop-1]||[]).length;
           const hidden=projection.hiddenByDepth[hop]||0;
-          const label=hop===1?'Direct neighbors':(shown?hop+'-hop context':'Expand to '+hop+'-hop context');
-          const tail=(shown?' · '+projection.rings[hop-1].length+' shown':' available · click to reveal')+
-            (hidden?' · '+hidden+' beyond display cap':'')+(projection.truncated?' · reach may be incomplete':'');
-          return {id:'depth-'+hop,label,color:this.DEPTH_COLORS[hop],relColor:this.DEPTH_COLORS[hop],phrase:String(count)+(projection.truncated?'+':''),tail,onGo:()=>this.setFocusDepth(shown?Math.max(1,hop-1):hop),badge:null};
+          const blocked=!shown && revealable===0;
+          const incomplete=projection.truncatedAtDepth!=null && hop>=projection.truncatedAtDepth;
+          const label=hop===1?'Direct neighbors':(shown?hop+'-hop context':(blocked?hop+'-hop context beyond shown branches':'Expand to '+hop+'-hop context'));
+          const tail=(shown?' · '+revealable+' shown':(blocked?' discovered beyond displayed branches · select another node to explore':' · '+revealable+' revealable · click to show'))+
+            (hidden&&!blocked?' · '+hidden+' beyond display cap':'')+(incomplete?' · reach may be incomplete':'');
+          return {id:'depth-'+hop,label,color:this.DEPTH_COLORS[hop],relColor:this.DEPTH_COLORS[hop],phrase:String(count)+(incomplete?'+':''),tail,onGo:()=>this.setFocusDepth(shown?Math.max(1,hop-1):hop),disabled:blocked,badge:null};
         }),
         ...(currentDepth>1?[{id:'depth-reset',label:'Return to 1 hop',color:this.DEPTH_COLORS[1],relColor:this.DEPTH_COLORS[1],phrase:'Reset',tail:' · keep the same selected node',onGo:()=>this.setFocusDepth(1),badge:null}]:[]),
         ...trail,

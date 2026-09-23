@@ -78,6 +78,7 @@ type FocusProjection = {
   countsByDepth: number[];
   hiddenByDepth: number[];
   truncated: boolean;
+  truncatedAtDepth: number | null;
 };
 
 function loadModel(): Model {
@@ -130,16 +131,24 @@ describe('selected-node focus layout', () => {
       { src: 'hidden', dst: 'orphan', rel: 'calls' },
     ];
     const model = loadModel();
-    const layout = model.focusLayout('root', ['shown'], ['orphan'], edges, model.buildIndexes(nodes, edges));
+    const layout = model.focusLayout(
+      'root',
+      ['shown'],
+      ['orphan'],
+      edges,
+      model.buildIndexes(nodes, edges),
+    );
 
     expect(layout.positions.orphan).toBeUndefined();
     expect(layout.parentById.orphan).toBeUndefined();
     expect(layout.edgeIndexes).toEqual([0]);
   });
 
-  it('shows a real sibling cross-link without implying a nonexistent direct edge', () => {
-    const nodes = ['benchHash', 'emitTopics', 'buildR2Heldout', 'buildEvalFixture']
-      .map((id) => ({ id, kind: 'function' }));
+  it('includes the exact real sibling cross-link in the visible edge set', () => {
+    const nodes = ['benchHash', 'emitTopics', 'buildR2Heldout', 'buildEvalFixture'].map((id) => ({
+      id,
+      kind: 'function',
+    }));
     const edges: EdgeLike[] = [
       { src: 'emitTopics', dst: 'benchHash', rel: 'calls' },
       { src: 'buildR2Heldout', dst: 'benchHash', rel: 'calls' },
@@ -148,15 +157,16 @@ describe('selected-node focus layout', () => {
     ];
     const model = loadModel();
     const layout = model.focusLayout(
-      'benchHash', ['emitTopics', 'buildR2Heldout', 'buildEvalFixture'], [],
-      edges, model.buildIndexes(nodes, edges),
+      'benchHash',
+      ['emitTopics', 'buildR2Heldout', 'buildEvalFixture'],
+      [],
+      edges,
+      model.buildIndexes(nodes, edges),
     );
 
     expect(layout.backboneEdgeIndexes).toEqual([0, 1, 2]);
     expect(layout.crossEdgeIndexes).toEqual([3]);
     expect(layout.edgeIndexes).toEqual([0, 1, 2, 3]);
-    expect(edges.filter((edge) => layout.edgeIndexes.includes(edges.indexOf(edge)) &&
-      edge.src === 'emitTopics' && edge.dst === 'buildEvalFixture')).toEqual([]);
   });
 
   it('projects capped, connected rings through four hops and lays out the deeper parent links', () => {
@@ -177,13 +187,46 @@ describe('selected-node focus layout', () => {
     expect(projection.countsByDepth).toEqual([1, 2, 1, 1, 1]);
     expect(projection.hiddenByDepth).toEqual([0, 1, 0, 0, 0]);
     expect(projection.truncated).toBe(false);
-    const layout = model.focusLayout('root', projection.rings[0]!, projection.rings[1]!,
-      edges, indexes, projection.rings.slice(2));
+    expect(projection.truncatedAtDepth).toBeNull();
+    const layout = model.focusLayout(
+      'root',
+      projection.rings[0]!,
+      projection.rings[1]!,
+      edges,
+      indexes,
+      projection.rings.slice(2),
+    );
     expect(layout.parentById.c).toBe('b');
     expect(layout.parentById.d).toBe('c');
     expect(layout.edgeIndexes).toEqual([0, 1, 2, 3]);
-    expect(Math.hypot(layout.positions.d!.x, layout.positions.d!.y))
-      .toBeGreaterThan(Math.hypot(layout.positions.c!.x, layout.positions.c!.y));
+    expect(Math.hypot(layout.positions.d!.x, layout.positions.d!.y)).toBeGreaterThan(
+      Math.hypot(layout.positions.c!.x, layout.positions.c!.y),
+    );
+  });
+
+  it('reports the exact hop where a bounded traversal stops', () => {
+    const ids = ['root', 'a', 'b', 'c', 'outer'];
+    const nodes = ids.map((id) => ({ id, kind: 'function' }));
+    const byId = Object.fromEntries(nodes.map((node) => [node.id, node]));
+    const edges: EdgeLike[] = [
+      { src: 'root', dst: 'a', rel: 'calls' },
+      { src: 'root', dst: 'b', rel: 'calls' },
+      { src: 'root', dst: 'c', rel: 'calls' },
+      { src: 'a', dst: 'outer', rel: 'calls' },
+    ];
+    const model = loadModel();
+    const projection = model.focusProjection(
+      'root',
+      2,
+      model.buildIndexes(nodes, edges),
+      byId,
+      [3, 3],
+      4,
+    );
+
+    expect(projection.countsByDepth).toEqual([1, 3, 0]);
+    expect(projection.truncated).toBe(true);
+    expect(projection.truncatedAtDepth).toBe(2);
   });
 });
 

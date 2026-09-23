@@ -67,17 +67,18 @@
     const rings = Array.from({ length: depth }, () => []);
     const countsByDepth = Array(depth + 1).fill(0);
     const hiddenByDepth = Array(depth + 1).fill(0);
-    if (!byId[rootId]) return { rings, countsByDepth, hiddenByDepth, depthMap: new Map(), truncated: false };
+    if (!byId[rootId]) return { rings, countsByDepth, hiddenByDepth, depthMap: new Map(), truncated: false, truncatedAtDepth: null };
     const discovered = new Map([[rootId, 0]]);
     const queue = [rootId];
     let truncated = false;
+    let truncatedAtDepth = null;
     for (let head = 0; head < queue.length; head++) {
       const id = queue[head];
       const hop = discovered.get(id);
       if (hop >= depth) continue;
       for (const neighbor of indexes.archAdj[id] || []) {
         if (!byId[neighbor] || discovered.has(neighbor)) continue;
-        if (discovered.size >= maxVisited) { truncated = true; break; }
+        if (discovered.size >= maxVisited) { truncated = true; truncatedAtDepth = hop + 1; break; }
         discovered.set(neighbor, hop + 1);
         queue.push(neighbor);
       }
@@ -95,7 +96,7 @@
       countsByDepth[hop] = byDepth[hop].length;
       hiddenByDepth[hop] = Math.max(0, countsByDepth[hop] - rings[hop - 1].length);
     }
-    return { rings, countsByDepth, hiddenByDepth, depthMap: discovered, truncated };
+    return { rings, countsByDepth, hiddenByDepth, depthMap: discovered, truncated, truncatedAtDepth };
   }
 
   /** The spanning backbone positions nodes; every real architectural edge among those visible
