@@ -632,6 +632,51 @@ itself and not of a pipe): `boundaries-check` **PASS** — `cli:2 core:15 mcp:3 
 `biome check .` **PASS** — 720 files, no fixes applied. So the three gates §4.2 could not reach are green,
 and the red in that section remains the *test* recursion — the same four items, attributed there.
 
+### 4.4 The hosted gate is red for a reason that predates this PR, and it has never run on the default branch (MEASURED 2026-09-23)
+
+§4.1–§4.3 are about the local `npm run verify`. This is the hosted gate, which the PR surfaced.
+
+`CI` (`.github/workflows/ci.yml`, job `Release gate (ubuntu, Node 22)`) fails on PR #66 in `rerank:check`:
+
+```
+rerank:check FAIL — overall rerank MRR did not improve: hybridMRR=0.6839 rerankMRR=0.6703 Δ=-0.0136 (need Δ > 0)
+rerank:check FAIL — rerank regressed conceptual recall: hybrid=0.9501 rerank=0.9500
+```
+
+**It is not this branch's**, on four independent lines of evidence:
+
+1. A fresh `git worktree` at `Master`, `pnpm install --frozen-lockfile`, a full recursive build, then the
+   gate: the output is identical **to the digit** — the same four numbers, the same per-language table, the
+   same two failed assertions. The worktree was removed afterwards.
+2. The same assertions fail on `dependabot/npm_and_yarn/vitest-5.0.0` on **2026-09-21**, two days before
+   this branch existed. (All six dependabot CI runs that day conclude `failure`; that one was inspected.)
+3. This branch changes **no rerank line at all** — `git diff Master -- <changed files> | grep '^[+-].*rerank'`
+   is empty, and neither the gate (`scripts/rerank-check.mjs`, added by `547a8b12` M2.2, an ancestor of
+   `Master`) nor the rerank implementation (`packages/core/src/index/rerank.ts`) is touched.
+4. It reproduces locally on this branch with the same four numbers, so it is environment-independent and
+   deterministic — the gate's own determinism assertion passes.
+
+So it is not flaky; it is a standing red. **`rerank:check` has been failing on every PR in this repository
+since at least 2026-09-21**, across the dependabot and UI-remediation branches alike. A red release gate is
+therefore, right now, not a signal that anything in a given PR is wrong — which is worth knowing before
+reading one as such, including this one.
+
+**And the gate has never run on the default branch.** `CI` has 99 runs in its entire history: **86
+`pull_request`, 13 `workflow_dispatch`, zero `push`.** On `Master` the only workflows that have ever run are
+`Fuzz Nightly` (schedule) and `Dependabot Updates` (dynamic) — no hand-written workflow has ever run on a
+push to the default branch.
+
+The mechanism is consistent with the workflow files but is **not proven here**: `ci.yml` filters
+`on.push.branches: [main, master]` — lowercase — while the default branch is `Master`, and GitHub branch
+filters are case-sensitive. `crib-soul-refresh.yml` filters the same two lowercase names and its header
+comment claims it runs "on every merge to the default branch"; it has never run on `Master` at all. The
+measurement (zero push-triggered runs) is certain; the case-mismatch is the leading explanation and a
+one-line edit plus a test push would settle it.
+
+Recorded here rather than filed as a blocker in §9: it is not this program's work and says nothing about
+whether WP0–WP5 are correct. It belongs in the register because the register's job includes saying which of
+its instruments can currently be believed, and §9's verdict leans on gate results.
+
 ## 5. WP4 — Code retrieval + measured scale (SPEC WRITTEN 2026-09-23; §7 AND §8.6 LANDED (§5.1, §5.2); §5.3 is a product defect the measuring found, §5.4 a measurement that withdrew its own earlier explanation; §5.6 audited the R3 instruments before the run and named a blocker and two unmeasurable clauses; **§5.8 — R3 RAN and the candidate is NOT PROMOTED. The retrieval-quality numbers now exist, and they are negative.** **§5.9 — the scale run is now COMPLETE too: clause 4 UNPROVEN, clause 5 FAIL on one bullet of five, and one instrument that cannot answer its own question.**)
 
 Spec: `docs/program/wp4-implementation-spec.md`. **This section replaces a stub that said only
