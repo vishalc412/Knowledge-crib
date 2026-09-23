@@ -186,10 +186,15 @@ import {
   memoryRecordId,
 } from '@knowledge-crib/memory';
 import {
+  CONCERN_RECORDED_MESSAGE,
+  MAX_CONCERN_REASON,
   graphRefKind,
+  parseEvidenceQuery,
+  parseFeedbackBody,
   parseMemoryLedgerQuery,
   parseMemoryPendingQuery,
   parseResumeBody,
+  readMemoryEvidence,
   readMemoryGraphDetail,
   readMemoryHome,
   readMemoryIntakeDetail,
@@ -891,5 +896,103 @@ describe('mutation boundary helpers (WP6.5)', () => {
     // vocabulary law: no internal admission words anywhere on the mutation error surface
     expect(JSON.stringify(fromMutation)).not.toMatch(/candidate|trust/i);
     expect(JSON.stringify(fromPlain)).not.toMatch(/candidate|trust/i);
+  });
+});
+
+// ─── evidence inspection + concern reporting (UI remediation Phase 4) ─────────
+
+describe('evidence and concern request parsing', () => {
+  it('accepts a record id and a non-negative integer index, never a path', () => {
+    expect(parseEvidenceQuery(new URLSearchParams('recordId=mem:a&index=2'))).toEqual({
+      recordId: 'mem:a',
+      index: 2,
+    });
+    for (const bad of [
+      'recordId=mem:a',
+      'index=0',
+      'recordId=mem:a&index=-1',
+      'recordId=mem:a&index=1.5',
+      'recordId=mem:a&index=x',
+    ]) {
+      expect(() => parseEvidenceQuery(new URLSearchParams(bad))).toThrow(VizHttpError);
+    }
+  });
+
+  it('requires a nonblank reason of at most 500 characters and ignores any client actor', () => {
+    expect(
+      parseFeedbackBody({ recordId: 'mem:a', reason: '  wrong since v2  ', actor: 'human:spoof' }),
+    ).toEqual({
+      recordId: 'mem:a',
+      reason: 'wrong since v2',
+    });
+    expect(() => parseFeedbackBody({ recordId: 'mem:a', reason: '   ' })).toThrow(
+      /reason is required/,
+    );
+    expect(() => parseFeedbackBody({ recordId: 'mem:a' })).toThrow(/reason is required/);
+    expect(() =>
+      parseFeedbackBody({ recordId: 'mem:a', reason: 'x'.repeat(MAX_CONCERN_REASON + 1) }),
+    ).toThrow(/at most 500/);
+    expect(() => parseFeedbackBody({ reason: 'x' })).toThrow(VizMutationError);
+    expect(CONCERN_RECORDED_MESSAGE).toBe(
+      'Recorded for review; this does not automatically retract or quarantine the claim.',
+    );
+  });
+});
+
+describe('readMemoryEvidence', () => {
+  let home = '';
+  beforeEach(() => {
+    home = mkdtempSync(join(tmpdir(), 'crib-viz-evidence-'));
+    __resetMemoryLockGuardForTest();
+  });
+  afterEach(() => {
+    __resetMemoryLockGuardForTest();
+    rmSync(home, { recursive: true, force: true });
+  });
+
+  it('shows the saved quote beside a current excerpt read by indexed node id', async () => {
+    writeFileSync(join(root, 'src', 'demo.ts'), 'zero\nexport function run() {\n  return 1;\n}\n');
+    const node = sourceNode('src/demo.ts');
+    expect(node.id).toBe(MEM_LIVE);
+    soul.putNodes([node]);
+    const record = memRecord();
+    const inspected = await readMemoryEvidence(memApi(home), soul, root, {
+      recordId: record.id,
+      index: 0,
+    });
+    expect(inspected.kind).toBe('source-quote');
+    expect(inspected.detail).toMatchObject({
+      kind: 'source-quote',
+      location: { state: 'current' },
+    });
+    expect(inspected.current).toMatchObject({
+      status: 'ready',
+      file: 'src/demo.ts',
+      excerpt: { text: 'export function run() {\n  return 1;' },
+    });
+  });
+
+  it('explains an unreadable source instead of presenting the saved quote as current', async () => {
+    const record = memRecord();
+    // The index knows the node, but this checkout has no file behind it.
+    const inspected = await readMemoryEvidence(memApi(home), soul, root, {
+      recordId: record.id,
+      index: 0,
+    });
+    expect(inspected.current).toMatchObject({ status: 'unavailable' });
+  });
+
+  it('answers 404 for a missing record or index without saying which', async () => {
+    const record = memRecord();
+    const status = async (recordId: string, index: number) => {
+      try {
+        await readMemoryEvidence(memApi(home), soul, root, { recordId, index });
+        return 200;
+      } catch (err) {
+        return err instanceof VizHttpError ? `${err.status} ${err.message}` : 'other';
+      }
+    };
+    expect(await status(record.id, 9)).toBe('404 evidence not found');
+    expect(await status('mem:missing', 0)).toBe('404 evidence not found');
   });
 });

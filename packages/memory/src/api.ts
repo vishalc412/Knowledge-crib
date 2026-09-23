@@ -76,6 +76,7 @@ import {
   recordSortTime,
   supersedeDecision,
 } from './evaluator.js';
+import { type EvidenceInspectionResult, inspectEvidenceItem } from './evidence-inspection.js';
 import { contradictedForReview, quarantinedRecordIds } from './feedback.js';
 import {
   type DependencyGenerations,
@@ -183,6 +184,7 @@ import { type ConflictRecord, loadSyncState, saveSyncState } from './sync/queue.
 import { type SyncStageContext, stageSyncableWrite } from './sync/stage.js';
 import type {
   CaptureOutboxEntry,
+  GateReceipt,
   GraphAssertion,
   GraphEntity,
   GraphExtractionJob,
@@ -1206,7 +1208,14 @@ export interface AuditRecordView {
     decisionId: string;
     source: MemorySource;
   }[];
-  feedback: readonly { at: string; signal: FeedbackSignal; actor: string; source: MemorySource }[];
+  feedback: readonly {
+    at: string;
+    signal: FeedbackSignal;
+    actor: string;
+    source: MemorySource;
+    /** the reporter's own words, when the feedback carried them (a reported concern's reason). */
+    context?: string;
+  }[];
 }
 
 export interface AuditResult {
@@ -2809,6 +2818,51 @@ export class MemoryApi {
     };
   }
 
+  // ── evidence inspection (UI remediation Phase 4) ───────────────────────────
+
+  /**
+   * Explain evidence item `index` of an authorized record, display-safe (see
+   * {@link inspectEvidenceItem}). The record resolves through the same principal-scoped
+   * {@link locate} `get()` uses, and receipts only from this API's own stores, so an inaccessible
+   * record, an out-of-range index, and a missing record are the SAME `{found: false}` — nothing
+   * about another principal's ids leaks through the difference.
+   */
+  inspectEvidence(recordId: string, index: number): EvidenceInspectionResult {
+    if (typeof recordId !== 'string' || recordId.length === 0) return { found: false };
+    const located = this.locate(recordId);
+    if (!located) return { found: false };
+    const evidence = located.record.evidence;
+    if (!Number.isInteger(index) || index < 0 || index >= evidence.length) return { found: false };
+    const item = evidence[index] as MemoryEvidence;
+    const nodes = this.deps.soul ? this.deps.soul.allNodes() : [];
+    const byId = new Map(nodes.map((n) => [n.id, n]));
+    return {
+      found: true,
+      recordId: located.record.id,
+      index,
+      total: evidence.length,
+      kind: item.kind,
+      verdict: item.verdict,
+      checkedAt: item.checkedAt,
+      ...(item.reason ? { reason: item.reason } : {}),
+      detail: inspectEvidenceItem(item, {
+        byId,
+        nodes,
+        findReceipt: (id) => this.findReceipt(id),
+      }),
+    };
+  }
+
+  /** A gate receipt by id from this API's own stores (never another principal's home). */
+  private findReceipt(id: string): GateReceipt | undefined {
+    for (const { store } of this.orderedStores()) {
+      if (!store.collections.includes('receipts')) continue;
+      const entry = this.directEntry(store, 'receipts', id);
+      if (entry && (entry as { id?: unknown }).id === id) return entry as unknown as GateReceipt;
+    }
+    return undefined;
+  }
+
   // ── supersede ──────────────────────────────────────────────────────────────
 
   /**
@@ -4298,6 +4352,7 @@ export class MemoryApi {
         signal: f.feedback.signal,
         actor: f.feedback.actor,
         source: f.source,
+        ...(f.feedback.context ? { context: f.feedback.context } : {}),
       }))
       .sort((a, b) => a.at.localeCompare(b.at));
     return {
