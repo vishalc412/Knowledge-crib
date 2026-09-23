@@ -636,42 +636,77 @@
             </sc-if>
             <sc-if value="{{ mem.detail.ready }}" hint-placeholder-val="{{ true }}">
               <div>
-                <div style="font-family:'IBM Plex Mono',monospace; font-size:12px; color: {{ t.sub }}; word-break:break-all; margin-bottom:8px;">{{ mem.detail.id }}</div>
-                <div style="padding:11px 12px; border-radius:10px; border-left:3px solid {{ mem.detail.groupColor }}; background: {{ t.chip }}; font-size:12.5px; line-height:1.55; color: {{ t.text }};">{{ mem.detail.claim }}</div>
+                <!-- claim, its standing and scope first; raw identifiers live under Technical details -->
+                <div data-kc-mem-claim style="padding:11px 12px; border-radius:10px; border-left:3px solid {{ mem.detail.groupColor }}; background: {{ t.chip }}; font-size:14px; line-height:1.55; color: {{ t.text }};">{{ mem.detail.claim }}</div>
                 <div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:10px;">
                   <sc-for list="{{ mem.detail.chips }}" as="chip" hint-placeholder-count="3">
                     <span style="display:inline-flex; align-items:center; gap:4px; padding:3px 8px; border-radius:6px; font-size:12px; font-weight:600; background: {{ chip.bg }}; color: {{ chip.fg }};">{{ chip.label }}</span>
                   </sc-for>
                 </div>
-                <sc-if value="{{ mem.detail.times }}" hint-placeholder-val="{{ true }}">
-                  <div style="margin-top:10px; font-size:12px; line-height:1.6; color: {{ t.sub }};">{{ mem.detail.times }}</div>
+                <sc-if value="{{ mem.detail.context }}" hint-placeholder-val="{{ true }}">
+                  <div style="margin-top:8px; font-size:12px; line-height:1.6; color: {{ t.sub }};">{{ mem.detail.context }}</div>
                 </sc-if>
-                <sc-if value="{{ mem.detail.lineage }}" hint-placeholder-val="{{ true }}">
-                  <div style="margin-top:12px;">
-                    <div style="font-size:12px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color: {{ t.sub }}; margin-bottom:5px;">Lineage</div>
-                    <div style="font-size:12px; line-height:1.6; color: {{ t.sub }}; font-family:'IBM Plex Mono',monospace; word-break:break-all;">{{ mem.detail.lineage }}</div>
-                  </div>
+                <sc-if value="{{ mem.detail.times }}" hint-placeholder-val="{{ true }}">
+                  <div style="margin-top:4px; font-size:12px; line-height:1.6; color: {{ t.sub }};">{{ mem.detail.times }}</div>
+                </sc-if>
+                <sc-if value="{{ mem.detail.evidence.length }}" hint-placeholder-val="{{ true }}">
+                  <section aria-labelledby="kc-mem-evidence-heading" style="margin-top:14px;">
+                    <h4 id="kc-mem-evidence-heading" style="margin:0 0 6px; font-size:12px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color: {{ t.sub }};">Evidence</h4>
+                    <ul data-kc-mem-evidence style="list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:6px;">
+                      <sc-for list="{{ mem.detail.evidence }}" as="ev" hint-placeholder-count="2">
+                        <li data-kc-mem-evidence-item="{{ ev.index }}" style="padding:8px 10px; border-radius:8px; border:1px solid {{ t.border }}; background: {{ t.chip }};">
+                          <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:8px;">
+                            <div style="min-width:0;">
+                              <div style="font-size:12px; font-weight:700; color: {{ t.text }};">{{ ev.typeLabel }}</div>
+                              <div style="font-size:12px; line-height:1.45; margin-top:2px;"><b style="color: {{ ev.verdictColor }};">{{ ev.verdictLabel }}</b> <span style="color: {{ t.sub }};">— {{ ev.verdictText }}</span></div>
+                              <div style="font-size:12px; color: {{ t.sub }}; margin-top:2px;">{{ ev.checked }}</div>
+                              <sc-if value="{{ ev.reason }}" hint-placeholder-val="{{ true }}"><div style="font-size:12px; color: {{ t.sub }}; margin-top:2px; word-break:break-word;">Why: {{ ev.reason }}</div></sc-if>
+                            </div>
+                            <button data-kc-mem-evidence-inspect="{{ ev.index }}" onClick="{{ ev.onInspect }}" aria-expanded="{{ ev.expanded }}" aria-controls="{{ ev.panelId }}" style="flex:none; min-height:32px; padding:0 10px; border-radius:7px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.text }}; cursor:pointer; font:600 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;">{{ ev.inspectLabel }}</button>
+                          </div>
+                          <sc-if value="{{ ev.panel }}" hint-placeholder-val="{{ true }}">
+                            <div id="{{ ev.panelId }}" data-kc-mem-evidence-panel style="margin-top:8px; padding-top:8px; border-top:1px solid {{ t.border }};">
+                              <sc-if value="{{ ev.panel.loading }}" hint-placeholder-val="{{ true }}"><div style="font-size:12px; color: {{ t.sub }};">Loading the evidence…</div></sc-if>
+                              <sc-if value="{{ ev.panel.error }}" hint-placeholder-val="{{ true }}"><div role="alert" style="font-size:12px; color:var(--kc-text-risk);">{{ ev.panel.error }}</div></sc-if>
+                              <sc-if value="{{ ev.panel.ready }}" hint-placeholder-val="{{ true }}">
+                                <div>
+                                  <sc-if value="{{ ev.panel.statement }}" hint-placeholder-val="{{ true }}"><p data-kc-mem-evidence-statement style="margin:0 0 6px; font-size:12px; line-height:1.45; color: {{ t.text }};">{{ ev.panel.statement }}</p></sc-if>
+                                  <dl style="display:grid; grid-template-columns:minmax(96px,auto) 1fr; gap:4px 10px; margin:0; font-size:12px; line-height:1.45;">
+                                    <sc-for list="{{ ev.panel.rows }}" as="row" hint-placeholder-count="3">
+                                      <dt style="color: {{ t.sub }};">{{ row.label }}</dt>
+                                      <dd style="margin:0; color: {{ t.text }}; word-break:break-word;">{{ row.value }}</dd>
+                                    </sc-for>
+                                  </dl>
+                                  <sc-if value="{{ ev.panel.unavailable }}" hint-placeholder-val="{{ true }}"><div data-kc-mem-evidence-unavailable style="margin-top:6px; font-size:12px; line-height:1.45; color: var(--kc-text-review);">{{ ev.panel.unavailable }}</div></sc-if>
+                                  <sc-if value="{{ ev.panel.excerpt }}" hint-placeholder-val="{{ true }}">
+                                    <div style="margin-top:6px;">
+                                      <div style="font-size:12px; color: {{ t.sub }}; margin-bottom:4px;">Current source — {{ ev.panel.excerpt.location }}</div>
+                                      <div data-kc-mem-evidence-excerpt style="max-height:220px; overflow:auto; border-radius:7px; border:1px solid {{ t.border }}; background: {{ t.code }}; padding:6px 0;">
+                                        <sc-for list="{{ ev.panel.excerpt.lines }}" as="line" hint-placeholder-count="3">
+                                          <div style="display:flex; min-width:max-content; font:12px/1.5 'IBM Plex Mono',ui-monospace,monospace; color: {{ t.codeText }};"><span style="width:42px; flex:none; padding-right:8px; text-align:right; user-select:none; color: {{ t.sub }};">{{ line.no }}</span><span style="white-space:pre; padding-right:10px;">{{ line.text }}</span></div>
+                                        </sc-for>
+                                      </div>
+                                    </div>
+                                  </sc-if>
+                                </div>
+                              </sc-if>
+                            </div>
+                          </sc-if>
+                        </li>
+                      </sc-for>
+                    </ul>
+                  </section>
                 </sc-if>
                 <sc-if value="{{ mem.detail.anchors.length }}" hint-placeholder-val="{{ true }}">
                   <div style="margin-top:12px;">
-                    <div style="font-size:12px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color: {{ t.sub }}; margin-bottom:6px;">Anchors — checked against the current graph</div>
+                    <h4 style="margin:0 0 6px; font-size:12px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color: {{ t.sub }};">Anchors — checked against the current graph</h4>
                     <div style="display:flex; flex-direction:column; gap:4px;">
                       <sc-for list="{{ mem.detail.anchors }}" as="an" hint-placeholder-count="2">
                         <div style="display:flex; align-items:center; gap:8px; padding:7px 9px; border-radius:8px; border:1px solid {{ t.border }}; background: {{ t.chip }};">
                           <span style="width:9px; height:9px; border-radius:50%; flex:none; background: {{ an.color }};"></span>
-                          <span style="flex:1; min-width:0; font-family:'IBM Plex Mono',monospace; font-size:12px; color: {{ t.text }}; word-break:break-all;">{{ an.ref }}</span>
-                          <span style="flex:none; font-size:12px; font-weight:600; color: {{ an.color }};">{{ an.state }}</span>
+                          <span style="flex:1; min-width:0; font-family:'IBM Plex Mono',ui-monospace,monospace; font-size:12px; color: {{ t.text }}; word-break:break-all;">{{ an.ref }}</span>
+                          <span style="flex:none; font-size:12px; font-weight:600; color: {{ an.textColor }};">{{ an.state }}</span>
                         </div>
-                      </sc-for>
-                    </div>
-                  </div>
-                </sc-if>
-                <sc-if value="{{ mem.detail.evidence.length }}" hint-placeholder-val="{{ true }}">
-                  <div style="margin-top:12px;">
-                    <div style="font-size:12px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color: {{ t.sub }}; margin-bottom:6px;">Evidence</div>
-                    <div style="display:flex; flex-direction:column; gap:4px;">
-                      <sc-for list="{{ mem.detail.evidence }}" as="ev" hint-placeholder-count="2">
-                        <div style="padding:7px 9px; border-radius:8px; border:1px solid {{ t.border }}; background: {{ t.chip }}; font-size:12px; color: {{ t.sub }}; line-height:1.5;">{{ ev.label }}</div>
                       </sc-for>
                     </div>
                   </div>
@@ -737,6 +772,46 @@
                     </div>
                   </div>
                 </sc-if>
+                <sc-if value="{{ mem.detail.concerns.length }}" hint-placeholder-val="{{ true }}">
+                  <div data-kc-mem-concerns style="margin-top:12px;">
+                    <h4 style="margin:0 0 6px; font-size:12px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color: {{ t.sub }};">Reported concerns</h4>
+                    <ul style="list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:4px;">
+                      <sc-for list="{{ mem.detail.concerns }}" as="cn" hint-placeholder-count="1">
+                        <li style="padding:7px 9px; border-radius:8px; border:1px solid {{ t.border }}; background: {{ t.chip }}; font-size:12px; line-height:1.5; color: {{ t.text }}; word-break:break-word;">{{ cn.text }}<span style="display:block; color: {{ t.sub }};">{{ cn.meta }}</span></li>
+                      </sc-for>
+                    </ul>
+                  </div>
+                </sc-if>
+                <!-- Report a concern: local feedback for review, never a lifecycle change -->
+                <section data-kc-mem-concern aria-labelledby="kc-mem-concern-heading" style="margin-top:14px; padding-top:10px; border-top:1px solid {{ t.border }};">
+                  <h4 id="kc-mem-concern-heading" style="margin:0 0 6px; font-size:12px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color: {{ t.sub }};">Something wrong with this claim?</h4>
+                  <sc-if value="{{ mem.detail.concern.notice }}" hint-placeholder-val="{{ true }}"><div role="status" data-kc-mem-concern-notice style="margin-bottom:6px; padding:8px 10px; border-radius:8px; border:1px solid var(--kc-border-control); background: {{ t.chip }}; font-size:12px; color: {{ t.text }};">{{ mem.detail.concern.notice }}</div></sc-if>
+                  <sc-if value="{{ mem.detail.concern.closed }}" hint-placeholder-val="{{ true }}">
+                    <button data-kc-mem-concern-open onClick="{{ mem.detail.concern.onOpen }}" style="min-height:32px; padding:0 10px; border-radius:7px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.text }}; cursor:pointer; font:600 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;">Report a concern</button>
+                  </sc-if>
+                  <sc-if value="{{ mem.detail.concern.open }}" hint-placeholder-val="{{ true }}">
+                    <div>
+                      <p style="margin:0 0 6px; font-size:12px; line-height:1.45; color: {{ t.sub }};">This records your concern as local feedback so the claim is listed in Needs review. It does not retract, quarantine or supersede the claim, and it does not change shared team memory.</p>
+                      <label for="kc-mem-concern-reason" style="display:block; font-size:12px; color: {{ t.text }}; margin-bottom:4px;">What is wrong with this claim? (required)</label>
+                      <textarea id="kc-mem-concern-reason" data-kc-mem-concern-reason maxlength="500" rows="3" aria-describedby="kc-mem-concern-count" onInput="{{ mem.detail.concern.onInput }}" style="width:100%; box-sizing:border-box; padding:7px 9px; border-radius:7px; border:1px solid var(--kc-border-control); background: {{ t.bg }}; color: {{ t.text }}; font:500 12px/1.45 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif; resize:vertical;"></textarea>
+                      <div id="kc-mem-concern-count" style="font-size:12px; color: {{ t.sub }}; margin-top:2px;">{{ mem.detail.concern.count }}</div>
+                      <sc-if value="{{ mem.detail.concern.error }}" hint-placeholder-val="{{ true }}"><div role="alert" data-kc-mem-concern-error style="margin-top:6px; font-size:12px; color:var(--kc-text-risk);">{{ mem.detail.concern.error }}</div></sc-if>
+                      <div style="display:flex; gap:6px; margin-top:8px;">
+                        <button data-kc-mem-concern-submit onClick="{{ mem.detail.concern.onSubmit }}" aria-disabled="{{ mem.detail.concern.busy }}" style="min-height:32px; padding:0 10px; border-radius:7px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.text }}; cursor:pointer; font:600 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;">{{ mem.detail.concern.submitLabel }}</button>
+                        <button data-kc-mem-concern-cancel onClick="{{ mem.detail.concern.onCancel }}" style="min-height:32px; padding:0 10px; border-radius:7px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.text }}; cursor:pointer; font:600 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;">Cancel</button>
+                      </div>
+                    </div>
+                  </sc-if>
+                </section>
+                <details data-kc-mem-technical style="margin-top:14px; font-size:12px; color: {{ t.sub }};">
+                  <summary style="cursor:pointer; min-height:32px; display:flex; align-items:center; color: {{ t.text }}; font-weight:600;">Technical details</summary>
+                  <dl style="display:grid; grid-template-columns:minmax(80px,auto) 1fr; gap:4px 10px; margin:6px 0 0; line-height:1.5;">
+                    <dt>Record id</dt><dd style="margin:0; font-family:'IBM Plex Mono',ui-monospace,monospace; word-break:break-all; color: {{ t.text }};">{{ mem.detail.id }}</dd>
+                    <sc-if value="{{ mem.detail.lineage }}" hint-placeholder-val="{{ true }}"><dt>Lineage</dt><dd style="margin:0; font-family:'IBM Plex Mono',ui-monospace,monospace; word-break:break-all; color: {{ t.text }};">{{ mem.detail.lineage }}</dd></sc-if>
+                  </dl>
+                  <p style="margin:8px 0 4px; line-height:1.45;">Correcting or retiring a claim is a deliberate terminal step:</p>
+                  <div data-kc-mem-cli style="font-family:'IBM Plex Mono',ui-monospace,monospace; font-size:12px; line-height:1.6; color: {{ t.text }}; word-break:break-all;">{{ mem.detail.cliSupersede }}<br>{{ mem.detail.cliRetract }}</div>
+                </details>
               </div>
             </sc-if>
           </div>
@@ -1956,12 +2031,12 @@ class Component extends DCLogic {
     }catch(err){ if(controller.signal.aborted||seq!==this._memSeq)return; this.setState({memLoading:false, memError:String(err&&err.message||err)}); } }
   backToMemoryHome(){ const tile=this._memTile; this.loadMemory({view:'home'});
     this.keepFocus(tile?'[data-kc-memory-home-action="'+tile+'"]':'[data-kc-memory-heading]'); }
-  async loadMemoryDetail(id,row,fromTrail){ const seq=++this._memSeq; if(this._memAbort)this._memAbort.abort(); const controller=new AbortController(); this._memAbort=controller;
+  async loadMemoryDetail(id,row,fromTrail,refresh){ const seq=++this._memSeq; if(this._memAbort)this._memAbort.abort(); const controller=new AbortController(); this._memAbort=controller;
+    if(!refresh) this.setState({memEvidence:{}, memConcern:null});
     // WP-G7 — the trail is the list/detail navigation stack: opening a linked claim pushes the
     // current one, Back pops it, and an empty trail returns to the ledger row that opened it.
     if(!fromTrail&&!this.state.memDetail) this._memTrail=[];
-    this.setState({memDetail:{id,status:'loading',row,graph:{status:'loading'}}});
-    this.keepFocus('[data-kc-mem-detail-back]');
+    if(!refresh){ this.setState({memDetail:{id,status:'loading',row,graph:{status:'loading'}}}); this.keepFocus('[data-kc-mem-detail-back]'); }
     const graphReq=fetch('/memory/graph.json?id='+encodeURIComponent(id),{signal:controller.signal,cache:'no-store'})
       .then(async (res)=>{ if(!res.ok)throw new Error(await res.text()); return res.json(); })
       .then((g)=>({status:'ready',data:g}),(err)=>({status:'error',message:String(err&&err.message||err)}));
@@ -1972,6 +2047,73 @@ class Component extends DCLogic {
       const graph=await graphReq; if(controller.signal.aborted||seq!==this._memSeq)return;
       this.setState({memDetail:{id,status:'ready',row,data,graph}});
     }catch(err){ if(controller.signal.aborted||seq!==this._memSeq)return; this.setState({memDetail:{id,status:'error',message:String(err&&err.message||err)}}); } }
+  // ── Phase 4 — evidence inspection and concern reporting ────────────────────
+  EV_LABELS={'source-quote':'Source quote','execution-assertion':'Execution assertion','committed-policy':'Committed policy','human-attestation':'Human attestation','receipt-pair':'Receipt pair — a failing run, then a passing run'};
+  EV_VERDICTS={valid:['Valid','the check passed when it last ran.','var(--kc-text-positive)'],degraded:['Degraded','only partly supported — use with caution.','var(--kc-text-review)'],invalid:['Invalid','the check no longer supports the claim.','var(--kc-text-risk)']};
+  memEvidenceItem(recordId,ev,index){ const key=recordId+'#'+index; const st=(this.state.memEvidence||{})[key]; const verdict=this.EV_VERDICTS[ev.verdict]||[String(ev.verdict),'',''];
+    return { index:String(index), typeLabel:this.EV_LABELS[ev.kind]||ev.kind, verdictLabel:verdict[0], verdictText:verdict[1], verdictColor:verdict[2]||'var(--kc-text-secondary)',
+      checked:'checked '+String(ev.checkedAt||'').slice(0,16).replace('T',' '), reason:ev.reason||null,
+      expanded:st?'true':'false', inspectLabel:st?'Hide details':'Inspect', panelId:'kc-mem-ev-'+index,
+      onInspect:()=>this.toggleEvidence(recordId,index), panel:st?this.memEvidencePanel(st):null }; }
+  toggleEvidence(recordId,index){ const key=recordId+'#'+index; const cur={...(this.state.memEvidence||{})};
+    if(cur[key]){ delete cur[key]; this.setState({memEvidence:cur}); return; }
+    cur[key]={status:'loading'}; this.setState({memEvidence:cur}); this.loadEvidence(recordId,index); }
+  async loadEvidence(recordId,index){ const key=recordId+'#'+index;
+    const put=(v)=>{ const cur=this.state.memEvidence||{}; if(!cur[key])return; this.setState({memEvidence:{...cur,[key]:v}}); };
+    try{ const res=await fetch('/memory/evidence.json?recordId='+encodeURIComponent(recordId)+'&index='+index,{cache:'no-store'});
+      if(!res.ok) throw new Error(res.status===404?'This evidence is not available to you.':((await res.text())||('HTTP '+res.status)));
+      put({status:'ready',data:await res.json()}); this.announceMemory('Evidence details loaded.');
+    }catch(err){ put({status:'error',message:String(err&&err.message||err)}); this.announceMemory('Evidence details could not load.'); } }
+  /** Shape one inspected item for the template: facts as rows, then the current source or why not. */
+  memEvidencePanel(st){ if(st.status==='loading') return {loading:true}; if(st.status==='error') return {error:st.message};
+    const d=st.data||{}; const x=d.detail||{}; const rows=[]; let statement=null; let unavailable=null; let excerpt=null;
+    const add=(label,value)=>{ if(value!==undefined&&value!==null&&value!=='') rows.push({label,value:String(value)}); };
+    const when=(v)=>v?String(v).slice(0,16).replace('T',' '):null;
+    const receiptLine=(r)=>r?('ran '+when(r.ranAt)+' at '+String(r.head||'').slice(0,12)+' · exit '+r.exitCode+' · '+(r.assertions||[]).map((a)=>a.name+' '+(a.passed?'passed':'failed')).join(', ')):null;
+    const place=(loc)=>{ if(!loc) return null; const at=loc.file?(loc.file+(loc.span?(':'+loc.span.start+'–'+loc.span.end):'')):loc.ref;
+      return {current:'current at '+at,moved:'moved; now at '+at,gone:'no longer in the index',ambiguous:'matches several places now',uncheckable:'cannot be checked without the code index'}[loc.state]||loc.state; };
+    if(x.kind==='source-quote'||x.kind==='committed-policy'){
+      if(x.kind==='source-quote'){ add('Saved quote',x.savedQuote!==undefined?('“'+x.savedQuote+'” (as recorded, not necessarily current)'):null); if(x.savedStartLine) add('Saved at line',x.savedStartLine); }
+      else { add('Artifact',x.artifactId); add('Anchor',x.anchor); }
+      add('Location now',place(x.location));
+      if(x.location&&x.location.changedSinceCheck) statement='The code at this location changed after the check ran, so the current source may no longer match.';
+      const cur=d.current||{};
+      if(cur.status==='ready'){ const ex=cur.excerpt||{}; excerpt={location:cur.file+':'+ex.start+'–'+ex.end+(ex.truncated?' (truncated)':''), lines:String(ex.text||'').split('\n').map((text,i)=>({no:(ex.start||1)+i,text}))}; }
+      else if(cur.status==='unavailable') unavailable='Current source unavailable: '+cur.reason;
+    }else if(x.kind==='execution-assertion'){
+      add('Assertion',x.assertion); add('Outcome',{passed:'passed',failed:'failed','not-recorded':'not recorded in the receipt'}[x.outcome]);
+      if(x.receipt){ add('Ran',when(x.receipt.ranAt)); add('HEAD',x.receipt.head); add('Exit code',x.receipt.exitCode); add('Output digest',x.receipt.outputDigest); add('Receipt',x.receipt.id); }
+      else unavailable='The receipt '+(x.receiptId||'(none recorded)')+' is not in the memory stores you can read, so the run cannot be shown.';
+      statement='Only the named assertion and a digest of the output are kept; the raw output was never stored.';
+    }else if(x.kind==='human-attestation'){
+      statement='This is a human attestation — a person vouched for the claim. It is not an independent check of the code.';
+      add('Attested by',x.attestedBy); add('Attested at',when(x.attestedAt)); add('Attestation',x.attestationId); add('Recorded from',x.interactive?'an interactive terminal':'a non-interactive client');
+    }else if(x.kind==='receipt-pair'){
+      add('Failing run',receiptLine(x.failing)||('missing'+(x.failingReceiptId?(' ('+x.failingReceiptId+')'):''))); add('Passing run',receiptLine(x.passing)||('missing'+(x.passingReceiptId?(' ('+x.passingReceiptId+')'):'')));
+      add('Order',x.ordered===true?'the failing run came first, then the passing run':(x.ordered===false?'out of order — the passing run did not follow the failing run':'cannot be determined while a receipt is missing'));
+      if(!x.failing||!x.passing) unavailable='A receipt in this pair is missing from the stores you can read.';
+    }
+    return {ready:true, rows, statement, unavailable, excerpt}; }
+  memConcernView(recordId){ const c=this.state.memConcern&&this.state.memConcern.recordId===recordId?this.state.memConcern:{recordId};
+    const text=c.text||''; return { open:!!c.open, closed:!c.open, notice:c.notice||null, error:c.error||null, busy:c.busy?'true':'false',
+      count:text.trim().length+' of 500 characters', submitLabel:c.busy?'Recording…':'Submit report',
+      onOpen:()=>{ this.setState({memConcern:{recordId,open:true,text:''}}); this.keepFocus('[data-kc-mem-concern-reason]',25); },
+      onCancel:()=>{ this.setState({memConcern:{recordId,open:false}}); this.keepFocus('[data-kc-mem-concern-open]',25); },
+      onInput:(e)=>this.setState({memConcern:{...(this.state.memConcern||{recordId}),recordId,open:true,text:e.target.value,error:null}}),
+      onSubmit:()=>this.reportConcern(recordId) }; }
+  async reportConcern(recordId){ const c=this.state.memConcern||{}; if(c.busy) return; const reason=(c.text||'').trim();
+    if(!reason){ this.setState({memConcern:{...c,recordId,open:true,error:'Describe what is wrong before submitting.'}}); this.announceMemory('A reason is required.'); return; }
+    this.setState({memConcern:{...c,recordId,open:true,busy:true,error:null}}); this.announceMemory('Recording the concern.');
+    const r=await this.postMemoryMutation('/memory/feedback',{recordId,reason});
+    if(r.ok){ const msg=(r.data&&r.data.message)||'Recorded for review.';
+      this.setState({memConcern:{recordId,open:false,notice:msg}}); this.announceMemory(msg); this._memDirty=true;
+      const cur=this.state.memDetail; if(cur) this.loadMemoryDetail(cur.id,cur.row,true,true); this.refreshMemoryCounts();
+      this.keepFocus('[data-kc-mem-concern-notice]',25);
+    }else{ this.setState({memConcern:{...c,recordId,open:true,busy:false,error:r.message||'The concern was not recorded.'}}); this.announceMemory('The concern was not recorded.'); } }
+  /** Refresh tile counts and the badge without disturbing the open record or the list page. */
+  async refreshMemoryCounts(){ try{ const [res,homeRes]=await Promise.all([fetch('/memory.json?limit=1',{cache:'no-store'}),fetch('/memory/home.json',{cache:'no-store'})]);
+      if(!res.ok||!homeRes.ok) return; const [data,home]=await Promise.all([res.json(),homeRes.json()]); const md=this.state.memData;
+      this.setState({memHome:home, ...(md&&data&&data.views?{memData:{...md,views:data.views}}:{})}); }catch(_e){} }
   /** Open a claim linked from the current record's connections; Back returns to this record. */
   openLinkedClaim(ref){ const cur=this.state.memDetail; if(!this._memTrail)this._memTrail=[];
     if(cur)this._memTrail.push({id:cur.id,row:cur.row}); this.loadMemoryDetail(ref,null,true); }
@@ -2013,7 +2155,8 @@ class Component extends DCLogic {
   backToLedger(){ const trail=this._memTrail||[]; const prev=trail.pop();
     if(prev){ this.loadMemoryDetail(prev.id,prev.row,true); return; }
     const origin=this.state.memDetail&&this.state.memDetail.row&&this.state.memDetail.row.id;
-    this.setState({memDetail:null});
+    // A report from the detail changed this record's review reasons: reload the same view and page.
+    if(this._memDirty){ this._memDirty=false; this.loadMemory(null); } else this.setState({memDetail:null});
     if(origin) this.keepFocus('[data-kc-mem-row="'+String(origin).replace(/["\\]/g,'')+'"]'); }
   // ── WP6.3–WP6.6 — pending queue, browser admission, intake resume ──────────
   // The read endpoints (/memory/pending.json, /memory/intake.json) are already display-shaped, so
@@ -2551,8 +2694,14 @@ class Component extends DCLogic {
               if(tt.observedAt)parts.push('observed '+tt.observedAt);
               return parts.join(' · ')||null; })(),
             lineage:lin.join(' · ')||null,
-            anchors:((row&&row.anchors)||[]).map((an)=>({ref:an.ref,state:this.memAxis(an.state),color:an.state==='current'?'#34d399':(an.state==='moved'?'#f59e0b':(an.state==='gone'||an.state==='ambiguous'?'#f87171':'#8b97a8'))})),
-            evidence:(d.evidence||[]).map((ev)=>({label:(ev.kind+' · '+ev.verdict)+(ev.soulId?' · '+ev.soulId:'')+(ev.reason?' · '+ev.reason:'')})),
+            anchors:((row&&row.anchors)||[]).map((an)=>{ const tone=an.state==='current'?'positive':(an.state==='moved'?'review':(an.state==='gone'||an.state==='ambiguous'?'risk':'secondary'));
+              return {ref:an.ref,state:this.memAxis(an.state),color:{positive:'#34d399',review:'#f59e0b',risk:'#f87171',secondary:'#8b97a8'}[tone],textColor:'var(--kc-text-'+tone+')'}; }),
+            evidence:(d.evidence||[]).map((ev,index)=>this.memEvidenceItem(d.id||memDetailState.id,ev,index)),
+            context:[rec.scope&&rec.scope.boundary?('scope: '+rec.scope.boundary):null, (d.placement||[]).length?('held in: '+(d.placement||[]).join(', ')):null, d.visibility?('visibility: '+d.visibility):null].filter(Boolean).join(' · ')||null,
+            concerns:((d.audit&&d.audit.records)||[]).flatMap((rv)=>(rv.feedback||[]).filter((f)=>f.signal==='contradicted').map((f)=>({text:f.context||'Concern reported (no reason recorded).', meta:'reported '+String(f.at||'').slice(0,16).replace('T',' ')+' by '+f.actor+' · '+f.source}))),
+            concern:this.memConcernView(d.id||memDetailState.id),
+            cliSupersede:'crib memory supersede '+(d.id||memDetailState.id)+' --actor <you> --claim "<the corrected claim>"',
+            cliRetract:'crib memory resolve '+(d.id||memDetailState.id)+' --retract --actor <you> --reason "<why>"',
             transitions:((d.audit&&d.audit.records)||[]).flatMap((rv)=>(rv.transitions||[]).map((tr)=>this.memAxis(tr.kind)+': '+this.memAxis(tr.from)+' → '+this.memAxis(tr.to)+' · '+tr.at.slice(0,10)+' · '+tr.actor+(tr.reason?' · '+tr.reason:''))),
             graph:this.memGraphView(memDetailState.graph) };
         }

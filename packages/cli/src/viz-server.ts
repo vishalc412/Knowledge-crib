@@ -7,6 +7,7 @@ import {
   type AuditResult,
   DEFAULT_LEDGER_PAGE,
   DEFAULT_PENDING_PAGE,
+  type EvidenceInspection,
   type GetResult,
   type GraphAssertion,
   type GraphConflictGroup,
@@ -329,6 +330,127 @@ export function parseDismissBody(v: unknown): VizDismissBody {
   const reason = requireString(o.reason ?? '', 'reason', { allowEmpty: true }).trim();
   return { id, ...(reason ? { reason } : {}) };
 }
+
+// ─── evidence inspection + concern reporting (UI remediation Phase 4) ─────────
+
+/** `/memory/evidence.json` accepts a record id and an evidence index — never a path. */
+export interface VizEvidenceQuery {
+  recordId: string;
+  index: number;
+}
+
+export function parseEvidenceQuery(params: URLSearchParams): VizEvidenceQuery {
+  const recordId = params.get('recordId');
+  if (!recordId || recordId.length > MAX_MUTATION_FIELD) {
+    throw new VizHttpError(400, 'missing or invalid recordId');
+  }
+  const raw = params.get('index');
+  const index = raw === null ? Number.NaN : Number(raw);
+  if (!Number.isInteger(index) || index < 0) throw new VizHttpError(400, `invalid index: ${raw}`);
+  return { recordId, index };
+}
+
+/** What the inspector can show of the evidence's CURRENT source, or exactly why it cannot. */
+export type VizEvidenceExcerpt =
+  | {
+      status: 'ready';
+      nodeId: string;
+      file: string;
+      span: { start: number; end: number };
+      excerpt: VizSourceResponse['excerpt'];
+    }
+  | { status: 'unavailable'; reason: string }
+  | { status: 'not-applicable' };
+
+export type VizEvidenceResponse = EvidenceInspection & { current: VizEvidenceExcerpt };
+
+/**
+ * One evidence item, explained. The record resolves through the authorized Memory API (a missing,
+ * foreign, or out-of-range item is one indistinguishable 404), and any current source excerpt is
+ * read through {@link readVizNodeSource} by indexed node id — the browser never names a file.
+ */
+export async function readMemoryEvidence(
+  api: MemoryApi,
+  soul: SoulStore,
+  repoRoot: string,
+  query: VizEvidenceQuery,
+): Promise<VizEvidenceResponse> {
+  const inspected = api.inspectEvidence(query.recordId, query.index);
+  if (!inspected.found) throw new VizHttpError(404, 'evidence not found');
+  const { found: _found, ...inspection } = inspected;
+  const detail = inspection.detail;
+  const location =
+    detail.kind === 'source-quote' || detail.kind === 'committed-policy'
+      ? detail.location
+      : undefined;
+  let current: VizEvidenceExcerpt = { status: 'not-applicable' };
+  if (location === null) {
+    current = { status: 'unavailable', reason: 'This evidence records no indexed location.' };
+  } else if (location) {
+    if (!location.readableNodeId) {
+      current = {
+        status: 'unavailable',
+        reason:
+          location.state === 'ambiguous'
+            ? 'The indexed location now matches several places, so none is shown as current.'
+            : location.state === 'uncheckable'
+              ? 'The code index is not available to this server, so currentness cannot be checked.'
+              : 'The indexed location no longer exists; only the saved record remains.',
+      };
+    } else {
+      try {
+        const source = await readVizNodeSource(soul, repoRoot, location.readableNodeId);
+        current = {
+          status: 'ready',
+          nodeId: source.nodeId,
+          file: source.file,
+          span: source.span,
+          excerpt: source.excerpt,
+        };
+      } catch (err) {
+        current = {
+          status: 'unavailable',
+          reason:
+            err instanceof VizHttpError && err.status === 422
+              ? 'The indexed node has no source span to read.'
+              : 'The source file could not be read from this checkout.',
+        };
+      }
+    }
+  }
+  return { ...inspection, current };
+}
+
+/** Longest concern a person can report; enough for a sentence or two, bounded for the ledger. */
+export const MAX_CONCERN_REASON = 500;
+
+export interface VizFeedbackBody {
+  recordId: string;
+  reason: string;
+}
+
+/** The concern POST: a record id and the reporter's reason. The actor is never client-supplied. */
+export function parseFeedbackBody(v: unknown): VizFeedbackBody {
+  const o = requireObject(v);
+  const recordId = requireString(o.recordId, 'recordId');
+  if (typeof o.reason !== 'string') {
+    throw new VizMutationError('bad-request', 400, 'a reason is required');
+  }
+  const reason = o.reason.trim();
+  if (reason.length === 0) throw new VizMutationError('bad-request', 400, 'a reason is required');
+  if (reason.length > MAX_CONCERN_REASON) {
+    throw new VizMutationError(
+      'bad-request',
+      400,
+      `the reason must be at most ${MAX_CONCERN_REASON} characters`,
+    );
+  }
+  return { recordId, reason };
+}
+
+/** The honest outcome copy: a report is feedback, not a lifecycle change. */
+export const CONCERN_RECORDED_MESSAGE =
+  'Recorded for review; this does not automatically retract or quarantine the claim.';
 
 /** The `/memory/record.json` body: the full `get` projection plus the record's audit trail. */
 export type VizLedgerDetailResponse = GetResult & { audit: AuditResult };
