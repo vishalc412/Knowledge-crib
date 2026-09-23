@@ -70,7 +70,7 @@ try {
     const searchStart = performance.now();
     await page.getByPlaceholder('Search code, docs, tables…').fill('test');
     await page.waitForFunction(
-      () => /\d+ matches?/.test(document.querySelector('.kc-search')?.textContent || ''),
+      () => /\d+ code graph matches?/.test(document.querySelector('.kc-search')?.textContent || ''),
       undefined,
       { timeout: 180_000 },
     );

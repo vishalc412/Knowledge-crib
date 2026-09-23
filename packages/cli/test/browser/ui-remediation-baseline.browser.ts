@@ -62,7 +62,6 @@ test('Active and Needs review cards open matching destinations', async ({ page }
 });
 
 test('a keyboard user can enter the textual symbol explorer', async ({ page }) => {
-  test.fail(true, 'Phase 3: the canvas has no textual List presentation');
   await page.goto(backend.url);
   const list = page.getByRole('button', { name: 'List', exact: true });
   await list.focus({ timeout: 5_000 });
@@ -77,7 +76,6 @@ test('the document declares its language and descriptive title', async ({ page }
 });
 
 test('zero graph-search results offer an explicit recovery action', async ({ page }) => {
-  test.fail(true, 'Phase 3: empty graph search has no clear action');
   await page.goto(backend.url);
   await page.getByPlaceholder('Search code, docs, tables…').fill('no-such-symbol-2026');
   await expect(page.getByRole('button', { name: 'Clear search' })).toBeVisible();
