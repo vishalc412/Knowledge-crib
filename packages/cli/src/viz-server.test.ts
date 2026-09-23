@@ -188,9 +188,9 @@ import {
   memoryRecordId,
 } from '@knowledge-crib/memory';
 import {
-  type VizMemoryHomeOperations,
   CONCERN_RECORDED_MESSAGE,
   MAX_CONCERN_REASON,
+  type VizMemoryHomeOperations,
   graphRefKind,
   parseEvidenceQuery,
   parseFeedbackBody,
@@ -454,6 +454,26 @@ describe('memory ledger endpoints', () => {
     expect(stamped.rows[0]?.eligible).toBe(true);
     expect(stamped.rows[0]?.excludedBy).toBeUndefined();
     expect(stamped.rows[0]?.reasons).toEqual([]);
+  });
+
+  // The seam between WP5 §7.1 and UI Phase 2: the working views read `eligible` and the evidence
+  // verdict, which the default re-check can overturn. A home tile folded from stamps would count a
+  // claim as Active while the list it opens — `/memory.json?view=…`, re-checked by default — files
+  // it under Needs review. Each tile must equal the total of the view it opens, as that view is served.
+  it('counts each home tile from the same re-checked verdicts its destination list is served with', () => {
+    const api = driftedApi(home);
+    const served = (view: string) => {
+      const r = readMemoryLedger(api, parseMemoryLedgerQuery(new URLSearchParams(`view=${view}`)));
+      if (!r.configured) throw new Error('memory not configured');
+      return r.total;
+    };
+    const result = readMemoryHome(api, {});
+    if (!result.configured) throw new Error('memory not configured');
+    // The drifted claim is out of recall once re-checked: not Active, needs review.
+    expect(served('active')).toBe(0);
+    expect(served('needs-review')).toBe(1);
+    expect(result.sections.active.count).toBe(served('active'));
+    expect(result.sections.needsReview.count).toBe(served('needs-review'));
   });
 });
 

@@ -1,4 +1,9 @@
 {
-  "_comment": "Exceptions for scripts/license-check.mjs. Each entry needs a `name` (the package name as pnpm reports it) and a `reason` saying why the license terms were accepted despite not being on the permissive list — naming the person or review that accepted them. An entry that matches no installed package FAILS the check, so this file cannot rot into a blanket exemption. It is intentionally EMPTY: every installed dependency's expression is permissive, so nothing needs excepting, and an empty list is the only honest state for that. Add an entry only when a real dependency requires it.",
-  "entries": []
+  "_comment": "Exceptions for scripts/license-check.mjs. Each entry needs a `name` (the package name as pnpm reports it) and a `reason` saying why the license terms were accepted despite not being on the permissive list — naming the person or review that accepted them. An entry that matches no installed package FAILS the check, so this file cannot rot into a blanket exemption. Add an entry only when a real dependency requires it.",
+  "entries": [
+    {
+      "name": "axe-core",
+      "reason": "PENDING OWNER CONFIRMATION (added by the combined-tree audit, not by a legal review). MPL-2.0 is file-level copyleft. axe-core is a devDependency of packages/cli used only by the Playwright accessibility audit (packages/cli/test/browser/axe.ts), which injects the unmodified axe.min.js into a test page. It is not bundled into any published tarball (pack:check validates the file lists), and nothing in this repository modifies its files, so no MPL obligation attaches to shipped code. Remove this entry if the owner rejects MPL-2.0 for dev tooling; the audit then needs a permissively licensed engine."
+    }
+  ]
 }

@@ -516,24 +516,48 @@ export class MemoryBackend {
     const store = mem.MemoryStore.local(this.repoId, { env: this.env, now: () => T0 });
     const record = (index: number, evidence: 'valid' | 'degraded') => {
       // A distinct subject per claim: same-subject claims with different text form conflicts.
-      const input = {
-        kind: 'fact',
-        subject: `topic:review-${String(index).padStart(3, '0')}`,
-        claim: `review claim ${String(index).padStart(3, '0')}`,
-        scope: { boundary: 'repo', repoId: this.repoId },
-        appliesTo: [this.sym.id],
-        evidence: [
-          {
-            kind: 'source-quote',
-            verdict: evidence,
-            checkedAt: T0,
-            soulId: this.sym.id,
-            quote: 'Normalizes input before hashing.',
-            targetHash: this.sym.hash,
-          },
-        ],
-        authorship: { actor: 'claude-code', kind: 'agent', tool: 'claude-code' },
-      };
+      // Degraded claims must be degraded by the evaluator's OWN re-check, not by a stamp: the
+      // ledger re-checks evidence by default (WP5 §7.1), so a stamped `degraded` over evidence that
+      // grounds would be re-derived as `valid`. A decision relayed by an agent (no terminal
+      // attestation) is exactly what the evaluator calls degraded — `relayed-unconfirmed` — and a
+      // local claim with it stays recall-eligible, so it belongs to BOTH working views.
+      const input =
+        evidence === 'degraded'
+          ? {
+              kind: 'decision',
+              subject: `topic:review-${String(index).padStart(3, '0')}`,
+              claim: `review claim ${String(index).padStart(3, '0')}`,
+              scope: { boundary: 'repo', repoId: this.repoId },
+              appliesTo: [this.sym.id],
+              evidence: [
+                {
+                  kind: 'human-attestation',
+                  verdict: evidence,
+                  checkedAt: T0,
+                  quote: 'We normalize input before hashing.',
+                  relayedBy: 'claude-code',
+                },
+              ],
+              authorship: { actor: 'claude-code', kind: 'agent', tool: 'claude-code' },
+            }
+          : {
+              kind: 'fact',
+              subject: `topic:review-${String(index).padStart(3, '0')}`,
+              claim: `review claim ${String(index).padStart(3, '0')}`,
+              scope: { boundary: 'repo', repoId: this.repoId },
+              appliesTo: [this.sym.id],
+              evidence: [
+                {
+                  kind: 'source-quote',
+                  verdict: evidence,
+                  checkedAt: T0,
+                  soulId: this.sym.id,
+                  quote: 'Normalizes input before hashing.',
+                  targetHash: this.sym.hash,
+                },
+              ],
+              authorship: { actor: 'claude-code', kind: 'agent', tool: 'claude-code' },
+            };
       return {
         id: mem.memoryRecordId(input),
         schemaVersion: '1',

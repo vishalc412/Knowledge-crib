@@ -37,7 +37,12 @@ test('Memory list favors a compact claim preview and keeps full detail available
   await page.goto(backend.url);
   await page.locator('[data-kc-memory-trigger]').click();
   await page.locator('[data-kc-memory-home-action="history"]').click();
-  const row = page.locator('[data-kc-mem-row]').first();
+  // A row with no review reasons: the fixture also seeds claims that need review (WP5's drifted
+  // claim among them), and those rows correctly offer "Review claim" instead.
+  const row = page
+    .locator('[data-kc-mem-row]')
+    .filter({ hasNot: page.locator('[data-kc-mem-reasons]') })
+    .first();
   await expect(row).toBeVisible();
   await expect(row.locator('[data-kc-memory-preview]')).toBeVisible();
   await expect(row.locator('[data-kc-memory-next-action]')).toHaveText('Inspect claim');

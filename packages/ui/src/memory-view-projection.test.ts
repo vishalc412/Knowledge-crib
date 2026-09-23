@@ -6,13 +6,18 @@ import { vizAssetsDir } from './viz.js';
 type HealthSignal = {
   label: string;
   status: string;
+  tone?: string;
+  fix?: string;
   showSnapshot?: boolean;
   revision?: string;
   lastSuccess?: string;
   explanation: string;
 };
 type MemoryView = {
-  healthSignals: (health: Record<string, unknown>) => HealthSignal[];
+  healthSignals: (
+    health: Record<string, unknown>,
+    recovery?: Record<string, unknown>,
+  ) => HealthSignal[];
   ledgerRow: (row: Record<string, unknown>) => {
     subject: string;
     preview: string;
@@ -81,6 +86,39 @@ describe('memory display projection', () => {
       });
       expect(signal?.explanation).toContain('unavailable');
     }
+  });
+
+  it('reports capture separately, with dead letters ahead of waiting captures', () => {
+    const dead = projection().healthSignals({ capture: { dead: 2, pending: 5 } });
+    expect(dead.find((signal) => signal.label === 'Capture')).toMatchObject({
+      status: 'Dead letters',
+      tone: 'risk',
+    });
+    const waiting = projection().healthSignals({ capture: { pending: 3 } });
+    expect(waiting.find((signal) => signal.label === 'Capture')?.status).toBe('Waiting');
+  });
+
+  it("attaches the server's repair line to the tile it repairs, and invents none", () => {
+    const signals = projection().healthSignals(
+      { codeIndex: { behindHead: true }, retrieval: { mode: 'lexical-fallback' } },
+      {
+        codeIndex: 'run crib update',
+        retrieval: 'run crib embed status',
+        capture: 'inspect outbox',
+      },
+    );
+    const fixOf = (label: string) => signals.find((signal) => signal.label === label)?.fix;
+    expect(fixOf('Published index')).toBe('run crib update');
+    expect(fixOf('Retrieval')).toBe('run crib embed status');
+    expect(fixOf('Capture')).toBe('inspect outbox');
+    // No server line → no line: absence means "no fault reported", never a made-up reassurance.
+    expect(fixOf('Reader snapshot')).toBe('');
+    expect(fixOf('Sync')).toBe('');
+    expect(
+      projection()
+        .healthSignals({})
+        .every((signal) => signal.fix === ''),
+    ).toBe(true);
   });
 
   it('makes a short one-line preview without losing the original claim on detail', () => {

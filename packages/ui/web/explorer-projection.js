@@ -48,7 +48,7 @@
       const prefix = module.pathPrefix;
       if (
         prefix &&
-        (node.file === prefix || node.file.startsWith(prefix + '/')) &&
+        (node.file === prefix || node.file.startsWith(`${prefix}/`)) &&
         (!best || prefix.length > best.pathPrefix.length)
       )
         best = module;
@@ -76,7 +76,7 @@
       const edge = edges[index];
       if (!edge || !MODEL.ARCHITECTURAL_RELS.has(edge.rel)) continue;
       if (edge.src === from && edge.dst === to) labels.add(FORWARD[edge.rel] || edge.rel);
-      if (edge.dst === from && edge.src === to) labels.add(REVERSE[edge.rel] || edge.rel + ' by');
+      if (edge.dst === from && edge.src === to) labels.add(REVERSE[edge.rel] || `${edge.rel} by`);
     }
     return [...labels].join(', ');
   }
@@ -190,7 +190,7 @@
           'The canvas highlights only its focus context; this table lists discovered affected nodes.';
         if (truncated) graphNote += ' Traversal reached its limit; more nodes may be affected.';
       } else {
-        const canvasIds = ((options.canvasFocus && options.canvasFocus.rings) || []).flat();
+        const canvasIds = (options.canvasFocus?.rings || []).flat();
         const canvasShown = canvasIds.filter(
           (id) => byId[id] && !hiddenKinds[byId[id].kind],
         ).length;
@@ -231,7 +231,7 @@
     } else if (options.moduleId) {
       scope = 'module';
       const module = modules.find((item) => item.id === options.moduleId);
-      const ids = new Set((module && module.clusterIds) || []);
+      const ids = new Set(module?.clusterIds || []);
       rows = clusters
         .filter((cluster) => ids.has(cluster.id))
         .map((cluster) => ({

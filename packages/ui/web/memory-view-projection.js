@@ -1,6 +1,4 @@
 (function installKnowledgeCribMemoryViewProjection(root) {
-  'use strict';
-
   function asObject(value) {
     return value && typeof value === 'object' ? value : {};
   }
@@ -12,7 +10,12 @@
   function compactClaim(value, max = 140) {
     const normalized = asText(value).replace(/\s+/g, ' ').trim();
     const points = Array.from(normalized);
-    return points.length > max ? `${points.slice(0, max - 1).join('').trimEnd()}…` : normalized;
+    return points.length > max
+      ? `${points
+          .slice(0, max - 1)
+          .join('')
+          .trimEnd()}…`
+      : normalized;
   }
 
   /**
@@ -26,6 +29,9 @@
     const published = asObject(health.codeIndex);
     const reader = asObject(health.readerFreshness);
     const retrieval = asObject(health.retrieval);
+    const capture = asObject(health.capture);
+    const dead = typeof capture.dead === 'number' ? capture.dead : 0;
+    const waiting = typeof capture.pending === 'number' ? capture.pending : 0;
     const sync = asObject(health.sync);
     const publishedRevision = asText(published.checkedRevision) || asText(reader.indexedHead);
     const readerRevision = asText(reader.indexedHead);
@@ -67,6 +73,30 @@
             : 'The reader snapshot check is unavailable.',
       },
       {
+        key: 'capture',
+        fix: asText(repair.capture),
+        label: 'Capture',
+        status:
+          dead > 0
+            ? 'Dead letters'
+            : waiting > 0
+              ? 'Waiting'
+              : asText(capture.lastSuccessfulAt)
+                ? 'Captured'
+                : 'None yet',
+        tone: dead > 0 ? 'risk' : waiting > 0 ? 'review' : 'neutral',
+        revision: '',
+        revisionLabel: '',
+        lastSuccess: asText(capture.lastSuccessfulAt),
+        lastSuccessLabel: asText(capture.lastSuccessfulAt) || 'not recorded',
+        explanation:
+          dead > 0
+            ? `${dead} captured learning(s) exhausted their retries and will not be distilled automatically.`
+            : waiting > 0
+              ? `${waiting} captured learning(s) are waiting to be checked against the code.`
+              : 'Nothing captured is waiting to be checked.',
+      },
+      {
         key: 'retrieval',
         fix: asText(repair.retrieval),
         label: 'Retrieval',
@@ -76,9 +106,10 @@
         revisionLabel: '',
         lastSuccess: '',
         lastSuccessLabel: '',
-        explanation: retrieval.mode === 'on-device-semantic'
-          ? 'Search uses a model on this device.'
-          : 'Search uses local keyword matching; a semantic model is unavailable.',
+        explanation:
+          retrieval.mode === 'on-device-semantic'
+            ? 'Search uses a model on this device.'
+            : 'Search uses local keyword matching; a semantic model is unavailable.',
       },
       {
         key: 'sync',
@@ -90,9 +121,10 @@
         revisionLabel: '',
         lastSuccess: asText(sync.lastSuccessfulAt),
         lastSuccessLabel: asText(sync.lastSuccessfulAt) || 'not recorded',
-        explanation: sync.configured === true
-          ? 'Encrypted device sync is configured for this memory store.'
-          : 'Memory stays local to this device until device sync is configured.',
+        explanation:
+          sync.configured === true
+            ? 'Encrypted device sync is configured for this memory store.'
+            : 'Memory stays local to this device until device sync is configured.',
       },
     ];
   }
@@ -107,9 +139,10 @@
       status,
       timeLabel: asText(row.recordedAt) ? 'Recorded' : 'Created',
       time: asText(row.recordedAt) || asText(row.createdAt) || 'Time unavailable',
-      nextAction: Array.isArray(row.reviewReasons) && row.reviewReasons.length
-        ? 'Review claim'
-        : 'Inspect claim',
+      nextAction:
+        Array.isArray(row.reviewReasons) && row.reviewReasons.length
+          ? 'Review claim'
+          : 'Inspect claim',
     };
   }
 
