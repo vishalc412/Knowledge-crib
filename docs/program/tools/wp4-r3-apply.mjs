@@ -587,7 +587,7 @@ function runScale(path) {
         : `All five bullets clear AT EACH OF ${PRE_REGISTERED_SLICES.map(fmt).join(', ')} — clause 5 is ` +
           'phrased "at each of", so the scope is stated rather than left to the rows that happen to be ' +
           `present. 5a-5d are measured; 5e is structural — and note that perf-gates.md's ` +
-          'ABSOLUTE thresholds (recall p95 < 100 ms @10k, < 300 ms @100k, `perf-gates.md:30-31`) are ' +
+          'ABSOLUTE thresholds (recall p95 < 100 ms @10k, < 300 ms @100k, `perf-gates.md:31-32`) are ' +
           'measured through `MemoryApi.search` and are NOT re-measured by this harness, whose latency ' +
           'table is about `crib query`. 5e claims the lexical path is UNCHANGED, not that those ' +
           'numbers were re-taken.';

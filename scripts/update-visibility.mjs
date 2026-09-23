@@ -4,8 +4,8 @@
  * until the change is QUERYABLE?
  *
  * WHY THIS EXISTS
- * `docs/bench/perf-gates.md:32` carries the row "One-file watch update → queryable | < 5 s p95 |
- * **not measured** | **BLOCKED** (no E2E watch fixture wired)", and `perf-gates.md:79` repeats it.
+ * `docs/bench/perf-gates.md:33` carries the row "One-file watch update → queryable | < 5 s p95 |
+ * **not measured** | **BLOCKED** (no E2E watch fixture wired)", and `perf-gates.md:80` repeats it.
  * `docs/program/developer-trust-plan.md:127` states the same acceptance target as "**update
  * visibility ≤2 s** on the specified workload". So the tree carried a plan acceptance criterion
  * with no reproducible command behind it, and two thresholds — 2 s (plan) and 5 s (perf-gates.md
@@ -36,7 +36,7 @@
  *  3. BM25 ONLY (`semantic: false`). The visibility question is "is the new symbol in the index",
  *     so the deterministic exact-match path is the right probe — a vector channel would add noise
  *     to a measurement that is about presence, not ranking quality.
- *  4. macOS, single machine, one run. `perf-gates.md:42` asks for "background load noted"; none
+ *  4. macOS, single machine, one run. `perf-gates.md:43` asks for "background load noted"; none
  *     was induced and none was controlled for.
  *
  * THRESHOLDS — why this exits 0 by default
@@ -67,7 +67,7 @@ import { pathToFileURL } from 'node:url';
 const PINNED_DATE = '2026-01-01T00:00:00.000Z';
 
 const FIXTURE_FILES = 300;
-/** perf-gates.md:42 — "p95 over >= 50 warm iterations after >= 5 warmup iterations". */
+/** perf-gates.md:43 — "p95 over >= 50 warm iterations after >= 5 warmup iterations". */
 const WARMUP_ITERATIONS = 5;
 const MEASURED_ITERATIONS = Number.parseInt(process.env.UV_ITERATIONS ?? '50', 10);
 const POLL_INTERVAL_MS = 10;
@@ -94,7 +94,7 @@ const assertMode = (process.argv.find((a) => a.startsWith('--assert=')) ?? '--as
 const negativeControl = process.argv.includes('--negative-control');
 /**
  * `--repo=<path>` runs against an EXISTING repo instead of the generated fixture — the only way to
- * measure the workload `perf-gates.md:32` actually names ("crib repo"), and the scale workloads
+ * measure the workload `perf-gates.md:33` actually names ("crib repo"), and the scale workloads
  * where the update path is already known to be fixed-cost dominated (WP1-D13: ~410-416 durable
  * writes per update whichever file changed). It APPENDS to a file in that tree, so it refuses to
  * run without `--yes-modify-copy`, and it never deletes the repo it was pointed at. Point it at a
@@ -324,7 +324,7 @@ async function main() {
       `max              : ${fmt(max)} ms`,
       '',
       `plan threshold   : ${PLAN_THRESHOLD_MS} ms  -> ${planVerdict}     (developer-trust-plan.md:127)`,
-      `perf-gates bound : ${PERF_GATES_THRESHOLD_MS} ms  -> ${pgVerdict}     (perf-gates.md:32, watch.ts:71-73)`,
+      `perf-gates bound : ${PERF_GATES_THRESHOLD_MS} ms  -> ${pgVerdict}     (perf-gates.md:33, watch.ts:71-73)`,
       '',
       'NOT MEASURED: process isolation (coordinator and probe share one process); cross-process',
       'fs.watch -> separate client round trip; background load. The probe reads the live in-memory',

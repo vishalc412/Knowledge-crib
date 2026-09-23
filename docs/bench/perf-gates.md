@@ -11,7 +11,7 @@
 > | Warm local recall p95 @ 100k | < 300 ms | **132.8 ms** | **PASS** |
 > | `git commit` blocking added | 0 ms | 0 ms | **PASS** |
 > | Failed refresh readability | prior generation preserved | covered by Gate 3.3 tests | **PASS** |
-> | One-file watch update → queryable | < 5 s p95 | 300-file fixture: **662.1–749.6 ms** p95 (3 runs). `--repo=` (786k LOC, crib-repo workload): **2644.7 ms** p95 @ n=50 | **PASS** at this file's 5 s — and **FAIL** at the plan's 2 s on the named workload; the two thresholds decide opposite verdicts. See *Watch-update visibility, measured* below |
+> | One-file watch update → queryable | < 5 s p95 | 300-file fixture: **662.1–749.6 ms** p95 (4 runs). `--repo=` (786k LOC, crib-repo workload): **2644.7 ms** p95 @ n=50 | **PASS** at this file's 5 s — and **FAIL** at the plan's 2 s on the named workload; the two thresholds decide opposite verdicts. See *Watch-update visibility, measured* below |
 > | Sync convergence soak | no data loss | — | **NOT RUN** (unit-tested only) |
 >
 > Recall latency went 2074 ms → 8.3 ms at 10k and 3775 ms → 132.8 ms at 100k across seven
@@ -309,15 +309,18 @@ RESULTS table above, and *Still open*). The fixture now exists: **`npm run visib
 
 | Workload | n | observed | p50 | p95 | vs < 5 s (this file) | vs ≤ 2 s (plan) |
 | --- | --- | --- | --- | --- | --- | --- |
-| generated fixture, 300 files | 50 | 50/50 | 655.4 ms | **749.6 ms** | PASS | PASS |
+| generated fixture, 300 files | 50 | 50/50 | 614.7 ms | **670.4 ms** | PASS | PASS |
+| generated fixture, 300 files (repeat) | 50 | 50/50 | 655.4 ms | **749.6 ms** | PASS | PASS |
 | `--repo=` copy of a real repo, 786k LOC | 50 | 50/50 | 2490.7 ms | **2644.7 ms** | **PASS** | **FAIL** |
 | `--negative-control` (watcher never started) | 1 | 0/1 in 10 s | — | — | correctly invisible | — |
 
-**Reproducibility, with its limit stated.** The fixture workload ran **three times** — p95 **749.6 ms** (the
-row above, via the documented `npm run visibility:check`, exit 0) and **724.2 / 662.1 ms** in two earlier
-50-iteration runs whose p50 was not captured and is not reported. All three agree within ~13 %. The `--repo=`
-workload ran twice — **2644.7 ms** at n=50 and **2405.9 ms** at n=5, agreeing within ~10 %. Every number here
-is a run's own printed output; nothing is interpolated.
+**Reproducibility, with its limit stated.** The fixture workload ran **four times**, and the two rows above are
+the two runs whose full output survives: **670.4 ms** and **749.6 ms** p95 (both 50/50, via the documented
+`npm run visibility:check`, exit 0). Two earlier 50-iteration runs gave **724.2 / 662.1 ms** p95, **whose p50
+was not captured and is therefore not reported** — so the four-run range is **662.1–749.6 ms**, and this table
+does not print a p50 for those two. All four agree within ~13 %. The `--repo=` workload ran twice — **2644.7 ms**
+at n=50 and **2405.9 ms** at n=5, agreeing within ~10 %. Every number here is a run's own printed output;
+nothing is interpolated.
 
 **Read the third row, because it is the row this gate names.** The threshold above says `(crib repo)` — a real
 repository, not a generated fixture. On one, **p95 is 2644.7 ms**, which **passes this file's 5 s bound and
@@ -337,5 +340,5 @@ reads the **live in-memory** reader index (`RefreshCoordinator` builds `new Sqli
 `refresh-coordinator.ts:536`), which is the only reader that can see a watch-mode update — a separate
 `crib query` process cannot, verified directly; and background load was neither induced nor controlled for.
 
-**The fixture PASS is not the gate passing.** 724.2 / 662.1 ms is a 300-file generated tree. The workload named
+**The fixture PASS is not the gate passing.** Four runs span **662.1–749.6 ms**, on a 300-file generated tree. The workload named
 above measures **2644.7 ms**, and this file's bound is the one it passes.
