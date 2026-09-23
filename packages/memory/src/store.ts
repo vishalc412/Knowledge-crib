@@ -80,6 +80,7 @@ export type MemoryCollection =
   | 'outbox'
   | 'dead'
   | 'intakes'
+  | 'implementations'
   | 'graph'
   | 'graph-jobs';
 
@@ -88,6 +89,7 @@ const TEAM_COLLECTIONS: readonly MemoryCollection[] = [
   'decisions',
   'receipts',
   'intakes',
+  'implementations',
 ];
 const LOCAL_COLLECTIONS: readonly MemoryCollection[] = [
   'attempts',
@@ -99,6 +101,7 @@ const LOCAL_COLLECTIONS: readonly MemoryCollection[] = [
   'outbox',
   'dead',
   'intakes',
+  'implementations',
   'graph',
   'graph-jobs',
 ];
@@ -137,6 +140,7 @@ function collectionCountKey(c: MemoryCollection): keyof MemoryCounts | undefined
     case 'outbox':
     case 'dead':
     case 'intakes':
+    case 'implementations':
     case 'graph':
     case 'graph-jobs':
       return undefined;
@@ -1275,6 +1279,11 @@ export class MemoryStore {
    */
   upsertEntries(collection: MemoryCollection, entries: MemoryEntry[]): void {
     this.assertCollection(collection);
+    for (const entry of entries) {
+      if ((entry.id.startsWith('impl:')) !== (collection === 'implementations')) {
+        throw new Error('implementation records must be stored only in implementations');
+      }
+    }
     if (collection === 'graph') {
       throw new Error(
         'refusing to upsertEntries into the graph collection directly: graph entries enter through submitGraphEntries — an id-replace here would re-author a first-writer-wins decision and bypass every graph merge law',

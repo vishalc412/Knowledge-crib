@@ -14,6 +14,7 @@ import {
   GRAPH_RESOLUTION_V2_SCHEMA,
   INTAKE_CHECKPOINT_SCHEMA,
   INTAKE_SCHEMA,
+  IMPLEMENTATION_RECORD_SCHEMA,
   MEMORY_MANIFEST_SCHEMA,
   RECEIPT_SCHEMA,
   RECORD_SCHEMA,
@@ -39,6 +40,7 @@ import type {
   GraphResolutionDecisionV2,
   IntakeCheckpoint,
   IntakeRequirement,
+  ImplementationRecord,
   MemoryAlias,
   MemoryCandidate,
   MemoryDecision,
@@ -64,6 +66,7 @@ const validateManifestFn: ValidateFunction = ajv.compile(MEMORY_MANIFEST_SCHEMA)
 const validateAliasFn: ValidateFunction = ajv.compile(ALIAS_SCHEMA);
 const validateSyncEventFn: ValidateFunction = ajv.compile(SYNC_EVENT_SCHEMA);
 const validateIntakeFn: ValidateFunction = ajv.compile(INTAKE_SCHEMA);
+const validateImplementationRecordFn: ValidateFunction = ajv.compile(IMPLEMENTATION_RECORD_SCHEMA);
 const validateIntakeCheckpointFn: ValidateFunction = ajv.compile(INTAKE_CHECKPOINT_SCHEMA);
 const validateGraphEntityFn: ValidateFunction = ajv.compile(GRAPH_ENTITY_SCHEMA);
 const validateGraphExtractionJobFn: ValidateFunction = ajv.compile(GRAPH_EXTRACTION_JOB_SCHEMA);
@@ -193,6 +196,11 @@ export function assertValidIntakeCheckpoint(checkpoint: IntakeCheckpoint): void 
   }
 }
 
+export function assertValidImplementationRecord(record: ImplementationRecord): void {
+  const ok: boolean = validateImplementationRecordFn(record);
+  if (!ok) throw new MemorySchemaError('implementation-record', validateImplementationRecordFn.errors, record.id);
+}
+
 // ─── connected memory graph (WP-G1) ──────────────────────────────────────────
 
 /**
@@ -280,6 +288,7 @@ const ENTRY_VALIDATORS: Record<string, { validate: ValidateFunction; label: stri
   evt: { validate: validateSyncEventFn, label: 'sync-event' },
   intake: { validate: validateIntakeFn, label: 'intake' },
   icp: { validate: validateIntakeCheckpointFn, label: 'intake-checkpoint' },
+  impl: { validate: validateImplementationRecordFn, label: 'implementation-record' },
 };
 
 /** schemaVersion → record validator. The `mem:` prefix is shared by memory-1 and memory-2 records,

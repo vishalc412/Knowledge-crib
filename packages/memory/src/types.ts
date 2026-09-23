@@ -457,6 +457,29 @@ export interface IntakeCheckpoint {
   recordedAt: string;
 }
 
+/** An explicit, content-addressed report of one implemented plan and its archived Git range. */
+export interface ImplementationRecord {
+  id: string;
+  schemaVersion: '1';
+  namespace: MemoryNamespace;
+  intakeId: string;
+  audience: 'private' | 'team';
+  category: 'enhancement' | 'addon' | 'fix' | 'refactor';
+  summary: string;
+  planPath: string;
+  planSha256: string;
+  baseCommit: string;
+  headCommit: string;
+  commits: string[];
+  changedPaths: string[];
+  patchSha256: string;
+  archivePath: string;
+  archiveSha256: string;
+  receiptIds: string[];
+  actor: string;
+  recordedAt: string;
+}
+
 /**
  * The memory-3 envelope. It preserves every v2 field and makes the authorization-relevant
  * namespace explicit and content-addressed. v2 stays live and read-compatible during migration.
@@ -701,6 +724,7 @@ export type MemoryEntry =
   | MemoryAlias
   | IntakeRequirement
   | IntakeCheckpoint
+  | ImplementationRecord
   | GraphEntity
   | GraphAssertion
   | GraphResolutionDecision
