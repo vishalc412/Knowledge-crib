@@ -59,6 +59,9 @@ async function routeSmallGraph(page: Page) {
 }
 
 async function selectSearchedNode(page: Page) {
+  // Phones open in List (Phase 3); the canvas path is audited in the Graph presentation.
+  const graph = page.locator('[data-kc-presentation="graph"]');
+  if ((await graph.getAttribute('aria-pressed')) !== 'true') await graph.click();
   await page.getByPlaceholder('Search code, docs, tables…').fill('RootAnchor');
   await expect(page.locator('[data-kc-search-status]')).toContainText('match');
   const stage = page.locator('[data-kc-graph-stage]');

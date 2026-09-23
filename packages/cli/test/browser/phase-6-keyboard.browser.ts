@@ -187,7 +187,7 @@ test('canvas hover content can be hovered and dismissed with Escape (WCAG 1.4.13
   await page.route('**/overview.json', (route) => route.fulfill({ json: { modules: [] } }));
   await page.goto(backend.url);
   await page.getByPlaceholder('Search code, docs, tables…').fill('Solo');
-  await expect(page.locator('[data-kc-search-status]')).toContainText('1 match');
+  await expect(page.locator('[data-kc-search-status]')).toContainText('1 code graph match');
   const box = (await page.locator('[data-kc-graph-stage]').boundingBox())!;
   const zoom =
     Number(
@@ -236,5 +236,5 @@ test('the search result count is announced through a polite live region (WCAG 4.
   await page.getByPlaceholder('Search code, docs, tables…').fill('normalizeInput');
   await expect(live).toContainText('match');
   await page.getByPlaceholder('Search code, docs, tables…').fill('no-such-symbol-2026');
-  await expect(live).toContainText('No graph matches');
+  await expect(live).toContainText('No code graph matches');
 });

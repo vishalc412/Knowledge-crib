@@ -77,6 +77,8 @@ test('mobile navigation is an opaque modal drawer with focus and Escape return',
 test('mobile inspector and Help close by keyboard and return focus', async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 812 });
   await page.goto(backend.url);
+  // Phones open in List (Phase 3); the inspector toggle is part of the Graph presentation.
+  await page.locator('[data-kc-presentation="graph"]').click();
   const inspectorTrigger = page.locator('[data-kc-inspector-toggle]');
   await inspectorTrigger.focus();
   await page.keyboard.press('Enter');

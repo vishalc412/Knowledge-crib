@@ -226,6 +226,7 @@
       return {
         query,
         matchIds: [],
+        allMatchIds: [],
         contextIds: [],
         nodeIds: new Set(),
         edgeIndexes: [],
@@ -258,6 +259,7 @@
     return {
       query,
       matchIds,
+      allMatchIds: allMatches.map((node) => node.id),
       contextIds,
       nodeIds,
       edgeIndexes: edgeIndexesForNodeIds(nodeIds, edges, indexes),
