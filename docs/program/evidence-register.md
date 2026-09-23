@@ -677,6 +677,60 @@ Recorded here rather than filed as a blocker in §9: it is not this program's wo
 whether WP0–WP5 are correct. It belongs in the register because the register's job includes saying which of
 its instruments can currently be believed, and §9's verdict leans on gate results.
 
+### 4.5 The gate's red switches off the coverage matrix beneath it, and that matrix was red when it went dark (MEASURED 2026-09-23)
+
+§4.4 recorded that the release gate is standing-red. Measuring the same runs for this section found something
+with a larger consequence: **the red does not only fail to report — it silently disables the cross-platform
+matrix that sits below it.**
+
+`verify-matrix` (`ci.yml:104`) declares **`needs: release-gate`** (`ci.yml:108`) with no `if: always()`. Any
+release-gate failure therefore skips all six cells. `gh pr checks` renders the skipped job as the literal
+string `verify (${{ matrix.os }}, Node ${{ matrix.node }})` — not a workflow defect, but GitHub displaying a
+job whose matrix never expanded because the job was never queued. That string is what made this findable.
+
+Measured across **all 100 CI runs** in the workflow's history:
+
+- **22 runs executed the matrix** (5 cells each); every one of them is at or before
+  **2026-09-09T16:17:26Z** (run `34375780464`).
+- The **first skip is 2026-09-09T17:06:17Z** (run `34380857902`), and **no CI run after it has executed a
+  single matrix cell** — 14 days, every remaining run carrying a failed release gate.
+- A second confirmation from the same window: on `2026-09-21`, ten runs were created inside four minutes and
+  all ten skipped the matrix.
+
+**The matrix was not idle when it went dark — it was reporting red.** On its last execution
+(`34375780464`) the release gate **passed** and **3 of 5 cells failed**: `windows-latest` on both Node lines
+and `macos-latest` on Node 24; the two remaining cells were cancelled. The failure is a Windows path-handling
+defect, not a flake:
+
+```
+packages/core test: Error: Cannot find module
+  'C:/Users/runneradmin/AppData/Local/Temp/crib-embed-model-Jwa6Z6/embedder.mjs'
+  imported from 'D:/a/Knowledge-crib/Knowledge-crib/packages/core/src/embeddings/embed-install.ts'
+  → FAIL src/embeddings/tier.test.ts
+```
+
+`embed-install.ts:209-210` names exactly this in its own comment: under vitest the tmpdir must be allow-listed
+in `server.fs` or "this native import of an out-of-root `file://` URL fails with a misleading 'Does the file
+exist?'". This is the **`windows-only` path-handling regression class** that `ci.yml:100-103` states the matrix
+exists to catch. It caught one, and then the matrix that caught it went blind.
+
+**Whether it is still live is unverified, and that is the point.** `packages/core/vitest.config.ts` (whose
+allow-list is `[realpathSync(tmpdir())]`), `embed-install.ts` and `tier.test.ts` are each **unchanged since
+before the failure**, and this branch touches none of them — so the configuration that produced the failure is
+byte-identical today, which makes a live failure more likely than a fixed one. But *likely* is not *measured*:
+the only instrument that could answer is the one that cannot run. **The blind spot is self-sustaining** —
+proving the Windows cells are fixed requires running the matrix, and the matrix cannot run while the gate
+above it is red.
+
+A precision note against §4.4, so the two are not conflated: §4.4's **2026-09-21** bound is for `rerank:check`
+specifically, whereas the release gate *as a whole* has failed in every run since **2026-09-09T17:06:17Z**. The
+gate can fail for reasons other than rerank, and this section does not establish which failure was operating
+between those two dates. §4.4's hedge stands; it is now bounded more tightly.
+
+Filed as an observation for the same reason as §4.4 — it is not this program's work and says nothing about
+whether WP0–WP5 are correct — and recorded because §9's verdict leans on gate results, so it matters how much
+of the gate's cross-platform half is currently a number rather than a signal.
+
 ## 5. WP4 — Code retrieval + measured scale (SPEC WRITTEN 2026-09-23; §7 AND §8.6 LANDED (§5.1, §5.2); §5.3 is a product defect the measuring found, §5.4 a measurement that withdrew its own earlier explanation; §5.6 audited the R3 instruments before the run and named a blocker and two unmeasurable clauses; **§5.8 — R3 RAN and the candidate is NOT PROMOTED. The retrieval-quality numbers now exist, and they are negative.** **§5.9 — the scale run is now COMPLETE too: clause 4 UNPROVEN, clause 5 FAIL on one bullet of five, and one instrument that cannot answer its own question.**)
 
 Spec: `docs/program/wp4-implementation-spec.md`. **This section replaces a stub that said only
