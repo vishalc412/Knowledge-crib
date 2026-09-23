@@ -14,6 +14,7 @@
 <script src="./vendor/react-dom.production.min.js"></script>
 <script src="./graph-model.js"></script>
 <script src="./explorer-projection.js"></script>
+<script src="./memory-view-projection.js"></script>
 <script src="./support.js"></script>
 </head>
 <body>
@@ -72,6 +73,14 @@
   .kc-result-pager button:disabled { opacity:.45; cursor:not-allowed; }
   .kc-result-empty { padding:24px 16px; color:var(--kc-text-2); font:400 14px/1.55 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif; }
   .kc-result-empty p { margin:0 0 12px; }
+  .kc-health-card { min-width:0; padding:12px; border:1px solid var(--kc-line); border-radius:9px; background:var(--kc-fill); color:var(--kc-text); }
+  .kc-health-card strong { display:block; font:700 12px/1.4 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif; }
+  .kc-health-card p { margin:5px 0 0; color:var(--kc-text-2); font:400 12px/1.45 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif; overflow-wrap:anywhere; }
+  .kc-health-card .kc-health-state { color:var(--kc-text); font-weight:600; }
+  .kc-memory-home-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(96px,1fr)); gap:8px; }
+  .kc-memory-home-action { min-height:44px; }
+  .kc-memory-home-label { display:block; margin-top:5px; color:var(--kc-text); font:700 12px/1.25 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif; overflow-wrap:anywhere; }
+  .kc-memory-preview { display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:1; line-clamp:1; overflow:hidden; overflow-wrap:anywhere; }
   .kc-navigation-rail { grid-column:1; grid-row:2; position:relative !important; top:auto !important; bottom:auto !important; left:auto !important; z-index:22; width:auto !important; display:flex; flex-direction:column; overflow:hidden; border:0; border-right:1px solid var(--kc-line); border-radius:0; background:var(--kc-panel); box-shadow:none; backdrop-filter:none; -webkit-backdrop-filter:none; transition:width 180ms ease; }
   .kc-rail-header { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:12px 12px 10px; border-bottom:1px solid var(--kc-line); }
   .kc-rail-body { flex:1; min-width:0; overflow:auto; padding:11px 8px 12px; }
@@ -471,19 +480,21 @@
       <div style="flex:1; overflow-y:auto; padding:13px 14px 16px;">
         <sc-if value="{{ mem.homeView }}" hint-placeholder-val="{{ true }}">
           <div style="margin-bottom:14px;">
-            <div style="display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:5px;">
+            <div class="kc-memory-home-grid">
               <sc-for list="{{ mem.homeView.sections }}" as="section" hint-placeholder-count="5">
-                <button data-kc-memory-home-action title="{{ section.help }}" onClick="{{ section.onGo }}" style="min-width:0; padding:8px 6px; border-radius:9px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color:{{ t.text }}; text-align:center; cursor:pointer; font-family:'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;">
+                <button data-kc-memory-home-action class="kc-memory-home-action" title="{{ section.help }}" onClick="{{ section.onGo }}" style="min-width:0; padding:8px 6px; border-radius:9px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color:{{ t.text }}; text-align:center; cursor:pointer; font-family:'IBM Plex Sans';">
                   <div style="font-size:18px; font-weight:700; line-height:1; color: {{ section.color }};">{{ section.count }}</div>
-                  <div style="font-size:12px; font-weight:700; letter-spacing:0.02em; color: {{ t.text }}; margin-top:5px; line-height:1.2;">{{ section.label }}</div>
+                  <span data-kc-memory-home-label class="kc-memory-home-label">{{ section.label }}</span>
                 </button>
               </sc-for>
             </div>
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:8px;">
+            <div style="display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; margin-top:12px;">
               <sc-for list="{{ mem.homeView.health }}" as="signal" hint-placeholder-count="4">
-                <div style="padding:8px 9px; border-radius:8px; border-left:3px solid {{ signal.color }}; background: {{ t.chip }}; min-width:0;">
-                  <div style="font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color: {{ t.sub }};">{{ signal.label }}</div>
-                  <div style="font-size:12px; font-weight:600; color: {{ t.text }}; margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ signal.value }}</div>
+                <div data-kc-health="{{ signal.key }}" class="kc-health-card">
+                  <strong>{{ signal.label }}</strong>
+                  <p class="kc-health-state">{{ signal.status }}</p>
+                  <sc-if value="{{ signal.showSnapshot }}" hint-placeholder-val="{{ true }}"><p>Checked revision <span title="{{ signal.revision }}">{{ signal.revisionLabel }}</span></p><p>Last successful {{ signal.lastSuccessLabel }}</p></sc-if>
+                  <p>{{ signal.explanation }}</p>
                 </div>
               </sc-for>
             </div>
@@ -501,9 +512,9 @@
                  name their exact command; only `ready` rows offer the Admit action. -->
             <sc-if value="{{ mem.pendingView }}" hint-placeholder-val="{{ true }}">
               <div style="margin-top:8px;">
-                <sc-if value="{{ mem.pendingView.loading }}" hint-placeholder-val="{{ true }}"><div style="font-size:12px; color: {{ t.sub }}; padding:6px 2px;">Loading the pending queue…</div></sc-if>
-                <sc-if value="{{ mem.pendingView.error }}" hint-placeholder-val="{{ true }}"><div style="font-size:12px; color:#f87171; padding:6px 2px;">{{ mem.pendingView.error }}</div></sc-if>
-                <sc-if value="{{ mem.pendingView.unwired }}" hint-placeholder-val="{{ true }}"><div style="font-size:12px; color: {{ t.sub }}; padding:6px 2px;">No memory stores are wired for this repo.</div></sc-if>
+                <sc-if value="{{ mem.pendingView.loading }}" hint-placeholder-val="{{ true }}"><div style="font-size:11.5px; color: {{ t.sub }}; padding:6px 2px;">Loading the pending queue…</div></sc-if>
+                <sc-if value="{{ mem.pendingView.error }}" hint-placeholder-val="{{ true }}"><div role="alert" data-kc-pending-error style="font-size:12px; color: {{ t.text }}; padding:10px; border:1px solid #f87171; border-radius:8px;">Could not load Pending: {{ mem.pendingView.error }}<button onClick="{{ mem.pendingView.onRetry }}" style="display:block; min-height:32px; margin-top:8px; padding:0 12px; border:1px solid {{ t.border }}; border-radius:7px; background: {{ t.chip }}; color: {{ t.text }}; cursor:pointer;">Retry Pending</button></div></sc-if>
+                <sc-if value="{{ mem.pendingView.unwired }}" hint-placeholder-val="{{ true }}"><div style="font-size:11.5px; color: {{ t.sub }}; padding:6px 2px;">No memory stores are wired for this repo.</div></sc-if>
                 <sc-if value="{{ mem.pendingView.notice }}" hint-placeholder-val="{{ true }}">
                   <div role="status" data-kc-mem-admit-notice style="margin:6px 0; padding:8px 10px; border-radius:8px; background:rgba(52,211,153,0.12); border:1px solid rgba(52,211,153,0.4); font-size:12px; color: {{ t.text }};">{{ mem.pendingView.notice }}</div>
                 </sc-if>
@@ -686,12 +697,12 @@
             <button data-kc-mem-detail-back onClick="{{ mem.detail.onBack }}" style="height:26px; padding:0 10px; border-radius:7px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.sub }}; cursor:pointer; font:600 12px 'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif; margin-bottom:12px;">{{ mem.detail.backLabel }}</button>
             <sc-if value="{{ mem.detail.loading }}" hint-placeholder-val="{{ true }}"><div style="font-size:12px; color: {{ t.sub }};">Loading record…</div></sc-if>
             <sc-if value="{{ mem.detail.error }}" hint-placeholder-val="{{ true }}">
-              <div style="font-size:12px; color:#f87171;">{{ mem.detail.error }}</div>
+              <div role="alert" data-kc-detail-error style="font-size:12px; color: {{ t.text }}; padding:10px; border:1px solid #f87171; border-radius:8px;">Could not load claim: {{ mem.detail.error }}<button onClick="{{ mem.detail.onRetry }}" style="display:block; min-height:32px; margin-top:8px; padding:0 12px; border:1px solid {{ t.border }}; border-radius:7px; background: {{ t.chip }}; color: {{ t.text }}; cursor:pointer;">Retry claim</button></div>
             </sc-if>
             <sc-if value="{{ mem.detail.ready }}" hint-placeholder-val="{{ true }}">
               <div>
-                <div style="font-family:'IBM Plex Mono',monospace; font-size:12px; color: {{ t.sub }}; word-break:break-all; margin-bottom:8px;">{{ mem.detail.id }}</div>
-                <div style="padding:11px 12px; border-radius:10px; border-left:3px solid {{ mem.detail.groupColor }}; background: {{ t.chip }}; font-size:12.5px; line-height:1.55; color: {{ t.text }};">{{ mem.detail.claim }}</div>
+                <div data-kc-memory-detail-claim style="padding:11px 12px; border-radius:10px; border-left:3px solid {{ mem.detail.groupColor }}; background: {{ t.chip }}; font-size:14px; line-height:1.55; color: {{ t.text }}; overflow-wrap:anywhere;">{{ mem.detail.claim }}</div>
+                <details data-kc-memory-technical style="margin-top:10px; font-size:12px; color: {{ t.sub }};"><summary style="cursor:pointer;">Technical details</summary><div style="font-family:'IBM Plex Mono',monospace; overflow-wrap:anywhere; margin-top:5px;">Record ID: {{ mem.detail.id }}</div></details>
                 <div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:10px;">
                   <sc-for list="{{ mem.detail.chips }}" as="chip" hint-placeholder-count="3">
                     <span style="display:inline-flex; align-items:center; gap:4px; padding:3px 8px; border-radius:6px; font-size:12px; font-weight:600; background: {{ chip.bg }}; color: {{ chip.fg }};">{{ chip.label }}</span>
@@ -811,20 +822,12 @@
             <!-- rows -->
             <div style="display:flex; flex-direction:column; gap:5px;">
               <sc-for list="{{ mem.rows }}" as="r" hint-placeholder-count="4">
-                <button data-kc-mem-row="{{ r.id }}" onClick="{{ r.onOpen }}" style="display:flex; align-items:flex-start; gap:9px; width:100%; text-align:left; padding:9px 10px; border-radius:9px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.text }}; cursor:pointer; font-family:'IBM Plex Sans',ui-sans-serif,system-ui,sans-serif;" style-hover="background: rgba(127,127,127,0.12);">
+                <button data-kc-mem-row="{{ r.id }}" onClick="{{ r.onOpen }}" style="display:flex; align-items:flex-start; gap:9px; width:100%; text-align:left; padding:12px; border-radius:9px; border:1px solid {{ t.border }}; background: {{ t.chip }}; color: {{ t.text }}; cursor:pointer; font-family:'IBM Plex Sans';" style-hover="background: rgba(127,127,127,0.12);">
                   <span style="width:9px; height:9px; border-radius:50%; flex:none; margin-top:4px; background: {{ r.color }}; box-shadow:0 0 0 3px {{ r.glow }};"></span>
                   <span style="flex:1; min-width:0;">
-                    <span style="display:flex; align-items:center; gap:6px; min-width:0;">
-                      <span style="font-size:12px; font-weight:600; letter-spacing:0.04em; text-transform:uppercase; color: {{ r.color }}; flex:none;">{{ r.groupLabel }}</span>
-                      <span style="font-family:'IBM Plex Mono',monospace; font-size:12px; color: {{ t.sub }}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ r.subject }}</span>
-                    </span>
-                    <span style="display:block; font-size:12px; line-height:1.5; color: {{ t.text }}; margin-top:3px;">{{ r.claim }}</span>
-                    <span style="display:flex; flex-wrap:wrap; gap:4px; margin-top:6px;">
-                      <sc-for list="{{ r.chips }}" as="chip" hint-placeholder-count="2">
-                        <span style="display:inline-flex; align-items:center; gap:4px; padding:2px 7px; border-radius:5px; font-size:12px; font-weight:600; background: {{ chip.bg }}; color: {{ chip.fg }};">{{ chip.label }}</span>
-                      </sc-for>
-                    </span>
-                    <span style="display:block; font-size:12px; color: {{ t.sub }}; margin-top:5px;">{{ r.time }}</span>
+                    <span style="display:block; font-size:14px; font-weight:600; overflow-wrap:anywhere;">{{ r.subject }}</span>
+                    <span data-kc-memory-preview class="kc-memory-preview" style="font-size:12px; line-height:1.5; color: {{ t.sub }}; margin-top:4px;">{{ r.preview }}</span>
+                    <span style="display:flex; flex-wrap:wrap; justify-content:space-between; gap:4px 10px; margin-top:7px; font-size:12px; color: {{ t.sub }};"><span>Status: {{ r.status }} · {{ r.timeLabel }} {{ r.time }}</span><span data-kc-memory-next-action style="color: {{ t.text }}; font-weight:600;">{{ r.nextAction }}</span></span>
                   </span>
                 </button>
               </sc-for>
@@ -832,10 +835,13 @@
                 <div style="font-size:12px; color: {{ t.sub }}; padding:8px 2px; line-height:1.5;">{{ mem.emptyMessage }}</div>
               </sc-if>
               <sc-if value="{{ mem.error }}" hint-placeholder-val="{{ true }}">
-                <div style="font-size:12px; color:#f87171;">{{ mem.error }}</div>
+                <div role="alert" data-kc-memory-error style="padding:12px; border:1px solid #f87171; border-radius:8px; font-size:12px; color: {{ t.text }}; line-height:1.5;">
+                  Could not load Memory: {{ mem.error }}
+                  <button onClick="{{ mem.onRetry }}" style="display:block; min-height:32px; margin-top:8px; padding:0 12px; border:1px solid {{ t.border }}; border-radius:7px; background: {{ t.chip }}; color: {{ t.text }}; cursor:pointer;">Retry Memory</button>
+                </div>
               </sc-if>
               <sc-if value="{{ mem.loading }}" hint-placeholder-val="{{ true }}">
-                <div style="font-size:12px; color: {{ t.sub }};">Loading ledger…</div>
+                <div role="status" style="font-size:12px; color: {{ t.sub }};">Loading Memory ledger…</div>
               </sc-if>
             </div>
           </div>
@@ -2407,12 +2413,8 @@ class Component extends DCLogic {
       const tabs=[{key:null,label:'All',color:'#8b97a8',count:configured?totalRows:0,on:!this.state.memGroup,onGo:()=>this.loadMemory(null),...tabChrome(!this.state.memGroup,'#8b97a8')}]
         .concat(this.MEM_GROUPS.map((g)=>({key:g[0],label:g[1],color:g[2],count:(configured&&counts[g[0]])||0,on:this.state.memGroup===g[0],onGo:()=>this.loadMemory(g[0]),...tabChrome(this.state.memGroup===g[0],g[2])})));
       const rows=((md&&md.rows)||[]).map((r)=>{ const color=groupColor(r.group);
-        const chips=this.memVerdictChips(r);
-        if(r.anchorStatus==='stale') chips.push(this.memChip('anchors stale','bad'));
-        else if(r.anchorStatus==='moved') chips.push(this.memChip('anchors moved','warn'));
-        if((r.supersededBy||[]).length) chips.push(this.memChip('superseded','dim'));
-        return { id:r.id, color, glow:this.hex(color,0.18), groupLabel:groupLabel(r.group), subject:r.subject, claim:r.claim, chips,
-          time:r.recordedAt?('recorded '+r.recordedAt):(r.createdAt?('created '+r.createdAt):''), onOpen:()=>this.loadMemoryDetail(r.id,r) }; });
+        return { ...KCMemoryViewProjection.ledgerRow(r), id:r.id, color, glow:this.hex(color,0.18),
+          onOpen:()=>this.loadMemoryDetail(r.id,r) }; });
       const conflicts=((md&&md.conflicts)||[]).map((c)=>({subject:c.subject||c.propositionKey||c.key,count:(c.recordIds||[]).length}));
       const policy=md&&md.capturePolicy?('ref '+md.capturePolicy.trustedRef+' · profiles '+md.capturePolicy.profiles.join(', ')):null;
       const hs=(mh&&mh.sections)||{}; const hh=(mh&&mh.health)||{};
@@ -2424,11 +2426,7 @@ class Component extends DCLogic {
           {label:'Needs review',count:(hs.needsReview&&hs.needsReview.count)||0,color:'#f87171',help:'Inspect stale or degraded evidence',onGo:openHomeAction('needsReview')},
           {label:'History',count:(hs.history&&hs.history.count)||0,color:'#8b97a8',help:'Open the full append-only ledger',onGo:openHomeAction('history')},
           {label:'Work in progress',count:(hs.resume&&hs.resume.count)||0,color:'#5b8cff',help:'Continue, finish or cancel saved work',onGo:openHomeAction('resume')}],
-        health:[
-          {label:'Retrieval mode',value:(hh.retrieval&&hh.retrieval.mode)||'unknown',color:hh.retrieval&&hh.retrieval.mode==='on-device-semantic'?'#34d399':'#f59e0b'},
-          {label:'Last capture',value:(hh.capture&&hh.capture.lastSuccessfulAt)||'none yet',color:hh.capture&&hh.capture.lastSuccessfulAt?'#34d399':'#8b97a8'},
-          {label:'Code index',value:hh.codeIndex&&hh.codeIndex.behindHead?'behind HEAD':((hh.codeIndex&&hh.codeIndex.lastSuccessfulAt)||'not indexed'),color:hh.codeIndex&&hh.codeIndex.behindHead?'#f87171':'#34d399'},
-          {label:'Sync',value:hh.sync&&hh.sync.configured?((hh.sync.lastSuccessfulAt)||'configured; no run yet'):'local only',color:hh.sync&&hh.sync.configured?'#34d399':'#8b97a8'}],
+        health:KCMemoryViewProjection.healthSignals(hh),
         nextAction:mh.nextAction||'Capture a reusable outcome.'}:null;
       const actionKind=this.state.memHomeAction;
       // WP6.1–WP6.3 — the pending queue view. /memory/pending.json is already display-shaped (two
@@ -2474,6 +2472,7 @@ class Component extends DCLogic {
           staged, stagedRows, stagedEmpty:!!(loaded&&staged&&staged.total===0),
           mutationError:this.state.memMutationError, notice:this.state.memAdmittedNotice,
           onRecheck:()=>this.recheckPending(), recheckBusy:!!this.state.memRechecking,
+          onRetry:()=>this.loadMemoryPending(offset),
           recheckLabel:this.state.memRechecking?'Re-checking…':'Re-check against the code',
           onProfile:(e)=>this.setState({memProfile:e.target.value}) };
       }else if(actionKind==='resume'){
@@ -2520,7 +2519,8 @@ class Component extends DCLogic {
         const onBack=()=>this.backToLedger();
         const backLabel=(this._memTrail&&this._memTrail.length)?'← Back to the previous claim':'← Back to ledger';
         if(memDetailState.status==='loading') detail={loading:true,ready:false,error:null,onBack,backLabel};
-        else if(memDetailState.status==='error') detail={loading:false,ready:false,error:memDetailState.message,onBack,backLabel};
+        else if(memDetailState.status==='error') detail={loading:false,ready:false,error:memDetailState.message,onBack,backLabel,
+          onRetry:()=>this.loadMemoryDetail(memDetailState.id,memDetailState.row,true)};
         else { const d=memDetailState.data||{}; const rec=d.record||{}; const row=memDetailState.row;
           const chips=this.memVerdictChips(d.verdicts||{standing:'staged',evidence:'unverified',applicability:'current',lifecycle:'active',quarantined:false});
           const lin=[]; for(const key of ['derivedFrom','supersedes','contradicts']) if((rec.lineage&&rec.lineage[key]||[]).length) lin.push(key+': '+(rec.lineage[key]||[]).join(', '));
@@ -2540,8 +2540,9 @@ class Component extends DCLogic {
       }
       mem={ notConfigured:!!(md&&!md.configured), homeView, homeAction, pendingView, resumeView, announce:this.state.memAnnounce||null,
         conflicts, conflictsPlural:conflicts.length===1?'':'s', policy,
-        detail, list:configured&&!detail,
+        detail, list:!detail&&(configured||this.state.memLoading||this.state.memError),
         loading:!!(this.state.memLoading&&!detail), error:this.state.memError, empty:configured&&rows.length===0,
+        onRetry:()=>this.loadMemory(this.state.memGroup),
         emptyMessage:this.state.memGroup?'No records match this lifecycle view. Return to All or inspect Needs review above.':'No memories yet. Agents record what they learn with memory_observe while they work, and every new session re-checks anything still pending.',
         tabs, rows };
     }
