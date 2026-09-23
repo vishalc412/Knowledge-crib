@@ -4,11 +4,11 @@
 | --- | --- |
 | Product | Knowledge Crib `crib viz` (local web UI, `packages/ui/web`) |
 | Standard | WCAG 2.2 Level A and AA (4.1.1 Parsing is obsolete in 2.2 and omitted) |
-| Version assessed | Branch `claude/ui-remediation-phase-6`, stacked on Phases 0, 1, 2 and 4 |
+| Version assessed | Branch `claude/ui-remediation-audit`: all six phases integrated (0–6), plus the audit fixes |
 | Prepared by | The implementation team, using automated checks and code/keyboard review |
 | Status | **Provisional.** Every "Supports" below needs confirmation from the independent assessor ([assessor-protocol.md](assessor-protocol.md)). No screen reader, forced-colours or touch-AT testing has been done. |
 
-Phase 3 (the textual Graph/List/Split explorer) is deferred, and Phase 5 is in progress in another environment. The criteria marked "Does not support" depend on Phase 3.
+All six phases are integrated. The Phase 3 List presentation closed the three A/AA gaps this draft previously recorded as "Does not support". Those criteria are now provisional and await the independent retest.
 
 Legend:
 - **Supports (provisional)**: automated and keyboard evidence found no failure; independent confirmation is required.
@@ -21,14 +21,14 @@ Legend:
 
 | Criterion | Status | Notes |
 | --- | --- | --- |
-| 1.1.1 Non-text Content | Does not support | A11Y-012: the canvas has only an interim label; the graph has no text equivalent until Phase 3 |
+| 1.1.1 Non-text Content | Supports (provisional) | The canvas is `role="img"` and points to List, which carries the same results as text (A11Y-012) |
 | 1.2.1–1.2.3 Time-based media | N/A | No audio or video |
-| 1.3.1 Info and Relationships | Partially supports | Landmarks, headings, lists, labelled forms and ARIA states are in place. Canvas relationships exist only for the selected node (A11Y-012) |
+| 1.3.1 Info and Relationships | Supports (provisional) | Landmarks, headings, lists, labelled forms and ARIA states. List names each relationship and hop; Blast is a table with row and column headers |
 | 1.3.2 Meaningful Sequence | Supports (provisional) | DOM order now matches the visual order (A11Y-007) |
 | 1.3.3 Sensory Characteristics | Supports (provisional) | Colour swatches always sit beside text labels |
 | 1.4.1 Use of Color | Partially supports | DOM states use text, `aria-pressed` and strike-through. Canvas node kinds and Blast depth are colour-coded; the inspector lists them as text |
 | 1.4.2 Audio Control | N/A | |
-| 2.1.1 Keyboard | Does not support | A11Y-001: canvas node selection, Focus and Blast need a pointer. Memory, the rail, Help, the theme toggle and search are fully keyboard-operable (tested) |
+| 2.1.1 Keyboard | Supports (provisional) | Every graph result and action is reachable in List by keyboard: module → cluster → symbol → source → Blast → back (A11Y-001, tested) |
 | 2.1.2 No Keyboard Trap | Supports (provisional) | Escape leaves every layer; Tab wraps inside modals by design (A11Y-008) |
 | 2.1.4 Character Key Shortcuts | Supports (provisional) | F and M can be turned off in Help; modifier combinations never trigger them (A11Y-016) |
 | 2.2.1 Timing Adjustable | Supports (provisional) | No time limits |
@@ -48,7 +48,7 @@ Legend:
 | 3.3.1 Error Identification | Supports (provisional) | Concern and resume errors are text in `role="alert"` regions |
 | 3.3.2 Labels or Instructions | Supports (provisional) | Search, concern reason, resume note and gate profile are labelled |
 | 3.3.7 Redundant Entry | Supports (provisional) | No repeated entry |
-| 4.1.2 Name, Role, Value | Supports (provisional) | Dialogs, switch, pressed and expanded states exposed (A11Y-009); axe clean in 40 state/theme runs |
+| 4.1.2 Name, Role, Value | Supports (provisional) | Dialogs, switch, pressed and expanded states exposed (A11Y-009); axe clean in 56 state/theme runs (28 states × 2 themes) |
 
 ## Level AA
 
@@ -60,7 +60,7 @@ Legend:
 | 1.4.3 Contrast (Minimum) | Partially supports | All sampled DOM text reaches ≥4.5:1 in both themes (A11Y-002…005, 011, 018). Canvas-drawn labels are not sampled |
 | 1.4.4 Resize Text | Supports (provisional) | Reflow verified at 400% zoom (320 × 256 CSS px) |
 | 1.4.5 Images of Text | Not evaluated | Canvas labels are drawn text; the assessor should decide how the criterion applies |
-| 1.4.10 Reflow | Supports (provisional) | 320 px and 400% zoom, no horizontal scroll (tested) |
+| 1.4.10 Reflow | Supports (provisional) | 320, 375, 768, 1280 and 1440 px in both themes; 200% and 400% zoom; long multilingual claims wrap (tested) |
 | 1.4.11 Non-text Contrast | Partially supports | Control borders ≥3.8:1 and focus ring tokens verified; canvas node colours not measured |
 | 1.4.12 Text Spacing | Not evaluated | Some labels truncate with an ellipsis by design; the assessor should test the override |
 | 1.4.13 Content on Hover or Focus | Supports (provisional) | The tooltip can be dismissed (Escape), hovered, and stays until dismissed (A11Y-010) |
@@ -68,8 +68,8 @@ Legend:
 | 2.4.6 Headings and Labels | Supports (provisional) | Ordered outline (tested) |
 | 2.4.7 Focus Visible | Supports (provisional) | Every tab stop checked (tested) |
 | 2.4.11 Focus Not Obscured (Minimum) | Supports (provisional) | Every tab stop checked in the shell, Memory and the drawer |
-| 2.5.7 Dragging Movements | Does not support | A11Y-014: panning the canvas requires dragging |
-| 2.5.8 Target Size (Minimum) | Supports (provisional) | ≥24 px desktop and ≥44 px phone in all 40 audited runs |
+| 2.5.7 Dragging Movements | Supports (provisional) | Content and actions are reachable in List without dragging, and zoom and Fit reframe by single pointer. Canvas panning still drags; the assessor should confirm List as the equivalent (A11Y-014) |
+| 2.5.8 Target Size (Minimum) | Supports (provisional) | ≥24 px desktop and ≥44 px phone in all 56 audited runs and the 320–1440 px width matrix |
 | 3.1.2 Language of Parts | N/A | English UI; code excerpts are not natural language |
 | 3.2.3 Consistent Navigation / 3.2.4 Consistent Identification | Supports (provisional) | |
 | 3.3.3 Error Suggestion | Supports (provisional) | "Describe what is wrong before submitting." |
@@ -79,4 +79,4 @@ Legend:
 
 ## Summary
 
-This draft does **not** claim conformance. The product cannot conform while A11Y-001, A11Y-012 and A11Y-014 are open, and `crib viz`'s release gate (`pnpm run ui:gate`) reports FAIL until they are resolved. It will report UNAVAILABLE until an independent assessment and the task review are recorded.
+This draft does **not** claim conformance. No Level A or AA issue is open in the issue log. `pnpm run ui:gate` reports UNAVAILABLE, not PASS, until an independent assessor retests the fixes, records `assessment.json`, and the four-task review is recorded in `ux-tasks.json`.

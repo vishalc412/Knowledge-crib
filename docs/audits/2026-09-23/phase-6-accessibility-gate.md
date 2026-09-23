@@ -61,7 +61,11 @@ FAIL dominates UNAVAILABLE. A mutation test confirmed that removing the independ
 
 The canvas now also has an interim `role="img"` text alternative that points to the textual routes. That doesn't close A11Y-012.
 
-## Open (block the gate)
+## Update after integration (2026-09-24)
+
+All six phases are now integrated on `claude/ui-remediation-audit`. Phase 3 closed A11Y-001, A11Y-012, A11Y-014 and A11Y-015. The audit (`docs/audits/2026-09-24/ui-remediation-audit.md`) fixed A11Y-019 through A11Y-022. No Level A or AA issue is open. The gate reports UNAVAILABLE and waits on the independent assessment, the retests, and the task review. The original record follows.
+
+## Open at the time of this record (since closed by Phase 3)
 
 | Id | Criterion | Owner |
 | --- | --- | --- |

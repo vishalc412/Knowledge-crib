@@ -10,10 +10,10 @@
       "title": "Selecting a graph node, Focus and Blast require a pointer on the canvas",
       "reproduction": "Load crib viz; with the keyboard only, try to open the inspector for a specific symbol. No keyboard path reaches a node: search results, Focus rings and Blast exist only as canvas pixels.",
       "severity": "critical",
-      "owner": "Phase 3 (deferred) \u2014 textual List presentation",
-      "status": "open",
+      "owner": "UI (Phase 3)",
+      "status": "fixed",
       "phase": "3",
-      "evidence": "ui-remediation-baseline.browser.ts \"a keyboard user can enter the textual symbol explorer\" (expected failure)"
+      "evidence": "Phase 3 List presentation: every result and action (module \u2192 cluster \u2192 symbol \u2192 source \u2192 Blast \u2192 back) is keyboard-operable without canvas coordinates. Evidence: phase-3-explorer.browser.ts keyboard journey; phase-6-a11y-audit list-* states."
     },
     {
       "id": "A11Y-012",
@@ -22,10 +22,10 @@
       "title": "The canvas graph (nodes, relationships, Focus rings, Blast) has no equivalent text presentation",
       "reproduction": "Inspect the stage with a screen reader: the canvas is announced by its interim label only; relationships drawn on it are not available as text outside the inspector of one selected node.",
       "severity": "critical",
-      "owner": "Phase 3 (deferred)",
-      "status": "open",
+      "owner": "UI (Phase 3)",
+      "status": "fixed",
       "phase": "3",
-      "evidence": "Interim role=\"img\" label added in Phase 6; full equivalence is the Phase 3 List view"
+      "evidence": "Phase 3 List and Blast table give a text equivalent of overview, cluster, search, Focus and Blast results with relationships and hops; the canvas names that route. Evidence: explorer-projection.test.ts; phase-3-explorer.browser.ts; phase-6-a11y-audit list-* and split states."
     },
     {
       "id": "A11Y-014",
@@ -34,10 +34,10 @@
       "title": "Panning the canvas and moving nodes require dragging",
       "reproduction": "On the stage, try to move the view without dragging: zoom and fit buttons exist, but no single-pointer control pans.",
       "severity": "serious",
-      "owner": "Phase 3 (deferred) \u2014 List view or pan controls",
-      "status": "open",
+      "owner": "UI (Phase 3)",
+      "status": "fixed",
       "phase": "3",
-      "evidence": "Manual review"
+      "evidence": "The explored content and every action are reachable in List without dragging; zoom and Fit re-frame the canvas by single pointer. Panning itself still drags \u2014 the assessor should confirm the List route satisfies 2.5.7 as the equivalent."
     },
     {
       "id": "A11Y-015",
@@ -46,10 +46,10 @@
       "title": "A zero-result graph search offers no Clear search action",
       "reproduction": "Search for \"no-such-symbol-2026\": the status reads \"No graph matches\" with no recovery control.",
       "severity": "moderate",
-      "owner": "Phase 3 (deferred)",
-      "status": "open",
+      "owner": "UI (Phase 3)",
+      "status": "fixed",
       "phase": "3",
-      "evidence": "ui-remediation-baseline.browser.ts (expected failure)"
+      "evidence": "Zero-result searches offer Clear search and name the code-graph scope. Evidence: ui-remediation-baseline.browser.ts (annotation removed); phase-3-explorer.browser.ts."
     },
     {
       "id": "A11Y-002",
@@ -206,6 +206,54 @@
       "status": "fixed",
       "phase": "1",
       "evidence": "phase-1-shell.browser.ts; retest needed by the independent assessor"
+    },
+    {
+      "id": "A11Y-019",
+      "criterion": "\u2014 (functional)",
+      "level": "best-practice",
+      "title": "An empty code graph index listed a phantom \"Project\" result instead of the empty-index state",
+      "reproduction": "Serve an index with no nodes; open List.",
+      "severity": "moderate",
+      "owner": "UI (audit)",
+      "status": "fixed",
+      "phase": "audit",
+      "evidence": "explorer-projection.js lists only clusters with members; explorer-projection.test.ts; phase-5-matrix.browser.ts loading/empty case"
+    },
+    {
+      "id": "A11Y-020",
+      "criterion": "4.1.3 Status Messages; 3.3.1 Error Identification",
+      "level": "AA",
+      "title": "Source preview failure was plain red text: no alert role and no recovery; loading was not a status",
+      "reproduction": "Make /source fail; open a symbol's Source.",
+      "severity": "moderate",
+      "owner": "UI (audit)",
+      "status": "fixed",
+      "phase": "audit",
+      "evidence": "role=\"alert\" with Retry source; loading and unavailable are role=\"status\"; phase-5-matrix.browser.ts partial/failed source case"
+    },
+    {
+      "id": "A11Y-021",
+      "criterion": "\u2014 (recovery)",
+      "level": "best-practice",
+      "title": "Evidence inspection and the Memory home error had no Retry",
+      "reproduction": "Make /memory/evidence.json or the first /memory.json fail.",
+      "severity": "minor",
+      "owner": "UI (audit)",
+      "status": "fixed",
+      "phase": "audit",
+      "evidence": "Retry evidence and Retry Memory controls; phase-5-hierarchy.browser.ts; phase-6-a11y-audit memory-load-failure"
+    },
+    {
+      "id": "A11Y-022",
+      "criterion": "4.1.3 Status Messages (quality)",
+      "level": "best-practice",
+      "title": "After integration, a search count was announced by two live regions in List/Split",
+      "reproduction": "Search with a screen reader in List.",
+      "severity": "minor",
+      "owner": "UI (audit)",
+      "status": "fixed",
+      "phase": "audit",
+      "evidence": "The shell region announces search only in Graph; List/Split use the result summary"
     }
   ]
 }

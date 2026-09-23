@@ -67,14 +67,32 @@ try {
     const startupMs = performance.now() - pageStart;
     const nodeCount = await page.locator('.kc-rail-stat strong').first().innerText();
     const edgeCount = await page.locator('.kc-rail-stat strong').nth(1).innerText();
-    const searchStart = performance.now();
-    await page.getByPlaceholder('Search code, docs, tables…').fill('test');
-    await page.waitForFunction(
-      () => /\d+ matches?/.test(document.querySelector('.kc-search')?.textContent || ''),
-      undefined,
-      { timeout: 180_000 },
+    // Measured inside the page from the input event to the DOM commit of the result count, with a
+    // MutationObserver: frame-polling from the test process quantizes to ~16.7 ms, which is the
+    // same size as the differences being compared. Accepts every release's status wording.
+    const searchMs = await page.evaluate(
+      () =>
+        new Promise((resolveSearch, rejectSearch) => {
+          const input = document.querySelector('input[placeholder="Search code, docs, tables…"]');
+          const box = document.querySelector('.kc-search');
+          if (!input || !box) {
+            rejectSearch(new Error('search box not found'));
+            return;
+          }
+          const done = () => /\d+ (code graph )?match(es)?\b/.test(box.textContent || '');
+          const started = performance.now();
+          const observer = new MutationObserver(() => {
+            if (done()) {
+              observer.disconnect();
+              resolveSearch(performance.now() - started);
+            }
+          });
+          observer.observe(box, { subtree: true, childList: true, characterData: true });
+          const setValue = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
+          setValue.call(input, 'test');
+          input.dispatchEvent(new Event('input', { bubbles: true }));
+        }),
     );
-    const searchMs = performance.now() - searchStart;
     const list = page.getByRole('button', { name: 'List', exact: true });
     let presentationSwitchMs = null;
     if (await list.count()) {

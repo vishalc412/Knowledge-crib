@@ -29,8 +29,24 @@
   --kc-accent-knowledge: #43d8c9;
   --kc-accent-review: #f5b942;
   --kc-accent-risk: #fb7b75;
+  --kc-accent-positive: #34d399;
   --kc-selected-surface: #3d63dd;
   --kc-selected-text: #ffffff;
+  /* Status tints and edges derive from the accents, so every hue has exactly one source. */
+  --kc-tint-code: color-mix(in srgb, var(--kc-accent-code) 16%, transparent);
+  --kc-tint-knowledge: color-mix(in srgb, var(--kc-accent-knowledge) 12%, transparent);
+  --kc-tint-positive: color-mix(in srgb, var(--kc-accent-positive) 14%, transparent);
+  --kc-tint-review: color-mix(in srgb, var(--kc-accent-review) 14%, transparent);
+  --kc-tint-risk: color-mix(in srgb, var(--kc-accent-risk) 14%, transparent);
+  --kc-edge-code: color-mix(in srgb, var(--kc-accent-code) 50%, transparent);
+  --kc-edge-knowledge: color-mix(in srgb, var(--kc-accent-knowledge) 45%, transparent);
+  --kc-edge-positive: color-mix(in srgb, var(--kc-accent-positive) 45%, transparent);
+  --kc-edge-review: color-mix(in srgb, var(--kc-accent-review) 45%, transparent);
+  --kc-edge-risk: color-mix(in srgb, var(--kc-accent-risk) 45%, transparent);
+  /* Interaction states on neutral surfaces. */
+  --kc-state-hover: color-mix(in srgb, var(--kc-text-primary) 10%, transparent);
+  --kc-state-selected: color-mix(in srgb, var(--kc-text-primary) 14%, transparent);
+  --kc-scrollbar-thumb: color-mix(in srgb, var(--kc-text-secondary) 40%, transparent);
 }
 
 [data-kc-shell="signal-console"][data-kc-theme="dark"] {

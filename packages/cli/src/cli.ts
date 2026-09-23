@@ -346,6 +346,7 @@ import {
   parseMemoryLedgerQuery,
   parseMemoryPendingQuery,
   parseResumeBody,
+  projectVizHealth,
   readMemoryEvidence,
   readMemoryGraphDetail,
   readMemoryHome,
@@ -4066,6 +4067,15 @@ async function cmdViz(args: string[], ctx?: CmdCtx): Promise<number> {
         const latest = (kind: 'memory.observed' | 'sync.applied') =>
           [...events].reverse().find((event) => event.kind === kind)?.recordedAt;
         const freshness = freshnessStatus(resolved.repoRoot);
+        const readerManifest = rt.soul.getManifest();
+        const projectedHealth = projectVizHealth(
+          { behindHead: freshness.behindHead, lastKnownGood: freshness.lastKnownGood },
+          coldReaderFreshness(resolved.repoRoot, resolved.cribDir),
+          {
+            head: readerManifest.repo?.vcsHead ?? null,
+            lastSuccessfulAt: readerManifest.stats.lastUpdated ?? null,
+          },
+        );
         const repoId = readRepoId(resolved.cribDir);
         const syncConfigured = Boolean(
           repoId &&
@@ -4088,8 +4098,7 @@ async function cmdViz(args: string[], ctx?: CmdCtx): Promise<number> {
               ...(latest('memory.observed') ? { lastSuccessfulAt: latest('memory.observed') } : {}),
             },
             codeIndex: {
-              lastSuccessfulAt: rt.soul.getManifest().stats.lastUpdated,
-              behindHead: freshness.behindHead,
+              ...projectedHealth.codeIndex,
               workerRunning: freshness.workerRunning,
             },
             sync: {
@@ -4098,7 +4107,7 @@ async function cmdViz(args: string[], ctx?: CmdCtx): Promise<number> {
             },
             // WP4.7 — the viz server has no refresh loop of its own; it reports the cold
             // committed-index shape so the home page shows honest reader staleness.
-            readerFreshness: coldReaderFreshness(resolved.repoRoot, resolved.cribDir),
+            readerFreshness: projectedHealth.readerFreshness,
           },
           currentRepositoryAnchor(resolved.repoRoot),
         );

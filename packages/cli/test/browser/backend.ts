@@ -86,7 +86,13 @@ export class MemoryBackend {
    * listed in Needs review), plus one claim carrying a reported concern — enough to page past the
    * first screen of both working views. Zero keeps the default fixture unchanged.
    */
-  constructor(private readonly options: { reviewClaims?: number; evidenceKinds?: boolean } = {}) {
+  constructor(
+    private readonly options: {
+      reviewClaims?: number;
+      evidenceKinds?: boolean;
+      longContent?: boolean;
+    } = {},
+  ) {
     this.repo = mkdtempSync(join(tmpdir(), 'crib-browser-repo-'));
     this.home = mkdtempSync(join(tmpdir(), 'crib-browser-home-'));
     this.env = {
@@ -213,6 +219,7 @@ export class MemoryBackend {
     await this.seedGraph();
     if (this.options.reviewClaims) await this.seedReviewClaims(this.options.reviewClaims);
     if (this.options.evidenceKinds) await this.seedEvidenceKinds();
+    if (this.options.longContent) await this.seedLongContent();
 
     // 8. The real viz server, headless (`--no-open`), on an ephemeral port.
     await this.startServer();
@@ -468,6 +475,51 @@ export class MemoryBackend {
     this.evidenceRecordId = mem.memoryRecordId(input);
   }
 
+  /** One active claim with long, multilingual text and an unbroken technical token. */
+  private async seedLongContent(): Promise<void> {
+    const mem = (await import('@knowledge-crib/memory')) as {
+      MemoryStore: { local: (repoId: string, opts: unknown) => MemoryStorePort };
+      memoryRecordId: (input: unknown) => string;
+    };
+    const store = mem.MemoryStore.local(this.repoId, { env: this.env, now: () => T0 });
+    const input = {
+      kind: 'fact',
+      subject: `topic:${'multilingual-subject-'.repeat(6)}end`,
+      claim: LONG_CLAIM,
+      scope: { boundary: 'repo', repoId: this.repoId },
+      appliesTo: [this.sym.id],
+      evidence: [
+        {
+          kind: 'source-quote',
+          verdict: 'valid',
+          checkedAt: T0,
+          soulId: this.sym.id,
+          quote: 'Normalizes input before hashing.',
+          targetHash: this.sym.hash,
+        },
+      ],
+      authorship: { actor: 'claude-code', kind: 'agent', tool: 'claude-code' },
+    };
+    this.longRecordId = mem.memoryRecordId(input);
+    store.upsertEntries('active', [
+      {
+        id: this.longRecordId,
+        schemaVersion: '1',
+        ...input,
+        verdicts: {
+          trust: 'local',
+          evidence: 'valid',
+          applicability: 'current',
+          lifecycle: 'active',
+        },
+        createdAt: T0,
+      },
+    ]);
+  }
+
+  /** The id of the long multilingual claim (set when `longContent` is seeded). */
+  longRecordId = '';
+
   /** The id of the every-evidence-kind claim (set when `evidenceKinds` is seeded). */
   evidenceRecordId = '';
 
@@ -665,6 +717,14 @@ interface MemoryStorePort {
   upsertEntries(collection: string, entries: unknown[]): void;
   submitGraphEntries(entries: unknown[]): unknown;
 }
+
+/** Long, mixed-script claim text: Japanese, Arabic (RTL), Hindi, emoji and an unbroken path. */
+export const LONG_CLAIM = [
+  'normalizeInput は入力を正規化してからハッシュ化します。',
+  'تقوم الدالة بتطبيع الإدخال قبل التجزئة.',
+  'यह फ़ंक्शन हैशिंग से पहले इनपुट को सामान्य करता है। 🧪',
+  `packages/${'very-long-directory-name/'.repeat(8)}index.ts#normalizeInput@L2`,
+].join(' ');
 
 /** Seeded into receipt argv and meta; it must never reach an evidence response. */
 export const EVIDENCE_SENTINEL = 'SENTINEL-do-not-disclose-4f1c';
