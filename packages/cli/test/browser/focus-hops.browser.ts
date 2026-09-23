@@ -46,7 +46,7 @@ test('Focus reveals real architectural context through four hops and can reset',
   await page.goto(backend.url);
 
   await page.getByPlaceholder('Search code, docs, tables…').fill('RootAnchor');
-  await expect(page.getByText('1 match · 2 related')).toBeVisible();
+  await expect(page.locator('[data-kc-search-status]')).toHaveText('1 match · 2 related');
   const stage = page.locator('[data-kc-graph-stage]');
   const box = await stage.boundingBox();
   expect(box).not.toBeNull();
@@ -102,7 +102,7 @@ test('Focus does not offer an empty hop behind a capped parent ring', async ({ p
   await page.goto(backend.url);
 
   await page.getByPlaceholder('Search code, docs, tables…').fill('RootAnchor');
-  await expect(page.getByText(/1 match · \d+ related/)).toBeVisible();
+  await expect(page.locator('[data-kc-search-status]')).toHaveText(/1 match · \d+ related/);
   const stage = page.locator('[data-kc-graph-stage]');
   const box = await stage.boundingBox();
   expect(box).not.toBeNull();

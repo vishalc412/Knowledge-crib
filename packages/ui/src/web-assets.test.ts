@@ -171,8 +171,9 @@ describe('viz web asset: memory ledger panel (G5.4)', () => {
     expect(html).toContain('toggleInspectorSource');
     expect(html).toContain('sourceOpen');
     expect(html).toContain('sec.open');
-    expect(html.indexOf('data-kc-inspector-source')).toBeGreaterThan(
-      html.indexOf('data-kc-inspector-connections'),
+    // Template order (CSS selectors mention the same hooks earlier in the helmet).
+    expect(html.indexOf('<div data-kc-inspector-source')).toBeGreaterThan(
+      html.indexOf('<div data-kc-inspector-connections>'),
     );
   });
 
